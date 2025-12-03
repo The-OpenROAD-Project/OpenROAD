@@ -39,7 +39,7 @@ void dbJournal::updateField(dbObject* obj,
                             bool prev_value,
                             bool new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -53,7 +53,7 @@ void dbJournal::updateField(dbObject* obj,
                             char prev_value,
                             char new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -67,7 +67,7 @@ void dbJournal::updateField(dbObject* obj,
                             unsigned char prev_value,
                             unsigned char new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -81,7 +81,7 @@ void dbJournal::updateField(dbObject* obj,
                             int prev_value,
                             int new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -95,7 +95,7 @@ void dbJournal::updateField(dbObject* obj,
                             unsigned int prev_value,
                             unsigned int new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -109,7 +109,7 @@ void dbJournal::updateField(dbObject* obj,
                             float prev_value,
                             float new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -123,7 +123,7 @@ void dbJournal::updateField(dbObject* obj,
                             double prev_value,
                             double new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -137,7 +137,7 @@ void dbJournal::updateField(dbObject* obj,
                             const char* prev_value,
                             const char* new_value)
 {
-  beginAction(UPDATE_FIELD);
+  beginAction(kUpdateField);
   _log.push(obj->getObjectType());
   _log.push(obj->getId());
   _log.push(field_id);
@@ -205,7 +205,7 @@ void dbJournal::pushParam(const std::string& value)
 void dbJournal::endAction()
 {
   _start_action = false;
-  _log.push((unsigned char) END_ACTION);
+  _log.push((unsigned char) kEndAction);
   _log.push(_action_idx);  // This value allows log to be scanned backwards.
 }
 
@@ -218,32 +218,32 @@ void dbJournal::redo()
     _log.pop(_cur_action);
 
     switch (_cur_action) {
-      case CREATE_OBJECT:
+      case kCreateObject:
         redo_createObject();
         break;
 
-      case DELETE_OBJECT:
+      case kDeleteObject:
         redo_deleteObject();
         break;
 
-      case CONNECT_OBJECT:
+      case kConnectObject:
         redo_connectObject();
         break;
 
-      case DISCONNECT_OBJECT:
+      case kDisconnectObject:
         redo_disconnectObject();
         break;
 
-      case SWAP_OBJECT:
+      case kSwapObject:
         redo_swapObject();
         break;
 
-      case UPDATE_FIELD:
+      case kUpdateField:
         redo_updateField();
         break;
 
-      case END_ACTION:
-        _logger->critical(utl::ODB, 399, "In redo saw unexpected END_ACTION.");
+      case kEndAction:
+        _logger->critical(utl::ODB, 399, "In redo saw unexpected kEndAction.");
         break;
     }
 
@@ -251,9 +251,9 @@ void dbJournal::redo()
     unsigned int action_idx;
     _log.pop(end_action);
     _log.pop(action_idx);
-    if (end_action != END_ACTION || action_idx != s) {
+    if (end_action != kEndAction || action_idx != s) {
       _logger->critical(
-          utl::ODB, 419, "In redo, didn't see the expected END_ACTION.");
+          utl::ODB, 419, "In redo, didn't see the expected kEndAction.");
     }
   }
 }
@@ -971,7 +971,7 @@ void dbJournal::redo_updateBlockField()
   int field;
   _log.pop(field);
   switch ((_dbBlock::Field) field) {
-    case _dbBlock::CORNERCOUNT: {
+    case _dbBlock::kCornerCount: {
       int cornerCount;
       _log.pop(cornerCount);
       int extDbCount;
@@ -993,7 +993,7 @@ void dbJournal::redo_updateBlockField()
       break;
     }
 
-    case _dbBlock::WRITEDB: {
+    case _dbBlock::kWriteDb: {
       std::string name;
       _log.pop(name);
       int allNode;
@@ -1025,7 +1025,7 @@ void dbJournal::redo_updateNetField()
   _log.pop(field);
 
   switch ((_dbNet::Field) field) {
-    case _dbNet::FLAGS: {
+    case _dbNet::kFlags: {
       uint prev_flags;
       _log.pop(prev_flags);
       uint* flags = (uint*) &net->flags_;
@@ -1041,7 +1041,7 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
-    case _dbNet::NON_DEFAULT_RULE: {
+    case _dbNet::kNonDefaultRule: {
       uint prev_rule;
       _log.pop(prev_rule);
       _log.pop(net->_non_default_rule.id());
@@ -1061,7 +1061,7 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
-    case _dbNet::TERM_EXTID: {
+    case _dbNet::kTermExtId: {
       int capId;
       _log.pop(capId);
       ((dbNet*) net)->setTermExtIds(capId);
@@ -1083,7 +1083,7 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
-    case _dbNet::HEAD_RSEG: {
+    case _dbNet::kHeadRSeg: {
       uint pid;
       uint rid;
       _log.pop(pid);
@@ -1100,7 +1100,7 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
-    case _dbNet::REVERSE_RSEG: {
+    case _dbNet::kReverseRSeg: {
       dbSet<dbRSeg> rSet = ((dbNet*) net)->getRSegs();
       rSet.reverse();
       debugPrint(_logger,
@@ -1112,7 +1112,7 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
-    case _dbNet::HEAD_CAPNODE: {
+    case _dbNet::kHeadCapNode: {
       uint pid;
       uint cid;
       _log.pop(pid);
@@ -1129,7 +1129,7 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
-    case _dbNet::NAME: {
+    case _dbNet::kName: {
       std::string prev_name;
       _log.pop(prev_name);
       std::string new_name;
@@ -1161,7 +1161,7 @@ void dbJournal::redo_updateModNetField()
   _log.pop(field);
 
   switch ((_dbModNet::Field) field) {
-    case _dbModNet::NAME: {
+    case _dbModNet::kName: {
       std::string prev_name;
       _log.pop(prev_name);
       std::string new_name;
@@ -1193,7 +1193,7 @@ void dbJournal::redo_updateInstField()
   _log.pop(field);
 
   switch ((_dbInst::Field) field) {
-    case _dbInst::FLAGS: {
+    case _dbInst::kFlags: {
       uint prev_flags;
       _log.pop(prev_flags);
       uint* flags = (uint*) &inst->flags_;
@@ -1217,7 +1217,7 @@ void dbJournal::redo_updateInstField()
       break;
     }
 
-    case _dbInst::ORIGIN: {
+    case _dbInst::kOrigin: {
       int prev_x;
       _log.pop(prev_x);
       int prev_y;
@@ -1240,7 +1240,7 @@ void dbJournal::redo_updateInstField()
       break;
     }
 
-    case _dbInst::NAME: {
+    case _dbInst::kName: {
       std::string prev_name;
       _log.pop(prev_name);
       std::string new_name;
@@ -1272,7 +1272,7 @@ void dbJournal::redo_updateBTermField()
   _log.pop(field);
 
   switch ((_dbBTerm::Field) field) {
-    case _dbBTerm::FLAGS: {
+    case _dbBTerm::kFlags: {
       uint prev_flags;
       _log.pop(prev_flags);
       uint* flags = (uint*) &bterm->flags_;
@@ -1299,7 +1299,7 @@ void dbJournal::redo_updateITermField()
   _log.pop(field);
 
   switch ((_dbITerm::Field) field) {
-    case _dbITerm::FLAGS: {
+    case _dbITerm::kFlags: {
       uint prev_flags;
       _log.pop(prev_flags);
       uint* flags = (uint*) &iterm->flags_;
@@ -1327,7 +1327,7 @@ void dbJournal::redo_updateRSegField()
   _log.pop(field);
 
   switch ((_dbRSeg::Field) field) {
-    case _dbRSeg::FLAGS: {
+    case _dbRSeg::kFlags: {
       uint prev_flags;
       _log.pop(prev_flags);
       uint* flags = (uint*) &rseg->flags_;
@@ -1343,7 +1343,7 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::SOURCE: {
+    case _dbRSeg::kSource: {
       uint prev_source;
       _log.pop(prev_source);
       _log.pop(rseg->_source);
@@ -1358,7 +1358,7 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::TARGET: {
+    case _dbRSeg::kTarget: {
       uint prev_target;
       _log.pop(prev_target);
       _log.pop(rseg->_target);
@@ -1373,7 +1373,7 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::RESISTANCE: {
+    case _dbRSeg::kResistance: {
       float prev_r;
       float r;
       int cnr;
@@ -1393,7 +1393,7 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::CAPACITANCE: {
+    case _dbRSeg::kCapacitance: {
       float prev_c;
       float c;
       int cnr;
@@ -1413,7 +1413,7 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::ADDRSEGCAPACITANCE: {
+    case _dbRSeg::kAddRSegCapacitance: {
       uint oseg_id;
       _log.pop(oseg_id);
       _dbRSeg* other = (_dbRSeg*) dbRSeg::getRSeg(_block, oseg_id);
@@ -1428,7 +1428,7 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::ADDRSEGRESISTANCE: {
+    case _dbRSeg::kAddRSegResistance: {
       uint oseg_id;
       _log.pop(oseg_id);
       _dbRSeg* other = (_dbRSeg*) dbRSeg::getRSeg(_block, oseg_id);
@@ -1443,7 +1443,7 @@ void dbJournal::redo_updateRSegField()
       break;
     }
 
-    case _dbRSeg::COORDINATES: {
+    case _dbRSeg::kCoordinates: {
       int prev_x;
       int prev_y;
       int x;
@@ -1479,7 +1479,7 @@ void dbJournal::redo_updateCapNodeField()
   _log.pop(field);
 
   switch ((_dbCapNode::Fields) field) {
-    case _dbCapNode::FLAGS: {
+    case _dbCapNode::kFlags: {
       uint prev_flags;
       _log.pop(prev_flags);
       uint* flags = (uint*) &node->flags_;
@@ -1495,7 +1495,7 @@ void dbJournal::redo_updateCapNodeField()
       break;
     }
 
-    case _dbCapNode::NODE_NUM: {
+    case _dbCapNode::kNodeNum: {
       uint prev_num;
       _log.pop(prev_num);
       _log.pop(node->_node_num);
@@ -1510,7 +1510,7 @@ void dbJournal::redo_updateCapNodeField()
       break;
     }
 
-    case _dbCapNode::CAPACITANCE: {
+    case _dbCapNode::kCapacitance: {
       float prev_c;
       float c;
       int cnr;
@@ -1529,7 +1529,7 @@ void dbJournal::redo_updateCapNodeField()
       ((dbCapNode*) node)->setCapacitance(c, cnr);
       break;
     }
-    case _dbCapNode::ADDCAPNCAPACITANCE: {
+    case _dbCapNode::kAddCapnCapacitance: {
       uint oseg_id;
       _log.pop(oseg_id);
       _dbCapNode* other = (_dbCapNode*) dbCapNode::getCapNode(_block, oseg_id);
@@ -1543,7 +1543,7 @@ void dbJournal::redo_updateCapNodeField()
       ((dbCapNode*) node)->addCapnCapacitance((dbCapNode*) other);
       break;
     }
-    case _dbCapNode::SETNET: {
+    case _dbCapNode::kSetNet: {
       uint onet_id;
       _log.pop(onet_id);
       uint nnet_id;
@@ -1558,7 +1558,7 @@ void dbJournal::redo_updateCapNodeField()
       ((dbCapNode*) node)->setNet(nnet_id);
       break;
     }
-    case _dbCapNode::SETNEXT: {
+    case _dbCapNode::kSetNext: {
       uint onext;
       _log.pop(onext);
       uint nnext;
@@ -1586,7 +1586,7 @@ void dbJournal::redo_updateCCSegField()
   _log.pop(field);
 
   switch ((_dbCCSeg::Fields) field) {
-    case _dbCCSeg::FLAGS: {
+    case _dbCCSeg::kFlags: {
       uint prev_flags;
       _log.pop(prev_flags);
       uint* flags = (uint*) &seg->flags_;
@@ -1602,7 +1602,7 @@ void dbJournal::redo_updateCCSegField()
       break;
     }
 
-    case _dbCCSeg::CAPACITANCE: {
+    case _dbCCSeg::kCapacitance: {
       float prev_c;
       float c;
       int cnr;
@@ -1622,7 +1622,7 @@ void dbJournal::redo_updateCCSegField()
       break;
     }
 
-    case _dbCCSeg::ADDCCCAPACITANCE: {
+    case _dbCCSeg::kAddCcCapacitance: {
       uint oseg_id;
       _log.pop(oseg_id);
       _dbCCSeg* other = (_dbCCSeg*) dbCCSeg::getCCSeg(_block, oseg_id);
@@ -1637,7 +1637,7 @@ void dbJournal::redo_updateCCSegField()
       break;
     }
 
-    case _dbCCSeg::SWAPCAPNODE: {
+    case _dbCCSeg::kSwapCapNode: {
       uint ocap_id;
       _log.pop(ocap_id);
       _dbCapNode* orig = (_dbCapNode*) dbCapNode::getCapNode(_block, ocap_id);
@@ -1656,7 +1656,7 @@ void dbJournal::redo_updateCCSegField()
       ((dbCCSeg*) seg)->swapCapnode((dbCapNode*) orig, (dbCapNode*) newn);
       break;
     }
-    case _dbCCSeg::LINKCCSEG: {
+    case _dbCCSeg::kLinkCcSeg: {
       uint cap_id;
       _log.pop(cap_id);
       uint cseq;
@@ -1673,7 +1673,7 @@ void dbJournal::redo_updateCCSegField()
       ((dbCCSeg*) seg)->Link_cc_seg(capn, cseq);
       break;
     }
-    case _dbCCSeg::UNLINKCCSEG: {
+    case _dbCCSeg::kUnlinkCcSeg: {
       uint cap_id;
       _log.pop(cap_id);
       dbCapNode* capn = (dbCapNode*) dbCapNode::getCapNode(_block, cap_id);
@@ -1687,7 +1687,7 @@ void dbJournal::redo_updateCCSegField()
       ((dbCCSeg*) seg)->unLink_cc_seg(capn);
       break;
     }
-    case _dbCCSeg::SETALLCCCAP: {
+    case _dbCCSeg::kSetAllCcCap: {
       uint cornerCnt = _block->getCornerCount();
       double ttcap[ADS_MAX_CORNER];
       char ccCaps[400];
@@ -1755,31 +1755,31 @@ void dbJournal::undo()
     _log.pop(_cur_action);
 
     switch (_cur_action) {
-      case CREATE_OBJECT:
+      case kCreateObject:
         undo_createObject();
         break;
 
-      case DELETE_OBJECT:
+      case kDeleteObject:
         undo_deleteObject();
         break;
 
-      case CONNECT_OBJECT:
+      case kConnectObject:
         undo_connectObject();
         break;
 
-      case DISCONNECT_OBJECT:
+      case kDisconnectObject:
         undo_disconnectObject();
         break;
 
-      case SWAP_OBJECT:
+      case kSwapObject:
         undo_swapObject();
         break;
 
-      case UPDATE_FIELD:
+      case kUpdateField:
         undo_updateField();
         break;
 
-      case END_ACTION:
+      case kEndAction:
         break;
     }
 
@@ -2588,7 +2588,7 @@ void dbJournal::undo_updateNetField()
   _log.pop(field);
 
   switch ((_dbNet::Field) field) {
-    case _dbNet::FLAGS: {
+    case _dbNet::kFlags: {
       uint* flags = (uint*) &net->flags_;
       _log.pop(*flags);
       uint new_flags;
@@ -2602,7 +2602,7 @@ void dbJournal::undo_updateNetField()
       break;
     }
 
-    case _dbNet::NAME: {
+    case _dbNet::kName: {
       std::string prev_name;
       _log.pop(prev_name);
       std::string new_name;
@@ -2638,7 +2638,7 @@ void dbJournal::undo_updateModNetField()
   _log.pop(field);
 
   switch ((_dbModNet::Field) field) {
-    case _dbModNet::NAME: {
+    case _dbModNet::kName: {
       std::string prev_name;
       _log.pop(prev_name);
       std::string new_name;
@@ -2675,7 +2675,7 @@ void dbJournal::undo_updateInstField()
   _log.pop(field);
 
   switch ((_dbInst::Field) field) {
-    case _dbInst::FLAGS: {
+    case _dbInst::kFlags: {
       uint* flags = (uint*) &inst->flags_;
       _log.pop(*flags);
       uint new_flags;
@@ -2696,7 +2696,7 @@ void dbJournal::undo_updateInstField()
       break;
     }
 
-    case _dbInst::ORIGIN: {
+    case _dbInst::kOrigin: {
       int prev_x;
       _log.pop(prev_x);
       int prev_y;
@@ -2715,7 +2715,7 @@ void dbJournal::undo_updateInstField()
       break;
     }
 
-    case _dbInst::NAME: {
+    case _dbInst::kName: {
       std::string prev_name;
       _log.pop(prev_name);
       std::string new_name;

@@ -1,2 +1,2 @@
 source $::env(SCRIPTS_DIR)/open.tcl
-write_verilog $::env(OUTPUT)
+log_cmd write_verilog -remove_cells $::env(ASAP7_REMOVE_CELLS) $::env(OUTPUT)

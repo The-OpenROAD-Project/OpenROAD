@@ -21,10 +21,10 @@ class _dbTechMinCutRule : public _dbObject
   // PERSISTENT-MEMBERS
   enum _RuleType
   {
-    NONE,
-    MINIMUM_CUT,
-    MINIMUM_CUT_ABOVE,
-    MINIMUM_CUT_BELOW
+    kNone,
+    kMinimumCut,
+    kMinimumCutAbove,
+    kMinimumCutBelow
   };
 
   struct _Flword
@@ -65,7 +65,7 @@ inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
 {
-  flags_._rule = _dbTechMinCutRule::NONE;
+  flags_._rule = _dbTechMinCutRule::kNone;
   flags_._cuts_length = 0;
   flags_._spare_bits = 0;
   _num_cuts = 0;

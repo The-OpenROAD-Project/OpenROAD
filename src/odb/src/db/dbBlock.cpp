@@ -2777,10 +2777,10 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
                cornersStoredCnt,
                extDbCnt,
                name_list);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbBlockObj);
     block->_journal->pushParam(block->getId());
-    block->_journal->pushParam(_dbBlock::CORNERCOUNT);
+    block->_journal->pushParam(_dbBlock::kCornerCount);
     block->_journal->pushParam(cornersStoredCnt);
     block->_journal->pushParam(extDbCnt);
     block->_journal->pushParam(name_list);
@@ -3147,10 +3147,10 @@ void dbBlock::writeDb(char* filename, int allNode)
                1,
                "ECO: dbBlock {}, writeDb",
                block->getId());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbBlockObj);
     block->_journal->pushParam(block->getId());
-    block->_journal->pushParam(_dbBlock::WRITEDB);
+    block->_journal->pushParam(_dbBlock::kWriteDb);
     block->_journal->pushParam(filename);
     block->_journal->pushParam(allNode);
     block->_journal->endAction();

@@ -35,12 +35,12 @@ class _dbCapNode : public _dbObject
  public:
   enum Fields  // dbJournal field names
   {
-    FLAGS,
-    NODE_NUM,
-    CAPACITANCE,
-    ADDCAPNCAPACITANCE,
-    SETNET,
-    SETNEXT
+    kFlags,
+    kNodeNum,
+    kCapacitance,
+    kAddCapnCapacitance,
+    kSetNet,
+    kSetNext
   };
 
   // PERSISTANT-MEMBERS

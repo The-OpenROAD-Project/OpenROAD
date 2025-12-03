@@ -150,7 +150,7 @@ bool isPinCoveredByGuides(const frBlockObject* pin,
   for (const auto& ap_loc : getAccessPoints(pin)) {
     for (const auto& guide : guides) {
       if (guide.getLayerNum() == ap_loc.z()
-          && guide.getBBox().overlaps(ap_loc)) {
+          && guide.getBBox().intersects(ap_loc)) {
         return true;
       }
     }
@@ -1329,8 +1329,10 @@ void GuideProcessor::mapTermAccessPointsToGCells(
     frBlockObject* pin) const
 {
   for (const auto& ap_loc : getAccessPoints(pin)) {
-    const odb::Point idx = getDesign()->getTopBlock()->getGCellIdx(ap_loc);
-    gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
+    for (const auto& idx :
+         getDesign()->getTopBlock()->getGCellIndices(ap_loc)) {
+      gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
+    }
   }
 }
 
@@ -1474,7 +1476,8 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
       path_finder.connectDisconnectedComponents(rects, intvs);
     }
   }
-  logger_->error(DRT, 218, "Guide is not connected to design.");
+  logger_->error(
+      DRT, 218, "Guide is not connected to design for net {}", net->getName());
   return {};
 }
 

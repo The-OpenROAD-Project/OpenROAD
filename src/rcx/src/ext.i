@@ -91,6 +91,9 @@ write_spef(const char* file,
   opts.nets = nets;
   opts.net_id = net_id;
   opts.coordinates= coordinates;
+  if (coordinates) {  
+    opts.N = "Y";
+  }
   
   ext->write_spef(opts);
 }

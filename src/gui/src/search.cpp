@@ -61,6 +61,16 @@ void Search::inDbBPinCreate(odb::dbBPin* pin)
   clearShapes();
 }
 
+void Search::inDbBPinAddBox(odb::dbBox* box)
+{
+  clearShapes();
+}
+
+void Search::inDbBPinRemoveBox(odb::dbBox* box)
+{
+  clearShapes();
+}
+
 void Search::inDbBPinDestroy(odb::dbBPin* pin)
 {
   clearShapes();

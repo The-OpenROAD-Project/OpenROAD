@@ -41,7 +41,7 @@ class _dbModNet : public _dbObject
   // User Code Begin Fields
   enum Field  // dbJournalField name
   {
-    NAME
+    kName
   };
   // User Code End Fields
 };

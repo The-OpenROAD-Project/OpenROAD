@@ -32,10 +32,10 @@ struct dbPropertyFlags
 enum _PropTypeEnum
 {
   // Do not change the order of this enum.
-  DB_STRING_PROP = 0,
-  DB_BOOL_PROP = 1,
-  DB_INT_PROP = 2,
-  DB_DOUBLE_PROP = 3
+  kDbStringProp = 0,
+  kDbBoolProp = 1,
+  kDbIntProp = 2,
+  kDbDoubleProp = 3
 };
 // User Code End Structs
 

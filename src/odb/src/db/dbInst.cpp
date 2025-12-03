@@ -380,7 +380,7 @@ bool dbInst::rename(const char* name)
                static_cast<void*>(this),
                getName(),
                name);
-    block->_journal->updateField(this, _dbInst::NAME, inst->name_, name);
+    block->_journal->updateField(this, _dbInst::kName, inst->name_, name);
   }
 
   block->_inst_hash.remove(inst);
@@ -431,20 +431,15 @@ void dbInst::setOrigin(int x, int y)
                "ECO: setOrigin {}, {}",
                x,
                y);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(inst->getObjectType());
     block->_journal->pushParam(inst->getId());
-    block->_journal->pushParam(_dbInst::ORIGIN);
+    block->_journal->pushParam(_dbInst::kOrigin);
     block->_journal->pushParam(prev_x);
     block->_journal->pushParam(prev_y);
     block->_journal->pushParam(inst->_x);
     block->_journal->pushParam(inst->_y);
     block->_journal->endAction();
-  }
-
-  for (auto iterm_idx : inst->_iterms) {
-    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
-    iterm->clearPrefAccessPoints();
   }
 
   block->flags_._valid_bbox = 0;
@@ -532,12 +527,7 @@ void dbInst::setOrient(dbOrientType orient)
                "ECO: setOrient {}",
                orient.getValue());
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
-  }
-
-  for (auto iterm_idx : inst->_iterms) {
-    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
-    iterm->clearPrefAccessPoints();
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 
   block->flags_._valid_bbox = 0;
@@ -576,7 +566,7 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
                "ECO: setPlacementStatus {}",
                status.getValue());
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 }
 
@@ -678,7 +668,7 @@ void dbInst::setUserFlag1()
 
   if (block->_journal) {
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 }
 
@@ -691,7 +681,7 @@ void dbInst::clearUserFlag1()
 
   if (block->_journal) {
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 }
 
@@ -710,7 +700,7 @@ void dbInst::setUserFlag2()
 
   if (block->_journal) {
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 }
 
@@ -723,7 +713,7 @@ void dbInst::clearUserFlag2()
 
   if (block->_journal) {
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 }
 
@@ -742,7 +732,7 @@ void dbInst::setUserFlag3()
 
   if (block->_journal) {
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 }
 
@@ -755,7 +745,7 @@ void dbInst::clearUserFlag3()
 
   if (block->_journal) {
     block->_journal->updateField(
-        this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+        this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
 }
 
@@ -1139,7 +1129,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
         newMasterName);
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
-    block->_journal->beginAction(dbJournal::SWAP_OBJECT);
+    block->_journal->beginAction(dbJournal::kSwapObject);
     block->_journal->pushParam(dbInstObj);
     block->_journal->pushParam(inst->getId());
     block->_journal->pushParam(old_lib->getId());
@@ -1204,11 +1194,6 @@ bool dbInst::swapMaster(dbMaster* new_master_)
                                  newMasterName,
                                  this->getConstName());
     return false;
-  }
-
-  for (auto iterm_idx : inst->_iterms) {
-    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
-    iterm->clearPrefAccessPoints();
   }
 
   // remove reference to inst_hdr
@@ -1315,7 +1300,7 @@ dbInst* dbInst::create(dbBlock* block_,
                name_,
                master_->getName());
     dbLib* lib = master_->getLib();
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbInstObj);
     block->_journal->pushParam(lib->getId());
     block->_journal->pushParam(master_->getId());
@@ -1525,7 +1510,7 @@ void dbInst::destroy(dbInst* inst_)
                static_cast<void*>(inst),
                inst_->getName());
     auto master = inst_->getMaster();
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbInstObj);
     block->_journal->pushParam(master->getLib()->getId());
     block->_journal->pushParam(master->getId());

@@ -10,6 +10,18 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
 
+# Empty cells we don't need or want, eqy doesn't grok them
+ASAP7_REMOVE_CELLS = [
+    "TAPCELL_ASAP7_75t_R",
+    "FILLERxp5_ASAP7_75",
+    "FILLER_ASAP7_75t_R",
+    "DECAPx1_ASAP7_75t_R",
+    "DECAPx2_ASAP7_75t_R",
+    "DECAPx4_ASAP7_75t_R",
+    "DECAPx6_ASAP7_75t_R",
+    "DECAPx10_ASAP7_75t_R",
+]
+
 FIRTOOL_OPTIONS = [
     "-disable-all-randomization",
     "-strip-debug-info",

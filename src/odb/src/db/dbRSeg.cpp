@@ -142,10 +142,10 @@ void dbRSeg::addRSegCapacitance(dbRSeg* other)
                "ECO: dbRSeg {}, other dbRSeg {}, addRSegCapacitance",
                seg->getId(),
                oseg->getId());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbRSeg::ADDRSEGCAPACITANCE);
+    block->_journal->pushParam(_dbRSeg::kAddRSegCapacitance);
     block->_journal->pushParam(oseg->getId());
     block->_journal->endAction();
   }
@@ -174,10 +174,10 @@ void dbRSeg::addRSegResistance(dbRSeg* other)
                "ECO: dbRSeg {}, other dbRSeg {}, addRSegResistance",
                seg->getId(),
                oseg->getId());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbRSeg::ADDRSEGRESISTANCE);
+    block->_journal->pushParam(_dbRSeg::kAddRSegResistance);
     block->_journal->pushParam(oseg->getId());
     block->_journal->endAction();
   }
@@ -204,10 +204,10 @@ void dbRSeg::setResistance(double res, int corner)
                seg->getId(),
                res,
                corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbRSeg::RESISTANCE);
+    block->_journal->pushParam(_dbRSeg::kResistance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(corner);
@@ -236,10 +236,10 @@ void dbRSeg::adjustResistance(float factor, int corner)
                seg->getId(),
                factor,
                corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbRSeg::RESISTANCE);
+    block->_journal->pushParam(_dbRSeg::kResistance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(corner);
@@ -287,10 +287,10 @@ void dbRSeg::setCapacitance(double cap, int corner)
                seg->getId(),
                cap,
                corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbRSeg::CAPACITANCE);
+    block->_journal->pushParam(_dbRSeg::kCapacitance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(corner);
@@ -335,10 +335,10 @@ void dbRSeg::adjustCapacitance(float factor, uint corner)
                  seg->getId(),
                  value,
                  0);
-      block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+      block->_journal->beginAction(dbJournal::kUpdateField);
       block->_journal->pushParam(dbRSegObj);
       block->_journal->pushParam(seg->getId());
-      block->_journal->pushParam(_dbRSeg::CAPACITANCE);
+      block->_journal->pushParam(_dbRSeg::kCapacitance);
       block->_journal->pushParam(prev_value);
       block->_journal->pushParam(value);
       block->_journal->pushParam(0);
@@ -565,7 +565,7 @@ void dbRSeg::setSourceNode(uint source_node)
                seg->getId(),
                source_node);
     block->_journal->updateField(
-        this, _dbRSeg::SOURCE, seg->_source, source_node);
+        this, _dbRSeg::kSource, seg->_source, source_node);
   }
 
   seg->_source = source_node;
@@ -585,7 +585,7 @@ void dbRSeg::setTargetNode(uint target_node)
                seg->getId(),
                target_node);
     block->_journal->updateField(
-        this, _dbRSeg::TARGET, seg->_target, target_node);
+        this, _dbRSeg::kTarget, seg->_target, target_node);
   }
 
   seg->_target = target_node;
@@ -622,10 +622,10 @@ void dbRSeg::setCoords(int x, int y)
                seg->getId(),
                x,
                y);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbRSeg::COORDINATES);
+    block->_journal->pushParam(_dbRSeg::kCoordinates);
     block->_journal->pushParam(prev_x);
     block->_journal->pushParam(x);
     block->_journal->pushParam(prev_y);
@@ -698,7 +698,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
                y,
                path_dir,
                allocate_cap);
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(net->getId());
     block->_journal->pushParam(x);
@@ -827,7 +827,7 @@ void dbRSeg::destroy(dbRSeg* seg_, dbNet* net_)
                seg->getId(),
                net->getId(),
                block->_journal->size());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
     block->_journal->pushParam(net->getId());
@@ -878,7 +878,7 @@ void dbRSeg::destroyS(dbRSeg* seg_)
                1,
                "ECO: dbRSeg simple destroy seg {}",
                seg->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbRSegObj);
     block->_journal->pushParam(seg->getId());
     block->_journal->pushParam((uint) 0);

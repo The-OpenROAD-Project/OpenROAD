@@ -154,7 +154,7 @@ void dbIntHashTable<T>::insert(T* object)
   } else {
     uint r = _num_entries / sz;
 
-    if (r > CHAIN_LENGTH) {
+    if (r > kChainLength) {
       growTable();
       sz = _hash_tbl.size();
     }
@@ -239,7 +239,7 @@ void dbIntHashTable<T>::remove(T* object)
 
       uint r = (_num_entries + _num_entries / 10) / sz;
 
-      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
+      if ((r < (kChainLength >> 1)) && (sz > 1)) {
         shrinkTable();
       }
 

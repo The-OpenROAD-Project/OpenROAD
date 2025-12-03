@@ -496,7 +496,8 @@ void TritonCTS::writeDataToDb()
       writeClockNDRsToDb(builder.get());
     }
     if (options_->dummyLoadEnabled()) {
-      writeDummyLoadsToDb(builder->getClock(), clkDummies);
+      int nDummies = writeDummyLoadsToDb(builder->getClock(), clkDummies);
+      builder->setNDummies(nDummies);
     }
   }
 
@@ -540,7 +541,8 @@ void TritonCTS::writeDataToDb()
       }
       logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
       if (options_->dummyLoadEnabled()) {
-        logger_->info(CTS, 207, " Leaf load cells {}", dummyLoadIndex_);
+        logger_->info(
+            CTS, 207, " Dummy loads inserted {}", builder->getNDummies());
       }
     }
   }
@@ -2436,20 +2438,21 @@ sta::LibertyCell* findBestDummyCell(
   return bestCell;
 }
 
-void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
-                                    std::unordered_set<odb::dbInst*>& dummies)
+int TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
+                                   std::unordered_set<odb::dbInst*>& dummies)
 {
   // Traverse clock tree and compute ideal output caps for clock
   // buffers in the same level
   if (!computeIdealOutputCaps(clockNet)) {
     // No cap adjustment is needed
-    return;
+    return 0;
   }
 
   // Find suitable candidate cells for dummy loads
   std::vector<sta::LibertyCell*> dummyCandidates;
   findCandidateDummyCells(dummyCandidates);
 
+  int nDummies = 0;
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     subNet.forEachSink([&](ClockInst* inst) {
       if (inst->isClockBuffer()
@@ -2459,6 +2462,7 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
             = insertDummyCell(clockNet, inst, dummyCandidates);
         if (dummyInst != nullptr) {
           dummies.insert(dummyInst);
+          nDummies++;
         }
       }
     });
@@ -2467,6 +2471,7 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
     printClockNetwork(clockNet);
   }
+  return nDummies;
 }
 
 // Return true if any clock buffers need cap adjustment; false otherwise
