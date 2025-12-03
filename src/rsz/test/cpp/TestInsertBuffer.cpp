@@ -20,6 +20,12 @@ class TestInsertBuffer : public tst::IntegratedFixture
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
                                "_main/src/rsz/test/")
   {
+    if (debug_) {
+      logger_.setDebugLevel(utl::ODB, "DB_ECO", 3);
+      logger_.setDebugLevel(utl::ODB, "insert_buffer", 3);
+
+      // logger_.setDebugLevel(utl::ODB, "dbg", 100);  // jk: tmp
+    }
   }
 
  protected:
@@ -30,6 +36,8 @@ class TestInsertBuffer : public tst::IntegratedFixture
     block_ = odb::dbBlock::create(chip, "top");
     sta_->postReadDef(block_);
   }
+
+  bool debug_ = true;  // Set to true to generate debug output
 };
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
@@ -129,6 +137,7 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
   mi0->findModITerm("A")->connect(top_mod_net);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
@@ -142,6 +151,7 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   dbInst* new_buffer = net->insertBufferAfterDriver(drvr_z, buffer_master);
   ASSERT_TRUE(new_buffer);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections
@@ -236,6 +246,7 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
   dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
   mi0->findModITerm("A")->connect(top_mod_net);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   buffer_master = db_->findMaster("BUF_X4");
@@ -250,6 +261,7 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
   dbInst* new_buffer = net->insertBufferAfterDriver(drvr_bterm, buffer_master);
   ASSERT_TRUE(new_buffer);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections
@@ -437,6 +449,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   dbModITerm::create(mi0, "A", mod0->findModBTerm("A"));
   mi0->findModITerm("A")->connect(top_mod_net);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
@@ -450,6 +463,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   dbInst* new_buffer1 = net->insertBufferBeforeLoad(load0_a, buffer_master);
   ASSERT_TRUE(new_buffer1);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections
@@ -466,6 +480,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   dbInst* new_buffer2 = net->insertBufferBeforeLoad(load1_a, buffer_master);
   ASSERT_TRUE(new_buffer2);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #2
@@ -482,6 +497,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   dbInst* new_buffer3 = net->insertBufferBeforeLoad(load2_a, buffer_master);
   ASSERT_TRUE(new_buffer3);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #3
@@ -499,6 +515,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
       = net->insertBufferBeforeLoad(load_output_bterm, buffer_master);
   ASSERT_TRUE(new_buffer4);
   num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #4
@@ -650,6 +667,10 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case3)
   // Create submodule MOD0
   dbModule* mod0_module = dbModule::create(block_, "MOD0");
   ASSERT_TRUE(mod0_module);
+  dbModInst* mod0_inst
+      = dbModInst::create(block_->getTopModule(), mod0_module, "mod0");
+  ASSERT_TRUE(mod0_inst);
+
   dbInst* buf0_inst
       = dbInst::create(block_, buf_master, "buf0", false, mod0_module);
   ASSERT_TRUE(buf0_inst);
@@ -668,10 +689,6 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case3)
   mod0_out->connect(mod_n2);
 
   // Create top-level logic
-  dbModInst* mod0_inst
-      = dbModInst::create(block_->getTopModule(), mod0_module, "mod0");
-  ASSERT_TRUE(mod0_inst);
-
   dbNet* n1 = dbNet::create(block_, "n1");
   ASSERT_TRUE(n1);
   dbBTerm* in_port = dbBTerm::create(n1, "in");
@@ -832,34 +849,32 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
 
   // Create submodules and instances within them
   dbModule* mod0 = dbModule::create(block_, "MOD0");
+  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mod0");
   dbInst::create(block_, buf_master, "drvr0", false, mod0);
   dbModBTerm::create(mod0, "Z")->setIoType(dbIoType::OUTPUT);
   mod0->findModBTerm("Z")->connect(dbModNet::create(mod0, "Z_net"));
   mod0->findDbInst("drvr0")->findITerm("Z")->connect(mod0->getModNet("Z_net"));
 
   dbModule* mod1 = dbModule::create(block_, "MOD1");
+  dbModInst* mi1 = dbModInst::create(block_->getTopModule(), mod1, "mod1");
   dbInst::create(block_, buf_master, "load0", false, mod1);
   dbModBTerm::create(mod1, "A")->setIoType(dbIoType::INPUT);
   mod1->findModBTerm("A")->connect(dbModNet::create(mod1, "A_net"));
   mod1->findDbInst("load0")->findITerm("A")->connect(mod1->getModNet("A_net"));
 
   dbModule* mod2 = dbModule::create(block_, "MOD2");
+  dbModInst* mi2 = dbModInst::create(block_->getTopModule(), mod2, "mod2");
   dbInst::create(block_, buf_master, "load1", false, mod2);
   dbModBTerm::create(mod2, "A")->setIoType(dbIoType::INPUT);
   mod2->findModBTerm("A")->connect(dbModNet::create(mod2, "A_net"));
   mod2->findDbInst("load1")->findITerm("A")->connect(mod2->getModNet("A_net"));
 
   dbModule* mod3 = dbModule::create(block_, "MOD3");
+  dbModInst* mi3 = dbModInst::create(block_->getTopModule(), mod3, "mod3");
   dbInst::create(block_, buf_master, "load2", false, mod3);
   dbModBTerm::create(mod3, "A")->setIoType(dbIoType::INPUT);
   mod3->findModBTerm("A")->connect(dbModNet::create(mod3, "A_net"));
   mod3->findDbInst("load2")->findITerm("A")->connect(mod3->getModNet("A_net"));
-
-  // Create top-level module instances
-  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mod0");
-  dbModInst* mi1 = dbModInst::create(block_->getTopModule(), mod1, "mod1");
-  dbModInst* mi2 = dbModInst::create(block_->getTopModule(), mod2, "mod2");
-  dbModInst* mi3 = dbModInst::create(block_->getTopModule(), mod3, "mod3");
 
   // Connect them hierarchically
   dbNet* n1 = dbNet::create(block_, "n1");
@@ -947,6 +962,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
+  int num_warning = 0;
   readVerilogAndSetup(test_name + ".v");
 
   // Get ODB objects
@@ -1005,7 +1021,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
 
   // Pre sanity check
   sta_->updateTiming(true);
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   //----------------------------------------------------
   // Insert buffer
@@ -1127,6 +1145,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case7)
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
+  int num_warning = 0;
   readVerilogAndSetup(test_name + ".v");
 
   // Get ODB objects
@@ -1170,7 +1189,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case7)
 
   // Pre sanity check
   sta_->updateTiming(true);
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   //----------------------------------------------------
   // Insert buffer
@@ -1658,6 +1679,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
+  int num_warning = 0;
   readVerilogAndSetup(test_name + ".v");
 
   // Get ODB objects
@@ -1694,7 +1716,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
 
   // Pre sanity check
   sta_->updateTiming(true);
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   //----------------------------------------------------
   // Insert buffer
@@ -1713,7 +1737,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
   //----------------------------------------------------
 
   // Post sanity check
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // Buffer Location: Top Module (LCA)
   EXPECT_EQ(new_buf->getModule(), block_->getTopModule());
@@ -1812,6 +1838,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case16)
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
+  int num_warning = 0;
   readVerilogAndSetup(test_name + "_pre.v");
 
   // Get ODB objects
@@ -1833,7 +1860,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case16)
 
   // Pre sanity check
   sta_->updateTiming(true);
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   //----------------------------------------------------
   // Insert buffer
@@ -1852,7 +1881,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case16)
   //----------------------------------------------------
 
   // Post sanity check
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
@@ -1865,6 +1896,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case17)
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
+  int num_warning = 0;
   readVerilogAndSetup(test_name + "_pre.v");
 
   // Get ODB objects
@@ -1898,7 +1930,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case17)
 
   // Pre sanity check
   sta_->updateTiming(true);
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   //----------------------------------------------------
   // Insert buffer
@@ -1927,7 +1961,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case17)
   ASSERT_FALSE(resizer_.hasFanout(buf_out_pin));
 
   // Post sanity check
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
@@ -1940,6 +1976,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case18)
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
+  int num_warning = 0;
   readVerilogAndSetup(test_name + "_pre.v");
 
   // Get ODB objects
@@ -1973,7 +2010,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case18)
 
   // Pre sanity check
   sta_->updateTiming(true);
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   //----------------------------------------------------
   // Insert buffer
@@ -2002,13 +2041,18 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case18)
   ASSERT_TRUE(resizer_.hasFanout(buf_out_pin));
 
   // Post sanity check
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
-// A submodule has a fakeram hard-macro
+// Partial-load buffering with loads of bus ports in a fakeram hard-macro.
+// New buffer will be inserted outside a submodule containing the fakeram,
+// which results in a dbModITerm connection change.
+// STA state should be consistent to the ODB state.
 TEST_F(TestInsertBuffer, BeforeLoads_Case19)
 {
   // Get the test name dynamically from the gtest framework.
@@ -2016,10 +2060,15 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case19)
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
+  int num_warning = 0;
+
+  // Load fakeram
   loadLibaryLef(lib_->getTech(),
                 "Nangate45_fakeram",
                 getFilePath("_main/test/Nangate45/fakeram45_64x7.lef"));
   readLiberty(getFilePath("_main/test/Nangate45/fakeram45_64x7.lib"));
+
+  // Read verilog
   readVerilogAndSetup(test_name + "_pre.v");
 
   // Get ODB objects
@@ -2057,7 +2106,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case19)
 
   // Pre sanity check
   sta_->updateTiming(true);
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // buf/Z should have fanout load
   sta::Pin* buf_out_pin = db_network_->dbToSta(buf_z);
@@ -2091,10 +2142,98 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case19)
   ASSERT_FALSE(resizer_.hasFanout(buf_out_pin));
 
   // Post sanity check
-  db_network_->checkAxioms();
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Partial-load buffering with three loads in three different hierarchies.
+TEST_F(TestInsertBuffer, BeforeLoads_Case20)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Load fakeram
+  loadLibaryLef(lib_->getTech(),
+                "Nangate45_fakeram",
+                getFilePath("_main/test/Nangate45/fakeram45_64x7.lef"));
+  readLiberty(getFilePath("_main/test/Nangate45/fakeram45_64x7.lib"));
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* h0_load0 = block_->findInst("h0/load0");
+  ASSERT_NE(h0_load0, nullptr);
+  dbInst* h0_h1_load1 = block_->findInst("h0/h1/load1");
+  ASSERT_NE(h0_h1_load1, nullptr);
+  dbInst* h0_h1_nontarget0 = block_->findInst("h0/h1/nontarget0");
+  ASSERT_NE(h0_h1_nontarget0, nullptr);
+  dbInst* h2_mem = block_->findInst("h2/mem");
+  ASSERT_NE(h2_mem, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* h0_load0_a = h0_load0->findITerm("A");
+  ASSERT_NE(h0_load0_a, nullptr);
+  dbITerm* h0_h1_load1_a = h0_h1_load1->findITerm("A");
+  ASSERT_NE(h0_h1_load1_a, nullptr);
+  dbITerm* h0_h1_nontarget0_a = h0_h1_nontarget0->findITerm("A");
+  ASSERT_NE(h0_h1_nontarget0_a, nullptr);
+  dbITerm* h2_mem_we_in = h2_mem->findITerm("we_in");
+  ASSERT_NE(h2_mem_we_in, nullptr);
+
+  dbNet* target_net = drvr_z->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buffer_master, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load0, h0/mem/w_mask_in[2:0]
+  // - Note that the two loads are on different dbNets.
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(h0_load0_a);
+  targets.insert(h0_h1_load1_a);
+  targets.insert(h2_mem_we_in);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(targets,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
 }
 
 }  // namespace odb

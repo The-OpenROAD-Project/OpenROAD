@@ -395,6 +395,9 @@ class dbNetwork : public ConcreteNetwork
   bool hasMembers(const Port* port) const override;
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
+  PinSet* drivers(const Pin* pin) override;
+  PinSet* drivers(const Net* net) override;
+  void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   using Network::cell;
