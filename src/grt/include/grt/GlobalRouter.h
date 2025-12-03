@@ -336,7 +336,8 @@ class GlobalRouter
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
                                     int max_routing_layer);
-  void computeUserLayerAdjustments(int max_routing_layer);
+  void computeUserLayerAdjustments(int min_routing_layer,
+                                   int max_routing_layer);
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);

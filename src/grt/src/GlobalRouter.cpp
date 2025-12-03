@@ -1605,23 +1605,20 @@ void GlobalRouter::computeUserGlobalAdjustments(int min_routing_layer,
   }
 }
 
-void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
+void GlobalRouter::computeUserLayerAdjustments(const int min_routing_layer,
+                                               const int max_routing_layer)
 {
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
 
-  const std::vector<int>& hor_capacities
-      = grid_->getHorizontalEdgesCapacities();
-  const std::vector<int>& ver_capacities = grid_->getVerticalEdgesCapacities();
-
   for (int layer = 1; layer <= max_routing_layer; layer++) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
+    const bool inside_layer_range
+        = (layer >= min_routing_layer && layer <= max_routing_layer);
     float adjustment = tech_layer->getLayerAdjustment();
     if (adjustment != 0) {
-      if (horizontal_capacities_[layer - 1] != 0) {
-        int new_cap = hor_capacities[layer - 1] * (1 - adjustment);
-        grid_->setHorizontalCapacity(new_cap, layer - 1);
-
+      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
+          && inside_layer_range) {
         for (int y = 1; y <= y_grids; y++) {
           for (int x = 1; x < x_grids; x++) {
             int edge_cap
@@ -1637,10 +1634,8 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
         }
       }
 
-      if (vertical_capacities_[layer - 1] != 0) {
-        int new_cap = ver_capacities[layer - 1] * (1 - adjustment);
-        grid_->setVerticalCapacity(new_cap, layer - 1);
-
+      if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL
+          && inside_layer_range) {
         for (int x = 1; x <= x_grids; x++) {
           for (int y = 1; y < y_grids; y++) {
             int edge_cap
@@ -2144,10 +2139,6 @@ void GlobalRouter::perturbCapacities()
       int perturbation
           = subtract ? -perturbation_amount_ : perturbation_amount_;
       if (horizontal_capacities_[layer - 1] != 0) {
-        int new_cap
-            = grid_->getHorizontalEdgesCapacities()[layer - 1] + perturbation;
-        new_cap = new_cap < 0 ? 0 : new_cap;
-        grid_->setHorizontalCapacity(new_cap, layer - 1);
         int edge_cap
             = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
         int new_h_capacity = (edge_cap + perturbation);
@@ -2155,10 +2146,6 @@ void GlobalRouter::perturbCapacities()
         fastroute_->addAdjustment(
             x - 1, y - 1, x, y - 1, layer, new_h_capacity, subtract);
       } else if (vertical_capacities_[layer - 1] != 0) {
-        int new_cap
-            = grid_->getVerticalEdgesCapacities()[layer - 1] + perturbation;
-        new_cap = new_cap < 0 ? 0 : new_cap;
-        grid_->setVerticalCapacity(new_cap, layer - 1);
         int edge_cap
             = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
         int new_v_capacity = (edge_cap + perturbation);

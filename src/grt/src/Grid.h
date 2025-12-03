@@ -56,25 +56,6 @@ class Grid
 
   void addTrackPitch(int value, int layer) { track_pitches_[layer] = value; }
 
-  const std::vector<int>& getHorizontalEdgesCapacities()
-  {
-    return horizontal_edges_capacities_;
-  };
-
-  const std::vector<int>& getVerticalEdgesCapacities()
-  {
-    return vertical_edges_capacities_;
-  };
-
-  void setHorizontalCapacity(int capacity, int layer)
-  {
-    horizontal_edges_capacities_[layer] = capacity;
-  }
-  void setVerticalCapacity(int capacity, int layer)
-  {
-    vertical_edges_capacities_[layer] = capacity;
-  }
-
   odb::Point getPositionOnGrid(const odb::Point& position);
 
   void getBlockedTiles(const odb::Rect& obstruction,
@@ -111,8 +92,6 @@ class Grid
   bool perfect_regular_y_;
   int num_layers_;
   std::vector<int> track_pitches_;
-  std::vector<int> horizontal_edges_capacities_;
-  std::vector<int> vertical_edges_capacities_;
 };
 
 }  // namespace grt
