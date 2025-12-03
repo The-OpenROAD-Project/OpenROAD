@@ -211,7 +211,7 @@ dbModInst* dbModInst::create(dbModule* parentModule,
                "ECO: create dbModInst {} at id {}",
                name,
                modinst->getId());
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbModInstObj);
     block->_journal->pushParam(name);
     block->_journal->pushParam(modinst->getId());
@@ -293,7 +293,7 @@ void dbModInst::destroy(dbModInst* modinst)
                "ECO: delete dbModInst {} at id {}",
                modinst->getName(),
                modinst->getId());
-    _block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    _block->_journal->beginAction(dbJournal::kDeleteObject);
     _block->_journal->pushParam(dbModInstObj);
     _block->_journal->pushParam(modinst->getName());
     _block->_journal->pushParam(modinst->getId());

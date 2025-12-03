@@ -29,7 +29,7 @@ class dbHashTable
  public:
   enum Params
   {
-    CHAIN_LENGTH = 4
+    kChainLength = 4
   };
 
   // PERSISTANT-MEMBERS

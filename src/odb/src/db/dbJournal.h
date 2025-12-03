@@ -29,13 +29,13 @@ class dbJournal
  public:
   enum Action
   {
-    CREATE_OBJECT,
-    DELETE_OBJECT,
-    CONNECT_OBJECT,
-    DISCONNECT_OBJECT,
-    SWAP_OBJECT,
-    UPDATE_FIELD,
-    END_ACTION
+    kCreateObject,
+    kDeleteObject,
+    kConnectObject,
+    kDisconnectObject,
+    kSwapObject,
+    kUpdateField,
+    kEndAction
   };
 
   dbJournal(dbBlock* block);

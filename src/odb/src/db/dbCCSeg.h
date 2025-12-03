@@ -29,13 +29,13 @@ class _dbCCSeg : public _dbObject
  public:
   enum Fields  // dbJournal field names
   {
-    FLAGS,
-    CAPACITANCE,
-    ADDCCCAPACITANCE,
-    SWAPCAPNODE,
-    LINKCCSEG,
-    UNLINKCCSEG,
-    SETALLCCCAP
+    kFlags,
+    kCapacitance,
+    kAddCcCapacitance,
+    kSwapCapNode,
+    kLinkCcSeg,
+    kUnlinkCcSeg,
+    kSetAllCcCap
   };
 
   // PERSISTANT-MEMBERS
