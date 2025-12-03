@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -130,8 +131,8 @@ int64_t ClusteringEngine::computeMacroWithHaloArea(
   int64_t macro_with_halo_area = 0;
   for (odb::dbInst* unfixed_macro : unfixed_macros) {
     odb::dbMaster* master = unfixed_macro->getMaster();
-    const int width = master->getWidth() + 2 * tree_->halo_width;
-    const int height = master->getHeight() + 2 * tree_->halo_height;
+    const int width = master->getWidth() + (2 * tree_->halo_width);
+    const int height = master->getHeight() + (2 * tree_->halo_height);
     macro_with_halo_area += (width * static_cast<int64_t>(height));
   }
   return macro_with_halo_area;

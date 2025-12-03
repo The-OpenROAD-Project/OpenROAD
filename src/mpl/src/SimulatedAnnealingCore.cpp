@@ -384,10 +384,8 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     // check how much the macro is far from no fence violation
     const int max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2;
     const int max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2;
-    const int x_dist
-        = std::abs((bbox.xMin() + bbox.xMax()) / 2 - (lx + ux) / 2);
-    const int y_dist
-        = std::abs((bbox.yMin() + bbox.yMax()) / 2 - (ly + uy) / 2);
+    const int x_dist = std::abs(bbox.xCenter() - ((lx + ux) / 2));
+    const int y_dist = std::abs(bbox.yCenter() - ((ly + uy) / 2));
     // calculate x and y direction independently
     float width = x_dist <= max_x_dist
                       ? 0.0

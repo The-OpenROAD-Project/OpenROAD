@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iterator>
 #include <memory>
 #include <random>
@@ -16,6 +17,7 @@
 #include "mpl-util.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -469,7 +471,7 @@ odb::Rect Cluster::getBBox() const
 
 Point Cluster::getCenter() const
 {
-  return {getX() + getWidth() / 2, getY() + getHeight() / 2};
+  return {getX() + (getWidth() / 2), getY() + (getHeight() / 2)};
 }
 
 // Hierarchy Support

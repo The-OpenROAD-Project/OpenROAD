@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -30,7 +31,6 @@ namespace mpl {
 
 class HierRTLMP;
 class MplObserver;
-struct Rect;
 
 class MacroPlacer
 {

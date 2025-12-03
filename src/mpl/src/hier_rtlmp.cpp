@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -105,7 +106,7 @@ void HierRTLMP::setGlobalFence(float fence_lx,
                                float fence_ly,
                                float fence_ux,
                                float fence_uy)
-{  
+{
   int fence_ux_dbu = fence_ux >= 100000000.0 ? block_->getCoreArea().xMax()
                                              : block_->micronsToDbu(fence_ux);
   int fence_uy_dbu = fence_uy >= 100000000.0 ? block_->getCoreArea().yMax()
