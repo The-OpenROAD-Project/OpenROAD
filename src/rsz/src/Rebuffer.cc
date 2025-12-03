@@ -2259,15 +2259,16 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     debugPrint(logger_,
                RSZ,
                "rebuffer",
-               2,
-               "buffering pin {} max_fanout={} max_slew={}",
+               1,
+               "[iter {}] buffering pin {} max_fanout={} max_slew={}",
+               iter,
                network_->name(drvr_pin),
                fanout_limit_,
                delayAsString(drvr_pin_max_slew_, this, 3));
 
     // jk: dbg pre
     if (logger_->debugCheck(RSZ, "dbg", 1)) {
-      if (iter >= 2187 && iter <= 2287) {
+      if (iter == 757) {
         printf("jk: #%d rebuffer pin = %s\n", iter, network_->name(drvr_pin));
         if (logger_->debugCheck(RSZ, "dbg", 100)) {
           sta::writeVerilog(
@@ -2453,14 +2454,53 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     // jk: dbg post
     if (logger_->debugCheck(RSZ, "dbg", 1)) {
-      if (iter == 7544 || iter == 7545) {
-        printf("jk: post rebuffer pin = %s\n", network_->name(drvr_pin));
+      if (iter == 757) {
+        printf(
+            "jk: #%d post rebuffer pin = %s\n", iter, network_->name(drvr_pin));
         if (logger_->debugCheck(RSZ, "dbg", 100)) {
           sta::writeVerilog(fmt::format("post_{}.v", iter).c_str(),
                             true,
                             false,
                             {},
                             network_);
+        }
+        if (logger_->debugCheck(RSZ, "dbg", 101)) {
+          odb::dbBlock* block = db_network_->block();
+          odb::dbNet* target_net = block->findNet("be_mmu.dcache/net3960");
+          if (target_net == nullptr) {
+            logger_->error(
+                RSZ, 9301, "jk: terminate! couldn't find the target net!");
+          }
+
+          target_net->dump();
+
+          odb::dbITerm* drvr_iterm
+              = block->findITerm("be_mmu.dcache/lce/place5133/Z");
+          Pin* drvr_pin = db_network_->dbToSta(drvr_iterm);
+          debugPrint(logger_,
+                     RSZ,
+                     "dbg",
+                     1,
+                     "jk: drvr_pin '{}' fanout = {}",
+                     drvr_iterm->getName(),
+                     resizer_->hasFanout(drvr_pin));
+
+          Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
+          VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
+          int num_edge = 0;
+          while (edge_iter.hasNext()) {
+            Edge* edge = edge_iter.next();
+            debugPrint(logger_,
+                       RSZ,
+                       "dbg",
+                       1,
+                       "jk: edge[{}] = {}",
+                       num_edge++,
+                       edge->to_string(sta_));
+          }
+
+          // jk: terminate
+          logger_->error(RSZ, 9300, "jk: terminate!");
         }
       }
     }
