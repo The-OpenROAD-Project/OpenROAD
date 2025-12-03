@@ -3659,46 +3659,6 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
   }
 }
 
-void GlobalRouter::computeCapacities(int max_layer)
-{
-  int h_capacity, v_capacity;
-
-  for (auto const& [level, tech_layer] : routing_layers_) {
-    if (level > max_layer && max_layer > -1) {
-      break;
-    }
-
-    RoutingTracks routing_tracks = getRoutingTracksByIndex(level);
-    int track_spacing = routing_tracks.getUsePitch();
-
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      h_capacity = std::floor((float) grid_->getTileSize() / track_spacing);
-
-      grid_->setHorizontalCapacity(h_capacity, level - 1);
-      grid_->setVerticalCapacity(0, level - 1);
-      debugPrint(logger_,
-                 GRT,
-                 "graph",
-                 1,
-                 "Layer {} has {} h-capacity",
-                 tech_layer->getConstName(),
-                 h_capacity);
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      v_capacity = std::floor((float) grid_->getTileSize() / track_spacing);
-
-      grid_->setHorizontalCapacity(0, level - 1);
-      grid_->setVerticalCapacity(v_capacity, level - 1);
-      debugPrint(logger_,
-                 GRT,
-                 "graph",
-                 1,
-                 "Layer {} has {} v-capacity",
-                 tech_layer->getConstName(),
-                 v_capacity);
-    }
-  }
-}
-
 void GlobalRouter::findTrackPitches(int max_layer)
 {
   for (auto const& [level, tech_layer] : routing_layers_) {

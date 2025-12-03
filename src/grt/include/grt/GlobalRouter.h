@@ -435,7 +435,6 @@ class GlobalRouter
 
   // db functions
   void initGrid(int max_layer);
-  void computeCapacities(int max_layer);
   void findTrackPitches(int max_layer);
   std::vector<Net*> findNets(bool init_clock_nets);
   void findClockNets(const std::vector<Net*>& nets,
