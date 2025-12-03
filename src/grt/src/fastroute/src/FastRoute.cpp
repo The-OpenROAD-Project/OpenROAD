@@ -371,8 +371,7 @@ void FastRouteCore::initEdges()
 
   // allocate memory and initialize for edges
 
-  graph2d_.init(
-      x_grid_, y_grid_, h_capacity_, v_capacity_, num_layers_, logger_);
+  graph2d_.init(x_grid_, y_grid_, num_layers_, logger_);
 
   init3DEdges();
 }
@@ -386,7 +385,7 @@ void FastRouteCore::init3DEdges()
     for (int j = 0; j < x_grid_; j++) {
       // 3D edge initialization
       for (int k = 0; k < num_layers_; k++) {
-        h_edges_3D_[k][i][j].cap = h_capacity_3D_[k];
+        h_edges_3D_[k][i][j].cap = 0;
         h_edges_3D_[k][i][j].usage = 0;
         h_edges_3D_[k][i][j].red = 0;
       }
@@ -396,7 +395,7 @@ void FastRouteCore::init3DEdges()
     for (int j = 0; j < x_grid_; j++) {
       // 3D edge initialization
       for (int k = 0; k < num_layers_; k++) {
-        v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
+        v_edges_3D_[k][i][j].cap = 0;
         v_edges_3D_[k][i][j].usage = 0;
         v_edges_3D_[k][i][j].red = 0;
       }
