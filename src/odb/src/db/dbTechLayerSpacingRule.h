@@ -20,19 +20,19 @@ class _dbTechLayerSpacingRule : public _dbObject
  public:
   enum _RuleType
   {
-    DEFAULT = 0,
-    RANGE_ONLY,
-    RANGE_USELENGTH,
-    RANGE_INFLUENCE,
-    RANGE_INFLUENCE_RANGE,
-    RANGE_RANGE,
-    LENGTHTHRESHOLD,
-    LENGTHTHRESHOLD_RANGE,
-    CUT_LAYER_BELOW,
-    ADJACENT_CUTS_INFLUENCE,
-    ENDOFLINE,
-    ENDOFLINE_PARALLEL,
-    ENDOFLINE_PARALLEL_TWOEDGES
+    kDefault = 0,
+    kRangeOnly,
+    kRangeUseLength,
+    kRangeInfluence,
+    kRangeInfluenceRange,
+    kRangeRange,
+    kLengthThreshold,
+    kLengthThresholdRange,
+    kCutLayerBelow,
+    kAdjacentCutsInfluence,
+    kEndOfLine,
+    kEndOfLineParallel,
+    kEndOfLineParallelTwoEdges
   };
 
   struct _Flword
@@ -90,7 +90,7 @@ inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(
 
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
 {
-  flags_._rule = DEFAULT;
+  flags_._rule = kDefault;
   flags_._except_same_pgnet = false;
   flags_._cut_stacking = false;
   flags_._cut_center_to_center = false;

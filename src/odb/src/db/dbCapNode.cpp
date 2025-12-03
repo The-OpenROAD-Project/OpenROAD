@@ -186,10 +186,10 @@ void dbCapNode::adjustCapacitance(float factor, uint corner)
                seg->getId(),
                factor,
                corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCapNodeObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCapNode::CAPACITANCE);
+    block->_journal->pushParam(_dbCapNode::kCapacitance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(0);
@@ -319,10 +319,10 @@ void dbCapNode::addCapnCapacitance(dbCapNode* other)
                "ECO: dbCapNode {}, other dbCapNode {}, addCapnCapacitance",
                seg->getId(),
                oseg->getId());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCapNodeObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCapNode::ADDCAPNCAPACITANCE);
+    block->_journal->pushParam(_dbCapNode::kAddCapnCapacitance);
     block->_journal->pushParam(oseg->getId());
     block->_journal->endAction();
   }
@@ -349,10 +349,10 @@ void dbCapNode::setCapacitance(double cap, int corner)
                seg->getId(),
                prev_value,
                value);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCapNodeObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCapNode::CAPACITANCE);
+    block->_journal->pushParam(_dbCapNode::kCapacitance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(corner);
@@ -381,10 +381,10 @@ void dbCapNode::addCapacitance(double cap, int corner)
                seg->getId(),
                prev_value,
                value);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
+    block->_journal->beginAction(dbJournal::kUpdateField);
     block->_journal->pushParam(dbCapNodeObj);
     block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCapNode::CAPACITANCE);
+    block->_journal->pushParam(_dbCapNode::kCapacitance);
     block->_journal->pushParam(prev_value);
     block->_journal->pushParam(value);
     block->_journal->pushParam(corner);
@@ -515,7 +515,7 @@ void dbCapNode::resetBTermFlag()
                "ECO: resetBTermFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::resetITermFlag()
@@ -533,7 +533,7 @@ void dbCapNode::resetITermFlag()
                "ECO: resetITermFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::resetNameFlag()
@@ -551,7 +551,7 @@ void dbCapNode::resetNameFlag()
                "ECO: resetInternalFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::resetInternalFlag()
@@ -569,7 +569,7 @@ void dbCapNode::resetInternalFlag()
                "ECO: resetInternalFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::resetBranchFlag()
@@ -587,7 +587,7 @@ void dbCapNode::resetBranchFlag()
                "ECO: resetBranchFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::resetForeignFlag()
@@ -605,7 +605,7 @@ void dbCapNode::resetForeignFlag()
                "ECO: resetForeignFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::setBTermFlag()
@@ -623,7 +623,7 @@ void dbCapNode::setBTermFlag()
                "ECO: setBTermFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::setITermFlag()
@@ -641,7 +641,7 @@ void dbCapNode::setITermFlag()
                "ECO: setITermFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 uint dbCapNode::incrChildrenCnt()
@@ -659,7 +659,7 @@ uint dbCapNode::incrChildrenCnt()
                "ECO: incrChildrenCnt, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
   return seg->flags_._childrenCnt;
 }
@@ -688,7 +688,7 @@ void dbCapNode::setBranchFlag()
                "ECO: setBranchFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::setNameFlag()
@@ -706,7 +706,7 @@ void dbCapNode::setNameFlag()
                "ECO: setInternalFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::setInternalFlag()
@@ -724,7 +724,7 @@ void dbCapNode::setInternalFlag()
                "ECO: setInternalFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::setForeignFlag()
@@ -742,7 +742,7 @@ void dbCapNode::setForeignFlag()
                "ECO: setForeignFlag, id: {}",
                getId());
     block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
+        this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
 void dbCapNode::setSelect(bool val)
@@ -768,7 +768,7 @@ void dbCapNode::setNode(uint node)
                getId(),
                prev_node,
                node);
-    block->_journal->updateField(this, _dbCapNode::NODE_NUM, prev_node, node);
+    block->_journal->updateField(this, _dbCapNode::kNodeNum, prev_node, node);
   }
 }
 uint dbCapNode::getNode()
@@ -864,7 +864,7 @@ void dbCapNode::setNext(uint nextid)
                getId(),
                prev_next,
                nextid);
-    block->_journal->updateField(this, _dbCapNode::SETNEXT, prev_next, nextid);
+    block->_journal->updateField(this, _dbCapNode::kSetNext, prev_next, nextid);
   }
 }
 void dbCapNode::setNet(uint netid)
@@ -883,7 +883,7 @@ void dbCapNode::setNet(uint netid)
                getId(),
                prev_net,
                netid);
-    block->_journal->updateField(this, _dbCapNode::SETNET, prev_net, netid);
+    block->_journal->updateField(this, _dbCapNode::kSetNet, prev_net, netid);
   }
 }
 /*
@@ -917,7 +917,7 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
                net->getId(),
                node,
                foreign);
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbCapNodeObj);
     block->_journal->pushParam(net->getId());
     block->_journal->pushParam(node);
@@ -997,7 +997,7 @@ void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
                "ECO: dbCapNode::destroy, seg id: {}, net id: {}",
                seg->getId(),
                net->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbCapNodeObj);
     block->_journal->pushParam(seg->getId());
     block->_journal->endAction();

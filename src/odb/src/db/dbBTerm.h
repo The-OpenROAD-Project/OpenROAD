@@ -44,7 +44,7 @@ class _dbBTerm : public _dbObject
  public:
   enum Field  // dbJournalField name
   {
-    FLAGS
+    kFlags
   };
   // PERSISTANT-MEMBERS
   _dbBTermFlags flags_;

@@ -250,7 +250,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
                "ECO: create dbModITerm {} at id {}",
                name,
                moditerm->getId());
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(name);
     block->_journal->pushParam(moditerm->getId());
@@ -318,7 +318,7 @@ void dbModITerm::connect(dbModNet* net)
                getId(),
                _modnet->name_,
                _modnet->getId());
-    _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    _block->_journal->beginAction(dbJournal::kConnectObject);
     _block->_journal->pushParam(dbModITermObj);
     _block->_journal->pushParam(getId());
     _block->_journal->pushParam(_modnet->getId());
@@ -352,7 +352,7 @@ void dbModITerm::disconnect()
         getId(),
         _modnet->name_,
         _modnet->getId());
-    _block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    _block->_journal->beginAction(dbJournal::kDisconnectObject);
     _block->_journal->pushParam(dbModITermObj);
     _block->_journal->pushParam(_moditerm->getId());
     _block->_journal->pushParam(_moditerm->_mod_net);
@@ -406,7 +406,7 @@ void dbModITerm::destroy(dbModITerm* val)
                "ECO: delete dbModITerm {} at id {}",
                val->getName(),
                val->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(val->getName());
     block->_journal->pushParam(val->getId());

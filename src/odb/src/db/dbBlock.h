@@ -147,8 +147,8 @@ class _dbBlock : public _dbObject
  public:
   enum Field  // dbJournal field names
   {
-    CORNERCOUNT,
-    WRITEDB
+    kCornerCount,
+    kWriteDb
   };
 
   // PERSISTANT-MEMBERS

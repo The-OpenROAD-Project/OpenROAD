@@ -360,7 +360,7 @@ void dbITerm::connect(dbNet* net_)
                net->getId(),
                static_cast<void*>(net),
                net_->getName());
-    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->beginAction(dbJournal::kConnectObject);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(net_->getId());
@@ -439,7 +439,7 @@ void dbITerm::connect(dbModNet* mod_net)
                _mod_net->getId(),
                static_cast<void*>(_mod_net),
                ((dbModNet*) _mod_net)->getHierarchicalName());
-    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->beginAction(dbJournal::kConnectObject);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(0);  // empty slot for dbNet, just dbModNet
@@ -510,7 +510,7 @@ void dbITerm::disconnect()
                (mod_net_impl) ? mod_net_impl->getId() : 0,
                static_cast<void*>(mod_net),
                (mod_net) ? mod_net->getHierarchicalName() : "NULL");
-    block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    block->_journal->beginAction(dbJournal::kDisconnectObject);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(net ? net->getOID() : 0U);
@@ -614,7 +614,7 @@ void dbITerm::disconnectDbNet()
                net->getId(),
                static_cast<void*>(net),
                ((dbNet*) net)->getName());
-    block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    block->_journal->beginAction(dbJournal::kDisconnectObject);
     block->_journal->pushParam(dbITermObj);
     block->_journal->pushParam(getId());
     block->_journal->pushParam(net->getOID());
@@ -669,7 +669,7 @@ void dbITerm::disconnectDbModNet()
                  getName(),
                  iterm->_mnet,
                  mod_net->name_);
-      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->beginAction(dbJournal::kDisconnectObject);
       block->_journal->pushParam(dbITermObj);
       block->_journal->pushParam(getId());
       // empty dbNet part, just the mod net being undone

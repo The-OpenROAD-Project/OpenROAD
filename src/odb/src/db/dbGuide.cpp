@@ -159,7 +159,7 @@ dbGuide* dbGuide::create(dbNet* net,
                guide->getOID(),
                layer->getName(),
                box);
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbGuideObj);
     block->_journal->pushParam(guide->getOID());
     block->_journal->endAction();
@@ -197,7 +197,7 @@ void dbGuide::destroy(dbGuide* guide)
                guide->getId(),
                guide->getLayer()->getName(),
                guide->getBox());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbGuideObj);
     block->_journal->pushParam(net->getOID());
     block->_journal->pushParam(_guide->box_.xMin());

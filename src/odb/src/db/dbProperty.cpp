@@ -72,7 +72,7 @@ _dbProperty::_dbProperty(_dbDatabase* db)
   flags_ = {};
   _owner = 0;
   // User Code Begin Constructor
-  flags_._type = DB_STRING_PROP;
+  flags_._type = kDbStringProp;
   name_ = 0;
   // User Code End Constructor
 }
@@ -88,7 +88,7 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
   stream >> obj._owner;
   // User Code Begin >>
   switch (obj.flags_._type) {
-    case DB_BOOL_PROP: {
+    case kDbBoolProp: {
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
       uint boolean;
@@ -96,13 +96,13 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
       obj._value = static_cast<bool>(boolean);
       break;
     }
-    case DB_INT_PROP: {
+    case kDbIntProp: {
       int integer;
       stream >> integer;
       obj._value = integer;
       break;
     }
-    case DB_STRING_PROP: {
+    case kDbStringProp: {
       char* char_string;
       stream >> char_string;
       obj._value = "";
@@ -112,7 +112,7 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
       }
       break;
     }
-    case DB_DOUBLE_PROP: {
+    case kDbDoubleProp: {
       double double_property;
       stream >> double_property;
       obj._value = double_property;
@@ -134,21 +134,21 @@ dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj)
   stream << obj._owner;
   // User Code Begin <<
   switch (obj.flags_._type) {
-    case DB_BOOL_PROP:
+    case kDbBoolProp:
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
       stream << static_cast<uint>(std::get<bool>(obj._value));
       break;
 
-    case DB_INT_PROP:
+    case kDbIntProp:
       stream << std::get<int>(obj._value);
       break;
 
-    case DB_STRING_PROP:
+    case kDbStringProp:
       stream << std::get<std::string>(obj._value).c_str();
       break;
 
-    case DB_DOUBLE_PROP:
+    case kDbDoubleProp:
       stream << std::get<double>(obj._value);
       break;
   }
@@ -162,7 +162,7 @@ void _dbProperty::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  if (flags_._type == DB_STRING_PROP) {
+  if (flags_._type == kDbStringProp) {
     info.children_["string"].add(std::get<std::string>(_value));
   }
   // User Code End collectMemInfo
@@ -494,7 +494,7 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
     return nullptr;
   }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
+  _dbProperty* prop = _dbProperty::createProperty(object, name, kDbBoolProp);
   prop->_value = value;
   return (dbBoolProperty*) prop;
 }
@@ -532,7 +532,7 @@ dbStringProperty* dbStringProperty::create(dbObject* object,
     return (dbStringProperty*) prop;
   }
 
-  prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
+  prop = _dbProperty::createProperty(object, name, kDbStringProp);
   prop->_value = std::string(value);
   return (dbStringProperty*) prop;
 }
@@ -567,7 +567,7 @@ dbIntProperty* dbIntProperty::create(dbObject* object,
     return nullptr;
   }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_INT_PROP);
+  _dbProperty* prop = _dbProperty::createProperty(object, name, kDbIntProp);
   prop->_value = value;
   return (dbIntProperty*) prop;
 }
@@ -601,7 +601,7 @@ dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
     return nullptr;
   }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_DOUBLE_PROP);
+  _dbProperty* prop = _dbProperty::createProperty(object, name, kDbDoubleProp);
   prop->_value = value;
   return (dbDoubleProperty*) prop;
 }

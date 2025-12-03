@@ -276,7 +276,7 @@ void dbBTerm::setSigType(dbSigType type)
                "ECO: setSigType {}",
                type.getValue());
     block->_journal->updateField(
-        this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
+        this, _dbBTerm::kFlags, prev_flags, flagsToUInt(bterm));
   }
 
   for (auto callback : block->_callbacks) {
@@ -306,7 +306,7 @@ void dbBTerm::setIoType(dbIoType type)
                "ECO: setIoType {}",
                type.getValue());
     block->_journal->updateField(
-        this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
+        this, _dbBTerm::kFlags, prev_flags, flagsToUInt(bterm));
   }
 
   for (auto callback : block->_callbacks) {
@@ -625,7 +625,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
                net->getId(),
                static_cast<void*>(net),
                name);
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(net->getId());
     block->_journal->pushParam(name);
@@ -692,7 +692,7 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
                mod_net->getId(),
                static_cast<void*>(mod_net),
                ((dbModNet*) mod_net)->getHierarchicalName());
-    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->beginAction(dbJournal::kConnectObject);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());
     // the flat net is left out
@@ -729,7 +729,7 @@ void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
                net->getId(),
                static_cast<void*>(net),
                ((dbNet*) net)->getName());
-    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->beginAction(dbJournal::kConnectObject);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());
     block->_journal->pushParam(net->getId());
@@ -794,7 +794,7 @@ void dbBTerm::destroy(dbBTerm* bterm_)
                bterm->getId(),
                static_cast<void*>(bterm),
                bterm->name_);
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm_->getId());
     block->_journal->endAction();
@@ -824,7 +824,7 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
           net->getId(),
           static_cast<void*>(net),
           net->name_);
-      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->beginAction(dbJournal::kDisconnectObject);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
       block->_journal->pushParam(net->getId());
@@ -882,7 +882,7 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
           mod_net->getId(),
           static_cast<void*>(mod_net),
           ((dbModNet*) mod_net)->getHierarchicalName());
-      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->beginAction(dbJournal::kDisconnectObject);
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
       // we are not considering the dbNet

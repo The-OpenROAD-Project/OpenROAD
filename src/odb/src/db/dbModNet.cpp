@@ -210,7 +210,7 @@ void dbModNet::rename(const char* new_name)
                static_cast<void*>(this),
                getHierarchicalName(),
                new_name);
-    block->_journal->updateField(this, _dbModNet::NAME, obj->name_, new_name);
+    block->_journal->updateField(this, _dbModNet::kName, obj->name_, new_name);
   }
 
   _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
@@ -331,7 +331,7 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
                "ECO: create dbModNet {} at id {}",
                base_name,
                modnet->getId());
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->beginAction(dbJournal::kCreateObject);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(base_name);
     block->_journal->pushParam(modnet->getId());
@@ -363,7 +363,7 @@ void dbModNet::destroy(dbModNet* mod_net)
                "ECO: delete dbModNet {} at id {}",
                mod_net->getName(),
                mod_net->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(mod_net->getName());
     block->_journal->pushParam(mod_net->getId());

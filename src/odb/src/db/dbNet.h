@@ -63,13 +63,13 @@ class _dbNet : public _dbObject
  public:
   enum Field  // dbJournal field name
   {
-    FLAGS,
-    NON_DEFAULT_RULE,
-    TERM_EXTID,
-    HEAD_CAPNODE,
-    HEAD_RSEG,
-    REVERSE_RSEG,
-    NAME
+    kFlags,
+    kNonDefaultRule,
+    kTermExtId,
+    kHeadCapNode,
+    kHeadRSeg,
+    kReverseRSeg,
+    kName
   };
 
   // PERSISTANT-MEMBERS

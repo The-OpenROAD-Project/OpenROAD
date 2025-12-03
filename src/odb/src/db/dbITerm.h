@@ -43,7 +43,7 @@ class _dbITerm : public _dbObject
  public:
   enum Field  // dbJournal field name
   {
-    FLAGS
+    kFlags
   };
 
   dbITermFlags flags_;
