@@ -130,7 +130,6 @@ class TritonCTS
   void cloneClockGaters(odb::dbNet* clkNet);
   void findLongEdges(
       stt::Tree& clkSteiner,
-      int driverID,
       odb::Point driverPt,
       std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin);
   void initOneClockTree(odb::dbNet* driverNet,

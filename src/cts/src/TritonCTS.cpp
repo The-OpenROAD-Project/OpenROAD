@@ -1065,32 +1065,27 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
 
   int drvrX, drvrY;
   driver->getAvgXY(&drvrX, &drvrY);
-  int driverID = xs.size();
-  xs.push_back(drvrX);
-  ys.push_back(drvrY);
   point2pin[{drvrX, drvrY}].push_back(driver);
   stt::Tree ftree
-      = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, driverID);
-  findLongEdges(ftree, driverID, {drvrX, drvrY}, point2pin);
+      = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, 0);
+  findLongEdges(ftree, {drvrX, drvrY}, point2pin);
 }
 
 void TritonCTS::findLongEdges(
     stt::Tree& clkSteiner,
-    int driverID,
     odb::Point driverPt,
     std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
 {
   double maxWlMicrons = resizer_->findMaxWireLength(/* don't issue error */false) * 1e+6;
   int threshold = block_->micronsToDbu(maxWlMicrons);
-  // TODO : Make it a debug print
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
+
   std::map<int, int> iterm2cluster;
   std::vector<std::vector<int>> clusters;
   odb::dbNet* icgNet = point2pin[driverPt][0]->getNet();
   odb::dbITerm* icgTerm = icgNet->getFirstOutput();
   std::string icgName = icgTerm->getInst()->getName();
-  int driverNId = -1;
 
   for (int b = 0; b < clkSteiner.branchCount(); b++) {
     const stt::Branch branch = clkSteiner.branch[b];
@@ -1108,11 +1103,7 @@ void TritonCTS::findLongEdges(
     if (b == branch.n) {
       continue;
     }
-    if (branchPt == driverPt) {
-      driverNId = branch.n;
-    } else if (neighborPt == driverPt) {
-      driverNId = b;
-    }
+
     if (dist >= threshold) {
       if (clusterFrom == -1) {
         int newClusterID = clusters.size();
@@ -1159,14 +1150,49 @@ void TritonCTS::findLongEdges(
     }
   }
 
-  int driverClusterID = iterm2cluster[driverID];
-  if (clusters[driverClusterID].size() == 1) {
-    int newDriverCluster = iterm2cluster[driverNId];
-    clusters[newDriverCluster].push_back(driverID);
-    clusters[driverClusterID].clear();
-    driverClusterID = newDriverCluster;
+  // Find closest cluster to orifginal ICG
+  int driverClusterID = -1;
+  int64_t minDist2Driver = std::numeric_limits<int64_t>::max();
+  int validClusters = 0;
+  for (int n = 0; n < clusters.size(); n++) {
+    const std::vector<int>& cluster = clusters[n];
+    if (cluster.empty()) {
+      continue;
+    }
+    bool validCluster = false;
+    odb::Rect sinksBbox = odb::Rect();
+    sinksBbox.mergeInit();
+    for (int branch : cluster) {
+      odb::Point branchPt
+          = {clkSteiner.branch[branch].x, clkSteiner.branch[branch].y};
+      for (auto sink : point2pin[branchPt]) {
+        if (!sink->isInputSignal()) {
+          continue;
+        }
+        validCluster = true;
+        int sinkX, sinkY;
+        sink->getAvgXY(&sinkX, &sinkY);
+        sinksBbox.merge({sinkX, sinkY});
+      }
+    }
+    if(validCluster) {
+      validClusters += 1;
+      int64_t dist2Driver = odb::Point::manhattanDistance(sinksBbox.center(), driverPt);
+      if(dist2Driver < minDist2Driver) {
+        driverClusterID = n;
+        minDist2Driver = dist2Driver;
+      }
+    }
   }
 
+  debugPrint(logger_,
+             CTS,
+             "clock gate cloning",
+             1,
+             "Found {} clusters",
+             validClusters);
+
+  // Insert original ICG to its closest cluster, create a clone to drive the other clusters
   int count = 0;
   // hierarchy fix, make the clone net in the right scope
   sta::Pin* driver = nullptr;
@@ -1181,12 +1207,6 @@ void TritonCTS::findLongEdges(
             ? network_->topInstance()
             : (sta::Instance*) (module->getModInst());
 
-  debugPrint(logger_,
-             CTS,
-             "clock gate cloning",
-             1,
-             "Found {} clusters",
-             clusters.size());
   for (int n = 0; n < clusters.size(); n++) {
     const std::vector<int>& cluster = clusters[n];
     if (cluster.empty()) {
@@ -1214,7 +1234,8 @@ void TritonCTS::findLongEdges(
                  " Original net {}",
                  cloneNet->getName());
     } else {
-      // creat a new input net
+      // Create the ICG clone
+      // Creat a new input net
       std::string newNetName
           = "clonenet_" + std::to_string(++count) + "_" + icgNet->getName();
 
@@ -1269,6 +1290,7 @@ void TritonCTS::findLongEdges(
       }
     }
 
+    // Compute cluster center
     for (int branch : cluster) {
       odb::Point branchPt
           = {clkSteiner.branch[branch].x, clkSteiner.branch[branch].y};
@@ -1286,6 +1308,7 @@ void TritonCTS::findLongEdges(
         sink->getAvgXY(&sinkX, &sinkY);
         sinksBbox.merge({sinkX, sinkY});
         if (disconectNets) {
+          // Connect sinks to new clone instance
           sink->disconnect();
           sink->connect(cloneNet);
           sta::Pin* sinkPin = network_->dbToSta(sink);
@@ -1298,6 +1321,8 @@ void TritonCTS::findLongEdges(
         }
       }
     }
+
+    // Move ICG (clone or original) to the center of its sinks
     clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
     clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
