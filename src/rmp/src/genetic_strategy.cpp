@@ -6,13 +6,13 @@
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
-#include <random>
 #include <ranges>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "boost/container_hash/hash.hpp"
+#include "absl/hash/hash.h"
+#include "absl/random/random.h"
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -29,21 +29,8 @@ using utl::RMP;
 static void removeDuplicates(std::vector<SolutionSlack>& population,
                              utl::Logger* logger)
 {
-  struct HashVector final
-  {
-    size_t operator()(const SolutionSlack::Type& sol) const
-    {
-      size_t res = 0;
-      for (const auto& item : sol) {
-        size_t hash = boost::hash<size_t>()(item.id);
-        // TODO set seed
-        boost::hash_combine(hash, res);
-      }
-      return res;
-    }
-  };
-
-  std::unordered_set<SolutionSlack::Type, HashVector> taken;
+  std::unordered_set<SolutionSlack::Type, absl::Hash<SolutionSlack::Type>>
+      taken;
   population.erase(
       std::ranges::begin(std::ranges::remove_if(
           population,
@@ -78,7 +65,8 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
   for (auto& ind : population) {
     ind.solution_.reserve(initial_ops_);
     for (size_t i = 0; i < initial_ops_; i++) {
-      ind.solution_.push_back(all_ops[random_() % all_ops.size()]);
+      const auto idx = absl::Uniform<int>(random_, 0, all_ops.size());
+      ind.solution_.push_back(all_ops[idx]);
     }
   }
 
@@ -95,8 +83,8 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     // Crossover
     unsigned cross_size = std::max<unsigned>(cross_prob_ * generation_size, 1);
     for (unsigned j = 0; j < cross_size; j++) {
-      auto rand1 = random_() % generation_size;
-      auto rand2 = random_() % generation_size;
+      auto rand1 = absl::Uniform<int>(random_, 0, generation_size);
+      auto rand2 = absl::Uniform<int>(random_, 0, generation_size);
       if (rand1 == rand2) {
         continue;
       }
@@ -115,7 +103,7 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     unsigned mut_size = std::max<unsigned>(mut_prob_ * generation_size, 1);
     for (unsigned j = 0; j < mut_size; j++) {
       SolutionSlack sol_slack;
-      auto rand = random_() % generation_size;
+      auto rand = absl::Uniform<int>(random_, 0, generation_size);
       sol_slack.solution_
           = population[rand].RandomNeighbor(all_ops, logger, random_);
       population.emplace_back(sol_slack);
@@ -134,34 +122,34 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
                          logger);
     }
     // Selection
-    std::ranges::sort(population, std::less{});
+    std::ranges::sort(population, std::greater{}, &SolutionSlack::worst_slack_);
     std::vector<SolutionSlack> newPopulation;
     newPopulation.reserve(pop_size_);
     for (int j = 0; j < pop_size_; j++) {
       std::vector<size_t> tournament(tourn_size_);
       std::generate_n(tournament.begin(), tourn_size_, [&]() {
-        return random_() % population.size();
+        return absl::Uniform<int>(random_, 0, population.size());
       });
       std::ranges::sort(tournament);
       tournament.erase(std::ranges::begin(std::ranges::unique(tournament)),
                        tournament.end());
-      std::bernoulli_distribution bern_dist{tourn_prob_};
-      for (const auto& candidateId : tournament) {
-        if (bern_dist(random_)) {
-          newPopulation.push_back(population[candidateId]);
-          break;
-        }
+      auto winner = std::ranges::find_if(tournament, [&](auto const& _) {
+        return absl::Bernoulli(random_, static_cast<double>(tourn_prob_));
+      });
+      if (winner != tournament.end()) {
+        newPopulation.push_back(population[*winner]);
       }
     }
     removeDuplicates(newPopulation, logger);
-    population = newPopulation;
+    population = std::move(newPopulation);
 
     for (const auto& candidate : population) {
       debugPrint(logger, RMP, "genetic", 1, candidate.toString());
     }
   }
 
-  auto best_it = std::ranges::min_element(population, std::less{});
+  auto best_it
+      = std::ranges::max_element(population, {}, &SolutionSlack::worst_slack_);
   logger->info(RMP,
                66,
                "Resynthesis: Best result is of individual {}",

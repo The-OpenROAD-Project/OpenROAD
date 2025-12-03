@@ -3,14 +3,20 @@
 
 #include "slack_tuning_strategy.h"
 
+#include <absl/base/optimization.h>
+
+#include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <random>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "absl/random/random.h"
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -37,12 +43,9 @@ std::string SolutionSlack::toString() const
   }
 
   std::ostringstream resStream;
-  resStream << '[';
-  if (!solution_.empty()) {
-    resStream << std::to_string(solution_.front().id);
-    for (int i = 1; i < solution_.size(); i++) {
-      resStream << ", " << std::to_string(solution_[i].id);
-    }
+  resStream << '[' << std::to_string(solution_.front().id);
+  for (int i = 1; i < solution_.size(); i++) {
+    resStream << ", " << std::to_string(solution_[i].id);
   }
   resStream << "], worst slack: ";
 
@@ -54,50 +57,47 @@ std::string SolutionSlack::toString() const
   return resStream.str();
 }
 
-bool SolutionSlack::operator<(const SolutionSlack& other) const
-{
-  // Highest slack first
-  return worst_slack_ > other.worst_slack_;
-}
-
 SolutionSlack::Type SolutionSlack::RandomNeighbor(
     const SolutionSlack::Type& all_ops,
     utl::Logger* logger,
     std::mt19937& random) const
 {
   SolutionSlack::Type sol = solution_;
-  enum Move
+  enum class Move : uint8_t
   {
     ADD,
     REMOVE,
     SWAP,
     COUNT
   };
-  Move move = ADD;
+  Move move = Move::ADD;
   if (sol.size() > 1) {
-    move = Move(random() % (COUNT));
+    const auto count = static_cast<std::underlying_type_t<Move>>(Move::COUNT);
+    move = Move(absl::Uniform<int>(random, 0, count));
   }
   switch (move) {
-    case ADD: {
-      debugPrint(logger, RMP, "annealing", 2, "Adding a new GIA operation");
-      size_t i = random() % (sol.size() + 1);
-      size_t j = random() % all_ops.size();
+    case Move::ADD: {
+      debugPrint(logger, RMP, "slack_tunning", 2, "Adding a new GIA operation");
+      size_t i = absl::Uniform<size_t>(random, 0, sol.size() + 1);
+      size_t j = absl::Uniform<size_t>(random, 0, all_ops.size());
       sol.insert(sol.begin() + i, all_ops[j]);
     } break;
-    case REMOVE: {
-      debugPrint(logger, RMP, "annealing", 2, "Removing a GIA operation");
-      size_t i = random() % sol.size();
+    case Move::REMOVE: {
+      debugPrint(logger, RMP, "slack_tunning", 2, "Removing a GIA operation");
+      size_t i = absl::Uniform<size_t>(random, 0, sol.size());
       sol.erase(sol.begin() + i);
     } break;
-    case SWAP: {
+    case Move::SWAP: {
       debugPrint(
-          logger, RMP, "annealing", 2, "Swapping adjacent GIA operations");
-      size_t i = random() % (sol.size() - 1);
+          logger, RMP, "slack_tunning", 2, "Swapping adjacent GIA operations");
+      assert(sol.size() > 1);
+      size_t i = absl::Uniform<size_t>(random, 0, sol.size() - 1);
       std::swap(sol[i], sol[i + 1]);
     } break;
-    case COUNT:
-      // unreachable
-      std::abort();
+    case Move::COUNT:
+      // TODO replace with std::unreachable() once we reach c++23
+      ABSL_UNREACHABLE();
+      break;
   }
   return sol;
 }
