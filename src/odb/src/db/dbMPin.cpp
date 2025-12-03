@@ -157,8 +157,7 @@ void dbMPin::clearPinAccess(const int pin_access_idx)
   if (pin->aps_.size() <= pin_access_idx) {
     return;
   }
-  const auto aps = pin->aps_[pin_access_idx];
-  for (const auto& ap : aps) {
+  for (const auto& ap : pin->aps_[pin_access_idx]) {
     odb::dbAccessPoint::destroy(
         (odb::dbAccessPoint*) block->ap_tbl_->getPtr(ap));
   }
