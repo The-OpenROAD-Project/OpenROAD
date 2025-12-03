@@ -263,7 +263,7 @@ void dbModNet::dump() const
     dbModBTerm* child_bterm = term->getChildModBTerm();
     if (child_bterm) {
       logger->report("    - {} ({}, {}, id={})",
-                     term->getName(),
+                     term->getHierarchicalName(),
                      child_bterm->getSigType().getString(),
                      child_bterm->getIoType().getString(),
                      term->getId());
@@ -276,7 +276,7 @@ void dbModNet::dump() const
   logger->report("  ModBTerms ({}):", getModBTerms().size());
   for (dbModBTerm* term : getModBTerms()) {
     logger->report("    - {} ({}, {}, id={})",
-                   term->getName(),
+                   term->getHierarchicalName(),
                    term->getSigType().getString(),
                    term->getIoType().getString(),
                    term->getId());

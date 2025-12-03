@@ -2551,7 +2551,7 @@ class dbNet : public dbObject
   ///
   /// Dump dbNet info for debugging
   ///
-  void dump() const;
+  void dump(bool show_modnets = false) const;
 
   ///
   /// Check consistency between the terminals connected to this dbNet and

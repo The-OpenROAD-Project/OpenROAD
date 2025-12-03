@@ -4,1970 +4,991 @@ Running main() from /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/buil
 [----------] 23 tests from TestInsertBuffer
 [ RUN      ] TestInsertBuffer.AfterDriver_Case1
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD0 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c7c030c0) 'drvr_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c7c03130) 'load0_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c7c031a0) 'load2_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mi1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mi0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c7c03210) 'load1_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c7c1c618) 'net'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c7c1c690) 'in'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(2, 0x5b23c7c1c690) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c7c206f8) 'in' to dbNet(2 0x5b23c7c1c690) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c7c06e18) 'drvr_inst/A' to dbNet(2, 0x5b23c7c1c690) 'in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c7c06e60) 'drvr_inst/Z' to dbNet(1, 0x5b23c7c1c618) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c7c06f38) 'load0_inst/A' to dbNet(1, 0x5b23c7c1c618) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c7c07058) 'load2_inst/A' to dbNet(1, 0x5b23c7c1c618) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 1
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c7bfedb0) 'mi0/mi1/A' to modnet (1 0x5b23c7c242c0) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c7c07178) 'load1_inst/A' to dbModNet(1 0x5b23c7c242c0) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c7c07178) 'load1_inst/A' to dbNet(1, 0x5b23c7c1c618) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm mi0/mi1/A at id 1 to dbModNet mi0/A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c7bfedf0) 'mi0/A' to modnet (2 0x5b23c7c242f0) 'mi0/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c7c06e60) 'drvr_inst/Z' to dbModNet(3 0x5b23c7c24320) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c7c06f38) 'load0_inst/A' to dbModNet(3 0x5b23c7c24320) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c7c07058) 'load2_inst/A' to dbModNet(3 0x5b23c7c24320) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 2 to dbModNet net at id 3
 Compare TestInsertBuffer_AfterDriver_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_AfterDriver_Case1_pre.v
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c7c03280) 'buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c7c1c708) 'net_drvr1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c7c07298) 'buf1/A' to dbNet(3, 0x5b23c7c1c708) 'net_drvr1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(18, 0x5b23c7c072e0) 'buf1/Z' to dbNet(1, 0x5b23c7c1c618) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(18 0x5b23c7c072e0) 'buf1/Z' to dbModNet(3 0x5b23c7c24320) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] disconnect dbITerm(2, 0x5b23c7c06e60) 'drvr_inst/Z' from dbNet(1, 0x5b23c7c1c618) 'net' corresponding to dbModNet(3, 0x5b23c7c24320) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c7c06e60) 'drvr_inst/Z' to dbNet(3, 0x5b23c7c1c708) 'net_drvr1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 Compare TestInsertBuffer_AfterDriver_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_AfterDriver_Case1_post.v
-[       OK ] TestInsertBuffer.AfterDriver_Case1 (549 ms)
+[       OK ] TestInsertBuffer.AfterDriver_Case1 (129 ms)
 [ RUN      ] TestInsertBuffer.AfterDriver_Case2
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD0 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c9a41ad0) 'load0_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c9a41b40) 'load2_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mi1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mi0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c9a41bb0) 'load1_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c9a5af68) 'X'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'X' on dbNet(1, 0x5b23c9a5af68) 'X'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a5f028) 'X' to dbNet(1 0x5b23c9a5af68) 'X'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9a45828) 'load0_inst/A' to dbNet(1, 0x5b23c9a5af68) 'X'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9a45948) 'load2_inst/A' to dbNet(1, 0x5b23c9a5af68) 'X'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 1
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c9a3d7c0) 'mi0/mi1/A' to modnet (1 0x5b23c9a62b40) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c9a45a68) 'load1_inst/A' to dbModNet(1 0x5b23c9a62b40) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c9a45a68) 'load1_inst/A' to dbNet(1, 0x5b23c9a5af68) 'X'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm mi0/mi1/A at id 1 to dbModNet mi0/A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c9a3d800) 'mi0/A' to modnet (2 0x5b23c9a62b70) 'mi0/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet X at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a5f028) 'X' to dbModNet(3 0x5b23c9a62ba0) 'X'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1 0x5b23c9a45828) 'load0_inst/A' to dbModNet(3 0x5b23c9a62ba0) 'X'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9a45948) 'load2_inst/A' to dbModNet(3 0x5b23c9a62ba0) 'X'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 2 to dbModNet X at id 3
 Compare TestInsertBuffer_AfterDriver_Case2_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_AfterDriver_Case2_pre.v
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c9a41c20) 'buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: dbNet(1 0x5b23c9a5af68) 'X', rename to 'net1'
-[DEBUG ODB-DB_ECO] ECO: dbModNet(3 0x5b23c9a62ba0) 'X', rename to 'net1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c9a5afe0) 'X'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c9a45b88) 'buf1/A' to dbNet(2, 0x5b23c9a5afe0) 'X'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(14, 0x5b23c9a45bd0) 'buf1/Z' to dbNet(1, 0x5b23c9a5af68) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(14 0x5b23c9a45bd0) 'buf1/Z' to dbModNet(3 0x5b23c9a62ba0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c9a5f028) 'X' from dbNet(1 0x5b23c9a5af68) 'net1'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c9a5f028) 'X' from dbModNet(3 0x5b23c9a62ba0) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a5f028) 'X' to dbNet(2 0x5b23c9a5afe0) 'X'
 Compare TestInsertBuffer_AfterDriver_Case2_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_AfterDriver_Case2_post.v
-[       OK ] TestInsertBuffer.AfterDriver_Case2 (495 ms)
+[       OK ] TestInsertBuffer.AfterDriver_Case2 (115 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoad_Case1
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD0 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c9a36710) 'drvr_inst' master 'LOGIC0_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c9a36780) 'load0_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c9a367f0) 'load2_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mi1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mi0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c9a36860) 'load1_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1 0x5b23c9a3a3b8) 'drvr_inst/Z' to dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9a3a3b8) 'drvr_inst/Z' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4 0x5b23c9a3a490) 'load0_inst/A' to dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4, 0x5b23c9a3a490) 'load0_inst/A' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8 0x5b23c9a3a5b0) 'load2_inst/A' to dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c9a3a5b0) 'load2_inst/A' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'load_output' on dbNet(1, 0x5b23c9a4fa68) 'load_output'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a554f8) 'load_output' to dbNet(1 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a554f8) 'load_output' to dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c9a324a0) 'mi0/mi1/A' to modnet (2 0x5b23c9a53a80) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12 0x5b23c9a3a6d0) 'load1_inst/A' to dbModNet(2 0x5b23c9a53a80) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12, 0x5b23c9a3a6d0) 'load1_inst/A' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm mi0/mi1/A at id 1 to dbModNet mi0/A at id 3
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c9a324e0) 'mi0/A' to modnet (3 0x5b23c9a53ab0) 'mi0/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 2 to dbModNet net at id 1
 Compare TestInsertBuffer_BeforeLoad_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoad_Case1_pre.v
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c9a368d0) 'buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c9a4fae0) 'net_load1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16, 0x5b23c9a3a7f0) 'buf1/A' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16 0x5b23c9a3a7f0) 'buf1/A' to dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c9a3a838) 'buf1/Z' to dbNet(2, 0x5b23c9a4fae0) 'net_load1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] disconnect dbITerm(4, 0x5b23c9a3a490) 'load0_inst/A' from dbNet(1, 0x5b23c9a4fa68) 'net' corresponding to dbModNet(1, 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4, 0x5b23c9a3a490) 'load0_inst/A' to dbNet(2, 0x5b23c9a4fae0) 'net_load1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 Compare TestInsertBuffer_BeforeLoad_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoad_Case1_step1.v
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c9a36940) 'mi0/mi1/buf2' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c9a4fb58) 'mi0/mi1/net_load2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20, 0x5b23c9a3a910) 'mi0/mi1/buf2/A' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20 0x5b23c9a3a910) 'mi0/mi1/buf2/A' to dbModNet(2 0x5b23c9a53a80) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c9a3a958) 'mi0/mi1/buf2/Z' to dbNet(3, 0x5b23c9a4fb58) 'mi0/mi1/net_load2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] disconnect dbITerm(12, 0x5b23c9a3a6d0) 'load1_inst/A' from dbNet(1, 0x5b23c9a4fa68) 'net' corresponding to dbModNet(2, 0x5b23c9a53a80) 'mi0/mi1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12, 0x5b23c9a3a6d0) 'load1_inst/A' to dbNet(3, 0x5b23c9a4fb58) 'mi0/mi1/net_load2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 Compare TestInsertBuffer_BeforeLoad_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoad_Case1_step2.v
-[DEBUG ODB-DB_ECO] ECO: create dbInst(7, 0x5b23c9a369b0) 'buf3' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(4, 0x5b23c9a4fbd0) 'net_load3'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24, 0x5b23c9a3aa30) 'buf3/A' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24 0x5b23c9a3aa30) 'buf3/A' to dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(25, 0x5b23c9a3aa78) 'buf3/Z' to dbNet(4, 0x5b23c9a4fbd0) 'net_load3'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] disconnect dbITerm(8, 0x5b23c9a3a5b0) 'load2_inst/A' from dbNet(1, 0x5b23c9a4fa68) 'net' corresponding to dbModNet(1, 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c9a3a5b0) 'load2_inst/A' to dbNet(4, 0x5b23c9a4fbd0) 'net_load3'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 Compare TestInsertBuffer_BeforeLoad_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoad_Case1_step3.v
-[DEBUG ODB-DB_ECO] ECO: create dbInst(8, 0x5b23c9a36a20) 'buf4' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(5, 0x5b23c9a4fc48) 'load_output'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(28, 0x5b23c9a3ab50) 'buf4/A' to dbNet(1, 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(28 0x5b23c9a3ab50) 'buf4/A' to dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(29, 0x5b23c9a3ab98) 'buf4/Z' to dbNet(5, 0x5b23c9a4fc48) 'load_output'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c9a554f8) 'load_output' from dbNet(1 0x5b23c9a4fa68) 'net'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c9a554f8) 'load_output' from dbModNet(1 0x5b23c9a53a50) 'net'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a554f8) 'load_output' to dbNet(5 0x5b23c9a4fc48) 'load_output'
 Compare TestInsertBuffer_BeforeLoad_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoad_Case1_post.v
-[       OK ] TestInsertBuffer.BeforeLoad_Case1 (494 ms)
+[       OK ] TestInsertBuffer.BeforeLoad_Case1 (112 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case1
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c9a2c080) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c9a2c0f0) 'buf0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c9a2c160) 'load' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c9a41e78) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c9a41ef0) 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c9a2fd50) 'drvr/Z' to dbNet(1, 0x5b23c9a41e78) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9a2fe28) 'buf0/A' to dbNet(1, 0x5b23c9a41e78) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c9a2fe70) 'buf0/Z' to dbNet(2, 0x5b23c9a41ef0) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c9a2ff48) 'load/A' to dbNet(2, 0x5b23c9a41ef0) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: buf0/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c9a2c1d0) 'buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c9a41f68) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c9a30068) 'buf1/A' to dbNet(1, 0x5b23c9a41e78) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (2):
+    - buf0/A (SIGNAL, INPUT, id=5)
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(14, 0x5b23c9a300b0) 'buf1/Z' to dbNet(3, 0x5b23c9a41f68) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'buf1/Z' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Creating hierarchical connection for load 'buf0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(5, 0x5b23c9a2fe28) 'buf0/A' from dbNet(1, 0x5b23c9a41e78) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9a2fe28) 'buf0/A' to dbNet(3, 0x5b23c9a41f68) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case1_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case1_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case1 (495 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case1 (116 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case2
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c9a04fc0) 'buf0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c9a1ad08) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c9a1ad80) 'n2'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c9a1ad08) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a1ed28) 'in' to dbNet(1 0x5b23c9a1ad08) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(2, 0x5b23c9a1ad80) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c9a1ed90) 'out' to dbNet(2 0x5b23c9a1ad80) 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9a08c48) 'buf0/A' to dbNet(1, 0x5b23c9a1ad08) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c9a08c90) 'buf0/Z' to dbNet(2, 0x5b23c9a1ad80) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: buf0/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c9a05030) 'buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c9a1adf8) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9a08d68) 'buf1/A' to dbNet(1, 0x5b23c9a1ad08) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (1):
+    - buf0/A (SIGNAL, INPUT, id=1)
+  BTerms (1):
+    - in (SIGNAL, INPUT, id=1)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c9a08db0) 'buf1/Z' to dbNet(3, 0x5b23c9a1adf8) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'buf1/Z' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Creating hierarchical connection for load 'buf0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(1, 0x5b23c9a08c48) 'buf0/A' from dbNet(1, 0x5b23c9a1ad08) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9a08c48) 'buf0/A' to dbNet(3, 0x5b23c9a1adf8) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'buf1' at (250, 1225)
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n2, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: out
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c9a050a0) 'buf2' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(4, 0x5b23c9a1ae70) 'net2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c9a08e88) 'buf2/A' to dbNet(2, 0x5b23c9a1ad80) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n2 (id=2)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (1):
+    - buf0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=2)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'buf2/A' to original flat net 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(10, 0x5b23c9a08ed0) 'buf2/Z' to dbNet(4, 0x5b23c9a1ae70) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'buf2/Z' to new flat net 'net2'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(2 0x5b23c9a1ed90) 'out' from dbNet(2 0x5b23c9a1ad80) 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c9a1ed90) 'out' to dbNet(4 0x5b23c9a1ae70) 'net2'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Moved BTerm load 'out' to new flat net 'net2'
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'buf2' at (0, 0)
 Compare TestInsertBuffer_BeforeLoads_Case2_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case2_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case2 (491 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case2 (112 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case3
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mod0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c99e7080) 'buf0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm out at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c99fcdb0) 'mod0/in' to modnet (1 0x5b23c99feed0) 'mod0/n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1 0x5b23c99ead28) 'buf0/A' to dbModNet(1 0x5b23c99feed0) 'mod0/n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n2 at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c99ead70) 'buf0/Z' to dbModNet(2 0x5b23c99fef00) 'mod0/n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c99fcdf0) 'mod0/out' to modnet (2 0x5b23c99fef00) 'mod0/n2'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c9a60438) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c9a60438) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a64048) 'in' to dbNet(1 0x5b23c9a60438) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c9a604b0) 'n2'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(2, 0x5b23c9a604b0) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c9a640b0) 'out' to dbNet(2 0x5b23c9a604b0) 'n2'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9a64048) 'in' to dbModNet(3 0x5b23c99fef30) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm in at id 1 to dbModNet n1 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n2 at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c9a640b0) 'out' to dbModNet(4 0x5b23c99fef60) 'n2'
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm out at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm out at id 2 to dbModNet n2 at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c99ead28) 'buf0/A' to dbNet(1, 0x5b23c9a60438) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c99ead70) 'buf0/Z' to dbNet(2, 0x5b23c9a604b0) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf1, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: buf0/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: MOD0
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c99e70f0) 'mod0/new_buf11' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c9a60528) 'mod0/net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c99eae48) 'mod0/new_buf11/A' to dbNet(1, 0x5b23c9a60438) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (1):
+    - buf0/A (SIGNAL, INPUT, id=1)
+  BTerms (1):
+    - in (SIGNAL, INPUT, id=1)
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=1)
+  Parent Module: MOD0 (id=2)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod0/in (SIGNAL, INPUT, id=1)
+  ITerms (1):
+    - buf0/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=3)
+  Parent Module: top (id=1)
+  ModITerms (1):
+    - in (SIGNAL, INPUT, id=1)
+  ModBTerms (0):
+  ITerms (0):
+  BTerms (1):
+    - in (SIGNAL, INPUT, id=1)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'mod0/new_buf11/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c99eae48) 'mod0/new_buf11/A' to dbModNet(1 0x5b23c99feed0) 'mod0/n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'mod0/new_buf11/A' to original hierarchical net 'mod0/n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c99eae90) 'mod0/new_buf11/Z' to dbNet(3, 0x5b23c9a60528) 'mod0/net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'mod0/new_buf11/Z' to new flat net 'mod0/net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Creating hierarchical connection for load 'buf0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(1, 0x5b23c99ead28) 'buf0/A' from dbNet(1, 0x5b23c9a60438) 'n1' corresponding to dbModNet(1, 0x5b23c99feed0) 'mod0/n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c99ead28) 'buf0/A' to dbNet(3, 0x5b23c9a60528) 'mod0/net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'mod0/new_buf11' at (250, 1225)
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n2, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf2, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: out
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c99e7160) 'new_buf22' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(4, 0x5b23c9a605a0) 'net2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c99eaf68) 'new_buf22/A' to dbNet(2, 0x5b23c9a604b0) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n2 (id=2)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (1):
+    - buf0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=2)
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n2 (id=2)
+  Parent Module: MOD0 (id=2)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod0/out (SIGNAL, OUTPUT, id=2)
+  ITerms (1):
+    - buf0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n2 (id=4)
+  Parent Module: top (id=1)
+  ModITerms (1):
+    - out (SIGNAL, OUTPUT, id=2)
+  ModBTerms (0):
+  ITerms (0):
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=2)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf22/A' to original flat net 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c99eaf68) 'new_buf22/A' to dbModNet(4 0x5b23c99fef60) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf22/A' to original hierarchical net 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(10, 0x5b23c99eafb0) 'new_buf22/Z' to dbNet(4, 0x5b23c9a605a0) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf22/Z' to new flat net 'net2'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(2 0x5b23c9a640b0) 'out' from dbNet(2 0x5b23c9a604b0) 'n2'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(2 0x5b23c9a640b0) 'out' from dbModNet(4 0x5b23c99fef60) 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c9a640b0) 'out' to dbNet(4 0x5b23c9a605a0) 'net2'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Moved BTerm load 'out' to new flat net 'net2'
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf22' at (0, 0)
 Compare TestInsertBuffer_BeforeLoads_Case3_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case3_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case3 (490 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case3 (111 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case4
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c7908ec0) 'drvr0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c7908f30) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c7908fa0) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c7909010) 'load2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c791ecf8) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c790cb90) 'drvr0/Z' to dbNet(1, 0x5b23c791ecf8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c790cc68) 'load0/A' to dbNet(1, 0x5b23c791ecf8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c790cd88) 'load1/A' to dbNet(1, 0x5b23c791ecf8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c790cea8) 'load2/A' to dbNet(1, 0x5b23c791ecf8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=2, buffer_master=BUF_X4, loc=(-1, -1), base_name=new0, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load0/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c7909080) 'new01' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c791ed70) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c790cfc8) 'new01/A' to dbNet(1, 0x5b23c791ecf8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (4):
+    - load2/A (SIGNAL, INPUT, id=13)
+    - load1/A (SIGNAL, INPUT, id=9)
+    - load0/A (SIGNAL, INPUT, id=5)
+    - drvr0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new01/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(18, 0x5b23c790d010) 'new01/Z' to dbNet(2, 0x5b23c791ed70) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new01/Z' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'load0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(5, 0x5b23c790cc68) 'load0/A' from dbNet(1, 0x5b23c791ecf8) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c790cc68) 'load0/A' to dbNet(2, 0x5b23c791ed70) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'load1/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(9, 0x5b23c790cd88) 'load1/A' from dbNet(1, 0x5b23c791ecf8) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c790cd88) 'load1/A' to dbNet(2, 0x5b23c791ed70) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new01' at (250, 1225)
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=2, buffer_master=BUF_X4, loc=(-1, -1), base_name=new1, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load2/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: new01/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c79090f0) 'new12' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c791ede8) 'net2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c790d0e8) 'new12/A' to dbNet(1, 0x5b23c791ecf8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (3):
+    - new01/A (SIGNAL, INPUT, id=17)
+    - load2/A (SIGNAL, INPUT, id=13)
+    - drvr0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new12/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22, 0x5b23c790d130) 'new12/Z' to dbNet(3, 0x5b23c791ede8) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new12/Z' to new flat net 'net2'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'load2/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(13, 0x5b23c790cea8) 'load2/A' from dbNet(1, 0x5b23c791ecf8) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c790cea8) 'load2/A' to dbNet(3, 0x5b23c791ede8) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'new01/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(17, 0x5b23c790cfc8) 'new01/A' from dbNet(1, 0x5b23c791ecf8) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c790cfc8) 'new01/A' to dbNet(3, 0x5b23c791ede8) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new12' at (365, 1837)
 Compare TestInsertBuffer_BeforeLoads_Case4_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case4_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case4 (493 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case4 (115 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case5
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mod0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c78e40a0) 'drvr0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm Z at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModNet Z_net at id 1
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c78f9dd0) 'mod0/Z' to modnet (1 0x5b23c78fbef0) 'mod0/Z_net'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c78e7d90) 'drvr0/Z' to dbModNet(1 0x5b23c78fbef0) 'mod0/Z_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD1 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mod1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c78e4110) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A_net at id 2
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c78f9e10) 'mod1/A' to modnet (2 0x5b23c78fbf20) 'mod1/A_net'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c78e7e68) 'load0/A' to dbModNet(2 0x5b23c78fbf20) 'mod1/A_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD2 at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mod2 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c78e4180) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A_net at id 3
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (3 0x5b23c78f9e50) 'mod2/A' to modnet (3 0x5b23c78fbf50) 'mod2/A_net'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c78e7f88) 'load1/A' to dbModNet(3 0x5b23c78fbf50) 'mod2/A_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD3 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModInst mod3 at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c78e41f0) 'load2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A_net at id 4
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (4 0x5b23c78f9e90) 'mod3/A' to modnet (4 0x5b23c78fbf80) 'mod3/A_net'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c78e80a8) 'load2/A' to dbModNet(4 0x5b23c78fbf80) 'mod3/A_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm Z at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm Z at id 1 to dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 2 to dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 3 to dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 4 to dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c78e7d90) 'drvr0/Z' to dbNet(1, 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c78e7e68) 'load0/A' to dbNet(1, 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c78e7f88) 'load1/A' to dbNet(1, 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c78e80a8) 'load2/A' to dbNet(1, 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=2, buffer_master=BUF_X4, loc=(-1, -1), base_name=new0, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load0/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c78e4260) 'new01' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c78fe260) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (4):
+    - load2/A (SIGNAL, INPUT, id=13)
+    - load1/A (SIGNAL, INPUT, id=9)
+    - load0/A (SIGNAL, INPUT, id=5)
+    - drvr0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: Z_net (id=1)
+  Parent Module: MOD0 (id=2)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod0/Z (SIGNAL, OUTPUT, id=1)
+  ITerms (1):
+    - drvr0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: A_net (id=2)
+  Parent Module: MOD1 (id=3)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod1/A (SIGNAL, INPUT, id=2)
+  ITerms (1):
+    - load0/A (SIGNAL, INPUT, id=5)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: A_net (id=3)
+  Parent Module: MOD2 (id=4)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod2/A (SIGNAL, INPUT, id=3)
+  ITerms (1):
+    - load1/A (SIGNAL, INPUT, id=9)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: A_net (id=4)
+  Parent Module: MOD3 (id=5)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod3/A (SIGNAL, INPUT, id=4)
+  ITerms (1):
+    - load2/A (SIGNAL, INPUT, id=13)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=5)
+  Parent Module: top (id=1)
+  ModITerms (4):
+    - A (SIGNAL, INPUT, id=4)
+    - A (SIGNAL, INPUT, id=3)
+    - A (SIGNAL, INPUT, id=2)
+    - Z (SIGNAL, OUTPUT, id=1)
+  ModBTerms (0):
+  ITerms (0):
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c78e81c8) 'new01/A' to dbNet(1, 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new01/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17 0x5b23c78e81c8) 'new01/A' to dbModNet(5 0x5b23c78fbfb0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new01/A' to original hierarchical net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(18, 0x5b23c78e8210) 'new01/Z' to dbNet(2, 0x5b23c78fe260) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(18 0x5b23c78e8210) 'new01/Z' to dbModNet(6 0x5b23c78fbfe0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new01/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'load0/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(5 0x5b23c78e7e68) 'load0/A' from dbNet(1 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm A at id 2 from dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 2 to dbModNet net1 at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c78e7e68) 'load0/A' to dbNet(2, 0x5b23c78fe260) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'load1/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(9 0x5b23c78e7f88) 'load1/A' from dbNet(1 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm A at id 3 from dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 3 to dbModNet net1 at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c78e7f88) 'load1/A' to dbNet(2, 0x5b23c78fe260) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new01' at (250, 1225)
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=2, buffer_master=BUF_X4, loc=(-1, -1), base_name=new1, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load2/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: new01/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c78e42d0) 'new12' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c78fe2d8) 'net2'
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (3):
+    - new01/A (SIGNAL, INPUT, id=17)
+    - load2/A (SIGNAL, INPUT, id=13)
+    - drvr0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: Z_net (id=1)
+  Parent Module: MOD0 (id=2)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod0/Z (SIGNAL, OUTPUT, id=1)
+  ITerms (1):
+    - drvr0/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: A_net (id=4)
+  Parent Module: MOD3 (id=5)
+  ModITerms (0):
+  ModBTerms (1):
+    - mod3/A (SIGNAL, INPUT, id=4)
+  ITerms (1):
+    - load2/A (SIGNAL, INPUT, id=13)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=5)
+  Parent Module: top (id=1)
+  ModITerms (2):
+    - A (SIGNAL, INPUT, id=4)
+    - Z (SIGNAL, OUTPUT, id=1)
+  ModBTerms (0):
+  ITerms (1):
+    - new01/A (SIGNAL, INPUT, id=17)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net2' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net2 at id 7
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c78e82e8) 'new12/A' to dbNet(1, 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new12/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21 0x5b23c78e82e8) 'new12/A' to dbModNet(5 0x5b23c78fbfb0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new12/A' to original hierarchical net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22, 0x5b23c78e8330) 'new12/Z' to dbNet(3, 0x5b23c78fe2d8) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22 0x5b23c78e8330) 'new12/Z' to dbModNet(7 0x5b23c78fc010) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new12/Z' to new flat net 'net2' and new hierarchical net 'net2'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'load2/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(13 0x5b23c78e80a8) 'load2/A' from dbNet(1 0x5b23c78fe1e8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm A at id 4 from dbModNet n1 at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 4 to dbModNet net2 at id 7
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c78e80a8) 'load2/A' to dbNet(3, 0x5b23c78fe2d8) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'new01/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(17, 0x5b23c78e81c8) 'new01/A' from dbNet(1, 0x5b23c78fe1e8) 'n1' corresponding to dbModNet(5, 0x5b23c78fbfb0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17 0x5b23c78e81c8) 'new01/A' to dbModNet(7 0x5b23c78fc010) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c78e81c8) 'new01/A' to dbNet(3, 0x5b23c78fe2d8) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new12' at (365, 1837)
 Compare TestInsertBuffer_BeforeLoads_Case5_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case5_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case5 (492 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case5 (111 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case6
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c7bc9a20) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH2 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h2 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm out at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm out at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH0 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm out at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm out at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c7bc9a90) 'u_h2/u_h0/drvr' master 'LOGIC0_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH1 at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h1 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c7bc9b00) 'u_h2/u_h1/load5' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH3 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h3 at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c7bc9b70) 'u_h3/load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c7bc9be0) 'u_h3/load2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH4 at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h4 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c7bc9c50) 'u_h4/load4' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH5 at id 7
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h5 at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbInst(7, 0x5b23c7bc9cc0) 'u_h4/u_h5/load3' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9a60408) 'load0/A' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9a60528) 'u_h2/u_h0/drvr/Z' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c9a60600) 'u_h2/u_h1/load5/A' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12, 0x5b23c9a60720) 'u_h3/load1/A' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16, 0x5b23c9a60840) 'u_h3/load2/A' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20, 0x5b23c9a60960) 'u_h4/load4/A' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24, 0x5b23c9a60a80) 'u_h4/u_h5/load3/A' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1 0x5b23c9a60408) 'load0/A' to dbModNet(1 0x5b23c7bdbde0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm out at id 1 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm in at id 4 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm in at id 5 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n_internal at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm u_h2/u_h0/out at id 2 to dbModNet u_h2/n_internal at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm u_h2/u_h1/in at id 3 to dbModNet u_h2/n_internal at id 2
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c7bd0a40) 'u_h2/out' to modnet (2 0x5b23c7bdbe10) 'u_h2/n_internal'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet out at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9a60528) 'u_h2/u_h0/drvr/Z' to dbModNet(3 0x5b23c7bdbe40) 'u_h2/u_h0/out'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c7bd0a80) 'u_h2/u_h0/out' to modnet (3 0x5b23c7bdbe40) 'u_h2/u_h0/out'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet in at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8 0x5b23c9a60600) 'u_h2/u_h1/load5/A' to dbModNet(4 0x5b23c7bdbe70) 'u_h2/u_h1/in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (3 0x5b23c7bd0ac0) 'u_h2/u_h1/in' to modnet (4 0x5b23c7bdbe70) 'u_h2/u_h1/in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet in at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12 0x5b23c9a60720) 'u_h3/load1/A' to dbModNet(5 0x5b23c7bdbea0) 'u_h3/in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16 0x5b23c9a60840) 'u_h3/load2/A' to dbModNet(5 0x5b23c7bdbea0) 'u_h3/in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (4 0x5b23c7bd0b00) 'u_h3/in' to modnet (5 0x5b23c7bdbea0) 'u_h3/in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet in at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20 0x5b23c9a60960) 'u_h4/load4/A' to dbModNet(6 0x5b23c7bdbed0) 'u_h4/in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm u_h4/u_h5/in at id 6 to dbModNet u_h4/in at id 6
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (5 0x5b23c7bd0b40) 'u_h4/in' to modnet (6 0x5b23c7bdbed0) 'u_h4/in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet in at id 7
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24 0x5b23c9a60a80) 'u_h4/u_h5/load3/A' to dbModNet(7 0x5b23c7bdbf00) 'u_h4/u_h5/in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (6 0x5b23c7bd0b80) 'u_h4/u_h5/in' to modnet (7 0x5b23c7bdbf00) 'u_h4/u_h5/in'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=3, buffer_master=BUF_X1, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u_h2/u_h1/load5/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u_h3/load2/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u_h4/u_h5/load3/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(8, 0x5b23c7bc9d30) 'new_buf1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c7bd8280) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (7):
+    - u_h4/u_h5/load3/A (SIGNAL, INPUT, id=24)
+    - u_h4/load4/A (SIGNAL, INPUT, id=20)
+    - u_h3/load2/A (SIGNAL, INPUT, id=16)
+    - u_h3/load1/A (SIGNAL, INPUT, id=12)
+    - u_h2/u_h1/load5/A (SIGNAL, INPUT, id=8)
+    - u_h2/u_h0/drvr/Z (SIGNAL, OUTPUT, id=5)
+    - load0/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=1)
+  Parent Module: top (id=1)
+  ModITerms (3):
+    - in (SIGNAL, INPUT, id=5)
+    - in (SIGNAL, INPUT, id=4)
+    - out (SIGNAL, OUTPUT, id=1)
+  ModBTerms (0):
+  ITerms (1):
+    - load0/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n_internal (id=2)
+  Parent Module: ModH2 (id=2)
+  ModITerms (2):
+    - u_h2/u_h1/in (SIGNAL, INPUT, id=3)
+    - u_h2/u_h0/out (SIGNAL, OUTPUT, id=2)
+  ModBTerms (1):
+    - u_h2/out (SIGNAL, OUTPUT, id=1)
+  ITerms (0):
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: out (id=3)
+  Parent Module: ModH0 (id=3)
+  ModITerms (0):
+  ModBTerms (1):
+    - u_h2/u_h0/out (SIGNAL, OUTPUT, id=2)
+  ITerms (1):
+    - u_h2/u_h0/drvr/Z (SIGNAL, OUTPUT, id=5)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: in (id=4)
+  Parent Module: ModH1 (id=4)
+  ModITerms (0):
+  ModBTerms (1):
+    - u_h2/u_h1/in (SIGNAL, INPUT, id=3)
+  ITerms (1):
+    - u_h2/u_h1/load5/A (SIGNAL, INPUT, id=8)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: in (id=5)
+  Parent Module: ModH3 (id=5)
+  ModITerms (0):
+  ModBTerms (1):
+    - u_h3/in (SIGNAL, INPUT, id=4)
+  ITerms (2):
+    - u_h3/load2/A (SIGNAL, INPUT, id=16)
+    - u_h3/load1/A (SIGNAL, INPUT, id=12)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: in (id=6)
+  Parent Module: ModH4 (id=6)
+  ModITerms (1):
+    - u_h4/u_h5/in (SIGNAL, INPUT, id=6)
+  ModBTerms (1):
+    - u_h4/in (SIGNAL, INPUT, id=5)
+  ITerms (1):
+    - u_h4/load4/A (SIGNAL, INPUT, id=20)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: in (id=7)
+  Parent Module: ModH5 (id=7)
+  ModITerms (0):
+  ModBTerms (1):
+    - u_h4/u_h5/in (SIGNAL, INPUT, id=6)
+  ITerms (1):
+    - u_h4/u_h5/load3/A (SIGNAL, INPUT, id=24)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 8
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(28, 0x5b23c9a60ba0) 'new_buf1/A' to dbNet(1, 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(28 0x5b23c9a60ba0) 'new_buf1/A' to dbModNet(1 0x5b23c7bdbde0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original hierarchical net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(29, 0x5b23c9a60be8) 'new_buf1/Z' to dbNet(2, 0x5b23c7bd8280) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(29 0x5b23c9a60be8) 'new_buf1/Z' to dbModNet(8 0x5b23c7bdbf30) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/3] Creating hierarchical connection for load 'u_h2/u_h1/load5/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm n1_i at id 7
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1_i at id 9
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (7 0x5b23c7bd0bc0) 'u_h2/n1_i' to modnet (9 0x5b23c7bdbf60) 'u_h2/n1_i'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm u_h2/u_h1/in at id 3 from dbModNet u_h2/n_internal at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm u_h2/u_h1/in at id 3 to dbModNet u_h2/n1_i at id 9
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm n1_i at id 7
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(8 0x5b23c9a60600) 'u_h2/u_h1/load5/A' from dbNet(1 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n1_i at id 7 to dbModNet net1 at id 8
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c9a60600) 'u_h2/u_h1/load5/A' to dbNet(2, 0x5b23c7bd8280) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/3] Creating hierarchical connection for load 'u_h3/load2/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm n1_i at id 8
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1_i at id 10
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (8 0x5b23c7bd0c00) 'u_h3/n1_i' to modnet (10 0x5b23c7bdbf90) 'u_h3/n1_i'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbIterm(16) 'u_h3/load2/A' from dbModNet(5) 'in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16 0x5b23c9a60840) 'u_h3/load2/A' to dbModNet(10 0x5b23c7bdbf90) 'u_h3/n1_i'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm n1_i at id 8
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(16 0x5b23c9a60840) 'u_h3/load2/A' from dbNet(1 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n1_i at id 8 to dbModNet net1 at id 8
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16, 0x5b23c9a60840) 'u_h3/load2/A' to dbNet(2, 0x5b23c7bd8280) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 3/3] Creating hierarchical connection for load 'u_h4/u_h5/load3/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm n1_i at id 9
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1_i at id 11
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (9 0x5b23c7bd0c40) 'u_h4/n1_i' to modnet (11 0x5b23c7bdbfc0) 'u_h4/n1_i'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm u_h4/u_h5/in at id 6 from dbModNet u_h4/in at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm u_h4/u_h5/in at id 6 to dbModNet u_h4/n1_i at id 11
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm n1_i at id 9
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(24 0x5b23c9a60a80) 'u_h4/u_h5/load3/A' from dbNet(1 0x5b23c7bd8208) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n1_i at id 9 to dbModNet net1 at id 8
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24, 0x5b23c9a60a80) 'u_h4/u_h5/load3/A' to dbNet(2, 0x5b23c7bd8280) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case6_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case6_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case6 (494 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case6 (112 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case7
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c7b59520) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c7b59590) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c7b59600) 'load4' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm out at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm out at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c7b59670) 'u_h0/drvr' master 'LOGIC0_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH1 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c7b596e0) 'u_h1/load2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH2 at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h2 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModule ModH3 at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u_h3 at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm in at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm in at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c7b59750) 'u_h2/u_h3/load3' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c7b655c8) 'load0/A' to dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c7b656e8) 'load1/A' to dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c7b65808) 'load4/A' to dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c7b65928) 'u_h0/drvr/Z' to dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16, 0x5b23c7b65a00) 'u_h1/load2/A' to dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20, 0x5b23c7b65b20) 'u_h2/u_h3/load3/A' to dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1 0x5b23c7b655c8) 'load0/A' to dbModNet(1 0x5b23c7b7ca10) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c7b656e8) 'load1/A' to dbModNet(1 0x5b23c7b7ca10) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c7b65808) 'load4/A' to dbModNet(1 0x5b23c7b7ca10) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm out at id 1 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm in at id 2 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm in at id 3 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModNet out at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c7b65928) 'u_h0/drvr/Z' to dbModNet(2 0x5b23c7b7ca40) 'u_h0/out'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c7b60130) 'u_h0/out' to modnet (2 0x5b23c7b7ca40) 'u_h0/out'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet in at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16 0x5b23c7b65a00) 'u_h1/load2/A' to dbModNet(3 0x5b23c7b7ca70) 'u_h1/in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c7b60170) 'u_h1/in' to modnet (3 0x5b23c7b7ca70) 'u_h1/in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet in at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm u_h2/u_h3/in at id 4 to dbModNet u_h2/in at id 4
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (3 0x5b23c7b601b0) 'u_h2/in' to modnet (4 0x5b23c7b7caa0) 'u_h2/in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet in at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20 0x5b23c7b65b20) 'u_h2/u_h3/load3/A' to dbModNet(5 0x5b23c7b7cad0) 'u_h2/u_h3/in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (4 0x5b23c7b601f0) 'u_h2/u_h3/in' to modnet (5 0x5b23c7b7cad0) 'u_h2/u_h3/in'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=3, buffer_master=BUF_X1, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load4/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u_h1/load2/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u_h2/u_h3/load3/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(7, 0x5b23c7b597c0) 'new_buf1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c7b78eb0) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (6):
+    - u_h2/u_h3/load3/A (SIGNAL, INPUT, id=20)
+    - u_h1/load2/A (SIGNAL, INPUT, id=16)
+    - u_h0/drvr/Z (SIGNAL, OUTPUT, id=13)
+    - load4/A (SIGNAL, INPUT, id=9)
+    - load1/A (SIGNAL, INPUT, id=5)
+    - load0/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=1)
+  Parent Module: top (id=1)
+  ModITerms (3):
+    - in (SIGNAL, INPUT, id=3)
+    - in (SIGNAL, INPUT, id=2)
+    - out (SIGNAL, OUTPUT, id=1)
+  ModBTerms (0):
+  ITerms (3):
+    - load4/A (SIGNAL, INPUT, id=9)
+    - load1/A (SIGNAL, INPUT, id=5)
+    - load0/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: out (id=2)
+  Parent Module: ModH0 (id=2)
+  ModITerms (0):
+  ModBTerms (1):
+    - u_h0/out (SIGNAL, OUTPUT, id=1)
+  ITerms (1):
+    - u_h0/drvr/Z (SIGNAL, OUTPUT, id=13)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: in (id=3)
+  Parent Module: ModH1 (id=3)
+  ModITerms (0):
+  ModBTerms (1):
+    - u_h1/in (SIGNAL, INPUT, id=2)
+  ITerms (1):
+    - u_h1/load2/A (SIGNAL, INPUT, id=16)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: in (id=4)
+  Parent Module: ModH2 (id=4)
+  ModITerms (1):
+    - u_h2/u_h3/in (SIGNAL, INPUT, id=4)
+  ModBTerms (1):
+    - u_h2/in (SIGNAL, INPUT, id=3)
+  ITerms (0):
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: in (id=5)
+  Parent Module: ModH3 (id=5)
+  ModITerms (0):
+  ModBTerms (1):
+    - u_h2/u_h3/in (SIGNAL, INPUT, id=4)
+  ITerms (1):
+    - u_h2/u_h3/load3/A (SIGNAL, INPUT, id=20)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24, 0x5b23c7b65c40) 'new_buf1/A' to dbNet(1, 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24 0x5b23c7b65c40) 'new_buf1/A' to dbModNet(1 0x5b23c7b7ca10) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original hierarchical net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(25, 0x5b23c7b65c88) 'new_buf1/Z' to dbNet(2, 0x5b23c7b78eb0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(25 0x5b23c7b65c88) 'new_buf1/Z' to dbModNet(6 0x5b23c7b7cb00) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/3] Creating hierarchical connection for load 'load4/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(9, 0x5b23c7b65808) 'load4/A' from dbNet(1, 0x5b23c7b78e38) 'n1' corresponding to dbModNet(1, 0x5b23c7b7ca10) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c7b65808) 'load4/A' to dbModNet(6 0x5b23c7b7cb00) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c7b65808) 'load4/A' to dbNet(2, 0x5b23c7b78eb0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/3] Creating hierarchical connection for load 'u_h1/load2/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(16 0x5b23c7b65a00) 'u_h1/load2/A' from dbNet(1 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm in at id 2 from dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm in at id 2 to dbModNet net1 at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16, 0x5b23c7b65a00) 'u_h1/load2/A' to dbNet(2, 0x5b23c7b78eb0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 3/3] Creating hierarchical connection for load 'u_h2/u_h3/load3/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(20 0x5b23c7b65b20) 'u_h2/u_h3/load3/A' from dbNet(1 0x5b23c7b78e38) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm in at id 3 from dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm in at id 3 to dbModNet net1 at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20, 0x5b23c7b65b20) 'u_h2/u_h3/load3/A' to dbNet(2, 0x5b23c7b78eb0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case7_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case7_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case7 (493 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case7 (116 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case8
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c787a1d0) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c788ff68) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c788ff68) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c7893f88) 'in' to dbNet(1 0x5b23c788ff68) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c787dea8) 'load1/A' to dbNet(1, 0x5b23c788ff68) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c787a240) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c788ffe0) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c787dfc8) 'new_buf1/A' to dbNet(1, 0x5b23c788ff68) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (1):
+    - load1/A (SIGNAL, INPUT, id=1)
+  BTerms (1):
+    - in (SIGNAL, INPUT, id=1)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c787e010) 'new_buf1/Z' to dbNet(2, 0x5b23c788ffe0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Creating hierarchical connection for load 'load1/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(1, 0x5b23c787dea8) 'load1/A' from dbNet(1, 0x5b23c788ff68) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c787dea8) 'load1/A' to dbNet(2, 0x5b23c788ffe0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case8_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case8_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case8 (490 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case8 (111 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case9
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c7023c10) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c7039958) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(1, 0x5b23c7039958) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c703d978) 'out' to dbNet(1 0x5b23c7039958) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c70278e0) 'drvr/Z' to dbNet(1, 0x5b23c7039958) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: out
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c7023c80) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c70399d0) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c70279b8) 'new_buf1/A' to dbNet(1, 0x5b23c7039958) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (1):
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=1)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c7027a00) 'new_buf1/Z' to dbNet(2, 0x5b23c70399d0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c703d978) 'out' from dbNet(1 0x5b23c7039958) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c703d978) 'out' to dbNet(2 0x5b23c70399d0) 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Moved BTerm load 'out' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (0, 0)
 Compare TestInsertBuffer_BeforeLoads_Case9_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case9_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case9 (493 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case9 (114 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case10
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c7001128) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c7001128) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c7005218) 'in' to dbNet(1 0x5b23c7001128) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(1, 0x5b23c7001128) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c7005280) 'out' to dbNet(1 0x5b23c7001128) 'n1'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: out
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c700aef0) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c70011a0) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c700eb78) 'new_buf1/A' to dbNet(1, 0x5b23c7001128) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (0):
+  BTerms (2):
+    - out (SIGNAL, OUTPUT, id=2)
+    - in (SIGNAL, INPUT, id=1)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c700ebc0) 'new_buf1/Z' to dbNet(2, 0x5b23c70011a0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(2 0x5b23c7005280) 'out' from dbNet(1 0x5b23c7001128) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c7005280) 'out' to dbNet(2 0x5b23c70011a0) 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Moved BTerm load 'out' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (0, 0)
 Compare TestInsertBuffer_BeforeLoads_Case10_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case10_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case10 (494 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case10 (111 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case11
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c79a89d0) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c79a8a40) 'load2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c79be788) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c79be788) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c79c27a8) 'in' to dbNet(1 0x5b23c79be788) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c79ac6a8) 'load1/A' to dbNet(1, 0x5b23c79be788) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c79ac7c8) 'load2/A' to dbNet(1, 0x5b23c79be788) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=1, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c79a8ab0) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c79be800) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c79ac8e8) 'new_buf1/A' to dbNet(1, 0x5b23c79be788) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (2):
+    - load2/A (SIGNAL, INPUT, id=5)
+    - load1/A (SIGNAL, INPUT, id=1)
+  BTerms (1):
+    - in (SIGNAL, INPUT, id=1)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(10, 0x5b23c79ac930) 'new_buf1/Z' to dbNet(2, 0x5b23c79be800) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/1] Creating hierarchical connection for load 'load1/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(1, 0x5b23c79ac6a8) 'load1/A' from dbNet(1, 0x5b23c79be788) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c79ac6a8) 'load1/A' to dbNet(2, 0x5b23c79be800) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case11_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case11_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case11 (489 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case11 (111 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case12
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c7987e70) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c7987ee0) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c799dc28) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(1, 0x5b23c799dc28) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c79a1c48) 'out' to dbNet(1 0x5b23c799dc28) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c798bb90) 'drvr/Z' to dbNet(1, 0x5b23c799dc28) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c798bc68) 'load1/A' to dbNet(1, 0x5b23c799dc28) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=2, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: out
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c7987f50) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c799dca0) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c798bd88) 'new_buf1/A' to dbNet(1, 0x5b23c799dc28) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (2):
+    - load1/A (SIGNAL, INPUT, id=5)
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=1)
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(10, 0x5b23c798bdd0) 'new_buf1/Z' to dbNet(2, 0x5b23c799dca0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c79a1c48) 'out' from dbNet(1 0x5b23c799dc28) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c79a1c48) 'out' to dbNet(2 0x5b23c799dca0) 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Moved BTerm load 'out' to new flat net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'load1/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(5, 0x5b23c798bc68) 'load1/A' from dbNet(1, 0x5b23c799dc28) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c798bc68) 'load1/A' to dbNet(2, 0x5b23c799dca0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case12_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case12_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case12 (493 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case12 (114 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case13
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c99e5060) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c99e50d0) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c99e5140) 'u1/load2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(1, 0x5b23c99f15c8) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c99f51d8) 'out' to dbNet(1 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c9a60590) 'drvr/Z' to dbNet(1, 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9a60668) 'load1/A' to dbNet(1, 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c9a60788) 'u1/load2/A' to dbNet(1, 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c9a60590) 'drvr/Z' to dbModNet(1 0x5b23c99f85c0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9a60668) 'load1/A' to dbModNet(1 0x5b23c99f85c0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 1 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c99f51d8) 'out' to dbModNet(1 0x5b23c99f85c0) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c9a60788) 'u1/load2/A' to dbModNet(2 0x5b23c99f85f0) 'u1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c99ec080) 'u1/A' to modnet (2 0x5b23c99f85f0) 'u1/A'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=3, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: out
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u1/load2/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c99e51b0) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c99f1640) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (3):
+    - u1/load2/A (SIGNAL, INPUT, id=9)
+    - load1/A (SIGNAL, INPUT, id=5)
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=1)
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=1)
+  Parent Module: top (id=1)
+  ModITerms (1):
+    - A (SIGNAL, INPUT, id=1)
+  ModBTerms (0):
+  ITerms (2):
+    - load1/A (SIGNAL, INPUT, id=5)
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=1)
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: A (id=2)
+  Parent Module: MOD1 (id=2)
+  ModITerms (0):
+  ModBTerms (1):
+    - u1/A (SIGNAL, INPUT, id=1)
+  ITerms (1):
+    - u1/load2/A (SIGNAL, INPUT, id=9)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c9a608a8) 'new_buf1/A' to dbNet(1, 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c9a608a8) 'new_buf1/A' to dbModNet(1 0x5b23c99f85c0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original hierarchical net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(14, 0x5b23c9a608f0) 'new_buf1/Z' to dbNet(2, 0x5b23c99f1640) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(14 0x5b23c9a608f0) 'new_buf1/Z' to dbModNet(3 0x5b23c99f8620) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c99f51d8) 'out' from dbNet(1 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbBTerm(1 0x5b23c99f51d8) 'out' from dbModNet(1 0x5b23c99f85c0) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c99f51d8) 'out' to dbNet(2 0x5b23c99f1640) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c99f51d8) 'out' to dbModNet(3 0x5b23c99f8620) 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/3] Moved BTerm load 'out' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/3] Creating hierarchical connection for load 'load1/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(5, 0x5b23c9a60668) 'load1/A' from dbNet(1, 0x5b23c99f15c8) 'n1' corresponding to dbModNet(1, 0x5b23c99f85c0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9a60668) 'load1/A' to dbModNet(3 0x5b23c99f8620) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9a60668) 'load1/A' to dbNet(2, 0x5b23c99f1640) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 3/3] Creating hierarchical connection for load 'u1/load2/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(9 0x5b23c9a60788) 'u1/load2/A' from dbNet(1 0x5b23c99f15c8) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm A at id 1 from dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 1 to dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c9a60788) 'u1/load2/A' to dbNet(2, 0x5b23c99f1640) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case13_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case13_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case13 (493 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case13 (112 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case14
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c99701e0) 'drvr_inst' master 'LOGIC0_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c9970250) 'load1_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c99702c0) 'load2_inst' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c9985ff8) 'drvr_net'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c9986070) 'other_net'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9973eb8) 'drvr_inst/Z' to dbNet(1, 0x5b23c9985ff8) 'drvr_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4, 0x5b23c9973f90) 'load1_inst/A' to dbNet(1, 0x5b23c9985ff8) 'drvr_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c99740b0) 'load2_inst/A' to dbNet(2, 0x5b23c9986070) 'other_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 Compare TestInsertBuffer_BeforeLoads_Case14_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case14_pre.v
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=drvr_net, load_pins_size=2, buffer_master=BUF_X1, loc=(-1, -1), base_name=buf, uniquify=2, loads_on_same_db_net=false
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1_inst/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load2_inst/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c9970330) 'buf' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c99860e8) 'net'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12, 0x5b23c99741d0) 'buf/A' to dbNet(1, 0x5b23c9985ff8) 'drvr_net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
+--------------------------------------------------
+dbNet: drvr_net (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (2):
+    - load1_inst/A (SIGNAL, INPUT, id=4)
+    - drvr_inst/Z (SIGNAL, OUTPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'buf/A' to original flat net 'drvr_net'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c9974218) 'buf/Z' to dbNet(3, 0x5b23c99860e8) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'buf/Z' to new flat net 'net'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'load1_inst/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(4, 0x5b23c9973f90) 'load1_inst/A' from dbNet(1, 0x5b23c9985ff8) 'drvr_net' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4, 0x5b23c9973f90) 'load1_inst/A' to dbNet(3, 0x5b23c99860e8) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'load2_inst/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(8, 0x5b23c99740b0) 'load2_inst/A' from dbNet(2, 0x5b23c9986070) 'other_net' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c99740b0) 'load2_inst/A' to dbNet(3, 0x5b23c99860e8) 'net'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'buf' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case14_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case14_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case14 (490 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case14 (114 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case15
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c98fee30) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c98feea0) 'load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule MOD1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst u1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm A at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c98fef10) 'u1/load2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c98fef80) 'u1/load3' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c98feff0) 'u1/non_target' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c991d678) 'in'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c991d678) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c9921288) 'in' to dbNet(1 0x5b23c991d678) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9909e08) 'drvr/A' to dbNet(1, 0x5b23c991d678) 'in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(2, 0x5b23c991d6f0) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c99212f0) 'out' to dbNet(2 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c9909e50) 'drvr/Z' to dbNet(2, 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9909f28) 'load1/A' to dbNet(2, 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c990a048) 'u1/load2/A' to dbNet(2, 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c990a168) 'u1/load3/A' to dbNet(2, 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c990a288) 'u1/non_target/A' to dbNet(2, 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c9909e50) 'drvr/Z' to dbModNet(1 0x5b23c9924670) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9909f28) 'load1/A' to dbModNet(1 0x5b23c9924670) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm A at id 1 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c99212f0) 'out' to dbModNet(1 0x5b23c9924670) 'n1'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet A at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c990a048) 'u1/load2/A' to dbModNet(2 0x5b23c99246a0) 'u1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c990a168) 'u1/load3/A' to dbModNet(2 0x5b23c99246a0) 'u1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17 0x5b23c990a288) 'u1/non_target/A' to dbModNet(2 0x5b23c99246a0) 'u1/A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c9905a40) 'u1/A' to modnet (2 0x5b23c99246a0) 'u1/A'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=3, buffer_master=BUF_X1, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u1/load2/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: u1/load3/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c98ff060) 'new_buf1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c991d768) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=2)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (5):
+    - u1/non_target/A (SIGNAL, INPUT, id=17)
+    - u1/load3/A (SIGNAL, INPUT, id=13)
+    - u1/load2/A (SIGNAL, INPUT, id=9)
+    - load1/A (SIGNAL, INPUT, id=5)
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=2)
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=1)
+  Parent Module: top (id=1)
+  ModITerms (1):
+    - A (SIGNAL, INPUT, id=1)
+  ModBTerms (0):
+  ITerms (2):
+    - load1/A (SIGNAL, INPUT, id=5)
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (1):
+    - out (SIGNAL, OUTPUT, id=2)
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: A (id=2)
+  Parent Module: MOD1 (id=2)
+  ModITerms (0):
+  ModBTerms (1):
+    - u1/A (SIGNAL, INPUT, id=1)
+  ITerms (3):
+    - u1/non_target/A (SIGNAL, INPUT, id=17)
+    - u1/load3/A (SIGNAL, INPUT, id=13)
+    - u1/load2/A (SIGNAL, INPUT, id=9)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c990a3a8) 'new_buf1/A' to dbNet(2, 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21 0x5b23c990a3a8) 'new_buf1/A' to dbModNet(1 0x5b23c9924670) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original hierarchical net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22, 0x5b23c990a3f0) 'new_buf1/Z' to dbNet(3, 0x5b23c991d768) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22 0x5b23c990a3f0) 'new_buf1/Z' to dbModNet(3 0x5b23c99246d0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/3] Creating hierarchical connection for load 'load1/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(5, 0x5b23c9909f28) 'load1/A' from dbNet(2, 0x5b23c991d6f0) 'n1' corresponding to dbModNet(1, 0x5b23c9924670) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9909f28) 'load1/A' to dbModNet(3 0x5b23c99246d0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9909f28) 'load1/A' to dbNet(3, 0x5b23c991d768) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/3] Creating hierarchical connection for load 'u1/load2/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm n1_i at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1_i at id 4
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c9905a80) 'u1/n1_i' to modnet (4 0x5b23c9924700) 'u1/n1_i'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbIterm(9) 'u1/load2/A' from dbModNet(2) 'A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c990a048) 'u1/load2/A' to dbModNet(4 0x5b23c9924700) 'u1/n1_i'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm n1_i at id 2
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(9 0x5b23c990a048) 'u1/load2/A' from dbNet(2 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n1_i at id 2 to dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c990a048) 'u1/load2/A' to dbNet(3, 0x5b23c991d768) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 3/3] Creating hierarchical connection for load 'u1/load3/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbIterm(13) 'u1/load3/A' from dbModNet(2) 'A'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c990a168) 'u1/load3/A' to dbModNet(4 0x5b23c9924700) 'u1/n1_i'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(13 0x5b23c990a168) 'u1/load3/A' from dbNet(2 0x5b23c991d6f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm n1_i at id 2 from dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n1_i at id 2 to dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c990a168) 'u1/load3/A' to dbNet(3, 0x5b23c991d768) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case15_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case15_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case15 (493 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case15 (112 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case16
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule H0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_out at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_out at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule H1 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h1_out at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h1_out at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c97bbfe0) 'h0/h1/h0_h1_drvr' master 'LOGIC0_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c97bc050) 'h0/load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c97bc0c0) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c97bc130) 'non_target0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c97c1c18) 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c9a60408) 'h0/h1/h0_h1_drvr/Z' to dbNet(1, 0x5b23c97c1c18) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4, 0x5b23c9a604e0) 'h0/load1/A' to dbNet(1, 0x5b23c97c1c18) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c9a60600) 'load0/A' to dbNet(1, 0x5b23c97c1c18) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12, 0x5b23c9a60720) 'non_target0/A' to dbNet(1, 0x5b23c97c1c18) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c97c1c90) 'out'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'out' on dbNet(2, 0x5b23c97c1c90) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c97c5828) 'out' to dbNet(2 0x5b23c97c1c90) 'out'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c9a60648) 'load0/Z' to dbNet(2, 0x5b23c97c1c90) 'out'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_out at id 1 to dbModNet net1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8 0x5b23c9a60600) 'load0/A' to dbModNet(1 0x5b23c97c9020) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12 0x5b23c9a60720) 'non_target0/A' to dbModNet(1 0x5b23c97c9020) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_out at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0/h1/h1_out at id 2 to dbModNet h0/h0_out at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4 0x5b23c9a604e0) 'h0/load1/A' to dbModNet(2 0x5b23c97c9050) 'h0/h0_out'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c97b7f60) 'h0/h0_out' to modnet (2 0x5b23c97c9050) 'h0/h0_out'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h1_out at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1 0x5b23c9a60408) 'h0/h1/h0_h1_drvr/Z' to dbModNet(3 0x5b23c97c9080) 'h0/h1/h1_out'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c97b7fa0) 'h0/h1/h1_out' to modnet (3 0x5b23c97c9080) 'h0/h1/h1_out'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=net1, load_pins_size=2, buffer_master=BUF_X1, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=true
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load0/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c97bc1a0) 'new_buf1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c97c1d08) 'net2'
+--------------------------------------------------
+dbNet: net1 (id=1)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (4):
+    - non_target0/A (SIGNAL, INPUT, id=12)
+    - load0/A (SIGNAL, INPUT, id=8)
+    - h0/load1/A (SIGNAL, INPUT, id=4)
+    - h0/h1/h0_h1_drvr/Z (SIGNAL, OUTPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: net1 (id=1)
+  Parent Module: top (id=1)
+  ModITerms (1):
+    - h0_out (SIGNAL, OUTPUT, id=1)
+  ModBTerms (0):
+  ITerms (2):
+    - non_target0/A (SIGNAL, INPUT, id=12)
+    - load0/A (SIGNAL, INPUT, id=8)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: h0_out (id=2)
+  Parent Module: H0 (id=2)
+  ModITerms (1):
+    - h0/h1/h1_out (SIGNAL, OUTPUT, id=2)
+  ModBTerms (1):
+    - h0/h0_out (SIGNAL, OUTPUT, id=1)
+  ITerms (1):
+    - h0/load1/A (SIGNAL, INPUT, id=4)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: h1_out (id=3)
+  Parent Module: H1 (id=3)
+  ModITerms (0):
+  ModBTerms (1):
+    - h0/h1/h1_out (SIGNAL, OUTPUT, id=2)
+  ITerms (1):
+    - h0/h1/h0_h1_drvr/Z (SIGNAL, OUTPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net2' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net2 at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16, 0x5b23c9a60840) 'new_buf1/A' to dbNet(1, 0x5b23c97c1c18) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16 0x5b23c9a60840) 'new_buf1/A' to dbModNet(1 0x5b23c97c9020) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original hierarchical net 'net1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c9a60888) 'new_buf1/Z' to dbNet(3, 0x5b23c97c1d08) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17 0x5b23c9a60888) 'new_buf1/Z' to dbModNet(4 0x5b23c97c90b0) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net2' and new hierarchical net 'net2'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'h0/load1/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm net1_i at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1_i at id 5
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (3 0x5b23c97b7fe0) 'h0/net1_i' to modnet (5 0x5b23c97c90e0) 'h0/net1_i'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbIterm(4) 'h0/load1/A' from dbModNet(2) 'h0_out'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4 0x5b23c9a604e0) 'h0/load1/A' to dbModNet(5 0x5b23c97c90e0) 'h0/net1_i'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm net1_i at id 3
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(4 0x5b23c9a604e0) 'h0/load1/A' from dbNet(1 0x5b23c97c1c18) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm net1_i at id 3 to dbModNet net2 at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(4, 0x5b23c9a604e0) 'h0/load1/A' to dbNet(3, 0x5b23c97c1d08) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'load0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(8, 0x5b23c9a60600) 'load0/A' from dbNet(1, 0x5b23c97c1c18) 'net1' corresponding to dbModNet(1, 0x5b23c97c9020) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8 0x5b23c9a60600) 'load0/A' to dbModNet(4 0x5b23c97c90b0) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(8, 0x5b23c9a60600) 'load0/A' to dbNet(3, 0x5b23c97c1d08) 'net2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case16_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case16_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case16 (494 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case16 (113 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case17
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c7a00260) 'buf' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c7a002d0) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule H0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c7a00340) 'h0/load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c7a003b0) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c7a00420) 'non_target0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c7a1e938) 'in'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c7a1e938) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c7a22548) 'in' to dbNet(1 0x5b23c7a1e938) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c7a0b1e8) 'drvr/A' to dbNet(1, 0x5b23c7a1e938) 'in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c7a1e9b0) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c7a0b0c8) 'buf/A' to dbNet(2, 0x5b23c7a1e9b0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c7a0b230) 'drvr/Z' to dbNet(2, 0x5b23c7a1e9b0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c7a0b428) 'load0/A' to dbNet(2, 0x5b23c7a1e9b0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c7a0b548) 'non_target0/A' to dbNet(2, 0x5b23c7a1e9b0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c7a1ea28) 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c7a0b110) 'buf/Z' to dbNet(3, 0x5b23c7a1ea28) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c7a0b308) 'h0/load1/A' to dbNet(3, 0x5b23c7a1ea28) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c7a0b110) 'buf/Z' to dbModNet(1 0x5b23c7a25930) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_in at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c7a0b308) 'h0/load1/A' to dbModNet(2 0x5b23c7a25960) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c7a06e70) 'h0/h0_in' to modnet (2 0x5b23c7a25960) 'h0/h0_in'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=2, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=false
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load0/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c7a00490) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(4, 0x5b23c7a1eaa0) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=2)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (4):
+    - non_target0/A (SIGNAL, INPUT, id=17)
+    - load0/A (SIGNAL, INPUT, id=13)
+    - drvr/Z (SIGNAL, OUTPUT, id=6)
+    - buf/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c7a0b668) 'new_buf1/A' to dbNet(2, 0x5b23c7a1e9b0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22, 0x5b23c7a0b6b0) 'new_buf1/Z' to dbNet(4, 0x5b23c7a1eaa0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22 0x5b23c7a0b6b0) 'new_buf1/Z' to dbModNet(3 0x5b23c7a25990) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'h0/load1/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(9 0x5b23c7a0b308) 'h0/load1/A' from dbNet(3 0x5b23c7a1ea28) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm h0_in at id 1 from dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c7a0b308) 'h0/load1/A' to dbNet(4, 0x5b23c7a1eaa0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'load0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(13, 0x5b23c7a0b428) 'load0/A' from dbNet(2, 0x5b23c7a1e9b0) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c7a0b428) 'load0/A' to dbModNet(3 0x5b23c7a25990) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c7a0b428) 'load0/A' to dbNet(4, 0x5b23c7a1eaa0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case17_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case17_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case17 (496 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case17 (113 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case18
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c95dbf00) 'buf' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c95dbf70) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule H0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c95dbfe0) 'h0/load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c95dc050) 'h0/non_target1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c95dc0c0) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c95dc130) 'non_target0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c95fa578) 'in'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c95fa578) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c95fe188) 'in' to dbNet(1 0x5b23c95fa578) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c95e6e28) 'drvr/A' to dbNet(1, 0x5b23c95fa578) 'in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c95fa5f0) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c95e6d08) 'buf/A' to dbNet(2, 0x5b23c95fa5f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c95e6e70) 'drvr/Z' to dbNet(2, 0x5b23c95fa5f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c95e7188) 'load0/A' to dbNet(2, 0x5b23c95fa5f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c95e72a8) 'non_target0/A' to dbNet(2, 0x5b23c95fa5f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c95fa668) 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c95e6d50) 'buf/Z' to dbNet(3, 0x5b23c95fa668) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c95e6f48) 'h0/load1/A' to dbNet(3, 0x5b23c95fa668) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c95e7068) 'h0/non_target1/A' to dbNet(3, 0x5b23c95fa668) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c95e6d50) 'buf/Z' to dbModNet(1 0x5b23c9601570) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_in at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c95e6f48) 'h0/load1/A' to dbModNet(2 0x5b23c96015a0) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c95e7068) 'h0/non_target1/A' to dbModNet(2 0x5b23c96015a0) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c95e2b10) 'h0/h0_in' to modnet (2 0x5b23c96015a0) 'h0/h0_in'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=2, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=false
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load0/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(7, 0x5b23c95dc1a0) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(4, 0x5b23c95fa6e0) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=2)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (4):
+    - non_target0/A (SIGNAL, INPUT, id=21)
+    - load0/A (SIGNAL, INPUT, id=17)
+    - drvr/Z (SIGNAL, OUTPUT, id=6)
+    - buf/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(25, 0x5b23c95e73c8) 'new_buf1/A' to dbNet(2, 0x5b23c95fa5f0) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(26, 0x5b23c95e7410) 'new_buf1/Z' to dbNet(4, 0x5b23c95fa6e0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(26 0x5b23c95e7410) 'new_buf1/Z' to dbModNet(3 0x5b23c96015d0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/2] Creating hierarchical connection for load 'h0/load1/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm n2_i at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n2_i at id 4
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c95e2b50) 'h0/n2_i' to modnet (4 0x5b23c9601600) 'h0/n2_i'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbIterm(9) 'h0/load1/A' from dbModNet(2) 'h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c95e6f48) 'h0/load1/A' to dbModNet(4 0x5b23c9601600) 'h0/n2_i'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm n2_i at id 2
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(9 0x5b23c95e6f48) 'h0/load1/A' from dbNet(3 0x5b23c95fa668) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n2_i at id 2 to dbModNet net1 at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c95e6f48) 'h0/load1/A' to dbNet(4, 0x5b23c95fa6e0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/2] Creating hierarchical connection for load 'load0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(17, 0x5b23c95e7188) 'load0/A' from dbNet(2, 0x5b23c95fa5f0) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17 0x5b23c95e7188) 'load0/A' to dbModNet(3 0x5b23c96015d0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c95e7188) 'load0/A' to dbNet(4, 0x5b23c95fa6e0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (250, 1225)
 Compare TestInsertBuffer_BeforeLoads_Case18_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case18_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case18 (497 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case18 (113 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case19
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/fakeram45_64x7.lef, created 1 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c6feb910) 'buf' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c6feb980) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule H0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_tie at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out[6] at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out[5] at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out[4] at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out[3] at id 7
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out[2] at id 8
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out[1] at id 9
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_rd_out[0] at id 10
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_tie at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_rd_out[6] at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_rd_out[5] at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_rd_out[4] at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_rd_out[3] at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_rd_out[2] at id 7
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_rd_out[1] at id 8
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_rd_out[0] at id 9
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c6feb9f0) 'h0/mem' master 'fakeram45_64x7'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c6feba60) 'load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c6febad0) 'non_target0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c6febb40) 'tie0' master 'LOGIC0_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c701a4d8) 'in'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c701a4d8) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c701e0e8) 'in' to dbNet(1 0x5b23c701a4d8) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c7006d88) 'drvr/A' to dbNet(1, 0x5b23c701a4d8) 'in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c701a550) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c7006c68) 'buf/A' to dbNet(2, 0x5b23c701a550) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(6, 0x5b23c7006dd0) 'drvr/Z' to dbNet(2, 0x5b23c701a550) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(41, 0x5b23c70077a8) 'load0/A' to dbNet(2, 0x5b23c701a550) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(45, 0x5b23c70078c8) 'non_target0/A' to dbNet(2, 0x5b23c701a550) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c7006cb0) 'buf/Z' to dbNet(3, 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c7006ea8) 'h0/mem/w_mask_in[0]' to dbNet(3, 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(10, 0x5b23c7006ef0) 'h0/mem/w_mask_in[1]' to dbNet(3, 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(11, 0x5b23c7006f38) 'h0/mem/w_mask_in[2]' to dbNet(3, 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(4, 0x5b23c701a640) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[0]' on dbNet(4, 0x5b23c701a640) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c701e150) 'rd_out[0]' to dbNet(4 0x5b23c701a640) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16, 0x5b23c70070a0) 'h0/mem/rd_out[0]' to dbNet(4, 0x5b23c701a640) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(5, 0x5b23c701a6b8) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[1]' on dbNet(5, 0x5b23c701a6b8) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(3 0x5b23c701e1b8) 'rd_out[1]' to dbNet(5 0x5b23c701a6b8) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c70070e8) 'h0/mem/rd_out[1]' to dbNet(5, 0x5b23c701a6b8) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(6, 0x5b23c701a730) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[2]' on dbNet(6, 0x5b23c701a730) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(4 0x5b23c701e220) 'rd_out[2]' to dbNet(6 0x5b23c701a730) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(18, 0x5b23c7007130) 'h0/mem/rd_out[2]' to dbNet(6, 0x5b23c701a730) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(7, 0x5b23c701a7a8) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[3]' on dbNet(7, 0x5b23c701a7a8) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(5 0x5b23c701e288) 'rd_out[3]' to dbNet(7 0x5b23c701a7a8) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(19, 0x5b23c7007178) 'h0/mem/rd_out[3]' to dbNet(7, 0x5b23c701a7a8) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(8, 0x5b23c701a820) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[4]' on dbNet(8, 0x5b23c701a820) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(6 0x5b23c701e2f0) 'rd_out[4]' to dbNet(8 0x5b23c701a820) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20, 0x5b23c70071c0) 'h0/mem/rd_out[4]' to dbNet(8, 0x5b23c701a820) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(9, 0x5b23c701a898) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[5]' on dbNet(9, 0x5b23c701a898) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(7 0x5b23c701e358) 'rd_out[5]' to dbNet(9 0x5b23c701a898) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c7007208) 'h0/mem/rd_out[5]' to dbNet(9, 0x5b23c701a898) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(10, 0x5b23c701a910) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[6]' on dbNet(10, 0x5b23c701a910) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(8 0x5b23c701e3c0) 'rd_out[6]' to dbNet(10 0x5b23c701a910) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22, 0x5b23c7007250) 'h0/mem/rd_out[6]' to dbNet(10, 0x5b23c701a910) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(30, 0x5b23c7007490) 'h0/mem/addr_in[0]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(31, 0x5b23c70074d8) 'h0/mem/addr_in[1]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(32, 0x5b23c7007520) 'h0/mem/addr_in[2]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(33, 0x5b23c7007568) 'h0/mem/addr_in[3]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(34, 0x5b23c70075b0) 'h0/mem/addr_in[4]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(35, 0x5b23c70075f8) 'h0/mem/addr_in[5]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(37, 0x5b23c7007688) 'h0/mem/ce_in' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(38, 0x5b23c70076d0) 'h0/mem/clk' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12, 0x5b23c7006f80) 'h0/mem/w_mask_in[3]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c7006fc8) 'h0/mem/w_mask_in[4]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(14, 0x5b23c7007010) 'h0/mem/w_mask_in[5]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(15, 0x5b23c7007058) 'h0/mem/w_mask_in[6]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(23, 0x5b23c7007298) 'h0/mem/wd_in[0]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24, 0x5b23c70072e0) 'h0/mem/wd_in[1]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(25, 0x5b23c7007328) 'h0/mem/wd_in[2]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(26, 0x5b23c7007370) 'h0/mem/wd_in[3]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(27, 0x5b23c70073b8) 'h0/mem/wd_in[4]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(28, 0x5b23c7007400) 'h0/mem/wd_in[5]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(29, 0x5b23c7007448) 'h0/mem/wd_in[6]' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(36, 0x5b23c7007640) 'h0/mem/we_in' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(49, 0x5b23c70079e8) 'tie0/Z' to dbNet(11, 0x5b23c701a988) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c7006cb0) 'buf/Z' to dbModNet(1 0x5b23c70214d0) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_in at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c7006ea8) 'h0/mem/w_mask_in[0]' to dbModNet(2 0x5b23c7021500) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(10 0x5b23c7006ef0) 'h0/mem/w_mask_in[1]' to dbModNet(2 0x5b23c7021500) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(11 0x5b23c7006f38) 'h0/mem/w_mask_in[2]' to dbModNet(2 0x5b23c7021500) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c6ff2520) 'h0/h0_in' to modnet (2 0x5b23c7021500) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet tie at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_tie at id 2 to dbModNet tie at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(49 0x5b23c70079e8) 'tie0/Z' to dbModNet(3 0x5b23c7021530) 'tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_tie at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(30 0x5b23c7007490) 'h0/mem/addr_in[0]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(31 0x5b23c70074d8) 'h0/mem/addr_in[1]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(32 0x5b23c7007520) 'h0/mem/addr_in[2]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(33 0x5b23c7007568) 'h0/mem/addr_in[3]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(34 0x5b23c70075b0) 'h0/mem/addr_in[4]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(35 0x5b23c70075f8) 'h0/mem/addr_in[5]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(37 0x5b23c7007688) 'h0/mem/ce_in' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(38 0x5b23c70076d0) 'h0/mem/clk' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(12 0x5b23c7006f80) 'h0/mem/w_mask_in[3]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c7006fc8) 'h0/mem/w_mask_in[4]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(14 0x5b23c7007010) 'h0/mem/w_mask_in[5]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(15 0x5b23c7007058) 'h0/mem/w_mask_in[6]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(23 0x5b23c7007298) 'h0/mem/wd_in[0]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(24 0x5b23c70072e0) 'h0/mem/wd_in[1]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(25 0x5b23c7007328) 'h0/mem/wd_in[2]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(26 0x5b23c7007370) 'h0/mem/wd_in[3]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(27 0x5b23c70073b8) 'h0/mem/wd_in[4]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(28 0x5b23c7007400) 'h0/mem/wd_in[5]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(29 0x5b23c7007448) 'h0/mem/wd_in[6]' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(36 0x5b23c7007640) 'h0/mem/we_in' to dbModNet(4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c6ff2560) 'h0/h0_tie' to modnet (4 0x5b23c7021560) 'h0/h0_tie'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[6] at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_rd_out[6] at id 3 to dbModNet rd_out[6] at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(8 0x5b23c701e3c0) 'rd_out[6]' to dbModNet(5 0x5b23c7021590) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_rd_out[6] at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(22 0x5b23c7007250) 'h0/mem/rd_out[6]' to dbModNet(6 0x5b23c70215c0) 'h0/h0_rd_out[6]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (4 0x5b23c6ff25e0) 'h0/h0_rd_out[6]' to modnet (6 0x5b23c70215c0) 'h0/h0_rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[5] at id 7
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_rd_out[5] at id 4 to dbModNet rd_out[5] at id 7
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(7 0x5b23c701e358) 'rd_out[5]' to dbModNet(7 0x5b23c70215f0) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_rd_out[5] at id 8
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21 0x5b23c7007208) 'h0/mem/rd_out[5]' to dbModNet(8 0x5b23c7021620) 'h0/h0_rd_out[5]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (5 0x5b23c6ff2620) 'h0/h0_rd_out[5]' to modnet (8 0x5b23c7021620) 'h0/h0_rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[4] at id 9
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_rd_out[4] at id 5 to dbModNet rd_out[4] at id 9
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(6 0x5b23c701e2f0) 'rd_out[4]' to dbModNet(9 0x5b23c7021650) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_rd_out[4] at id 10
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(20 0x5b23c70071c0) 'h0/mem/rd_out[4]' to dbModNet(10 0x5b23c7021680) 'h0/h0_rd_out[4]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (6 0x5b23c6ff2660) 'h0/h0_rd_out[4]' to modnet (10 0x5b23c7021680) 'h0/h0_rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[3] at id 11
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_rd_out[3] at id 6 to dbModNet rd_out[3] at id 11
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(5 0x5b23c701e288) 'rd_out[3]' to dbModNet(11 0x5b23c70216b0) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_rd_out[3] at id 12
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(19 0x5b23c7007178) 'h0/mem/rd_out[3]' to dbModNet(12 0x5b23c70216e0) 'h0/h0_rd_out[3]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (7 0x5b23c6ff26a0) 'h0/h0_rd_out[3]' to modnet (12 0x5b23c70216e0) 'h0/h0_rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[2] at id 13
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_rd_out[2] at id 7 to dbModNet rd_out[2] at id 13
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(4 0x5b23c701e220) 'rd_out[2]' to dbModNet(13 0x5b23c7021710) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_rd_out[2] at id 14
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(18 0x5b23c7007130) 'h0/mem/rd_out[2]' to dbModNet(14 0x5b23c7021740) 'h0/h0_rd_out[2]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (8 0x5b23c6ff26e0) 'h0/h0_rd_out[2]' to modnet (14 0x5b23c7021740) 'h0/h0_rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[1] at id 15
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_rd_out[1] at id 8 to dbModNet rd_out[1] at id 15
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(3 0x5b23c701e1b8) 'rd_out[1]' to dbModNet(15 0x5b23c7021770) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_rd_out[1] at id 16
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17 0x5b23c70070e8) 'h0/mem/rd_out[1]' to dbModNet(16 0x5b23c70217a0) 'h0/h0_rd_out[1]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (9 0x5b23c6ff2720) 'h0/h0_rd_out[1]' to modnet (16 0x5b23c70217a0) 'h0/h0_rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[0] at id 17
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_rd_out[0] at id 9 to dbModNet rd_out[0] at id 17
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c701e150) 'rd_out[0]' to dbModNet(17 0x5b23c70217d0) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_rd_out[0] at id 18
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(16 0x5b23c70070a0) 'h0/mem/rd_out[0]' to dbModNet(18 0x5b23c7021800) 'h0/h0_rd_out[0]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (10 0x5b23c6ff2760) 'h0/h0_rd_out[0]' to modnet (18 0x5b23c7021800) 'h0/h0_rd_out[0]'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=4, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=false
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/mem/w_mask_in[0]
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/mem/w_mask_in[1]
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/mem/w_mask_in[2]
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: load0/A
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(7, 0x5b23c6febbb0) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(12, 0x5b23c701aa00) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=2)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (4):
+    - non_target0/A (SIGNAL, INPUT, id=45)
+    - load0/A (SIGNAL, INPUT, id=41)
+    - drvr/Z (SIGNAL, OUTPUT, id=6)
+    - buf/A (SIGNAL, INPUT, id=1)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(52, 0x5b23c7007ac0) 'new_buf1/A' to dbNet(2, 0x5b23c701a550) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(53, 0x5b23c7007b08) 'new_buf1/Z' to dbNet(12, 0x5b23c701aa00) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(53 0x5b23c7007b08) 'new_buf1/Z' to dbModNet(19 0x5b23c7021830) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/4] Creating hierarchical connection for load 'h0/mem/w_mask_in[0]'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(9 0x5b23c7006ea8) 'h0/mem/w_mask_in[0]' from dbNet(3 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm h0_in at id 1 from dbModNet n2 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c7006ea8) 'h0/mem/w_mask_in[0]' to dbNet(12, 0x5b23c701aa00) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/4] Creating hierarchical connection for load 'h0/mem/w_mask_in[1]'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(10 0x5b23c7006ef0) 'h0/mem/w_mask_in[1]' from dbNet(3 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm h0_in at id 1 from dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(10, 0x5b23c7006ef0) 'h0/mem/w_mask_in[1]' to dbNet(12, 0x5b23c701aa00) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 3/4] Creating hierarchical connection for load 'h0/mem/w_mask_in[2]'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(11 0x5b23c7006f38) 'h0/mem/w_mask_in[2]' from dbNet(3 0x5b23c701a5c8) 'n2'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm h0_in at id 1 from dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(11, 0x5b23c7006f38) 'h0/mem/w_mask_in[2]' to dbNet(12, 0x5b23c701aa00) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 4/4] Creating hierarchical connection for load 'load0/A'
-[DEBUG ODB-DB_ECO] disconnect dbITerm(41, 0x5b23c70077a8) 'load0/A' from dbNet(2, 0x5b23c701a550) 'n1' corresponding to dbModNet(0, 0x0) 'NULL'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(41 0x5b23c70077a8) 'load0/A' to dbModNet(19 0x5b23c7021830) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(41, 0x5b23c70077a8) 'load0/A' to dbNet(12, 0x5b23c701aa00) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (115, 4926)
 Compare TestInsertBuffer_BeforeLoads_Case19_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case19_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case19 (499 ms)
+[       OK ] TestInsertBuffer.BeforeLoads_Case19 (114 ms)
 [ RUN      ] TestInsertBuffer.BeforeLoads_Case20
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbModule top at id 1
 [INFO ODB-0227] LEF file: /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/test/Nangate45/fakeram45_64x7.lef, created 1 library cells
-[DEBUG ODB-DB_ECO] ECO: create dbInst(1, 0x5b23c96e9b40) 'drvr' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule H0 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h0 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h0_in at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModule H1 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h1 at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h1_in at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h1_in at id 2
-[DEBUG ODB-DB_ECO] ECO: create dbInst(2, 0x5b23c96e9bb0) 'h0/h1/load1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(3, 0x5b23c96e9c20) 'h0/h1/nontarget0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(4, 0x5b23c96e9c90) 'h0/h1/nontarget1' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(5, 0x5b23c96e9d00) 'h0/h1/nontarget2' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(6, 0x5b23c96e9d70) 'h0/load0' master 'BUF_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbModule H2 at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModInst h2 at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_in at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out[6] at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out[5] at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out[4] at id 7
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out[3] at id 8
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out[2] at id 9
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out[1] at id 10
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm h2_rd_out[0] at id 11
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_in at id 3
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_rd_out[6] at id 4
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_rd_out[5] at id 5
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_rd_out[4] at id 6
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_rd_out[3] at id 7
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_rd_out[2] at id 8
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_rd_out[1] at id 9
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm h2_rd_out[0] at id 10
-[DEBUG ODB-DB_ECO] ECO: create dbInst(7, 0x5b23c96e9de0) 'h2/h2_tie0' master 'LOGIC0_X1'
-[DEBUG ODB-DB_ECO] ECO: create dbInst(8, 0x5b23c96e9e50) 'h2/mem' master 'fakeram45_64x7'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(1, 0x5b23c9719488) 'in'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'in' on dbNet(1, 0x5b23c9719488) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(1 0x5b23c971d098) 'in' to dbNet(1 0x5b23c9719488) 'in'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(1, 0x5b23c97047f8) 'drvr/A' to dbNet(1, 0x5b23c9719488) 'in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2, 0x5b23c9704840) 'drvr/Z' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9704918) 'h0/h1/load1/A' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9, 0x5b23c9704a38) 'h0/h1/nontarget0/A' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13, 0x5b23c9704b58) 'h0/h1/nontarget1/A' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17, 0x5b23c9704c78) 'h0/h1/nontarget2/A' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c9704d98) 'h0/load0/A' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(55, 0x5b23c9705728) 'h2/mem/we_in' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(3, 0x5b23c9719578) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[0]' on dbNet(3, 0x5b23c9719578) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c971d100) 'rd_out[0]' to dbNet(3 0x5b23c9719578) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(35, 0x5b23c9705188) 'h2/mem/rd_out[0]' to dbNet(3, 0x5b23c9719578) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(4, 0x5b23c97195f0) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[1]' on dbNet(4, 0x5b23c97195f0) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(3 0x5b23c971d168) 'rd_out[1]' to dbNet(4 0x5b23c97195f0) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(36, 0x5b23c97051d0) 'h2/mem/rd_out[1]' to dbNet(4, 0x5b23c97195f0) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(5, 0x5b23c9719668) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[2]' on dbNet(5, 0x5b23c9719668) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(4 0x5b23c971d1d0) 'rd_out[2]' to dbNet(5 0x5b23c9719668) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(37, 0x5b23c9705218) 'h2/mem/rd_out[2]' to dbNet(5, 0x5b23c9719668) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(6, 0x5b23c97196e0) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[3]' on dbNet(6, 0x5b23c97196e0) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(5 0x5b23c971d238) 'rd_out[3]' to dbNet(6 0x5b23c97196e0) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(38, 0x5b23c9705260) 'h2/mem/rd_out[3]' to dbNet(6, 0x5b23c97196e0) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(7, 0x5b23c9719758) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[4]' on dbNet(7, 0x5b23c9719758) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(6 0x5b23c971d2a0) 'rd_out[4]' to dbNet(7 0x5b23c9719758) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(39, 0x5b23c97052a8) 'h2/mem/rd_out[4]' to dbNet(7, 0x5b23c9719758) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(8, 0x5b23c97197d0) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[5]' on dbNet(8, 0x5b23c97197d0) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(7 0x5b23c971d308) 'rd_out[5]' to dbNet(8 0x5b23c97197d0) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(40, 0x5b23c97052f0) 'h2/mem/rd_out[5]' to dbNet(8, 0x5b23c97197d0) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(9, 0x5b23c9719848) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: create dbBTerm 'rd_out[6]' on dbNet(9, 0x5b23c9719848) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(8 0x5b23c971d370) 'rd_out[6]' to dbNet(9 0x5b23c9719848) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(41, 0x5b23c9705338) 'h2/mem/rd_out[6]' to dbNet(9, 0x5b23c9719848) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(25, 0x5b23c9704eb8) 'h2/h2_tie0/Z' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(49, 0x5b23c9705578) 'h2/mem/addr_in[0]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(50, 0x5b23c97055c0) 'h2/mem/addr_in[1]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(51, 0x5b23c9705608) 'h2/mem/addr_in[2]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(52, 0x5b23c9705650) 'h2/mem/addr_in[3]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(53, 0x5b23c9705698) 'h2/mem/addr_in[4]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(54, 0x5b23c97056e0) 'h2/mem/addr_in[5]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(56, 0x5b23c9705770) 'h2/mem/ce_in' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(57, 0x5b23c97057b8) 'h2/mem/clk' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(28, 0x5b23c9704f90) 'h2/mem/w_mask_in[0]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(29, 0x5b23c9704fd8) 'h2/mem/w_mask_in[1]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(30, 0x5b23c9705020) 'h2/mem/w_mask_in[2]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(31, 0x5b23c9705068) 'h2/mem/w_mask_in[3]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(32, 0x5b23c97050b0) 'h2/mem/w_mask_in[4]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(33, 0x5b23c97050f8) 'h2/mem/w_mask_in[5]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(34, 0x5b23c9705140) 'h2/mem/w_mask_in[6]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(42, 0x5b23c9705380) 'h2/mem/wd_in[0]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(43, 0x5b23c97053c8) 'h2/mem/wd_in[1]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(44, 0x5b23c9705410) 'h2/mem/wd_in[2]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(45, 0x5b23c9705458) 'h2/mem/wd_in[3]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(46, 0x5b23c97054a0) 'h2/mem/wd_in[4]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(47, 0x5b23c97054e8) 'h2/mem/wd_in[5]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(48, 0x5b23c9705530) 'h2/mem/wd_in[6]' to dbNet(10, 0x5b23c97198c0) 'h2/h2_tie'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(2 0x5b23c9704840) 'drvr/Z' to dbModNet(1 0x5b23c9720480) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0_in at id 1 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_in at id 3 to dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h0_in at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0/h1/h1_in at id 2 to dbModNet h0/h0_in at id 2
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21 0x5b23c9704d98) 'h0/load0/A' to dbModNet(2 0x5b23c97204b0) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (1 0x5b23c96f0750) 'h0/h0_in' to modnet (2 0x5b23c97204b0) 'h0/h0_in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h1_in at id 3
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9704918) 'h0/h1/load1/A' to dbModNet(3 0x5b23c97204e0) 'h0/h1/h1_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(9 0x5b23c9704a38) 'h0/h1/nontarget0/A' to dbModNet(3 0x5b23c97204e0) 'h0/h1/h1_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(13 0x5b23c9704b58) 'h0/h1/nontarget1/A' to dbModNet(3 0x5b23c97204e0) 'h0/h1/h1_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(17 0x5b23c9704c78) 'h0/h1/nontarget2/A' to dbModNet(3 0x5b23c97204e0) 'h0/h1/h1_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (2 0x5b23c96f0790) 'h0/h1/h1_in' to modnet (3 0x5b23c97204e0) 'h0/h1/h1_in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_in at id 4
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(55 0x5b23c9705728) 'h2/mem/we_in' to dbModNet(4 0x5b23c9720510) 'h2/h2_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (3 0x5b23c96f07d0) 'h2/h2_in' to modnet (4 0x5b23c9720510) 'h2/h2_in'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[6] at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_rd_out[6] at id 4 to dbModNet rd_out[6] at id 5
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(8 0x5b23c971d370) 'rd_out[6]' to dbModNet(5 0x5b23c9720540) 'rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_rd_out[6] at id 6
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(41 0x5b23c9705338) 'h2/mem/rd_out[6]' to dbModNet(6 0x5b23c9720570) 'h2/h2_rd_out[6]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (5 0x5b23c96f0850) 'h2/h2_rd_out[6]' to modnet (6 0x5b23c9720570) 'h2/h2_rd_out[6]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[5] at id 7
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_rd_out[5] at id 5 to dbModNet rd_out[5] at id 7
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(7 0x5b23c971d308) 'rd_out[5]' to dbModNet(7 0x5b23c97205a0) 'rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_rd_out[5] at id 8
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(40 0x5b23c97052f0) 'h2/mem/rd_out[5]' to dbModNet(8 0x5b23c97205d0) 'h2/h2_rd_out[5]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (6 0x5b23c96f0890) 'h2/h2_rd_out[5]' to modnet (8 0x5b23c97205d0) 'h2/h2_rd_out[5]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[4] at id 9
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_rd_out[4] at id 6 to dbModNet rd_out[4] at id 9
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(6 0x5b23c971d2a0) 'rd_out[4]' to dbModNet(9 0x5b23c9720600) 'rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_rd_out[4] at id 10
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(39 0x5b23c97052a8) 'h2/mem/rd_out[4]' to dbModNet(10 0x5b23c9720630) 'h2/h2_rd_out[4]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (7 0x5b23c96f08d0) 'h2/h2_rd_out[4]' to modnet (10 0x5b23c9720630) 'h2/h2_rd_out[4]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[3] at id 11
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_rd_out[3] at id 7 to dbModNet rd_out[3] at id 11
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(5 0x5b23c971d238) 'rd_out[3]' to dbModNet(11 0x5b23c9720660) 'rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_rd_out[3] at id 12
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(38 0x5b23c9705260) 'h2/mem/rd_out[3]' to dbModNet(12 0x5b23c9720690) 'h2/h2_rd_out[3]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (8 0x5b23c96f0910) 'h2/h2_rd_out[3]' to modnet (12 0x5b23c9720690) 'h2/h2_rd_out[3]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[2] at id 13
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_rd_out[2] at id 8 to dbModNet rd_out[2] at id 13
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(4 0x5b23c971d1d0) 'rd_out[2]' to dbModNet(13 0x5b23c97206c0) 'rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_rd_out[2] at id 14
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(37 0x5b23c9705218) 'h2/mem/rd_out[2]' to dbModNet(14 0x5b23c97206f0) 'h2/h2_rd_out[2]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (9 0x5b23c96f0950) 'h2/h2_rd_out[2]' to modnet (14 0x5b23c97206f0) 'h2/h2_rd_out[2]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[1] at id 15
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_rd_out[1] at id 9 to dbModNet rd_out[1] at id 15
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(3 0x5b23c971d168) 'rd_out[1]' to dbModNet(15 0x5b23c9720720) 'rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_rd_out[1] at id 16
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(36 0x5b23c97051d0) 'h2/mem/rd_out[1]' to dbModNet(16 0x5b23c9720750) 'h2/h2_rd_out[1]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (10 0x5b23c96f0990) 'h2/h2_rd_out[1]' to modnet (16 0x5b23c9720750) 'h2/h2_rd_out[1]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet rd_out[0] at id 17
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_rd_out[0] at id 10 to dbModNet rd_out[0] at id 17
-[DEBUG ODB-DB_ECO] ECO: connect dbBTerm(2 0x5b23c971d100) 'rd_out[0]' to dbModNet(17 0x5b23c9720780) 'rd_out[0]'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet h2_rd_out[0] at id 18
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(35 0x5b23c9705188) 'h2/mem/rd_out[0]' to dbModNet(18 0x5b23c97207b0) 'h2/h2_rd_out[0]'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (11 0x5b23c96f09d0) 'h2/h2_rd_out[0]' to modnet (18 0x5b23c97207b0) 'h2/h2_rd_out[0]'
 [DEBUG ODB-insert_buffer] BeforeLoads: on dbNet=n1, load_pins_size=3, buffer_master=BUF_X4, loc=(-1, -1), base_name=new_buf, uniquify=0, loads_on_same_db_net=false
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/h1/load1/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h0/load0/A
 [DEBUG ODB-insert_buffer] BeforeLoads:   target load pin: h2/mem/we_in
 [DEBUG ODB-insert_buffer] BeforeLoads: LCA module: top
-[DEBUG ODB-DB_ECO] ECO: create dbInst(9, 0x5b23c96e9ec0) 'new_buf1' master 'BUF_X4'
-[DEBUG ODB-DB_ECO] ECO: create dbNet(11, 0x5b23c9719938) 'net1'
+--------------------------------------------------
+dbNet: n1 (id=2)
+  Parent Block: top (id=1)
+  SigType: SIGNAL
+  WireType: ROUTED
+  ITerms (7):
+    - h2/mem/we_in (SIGNAL, INPUT, id=55)
+    - h0/load0/A (SIGNAL, INPUT, id=21)
+    - h0/h1/nontarget2/A (SIGNAL, INPUT, id=17)
+    - h0/h1/nontarget1/A (SIGNAL, INPUT, id=13)
+    - h0/h1/nontarget0/A (SIGNAL, INPUT, id=9)
+    - h0/h1/load1/A (SIGNAL, INPUT, id=5)
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: n1 (id=1)
+  Parent Module: top (id=1)
+  ModITerms (2):
+    - h2_in (SIGNAL, INPUT, id=3)
+    - h0_in (SIGNAL, INPUT, id=1)
+  ModBTerms (0):
+  ITerms (1):
+    - drvr/Z (SIGNAL, OUTPUT, id=2)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: h0_in (id=2)
+  Parent Module: H0 (id=2)
+  ModITerms (1):
+    - h0/h1/h1_in (SIGNAL, INPUT, id=2)
+  ModBTerms (1):
+    - h0/h0_in (SIGNAL, INPUT, id=1)
+  ITerms (1):
+    - h0/load0/A (SIGNAL, INPUT, id=21)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: h1_in (id=3)
+  Parent Module: H1 (id=3)
+  ModITerms (0):
+  ModBTerms (1):
+    - h0/h1/h1_in (SIGNAL, INPUT, id=2)
+  ITerms (4):
+    - h0/h1/nontarget2/A (SIGNAL, INPUT, id=17)
+    - h0/h1/nontarget1/A (SIGNAL, INPUT, id=13)
+    - h0/h1/nontarget0/A (SIGNAL, INPUT, id=9)
+    - h0/h1/load1/A (SIGNAL, INPUT, id=5)
+  BTerms (0):
+--------------------------------------------------
+--------------------------------------------------
+dbModNet: h2_in (id=4)
+  Parent Module: H2 (id=4)
+  ModITerms (0):
+  ModBTerms (1):
+    - h2/h2_in (SIGNAL, INPUT, id=3)
+  ITerms (1):
+    - h2/mem/we_in (SIGNAL, INPUT, id=55)
+  BTerms (0):
+--------------------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Creating new hierarchical net (dbModNet) with base name 'net1' in module 'top'
-[DEBUG ODB-DB_ECO] ECO: create dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(60, 0x5b23c9705890) 'new_buf1/A' to dbNet(2, 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original flat net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(60 0x5b23c9705890) 'new_buf1/A' to dbModNet(1 0x5b23c9720480) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer input 'new_buf1/A' to original hierarchical net 'n1'
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(61, 0x5b23c97058d8) 'new_buf1/Z' to dbNet(11, 0x5b23c9719938) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(61 0x5b23c97058d8) 'new_buf1/Z' to dbModNet(19 0x5b23c97207e0) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Connected buffer output 'new_buf1/Z' to new flat net 'net1' and new hierarchical net 'net1'
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 1/3] Creating hierarchical connection for load 'h0/h1/load1/A'
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm n1_i at id 12
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1_i at id 20
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (12 0x5b23c96f0a10) 'h0/h1/n1_i' to modnet (20 0x5b23c9720810) 'h0/h1/n1_i'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbIterm(5) 'h0/h1/load1/A' from dbModNet(3) 'h1_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5 0x5b23c9704918) 'h0/h1/load1/A' to dbModNet(20 0x5b23c9720810) 'h0/h1/n1_i'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm n1_i at id 11
-[DEBUG ODB-DB_ECO] ECO: create dbModBTerm n1_i at id 13
-[DEBUG ODB-DB_ECO] ECO: create dbModNet n1_i at id 21
-[DEBUG ODB-DB_ECO] ECO: connect modBterm (13 0x5b23c96f0a50) 'h0/n1_i' to modnet (21 0x5b23c9720840) 'h0/n1_i'
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h0/h1/n1_i at id 11 to dbModNet h0/n1_i at id 21
-[DEBUG ODB-DB_ECO] ECO: create dbModITerm n1_i at id 12
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(5 0x5b23c9704918) 'h0/h1/load1/A' from dbNet(2 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n1_i at id 12 to dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(5, 0x5b23c9704918) 'h0/h1/load1/A' to dbNet(11, 0x5b23c9719938) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 2/3] Creating hierarchical connection for load 'h0/load0/A'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbIterm(21) 'h0/load0/A' from dbModNet(2) 'h0_in'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21 0x5b23c9704d98) 'h0/load0/A' to dbModNet(21 0x5b23c9720840) 'h0/n1_i'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(21 0x5b23c9704d98) 'h0/load0/A' from dbNet(2 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm n1_i at id 12 from dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm n1_i at id 12 to dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(21, 0x5b23c9704d98) 'h0/load0/A' to dbNet(11, 0x5b23c9719938) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: [load 3/3] Creating hierarchical connection for load 'h2/mem/we_in'
-[DEBUG ODB-DB_ECO] ECO: disconnect dbITerm(55 0x5b23c9705728) 'h2/mem/we_in' from dbNet(2 0x5b23c9719500) 'n1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
-[DEBUG ODB-DB_ECO] ECO: disconnect dbModITerm h2_in at id 3 from dbModNet n1 at id 1
-[DEBUG ODB-DB_ECO] ECO: connect dbModITerm h2_in at id 3 to dbModNet net1 at id 19
-[DEBUG ODB-DB_ECO] ECO: connect dbITerm(55, 0x5b23c9705728) 'h2/mem/we_in' to dbNet(11, 0x5b23c9719938) 'net1'
-[DEBUG ODB-DB_ECO] ----------------------------------------
 [DEBUG ODB-insert_buffer] BeforeLoads: Placing buffer 'new_buf1' at (190, 29376)
 Compare TestInsertBuffer_BeforeLoads_Case20_out.v and /workspace/ws6_gem/OpenROAD-flow-scripts/tools/OpenROAD/src/rsz/test/cpp/TestInsertBuffer_BeforeLoads_Case20_post.v
-[       OK ] TestInsertBuffer.BeforeLoads_Case20 (504 ms)
-[----------] 23 tests from TestInsertBuffer (11422 ms total)
+[       OK ] TestInsertBuffer.BeforeLoads_Case20 (114 ms)
+[----------] 23 tests from TestInsertBuffer (2626 ms total)
 
 [----------] Global test environment tear-down
-[==========] 23 tests from 1 test suite ran. (11422 ms total)
+[==========] 23 tests from 1 test suite ran. (2626 ms total)
 [  PASSED  ] 23 tests.

@@ -3137,7 +3137,7 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
   return !modnet_set.empty();
 }
 
-void dbNet::dump() const
+void dbNet::dump(bool show_modnets) const
 {
   utl::Logger* logger = getImpl()->getLogger();
   logger->report("--------------------------------------------------");
@@ -3171,6 +3171,14 @@ void dbNet::dump() const
                    term->getId());
   }
   logger->report("--------------------------------------------------");
+
+  if (show_modnets) {
+    std::set<dbModNet*> modnets;
+    findRelatedModNets(modnets);
+    for (dbModNet* modnet : modnets) {
+      modnet->dump();
+    }
+  }
 }
 
 void _dbNet::collectMemInfo(MemInfo& info)
@@ -3816,6 +3824,11 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
              1,
              "BeforeLoads: LCA module: {}",
              target_module ? target_module->getName() : "null");
+
+  // Print net connectivities including both this flat and related hier nets
+  if (getImpl()->getLogger()->debugCheck(utl::ODB, "insert_buffer", 2)) {
+    dump(true);
+  }
 
   if (target_module == nullptr) {
     // Fallback to top module if something went wrong or loads are in top
