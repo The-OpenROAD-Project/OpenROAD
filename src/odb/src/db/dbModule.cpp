@@ -376,7 +376,7 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
                "ECO: create dbModule {} at id {}",
                module->name_,
                module->getId());
-    _block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    _block->_journal->beginAction(dbJournal::kCreateObject);
     _block->_journal->pushParam(dbModuleObj);
     _block->_journal->pushParam(module->name_);
     _block->_journal->pushParam(module->getId());
@@ -468,7 +468,7 @@ void dbModule::destroy(dbModule* module)
                "ECO: delete dbModule {} at id {}",
                module->getName(),
                module->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->beginAction(dbJournal::kDeleteObject);
     block->_journal->pushParam(dbModuleObj);
     block->_journal->pushParam(module->getName());
     block->_journal->pushParam(module->getId());

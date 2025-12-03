@@ -291,6 +291,10 @@ void _dbBPin::removeBox(_dbBox* box)
 {
   _dbBlock* block = (_dbBlock*) getOwner();
 
+  for (auto callback : block->_callbacks) {
+    callback->inDbBPinRemoveBox((dbBox*) box);
+  }
+
   dbId<_dbBox> boxid = box->getOID();
   if (boxid == boxes_) {
     // at head of list, need to move head

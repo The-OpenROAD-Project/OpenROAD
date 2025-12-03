@@ -115,25 +115,25 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
     stream >> type;
 
     switch (type) {
-      case _dbMarker::ShapeType::Point: {
+      case _dbMarker::ShapeType::kPoint: {
         Point pt;
         stream >> pt;
         obj.shapes_.push_back(pt);
         break;
       }
-      case _dbMarker::ShapeType::Line: {
+      case _dbMarker::ShapeType::kLine: {
         Line l;
         stream >> l;
         obj.shapes_.push_back(l);
         break;
       }
-      case _dbMarker::ShapeType::Rect: {
+      case _dbMarker::ShapeType::kRect: {
         Rect r;
         stream >> r;
         obj.shapes_.push_back(r);
         break;
       }
-      case _dbMarker::ShapeType::Polygon: {
+      case _dbMarker::ShapeType::kPolygon: {
         Polygon p;
         stream >> p;
         obj.shapes_.push_back(p);
@@ -167,16 +167,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
   stream << static_cast<int>(obj.shapes_.size());
   for (const dbMarker::MarkerShape& shape : obj.shapes_) {
     if (std::holds_alternative<Point>(shape)) {
-      stream << _dbMarker::ShapeType::Point;
+      stream << _dbMarker::ShapeType::kPoint;
       stream << std::get<Point>(shape);
     } else if (std::holds_alternative<Line>(shape)) {
-      stream << _dbMarker::ShapeType::Line;
+      stream << _dbMarker::ShapeType::kLine;
       stream << std::get<Line>(shape);
     } else if (std::holds_alternative<Rect>(shape)) {
-      stream << _dbMarker::ShapeType::Rect;
+      stream << _dbMarker::ShapeType::kRect;
       stream << std::get<Rect>(shape);
     } else {
-      stream << _dbMarker::ShapeType::Polygon;
+      stream << _dbMarker::ShapeType::kPolygon;
       stream << std::get<Polygon>(shape);
     }
   }

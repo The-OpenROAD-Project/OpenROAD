@@ -30,14 +30,14 @@ class _dbRSeg : public _dbObject
  public:
   enum Field  // dbJournal field names
   {
-    FLAGS,
-    SOURCE,
-    TARGET,
-    RESISTANCE,
-    CAPACITANCE,
-    COORDINATES,
-    ADDRSEGCAPACITANCE,
-    ADDRSEGRESISTANCE
+    kFlags,
+    kSource,
+    kTarget,
+    kResistance,
+    kCapacitance,
+    kCoordinates,
+    kAddRSegCapacitance,
+    kAddRSegResistance
   };
 
   // PERSISTANT-MEMBERS

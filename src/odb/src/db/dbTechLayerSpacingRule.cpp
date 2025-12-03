@@ -261,15 +261,15 @@ void dbTechLayerSpacingRule::setCutArea(uint area)
 bool dbTechLayerSpacingRule::isUnconditional() const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  return (_lsp->flags_._rule == _dbTechLayerSpacingRule::DEFAULT);
+  return (_lsp->flags_._rule == _dbTechLayerSpacingRule::kDefault);
 }
 
 bool dbTechLayerSpacingRule::getLengthThreshold(uint& threshold) const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
+  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
       && (_lsp->flags_._rule
-          != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)) {
+          != _dbTechLayerSpacingRule::kLengthThresholdRange)) {
     return false;
   }
 
@@ -281,7 +281,7 @@ bool dbTechLayerSpacingRule::getLengthThresholdRange(uint& rmin,
                                                      uint& rmax) const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE) {
+  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThresholdRange) {
     return false;
   }
 
@@ -292,12 +292,12 @@ bool dbTechLayerSpacingRule::getLengthThresholdRange(uint& rmin,
 bool dbTechLayerSpacingRule::hasRange() const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_ONLY)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE)
+  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeOnly)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeUseLength)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence)
       && (_lsp->flags_._rule
-          != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)) {
+          != _dbTechLayerSpacingRule::kRangeInfluenceRange)) {
     return false;
   }
   return true;
@@ -306,9 +306,9 @@ bool dbTechLayerSpacingRule::hasRange() const
 bool dbTechLayerSpacingRule::hasLengthThreshold() const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
+  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
       && (_lsp->flags_._rule
-          != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)) {
+          != _dbTechLayerSpacingRule::kLengthThresholdRange)) {
     return false;
   }
   return true;
@@ -341,12 +341,12 @@ bool dbTechLayerSpacingRule::hasSpacingEndOfNotchWidth() const
 bool dbTechLayerSpacingRule::getRange(uint& rmin, uint& rmax) const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_ONLY)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE)
+  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeOnly)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeUseLength)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence)
       && (_lsp->flags_._rule
-          != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)) {
+          != _dbTechLayerSpacingRule::kRangeInfluenceRange)) {
     return false;
   }
 
@@ -358,15 +358,15 @@ bool dbTechLayerSpacingRule::getRange(uint& rmin, uint& rmax) const
 bool dbTechLayerSpacingRule::hasUseLengthThreshold() const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  return (_lsp->flags_._rule == _dbTechLayerSpacingRule::RANGE_USELENGTH);
+  return (_lsp->flags_._rule == _dbTechLayerSpacingRule::kRangeUseLength);
 }
 
 bool dbTechLayerSpacingRule::getInfluence(uint& influence) const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE)
+  if ((_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence)
       && (_lsp->flags_._rule
-          != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)) {
+          != _dbTechLayerSpacingRule::kRangeInfluenceRange)) {
     return false;
   }
 
@@ -377,7 +377,7 @@ bool dbTechLayerSpacingRule::getInfluence(uint& influence) const
 bool dbTechLayerSpacingRule::getInfluenceRange(uint& rmin, uint& rmax) const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE) {
+  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluenceRange) {
     return false;
   }
 
@@ -389,7 +389,7 @@ bool dbTechLayerSpacingRule::getInfluenceRange(uint& rmin, uint& rmax) const
 bool dbTechLayerSpacingRule::getRangeRange(uint& rmin, uint& rmax) const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE) {
+  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange) {
     return false;
   }
 
@@ -405,7 +405,7 @@ bool dbTechLayerSpacingRule::getAdjacentCuts(uint& numcuts,
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
 
-  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE) {
+  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::kAdjacentCutsInfluence) {
     return false;
   }
 
@@ -419,7 +419,7 @@ bool dbTechLayerSpacingRule::getAdjacentCuts(uint& numcuts,
 bool dbTechLayerSpacingRule::getCutLayer4Spacing(dbTechLayer*& outly) const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::CUT_LAYER_BELOW) {
+  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::kCutLayerBelow) {
     return false;
   }
 
@@ -433,18 +433,18 @@ void dbTechLayerSpacingRule::setLengthThreshold(uint threshold)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   assert(
-      (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_ONLY)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::CUT_LAYER_BELOW)
+      (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeOnly)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeUseLength)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluenceRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kCutLayerBelow)
       && (_lsp->flags_._rule
-          != _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE));
+          != _dbTechLayerSpacingRule::kAdjacentCutsInfluence));
 
   // Not already LENGTHTHRESHOLD or LENGTHTHRESHOLD_RANGE
-  if (_lsp->flags_._rule == _dbTechLayerSpacingRule::DEFAULT) {
-    _lsp->flags_._rule = _dbTechLayerSpacingRule::LENGTHTHRESHOLD;
+  if (_lsp->flags_._rule == _dbTechLayerSpacingRule::kDefault) {
+    _lsp->flags_._rule = _dbTechLayerSpacingRule::kLengthThreshold;
   }
 
   _lsp->_length_or_influence = threshold;
@@ -453,14 +453,14 @@ void dbTechLayerSpacingRule::setLengthThreshold(uint threshold)
 void dbTechLayerSpacingRule::setLengthThresholdRange(uint rmin, uint rmax)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  assert((_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_ONLY)
-         && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE)
-         && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH)
-         && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE)
-         && (_lsp->flags_._rule
-             != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE));
+  assert(
+      (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeOnly)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeUseLength)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluenceRange));
 
-  _lsp->flags_._rule = _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE;
+  _lsp->flags_._rule = _dbTechLayerSpacingRule::kLengthThresholdRange;
   _lsp->_r2min = rmin;
   _lsp->_r2max = rmax;
 }
@@ -468,12 +468,12 @@ void dbTechLayerSpacingRule::setLengthThresholdRange(uint rmin, uint rmax)
 void dbTechLayerSpacingRule::setRange(uint rmin, uint rmax)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  assert((_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
+  assert((_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
          && (_lsp->flags_._rule
-             != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE));
+             != _dbTechLayerSpacingRule::kLengthThresholdRange));
 
-  if (_lsp->flags_._rule == _dbTechLayerSpacingRule::DEFAULT) {
-    _lsp->flags_._rule = _dbTechLayerSpacingRule::RANGE_ONLY;
+  if (_lsp->flags_._rule == _dbTechLayerSpacingRule::kDefault) {
+    _lsp->flags_._rule = _dbTechLayerSpacingRule::kRangeOnly;
   }
 
   _lsp->_r1min = rmin;
@@ -484,31 +484,30 @@ void dbTechLayerSpacingRule::setUseLengthThreshold()
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   assert(
-      (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE));
+      (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThresholdRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluenceRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence));
 
-  _lsp->flags_._rule = _dbTechLayerSpacingRule::RANGE_USELENGTH;
+  _lsp->flags_._rule = _dbTechLayerSpacingRule::kRangeUseLength;
 }
 
 void dbTechLayerSpacingRule::setInfluence(uint influence)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   assert(
-      (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::CUT_LAYER_BELOW)
-      && (_lsp->flags_._rule
-          != _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE));
+      (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThresholdRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeUseLength)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kCutLayerBelow)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kAdjacentCutsInfluence)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange));
 
   // Not already RANGE_INFLUENCE or RANGE_INFLUENCE_RANGE
-  if ((_lsp->flags_._rule == _dbTechLayerSpacingRule::DEFAULT)
-      || (_lsp->flags_._rule == _dbTechLayerSpacingRule::RANGE_ONLY)) {
-    _lsp->flags_._rule = _dbTechLayerSpacingRule::RANGE_INFLUENCE;
+  if ((_lsp->flags_._rule == _dbTechLayerSpacingRule::kDefault)
+      || (_lsp->flags_._rule == _dbTechLayerSpacingRule::kRangeOnly)) {
+    _lsp->flags_._rule = _dbTechLayerSpacingRule::kRangeInfluence;
   }
 
   _lsp->_length_or_influence = influence;
@@ -518,12 +517,12 @@ void dbTechLayerSpacingRule::setInfluenceRange(uint rmin, uint rmax)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   assert(
-      (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH));
+      (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThresholdRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeUseLength));
 
-  _lsp->flags_._rule = _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE;
+  _lsp->flags_._rule = _dbTechLayerSpacingRule::kRangeInfluenceRange;
   _lsp->_r2min = rmin;
   _lsp->_r2max = rmax;
 }
@@ -532,13 +531,13 @@ void dbTechLayerSpacingRule::setRangeRange(uint rmin, uint rmax)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   assert(
-      (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_USELENGTH));
+      (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThresholdRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluenceRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeUseLength));
 
-  _lsp->flags_._rule = _dbTechLayerSpacingRule::RANGE_RANGE;
+  _lsp->flags_._rule = _dbTechLayerSpacingRule::kRangeRange;
   _lsp->_r2min = rmin;
   _lsp->_r2max = rmax;
 }
@@ -552,23 +551,23 @@ void dbTechLayerSpacingRule::setEol(uint width,
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
   assert(
-      (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::LENGTHTHRESHOLD_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE_RANGE)
-      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::RANGE_INFLUENCE));
+      (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThreshold)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kLengthThresholdRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluenceRange)
+      && (_lsp->flags_._rule != _dbTechLayerSpacingRule::kRangeInfluence));
 
   _lsp->_r1min = width;
   _lsp->_r1max = within;
   if (!parallelEdge) {
-    _lsp->flags_._rule = _dbTechLayerSpacingRule::ENDOFLINE;
+    _lsp->flags_._rule = _dbTechLayerSpacingRule::kEndOfLine;
   } else {
     _lsp->_r2min = parallelSpace;
     _lsp->_r2max = parallelWithin;
     if (!twoEdges) {
-      _lsp->flags_._rule = _dbTechLayerSpacingRule::ENDOFLINE_PARALLEL;
+      _lsp->flags_._rule = _dbTechLayerSpacingRule::kEndOfLineParallel;
     } else {
-      _lsp->flags_._rule = _dbTechLayerSpacingRule::ENDOFLINE_PARALLEL_TWOEDGES;
+      _lsp->flags_._rule = _dbTechLayerSpacingRule::kEndOfLineParallelTwoEdges;
     }
   }
 }
@@ -582,10 +581,10 @@ bool dbTechLayerSpacingRule::getEol(uint& width,
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
 
-  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::ENDOFLINE
-      && _lsp->flags_._rule != _dbTechLayerSpacingRule::ENDOFLINE_PARALLEL
+  if (_lsp->flags_._rule != _dbTechLayerSpacingRule::kEndOfLine
+      && _lsp->flags_._rule != _dbTechLayerSpacingRule::kEndOfLineParallel
       && _lsp->flags_._rule
-             != _dbTechLayerSpacingRule::ENDOFLINE_PARALLEL_TWOEDGES) {
+             != _dbTechLayerSpacingRule::kEndOfLineParallelTwoEdges) {
     return false;
   }
 
@@ -594,7 +593,7 @@ bool dbTechLayerSpacingRule::getEol(uint& width,
   twoEdges = false;
   width = _lsp->_r1min;
   within = _lsp->_r1max;
-  if (_lsp->flags_._rule == _dbTechLayerSpacingRule::ENDOFLINE) {
+  if (_lsp->flags_._rule == _dbTechLayerSpacingRule::kEndOfLine) {
     parallelSpace = false;
     return true;
   }
@@ -602,7 +601,7 @@ bool dbTechLayerSpacingRule::getEol(uint& width,
   parallelSpace = _lsp->_r2min;
   parallelWithin = _lsp->_r2max;
   twoEdges = _lsp->flags_._rule
-             == _dbTechLayerSpacingRule::ENDOFLINE_PARALLEL_TWOEDGES;
+             == _dbTechLayerSpacingRule::kEndOfLineParallelTwoEdges;
   return true;
 }
 
@@ -625,11 +624,11 @@ void dbTechLayerSpacingRule::setAdjacentCuts(uint numcuts,
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
 
-  assert((_lsp->flags_._rule == _dbTechLayerSpacingRule::DEFAULT)
+  assert((_lsp->flags_._rule == _dbTechLayerSpacingRule::kDefault)
          || (_lsp->flags_._rule
-             == _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE));
+             == _dbTechLayerSpacingRule::kAdjacentCutsInfluence));
 
-  _lsp->flags_._rule = _dbTechLayerSpacingRule::ADJACENT_CUTS_INFLUENCE;
+  _lsp->flags_._rule = _dbTechLayerSpacingRule::kAdjacentCutsInfluence;
   _lsp->flags_._except_same_pgnet = except_same_pgnet;
   _lsp->_spacing = spacing;
   _lsp->_length_or_influence = within;
@@ -639,14 +638,14 @@ void dbTechLayerSpacingRule::setAdjacentCuts(uint numcuts,
 void dbTechLayerSpacingRule::setCutLayer4Spacing(dbTechLayer* cutly)
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  assert((_lsp->flags_._rule == _dbTechLayerSpacingRule::DEFAULT)
-         || (_lsp->flags_._rule == _dbTechLayerSpacingRule::CUT_LAYER_BELOW));
+  assert((_lsp->flags_._rule == _dbTechLayerSpacingRule::kDefault)
+         || (_lsp->flags_._rule == _dbTechLayerSpacingRule::kCutLayerBelow));
 
   [[maybe_unused]] dbTechLayer* tmply = (dbTechLayer*) _lsp->getOwner();
   assert(cutly->getNumber() < tmply->getNumber());
   _dbTechLayer* ct_ly = (_dbTechLayer*) cutly;
 
-  _lsp->flags_._rule = _dbTechLayerSpacingRule::CUT_LAYER_BELOW;
+  _lsp->flags_._rule = _dbTechLayerSpacingRule::kCutLayerBelow;
   _lsp->_cut_layer_below = ct_ly->getOID();
 }
 
@@ -715,7 +714,7 @@ void dbTechLayerSpacingRule::writeLef(lefout& writer) const
     }
   } else if (getLengthThreshold(length_or_influence)) {
     fmt::print(writer.out(),
-               "_dbTechLayerSpacingRule::LENGTHTHRESHOLD {:g} ",
+               "LENGTHTHRESHOLD {:g} ",
                writer.lefdist(length_or_influence));
     if (getLengthThresholdRange(rmin, rmax)) {
       fmt::print(writer.out(),
