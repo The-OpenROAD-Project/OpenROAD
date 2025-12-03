@@ -4892,7 +4892,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
   }
 
   // jk: dbg
-  sta_->checkSanityDrvrVertexEdges(buffer_inst->findITerm("Z"));
+  // sta_->checkSanityDrvrVertexEdges(buffer_inst->findITerm("Z"));
 
   return buffer_inst;
 }
