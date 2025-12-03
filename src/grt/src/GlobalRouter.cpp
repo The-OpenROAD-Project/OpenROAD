@@ -1893,8 +1893,28 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
 
   int track_space = grid_->getTrackPitches()[layer - 1];
 
-  const int layer_capacity = vertical ? vertical_capacities_[layer - 1]
-                                      : horizontal_capacities_[layer - 1];
+  const int first_cap = vertical
+                            ? fastroute_->getEdgeCapacity(first_tile.getX(),
+                                                          first_tile.getY(),
+                                                          first_tile.getX(),
+                                                          first_tile.getY() + 1,
+                                                          layer)
+                            : fastroute_->getEdgeCapacity(first_tile.getX(),
+                                                          first_tile.getY(),
+                                                          first_tile.getX() + 1,
+                                                          first_tile.getY(),
+                                                          layer);
+  const int last_cap = vertical
+                           ? fastroute_->getEdgeCapacity(last_tile.getX(),
+                                                         last_tile.getY(),
+                                                         last_tile.getX(),
+                                                         last_tile.getY() + 1,
+                                                         layer)
+                           : fastroute_->getEdgeCapacity(last_tile.getX(),
+                                                         last_tile.getY(),
+                                                         last_tile.getX() + 1,
+                                                         last_tile.getY(),
+                                                         layer);
 
   interval<int>::type first_tile_reduce_interval
       = grid_->computeTileReduceInterval(obstruction_rect,
@@ -1902,7 +1922,7 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          track_space,
                                          true,
                                          tech_layer->getDirection(),
-                                         layer_capacity,
+                                         first_cap,
                                          is_macro);
   interval<int>::type last_tile_reduce_interval
       = grid_->computeTileReduceInterval(obstruction_rect,
@@ -1910,7 +1930,7 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
                                          track_space,
                                          false,
                                          tech_layer->getDirection(),
-                                         layer_capacity,
+                                         last_cap,
                                          is_macro);
 
   int grid_limit = vertical ? grid_->getYGrids() : grid_->getXGrids();
