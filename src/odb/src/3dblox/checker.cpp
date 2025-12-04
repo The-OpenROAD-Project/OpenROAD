@@ -54,7 +54,7 @@ void Checker::unfoldChip(odb::dbChipInst* chip_inst, UnfoldedChip unfolded_chip)
   } else {
     // calculate the cuboid of the chip
     unfolded_chip.cuboid = chip_inst->getMasterChip()->getCuboid();
-    for (auto chip_inst : unfolded_chip.chip_inst_path) {
+    for (auto chip_inst : std::views::reverse(unfolded_chip.chip_inst_path)) {
       chip_inst->getTransform().apply(unfolded_chip.cuboid);
     }
     debugPrint(

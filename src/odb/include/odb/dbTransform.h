@@ -17,10 +17,6 @@ class dbIStream;
 //
 class dbTransform
 {
-  dbOrientType::Value orient_ = dbOrientType::R0;
-  Point3D offset_;
-  bool mirror_z_ = false;
-
  public:
   // T = <R0, (0,0,0), false>
   dbTransform() = default;
@@ -114,9 +110,9 @@ class dbTransform
 
  private:
   friend class _dbBlock;
-
   dbOrientType::Value orient_ = dbOrientType::R0;
-  Point offset_;
+  Point3D offset_;
+  bool mirror_z_ = false;
 };
 
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
