@@ -72,7 +72,7 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
  public slots:
   void loadReport(const QString& filename);
-  void setBlock(odb::dbBlock* block);
+  void setChip(odb::dbChip* chip);
   void clicked(const QModelIndex& index);
   void doubleClicked(const QModelIndex& index);
   void selectReport();
@@ -103,7 +103,7 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
   ObjectTree* view_;
   DRCItemModel* model_;
 
-  odb::dbBlock* block_;
+  odb::dbChip* chip_;
 
   QComboBox* categories_;
   QPushButton* load_;

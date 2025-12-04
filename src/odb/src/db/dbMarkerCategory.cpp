@@ -471,31 +471,31 @@ void dbMarkerCategory::writeTR(std::ofstream& report) const
   obj->writeTR(report);
 }
 
-std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbBlock* block,
+std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbChip* chip,
                                                        const std::string& path)
 {
   std::ifstream report(path);
   if (!report.is_open()) {
-    _dbBlock* _block = (_dbBlock*) block;
-    utl::Logger* logger = _block->getLogger();
+    _dbChip* _chip = (_dbChip*) chip;
+    utl::Logger* logger = _chip->getLogger();
 
     logger->error(utl::ODB, 31, "Unable to open marker report: {}", path);
   }
 
   std::set<dbMarkerCategory*> categories
-      = fromJSON(block, path.c_str(), report);
+      = fromJSON(chip, path.c_str(), report);
 
   report.close();
 
   return categories;
 }
 
-std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbBlock* block,
+std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbChip* chip,
                                                        const char* source,
                                                        std::ifstream& report)
 {
-  _dbBlock* _block = (_dbBlock*) block;
-  utl::Logger* logger = _block->getLogger();
+  _dbChip* _chip = (_dbChip*) chip;
+  utl::Logger* logger = _chip->getLogger();
 
   _dbMarkerCategory::PropertyTree tree;
   try {
@@ -507,7 +507,7 @@ std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbBlock* block,
   std::set<dbMarkerCategory*> categories;
   for (const auto& [name, subtree] : tree) {
     dbMarkerCategory* top_category
-        = dbMarkerCategory::createOrReplace(block, name.c_str());
+        = dbMarkerCategory::createOrReplace(chip, name.c_str());
     categories.insert(top_category);
     _dbMarkerCategory* top_category_ = (_dbMarkerCategory*) top_category;
 
@@ -517,36 +517,36 @@ std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbBlock* block,
   return categories;
 }
 
-dbMarkerCategory* dbMarkerCategory::fromTR(dbBlock* block,
+dbMarkerCategory* dbMarkerCategory::fromTR(dbChip* chip,
                                            const char* name,
                                            const std::string& path)
 {
   std::ifstream report(path);
   if (!report.is_open()) {
-    _dbBlock* _block = (_dbBlock*) block;
-    utl::Logger* logger = _block->getLogger();
+    _dbChip* _chip = (_dbChip*) chip;
+    utl::Logger* logger = _chip->getLogger();
 
     logger->error(
         utl::ODB, 30, "Unable to open TritonRoute DRC report: {}", path);
   }
 
-  dbMarkerCategory* category = fromTR(block, name, path.c_str(), report);
+  dbMarkerCategory* category = fromTR(chip, name, path.c_str(), report);
 
   report.close();
 
   return category;
 }
 
-dbMarkerCategory* dbMarkerCategory::fromTR(dbBlock* block,
+dbMarkerCategory* dbMarkerCategory::fromTR(dbChip* chip,
                                            const char* name,
                                            const char* source,
                                            std::ifstream& report)
 {
-  dbMarkerCategory* marker_category = createOrReplace(block, name);
+  dbMarkerCategory* marker_category = createOrReplace(chip, name);
   marker_category->setSource(source);
 
-  _dbBlock* _block = (_dbBlock*) block;
-  utl::Logger* logger = _block->getLogger();
+  _dbChip* _chip = (_dbChip*) chip;
+  utl::Logger* logger = _chip->getLogger();
 
   const std::regex violation_type("\\s*violation type: (.*)");
   const boost::regex srcs("\\s*srcs: (.*)");
@@ -556,7 +556,8 @@ dbMarkerCategory* dbMarkerCategory::fromTR(dbBlock* block,
       "\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)\\s*-\\s*\\(\\s*(.*),\\s*(.*)\\s*\\)");
 
   int line_number = 0;
-  dbTech* tech = block->getTech();
+  dbTech* tech = chip->getTech();
+  dbBlock* block = chip->getBlock();
   while (!report.eof()) {
     std::string line;
     std::smatch base_match;
@@ -823,17 +824,23 @@ dbMarkerCategory* dbMarkerCategory::createOrReplace(dbChip* chip,
   return create(chip, name);
 }
 
+// For compatibility purposes only, Markers are now stored on the chip
+// This should be removed in the future
 dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
 {
   return create(block->getChip(), name);
 }
 
+// For compatibility purposes only, Markers are now stored on the chip
+// This should be removed in the future
 dbMarkerCategory* dbMarkerCategory::createOrGet(dbBlock* block,
                                                 const char* name)
 {
   return createOrGet(block->getChip(), name);
 }
 
+// For compatibility purposes only, Markers are now stored on the chip
+// This should be removed in the future
 dbMarkerCategory* dbMarkerCategory::createOrReplace(dbBlock* block,
                                                     const char* name)
 {
