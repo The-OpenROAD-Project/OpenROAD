@@ -8,14 +8,14 @@
       "flags":["cmpgt", "no-set"]
     },
     {
-      "name": "loc_",
+      "name": "origin_",
       "type": "Point3D",
-      "flags":["cmpgt", "set-const-ref"]
+      "flags":["cmpgt", "private"]
     },
     {
       "name": "orient_",
       "type": "dbOrientType3D",
-      "flags": []
+      "flags": ["no-set"]
     },
     {
       "name": "master_chip_",

@@ -160,8 +160,9 @@ void dbTransform::invert(dbTransform& result) const
       throw std::runtime_error("Unknown orientation");
   }
 
-  result._offset = offset;
+  result._offset = Point3D(offset, mirror_z_ ? _offset.z() : -_offset.z());
   result._orient = orient;
+  result.mirror_z_ = mirror_z_;
 }
 
 void dbTransform::apply(Point& p) const
@@ -205,6 +206,21 @@ void dbTransform::apply(Point& p) const
   p.addY(_offset.y());
 }
 
+void dbTransform::apply(Point3D& p) const
+{
+  Point p2d(p.x(), p.y());
+  apply(p2d);
+
+  int z = p.z();
+  if (mirror_z_) {
+    z = -z;
+  }
+
+  p.setX(p2d.x());
+  p.setY(p2d.y());
+  p.setZ(z + _offset.z());
+}
+
 void dbTransform::apply(Rect& r) const
 {
   Point ll = r.ll();
@@ -212,6 +228,15 @@ void dbTransform::apply(Rect& r) const
   apply(ll);
   apply(ur);
   r.init(ll.x(), ll.y(), ur.x(), ur.y());
+}
+
+void dbTransform::apply(Cuboid& c) const
+{
+  Point3D lll = c.lll();
+  Point3D uur = c.uur();
+  apply(lll);
+  apply(uur);
+  c.init(lll.x(), lll.y(), lll.z(), uur.x(), uur.y(), uur.z());
 }
 
 void dbTransform::apply(Polygon& p) const
@@ -228,6 +253,7 @@ void dbTransform::concat(const dbTransform& t, dbTransform& result)
   result._offset = _offset;
   t.apply(result._offset);
   result._orient = orientMul[_orient][t._orient];
+  result.mirror_z_ = mirror_z_ ^ t.mirror_z_;
 }
 
 }  // namespace odb

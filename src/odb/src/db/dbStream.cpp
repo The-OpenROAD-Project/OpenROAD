@@ -184,6 +184,13 @@ std::ostream& operator<<(std::ostream& os, const Point3D& pIn)
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const Cuboid& cIn)
+{
+  os << "( " << cIn.xMin() << " " << cIn.yMin() << " " << cIn.zMin() << " ) ( "
+     << cIn.xMax() << " " << cIn.yMax() << " " << cIn.zMax() << " )";
+  return os;
+}
+
 std::ostream& operator<<(std::ostream& os, const Orientation2D& ori)
 {
   if (ori == horizontal) {
