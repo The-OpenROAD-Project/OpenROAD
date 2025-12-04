@@ -18,8 +18,8 @@ class dbIStream;
 class dbTransform
 {
   friend class _dbBlock;
-  dbOrientType::Value _orient = dbOrientType::R0;
-  Point3D _offset;
+  dbOrientType::Value orient_ = dbOrientType::R0;
+  Point3D offset_;
   bool mirror_z_ = false;
 
  public:
@@ -27,57 +27,57 @@ class dbTransform
   dbTransform() = default;
 
   //  T = <R0, (offset,0), false>
-  dbTransform(const Point offset) : _offset(offset, 0) {}
+  dbTransform(const Point offset) : offset_(offset, 0) {}
 
   //  T = <R0, offset, false>
-  dbTransform(const Point3D& offset) : _offset(offset) {}
+  dbTransform(const Point3D& offset) : offset_(offset) {}
 
   //  T = <orient, (0,0,0), false>
-  dbTransform(const dbOrientType orient) : _orient(orient) {}
+  dbTransform(const dbOrientType orient) : orient_(orient) {}
 
   //  T = <orient, (0,0,0), orient.mirror_z_>
   dbTransform(const dbOrientType3D& orient)
-      : _orient(orient.getOrientType2D()), mirror_z_(orient.isMirrorZ())
+      : orient_(orient.getOrientType2D()), mirror_z_(orient.isMirrorZ())
   {
   }
 
   //  T = <orient, (offset,0), false>
   dbTransform(const dbOrientType orient, const Point& offset)
-      : _orient(orient), _offset(offset, 0)
+      : orient_(orient), offset_(offset, 0)
   {
   }
 
   dbTransform(const dbOrientType3D orient, const Point3D& offset)
-      : _orient(orient.getOrientType2D()),
-        _offset(offset),
+      : orient_(orient.getOrientType2D()),
+        offset_(offset),
         mirror_z_(orient.isMirrorZ())
   {
   }
 
   bool operator==(const dbTransform& t) const
   {
-    return (_orient == t._orient) && (_offset == t._offset)
+    return (orient_ == t.orient_) && (offset_ == t.offset_)
            && (mirror_z_ == t.mirror_z_);
   }
 
   bool operator!=(const dbTransform& t) const { return !operator==(t); }
 
-  void setOrient(const dbOrientType orient) { _orient = orient; }
+  void setOrient(const dbOrientType orient) { orient_ = orient; }
 
   void setOrient(const dbOrientType3D& orient)
   {
-    _orient = orient.getOrientType2D();
+    orient_ = orient.getOrientType2D();
     mirror_z_ = orient.isMirrorZ();
   }
 
-  void setOffset(const Point offset) { _offset = Point3D(offset, 0); }
+  void setOffset(const Point offset) { offset_ = Point3D(offset, 0); }
 
-  void setOffset(const Point3D& offset) { _offset = offset; }
+  void setOffset(const Point3D& offset) { offset_ = offset; }
 
   void setTransform(const dbOrientType orient, const Point& offset)
   {
-    _orient = orient;
-    _offset = Point3D(offset, 0);
+    orient_ = orient;
+    offset_ = Point3D(offset, 0);
   }
 
   // Apply transform to this point
@@ -107,8 +107,8 @@ class dbTransform
   // Compute inverse transform
   void invert();
 
-  dbOrientType getOrient() const { return _orient; }
-  Point getOffset() const { return Point(_offset.x(), _offset.y()); }
+  dbOrientType getOrient() const { return orient_; }
+  Point getOffset() const { return Point(offset_.x(), offset_.y()); }
 
   friend dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
   friend dbIStream& operator>>(dbIStream& stream, dbTransform& t);

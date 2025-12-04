@@ -81,8 +81,8 @@ static const dbOrientType::Value orientMul[8][8] = {{dbOrientType::R0,
 
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t)
 {
-  stream << (int) t._orient;
-  stream << t._offset;
+  stream << (int) t.orient_;
+  stream << t.offset_;
   return stream;
 }
 
@@ -90,8 +90,8 @@ dbIStream& operator>>(dbIStream& stream, dbTransform& t)
 {
   int orient;
   stream >> orient;
-  t._orient = (dbOrientType::Value) orient;
-  stream >> t._offset;
+  t.orient_ = (dbOrientType::Value) orient;
+  stream >> t.offset_;
   return stream;
 }
 
@@ -112,10 +112,10 @@ dbIStream& operator>>(dbIStream& stream, dbTransform& t)
 //
 void dbTransform::invert(dbTransform& result) const
 {
-  Point offset(-_offset.x(), -_offset.y());
+  Point offset(-offset_.x(), -offset_.y());
   dbOrientType::Value orient;
 
-  switch (_orient) {
+  switch (orient_) {
     case dbOrientType::R0:
       orient = dbOrientType::R0;
       break;
@@ -160,14 +160,14 @@ void dbTransform::invert(dbTransform& result) const
       throw std::runtime_error("Unknown orientation");
   }
 
-  result._offset = Point3D(offset, mirror_z_ ? _offset.z() : -_offset.z());
-  result._orient = orient;
+  result.offset_ = Point3D(offset, mirror_z_ ? offset_.z() : -offset_.z());
+  result.orient_ = orient;
   result.mirror_z_ = mirror_z_;
 }
 
 void dbTransform::apply(Point& p) const
 {
-  switch (_orient) {
+  switch (orient_) {
     case dbOrientType::R0:
       break;
 
@@ -202,8 +202,8 @@ void dbTransform::apply(Point& p) const
       break;
   }
 
-  p.addX(_offset.x());
-  p.addY(_offset.y());
+  p.addX(offset_.x());
+  p.addY(offset_.y());
 }
 
 void dbTransform::apply(Point3D& p) const
@@ -218,7 +218,7 @@ void dbTransform::apply(Point3D& p) const
 
   p.setX(p2d.x());
   p.setY(p2d.y());
-  p.setZ(z + _offset.z());
+  p.setZ(z + offset_.z());
 }
 
 void dbTransform::apply(Rect& r) const
@@ -250,9 +250,9 @@ void dbTransform::apply(Polygon& p) const
 
 void dbTransform::concat(const dbTransform& t, dbTransform& result)
 {
-  result._offset = _offset;
-  t.apply(result._offset);
-  result._orient = orientMul[_orient][t._orient];
+  result.offset_ = offset_;
+  t.apply(result.offset_);
+  result.orient_ = orientMul[orient_][t.orient_];
   result.mirror_z_ = mirror_z_ ^ t.mirror_z_;
 }
 
