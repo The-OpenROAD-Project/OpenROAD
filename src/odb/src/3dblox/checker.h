@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "odb/3dblox.h"
 #include "odb/geom.h"

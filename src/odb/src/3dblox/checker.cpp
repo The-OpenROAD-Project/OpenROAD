@@ -17,7 +17,7 @@ namespace odb {
 
 std::string UnfoldedChip::getName() const
 {
-  std::string name = "";
+  std::string name;
   int index = 0;
   for (auto chip_inst : chip_inst_path) {
     name += chip_inst->getName();
@@ -54,7 +54,7 @@ void Checker::unfoldChip(odb::dbChipInst* chip_inst, UnfoldedChip unfolded_chip)
   } else {
     // calculate the cuboid of the chip
     unfolded_chip.cuboid = chip_inst->getMasterChip()->getCuboid();
-    for (auto chip_inst : std::views::reverse(unfolded_chip.chip_inst_path)) {
+    for (auto chip_inst : unfolded_chip.chip_inst_path | std::views::reverse) {
       chip_inst->getTransform().apply(unfolded_chip.cuboid);
     }
     debugPrint(
@@ -134,12 +134,11 @@ void Checker::checkFloatingChips(odb::dbMarkerCategory* category)
       insts_sets.emplace_back(chips);
     }
 
-    std::sort(insts_sets.begin(),
-              insts_sets.end(),
-              [](const std::vector<UnfoldedChip*>& a,
-                 const std::vector<UnfoldedChip*>& b) {
-                return a.size() > b.size();
-              });
+    std::ranges::sort(insts_sets,
+                      [](const std::vector<UnfoldedChip*>& a,
+                         const std::vector<UnfoldedChip*>& b) {
+                        return a.size() > b.size();
+                      });
 
     odb::dbMarkerCategory* floating_chips_category
         = odb::dbMarkerCategory::createOrReplace(category, "Floating chips");
