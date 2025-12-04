@@ -28,43 +28,43 @@ template class dbTable<_dbTrackGrid>;
 
 bool _dbTrackGrid::operator==(const _dbTrackGrid& rhs) const
 {
-  if (_layer != rhs._layer) {
+  if (layer_ != rhs.layer_) {
     return false;
   }
 
-  if (_x_origin != rhs._x_origin) {
+  if (x_origin_ != rhs.x_origin_) {
     return false;
   }
 
-  if (_x_count != rhs._x_count) {
+  if (x_count_ != rhs.x_count_) {
     return false;
   }
 
-  if (_x_step != rhs._x_step) {
+  if (x_step_ != rhs.x_step_) {
     return false;
   }
 
-  if (_y_origin != rhs._y_origin) {
+  if (y_origin_ != rhs.y_origin_) {
     return false;
   }
 
-  if (_y_count != rhs._y_count) {
+  if (y_count_ != rhs.y_count_) {
     return false;
   }
 
-  if (_y_step != rhs._y_step) {
+  if (y_step_ != rhs.y_step_) {
     return false;
   }
 
-  if (_first_mask != rhs._first_mask) {
+  if (first_mask_ != rhs.first_mask_) {
     return false;
   }
 
-  if (_samemask != rhs._samemask) {
+  if (samemask_ != rhs.samemask_) {
     return false;
   }
 
-  if (_next_grid != rhs._next_grid) {
+  if (next_grid_ != rhs.next_grid_) {
     return false;
   }
 
@@ -81,7 +81,7 @@ dbTechLayer* dbTrackGrid::getTechLayer()
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
   _dbBlock* block = (_dbBlock*) grid->getOwner();
   _dbTech* tech = block->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(grid->_layer);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(grid->layer_);
 }
 
 const std::vector<int>& dbTrackGrid::getGridX()
@@ -91,12 +91,12 @@ const std::vector<int>& dbTrackGrid::getGridX()
   if (grid->grid_x_.empty()) {
     uint i;
 
-    for (i = 0; i < grid->_x_origin.size(); ++i) {
+    for (i = 0; i < grid->x_origin_.size(); ++i) {
       int j;
 
-      int x = grid->_x_origin[i];
-      int count = grid->_x_count[i];
-      int step = grid->_x_step[i];
+      int x = grid->x_origin_[i];
+      int count = grid->x_count_[i];
+      int step = grid->x_step_[i];
 
       for (j = 0; j < count; ++j) {
         grid->grid_x_.push_back(x);
@@ -135,12 +135,12 @@ const std::vector<int>& dbTrackGrid::getGridY()
   if (grid->grid_y_.empty()) {
     uint i;
 
-    for (i = 0; i < grid->_y_origin.size(); ++i) {
+    for (i = 0; i < grid->y_origin_.size(); ++i) {
       int j;
 
-      int y = grid->_y_origin[i];
-      int count = grid->_y_count[i];
-      int step = grid->_y_step[i];
+      int y = grid->y_origin_[i];
+      int count = grid->y_count_[i];
+      int step = grid->y_step_[i];
 
       for (j = 0; j < count; ++j) {
         grid->grid_y_.push_back(y);
@@ -184,11 +184,11 @@ void dbTrackGrid::addGridPatternX(int origin_x,
                                   bool samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  grid->_x_origin.push_back(origin_x);
-  grid->_x_count.push_back(line_count);
-  grid->_x_step.push_back(step);
-  grid->_first_mask.push_back(first_mask);
-  grid->_samemask.push_back(samemask);
+  grid->x_origin_.push_back(origin_x);
+  grid->x_count_.push_back(line_count);
+  grid->x_step_.push_back(step);
+  grid->first_mask_.push_back(first_mask);
+  grid->samemask_.push_back(samemask);
 
   grid->grid_x_.clear();
 }
@@ -200,11 +200,11 @@ void dbTrackGrid::addGridPatternY(int origin_y,
                                   bool samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  grid->_y_origin.push_back(origin_y);
-  grid->_y_count.push_back(line_count);
-  grid->_y_step.push_back(step);
-  grid->_first_mask.push_back(first_mask);
-  grid->_samemask.push_back(samemask);
+  grid->y_origin_.push_back(origin_y);
+  grid->y_count_.push_back(line_count);
+  grid->y_step_.push_back(step);
+  grid->first_mask_.push_back(first_mask);
+  grid->samemask_.push_back(samemask);
 
   grid->grid_y_.clear();
 }
@@ -212,13 +212,13 @@ void dbTrackGrid::addGridPatternY(int origin_y,
 int dbTrackGrid::getNumGridPatternsX()
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  return grid->_x_origin.size();
+  return grid->x_origin_.size();
 }
 
 int dbTrackGrid::getNumGridPatternsY()
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  return grid->_y_origin.size();
+  return grid->y_origin_.size();
 }
 
 void dbTrackGrid::getGridPatternX(int i,
@@ -227,10 +227,10 @@ void dbTrackGrid::getGridPatternX(int i,
                                   int& step)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  assert(i < (int) grid->_x_origin.size());
-  origin_x = grid->_x_origin[i];
-  line_count = grid->_x_count[i];
-  step = grid->_x_step[i];
+  assert(i < (int) grid->x_origin_.size());
+  origin_x = grid->x_origin_[i];
+  line_count = grid->x_count_[i];
+  step = grid->x_step_[i];
 }
 
 void dbTrackGrid::getGridPatternX(int i,
@@ -241,12 +241,12 @@ void dbTrackGrid::getGridPatternX(int i,
                                   bool& samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  assert(i < (int) grid->_x_origin.size());
-  origin_x = grid->_x_origin[i];
-  line_count = grid->_x_count[i];
-  step = grid->_x_step[i];
-  first_mask = grid->_first_mask[i];
-  samemask = grid->_samemask[i];
+  assert(i < (int) grid->x_origin_.size());
+  origin_x = grid->x_origin_[i];
+  line_count = grid->x_count_[i];
+  step = grid->x_step_[i];
+  first_mask = grid->first_mask_[i];
+  samemask = grid->samemask_[i];
 }
 
 void dbTrackGrid::getGridPatternY(int i,
@@ -255,10 +255,10 @@ void dbTrackGrid::getGridPatternY(int i,
                                   int& step)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  assert(i < (int) grid->_y_origin.size());
-  origin_y = grid->_y_origin[i];
-  line_count = grid->_y_count[i];
-  step = grid->_y_step[i];
+  assert(i < (int) grid->y_origin_.size());
+  origin_y = grid->y_origin_[i];
+  line_count = grid->y_count_[i];
+  step = grid->y_step_[i];
 }
 
 void dbTrackGrid::getGridPatternY(int i,
@@ -269,12 +269,12 @@ void dbTrackGrid::getGridPatternY(int i,
                                   bool& samemask)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  assert(i < (int) grid->_y_origin.size());
-  origin_y = grid->_y_origin[i];
-  line_count = grid->_y_count[i];
-  step = grid->_y_step[i];
-  first_mask = grid->_first_mask[i];
-  samemask = grid->_samemask[i];
+  assert(i < (int) grid->y_origin_.size());
+  origin_y = grid->y_origin_[i];
+  line_count = grid->y_count_[i];
+  step = grid->y_step_[i];
+  first_mask = grid->first_mask_[i];
+  samemask = grid->samemask_[i];
 }
 
 void dbTrackGrid::getAverageTrackSpacing(int& track_step,
@@ -326,22 +326,22 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
     return nullptr;
   }
 
-  _dbTrackGrid* grid = block->_track_grid_tbl->create();
-  grid->_layer = layer_->getImpl()->getOID();
+  _dbTrackGrid* grid = block->track_grid_tbl_->create();
+  grid->layer_ = layer_->getImpl()->getOID();
   return (dbTrackGrid*) grid;
 }
 
 dbTrackGrid* dbTrackGrid::getTrackGrid(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbTrackGrid*) block->_track_grid_tbl->getPtr(dbid_);
+  return (dbTrackGrid*) block->track_grid_tbl_->getPtr(dbid_);
 }
 void dbTrackGrid::destroy(dbTrackGrid* grid_)
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) grid_;
   _dbBlock* block = (_dbBlock*) grid->getOwner();
   dbProperty::destroyProperties(grid);
-  block->_track_grid_tbl->destroy(grid);
+  block->track_grid_tbl_->destroy(grid);
 }
 
 void _dbTrackGrid::collectMemInfo(MemInfo& info)
@@ -349,14 +349,14 @@ void _dbTrackGrid::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["x_origin"].add(_x_origin);
-  info.children_["x_count"].add(_x_count);
-  info.children_["x_step"].add(_x_step);
-  info.children_["y_origin"].add(_y_origin);
-  info.children_["y_count"].add(_y_count);
-  info.children_["y_step"].add(_y_step);
-  info.children_["first_mask"].add(_first_mask);
-  info.children_["samemask"].add(_samemask);
+  info.children_["x_origin"].add(x_origin_);
+  info.children_["x_count"].add(x_count_);
+  info.children_["x_step"].add(x_step_);
+  info.children_["y_origin"].add(y_origin_);
+  info.children_["y_count"].add(y_count_);
+  info.children_["y_step"].add(y_step_);
+  info.children_["first_mask"].add(first_mask_);
+  info.children_["samemask"].add(samemask_);
 }
 
 void _dbTrackGrid::getAverageTrackPattern(bool is_x,

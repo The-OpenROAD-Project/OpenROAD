@@ -20,7 +20,7 @@ class dbOStream;
 class dbArrayTablePage : public dbObjectPage
 {
  public:
-  char _objects[1];
+  char objects_[1];
 };
 
 //
@@ -33,18 +33,6 @@ template <class T>
 class dbArrayTable : public dbObjectTable
 {
  public:
-  // PERSISTANT-DATA
-  uint _page_mask;          // bit-mask to get page-offset
-  uint _page_shift;         // number of bits to shift to determine page-no
-  uint _page_cnt;           // high-water mark of page-table
-  uint _page_tbl_size;      // length of the page table
-  uint _alloc_cnt;          // number of object allocated
-  uint _objects_per_alloc;  // number of object to allocate per array
-  uint _free_list;          // objects on freelist
-
-  // NON-PERSISTANT-DATA
-  dbArrayTablePage** _pages;  // page-table
-
   void resizePageTbl();
   void newPage();
   void pushQ(uint& Q, _dbFreeObject* e);
@@ -66,10 +54,10 @@ class dbArrayTable : public dbObjectTable
   ~dbArrayTable() override;
 
   // returns the number of instances of "T" allocated
-  uint size() const { return _alloc_cnt; }
+  uint size() const { return alloc_cnt_; }
 
   // returns the number of objects per array
-  uint arraySize() const { return _objects_per_alloc; }
+  uint arraySize() const { return objects_per_alloc_; }
 
   // Create a "T", calls T( _dbDatabase * )
   dbId<T> createArray();
@@ -83,26 +71,26 @@ class dbArrayTable : public dbObjectTable
   // clear the table and set the array-size
   // void reset( int array_size );
 
-  uint page_size() const { return _page_mask + 1; }
+  uint page_size() const { return page_mask_ + 1; }
 
   // Get the object of this id
   T* getPtr(uint id) const
   {
-    uint page = id >> _page_shift;
-    uint offset = id & _page_mask;
-    assert((id != 0) && (page < _page_cnt));
-    T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
+    uint page = id >> page_shift_;
+    uint offset = id & page_mask_;
+    assert((id != 0) && (page < page_cnt_));
+    T* p = (T*) &(pages_[page]->objects_[offset * sizeof(T)]);
     assert(p->_oid & DB_ALLOC_BIT);
     return p;
   }
 
   bool validId(uint id) const
   {
-    uint page = id >> _page_shift;
-    uint offset = id & _page_mask;
+    uint page = id >> page_shift_;
+    uint offset = id & page_mask_;
 
-    if ((id != 0) && (page < _page_cnt)) {
-      T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
+    if ((id != 0) && (page < page_cnt_)) {
+      T* p = (T*) &(pages_[page]->objects_[offset * sizeof(T)]);
       return (p->_oid & DB_ALLOC_BIT) == DB_ALLOC_BIT;
     }
 
@@ -116,10 +104,10 @@ class dbArrayTable : public dbObjectTable
   //
   T* getFreeObj(uint id)
   {
-    uint page = id >> _page_shift;
-    uint offset = id & _page_mask;
-    assert((id != 0) && (page < _page_cnt));
-    T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
+    uint page = id >> page_shift_;
+    uint offset = id & page_mask_;
+    assert((id != 0) && (page < page_cnt_));
+    T* p = (T*) &(pages_[page]->objects_[offset * sizeof(T)]);
     assert((p->_oid & DB_ALLOC_BIT) == 0);
     return p;
   }
@@ -138,6 +126,18 @@ class dbArrayTable : public dbObjectTable
   void destroy(T* t);
   void copy_pages(const dbArrayTable<T>&);
   void copy_page(uint page_id, dbArrayTablePage* page);
+
+  // PERSISTANT-DATA
+  uint page_mask_;          // bit-mask to get page-offset
+  uint page_shift_;         // number of bits to shift to determine page-no
+  uint page_cnt_;           // high-water mark of page-table
+  uint page_tbl_size_;      // length of the page table
+  uint alloc_cnt_;          // number of object allocated
+  uint objects_per_alloc_;  // number of object to allocate per array
+  uint free_list_;          // objects on freelist
+
+  // NON-PERSISTANT-DATA
+  dbArrayTablePage** pages_;  // page-table
 };
 
 template <class T>

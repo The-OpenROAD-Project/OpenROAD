@@ -14,10 +14,8 @@ class _dbNet;
 
 class dbGroupPowerNetItr : public dbIterator
 {
-  dbTable<_dbNet>* _net_tbl;
-
  public:
-  dbGroupPowerNetItr(dbTable<_dbNet>* net_tbl) { _net_tbl = net_tbl; }
+  dbGroupPowerNetItr(dbTable<_dbNet>* net_tbl) { net_tbl_ = net_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -28,6 +26,9 @@ class dbGroupPowerNetItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbNet>* net_tbl_;
 };
 
 }  // namespace odb

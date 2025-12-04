@@ -20,7 +20,7 @@ namespace odb {
   class {{itr.name}} : public dbIterator
   {
   public:
-    {{itr.name}}({{macros.table_type(itr)}}* {{itr.tableName}}) { _{{itr.tableName}} = {{itr.tableName}}; }
+    {{itr.name}}({{macros.table_type(itr)}}* {{itr.tableName}}) { {{itr.tableName}}_ = {{itr.tableName}}; }
 
     bool      reversible() const override;
     bool      orderReversed() const override;
@@ -34,7 +34,7 @@ namespace odb {
     // User Code Begin Methods
     // User Code End Methods
   private:
-    {{macros.table_type(itr)}}* _{{itr.tableName}};
+    {{macros.table_type(itr)}}* {{itr.tableName}}_;
     // User Code Begin Fields
     // User Code End Fields
   };

@@ -1825,6 +1825,14 @@ bool DetailedMgr::alignPos(const Node* ndi, DbuX& xi, const DbuX xl, DbuX xr)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+bool DetailedMgr::checkSiteOrientation(Node* node, DbuX x, DbuY y)
+{
+  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+  const auto grid_x = grid_->gridX(x);
+  const auto grid_y = grid_->gridSnapDownY(y);
+  return grid_->getSiteOrientation(grid_x, grid_y, site).has_value();
+}
+
 bool DetailedMgr::shift(std::vector<Node*>& cells,
                         std::vector<DbuX>& targetLeft,
                         std::vector<DbuX>& posLeft,
@@ -2468,6 +2476,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2486,6 +2495,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2873,6 +2883,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
   const DbuX x2 = ndj->getLeft();
   const DbuY y2 = ndj->getBottom();
   // Build move list.
+
   if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
     return false;
   }
@@ -2902,6 +2913,10 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 {
   // Limit maximum number of cells that can move at once.
   if (journal_.size() >= moveLimit_) {
+    return false;
+  }
+
+  if (!checkSiteOrientation(ndi, newLeft, newBottom)) {
     return false;
   }
 
@@ -2946,6 +2961,11 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   if (journal_.size() >= moveLimit_) {
     return false;
   }
+
+  if (!checkSiteOrientation(ndi, newLeft, newBottom)) {
+    return false;
+  }
+
   // commit move and add to journal
   eraseFromGrid(ndi);
   for (const auto& curSeg : curSegs) {
@@ -2989,6 +3009,7 @@ void DetailedMgr::paintInGrid(Node* node)
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
   odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+
   const auto orientation
       = grid_->getSiteOrientation(grid_x, grid_y, site).value();
   grid_->paintPixel(node, grid_x, grid_y);
