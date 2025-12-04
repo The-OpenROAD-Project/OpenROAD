@@ -11,10 +11,10 @@ read_def "create_blockage.def"
 set chip [$db getChip]
 set block [$chip getBlock]
 
-catch {create_obstruction -region {10 10 20 20}} err
+catch { create_obstruction -region {10 10 20 20} } err
 puts $err
 
-catch {create_obstruction -layer Metal1 -region {10 10 20 20}} err
+catch { create_obstruction -layer Metal1 -region {10 10 20 20} } err
 puts $err
 
 set b1 [create_obstruction -layer met1 -region {10 10 20 20}]
