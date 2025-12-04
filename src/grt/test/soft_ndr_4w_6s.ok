@@ -61,24 +61,24 @@ met5       Horizontal       3108          1406          54.76%
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clk
 [WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clknet_0_clk
-[INFO GRT-0197] Via related to pin nodes: 147
+[INFO GRT-0197] Via related to pin nodes: 143
 [INFO GRT-0198] Via related Steiner nodes: 11
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 199
-[INFO GRT-0112] Final usage 3D: 989
+[INFO GRT-0111] Final number of vias: 191
+[INFO GRT-0112] Final usage 3D: 975
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1             13349           214            1.60%             0 /  0 /  0
-met2             10101           143            1.42%             0 /  0 /  0
+met1             13349           242            1.81%             0 /  0 /  0
+met2             10101           125            1.24%             0 /  0 /  0
 met3              3922            23            0.59%             0 /  0 /  0
 met4              2886            12            0.42%             0 /  0 /  0
 met5              1406             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            31664           392            1.24%             0 /  0 /  0
+Total            31664           402            1.27%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1728 um
+[INFO GRT-0018] Total wirelength: 1720 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.
