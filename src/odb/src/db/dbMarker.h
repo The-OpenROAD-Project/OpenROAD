@@ -36,10 +36,10 @@ class _dbChip;
 
 struct dbMarkerFlags
 {
-  bool visited_ : 1;
-  bool visible_ : 1;
-  bool waived_ : 1;
-  uint spare_bits_ : 29;
+  bool visited : 1;
+  bool visible : 1;
+  bool waived : 1;
+  uint spare_bits : 29;
 };
 
 class _dbMarker : public _dbObject
@@ -49,10 +49,10 @@ class _dbMarker : public _dbObject
   // Order of these enum must be preserved
   enum class ShapeType
   {
-    Point = 0,
-    Line = 1,
-    Rect = 2,
-    Polygon = 3
+    kPoint = 0,
+    kLine = 1,
+    kRect = 2,
+    kPolygon = 3
   };
   // User Code End Enums
 

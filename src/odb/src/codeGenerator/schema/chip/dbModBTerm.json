@@ -17,42 +17,42 @@
             "schema":"db_schema_update_hierarchy"	
 	},
         {
-	    "name":"_parent_moditerm",
+	    "name":"parent_moditerm_",
 	    "type":"dbId<_dbModITerm>",
 	    "parent":"dbBlock",
 	    "flags":["private"],
 	    "schema":"db_schema_update_hierarchy"	
         },
         {
-            "name":"_parent",
+            "name":"parent_",
             "type":"dbId<_dbModule>",
             "flags":["no-set"],
             "schema":"db_schema_update_hierarchy",
             "parent":"dbBlock"
         },
         {
-            "name":"_modnet",
+            "name":"modnet_",
             "type":"dbId<_dbModNet>",
             "flags":["private"],
             "schema":"db_schema_update_hierarchy",
             "parent":"dbBlock"
         },
         {
-            "name":"_next_net_modbterm",
+            "name":"next_net_modbterm_",
             "type":"dbId<_dbModBTerm>",
             "flags":["private"],
             "schema":"db_schema_update_hierarchy",
             "parent":"dbBlock"
         },
         {
-            "name":"_prev_net_modbterm",
+            "name":"prev_net_modbterm_",
             "type":"dbId<_dbModBTerm>",
             "flags":["private"],
             "schema":"db_schema_update_hierarchy",
             "parent":"dbBlock"
         },
         {
-            "name":"_busPort",
+            "name":"busPort_",
             "type":"dbId<_dbBusPort>",
             "flags":["private"],
             "schema":"db_schema_odb_busport",
@@ -66,7 +66,7 @@
             "parent":"dbBlock"
         },
         {
-            "name":"_prev_entry",
+            "name":"prev_entry_",
             "type":"dbId<_dbModBTerm>",
             "flags":["private"],
             "schema":"db_schema_hier_port_removal",

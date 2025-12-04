@@ -123,13 +123,13 @@
 [INFO CTS-0100]  Leaf buffers 0
 [INFO CTS-0101]  Average sink wire length 45.22 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Leaf load cells 29
+[INFO CTS-0207]  Dummy loads inserted 15
 [INFO CTS-0098] Clock net "gclk1"
 [INFO CTS-0099]  Sinks 158
 [INFO CTS-0100]  Leaf buffers 0
 [INFO CTS-0101]  Average sink wire length 83.63 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Leaf load cells 29
+[INFO CTS-0207]  Dummy loads inserted 14
 [INFO CTS-0033] Balancing latency for clock clk
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (101013 149105)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (102026 98350)

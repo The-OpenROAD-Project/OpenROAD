@@ -34,18 +34,18 @@ bool dbBPinItr::orderReversed() const
 void dbBPinItr::reverse(dbObject* parent)
 {
   _dbBTerm* bterm = (_dbBTerm*) parent;
-  uint id = bterm->_bpins;
+  uint id = bterm->bpins_;
   uint list = 0;
 
   while (id != 0) {
-    _dbBPin* bpin = _bpin_tbl->getPtr(id);
+    _dbBPin* bpin = bpin_tbl_->getPtr(id);
     uint n = bpin->next_bpin_;
     bpin->next_bpin_ = list;
     list = id;
     id = n;
   }
 
-  bterm->_bpins = list;
+  bterm->bpins_ = list;
 }
 
 uint dbBPinItr::sequential() const
@@ -69,7 +69,7 @@ uint dbBPinItr::size(dbObject* parent) const
 uint dbBPinItr::begin(dbObject* parent) const
 {
   _dbBTerm* bterm = (_dbBTerm*) parent;
-  return bterm->_bpins;
+  return bterm->bpins_;
 }
 
 uint dbBPinItr::end(dbObject* /* unused: parent */) const
@@ -79,13 +79,13 @@ uint dbBPinItr::end(dbObject* /* unused: parent */) const
 
 uint dbBPinItr::next(uint id, ...) const
 {
-  _dbBPin* bpin = _bpin_tbl->getPtr(id);
+  _dbBPin* bpin = bpin_tbl_->getPtr(id);
   return bpin->next_bpin_;
 }
 
 dbObject* dbBPinItr::getObject(uint id, ...)
 {
-  return _bpin_tbl->getPtr(id);
+  return bpin_tbl_->getPtr(id);
 }
 
 }  // namespace odb

@@ -56,7 +56,7 @@ uint dbModulePortItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
-  return _module->_modbterms;
+  return _module->modbterms_;
   // User Code End begin
 }
 
@@ -68,12 +68,12 @@ uint dbModulePortItr::end(dbObject* /* unused: parent */) const
 uint dbModulePortItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-  if (modbterm->_busPort != 0) {
+  _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
+  if (modbterm->busPort_ != 0) {
     _dbBlock* block = (_dbBlock*) modbterm->getOwner();
-    _dbBusPort* bus_port = block->_busport_tbl->getPtr(modbterm->_busPort);
+    _dbBusPort* bus_port = block->busport_tbl_->getPtr(modbterm->busPort_);
     if (bus_port) {
-      modbterm = _modbterm_tbl->getPtr(bus_port->_last);
+      modbterm = modbterm_tbl_->getPtr(bus_port->last_);
     }
   }
   if (modbterm) {
@@ -85,7 +85,7 @@ uint dbModulePortItr::next(uint id, ...) const
 
 dbObject* dbModulePortItr::getObject(uint id, ...)
 {
-  return _modbterm_tbl->getPtr(id);
+  return modbterm_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp
