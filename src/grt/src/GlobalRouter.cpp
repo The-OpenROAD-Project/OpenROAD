@@ -746,6 +746,7 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
       fastroute_->addVCapacity(min_cap, layer);
     }
   }
+  fastroute_->initLowerBoundCapacities();
 }
 
 int GlobalRouter::computeGCellCapacity(const int x,

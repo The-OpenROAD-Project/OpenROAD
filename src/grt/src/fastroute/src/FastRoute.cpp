@@ -365,12 +365,7 @@ void FastRouteCore::clearNDRnets()
 
 void FastRouteCore::initEdges()
 {
-  const float LB = 0.9;
-  v_capacity_lb_ = LB * v_capacity_;
-  h_capacity_lb_ = LB * h_capacity_;
-
   // allocate memory and initialize for edges
-
   graph2d_.init(x_grid_, y_grid_, num_layers_, logger_);
 
   init3DEdges();
@@ -401,6 +396,13 @@ void FastRouteCore::init3DEdges()
       }
     }
   }
+}
+
+void FastRouteCore::initLowerBoundCapacities()
+{
+  const float LB = 0.9;
+  v_capacity_lb_ = LB * v_capacity_;
+  h_capacity_lb_ = LB * h_capacity_;
 }
 
 void FastRouteCore::setEdgeCapacity(int x1,
