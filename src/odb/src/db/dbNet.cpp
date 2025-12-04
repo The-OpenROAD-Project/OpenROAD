@@ -3925,8 +3925,17 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
              this->getName());
 
   // Also connect to ModNet if it exists in this module
-  if (dbModNet* orig_mod_net = target_module->getModNet(
-          getBlock()->getBaseName(this->getConstName()))) {
+  std::set<dbModNet*> related_modnets;
+  findRelatedModNets(related_modnets);
+  dbModNet* orig_mod_net = nullptr;
+  for (dbModNet* modnet : related_modnets) {
+    if (modnet->getParent() == target_module) {
+      orig_mod_net = modnet;
+      break;
+    }
+  }
+
+  if (orig_mod_net) {
     buf_input_iterm->connect(orig_mod_net);
     debugPrint(getImpl()->getLogger(),
                utl::ODB,

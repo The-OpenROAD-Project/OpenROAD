@@ -2383,4 +2383,71 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case22)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
 }
 
+TEST_F(TestInsertBuffer, BeforeLoads_Case23)
+{
+  // Reproduction of ORD-2030: Flat net logical inconsistency
+  // Net renaming across hierarchy + name collision in sub-module
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* load_inst = block_->findInst("inst1/load_inst");
+  ASSERT_NE(load_inst, nullptr);
+
+  dbITerm* drvr_q = drvr->findITerm("Q");
+  ASSERT_NE(drvr_q, nullptr);
+  dbITerm* load_a = load_inst->findITerm("A");
+  ASSERT_NE(load_a, nullptr);
+
+  dbNet* net_orig = drvr_q->getNet();
+  ASSERT_NE(net_orig, nullptr);
+  // Verify net name is "n1"
+  EXPECT_EQ(std::string(net_orig->getConstName()), "n1");
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load_a
+  //----------------------------------------------------
+  std::set<dbObject*> loads;
+  loads.insert(load_a);
+
+  dbInst* new_buf
+      = net_orig->insertBufferBeforeLoads(loads,
+                                          buffer_master,
+                                          nullptr,
+                                          "new_buf",
+                                          odb::dbNameUniquifyType::ALWAYS,
+                                          false);
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+}
+
 }  // namespace odb
