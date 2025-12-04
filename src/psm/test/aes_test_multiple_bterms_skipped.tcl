@@ -9,11 +9,11 @@ analyze_power_grid -net VDD
 # Disconnect all metal6
 set bterm [[ord::get_db_block] findBTerm VDD]
 foreach bpin [$bterm getBPins] {
-    foreach box [$bpin getBoxes] {
-        if { [$box getTechLayer] == [[ord::get_db_tech] findLayer metal6]} {
-            odb::dbBoolProperty_create $box PSM_DISCONNECT 1
-        }
+  foreach box [$bpin getBoxes] {
+    if { [$box getTechLayer] == [[ord::get_db_tech] findLayer metal6] } {
+      odb::dbBoolProperty_create $box PSM_DISCONNECT 1
     }
+  }
 }
 
 analyze_power_grid -net VDD
