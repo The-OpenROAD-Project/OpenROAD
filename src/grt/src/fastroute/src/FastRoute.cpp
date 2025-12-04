@@ -1221,27 +1221,36 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
       continue;
     }
 
-    const uint8_t capH = h_capacity_3D_[k];
-    const uint8_t capV = v_capacity_3D_[k];
-    const uint8_t last_row_capH = last_row_h_capacity_3D_[k];
-    const uint8_t last_col_capV = last_col_v_capacity_3D_[k];
     bool is_horizontal
         = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
+    if (is_horizontal) {
+      int last_cell_cap_h = 0;
+      for (int y = 0; y < y_grid_; y++) {
+        for (int x = 0; x < x_grid_; x++) {
+          const uint8_t capH
+              = x == x_grid_ - 1
+                    ? last_cell_cap_h
+                    : h_edges_3D_[k][y][x].cap + h_edges_3D_[k][y][x].red;
+          db_gcell->setCapacity(layer, x, y, capH);
+          last_cell_cap_h = capH;
+        }
+      }
+    } else {
+      int last_cell_cap_v = 0;
+      for (int x = 0; x < x_grid_; x++) {
+        for (int y = 0; y < y_grid_; y++) {
+          const uint8_t capV
+              = y == y_grid_ - 1
+                    ? last_cell_cap_v
+                    : v_edges_3D_[k][y][x].cap + v_edges_3D_[k][y][x].red;
+          db_gcell->setCapacity(layer, x, y, capV);
+          last_cell_cap_v = capV;
+        }
+      }
+    }
+
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_; x++) {
-        if (is_horizontal) {
-          if (!regular_y_ && y == y_grid_ - 1) {
-            db_gcell->setCapacity(layer, x, y, last_row_capH);
-          } else {
-            db_gcell->setCapacity(layer, x, y, capH);
-          }
-        } else {
-          if (!regular_x_ && x == x_grid_ - 1) {
-            db_gcell->setCapacity(layer, x, y, last_col_capV);
-          } else {
-            db_gcell->setCapacity(layer, x, y, capV);
-          }
-        }
         if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
             && y_grid_ > 1) {
           uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
