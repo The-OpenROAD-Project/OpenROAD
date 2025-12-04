@@ -1100,8 +1100,8 @@ void TritonCTS::findLongEdges(
     const int clusterFrom
         = iterm2cluster.find(b) == iterm2cluster.end() ? -1 : iterm2cluster[b];
     const int clusterTo = iterm2cluster.find(branch.n) == iterm2cluster.end()
-                        ? -1
-                        : iterm2cluster[branch.n];
+                              ? -1
+                              : iterm2cluster[branch.n];
 
     if (b == branch.n) {
       continue;
@@ -1252,7 +1252,8 @@ void TritonCTS::findLongEdges(
       staClockNets_.insert(cloneNet);
 
       // Create a new clone instance
-      std::string newBufName = "clone_" + std::to_string(nClones) + "_" + icgName;
+      std::string newBufName
+          = "clone_" + std::to_string(nClones) + "_" + icgName;
       odb::dbMaster* master = icgTerm->getInst()->getMaster();
 
       // fix: make buffer in same hierarchical module as driver
@@ -1274,7 +1275,7 @@ void TritonCTS::findLongEdges(
                  2,
                  " New clone net {}",
                  cloneNet->getName());
-      
+
       // Connect clone pins to same input nets as parent and new output net
       for (odb::dbITerm* iterm : clone->getITerms()) {
         if (iterm->isInputSignal()) {
@@ -1331,7 +1332,8 @@ void TritonCTS::findLongEdges(
     clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
     clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
-  debugPrint(logger_, CTS, "clock gate cloning", 1, "Created {} clones", nClones);
+  debugPrint(
+      logger_, CTS, "clock gate cloning", 1, "Created {} clones", nClones);
 }
 
 void TritonCTS::populateTritonCTS()
