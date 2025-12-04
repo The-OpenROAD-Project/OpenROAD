@@ -187,6 +187,18 @@ The image below illustrate how they can be modeled, the red elements are the sou
 | - | - | - | - |
 | ![Image 1](doc/top_grid_bumps_2x.png) | ![Image 2](doc/top_grid_bumps_3x.png) | ![Image 1](doc/top_grid_straps.png) | ![Image 2](doc/top_grid_full.png) |
 
+### Selectively disconnecting sources
+
+If you need to be able to disconnect some of the terminals in the design, such as in the case of "what-if" analysis or different chip packaging options.
+This can be done by assigning `PSM_DISCONNECT` to a terminal or shape in a terminal will cause PDNSim to leave that object disconnected from the analysis.
+
+```tcl
+# Assumes bpin is the block pin to be disconnected
+odb::dbBoolProperty_create $bpin PSM_DISCONNECT 1
+
+# Assumes box the box shape in the bpin to be disconnected
+odb::dbBoolProperty_create $box PSM_DISCONNECT 1
+```
 
 ## Useful Developer Commands
 

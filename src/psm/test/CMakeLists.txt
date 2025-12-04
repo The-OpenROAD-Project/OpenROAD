@@ -4,6 +4,7 @@ or_integration_tests(
     aes_asap7_vdd
     aes_test_bterms
     aes_test_multiple_bterms
+    aes_test_multiple_bterms_skipped
     aes_test_vdd
     aes_test_vss
     check_power_grid
