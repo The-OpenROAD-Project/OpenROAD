@@ -10,6 +10,8 @@ ChipletDef:
     shrink: 1
     tsv: false
     offset: [0, 0]
+    seal_ring_width: [0, 0, 0, 0]
+    scribe_line_remaining_width: [0, 0, 0, 0]
     external:
       APR_tech_file: [Nangate45_tech.lef]
       LEF_file: [fake_bumps_lib.lef, fake_macros_lib.lef]
