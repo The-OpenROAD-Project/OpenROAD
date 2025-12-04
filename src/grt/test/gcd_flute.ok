@@ -28,40 +28,40 @@
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      33840         25751          23.90%
-metal2     Vertical        25163         24628          2.13%
-metal3     Horizontal      33840         33120          2.13%
-metal4     Vertical        16039         15698          2.13%
-metal5     Horizontal      15792         15456          2.13%
-metal6     Vertical        16039         15698          2.13%
-metal7     Horizontal       4512          4416          2.13%
-metal8     Vertical         4610          4512          2.13%
-metal9     Horizontal       2256          2208          2.13%
-metal10    Vertical         2305          2256          2.13%
+metal1     Horizontal      33120         25751          22.25%
+metal2     Vertical        24769         24722          0.19%
+metal3     Horizontal      33120         33120          0.00%
+metal4     Vertical        16826         16779          0.28%
+metal5     Horizontal      16560         16560          0.00%
+metal6     Vertical        16826         16779          0.28%
+metal7     Horizontal       5796          5796          0.00%
+metal8     Vertical         5922          5875          0.79%
+metal9     Horizontal       2898          2898          0.00%
+metal10    Vertical         2961          2961          0.00%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 1955
-[INFO GRT-0198] Via related Steiner nodes: 64
+[INFO GRT-0197] Via related to pin nodes: 1934
+[INFO GRT-0198] Via related Steiner nodes: 70
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 2806
-[INFO GRT-0112] Final usage 3D: 11875
+[INFO GRT-0111] Final number of vias: 2783
+[INFO GRT-0112] Final usage 3D: 11806
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1           25751           727            2.82%             0 /  0 /  0
-metal2           24628          1591            6.46%             0 /  0 /  0
-metal3           33120           977            2.95%             0 /  0 /  0
-metal4           15698            53            0.34%             0 /  0 /  0
-metal5           15456            46            0.30%             0 /  0 /  0
-metal6           15698            63            0.40%             0 /  0 /  0
-metal7            4416             0            0.00%             0 /  0 /  0
-metal8            4512             0            0.00%             0 /  0 /  0
-metal9            2208             0            0.00%             0 /  0 /  0
-metal10           2256             0            0.00%             0 /  0 /  0
+metal1           25751           839            3.26%             0 /  0 /  0
+metal2           24722          1584            6.41%             0 /  0 /  0
+metal3           33120           863            2.61%             0 /  0 /  0
+metal4           16779            55            0.33%             0 /  0 /  0
+metal5           16560            50            0.30%             0 /  0 /  0
+metal6           16779            66            0.39%             0 /  0 /  0
+metal7            5796             0            0.00%             0 /  0 /  0
+metal8            5875             0            0.00%             0 /  0 /  0
+metal9            2898             0            0.00%             0 /  0 /  0
+metal10           2961             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           143743          3457            2.40%             0 /  0 /  0
+Total           151241          3457            2.29%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 10388 um
+[INFO GRT-0018] Total wirelength: 10397 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.
