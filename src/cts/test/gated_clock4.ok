@@ -311,6 +311,4 @@ delta HPWL                49070 %
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_6_core is inserted at (1005080 1985475)
 [INFO CTS-0036]  inserted 7 delay buffers
 [INFO CTS-0037] Total number of delay buffers: 7
-Differences found at line 4.
- wire delaynet_4_core;
- wire delaynet_3_core;
+No differences found.
