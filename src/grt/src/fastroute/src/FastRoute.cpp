@@ -2011,24 +2011,18 @@ std::vector<int> FastRouteCore::getOriginalResources()
     bool is_horizontal
         = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
     if (is_horizontal) {
-      if (!regular_y_) {
-        original_resources[l] += (v_capacity_3D_[l] + h_capacity_3D_[l])
-                                 * (y_grid_) * (x_grid_ - 1);
-        original_resources[l] += (last_col_v_capacity_3D_[l] * y_grid_)
-                                 + (last_row_h_capacity_3D_[l] * x_grid_);
-      } else {
-        original_resources[l]
-            += (v_capacity_3D_[l] + h_capacity_3D_[l]) * (y_grid_) * (x_grid_);
+      for (int i = 0; i < y_grid_; i++) {
+        for (int j = 0; j < x_grid_ - 1; j++) {
+          original_resources[l]
+              += h_edges_3D_[l][i][j].cap + h_edges_3D_[l][i][j].red;
+        }
       }
     } else {
-      if (!regular_x_) {
-        original_resources[l] += (v_capacity_3D_[l] + h_capacity_3D_[l])
-                                 * (y_grid_ - 1) * (x_grid_);
-        original_resources[l] += (last_col_v_capacity_3D_[l] * y_grid_)
-                                 + (last_row_h_capacity_3D_[l] * x_grid_);
-      } else {
-        original_resources[l]
-            += (v_capacity_3D_[l] + h_capacity_3D_[l]) * (y_grid_) * (x_grid_);
+      for (int i = 0; i < y_grid_ - 1; i++) {
+        for (int j = 0; j < x_grid_; j++) {
+          original_resources[l]
+              += v_edges_3D_[l][i][j].cap + v_edges_3D_[l][i][j].red;
+        }
       }
     }
   }
