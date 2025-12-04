@@ -2236,4 +2236,151 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case20)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
 }
 
+// Partial-load buffering on loads connected with both input & output
+// dbModBTerms.
+// TODO: If nontarget1 is changed to `assign`, write_verilog crashes.
+TEST_F(TestInsertBuffer, BeforeLoads_Case21)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("h0/drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* h1_h2_load0 = block_->findInst("h1/h2/load0");
+  ASSERT_NE(h1_h2_load0, nullptr);
+  dbInst* h3_load1 = block_->findInst("h3/load1");
+  ASSERT_NE(h3_load1, nullptr);
+  dbInst* h3_load2 = block_->findInst("h3/load2");
+  ASSERT_NE(h3_load2, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* h1_h2_load0_a = h1_h2_load0->findITerm("A");
+  ASSERT_NE(h1_h2_load0_a, nullptr);
+  dbITerm* h3_load1_a = h3_load1->findITerm("A");
+  ASSERT_NE(h3_load1_a, nullptr);
+  dbITerm* h3_load2_a = h3_load2->findITerm("A");
+  ASSERT_NE(h3_load2_a, nullptr);
+
+  dbNet* target_net = drvr_z->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buffer_master, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: h1/h2/load0, h3/load1, h3/load2
+  // - Note that the two loads are on different dbNets.
+  //----------------------------------------------------
+  std::set<dbObject*> targets;
+  targets.insert(h1_h2_load0_a);
+  targets.insert(h3_load1_a);
+  targets.insert(h3_load2_a);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(targets,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case22)
+{
+  // Reproduction of ORD-2030: Flat net logical inconsistency
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* wb_inst_load_internal = block_->findInst("wb_inst/load_internal");
+  ASSERT_NE(wb_inst_load_internal, nullptr);
+  dbInst* exec_inst_load_exec = block_->findInst("exec_inst/load_exec");
+  ASSERT_NE(exec_inst_load_exec, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* load_internal_a = wb_inst_load_internal->findITerm("A");
+  ASSERT_NE(load_internal_a, nullptr);
+  dbITerm* load_exec_a = exec_inst_load_exec->findITerm("A");
+  ASSERT_NE(load_exec_a, nullptr);
+
+  dbNet* net_orig = drvr_z->getNet();
+  ASSERT_NE(net_orig, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: load_internal_a, load_exec_a
+  //----------------------------------------------------
+  std::set<dbObject*> loads;
+  loads.insert(load_internal_a);
+  loads.insert(load_exec_a);
+
+  dbInst* new_buf
+      = net_orig->insertBufferBeforeLoads(loads,
+                                          buffer_master,
+                                          nullptr,
+                                          "new_buf",
+                                          odb::dbNameUniquifyType::ALWAYS,
+                                          false);
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+}
+
 }  // namespace odb

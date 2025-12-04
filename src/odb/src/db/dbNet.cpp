@@ -457,6 +457,10 @@ bool createHierarchicalConnection(dbITerm* load_pin,
         if (safe_to_reuse) {
           // Check if this net is connected to a boundary port (ModBTerm)
           for (dbModBTerm* modbterm : existing_mod_net->getModBTerms()) {
+            if (modbterm->getIoType() != dbIoType::INPUT) {
+              continue;
+            }
+
             dbModITerm* parent_iterm = modbterm->getParentModITerm();
             if (!parent_iterm) {
               continue;
@@ -3722,21 +3726,22 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
     return nullptr;
   }
 
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "insert_buffer",
-             1,
-             "BeforeLoads: on dbNet={}, load_pins_size={}, "
-             "buffer_master={}, loc=({}, {}), base_name={}, uniquify={}, "
-             "loads_on_same_db_net={}",
-             getName(),
-             load_pins.size(),
-             buffer_master->getName(),
-             loc ? loc->getX() : -1,
-             loc ? loc->getY() : -1,
-             base_name ? base_name : "buf",
-             static_cast<int>(uniquify),
-             loads_on_same_db_net);
+  debugPrint(
+      getImpl()->getLogger(),
+      utl::ODB,
+      "insert_buffer",
+      1,
+      "BeforeLoads: Try inserting a buffer on dbNet={}, load_pins_size={}, "
+      "buffer_master={}, loc=({}, {}), base_name={}, uniquify={}, "
+      "loads_on_same_db_net={}",
+      getName(),
+      load_pins.size(),
+      buffer_master->getName(),
+      loc ? loc->getX() : -1,
+      loc ? loc->getY() : -1,
+      base_name ? base_name : "buf",
+      static_cast<int>(uniquify),
+      loads_on_same_db_net);
 
   // 1. Validate Load Pins & Find Lowest Common Ancestor (Hierarchy)
   //    Also check for DontTouch attributes.
@@ -4017,6 +4022,13 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
     new_flat_net->setNonDefaultRule(rule);
   }
+
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "BeforeLoads: Successfully inserted a new buffer '{}'",
+             buffer_inst->getName());
 
   return buffer_inst;
 }
