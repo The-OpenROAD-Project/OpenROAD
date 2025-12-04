@@ -15,8 +15,8 @@ class _dbDatabase;
 
 struct dbTechLayerWidthTableRuleFlags
 {
-  bool wrong_direction_ : 1;
-  bool orthogonal_ : 1;
+  bool wrong_direction : 1;
+  bool orthogonal : 1;
   uint spare_bits : 30;
 };
 

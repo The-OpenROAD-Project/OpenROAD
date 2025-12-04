@@ -17,10 +17,10 @@ template class dbTable<_dbScanList>;
 
 bool _dbScanList::operator==(const _dbScanList& rhs) const
 {
-  if (_unused != rhs._unused) {
+  if (unused_ != rhs.unused_) {
     return false;
   }
-  if (_first_scan_inst != rhs._first_scan_inst) {
+  if (first_scan_inst_ != rhs.first_scan_inst_) {
     return false;
   }
 
@@ -34,24 +34,24 @@ bool _dbScanList::operator<(const _dbScanList& rhs) const
 
 _dbScanList::_dbScanList(_dbDatabase* db)
 {
-  _unused = 0;
+  unused_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream >> obj._unused;
+    stream >> obj.unused_;
   }
   if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream >> obj._first_scan_inst;
+    stream >> obj.first_scan_inst_;
   }
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj)
 {
-  stream << obj._unused;
-  stream << obj._first_scan_inst;
+  stream << obj.unused_;
+  stream << obj.first_scan_inst_;
   return stream;
 }
 

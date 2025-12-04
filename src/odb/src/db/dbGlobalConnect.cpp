@@ -303,7 +303,7 @@ std::set<dbITerm*> _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
   std::set<dbITerm*> iterms;
   for (dbInst* inst : insts) {
     _dbInst* dbinst = (_dbInst*) inst;
-    if (region_ != 0 && region_ != dbinst->_region) {
+    if (region_ != 0 && region_ != dbinst->region_) {
       continue;
     }
 

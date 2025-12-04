@@ -23,15 +23,15 @@ template class dbTable<_dbHier>;
 
 bool _dbHier::operator==(const _dbHier& rhs) const
 {
-  if (_inst != rhs._inst) {
+  if (inst_ != rhs.inst_) {
     return false;
   }
 
-  if (_child_block != rhs._child_block) {
+  if (child_block_ != rhs.child_block_) {
     return false;
   }
 
-  if (_child_bterms != rhs._child_bterms) {
+  if (child_bterms_ != rhs.child_bterms_) {
     return false;
   }
 
@@ -43,9 +43,9 @@ _dbHier::_dbHier(_dbDatabase*)
 }
 
 _dbHier::_dbHier(_dbDatabase*, const _dbHier& i)
-    : _inst(i._inst),
-      _child_block(i._child_block),
-      _child_bterms(i._child_bterms)
+    : inst_(i.inst_),
+      child_block_(i.child_block_),
+      child_bterms_(i.child_bterms_)
 {
 }
 
@@ -55,17 +55,17 @@ _dbHier::~_dbHier()
 
 dbOStream& operator<<(dbOStream& stream, const _dbHier& hier)
 {
-  stream << hier._inst;
-  stream << hier._child_block;
-  stream << hier._child_bterms;
+  stream << hier.inst_;
+  stream << hier.child_block_;
+  stream << hier.child_bterms_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbHier& hier)
 {
-  stream >> hier._inst;
-  stream >> hier._child_block;
-  stream >> hier._child_bterms;
+  stream >> hier.inst_;
+  stream >> hier.child_block_;
+  stream >> hier.child_bterms_;
   return stream;
 }
 
@@ -86,13 +86,13 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
 
   // initialize the hier structure
   _dbHier* hier = parent->hier_tbl_->create();
-  hier->_inst = inst->getOID();
-  hier->_child_block = child->getOID();
-  hier->_child_bterms.resize(child->bterm_tbl_->size());
+  hier->inst_ = inst->getOID();
+  hier->child_block_ = child->getOID();
+  hier->child_bterms_.resize(child->bterm_tbl_->size());
 
   // create "down-hier" mapping to bterms
   for (dbBTerm* bterm : bterms) {
-    _dbMTerm* mterm = master->_mterm_hash.find(bterm->getConstName());
+    _dbMTerm* mterm = master->mterm_hash_.find(bterm->getConstName());
 
     // bterms do not map 1-to-1 to mterms.
     if (mterm == nullptr) {
@@ -100,19 +100,19 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
       return nullptr;
     }
 
-    hier->_child_bterms[mterm->_order_id] = bterm->getId();
+    hier->child_bterms_[mterm->order_id_] = bterm->getId();
   }
 
   // create "up-hier" mapping to iterms
   for (dbBTerm* bterm : bterms) {
     _dbBTerm* bterm_impl = (_dbBTerm*) bterm;
-    _dbMTerm* mterm = master->_mterm_hash.find(bterm_impl->name_);
+    _dbMTerm* mterm = master->mterm_hash_.find(bterm_impl->name_);
     bterm_impl->parent_block_ = parent->getOID();
-    bterm_impl->parent_iterm_ = inst->_iterms[mterm->_order_id];
+    bterm_impl->parent_iterm_ = inst->iterms_[mterm->order_id_];
   }
 
   // bind hier to inst
-  inst->_hierarchy = hier->getOID();
+  inst->hierarchy_ = hier->getOID();
 
   // point child-block to parent inst
   child->parent_block_ = parent->getOID();
@@ -125,11 +125,11 @@ void _dbHier::destroy(_dbHier* hier)
 {
   _dbBlock* parent = (_dbBlock*) hier->getOwner();
   _dbChip* chip = (_dbChip*) parent->getOwner();
-  _dbBlock* child = chip->block_tbl_->getPtr(hier->_child_block);
-  _dbInst* inst = parent->inst_tbl_->getPtr(hier->_inst);
+  _dbBlock* child = chip->block_tbl_->getPtr(hier->child_block_);
+  _dbInst* inst = parent->inst_tbl_->getPtr(hier->inst_);
 
   // unbind inst from hier
-  inst->_hierarchy = 0;
+  inst->hierarchy_ = 0;
 
   // unbind child bterms from hier
   for (dbBTerm* bterm : ((dbBlock*) child)->getBTerms()) {
@@ -151,7 +151,7 @@ void _dbHier::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["child_bterms"].add(_child_bterms);
+  info.children_["child_bterms"].add(child_bterms_);
 }
 
 }  // namespace odb

@@ -56,7 +56,7 @@ uint dbModuleModInstModITermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModInst* mod_inst = (_dbModInst*) parent;
-  return mod_inst->_moditerms;
+  return mod_inst->moditerms_;
   // User Code End begin
 }
 

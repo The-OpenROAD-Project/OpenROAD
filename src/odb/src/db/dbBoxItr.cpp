@@ -42,7 +42,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
       _dbRegion* region = (_dbRegion*) parent;
-      uint id = region->_boxes;
+      uint id = region->boxes_;
       uint list = 0;
 
       while (id != 0) {
@@ -53,7 +53,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
         id = n;
       }
 
-      region->_boxes = list;
+      region->boxes_ = list;
       break;
     }
 
@@ -62,7 +62,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbViaObj: {
       _dbVia* via = (_dbVia*) parent;
-      uint id = via->_boxes;
+      uint id = via->boxes_;
       uint list = 0;
 
       while (id != 0) {
@@ -73,13 +73,13 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
         id = n;
       }
 
-      via->_boxes = list;
+      via->boxes_ = list;
       break;
     }
 
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
-      uint id = master->_obstructions;
+      uint id = master->obstructions_;
       uint list = 0;
 
       while (id != 0) {
@@ -90,13 +90,13 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
         id = n;
       }
 
-      master->_obstructions = list;
+      master->obstructions_ = list;
       break;
     }
 
     case dbMPinObj: {
       _dbMPin* pin = (_dbMPin*) parent;
-      uint id = pin->_geoms;
+      uint id = pin->geoms_;
       uint list = 0;
 
       while (id != 0) {
@@ -107,7 +107,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
         id = n;
       }
 
-      pin->_geoms = list;
+      pin->geoms_ = list;
       break;
     }
 
@@ -193,18 +193,18 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
       _dbRegion* region = (_dbRegion*) parent;
-      return region->_boxes;
+      return region->boxes_;
     }
 
     case dbViaObj: {
       _dbVia* via = (_dbVia*) parent;
-      return via->_boxes;
+      return via->boxes_;
     }
 
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
-      if (include_polygons_ && master->_poly_obstructions) {
-        dbId<_dbPolygon> pid = master->_poly_obstructions;
+      if (include_polygons_ && master->poly_obstructions_) {
+        dbId<_dbPolygon> pid = master->poly_obstructions_;
         _dbPolygon* pbox = pbox_tbl_->getPtr(pid);
         while (pbox != nullptr && pbox->boxes_ == 0) {
           // move to next pbox
@@ -215,13 +215,13 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
           return pbox->boxes_;
         }
       }
-      return master->_obstructions;
+      return master->obstructions_;
     }
 
     case dbMPinObj: {
       _dbMPin* pin = (_dbMPin*) parent;
-      if (include_polygons_ && pin->_poly_geoms) {
-        dbId<_dbPolygon> pid = pin->_poly_geoms;
+      if (include_polygons_ && pin->poly_geoms_) {
+        dbId<_dbPolygon> pid = pin->poly_geoms_;
         _dbPolygon* pbox = pbox_tbl_->getPtr(pid);
         while (pbox != nullptr && pbox->boxes_ == 0) {
           // move to next pbox
@@ -232,7 +232,7 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
           return pbox->boxes_;
         }
       }
-      return pin->_geoms;
+      return pin->geoms_;
     }
 
     case dbTechViaObj: {
@@ -295,14 +295,14 @@ uint dbBoxItr<page_size>::next(uint id, ...) const
     // end of polygons
 
     // return non-polygon list from owner
-    if (box_pbox->flags_.owner_type_ == dbBoxOwner::MASTER) {
+    if (box_pbox->flags_.owner_type == dbBoxOwner::MASTER) {
       _dbMaster* master = (_dbMaster*) box_pbox->getOwner();
-      return master->_obstructions;
+      return master->obstructions_;
     }
-    if (box_pbox->flags_.owner_type_ == dbBoxOwner::MPIN) {
+    if (box_pbox->flags_.owner_type == dbBoxOwner::MPIN) {
       _dbMaster* master = (_dbMaster*) box_pbox->getOwner();
-      _dbMPin* pin = (_dbMPin*) master->_mpin_tbl->getPtr(box_pbox->owner_);
-      return pin->_geoms;
+      _dbMPin* pin = (_dbMPin*) master->mpin_tbl_->getPtr(box_pbox->owner_);
+      return pin->geoms_;
     }
 
     // this should not be possible unless new types with polygons are added

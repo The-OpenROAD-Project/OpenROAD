@@ -17,8 +17,8 @@ class _dbBox;
 
 struct dbPolygonFlags
 {
-  uint owner_type_ : 4;
-  uint layer_id_ : 9;
+  uint owner_type : 4;
+  uint layer_id : 9;
   uint spare_bits : 19;
 };
 

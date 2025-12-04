@@ -29,31 +29,31 @@ template class dbTable<_dbRSeg>;
 
 bool _dbRSeg::operator==(const _dbRSeg& rhs) const
 {
-  if (flags_._path_dir != rhs.flags_._path_dir) {
+  if (flags_.path_dir != rhs.flags_.path_dir) {
     return false;
   }
 
-  if (flags_._allocated_cap != rhs.flags_._allocated_cap) {
+  if (flags_.allocated_cap != rhs.flags_.allocated_cap) {
     return false;
   }
 
-  if (_source != rhs._source) {
+  if (source_ != rhs.source_) {
     return false;
   }
 
-  if (_target != rhs._target) {
+  if (target_ != rhs.target_) {
     return false;
   }
 
-  if (_xcoord != rhs._xcoord) {
+  if (xcoord_ != rhs.xcoord_) {
     return false;
   }
 
-  if (_ycoord != rhs._ycoord) {
+  if (ycoord_ != rhs.ycoord_) {
     return false;
   }
 
-  if (_next != rhs._next) {
+  if (next_ != rhs.next_) {
     return false;
   }
 
@@ -101,24 +101,24 @@ void dbRSeg::addAllRes(double* res)
 bool dbRSeg::updatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_._update_cap == 1 ? true : false);
+  return (seg->flags_.update_cap == 1 ? true : false);
 }
 bool dbRSeg::allocatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_._allocated_cap == 1 ? true : false);
+  return (seg->flags_.allocated_cap == 1 ? true : false);
 }
 
 bool dbRSeg::pathLowToHigh()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_._path_dir == 0 ? true : false);
+  return (seg->flags_.path_dir == 0 ? true : false);
 }
 
 void dbRSeg::addRSegCapacitance(dbRSeg* other)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  if (!seg->flags_._allocated_cap) {
+  if (!seg->flags_.allocated_cap) {
     getTargetCapNode()->addCapnCapacitance(other->getTargetCapNode());
     return;
   }
@@ -263,13 +263,13 @@ void dbRSeg::setCapacitance(double cap, int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
 
-  if (!seg->flags_._allocated_cap) {
+  if (!seg->flags_.allocated_cap) {
     fprintf(stdout, "WARNING: cap value storage is not allocated\n");
     return;
   }
-  seg->flags_._update_cap = 1;
+  seg->flags_.update_cap = 1;
   if (cap == 0.0) {
-    seg->flags_._update_cap = 0;
+    seg->flags_.update_cap = 0;
   }
 
   assert((corner >= 0) && ((uint) corner < cornerCnt));
@@ -303,10 +303,10 @@ void dbRSeg::adjustSourceCapacitance(float factor, uint corner)
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
-  if (seg->flags_._allocated_cap != 0) {
+  if (seg->flags_.allocated_cap != 0) {
     return;
   }
-  dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_source);
+  dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->source_);
   node->adjustCapacitance(factor, corner);
 }
 
@@ -316,9 +316,9 @@ void dbRSeg::adjustCapacitance(float factor, uint corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
 
-  if (seg->flags_._allocated_cap == 0) {
+  if (seg->flags_.allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
-    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
+    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->target_);
     node->adjustCapacitance(factor, corner);
   } else {
     float& value
@@ -363,9 +363,9 @@ double dbRSeg::getCapacitance(int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
 
-  if (seg->flags_._allocated_cap == 0) {
+  if (seg->flags_.allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
-    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
+    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->target_);
     return node->getCapacitance(corner);
   }
   assert((corner >= 0) && ((uint) corner < cornerCnt));
@@ -378,8 +378,8 @@ void dbRSeg::getGndCap(double* gndcap, double* totalcap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
   double gcap;
-  if (seg->flags_._allocated_cap == 0) {
-    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
+  if (seg->flags_.allocated_cap == 0) {
+    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->target_);
     node->getGndCap(gndcap, totalcap);
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
@@ -400,8 +400,8 @@ void dbRSeg::addGndCap(double* gndcap, double* totalcap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
   double gcap;
-  if (seg->flags_._allocated_cap == 0) {
-    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
+  if (seg->flags_.allocated_cap == 0) {
+    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->target_);
     node->addGndCap(gndcap, totalcap);
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
@@ -422,9 +422,9 @@ double dbRSeg::getSourceCapacitance(int corner)
 
   _dbRSeg* seg = (_dbRSeg*) this;
 
-  if (seg->flags_._allocated_cap == 0) {
+  if (seg->flags_.allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
-    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_source);
+    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->source_);
     return node->getCapacitance(corner);
   }
   return 0.0;
@@ -528,9 +528,9 @@ void dbRSeg::getCapTable(double* cap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
 
-  if (seg->flags_._allocated_cap == 0) {
+  if (seg->flags_.allocated_cap == 0) {
     _dbBlock* block = (_dbBlock*) seg->getOwner();
-    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
+    dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->target_);
     node->getCapTable(cap);
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
@@ -542,13 +542,13 @@ void dbRSeg::getCapTable(double* cap)
 uint dbRSeg::getSourceNode()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return seg->_source;
+  return seg->source_;
 }
 
 void dbRSeg::setNext(uint rid)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  seg->_next = rid;
+  seg->next_ = rid;
 }
 
 void dbRSeg::setSourceNode(uint source_node)
@@ -565,10 +565,10 @@ void dbRSeg::setSourceNode(uint source_node)
                seg->getId(),
                source_node);
     block->journal_->updateField(
-        this, _dbRSeg::kSource, seg->_source, source_node);
+        this, _dbRSeg::kSource, seg->source_, source_node);
   }
 
-  seg->_source = source_node;
+  seg->source_ = source_node;
 }
 
 void dbRSeg::setTargetNode(uint target_node)
@@ -585,33 +585,33 @@ void dbRSeg::setTargetNode(uint target_node)
                seg->getId(),
                target_node);
     block->journal_->updateField(
-        this, _dbRSeg::kTarget, seg->_target, target_node);
+        this, _dbRSeg::kTarget, seg->target_, target_node);
   }
 
-  seg->_target = target_node;
+  seg->target_ = target_node;
 }
 
 uint dbRSeg::getTargetNode()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return seg->_target;
+  return seg->target_;
 }
 
 uint dbRSeg::getShapeId()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
   dbBlock* block = (dbBlock*) seg->getOwner();
-  dbCapNode* node = dbCapNode::getCapNode(block, seg->_target);
+  dbCapNode* node = dbCapNode::getCapNode(block, seg->target_);
   return node->getShapeId();
 }
 
 void dbRSeg::setCoords(int x, int y)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  const int prev_x = seg->_xcoord;
-  const int prev_y = seg->_ycoord;
-  seg->_xcoord = x;
-  seg->_ycoord = y;
+  const int prev_x = seg->xcoord_;
+  const int prev_y = seg->ycoord_;
+  seg->xcoord_ = x;
+  seg->ycoord_ = y;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   if (block->journal_) {
     debugPrint(getImpl()->getLogger(),
@@ -641,8 +641,8 @@ void dbRSeg::getCoords(int& x, int& y)
   //    dbCapNode *node= dbCapNode::getCapNode(block, seg->_target);
   //    if (node->getTermCoords(x, y))
   //        return;
-  x = seg->_xcoord;
-  y = seg->_ycoord;
+  x = seg->xcoord_;
+  y = seg->ycoord_;
   // node->getCoordY(y);
 }
 
@@ -661,7 +661,7 @@ dbNet* dbRSeg::getNet()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
+  dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->target_);
   return node->getNet();
 }
 
@@ -669,7 +669,7 @@ void dbRSeg::updateShapeId(uint nsid)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->_target);
+  dbCapNode* node = dbCapNode::getCapNode((dbBlock*) block, seg->target_);
   if (node->isITerm() || node->isBTerm()) {
     return;
   }
@@ -717,10 +717,10 @@ dbRSeg* dbRSeg::create(dbNet* net_,
     block->max_rseg_id_ = seg->getOID();
   }
 
-  seg->_xcoord = x;
-  seg->_ycoord = y;
+  seg->xcoord_ = x;
+  seg->ycoord_ = y;
 
-  seg->flags_._path_dir = path_dir;
+  seg->flags_.path_dir = path_dir;
   // seg->flags_._cnt = block->_num_corners;
 
   if (valueMem) {
@@ -741,7 +741,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   //}
 
   if (allocate_cap) {
-    seg->flags_._allocated_cap = 1;
+    seg->flags_.allocated_cap = 1;
 
     if (valueMem) {
       for (uint ii = 0; ii < cornerCnt; ii++) {
@@ -785,8 +785,8 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   //    }
   */
   // seg->_net = net->getOID();
-  seg->_next = net->_r_segs;
-  net->_r_segs = seg->getOID();
+  seg->next_ = net->r_segs_;
+  net->r_segs_ = seg->getOID();
   return (dbRSeg*) seg;
 }
 bool dbRSeg::addToNet()
@@ -806,8 +806,8 @@ bool dbRSeg::addToNet()
   _dbNet* net = (_dbNet*) dbNet::getNet((dbBlock*) block, seg->net_);
 
   _dbRSeg* rseg = (_dbRSeg*) this;
-  rseg->_next = net->_r_segs;
-  net->_r_segs = rseg->getOID();
+  rseg->next_ = net->r_segs_;
+  net->r_segs_ = rseg->getOID();
 
   return true;
 }
@@ -844,7 +844,7 @@ void dbRSeg::destroy(dbRSeg* seg_, dbNet* net_)
                (void*) block->journal_);
   }
 
-  dbId<_dbRSeg> c = net->_r_segs;
+  dbId<_dbRSeg> c = net->r_segs_;
   _dbRSeg* p = nullptr;
 
   while (c != 0) {
@@ -852,14 +852,14 @@ void dbRSeg::destroy(dbRSeg* seg_, dbNet* net_)
 
     if (s == seg) {
       if (p == nullptr) {
-        net->_r_segs = s->_next;
+        net->r_segs_ = s->next_;
       } else {
-        p->_next = s->_next;
+        p->next_ = s->next_;
       }
       break;
     }
     p = s;
-    c = s->_next;
+    c = s->next_;
   }
 
   dbProperty::destroyProperties(seg);

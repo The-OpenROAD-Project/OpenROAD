@@ -268,11 +268,11 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbVia* via = (_dbVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0) {
+  if (via->bbox_ == 0) {
     return nullptr;
   }
 
-  _dbBox* vbbox = block->box_tbl_->getPtr(via->_bbox);
+  _dbBox* vbbox = block->box_tbl_->getPtr(via->bbox_);
   const int xmin = vbbox->shape_.rect.xMin() + x;
   const int ymin = vbbox->shape_.rect.yMin() + y;
   const int xmax = vbbox->shape_.rect.xMax() + x;
@@ -301,12 +301,12 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbTechVia* via = (_dbTechVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0) {
+  if (via->bbox_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
-  _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
+  _dbBox* vbbox = tech->box_tbl_->getPtr(via->bbox_);
   const int xmin = vbbox->shape_.rect.xMin() + x;
   const int ymin = vbbox->shape_.rect.yMin() + y;
   const int xmax = vbbox->shape_.rect.xMax() + x;

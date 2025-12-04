@@ -1880,7 +1880,7 @@ std::vector<dbTechLayer*> dbBlock::getComponentMaskShift()
   _dbTech* tech = block->getTech();
   std::vector<dbTechLayer*> layers;
   for (const auto& layer_id : block->component_mask_shift_) {
-    layers.push_back((dbTechLayer*) tech->_layer_tbl->getPtr(layer_id));
+    layers.push_back((dbTechLayer*) tech->layer_tbl_->getPtr(layer_id));
   }
   return layers;
 }
@@ -2691,8 +2691,8 @@ void dbBlock::initParasiticsValueTables()
       || (block->cc_seg_tbl_->size() > 0)) {
     for (dbNet* net : getNets()) {
       _dbNet* n = (_dbNet*) net;
-      n->_cap_nodes = 0;
-      n->_r_segs = 0;
+      n->cap_nodes_ = 0;
+      n->r_segs_ = 0;
     }
   }
 
@@ -3020,7 +3020,7 @@ void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
     tot++;
     _dbNet* n = (_dbNet*) net;
 
-    if (n->flags_._wire_altered != 1) {
+    if (n->flags_.wire_altered != 1) {
       continue;
     }
     upd++;

@@ -56,7 +56,7 @@ uint dbModuleModNetModITermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModNet* mod_net = (_dbModNet*) parent;
-  return mod_net->_moditerms;
+  return mod_net->moditerms_;
   // User Code End begin
 }
 
@@ -69,7 +69,7 @@ uint dbModuleModNetModITermItr::next(uint id, ...) const
 {
   // User Code Begin next
   _dbModITerm* _moditerm = moditerm_tbl_->getPtr(id);
-  return _moditerm->_next_net_moditerm;
+  return _moditerm->next_net_moditerm_;
   // User Code End next
 }
 

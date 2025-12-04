@@ -252,7 +252,7 @@ dbTechLayer* _dbGCellGrid::getLayer(const dbId<_dbTechLayer>& lid) const
   _dbGCellGrid* obj = (_dbGCellGrid*) this;
   dbDatabase* db = (dbDatabase*) obj->getDatabase();
   _dbTech* tech = (_dbTech*) db->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(lid);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(lid);
 }
 
 // User Code End PrivateMethods

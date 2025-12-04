@@ -85,14 +85,14 @@ struct MemInfo
   void add(const dbHashTable<T, page_size>& table)
   {
     cnt += 1;
-    size += table._hash_tbl.size() * sizeof(dbId<T>);
+    size += table.hash_tbl_.size() * sizeof(dbId<T>);
   }
 
   template <class T>
   void add(const dbIntHashTable<T>& table)
   {
     cnt += 1;
-    size += table._hash_tbl.size() * sizeof(dbId<T>);
+    size += table.hash_tbl_.size() * sizeof(dbId<T>);
   }
 
   template <typename T>

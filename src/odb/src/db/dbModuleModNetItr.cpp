@@ -55,7 +55,7 @@ uint dbModuleModNetItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* module = (_dbModule*) parent;
-  return module->_modnets;
+  return module->modnets_;
   // User Code End begin
 }
 

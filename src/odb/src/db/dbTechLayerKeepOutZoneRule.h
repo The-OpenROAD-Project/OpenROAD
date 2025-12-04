@@ -16,11 +16,11 @@ class _dbDatabase;
 
 struct dbTechLayerKeepOutZoneRuleFlags
 {
-  bool same_mask_ : 1;
-  bool same_metal_ : 1;
-  bool diff_metal_ : 1;
-  bool except_aligned_side_ : 1;
-  bool except_aligned_end_ : 1;
+  bool same_mask : 1;
+  bool same_metal : 1;
+  bool diff_metal : 1;
+  bool except_aligned_side : 1;
+  bool except_aligned_end : 1;
   uint spare_bits : 27;
 };
 

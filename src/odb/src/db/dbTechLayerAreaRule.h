@@ -18,8 +18,8 @@ class _dbTechLayer;
 
 struct dbTechLayerAreaRuleFlags
 {
-  bool except_rectangle_ : 1;
-  uint overlap_ : 2;
+  bool except_rectangle : 1;
+  uint overlap : 2;
   uint spare_bits : 29;
 };
 

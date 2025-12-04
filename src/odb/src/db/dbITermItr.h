@@ -13,10 +13,8 @@ class _dbITerm;
 
 class dbNetITermItr : public dbIterator
 {
-  dbTable<_dbITerm, 1024>* _iterm_tbl;
-
  public:
-  dbNetITermItr(dbTable<_dbITerm, 1024>* iterm_tbl) { _iterm_tbl = iterm_tbl; }
+  dbNetITermItr(dbTable<_dbITerm, 1024>* iterm_tbl) { iterm_tbl_ = iterm_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -27,6 +25,9 @@ class dbNetITermItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbITerm, 1024>* iterm_tbl_;
 };
 
 class dbInstITermItr : public dbIterator
