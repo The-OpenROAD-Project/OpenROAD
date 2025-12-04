@@ -416,7 +416,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         macro.setShapes(width_intervals, tilings.front().area());
       }
 
-      macros.push_back(macro);
+      macros.push_back(std::move(macro));
     }
   }
   // if there is only one soft macro

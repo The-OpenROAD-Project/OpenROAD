@@ -389,7 +389,7 @@ class PlacerBase
   int64_t stdInstsArea() const { return stdInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
-  odb::dbGroup* group() const { return group_; }
+  odb::dbGroup* getGroup() const { return group_; }
 
   void unlockAll();
 

@@ -7,6 +7,7 @@ or_integration_tests(
     bterm_hier_create
     check_routing_tracks
     create_blockage
+    create_obstruction
     create_sboxes
     def_dup_net
     def_parser

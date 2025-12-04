@@ -204,7 +204,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
 {
   _dbSWire* wire = (_dbSWire*) wire_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
-  _dbSBox* box = block->_sbox_tbl->create();
+  _dbSBox* box = block->sbox_tbl_->create();
 
   const uint dx = std::abs(x2 - x1);
   const uint dy = std::abs(y2 - y1);
@@ -268,16 +268,16 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbVia* via = (_dbVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0) {
+  if (via->bbox_ == 0) {
     return nullptr;
   }
 
-  _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
+  _dbBox* vbbox = block->box_tbl_->getPtr(via->bbox_);
   const int xmin = vbbox->shape_.rect.xMin() + x;
   const int ymin = vbbox->shape_.rect.yMin() + y;
   const int xmax = vbbox->shape_.rect.xMax() + x;
   const int ymax = vbbox->shape_.rect.yMax() + y;
-  _dbSBox* box = block->_sbox_tbl->create();
+  _dbSBox* box = block->sbox_tbl_->create();
   box->flags_.owner_type = dbBoxOwner::SWIRE;
   box->shape_.rect.init(xmin, ymin, xmax, ymax);
   box->flags_.is_block_via = 1;
@@ -301,17 +301,17 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbTechVia* via = (_dbTechVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0) {
+  if (via->bbox_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
-  _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
+  _dbBox* vbbox = tech->box_tbl_->getPtr(via->bbox_);
   const int xmin = vbbox->shape_.rect.xMin() + x;
   const int ymin = vbbox->shape_.rect.yMin() + y;
   const int xmax = vbbox->shape_.rect.xMax() + x;
   const int ymax = vbbox->shape_.rect.yMax() + y;
-  _dbSBox* box = block->_sbox_tbl->create();
+  _dbSBox* box = block->sbox_tbl_->create();
   box->flags_.owner_type = dbBoxOwner::SWIRE;
   box->shape_.rect.init(xmin, ymin, xmax, ymax);
   box->flags_.is_tech_via = 1;
@@ -328,7 +328,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
 dbSBox* dbSBox::getSBox(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbSBox*) block->_sbox_tbl->getPtr(dbid_);
+  return (dbSBox*) block->sbox_tbl_->getPtr(dbid_);
 }
 
 void dbSBox::destroy(dbSBox* box_)
@@ -341,7 +341,7 @@ void dbSBox::destroy(dbSBox* box_)
 
   block->remove_rect(box->shape_.rect);
   dbProperty::destroyProperties(box);
-  block->_sbox_tbl->destroy(box);
+  block->sbox_tbl_->destroy(box);
 }
 
 std::vector<dbSBox*> dbSBox::smashVia()

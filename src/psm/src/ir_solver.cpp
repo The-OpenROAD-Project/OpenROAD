@@ -501,7 +501,7 @@ IRSolver::generateSourceNodesFromBTerms() const
 
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
 
-  for (auto* root_node : network_->getBPinShapeNodes()) {
+  for (Node* root_node : network_->getBPinShapeNodes()) {
     src_nodes.push_back(std::make_unique<SourceNode>(root_node));
   }
 

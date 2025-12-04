@@ -51,6 +51,8 @@ if (NOT USE_SYSTEM_ABC)
 add_compile_options(
   $<$<CXX_COMPILER_ID:AppleClang>:-g>
 )
+
+  set(ABC_SKIP_TESTS TRUE CACHE BOOL "Disable tests in the ABC submodule")
   add_subdirectory(abc)
 
 endif()

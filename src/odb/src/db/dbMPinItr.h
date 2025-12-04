@@ -13,8 +13,6 @@ class _dbMPin;
 
 class dbMPinItr : public dbIterator
 {
-  dbTable<_dbMPin, 4>* _mpin_tbl;
-
  public:
   dbMPinItr(dbTable<_dbMPin, 4>* mpin_tbl) { _mpin_tbl = mpin_tbl; }
 
@@ -27,6 +25,9 @@ class dbMPinItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbMPin, 4>* _mpin_tbl;
 };
 
 }  // namespace odb

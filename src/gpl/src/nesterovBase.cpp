@@ -1876,7 +1876,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   log_->info(GPL,
              33,
              "Initializing Nesterov region: {}",
-             pb_->group() ? pb_->group()->getName() : "Top-level");
+             pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level");
 
   // Set a fixed seed
   srand(42);
@@ -2943,11 +2943,11 @@ void NesterovBase::updateNextIter(const int iter)
     prev_reported_overflow_unscaled_ = sum_overflow_unscaled_;
 
     std::string group_name;
-    if (pb_->group()) {
-      group_name = fmt::format(" ({})", pb_->group()->getName());
+    if (pb_->getGroup()) {
+      group_name = fmt::format(" ({})", pb_->getGroup()->getName());
     }
 
-    if ((iter == 0 || reprint_iter_header_) && !pb_->group()) {
+    if ((iter == 0 || reprint_iter_header_) && !pb_->getGroup()) {
       if (iter == 0) {
         log_->info(GPL, 31, "HPWL: Half-Perimeter Wirelength");
       }
@@ -3106,8 +3106,8 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     return true;
   }
   if (sum_overflow_unscaled_ <= npVars_->targetOverflow) {
-    const bool has_group = pb_->group();
-    const std::string group_name = has_group ? pb_->group()->getName() : "";
+    const bool has_group = pb_->getGroup();
+    const std::string group_name = has_group ? pb_->getGroup()->getName() : "";
     const int final_iter = gpl_iter_count;
     dbBlock* block = pb_->db()->getChip()->getBlock();
 

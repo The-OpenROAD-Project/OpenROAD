@@ -1132,6 +1132,8 @@ class NesterovBase
 
   std::shared_ptr<PlacerBase> getPb() const { return pb_; }
 
+  odb::dbGroup* getGroup() const { return pb_->getGroup(); }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
