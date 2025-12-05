@@ -1315,7 +1315,7 @@ void PadDirectConnectionStraps::cutShapes(
 }
 
 void PadDirectConnectionStraps::unifyConnectionTypes(
-    const std::set<PadDirectConnectionStraps*>& straps)
+    const std::vector<PadDirectConnectionStraps*>& straps)
 {
   std::set<ConnectionType> types;
   for (auto* strap : straps) {
