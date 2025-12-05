@@ -3823,12 +3823,18 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
     }
   }
 
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "insert_buffer",
-             1,
-             "BeforeLoads: LCA module: {}",
-             target_module ? target_module->getName() : "null");
+  if (getImpl()->getLogger()->debugCheck(utl::ODB, "insert_buffer", 1)) {
+    dbModInst* target_mod_inst
+        = target_module ? target_module->getModInst() : nullptr;
+    debugPrint(getImpl()->getLogger(),
+               utl::ODB,
+               "insert_buffer",
+               1,
+               "BeforeLoads: LCA module: {} '{}'",
+               target_module ? target_module->getName() : "null",
+               target_mod_inst ? target_mod_inst->getHierarchicalName()
+                               : "<null_inst>");
+  }
 
   // Print net connectivities including both this flat and related hier nets
   if (getImpl()->getLogger()->debugCheck(utl::ODB, "insert_buffer", 2)) {
@@ -3928,11 +3934,26 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   std::set<dbModNet*> related_modnets;
   findRelatedModNets(related_modnets);
   dbModNet* orig_mod_net = nullptr;
+  std::set<dbModNet*> modnets_in_target_module;
   for (dbModNet* modnet : related_modnets) {
     if (modnet->getParent() == target_module) {
-      orig_mod_net = modnet;
-      break;
+      // There can be multiple modnets in the target module
+      modnets_in_target_module.insert(modnet);
     }
+  }
+
+  if (modnets_in_target_module.size() > 1) {
+    // There are multiple modnets in the target module.
+    // Select the modnet that can see any of the target load pins.
+    //
+    // Algorithm:
+    // 1. Fanin traversal through modnets from each load pin.
+    // 2. Select the first visit modnet that is included in the
+    //    modnets_in_target_module.
+    orig_mod_net
+        = getFirstModNetInFaninOfLoads(load_pins, modnets_in_target_module);
+  } else if (modnets_in_target_module.size() == 1) {
+    orig_mod_net = *modnets_in_target_module.begin();
   }
 
   if (orig_mod_net) {
@@ -4040,6 +4061,44 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
              buffer_inst->getName());
 
   return buffer_inst;
+}
+
+// jk: move to proper location
+dbModNet* dbNet::getFirstModNetInFaninOfLoads(
+    const std::set<dbObject*>& load_pins,
+    const std::set<dbModNet*>& modnets_in_target_module)
+{
+  for (dbObject* load : load_pins) {
+    dbModNet* curr_mod_net = nullptr;
+
+    // 1. Get the modnet of the load
+    if (load->getObjectType() == dbITermObj) {
+      dbITerm* iterm = static_cast<dbITerm*>(load);
+      curr_mod_net = iterm->getModNet();
+    } else if (load->getObjectType() == dbBTermObj) {
+      curr_mod_net = static_cast<dbBTerm*>(load)->getModNet();
+    } else {
+      continue;
+    }
+
+    if (curr_mod_net == nullptr) {
+      continue;
+    }
+
+    // 2. Find the modnet in the target module by fanin traversal
+    while (curr_mod_net) {
+      // Found the modnet in the target module
+      if (modnets_in_target_module.find(curr_mod_net)
+          != modnets_in_target_module.end()) {
+        return curr_mod_net;
+      }
+
+      // Go up to the next modnet in the fanin
+      curr_mod_net = curr_mod_net->getNextModNetInFanin();
+    }
+  }
+
+  return nullptr;
 }
 
 }  // namespace odb

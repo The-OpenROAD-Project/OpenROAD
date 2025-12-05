@@ -206,16 +206,18 @@ void dbModNet::rename(const char* new_name)
 
   _dbBlock* block = (_dbBlock*) obj->getOwner();
 
+  // jk: dbg
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: dbModNet({} {:p}) '{}', rename to '{}'",
+             getId(),
+             static_cast<void*>(this),
+             getHierarchicalName(),
+             new_name);
+
   if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbModNet({} {:p}) '{}', rename to '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getHierarchicalName(),
-               new_name);
     block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
   }
 
@@ -252,7 +254,7 @@ void dbModNet::dump() const
 {
   utl::Logger* logger = getImpl()->getLogger();
   logger->report("--------------------------------------------------");
-  logger->report("dbModNet: {} (id={})", getName(), getId());
+  logger->report("dbModNet: {} (id={})", getHierarchicalName(), getId());
   logger->report("  Parent Module: {} (id={})",
                  getParent()->getName(),
                  getParent()->getId());
@@ -329,14 +331,16 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   parent->_modnets = modnet->getOID();
   parent->_modnet_hash[base_name] = modnet->getOID();
 
+  // jk: dbg
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: create dbModNet {} at id {}",
+             base_name,
+             modnet->getId());
+
   if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbModNet {} at id {}",
-               base_name,
-               modnet->getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(base_name);
@@ -360,15 +364,17 @@ void dbModNet::destroy(dbModNet* mod_net)
 
   mod_net->disconnectAllTerms();
 
+  // jk: dbg
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: delete dbModNet {} at id {}",
+             mod_net->getName(),
+             mod_net->getId());
+
   // journalling
   if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbModNet {} at id {}",
-               mod_net->getName(),
-               mod_net->getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(mod_net->getName());
@@ -610,6 +616,20 @@ bool dbModNet::isConnected(const dbModNet* other) const
   dbNet* net = findRelatedNet();
   dbNet* other_net = other->findRelatedNet();
   return (net == other_net);
+}
+
+dbModNet* dbModNet::getNextModNetInFanin() const
+{
+  for (dbModBTerm* modbterm : getModBTerms()) {
+    if (modbterm->getIoType() == dbIoType::INPUT
+        || modbterm->getIoType() == dbIoType::INOUT) {
+      if (dbModITerm* moditerm = modbterm->getParentModITerm()) {
+        return moditerm->getModNet();
+      }
+    }
+  }
+
+  return nullptr;
 }
 
 // User Code End dbModNetPublicMethods

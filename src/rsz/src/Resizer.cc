@@ -4892,7 +4892,11 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
   }
 
   // jk: dbg
-  // sta_->checkSanityDrvrVertexEdges(buffer_inst->findITerm("Z"));
+  if (logger_->debugCheck(utl::RSZ, "dbg", 2)) {
+    dbITerm* out_iterm = buffer_inst->getFirstOutput();
+    sta_->checkSanityDrvrVertexEdges(out_iterm);
+    db_network_->checkSanityNetConnectivity(out_iterm);
+  }
 
   return buffer_inst;
 }

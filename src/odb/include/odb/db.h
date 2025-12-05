@@ -2612,6 +2612,7 @@ class dbNet : public dbObject
                                   = dbNameUniquifyType::ALWAYS,
                                   bool loads_on_same_db_net = true);
 
+  // jk: move into _dbNet
  private:
   dbInst* insertBufferCommon(dbObject* term_obj,
                              const dbMaster* buffer_master,
@@ -2619,6 +2620,9 @@ class dbNet : public dbObject
                              const char* base_name,
                              const dbNameUniquifyType& uniquify,
                              bool insertBefore);
+  dbModNet* getFirstModNetInFaninOfLoads(
+      const std::set<dbObject*>& load_pins,
+      const std::set<dbModNet*>& modnets_in_target_module);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -8556,6 +8560,11 @@ class dbModNet : public dbObject
   /// Returns true if this dbModNet is connected to other dbModNet.
   ///
   bool isConnected(const dbModNet* other) const;
+
+  ///
+  /// Returns the next dbModNet in the fanin of this dbModNet.
+  ///
+  dbModNet* getNextModNetInFanin() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
