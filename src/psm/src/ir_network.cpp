@@ -330,7 +330,7 @@ IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 
   for (auto* bterm : net_->getBTerms()) {
     for (auto* bpin : bterm->getBPins()) {
-      for (auto* geom : bpin->getBoxes()) {
+      for (odb::dbBox* geom : bpin->getBoxes()) {
         for (const auto& [layer, shapes] :
              generatePolygonsFromBox(geom, odb::dbTransform())) {
           shapes_by_layer[layer] += shapes;
@@ -345,7 +345,7 @@ IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 
         // create bpin nodes
         auto term = std::make_unique<TerminalNode>(pin_shape, layer);
-        auto pin_node = std::make_unique<BPinNode>(bpin, pin_shape, layer);
+        auto pin_node = std::make_unique<BPinNode>(bpin, geom, layer);
 
         connections_.push_back(
             std::make_unique<TermConnection>(term.get(), pin_node.get()));
@@ -1292,7 +1292,9 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
 
   std::map<odb::dbTechLayer*, std::set<odb::Rect>> nodes;
   for (const auto& bpin : bpin_nodes_) {
-    nodes[bpin->getLayer()].insert(bpin->getShape());
+    if (bpin->shouldConnect()) {
+      nodes[bpin->getLayer()].insert(bpin->getShape());
+    }
   }
 
   Node::NodeSet pin_nodes;

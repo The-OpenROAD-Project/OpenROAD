@@ -14,9 +14,9 @@ class _dbDatabase;
 
 struct dbTechLayerTwoWiresForbiddenSpcRuleFlags
 {
-  bool min_exact_span_length_ : 1;
-  bool max_exact_span_length_ : 1;
-  uint spare_bits_ : 30;
+  bool min_exact_span_length : 1;
+  bool max_exact_span_length : 1;
+  uint spare_bits : 30;
 };
 
 class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject

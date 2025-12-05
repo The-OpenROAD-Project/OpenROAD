@@ -19,31 +19,31 @@ template class dbTable<_dbTechLayerMinCutRule>;
 
 bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
 {
-  if (flags_.per_cut_class_ != rhs.flags_.per_cut_class_) {
+  if (flags_.per_cut_class != rhs.flags_.per_cut_class) {
     return false;
   }
   if (flags_.within_cut_dist_valid != rhs.flags_.within_cut_dist_valid) {
     return false;
   }
-  if (flags_.from_above_ != rhs.flags_.from_above_) {
+  if (flags_.from_above != rhs.flags_.from_above) {
     return false;
   }
-  if (flags_.from_below_ != rhs.flags_.from_below_) {
+  if (flags_.from_below != rhs.flags_.from_below) {
     return false;
   }
-  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
+  if (flags_.length_valid != rhs.flags_.length_valid) {
     return false;
   }
-  if (flags_.area_valid_ != rhs.flags_.area_valid_) {
+  if (flags_.area_valid != rhs.flags_.area_valid) {
     return false;
   }
-  if (flags_.area_within_dist_valid_ != rhs.flags_.area_within_dist_valid_) {
+  if (flags_.area_within_dist_valid != rhs.flags_.area_within_dist_valid) {
     return false;
   }
   if (flags_.same_metal_overlap != rhs.flags_.same_metal_overlap) {
     return false;
   }
-  if (flags_.fully_enclosed_ != rhs.flags_.fully_enclosed_) {
+  if (flags_.fully_enclosed != rhs.flags_.fully_enclosed) {
     return false;
   }
   if (num_cuts_ != rhs.num_cuts_) {
@@ -239,14 +239,14 @@ void dbTechLayerMinCutRule::setPerCutClass(bool per_cut_class)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  obj->flags_.per_cut_class_ = per_cut_class;
+  obj->flags_.per_cut_class = per_cut_class;
 }
 
 bool dbTechLayerMinCutRule::isPerCutClass() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  return obj->flags_.per_cut_class_;
+  return obj->flags_.per_cut_class;
 }
 
 void dbTechLayerMinCutRule::setWithinCutDistValid(bool within_cut_dist_valid)
@@ -267,70 +267,70 @@ void dbTechLayerMinCutRule::setFromAbove(bool from_above)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  obj->flags_.from_above_ = from_above;
+  obj->flags_.from_above = from_above;
 }
 
 bool dbTechLayerMinCutRule::isFromAbove() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  return obj->flags_.from_above_;
+  return obj->flags_.from_above;
 }
 
 void dbTechLayerMinCutRule::setFromBelow(bool from_below)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  obj->flags_.from_below_ = from_below;
+  obj->flags_.from_below = from_below;
 }
 
 bool dbTechLayerMinCutRule::isFromBelow() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  return obj->flags_.from_below_;
+  return obj->flags_.from_below;
 }
 
 void dbTechLayerMinCutRule::setLengthValid(bool length_valid)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  obj->flags_.length_valid_ = length_valid;
+  obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerMinCutRule::isLengthValid() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  return obj->flags_.length_valid_;
+  return obj->flags_.length_valid;
 }
 
 void dbTechLayerMinCutRule::setAreaValid(bool area_valid)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  obj->flags_.area_valid_ = area_valid;
+  obj->flags_.area_valid = area_valid;
 }
 
 bool dbTechLayerMinCutRule::isAreaValid() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  return obj->flags_.area_valid_;
+  return obj->flags_.area_valid;
 }
 
 void dbTechLayerMinCutRule::setAreaWithinDistValid(bool area_within_dist_valid)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  obj->flags_.area_within_dist_valid_ = area_within_dist_valid;
+  obj->flags_.area_within_dist_valid = area_within_dist_valid;
 }
 
 bool dbTechLayerMinCutRule::isAreaWithinDistValid() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  return obj->flags_.area_within_dist_valid_;
+  return obj->flags_.area_within_dist_valid;
 }
 
 void dbTechLayerMinCutRule::setSameMetalOverlap(bool same_metal_overlap)
@@ -351,14 +351,14 @@ void dbTechLayerMinCutRule::setFullyEnclosed(bool fully_enclosed)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  obj->flags_.fully_enclosed_ = fully_enclosed;
+  obj->flags_.fully_enclosed = fully_enclosed;
 }
 
 bool dbTechLayerMinCutRule::isFullyEnclosed() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
-  return obj->flags_.fully_enclosed_;
+  return obj->flags_.fully_enclosed;
 }
 
 // User Code Begin dbTechLayerMinCutRulePublicMethods

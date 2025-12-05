@@ -56,7 +56,7 @@ uint dbModuleBusPortModBTermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbBusPort* _busport = (_dbBusPort*) parent;
-  return _busport->_members;
+  return _busport->members_;
   // User Code End begin
 }
 
@@ -68,7 +68,7 @@ uint dbModuleBusPortModBTermItr::end(dbObject* /* unused: parent */) const
 uint dbModuleBusPortModBTermItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModBTerm* lmodbterm = _modbterm_tbl->getPtr(id);
+  _dbModBTerm* lmodbterm = modbterm_tbl_->getPtr(id);
   uint ret = lmodbterm->next_entry_;
   return ret;
   // User Code End next
@@ -76,7 +76,7 @@ uint dbModuleBusPortModBTermItr::next(uint id, ...) const
 
 dbObject* dbModuleBusPortModBTermItr::getObject(uint id, ...)
 {
-  return _modbterm_tbl->getPtr(id);
+  return modbterm_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

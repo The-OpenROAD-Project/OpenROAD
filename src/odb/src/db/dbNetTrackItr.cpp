@@ -38,7 +38,7 @@ void dbNetTrackItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbNetTrack* _child = _net_tracks_tbl->getPtr(id);
+    _dbNetTrack* _child = net_tracks_tbl_->getPtr(id);
     uint n = _child->track_next_;
     _child->track_next_ = list;
     list = id;
@@ -82,14 +82,14 @@ uint dbNetTrackItr::end(dbObject* /* unused: parent */) const
 uint dbNetTrackItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbNetTrack* _track = _net_tracks_tbl->getPtr(id);
+  _dbNetTrack* _track = net_tracks_tbl_->getPtr(id);
   return _track->track_next_;
   // User Code End next
 }
 
 dbObject* dbNetTrackItr::getObject(uint id, ...)
 {
-  return _net_tracks_tbl->getPtr(id);
+  return net_tracks_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

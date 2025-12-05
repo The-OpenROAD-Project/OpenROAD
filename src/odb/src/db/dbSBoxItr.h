@@ -13,11 +13,8 @@ class _dbSBox;
 
 class dbSBoxItr : public dbIterator
 {
- protected:
-  dbTable<_dbSBox>* _box_tbl;
-
  public:
-  dbSBoxItr(dbTable<_dbSBox>* box_tbl) { _box_tbl = box_tbl; }
+  dbSBoxItr(dbTable<_dbSBox>* box_tbl) { box_tbl_ = box_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -28,6 +25,9 @@ class dbSBoxItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbSBox>* box_tbl_;
 };
 
 }  // namespace odb

@@ -14,7 +14,7 @@ class _dbGroup;
 class dbRegionGroupItr : public dbIterator
 {
  public:
-  dbRegionGroupItr(dbTable<_dbGroup>* group_tbl) { _group_tbl = group_tbl; }
+  dbRegionGroupItr(dbTable<_dbGroup>* group_tbl) { group_tbl_ = group_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -27,7 +27,7 @@ class dbRegionGroupItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbGroup>* _group_tbl;
+  dbTable<_dbGroup>* group_tbl_;
 };
 
 }  // namespace odb

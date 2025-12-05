@@ -21,17 +21,17 @@ bool _dbCellEdgeSpacing::operator==(const _dbCellEdgeSpacing& rhs) const
   if (flags_.except_abutted_ != rhs.flags_.except_abutted_) {
     return false;
   }
-  if (flags_.except_non_filler_in_between_
-      != rhs.flags_.except_non_filler_in_between_) {
+  if (flags_.except_non_filler_in_between
+      != rhs.flags_.except_non_filler_in_between) {
     return false;
   }
-  if (flags_.optional_ != rhs.flags_.optional_) {
+  if (flags_.optional != rhs.flags_.optional) {
     return false;
   }
-  if (flags_.soft_ != rhs.flags_.soft_) {
+  if (flags_.soft != rhs.flags_.soft) {
     return false;
   }
-  if (flags_.exact_ != rhs.flags_.exact_) {
+  if (flags_.exact != rhs.flags_.exact) {
     return false;
   }
   if (first_edge_type_ != rhs.first_edge_type_) {
@@ -40,7 +40,7 @@ bool _dbCellEdgeSpacing::operator==(const _dbCellEdgeSpacing& rhs) const
   if (second_edge_type_ != rhs.second_edge_type_) {
     return false;
   }
-  if (spacing != rhs.spacing) {
+  if (spacing_ != rhs.spacing_) {
     return false;
   }
 
@@ -55,7 +55,7 @@ bool _dbCellEdgeSpacing::operator<(const _dbCellEdgeSpacing& rhs) const
 _dbCellEdgeSpacing::_dbCellEdgeSpacing(_dbDatabase* db)
 {
   flags_ = {};
-  spacing = -1;
+  spacing_ = -1;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbCellEdgeSpacing& obj)
@@ -66,7 +66,7 @@ dbIStream& operator>>(dbIStream& stream, _dbCellEdgeSpacing& obj)
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.first_edge_type_;
   stream >> obj.second_edge_type_;
-  stream >> obj.spacing;
+  stream >> obj.spacing_;
   return stream;
 }
 
@@ -78,7 +78,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbCellEdgeSpacing& obj)
   stream << flags_bit_field;
   stream << obj.first_edge_type_;
   stream << obj.second_edge_type_;
-  stream << obj.spacing;
+  stream << obj.spacing_;
   return stream;
 }
 
@@ -129,13 +129,13 @@ void dbCellEdgeSpacing::setSpacing(int spacing)
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  obj->spacing = spacing;
+  obj->spacing_ = spacing;
 }
 
 int dbCellEdgeSpacing::getSpacing() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
-  return obj->spacing;
+  return obj->spacing_;
 }
 
 void dbCellEdgeSpacing::setExceptAbutted(bool except_abutted)
@@ -157,56 +157,56 @@ void dbCellEdgeSpacing::setExceptNonFillerInBetween(
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  obj->flags_.except_non_filler_in_between_ = except_non_filler_in_between;
+  obj->flags_.except_non_filler_in_between = except_non_filler_in_between;
 }
 
 bool dbCellEdgeSpacing::isExceptNonFillerInBetween() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  return obj->flags_.except_non_filler_in_between_;
+  return obj->flags_.except_non_filler_in_between;
 }
 
 void dbCellEdgeSpacing::setOptional(bool optional)
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  obj->flags_.optional_ = optional;
+  obj->flags_.optional = optional;
 }
 
 bool dbCellEdgeSpacing::isOptional() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  return obj->flags_.optional_;
+  return obj->flags_.optional;
 }
 
 void dbCellEdgeSpacing::setSoft(bool soft)
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  obj->flags_.soft_ = soft;
+  obj->flags_.soft = soft;
 }
 
 bool dbCellEdgeSpacing::isSoft() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  return obj->flags_.soft_;
+  return obj->flags_.soft;
 }
 
 void dbCellEdgeSpacing::setExact(bool exact)
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  obj->flags_.exact_ = exact;
+  obj->flags_.exact = exact;
 }
 
 bool dbCellEdgeSpacing::isExact() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  return obj->flags_.exact_;
+  return obj->flags_.exact;
 }
 
 // User Code Begin dbCellEdgeSpacingPublicMethods

@@ -9,7 +9,7 @@
     },
     {
       "type": "bit",
-      "name": "parallel_only_"
+      "name": "parallel_only"
     },
     {
       "type": "dbVector<std::pair<int, int>>",

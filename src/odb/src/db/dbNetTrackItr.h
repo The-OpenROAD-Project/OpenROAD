@@ -16,7 +16,7 @@ class dbNetTrackItr : public dbIterator
  public:
   dbNetTrackItr(dbTable<_dbNetTrack>* net_tracks_tbl)
   {
-    _net_tracks_tbl = net_tracks_tbl;
+    net_tracks_tbl_ = net_tracks_tbl;
   }
 
   bool reversible() const override;
@@ -30,7 +30,7 @@ class dbNetTrackItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbNetTrack>* _net_tracks_tbl;
+  dbTable<_dbNetTrack>* net_tracks_tbl_;
 };
 
 }  // namespace odb

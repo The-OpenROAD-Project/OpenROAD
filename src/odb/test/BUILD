@@ -147,6 +147,7 @@ COMPULSORY_TESTS = [
     "bterm_hier_create",
     "check_routing_tracks",
     "create_blockage",
+    "create_obstruction",
     "create_sboxes",
     "def_dup_net",
     "def_parser",
@@ -350,6 +351,9 @@ filegroup(
             ],
             "all_pins_placed2": [
                 "design_is_routed1.def",
+            ],
+            "create_obstruction": [
+                "create_blockage.def",
             ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",
