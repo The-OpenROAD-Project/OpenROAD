@@ -166,7 +166,7 @@ module multi_sink (clk);
  DFF_X1 ff285 (.CK(clknet_2_0__leaf_gclk3));
  DFF_X1 ff286 (.CK(clknet_2_2__leaf_gclk3));
  DFF_X1 ff287 (.CK(clknet_2_3__leaf_gclk3));
- CLKGATE_X1 gclk1 (.CK(clknet_1_1__leaf_clk),
+ CLKGATE_X1 gclk1 (.CK(delaynet_0_core),
     .GCK(gclk1));
  CLKGATE_X1 gclk3 (.CK(clknet_1_0__leaf_gclk4),
     .GCK(gclk3));
@@ -341,9 +341,9 @@ module multi_sink (clk);
  DFF_X1 \h1/ff97  (.CK(clknet_4_6__leaf_hi_gclk5));
  DFF_X1 \h1/ff98  (.CK(clknet_4_14__leaf_hi_gclk5));
  DFF_X1 \h1/ff99  (.CK(clknet_4_6__leaf_hi_gclk5));
- CLKGATE_X1 hi_gclk5 (.CK(delaynet_3_core),
+ CLKGATE_X1 hi_gclk5 (.CK(clknet_1_1__leaf_clk),
     .GCK(hi_gclk5));
- CLKGATE_X1 \hi_inst/gclk2_inst  (.CK(clknet_1_1__leaf_clk),
+ CLKGATE_X1 \hi_inst/gclk2_inst  (.CK(delaynet_4_core),
     .GCK(hi_gclk2));
  CLKBUF_X3 clkbuf_regs_0_core (.A(delaynet_1_core),
     .Z(gclk4_regs));
@@ -457,17 +457,17 @@ module multi_sink (clk);
     .Z(clknet_2_3__leaf_gclk1));
  INV_X1 clkload24 (.A(clknet_2_0__leaf_gclk1));
  INV_X1 clkload25 (.A(clknet_2_3__leaf_gclk1));
- CLKBUF_X3 delaybuf_0_core (.A(gclk4),
+ CLKBUF_X3 delaybuf_0_core (.A(clknet_1_1__leaf_clk),
     .Z(delaynet_0_core));
- CLKBUF_X3 delaybuf_1_core (.A(delaynet_0_core),
+ CLKBUF_X3 delaybuf_1_core (.A(gclk4),
     .Z(delaynet_1_core));
  CLKBUF_X3 delaybuf_2_core (.A(clknet_1_0__leaf_clk),
     .Z(delaynet_2_core));
  CLKBUF_X3 delaybuf_3_core (.A(delaynet_2_core),
     .Z(delaynet_3_core));
- CLKBUF_X3 delaybuf_4_core (.A(clknet_0_clk),
+ CLKBUF_X3 delaybuf_4_core (.A(delaynet_3_core),
     .Z(delaynet_4_core));
- CLKBUF_X3 delaybuf_5_core (.A(delaynet_4_core),
+ CLKBUF_X3 delaybuf_5_core (.A(clknet_0_clk),
     .Z(delaynet_5_core));
  CLKBUF_X3 delaybuf_6_core (.A(delaynet_5_core),
     .Z(delaynet_6_core));
