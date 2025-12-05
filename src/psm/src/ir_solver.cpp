@@ -431,7 +431,9 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
 }
 
 Connection::ConnectionMap<Connection::Conductance>
-IRSolver::generateConductanceMap(sta::Corner* corner) const
+IRSolver::generateConductanceMap(
+    sta::Corner* corner,
+    const std::vector<std::unique_ptr<Connection>>& connections) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate conductance map: {}");
@@ -439,7 +441,7 @@ IRSolver::generateConductanceMap(sta::Corner* corner) const
   const Connection::ResistanceMap resistance = getResistanceMap(corner);
 
   Connection::ConnectionMap<Connection::Conductance> conductance;
-  for (const auto& conn : network_->getConnections()) {
+  for (const auto& conn : connections) {
     const auto res = conn->getResistance(resistance);
     conductance[conn.get()] = 1.0 / res;
   }
@@ -985,7 +987,33 @@ void IRSolver::solve(sta::Corner* corner,
   voltages.clear();
   currents.clear();
 
-  const auto conductance = generateConductanceMap(corner);
+  // Build source map
+  std::vector<std::unique_ptr<SourceNode>> real_src_nodes;
+  Voltage src_voltage
+      = generateSourceNodes(source_type, source_file, corner, real_src_nodes);
+
+  std::vector<std::unique_ptr<SourceNode>> src_nodes;
+  std::vector<std::unique_ptr<Connection>> src_conns;
+  // If resistance is set, add connection from source nodes to new source and
+  // connect
+  if (generated_source_settings_.resistance > 0) {
+    src_nodes.reserve(real_src_nodes.size());
+    src_conns.reserve(real_src_nodes.size());
+    for (const auto& real_src_node : real_src_nodes) {
+      src_conns.push_back(std::make_unique<FixedResistanceConnection>(
+          real_src_node->getSource(),
+          real_src_node.get(),
+          generated_source_settings_.resistance));
+      src_nodes.push_back(std::make_unique<SourceNode>(real_src_node.get()));
+    }
+  } else {
+    src_nodes = std::move(real_src_nodes);
+    real_src_nodes.clear();
+  }
+
+  // Build conductance map
+  Connection::ConnectionMap<Connection::Conductance> conductance
+      = generateConductanceMap(corner, network_->getConnections());
   debugPrint(logger_,
              utl::PSM,
              "stats",
@@ -997,23 +1025,34 @@ void IRSolver::solve(sta::Corner* corner,
     dumpConductance(conductance, "cond");
   }
 
-  const auto node_connections = getNodeConnectionMap(conductance);
+  std::map<Node*, Connection::ConnectionSet> node_connections
+      = getNodeConnectionMap(conductance);
   Node::NodeSet all_nodes;
   for (const auto& [node, conns] : node_connections) {
     all_nodes.insert(node);
   }
 
-  const Power total_power = buildNodeCurrentMap(corner, currents);
+  // Add source conductance
+  if (!src_conns.empty()) {
+    const auto src_conductance = generateConductanceMap(corner, src_conns);
+    for (const auto& [conn, cond] : src_conductance) {
+      conductance[conn] = cond;
+    }
+    for (const auto& [node, conns] : getNodeConnectionMap(src_conductance)) {
+      node_connections[node].insert(conns.begin(), conns.end());
+    }
+  }
 
-  // Build source map
-  std::vector<std::unique_ptr<SourceNode>> src_nodes;
-  Voltage src_voltage
-      = generateSourceNodes(source_type, source_file, corner, src_nodes);
+  const Power total_power = buildNodeCurrentMap(corner, currents);
 
   // Solve
   // create vector of nodes
   std::map<Node*, std::size_t> node_index = assignNodeIDs(all_nodes);
   const std::map<Node*, std::size_t> real_node_index = node_index;
+  for (const auto& [node, id] :
+       assignNodeIDs(real_src_nodes, node_index.size())) {
+    node_index[node] = id;
+  }
   for (const auto& [node, id] : assignNodeIDs(src_nodes, node_index.size())) {
     node_index[node] = id;
   }
@@ -1052,6 +1091,7 @@ void IRSolver::solve(sta::Corner* corner,
     if (logger_->debugCheck(utl::PSM, "dump", 1)) {
       network_->dumpNodes(node_index);
       dumpMatrix(g_matrix, "G");
+      dumpVector(j_vector, "J");
     }
     logger_->error(
         utl::PSM,
@@ -1576,7 +1616,8 @@ Connection::ConnectionMap<IRSolver::Current> IRSolver::generateCurrentMap(
 {
   const auto& voltages = voltages_.at(corner);
   Connection::ConnectionMap<IRSolver::Current> currents;
-  for (const auto& [connection, cond] : generateConductanceMap(corner)) {
+  for (const auto& [connection, cond] :
+       generateConductanceMap(corner, network_->getConnections())) {
     if (connection->hasITermNode() || connection->hasBPinNode()) {
       continue;
     }
