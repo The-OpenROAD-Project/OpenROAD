@@ -139,11 +139,6 @@ MANUAL_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "pads_black_parrot",
-    "pads_black_parrot_flipchip",
-    "pads_black_parrot_flipchip_connect_bumps",
-    "pads_black_parrot_flipchip_connect_overpads",
-    "pads_black_parrot_offset",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
