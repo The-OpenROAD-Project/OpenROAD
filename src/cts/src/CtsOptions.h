@@ -84,11 +84,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
 
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
   bool getSinkClustering() const { return sinkClusteringEnable_; }
-  void setSinkClusteringUseMaxCap(bool useMaxCap)
-  {
-    sinkClusteringUseMaxCap_ = useMaxCap;
-  }
-  bool getSinkClusteringUseMaxCap() const { return sinkClusteringUseMaxCap_; }
   void setNumMaxLeafSinks(unsigned numSinks) { numMaxLeafSinks_ = numSinks; }
   unsigned getNumMaxLeafSinks() const { return numMaxLeafSinks_; }
   void setMaxSlew(unsigned slew) { maxSlew_ = slew; }
@@ -209,13 +204,11 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setMaxDiameter(double distance)
   {
     maxDiameter_ = distance;
-    sinkClusteringUseMaxCap_ = false;
     maxDiameterSet_ = true;
   }
   void resetMaxDiameter()
   {
     maxDiameter_ = 50;
-    sinkClusteringUseMaxCap_ = true;
     maxDiameterSet_ = false;
   }
   bool isMaxDiameterSet() const { return maxDiameterSet_; }
@@ -223,13 +216,11 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setSinkClusteringSize(unsigned size)
   {
     sinkClustersSize_ = size;
-    sinkClusteringUseMaxCap_ = false;
     sinkClustersSizeSet_ = true;
   }
   void resetSinkClusteringSize()
   {
     sinkClustersSize_ = 30;
-    sinkClusteringUseMaxCap_ = true;
     sinkClustersSizeSet_ = false;
   }
   bool isSinkClusteringSizeSet() const { return sinkClustersSizeSet_; }
@@ -355,7 +346,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
   bool sinkClusteringEnable_ = true;
-  bool sinkClusteringUseMaxCap_ = true;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
   std::unique_ptr<CtsObserver> observer_;
