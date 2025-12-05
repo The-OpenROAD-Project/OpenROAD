@@ -415,7 +415,7 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
 
       // Keep track of flat nets that are already represented by a mod_net
       // to avoid returning both.
-      std::set<dbNet*> handled_flat_nets;
+      std::unordered_set<dbNet*> handled_flat_nets;
       for (dbModNet* mod_net : mod_nets) {
         dbNet* flat_net = network_->findRelatedDbNet(mod_net);
         if (flat_net) {
@@ -425,7 +425,7 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
 
       // Collect dbNets from children dbInsts' pins that are not already
       // handled.
-      std::set<dbNet*> flat_nets_set;
+      std::unordered_set<dbNet*> flat_nets_set;
       for (dbInst* child_inst : module->getInsts()) {
         for (dbITerm* iterm : child_inst->getITerms()) {
           dbNet* flat_net = iterm->getNet();
@@ -447,6 +447,10 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
         }
       }
       flat_nets_vec_.assign(flat_nets_set.begin(), flat_nets_set.end());
+      // Sort these nets so their order is determinisitc
+      std::ranges::sort(flat_nets_vec_, [](auto const* net1, auto const* net2) {
+        return net1->getId() < net2->getId();
+      });
     }
   } else {
     //

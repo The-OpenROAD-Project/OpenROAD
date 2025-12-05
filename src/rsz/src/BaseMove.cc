@@ -982,14 +982,26 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
 
 LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
 {
-  LibertyCellSeq buffer_sizes;
   if (base->isBuffer()) {
-    for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
-      buffer_sizes.push_back(buffer);
-    }
     if (resizer_->buffer_fast_sizes_.count(base) == 0) {
       return LibertyCellSeq();
     }
+
+    LibertyCellSeq buffer_sizes;
+    buffer_sizes.reserve(resizer_->buffer_fast_sizes_.size());
+    for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
+      buffer_sizes.push_back(buffer);
+    }
+    // Sort output to ensure deterministic order
+    std::ranges::sort(buffer_sizes,
+              [](LibertyCell const* c1, LibertyCell const* c2) {
+                auto area1 = c1->area();
+                auto area2 = c2->area();
+                if (area1 != area2) {
+                  return area1 < area2;
+                }
+                return c1->id() < c2->id();
+    });
     return buffer_sizes;
   }
   return resizer_->getSwappableCells(base);
