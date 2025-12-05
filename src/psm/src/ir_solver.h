@@ -50,6 +50,7 @@ class IRSolver
     Voltage avg_voltage = 0.0;
     Voltage avg_ir_drop = 0.0;
     float max_percent = 0.0;
+    Power total_power = 0.0;
   };
   struct EMResults
   {
@@ -172,8 +173,8 @@ class IRSolver
   std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
       const Connection::ConnectionMap<Connection::Conductance>& conductance)
       const;
-  void buildNodeCurrentMap(sta::Corner* corner,
-                           ValueNodeMap<Current>& currents) const;
+  IRSolver::Power buildNodeCurrentMap(sta::Corner* corner,
+                                      ValueNodeMap<Current>& currents) const;
   std::map<Node*, std::size_t> assignNodeIDs(const Node::NodeSet& nodes,
                                              std::size_t start = 0) const;
   std::map<Node*, std::size_t> assignNodeIDs(
@@ -216,6 +217,7 @@ class IRSolver
   const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages_;
   const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers_;
   std::map<sta::Corner*, Voltage> solution_voltages_;
+  std::map<sta::Corner*, Power> solution_power_;
 
   const PDNSim::GeneratedSourceSettings& generated_source_settings_;
 
