@@ -1209,11 +1209,12 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 {
   auto gcell_index = nbc_->createCbkGCell(db_inst);
-  for (auto& nesterov : nbVec_) {
-    // TODO: manage regions, not every NB should create a
-    // gcell.
-    nesterov->createCbkGCell(db_inst, gcell_index);
-  }
+  // Always create gcell on top-level
+  nbVec_[0]->createCbkGCell(db_inst, gcell_index);
+  // TODO: properly create new gcell in each region
+  // for (auto& nesterov : nbVec_) {
+  //   nesterov->createCbkGCell(db_inst, gcell_index);
+  // }
 }
 
 void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
