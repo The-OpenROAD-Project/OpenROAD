@@ -994,14 +994,14 @@ LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
     }
     // Sort output to ensure deterministic order
     std::ranges::sort(buffer_sizes,
-              [](LibertyCell const* c1, LibertyCell const* c2) {
-                auto area1 = c1->area();
-                auto area2 = c2->area();
-                if (area1 != area2) {
-                  return area1 < area2;
-                }
-                return c1->id() < c2->id();
-    });
+                      [](LibertyCell const* c1, LibertyCell const* c2) {
+                        auto area1 = c1->area();
+                        auto area2 = c2->area();
+                        if (area1 != area2) {
+                          return area1 < area2;
+                        }
+                        return c1->id() < c2->id();
+                      });
     return buffer_sizes;
   }
   return resizer_->getSwappableCells(base);

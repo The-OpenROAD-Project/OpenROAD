@@ -283,7 +283,7 @@ void SwapPinsMove::equivCellPins(const LibertyCell* cell,
       ports.push_back(candidate_port);
     }
   }
-  if (!seen_ports.empty()) { // If we added any ports sort them.
+  if (!seen_ports.empty()) {  // If we added any ports sort them.
     std::ranges::sort(ports,
                       [](auto* p1, auto* p2) { return p1->id() < p2->id(); });
   }
