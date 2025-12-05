@@ -1128,18 +1128,21 @@ void HTreeBuilder::run()
   unsigned clusterSize = (type_ == TreeType::MacroTree)
                              ? options_->getMacroSinkClusteringSize()
                              : options_->getSinkClusteringSize();
+  bool use_max_diameter = (type_ == TreeType::MacroTree)
+                              ? options_->isMacroMaxDiameterSet()
+                              : options_->isMaxDiameterSet();
+  bool use_max_size = (type_ == TreeType::MacroTree)
+                          ? options_->isMacroSinkClusteringSizeSet()
+                          : options_->isSinkClusteringSizeSet();
   bool useMaxCap = (type_ == TreeType::MacroTree)
                        ? false
-                       : options_->getSinkClusteringUseMaxCap();
+                       : !(use_max_size && use_max_diameter);
 
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
   logger_->info(CTS, 28, " Total number of sinks: {}.", clock_.getNumSinks());
   if (options_->getSinkClustering()) {
-    if (useMaxCap) {
-      logger_->info(
-          CTS, 90, " Sinks will be clustered based on buffer max cap.");
-    } else {
+    if (!useMaxCap) {
       logger_->info(
           CTS,
           29,
@@ -1148,6 +1151,23 @@ void HTreeBuilder::run()
           type_ == TreeType::MacroTree ? "Macro " : "Register",
           clusterSize,
           clusterDiameter);
+    } else if (use_max_diameter && !use_max_size) {
+      logger_->info(CTS,
+                    59,
+                    " {} sinks will be clustered with maximum cluster diameter "
+                    "of {:.1f} um and based on buffer max cap.",
+                    type_ == TreeType::MacroTree ? "Macro " : "Register",
+                    clusterDiameter);
+    } else if (!use_max_diameter && use_max_size) {
+      logger_->info(CTS,
+                    60,
+                    " {} sinks will be clustered in groups of up to {} and "
+                    "based on buffer max cap.",
+                    type_ == TreeType::MacroTree ? "Macro " : "Register",
+                    clusterSize);
+    } else {
+      logger_->info(
+          CTS, 90, " Sinks will be clustered based on buffer max cap.");
     }
   }
   logger_->info(
