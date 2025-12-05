@@ -1415,7 +1415,7 @@ bool PadDirectConnectionStraps::refineShapes(
     return GridComponent::refineShapes(all_shapes, all_obstructions);
   }
 
-  std::set<Shape*> refine;
+  std::vector<Shape*> refine;
   for (const auto& [layer, shapes] : getShapes()) {
     for (const auto& shape : shapes) {
       if (!strapViaIsObstructed(
@@ -1423,13 +1423,15 @@ bool PadDirectConnectionStraps::refineShapes(
         continue;
       }
 
-      refine.insert(shape.get());
+      refine.push_back(shape.get());
     }
   }
 
   if (refine.empty()) {
     return false;
   }
+
+  refine.erase(std::unique(refine.begin(), refine.end()), refine.end());
 
   for (auto* refine_shape : refine) {
     std::unique_ptr<Shape> shape = refine_shape->copy();
