@@ -1282,7 +1282,7 @@ odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
-  std::set<PadDirectConnectionStraps*> straps;
+  std::vector<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
     std::vector<odb::dbITerm*> iterms;
@@ -1299,23 +1299,11 @@ void CoreGrid::setupDirectConnect(
       iterms.push_back(iterm);
     }
 
-    // sort by name to keep stable
-    std::stable_sort(
-        iterms.begin(), iterms.end(), [](odb::dbITerm* l, odb::dbITerm* r) {
-          const int name_compare
-              = r->getInst()->getName().compare(l->getInst()->getName());
-          if (name_compare != 0) {
-            return name_compare < 0;
-          }
-
-          return r->getMTerm()->getName() < l->getMTerm()->getName();
-        });
-
     for (auto* iterm : iterms) {
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
           this, iterm, connect_pad_layers);
       if (pad_connect->canConnect()) {
-        straps.insert(pad_connect.get());
+        straps.push_back(pad_connect.get());
         addStrap(std::move(pad_connect));
       } else {
         debugPrint(getLogger(),
