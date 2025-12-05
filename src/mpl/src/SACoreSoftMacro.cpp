@@ -324,9 +324,7 @@ void SACoreSoftMacro::initialize()
 
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(
-        block_->dbuAreaToMicrons(width_ * static_cast<int64_t>(height_))
-        / block_->dbuAreaToMicrons(outline_.area()));
+    area_penalty_list.push_back(getAreaPenalty());
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
     guidance_penalty_list.push_back(guidance_penalty_);
@@ -441,9 +439,9 @@ void SACoreSoftMacro::calBoundaryPenalty()
     return;
   }
 
-  int64_t global_lx = 0, global_ly = 0;
-  int64_t global_ux = 0, global_uy = 0;
-  float x_dist_from_root = 0, y_dist_from_root = 0;
+  int global_lx = 0, global_ly = 0;
+  int global_ux = 0, global_uy = 0;
+  int x_dist_from_root = 0, y_dist_from_root = 0;
 
   for (const auto& macro_id : pos_seq_) {
     const SoftMacro& soft_macro = macros_[macro_id];
@@ -457,13 +455,14 @@ void SACoreSoftMacro::calBoundaryPenalty()
       global_ux = global_lx + soft_macro.getWidth();
       global_uy = global_ly + soft_macro.getHeight();
 
-      x_dist_from_root = block_->dbuToMicrons(
-          std::min(global_lx, std::abs(root_->getWidth() - global_ux)));
-      y_dist_from_root = block_->dbuToMicrons(
-          std::min(global_ly, std::abs(root_->getHeight() - global_uy)));
+      x_dist_from_root
+          = std::min(global_lx, std::abs(root_->getWidth() - global_ux));
+      y_dist_from_root
+          = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
 
       boundary_penalty_
-          += (x_dist_from_root + y_dist_from_root) * soft_macro.getNumMacro();
+          += block_->dbuToMicrons(x_dist_from_root + y_dist_from_root)
+             * soft_macro.getNumMacro();
     }
   }
   // normalization
@@ -510,7 +509,7 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         }
 
         Cluster* cluster = soft_macro.getCluster();
-        float macro_dominance
+        const float macro_dominance
             = cluster->getMacroArea() / static_cast<float>(cluster->getArea());
 
         macro_blockage_penalty_ += overlap_shape.width()
@@ -997,7 +996,7 @@ void SACoreSoftMacro::fillDeadSpace()
   }
 }
 
-int SACoreSoftMacro::getSegmentIndex(int segment,
+int SACoreSoftMacro::getSegmentIndex(const int segment,
                                      const std::vector<int>& coords)
 {
   int index = std::distance(
@@ -1011,9 +1010,9 @@ void SACoreSoftMacro::addBlockages(const std::vector<odb::Rect>& blockages)
   blockages_.insert(blockages_.end(), blockages.begin(), blockages.end());
 }
 
-std::vector<std::pair<int, int>> SACoreSoftMacro::getClustersLocations() const
+std::vector<odb::Point> SACoreSoftMacro::getClustersLocations() const
 {
-  std::vector<std::pair<int, int>> clusters_locations(pos_seq_.size());
+  std::vector<odb::Point> clusters_locations(pos_seq_.size());
   for (int id : pos_seq_) {
     clusters_locations[id] = {macros_[id].getX(), macros_[id].getY()};
   }
@@ -1022,7 +1021,7 @@ std::vector<std::pair<int, int>> SACoreSoftMacro::getClustersLocations() const
 }
 
 void SACoreSoftMacro::setClustersLocations(
-    const std::vector<std::pair<int, int>>& clusters_locations)
+    const std::vector<odb::Point>& clusters_locations)
 {
   if (clusters_locations.size() != pos_seq_.size()) {
     logger_->error(MPL,
@@ -1032,8 +1031,8 @@ void SACoreSoftMacro::setClustersLocations(
   }
 
   for (int& id : pos_seq_) {
-    macros_[id].setX(clusters_locations[id].first);
-    macros_[id].setY(clusters_locations[id].second);
+    macros_[id].setX(clusters_locations[id].x());
+    macros_[id].setY(clusters_locations[id].y());
   }
 }
 
@@ -1048,8 +1047,8 @@ void SACoreSoftMacro::attemptCentralization(const float pre_cost)
   // x,y grid to fill the dead space by expanding mixed clusters.
   auto clusters_locations = getClustersLocations();
 
-  std::pair<int, int> offset((outline_.dx() - width_) / 2,
-                             (outline_.dy() - height_) / 2);
+  const odb::Point offset((outline_.dx() - width_) / 2,
+                          (outline_.dy() - height_) / 2);
   moveFloorplan(offset);
   calPenalty();
 
@@ -1067,11 +1066,11 @@ void SACoreSoftMacro::attemptCentralization(const float pre_cost)
   }
 }
 
-void SACoreSoftMacro::moveFloorplan(const std::pair<float, float>& offset)
+void SACoreSoftMacro::moveFloorplan(const odb::Point& offset)
 {
   for (auto& id : pos_seq_) {
-    macros_[id].setX(macros_[id].getX() + offset.first);
-    macros_[id].setY(macros_[id].getY() + offset.second);
+    macros_[id].setX(macros_[id].getX() + offset.x());
+    macros_[id].setY(macros_[id].getY() + offset.y());
   }
 
   if (graphics_) {

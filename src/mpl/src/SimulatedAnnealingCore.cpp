@@ -294,10 +294,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
       continue;
     }
 
-    const float x1 = source.getPinX();
-    const float y1 = source.getPinY();
-    const float x2 = target.getPinX();
-    const float y2 = target.getPinY();
+    const int x1 = source.getPinX();
+    const int y1 = source.getPinY();
+    const int x2 = target.getPinX();
+    const int y2 = target.getPinY();
     wirelength_
         += net.weight
            * block_->dbuToMicrons((std::abs(x2 - x1) + std::abs(y2 - y1)));
@@ -373,7 +373,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     const int ux = lx + macros_[id].getWidth();
     const int uy = ly + macros_[id].getHeight();
     // check if the macro is valid
-    if (macros_[id].getWidth() * macros_[id].getHeight() <= 1e-4) {
+    if (macros_[id].getWidth() * macros_[id].getHeight() == 0) {
       continue;
     }
     // check if the fence is valid
@@ -387,15 +387,12 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     const int x_dist = std::abs(bbox.xCenter() - ((lx + ux) / 2));
     const int y_dist = std::abs(bbox.yCenter() - ((ly + uy) / 2));
     // calculate x and y direction independently
-    float width = x_dist <= max_x_dist
-                      ? 0.0
-                      : block_->dbuToMicrons((x_dist - max_x_dist));
-    float height = y_dist <= max_y_dist
-                       ? 0.0
-                       : block_->dbuToMicrons((y_dist - max_y_dist));
-    width = width / block_->dbuToMicrons(outline_.dx());
-    height = height / block_->dbuToMicrons(outline_.dy());
-    fence_penalty_ += width * width + height * height;
+    const int width = x_dist <= max_x_dist ? 0 : (x_dist - max_x_dist);
+    const int height = y_dist <= max_y_dist ? 0 : (y_dist - max_y_dist);
+    const float width_ratio = width / static_cast<float>(outline_.dx());
+    const float height_ratio = height / static_cast<float>(outline_.dy());
+    fence_penalty_
+        += (width_ratio * width_ratio) + (height_ratio + height_ratio);
   }
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();

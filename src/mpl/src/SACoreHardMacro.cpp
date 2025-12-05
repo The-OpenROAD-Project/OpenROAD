@@ -211,7 +211,7 @@ void SACoreHardMacro::initialize()
     // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(block_->dbuAreaToMicrons(getArea()));
+    area_penalty_list.push_back(getAreaPenalty());
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
     guidance_penalty_list.push_back(guidance_penalty_);

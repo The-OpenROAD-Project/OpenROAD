@@ -151,26 +151,18 @@ std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
 
 void ClusteringEngine::setFloorplanShape()
 {
-  const odb::Rect& core = block_->getCoreArea();
-
-  tree_->floorplan_shape
-      = odb::Rect(std::max(core.xMin(), tree_->global_fence.xMin()),
-                  std::max(core.yMin(), tree_->global_fence.yMin()),
-                  std::min(core.xMax(), tree_->global_fence.xMax()),
-                  std::min(core.yMax(), tree_->global_fence.yMax()));
+  tree_->floorplan_shape = block_->getCoreArea().intersect(tree_->global_fence);
 }
 
 void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
 {
-  odb::Rect floorplan_shape = tree_->floorplan_shape;
-
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isBlock()) {
       continue;
     }
 
     if (inst->isFixed()
-        && inst->getBBox()->getBox().overlaps(floorplan_shape)) {
+        && inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
       logger_->error(MPL,
                      50,
                      "Found fixed instance {} inside the floorplan area.",
@@ -202,10 +194,7 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
       auto macro = std::make_unique<HardMacro>(
           inst, tree_->halo_width, tree_->halo_height);
 
-      const int macro_dbu_width = macro->getWidth();
-      const int macro_dbu_height = macro->getHeight();
-
-      if (macro_dbu_width > core.dx() || macro_dbu_height > core.dy()) {
+      if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
         logger_->error(
             MPL,
             6,
@@ -276,12 +265,12 @@ void ClusteringEngine::reportDesignData()
       block_->dbuToMicrons(tree_->floorplan_shape.xMax()),
       block_->dbuToMicrons(tree_->floorplan_shape.yMax()));
 
-  float util
+  double util
       = (design_metrics_->getStdCellArea() + design_metrics_->getMacroArea())
-        / static_cast<float>(tree_->floorplan_shape.area());
-  float floorplan_util
+        / static_cast<double>(tree_->floorplan_shape.area());
+  double floorplan_util
       = design_metrics_->getStdCellArea()
-        / static_cast<float>(
+        / static_cast<double>(
             (tree_->floorplan_shape.area() - design_metrics_->getMacroArea()));
   logger_->report(
       "\tNumber of std cell instances: {}\n"
@@ -1230,10 +1219,7 @@ void ClusteringEngine::setClusterMetrics(Cluster* cluster)
 
 int64_t ClusteringEngine::computeArea(odb::dbInst* inst)
 {
-  const int width = inst->getBBox()->getBox().dx();
-  const int height = inst->getBBox()->getBox().dy();
-
-  return width * static_cast<int64_t>(height);
+  return inst->getBBox()->getBox().area();
 }
 
 // Post-order DFS for clustering

@@ -14,6 +14,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shapes.h"
+
 namespace utl {
 class Logger;
 }
@@ -89,12 +90,11 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calMacroBlockagePenalty();
   void calFixedMacrosPenalty();
 
-  std::vector<std::pair<int, int>> getClustersLocations() const;
-  void setClustersLocations(
-      const std::vector<std::pair<int, int>>& clusters_locations);
+  std::vector<odb::Point> getClustersLocations() const;
+  void setClustersLocations(const std::vector<odb::Point>& clusters_locations);
   // Only for Cluster Placement:
   void attemptCentralization(float pre_cost);
-  void moveFloorplan(const std::pair<float, float>& offset);
+  void moveFloorplan(const odb::Point& offset);
 
   Tiling computeOverlapShape(const odb::Rect& rect_a,
                              const odb::Rect& rect_b) const;

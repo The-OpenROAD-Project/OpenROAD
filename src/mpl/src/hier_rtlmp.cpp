@@ -1250,10 +1250,10 @@ int HierRTLMP::computePinAccessBaseDepth(const int io_span) const
 
   int64_t root_area = (tree_->root->getWidth()
                        * static_cast<int64_t>(tree_->root->getHeight()));
-  const float macro_dominance_factor
-      = tree_->macro_with_halo_area / static_cast<float>(root_area);
+  const double macro_dominance_factor
+      = tree_->macro_with_halo_area / static_cast<double>(root_area);
 
-  const int base_depth = std_cell_area / static_cast<float>(io_span)
+  const int base_depth = std_cell_area / static_cast<double>(io_span)
                          * std::pow((1 - macro_dominance_factor), 2);
 
   debugPrint(logger_,
@@ -1313,7 +1313,7 @@ void HierRTLMP::considerFixedMacro(const odb::Rect& outline,
                                    Cluster* fixed_macro_cluster) const
 {
   const HardMacro* hard_macro = fixed_macro_cluster->getHardMacros().front();
-  Point offset(-outline.xMin(), -outline.yMin());
+  odb::Point offset(-outline.xMin(), -outline.yMin());
   sa_macros.emplace_back(logger_, hard_macro, &offset);
 }
 
@@ -1472,13 +1472,12 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
   for (Cluster* io_cluster : io_clusters) {
     soft_macro_id_map[io_cluster->getName()] = macros.size();
 
-    macros.emplace_back(
-        std::pair<float, float>(io_cluster->getX() - outline.xMin(),
-                                io_cluster->getY() - outline.yMin()),
-        io_cluster->getName(),
-        io_cluster->getWidth(),
-        io_cluster->getHeight(),
-        io_cluster);
+    macros.emplace_back(odb::Point(io_cluster->getX() - outline.xMin(),
+                                   io_cluster->getY() - outline.yMin()),
+                        io_cluster->getName(),
+                        io_cluster->getWidth(),
+                        io_cluster->getHeight(),
+                        io_cluster);
   }
 
   createFixedTerminals(parent, soft_macro_id_map, macros);
@@ -1847,7 +1846,7 @@ void HierRTLMP::createFixedTerminal(Cluster* cluster,
 {
   // A conventional fixed terminal is just a point without
   // the cluster data.
-  Point location = cluster->getCenter();
+  odb::Point location = cluster->getCenter();
   float width = 0.0f;
   float height = 0.0f;
   Cluster* terminal_cluster = nullptr;
@@ -1862,8 +1861,8 @@ void HierRTLMP::createFixedTerminal(Cluster* cluster,
     terminal_cluster = cluster;
   }
 
-  location.first -= outline.xMin();
-  location.second -= outline.yMin();
+  location.addX(-outline.xMin());
+  location.addY(-outline.yMin());
 
   macros.emplace_back(
       location, cluster->getName(), width, height, terminal_cluster);

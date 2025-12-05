@@ -42,7 +42,6 @@ using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
-using Point = std::pair<int, int>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -155,16 +154,14 @@ class Cluster
   bool isIOCluster() const;
   bool isClusterOfUnconstrainedIOPins() const;
   bool isClusterOfUnplacedIOPins() const;
-  void setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
-                                    float width,
-                                    float height,
+  void setAsClusterOfUnplacedIOPins(const odb::Point& pos,
+                                    int width,
+                                    int height,
                                     bool is_cluster_of_unconstrained_io_pins);
   bool isIOPadCluster() const { return is_io_pad_cluster_; }
-  void setAsIOPadCluster(const std::pair<float, float>& pos,
-                         float width,
-                         float height);
+  void setAsIOPadCluster(const odb::Point& pos, int width, int height);
   bool isIOBundle() const { return is_io_bundle_; }
-  void setAsIOBundle(const Point& pos, float width, float height);
+  void setAsIOBundle(const odb::Point& pos, int width, int height);
 
   bool isFixedMacro() const { return is_fixed_macro_; }
   void setAsFixedMacro(const HardMacro* hard_macro);
@@ -192,9 +189,9 @@ class Cluster
   int getY() const;
   void setX(int x);
   void setY(int y);
-  std::pair<int, int> getLocation() const;
+  odb::Point getLocation() const;
   odb::Rect getBBox() const;
-  Point getCenter() const;
+  odb::Point getCenter() const;
 
   // Hierarchy Support
   void setParent(Cluster* parent);
@@ -271,7 +268,7 @@ class HardMacro
  public:
   // Create a macro with specified size
   // Model fixed terminals
-  HardMacro(std::pair<int, int> location,
+  HardMacro(const odb::Point& location,
             const std::string& name,
             int width,
             int height,
@@ -295,10 +292,10 @@ class HardMacro
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
-  void setLocation(const std::pair<int, int>& location);
+  void setLocation(const odb::Point& location);
   void setX(int x);
   void setY(int y);
-  std::pair<int, int> getLocation() const;
+  odb::Point getLocation() const;
   int getX() const { return x_; }
   int getY() const { return y_; }
   // The position of pins relative to the lower left of the instance
@@ -314,10 +311,10 @@ class HardMacro
   bool isFixed() const { return fixed_; }
 
   // Note that the real X and Y does NOT include halo_width
-  void setRealLocation(const std::pair<int, int>& location);
+  void setRealLocation(const odb::Point& location);
   void setRealX(int x);
   void setRealY(int y);
-  std::pair<int, int> getRealLocation() const;
+  odb::Point getRealLocation() const;
   int getRealX() const;
   int getRealY() const;
   int getRealWidth() const;
@@ -377,20 +374,20 @@ class SoftMacro
  public:
   SoftMacro(Cluster* cluster);
   SoftMacro(const odb::Rect& blockage, const std::string& name);
-  SoftMacro(const std::pair<int, int>& location,
+  SoftMacro(const odb::Point& location,
             const std::string& name,
             int width,
             int height,
             Cluster* cluster);
   SoftMacro(utl::Logger* logger,
             const HardMacro* hard_macro,
-            const Point* offset = nullptr);
+            const odb::Point* offset = nullptr);
 
   const std::string& getName() const;
 
   void setX(int x);
   void setY(int y);
-  void setLocation(const std::pair<int, int>& location);
+  void setLocation(const odb::Point& location);
   void setWidth(int width);    // only for StdCellCluster and MixedCluster
   void setHeight(int height);  // only for StdCellCluster and MixedCluster
   void setArea(int64_t area);  // only for StdCellCluster and MixedCluster
@@ -406,10 +403,7 @@ class SoftMacro
   int getPinX() const { return x_ + (0.5 * width_); }
   int getPinY() const { return y_ + (0.5 * height_); }
 
-  std::pair<int, int> getLocation() const
-  {
-    return std::pair<int, int>(x_, y_);
-  }
+  odb::Point getLocation() const { return {x_, y_}; }
 
   bool isFixed() const { return fixed_; }
 

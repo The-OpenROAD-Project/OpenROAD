@@ -210,7 +210,7 @@ inline int64_t computeDistToNearestRegion(
     }
   }
 
-  return static_cast<int64_t>(std::sqrt(smallest_distance));
+  return std::sqrt(smallest_distance);
 }
 
 }  // namespace mpl
