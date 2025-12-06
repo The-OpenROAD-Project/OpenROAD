@@ -392,7 +392,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     const float width_ratio = width / static_cast<float>(outline_.dx());
     const float height_ratio = height / static_cast<float>(outline_.dy());
     fence_penalty_
-        += (width_ratio * width_ratio) + (height_ratio + height_ratio);
+        += (width_ratio * width_ratio) + (height_ratio * height_ratio);
   }
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();
