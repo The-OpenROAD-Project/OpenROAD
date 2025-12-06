@@ -1,6 +1,6 @@
 source "helpers.tcl"
 
-set test_name gcd_annealing2
+set test_name gcd_genetic
 
 define_corners fast slow
 set lib_files_slow {\
@@ -41,8 +41,7 @@ report_tns
 write_verilog_for_eqy $test_name before "None"
 
 puts "-- After --\n"
-
-resynth_annealing -corner fast -temp 1e-10
+resynth_genetic -corner slow -initial_ops 5 -iters 15 -pop_size 100 -mut_prob 0.25 -cross_prob 0.75 -tourn_size 9 -tourn_prob 0.9
 report_timing_histogram
 report_cell_usage
 report_checks
