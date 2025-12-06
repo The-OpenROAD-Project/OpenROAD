@@ -161,6 +161,11 @@ class dbNetwork : public ConcreteNetwork
 
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
+
+  bool isPGSupply(dbITerm* iterm) const;
+  bool isPGSupply(dbBTerm* bterm) const;
+  bool isPGSupply(dbNet* net) const;
+
   // dbStaCbk::inDbBTermCreate
   Port* makeTopPort(dbBTerm* bterm);
   dbBTerm* isTopPort(const Port*) const;
