@@ -53,9 +53,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: spm_inst_0_domain.
 [INFO GPL-0015] Region area:                 23100.000 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:       3487.094 um^2
-[INFO GPL-0019] Utilization:                    15.096 %
-[INFO GPL-0020] Standard cells area:          3487.094 um^2
+[INFO GPL-0018] Movable instances area:       3725.621 um^2
+[INFO GPL-0019] Utilization:                    16.128 %
+[INFO GPL-0020] Standard cells area:          3725.621 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Initializing region: spm_inst_1_domain
 [INFO GPL-0006] Number of instances:               315
@@ -70,138 +70,140 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: spm_inst_1_domain.
 [INFO GPL-0015] Region area:                 23100.000 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:       3487.094 um^2
-[INFO GPL-0019] Utilization:                    15.096 %
-[INFO GPL-0020] Standard cells area:          3487.094 um^2
+[INFO GPL-0018] Movable instances area:       3725.621 um^2
+[INFO GPL-0019] Utilization:                    16.128 %
+[INFO GPL-0020] Standard cells area:          3725.621 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [WARNING GPL-0123] No placeable instances in the top-level region. Removing it.
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 12377325
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 9278995
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 9278995
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 9278995
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 9278995
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 9412947
 [INFO GPL-0033] Initializing Nesterov region: spm_inst_0_domain
 [INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:     11.070 um^2
-[INFO GPL-0025] Ideal bin area:                 15.814 um^2
-[INFO GPL-0026] Ideal bin count:                  1460
+[INFO GPL-0024] Movable insts average area:     11.827 um^2
+[INFO GPL-0025] Ideal bin area:                 16.896 um^2
+[INFO GPL-0026] Ideal bin count:                  1367
 [INFO GPL-0027] Total bin area:              23100.000 um^2
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
 [INFO GPL-0030] Number of bins:                   1024
 [INFO GPL-0033] Initializing Nesterov region: spm_inst_1_domain
 [INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:     11.070 um^2
-[INFO GPL-0025] Ideal bin area:                 15.814 um^2
-[INFO GPL-0026] Ideal bin count:                  1460
+[INFO GPL-0024] Movable insts average area:     11.827 um^2
+[INFO GPL-0025] Ideal bin area:                 16.896 um^2
+[INFO GPL-0026] Ideal bin count:                  1367
 [INFO GPL-0027] Total bin area:              23100.000 um^2
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
 [INFO GPL-0030] Number of bins:                   1024
 [INFO GPL-0007] Execute nesterov global placement.
-        0 |   0.9815 |  5.922132e+03 |   +0.00% |  3.07e-15 |  (spm_inst_0_domain)
-        0 |   0.9815 |  5.922132e+03 |   +0.00% |  2.65e-15 |  (spm_inst_1_domain)
-       10 |   0.9813 |  5.883946e+03 |   -0.64% |  4.99e-15 |  (spm_inst_0_domain)
-       10 |   0.9808 |  5.883946e+03 |   -0.64% |  4.32e-15 |  (spm_inst_1_domain)
-       20 |   0.9813 |  5.881222e+03 |   -0.05% |  8.14e-15 |  (spm_inst_0_domain)
-       20 |   0.9809 |  5.881222e+03 |   -0.05% |  7.04e-15 |  (spm_inst_1_domain)
-       30 |   0.9813 |  5.881123e+03 |   -0.00% |  1.33e-14 |  (spm_inst_0_domain)
-       30 |   0.9809 |  5.881123e+03 |   -0.00% |  1.15e-14 |  (spm_inst_1_domain)
-       40 |   0.9813 |  5.881086e+03 |   -0.00% |  2.16e-14 |  (spm_inst_0_domain)
-       40 |   0.9809 |  5.881086e+03 |   -0.00% |  1.87e-14 |  (spm_inst_1_domain)
-       50 |   0.9813 |  5.881136e+03 |   +0.00% |  3.52e-14 |  (spm_inst_0_domain)
-       50 |   0.9809 |  5.881136e+03 |   +0.00% |  3.04e-14 |  (spm_inst_1_domain)
-       60 |   0.9813 |  5.881683e+03 |   +0.01% |  5.73e-14 |  (spm_inst_0_domain)
-       60 |   0.9809 |  5.881683e+03 |   +0.01% |  4.96e-14 |  (spm_inst_1_domain)
-       70 |   0.9813 |  5.883200e+03 |   +0.03% |  9.33e-14 |  (spm_inst_0_domain)
-       70 |   0.9810 |  5.883200e+03 |   +0.03% |  8.08e-14 |  (spm_inst_1_domain)
-       80 |   0.9813 |  5.886742e+03 |   +0.06% |  1.52e-13 |  (spm_inst_0_domain)
-       80 |   0.9810 |  5.886742e+03 |   +0.06% |  1.32e-13 |  (spm_inst_1_domain)
-       90 |   0.9812 |  5.894628e+03 |   +0.13% |  2.48e-13 |  (spm_inst_0_domain)
-       90 |   0.9811 |  5.894628e+03 |   +0.13% |  2.14e-13 |  (spm_inst_1_domain)
-      100 |   0.9811 |  5.910223e+03 |   +0.26% |  4.03e-13 |  (spm_inst_0_domain)
-      100 |   0.9812 |  5.910223e+03 |   +0.26% |  3.49e-13 |  (spm_inst_1_domain)
-      110 |   0.9810 |  5.941573e+03 |   +0.53% |  6.57e-13 |  (spm_inst_0_domain)
-      110 |   0.9813 |  5.941573e+03 |   +0.53% |  5.69e-13 |  (spm_inst_1_domain)
-      120 |   0.9808 |  6.001912e+03 |   +1.02% |  1.07e-12 |  (spm_inst_0_domain)
-      120 |   0.9815 |  6.001912e+03 |   +1.02% |  9.26e-13 |  (spm_inst_1_domain)
-      130 |   0.9806 |  6.090310e+03 |   +1.47% |  1.74e-12 |  (spm_inst_0_domain)
-      130 |   0.9789 |  6.090310e+03 |   +1.47% |  1.51e-12 |  (spm_inst_1_domain)
-      140 |   0.9713 |  6.206644e+03 |   +1.91% |  2.84e-12 |  (spm_inst_0_domain)
-      140 |   0.9725 |  6.206644e+03 |   +1.91% |  2.46e-12 |  (spm_inst_1_domain)
-      150 |   0.9707 |  6.364342e+03 |   +2.54% |  4.62e-12 |  (spm_inst_0_domain)
-      150 |   0.9724 |  6.364342e+03 |   +2.54% |  4.00e-12 |  (spm_inst_1_domain)
-      160 |   0.9533 |  6.561297e+03 |   +3.09% |  7.53e-12 |  (spm_inst_0_domain)
-      160 |   0.9628 |  6.561297e+03 |   +3.09% |  6.52e-12 |  (spm_inst_1_domain)
-      170 |   0.9456 |  6.756451e+03 |   +2.97% |  1.23e-11 |  (spm_inst_0_domain)
-      170 |   0.9501 |  6.756451e+03 |   +2.97% |  1.06e-11 |  (spm_inst_1_domain)
-      180 |   0.9302 |  7.025814e+03 |   +3.99% |  2.00e-11 |  (spm_inst_0_domain)
-      180 |   0.9317 |  7.025814e+03 |   +3.99% |  1.73e-11 |  (spm_inst_1_domain)
-      190 |   0.9074 |  7.349717e+03 |   +4.61% |  3.25e-11 |  (spm_inst_0_domain)
-      190 |   0.9187 |  7.349717e+03 |   +4.61% |  2.82e-11 |  (spm_inst_1_domain)
-      200 |   0.8856 |  7.809949e+03 |   +6.26% |  5.30e-11 |  (spm_inst_0_domain)
-      200 |   0.9006 |  7.809949e+03 |   +6.26% |  4.59e-11 |  (spm_inst_1_domain)
-      210 |   0.8565 |  8.363940e+03 |   +7.09% |  8.63e-11 |  (spm_inst_0_domain)
-      210 |   0.8876 |  8.363940e+03 |   +7.09% |  7.48e-11 |  (spm_inst_1_domain)
-      220 |   0.8211 |  8.892512e+03 |   +6.32% |  1.41e-10 |  (spm_inst_0_domain)
-      220 |   0.8496 |  8.892512e+03 |   +6.32% |  1.22e-10 |  (spm_inst_1_domain)
-      230 |   0.7917 |  9.383823e+03 |   +5.52% |  2.29e-10 |  (spm_inst_0_domain)
-      230 |   0.8095 |  9.383823e+03 |   +5.52% |  1.98e-10 |  (spm_inst_1_domain)
-      240 |   0.7444 |  9.995708e+03 |   +6.52% |  3.73e-10 |  (spm_inst_0_domain)
-      240 |   0.7766 |  9.995708e+03 |   +6.52% |  3.23e-10 |  (spm_inst_1_domain)
-      250 |   0.6898 |  1.056075e+04 |   +5.65% |  6.08e-10 |  (spm_inst_0_domain)
-      250 |   0.7312 |  1.056075e+04 |   +5.65% |  5.26e-10 |  (spm_inst_1_domain)
-      260 |   0.6433 |  1.102470e+04 |   +4.39% |  9.90e-10 |  (spm_inst_0_domain)
-      260 |   0.6879 |  1.102470e+04 |   +4.39% |  8.57e-10 |  (spm_inst_1_domain)
-      270 |   0.5915 |  1.147948e+04 |   +4.13% |  1.61e-09 |  (spm_inst_0_domain)
-      270 |   0.6323 |  1.147948e+04 |   +4.13% |  1.40e-09 |  (spm_inst_1_domain)
-      280 |   0.5275 |  1.178290e+04 |   +2.64% |  2.63e-09 |  (spm_inst_0_domain)
-      280 |   0.5701 |  1.178290e+04 |   +2.64% |  2.27e-09 |  (spm_inst_1_domain)
-      290 |   0.4895 |  1.207000e+04 |   +2.44% |  4.28e-09 |  (spm_inst_0_domain)
-      290 |   0.5144 |  1.207000e+04 |   +2.44% |  3.70e-09 |  (spm_inst_1_domain)
-      300 |   0.4305 |  1.262486e+04 |   +4.60% |  6.97e-09 |  (spm_inst_0_domain)
-      300 |   0.4597 |  1.262486e+04 |   +4.60% |  6.03e-09 |  (spm_inst_1_domain)
-      310 |   0.3686 |  1.315408e+04 |   +4.19% |  1.13e-08 |  (spm_inst_0_domain)
-      310 |   0.4149 |  1.315408e+04 |   +4.19% |  9.82e-09 |  (spm_inst_1_domain)
-      320 |   0.3298 |  1.353935e+04 |   +2.93% |  1.76e-08 |  (spm_inst_0_domain)
-      320 |   0.3648 |  1.353935e+04 |   +2.93% |  1.60e-08 |  (spm_inst_1_domain)
-      330 |   0.3080 |  1.374963e+04 |   +1.55% |  2.59e-08 |  (spm_inst_0_domain)
-      330 |   0.3248 |  1.374963e+04 |   +1.55% |  2.45e-08 |  (spm_inst_1_domain)
-      340 |   0.2726 |  1.391760e+04 |   +1.22% |  3.81e-08 |  (spm_inst_0_domain)
-      340 |   0.2800 |  1.391760e+04 |   +1.22% |  3.62e-08 |  (spm_inst_1_domain)
-      350 |   0.2449 |  1.397663e+04 |   +0.42% |  5.62e-08 |  (spm_inst_0_domain)
-      350 |   0.2701 |  1.397663e+04 |   +0.42% |  5.33e-08 |  (spm_inst_1_domain)
-      360 |   0.2278 |  1.367460e+04 |   -2.16% |  8.28e-08 |  (spm_inst_0_domain)
-      360 |   0.2283 |  1.367460e+04 |   -2.16% |  7.85e-08 |  (spm_inst_1_domain)
-      370 |   0.2060 |  1.362133e+04 |   -0.39% |  1.22e-07 |  (spm_inst_0_domain)
-      370 |   0.2103 |  1.362133e+04 |   -0.39% |  1.16e-07 |  (spm_inst_1_domain)
-      380 |   0.1809 |  1.358312e+04 |   -0.28% |  1.80e-07 |  (spm_inst_0_domain)
-      380 |   0.1851 |  1.358312e+04 |   -0.28% |  1.70e-07 |  (spm_inst_1_domain)
-      390 |   0.1510 |  1.362744e+04 |   +0.33% |  2.65e-07 |  (spm_inst_0_domain)
-      390 |   0.1649 |  1.362744e+04 |   +0.33% |  2.51e-07 |  (spm_inst_1_domain)
-      400 |   0.1309 |  1.367873e+04 |   +0.38% |  3.90e-07 |  (spm_inst_0_domain)
-      400 |   0.1426 |  1.367873e+04 |   +0.38% |  3.69e-07 |  (spm_inst_1_domain)
-      410 |   0.1043 |  1.371135e+04 |   +0.24% |  5.74e-07 |  (spm_inst_0_domain)
-      410 |   0.1251 |  1.371135e+04 |   +0.24% |  5.44e-07 |  (spm_inst_1_domain)
-      419 |   0.0975 |  1.374203e+04 |          |  8.46e-07 | spm_inst_0_domain
+        0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.76e-15 |  (spm_inst_0_domain)
+        0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.36e-15 |  (spm_inst_1_domain)
+       10 |   0.9825 |  5.884226e+03 |   -0.64% |  4.49e-15 |  (spm_inst_0_domain)
+       10 |   0.9820 |  5.884226e+03 |   -0.64% |  3.84e-15 |  (spm_inst_1_domain)
+       20 |   0.9825 |  5.881184e+03 |   -0.05% |  7.31e-15 |  (spm_inst_0_domain)
+       20 |   0.9821 |  5.881184e+03 |   -0.05% |  6.25e-15 |  (spm_inst_1_domain)
+       30 |   0.9825 |  5.881139e+03 |   -0.00% |  1.19e-14 |  (spm_inst_0_domain)
+       30 |   0.9821 |  5.881139e+03 |   -0.00% |  1.02e-14 |  (spm_inst_1_domain)
+       40 |   0.9825 |  5.881055e+03 |   -0.00% |  1.94e-14 |  (spm_inst_0_domain)
+       40 |   0.9821 |  5.881055e+03 |   -0.00% |  1.66e-14 |  (spm_inst_1_domain)
+       50 |   0.9825 |  5.881132e+03 |   +0.00% |  3.16e-14 |  (spm_inst_0_domain)
+       50 |   0.9821 |  5.881132e+03 |   +0.00% |  2.70e-14 |  (spm_inst_1_domain)
+       60 |   0.9825 |  5.881776e+03 |   +0.01% |  5.15e-14 |  (spm_inst_0_domain)
+       60 |   0.9821 |  5.881776e+03 |   +0.01% |  4.40e-14 |  (spm_inst_1_domain)
+       70 |   0.9825 |  5.883319e+03 |   +0.03% |  8.38e-14 |  (spm_inst_0_domain)
+       70 |   0.9821 |  5.883319e+03 |   +0.03% |  7.17e-14 |  (spm_inst_1_domain)
+       80 |   0.9824 |  5.886857e+03 |   +0.06% |  1.37e-13 |  (spm_inst_0_domain)
+       80 |   0.9822 |  5.886857e+03 |   +0.06% |  1.17e-13 |  (spm_inst_1_domain)
+       90 |   0.9824 |  5.894641e+03 |   +0.13% |  2.22e-13 |  (spm_inst_0_domain)
+       90 |   0.9823 |  5.894641e+03 |   +0.13% |  1.90e-13 |  (spm_inst_1_domain)
+      100 |   0.9823 |  5.909537e+03 |   +0.25% |  3.62e-13 |  (spm_inst_0_domain)
+      100 |   0.9823 |  5.909537e+03 |   +0.25% |  3.10e-13 |  (spm_inst_1_domain)
+      110 |   0.9822 |  5.940643e+03 |   +0.53% |  5.90e-13 |  (spm_inst_0_domain)
+      110 |   0.9825 |  5.940643e+03 |   +0.53% |  5.05e-13 |  (spm_inst_1_domain)
+      120 |   0.9820 |  6.000125e+03 |   +1.00% |  9.62e-13 |  (spm_inst_0_domain)
+      120 |   0.9827 |  6.000125e+03 |   +1.00% |  8.22e-13 |  (spm_inst_1_domain)
+      130 |   0.9818 |  6.087369e+03 |   +1.45% |  1.57e-12 |  (spm_inst_0_domain)
+      130 |   0.9798 |  6.087369e+03 |   +1.45% |  1.34e-12 |  (spm_inst_1_domain)
+      140 |   0.9731 |  6.204553e+03 |   +1.93% |  2.55e-12 |  (spm_inst_0_domain)
+      140 |   0.9742 |  6.204553e+03 |   +1.93% |  2.18e-12 |  (spm_inst_1_domain)
+      150 |   0.9724 |  6.367104e+03 |   +2.62% |  4.16e-12 |  (spm_inst_0_domain)
+      150 |   0.9742 |  6.367104e+03 |   +2.62% |  3.55e-12 |  (spm_inst_1_domain)
+      160 |   0.9563 |  6.568583e+03 |   +3.16% |  6.77e-12 |  (spm_inst_0_domain)
+      160 |   0.9654 |  6.568583e+03 |   +3.16% |  5.79e-12 |  (spm_inst_1_domain)
+      170 |   0.9486 |  6.769498e+03 |   +3.06% |  1.10e-11 |  (spm_inst_0_domain)
+      170 |   0.9529 |  6.769498e+03 |   +3.06% |  9.43e-12 |  (spm_inst_1_domain)
+      180 |   0.9345 |  7.036030e+03 |   +3.94% |  1.80e-11 |  (spm_inst_0_domain)
+      180 |   0.9361 |  7.036030e+03 |   +3.94% |  1.54e-11 |  (spm_inst_1_domain)
+      190 |   0.9131 |  7.368468e+03 |   +4.72% |  2.93e-11 |  (spm_inst_0_domain)
+      190 |   0.9233 |  7.368468e+03 |   +4.72% |  2.50e-11 |  (spm_inst_1_domain)
+      200 |   0.8893 |  7.848384e+03 |   +6.51% |  4.76e-11 |  (spm_inst_0_domain)
+      200 |   0.9076 |  7.848384e+03 |   +6.51% |  4.08e-11 |  (spm_inst_1_domain)
+      210 |   0.8625 |  8.441874e+03 |   +7.56% |  7.76e-11 |  (spm_inst_0_domain)
+      210 |   0.8937 |  8.441874e+03 |   +7.56% |  6.64e-11 |  (spm_inst_1_domain)
+      220 |   0.8240 |  8.980570e+03 |   +6.38% |  1.26e-10 |  (spm_inst_0_domain)
+      220 |   0.8674 |  8.980570e+03 |   +6.38% |  1.08e-10 |  (spm_inst_1_domain)
+      230 |   0.7868 |  9.581507e+03 |   +6.69% |  2.06e-10 |  (spm_inst_0_domain)
+      230 |   0.8315 |  9.581507e+03 |   +6.69% |  1.76e-10 |  (spm_inst_1_domain)
+      240 |   0.7456 |  1.017918e+04 |   +6.24% |  3.35e-10 |  (spm_inst_0_domain)
+      240 |   0.7959 |  1.017918e+04 |   +6.24% |  2.87e-10 |  (spm_inst_1_domain)
+      250 |   0.6975 |  1.070621e+04 |   +5.18% |  5.46e-10 |  (spm_inst_0_domain)
+      250 |   0.7527 |  1.070621e+04 |   +5.18% |  4.67e-10 |  (spm_inst_1_domain)
+      260 |   0.6456 |  1.120021e+04 |   +4.61% |  8.90e-10 |  (spm_inst_0_domain)
+      260 |   0.6998 |  1.120021e+04 |   +4.61% |  7.61e-10 |  (spm_inst_1_domain)
+      270 |   0.5855 |  1.168094e+04 |   +4.29% |  1.45e-09 |  (spm_inst_0_domain)
+      270 |   0.6450 |  1.168094e+04 |   +4.29% |  1.24e-09 |  (spm_inst_1_domain)
+      280 |   0.5328 |  1.202020e+04 |   +2.90% |  2.36e-09 |  (spm_inst_0_domain)
+      280 |   0.5709 |  1.202020e+04 |   +2.90% |  2.02e-09 |  (spm_inst_1_domain)
+      290 |   0.4623 |  1.247727e+04 |   +3.80% |  3.84e-09 |  (spm_inst_0_domain)
+      290 |   0.5213 |  1.247727e+04 |   +3.80% |  3.29e-09 |  (spm_inst_1_domain)
+      300 |   0.4170 |  1.281975e+04 |   +2.74% |  6.26e-09 |  (spm_inst_0_domain)
+      300 |   0.4877 |  1.281975e+04 |   +2.74% |  5.36e-09 |  (spm_inst_1_domain)
+      310 |   0.3756 |  1.321775e+04 |   +3.10% |  1.02e-08 |  (spm_inst_0_domain)
+      310 |   0.4221 |  1.321775e+04 |   +3.10% |  8.72e-09 |  (spm_inst_1_domain)
+      320 |   0.3353 |  1.347512e+04 |   +1.95% |  1.63e-08 |  (spm_inst_0_domain)
+      320 |   0.3628 |  1.347512e+04 |   +1.95% |  1.42e-08 |  (spm_inst_1_domain)
+      330 |   0.3149 |  1.356931e+04 |   +0.70% |  2.40e-08 |  (spm_inst_0_domain)
+      330 |   0.3140 |  1.356931e+04 |   +0.70% |  2.18e-08 |  (spm_inst_1_domain)
+      340 |   0.2746 |  1.364214e+04 |   +0.54% |  3.53e-08 |  (spm_inst_0_domain)
+      340 |   0.3131 |  1.364214e+04 |   +0.54% |  3.21e-08 |  (spm_inst_1_domain)
+      350 |   0.2590 |  1.361574e+04 |   -0.19% |  5.21e-08 |  (spm_inst_0_domain)
+      350 |   0.2887 |  1.361574e+04 |   -0.19% |  4.73e-08 |  (spm_inst_1_domain)
+      360 |   0.2465 |  1.340681e+04 |   -1.53% |  7.67e-08 |  (spm_inst_0_domain)
+      360 |   0.2556 |  1.340681e+04 |   -1.53% |  6.97e-08 |  (spm_inst_1_domain)
+      370 |   0.2182 |  1.344709e+04 |   +0.30% |  1.13e-07 |  (spm_inst_0_domain)
+      370 |   0.2206 |  1.344709e+04 |   +0.30% |  1.03e-07 |  (spm_inst_1_domain)
+      380 |   0.1933 |  1.343676e+04 |   -0.08% |  1.66e-07 |  (spm_inst_0_domain)
+      380 |   0.1935 |  1.343676e+04 |   -0.08% |  1.51e-07 |  (spm_inst_1_domain)
+      390 |   0.1822 |  1.349270e+04 |   +0.42% |  2.45e-07 |  (spm_inst_0_domain)
+      390 |   0.1820 |  1.349270e+04 |   +0.42% |  2.23e-07 |  (spm_inst_1_domain)
+      400 |   0.1496 |  1.353300e+04 |   +0.30% |  3.61e-07 |  (spm_inst_0_domain)
+      400 |   0.1561 |  1.353300e+04 |   +0.30% |  3.28e-07 |  (spm_inst_1_domain)
+      410 |   0.1242 |  1.362208e+04 |   +0.66% |  5.32e-07 |  (spm_inst_0_domain)
+      410 |   0.1417 |  1.362208e+04 |   +0.66% |  4.83e-07 |  (spm_inst_1_domain)
+      420 |   0.1082 |  1.376491e+04 |   +1.05% |  7.84e-07 |  (spm_inst_0_domain)
+      420 |   0.1112 |  1.376491e+04 |   +1.05% |  7.12e-07 |  (spm_inst_1_domain)
+      425 |   0.0986 |  1.382551e+04 |          |  9.89e-07 | spm_inst_0_domain
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'spm_inst_0_domain' placement finished at iteration 419
-[INFO GPL-1002] Placed Cell Area             3487.0944
+[INFO GPL-1016] Region 'spm_inst_0_domain' placement finished at iteration 425
+[INFO GPL-1002] Placed Cell Area             3725.6211
 [INFO GPL-1003] Available Free Area         23100.0000
-[INFO GPL-1004] Minimum Feasible Density        0.1600 (cell_area / free_area)
+[INFO GPL-1004] Minimum Feasible Density        0.1700 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.1677
-[INFO GPL-1008]     - For 80% usage of free space: 0.1887
-[INFO GPL-1009]     - For 50% usage of free space: 0.3019
-      419 |   0.0998 |  1.374203e+04 |          |  8.02e-07 | spm_inst_1_domain
+[INFO GPL-1007]     - For 90% usage of free space: 0.1792
+[INFO GPL-1008]     - For 80% usage of free space: 0.2016
+[INFO GPL-1009]     - For 50% usage of free space: 0.3226
+      425 |   0.0988 |  1.382551e+04 |          |  8.98e-07 | spm_inst_1_domain
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'spm_inst_1_domain' placement finished at iteration 419
-[INFO GPL-1002] Placed Cell Area             3487.0944
+[INFO GPL-1016] Region 'spm_inst_1_domain' placement finished at iteration 425
+[INFO GPL-1002] Placed Cell Area             3725.6211
 [INFO GPL-1003] Available Free Area         23100.0000
-[INFO GPL-1004] Minimum Feasible Density        0.1600 (cell_area / free_area)
+[INFO GPL-1004] Minimum Feasible Density        0.1700 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.1677
-[INFO GPL-1008]     - For 80% usage of free space: 0.1887
-[INFO GPL-1009]     - For 50% usage of free space: 0.3019
-[INFO GPL-1014] Final placement area: 6974.19 (+0.00%)
+[INFO GPL-1007]     - For 90% usage of free space: 0.1792
+[INFO GPL-1008]     - For 80% usage of free space: 0.2016
+[INFO GPL-1009]     - For 50% usage of free space: 0.3226
+[INFO GPL-1014] Final placement area: 7451.24 (+0.00%)
 No differences found.
