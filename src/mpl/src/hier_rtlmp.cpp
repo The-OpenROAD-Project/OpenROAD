@@ -1447,10 +1447,10 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       }
     }
 
-    // TODO: check if intersect is enogh for relacote or moveDelta is also
-    // needed Calculate overlap with outline
     fence = fence.intersect(outline);
+    fence.moveDelta(-outline.xMin(), -outline.yMin());
     guide = guide.intersect(outline);
+    guide.moveDelta(-outline.xMin(), -outline.yMin());
 
     if (!fence.isInverted()) {
       // current macro id is macros.size() - 1
@@ -2347,10 +2347,12 @@ void HierRTLMP::computeFencesAndGuides(
   for (int i = 0; i < hard_macros.size(); ++i) {
     if (fences_.find(hard_macros[i]->getName()) != fences_.end()) {
       fences[i] = fences_[hard_macros[i]->getName()].intersect(outline);
+      fences[i].moveDelta(-outline.xMin(), -outline.yMin());
     }
     auto itr = guides_.find(hard_macros[i]->getInst());
     if (itr != guides_.end()) {
       guides[i] = itr->second.intersect(outline);
+      guides[i].moveDelta(-outline.xMin(), -outline.yMin());
     }
   }
 }
