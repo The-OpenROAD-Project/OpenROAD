@@ -17,6 +17,11 @@ orfs_flow(
         "DIE_AREA": "0 0 16.2 16.2",
         "PLACE_DENSITY": "0.35",
         "OPENROAD_HIERARCHICAL": "1",
+        # Start simple with eqy
+        "SKIP_PIN_SWAP": "1",
+        "SKIP_GATE_CLONING": "1",
+        "SKIP_VT_SWAP": "1",
+        "SKIP_CRIT_VT_SWAP": "1",
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],
