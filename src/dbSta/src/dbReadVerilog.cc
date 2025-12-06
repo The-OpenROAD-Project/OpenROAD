@@ -975,6 +975,26 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
                  db_mod_net->getId());
     }
   }
+
+  std::unique_ptr<sta::NetTermIterator> nti{
+      network_->termIterator(inst_pin_net)};
+  while (nti->hasNext()) {
+    const sta::Term* term = nti->next();
+    dbModBTerm* mod_bterm = module->findModBTerm(network_->name(term));
+    if (mod_bterm) {
+      mod_bterm->connect(db_mod_net);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "connected feed-through mod_bterm '{}' (id={}) to mod net "
+                 "'{}' (id={})",
+                 mod_bterm->getName(),
+                 mod_bterm->getId(),
+                 db_mod_net->getName(),
+                 db_mod_net->getId());
+    }
+  }
   return db_mod_net;
 }
 
