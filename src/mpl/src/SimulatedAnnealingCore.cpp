@@ -270,10 +270,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
   wirelength_ = computeNetsWireLength(nets_);
 
   if (graphics_) {
-    graphics_->setWirelengthPenalty({"Wire Length",
-                                     core_weights_.wirelength,
-                                     wirelength_,
-                                     norm_wirelength_});
+    graphics_->setWirelengthPenalty({.name="Wire Length",
+                                     .weight=core_weights_.wirelength,
+                                     .value=wirelength_,
+                                     .normalization_factor=norm_wirelength_});
   }
 }
 
