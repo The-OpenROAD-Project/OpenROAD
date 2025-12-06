@@ -15,14 +15,12 @@
 #include <utility>  // pair
 #include <vector>
 
-// clang-format off
-#include "boost/geometry/geometries/point.hpp"
+#include "boost/geometry/core/cs.hpp"
 #include "boost/geometry/geometries/box.hpp"
 #include "boost/geometry/geometries/point_xy.hpp"
-#include "boost/geometry/strategies/strategies.hpp"
-#include "boost/geometry/core/cs.hpp"
-// clang-format on
 #include "boost/geometry/index/rtree.hpp"
+// NOLINTNEXTLINE
+#include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
