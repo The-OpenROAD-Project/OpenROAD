@@ -3,34 +3,35 @@
 
 #pragma once
 
+#include <cstdint>
 namespace mpl {
 
 struct Interval
 {
   Interval() = default;
-  Interval(float min, float max) : min(min), max(max) {}
+  Interval(int min, int max) : min(min), max(max) {}
 
-  float min{0.0f};
-  float max{0.0f};
+  int min{0};
+  int max{0};
 };
 
 class Tiling
 {
  public:
   Tiling() = default;
-  Tiling(float width, float height) : width_(width), height_(height) {}
+  Tiling(int width, int height) : width_(width), height_(height) {}
 
-  float width() const { return width_; }
-  float height() const { return height_; }
-  float area() const { return width_ * height_; }
-  float aspectRatio() const { return height_ / width_; }
+  int width() const { return width_; }
+  int height() const { return height_; }
+  int64_t area() const { return width_ * static_cast<int64_t>(height_); }
+  float aspectRatio() const { return height_ / static_cast<float>(width_); }
 
   bool operator==(const Tiling& tiling) const;
   bool operator<(const Tiling& tiling) const;
 
  private:
-  float width_{0.0f};
-  float height_{0.0f};
+  int width_{0};
+  int height_{0};
 };
 
 }  // namespace mpl

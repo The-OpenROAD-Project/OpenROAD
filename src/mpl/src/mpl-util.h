@@ -189,7 +189,7 @@ inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
 
 // The distance in DBU from the source to the nearest point of the nearest
 // region.
-inline double computeDistToNearestRegion(
+inline int64_t computeDistToNearestRegion(
     const odb::Point& source,
     const std::vector<BoundaryRegion>& regions,
     odb::Point* nearest_point)
@@ -211,113 +211,6 @@ inline double computeDistToNearestRegion(
   }
 
   return std::sqrt(smallest_distance);
-}
-
-// Here we redefine the Rect class
-// odb::Rect use database unit
-// Rect class use float type for Micron unit
-struct Rect
-{
-  Rect() = default;
-  Rect(const float lx,
-       const float ly,
-       const float ux,
-       const float uy,
-       bool fixed_flag = false)
-      : lx(lx), ly(ly), ux(ux), uy(uy), fixed_flag(fixed_flag)
-  {
-  }
-
-  float xMin() const { return lx; }
-  float yMin() const { return ly; }
-  float xMax() const { return ux; }
-  float yMax() const { return uy; }
-
-  void setXMin(float lx) { this->lx = lx; }
-  void setYMin(float ly) { this->ly = ly; }
-  void setXMax(float ux) { this->ux = ux; }
-  void setYMax(float uy) { this->uy = uy; }
-
-  float xCenter() const { return (lx + ux) / 2.0; }
-  float yCenter() const { return (ly + uy) / 2.0; }
-
-  float getWidth() const { return ux - lx; }
-  float getHeight() const { return uy - ly; }
-
-  float getPerimeter() const { return 2 * getWidth() + 2 * getHeight(); }
-  float getArea() const { return getWidth() * getHeight(); }
-
-  void moveHor(float dist)
-  {
-    lx = lx + dist;
-    ux = ux + dist;
-  }
-
-  void moveVer(float dist)
-  {
-    ly = ly + dist;
-    uy = uy + dist;
-  }
-
-  bool isValid() const { return (lx < ux) && (ly < uy); }
-
-  void mergeInit()
-  {
-    lx = std::numeric_limits<float>::max();
-    ly = lx;
-    ux = std::numeric_limits<float>::lowest();
-    uy = ux;
-  }
-
-  void merge(const Rect& rect)
-  {
-    lx = std::min(lx, rect.lx);
-    ly = std::min(ly, rect.ly);
-    ux = std::max(ux, rect.ux);
-    uy = std::max(uy, rect.uy);
-  }
-
-  void relocate(float outline_lx,
-                float outline_ly,
-                float outline_ux,
-                float outline_uy)
-  {
-    if (!isValid()) {
-      return;
-    }
-
-    lx = std::max(lx, outline_lx);
-    ly = std::max(ly, outline_ly);
-    ux = std::min(ux, outline_ux);
-    uy = std::min(uy, outline_uy);
-    lx -= outline_lx;
-    ly -= outline_ly;
-    ux -= outline_lx;
-    uy -= outline_ly;
-  }
-
-  float lx = 0.0;
-  float ly = 0.0;
-  float ux = 0.0;
-  float uy = 0.0;
-
-  bool fixed_flag = false;
-};
-
-inline odb::Rect micronsToDbu(odb::dbBlock* block, const Rect& micron_rect)
-{
-  return odb::Rect(block->micronsToDbu(micron_rect.xMin()),
-                   block->micronsToDbu(micron_rect.yMin()),
-                   block->micronsToDbu(micron_rect.xMax()),
-                   block->micronsToDbu(micron_rect.yMax()));
-}
-
-inline Rect dbuToMicrons(odb::dbBlock* block, const odb::Rect& dbu_rect)
-{
-  return Rect(block->dbuToMicrons(dbu_rect.xMin()),
-              block->dbuToMicrons(dbu_rect.yMin()),
-              block->dbuToMicrons(dbu_rect.xMax()),
-              block->dbuToMicrons(dbu_rect.yMax()));
 }
 
 }  // namespace mpl

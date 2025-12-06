@@ -61,6 +61,7 @@ bool MacroPlacer::place(const int num_threads,
                         const char* report_directory,
                         const bool keep_clustering_data)
 {
+  hier_rtlmp_->init();
   hier_rtlmp_->setClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
   hier_rtlmp_->setClusterSizeTolerance(tolerance);
@@ -87,7 +88,6 @@ bool MacroPlacer::place(const int num_threads,
 
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
-  hier_rtlmp_->init();
   hier_rtlmp_->run();
 
   return true;
@@ -194,16 +194,20 @@ std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
   return overlapped_macros;
 }
 
-void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
+void MacroPlacer::addGuidanceRegion(odb::dbInst* macro,
+                                    const float x1,
+                                    const float y1,
+                                    const float x2,
+                                    const float y2)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const odb::Rect& core = block->getCoreArea();
-  const odb::Rect dbu_region(block->micronsToDbu(region.xMin()),
-                             block->micronsToDbu(region.yMin()),
-                             block->micronsToDbu(region.xMax()),
-                             block->micronsToDbu(region.yMax()));
+  odb::Rect region = odb::Rect(block->micronsToDbu(x1),
+                               block->micronsToDbu(y1),
+                               block->micronsToDbu(x2),
+                               block->micronsToDbu(y2));
 
-  if (!core.contains(dbu_region)) {
+  if (!core.contains(region)) {
     logger_->error(MPL,
                    42,
                    "Specified guidance region ({}, {}) ({}, {}) for the macro "

@@ -127,7 +127,7 @@ add_guidance_region(odb::dbInst* macro,
                     float x2,
                     float y2)
 {
-  getMacroPlacer()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
+  getMacroPlacer()->addGuidanceRegion(macro, x1, y1, x2, y2);
 }
 
 
