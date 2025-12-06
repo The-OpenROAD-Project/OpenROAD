@@ -15,7 +15,13 @@
 #include <utility>  // pair
 #include <vector>
 
-#include "boost/geometry/geometry.hpp"
+// clang-format off
+#include "boost/geometry/geometries/point.hpp"
+#include "boost/geometry/geometries/box.hpp"
+#include "boost/geometry/geometries/point_xy.hpp"
+#include "boost/geometry/strategies/strategies.hpp"
+#include "boost/geometry/core/cs.hpp"
+// clang-format on
 #include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
