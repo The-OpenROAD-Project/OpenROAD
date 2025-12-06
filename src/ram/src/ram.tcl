@@ -6,12 +6,14 @@ sta::define_cmd_args "generate_ram_netlist" {-bytes_per_word bits
                                              [-storage_cell name]
                                              [-tristate_cell name]
                                              [-inv_cell name]
-                                             [-read_ports count]}
+                                             [-read_ports count]
+                                             [-tapcell name]
+                                             [-max_tap_dist value]}
 
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
-    keys {-bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell
-      -read_ports } flags {}
+    keys { -bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell
+      -read_ports -tapcell -max_tap_dist } flags {}
 
   if { [info exists keys(-bytes_per_word)] } {
     set bytes_per_word $keys(-bytes_per_word)
@@ -45,8 +47,23 @@ proc generate_ram_netlist { args } {
     set read_ports $keys(-read_ports)
   }
 
+  set tapcell ""
+  set max_tap_dist 0
+  if { [info exists keys(-tapcell)] } {
+    if { [info exists keys(-max_tap_dist)] } {
+      set max_tap_dist $keys(-max_tap_dist)
+      set max_tap_dist [ord::microns_to_dbu $max_tap_dist]
+    } else {
+      utl::error RAM 21 "The -max_tap_dist argument must be specified with tapcell."
+    }
+    set tapcell $keys(-tapcell)
+  } else {
+    utl::warn RAM 22 "No tapcell is specified.
+        The generated layout may not pass Design Rule Checks."
+  }
+
   ram::generate_ram_netlist_cmd $bytes_per_word $word_count $storage_cell \
-    $tristate_cell $inv_cell $read_ports
+    $tristate_cell $inv_cell $read_ports $tapcell $max_tap_dist
 }
 
 sta::define_cmd_args "generate_ram" {-bytes_per_word bits
@@ -60,13 +77,16 @@ sta::define_cmd_args "generate_ram" {-bytes_per_word bits
                                      -routing_layer config
                                      -ver_layer config
                                      -hor_layer config
-                                     -filler_cells fillers}
+                                     -filler_cells fillers
+                                     [-tapcell name]
+                                     [-max_tap_dist value]}
 
 # user arguments for generate ram arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
-    keys {-bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell -read_ports
-      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells} flags {}
+    keys { -bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell -read_ports
+      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
+        -tapcell -max_tap_dist} flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -93,6 +113,14 @@ proc generate_ram { args } {
 
   if { [info exists keys(-inv_cell)] } {
     lappend ram_netlist_args -inv_cell $keys(-inv_cell)
+  }
+
+  if { [info exists keys(-tapcell)] } {
+    lappend ram_netlist_args -tapcell $keys(-tapcell)
+  }
+
+  if { [info exists keys(-max_tap_dist)] } {
+    lappend ram_netlist_args -max_tap_dist $keys(-max_tap_dist)
   }
 
   generate_ram_netlist {*}$ram_netlist_args
