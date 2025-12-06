@@ -830,15 +830,9 @@ void PlacerBaseCommon::init()
 
   // Extending instances by average pin density.
   auto count_signal_pins = [](const Instance& inst) -> int {
-    int pin_count = 0;
-    for (odb::dbITerm* iterm : inst.dbInst()->getITerms()) {
-      odb::dbSigType sig_type = iterm->getSigType();
-      if (sig_type != odb::dbSigType::POWER
-          && sig_type != odb::dbSigType::GROUND) {
-        ++pin_count;
-      }
-    }
-    return pin_count;
+    return std::ranges::count_if(
+        inst.dbInst()->getITerms(),
+        [](odb::dbITerm* iterm) { return !iterm->getSigType().isSupply(); });
   };
 
   int total_signal_pins = 0;
