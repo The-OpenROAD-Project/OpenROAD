@@ -4891,8 +4891,8 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  // jk: dbg
-  if (logger_->debugCheck(utl::RSZ, "dbg", 2)) {
+  // jk: added sanity check
+  if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 1)) {
     dbITerm* out_iterm = buffer_inst->getFirstOutput();
     sta_->checkSanityDrvrVertexEdges(out_iterm);
     db_network_->checkSanityNetConnectivity(out_iterm);

@@ -794,6 +794,20 @@ class dbBlock : public dbObject
   dbModInst* findModInst(const char* path);
 
   ///
+  /// Find a specific moditerm in this block. path is
+  /// master_module_name/modinst_name/term_name Returns nullptr if the object
+  /// was not found.
+  ///
+  dbModITerm* findModITerm(const char* hierarchical_name);
+
+  ///
+  /// Find a specific modbterm in this block. path is
+  /// master_module_name/modinst_name/term_name Returns nullptr if the object
+  /// was not found.
+  ///
+  dbModBTerm* findModBTerm(const char* hierarchical_name);
+
+  ///
   /// Find a specific PowerDomain in this block.
   /// Returns nullptr if the object was not found.
   ///
@@ -2614,6 +2628,19 @@ class dbNet : public dbObject
 
   // jk: move into _dbNet
  private:
+  dbNet* createBufferNet(dbBTerm* bterm,
+                         const char* suffix,
+                         dbModNet* mod_net,
+                         dbModule* parent_mod,
+                         const dbNameUniquifyType& uniquify);
+  std::string makeUniqueHierName(dbModule* module,
+                                 const std::string& base_name,
+                                 const char* suffix) const;
+  int getModuleDepth(dbModule* mod) const;
+  dbModule* findLCA(dbModule* m1, dbModule* m2) const;
+  bool createHierarchicalConnection(dbITerm* load_pin,
+                                    dbITerm* drvr_term,
+                                    const std::set<dbObject*>& load_pins);
   dbInst* insertBufferCommon(dbObject* term_obj,
                              const dbMaster* buffer_master,
                              const Point* loc,
@@ -2622,6 +2649,8 @@ class dbNet : public dbObject
                              bool insertBefore);
   dbModNet* getFirstModNetInFaninOfLoads(
       const std::set<dbObject*>& load_pins,
+      const std::set<dbModNet*>& modnets_in_target_module);
+  dbModNet* getFirstDriverModNetInTargetModule(
       const std::set<dbModNet*>& modnets_in_target_module);
 };
 
@@ -8565,6 +8594,12 @@ class dbModNet : public dbObject
   /// Returns the next dbModNet in the fanin of this dbModNet.
   ///
   dbModNet* getNextModNetInFanin() const;
+
+  ///
+  /// Returns the next dbModNet in the fanout of this dbModNet.
+  /// Traverses down the hierarchy through OUTPUT ModITerms.
+  ///
+  dbModNet* getNextModNetInFanout() const;
 
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);

@@ -2233,7 +2233,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case20)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Partial-load buffering on loads connected with both input & output
@@ -2311,7 +2311,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case21)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 TEST_F(TestInsertBuffer, BeforeLoads_Case22)
@@ -2380,7 +2380,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case22)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 TEST_F(TestInsertBuffer, BeforeLoads_Case23)
@@ -2447,7 +2447,155 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case23)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case24)
+{
+  // Reproduction of ORD-2030: Flat net logical inconsistency
+  // Multiple ModNets in target module scenario:
+  //
+  // Hierarchy:
+  // - top (target module where buffer will be placed)
+  //   - H0 (child module with feedthrough: in -> internal_buf -> out)
+  //   - H1 (another child module with internal_load)
+  //   - drvr (driver in top)
+  //
+  // Signal flow:
+  // - drvr/Z drives flat net 'n1' (modnet 'n1' in top)
+  // - n1 connects to h0/in (creates modnet 'in' inside H0)
+  // - h0/out (feedthrough) connects to 'w1' (modnet 'w1' in top)
+  // - w1 connects to h1/in (load path through different modnet)
+  //
+  // The key issue:
+  // - Both 'n1' and 'w1' are modnets in 'top' module for the same logical net
+  // - When buffering loads inside H0 and H1, the algorithm must select
+  //   the driver's modnet ('n1'), not the load's modnet ('w1')
+
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buffer_master);
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* h0_internal_buf = block_->findInst("h0/internal_buf");
+  ASSERT_NE(h0_internal_buf, nullptr);
+  dbInst* h1_internal_load = block_->findInst("h1/internal_load");
+  ASSERT_NE(h1_internal_load, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* h0_internal_buf_a = h0_internal_buf->findITerm("A");
+  ASSERT_NE(h0_internal_buf_a, nullptr);
+  dbITerm* h1_internal_load_a = h1_internal_load->findITerm("A");
+  ASSERT_NE(h1_internal_load_a, nullptr);
+
+  dbNet* target_net = drvr_z->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  // dbNet "w1" makes "n1" dangling.
+  // - "w1" and "n1" indicates the same logical net.
+  // - "n1" is created first and has all the connections at first.
+  // - "w1" is created later and takes over all the connections.
+  // - "n1" has no connection at the end.
+  EXPECT_EQ(std::string(target_net->getConstName()), "w1");
+
+  dbModNet* modnet_n1 = block_->findModNet("n1");
+  ASSERT_NE(modnet_n1, nullptr);
+
+  dbModNet* modnet_w1 = block_->findModNet("w1");
+  ASSERT_NE(modnet_w1, nullptr);
+
+  dbModNet* modnet_h0_in = block_->findModNet("h0/in");
+  ASSERT_NE(modnet_h0_in, nullptr);
+
+  dbModNet* modnet_h1_in = block_->findModNet("h1/in");
+  ASSERT_NE(modnet_h1_in, nullptr);
+
+  // Check feedthrough path
+  dbModBTerm* modbterm_h0_out = block_->findModBTerm("h0/out");
+  ASSERT_NE(modbterm_h0_out, nullptr);
+  dbModITerm* moditerm_h0_out = block_->findModITerm("h0/out");
+  ASSERT_NE(moditerm_h0_out, nullptr);
+  ASSERT_EQ(modbterm_h0_out->getModNet(), modnet_h0_in);
+
+  dbModNet* modnet_h0_out = block_->findModNet("h0/out");
+  ASSERT_EQ(modnet_h0_out, nullptr);
+
+  // Verify we have multiple modnets in target module for this flat net
+  std::set<dbModNet*> related_modnets;
+  target_net->findRelatedModNets(related_modnets);
+  std::set<dbModNet*> modnets_in_top;
+  dbModule* top_module = block_->getTopModule();
+  for (dbModNet* modnet : related_modnets) {
+    if (modnet->getParent() == top_module) {
+      modnets_in_top.insert(modnet);
+    }
+  }
+  // Should have at least 2 modnets in top: 'n1' and 'w1'
+  EXPECT_GE(modnets_in_top.size(), 2);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 1);  // 'n1' is dangling
+
+  //----------------------------------------------------
+  // Insert buffer
+  // - Targets: h0/internal_buf/A (inside H0, connected via h0/in modnet)
+  //            AND h1/internal_load/A (inside H1, connected via h1/in modnet)
+  // - Both are on the same logical net but via different modnets in 'top'
+  // - The fix ensures buffer input connects to driver's modnet ('n1'),
+  //   not the load's modnet ('w1')
+  //----------------------------------------------------
+  std::set<dbObject*> loads;
+  loads.insert(h0_internal_buf_a);
+  loads.insert(h1_internal_load_a);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(loads,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_NE(new_buf, nullptr);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Verify buffer input is connected to driver's modnet ('n1'), not 'w1'
+  dbITerm* buf_input = new_buf->findITerm("A");
+  ASSERT_NE(buf_input, nullptr);
+  dbModNet* buf_input_modnet = buf_input->getModNet();
+  ASSERT_NE(buf_input_modnet, nullptr);
+  // Buffer input should be connected to 'n1' modnet (driver's modnet)
+  EXPECT_EQ(std::string(buf_input_modnet->getConstName()), "n1");
+
+  // Post sanity check - this was failing with ORD-2030 before the fix
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 3);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+
+  // dbNet 'w1' loses dbModNet 'w1' because the new buffer cuts off the
+  // connection
+  dbModNet* w1_mn = block_->findModNet("w1");
+  ASSERT_NE(w1_mn, nullptr);
+  // target_net->dump(true);    // To see the net connectivity for debugging
 }
 
 }  // namespace odb

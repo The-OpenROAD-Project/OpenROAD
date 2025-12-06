@@ -260,18 +260,19 @@ void dbModNet::dump() const
                  getParent()->getId());
 
   logger->report("  ModITerms ({}):", getModITerms().size());
-  for (dbModITerm* term : getModITerms()) {
+  for (dbModITerm* moditerm : getModITerms()) {
     // For dbModITerm, get types from child dbModBTerm
-    dbModBTerm* child_bterm = term->getChildModBTerm();
-    if (child_bterm) {
+    dbModBTerm* child_modbterm = moditerm->getChildModBTerm();
+    if (child_modbterm) {
       logger->report("    - {} ({}, {}, id={})",
-                     term->getHierarchicalName(),
-                     child_bterm->getSigType().getString(),
-                     child_bterm->getIoType().getString(),
-                     term->getId());
+                     child_modbterm->getHierarchicalName(),
+                     child_modbterm->getSigType().getString(),
+                     child_modbterm->getIoType().getString(),
+                     moditerm->getId());
     } else {
-      logger->report(
-          "    - {} (no child bterm, id={})", term->getName(), term->getId());
+      logger->report("    - {} (no child bterm, id={})",
+                     moditerm->getName(),
+                     moditerm->getId());
     }
   }
 
@@ -625,6 +626,23 @@ dbModNet* dbModNet::getNextModNetInFanin() const
         || modbterm->getIoType() == dbIoType::INOUT) {
       if (dbModITerm* moditerm = modbterm->getParentModITerm()) {
         return moditerm->getModNet();
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+dbModNet* dbModNet::getNextModNetInFanout() const
+{
+  // Traverse through ModITerms to find child module's modnet
+  // ModITerm connects to child's ModBTerm (INPUT direction from parent's view)
+  for (dbModITerm* moditerm : getModITerms()) {
+    if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
+      // Child's INPUT bterm receives signal from this modnet (fanout)
+      if (child_bterm->getIoType() == dbIoType::INPUT
+          || child_bterm->getIoType() == dbIoType::INOUT) {
+        return child_bterm->getModNet();
       }
     }
   }

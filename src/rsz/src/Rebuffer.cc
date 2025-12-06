@@ -2268,7 +2268,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     // jk: dbg pre
     if (logger_->debugCheck(RSZ, "dbg", 1)) {
-      if (iter == 757) {
+      if (iter == 59638) {
         printf("jk: #%d rebuffer pin = %s\n", iter, network_->name(drvr_pin));
         if (logger_->debugCheck(RSZ, "dbg", 100)) {
           sta::writeVerilog(
@@ -2454,7 +2454,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     // jk: dbg post
     if (logger_->debugCheck(RSZ, "dbg", 1)) {
-      if (iter == 757) {
+      if (iter == 59638) {
         printf(
             "jk: #%d post rebuffer pin = %s\n", iter, network_->name(drvr_pin));
         if (logger_->debugCheck(RSZ, "dbg", 100)) {

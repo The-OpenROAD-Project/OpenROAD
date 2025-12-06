@@ -1304,16 +1304,18 @@ dbInst* dbInst::create(dbBlock* block_,
   _dbInst* inst_impl = block->_inst_tbl->create();
   dbInst* inst = reinterpret_cast<dbInst*>(inst_impl);
 
+  // jk: dbg
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: create dbInst({}, {:p}) '{}' master '{}'",
+             inst->getId(),
+             static_cast<void*>(inst),
+             name_,
+             master_->getName());
+
   if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbInst({}, {:p}) '{}' master '{}'",
-               inst->getId(),
-               static_cast<void*>(inst),
-               name_,
-               master_->getName());
     dbLib* lib = master_->getLib();
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbInstObj);
@@ -1528,15 +1530,17 @@ void dbInst::destroy(dbInst* inst_)
     ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
   }
 
+  // jk: dbg
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: delete dbInst({}, {:p}) '{}'",
+             inst->getId(),
+             static_cast<void*>(inst),
+             inst_->getName());
+
   if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbInst({}, {:p}) '{}'",
-               inst->getId(),
-               static_cast<void*>(inst),
-               inst_->getName());
     auto master = inst_->getMaster();
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbInstObj);

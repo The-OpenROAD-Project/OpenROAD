@@ -1949,17 +1949,18 @@ dbLevelShifter* dbBlock::findLevelShifter(const char* name)
 
 dbModInst* dbBlock::findModInst(const char* path)
 {
+  char hier_delimiter[2] = {getHierarchyDelimiter(), '\0'};
   char* _path = strdup(path);
   dbModule* cur_mod = getTopModule();
   dbModInst* cur_inst = nullptr;
-  char* token = strtok(_path, "/");
+  char* token = strtok(_path, hier_delimiter);
   while (token != nullptr) {
     cur_inst = cur_mod->findModInst(token);
     if (cur_inst == nullptr) {
       break;
     }
     cur_mod = cur_inst->getMaster();
-    token = strtok(nullptr, "/");
+    token = strtok(nullptr, hier_delimiter);
   }
   free((void*) _path);
   return cur_inst;
@@ -3885,6 +3886,54 @@ const char* dbBlock::getBaseName(const char* full_name) const
     return last_hier_delimiter + 1;
   }
   return full_name;
+}
+
+dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)
+{
+  if (hierarchical_name == nullptr) {
+    return nullptr;
+  }
+
+  const char* last_delim = strrchr(hierarchical_name, getHierarchyDelimiter());
+  if (last_delim == nullptr) {
+    return nullptr;
+  }
+
+  std::string inst_path(hierarchical_name, last_delim - hierarchical_name);
+  const char* term_name = last_delim + 1;
+
+  dbModInst* inst = findModInst(inst_path.c_str());
+  if (inst) {
+    return inst->findModITerm(term_name);
+  }
+  return nullptr;
+}
+
+dbModBTerm* dbBlock::findModBTerm(const char* hierarchical_name)
+{
+  if (hierarchical_name == nullptr) {
+    return nullptr;
+  }
+
+  const char* last_delim = strrchr(hierarchical_name, getHierarchyDelimiter());
+  if (last_delim == nullptr) {
+    // Top level port
+    if (dbModule* top_module = getTopModule()) {
+      return top_module->findModBTerm(hierarchical_name);
+    }
+    return nullptr;
+  }
+
+  std::string inst_path(hierarchical_name, last_delim - hierarchical_name);
+  const char* term_name = last_delim + 1;
+
+  dbModInst* inst = findModInst(inst_path.c_str());
+  if (inst) {
+    if (dbModule* master = inst->getMaster()) {
+      return master->findModBTerm(term_name);
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace odb
