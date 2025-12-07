@@ -179,8 +179,6 @@ class _dbObject : public dbObject
 
   template <class T, uint page_size>
   friend class dbTable;
-  template <class T>
-  friend class dbArrayTable;
 };
 
 ///////////////////////////////////////////////////////////////
