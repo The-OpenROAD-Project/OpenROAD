@@ -10,7 +10,6 @@
 #include <optional>
 #include <string>
 
-#include "dbArrayTable.h"
 #include "dbBPinItr.h"
 #include "dbBlock.h"
 #include "dbBox.h"
