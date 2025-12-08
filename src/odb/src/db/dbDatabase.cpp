@@ -35,7 +35,6 @@
 #include <string>
 #include <vector>
 
-#include "dbArrayTable.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
