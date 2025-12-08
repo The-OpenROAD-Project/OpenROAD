@@ -94,7 +94,7 @@ void clear_solvers()
   pdnsim->clearSolvers();
 }
 
-void set_source_settings(int bump_dx, int bump_dy, int bump_size, int bump_interval, int track_pitch)
+void set_source_settings(int bump_dx, int bump_dy, int bump_size, int bump_interval, int track_pitch, float resistance)
 {
   PDNSim::GeneratedSourceSettings settings;
   settings.bump_dx = bump_dx;
@@ -102,6 +102,7 @@ void set_source_settings(int bump_dx, int bump_dy, int bump_size, int bump_inter
   settings.bump_size = bump_size;
   settings.bump_interval = bump_interval;
   settings.strap_track_pitch = track_pitch;
+  settings.resistance = resistance;
 
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setGeneratedSourceSettings(settings);
