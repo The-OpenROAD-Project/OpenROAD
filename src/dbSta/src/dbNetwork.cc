@@ -1459,14 +1459,6 @@ Net* dbNetwork::net(const Pin* pin) const
   }
   // only pins which act as bterms are top levels and have no net
   if (bterm) {
-    // jk: ok to add???
-    if (dbModNet* mnet = bterm->getModNet()) {
-      return dbToSta(mnet);
-    }
-    if (dbNet* dnet = bterm->getNet()) {
-      return dbToSta(dnet);
-    }
-
     //    dbNet* dnet = bterm -> getNet();
     //    return dbToSta(dnet);
     ;
@@ -2076,9 +2068,7 @@ Pin* dbNetwork::pin(const Term* term) const
   dbITerm* iterm = nullptr;
   staToDb(term, iterm, bterm, modbterm);
   if (bterm) {
-    // jk: it should return nullptr in hierarchical mode. ok???
-    return nullptr;
-    // return dbToSta(bterm);
+    return dbToSta(bterm);
   }
   if (modbterm) {
     // get the moditerm
