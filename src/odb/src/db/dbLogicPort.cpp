@@ -99,10 +99,10 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
                                  const std::string& direction)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_logicport_hash.hasMember(name)) {
+  if (_block->logicport_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbLogicPort* lp = _block->_logicport_tbl->create();
+  _dbLogicPort* lp = _block->logicport_tbl_->create();
   lp->name_ = safe_strdup(name);
 
   if (direction.empty()) {
@@ -111,7 +111,7 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
     lp->direction = direction;
   }
 
-  _block->_logicport_hash.insert(lp);
+  _block->logicport_hash_.insert(lp);
   return (dbLogicPort*) lp;
 }
 

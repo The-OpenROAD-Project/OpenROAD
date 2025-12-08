@@ -13,10 +13,8 @@ class _dbSWire;
 
 class dbSWireItr : public dbIterator
 {
-  dbTable<_dbSWire>* _swire_tbl;
-
  public:
-  dbSWireItr(dbTable<_dbSWire>* swire_tbl) { _swire_tbl = swire_tbl; }
+  dbSWireItr(dbTable<_dbSWire>* swire_tbl) { swire_tbl_ = swire_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -27,6 +25,9 @@ class dbSWireItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbSWire>* swire_tbl_;
 };
 
 }  // namespace odb

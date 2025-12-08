@@ -1618,6 +1618,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
     float adjustment = tech_layer->getLayerAdjustment();
     if (adjustment != 0) {
+      const bool is_reduce = adjustment > 0;
       if (horizontal_capacities_[layer - 1] != 0) {
         int new_cap = hor_capacities[layer - 1] * (1 - adjustment);
         grid_->setHorizontalCapacity(new_cap, layer - 1);
@@ -1632,7 +1633,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                                  ? std::max(new_h_capacity, 1)
                                  : new_h_capacity;
             fastroute_->addAdjustment(
-                x - 1, y - 1, x, y - 1, layer, new_h_capacity, true);
+                x - 1, y - 1, x, y - 1, layer, new_h_capacity, is_reduce);
           }
         }
       }
@@ -1651,7 +1652,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                                  ? std::max(new_v_capacity, 1)
                                  : new_v_capacity;
             fastroute_->addAdjustment(
-                x - 1, y - 1, x - 1, y, layer, new_v_capacity, true);
+                x - 1, y - 1, x - 1, y, layer, new_v_capacity, is_reduce);
           }
         }
       }

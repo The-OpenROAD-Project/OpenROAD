@@ -9,6 +9,7 @@
 ########## IR report #################
 Net              : VDD
 Corner           : default
+Total power      : 1.41e-04 W
 Supply voltage   : 1.50e+00 V
 Worstcase voltage: 1.50e+00 V
 Average voltage  : 1.50e+00 V
@@ -21,6 +22,7 @@ Percentage drop  : 0.02 %
 ########## IR report #################
 Net              : VSS
 Corner           : default
+Total power      : 1.41e-04 W
 Supply voltage   : 0.00e+00 V
 Worstcase voltage: 1.51e-03 V
 Average voltage  : 9.31e-04 V
@@ -33,6 +35,7 @@ Percentage drop  : 0.10 %
 ########## IR report #################
 Net              : VDD
 Corner           : default
+Total power      : 1.41e-04 W
 Supply voltage   : 1.50e+00 V
 Worstcase voltage: 1.50e+00 V
 Average voltage  : 1.50e+00 V
@@ -45,6 +48,7 @@ Percentage drop  : 0.02 %
 ########## IR report #################
 Net              : VSS
 Corner           : default
+Total power      : 1.41e-04 W
 Supply voltage   : 0.00e+00 V
 Worstcase voltage: 1.51e-03 V
 Average voltage  : 9.31e-04 V

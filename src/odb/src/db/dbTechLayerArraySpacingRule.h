@@ -18,11 +18,11 @@ class _dbTechLayerCutClassRule;
 
 struct dbTechLayerArraySpacingRuleFlags
 {
-  bool parallel_overlap_ : 1;
-  bool long_array_ : 1;
-  bool via_width_valid_ : 1;
-  bool within_valid_ : 1;
-  uint spare_bits_ : 28;
+  bool parallel_overlap : 1;
+  bool long_array : 1;
+  bool via_width_valid : 1;
+  bool within_valid : 1;
+  uint spare_bits : 28;
 };
 
 class _dbTechLayerArraySpacingRule : public _dbObject

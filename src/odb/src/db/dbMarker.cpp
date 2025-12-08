@@ -33,13 +33,13 @@ template class dbTable<_dbMarker>;
 
 bool _dbMarker::operator==(const _dbMarker& rhs) const
 {
-  if (flags_.visited_ != rhs.flags_.visited_) {
+  if (flags_.visited != rhs.flags_.visited) {
     return false;
   }
-  if (flags_.visible_ != rhs.flags_.visible_) {
+  if (flags_.visible != rhs.flags_.visible) {
     return false;
   }
-  if (flags_.waived_ != rhs.flags_.waived_) {
+  if (flags_.waived != rhs.flags_.waived) {
     return false;
   }
   if (parent_ != rhs.parent_) {
@@ -81,7 +81,7 @@ _dbMarker::_dbMarker(_dbDatabase* db)
   flags_ = {};
   line_number_ = -1;
   // User Code Begin Constructor
-  flags_.visible_ = true;
+  flags_.visible = true;
   // User Code End Constructor
 }
 
@@ -382,15 +382,15 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
 
   const auto visited = tree.get_optional<bool>("visited");
   if (visited) {
-    flags_.visited_ = visited.value();
+    flags_.visited = visited.value();
   }
   const auto visible = tree.get_optional<bool>("visible");
   if (visible) {
-    flags_.visible_ = visible.value();
+    flags_.visible = visible.value();
   }
   const auto waived = tree.get_optional<bool>("waived");
   if (waived) {
-    flags_.waived_ = waived.value();
+    flags_.waived = waived.value();
   }
 
   const auto line_number = tree.get_optional<int>("line_number");
@@ -561,42 +561,42 @@ void dbMarker::setVisited(bool visited)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->flags_.visited_ = visited;
+  obj->flags_.visited = visited;
 }
 
 bool dbMarker::isVisited() const
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  return obj->flags_.visited_;
+  return obj->flags_.visited;
 }
 
 void dbMarker::setVisible(bool visible)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->flags_.visible_ = visible;
+  obj->flags_.visible = visible;
 }
 
 bool dbMarker::isVisible() const
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  return obj->flags_.visible_;
+  return obj->flags_.visible;
 }
 
 void dbMarker::setWaived(bool waived)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->flags_.waived_ = waived;
+  obj->flags_.waived = waived;
 }
 
 bool dbMarker::isWaived() const
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  return obj->flags_.waived_;
+  return obj->flags_.waived;
 }
 
 // User Code Begin dbMarkerPublicMethods
@@ -744,7 +744,7 @@ dbTechLayer* dbMarker::getTechLayer() const
 
   dbBlock* block = (dbBlock*) marker->getBlock();
   _dbTech* tech = (_dbTech*) block->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(marker->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(marker->layer_);
 }
 
 Rect dbMarker::getBBox() const
@@ -808,7 +808,7 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
 
   _dbBlock* block = marker->getBlock();
   if (block) {
-    for (auto cb : block->_callbacks) {
+    for (auto cb : block->callbacks_) {
       cb->inDbMarkerCreate((dbMarker*) marker);
     }
   }
@@ -821,7 +821,7 @@ void dbMarker::destroy(dbMarker* marker)
   _dbMarker* _marker = (_dbMarker*) marker;
 
   _dbBlock* block = _marker->getBlock();
-  for (auto cb : block->_callbacks) {
+  for (auto cb : block->callbacks_) {
     cb->inDbMarkerDestroy(marker);
   }
 

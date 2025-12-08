@@ -28,11 +28,11 @@
       },
       {
         "type": "bit",
-        "name": "min_exact_span_length_"
+        "name": "min_exact_span_length"
       },
       {
         "type": "bit",
-        "name": "max_exact_span_length_"
+        "name": "max_exact_span_length"
       }
     ],
     "cpp_includes": [

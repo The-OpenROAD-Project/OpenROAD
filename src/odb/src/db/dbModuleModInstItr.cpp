@@ -32,17 +32,17 @@ void dbModuleModInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbModule* module = (_dbModule*) parent;
-  uint id = module->_modinsts;
+  uint id = module->modinsts_;
   uint list = 0;
 
   while (id != 0) {
-    _dbModInst* modinst = _modinst_tbl->getPtr(id);
-    uint n = modinst->_module_next;
-    modinst->_module_next = list;
+    _dbModInst* modinst = modinst_tbl_->getPtr(id);
+    uint n = modinst->module_next_;
+    modinst->module_next_ = list;
     list = id;
     id = n;
   }
-  module->_modinsts = list;
+  module->modinsts_ = list;
   // User Code End reverse
 }
 
@@ -69,7 +69,7 @@ uint dbModuleModInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* module = (_dbModule*) parent;
-  return module->_modinsts;
+  return module->modinsts_;
   // User Code End begin
 }
 
@@ -81,14 +81,14 @@ uint dbModuleModInstItr::end(dbObject* /* unused: parent */) const
 uint dbModuleModInstItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModInst* modinst = _modinst_tbl->getPtr(id);
-  return modinst->_module_next;
+  _dbModInst* modinst = modinst_tbl_->getPtr(id);
+  return modinst->module_next_;
   // User Code End next
 }
 
 dbObject* dbModuleModInstItr::getObject(uint id, ...)
 {
-  return _modinst_tbl->getPtr(id);
+  return modinst_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

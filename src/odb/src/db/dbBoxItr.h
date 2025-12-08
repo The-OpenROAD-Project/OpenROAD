@@ -16,17 +16,13 @@ class _dbPolygon;
 template <uint page_size>
 class dbBoxItr : public dbIterator
 {
- protected:
-  dbTable<_dbBox, page_size>* _box_tbl;
-  dbTable<_dbPolygon, page_size>* _pbox_tbl;
-
  public:
   dbBoxItr(dbTable<_dbBox, page_size>* box_tbl,
            dbTable<_dbPolygon, page_size>* pbox_tbl,
            bool include_polygons)
   {
-    _box_tbl = box_tbl;
-    _pbox_tbl = pbox_tbl;
+    box_tbl_ = box_tbl;
+    pbox_tbl_ = pbox_tbl;
     include_polygons_ = include_polygons;
   }
 
@@ -41,7 +37,8 @@ class dbBoxItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  // include polygons in iterations
+  dbTable<_dbBox, page_size>* box_tbl_;
+  dbTable<_dbPolygon, page_size>* pbox_tbl_;
   bool include_polygons_;
 };
 

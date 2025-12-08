@@ -33,7 +33,7 @@ COMPONENTS 289 ;
  ;
 - ff275 DFF_X1 + PLACED ( 61180 170800 ) N
  ;
-- gclk1 CLKGATE_X1 + PLACED ( 50160 165200 ) N
+- gclk1 CLKGATE_X1 + PLACED ( 161120 82600 ) N
  ;
 - ff274 DFF_X1 + PLACED ( 50160 170800 ) N
  ;
@@ -596,9 +596,9 @@ END PINS
 NETS 2 ;
 - clk
   ( PIN clk ) ( gclk1 CK )
-  ( ff0 CK ) ( ff1 CK ) ( ff2 CK ) ( ff3 CK ) ( ff4 CK ) ( ff5 CK )
+  ( ff2 CK ) ( ff3 CK ) ( ff4 CK ) ( ff5 CK )
   ( ff6 CK ) ( ff7 CK ) ( ff8 CK ) ( ff9 CK ) ( ff10 CK ) ( ff11 CK )
-  ( ff12 CK ) ( ff13 CK ) ( ff14 CK ) ( ff15 CK ) ( ff16 CK ) ( ff17 CK )
+  ( ff12 CK ) ( ff13 CK ) 
   ( ff18 CK ) ( ff19 CK ) ( ff20 CK ) ( ff21 CK ) ( ff22 CK ) ( ff23 CK )
   ( ff24 CK ) ( ff25 CK ) ( ff26 CK ) ( ff27 CK ) ( ff28 CK ) ( ff29 CK )
   ( ff30 CK ) ( ff31 CK ) ( ff32 CK ) ( ff33 CK ) ( ff34 CK ) ( ff35 CK )
@@ -620,42 +620,48 @@ NETS 2 ;
   ( ff126 CK ) ( ff127 CK ) ( ff128 CK ) ( ff129 CK ) ( ff130 CK ) ( ff131 CK )
   ( ff132 CK ) ( ff133 CK ) ( ff134 CK ) ( ff135 CK ) ( ff136 CK ) ( ff137 CK )
   ( ff138 CK ) ( ff139 CK ) ( ff140 CK ) ( ff141 CK ) ( ff142 CK ) ( ff143 CK )
+
+  ( ff144 CK ) ( ff145 CK ) ( ff146 CK ) ( ff147 CK ) ( ff148 CK ) ( ff149 CK )
+  ( ff150 CK ) ( ff151 CK ) ( ff152 CK )
+  ( ff153 CK ) ( ff154 CK ) ( ff155 CK )
+  ( ff156 CK ) ( ff157 CK ) ( ff158 CK ) ( ff159 CK ) ( ff160 CK ) ( ff161 CK )
+  ( ff162 CK ) ( ff163 CK ) ( ff164 CK ) ( ff165 CK ) ( ff166 CK ) ( ff167 CK )
+  ( ff168 CK ) ( ff169 CK ) ( ff170 CK )
+  ( ff171 CK ) ( ff172 CK ) ( ff173 CK )
+  ( ff174 CK ) ( ff175 CK ) ( ff176 CK ) ( ff177 CK ) ( ff178 CK ) ( ff179 CK )
+  ( ff180 CK ) ( ff181 CK ) ( ff182 CK ) ( ff183 CK ) ( ff184 CK ) ( ff185 CK )
+  ( ff186 CK ) ( ff187 CK ) ( ff188 CK )
+  ( ff189 CK ) ( ff190 CK ) ( ff191 CK )
+  ( ff192 CK ) ( ff193 CK ) ( ff194 CK ) ( ff195 CK ) ( ff196 CK ) ( ff197 CK )
+  ( ff198 CK ) ( ff199 CK ) ( ff200 CK ) ( ff201 CK ) ( ff202 CK ) ( ff203 CK )
+  ( ff204 CK ) ( ff205 CK ) ( ff206 CK )
+  ( ff207 CK ) ( ff208 CK ) ( ff209 CK )
+  ( ff210 CK ) ( ff211 CK ) ( ff212 CK ) ( ff213 CK ) ( ff214 CK ) ( ff215 CK )
+  ( ff216 CK ) ( ff217 CK ) ( ff218 CK ) ( ff219 CK ) ( ff220 CK ) ( ff221 CK )
+  ( ff222 CK ) ( ff223 CK ) ( ff224 CK )
+  ( ff225 CK ) ( ff226 CK ) ( ff227 CK )
+  ( ff228 CK ) ( ff229 CK ) ( ff230 CK ) ( ff231 CK ) ( ff232 CK ) ( ff233 CK )
+  ( ff234 CK ) ( ff235 CK ) ( ff236 CK ) ( ff237 CK ) ( ff238 CK ) ( ff239 CK )
+  ( ff240 CK ) ( ff241 CK ) ( ff242 CK )
+  ( ff243 CK ) ( ff244 CK ) ( ff245 CK )
+  ( ff246 CK ) ( ff247 CK ) ( ff248 CK ) ( ff249 CK ) ( ff250 CK ) ( ff251 CK )
+  ( ff252 CK ) ( ff253 CK ) ( ff254 CK ) ( ff255 CK ) ( ff256 CK ) ( ff257 CK )
+  ( ff258 CK ) ( ff259 CK ) ( ff260 CK )
+  ( ff261 CK ) ( ff262 CK ) ( ff263 CK )
+  ( ff264 CK ) ( ff265 CK ) ( ff266 CK ) ( ff267 CK ) ( ff268 CK ) ( ff269 CK )
+  ( ff270 CK ) ( ff271 CK ) ( ff272 CK ) ( ff273 CK ) ( ff274 CK ) ( ff275 CK )
+  ( ff276 CK ) ( ff277 CK ) ( ff278 CK )
   
  ;
 - gclk1
   ( gclk1 GCK )
-  ( ff216 CK ) ( ff217 CK ) ( ff218 CK ) ( ff219 CK ) ( ff220 CK ) ( ff221 CK )
-  ( ff222 CK ) ( ff223 CK ) ( ff224 CK )
-  ( ff234 CK ) ( ff235 CK ) ( ff236 CK ) ( ff237 CK ) ( ff238 CK ) ( ff239 CK )
-  ( ff240 CK ) ( ff241 CK ) ( ff242 CK ) 
-  ( ff252 CK ) ( ff253 CK ) ( ff254 CK ) ( ff255 CK ) ( ff256 CK ) ( ff257 CK )
-  ( ff258 CK ) ( ff259 CK ) ( ff260 CK ) 
-  ( ff270 CK ) ( ff271 CK ) ( ff272 CK ) ( ff273 CK ) ( ff274 CK ) ( ff275 CK )
-  ( ff276 CK ) ( ff277 CK ) ( ff278 CK )
-  ( ff144 CK ) ( ff145 CK ) ( ff146 CK ) ( ff147 CK ) ( ff148 CK ) ( ff149 CK )
-  ( ff150 CK ) ( ff151 CK ) ( ff152 CK )
-  ( ff162 CK ) ( ff163 CK ) ( ff164 CK ) ( ff165 CK ) ( ff166 CK ) ( ff167 CK )
-  ( ff168 CK ) ( ff169 CK ) ( ff170 CK )
-  ( ff180 CK ) ( ff181 CK ) ( ff182 CK ) ( ff183 CK ) ( ff184 CK ) ( ff185 CK )
-  ( ff186 CK ) ( ff187 CK ) ( ff188 CK )
-  ( ff198 CK ) ( ff199 CK ) ( ff200 CK ) ( ff201 CK ) ( ff202 CK ) ( ff203 CK )
-  ( ff204 CK ) ( ff205 CK ) ( ff206 CK )
-  ( ff225 CK ) ( ff226 CK ) ( ff227 CK )
-  ( ff228 CK ) ( ff229 CK ) ( ff230 CK ) ( ff231 CK ) ( ff232 CK ) ( ff233 CK )
-  ( ff243 CK ) ( ff244 CK ) ( ff245 CK )
-  ( ff246 CK ) ( ff247 CK ) ( ff248 CK ) ( ff249 CK ) ( ff250 CK ) ( ff251 CK )
-  ( ff261 CK ) ( ff262 CK ) ( ff263 CK )
-  ( ff264 CK ) ( ff265 CK ) ( ff266 CK ) ( ff267 CK ) ( ff268 CK ) ( ff269 CK )
+  
   ( ff279 CK ) ( ff280 CK ) ( ff281 CK )
   ( ff282 CK ) ( ff283 CK ) ( ff284 CK ) ( ff285 CK ) ( ff286 CK ) ( ff287 CK )
-  ( ff153 CK ) ( ff154 CK ) ( ff155 CK )
-  ( ff156 CK ) ( ff157 CK ) ( ff158 CK ) ( ff159 CK ) ( ff160 CK ) ( ff161 CK )
-  ( ff171 CK ) ( ff172 CK ) ( ff173 CK )
-  ( ff174 CK ) ( ff175 CK ) ( ff176 CK ) ( ff177 CK ) ( ff178 CK ) ( ff179 CK )
-  ( ff189 CK ) ( ff190 CK ) ( ff191 CK )
-  ( ff192 CK ) ( ff193 CK ) ( ff194 CK ) ( ff195 CK ) ( ff196 CK ) ( ff197 CK )
-  ( ff207 CK ) ( ff208 CK ) ( ff209 CK )
-  ( ff210 CK ) ( ff211 CK ) ( ff212 CK ) ( ff213 CK ) ( ff214 CK ) ( ff215 CK ) 
+
+  ( ff14 CK ) ( ff15 CK ) ( ff16 CK ) ( ff17 CK )
+
+  ( ff0 CK ) ( ff1 CK )
  ;
 END NETS
 

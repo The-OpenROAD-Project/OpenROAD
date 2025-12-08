@@ -167,7 +167,7 @@ class RouteBase
   //         (e.g. calling NesterovPlace's init())
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
-  int64_t inflatedAreaDelta() const;
+  std::vector<int64_t> inflatedAreaDelta() const;
   int numCall() const;
 
  private:
@@ -181,7 +181,7 @@ class RouteBase
 
   std::unique_ptr<TileGrid> tg_;
 
-  int64_t inflatedAreaDelta_ = 0;
+  std::vector<int64_t> inflatedAreaDelta_;
 
   int numCall_ = 0;
 
@@ -190,13 +190,14 @@ class RouteBase
   // minRcInflationSize_ will store
   // GCell's width and height
   float minRc_ = 1e30;
-  float minRcTargetDensity_ = 0;
+  std::vector<float> minRcTargetDensity_;
   int min_RC_violated_cnt_ = 0;
   int max_routability_no_improvement_ = 3;
   int max_routability_revert_ = 50;
 
   void init();
   void resetRoutabilityResources();
+  void revertToMinCongestion();
 
   // update numCall_
   void increaseCounter();

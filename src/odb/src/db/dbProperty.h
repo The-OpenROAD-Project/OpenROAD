@@ -23,9 +23,9 @@ class dbPropertyItr;
 
 struct dbPropertyFlags
 {
-  uint _type : 4;
-  uint _owner_type : 8;
-  uint _spare_bits : 20;
+  uint type : 4;
+  uint owner_type : 8;
+  uint spare_bits : 20;
 };
 
 // User Code Begin Structs
@@ -60,9 +60,9 @@ class _dbProperty : public _dbObject
 
   dbPropertyFlags flags_;
   uint name_;
-  dbId<_dbProperty> _next;
-  uint _owner;
-  std::variant<std::string, bool, int, double> _value;
+  dbId<_dbProperty> next_;
+  uint owner_;
+  std::variant<std::string, bool, int, double> value_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbProperty& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj);

@@ -114,6 +114,9 @@ also set resource adjustment for a layer range, e.g.: `set_global_routing_layer_
 Metal4-Metal8 0.3` reduces the routing resources of routing layers  `Metal4`,
 `Metal5`, `Metal6`, `Metal7` and `Metal8` by 30%.
 
+Negative adjustment values can be used to increase the capacity of a given metal layer. For example,
+`set_global_routing_layer_adjustment Metal5 -0.5` will increase the total capacity of `Metal5` by 50%.
+
 ```tcl
 set_global_routing_layer_adjustment layer adjustment
 ```
