@@ -143,7 +143,8 @@ class IRSolver
       sta::Corner* corner) const;
 
   Connection::ConnectionMap<Connection::Conductance> generateConductanceMap(
-      sta::Corner* corner) const;
+      sta::Corner* corner,
+      const std::vector<std::unique_ptr<Connection>>& connections) const;
   Voltage generateSourceNodes(
       GeneratedSourceType source_type,
       const std::string& source_file,

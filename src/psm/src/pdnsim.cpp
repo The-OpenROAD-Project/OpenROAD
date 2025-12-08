@@ -205,6 +205,9 @@ void PDNSim::setGeneratedSourceSettings(const GeneratedSourceSettings& settings)
   if (settings.strap_track_pitch > 0) {
     generated_source_settings_.strap_track_pitch = settings.strap_track_pitch;
   }
+  if (settings.resistance > 0) {
+    generated_source_settings_.resistance = settings.resistance;
+  }
 }
 
 void PDNSim::clearSolvers()
