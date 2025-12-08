@@ -20,7 +20,7 @@ class dbId
   dbId(unsigned int id) : id_(id) {}
 
   operator unsigned int() const { return id_; }
-  unsigned int& id() { return id_; }
+  unsigned int id() const { return id_; }
 
   bool isValid() const { return id_ != invalid; }
   void clear() { id_ = invalid; }

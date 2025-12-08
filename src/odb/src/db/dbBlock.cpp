@@ -29,8 +29,6 @@
 #include <vector>
 
 #include "dbAccessPoint.h"
-#include "dbArrayTable.h"
-#include "dbArrayTable.hpp"
 #include "dbBPin.h"
 #include "dbBPinItr.h"
 #include "dbBTerm.h"

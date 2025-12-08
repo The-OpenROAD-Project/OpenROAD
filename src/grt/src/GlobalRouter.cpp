@@ -1698,6 +1698,8 @@ void GlobalRouter::computeUserLayerAdjustments(const int min_routing_layer,
     const bool inside_layer_range
         = (layer >= min_routing_layer && layer <= max_routing_layer);
     float adjustment = tech_layer->getLayerAdjustment();
+    const bool is_reduce = adjustment > 0;
+
     if (adjustment != 0) {
       if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
           && inside_layer_range) {
@@ -1711,7 +1713,7 @@ void GlobalRouter::computeUserLayerAdjustments(const int min_routing_layer,
                                  ? std::max(new_h_capacity, 1)
                                  : new_h_capacity;
             fastroute_->addAdjustment(
-                x - 1, y - 1, x, y - 1, layer, new_h_capacity, true);
+                x - 1, y - 1, x, y - 1, layer, new_h_capacity, is_reduce);
           }
         }
       }
@@ -1728,7 +1730,7 @@ void GlobalRouter::computeUserLayerAdjustments(const int min_routing_layer,
                                  ? std::max(new_v_capacity, 1)
                                  : new_v_capacity;
             fastroute_->addAdjustment(
-                x - 1, y - 1, x - 1, y, layer, new_v_capacity, true);
+                x - 1, y - 1, x - 1, y, layer, new_v_capacity, is_reduce);
           }
         }
       }

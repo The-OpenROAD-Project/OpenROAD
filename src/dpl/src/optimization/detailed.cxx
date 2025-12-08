@@ -13,6 +13,8 @@
 #include "infrastructure/detailed_segment.h"
 #include "optimization/detailed_manager.h"
 // Detailed placement algorithms.
+#include "boost/token_functions.hpp"
+#include "boost/tokenizer.hpp"
 #include "detailed.h"
 #include "optimization/detailed_global.h"
 #include "optimization/detailed_mis.h"
@@ -20,7 +22,6 @@
 #include "optimization/detailed_random.h"
 #include "optimization/detailed_reorder.h"
 #include "optimization/detailed_vertical.h"
-
 using utl::DPL;
 
 namespace dpl {

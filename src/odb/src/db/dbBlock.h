@@ -26,8 +26,6 @@
 
 namespace odb {
 
-template <class T>
-class dbArrayTable;
 class _dbProperty;
 class dbPropertyItr;
 class _dbNameCache;

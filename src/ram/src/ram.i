@@ -20,7 +20,9 @@ generate_ram_netlist_cmd(int bytes_per_word,
                          const char* storage_cell_name,
                          const char* tristate_cell_name,
                          const char* inv_cell_name,
-                         const int read_ports)
+                         const int read_ports,
+                         const char* tapcell_name,
+                         const int max_tap_dist)
 {
   auto* app = ord::OpenRoad::openRoad();
   auto* ram_gen = app->getRamGen();
@@ -58,8 +60,21 @@ generate_ram_netlist_cmd(int bytes_per_word,
                               inv_cell_name);
     }
   }
+
+  odb::dbMaster* tapcell = nullptr;
+  if (tapcell_name[0] != '\0') {
+    tapcell = db->findMaster(tapcell_name);
+    if (!tapcell) {
+      app->getLogger()->error(utl::RAM,
+                              19,
+                              "Tapcell {} can't be found",
+                              tapcell_name);
+    }
+  }
+
   ram_gen->generate(bytes_per_word, word_count, read_ports,
-                    storage_cell, tristate_cell, inv_cell);
+                    storage_cell, tristate_cell, inv_cell, tapcell,
+                    max_tap_dist);
 }
 
 } //namespace_ram

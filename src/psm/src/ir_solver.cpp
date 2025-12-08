@@ -501,7 +501,7 @@ IRSolver::generateSourceNodesFromBTerms() const
 
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
 
-  for (auto* root_node : network_->getBPinShapeNodes()) {
+  for (Node* root_node : network_->getBPinShapeNodes()) {
     src_nodes.push_back(std::make_unique<SourceNode>(root_node));
   }
 
@@ -785,23 +785,26 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
   return src_voltage;
 }
 
-void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
-                                   ValueNodeMap<Current>& currents) const
+IRSolver::Power IRSolver::buildNodeCurrentMap(
+    sta::Corner* corner,
+    ValueNodeMap<Current>& currents) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
   // Build power map
+  std::map<odb::dbInst*, Power> instance_powers;
   const auto inst_nodes = network_->getInstanceNodeMapping();
   const Voltage power_voltage = getPowerNetVoltage(corner);
   if (power_voltage == 0) {
     logger_->error(utl::PSM, 74, "Unable to determine voltage for power nets.");
   }
   for (const auto& [inst, power] : getInstancePower(corner)) {
-    const Current current = power / power_voltage;
     auto find_inst = inst_nodes.find(inst);
     if (find_inst == inst_nodes.end()) {
       continue;
     }
+    instance_powers[inst] = power;
+    const Current current = power / power_voltage;
     const auto& nodes = find_inst->second;
     for (auto* node : nodes) {
       currents[node] += current / nodes.size();
@@ -823,12 +826,19 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
       continue;
     }
 
+    instance_powers[inst] = find_power->second;
     const Current current = find_power->second / power_voltage;
     const auto& nodes = find_inst->second;
     for (auto* node : nodes) {
       currents[node] += current / nodes.size();
     }
   }
+
+  Power total_power = 0.0;
+  for (const auto& [inst, power] : instance_powers) {
+    total_power += power;
+  }
+  return total_power;
 }
 
 std::map<Node*, Connection::ConnectionSet> IRSolver::getNodeConnectionMap(
@@ -993,7 +1003,7 @@ void IRSolver::solve(sta::Corner* corner,
     all_nodes.insert(node);
   }
 
-  buildNodeCurrentMap(corner, currents);
+  const Power total_power = buildNodeCurrentMap(corner, currents);
 
   // Build source map
   std::vector<std::unique_ptr<SourceNode>> src_nodes;
@@ -1077,6 +1087,7 @@ void IRSolver::solve(sta::Corner* corner,
     voltages[node] = v_vector[node_idx];
   }
   solution_voltages_[corner] = src_voltage;
+  solution_power_[corner] = total_power;
 }
 
 std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
@@ -1270,6 +1281,7 @@ IRSolver::Results IRSolver::getSolution(sta::Corner* corner) const
   }
 
   results.net_voltage = solution_voltages_.at(corner);
+  results.total_power = solution_power_.at(corner);
 
   const bool is_ground = results.net_voltage == 0.0;
   auto worst_calc = [is_ground](Voltage& worst, Voltage check) {
@@ -1357,6 +1369,7 @@ void IRSolver::report(sta::Corner* corner) const
   logger_->report("########## IR report #################");
   logger_->report("Net              : {}", net_->getName());
   logger_->report("Corner           : {}", corner->name());
+  logger_->report("Total power      : {:3.2e} W", results.total_power);
   logger_->report("Supply voltage   : {:3.2e} V", results.net_voltage);
   logger_->report("Worstcase voltage: {:3.2e} V", results.worst_voltage);
   logger_->report("Average voltage  : {:3.2e} V", results.avg_voltage);
