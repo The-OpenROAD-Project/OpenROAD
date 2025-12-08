@@ -92,7 +92,7 @@ filegroup(
 [sim_test(
     name = "ram_8x7_{stage}_sim_test".format(stage = stage),
     cc_srcs = ["ram_8x7_sim.cpp"],
-    verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
     module_top = "ram_8x7",
+    verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
     #tags = ["manual"],
 ) for stage in STAGES[1:]]

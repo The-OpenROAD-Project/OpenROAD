@@ -23,13 +23,13 @@ def sim_test(
     """
     verilog_library(
         name = "{name}_split".format(name = name),
-        srcs =                [
+        srcs = [
             "//test/orfs/mock-array:asap7_files",
-                #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
-                #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
-                #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-                #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
-               ] + verilog,
+            #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
+            #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
+            #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
+            #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
+        ] + verilog,
         visibility = ["//visibility:public"],
         tags = ["manual"],
     )
@@ -46,17 +46,17 @@ def sim_test(
         trace = True,
         visibility = ["//visibility:public"],
         vopts = [
-                    "--timescale 1ps/1ps",
-                    "-Wall",
-                    "-Wno-DECLFILENAME",
-                    "-Wno-UNUSEDSIGNAL",
-                    "-Wno-PINMISSING",
-                    "--trace-underscore",
-                    # inline all PDK modules to speed up compilation
-                    "--flatten",
-                    # No-op option to retrigger a build
-                    # "-Wfuture-blah",
-                ],
+            "--timescale 1ps/1ps",
+            "-Wall",
+            "-Wno-DECLFILENAME",
+            "-Wno-UNUSEDSIGNAL",
+            "-Wno-PINMISSING",
+            "--trace-underscore",
+            # inline all PDK modules to speed up compilation
+            "--flatten",
+            # No-op option to retrigger a build
+            # "-Wfuture-blah",
+        ],
     )
 
     cc_test(
