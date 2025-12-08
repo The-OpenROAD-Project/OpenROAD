@@ -46,6 +46,7 @@ def sim_test(
         trace = True,
         visibility = ["//visibility:public"],
         vopts = [
+            "--runtime-debug",
             "--timescale 1ps/1ps",
             "-Wall",
             "-Wno-DECLFILENAME",
