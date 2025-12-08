@@ -10,7 +10,7 @@ set clk_period 1200
 # Covers all clock naming types in SRAMs and reg files
 set clock_ports [concat [get_ports -quiet *clk] [get_ports -quiet *clock]]
 
-if {[llength $clock_ports] == 0} {
+if { [llength $clock_ports] == 0 } {
   error "No clock ports found"
 }
 
@@ -21,17 +21,17 @@ foreach clk_port $clock_ports {
 
 set non_clk_inputs {}
 foreach input [all_inputs] {
-  if {[lsearch -exact $clock_ports $input] == -1} {
+  if { [lsearch -exact $clock_ports $input] == -1 } {
     lappend non_clk_inputs $input
   }
 }
 
-set_max_delay [expr {[info exists in2out_max] ? $in2out_max : 80}] -from $non_clk_inputs -to [all_outputs]
+set_max_delay [expr { [info exists in2out_max] ? $in2out_max : 80 }] -from $non_clk_inputs -to [all_outputs]
 group_path -name in2out -from $non_clk_inputs -to [all_outputs]
 
-if {[llength [all_registers]] > 0} {
-  set_max_delay [expr {[info exists in2reg_max] ? $in2reg_max : 80}] -from $non_clk_inputs -to [all_registers]
-  set_max_delay [expr {[info exists reg2out_max] ? $reg2out_max : 80}] -from [all_registers] -to [all_outputs]
+if { [llength [all_registers]] > 0 } {
+  set_max_delay [expr { [info exists in2reg_max] ? $in2reg_max : 80 }] -from $non_clk_inputs -to [all_registers]
+  set_max_delay [expr { [info exists reg2out_max] ? $reg2out_max : 80 }] -from [all_registers] -to [all_outputs]
 
   group_path -name in2reg -from $non_clk_inputs -to [all_registers]
   group_path -name reg2out -from [all_registers] -to [all_outputs]
