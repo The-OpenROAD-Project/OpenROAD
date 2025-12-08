@@ -1044,7 +1044,9 @@ void dbJournal::redo_updateNetField()
     case _dbNet::kNonDefaultRule: {
       uint prev_rule;
       log_.pop(prev_rule);
-      log_.pop(net->non_default_rule_.id());
+      unsigned int id;
+      log_.pop(id);
+      net->non_default_rule_ = id;
       bool prev_block_rule;
       bool cur_block_rule;
       log_.pop(prev_block_rule);
