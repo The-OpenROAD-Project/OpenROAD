@@ -228,12 +228,12 @@ sta::define_cmd_args "set_pdnsim_source_settings" {
   [-bump_size size]
   [-bump_interval interval]
   [-strap_track_pitch pitch]
-  [-resistance resistance]
+  [-external_resistance resistance]
 }
 
 proc set_pdnsim_source_settings { args } {
   sta::parse_key_args "set_pdnsim_source_settings" args \
-    keys {-bump_dx -bump_dy -bump_size -bump_interval -strap_track_pitch -resistance} \
+    keys {-bump_dx -bump_dy -bump_size -bump_interval -strap_track_pitch -external_resistance} \
     flags {}
 
   set dx 0
@@ -259,8 +259,8 @@ proc set_pdnsim_source_settings { args } {
   }
 
   set resistance 0
-  if { [info exists keys(-resistance)] } {
-    set resistance $keys(-resistance)
+  if { [info exists keys(-external_resistance)] } {
+    set resistance $keys(-external_resistance)
   }
 
   psm::set_source_settings $dx $dy $size $interval $track_pitch $resistance

@@ -9,5 +9,5 @@ set voltage_file [make_result_file gcd_all_vss-voltage.rpt]
 set em_file [make_result_file gcd_all_vss-em.rpt]
 set spice_file [make_result_file gcd_all_vss-spice.sp]
 
-set_pdnsim_source_settings -resistance 100
+set_pdnsim_source_settings -external_resistance 100
 analyze_power_grid -vsrc Vsrc_gcd_vss.loc -net VSS

@@ -5,7 +5,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_sdc Nangate45_data/aes.sdc
 
 analyze_power_grid -net VDD
-set_pdnsim_source_settings -resistance 10.0
+set_pdnsim_source_settings -external_resistance 10.0
 analyze_power_grid -net VDD
-set_pdnsim_source_settings -resistance 100.0
+set_pdnsim_source_settings -external_resistance 100.0
 analyze_power_grid -net VDD
