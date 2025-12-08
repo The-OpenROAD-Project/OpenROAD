@@ -179,7 +179,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   schema_major_ = db_schema_major;
   schema_minor_ = db_schema_minor;
   master_id_ = 0;
-  logger_ = nullptr;
+  logger_ = &_dbDatabase::default_logger_;
   unique_id_ = db_unique_id++;
 
   gds_lib_tbl_ = new dbTable<_dbGDSLib, 2>(

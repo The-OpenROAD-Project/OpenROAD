@@ -323,6 +323,8 @@ class _dbDatabase : public _dbObject
 
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
+
+  inline static utl::Logger default_logger_ = utl::Logger();
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj);
