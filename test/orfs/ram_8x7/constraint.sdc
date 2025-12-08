@@ -26,12 +26,15 @@ foreach input [all_inputs] {
   }
 }
 
-set_max_delay [expr { [info exists in2out_max] ? $in2out_max : 80 }] -from $non_clk_inputs -to [all_outputs]
+set in2out_max [expr { [info exists in2out_max] ? $in2out_max : 80 }]
+set_max_delay $in2out_max -from $non_clk_inputs -to [all_outputs]
 group_path -name in2out -from $non_clk_inputs -to [all_outputs]
 
 if { [llength [all_registers]] > 0 } {
-  set_max_delay [expr { [info exists in2reg_max] ? $in2reg_max : 80 }] -from $non_clk_inputs -to [all_registers]
-  set_max_delay [expr { [info exists reg2out_max] ? $reg2out_max : 80 }] -from [all_registers] -to [all_outputs]
+  set in2reg_max [expr { [info exists in2reg_max] ? $in2reg_max : 80 }]
+  set reg2out_max [expr { [info exists reg2out_max] ? $reg2out_max : 80 }]
+  set_max_delay $in2reg_max -from $non_clk_inputs -to [all_registers]
+  set_max_delay $reg2out_max -from [all_registers] -to [all_outputs]
 
   group_path -name in2reg -from $non_clk_inputs -to [all_registers]
   group_path -name reg2out -from [all_registers] -to [all_outputs]
