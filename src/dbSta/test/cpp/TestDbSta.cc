@@ -22,7 +22,7 @@ class TestDbSta : public tst::IntegratedFixture
   }
 };
 
-TEST_F(TestDbSta, TestIsConnected)
+TEST_F(TestDbSta, TestHierarchyConnectivity)
 {
   std::string test_name = "TestDbSta_0";
   readVerilogAndSetup(test_name + ".v");
