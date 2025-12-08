@@ -55,12 +55,18 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
 
-  dbModule* mod1 = dbModule::create(block_, "MOD1");
-  ASSERT_TRUE(mod1);
-  dbModBTerm::create(mod1, "A");
-
+  // Create modules & module instances
   dbModule* mod0 = dbModule::create(block_, "MOD0");
   ASSERT_TRUE(mod0);
+  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
+  ASSERT_TRUE(mi0);
+
+  dbModule* mod1 = dbModule::create(block_, "MOD1");
+  ASSERT_TRUE(mod1);
+  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
+  ASSERT_TRUE(mi1);
+
+  dbModBTerm::create(mod1, "A");
   dbModBTerm::create(mod0, "A");
 
   // Create instances
@@ -72,12 +78,6 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
 
   dbInst* load2_inst = dbInst::create(block_, buf_master, "load2_inst");
   ASSERT_TRUE(load2_inst);
-
-  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
-  ASSERT_TRUE(mi1);
-
-  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
-  ASSERT_TRUE(mi0);
 
   dbInst* load1_inst
       = dbInst::create(block_, buf_master, "load1_inst", false, mod1);
@@ -178,13 +178,19 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
 
-  dbModule* mod1 = dbModule::create(block_, "MOD1");
-  ASSERT_TRUE(mod1);
-  dbModBTerm::create(mod1, "A");
-
+  // Create modules & module instances
   dbModule* mod0 = dbModule::create(block_, "MOD0");
   ASSERT_TRUE(mod0);
+  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
+  ASSERT_TRUE(mi0);
+
+  dbModule* mod1 = dbModule::create(block_, "MOD1");
+  ASSERT_TRUE(mod1);
+  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
+  ASSERT_TRUE(mi1);
+
   dbModBTerm::create(mod0, "A");
+  dbModBTerm::create(mod1, "A");
 
   // Create instances
   dbInst* load0_inst = dbInst::create(block_, buf_master, "load0_inst");
@@ -192,12 +198,6 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
 
   dbInst* load2_inst = dbInst::create(block_, buf_master, "load2_inst");
   ASSERT_TRUE(load2_inst);
-
-  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
-  ASSERT_TRUE(mi1);
-
-  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
-  ASSERT_TRUE(mi0);
 
   dbInst* load1_inst
       = dbInst::create(block_, buf_master, "load1_inst", false, mod1);
@@ -374,12 +374,18 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   dbMaster* buf_master = db_->findMaster("BUF_X1");
   ASSERT_TRUE(buf_master);
 
-  dbModule* mod1 = dbModule::create(block_, "MOD1");
-  ASSERT_TRUE(mod1);
-  dbModBTerm::create(mod1, "A");
-
+  // Create modules & module instances
   dbModule* mod0 = dbModule::create(block_, "MOD0");
   ASSERT_TRUE(mod0);
+  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
+  ASSERT_TRUE(mi0);
+
+  dbModule* mod1 = dbModule::create(block_, "MOD1");
+  ASSERT_TRUE(mod1);
+  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
+  ASSERT_TRUE(mi1);
+
+  dbModBTerm::create(mod1, "A");
   dbModBTerm::create(mod0, "A");
 
   // TIELO master cell for Nangate45
@@ -394,12 +400,6 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
 
   dbInst* load2_inst = dbInst::create(block_, buf_master, "load2_inst");
   ASSERT_TRUE(load2_inst);
-
-  dbModInst* mi1 = dbModInst::create(mod0, mod1, "mi1");
-  ASSERT_TRUE(mi1);
-
-  dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mi0");
-  ASSERT_TRUE(mi0);
 
   dbInst* load1_inst
       = dbInst::create(block_, buf_master, "load1_inst", false, mod1);
