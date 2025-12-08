@@ -180,7 +180,7 @@ class dbObject
 
   ///
   /// Returns object name for debugging
-  /// e.g., "dbITerm(123@0x555551234b, "u0/buf/A")"
+  /// e.g., "dbITerm(34, 0x555551234b, 'u0/buf/A')"
   ///
   std::string getDebugName() const;
 
