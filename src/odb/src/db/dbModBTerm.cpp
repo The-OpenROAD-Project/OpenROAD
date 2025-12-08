@@ -305,14 +305,14 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   module->modbterms_ = modbterm->getOID();
   module->modbterm_hash_[name] = dbId<_dbModBTerm>(modbterm->getOID());
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: create {}",
+             modbterm->getDebugName());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbModBTerm {} at id {}",
-               name,
-               modbterm->getId());
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbModBTermObj);
     block->journal_->pushParam(name);
@@ -362,18 +362,15 @@ void dbModBTerm::connect(dbModNet* net)
   _modbterm->prev_net_modbterm_ = 0;  // previous of head always zero
   _modnet->modbterms_ = getId();      // set new head
 
+  debugPrint(_modbterm->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: connect {} to {}",
+             _modbterm->getDebugName(),
+             net->getDebugName());
+
   if (_block->journal_) {
-    debugPrint(_modbterm->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: connect modBterm ({} {:p}) '{}' to modnet ({} {:p}) '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getHierarchicalName(),
-               net->getId(),
-               static_cast<void*>(net),
-               net->getHierarchicalName());
     _block->journal_->beginAction(dbJournal::kConnectObject);
     _block->journal_->pushParam(dbModBTermObj);
     _block->journal_->pushParam(getId());
@@ -399,17 +396,15 @@ void dbModBTerm::disconnect()
   }
   _dbModNet* mod_net = block->modnet_tbl_->getPtr(_modbterm->modnet_);
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: disconnect {} from {}",
+             _modbterm->getDebugName(),
+             mod_net->getDebugName());
+
   if (block->journal_) {
-    debugPrint(
-        block->getImpl()->getLogger(),
-        utl::ODB,
-        "DB_ECO",
-        1,
-        "ECO: disconnect dbModBTerm {} at id {} from dbModNet {} at id {}",
-        getName(),
-        getId(),
-        mod_net->name_,
-        mod_net->getId());
     block->journal_->beginAction(dbJournal::kDisconnectObject);
     block->journal_->pushParam(dbModBTermObj);
     block->journal_->pushParam(_modbterm->getId());
@@ -480,14 +475,14 @@ void dbModBTerm::destroy(dbModBTerm* val)
 
   _dbModule* module = block->module_tbl_->getPtr(_modbterm->parent_);
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: delete {}",
+             val->getDebugName());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbModBTerm {} at id {}",
-               val->getName(),
-               val->getId());
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbModBTermObj);
     block->journal_->pushParam(val->getName());

@@ -200,16 +200,15 @@ void dbModNet::rename(const char* new_name)
 
   _dbBlock* block = (_dbBlock*) obj->getOwner();
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: {}, rename to '{}'",
+             obj->getDebugName(),
+             new_name);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbModNet({} {:p}) '{}', rename to '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getHierarchicalName(),
-               new_name);
     block->journal_->updateField(this, _dbModNet::kName, obj->name_, new_name);
   }
 
@@ -324,14 +323,14 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   parent->modnets_ = modnet->getOID();
   parent->modnet_hash_[base_name] = modnet->getOID();
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: create {}",
+             modnet->getDebugName());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbModNet {} at id {}",
-               base_name,
-               modnet->getId());
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbModNetObj);
     block->journal_->pushParam(base_name);
@@ -355,15 +354,15 @@ void dbModNet::destroy(dbModNet* mod_net)
 
   mod_net->disconnectAllTerms();
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: delete {}",
+             mod_net->getDebugName());
+
   // journalling
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbModNet {} at id {}",
-               mod_net->getName(),
-               mod_net->getId());
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbModNetObj);
     block->journal_->pushParam(mod_net->getName());
