@@ -368,16 +368,15 @@ bool dbInst::rename(const char* name)
     return false;
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: {}, rename to '{}'",
+             inst->getDebugName(),
+             name);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbInst({} {:p}) '{}', rename to '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getName(),
-               name);
     block->journal_->updateField(this, _dbInst::kName, inst->name_, name);
   }
 
@@ -421,14 +420,16 @@ void dbInst::setOrigin(int x, int y)
   inst->y_ = y;
   _dbInst::setInstBBox(inst);
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: {} setOrigin {}, {}",
+             inst->getDebugName(),
+             x,
+             y);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setOrigin {}, {}",
-               x,
-               y);
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(inst->getObjectType());
     block->journal_->pushParam(inst->getId());
@@ -517,13 +518,15 @@ void dbInst::setOrient(dbOrientType orient)
   inst->flags_.orient = orient.getValue();
   _dbInst::setInstBBox(inst);
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: {} setOrient {}",
+             inst->getDebugName(),
+             orient.getValue());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setOrient {}",
-               orient.getValue());
     block->journal_->updateField(
         this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
@@ -556,13 +559,16 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
   uint prev_flags = flagsToUInt(inst);
   inst->flags_.status = status.getValue();
   block->flags_.valid_bbox = 0;
+
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             2,
+             "ECO: {} setPlacementStatus {}",
+             inst->getDebugName(),
+             status.getValue());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setPlacementStatus {}",
-               status.getValue());
     block->journal_->updateField(
         this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
@@ -1113,18 +1119,16 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     return false;
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: swapMaster on {} from master '{}' to '{}'",
+             inst->getDebugName(),
+             oldMasterName,
+             newMasterName);
+
   if (block->journal_) {
-    debugPrint(
-        getImpl()->getLogger(),
-        utl::ODB,
-        "DB_ECO",
-        1,
-        "ECO: swapMaster on dbInst({} {:p}) '{}' from master '{}' to '{}'",
-        getId(),
-        static_cast<void*>(this),
-        getName(),
-        oldMasterName,
-        newMasterName);
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
     block->journal_->beginAction(dbJournal::kSwapObject);
@@ -1288,15 +1292,6 @@ dbInst* dbInst::create(dbBlock* block_,
   dbInst* inst = reinterpret_cast<dbInst*>(inst_impl);
 
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbInst({}, {:p}) '{}' master '{}'",
-               inst->getId(),
-               static_cast<void*>(inst),
-               name_,
-               master_->getName());
     dbLib* lib = master_->getLib();
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbInstObj);
@@ -1313,6 +1308,14 @@ dbInst* dbInst::create(dbBlock* block_,
   inst_impl->inst_hdr_ = inst_hdr->getOID();
   block->inst_hash_.insert(inst_impl);
   inst_hdr->inst_cnt_++;
+
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: create {} master '{}'",
+             inst->getDebugName(),
+             master_->getName());
 
   // create the iterms
   uint mterm_cnt = inst_hdr->mterms_.size();
@@ -1498,15 +1501,14 @@ void dbInst::destroy(dbInst* inst_)
     ((_dbModule*) module)->dbinst_hash_.erase(inst_->getName());
   }
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: delete {}",
+             inst->getDebugName());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbInst({}, {:p}) '{}'",
-               inst->getId(),
-               static_cast<void*>(inst),
-               inst_->getName());
     auto master = inst_->getMaster();
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbInstObj);

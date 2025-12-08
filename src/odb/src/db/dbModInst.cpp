@@ -204,13 +204,6 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   _dbModInst* modinst = block->modinst_tbl_->create();
 
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbModInst {} at id {}",
-               name,
-               modinst->getId());
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbModInstObj);
     block->journal_->pushParam(name);
@@ -228,6 +221,13 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   module->modinsts_ = modinst->getOID();
   master->mod_inst_ = modinst->getOID();
   module->modinst_hash_[modinst->name_] = modinst->getOID();
+
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: create {}",
+             modinst->getDebugName());
 
   for (dbBlockCallBackObj* cb : block->callbacks_) {
     cb->inDbModInstCreate((dbModInst*) modinst);
@@ -284,15 +284,15 @@ void dbModInst::destroy(dbModInst* modinst)
 
   dbProperty::destroyProperties(_modinst);
 
+  debugPrint(_block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: delete {}",
+             modinst->getDebugName());
+
   // Assure that dbModInst obj is restored first by being journalled last.
   if (_block->journal_) {
-    debugPrint(_block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbModInst {} at id {}",
-               modinst->getName(),
-               modinst->getId());
     _block->journal_->beginAction(dbJournal::kDeleteObject);
     _block->journal_->pushParam(dbModInstObj);
     _block->journal_->pushParam(modinst->getName());

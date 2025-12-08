@@ -347,18 +347,15 @@ void dbITerm::connect(dbNet* net_)
     callback->inDbITermPreConnect(this, net_);
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: connect {} to {}",
+             iterm->getDebugName(),
+             net->getDebugName());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: connect dbITerm({}, {:p}) '{}' to dbNet({}, {:p}) '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getName(),
-               net->getId(),
-               static_cast<void*>(net),
-               net_->getName());
     block->journal_->beginAction(dbJournal::kConnectObject);
     block->journal_->pushParam(dbITermObj);
     block->journal_->pushParam(getId());
@@ -426,18 +423,15 @@ void dbITerm::connect(dbModNet* mod_net)
         inst->name_);
   }
 
+  debugPrint(iterm->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: connect {} to {}",
+             iterm->getDebugName(),
+             mod_net->getDebugName());
+
   if (block->journal_) {
-    debugPrint(iterm->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: connect dbITerm({} {:p}) '{}' to dbModNet({} {:p}) '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getName(),
-               _mod_net->getId(),
-               static_cast<void*>(_mod_net),
-               ((dbModNet*) _mod_net)->getHierarchicalName());
     block->journal_->beginAction(dbJournal::kConnectObject);
     block->journal_->pushParam(dbITermObj);
     block->journal_->pushParam(getId());
@@ -493,22 +487,17 @@ void dbITerm::disconnect()
         net->name_);
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "disconnect {} from {} "
+             "and {}",
+             iterm->getDebugName(),
+             (net) ? net->getDebugName() : "dbNet(NULL)",
+             (mod_net) ? mod_net->getDebugName() : "dbModNet(NULL)");
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "disconnect dbITerm({}, {:p}) '{}' from dbNet({}, {:p}) '{}' "
-               "corresponding to dbModNet({}, {:p}) '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getName(),
-               (net) ? net->getId() : 0,
-               static_cast<void*>(net),
-               (net) ? net->name_ : "NULL",
-               (mod_net_impl) ? mod_net_impl->getId() : 0,
-               static_cast<void*>(mod_net),
-               (mod_net) ? mod_net->getHierarchicalName() : "NULL");
     block->journal_->beginAction(dbJournal::kDisconnectObject);
     block->journal_->pushParam(dbITermObj);
     block->journal_->pushParam(getId());
@@ -601,18 +590,16 @@ void dbITerm::disconnectDbNet()
   for (auto callback : block->callbacks_) {
     callback->inDbITermPreDisconnect(this);
   }
+
+  debugPrint(iterm->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_ECO",
+             1,
+             "ECO: disconnect {} from {}",
+             iterm->getDebugName(),
+             net->getDebugName());
+
   if (block->journal_) {
-    debugPrint(iterm->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: disconnect dbITerm({} {:p}) '{}' from dbNet({} {:p}) '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getName(),
-               net->getId(),
-               static_cast<void*>(net),
-               ((dbNet*) net)->getName());
     block->journal_->beginAction(dbJournal::kDisconnectObject);
     block->journal_->pushParam(dbITermObj);
     block->journal_->pushParam(getId());
@@ -658,16 +645,15 @@ void dbITerm::disconnectDbModNet()
   if (iterm->mnet_ != 0) {
     _dbModNet* mod_net = block->modnet_tbl_->getPtr(iterm->mnet_);
 
+    debugPrint(iterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: disconnect {} from {}",
+               iterm->getDebugName(),
+               mod_net->getDebugName());
+
     if (block->journal_) {
-      debugPrint(iterm->getImpl()->getLogger(),
-                 utl::ODB,
-                 "DB_ECO",
-                 1,
-                 "ECO: disconnect dbIterm({}) '{}' from dbModNet({}) '{}'",
-                 getId(),
-                 getName(),
-                 iterm->mnet_,
-                 mod_net->name_);
       block->journal_->beginAction(dbJournal::kDisconnectObject);
       block->journal_->pushParam(dbITermObj);
       block->journal_->pushParam(getId());
