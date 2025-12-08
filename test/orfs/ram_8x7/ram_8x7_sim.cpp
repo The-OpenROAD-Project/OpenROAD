@@ -10,6 +10,7 @@
 // NOLINT
 #include "Vram_8x7.h"
 
+// DUMMY, testing nit
 namespace {
 class Ram_8x7TestHarness
 {
