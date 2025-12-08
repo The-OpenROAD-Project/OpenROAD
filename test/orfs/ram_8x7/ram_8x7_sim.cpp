@@ -26,8 +26,7 @@ class Ram_8x7TestHarness
     trace->open(vcd_file.c_str());
   }
 
-  ~Ram_8x7TestHarness();
-
+  ~Ram_8x7TestHarness() = default;
   // Simulate one clock cycle
   void step()
   {
@@ -50,11 +49,6 @@ class Ram_8x7TestHarness
     // Now we're ready to pick up poked inputs on rising edge
   }
 };
-// NOLINT
-Ram_8x7TestHarness::~Ram_8x7TestHarness()
-{
-  trace->close();
-}
 }  // namespace
 
 TEST(Ram_8x7Test, SimpleTest)
@@ -90,4 +84,5 @@ TEST(Ram_8x7Test, SimpleTest)
       // 100));
     }
   }
+  harness.trace->close();
 }
