@@ -16,21 +16,21 @@ class dbModuleModInstModITermItr : public dbIterator
  public:
   dbModuleModInstModITermItr(dbTable<_dbModITerm>* moditerm_tbl)
   {
-    _moditerm_tbl = moditerm_tbl;
+    moditerm_tbl_ = moditerm_tbl;
   }
 
-  bool reversible() override;
-  bool orderReversed() override;
+  bool reversible() const override;
+  bool orderReversed() const override;
   void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
+  uint sequential() const override;
+  uint size(dbObject* parent) const override;
+  uint begin(dbObject* parent) const override;
+  uint end(dbObject* parent) const override;
+  uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbModITerm>* _moditerm_tbl;
+  dbTable<_dbModITerm>* moditerm_tbl_;
 };
 
 }  // namespace odb

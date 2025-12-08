@@ -13,20 +13,21 @@ class _dbBlock;
 
 class dbBlockItr : public dbIterator
 {
-  dbTable<_dbBlock>* _block_tbl;
-
  public:
-  dbBlockItr(dbTable<_dbBlock>* block_tbl) { _block_tbl = block_tbl; }
+  dbBlockItr(dbTable<_dbBlock>* block_tbl) { block_tbl_ = block_tbl; }
 
-  bool reversible() override;
-  bool orderReversed() override;
+  bool reversible() const override;
+  bool orderReversed() const override;
   void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
+  uint sequential() const override;
+  uint size(dbObject* parent) const override;
+  uint begin(dbObject* parent) const override;
+  uint end(dbObject* parent) const override;
+  uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbBlock>* block_tbl_;
 };
 
 }  // namespace odb

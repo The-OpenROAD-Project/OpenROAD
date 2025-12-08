@@ -192,74 +192,69 @@ class dbBox : public dbObject
   ///
   /// Get the lower coordinate.
   ///
-  int xMin();
+  int xMin() const;
 
   ///
   /// Get the lower y coordinate.
   ///
-  int yMin();
+  int yMin() const;
 
   ///
   /// Get the high x coordinate.
   ///
-  int xMax();
+  int xMax() const;
 
   ///
   /// Get the high y coordinate.
   ///
-  int yMax();
+  int yMax() const;
 
   ///
   /// Returns true if this box represents a via
   ///
-  bool isVia();
+  bool isVia() const;
 
   ///
   /// Get tech-via this box represents.
   /// returns nullptr if this box does not represent a tech-via
   ///
-  dbTechVia* getTechVia();
+  dbTechVia* getTechVia() const;
 
   ///
   /// Get block-via this box represents.
   /// returns nullptr if this box does not represent a block-via
   ///
-  dbVia* getBlockVia();
+  dbVia* getBlockVia() const;
 
   ///
   /// Return the placed location of this via.
   ///
-  void getViaXY(int& x, int& y);
-
-  ///
-  /// Return the placed location of this via.
-  ///
-  Point getViaXY();
+  Point getViaXY() const;
 
   ///
   /// Get the box bounding points.
   ///
-  Rect getBox();
+  Rect getBox() const;
 
   ///
   /// Get the translated boxes of this via
   ///
-  void getViaBoxes(std::vector<dbShape>& shapes);
+  void getViaBoxes(std::vector<dbShape>& shapes) const;
 
   ///
   /// Get the translated boxes of this via on the given layer
   ///
-  void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes);
+  void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes) const;
+
+  ///
+  /// Get the orientation of the box.
+  ///
+  Orientation2D getDir() const;
 
   ///
   /// Get the width (xMax-xMin) of the box.
   ///
-  int getDir();
-
-  ///
-  /// Get the width (xMax-xMin) of the box.
-  ///
-  uint getDX();
+  uint getDX() const;
 
   int getDesignRuleWidth() const;
 
@@ -268,25 +263,23 @@ class dbBox : public dbObject
   ///
   /// Get the height (yMax-yMin) of the box.
   ///
-  uint getDY();
-  uint getWidth(uint dir = 1);
-  uint getLength(uint dir = 1);
+  uint getDY() const;
 
   ///
   /// Set temporary flag visited
   ///
   void setVisited(bool value);
-  bool isVisited();
+  bool isVisited() const;
 
   ///
   /// Get the owner of this box
   ///
-  dbObject* getBoxOwner();
+  dbObject* getBoxOwner() const;
 
   ///
   /// Get the owner type of this box
   ///
-  dbBoxOwner getOwnerType();
+  dbBoxOwner getOwnerType() const;
 
   ///
   /// Get the layer of this box.
@@ -300,13 +293,13 @@ class dbBox : public dbObject
   /// These bboxes have no layer.
   ///    All dbBox(s) that represent VIA's.
   ///
-  dbTechLayer* getTechLayer();
+  dbTechLayer* getTechLayer() const;
 
   ///
   /// Get the layer mask assigned to this box.
   /// Returns 0 is not assigned or bbox has no layer
   ///
-  uint getLayerMask();
+  uint getLayerMask() const;
 
   ///
   /// Sets the layer mask for this box.
@@ -433,37 +426,37 @@ class dbSBox : public dbBox
   ///
   /// Get the shape type of this wire.
   ///
-  dbWireShapeType getWireShapeType();
+  dbWireShapeType getWireShapeType() const;
 
   ///
   /// Return the specified direction of this segment
   ///
-  Direction getDirection();
+  Direction getDirection() const;
 
   ///
   /// Get the swire of this shape
   ///
-  dbSWire* getSWire();
+  dbSWire* getSWire() const;
 
   ///
   /// Get Oct Wire Shape
   ///
-  Oct getOct();
+  Oct getOct() const;
 
   ///
   /// Get via mask for bottom layer of via
   ///
-  uint getViaBottomLayerMask();
+  uint getViaBottomLayerMask() const;
 
   ///
   /// Get via mask for cut layer of via
   ///
-  uint getViaCutLayerMask();
+  uint getViaCutLayerMask() const;
 
   ///
   /// Get via mask for top layer of via
   ///
-  uint getViaTopLayerMask();
+  uint getViaTopLayerMask() const;
 
   ///
   /// Set via masks
@@ -473,7 +466,7 @@ class dbSBox : public dbBox
   ///
   /// Has via mask
   ///
-  bool hasViaLayerMasks();
+  bool hasViaLayerMasks() const;
 
   ///
   /// Create a set of new sboxes from a via array
@@ -1694,7 +1687,7 @@ class dbBPin : public dbObject
   ///
   /// Get the placement status of this block-terminal.
   ///
-  dbPlacementStatus getPlacementStatus();
+  dbPlacementStatus getPlacementStatus() const;
 
   ///
   /// Set the placement status of this block-terminal.
@@ -1719,7 +1712,7 @@ class dbBPin : public dbObject
   ///
   /// Returns true if this bpin has an effective-width rule.
   ///
-  bool hasEffectiveWidth();
+  bool hasEffectiveWidth() const;
 
   ///
   /// Set the effective width rule.
@@ -1729,12 +1722,12 @@ class dbBPin : public dbObject
   ///
   /// Return the effective width rule.
   ///
-  int getEffectiveWidth();
+  int getEffectiveWidth() const;
 
   ///
   /// Returns true if this bpin has an min-spacing rule.
   ///
-  bool hasMinSpacing();
+  bool hasMinSpacing() const;
 
   ///
   /// Set the min spacing rule.
@@ -1744,7 +1737,7 @@ class dbBPin : public dbObject
   ///
   /// Return the min spacing rule.
   ///
-  int getMinSpacing();
+  int getMinSpacing() const;
 
   std::vector<dbAccessPoint*> getAccessPoints() const;
 
@@ -5622,6 +5615,11 @@ class dbMaster : public dbObject
   int getMasterId();
 
   ///
+  /// Clear the access points of all pins.
+  ///
+  void clearPinAccess(int pin_access_idx);
+
+  ///
   /// Create a new master.
   /// Returns nullptr if a master with this name already exists
   ///
@@ -5815,6 +5813,8 @@ class dbMPin : public dbObject
   Rect getBBox();
 
   std::vector<std::vector<odb::dbAccessPoint*>> getPinAccess() const;
+
+  void clearPinAccess(int pin_access_idx);
 
   ///
   /// Create a new physical pin.

@@ -158,11 +158,6 @@ void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
   tree_->large_net_threshold = large_net_threshold;
 }
 
-void HierRTLMP::setSignatureNetThreshold(int signature_net_threshold)
-{
-  tree_->min_net_count_for_connection = signature_net_threshold;
-}
-
 void HierRTLMP::setTargetUtil(float target_util)
 {
   target_util_ = target_util;
@@ -421,7 +416,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         macro.setShapes(width_intervals, tilings.front().area());
       }
 
-      macros.push_back(macro);
+      macros.push_back(std::move(macro));
     }
   }
   // if there is only one soft macro
@@ -2170,7 +2165,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     // Large arrays need more steps to properly converge.
     if (large_macro_cluster) {
-      perturbations_per_step *= 2;
+      perturbations_per_step = num_perturb_per_step_;
     }
   }
 

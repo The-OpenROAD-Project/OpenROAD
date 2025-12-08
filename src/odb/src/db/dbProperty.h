@@ -23,19 +23,19 @@ class dbPropertyItr;
 
 struct dbPropertyFlags
 {
-  uint _type : 4;
-  uint _owner_type : 8;
-  uint _spare_bits : 20;
+  uint type : 4;
+  uint owner_type : 8;
+  uint spare_bits : 20;
 };
 
 // User Code Begin Structs
 enum _PropTypeEnum
 {
   // Do not change the order of this enum.
-  DB_STRING_PROP = 0,
-  DB_BOOL_PROP = 1,
-  DB_INT_PROP = 2,
-  DB_DOUBLE_PROP = 3
+  kDbStringProp = 0,
+  kDbBoolProp = 1,
+  kDbIntProp = 2,
+  kDbDoubleProp = 3
 };
 // User Code End Structs
 
@@ -59,10 +59,10 @@ class _dbProperty : public _dbObject
   // User Code End Methods
 
   dbPropertyFlags flags_;
-  uint _name;
-  dbId<_dbProperty> _next;
-  uint _owner;
-  std::variant<std::string, bool, int, double> _value;
+  uint name_;
+  dbId<_dbProperty> next_;
+  uint owner_;
+  std::variant<std::string, bool, int, double> value_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbProperty& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj);

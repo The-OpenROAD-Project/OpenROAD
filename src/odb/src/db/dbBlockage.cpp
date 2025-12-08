@@ -25,38 +25,38 @@ template class dbTable<_dbBlockage>;
 _dbBox* _dbBlockage::getBBox() const
 {
   _dbBlock* block = (_dbBlock*) getOwner();
-  return block->_box_tbl->getPtr(_bbox);
+  return block->box_tbl_->getPtr(bbox_);
 }
 
 _dbInst* _dbBlockage::getInst()
 {
-  if (_inst == 0) {
+  if (inst_ == 0) {
     return nullptr;
   }
 
   _dbBlock* block = (_dbBlock*) getOwner();
-  return block->_inst_tbl->getPtr(_inst);
+  return block->inst_tbl_->getPtr(inst_);
 }
 
 bool _dbBlockage::operator==(const _dbBlockage& rhs) const
 {
-  if (_flags._pushed_down != rhs._flags._pushed_down) {
+  if (flags_.pushed_down != rhs.flags_.pushed_down) {
     return false;
   }
 
-  if (_flags._soft != rhs._flags._soft) {
+  if (flags_.soft != rhs.flags_.soft) {
     return false;
   }
 
-  if (_inst != rhs._inst) {
+  if (inst_ != rhs.inst_) {
     return false;
   }
 
-  if (_bbox != rhs._bbox) {
+  if (bbox_ != rhs.bbox_) {
     return false;
   }
 
-  if (_max_density != rhs._max_density) {
+  if (max_density_ != rhs.max_density_) {
     return false;
   }
 
@@ -73,12 +73,12 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
   }
 
   if (b0->equal(*b1)) {
-    if (_inst && rhs._inst) {
+    if (inst_ && rhs.inst_) {
       _dbBlock* lhs_blk = (_dbBlock*) getOwner();
       _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      int r = strcmp(lhs_inst->_name, rhs_inst->_name);
+      _dbInst* lhs_inst = lhs_blk->inst_tbl_->getPtr(inst_);
+      _dbInst* rhs_inst = rhs_blk->inst_tbl_->getPtr(rhs.inst_);
+      int r = strcmp(lhs_inst->name_, rhs_inst->name_);
 
       if (r < 0) {
         return true;
@@ -87,33 +87,33 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
       if (r > 0) {
         return false;
       }
-    } else if (_inst) {
+    } else if (inst_) {
       return false;
-    } else if (rhs._inst) {
+    } else if (rhs.inst_) {
       return true;
     }
 
-    if (_flags._pushed_down < rhs._flags._pushed_down) {
+    if (flags_.pushed_down < rhs.flags_.pushed_down) {
       return true;
     }
 
-    if (_flags._pushed_down > rhs._flags._pushed_down) {
-      return false;
-    }
-
-    if (_flags._soft < rhs._flags._soft) {
-      return true;
-    }
-
-    if (_flags._soft > rhs._flags._soft) {
+    if (flags_.pushed_down > rhs.flags_.pushed_down) {
       return false;
     }
 
-    if (_max_density < rhs._max_density) {
+    if (flags_.soft < rhs.flags_.soft) {
       return true;
     }
 
-    if (_max_density > rhs._max_density) {
+    if (flags_.soft > rhs.flags_.soft) {
+      return false;
+    }
+
+    if (max_density_ < rhs.max_density_) {
+      return true;
+    }
+
+    if (max_density_ > rhs.max_density_) {
       return false;
     }
   }
@@ -142,37 +142,37 @@ dbInst* dbBlockage::getInstance()
 void dbBlockage::setPushedDown()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_flags._pushed_down = 1;
+  bkg->flags_.pushed_down = 1;
 }
 
 bool dbBlockage::isPushedDown()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_flags._pushed_down == 1;
+  return bkg->flags_.pushed_down == 1;
 }
 
 void dbBlockage::setSoft()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_flags._soft = 1;
+  bkg->flags_.soft = 1;
 }
 
 bool dbBlockage::isSoft()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_flags._soft == 1;
+  return bkg->flags_.soft == 1;
 }
 
 void dbBlockage::setMaxDensity(float max_density)
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_max_density = max_density;
+  bkg->max_density_ = max_density;
 }
 
 float dbBlockage::getMaxDensity()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_max_density;
+  return bkg->max_density_;
 }
 
 dbBlock* dbBlockage::getBlock()
@@ -183,13 +183,13 @@ dbBlock* dbBlockage::getBlock()
 bool dbBlockage::isSystemReserved()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_flags._is_system_reserved;
+  return bkg->flags_.is_system_reserved;
 }
 
 void dbBlockage::setIsSystemReserved(bool is_system_reserved)
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_flags._is_system_reserved = is_system_reserved;
+  bkg->flags_.is_system_reserved = is_system_reserved;
 }
 
 dbBlockage* dbBlockage::create(dbBlock* block_,
@@ -202,22 +202,22 @@ dbBlockage* dbBlockage::create(dbBlock* block_,
   _dbBlock* block = (_dbBlock*) block_;
   _dbInst* inst = (_dbInst*) inst_;
 
-  _dbBlockage* bkg = block->_blockage_tbl->create();
+  _dbBlockage* bkg = block->blockage_tbl_->create();
 
   if (inst) {
-    bkg->_inst = inst->getOID();
+    bkg->inst_ = inst->getOID();
   }
 
-  _dbBox* box = block->_box_tbl->create();
-  box->_shape._rect.init(x1, y1, x2, y2);
-  box->_flags._owner_type = dbBoxOwner::BLOCKAGE;
-  box->_owner = bkg->getOID();
-  bkg->_bbox = box->getOID();
+  _dbBox* box = block->box_tbl_->create();
+  box->shape_.rect.init(x1, y1, x2, y2);
+  box->flags_.owner_type = dbBoxOwner::BLOCKAGE;
+  box->owner_ = bkg->getOID();
+  bkg->bbox_ = box->getOID();
 
   // Update bounding box of block
-  _dbBox* bbox = (_dbBox*) block->_box_tbl->getPtr(block->_bbox);
-  bbox->_shape._rect.merge(box->_shape._rect);
-  for (auto callback : block->_callbacks) {
+  _dbBox* bbox = (_dbBox*) block->box_tbl_->getPtr(block->bbox_);
+  bbox->shape_.rect.merge(box->shape_.rect);
+  for (auto callback : block->callbacks_) {
     callback->inDbBlockageCreate((dbBlockage*) bkg);
   }
   return (dbBlockage*) bkg;
@@ -236,19 +236,19 @@ void dbBlockage::destroy(dbBlockage* blockage)
         "You cannot delete a system created blockage (isSystemReserved).");
   }
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbBlockageDestroy(blockage);
   }
 
-  block->_box_tbl->destroy(block->_box_tbl->getPtr(bkg->_bbox));
+  block->box_tbl_->destroy(block->box_tbl_->getPtr(bkg->bbox_));
 
-  block->_blockage_tbl->destroy(bkg);
+  block->blockage_tbl_->destroy(bkg);
 }
 
 dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbBlockage*) block->_blockage_tbl->getPtr(dbid_);
+  return (dbBlockage*) block->blockage_tbl_->getPtr(dbid_);
 }
 
 void _dbBlockage::collectMemInfo(MemInfo& info)

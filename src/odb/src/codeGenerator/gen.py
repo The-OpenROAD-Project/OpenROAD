@@ -89,7 +89,7 @@ def make_parent_hash_field(parent, relation, parent_field):
 
 def make_child_next_field(child, relation):
     """Adds a next entry field to the child of a hashed relationsip"""
-    inChildNextEntry = {"name": "_next_entry"}
+    inChildNextEntry = {"name": "next_entry_"}
     inChildNextEntry["type"] = "dbId<_" + relation["child"] + ">"
     inChildNextEntry["flags"] = ["private"]
     inChildNextEntry["flags"].extend(relation.get("flags", []))
@@ -221,7 +221,7 @@ def add_bitfield_flags(klass, flag_num_bits, flags_struct):
     total_num_bits = flag_num_bits
     if flag_num_bits > 0 and flag_num_bits % 32 != 0:
         spare_bits_field = {
-            "name": "spare_bits_",
+            "name": "spare_bits",
             "type": "uint",
             "bits": 32 - (flag_num_bits % 32),
             "flags": ["no-cmp", "no-set", "no-get", "no-serial"],

@@ -26,24 +26,22 @@ class _dbModInst : public _dbObject
  public:
   _dbModInst(_dbDatabase*);
 
-  ~_dbModInst();
-
   bool operator==(const _dbModInst& rhs) const;
   bool operator!=(const _dbModInst& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbModInst> _next_entry;
-  dbId<_dbModule> _parent;
-  dbId<_dbModInst> _module_next;
-  dbId<_dbModule> _master;
-  dbId<_dbModInst> _group_next;
-  dbId<_dbGroup> _group;
-  dbId<_dbModITerm> _moditerms;
+  char* name_;
+  dbId<_dbModInst> next_entry_;
+  dbId<_dbModule> parent_;
+  dbId<_dbModInst> module_next_;
+  dbId<_dbModule> master_;
+  dbId<_dbModInst> group_next_;
+  dbId<_dbGroup> group_;
+  dbId<_dbModITerm> moditerms_;
 
   // User Code Begin Fields
-  std::unordered_map<std::string, dbId<_dbModITerm>> _moditerm_hash;
+  std::unordered_map<std::string, dbId<_dbModITerm>> moditerm_hash_;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj);

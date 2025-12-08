@@ -13,17 +13,16 @@
 #include <string>
 #include <vector>
 
-#include "odb/array1.h"
-#include "odb/util.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "rcx/grids.h"
+#include "rcx/util.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER
 
-using odb::Ath__array1D;
 using utl::RCX;
 
 namespace rcx {
@@ -80,8 +79,6 @@ uint extRCModel::getCorners(std::list<std::string>& corners)
 uint extRCModel::initModel(std::list<std::string>& corners, int met_cnt)
 {
   int cornerCnt = defineCorners(corners);
-  _logFP = openFile("./", "corners", ".log", "w");
-  _dbg_logFP = openFile("./", "corners", ".debug.log", "w");
   createModelTable(cornerCnt, (uint) (met_cnt + 1));
   for (uint m = 0; m < cornerCnt; m++) {
     for (uint ii = 1; ii < _layerCnt; ii++) {
@@ -181,7 +178,7 @@ uint extRCModel::readRCvalues(const char* corner,
 
   uint corner_index = 0;
   extMetRCTable* met_rc = getMetRCTable(corner_index);
-  odb::AthPool<extDistRC>* rcPool = met_rc->getRCPool();
+  AthPool<extDistRC>* rcPool = met_rc->getRCPool();
 
   extMeasure m(nullptr);
   m._diagModel = 1;
@@ -195,16 +192,6 @@ uint extRCModel::readRCvalues(const char* corner,
     sprintf(buff, "%s.debug.log", corner);
     FILE* dbg_logFP = fopen(buff, "w");
   */
-  FILE* logFP = _logFP;
-  FILE* dbg_logFP = _dbg_logFP;
-  fprintf(logFP,
-          "REading corner %s File: %s -------------------------\n\n",
-          corner,
-          filename);
-  fprintf(dbg_logFP,
-          "REading corner %s File: %s ----------------------\n\n",
-          corner,
-          filename);
 
   free(_ruleFileName);
   _ruleFileName = strdup(filename);
@@ -259,37 +246,6 @@ uint extRCModel::readRCvalues(const char* corner,
       R *= 2;
     }
 
-    if (m._res) {
-      fprintf(
-          logFP,
-          "M%2d OVER %2d UNDER %2d W %.3f S1 %.3f S2 %.3f R %g LEN %g %g  %s\n",
-          m._met,
-          m._underMet,
-          m._overMet,
-          m._w_m,
-          m._s_m,
-          m._s2_m,
-          res,
-          wLen,
-          R,
-          fullPatternName);
-    } else {
-      fprintf(logFP,
-              "M%2d OVER %2d UNDER %2d W %.3f S %.3f CC %.6f GND %.6f TC %.6f "
-              "x %.6f R %g LEN %g  %s\n",
-              m._met,
-              m._underMet,
-              m._overMet,
-              m._w_m,
-              m._s_m,
-              totCC,
-              totGnd,
-              totCC + totGnd,
-              contextCoupling,
-              res,
-              wLen,
-              fullPatternName);
-    }
     // if (strstr(netName, "cntxM") != nullptr)
     //  continue;
 
@@ -303,39 +259,6 @@ uint extRCModel::readRCvalues(const char* corner,
       //  m._s_nm = prev_sep + prev_width;
       rc->set(m._s_nm, cc, gnd, 0.0, R);
     }
-
-    if (m._res) {
-      fprintf(dbg_logFP,
-              "M%2d OVER %2d UNDER %2d W %.3f S1 %.3f S2 %.3f R %g LEN %g %g  "
-              "%s --- ",
-              m._met,
-              m._underMet,
-              m._overMet,
-              m._w_m,
-              m._s_m,
-              m._s2_m,
-              res,
-              wLen,
-              R,
-              fullPatternName);
-    } else {
-      fprintf(dbg_logFP,
-              "M%2d OVER %2d UNDER %2d W %.3f S %.3f CC %.6f GND %.6f TC %.6f "
-              "x %.6f R %g LEN %g  %s --- ",
-              m._met,
-              m._underMet,
-              m._overMet,
-              m._w_m,
-              m._s_m,
-              totCC,
-              totGnd,
-              totCC + totGnd,
-              contextCoupling,
-              res,
-              wLen,
-              fullPatternName);
-    }
-    rc->writeRC(dbg_logFP, false);
 
     m._tmpRC = rc;
     met_rc->addRCw(&m);

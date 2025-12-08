@@ -14,20 +14,20 @@ class _dbInst;
 class dbGroupInstItr : public dbIterator
 {
  public:
-  dbGroupInstItr(dbTable<_dbInst>* inst_tbl) { _inst_tbl = inst_tbl; }
+  dbGroupInstItr(dbTable<_dbInst>* inst_tbl) { inst_tbl_ = inst_tbl; }
 
-  bool reversible() override;
-  bool orderReversed() override;
+  bool reversible() const override;
+  bool orderReversed() const override;
   void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
+  uint sequential() const override;
+  uint size(dbObject* parent) const override;
+  uint begin(dbObject* parent) const override;
+  uint end(dbObject* parent) const override;
+  uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbInst>* _inst_tbl;
+  dbTable<_dbInst>* inst_tbl_;
 };
 
 }  // namespace odb

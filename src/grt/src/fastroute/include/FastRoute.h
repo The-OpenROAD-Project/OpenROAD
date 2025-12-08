@@ -271,6 +271,7 @@ class FastRouteCore
 
   NetRouteMap getPlanarRoutes();
   void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
+  void get3DRoute(odb::dbNet* db_net, GRoute& route);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -280,7 +281,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.7);
+  void updateSlacks(float percentage = 1);
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -513,6 +514,7 @@ class FastRouteCore
   void printEdge(int netID, int edgeID);
   void ConvertToFull3DType2();
   void fillVIA();
+  void ensurePinCoverage();
   void getViaStackRange(int netID,
                         int nodeID,
                         int16_t& bot_pin_l,
@@ -609,9 +611,10 @@ class FastRouteCore
   int x_range_;
   int y_range_;
 
-  bool estimate_parasitics_ = false;
+  bool en_estimate_parasitics_ = false;
   bool resistance_aware_ = false;
   bool enable_resistance_aware_ = false;
+  bool is_3d_step_ = false;
   int num_adjust_;
   int v_capacity_;
   int h_capacity_;

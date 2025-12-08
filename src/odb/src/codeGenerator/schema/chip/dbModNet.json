@@ -3,51 +3,51 @@
           "type":"dbObject",
 	  "fields":[
            {
-          "name":"_name",
+          "name":"name_",
           "type":"char *",
           "flags":["no-set","no-get"],
           "default":"nullptr",
 	  "schema":"db_schema_update_hierarchy"	    	    	
            },
           {
-	  "name":"_parent",
+	  "name":"parent_",
           "type":"dbId<_dbModule>",
           "flags":["no-set"],
 	  "schema":"db_schema_update_hierarchy",	    	    	       	
           "parent":"dbBlock"
           },
           {
-          "name":"_next_entry",
+          "name":"next_entry_",
           "type":"dbId<_dbModNet>",
           "flags":["no-set","no-get"],
 	  "schema":"db_schema_update_hierarchy"	    	    	       	      	
           },
           {
-          "name":"_prev_entry",
+          "name":"prev_entry_",
           "type":"dbId<_dbModNet>",
           "flags":["no-set","no-get"],
 	  "schema":"db_schema_hier_port_removal"	    	    	       	      	
           },
 	  {
-          "name": "_moditerms",
+          "name": "moditerms_",
           "type": "dbId<_dbModITerm>",
           "flags":["no-set","no-get"],
 	  "schema":"db_schema_update_hierarchy"	    	    	       	      	      	
 	  },
 	  {
-	      "name": "_modbterms",
+	      "name": "modbterms_",
 	      "type": "dbId<_dbModBTerm>",
 	      "flags":["no-set","no-get"],
 	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	
 	  },
 	  {
-	      "name": "_iterms",
+	      "name": "iterms_",
 	      "type": "dbId<_dbITerm>",
 	      "flags":["no-set","no-get"],
 	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	      	
 	  },
 	  {
-	      "name": "_bterms",
+	      "name": "bterms_",
 	      "type": "dbId<_dbBTerm>",
 	      "flags":["no-set","no-get"],
 	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	      	      	

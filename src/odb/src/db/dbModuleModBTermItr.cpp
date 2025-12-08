@@ -9,6 +9,7 @@
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,12 +19,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModuleModBTermItr::reversible()
+bool dbModuleModBTermItr::reversible() const
 {
   return true;
 }
 
-bool dbModuleModBTermItr::orderReversed()
+bool dbModuleModBTermItr::orderReversed() const
 {
   return true;
 }
@@ -32,26 +33,26 @@ void dbModuleModBTermItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbModule* module = (_dbModule*) parent;
-  uint id = module->_modbterms;
+  uint id = module->modbterms_;
   uint list = 0;
   while (id != 0) {
-    _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-    uint n = modbterm->_next_entry;
-    modbterm->_next_entry = list;
-    modbterm->_prev_entry = n;
+    _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
+    uint n = modbterm->next_entry_;
+    modbterm->next_entry_ = list;
+    modbterm->prev_entry_ = n;
     list = id;
     id = n;
   }
-  module->_modbterms = list;
+  module->modbterms_ = list;
   // User Code End reverse
 }
 
-uint dbModuleModBTermItr::sequential()
+uint dbModuleModBTermItr::sequential() const
 {
   return 0;
 }
 
-uint dbModuleModBTermItr::size(dbObject* parent)
+uint dbModuleModBTermItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -65,30 +66,30 @@ uint dbModuleModBTermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbModuleModBTermItr::begin(dbObject* parent)
+uint dbModuleModBTermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
-  return _module->_modbterms;
+  return _module->modbterms_;
   // User Code End begin
 }
 
-uint dbModuleModBTermItr::end(dbObject* /* unused: parent */)
+uint dbModuleModBTermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModuleModBTermItr::next(uint id, ...)
+uint dbModuleModBTermItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-  return modbterm->_next_entry;
+  _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
+  return modbterm->next_entry_;
   // User Code End next
 }
 
 dbObject* dbModuleModBTermItr::getObject(uint id, ...)
 {
-  return _modbterm_tbl->getPtr(id);
+  return modbterm_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

@@ -291,16 +291,16 @@ class _dbDatabase : public _dbObject
   // User Code Begin Methods
   _dbDatabase(_dbDatabase* db, int id);
   utl::Logger* getLogger() const;
-  bool isSchema(uint rev) const { return _schema_minor >= rev; }
-  bool isLessThanSchema(uint rev) { return _schema_minor < rev; }
+  bool isSchema(uint rev) const { return schema_minor_ >= rev; }
+  bool isLessThanSchema(uint rev) { return schema_minor_ < rev; }
   // User Code End Methods
 
-  uint _magic1;
-  uint _magic2;
-  uint _schema_major;
-  uint _schema_minor;
-  uint _master_id;
-  dbId<_dbChip> _chip;
+  uint magic1_;
+  uint magic2_;
+  uint schema_major_;
+  uint schema_minor_;
+  uint master_id_;
+  dbId<_dbChip> chip_;
   uint dbu_per_micron_;
   dbTable<_dbChip, 2>* chip_tbl_;
   dbHashTable<_dbChip, 2> chip_hash_;
@@ -312,20 +312,20 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipNet>* chip_net_tbl_;
 
   // User Code Begin Fields
-  dbTable<_dbTech, 2>* _tech_tbl;
-  dbTable<_dbLib>* _lib_tbl;
-  dbTable<_dbGDSLib, 2>* _gds_lib_tbl;
-  _dbNameCache* _name_cache;
-  dbPropertyItr* _prop_itr;
+  dbTable<_dbTech, 2>* tech_tbl_;
+  dbTable<_dbLib>* lib_tbl_;
+  dbTable<_dbGDSLib, 2>* gds_lib_tbl_;
+  _dbNameCache* name_cache_;
+  dbPropertyItr* prop_itr_;
   dbChipInstItr* chip_inst_itr_;
   dbChipRegionInstItr* chip_region_inst_itr_;
   dbChipConnItr* chip_conn_itr_;
   dbChipBumpInstItr* chip_bump_inst_itr_;
   dbChipNetItr* chip_net_itr_;
-  int _unique_id;
+  int unique_id_;
   bool hierarchy_;
 
-  utl::Logger* _logger;
+  utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
   // User Code End Fields
 };

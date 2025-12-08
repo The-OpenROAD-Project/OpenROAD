@@ -20,18 +20,16 @@ class PlacerBaseCommon;
 class PlacerBase;
 class AbstractGraphics;
 
-class InitialPlaceVars
+struct InitialPlaceVars
 {
- public:
-  int maxIter;
-  int minDiffLength;
-  int maxSolverIter;
-  int maxFanout;
-  float netWeightScale;
-  bool debug;
+  InitialPlaceVars(const PlaceOptions& options, bool debug);
 
-  InitialPlaceVars();
-  void reset();
+  const int maxIter;
+  const int minDiffLength;
+  const int maxSolverIter;
+  const int maxFanout;
+  const float netWeightScale;
+  const bool debug;
 };
 
 using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;

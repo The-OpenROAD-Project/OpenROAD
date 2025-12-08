@@ -22,11 +22,6 @@ class dbOStream;
 class _dbName : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  char* _name;
-  dbId<_dbName> _next_entry;
-  uint _ref_cnt;
-
   _dbName(_dbDatabase*);
   _dbName(_dbDatabase*, const _dbName& n);
   ~_dbName();
@@ -35,6 +30,11 @@ class _dbName : public _dbObject
   bool operator!=(const _dbName& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbName& rhs) const;
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  char* name_;
+  dbId<_dbName> next_entry_;
+  uint ref_cnt_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbName& n);

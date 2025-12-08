@@ -22,6 +22,7 @@ exports_files([
     "LICENSE",
     "src/Design.i",
     "src/Exception.i",
+    "src/options.i",
 ])
 
 string_flag(
@@ -298,6 +299,7 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
+        "//src/gpl:gpl_py",
         "//src/odb:odb_py",
         "//src/utl:utl_py",
     ],
@@ -361,4 +363,12 @@ filegroup(
     srcs = [
         "src/Design.i",
     ],
+)
+
+filegroup(
+    name = "options_swig",
+    srcs = [
+        "src/options.i",
+    ],
+    visibility = ["@//:__subpackages__"],
 )

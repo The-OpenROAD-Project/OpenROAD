@@ -21,19 +21,15 @@ namespace gpl {
 
 using T = Eigen::Triplet<float>;
 
-InitialPlaceVars::InitialPlaceVars()
+InitialPlaceVars::InitialPlaceVars(const PlaceOptions& options,
+                                   const bool debug)
+    : maxIter(options.initialPlaceMaxIter),
+      minDiffLength(options.initialPlaceMinDiffLength),
+      maxSolverIter(options.initialPlaceMaxSolverIter),
+      maxFanout(options.initialPlaceMaxFanout),
+      netWeightScale(options.initialPlaceNetWeightScale),
+      debug(debug)
 {
-  reset();
-}
-
-void InitialPlaceVars::reset()
-{
-  maxIter = 20;
-  minDiffLength = 1500;
-  maxSolverIter = 100;
-  maxFanout = 200;
-  netWeightScale = 800.0;
-  debug = false;
 }
 
 InitialPlace::InitialPlace(InitialPlaceVars ipVars,
