@@ -1461,6 +1461,11 @@ NetRouteMap FastRouteCore::run()
   float overflow_reduction_percent = -1;
   while (total_overflow_ > 0 && i <= overflow_iterations_
          && overflow_increases <= max_overflow_increases) {
+    if (verbose_) {
+      logger_->info(
+          GRT, 102, "Start extra iteration {}/{}", i, overflow_iterations_);
+    }
+
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
     } else if (THRESH_M >= 2) {
