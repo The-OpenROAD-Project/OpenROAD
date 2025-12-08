@@ -448,9 +448,8 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
       }
       flat_nets_vec_.assign(flat_nets_set.begin(), flat_nets_set.end());
       // Sort these nets so their order is determinisitc
-      std::ranges::sort(flat_nets_vec_, [](auto const* net1, auto const* net2) {
-        return net1->getId() < net2->getId();
-      });
+      std::ranges::sort(
+          flat_nets_vec_, {}, [](auto const* net1) { return net1->getId(); });
     }
   } else {
     //
