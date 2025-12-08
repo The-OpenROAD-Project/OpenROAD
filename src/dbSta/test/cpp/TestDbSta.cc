@@ -59,6 +59,41 @@ TEST_F(TestDbSta, TestIsConnected)
 
   bool_return = db_network_->isConnected(sta_net, sta_modnet);
   ASSERT_TRUE(bool_return);
+
+  // Check Network::highestNetAbove(Net* net)
+  dbNet* dbnet_out2 = block_->findNet("out2");
+  ASSERT_NE(dbnet_out2, nullptr);
+  Net* sta_dbnet_out2 = db_network_->dbToSta(dbnet_out2);
+  ASSERT_NE(sta_dbnet_out2, nullptr);
+  Net* sta_highest_net = db_network_->highestNetAbove(sta_dbnet_out2);
+  ASSERT_EQ(sta_highest_net, sta_dbnet_out2);
+
+  dbModNet* modnet_mod_out = block_->findModNet("sub_inst/mod_out");
+  ASSERT_NE(modnet_mod_out, nullptr);
+  Net* sta_modnet_mod_out = db_network_->dbToSta(modnet_mod_out);
+  ASSERT_NE(sta_modnet_mod_out, nullptr);
+  dbModNet* modnet_out2 = block_->findModNet("out2");
+  ASSERT_NE(modnet_out2, nullptr);
+  Net* sta_modnet_out2 = db_network_->dbToSta(modnet_out2);
+  ASSERT_NE(sta_modnet_out2, nullptr);
+  Net* sta_highest_modnet_out
+      = db_network_->highestNetAbove(sta_modnet_mod_out);
+  ASSERT_EQ(sta_highest_modnet_out, sta_modnet_out2);
+
+  // Check get_ports -of_object Net*
+  NetTermIterator* term_iter = db_network_->termIterator(sta_dbnet_out2);
+  while (term_iter->hasNext()) {
+    Term* term = term_iter->next();
+    Pin* pin = db_network_->pin(term);
+    Port* port = db_network_->port(pin);
+    ASSERT_EQ(db_network_->name(port), block_->findBTerm("out2")->getName());
+  }
+
+  // Check dbBTerm::getITerm()
+  dbBTerm* bterm_clk = block_->findBTerm("in1");
+  ASSERT_NE(bterm_clk, nullptr);
+  // There is no related dbITerm for a dbBTerm
+  ASSERT_EQ(bterm_clk->getITerm(), nullptr);
 }
 
 }  // namespace sta
