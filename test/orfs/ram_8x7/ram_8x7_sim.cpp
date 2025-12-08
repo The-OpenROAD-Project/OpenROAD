@@ -73,8 +73,12 @@ TEST(Ram_8x7Test, SimpleTest)
     harness.top.R0_en = 0;
 
     if (i > 0) {
-      // Check read data from previous write
-      EXPECT_EQ(harness.top.R0_data, (i - 1) + 100);
+      // Check read data from previous write, note that we need to mask the
+      // upper bit as we're 7-bit wide
+      EXPECT_EQ(harness.top.R0_data % 128, ((i - 1) + 100) % 128);
+      // FIXME should always fail, but passes in Verilator source code, but fails in
+      // after synthesis.
+      // EXPECT_EQ(harness.top.R0_data, ((i - 1) + 100));
     }
   }
 }
