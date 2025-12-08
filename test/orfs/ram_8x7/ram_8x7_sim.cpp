@@ -1,11 +1,9 @@
 #include "Vram_8x7.h"
-// #include <gmock/gmock-matchers.h>
-#include <gmock/gmock-matchers.h>
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
+#include <cstdlib>
 #include <string>
 
 class Ram_8x7TestHarness
