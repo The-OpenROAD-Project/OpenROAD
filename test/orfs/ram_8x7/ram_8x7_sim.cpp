@@ -1,10 +1,13 @@
 #include <gtest/gtest.h>
+// NOLINT
 #include <verilated.h>
+// NOLINT
 #include <verilated_vcd_c.h>
 
 #include <cstdlib>
 #include <string>
 
+// NOLINT
 #include "Vram_8x7.h"
 
 namespace {
@@ -47,6 +50,7 @@ class Ram_8x7TestHarness
     // Now we're ready to pick up poked inputs on rising edge
   }
 };
+// NOLINT
 Ram_8x7TestHarness::~Ram_8x7TestHarness()
 {
   trace->close();
