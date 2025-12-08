@@ -1,10 +1,11 @@
-#include "Vram_8x7.h"
 #include <gtest/gtest.h>
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 
 #include <cstdlib>
 #include <string>
+
+#include "Vram_8x7.h"
 
 class Ram_8x7TestHarness
 {
