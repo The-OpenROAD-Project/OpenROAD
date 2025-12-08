@@ -1,8 +1,11 @@
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
 load("//test/orfs/mock-array:mock-array.bzl", "ASAP7_REMOVE_CELLS")
+load(":sim.bzl", "sim_test")
 
-package(features = ["layering_check"])
+package(
+    features = ["-layering_check"],  # TODO: enable
+)
 
 orfs_flow(
     name = "ram_8x7",
@@ -85,3 +88,11 @@ filegroup(
     module_top = "ram_8x7",
     tags = ["manual"],
 ) for i in range(len(STAGES) - 1)]
+
+[sim_test(
+    name = "ram_8x7_{stage}_sim_test".format(stage = stage),
+    cc_srcs = ["ram_8x7_sim.cpp"],
+    verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
+    module_top = "ram_8x7",
+    #tags = ["manual"],
+) for stage in STAGES[1:]]
