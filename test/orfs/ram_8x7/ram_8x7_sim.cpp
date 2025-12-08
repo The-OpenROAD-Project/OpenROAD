@@ -7,6 +7,7 @@
 
 #include "Vram_8x7.h"
 
+namespace {
 class Ram_8x7TestHarness
 {
  public:
@@ -22,7 +23,7 @@ class Ram_8x7TestHarness
     trace->open(vcd_file.c_str());
   }
 
-  ~Ram_8x7TestHarness() { trace->close(); }
+  ~Ram_8x7TestHarness();
 
   // Simulate one clock cycle
   void step()
@@ -46,6 +47,11 @@ class Ram_8x7TestHarness
     // Now we're ready to pick up poked inputs on rising edge
   }
 };
+Ram_8x7TestHarness::~Ram_8x7TestHarness()
+{
+  trace->close();
+}
+}  // namespace
 
 TEST(Ram_8x7Test, SimpleTest)
 {
