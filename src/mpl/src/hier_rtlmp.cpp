@@ -335,8 +335,8 @@ void HierRTLMP::setRootShapes()
 {
   auto root_soft_macro = std::make_unique<SoftMacro>(tree_->root.get());
 
-  const float root_area = tree_->floorplan_shape.area();
-  const float root_width = tree_->floorplan_shape.dx();
+  const int64_t root_area = tree_->floorplan_shape.area();
+  const int root_width = tree_->floorplan_shape.dx();
   const IntervalList root_width_intervals = {Interval(root_width, root_width)};
 
   root_soft_macro->setShapes(root_width_intervals, root_area);
@@ -465,7 +465,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       odb::Rect new_outline = outline;
-      const float new_width = outline.dx() * vary_factor_list[run_id++];
+      const int new_width = outline.dx() * vary_factor_list[run_id++];
       new_outline.set_xhi(new_outline.xMin() + new_width);
 
       if (graphics_) {
@@ -523,7 +523,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       odb::Rect new_outline = outline;
-      const float new_height = outline.dy() * vary_factor_list[run_id++];
+      const int new_height = outline.dy() * vary_factor_list[run_id++];
       new_outline.set_yhi(new_outline.yMin() + new_height);
 
       if (graphics_) {
@@ -3122,10 +3122,7 @@ bool Pusher::overlapsWithHardMacro(
       continue;
     }
 
-    if (cluster_box.xMin() < (hard_macro->getX() + hard_macro->getWidth())
-        && cluster_box.yMin() < (hard_macro->getY() + hard_macro->getHeight())
-        && cluster_box.xMax() > hard_macro->getX()
-        && cluster_box.yMax() > hard_macro->getY()) {
+    if (cluster_box.intersects(hard_macro->getBBox())) {
       debugPrint(logger_,
                  MPL,
                  "boundary_push",

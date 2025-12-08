@@ -499,11 +499,10 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
     for (const auto& macro_id : pos_seq_) {
       const SoftMacro& soft_macro = macros_[macro_id];
       if (soft_macro.getNumMacro() > 0) {
-        Tiling overlap_shape
-            = computeOverlapShape(blockage, soft_macro.getBBox());
+        odb::Rect overlap = blockage.intersect(soft_macro.getBBox());
 
         // If any of the dimensions is negative, then there's no overlap.
-        if (overlap_shape.width() < 0 || overlap_shape.height() < 0) {
+        if (overlap.dx() < 0 || overlap.dy() < 0) {
           continue;
         }
 
@@ -511,9 +510,8 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         const float macro_dominance
             = cluster->getMacroArea() / static_cast<float>(cluster->getArea());
 
-        macro_blockage_penalty_ += overlap_shape.width()
-                                   * overlap_shape.height()
-                                   * soft_macro.getNumMacro() * macro_dominance;
+        macro_blockage_penalty_
+            += overlap.area() * soft_macro.getNumMacro() * macro_dominance;
       }
     }
   }
@@ -544,14 +542,14 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
         continue;
       }
 
-      Tiling overlap_shape = computeOverlapShape(fixed_macro, macro.getBBox());
+      odb::Rect overlap = fixed_macro.intersect(macro.getBBox());
 
       // If any of the dimensions is negative, then there's no overlap.
-      if (overlap_shape.width() < 0 || overlap_shape.height() < 0) {
+      if (overlap.dx() < 0 || overlap.dy() < 0) {
         continue;
       }
 
-      fixed_macros_penalty_ += block_->dbuAreaToMicrons(overlap_shape.area());
+      fixed_macros_penalty_ += block_->dbuAreaToMicrons(overlap.area());
     }
   }
 
@@ -1075,14 +1073,6 @@ void SACoreSoftMacro::moveFloorplan(const odb::Point& offset)
   if (graphics_) {
     graphics_->saStep(macros_);
   }
-}
-
-Tiling SACoreSoftMacro::computeOverlapShape(const odb::Rect& rect_a,
-                                            const odb::Rect& rect_b) const
-{
-  const odb::Rect overlap = rect_a.intersect(rect_b);
-
-  return Tiling(overlap.dx(), overlap.dy());
 }
 
 }  // namespace mpl

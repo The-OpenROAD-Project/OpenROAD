@@ -308,6 +308,7 @@ class HardMacro
   int getWidth() const { return width_; }
   int getHeight() const { return height_; }
   int64_t getArea() const { return width_ * static_cast<int64_t>(height_); }
+  odb::Rect getBBox() const;
   bool isFixed() const { return fixed_; }
 
   // Note that the real X and Y does NOT include halo_width

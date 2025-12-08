@@ -96,9 +96,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const odb::Point& offset);
 
-  Tiling computeOverlapShape(const odb::Rect& rect_a,
-                             const odb::Rect& rect_b) const;
-
   void findFixedMacros();
 
   std::vector<odb::Rect> blockages_;

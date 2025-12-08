@@ -253,9 +253,10 @@ std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 template <class T>
 void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
-  const float max_width = std::max(outline_.dx(), width_);
-  const float max_height = std::max(outline_.dy(), height_);
-  outline_penalty_ = max_width * max_height - outline_.area();
+  const int max_width = std::max(outline_.dx(), width_);
+  const int max_height = std::max(outline_.dy(), height_);
+  outline_penalty_
+      = (max_width * static_cast<int64_t>(max_height)) - outline_.area();
   // normalization
   outline_penalty_ = outline_penalty_ / outline_.area();
   if (graphics_) {
@@ -412,15 +413,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
 
   for (const auto& [id, guide] : guides_) {
-    const int macro_x_min = macros_[id].getX();
-    const int macro_y_min = macros_[id].getY();
-    const int macro_x_max = macro_x_min + macros_[id].getWidth();
-    const int macro_y_max = macro_y_min + macros_[id].getHeight();
-
-    const int overlap_width = std::min(guide.xMax(), macro_x_max)
-                              - std::max(guide.xMin(), macro_x_min);
-    const int overlap_height = std::min(guide.yMax(), macro_y_max)
-                               - std::max(guide.yMin(), macro_y_min);
+    const odb::Rect overlap = macros_[id].getBBox().intersect(guide);
 
     // maximum overlap area
     int64_t penalty
@@ -428,8 +421,8 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
           * static_cast<int64_t>(std::min(macros_[id].getHeight(), guide.dy()));
 
     // subtract overlap
-    if (overlap_width > 0 && overlap_height > 0) {
-      penalty -= (overlap_width * static_cast<int64_t>(overlap_height));
+    if (overlap.dx() > 0 && overlap.dy() > 0) {
+      penalty -= (overlap.area());
     }
 
     guidance_penalty_ += block_->dbuAreaToMicrons(penalty);

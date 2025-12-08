@@ -720,6 +720,11 @@ bool HardMacro::isClusterOfUnconstrainedIOPins() const
   return cluster_->isClusterOfUnconstrainedIOPins();
 }
 
+odb::Rect HardMacro::getBBox() const
+{
+  return odb::Rect(x_, y_, x_ + width_, y_ + height_);
+}
+
 // Get Physical Information
 // Note that the default X and Y include halo_width
 void HardMacro::setLocation(const odb::Point& location)
