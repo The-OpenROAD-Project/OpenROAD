@@ -97,7 +97,7 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
 
   const double dbu_to_micron = block_->getDbUnitsPerMicron();
 
-  csv << "x0,y0,x1,y1,value (" << getValueUnits() << ")" << std::endl;
+  csv << "x0,y0,x1,y1,value (" << getValueUnits() << ")" << '\n';
   for (const auto& map_col : map_) {
     for (const auto& map_value : map_col) {
       if (!map_value->has_value) {
