@@ -443,7 +443,7 @@ bool dbNet::createHierarchicalConnection(dbITerm* load_pin,
         // as it implies we've hit the top module before reaching the target.
         block->getImpl()->getLogger()->error(
             utl::ODB,
-            1022,
+            1206,
             "Cannot create hierarchical connection: '{}' is not a descendant "
             "of '{}'.",
             load_pin->getInst()->getName(),
@@ -3826,7 +3826,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
 
         if (loads_on_same_db_net) {
           getImpl()->getLogger()->error(utl::ODB,
-                                        1020,
+                                        1200,
                                         "BeforeLoads: Load pin {} is "
                                         "not connected to net {}",
                                         load->getName(),
@@ -3838,7 +3838,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       // Check dont_touch on the instance or the load pin's net
       if (checkDontTouch(this, nullptr, load)) {
         getImpl()->getLogger()->warn(utl::ODB,
-                                     1017,
+                                     1201,
                                      "BeforeLoads: Load pin {} or "
                                      "net is dont_touch.",
                                      load->getName());
@@ -3860,7 +3860,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
 
         if (loads_on_same_db_net) {
           getImpl()->getLogger()->error(utl::ODB,
-                                        999,
+                                        1202,
                                         "BeforeLoads: Load pin {} is "
                                         "not connected to net {}",
                                         load->getName(),
@@ -3872,7 +3872,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       // Check dont_touch on the net
       if (checkDontTouch(this, nullptr, nullptr)) {
         getImpl()->getLogger()->warn(utl::ODB,
-                                     1021,
+                                     1203,
                                      "BeforeLoads: Load pin {} or "
                                      "net is dont_touch.",
                                      load->getName());
@@ -3881,7 +3881,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       curr_mod = block->getTopModule();
     } else {
       getImpl()->getLogger()->error(
-          utl::ODB, 1019, "BeforeLoads: Load object is not an ITerm or BTerm.");
+          utl::ODB, 1204, "BeforeLoads: Load object is not an ITerm or BTerm.");
       return nullptr;
     }
 
@@ -3944,7 +3944,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                              buf_output_iterm);
   if (buffer_inst == nullptr) {
     getImpl()->getLogger()->error(
-        utl::ODB, 1018, "BeforeLoads: Failed to create buffer instance.");
+        utl::ODB, 1205, "BeforeLoads: Failed to create buffer instance.");
     return nullptr;
   }
 
@@ -4212,7 +4212,7 @@ dbModNet* dbNet::getFirstDriverModNetInTargetModule(
   // 3. Traverse fanout from driver's modnet to find target module's modnet
   while (curr_modnet) {
     // Found the first modnet in the target module
-    if (modnets_in_target_module.count(curr_modnet)) {
+    if (modnets_in_target_module.contains(curr_modnet)) {
       return curr_modnet;
     }
     curr_modnet = curr_modnet->getNextModNetInFanout();
