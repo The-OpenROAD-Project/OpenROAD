@@ -30,7 +30,7 @@ class BufRemTest3 : public tst::IntegratedFixture
     }
   }
 
-  bool debug_ = true;  // Set to true to generate debug output
+  bool debug_ = false;  // Set to true to generate debug output
 };
 
 TEST_F(BufRemTest3, RemoveBufferCase9)
