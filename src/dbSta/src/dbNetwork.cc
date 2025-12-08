@@ -5206,4 +5206,36 @@ bool dbNetwork::isPGSupply(dbNet* net) const
   return net->isSpecial() && net->getSigType().isSupply();
 }
 
+Net* dbNetwork::highestNetAbove(Net* net) const
+{
+  if (net == nullptr) {
+    return nullptr;
+  }
+
+  dbNet* dbnet;
+  dbModNet* modnet;
+  staToDb(net, dbnet, modnet);
+
+  if (dbnet) {
+    // If a flat net, return it.
+    // - We should not return the highest modnet related to the flat net.
+    // - Otherwise, it breaks estimate_parasitics function.
+    //   . est module uses flat nets for parasitic estimation
+    //   . It has (highestNetAbove(flat_net) != flat_net) comparison.
+    //   . If highestNetAbove(flat_net) returns the highest modnet, it
+    //     changes the estimate_parasitics behavior.
+    return net;
+  }
+
+  if (modnet) {
+    if (dbNet* related_dbnet = modnet->findRelatedNet()) {
+      if (dbModNet* highest_modnet = related_dbnet->findModNetInHighestHier()) {
+        return dbToSta(highest_modnet);  // Found the highest modnet
+      }
+    }
+  }
+
+  return net;
+}
+
 }  // namespace sta

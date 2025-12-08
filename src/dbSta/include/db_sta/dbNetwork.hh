@@ -344,6 +344,11 @@ class dbNetwork : public ConcreteNetwork
 
   bool hasPort(const Net* net) const;
 
+  // Return the highest net above the given net.
+  // - If the net is a flat net, return it.
+  // - If the net is a hier net, return the modnet in the highest hierarchy.
+  Net* highestNetAbove(Net* net) const override;
+
   ////////////////////////////////////////////////////////////////
   // Edit functions
   Instance* makeInstance(LibertyCell* cell,
