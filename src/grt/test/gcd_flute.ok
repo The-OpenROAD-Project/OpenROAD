@@ -28,14 +28,14 @@
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      33120         25751          22.25%
-metal2     Vertical        24769         24722          0.19%
+metal1     Horizontal      25751         25751          0.00%
+metal2     Vertical        24769         24769          0.00%
 metal3     Horizontal      33120         33120          0.00%
-metal4     Vertical        16826         16779          0.28%
+metal4     Vertical        16826         16826          0.00%
 metal5     Horizontal      16560         16560          0.00%
-metal6     Vertical        16826         16779          0.28%
+metal6     Vertical        16826         16826          0.00%
 metal7     Horizontal       5796          5796          0.00%
-metal8     Vertical         5922          5875          0.79%
+metal8     Vertical         5922          5922          0.00%
 metal9     Horizontal       2898          2898          0.00%
 metal10    Vertical         2961          2961          0.00%
 ---------------------------------------------------------------
@@ -50,17 +50,17 @@ metal10    Vertical         2961          2961          0.00%
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1           25751           727            2.82%             0 /  0 /  0
-metal2           24722          1591            6.44%             0 /  0 /  0
+metal2           24769          1591            6.42%             0 /  0 /  0
 metal3           33120           977            2.95%             0 /  0 /  0
-metal4           16779            53            0.32%             0 /  0 /  0
+metal4           16826            53            0.31%             0 /  0 /  0
 metal5           16560            46            0.28%             0 /  0 /  0
-metal6           16779            63            0.38%             0 /  0 /  0
+metal6           16826            63            0.37%             0 /  0 /  0
 metal7            5796             0            0.00%             0 /  0 /  0
-metal8            5875             0            0.00%             0 /  0 /  0
+metal8            5922             0            0.00%             0 /  0 /  0
 metal9            2898             0            0.00%             0 /  0 /  0
 metal10           2961             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           151241          3457            2.29%             0 /  0 /  0
+Total           151429          3457            2.28%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 10388 um
 [INFO GRT-0014] Routed nets: 563

@@ -2016,14 +2016,14 @@ std::vector<int> FastRouteCore::getOriginalResources()
       for (int i = 0; i < y_grid_; i++) {
         for (int j = 0; j < x_grid_ - 1; j++) {
           original_resources[l]
-              += h_edges_3D_[l][i][j].cap + h_edges_3D_[l][i][j].red;
+              += h_edges_3D_[l][i][j].real_cap;
         }
       }
     } else {
       for (int i = 0; i < y_grid_ - 1; i++) {
         for (int j = 0; j < x_grid_; j++) {
           original_resources[l]
-              += v_edges_3D_[l][i][j].cap + v_edges_3D_[l][i][j].red;
+              += v_edges_3D_[l][i][j].real_cap;
         }
       }
     }

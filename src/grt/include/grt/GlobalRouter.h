@@ -339,8 +339,6 @@ class GlobalRouter
       std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   void adjustTileSet(const TileSet& tiles_to_reduce,
                      odb::dbTechLayer* tech_layer);
-  void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
-  void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
                                     int max_routing_layer);
   void computeUserLayerAdjustments(int min_routing_layer,

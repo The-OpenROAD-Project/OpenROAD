@@ -25,10 +25,10 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      28009          4294          84.67%
-met2       Vertical        21571          5764          73.28%
-met3       Horizontal      14023          6786          51.61%
-met4       Vertical        10804          5027          53.47%
+met1       Horizontal      27385          4294          84.32%
+met2       Vertical        21491          5764          73.18%
+met3       Horizontal      13997          6786          51.52%
+met4       Vertical        10791          5027          53.41%
 met5       Horizontal       3108          1443          53.57%
 ---------------------------------------------------------------
 

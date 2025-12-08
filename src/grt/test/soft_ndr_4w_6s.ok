@@ -51,7 +51,7 @@ Net: clknet_2_3__leaf_clk NDR cost in met5 (float/int): 4.084084/5  Edge cost: 5
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      28009         13349          52.34%
+met1       Horizontal      27480         13349          51.42%
 met2       Vertical        21571         10101          53.17%
 met3       Horizontal      14023          3922          72.03%
 met4       Vertical        10804          2886          73.29%

@@ -28,7 +28,7 @@
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal       2782          2650          4.74%
+metal1     Horizontal       2650          2650          0.00%
 metal2     Vertical         2054          1542          24.93%
 metal3     Horizontal       2782          2782          0.00%
 metal4     Vertical         1391          1391          0.00%
