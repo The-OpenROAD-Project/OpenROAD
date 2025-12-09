@@ -21,7 +21,6 @@ orfs_flow(
         #"PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
         "RTLMP_BOUNDARY_WT": "0",
         "SETUP_SLACK_MARGIN": "-4000",
-        "SKIP_REPORT_METRICS": "1",
         "TAPCELL_TCL": "",
     },
     sources = {
