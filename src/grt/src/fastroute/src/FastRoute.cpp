@@ -2023,15 +2023,13 @@ std::vector<int> FastRouteCore::getOriginalResources()
     if (is_horizontal) {
       for (int i = 0; i < y_grid_; i++) {
         for (int j = 0; j < x_grid_ - 1; j++) {
-          original_resources[l]
-              += h_edges_3D_[l][i][j].real_cap;
+          original_resources[l] += h_edges_3D_[l][i][j].real_cap;
         }
       }
     } else {
       for (int i = 0; i < y_grid_ - 1; i++) {
         for (int j = 0; j < x_grid_; j++) {
-          original_resources[l]
-              += v_edges_3D_[l][i][j].real_cap;
+          original_resources[l] += v_edges_3D_[l][i][j].real_cap;
         }
       }
     }
