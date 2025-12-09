@@ -3122,7 +3122,7 @@ bool Pusher::overlapsWithHardMacro(
       continue;
     }
 
-    if (cluster_box.intersects(hard_macro->getBBox())) {
+    if (cluster_box.overlaps(hard_macro->getBBox())) {
       debugPrint(logger_,
                  MPL,
                  "boundary_push",
