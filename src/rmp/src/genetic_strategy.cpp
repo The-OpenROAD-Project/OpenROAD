@@ -56,6 +56,10 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     rsz::Resizer* resizer,
     utl::Logger* logger)
 {
+  if (pop_size_ <= 0) {
+    logger->error(RMP, 64, "Population size should be greater than 0");
+  }
+
   // Initial solution and slack
   debugPrint(logger,
              RMP,
@@ -139,10 +143,15 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
         return absl::Bernoulli(random_, static_cast<double>(tourn_prob_));
       });
       if (winner != tournament.end()) {
-        newPopulation.push_back(population[*winner]);
+        newPopulation.emplace_back(population[*winner]);
       }
     }
     removeDuplicates(newPopulation, logger);
+
+    if (newPopulation.empty()) {
+      newPopulation.emplace_back(population.front());
+    }
+
     population = std::move(newPopulation);
 
     for (const auto& candidate : population) {
