@@ -3,17 +3,22 @@
 
 #pragma once
 
-#include <random>
+#include <vector>
 
-#include "aig/gia/giaAig.h"
+#include "aig/aig/aig.h"
+#include "aig/gia/gia.h"
 #include "base/abc/abc.h"
-#include "db_sta/dbSta.hh"
-#include "resynthesis_strategy.h"
-#include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
-#include "utl/Logger.h"
+#include "sta/Graph.hh"
 #include "utl/deleter.h"
+
+namespace rsz {
+class Resizer;
+}  // namespace rsz
+
+namespace sta {
+class dbSta;
+}  // namespace sta
 
 namespace rmp {
 

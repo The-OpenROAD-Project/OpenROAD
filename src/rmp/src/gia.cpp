@@ -19,7 +19,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gia.h"
-#include "map/if/if.h"
+// This header has a cycle, but has include guards
+#include "map/if/if.h"  // NOLINT(misc-header-include-cycle)
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
