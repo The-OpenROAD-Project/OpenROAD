@@ -11,6 +11,7 @@
 #include "hier_rtlmp.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace mpl {
