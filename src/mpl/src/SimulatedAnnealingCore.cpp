@@ -314,8 +314,8 @@ float SimulatedAnnealingCore<T>::computeNetsWireLength(
       }
     }
 
-    nets_wire_length = nets_wire_length / nets_weight_sum
-                       / (outline_.dx() + outline_.dy());
+    nets_wire_length
+        = nets_wire_length / nets_weight_sum / (outline_.dx() + outline_.dy());
   }
 
   return nets_wire_length;
