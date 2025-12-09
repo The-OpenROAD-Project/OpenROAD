@@ -102,30 +102,23 @@ void HierRTLMP::setMacroBlockageWeight(float weight)
   cluster_placement_weights_.macro_blockage = weight;
 }
 
-void HierRTLMP::setGlobalFence(float fence_lx,
-                               float fence_ly,
-                               float fence_ux,
-                               float fence_uy)
+void HierRTLMP::setGlobalFence(odb::Rect global_fence)
 {
-  int fence_ux_dbu = fence_ux >= 100000000.0 ? block_->getCoreArea().xMax()
-                                             : block_->micronsToDbu(fence_ux);
-  int fence_uy_dbu = fence_uy >= 100000000.0 ? block_->getCoreArea().yMax()
-                                             : block_->micronsToDbu(fence_uy);
-
-  tree_->global_fence = odb::Rect(block_->micronsToDbu(fence_lx),
-                                  block_->micronsToDbu(fence_ly),
-                                  fence_ux_dbu,
-                                  fence_uy_dbu);
+  if (global_fence.area() > 0) {
+    tree_->global_fence = global_fence;
+  } else {
+    tree_->global_fence = block_->getCoreArea();
+  }
 }
 
-void HierRTLMP::setHaloWidth(float halo_width)
+void HierRTLMP::setHaloWidth(int halo_width)
 {
-  tree_->halo_width = block_->micronsToDbu(halo_width);
+  tree_->halo_width = halo_width;
 }
 
-void HierRTLMP::setHaloHeight(float halo_height)
+void HierRTLMP::setHaloHeight(int halo_height)
 {
-  tree_->halo_height = block_->micronsToDbu(halo_height);
+  tree_->halo_height = halo_height;
 }
 
 void HierRTLMP::setGuidanceRegions(

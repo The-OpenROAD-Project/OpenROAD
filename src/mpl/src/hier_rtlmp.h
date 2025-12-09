@@ -74,12 +74,9 @@ class HierRTLMP
 
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
-  void setGlobalFence(float fence_lx,
-                      float fence_ly,
-                      float fence_ux,
-                      float fence_uy);
-  void setHaloWidth(float halo_width);
-  void setHaloHeight(float halo_height);
+  void setGlobalFence(odb::Rect global_fence);
+  void setHaloWidth(int halo_width);
+  void setHaloHeight(int halo_height);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
 

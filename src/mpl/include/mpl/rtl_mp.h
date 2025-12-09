@@ -51,12 +51,9 @@ class MacroPlacer
              int max_num_level,
              float coarsening_ratio,
              int large_net_threshold,
-             float halo_width,
-             float halo_height,
-             float fence_lx,
-             float fence_ly,
-             float fence_ux,
-             float fence_uy,
+             int halo_width,
+             int halo_height,
+             odb::Rect global_fence,
              float area_weight,
              float outline_weight,
              float wirelength_weight,
@@ -80,11 +77,7 @@ class MacroPlacer
   std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void setMacroPlacementFile(const std::string& file_name);
-  void addGuidanceRegion(odb::dbInst* macro,
-                         float x1,
-                         float y1,
-                         float x2,
-                         float y2);
+  void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

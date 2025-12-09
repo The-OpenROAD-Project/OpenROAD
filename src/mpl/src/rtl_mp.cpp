@@ -41,12 +41,9 @@ bool MacroPlacer::place(const int num_threads,
                         const int max_num_level,
                         const float coarsening_ratio,
                         const int large_net_threshold,
-                        const float halo_width,
-                        const float halo_height,
-                        const float fence_lx,
-                        const float fence_ly,
-                        const float fence_ux,
-                        const float fence_uy,
+                        const int halo_width,
+                        const int halo_height,
+                        const odb::Rect global_fence,
                         const float area_weight,
                         const float outline_weight,
                         const float wirelength_weight,
@@ -70,7 +67,7 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
   hier_rtlmp_->setHaloWidth(halo_width);
   hier_rtlmp_->setHaloHeight(halo_height);
-  hier_rtlmp_->setGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
+  hier_rtlmp_->setGlobalFence(global_fence);
   hier_rtlmp_->setAreaWeight(area_weight);
   hier_rtlmp_->setOutlineWeight(outline_weight);
   hier_rtlmp_->setWirelengthWeight(wirelength_weight);
@@ -194,18 +191,10 @@ std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
   return overlapped_macros;
 }
 
-void MacroPlacer::addGuidanceRegion(odb::dbInst* macro,
-                                    const float x1,
-                                    const float y1,
-                                    const float x2,
-                                    const float y2)
+void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const odb::Rect& core = block->getCoreArea();
-  odb::Rect region = odb::Rect(block->micronsToDbu(x1),
-                               block->micronsToDbu(y1),
-                               block->micronsToDbu(x2),
-                               block->micronsToDbu(y2));
 
   if (!core.contains(region)) {
     logger_->error(MPL,
