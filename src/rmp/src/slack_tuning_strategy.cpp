@@ -3,8 +3,6 @@
 
 #include "slack_tuning_strategy.h"
 
-#include <absl/base/optimization.h>
-
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/optimization.h"
 #include "absl/random/random.h"
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
