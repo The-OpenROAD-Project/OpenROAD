@@ -26,7 +26,7 @@ void dbPolygonItr::reverse(dbObject* parent)
   switch (parent->getImpl()->getType()) {
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
-      uint id = master->_poly_obstructions;
+      uint id = master->poly_obstructions_;
       uint list = 0;
 
       while (id != 0) {
@@ -37,13 +37,13 @@ void dbPolygonItr::reverse(dbObject* parent)
         id = n;
       }
 
-      master->_poly_obstructions = list;
+      master->poly_obstructions_ = list;
       break;
     }
 
     case dbMPinObj: {
       _dbMPin* pin = (_dbMPin*) parent;
-      uint id = pin->_poly_geoms;
+      uint id = pin->poly_geoms_;
       uint list = 0;
 
       while (id != 0) {
@@ -54,7 +54,7 @@ void dbPolygonItr::reverse(dbObject* parent)
         id = n;
       }
 
-      pin->_poly_geoms = list;
+      pin->poly_geoms_ = list;
       break;
     }
 
@@ -86,12 +86,12 @@ uint dbPolygonItr::begin(dbObject* parent) const
   switch (parent->getImpl()->getType()) {
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
-      return master->_poly_obstructions;
+      return master->poly_obstructions_;
     }
 
     case dbMPinObj: {
       _dbMPin* pin = (_dbMPin*) parent;
-      return pin->_poly_geoms;
+      return pin->poly_geoms_;
     }
 
     default:

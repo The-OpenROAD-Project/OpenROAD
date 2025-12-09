@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;
@@ -39,7 +40,8 @@ class Pin;
 
 namespace stt {
 class SteinerTreeBuilder;
-}
+struct Tree;
+}  // namespace stt
 
 namespace cts {
 
@@ -125,6 +127,11 @@ class TritonCTS
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
+  void cloneClockGaters(odb::dbNet* clkNet);
+  void findLongEdges(
+      stt::Tree& clkSteiner,
+      odb::Point driverPt,
+      std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin);
   void initOneClockTree(odb::dbNet* driverNet,
                         odb::dbNet* clkInputNet,
                         const std::string& sdcClockName,

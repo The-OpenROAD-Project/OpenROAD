@@ -14,37 +14,37 @@
       "flags":["no-set","no-get"]
     },
     {
-      "name":"_applies_to",
+      "name":"applies_to_",
       "type":"std::string",
       "flags":["no-set"]
     },
     {
-      "name":"_clamp_value",
+      "name":"clamp_value_",
       "type":"std::string",
       "flags":["no-set"]
     },
     {
-      "name":"_isolation_signal",
+      "name":"isolation_signal_",
       "type":"std::string",
       "flags":["no-set"]
     },
     {
-      "name":"_isolation_sense",
+      "name":"isolation_sense_",
       "type":"std::string",
       "flags":["no-set"]
     },
     {
-      "name":"_location",
+      "name":"location_",
       "type":"std::string",
       "flags":["no-set"]
     },
     {
-      "name": "_isolation_cells",
+      "name": "isolation_cells_",
       "type": "dbVector<std::string>",
       "flags": ["no-get", "no-set"]
     },
     {
-      "name":"_power_domain",
+      "name":"power_domain_",
       "type":"dbId<_dbPowerDomain>",
       "flags":[],
       "parent":"dbBlock"

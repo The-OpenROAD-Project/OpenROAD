@@ -16,7 +16,7 @@ class dbModuleModNetITermItr : public dbIterator
  public:
   dbModuleModNetITermItr(dbTable<_dbITerm, 1024>* iterm_tbl)
   {
-    _iterm_tbl = iterm_tbl;
+    iterm_tbl_ = iterm_tbl;
   }
 
   bool reversible() const override;
@@ -30,7 +30,7 @@ class dbModuleModNetITermItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbITerm, 1024>* _iterm_tbl;
+  dbTable<_dbITerm, 1024>* iterm_tbl_;
 };
 
 }  // namespace odb

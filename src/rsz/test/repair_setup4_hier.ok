@@ -27,18 +27,18 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:         58.254 um^2
-[INFO GPL-0019] Utilization:                     0.122 %
-[INFO GPL-0020] Standard cells area:            58.254 um^2
+[INFO GPL-0018] Movable instances area:         52.955 um^2
+[INFO GPL-0019] Utilization:                     0.111 %
+[INFO GPL-0020] Standard cells area:            52.955 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 2447220
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000001 HPWL: 63028
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 59801
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 60266
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 60344
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000001 HPWL: 63168
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 59941
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 60406
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 60484
 Placement Analysis
 ---------------------------------
-total displacement         71.7 u
+total displacement         71.5 u
 average displacement        4.2 u
 max displacement            7.3 u
 original HPWL               5.5 u

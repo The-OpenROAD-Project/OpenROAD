@@ -124,14 +124,14 @@ dbBTerm* dbBPin::getBTerm() const
 {
   const _dbBPin* pin = (const _dbBPin*) this;
   _dbBlock* block = (_dbBlock*) pin->getOwner();
-  return (dbBTerm*) block->_bterm_tbl->getPtr(pin->bterm_);
+  return (dbBTerm*) block->bterm_tbl_->getPtr(pin->bterm_);
 }
 
 dbSet<dbBox> dbBPin::getBoxes()
 {
   _dbBPin* pin = (_dbBPin*) this;
   _dbBlock* block = (_dbBlock*) pin->getOwner();
-  return dbSet<dbBox>(pin, block->_box_itr);
+  return dbSet<dbBox>(pin, block->box_itr_);
 }
 
 Rect dbBPin::getBBox()
@@ -156,7 +156,7 @@ void dbBPin::setPlacementStatus(dbPlacementStatus status)
   _dbBPin* bpin = (_dbBPin*) this;
   bpin->flags_.status = status.getValue();
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
-  block->flags_._valid_bbox = 0;
+  block->flags_.valid_bbox = 0;
 }
 
 bool dbBPin::hasEffectiveWidth() const
@@ -212,11 +212,11 @@ dbBPin* dbBPin::create(dbBTerm* bterm_)
 {
   _dbBTerm* bterm = (_dbBTerm*) bterm_;
   _dbBlock* block = (_dbBlock*) bterm->getOwner();
-  _dbBPin* bpin = block->_bpin_tbl->create();
+  _dbBPin* bpin = block->bpin_tbl_->create();
   bpin->bterm_ = bterm->getOID();
-  bpin->next_bpin_ = bterm->_bpins;
-  bterm->_bpins = bpin->getOID();
-  for (auto callback : block->_callbacks) {
+  bpin->next_bpin_ = bterm->bpins_;
+  bterm->bpins_ = bpin->getOID();
+  for (auto callback : block->callbacks_) {
     callback->inDbBPinCreate((dbBPin*) bpin);
   }
   return (dbBPin*) bpin;
@@ -227,18 +227,18 @@ void dbBPin::destroy(dbBPin* bpin_)
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
   _dbBTerm* bterm = (_dbBTerm*) bpin_->getBTerm();
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbBPinDestroy(bpin_);
   }
   // unlink bpin from bterm
   uint id = bpin->getOID();
   _dbBPin* prev = nullptr;
-  uint cur = bterm->_bpins;
+  uint cur = bterm->bpins_;
   while (cur) {
-    _dbBPin* c = block->_bpin_tbl->getPtr(cur);
+    _dbBPin* c = block->bpin_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
-        bterm->_bpins = bpin->next_bpin_;
+        bterm->bpins_ = bpin->next_bpin_;
       } else {
         prev->next_bpin_ = bpin->next_bpin_;
       }
@@ -250,11 +250,11 @@ void dbBPin::destroy(dbBPin* bpin_)
 
   dbId<_dbBox> nextBox = bpin->boxes_;
   while (nextBox) {
-    _dbBox* b = block->_box_tbl->getPtr(nextBox);
+    _dbBox* b = block->box_tbl_->getPtr(nextBox);
     nextBox = b->next_box_;
     dbProperty::destroyProperties(b);
     block->remove_rect(b->shape_.rect);
-    block->_box_tbl->destroy(b);
+    block->box_tbl_->destroy(b);
   }
 
   for (auto ap : bpin_->getAccessPoints()) {
@@ -262,7 +262,7 @@ void dbBPin::destroy(dbBPin* bpin_)
   }
 
   dbProperty::destroyProperties(bpin);
-  block->_bpin_tbl->destroy(bpin);
+  block->bpin_tbl_->destroy(bpin);
 }
 
 dbSet<dbBPin>::iterator dbBPin::destroy(dbSet<dbBPin>::iterator& itr)
@@ -276,7 +276,7 @@ dbSet<dbBPin>::iterator dbBPin::destroy(dbSet<dbBPin>::iterator& itr)
 dbBPin* dbBPin::getBPin(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbBPin*) block->_bpin_tbl->getPtr(dbid_);
+  return (dbBPin*) block->bpin_tbl_->getPtr(dbid_);
 }
 
 void _dbBPin::collectMemInfo(MemInfo& info)
@@ -291,7 +291,7 @@ void _dbBPin::removeBox(_dbBox* box)
 {
   _dbBlock* block = (_dbBlock*) getOwner();
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbBPinRemoveBox((dbBox*) box);
   }
 
@@ -306,7 +306,7 @@ void _dbBPin::removeBox(_dbBox* box)
       return;
     }
     while (id != 0) {
-      _dbBox* nbox = block->_box_tbl->getPtr(id);
+      _dbBox* nbox = block->box_tbl_->getPtr(id);
       dbId<_dbBox> nid = nbox->next_box_;
 
       if (nid == boxid) {

@@ -106,7 +106,7 @@ dbRegion* dbGlobalConnect::getRegion() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
+  return (dbRegion*) par->region_tbl_->getPtr(obj->region_);
 }
 
 dbNet* dbGlobalConnect::getNet() const
@@ -116,7 +116,7 @@ dbNet* dbGlobalConnect::getNet() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbNet*) par->_net_tbl->getPtr(obj->net_);
+  return (dbNet*) par->net_tbl_->getPtr(obj->net_);
 }
 
 std::string dbGlobalConnect::getInstPattern() const
@@ -303,7 +303,7 @@ std::set<dbITerm*> _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
   std::set<dbITerm*> iterms;
   for (dbInst* inst : insts) {
     _dbInst* dbinst = (_dbInst*) inst;
-    if (region_ != 0 && region_ != dbinst->_region) {
+    if (region_ != 0 && region_ != dbinst->region_) {
       continue;
     }
 

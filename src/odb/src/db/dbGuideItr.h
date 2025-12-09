@@ -14,7 +14,7 @@ class _dbGuide;
 class dbGuideItr : public dbIterator
 {
  public:
-  dbGuideItr(dbTable<_dbGuide>* guide_tbl) { _guide_tbl = guide_tbl; }
+  dbGuideItr(dbTable<_dbGuide>* guide_tbl) { guide_tbl_ = guide_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -27,7 +27,7 @@ class dbGuideItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbGuide>* _guide_tbl;
+  dbTable<_dbGuide>* guide_tbl_;
 };
 
 }  // namespace odb

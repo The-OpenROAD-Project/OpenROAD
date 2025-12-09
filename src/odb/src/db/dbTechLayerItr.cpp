@@ -46,7 +46,7 @@ uint dbTechLayerItr::size(dbObject* parent) const
 uint dbTechLayerItr::begin(dbObject* parent) const
 {
   _dbTech* tech = (_dbTech*) parent;
-  return (uint) tech->_bottom;
+  return (uint) tech->bottom_;
 }
 
 uint dbTechLayerItr::end(dbObject* /* unused: parent */) const
@@ -57,7 +57,7 @@ uint dbTechLayerItr::end(dbObject* /* unused: parent */) const
 uint dbTechLayerItr::next(uint id, ...) const
 {
   _dbTechLayer* layer = _layer_tbl->getPtr(id);
-  return layer->_upper;
+  return layer->upper_;
 }
 
 dbObject* dbTechLayerItr::getObject(uint id, ...)

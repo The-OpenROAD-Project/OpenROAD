@@ -801,6 +801,7 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
+  void reportInstanceExtensionByPinDensity() const;
   const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
   const std::vector<GNet*>& getGNets() const { return gNets_; }
   const std::vector<GPin*>& getGPins() const { return gPins_; }
@@ -1130,6 +1131,8 @@ class NesterovBase
                               int gcell_index_stride = 10) const;
 
   std::shared_ptr<PlacerBase> getPb() const { return pb_; }
+
+  odb::dbGroup* getGroup() const { return pb_->getGroup(); }
 
  private:
   NesterovBaseVars nbVars_;

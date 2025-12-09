@@ -28,7 +28,7 @@ bool dbGroupPowerNetItr::orderReversed() const
 void dbGroupPowerNetItr::reverse(dbObject* parent)
 {
   _dbGroup* group = (_dbGroup*) parent;
-  std::reverse(group->_power_nets.begin(), group->_power_nets.end());
+  std::reverse(group->power_nets_.begin(), group->power_nets_.end());
 }
 
 uint dbGroupPowerNetItr::sequential() const
@@ -39,7 +39,7 @@ uint dbGroupPowerNetItr::sequential() const
 uint dbGroupPowerNetItr::size(dbObject* parent) const
 {
   _dbGroup* group = (_dbGroup*) parent;
-  return group->_power_nets.size();
+  return group->power_nets_.size();
 }
 
 uint dbGroupPowerNetItr::begin(dbObject*) const
@@ -50,7 +50,7 @@ uint dbGroupPowerNetItr::begin(dbObject*) const
 uint dbGroupPowerNetItr::end(dbObject* parent) const
 {
   _dbGroup* group = (_dbGroup*) parent;
-  return group->_power_nets.size();
+  return group->power_nets_.size();
 }
 
 uint dbGroupPowerNetItr::next(uint id, ...) const
@@ -64,8 +64,8 @@ dbObject* dbGroupPowerNetItr::getObject(uint id, ...)
   va_start(ap, id);
   _dbGroup* parent = (_dbGroup*) va_arg(ap, dbObject*);
   va_end(ap);
-  uint nid = parent->_power_nets[id];
-  return _net_tbl->getPtr(nid);
+  uint nid = parent->power_nets_[id];
+  return net_tbl_->getPtr(nid);
 }
 
 }  // namespace odb

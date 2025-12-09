@@ -293,7 +293,7 @@ dbTechLayer* dbAccessPoint::getLayer() const
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
   dbDatabase* db = (dbDatabase*) obj->getDatabase();
   _dbTech* tech = (_dbTech*) db->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(obj->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
 }
 
 dbMPin* dbAccessPoint::getMPin() const
@@ -303,9 +303,9 @@ dbMPin* dbAccessPoint::getMPin() const
     return nullptr;
   }
   _dbDatabase* db = obj->getDatabase();
-  auto lib = (_dbLib*) db->_lib_tbl->getPtr(obj->lib_);
-  auto master = (_dbMaster*) lib->_master_tbl->getPtr(obj->master_);
-  return (dbMPin*) master->_mpin_tbl->getPtr(obj->mpin_);
+  auto lib = (_dbLib*) db->lib_tbl_->getPtr(obj->lib_);
+  auto master = (_dbMaster*) lib->master_tbl_->getPtr(obj->master_);
+  return (dbMPin*) master->mpin_tbl_->getPtr(obj->mpin_);
 }
 
 dbBPin* dbAccessPoint::getBPin() const
@@ -315,7 +315,7 @@ dbBPin* dbAccessPoint::getBPin() const
     return nullptr;
   }
   _dbBlock* block = (_dbBlock*) obj->getOwner();
-  return (dbBPin*) block->_bpin_tbl->getPtr(obj->bpin_);
+  return (dbBPin*) block->bpin_tbl_->getPtr(obj->bpin_);
 }
 std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
 {
@@ -329,10 +329,10 @@ std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
     for (const auto& [type, id] : cutVias) {
       if (type == dbObjectType::dbViaObj) {
         result.back().push_back(
-            (dbObject*) block->_via_tbl->getPtr(dbId<_dbVia>(id)));
+            (dbObject*) block->via_tbl_->getPtr(dbId<_dbVia>(id)));
       } else {
         result.back().push_back(
-            (dbTechVia*) tech->_via_tbl->getPtr(dbId<_dbTechVia>(id)));
+            (dbTechVia*) tech->via_tbl_->getPtr(dbId<_dbTechVia>(id)));
       }
     }
   }
@@ -417,7 +417,7 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
       }
     }
     for (const auto& iterm_id : _ap->iterms_) {
-      _dbITerm* iterm = block->_iterm_tbl->getPtr(iterm_id);
+      _dbITerm* iterm = block->iterm_tbl_->getPtr(iterm_id);
       auto ap_itr = iterm->aps_.begin();
       while (ap_itr != iterm->aps_.end()) {
         if ((*ap_itr).second == ap->getImpl()->getOID()) {
