@@ -44,11 +44,11 @@ Path Type: max
    0.000    0.000    0.000   clock clk (rise edge)
             0.000    0.000   clock network delay (ideal)
    0.000    0.000    0.000 ^ r1/CLK (sky130_fd_sc_hs__dfxbp_1)
-   0.024    0.189    0.189 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
-   0.024    0.000    0.189 v u1/A (sky130_fd_sc_hs__clkbuf_2)
-   0.059    0.108    0.297 v u1/X (sky130_fd_sc_hs__clkbuf_2)
-   0.059    0.000    0.297 v r2/D (sky130_fd_sc_hs__dfxbp_1)
-                     0.297   data arrival time
+   0.028    0.194    0.194 v r1/Q (sky130_fd_sc_hs__dfxbp_1)
+   0.028    0.000    0.194 v u1/A (sky130_fd_sc_hs__clkbuf_2)
+   0.059    0.109    0.303 v u1/X (sky130_fd_sc_hs__clkbuf_2)
+   0.059    0.000    0.303 v r2/D (sky130_fd_sc_hs__dfxbp_1)
+                     0.303   data arrival time
 
    0.000    1.000    1.000   clock clk (rise edge)
             0.000    1.000   clock network delay (ideal)
@@ -58,8 +58,8 @@ Path Type: max
                      0.875   data required time
 -------------------------------------------------------------------
                      0.875   data required time
-                    -0.297   data arrival time
+                    -0.303   data arrival time
 -------------------------------------------------------------------
-                     0.578   slack (MET)
+                     0.572   slack (MET)
 
 

@@ -329,9 +329,9 @@ void RepairDesign::repairDesign(
              annotations_to_clean_up.size());
 
   int print_iteration = 0;
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   {
     // Fix violations from outputs to inputs
-    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     if (resizer_->level_drvr_vertices_.size()
         > size_t(5) * max_print_interval_) {
       print_interval_ = max_print_interval_;
@@ -360,8 +360,8 @@ void RepairDesign::repairDesign(
                    cap_violations,
                    fanout_violations,
                    length_violations);
+      estimate_parasitics_->updateParasitics();
     }
-    estimate_parasitics_->updateParasitics();
   }
 
   if (!annotations_to_clean_up.empty()) {
@@ -379,12 +379,18 @@ void RepairDesign::repairDesign(
   {
     // Do one more pass of load slew fixing in case annotated slews interfered
     // with fixing
-    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+
     int slew_violations2, repaired_net_count2;
     for (auto vertex : load_vertices) {
       if (!vertex->slewAnnotated()) {
+        Pin* pin = vertex->pin();
+        if (pin == nullptr) {
+          continue;
+        }
         sta_->findDelays(vertex);
-        LibertyPort* port = network_->libertyPort(vertex->pin());
+        LibertyPort* port = network_->libertyPort(pin);
         if (port) {
           for (auto corner : *sta_->corners()) {
             const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
@@ -399,35 +405,37 @@ void RepairDesign::repairDesign(
               }
             }
             if (slew_viol) {
-              PinSet* drivers = network_->drivers(vertex->pin());
-              for (const Pin* drvr_pin : *drivers) {
-                debugPrint(logger_,
-                           RSZ,
-                           "repair_design",
-                           2,
-                           "last pass: drvr {} has slew {} vs. limit {}",
-                           sdc_network_->pathName(drvr_pin),
-                           delayAsString(actual, this, 3),
-                           delayAsString(limit, this, 3));
-                repairDriver(graph_->pinDrvrVertex(drvr_pin),
-                             true /* check_slew */,
-                             false /* check_cap */,
-                             false /* check_fanout */,
-                             0 /* max_length */,
-                             true /* resize_driver */,
-                             corner,
-                             repaired_net_count2,
-                             slew_violations2,
-                             cap_violations,
-                             fanout_violations,
-                             length_violations);
+              PinSet* drivers = network_->drivers(pin);
+              if (drivers) {
+                for (const Pin* drvr_pin : *drivers) {
+                  debugPrint(logger_,
+                             RSZ,
+                             "repair_design",
+                             2,
+                             "last pass: drvr {} has slew {} vs. limit {}",
+                             sdc_network_->pathName(drvr_pin),
+                             delayAsString(actual, this, 3),
+                             delayAsString(limit, this, 3));
+                  repairDriver(graph_->pinDrvrVertex(drvr_pin),
+                               true /* check_slew */,
+                               false /* check_cap */,
+                               false /* check_fanout */,
+                               0 /* max_length */,
+                               true /* resize_driver */,
+                               corner,
+                               repaired_net_count2,
+                               slew_violations2,
+                               cap_violations,
+                               fanout_violations,
+                               length_violations);
+                }
+                estimate_parasitics_->updateParasitics();
               }
             }
           }
         }
       }
     }
-    estimate_parasitics_->updateParasitics();
     printProgress(print_iteration, true, true, repaired_net_count);
   }
 
@@ -1010,13 +1018,21 @@ void RepairDesign::repairDriver(Vertex* drvr,
                                 int& fanout_violations,
                                 int& length_violations)
 {
+  if (drvr == nullptr) {
+    return;
+  }
+
   Pin* drvr_pin = drvr->pin();
+  if (drvr_pin == nullptr) {
+    return;
+  }
+
   // hier fix
   // clang-format off
-      Net* net = network_->isTopLevelPort(drvr_pin)
-                     ? db_network_->dbToSta(
-                         db_network_->flatNet(network_->term(drvr_pin)))
-                     : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+  Net* net = network_->isTopLevelPort(drvr_pin)
+                 ? db_network_->dbToSta(
+                       db_network_->flatNet(network_->term(drvr_pin)))
+                 : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
   // clang-format on
   if (!net) {
     return;
