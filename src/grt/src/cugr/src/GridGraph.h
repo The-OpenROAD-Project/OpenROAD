@@ -151,6 +151,9 @@ class GridGraph
     return unit_length_short_costs_[layer_index];
   }
 
+  bool findODBAccessPoints(const GRNet* net,
+                           AccessPointSet& selected_access_points) const;
+
   double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
                     PointT lower,
@@ -174,6 +177,8 @@ class GridGraph
   const int num_layers_;
   const int x_size_;
   const int y_size_;
+
+  const Design* design_;
 
   // Unit costs
   CostT unit_length_wire_cost_;
