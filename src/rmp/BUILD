@@ -58,6 +58,7 @@ cc_library(
         "@boost.optional",
         "@boost.phoenix",
         "@boost.spirit",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/hash",
         "@com_google_absl//absl/random",
     ],
