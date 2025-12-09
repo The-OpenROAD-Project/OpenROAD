@@ -3,7 +3,8 @@
 #include <cstdlib>
 #include <string>
 
-#include "Vram_8x7.h"  // NOLINT
+// NOLINTNEXTLINE
+#include "Vram_8x7.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 
