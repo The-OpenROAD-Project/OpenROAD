@@ -11,15 +11,18 @@ orfs_flow(
     name = "ram_8x7",
     # buildifier: disable=unsorted-dict-items
     arguments = {
-        # Faster builds
-        "GPL_TIMING_DRIVEN": "0",
-        "SKIP_INCREMENTAL_REPAIR": "1",
-        "SKIP_LAST_GASP": "1",
         # Various
         "CORE_AREA": "1.08 1.08 15.12 15.12",
         "DIE_AREA": "0 0 16.2 16.2",
         "PLACE_DENSITY": "0.35",
         "OPENROAD_HIERARCHICAL": "1",
+        "HOLD_SLACK_MARGIN": "-1000",
+        "MACRO_PLACE_HALO": "0 1",
+        #"PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCKS_grid_strategy.tcl",
+        "RTLMP_BOUNDARY_WT": "0",
+        "SETUP_SLACK_MARGIN": "-4000",
+        "SKIP_REPORT_METRICS": "1",
+        "TAPCELL_TCL": "",
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],
@@ -94,5 +97,14 @@ filegroup(
     cc_srcs = ["ram_8x7_sim.cpp"],
     module_top = "ram_8x7",
     verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
-    #tags = ["manual"],
+    tags = ["manual"],
 ) for stage in STAGES[1:]]
+
+OTHER = ["good.v", "bad.v"]
+[sim_test(
+    name = "ram_8x7_{other}_sim_test".format(other = other[:-2]),
+    cc_srcs = ["ram_8x7_sim.cpp"],
+    module_top = "ram_8x7",
+    verilog = [other],
+    tags = ["manual"],
+) for other in OTHER]

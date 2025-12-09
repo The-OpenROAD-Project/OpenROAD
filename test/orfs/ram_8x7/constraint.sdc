@@ -4,8 +4,8 @@ set sdc_version 2.0
 # SDC file used during SRAM abstract generation
 #
 
-# Run at 833 MHz
-set clk_period 1200
+# make repair_timing sweat
+set clk_period 50
 
 # Covers all clock naming types in SRAMs and reg files
 set clock_ports [concat [get_ports -quiet *clk] [get_ports -quiet *clock]]
