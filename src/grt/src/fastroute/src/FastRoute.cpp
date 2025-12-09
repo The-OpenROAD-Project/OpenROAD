@@ -1283,9 +1283,6 @@ void FastRouteCore::getCapacityReductionData(
   for (int k = 0; k < num_layers_; k++) {
     bool is_horizontal
         = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
-    const uint8_t capH = h_capacity_3D_[k];
-    const uint8_t capV = v_capacity_3D_[k];
-
     if (is_horizontal) {
       int last_cell_cap_h = 0;
       for (int y = 0; y < y_grid_; y++) {
