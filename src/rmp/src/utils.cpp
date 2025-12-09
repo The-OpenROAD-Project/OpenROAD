@@ -7,7 +7,8 @@
 
 #include <vector>
 
-#include "aig/gia/giaAig.h"
+#include "aig/aig/aig.h"
+#include "aig/gia/gia.h"
 #include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"

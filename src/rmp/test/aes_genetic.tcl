@@ -27,7 +27,15 @@ report_wns
 report_tns
 
 puts "-- After --\n"
-resynth_genetic -corner slow -initial_ops 5 -iters 15 -pop_size 50 -mut_prob 0.25 -cross_prob 0.25 -tourn_size 9 -tourn_prob 0.8
+resynth_genetic \
+  -corner slow \
+  -initial_ops 5 \
+  -iters 15 \
+  -pop_size 50 \
+  -mut_prob 0.25 \
+  -cross_prob 0.25 \
+  -tourn_size 9 \
+  -tourn_prob 0.8
 report_timing_histogram
 report_cell_usage
 report_checks
