@@ -118,9 +118,10 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
-  void computeWLForClusterOfUnplacedIOPins(const T& macro,
-                                           const T& unplaced_ios,
-                                           float net_weight);
+  float computeNetsWireLength(const std::vector<BundledNet>& nets) const;
+  double computeWLForClusterOfUnplacedIOPins(const T& macro,
+                                             const T& unplaced_ios,
+                                             float net_weight) const;
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
