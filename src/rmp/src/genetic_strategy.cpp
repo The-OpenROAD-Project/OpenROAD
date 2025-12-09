@@ -123,7 +123,8 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
                          logger);
     }
     // Selection
-    std::ranges::sort(population, std::greater{}, &SolutionSlack::worst_slack_);
+    std::ranges::stable_sort(
+        population, std::greater{}, &SolutionSlack::worst_slack_);
     std::vector<SolutionSlack> newPopulation;
     newPopulation.reserve(pop_size_);
     for (int j = 0; j < pop_size_; j++) {
@@ -131,7 +132,7 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
       std::generate_n(tournament.begin(), tourn_size_, [&]() {
         return absl::Uniform<int>(random_, 0, population.size());
       });
-      std::ranges::sort(tournament);
+      std::ranges::stable_sort(tournament);
       tournament.erase(std::ranges::begin(std::ranges::unique(tournament)),
                        tournament.end());
       auto winner = std::ranges::find_if(tournament, [&](auto const& _) {
