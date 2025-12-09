@@ -96,15 +96,34 @@ filegroup(
     name = "ram_8x7_{stage}_sim_test".format(stage = stage),
     cc_srcs = ["ram_8x7_sim.cpp"],
     module_top = "ram_8x7",
-    verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
     tags = ["manual"],
+    verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
 ) for stage in STAGES[1:]]
 
-OTHER = ["good.v", "bad.v"]
+OTHER = [
+    "good.v",
+    "bad.v",
+]
+
 [sim_test(
     name = "ram_8x7_{other}_sim_test".format(other = other[:-2]),
     cc_srcs = ["ram_8x7_sim.cpp"],
     module_top = "ram_8x7",
-    verilog = [other],
     tags = ["manual"],
+    verilog = [other],
 ) for other in OTHER]
+
+eqy_test(
+    name = "eqy_repair_tie_test",
+    depth = 1,
+    gate_verilog_files = [
+        "bad.v",
+        "//test/orfs/mock-array:asap7_files",
+    ],
+    gold_verilog_files = [
+        "good.v",
+        "//test/orfs/mock-array:asap7_files",
+    ],
+    module_top = "ram_8x7",
+    tags = ["manual"],
+)
