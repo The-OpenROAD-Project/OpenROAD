@@ -1,16 +1,12 @@
 #include <gtest/gtest.h>
-// NOLINT
-#include <verilated.h>
-// NOLINT
-#include <verilated_vcd_c.h>
 
 #include <cstdlib>
 #include <string>
 
-// NOLINT
-#include "Vram_8x7.h"
+#include "Vram_8x7.h"  // NOLINT
+#include "verilated.h"
+#include "verilated_vcd_c.h"
 
-// DUMMY, testing nit
 namespace {
 class Ram_8x7TestHarness
 {
