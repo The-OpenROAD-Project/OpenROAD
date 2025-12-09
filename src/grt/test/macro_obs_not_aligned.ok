@@ -32,6 +32,9 @@ met5       Horizontal     398152        196181          50.73%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0102] Start extra iteration 1/50
+[INFO GRT-0102] Start extra iteration 2/50
+[INFO GRT-0102] Start extra iteration 3/50
 [INFO GRT-0197] Via related to pin nodes: 4
 [INFO GRT-0198] Via related Steiner nodes: 1
 [INFO GRT-0199] Via filling finished.
