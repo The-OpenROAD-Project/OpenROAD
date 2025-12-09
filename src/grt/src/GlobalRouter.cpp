@@ -571,7 +571,8 @@ std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
   // dbu wirelength for wires, via count for vias
   std::vector<int> layer_lengths(tech->getLayerCount());
 
-  if (!db_net->getSigType().isSupply()) {
+  if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
+      && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
     GRoute& route = routes[db_net];
     std::set<RoutePt> route_pts;
     // Compute wirelengths from route segments
