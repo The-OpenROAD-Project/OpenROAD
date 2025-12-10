@@ -204,15 +204,16 @@ void initGui(Tcl_Interp* interp,
   Tcl_Eval(interp, enabled_supported.c_str());
 }
 
-void Gui::gifStart(const std::string& filename)
+int Gui::gifStart(const std::string& filename)
 {
 }
 
-void Gui::gifEnd()
+void Gui::gifEnd(const int key)
 {
 }
 
-void Gui::gifAddFrame(const odb::Rect& region,
+void Gui::gifAddFrame(const int key,
+                      const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
                       std::optional<int> delay)

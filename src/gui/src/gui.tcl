@@ -189,19 +189,24 @@ proc save_animated_gif { args } {
     set delay $keys(-delay)
   }
 
+  set key 0
+  if { [info exists keys(-key)] } {
+    set key $keys(-key)
+  }
+
   if { [info exists flags(-start)] } {
     sta::check_argc_eq1 "save_animated_gif" $args
     set path [lindex $args 0]
 
-    gui::gif_start $path
+    return [gui::gif_start $path]
   } elseif { [info exists flags(-add)] } {
     sta::check_argc_eq0 "save_animated_gif" $args
 
-    gui::gif_add {*}$area $width $resolution $delay
+    gui::gif_add $key {*}$area $width $resolution $delay
   } elseif { [info exists flags(-end)] } {
     sta::check_argc_eq0 "save_animated_gif" $args
 
-    gui::gif_end
+    gui::gif_end $key
   } else {
     utl::error GUI 106 "-start, -end, or -add is required"
   }
