@@ -25,9 +25,9 @@ add_pdn_stripe -layer metal8 -width 1.40 -pitch 40.0 -offset 2.0 -extend_to_core
 add_pdn_stripe -layer metal9 -width 1.40 -pitch 40.0 -offset 2.0 -extend_to_core_ring
 
 
-add_pdn_connect -layers {metal1 metal4}
 add_pdn_connect -layers {metal4 metal7}
-add_pdn_connect -layers {metal7 metal8}
+add_pdn_connect -layers {metal1 metal4}
 add_pdn_connect -layers {metal8 metal9}
+add_pdn_connect -layers {metal7 metal8}
 
 pdngen -report_only

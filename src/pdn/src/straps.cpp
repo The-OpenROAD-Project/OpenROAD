@@ -883,6 +883,9 @@ void PadDirectConnectionStraps::report() const
       break;
   }
   logger->report("    Connection type: {}", connection_type);
+  if (type_ == ConnectionType::Edge) {
+    logger->report("    Edge: {}", pad_edge_.getString());
+  }
 }
 
 std::string PadDirectConnectionStraps::getName() const
