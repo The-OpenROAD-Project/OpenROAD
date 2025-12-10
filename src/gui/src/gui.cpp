@@ -1467,7 +1467,7 @@ void Gui::gifAddFrame(const int key,
                       double dbu_per_pixel,
                       std::optional<int> delay)
 {
-  if (key >= gifs_.size()) {
+  if (key >= gifs_.size() || gifs_[key] == nullptr) {
     logger_->warn(utl::GUI, 51, "GIF not active");
     return;
   }
@@ -1551,7 +1551,7 @@ void Gui::gifAddFrame(const int key,
 
 void Gui::gifEnd(const int key)
 {
-  if (key >= gifs_.size()) {
+  if (key >= gifs_.size() || gifs_[key] == nullptr) {
     logger_->warn(utl::GUI, 58, "GIF not active");
     return;
   }
