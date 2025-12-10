@@ -12,6 +12,7 @@
 #include <sstream>
 #include <vector>
 
+#include "TreeBuilder.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
