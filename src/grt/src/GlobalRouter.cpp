@@ -79,7 +79,6 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       groute_renderer_(nullptr),
       grid_(new Grid),
       adjustment_(0.0),
-      layer_for_guide_dimension_(3),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
@@ -149,7 +148,6 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   fastroute_->clear();
   h_nets_in_pos_.clear();
   v_nets_in_pos_.clear();
-  ensureLayerForGuideDimension(max_routing_layer);
 
   configFastRoute();
 
@@ -2170,13 +2168,6 @@ void GlobalRouter::initGridAndNets()
   }
   std::vector<Net*> nets = findNets(false);
   initNetlist(nets);
-}
-
-void GlobalRouter::ensureLayerForGuideDimension(int max_routing_layer)
-{
-  if (max_routing_layer < layer_for_guide_dimension_) {
-    layer_for_guide_dimension_ = max_routing_layer;
-  }
 }
 
 void GlobalRouter::configFastRoute()
