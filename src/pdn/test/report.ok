@@ -331,7 +331,7 @@ Straps:
     Offset: 2.0000
     Snap to grid: false
 Connect:
-  Connect layers metal1 -> metal4 (2)
-  Connect layers metal4 -> metal7 (1)
-  Connect layers metal7 -> metal8 (4)
-  Connect layers metal8 -> metal9 (3)
+  Connect layers metal1 -> metal4
+  Connect layers metal4 -> metal7
+  Connect layers metal7 -> metal8
+  Connect layers metal8 -> metal9

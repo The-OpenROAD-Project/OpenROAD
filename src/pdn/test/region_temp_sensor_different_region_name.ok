@@ -46,8 +46,8 @@ Straps:
     Offset: 13.6000
     Snap to grid: false
 Connect:
-  Connect layers met1 -> met4 (1)
-  Connect layers met4 -> met5 (2)
+  Connect layers met1 -> met4
+  Connect layers met4 -> met5
 Voltage domain: TemperatureAnalog
   Floorplan region: TEMP_ANALOG
   Power net: VIN
@@ -89,5 +89,5 @@ Straps:
     Offset: 13.6000
     Snap to grid: false
 Connect:
-  Connect layers met1 -> met4 (1)
-  Connect layers met4 -> met5 (2)
+  Connect layers met1 -> met4
+  Connect layers met4 -> met5

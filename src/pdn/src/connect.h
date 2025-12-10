@@ -5,7 +5,6 @@
 
 #include <map>
 #include <memory>
-#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -50,7 +49,7 @@ class Connect
   int getSplitCutPitch(odb::dbTechLayer* layer) const;
   bool getSplitCutStagger(odb::dbTechLayer* layer) const;
 
-  void report(const std::optional<int>& order = {}) const;
+  void report() const;
 
   odb::dbTechLayer* getLowerLayer() const { return layer0_; }
   odb::dbTechLayer* getUpperLayer() const { return layer1_; }

@@ -7,7 +7,6 @@
 #include <cmath>
 #include <map>
 #include <memory>
-#include <optional>
 #include <regex>
 #include <set>
 #include <tuple>
@@ -399,16 +398,14 @@ bool Connect::startsBelow(const Connect* other) const
   return layer0_->getNumber() < other->getLowerLayer()->getNumber();
 }
 
-void Connect::report(const std::optional<int>& order) const
+void Connect::report() const
 {
   auto* logger = grid_->getLogger();
   auto* block = grid_->getBlock();
   const double dbu_per_micron = block->getDbUnitsPerMicron();
 
-  logger->report("  Connect layers {} -> {}{}",
-                 layer0_->getName(),
-                 layer1_->getName(),
-                 order.has_value() ? fmt::format(" ({})", *order) : "");
+  logger->report(
+      "  Connect layers {} -> {}", layer0_->getName(), layer1_->getName());
   if (!fixed_generate_vias_.empty() || !fixed_tech_vias_.empty()) {
     std::string vias;
     for (auto* via : fixed_generate_vias_) {

@@ -35,8 +35,8 @@ Straps:
     Offset: 2.5000
     Snap to grid: false
 Connect:
-  Connect layers metal1 -> metal4 (1)
-  Connect layers metal4 -> metal7 (2)
+  Connect layers metal1 -> metal4
+  Connect layers metal4 -> metal7
 Grid name: sram - dcache.data.data_arrays_0.data_arrays_0_ext.mem
 Type: Instance
 Halo:
