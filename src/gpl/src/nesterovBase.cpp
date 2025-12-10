@@ -3139,11 +3139,12 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     }
 
     if (npVars_->routability_driven_mode) {
-      rb->getRudyResult();
+      rb->calculateRudyTiles();
+      rb->updateRudyAverage(false);
       log_->info(GPL,
                  1005,
                  "Routability final weighted congestion: {:.4f}",
-                 rb->getRudyRC(false));
+                  rb->getRudyAverage());
     }
 
     log_->info(GPL,

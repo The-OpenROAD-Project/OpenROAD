@@ -56,6 +56,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
     graphics_->debugForNesterovPlace(this,
                                      pbc_,
                                      nbc_,
+                                     rb_,
                                      pbVec_,
                                      nbVec_,
                                      npVars_.debug_draw_bins,
@@ -528,6 +529,11 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->updateAreas();
         nesterov->updateDensitySize();
         nesterov->checkConsistency();
+      }
+
+      if (npVars_.routability_driven_mode) {
+        rb_->calculateRudyTiles();
+        rb_->updateRudyAverage();
       }
 
       // update snapshot after non-virtual TD
@@ -1081,6 +1087,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                         route_snapshot_WlCoefY,
                         route_snapshotA);
 
+    if(average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
+      rb_->calculateRudyTiles();
+      rb_->updateRudyAverage(false);
+      log_->report("RUDY: {}", rb_->getRudyAverage());
+    }
     runRoutability(nesterov_iter,
                    timing_driven_count,
                    routability_driven_dir,
@@ -1092,6 +1103,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                    end_routability_area);
 
     if (isConverged(nesterov_iter, routability_gpl_iter_count_)) {
+      graphics_->addIter(nesterov_iter, average_overflow_unscaled_);
       break;
     }
   }

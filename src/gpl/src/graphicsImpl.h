@@ -54,6 +54,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void debugForNesterovPlace(NesterovPlace* np,
                              std::shared_ptr<PlacerBaseCommon> pbc,
                              std::shared_ptr<NesterovBaseCommon> nbc,
+                             std::shared_ptr<RouteBase> rb,
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              bool draw_bins,
@@ -157,6 +158,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::shared_ptr<RouteBase> rb_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_ = nullptr;
@@ -170,9 +172,9 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
   gui::Chart* main_chart_{nullptr};
-  gui::Chart* density_chart_{nullptr};
-  gui::Chart* phi_chart_{nullptr};
+  gui::Chart* density_chart_{nullptr};  
   gui::Chart* stepLength_chart_{nullptr};
+  gui::Chart* routing_chart_{nullptr};
   bool debug_on_ = false;
 
   void initHeatmap();

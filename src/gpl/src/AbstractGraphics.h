@@ -11,6 +11,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "routeBase.h"
 
 namespace gpl {
 
@@ -48,6 +49,7 @@ class AbstractGraphics
       NesterovPlace* np,
       std::shared_ptr<PlacerBaseCommon> pbc,
       std::shared_ptr<NesterovBaseCommon> nbc,
+      std::shared_ptr<RouteBase> rb,
       std::vector<std::shared_ptr<PlacerBase>>& pbVec,
       std::vector<std::shared_ptr<NesterovBase>>& nbVec,
       bool draw_bins,

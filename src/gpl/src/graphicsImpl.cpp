@@ -61,6 +61,7 @@ void GraphicsImpl::debugForNesterovPlace(
     NesterovPlace* np,
     std::shared_ptr<PlacerBaseCommon> pbc,
     std::shared_ptr<NesterovBaseCommon> nbc,
+    std::shared_ptr<RouteBase> rb,
     std::vector<std::shared_ptr<PlacerBase>>& pbVec,
     std::vector<std::shared_ptr<NesterovBase>>& nbVec,
     bool draw_bins,
@@ -70,13 +71,15 @@ void GraphicsImpl::debugForNesterovPlace(
 
   pbc_ = std::move(pbc);
   nbc_ = std::move(nbc);
+  rb_ = std::move(rb);
   pbVec_ = pbVec;
   nbVec_ = nbVec;
   np_ = np;
   draw_bins_ = draw_bins;
   mode_ = Nesterov;
 
-  if (enabled()) {
+  if (gui::Gui::enabled()) {
+    logger_->report("gui is enabled!");
     // Setup the chart
     gui::Gui* gui = gui::Gui::get();
     main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
@@ -87,32 +90,31 @@ void GraphicsImpl::debugForNesterovPlace(
     // Useful for debugging : Density penalty and PhiCoef
     if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
       if (!nbVec_.empty()) {
-        std::vector<std::string> region_names;
-        region_names.reserve(nbVec_.size());
-        for (size_t i = 0; i < nbVec_.size(); ++i) {
-          std::string name;
-          if (nbVec_[i] && nbVec_[i]->getPb()
-              && nbVec_[i]->getPb()->getGroup()) {
-            name = fmt::format(
-                "nb[{}] {}", i, nbVec_[i]->getPb()->getGroup()->getName());
-          } else {
-            name = fmt::format("nb[{}]", i);
-          }
-          region_names.push_back(name);
-        }
-        density_chart_ = gui->addChart(
-            "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
-        density_chart_->setXAxisFormat("%d");
-        density_chart_->setYAxisFormats({"%.2e", "%.2f"});
-        density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
+      density_chart_ = gui->addChart(
+        "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
+      density_chart_->setXAxisFormat("%d");
+      density_chart_->setYAxisFormats({"%.2e", "%.2f"});
+      density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
 
-        stepLength_chart_ = gui->addChart(
-            "GPL StepLength",
-            "Iteration",
-            {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
-        stepLength_chart_->setXAxisFormat("%d");
-        stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
-        stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+      stepLength_chart_ = gui->addChart(
+        "GPL StepLength",
+        "Iteration",
+        {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
+      stepLength_chart_->setXAxisFormat("%d");
+      stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
+      stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+
+      // routing_chart_ = gui->addChart(
+      //   "GPL Routing", "Iteration", {"RUDY", "Std area", "% inflated"});
+      // routing_chart_->setXAxisFormat("%d");
+      // routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f"});
+      // routing_chart_->setYAxisMin({0.0, 0.0, 0.0});
+      
+      routing_chart_ = gui->addChart(
+        "GPL Routing", "Iteration", {"RUDY", "Std area", "Overflowed Tiles"});
+      routing_chart_->setXAxisFormat("%d");
+      routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f"});
+      routing_chart_->setYAxisMin({0.0, 0.0, 0.0});
       }
     }
     initHeatmap();
@@ -580,12 +582,29 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
       }
       stepLength_chart_->addPoint(iter, values);
     }
+
+    if (routing_chart_) {
+      std::vector<double> values;
+      if (!nbVec_.empty() && nbVec_[0]) {
+        values.push_back(static_cast<double>(rb_->getRudyAverage()));
+        values.push_back(
+            static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+            values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()));
+        // values.push_back(static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+      } else {
+        values.push_back(0.0);
+        values.push_back(0.0);
+        values.push_back(0.0);
+      }
+      routing_chart_->addPoint(iter, values);
+    }
   }
 }
 
 void GraphicsImpl::addTimingDrivenIter(const int iter)
 {
   main_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+  routing_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
 }
 
 void GraphicsImpl::addRoutabilitySnapshot(int iter)
@@ -598,6 +617,8 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
   gui::Painter::Color color
       = revert ? gui::Painter::kRed : gui::Painter::kGreen;
   main_chart_->addVerticalMarker(iter, color);
+  routing_chart_->addVerticalMarker(iter, rb_->isMinRc() ? gui::Painter::kMagenta
+                                         : gui::Painter::kBlack);
 }
 
 void GraphicsImpl::cellPlotImpl(bool pause)
