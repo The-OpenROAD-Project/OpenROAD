@@ -206,6 +206,7 @@ void initGui(Tcl_Interp* interp,
 
 int Gui::gifStart(const std::string& filename)
 {
+  return 0;
 }
 
 void Gui::gifEnd(const int key)
