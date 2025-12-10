@@ -2531,10 +2531,16 @@ dbModNet* dbNet::findModNetInHighestHier() const
   size_t min_delimiters = (size_t) -1;
   char delim = getBlock()->getHierarchyDelimiter();
 
+  // Network::highestConnectedNet(Net *net) compares level of hierarchy and
+  // hierarchical net name as a tie breaker.
+  // For consistency, this API also uses the hierarchical net name as a tie
+  // breaker.
   for (dbModNet* modnet : modnets) {
     std::string name = modnet->getHierarchicalName();
     size_t num_delimiters = std::count(name.begin(), name.end(), delim);
-    if (highest == nullptr || num_delimiters < min_delimiters) {
+    if (highest == nullptr || num_delimiters < min_delimiters
+        || (num_delimiters == min_delimiters
+            && name < highest->getHierarchicalName())) {  // name = tie breaker
       min_delimiters = num_delimiters;
       highest = modnet;
     }

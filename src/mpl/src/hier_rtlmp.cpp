@@ -1390,13 +1390,10 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     graphics_->setOutline(micronsToDbu(block_, outline));
   }
 
-  // Suppose the region, fence, guide has been mapped to cooresponding macros
-  // This step is done when we enter the Hier-RTLMP program
-  std::map<std::string, int> soft_macro_id_map;  // cluster_name, macro_id
+  SoftMacroNameToIdMap soft_macro_id_map;
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
   std::vector<SoftMacro> macros;
-  std::vector<BundledNet> nets;
 
   std::vector<Rect> blockages = findBlockagesWithinOutline(outline);
   eliminateOverlaps(blockages);
@@ -1486,39 +1483,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
 
   clustering_engine_->rebuildConnections();
 
-  // add the virtual connections (the weight related to IOs and macros belong to
-  // the same cluster)
-  for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
-    BundledNet net(
-        soft_macro_id_map[tree_->maps.id_to_cluster[cluster1]->getName()],
-        soft_macro_id_map[tree_->maps.id_to_cluster[cluster2]->getName()],
-        tree_->virtual_weight);
-    nets.push_back(net);
-  }
-
-  // convert the connections between clusters to SoftMacros
-  for (auto& cluster : parent->getChildren()) {
-    const int src_id = cluster->getId();
-    const std::string src_name = cluster->getName();
-    for (auto& [cluster_id, weight] : cluster->getConnectionsMap()) {
-      debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 3,
-                 " Cluster connection: {} {} {} ",
-                 cluster->getName(),
-                 tree_->maps.id_to_cluster[cluster_id]->getName(),
-                 weight);
-      const std::string name = tree_->maps.id_to_cluster[cluster_id]->getName();
-      if (src_id > cluster_id) {
-        BundledNet net(
-            soft_macro_id_map[src_name], soft_macro_id_map[name], weight);
-        nets.push_back(net);
-      }
-    }
-  }
-
-  // merge nets to reduce runtime
+  BundledNetList nets = buildBundledNets(parent, soft_macro_id_map);
   mergeNets(nets);
 
   std::string file_name_prefix
@@ -2113,9 +2078,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   clustering_engine_->rebuildConnections();
 
   createFixedTerminals(outline, macro_clusters, cluster_to_macro, sa_macros);
-
-  std::vector<BundledNet> nets
-      = computeBundledNets(macro_clusters, cluster_to_macro);
+  BundledNetList nets = buildBundledNets(macro_clusters, cluster_to_macro);
 
   if (graphics_) {
     graphics_->setBundledNets(nets);
@@ -2375,19 +2338,55 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
   }
 }
 
-std::vector<BundledNet> HierRTLMP::computeBundledNets(
-    const UniqueClusterVector& macro_clusters,
-    const std::map<int, int>& cluster_to_macro)
+BundledNetList HierRTLMP::buildBundledNets(
+    Cluster* parent,
+    const SoftMacroNameToIdMap& soft_macro_id_map) const
+{
+  BundledNetList nets;
+  const float virtual_connections_weight = 10.0f;
+
+  for (const auto& [a_id, b_id] : parent->getVirtualConnections()) {
+    Cluster* a = tree_->maps.id_to_cluster.at(a_id);
+    Cluster* b = tree_->maps.id_to_cluster.at(b_id);
+    const int macro_a_id = soft_macro_id_map.at(a->getName());
+    const int macro_b_id = soft_macro_id_map.at(b->getName());
+
+    nets.emplace_back(macro_a_id, macro_b_id, virtual_connections_weight);
+  }
+
+  for (const auto& child : parent->getChildren()) {
+    const int source_macro_id = soft_macro_id_map.at(child->getName());
+    const ConnectionsMap& connections_map = child->getConnectionsMap();
+
+    for (const auto& [cluster_id, connection_weight] : connections_map) {
+      Cluster* target_cluster = tree_->maps.id_to_cluster.at(cluster_id);
+      const int target_macro_id
+          = soft_macro_id_map.at(target_cluster->getName());
+
+      // As connections are undirected and therefore exist in both directions,
+      // this check prevents connections from being taken twice into account.
+      if (child->getId() > target_cluster->getId()) {
+        nets.emplace_back(source_macro_id, target_macro_id, connection_weight);
+      }
+    }
+  }
+
+  return nets;
+}
+
+BundledNetList HierRTLMP::buildBundledNets(
+    const UniqueClusterVector& clusters,
+    const ClusterToMacroMap& cluster_to_macro) const
 {
   std::vector<BundledNet> nets;
 
-  for (auto& macro_cluster : macro_clusters) {
-    const int src_id = macro_cluster->getId();
+  for (const auto& cluster : clusters) {
+    const int source_macro_id = cluster_to_macro.at(cluster->getId());
+    const ConnectionsMap& connections_map = cluster->getConnectionsMap();
 
-    for (auto [cluster_id, weight] : macro_cluster->getConnectionsMap()) {
-      BundledNet net(
-          cluster_to_macro.at(src_id), cluster_to_macro.at(cluster_id), weight);
-      nets.push_back(net);
+    for (const auto& [cluster_id, connection_weight] : connections_map) {
+      const int target_macro_id = cluster_to_macro.at(cluster_id);
+      nets.emplace_back(source_macro_id, target_macro_id, connection_weight);
     }
   }
 
