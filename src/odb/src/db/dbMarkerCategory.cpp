@@ -482,8 +482,7 @@ std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbChip* chip,
     logger->error(utl::ODB, 31, "Unable to open marker report: {}", path);
   }
 
-  std::set<dbMarkerCategory*> categories
-      = fromJSON(chip, path.c_str(), report);
+  std::set<dbMarkerCategory*> categories = fromJSON(chip, path.c_str(), report);
 
   report.close();
 

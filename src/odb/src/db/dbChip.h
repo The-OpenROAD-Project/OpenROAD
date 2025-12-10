@@ -22,6 +22,7 @@ class _dbDatabase;
 class dbPropertyItr;
 class _dbNameCache;
 class dbBlockItr;
+class dbChipCallBackObj;
 class _dbProperty;
 class _dbChipRegion;
 class _dbMarkerCategory;
@@ -30,9 +31,6 @@ class _dbChipInst;
 class _dbChipConn;
 class _dbChipNet;
 class _dbTech;
-// User Code Begin Classes
-class dbChipCallBackObj;
-// User Code End Classes
 
 class _dbChip : public _dbObject
 {

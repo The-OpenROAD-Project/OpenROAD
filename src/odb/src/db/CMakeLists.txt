@@ -61,6 +61,7 @@ add_library(db
     dbJournal.cpp 
     dbJournalLog.cpp 
     dbBlockCallBackObj.cpp 
+    dbChipCallBackObj.cpp 
     dbRegion.cpp 
     dbRegionInstItr.cpp 
     dbExtControl.cpp 
@@ -90,7 +91,6 @@ add_library(db
     dbChip.cpp
     dbChipBump.cpp
     dbChipBumpInst.cpp
-    dbChipCallBackObj.cpp 
     dbChipConn.cpp
     dbChipInst.cpp
     dbChipNet.cpp

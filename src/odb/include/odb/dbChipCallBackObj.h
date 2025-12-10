@@ -3,10 +3,6 @@
 
 #pragma once
 
-#include <list>
-
-#include "odb/odb.h"
-
 namespace odb {
 
 class dbChip;
