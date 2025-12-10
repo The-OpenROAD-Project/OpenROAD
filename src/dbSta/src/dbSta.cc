@@ -771,6 +771,10 @@ void dbSta::checkSanityDrvrVertexEdges(const odb::dbObject* term) const
 
 void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
 {
+  if (db_network_->isDriver(pin) == false) {
+    return;
+  }
+
   sta::Graph* graph = this->graph();
   sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
 
@@ -788,6 +792,15 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
   while (edge_iter.hasNext()) {
     sta::Edge* edge = edge_iter.next();
     sta::Vertex* to_vertex = edge->to(graph);
+
+    // jk: dbg
+    debugPrint(logger_,
+               utl::RSZ,
+               "insert_buffer_check_sanity",
+               10,
+               "    Edge from {} to {}",
+               drvr_vertex->to_string(this).c_str(),
+               to_vertex->to_string(this).c_str());
 
     if (visited_to_vertices.find(to_vertex) != visited_to_vertices.end()) {
       logger_->error(utl::STA,
@@ -851,10 +864,10 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
   }
 
   if (has_inconsistency) {
-    logger_->warn(utl::STA,
-                  2064,
-                  "Inconsistencies found in driver vertex edges for pin {}.",
-                  db_network_->pathName(pin));
+    logger_->error(utl::STA,
+                   2064,
+                   "Inconsistencies found in driver vertex edges for pin {}.",
+                   db_network_->pathName(pin));
   }
 }
 
