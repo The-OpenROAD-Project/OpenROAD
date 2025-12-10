@@ -261,7 +261,7 @@ def define_pdn_grid_real(
             power_cell,
             power_control,
             power_control_network,
-            connect_to_pad_layers
+            connect_to_pad_layers,
         )
 
 
