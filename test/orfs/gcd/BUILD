@@ -90,3 +90,12 @@ filegroup(
     module_top = "gcd",
     tags = ["manual"],
 ) for i in range(len(STAGES) - 1)]
+
+test_suite(
+    name = "eqy_tests",
+    tags = ["manual"],
+    tests = [
+        "eqy_{stage}_test".format(stage = STAGES[i + 1])
+        for i in range(len(STAGES) - 1)
+    ],
+)
