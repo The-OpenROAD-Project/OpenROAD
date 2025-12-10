@@ -343,7 +343,7 @@ std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
       all_shapes.begin(), all_shapes.end(), [](const auto& l, const auto& r) {
         auto* l_layer = l->getLayer();
         int l_level = l_layer->getNumber();
-        auto* r_layer = l->getLayer();
+        auto* r_layer = r->getLayer();
         int r_level = r_layer->getNumber();
 
         return std::tie(l_level, l->getRect())

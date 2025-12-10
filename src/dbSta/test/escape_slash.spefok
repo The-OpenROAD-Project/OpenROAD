@@ -16,143 +16,145 @@
 *PORTS
 clk I
 
-*D_NET clk 2.48096
+*D_NET clk 1.26511
 *CONN
 *P clk I
 *I clkbuf_0_clk:A I *D CLKBUF_X3
 *CAP
-1 clk:0 1.24048
-2 clk:1 1.24048
+1 clk:0 0.632554
+2 clk:1 0.632554
 *RES
-1 clk:0 clk:1 0.0510605
-2 clkbuf_0_clk:A clk:2 1e-06
+1 clk:0 clk:0 1e-06
+2 clk clk:2 1e-06
 3 clk:2 clk:3 1e-06
 4 clk:3 clk:4 1e-06
-5 clk:4 clk:5 1e-06
-6 clk:5 clk:0 1e-06
-7 clk clk:7 1e-06
-8 clk:7 clk:8 1e-06
-9 clk:8 clk:9 1e-06
-10 clk:9 clk:1 1e-06
-11 clk:1 clk:1 1e-06
+5 clk:4 clk:0 1e-06
+6 clk:1 clk:0 0.0260372
+7 clkbuf_0_clk:A clk:6 1e-06
+8 clk:6 clk:7 1e-06
+9 clk:7 clk:8 1e-06
+10 clk:8 clk:9 1e-06
+11 clk:9 clk:1 1e-06
 *END
 
-*D_NET gclk1 1.35013
+*D_NET gclk1 0.174422
 *CONN
 *I gclk1:GCK O *D CLKGATE_X1
 *I clkbuf_0_gclk1:A I *D CLKBUF_X3
 *CAP
-1 gclk1:0 0.675065
-2 gclk1:1 0.675065
+1 gclk1:0 0.0872111
+2 gclk1:1 0.0872111
 *RES
-1 gclk1:0 gclk1:0 1e-06
-2 gclk1:GCK gclk1:2 1e-06
+1 gclk1:0 gclk1:1 0.00358978
+2 clkbuf_0_gclk1:A gclk1:2 1e-06
 3 gclk1:2 gclk1:3 1e-06
 4 gclk1:3 gclk1:4 1e-06
 5 gclk1:4 gclk1:5 1e-06
 6 gclk1:5 gclk1:0 1e-06
-7 gclk1:1 gclk1:0 0.027787
-8 clkbuf_0_gclk1:A gclk1:7 1e-06
-9 gclk1:7 gclk1:8 1e-06
-10 gclk1:8 gclk1:9 1e-06
-11 gclk1:9 gclk1:10 1e-06
-12 gclk1:10 gclk1:1 1e-06
+7 gclk1:GCK gclk1:7 1e-06
+8 gclk1:7 gclk1:8 1e-06
+9 gclk1:8 gclk1:9 1e-06
+10 gclk1:9 gclk1:10 1e-06
+11 gclk1:10 gclk1:1 1e-06
+12 gclk1:1 gclk1:1 1e-06
 *END
 
-*D_NET gclk3 2.14014
+*D_NET gclk3 0.16457
 *CONN
 *I gclk3:GCK O *D CLKGATE_X1
 *I clkbuf_0_gclk3:A I *D CLKBUF_X3
 *CAP
-1 gclk3:0 1.07007
-2 gclk3:1 1.07007
+1 gclk3:0 0.0822849
+2 gclk3:1 0.0822849
 *RES
-1 gclk3:0 gclk3:0 1e-06
-2 gclk3:GCK gclk3:2 1e-06
+1 gclk3:0 gclk3:1 0.00338701
+2 clkbuf_0_gclk3:A gclk3:2 1e-06
 3 gclk3:2 gclk3:3 1e-06
 4 gclk3:3 gclk3:4 1e-06
 5 gclk3:4 gclk3:5 1e-06
 6 gclk3:5 gclk3:0 1e-06
-7 gclk3:1 gclk3:0 0.0440461
-8 clkbuf_0_gclk3:A gclk3:7 1e-06
-9 gclk3:7 gclk3:8 1e-06
-10 gclk3:8 gclk3:9 1e-06
-11 gclk3:9 gclk3:10 1e-06
-12 gclk3:10 gclk3:1 1e-06
+7 gclk3:GCK gclk3:7 1e-06
+8 gclk3:7 gclk3:8 1e-06
+9 gclk3:8 gclk3:9 1e-06
+10 gclk3:9 gclk3:10 1e-06
+11 gclk3:10 gclk3:1 1e-06
+12 gclk3:1 gclk3:1 1e-06
 *END
 
-*D_NET gclk4 1.19268
+*D_NET gclk4 1.02767
 *CONN
 *I gclk4:GCK O *D CLKGATE_X1
 *I clkbuf_0_gclk4:A I *D CLKBUF_X3
-*I delaybuf_0_core:A I *D CLKBUF_X3
+*I delaybuf_1_core:A I *D CLKBUF_X3
 *CAP
-1 gclk4:0 0.397102
-2 gclk4:1 0.596338
-3 gclk4:2 0.199235
+1 gclk4:0 0.0479479
+2 gclk4:1 0.0193762
+3 gclk4:2 0.44651
+4 gclk4:3 0.513834
 *RES
-1 gclk4:0 gclk4:0 1e-06
-2 gclk4:GCK gclk4:3 1e-06
-3 gclk4:3 gclk4:4 1e-06
-4 gclk4:4 gclk4:5 1e-06
-5 gclk4:5 gclk4:6 1e-06
-6 gclk4:6 gclk4:0 1e-06
-7 gclk4:1 gclk4:0 0.0163455
-8 delaybuf_0_core:A gclk4:8 1e-06
-9 gclk4:8 gclk4:9 1e-06
-10 gclk4:9 gclk4:10 1e-06
-11 gclk4:10 gclk4:11 1e-06
-12 gclk4:11 gclk4:1 1e-06
-13 gclk4:2 gclk4:1 0.00820092
-14 clkbuf_0_gclk4:A gclk4:13 1e-06
-15 gclk4:13 gclk4:14 1e-06
-16 gclk4:14 gclk4:15 1e-06
-17 gclk4:15 gclk4:16 1e-06
-18 gclk4:16 gclk4:2 1e-06
+1 gclk4:0 gclk4:3 0.00197363
+2 delaybuf_1_core:A gclk4:4 1e-06
+3 gclk4:4 gclk4:5 1e-06
+4 gclk4:5 gclk4:6 1e-06
+5 gclk4:6 gclk4:7 1e-06
+6 gclk4:7 gclk4:0 1e-06
+7 gclk4:1 gclk4:1 1e-06
+8 gclk4:GCK gclk4:9 1e-06
+9 gclk4:9 gclk4:10 1e-06
+10 gclk4:10 gclk4:11 1e-06
+11 gclk4:11 gclk4:12 1e-06
+12 gclk4:12 gclk4:1 1e-06
+13 gclk4:2 gclk4:3 0.0183792
+14 clkbuf_0_gclk4:A gclk4:14 1e-06
+15 gclk4:14 gclk4:15 1e-06
+16 gclk4:15 gclk4:16 1e-06
+17 gclk4:16 gclk4:17 1e-06
+18 gclk4:17 gclk4:2 1e-06
+19 gclk4:3 gclk4:1 0.000797562
 *END
 
-*D_NET hi_gclk2 1.69277
+*D_NET hi_gclk2 0.16457
 *CONN
 *I hi_inst\/gclk2_inst:GCK O *D CLKGATE_X1
 *I clkbuf_0_hi_gclk2:A I *D CLKBUF_X3
 *CAP
-1 hi_gclk2:0 0.846385
-2 hi_gclk2:1 0.846385
+1 hi_gclk2:0 0.0822849
+2 hi_gclk2:1 0.0822849
 *RES
-1 hi_gclk2:0 hi_gclk2:0 1e-06
-2 hi_inst\/gclk2_inst:GCK hi_gclk2:2 1e-06
+1 hi_gclk2:0 hi_gclk2:1 0.00338701
+2 clkbuf_0_hi_gclk2:A hi_gclk2:2 1e-06
 3 hi_gclk2:2 hi_gclk2:3 1e-06
 4 hi_gclk2:3 hi_gclk2:4 1e-06
 5 hi_gclk2:4 hi_gclk2:5 1e-06
 6 hi_gclk2:5 hi_gclk2:0 1e-06
-7 hi_gclk2:1 hi_gclk2:0 0.0348389
-8 clkbuf_0_hi_gclk2:A hi_gclk2:7 1e-06
-9 hi_gclk2:7 hi_gclk2:8 1e-06
-10 hi_gclk2:8 hi_gclk2:9 1e-06
-11 hi_gclk2:9 hi_gclk2:10 1e-06
-12 hi_gclk2:10 hi_gclk2:1 1e-06
+7 hi_inst\/gclk2_inst:GCK hi_gclk2:7 1e-06
+8 hi_gclk2:7 hi_gclk2:8 1e-06
+9 hi_gclk2:8 hi_gclk2:9 1e-06
+10 hi_gclk2:9 hi_gclk2:10 1e-06
+11 hi_gclk2:10 hi_gclk2:1 1e-06
+12 hi_gclk2:1 hi_gclk2:1 1e-06
 *END
 
-*D_NET hi_gclk5 1.81574
+*D_NET hi_gclk5 0.336803
 *CONN
 *I hi_gclk5:GCK O *D CLKGATE_X1
 *I clkbuf_0_hi_gclk5:A I *D CLKBUF_X3
 *CAP
-1 hi_gclk5:0 0.907871
-2 hi_gclk5:1 0.907871
+1 hi_gclk5:0 0.168401
+2 hi_gclk5:1 0.168401
 *RES
-1 hi_gclk5:0 hi_gclk5:0 1e-06
-2 hi_gclk5:GCK hi_gclk5:2 1e-06
+1 hi_gclk5:0 hi_gclk5:1 0.00693173
+2 clkbuf_0_hi_gclk5:A hi_gclk5:2 1e-06
 3 hi_gclk5:2 hi_gclk5:3 1e-06
 4 hi_gclk5:3 hi_gclk5:4 1e-06
 5 hi_gclk5:4 hi_gclk5:5 1e-06
 6 hi_gclk5:5 hi_gclk5:0 1e-06
-7 hi_gclk5:1 hi_gclk5:0 0.0373698
-8 clkbuf_0_hi_gclk5:A hi_gclk5:7 1e-06
-9 hi_gclk5:7 hi_gclk5:8 1e-06
-10 hi_gclk5:8 hi_gclk5:9 1e-06
-11 hi_gclk5:9 hi_gclk5:10 1e-06
-12 hi_gclk5:10 hi_gclk5:1 1e-06
+7 hi_gclk5:GCK hi_gclk5:7 1e-06
+8 hi_gclk5:7 hi_gclk5:8 1e-06
+9 hi_gclk5:8 hi_gclk5:9 1e-06
+10 hi_gclk5:9 hi_gclk5:10 1e-06
+11 hi_gclk5:10 hi_gclk5:1 1e-06
+12 hi_gclk5:1 hi_gclk5:1 1e-06
 *END
 
 *D_NET gclk4_regs 0.038132
@@ -177,47 +179,49 @@ clk I
 12 gclk4_regs:1 gclk4_regs:1 1e-06
 *END
 
-*D_NET clknet_0_clk 0.692398
+*D_NET clknet_0_clk 0.763772
 *CONN
 *I clkbuf_0_clk:Z O *D CLKBUF_X3
 *I clkbuf_1_0__f_clk:A I *D CLKBUF_X3
-*I delaybuf_4_core:A I *D CLKBUF_X3
+*I delaybuf_5_core:A I *D CLKBUF_X3
 *CAP
-1 clknet_0_clk:0 0.274496
-2 clknet_0_clk:1 0.346199
-3 clknet_0_clk:2 0.0717028
+1 clknet_0_clk:0 0.260082
+2 clknet_0_clk:1 0.10739
+3 clknet_0_clk:2 0.0144135
+4 clknet_0_clk:3 0.381886
 *RES
-1 clknet_0_clk:0 clknet_0_clk:1 0.0112988
-2 clkbuf_1_0__f_clk:A clknet_0_clk:3 1e-06
-3 clknet_0_clk:3 clknet_0_clk:4 1e-06
-4 clknet_0_clk:4 clknet_0_clk:5 1e-06
-5 clknet_0_clk:5 clknet_0_clk:6 1e-06
-6 clknet_0_clk:6 clknet_0_clk:0 1e-06
-7 clkbuf_0_clk:Z clknet_0_clk:8 1e-06
-8 clknet_0_clk:8 clknet_0_clk:9 1e-06
+1 clknet_0_clk:0 clknet_0_clk:3 0.0107055
+2 clkbuf_1_0__f_clk:A clknet_0_clk:4 1e-06
+3 clknet_0_clk:4 clknet_0_clk:5 1e-06
+4 clknet_0_clk:5 clknet_0_clk:6 1e-06
+5 clknet_0_clk:6 clknet_0_clk:7 1e-06
+6 clknet_0_clk:7 clknet_0_clk:0 1e-06
+7 clknet_0_clk:1 clknet_0_clk:3 0.00442039
+8 delaybuf_5_core:A clknet_0_clk:9 1e-06
 9 clknet_0_clk:9 clknet_0_clk:10 1e-06
 10 clknet_0_clk:10 clknet_0_clk:11 1e-06
-11 clknet_0_clk:11 clknet_0_clk:1 1e-06
-12 clknet_0_clk:1 clknet_0_clk:1 1e-06
-13 clknet_0_clk:2 clknet_0_clk:1 0.00295143
-14 delaybuf_4_core:A clknet_0_clk:13 1e-06
-15 clknet_0_clk:13 clknet_0_clk:14 1e-06
-16 clknet_0_clk:14 clknet_0_clk:15 1e-06
-17 clknet_0_clk:15 clknet_0_clk:16 1e-06
-18 clknet_0_clk:16 clknet_0_clk:2 1e-06
+11 clknet_0_clk:11 clknet_0_clk:12 1e-06
+12 clknet_0_clk:12 clknet_0_clk:1 1e-06
+13 clknet_0_clk:2 clknet_0_clk:2 1e-06
+14 clkbuf_0_clk:Z clknet_0_clk:14 1e-06
+15 clknet_0_clk:14 clknet_0_clk:15 1e-06
+16 clknet_0_clk:15 clknet_0_clk:16 1e-06
+17 clknet_0_clk:16 clknet_0_clk:17 1e-06
+18 clknet_0_clk:17 clknet_0_clk:2 1e-06
+19 clknet_0_clk:3 clknet_0_clk:2 0.00059329
 *END
 
-*D_NET clknet_1_0__leaf_clk 0.819565
+*D_NET clknet_1_0__leaf_clk 0.447367
 *CONN
 *I gclk4:CK I *D CLKGATE_X1
 *I clkbuf_1_0__f_clk:Z O *D CLKBUF_X3
 *I delaybuf_2_core:A I *D CLKBUF_X3
 *CAP
-1 clknet_1_0__leaf_clk:0 0.316168
-2 clknet_1_0__leaf_clk:1 0.409783
-3 clknet_1_0__leaf_clk:2 0.0936151
+1 clknet_1_0__leaf_clk:0 0.130196
+2 clknet_1_0__leaf_clk:1 0.223684
+3 clknet_1_0__leaf_clk:2 0.0934874
 *RES
-1 clknet_1_0__leaf_clk:0 clknet_1_0__leaf_clk:1 0.0130141
+1 clknet_1_0__leaf_clk:0 clknet_1_0__leaf_clk:1 0.00535914
 2 gclk4:CK clknet_1_0__leaf_clk:3 1e-06
 3 clknet_1_0__leaf_clk:3 clknet_1_0__leaf_clk:4 1e-06
 4 clknet_1_0__leaf_clk:4 clknet_1_0__leaf_clk:5 1e-06
@@ -228,7 +232,7 @@ clk I
 9 clknet_1_0__leaf_clk:9 clknet_1_0__leaf_clk:10 1e-06
 10 clknet_1_0__leaf_clk:10 clknet_1_0__leaf_clk:11 1e-06
 11 clknet_1_0__leaf_clk:11 clknet_1_0__leaf_clk:1 1e-06
-12 clknet_1_0__leaf_clk:1 clknet_1_0__leaf_clk:2 0.00385338
+12 clknet_1_0__leaf_clk:1 clknet_1_0__leaf_clk:2 0.00384812
 13 clkbuf_1_0__f_clk:Z clknet_1_0__leaf_clk:13 1e-06
 14 clknet_1_0__leaf_clk:13 clknet_1_0__leaf_clk:14 1e-06
 15 clknet_1_0__leaf_clk:14 clknet_1_0__leaf_clk:15 1e-06
@@ -237,34 +241,36 @@ clk I
 18 clknet_1_0__leaf_clk:2 clknet_1_0__leaf_clk:2 1e-06
 *END
 
-*D_NET clknet_1_1__leaf_clk 1.8318
+*D_NET clknet_1_1__leaf_clk 0.505861
 *CONN
-*I gclk1:CK I *D CLKGATE_X1
-*I hi_inst\/gclk2_inst:CK I *D CLKGATE_X1
+*I hi_gclk5:CK I *D CLKGATE_X1
 *I clkbuf_1_1__f_clk:Z O *D CLKBUF_X3
+*I delaybuf_0_core:A I *D CLKBUF_X3
 *CAP
-1 clknet_1_1__leaf_clk:0 0.508306
-2 clknet_1_1__leaf_clk:1 0.915899
-3 clknet_1_1__leaf_clk:2 0.407593
+1 clknet_1_1__leaf_clk:0 0.0314361
+2 clknet_1_1__leaf_clk:1 0.103358
+3 clknet_1_1__leaf_clk:2 0.118136
+4 clknet_1_1__leaf_clk:3 0.25293
 *RES
-1 clknet_1_1__leaf_clk:0 clknet_1_1__leaf_clk:1 0.0209229
-2 hi_inst\/gclk2_inst:CK clknet_1_1__leaf_clk:3 1e-06
-3 clknet_1_1__leaf_clk:3 clknet_1_1__leaf_clk:4 1e-06
-4 clknet_1_1__leaf_clk:4 clknet_1_1__leaf_clk:5 1e-06
-5 clknet_1_1__leaf_clk:5 clknet_1_1__leaf_clk:6 1e-06
-6 clknet_1_1__leaf_clk:6 clknet_1_1__leaf_clk:0 1e-06
-7 clkbuf_1_1__f_clk:Z clknet_1_1__leaf_clk:8 1e-06
-8 clknet_1_1__leaf_clk:8 clknet_1_1__leaf_clk:9 1e-06
+1 clknet_1_1__leaf_clk:0 clknet_1_1__leaf_clk:3 0.00129397
+2 delaybuf_0_core:A clknet_1_1__leaf_clk:4 1e-06
+3 clknet_1_1__leaf_clk:4 clknet_1_1__leaf_clk:5 1e-06
+4 clknet_1_1__leaf_clk:5 clknet_1_1__leaf_clk:6 1e-06
+5 clknet_1_1__leaf_clk:6 clknet_1_1__leaf_clk:7 1e-06
+6 clknet_1_1__leaf_clk:7 clknet_1_1__leaf_clk:0 1e-06
+7 clknet_1_1__leaf_clk:1 clknet_1_1__leaf_clk:1 1e-06
+8 clkbuf_1_1__f_clk:Z clknet_1_1__leaf_clk:9 1e-06
 9 clknet_1_1__leaf_clk:9 clknet_1_1__leaf_clk:10 1e-06
 10 clknet_1_1__leaf_clk:10 clknet_1_1__leaf_clk:11 1e-06
-11 clknet_1_1__leaf_clk:11 clknet_1_1__leaf_clk:1 1e-06
-12 clknet_1_1__leaf_clk:1 clknet_1_1__leaf_clk:1 1e-06
-13 clknet_1_1__leaf_clk:2 clknet_1_1__leaf_clk:1 0.0167773
-14 gclk1:CK clknet_1_1__leaf_clk:13 1e-06
-15 clknet_1_1__leaf_clk:13 clknet_1_1__leaf_clk:14 1e-06
-16 clknet_1_1__leaf_clk:14 clknet_1_1__leaf_clk:15 1e-06
-17 clknet_1_1__leaf_clk:15 clknet_1_1__leaf_clk:16 1e-06
-18 clknet_1_1__leaf_clk:16 clknet_1_1__leaf_clk:2 1e-06
+11 clknet_1_1__leaf_clk:11 clknet_1_1__leaf_clk:12 1e-06
+12 clknet_1_1__leaf_clk:12 clknet_1_1__leaf_clk:1 1e-06
+13 clknet_1_1__leaf_clk:2 clknet_1_1__leaf_clk:3 0.00486272
+14 hi_gclk5:CK clknet_1_1__leaf_clk:14 1e-06
+15 clknet_1_1__leaf_clk:14 clknet_1_1__leaf_clk:15 1e-06
+16 clknet_1_1__leaf_clk:15 clknet_1_1__leaf_clk:16 1e-06
+17 clknet_1_1__leaf_clk:16 clknet_1_1__leaf_clk:17 1e-06
+18 clknet_1_1__leaf_clk:17 clknet_1_1__leaf_clk:2 1e-06
+19 clknet_1_1__leaf_clk:3 clknet_1_1__leaf_clk:1 0.00425442
 *END
 
 *D_NET clknet_0_hi_gclk2 3.60521
@@ -2625,59 +2631,59 @@ clk I
 31 clknet_2_3__leaf_gclk1:10 clknet_2_3__leaf_gclk1:3 0.00171731
 *END
 
-*D_NET delaynet_0_core 0.828505
+*D_NET delaynet_0_core 0.377197
 *CONN
+*I gclk1:CK I *D CLKGATE_X1
 *I delaybuf_0_core:Z O *D CLKBUF_X3
-*I delaybuf_1_core:A I *D CLKBUF_X3
 *CAP
-1 delaynet_0_core:0 0.414253
-2 delaynet_0_core:1 0.414253
+1 delaynet_0_core:0 0.188599
+2 delaynet_0_core:1 0.188599
 *RES
-1 delaynet_0_core:0 delaynet_0_core:0 1e-06
-2 delaybuf_0_core:Z delaynet_0_core:2 1e-06
+1 delaynet_0_core:0 delaynet_0_core:1 0.00776309
+2 gclk1:CK delaynet_0_core:2 1e-06
 3 delaynet_0_core:2 delaynet_0_core:3 1e-06
 4 delaynet_0_core:3 delaynet_0_core:4 1e-06
 5 delaynet_0_core:4 delaynet_0_core:5 1e-06
 6 delaynet_0_core:5 delaynet_0_core:0 1e-06
-7 delaynet_0_core:1 delaynet_0_core:0 0.0170515
-8 delaybuf_1_core:A delaynet_0_core:7 1e-06
-9 delaynet_0_core:7 delaynet_0_core:8 1e-06
-10 delaynet_0_core:8 delaynet_0_core:9 1e-06
-11 delaynet_0_core:9 delaynet_0_core:10 1e-06
-12 delaynet_0_core:10 delaynet_0_core:1 1e-06
+7 delaybuf_0_core:Z delaynet_0_core:7 1e-06
+8 delaynet_0_core:7 delaynet_0_core:8 1e-06
+9 delaynet_0_core:8 delaynet_0_core:9 1e-06
+10 delaynet_0_core:9 delaynet_0_core:10 1e-06
+11 delaynet_0_core:10 delaynet_0_core:1 1e-06
+12 delaynet_0_core:1 delaynet_0_core:1 1e-06
 *END
 
-*D_NET delaynet_1_core 0.864083
+*D_NET delaynet_1_core 0.145559
 *CONN
 *I clkbuf_regs_0_core:A I *D CLKBUF_X3
 *I delaybuf_1_core:Z O *D CLKBUF_X3
 *CAP
-1 delaynet_1_core:0 0.432042
-2 delaynet_1_core:1 0.432042
+1 delaynet_1_core:0 0.0727793
+2 delaynet_1_core:1 0.0727793
 *RES
-1 delaynet_1_core:0 delaynet_1_core:0 1e-06
-2 delaybuf_1_core:Z delaynet_1_core:2 1e-06
+1 delaynet_1_core:0 delaynet_1_core:1 0.00299574
+2 clkbuf_regs_0_core:A delaynet_1_core:2 1e-06
 3 delaynet_1_core:2 delaynet_1_core:3 1e-06
 4 delaynet_1_core:3 delaynet_1_core:4 1e-06
 5 delaynet_1_core:4 delaynet_1_core:5 1e-06
 6 delaynet_1_core:5 delaynet_1_core:0 1e-06
-7 delaynet_1_core:1 delaynet_1_core:0 0.0177837
-8 clkbuf_regs_0_core:A delaynet_1_core:7 1e-06
-9 delaynet_1_core:7 delaynet_1_core:8 1e-06
-10 delaynet_1_core:8 delaynet_1_core:9 1e-06
-11 delaynet_1_core:9 delaynet_1_core:10 1e-06
-12 delaynet_1_core:10 delaynet_1_core:1 1e-06
+7 delaybuf_1_core:Z delaynet_1_core:7 1e-06
+8 delaynet_1_core:7 delaynet_1_core:8 1e-06
+9 delaynet_1_core:8 delaynet_1_core:9 1e-06
+10 delaynet_1_core:9 delaynet_1_core:10 1e-06
+11 delaynet_1_core:10 delaynet_1_core:1 1e-06
+12 delaynet_1_core:1 delaynet_1_core:1 1e-06
 *END
 
-*D_NET delaynet_2_core 0.151725
+*D_NET delaynet_2_core 0.151397
 *CONN
 *I delaybuf_2_core:Z O *D CLKBUF_X3
 *I delaybuf_3_core:A I *D CLKBUF_X3
 *CAP
-1 delaynet_2_core:0 0.0758627
-2 delaynet_2_core:1 0.0758627
+1 delaynet_2_core:0 0.0756985
+2 delaynet_2_core:1 0.0756985
 *RES
-1 delaynet_2_core:0 delaynet_2_core:1 0.00312266
+1 delaynet_2_core:0 delaynet_2_core:1 0.0031159
 2 delaybuf_3_core:A delaynet_2_core:2 1e-06
 3 delaynet_2_core:2 delaynet_2_core:3 1e-06
 4 delaynet_2_core:3 delaynet_2_core:4 1e-06
@@ -2691,16 +2697,16 @@ clk I
 12 delaynet_2_core:1 delaynet_2_core:1 1e-06
 *END
 
-*D_NET delaynet_3_core 0.116075
+*D_NET delaynet_3_core 0.151361
 *CONN
-*I hi_gclk5:CK I *D CLKGATE_X1
 *I delaybuf_3_core:Z O *D CLKBUF_X3
+*I delaybuf_4_core:A I *D CLKBUF_X3
 *CAP
-1 delaynet_3_core:0 0.0580373
-2 delaynet_3_core:1 0.0580373
+1 delaynet_3_core:0 0.0756803
+2 delaynet_3_core:1 0.0756803
 *RES
-1 delaynet_3_core:0 delaynet_3_core:1 0.00238893
-2 hi_gclk5:CK delaynet_3_core:2 1e-06
+1 delaynet_3_core:0 delaynet_3_core:1 0.00311515
+2 delaybuf_4_core:A delaynet_3_core:2 1e-06
 3 delaynet_3_core:2 delaynet_3_core:3 1e-06
 4 delaynet_3_core:3 delaynet_3_core:4 1e-06
 5 delaynet_3_core:4 delaynet_3_core:5 1e-06
@@ -2713,69 +2719,69 @@ clk I
 12 delaynet_3_core:1 delaynet_3_core:1 1e-06
 *END
 
-*D_NET delaynet_4_core 0.0899478
+*D_NET delaynet_4_core 0.115819
 *CONN
+*I hi_inst\/gclk2_inst:CK I *D CLKGATE_X1
 *I delaybuf_4_core:Z O *D CLKBUF_X3
-*I delaybuf_5_core:A I *D CLKBUF_X3
 *CAP
-1 delaynet_4_core:0 0.0449739
-2 delaynet_4_core:1 0.0449739
+1 delaynet_4_core:0 0.0579096
+2 delaynet_4_core:1 0.0579096
 *RES
-1 delaynet_4_core:0 delaynet_4_core:0 1e-06
-2 delaybuf_4_core:Z delaynet_4_core:2 1e-06
+1 delaynet_4_core:0 delaynet_4_core:1 0.00238367
+2 hi_inst\/gclk2_inst:CK delaynet_4_core:2 1e-06
 3 delaynet_4_core:2 delaynet_4_core:3 1e-06
 4 delaynet_4_core:3 delaynet_4_core:4 1e-06
 5 delaynet_4_core:4 delaynet_4_core:5 1e-06
 6 delaynet_4_core:5 delaynet_4_core:0 1e-06
-7 delaynet_4_core:1 delaynet_4_core:0 0.00185122
-8 delaybuf_5_core:A delaynet_4_core:7 1e-06
-9 delaynet_4_core:7 delaynet_4_core:8 1e-06
-10 delaynet_4_core:8 delaynet_4_core:9 1e-06
-11 delaynet_4_core:9 delaynet_4_core:10 1e-06
-12 delaynet_4_core:10 delaynet_4_core:1 1e-06
+7 delaybuf_4_core:Z delaynet_4_core:7 1e-06
+8 delaynet_4_core:7 delaynet_4_core:8 1e-06
+9 delaynet_4_core:8 delaynet_4_core:9 1e-06
+10 delaynet_4_core:9 delaynet_4_core:10 1e-06
+11 delaynet_4_core:10 delaynet_4_core:1 1e-06
+12 delaynet_4_core:1 delaynet_4_core:1 1e-06
 *END
 
-*D_NET delaynet_5_core 0.0899478
+*D_NET delaynet_5_core 0.208066
 *CONN
 *I delaybuf_5_core:Z O *D CLKBUF_X3
 *I delaybuf_6_core:A I *D CLKBUF_X3
 *CAP
-1 delaynet_5_core:0 0.0449739
-2 delaynet_5_core:1 0.0449739
+1 delaynet_5_core:0 0.104033
+2 delaynet_5_core:1 0.104033
 *RES
-1 delaynet_5_core:0 delaynet_5_core:0 1e-06
-2 delaybuf_5_core:Z delaynet_5_core:2 1e-06
+1 delaynet_5_core:0 delaynet_5_core:1 0.0042822
+2 delaybuf_6_core:A delaynet_5_core:2 1e-06
 3 delaynet_5_core:2 delaynet_5_core:3 1e-06
 4 delaynet_5_core:3 delaynet_5_core:4 1e-06
 5 delaynet_5_core:4 delaynet_5_core:5 1e-06
 6 delaynet_5_core:5 delaynet_5_core:0 1e-06
-7 delaynet_5_core:1 delaynet_5_core:0 0.00185122
-8 delaybuf_6_core:A delaynet_5_core:7 1e-06
-9 delaynet_5_core:7 delaynet_5_core:8 1e-06
-10 delaynet_5_core:8 delaynet_5_core:9 1e-06
-11 delaynet_5_core:9 delaynet_5_core:10 1e-06
-12 delaynet_5_core:10 delaynet_5_core:1 1e-06
+7 delaybuf_5_core:Z delaynet_5_core:7 1e-06
+8 delaynet_5_core:7 delaynet_5_core:8 1e-06
+9 delaynet_5_core:8 delaynet_5_core:9 1e-06
+10 delaynet_5_core:9 delaynet_5_core:10 1e-06
+11 delaynet_5_core:10 delaynet_5_core:1 1e-06
+12 delaynet_5_core:1 delaynet_5_core:1 1e-06
 *END
 
-*D_NET delaynet_6_core 0.125526
+*D_NET delaynet_6_core 0.172488
 *CONN
 *I clkbuf_1_1__f_clk:A I *D CLKBUF_X3
 *I delaybuf_6_core:Z O *D CLKBUF_X3
 *CAP
-1 delaynet_6_core:0 0.0627628
-2 delaynet_6_core:1 0.0627628
+1 delaynet_6_core:0 0.0862441
+2 delaynet_6_core:1 0.0862441
 *RES
-1 delaynet_6_core:0 delaynet_6_core:0 1e-06
-2 delaybuf_6_core:Z delaynet_6_core:2 1e-06
+1 delaynet_6_core:0 delaynet_6_core:1 0.00354998
+2 clkbuf_1_1__f_clk:A delaynet_6_core:2 1e-06
 3 delaynet_6_core:2 delaynet_6_core:3 1e-06
 4 delaynet_6_core:3 delaynet_6_core:4 1e-06
 5 delaynet_6_core:4 delaynet_6_core:5 1e-06
 6 delaynet_6_core:5 delaynet_6_core:0 1e-06
-7 delaynet_6_core:1 delaynet_6_core:0 0.00258344
-8 clkbuf_1_1__f_clk:A delaynet_6_core:7 1e-06
-9 delaynet_6_core:7 delaynet_6_core:8 1e-06
-10 delaynet_6_core:8 delaynet_6_core:9 1e-06
-11 delaynet_6_core:9 delaynet_6_core:10 1e-06
-12 delaynet_6_core:10 delaynet_6_core:1 1e-06
+7 delaybuf_6_core:Z delaynet_6_core:7 1e-06
+8 delaynet_6_core:7 delaynet_6_core:8 1e-06
+9 delaynet_6_core:8 delaynet_6_core:9 1e-06
+10 delaynet_6_core:9 delaynet_6_core:10 1e-06
+11 delaynet_6_core:10 delaynet_6_core:1 1e-06
+12 delaynet_6_core:1 delaynet_6_core:1 1e-06
 *END
 

@@ -438,6 +438,16 @@ void EstimateParasitics::updateParasitics(bool save_guides)
       break;
   }
 
+  // Router calls into the timer. This means the timer could be caching
+  // delays calculated in the interim period before we had put new parasitic
+  // annotations on the nets affected by a network edit. We need to explicitly
+  // invalidate those delays. Do it in bulk instead of interleaving with each
+  // groute call.
+  if (parasitics_src_ != ParasiticsSrc::none) {
+    for (const Net* net : parasitics_invalid_) {
+      sta_->delaysInvalidFromFanin(net);
+    }
+  }
   parasitics_invalid_.clear();
 }
 

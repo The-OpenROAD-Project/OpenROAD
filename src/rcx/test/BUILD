@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "generate_pattern",
     "names",
     "net_name_consistency",
+    "coordinates",
 ]
 
 # Disabled in CMakeLists.txt

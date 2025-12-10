@@ -124,6 +124,10 @@ void io::Parser::setTracks(odb::dbBlock* block)
 
 frInst* io::Parser::setInst(odb::dbInst* db_inst)
 {
+  auto existing_inst = getBlock()->findInst(db_inst);
+  if (existing_inst != nullptr) {
+    return existing_inst;
+  }
   frMaster* master
       = getDesign()->name2master_.at(db_inst->getMaster()->getName());
   auto inst = std::make_unique<frInst>(db_inst->getName(), master, db_inst);
@@ -958,9 +962,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
               == getTech()->name2via_.end()) {
             logger_->error(DRT, 109, "Unsupported via in db.");
           } else {
-            int x, y;
-            box->getViaXY(x, y);
-            odb::Point p(x, y);
+            const odb::Point p = box->getViaXY();
             auto viaDef = getTech()->name2via_[viaName];
             auto tmpP = std::make_unique<frVia>(viaDef);
             tmpP->setOrigin(p);
@@ -981,6 +983,10 @@ void io::Parser::setNets(odb::dbBlock* block)
 
 frNet* io::Parser::addNet(odb::dbNet* db_net)
 {
+  auto existing_net = getBlock()->findNet(db_net->getName());
+  if (existing_net != nullptr) {
+    return existing_net;
+  }
   bool is_special = db_net->isSpecial();
   bool has_jumpers = db_net->hasJumpers();
   bool is_abuted = db_net->isConnectedByAbutment();
@@ -1236,6 +1242,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
             std::unique_ptr<frAccessPoint> ap
                 = std::make_unique<frAccessPoint>();
             updatefrAccessPoint(db_ap, ap.get(), getTech());
+            ap->setDbAccessPoint(db_ap);
             ap_map[db_ap] = ap.get();
             pa->addAccessPoint(std::move(ap));
           }
@@ -2666,11 +2673,10 @@ void io::Parser::setMasters(odb::dbDatabase* db)
                               master->getName(),
                               _term->getName());
               }
-              int x, y;
-              box->getViaXY(x, y);
+              const odb::Point pt = box->getViaXY();
               auto viaDef = getTech()->name2via_[box->getTechVia()->getName()];
               auto tmpP = std::make_unique<frVia>(viaDef);
-              tmpP->setOrigin({x, y});
+              tmpP->setOrigin(pt);
               // layer1 rect
               addPinFig(
                   tmpP->getLayer1BBox(), viaDef->getLayer1Num(), pinIn.get());
@@ -3122,7 +3128,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
 void io::Parser::updateDesign()
 {
   auto block = db_->getChip()->getBlock();
-  getBlock()->removeDeletedInsts();
+  getBlock()->removeDeletedObjects();
   for (auto db_inst : block->getInsts()) {
     auto inst = getBlock()->findInst(db_inst);
     if (inst == nullptr) {
@@ -3738,15 +3744,17 @@ void io::Writer::updateTrackAssignment(odb::dbBlock* block)
 
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
 {
-  for (auto ap : block->getAccessPoints()) {
-    odb::dbAccessPoint::destroy(ap);
-  }
   auto db = block->getDb();
-  std::map<frAccessPoint*, odb::dbAccessPoint*> aps_map;
   for (auto& master : getDesign()->getMasters()) {
+    if (!master->hasPinAccessUpdate()) {
+      continue;
+    }
     auto db_master = db->findMaster(master->getName().c_str());
     if (db_master == nullptr) {
       logger_->error(DRT, 294, "master {} not found in db", master->getName());
+    }
+    for (const auto& updated_pa_index : master->getUpdatedPAIndices()) {
+      db_master->clearPinAccess(updated_pa_index);
     }
     for (auto& term : master->getTerms()) {
       auto db_mterm = db_master->findMTerm(term->getName().c_str());
@@ -3765,21 +3773,22 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       auto& pins = term->getPins();
       for (auto db_pin : db_pins) {
         auto& pin = pins[i++];
-        int j = 0;
-        int sz = pin->getNumPinAccess();
-        while (j < sz) {
+        for (int j : master->getUpdatedPAIndices()) {
           auto pa = pin->getPinAccess(j);
           for (auto& ap : pa->getAccessPoints()) {
             auto db_ap = odb::dbAccessPoint::create(block, db_pin, j);
             updateDbAccessPoint(db_ap, ap.get(), db_tech, block);
-            aps_map[ap.get()] = db_ap;
+            ap->setDbAccessPoint(db_ap);
           }
-          j++;
         }
       }
     }
+    master->clearUpdatedPAIndices();
   }
   for (auto& inst : getDesign()->getTopBlock()->getInsts()) {
+    if (!inst->hasPinAccessUpdate()) {
+      continue;
+    }
     auto db_inst = block->findInst(inst->getName().c_str());
     if (db_inst == nullptr) {
       logger_->error(DRT, 297, "inst {} not found in db", inst->getName());
@@ -3788,6 +3797,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
     for (auto& term : inst->getInstTerms()) {
       auto aps = term->getAccessPoints();
       auto db_iterm = db_inst->findITerm(term->getTerm()->getName().c_str());
+      db_iterm->clearPrefAccessPoints();
       if (db_iterm == nullptr) {
         logger_->error(DRT, 298, "iterm {} not found in db", term->getName());
       }
@@ -3808,8 +3818,8 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       frUInt4 i = 0;
       for (auto db_pin : db_pins) {
         if (aps[i] != nullptr) {
-          if (aps_map.find(aps[i]) != aps_map.end()) {
-            db_iterm->setAccessPoint(db_pin, aps_map[aps[i]]);
+          if (aps[i]->getDbAccessPoint() != nullptr) {
+            db_iterm->setAccessPoint(db_pin, aps[i]->getDbAccessPoint());
           } else {
             logger_->error(DRT, 300, "Preferred access point is not found");
           }
@@ -3819,8 +3829,12 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
         i++;
       }
     }
+    inst->setHasPinAccessUpdate(false);
   }
   for (auto& term : getDesign()->getTopBlock()->getTerms()) {
+    if (!term->hasPinAccessUpdate()) {
+      continue;
+    }
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr) {
       logger_->error(DRT, 301, "bterm {} not found in db", term->getName());
@@ -3850,6 +3864,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
       }
       j++;
     }
+    term->setHasPinAccessUpdate(false);
   }
 }
 

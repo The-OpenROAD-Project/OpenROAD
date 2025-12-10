@@ -19,26 +19,14 @@ class dbOStream;
 ///
 /// Each object must have the following "named" fields:
 ///
-///     char *        _name
-///     dbId<T>       _next_entry
+///     char *        name_
+///     dbId<T>       next_entry_
 ///
 //////////////////////////////////////////////////////////
 template <class T, uint page_size>
 class dbHashTable
 {
  public:
-  enum Params
-  {
-    CHAIN_LENGTH = 4
-  };
-
-  // PERSISTANT-MEMBERS
-  dbPagedVector<dbId<T>, 256, 8> _hash_tbl;
-  uint _num_entries;
-
-  // NON-PERSISTANT-MEMBERS
-  dbTable<T, page_size>* _obj_tbl;
-
   void growTable();
   void shrinkTable();
 
@@ -51,11 +39,20 @@ class dbHashTable
     return !operator==(rhs);
   }
 
-  void setTable(dbTable<T, page_size>* table) { _obj_tbl = table; }
+  void setTable(dbTable<T, page_size>* table) { obj_tbl_ = table; }
   T* find(const char* name);
   int hasMember(const char* name);
   void insert(T* object);
   void remove(T* object);
+
+  // PERSISTANT-MEMBERS
+  dbPagedVector<dbId<T>, 256, 8> hash_tbl_;
+  uint num_entries_;
+
+  // NON-PERSISTANT-MEMBERS
+  dbTable<T, page_size>* obj_tbl_;
+
+  static constexpr int kChainLength = 4;
 };
 
 template <class T, uint page_size>

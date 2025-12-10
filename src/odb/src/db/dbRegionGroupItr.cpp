@@ -7,6 +7,7 @@
 #include "dbGroup.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbRegion.h"
 // User Code End Includes
@@ -19,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbRegionGroupItr::reversible()
+bool dbRegionGroupItr::reversible() const
 {
   return true;
 }
 
-bool dbRegionGroupItr::orderReversed()
+bool dbRegionGroupItr::orderReversed() const
 {
   return true;
 }
@@ -37,7 +38,7 @@ void dbRegionGroupItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbGroup* _child = _group_tbl->getPtr(id);
+    _dbGroup* _child = group_tbl_->getPtr(id);
     uint n = _child->region_next_;
     _child->region_next_ = list;
     list = id;
@@ -47,12 +48,12 @@ void dbRegionGroupItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbRegionGroupItr::sequential()
+uint dbRegionGroupItr::sequential() const
 {
   return 0;
 }
 
-uint dbRegionGroupItr::size(dbObject* parent)
+uint dbRegionGroupItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -66,7 +67,7 @@ uint dbRegionGroupItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbRegionGroupItr::begin(dbObject* parent)
+uint dbRegionGroupItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbRegion* _parent = (_dbRegion*) parent;
@@ -74,22 +75,22 @@ uint dbRegionGroupItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbRegionGroupItr::end(dbObject* /* unused: parent */)
+uint dbRegionGroupItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbRegionGroupItr::next(uint id, ...)
+uint dbRegionGroupItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbGroup* _child = _group_tbl->getPtr(id);
+  _dbGroup* _child = group_tbl_->getPtr(id);
   return _child->region_next_;
   // User Code End next
 }
 
 dbObject* dbRegionGroupItr::getObject(uint id, ...)
 {
-  return _group_tbl->getPtr(id);
+  return group_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

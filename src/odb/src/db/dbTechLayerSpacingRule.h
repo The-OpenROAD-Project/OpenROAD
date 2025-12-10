@@ -18,47 +18,35 @@ class dbOStream;
 class _dbTechLayerSpacingRule : public _dbObject
 {
  public:
-  enum _RuleType
+  enum RuleType
   {
-    DEFAULT = 0,
-    RANGE_ONLY,
-    RANGE_USELENGTH,
-    RANGE_INFLUENCE,
-    RANGE_INFLUENCE_RANGE,
-    RANGE_RANGE,
-    LENGTHTHRESHOLD,
-    LENGTHTHRESHOLD_RANGE,
-    CUT_LAYER_BELOW,
-    ADJACENT_CUTS_INFLUENCE,
-    ENDOFLINE,
-    ENDOFLINE_PARALLEL,
-    ENDOFLINE_PARALLEL_TWOEDGES
+    kDefault = 0,
+    kRangeOnly,
+    kRangeUseLength,
+    kRangeInfluence,
+    kRangeInfluenceRange,
+    kRangeRange,
+    kLengthThreshold,
+    kLengthThresholdRange,
+    kCutLayerBelow,
+    kAdjacentCutsInfluence,
+    kEndOfLine,
+    kEndOfLineParallel,
+    kEndOfLineParallelTwoEdges
   };
 
-  struct _Flword
+  struct Flags
   {
-    _RuleType _rule : 4;
-    bool _except_same_pgnet : 1;
-    bool _cut_stacking : 1;
-    bool _cut_center_to_center : 1;
-    bool _cut_same_net : 1;
-    bool _cut_parallel_overlap : 1;
-    bool _notch_length : 1;
-    bool _end_of_notch_width : 1;
-    uint _spare_bits : 21;
+    RuleType rule : 4;
+    bool except_same_pgnet : 1;
+    bool cut_stacking : 1;
+    bool cut_center_to_center : 1;
+    bool cut_same_net : 1;
+    bool cut_parallel_overlap : 1;
+    bool notch_length : 1;
+    bool end_of_notch_width : 1;
+    uint spare_bits : 21;
   };
-
-  // PERSISTENT-MEMBERS
-  _Flword _flags;
-  uint _spacing;
-  uint _length_or_influence;
-  uint _r1min;
-  uint _r1max;
-  uint _r2min;
-  uint _r2max;
-  uint _cut_area;
-  dbId<_dbTechLayer> _layer;
-  dbId<_dbTechLayer> _cut_layer_below;
 
   _dbTechLayerSpacingRule(_dbDatabase*, const _dbTechLayerSpacingRule& r);
   _dbTechLayerSpacingRule(_dbDatabase*);
@@ -70,42 +58,54 @@ class _dbTechLayerSpacingRule : public _dbObject
     return !operator==(rhs);
   }
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTENT-MEMBERS
+  Flags flags_;
+  uint spacing_;
+  uint length_or_influence_;
+  uint r1min_;
+  uint r1max_;
+  uint r2min_;
+  uint r2max_;
+  uint cut_area_;
+  dbId<_dbTechLayer> layer_;
+  dbId<_dbTechLayer> cut_layer_below_;
 };
 
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(
     _dbDatabase*,
     const _dbTechLayerSpacingRule& r)
-    : _flags(r._flags),
-      _spacing(r._spacing),
-      _length_or_influence(r._length_or_influence),
-      _r1min(r._r1min),
-      _r1max(r._r1max),
-      _r2min(r._r2min),
-      _r2max(r._r2max),
-      _cut_area(r._cut_area),
-      _layer(r._layer),
-      _cut_layer_below(r._cut_layer_below)
+    : flags_(r.flags_),
+      spacing_(r.spacing_),
+      length_or_influence_(r.length_or_influence_),
+      r1min_(r.r1min_),
+      r1max_(r.r1max_),
+      r2min_(r.r2min_),
+      r2max_(r.r2max_),
+      cut_area_(r.cut_area_),
+      layer_(r.layer_),
+      cut_layer_below_(r.cut_layer_below_)
 {
 }
 
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
 {
-  _flags._rule = DEFAULT;
-  _flags._except_same_pgnet = false;
-  _flags._cut_stacking = false;
-  _flags._cut_center_to_center = false;
-  _flags._cut_same_net = false;
-  _flags._cut_parallel_overlap = false;
-  _flags._notch_length = false;
-  _flags._end_of_notch_width = false;
-  _flags._spare_bits = 0;
-  _spacing = 0;
-  _length_or_influence = 0;
-  _r1min = 0;
-  _r1max = 0;
-  _r2min = 0;
-  _r2max = 0;
-  _cut_area = 0;
+  flags_.rule = kDefault;
+  flags_.except_same_pgnet = false;
+  flags_.cut_stacking = false;
+  flags_.cut_center_to_center = false;
+  flags_.cut_same_net = false;
+  flags_.cut_parallel_overlap = false;
+  flags_.notch_length = false;
+  flags_.end_of_notch_width = false;
+  flags_.spare_bits = 0;
+  spacing_ = 0;
+  length_or_influence_ = 0;
+  r1min_ = 0;
+  r1max_ = 0;
+  r2min_ = 0;
+  r2max_ = 0;
+  cut_area_ = 0;
 }
 
 inline _dbTechLayerSpacingRule::~_dbTechLayerSpacingRule()

@@ -49,23 +49,23 @@ class dbTrackGrid;
 
 struct dbTechLayerFlags
 {
-  uint num_masks_ : 2;
-  dbTechLayerType::Value type_ : 4;
-  dbTechLayerDir::Value direction_ : 4;
-  dbTechLayerMinStepType::Value minstep_type_ : 2;
-  bool has_max_width_ : 1;
-  bool has_thickness_ : 1;
-  bool has_area_ : 1;
-  bool has_protrusion_ : 1;
-  bool has_alias_ : 1;
-  bool has_xy_pitch_ : 1;
-  bool has_xy_offset_ : 1;
-  bool rect_only_ : 1;
-  bool right_way_on_grid_only_ : 1;
-  bool right_way_on_grid_only_check_mask_ : 1;
-  bool rect_only_except_non_core_pins_ : 1;
-  uint lef58_type_ : 5;
-  uint spare_bits_ : 4;
+  uint num_masks : 2;
+  dbTechLayerType::Value type : 4;
+  dbTechLayerDir::Value direction : 4;
+  dbTechLayerMinStepType::Value minstep_type : 2;
+  bool has_max_width : 1;
+  bool has_thickness : 1;
+  bool has_area : 1;
+  bool has_protrusion : 1;
+  bool has_alias : 1;
+  bool has_xy_pitch : 1;
+  bool has_xy_offset : 1;
+  bool rect_only : 1;
+  bool right_way_on_grid_only : 1;
+  bool right_way_on_grid_only_check_mask : 1;
+  bool rect_only_except_non_core_pins : 1;
+  uint lef58_type : 5;
+  uint spare_bits : 4;
 };
 
 class _dbTechLayer : public _dbObject
@@ -115,52 +115,52 @@ class _dbTechLayer : public _dbObject
 
   // User Code Begin Fields
 
-  uint _pitch_x;
-  uint _pitch_y;
-  uint _offset_x;
-  uint _offset_y;
-  uint _width;
-  uint _spacing;
-  double _resistance;
-  double _capacitance;
-  double _edge_capacitance;
-  uint _wire_extension;
-  uint _number;
-  uint _rlevel;
-  double _area;
-  uint _thickness;
-  uint _max_width;
-  int _min_width;
-  int _min_step;
-  int _min_step_max_length;
-  int _min_step_max_edges;
-  int _first_last_pitch;
+  uint pitch_x_;
+  uint pitch_y_;
+  uint offset_x_;
+  uint offset_y_;
+  uint width_;
+  uint spacing_;
+  double resistance_;
+  double capacitance_;
+  double edge_capacitance_;
+  uint wire_extension_;
+  uint number_;
+  uint rlevel_;
+  double area_;
+  uint thickness_;
+  uint max_width_;
+  int min_width_;
+  int min_step_;
+  int min_step_max_length_;
+  int min_step_max_edges_;
+  int first_last_pitch_;
 
   struct
   {  // Protrusion
-    uint _width;
-    uint _length;
-    uint _from_width;
-  } _pt;
-  char* _name;
-  char* _alias;
-  dbId<_dbTechLayer> _upper;
-  dbId<_dbTechLayer> _lower;
-  dbTable<_dbTechLayerSpacingRule>* _spacing_rules_tbl;
+    uint width;
+    uint length;
+    uint from_width;
+  } pt_;
+  char* name_;
+  char* alias_;
+  dbId<_dbTechLayer> upper_;
+  dbId<_dbTechLayer> lower_;
+  dbTable<_dbTechLayerSpacingRule>* spacing_rules_tbl_;
 
-  dbTable<_dbTechMinCutRule, 8>* _min_cut_rules_tbl;
-  dbTable<_dbTechMinEncRule, 8>* _min_enc_rules_tbl;
-  dbTable<_dbTechV55InfluenceEntry, 8>* _v55inf_tbl;
-  dbVector<uint> _v55sp_length_idx;
-  dbVector<uint> _v55sp_width_idx;
-  dbMatrix<uint> _v55sp_spacing;
+  dbTable<_dbTechMinCutRule, 8>* min_cut_rules_tbl_;
+  dbTable<_dbTechMinEncRule, 8>* min_enc_rules_tbl_;
+  dbTable<_dbTechV55InfluenceEntry, 8>* v55inf_tbl_;
+  dbVector<uint> v55sp_length_idx_;
+  dbVector<uint> v55sp_width_idx_;
+  dbMatrix<uint> v55sp_spacing_;
 
-  dbVector<uint> _two_widths_sp_idx;
-  dbVector<int> _two_widths_sp_prl;
-  dbMatrix<uint> _two_widths_sp_spacing;
+  dbVector<uint> two_widths_sp_idx_;
+  dbVector<int> two_widths_sp_prl_;
+  dbMatrix<uint> two_widths_sp_spacing_;
 
-  dbId<_dbTechLayerAntennaRule> _oxide1;
-  dbId<_dbTechLayerAntennaRule> _oxide2;
+  dbId<_dbTechLayerAntennaRule> oxide1_;
+  dbId<_dbTechLayerAntennaRule> oxide2_;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);

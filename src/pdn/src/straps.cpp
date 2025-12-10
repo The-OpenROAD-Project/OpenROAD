@@ -1012,12 +1012,16 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
     return;
   }
 
-  std::set<odb::dbTechLayer*> connectable_layers;
+  std::set<odb::dbTechLayer*> pin_layers;
+  std::map<odb::dbTechLayer*, std::set<odb::dbTechLayer*>> connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& shape : shapes) {
       if (shape->getType() == target_shapes_type_) {
         const auto layers = getGrid()->connectableLayers(layer);
-        connectable_layers.insert(layers.begin(), layers.end());
+        pin_layers.insert(layers.begin(), layers.end());
+        for (auto* clayer : layers) {
+          connectable_layers[clayer].insert(layer);
+        }
       }
     }
   }
@@ -1033,14 +1037,20 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
     transform.apply(pin_rect);
 
     auto* layer = pin->getTechLayer();
-    if (connectable_layers.find(layer) == connectable_layers.end()) {
+    if (pin_layers.find(layer) == pin_layers.end()) {
       // layer is not connectable to a target
       continue;
     }
 
+    const auto& connect_layers = connectable_layers[layer];
+
     // find nearest target
     for (const auto& [search_layer, search_shape_tree] : other_shapes) {
       if (layer == search_layer) {
+        continue;
+      }
+      if (connect_layers.find(search_layer) == connect_layers.end()) {
+        // cannot connect to this layer
         continue;
       }
 
@@ -1049,6 +1059,16 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
       if (closest_shape == nullptr) {
         continue;
       }
+
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Pad",
+                 2,
+                 "Connect iterm {} ({}/{}) -> {}",
+                 iterm_->getName(),
+                 layer->getName(),
+                 pin->getName(),
+                 closest_shape->getReportText());
 
       odb::Rect shape_rect;
       if (!snapRectToClosestShape(closest_shape, pin_rect, shape_rect)) {
@@ -1315,7 +1335,7 @@ void PadDirectConnectionStraps::cutShapes(
 }
 
 void PadDirectConnectionStraps::unifyConnectionTypes(
-    const std::set<PadDirectConnectionStraps*>& straps)
+    const std::vector<PadDirectConnectionStraps*>& straps)
 {
   std::set<ConnectionType> types;
   for (auto* strap : straps) {
@@ -1415,7 +1435,7 @@ bool PadDirectConnectionStraps::refineShapes(
     return GridComponent::refineShapes(all_shapes, all_obstructions);
   }
 
-  std::set<Shape*> refine;
+  std::vector<Shape*> refine;
   for (const auto& [layer, shapes] : getShapes()) {
     for (const auto& shape : shapes) {
       if (!strapViaIsObstructed(
@@ -1423,13 +1443,16 @@ bool PadDirectConnectionStraps::refineShapes(
         continue;
       }
 
-      refine.insert(shape.get());
+      refine.push_back(shape.get());
     }
   }
 
   if (refine.empty()) {
     return false;
   }
+
+  const auto [first, last] = std::ranges::unique(refine.begin(), refine.end());
+  refine.erase(first, last);
 
   for (auto* refine_shape : refine) {
     std::unique_ptr<Shape> shape = refine_shape->copy();

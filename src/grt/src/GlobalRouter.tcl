@@ -12,21 +12,21 @@ proc set_global_routing_layer_adjustment { args } {
     lassign $args layer adj
 
     if { $layer == "*" } {
-      sta::check_positive_float "adjustment" $adj
+      sta::check_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
     } elseif { [regexp -all {([^-]+)-([^ ]+)} $layer] } {
       lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" \
         $layer] first_layer last_layer
       for { set l $first_layer } { $l <= $last_layer } { incr l } {
         grt::check_routing_layer $l
-        sta::check_positive_float "adjustment" $adj
+        sta::check_float "adjustment" $adj
 
         grt::add_layer_adjustment $l $adj
       }
     } else {
       set layer_idx [grt::parse_layer_name $layer]
       grt::check_routing_layer $layer_idx
-      sta::check_positive_float "adjustment" $adj
+      sta::check_float "adjustment" $adj
 
       grt::add_layer_adjustment $layer_idx $adj
     }

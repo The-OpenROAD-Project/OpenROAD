@@ -11,12 +11,12 @@
 
 namespace odb {
 
-bool dbSBoxItr::reversible()
+bool dbSBoxItr::reversible() const
 {
   return true;
 }
 
-bool dbSBoxItr::orderReversed()
+bool dbSBoxItr::orderReversed() const
 {
   return true;
 }
@@ -26,18 +26,18 @@ void dbSBoxItr::reverse(dbObject* parent)
   switch (parent->getImpl()->getType()) {
     case dbSWireObj: {
       _dbSWire* wire = (_dbSWire*) parent;
-      uint id = wire->_wires;
+      uint id = wire->wires_;
       uint list = 0;
 
       while (id != 0) {
-        _dbSBox* b = _box_tbl->getPtr(id);
-        uint n = b->_next_box;
-        b->_next_box = list;
+        _dbSBox* b = box_tbl_->getPtr(id);
+        uint n = b->next_box_;
+        b->next_box_ = list;
         list = id;
         id = n;
       }
 
-      wire->_wires = list;
+      wire->wires_ = list;
       break;
     }
 
@@ -46,12 +46,12 @@ void dbSBoxItr::reverse(dbObject* parent)
   }
 }
 
-uint dbSBoxItr::sequential()
+uint dbSBoxItr::sequential() const
 {
   return 0;
 }
 
-uint dbSBoxItr::size(dbObject* parent)
+uint dbSBoxItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -64,12 +64,12 @@ uint dbSBoxItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbSBoxItr::begin(dbObject* parent)
+uint dbSBoxItr::begin(dbObject* parent) const
 {
   switch (parent->getImpl()->getType()) {
     case dbSWireObj: {
       _dbSWire* wire = (_dbSWire*) parent;
-      return wire->_wires;
+      return wire->wires_;
     }
 
     default:
@@ -79,20 +79,20 @@ uint dbSBoxItr::begin(dbObject* parent)
   return 0;
 }
 
-uint dbSBoxItr::end(dbObject* /* unused: parent */)
+uint dbSBoxItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbSBoxItr::next(uint id, ...)
+uint dbSBoxItr::next(uint id, ...) const
 {
-  _dbSBox* box = _box_tbl->getPtr(id);
-  return box->_next_box;
+  _dbSBox* box = box_tbl_->getPtr(id);
+  return box->next_box_;
 }
 
 dbObject* dbSBoxItr::getObject(uint id, ...)
 {
-  return _box_tbl->getPtr(id);
+  return box_tbl_->getPtr(id);
 }
 
 }  // namespace odb

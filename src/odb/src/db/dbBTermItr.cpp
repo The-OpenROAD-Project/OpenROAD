@@ -21,12 +21,12 @@ namespace odb {
 //
 // BTerms are ordered by io-type and cannot be reversed.
 //
-bool dbNetBTermItr::reversible()
+bool dbNetBTermItr::reversible() const
 {
   return true;
 }
 
-bool dbNetBTermItr::orderReversed()
+bool dbNetBTermItr::orderReversed() const
 {
   return true;
 }
@@ -34,13 +34,13 @@ bool dbNetBTermItr::orderReversed()
 void dbNetBTermItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->_bterms;
+  uint id = net->bterms_;
   uint list = 0;
 
   while (id != 0) {
-    _dbBTerm* bterm = _bterm_tbl->getPtr(id);
-    uint n = bterm->_next_bterm;
-    bterm->_next_bterm = list;
+    _dbBTerm* bterm = bterm_tbl_->getPtr(id);
+    uint n = bterm->next_bterm_;
+    bterm->next_bterm_ = list;
     list = id;
     id = n;
   }
@@ -49,21 +49,21 @@ void dbNetBTermItr::reverse(dbObject* parent)
   id = list;
 
   while (id != 0) {
-    _dbBTerm* bterm = _bterm_tbl->getPtr(id);
-    bterm->_prev_bterm = prev;
+    _dbBTerm* bterm = bterm_tbl_->getPtr(id);
+    bterm->prev_bterm_ = prev;
     prev = id;
-    id = bterm->_next_bterm;
+    id = bterm->next_bterm_;
   }
 
-  net->_bterms = list;
+  net->bterms_ = list;
 }
 
-uint dbNetBTermItr::sequential()
+uint dbNetBTermItr::sequential() const
 {
   return 0;
 }
 
-uint dbNetBTermItr::size(dbObject* parent)
+uint dbNetBTermItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -76,26 +76,26 @@ uint dbNetBTermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbNetBTermItr::begin(dbObject* parent)
+uint dbNetBTermItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
-  return net->_bterms;
+  return net->bterms_;
 }
 
-uint dbNetBTermItr::end(dbObject* /* unused: parent */)
+uint dbNetBTermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbNetBTermItr::next(uint id, ...)
+uint dbNetBTermItr::next(uint id, ...) const
 {
-  _dbBTerm* bterm = _bterm_tbl->getPtr(id);
-  return bterm->_next_bterm;
+  _dbBTerm* bterm = bterm_tbl_->getPtr(id);
+  return bterm->next_bterm_;
 }
 
 dbObject* dbNetBTermItr::getObject(uint id, ...)
 {
-  return _bterm_tbl->getPtr(id);
+  return bterm_tbl_->getPtr(id);
 }
 
 }  // namespace odb

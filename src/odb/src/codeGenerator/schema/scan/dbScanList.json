@@ -14,7 +14,7 @@
     "dbScanListScanInstItr.h"],
   "fields": [
     {
-      "name": "_unused",
+      "name": "unused_",
       "type": "uint",
       "flags": [
         "private"
@@ -24,7 +24,7 @@
       "schema": "db_schema_block_owns_scan_insts"
     },
     {
-      "name": "_first_scan_inst",
+      "name": "first_scan_inst_",
       "type": "dbId<_dbScanInst>",
       "flags": [
         "private"

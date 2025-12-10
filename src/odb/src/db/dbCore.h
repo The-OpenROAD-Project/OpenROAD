@@ -85,14 +85,14 @@ struct MemInfo
   void add(const dbHashTable<T, page_size>& table)
   {
     cnt += 1;
-    size += table._hash_tbl.size() * sizeof(dbId<T>);
+    size += table.hash_tbl_.size() * sizeof(dbId<T>);
   }
 
   template <class T>
   void add(const dbIntHashTable<T>& table)
   {
     cnt += 1;
-    size += table._hash_tbl.size() * sizeof(dbId<T>);
+    size += table.hash_tbl_.size() * sizeof(dbId<T>);
   }
 
   template <typename T>
@@ -172,15 +172,13 @@ class _dbObject : public dbObject
   dbObjectType getType() const;
   uint getOID() const;
   utl::Logger* getLogger() const;
-  bool isValid() const { return _oid & DB_ALLOC_BIT; };
+  bool isValid() const { return oid_ & DB_ALLOC_BIT; };
 
  private:
-  uint _oid;
+  uint oid_;
 
   template <class T, uint page_size>
   friend class dbTable;
-  template <class T>
-  friend class dbArrayTable;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -196,11 +194,11 @@ class dbObjectTable
                 uint size);
   virtual ~dbObjectTable() = default;
 
-  dbId<_dbProperty> getPropList(uint oid) { return _prop_list.getAttr(oid); }
+  dbId<_dbProperty> getPropList(uint oid) { return prop_list_.getAttr(oid); }
 
   void setPropList(uint oid, const dbId<_dbProperty>& propList)
   {
-    _prop_list.setAttr(oid, propList);
+    prop_list_.setAttr(oid, propList);
   }
 
   virtual dbObject* getObject(uint id, ...) = 0;
@@ -208,18 +206,18 @@ class dbObjectTable
 
   dbObjectTable* getObjectTable(dbObjectType type)
   {
-    return (_owner->*_getObjectTable)(type);
+    return (owner_->*getObjectTable_)(type);
   }
 
   // NON-PERSISTANT DATA
-  _dbDatabase* _db;
-  dbObject* _owner;
-  dbObjectType _type;
-  uint _obj_size;
-  dbObjectTable* (dbObject::*_getObjectTable)(dbObjectType type);
+  _dbDatabase* db_;
+  dbObject* owner_;
+  dbObjectType type_;
+  uint obj_size_;
+  dbObjectTable* (dbObject::*getObjectTable_)(dbObjectType type);
 
   // PERSISTANT DATA
-  dbAttrTable<dbId<_dbProperty>> _prop_list;
+  dbAttrTable<dbId<_dbProperty>> prop_list_;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -255,7 +253,7 @@ inline dbObjectTable::dbObjectTable(_dbDatabase* db,
                                     dbObjectTable* (dbObject::*m)(dbObjectType),
                                     dbObjectType type,
                                     uint size)
-    : _db(db), _owner(owner), _type(type), _obj_size(size), _getObjectTable(m)
+    : db_(db), owner_(owner), type_(type), obj_size_(size), getObjectTable_(m)
 {
   // Objects must be greater than 16-bytes
   assert(size >= sizeof(_dbFreeObject));
@@ -278,8 +276,8 @@ inline const _dbObject* dbObject::getImpl() const
 inline uint _dbObject::getOID() const
 {
   dbObjectPage* page = getObjectPage();
-  uint offset = (_oid & DB_OFFSET_MASK);
-  return page->_page_addr | offset / page->_table->_obj_size;
+  uint offset = (oid_ & DB_OFFSET_MASK);
+  return page->_page_addr | offset / page->_table->obj_size_;
 }
 
 inline dbObjectTable* _dbObject::getTable() const
@@ -291,24 +289,24 @@ inline dbObjectTable* _dbObject::getTable() const
 inline _dbDatabase* _dbObject::getDatabase() const
 {
   dbObjectPage* page = getObjectPage();
-  return page->_table->_db;
+  return page->_table->db_;
 }
 
 inline dbObject* _dbObject::getOwner() const
 {
   dbObjectPage* page = getObjectPage();
-  return page->_table->_owner;
+  return page->_table->owner_;
 }
 
 inline dbObjectType _dbObject::getType() const
 {
   dbObjectPage* page = getObjectPage();
-  return page->_table->_type;
+  return page->_table->type_;
 }
 
 inline dbObjectPage* _dbObject::getObjectPage() const
 {
-  uint offset = (_oid & DB_OFFSET_MASK);
+  uint offset = (oid_ & DB_OFFSET_MASK);
   char* base = (char*) this - offset;
   dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
   return page;

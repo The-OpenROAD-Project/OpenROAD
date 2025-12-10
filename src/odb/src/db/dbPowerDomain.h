@@ -26,24 +26,22 @@ class _dbPowerDomain : public _dbObject
  public:
   _dbPowerDomain(_dbDatabase*);
 
-  ~_dbPowerDomain();
-
   bool operator==(const _dbPowerDomain& rhs) const;
   bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPowerDomain& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbPowerDomain> _next_entry;
-  dbVector<std::string> _elements;
-  dbVector<dbId<_dbPowerSwitch>> _power_switch;
-  dbVector<dbId<_dbIsolation>> _isolation;
-  dbId<_dbGroup> _group;
-  bool _top;
-  dbId<_dbPowerDomain> _parent;
-  Rect _area;
-  dbVector<dbId<_dbLevelShifter>> _levelshifters;
-  float _voltage;
+  char* name_;
+  dbId<_dbPowerDomain> next_entry_;
+  dbVector<std::string> elements_;
+  dbVector<dbId<_dbPowerSwitch>> power_switch_;
+  dbVector<dbId<_dbIsolation>> isolation_;
+  dbId<_dbGroup> group_;
+  bool top_;
+  dbId<_dbPowerDomain> parent_;
+  Rect area_;
+  dbVector<dbId<_dbLevelShifter>> levelshifters_;
+  float voltage_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj);

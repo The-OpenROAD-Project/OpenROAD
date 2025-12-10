@@ -547,18 +547,21 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
 bool DbInstancePinIterator::hasNext()
 {
   if (top_) {
-    if (bitr_ == bitr_end_) {
-      return false;
+    while (bitr_ != bitr_end_) {
+      dbBTerm* bterm = *bitr_;
+      if (!network_->isPGSupply(bterm)) {
+        next_ = network_->dbToSta(bterm);
+        bitr_++;
+        return true;
+      }
+      bitr_++;
     }
-    dbBTerm* bterm = *bitr_;
-    next_ = network_->dbToSta(bterm);
-    bitr_++;
-    return true;
+    return false;
   }
 
   while (iitr_ != iitr_end_) {
     dbITerm* iterm = *iitr_;
-    if (!iterm->getSigType().isSupply()) {
+    if (!network_->isPGSupply(iterm)) {
       next_ = network_->dbToSta(*iitr_);
       ++iitr_;
       return true;
@@ -621,7 +624,7 @@ bool DbNetPinIterator::hasNext()
 {
   while (iitr_ != iitr_end_) {
     dbITerm* iterm = *iitr_;
-    if (!iterm->getSigType().isSupply()) {
+    if (!network_->isPGSupply(iterm)) {
       next_ = network_->dbToSta(*iitr_);
       ++iitr_;
       return true;
@@ -685,11 +688,14 @@ bool DbNetTermIterator::hasNext()
 
 Term* DbNetTermIterator::next()
 {
-  if (iter_ != end_) {
+  while (iter_ != end_) {
     dbBTerm* bterm = *iter_;
     iter_++;
-    return network_->dbToStaTerm(bterm);
+    if (!network_->isPGSupply(bterm)) {
+      return network_->dbToStaTerm(bterm);
+    }
   }
+
   if (mod_iter_ != mod_end_ && (network_->hasHierarchy())) {
     dbModBTerm* modbterm = *mod_iter_;
     mod_iter_++;
@@ -4050,11 +4056,9 @@ class PinModDbNetConnection : public PinVisitor
                         Logger* logger,
                         const Net* net_to_search);
   void operator()(const Pin* pin) override;
-  const std::set<dbModNet*>& getModNets() const { return modnets_; }
   dbNet* getNet() const { return dbnet_; }
 
  private:
-  std::set<dbModNet*> modnets_;
   dbNet* dbnet_;
   Logger* logger_ = nullptr;
   bool db_net_search_ = false;
@@ -4085,14 +4089,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
   dbModITerm* moditerm;
 
   db_network_->staToDb(pin, iterm, bterm, moditerm);
-
-  if (iterm && iterm->getModNet()) {
-    modnets_.insert(iterm->getModNet());
-  } else if (bterm && bterm->getModNet()) {
-    modnets_.insert(bterm->getModNet());
-  } else if (moditerm && moditerm->getModNet()) {
-    modnets_.insert(moditerm->getModNet());
-  }
 
   dbNet* candidate_flat_net = db_network_->flatNet(pin);
   if (candidate_flat_net) {
@@ -4989,6 +4985,65 @@ void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
   if (drvrs) {
     drvrs->erase(drvr);
   }
+}
+
+bool dbNetwork::isPGSupply(dbITerm* iterm) const
+{
+  if (iterm->getSigType().isSupply()) {
+    return true;
+  }
+
+  return isPGSupply(iterm->getNet());
+}
+
+bool dbNetwork::isPGSupply(dbBTerm* bterm) const
+{
+  if (bterm->getSigType().isSupply()) {
+    return true;
+  }
+
+  return isPGSupply(bterm->getNet());
+}
+
+bool dbNetwork::isPGSupply(dbNet* net) const
+{
+  if (net == nullptr) {
+    return false;
+  }
+
+  return net->isSpecial() && net->getSigType().isSupply();
+}
+
+Net* dbNetwork::highestNetAbove(Net* net) const
+{
+  if (net == nullptr) {
+    return nullptr;
+  }
+
+  dbNet* dbnet;
+  dbModNet* modnet;
+  staToDb(net, dbnet, modnet);
+
+  if (dbnet) {
+    // If a flat net, return it.
+    // - We should not return the highest modnet related to the flat net.
+    // - Otherwise, it breaks estimate_parasitics function.
+    //   . est module uses flat nets for parasitic estimation
+    //   . It has (highestNetAbove(flat_net) != flat_net) comparison.
+    //   . If highestNetAbove(flat_net) returns the highest modnet, it
+    //     changes the estimate_parasitics behavior.
+    return net;
+  }
+
+  if (modnet) {
+    if (dbNet* related_dbnet = modnet->findRelatedNet()) {
+      if (dbModNet* highest_modnet = related_dbnet->findModNetInHighestHier()) {
+        return dbToSta(highest_modnet);  // Found the highest modnet
+      }
+    }
+  }
+
+  return net;
 }
 
 }  // namespace sta
