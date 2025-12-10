@@ -2,7 +2,7 @@
 // gif.h
 // by Charlie Tangora
 // Public domain.
-// Email me : ctangora -at- gmail -dot- com
+// Email me : ctangora -at- gmail-dot-com
 //
 // This file offers a simple, very limited way to create animated GIFs directly
 // in code.
