@@ -120,11 +120,6 @@ struct PhysicalHierarchy
   float cluster_size_ratio{0.0f};
   float cluster_size_tolerance{0.0f};
 
-  // Virtual connection weight between each macro cluster
-  // and its corresponding standard-cell cluster to bias
-  // the macro placer to place them together.
-  const float virtual_weight = 10.0f;
-
   const int io_bundles_per_edge = 5;
 };
 
