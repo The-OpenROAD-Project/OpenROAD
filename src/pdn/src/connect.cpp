@@ -7,6 +7,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <set>
 #include <tuple>

@@ -458,16 +458,16 @@ void Grid::report() const
     for (const auto& conn : connect_) {
       connect.emplace_back(conn.get(), connect.size() + 1);
     }
-    std::sort(connect.begin(),
-              connect.end(),
-              [](const std::pair<Connect*, int>& l,
-                 const std::pair<Connect*, int>& r) {
-                int l_lower = l.first->getLowerLayer()->getRoutingLevel();
-                int l_upper = l.first->getUpperLayer()->getRoutingLevel();
-                int r_lower = r.first->getLowerLayer()->getRoutingLevel();
-                int r_upper = r.first->getUpperLayer()->getRoutingLevel();
-                return std::tie(l_lower, l_upper) < std::tie(r_lower, r_upper);
-              });
+    std::ranges::sort(
+        connect,
+        [](const std::pair<Connect*, int>& l,
+           const std::pair<Connect*, int>& r) {
+          int l_lower = l.first->getLowerLayer()->getRoutingLevel();
+          int l_upper = l.first->getUpperLayer()->getRoutingLevel();
+          int r_lower = r.first->getLowerLayer()->getRoutingLevel();
+          int r_upper = r.first->getUpperLayer()->getRoutingLevel();
+          return std::tie(l_lower, l_upper) < std::tie(r_lower, r_upper);
+        });
     logger->report("Connect:");
     for (const auto& [connect, order] : connect) {
       connect->report(order);
