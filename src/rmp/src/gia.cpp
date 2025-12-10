@@ -12,15 +12,16 @@
 #include "aig/aig/aig.h"
 #include "aig/gia/giaAig.h"
 #include "base/abc/abc.h"
-#include "base/main/main.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#include "map/if/if.h"
+#pragma GCC diagnostic pop
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gia.h"
-// This header has a cycle, but has include guards
-#include "map/if/if.h"  // NOLINT(misc-header-include-cycle)
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
@@ -75,6 +76,7 @@ extern Gia_Man_t* Gia_ManCheckFalse(Gia_Man_t* p,
 extern Vec_Ptr_t* Abc_NtkCollectCiNames(Abc_Ntk_t* pNtk);
 extern Vec_Ptr_t* Abc_NtkCollectCoNames(Abc_Ntk_t* pNtk);
 extern void Abc_NtkRedirectCiCo(Abc_Ntk_t* pNtk);
+extern void Abc_FrameSetLibGen(void* pLib);
 }  // namespace abc
 
 namespace rmp {
