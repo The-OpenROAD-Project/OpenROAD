@@ -293,7 +293,6 @@ class EstimateParasitics : public dbStaState
   int dbu_ = 0;
 
   bool incremental_parasitics_enabled_ = false;
-  int updated_nets_ = 0;
 
   // constants
   const MinMax* min_ = MinMax::min();
