@@ -121,15 +121,21 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
 
   Shape::ShapeTreeMap local_shapes = global_shapes;
   // make shapes
+  std::vector<GridComponent*> deferred;
   for (auto* component : getGridComponents()) {
-    // make initial shapes
-    component->makeShapes(local_shapes);
-    // cut shapes to avoid obstructions
-    component->cutShapes(local_obstructions);
-    // add shapes and obstructions to they are accounted for in future
-    // components
-    component->getObstructions(local_obstructions);
-    component->getShapes(local_shapes);
+    if (!component->make(local_shapes, local_obstructions)) {
+      debugPrint(logger,
+                 utl::PDN,
+                 "Make",
+                 2,
+                 "Deferring shape creation for component in \"{}\".",
+                 getName());
+      deferred.push_back(component);
+    }
+  }
+  // make deferred components
+  for (auto* component : deferred) {
+    component->make(local_shapes, local_obstructions);
   }
 
   // refine shapes

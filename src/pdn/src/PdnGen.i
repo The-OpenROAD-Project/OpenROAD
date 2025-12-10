@@ -81,7 +81,8 @@ void make_core_grid(pdn::VoltageDomain* domain,
                     const std::vector<odb::dbTechLayer*>& generate_obstructions,
                     pdn::PowerCell* powercell,
                     odb::dbNet* powercontrol,
-                    const char* powercontrolnetwork)
+                    const char* powercontrolnetwork,
+                    const std::vector<odb::dbTechLayer*>& pad_pin_layers)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
@@ -95,7 +96,8 @@ void make_core_grid(pdn::VoltageDomain* domain,
                        generate_obstructions, 
                        powercell, 
                        powercontrol, 
-                       powercontrolnetwork);
+                       powercontrolnetwork,
+                       pad_pin_layers);
 }
 
 void make_instance_grid(pdn::VoltageDomain* domain,

@@ -952,8 +952,7 @@ ShapePtr PadDirectConnectionStraps::getClosestShape(
   for (auto it = search_shapes.qbegin(bgi::intersects(search_rect)
                                       && bgi::satisfies([&](const auto& other) {
                                            return other->getNet() == net
-                                                  && other->getType()
-                                                         == target_shapes_type_;
+                                                  && isTargetShape(other.get());
                                          }));
        it != search_shapes.qend();
        it++) {
@@ -1016,7 +1015,7 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
   std::map<odb::dbTechLayer*, std::set<odb::dbTechLayer*>> connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& shape : shapes) {
-      if (shape->getType() == target_shapes_type_) {
+      if (isTargetShape(shape.get())) {
         const auto layers = getGrid()->connectableLayers(layer);
         pin_layers.insert(layers.begin(), layers.end());
         for (auto* clayer : layers) {
@@ -1566,6 +1565,32 @@ bool PadDirectConnectionStraps::refineShape(
 
       return true;
     }
+  }
+
+  return false;
+}
+
+bool PadDirectConnectionStraps::isTargetShape(const Shape* shape) const
+{
+  if (target_shapes_type_) {
+    return shape->getType() == target_shapes_type_.value();
+  }
+
+  switch (shape->getType()) {
+    case odb::dbWireShapeType::STRIPE:
+    case odb::dbWireShapeType::RING:
+      return true;
+    case odb::dbWireShapeType::NONE:
+    case odb::dbWireShapeType::PADRING:
+    case odb::dbWireShapeType::BLOCKRING:
+    case odb::dbWireShapeType::FOLLOWPIN:
+    case odb::dbWireShapeType::IOWIRE:
+    case odb::dbWireShapeType::COREWIRE:
+    case odb::dbWireShapeType::BLOCKWIRE:
+    case odb::dbWireShapeType::BLOCKAGEWIRE:
+    case odb::dbWireShapeType::FILLWIRE:
+    case odb::dbWireShapeType::DRCFILL:
+      return false;
   }
 
   return false;

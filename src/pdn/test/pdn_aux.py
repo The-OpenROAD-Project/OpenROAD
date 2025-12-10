@@ -191,6 +191,8 @@ def define_pdn_grid_real(
     grid_over_pg_pins=False,
     grid_over_boundary=False,
     power_control_network="STAR",
+    connect_to_pads=False,
+    connect_to_pad_layers=None,
 ):  # (STAR|DAISY)]}
     pdngen = design.getPdnGen()
     if bool(voltage_domains):
@@ -237,6 +239,17 @@ def define_pdn_grid_real(
                     utl.PDN, 1521, f"Unable to find power control net: {power_control}"
                 )
 
+    connect_to_pad_layers = []
+    if bool(connect_to_pads):
+        if not bool(connect_to_pad_layers):
+            for layer in design.getTech().getDB().getTech().getLayers():
+                if layer.getType() == "ROUTING":
+                    connect_to_pad_layers.append(layer)
+        else:
+            connect_to_pad_layers = [
+                get_layer(design, l) for l in connect_to_pad_layers
+            ]
+
     starts_with = pdn.POWER if starts_with_power else pdn.GROUND
     for domain in domains:
         pdngen.makeCoreGrid(
@@ -248,6 +261,7 @@ def define_pdn_grid_real(
             power_cell,
             power_control,
             power_control_network,
+            connect_to_pad_layers
         )
 
 

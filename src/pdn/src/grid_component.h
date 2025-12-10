@@ -46,6 +46,9 @@ class GridComponent
   Grid* getGrid() const { return grid_; }
   VoltageDomain* getDomain() const;
 
+  bool make(Shape::ShapeTreeMap& shapes,
+            Shape::ObstructionTreeMap& obstructions);
+
   virtual void makeShapes(const Shape::ShapeTreeMap& other_shapes) = 0;
   virtual bool refineShapes(Shape::ShapeTreeMap& all_shapes,
                             Shape::ObstructionTreeMap& all_obstructions)

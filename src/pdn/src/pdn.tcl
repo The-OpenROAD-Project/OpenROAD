@@ -169,7 +169,9 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-obstructions <list_of_layers>] \
                                         [-power_switch_cell <name>] \
                                         [-power_control <signal_name>] \
-                                        [-power_control_network (STAR|DAISY)]
+                                        [-power_control_network (STAR|DAISY)] \
+                                        [-connect_to_pads] \
+                                        [-connect_to_pad_layers layers]
 } ;#checker off
 
 proc define_pdn_grid { args } {
@@ -840,8 +842,8 @@ proc deprecated { args_var key { use "." } } {
 proc define_pdn_grid { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
-      -power_control -power_control_network} \
-    flags {} ;# checker off
+      -power_control -power_control_network -connect_to_pad_layers} \
+    flags {-connect_to_pads} ;# checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
@@ -900,6 +902,21 @@ proc define_pdn_grid { args } {
     set power_control_network $keys(-power_control_network)
   }
 
+  set connect_to_pad_layers {}
+  if { [info exists flags(-connect_to_pads)] } {
+    if { ![info exists keys(-connect_to_pad_layers)] } {
+      foreach layer [[ord::get_db_tech] getLayers] {
+        if { [$layer getType] == "ROUTING" } {
+          lappend connect_to_pad_layers $layer
+        }
+      }
+    } else {
+      foreach layer $keys(-connect_to_pad_layers) {
+        lappend connect_to_pad_layers [get_layer $layer]
+      }
+    }
+  }
+
   foreach domain $domains {
     pdn::make_core_grid \
       $domain \
@@ -909,7 +926,8 @@ proc define_pdn_grid { args } {
       $obstructions \
       $power_cell \
       $power_control \
-      $power_control_network
+      $power_control_network \
+      $connect_to_pad_layers
   }
 }
 
