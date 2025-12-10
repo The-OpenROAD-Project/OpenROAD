@@ -1576,7 +1576,7 @@ bool PadDirectConnectionStraps::isTargetShape(const Shape* shape) const
     return shape->getType() == target_shapes_type_.value();
   }
 
-  switch (shape->getType()) {
+  switch (shape->getType().getValue()) {
     case odb::dbWireShapeType::STRIPE:
     case odb::dbWireShapeType::RING:
       return true;
