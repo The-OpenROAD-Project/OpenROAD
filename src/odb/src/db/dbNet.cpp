@@ -3768,7 +3768,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
              "insert_buffer",
              1,
              "BeforeLoads#{}",
-             i++);
+             ++i);
 
   if (load_pins.empty() || buffer_master == nullptr) {
     return nullptr;

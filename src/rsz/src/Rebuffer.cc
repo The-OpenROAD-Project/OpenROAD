@@ -2266,6 +2266,12 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
                fanout_limit_,
                delayAsString(drvr_pin_max_slew_, this, 3));
 
+    // jk: dbg
+    if (logger_->debugCheck(RSZ, "insert_buffer_check_sanity", 4)) {
+      sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(drvr_pin));
+      db_network_->checkSanityNetConnectivity(db_network_->staToDb(drvr_pin));
+    }
+
     // jk: dbg pre
     if (logger_->debugCheck(RSZ, "dbg", 1)) {
       if (iter == 59638) {

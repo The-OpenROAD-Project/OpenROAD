@@ -67,6 +67,24 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
   }
 
   prometheus_registry_ = std::make_shared<PrometheusRegistry>();
+
+  // jk: dbg
+
+  // 1~4: enable sanity checkers in different buffering logics
+  // 5: enable sanity checks after buffering
+  // 10: print buffering code location info
+  setDebugLevel(RSZ, "insert_buffer_check_sanity", 9);
+
+  // go back to the old buffering logics
+  setDebugLevel(RSZ, "rebuffer_old", 0);
+  setDebugLevel(RSZ, "split_load_old", 0);
+  setDebugLevel(RSZ, "make_repeater_old", 0);
+  setDebugLevel(RSZ, "buffer_input_old", 0);
+  setDebugLevel(RSZ, "buffer_output_old", 1);
+  setDebugLevel(RSZ, "buffer_in_cts_old", 1);
+  setDebugLevel(RSZ, "make_hold_delay_old", 1);
+  setDebugLevel(RSZ, "insert_delay_buffer_old", 1);
+  setDebugLevel(RSZ, "clone_move_old", 1);
 }
 
 Logger::~Logger()

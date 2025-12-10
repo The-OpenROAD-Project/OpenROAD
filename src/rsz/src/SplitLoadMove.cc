@@ -150,7 +150,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   const Point drvr_loc = db_network_->location(drvr_pin);
 
   // jk: old split load behavior
-  if (logger_->debugCheck(utl::RSZ, "old_split_load_move", 1)) {
+  if (logger_->debugCheck(utl::RSZ, "split_load_old", 1)) {
     // H-Fix Use driver parent for hierarchy, not the top instance
     Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
 
@@ -335,6 +335,18 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
           db_network_->dbToSta(db_drvr_net));
       Net* out_net = network_->net(buffer_out_pin);
       estimate_parasitics_->parasiticsInvalid(out_net);
+
+      // jk: dbg. Sanity check
+      if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 1)) {
+        dbITerm* in_iterm = buffer_inst->getFirstInput();
+        sta_->checkSanityDrvrVertexEdges(in_iterm);
+        db_network_->checkSanityNetConnectivity(in_iterm);
+
+        dbITerm* out_iterm = buffer_inst->getFirstOutput();
+        sta_->checkSanityDrvrVertexEdges(out_iterm);
+        db_network_->checkSanityNetConnectivity(out_iterm);
+      }
+
       return true;
     }
   }

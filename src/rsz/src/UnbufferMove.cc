@@ -452,6 +452,12 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
     survivor_modnet->rename(new_modnet_name->c_str());
   }
 
+  // jk: dbg. Sanity check
+  if (logger_->debugCheck(utl::RSZ, "insert_buffer_sanity_check", 6)) {
+    db_network_->checkAxioms();
+    sta_->checkSanity();
+  }
+
   return true;
 }
 
