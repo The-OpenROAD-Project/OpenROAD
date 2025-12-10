@@ -52,12 +52,7 @@ class Graph2D
     }
   };
 
-  void init(int x_grid,
-            int y_grid,
-            int h_capacity,
-            int v_capacity,
-            int num_layers,
-            utl::Logger* logger);
+  void init(int x_grid, int y_grid, int num_layers, utl::Logger* logger);
   void InitEstUsage();
   void InitLastUsage(int upType);
   void clear();
