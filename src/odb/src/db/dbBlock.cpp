@@ -2474,16 +2474,22 @@ int dbBlock::getGCellTileSize()
     return track_spacing;
   };
 
-  // Use the pitch of the third routing layer to compute the gcell tile size.
-  int layer_for_gcell_size = 3;
-  if (block->max_routing_layer_ < layer_for_gcell_size) {
-    layer_for_gcell_size = block->max_routing_layer_;
+  // Use the pitch of the fourth routing layer as the top option to compute the
+  // gcell tile size.
+  const int upper_layer_for_gcell_size = 4;
+  const int pitches_in_tile = 15;
+
+  if (block->max_routing_layer_ < upper_layer_for_gcell_size) {
+    return getAverageTrackSpacing(block->max_routing_layer_) * pitches_in_tile;
   }
 
-  const int pitches_in_tile = 15;
-  int track_spacing = getAverageTrackSpacing(layer_for_gcell_size);
+  // Use the middle track spacing between M2, M3 and M4
+  std::vector<int> track_spacings = {getAverageTrackSpacing(2),
+                                     getAverageTrackSpacing(3),
+                                     getAverageTrackSpacing(4)};
+  std::sort(track_spacings.begin(), track_spacings.end());
 
-  return pitches_in_tile * track_spacing;
+  return track_spacings[1] * pitches_in_tile;
 }
 
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
