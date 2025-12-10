@@ -140,7 +140,7 @@ class PadDirectConnectionStraps : public Straps
   void cutShapes(const Shape::ObstructionTreeMap& obstructions) override;
 
   static void unifyConnectionTypes(
-      const std::set<PadDirectConnectionStraps*>& straps);
+      const std::vector<PadDirectConnectionStraps*>& straps);
 
  private:
   enum class ConnectionType

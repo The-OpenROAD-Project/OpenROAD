@@ -29,8 +29,6 @@
 #include <vector>
 
 #include "dbAccessPoint.h"
-#include "dbArrayTable.h"
-#include "dbArrayTable.hpp"
 #include "dbBPin.h"
 #include "dbBPinItr.h"
 #include "dbBTerm.h"
@@ -3885,6 +3883,54 @@ const char* dbBlock::getBaseName(const char* full_name) const
     return last_hier_delimiter + 1;
   }
   return full_name;
+}
+
+dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)
+{
+  if (hierarchical_name == nullptr) {
+    return nullptr;
+  }
+
+  const char* last_delim = strrchr(hierarchical_name, getHierarchyDelimiter());
+  if (last_delim == nullptr) {
+    return nullptr;
+  }
+
+  std::string inst_path(hierarchical_name, last_delim - hierarchical_name);
+  const char* term_name = last_delim + 1;
+
+  dbModInst* inst = findModInst(inst_path.c_str());
+  if (inst) {
+    return inst->findModITerm(term_name);
+  }
+  return nullptr;
+}
+
+dbModBTerm* dbBlock::findModBTerm(const char* hierarchical_name)
+{
+  if (hierarchical_name == nullptr) {
+    return nullptr;
+  }
+
+  const char* last_delim = strrchr(hierarchical_name, getHierarchyDelimiter());
+  if (last_delim == nullptr) {
+    // Top level port
+    if (dbModule* top_module = getTopModule()) {
+      return top_module->findModBTerm(hierarchical_name);
+    }
+    return nullptr;
+  }
+
+  std::string inst_path(hierarchical_name, last_delim - hierarchical_name);
+  const char* term_name = last_delim + 1;
+
+  dbModInst* inst = findModInst(inst_path.c_str());
+  if (inst) {
+    if (dbModule* master = inst->getMaster()) {
+      return master->findModBTerm(term_name);
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace odb

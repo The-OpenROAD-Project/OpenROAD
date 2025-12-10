@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "dbAccessPoint.h"
-#include "dbArrayTable.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbChip.h"

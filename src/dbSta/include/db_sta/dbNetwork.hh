@@ -161,6 +161,11 @@ class dbNetwork : public ConcreteNetwork
 
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
+
+  bool isPGSupply(dbITerm* iterm) const;
+  bool isPGSupply(dbBTerm* bterm) const;
+  bool isPGSupply(dbNet* net) const;
+
   // dbStaCbk::inDbBTermCreate
   Port* makeTopPort(dbBTerm* bterm);
   dbBTerm* isTopPort(const Port*) const;
@@ -331,6 +336,11 @@ class dbNetwork : public ConcreteNetwork
   Net* findFlatNet(const Pin* pin) const;
 
   bool hasPort(const Net* net) const;
+
+  // Return the highest net above the given net.
+  // - If the net is a flat net, return it.
+  // - If the net is a hier net, return the modnet in the highest hierarchy.
+  Net* highestNetAbove(Net* net) const override;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
