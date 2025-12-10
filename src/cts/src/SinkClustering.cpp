@@ -420,21 +420,20 @@ bool SinkClustering::isLimitExceeded(const unsigned size,
                                      const double capCost,
                                      const unsigned sizeLimit)
 {
+  bool is_limit_exceeded = false;
   if (useMaxCapLimit_) {
-    bool is_limit_exceeded
-        = (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
-    // size is defined by the user
-    if (use_max_size_) {
-      is_limit_exceeded |= (size >= sizeLimit);
-    }
-    // diameter is defined by the user
-    if (use_max_diameter_) {
-      is_limit_exceeded |= (cost > maxInternalDiameter_);
-    }
-    return is_limit_exceeded;
+    is_limit_exceeded
+        |= (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
   }
-
-  return (size >= sizeLimit || cost > maxInternalDiameter_);
+  // size is defined by the user
+  if (use_max_size_) {
+    is_limit_exceeded |= (size >= sizeLimit);
+  }
+  // diameter is defined by the user
+  if (use_max_diameter_) {
+    is_limit_exceeded |= (cost > maxInternalDiameter_);
+  }
+  return is_limit_exceeded;
 }
 
 void SinkClustering::writePlotFile(unsigned groupSize)
