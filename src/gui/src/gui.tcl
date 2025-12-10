@@ -142,12 +142,13 @@ sta::define_cmd_args "save_animated_gif" {-start|-add|-end \
                                           [-width width] \
                                           [-resolution microns_per_pixel] \
                                           [-delay delay] \
+                                          [-key key] \
                                           [path]
 }
 
 proc save_animated_gif { args } {
   sta::parse_key_args "save_animated_gif" args \
-    keys {-area -width -resolution -delay} flags {-start -end -add}
+    keys {-area -width -resolution -delay -key} flags {-start -end -add}
 
   set resolution 0
   if { [info exists keys(-resolution)] } {
