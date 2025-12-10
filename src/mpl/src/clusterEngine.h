@@ -169,6 +169,12 @@ class ClusteringEngine
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
 
+  struct Net
+  {
+    int driver_id{-1};
+    std::vector<int> loads_ids;
+  };
+
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
@@ -249,6 +255,8 @@ class ClusteringEngine
   void clearConnections();
   void buildNetListConnections();
   void buildDataFlowConnections();
+  Net buildNet(odb::dbNet* db_net) const;
+  void connectClusters(const Net& net);
   void connect(Cluster* a, Cluster* b, float connection_weight) const;
 
   // Methods for data flow

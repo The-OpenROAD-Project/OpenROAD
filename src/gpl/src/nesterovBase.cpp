@@ -1452,10 +1452,8 @@ void NesterovBaseCommon::updateDbGCells()
   if (db_cbk_) {
     db_cbk_->removeOwner();
   }
-  assert(omp_get_thread_num() == 0);
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto it = getGCells().begin(); it < getGCells().end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+
+  for (auto& gCell : getGCells()) {
     if (gCell->isInstance()) {
       for (Instance* inst : gCell->insts()) {
         odb::dbInst* db_inst = inst->dbInst();
@@ -1468,6 +1466,7 @@ void NesterovBaseCommon::updateDbGCells()
       }
     }
   }
+
   if (db_cbk_) {
     db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
   }
