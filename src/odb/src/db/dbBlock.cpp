@@ -2454,26 +2454,34 @@ void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
 int dbBlock::getGCellTileSize()
 {
   _dbBlock* block = (_dbBlock*) this;
+
+  // lambda function to get the average track spacing of a given layer
+  auto getAverageTrackSpacing = [this](int layer_idx) -> int {
+    dbTech* tech = getTech();
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+
+    if (track_grid == nullptr) {
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          358,
+          "Track grid for routing layer {} not found.",
+          tech_layer->getName());
+    }
+
+    int track_spacing, track_init, num_tracks;
+    track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
+    return track_spacing;
+  };
+
   // Use the pitch of the third routing layer to compute the gcell tile size.
   int layer_for_gcell_size = 3;
   if (block->max_routing_layer_ < layer_for_gcell_size) {
     layer_for_gcell_size = block->max_routing_layer_;
   }
+
   const int pitches_in_tile = 15;
-
-  dbTech* tech = getTech();
-  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_gcell_size);
-  odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
-
-  if (track_grid == nullptr) {
-    getImpl()->getLogger()->error(utl::ODB,
-                                  358,
-                                  "Track grid for routing layer {} not found.",
-                                  tech_layer->getName());
-  }
-
-  int track_spacing, track_init, num_tracks;
-  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
+  int track_spacing = getAverageTrackSpacing(layer_for_gcell_size);
 
   return pitches_in_tile * track_spacing;
 }
