@@ -2971,9 +2971,14 @@ class dbInst : public dbObject
   dbSet<dbITerm> getITerms() const;
 
   ///
+  /// Get the first input terminal of this instance.
+  ///
+  dbITerm* getFirstInput() const;
+
+  ///
   /// Get the first output terminal of this instance.
   ///
-  dbITerm* getFirstOutput();
+  dbITerm* getFirstOutput() const;
 
   ///
   /// Get the region this instance belongs to. Returns nullptr if instance has

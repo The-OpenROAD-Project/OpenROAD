@@ -1276,6 +1276,10 @@ dbInst* dbInst::create(dbBlock* block_,
                        bool physical_only,
                        dbModule* parent_module)
 {
+  // jk: dbg
+  static int _i = 0;
+  _i++;
+
   _dbBlock* block = (_dbBlock*) block_;
   if (block->inst_hash_.hasMember(name_)) {
     return nullptr;
@@ -1313,7 +1317,8 @@ dbInst* dbInst::create(dbBlock* block_,
              utl::ODB,
              "DB_ECO",
              1,
-             "ECO: create {} master '{}'",
+             "ECO: [{}] create {} master '{}'",
+             _i,  // jk: dbg
              inst->getDebugName(),
              master_->getName());
 
@@ -1602,7 +1607,26 @@ dbInst* dbInst::getValidInst(dbBlock* block_, uint dbid_)
   }
   return (dbInst*) block->inst_tbl_->getPtr(dbid_);
 }
-dbITerm* dbInst::getFirstOutput()
+
+dbITerm* dbInst::getFirstInput() const
+{
+  for (dbITerm* tr : getITerms()) {
+    if (tr->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (tr->getIoType() != dbIoType::INPUT) {
+      continue;
+    }
+
+    return tr;
+  }
+  getImpl()->getLogger()->warn(
+      utl::ODB, 172, "instance {} has no input pin", getConstName());
+  return nullptr;
+}
+
+dbITerm* dbInst::getFirstOutput() const
 {
   for (dbITerm* tr : getITerms()) {
     if (tr->getSigType().isSupply()) {
