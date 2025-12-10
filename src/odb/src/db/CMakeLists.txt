@@ -90,6 +90,7 @@ add_library(db
     dbChip.cpp
     dbChipBump.cpp
     dbChipBumpInst.cpp
+    dbChipCallBackObj.cpp 
     dbChipConn.cpp
     dbChipInst.cpp
     dbChipNet.cpp

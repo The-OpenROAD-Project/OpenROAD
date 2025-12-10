@@ -19,7 +19,7 @@
 #include "gui/gui.h"
 #include "inspector.h"
 #include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/geom.h"
 
 namespace utl {
@@ -51,7 +51,7 @@ class DRCRenderer : public Renderer
   odb::dbMarkerCategory* category_;
 };
 
-class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
+class DRCWidget : public QDockWidget, public odb::dbChipCallBackObj
 {
   Q_OBJECT
 

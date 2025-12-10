@@ -195,6 +195,15 @@
     "dbBlock.h", 
     "dbTech.h", 
     "dbPropertyItr.h",
-    "dbChipConn.h"
+    "dbChipConn.h",
+    "dbChipConnItr.h",
+    "dbChipInst.h",
+    "dbChipInstItr.h",
+    "dbChipNet.h",
+    "dbChipNetItr.h",
+    "dbCommon.h",
+    "odb/dbChipCallBackObj.h",
+    "odb/dbObject.h",
+    "odb/geom.h"
   ]
 } 

@@ -231,14 +231,14 @@ void DRCWidget::setChip(odb::dbChip* chip)
 {
   chip_ = chip;
 
-  addOwner(chip_->getBlock());
+  addOwner(chip_);
   updateMarkerGroups();
 }
 
 void DRCWidget::showEvent(QShowEvent* event)
 {
   if (chip_) {
-    addOwner(chip_->getBlock());
+    addOwner(chip_);
   }
 
   updateMarkerGroups();

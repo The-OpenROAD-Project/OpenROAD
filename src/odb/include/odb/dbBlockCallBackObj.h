@@ -18,8 +18,6 @@ class dbFill;
 class dbITerm;
 class dbInst;
 class dbIoType;
-class dbMarker;
-class dbMarkerCategory;
 class dbMaster;
 class dbModBTerm;
 class dbModule;
@@ -181,16 +179,6 @@ class dbBlockCallBackObj
   // dbFill Start
   virtual void inDbFillCreate(dbFill*) {}
   // dbFill End
-
-  // dbMarkerCategory Start
-  virtual void inDbMarkerCategoryCreate(dbMarkerCategory*) {}
-  virtual void inDbMarkerCategoryDestroy(dbMarkerCategory*) {}
-  // dbMarkerCategory End
-
-  // dbMarker Start
-  virtual void inDbMarkerCreate(dbMarker*) {}
-  virtual void inDbMarkerDestroy(dbMarker*) {}
-  // dbMarker End
 
   virtual void inDbBlockStreamOutBefore(dbBlock*) {}
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}

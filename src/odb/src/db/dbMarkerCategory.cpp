@@ -23,7 +23,7 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbHashTable.hpp"
-#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
 // User Code End Includes
 namespace odb {
@@ -787,11 +787,8 @@ dbMarkerCategory* dbMarkerCategory::create(dbChip* chip, const char* name)
 
   parent->marker_categories_map_[name] = _category->getImpl()->getId();
 
-  _dbBlock* block = (_dbBlock*) chip->getBlock();
-  if (block) {
-    for (auto cb : block->callbacks_) {
-      cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
-    }
+  for (auto cb : parent->callbacks_) {
+    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
   }
 
   return (dbMarkerCategory*) _category;
@@ -862,9 +859,9 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
 
   parent->categories_hash_.insert(_category);
 
-  _dbBlock* block = parent->getBlock();
-  if (block) {
-    for (auto cb : block->callbacks_) {
+  _dbChip* chip = parent->getChip();
+  if (chip) {
+    for (auto cb : chip->callbacks_) {
       cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
     }
   }
@@ -902,10 +899,8 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
 
   if (_category->isTopCategory()) {
     _dbChip* _chip = (_dbChip*) _category->getOwner();
-    if (_category->getBlock()) {
-      for (auto cb : _category->getBlock()->callbacks_) {
-        cb->inDbMarkerCategoryDestroy(category);
-      }
+    for (auto cb : _chip->callbacks_) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     _chip->marker_categories_map_.erase(_category->name_);
@@ -913,11 +908,9 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
   } else {
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();
 
-    _dbBlock* block = parent->getBlock();
-    if (block) {
-      for (auto cb : block->callbacks_) {
-        cb->inDbMarkerCategoryDestroy(category);
-      }
+    _dbChip* chip = parent->getChip();
+    for (auto cb : chip->callbacks_) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     parent->categories_hash_.remove(_category);
