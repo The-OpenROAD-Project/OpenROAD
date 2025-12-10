@@ -25,7 +25,7 @@ Straps:
     Offset: 0.0000
     Snap to grid: false
 Connect:
-  Connect layers M1 -> M3
+  Connect layers M1 -> M3 (1)
     Split cuts:
       Layer: M2 with pitch 1.0000 staggered
 [INFO PDN-0001] Inserting grid: Core

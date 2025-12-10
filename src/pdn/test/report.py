@@ -45,9 +45,9 @@ pdn_aux.add_pdn_stripe(
     design, layer="metal9", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True
 )
 
-pdn_aux.add_pdn_connect(design, layers=["metal1", "metal4"])
 pdn_aux.add_pdn_connect(design, layers=["metal4", "metal7"])
-pdn_aux.add_pdn_connect(design, layers=["metal7", "metal8"])
+pdn_aux.add_pdn_connect(design, layers=["metal1", "metal4"])
 pdn_aux.add_pdn_connect(design, layers=["metal8", "metal9"])
+pdn_aux.add_pdn_connect(design, layers=["metal7", "metal8"])
 
 pdngen.report()
