@@ -88,7 +88,8 @@ void GraphicsImpl::debugForNesterovPlace(
     main_chart_->setYAxisMin({std::nullopt, 0});
 
     // Useful for debugging : Density penalty and PhiCoef
-    if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
+    // if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) 
+    {
       if (!nbVec_.empty()) {
       density_chart_ = gui->addChart(
         "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
@@ -551,7 +552,8 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
   main_chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
 
-  if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
+  // if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) 
+  {
     if (density_chart_) {
       std::vector<double> values;
       if (!nbVec_.empty() && nbVec_[0]) {
