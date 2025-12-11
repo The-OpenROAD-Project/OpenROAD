@@ -541,7 +541,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
       // Insert buffer
       std::string clkName = root_->getClock().getSdcName();
       std::string newBufferName
-          = std::format("delaybuf_{}_{}", delayBufIndex_++, clkName);
+          = fmt::format("delaybuf_{}_{}", delayBufIndex_++, clkName);
       odb::dbMaster* bufferMaster
           = db_->findMaster(options_->getRootBuffer().c_str());
 
