@@ -129,6 +129,9 @@ void _dbModule::collectMemInfo(MemInfo& info)
 
 _dbModule::~_dbModule()
 {
+  if (name_) {
+    free((void*) name_);
+  }
   // User Code Begin Destructor
   delete _port_iter;
   // User Code End Destructor

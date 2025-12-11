@@ -453,9 +453,21 @@ void Grid::report() const
     }
   }
   if (!connect_.empty()) {
+    std::vector<Connect*> connect;
+    connect.reserve(connect_.size());
+    for (const auto& conn : connect_) {
+      connect.push_back(conn.get());
+    }
+    std::ranges::sort(connect, [](const Connect* l, const Connect* r) {
+      int l_lower = l->getLowerLayer()->getRoutingLevel();
+      int l_upper = l->getUpperLayer()->getRoutingLevel();
+      int r_lower = r->getLowerLayer()->getRoutingLevel();
+      int r_upper = r->getUpperLayer()->getRoutingLevel();
+      return std::tie(l_lower, l_upper) < std::tie(r_lower, r_upper);
+    });
     logger->report("Connect:");
-    for (const auto& connect : connect_) {
-      connect->report();
+    for (Connect* conn : connect) {
+      conn->report();
     }
   }
   if (!pin_layers_.empty()) {
