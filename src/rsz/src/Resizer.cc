@@ -1275,16 +1275,17 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
     odb::dbInst* new_buffer
         = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
 
+    inserted_buffer_count_++;
+
     // jk: dbg
     // odb::dbObject* drvr_pin = db_network_->staToDb(top_pin);
     // odb::dbMaster* buffer_master = db_network_->staToDb(buffer_cell);
     // odb::dbInst* new_buffer = top_pin_flat_net->insertBufferAfterDriver(
     //     drvr_pin, buffer_master, nullptr, "input");
 
+    // jk: rm
     buffer = db_network_->dbToSta(new_buffer);
     getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-
-    inserted_buffer_count_++;
   }
 
   // jk: post buffer input
@@ -1394,63 +1395,78 @@ void Resizer::bufferOutput(const Pin* top_pin,
         RSZ, 215, "Buffering output port {}.", network_->name(top_pin));
   }
 
-  NetworkEdit* network = networkEdit();
-
-  odb::dbITerm* top_pin_op_iterm;
-  odb::dbBTerm* top_pin_op_bterm;
-  odb::dbModITerm* top_pin_op_moditerm;
-
-  db_network_->staToDb(
-      top_pin, top_pin_op_iterm, top_pin_op_bterm, top_pin_op_moditerm);
-
-  odb::dbNet* flat_op_net = top_pin_op_bterm->getNet();
-  odb::dbModNet* hier_op_net = top_pin_op_bterm->getModNet();
-
-  sta_->disconnectPin(const_cast<Pin*>(top_pin));
-
-  LibertyPort *input, *output;
-  assert(buffer_cell);
-  buffer_cell->bufferPorts(input, output);
-
-  Instance* parent = network->topInstance();
-  Net* buffer_out = db_network_->makeNet(parent);
-
-  Point pin_loc = db_network_->location(top_pin);
-  // buffer made in top level.
-  Instance* buffer = makeBuffer(buffer_cell, "output", parent, pin_loc);
-  inserted_buffer_count_++;
-
-  // connect original input (hierarchical or flat) to buffer input
-  // handle hierarchy
+  Instance* buffer = nullptr;
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
-  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
-  // get the iterms. Note this are never null (makeBuffer properly instantiates
-  // them and we know to always expect an iterm.). However, the api (flatPin)
-  // truly checks to see if the pins could be moditerms & if they are returns
-  // null, so coverity rationally reasons that the iterm could be null,
-  // so we add some extra checking here. This is a consequence of
-  //"hiding" the full api.
-  //
-  odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
-  odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
+  if (logger_->debugCheck(utl::RSZ, "buffer_output_old", 1)) {
+    NetworkEdit* network = networkEdit();
 
-  if (buffer_ip_pin_iterm && buffer_op_pin_iterm) {
-    if (flat_op_net) {
-      buffer_ip_pin_iterm->connect(flat_op_net);
+    odb::dbITerm* top_pin_op_iterm;
+    odb::dbBTerm* top_pin_op_bterm;
+    odb::dbModITerm* top_pin_op_moditerm;
+
+    db_network_->staToDb(
+        top_pin, top_pin_op_iterm, top_pin_op_bterm, top_pin_op_moditerm);
+
+    odb::dbNet* flat_op_net = top_pin_op_bterm->getNet();
+    odb::dbModNet* hier_op_net = top_pin_op_bterm->getModNet();
+
+    sta_->disconnectPin(const_cast<Pin*>(top_pin));
+
+    LibertyPort *input, *output;
+    assert(buffer_cell);
+    buffer_cell->bufferPorts(input, output);
+
+    Instance* parent = network->topInstance();
+    Net* buffer_out = db_network_->makeNet(parent);
+
+    Point pin_loc = db_network_->location(top_pin);
+    // buffer made in top level.
+    buffer = makeBuffer(buffer_cell, "output", parent, pin_loc);
+    inserted_buffer_count_++;
+
+    // connect original input (hierarchical or flat) to buffer input
+    // handle hierarchy
+    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+
+    // get the iterms. Note this are never null (makeBuffer properly
+    // instantiates them and we know to always expect an iterm.). However, the
+    // api (flatPin) truly checks to see if the pins could be moditerms & if
+    // they are returns null, so coverity rationally reasons that the iterm
+    // could be null, so we add some extra checking here. This is a consequence
+    // of
+    //"hiding" the full api.
+    //
+    odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
+    odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
+
+    if (buffer_ip_pin_iterm && buffer_op_pin_iterm) {
+      if (flat_op_net) {
+        buffer_ip_pin_iterm->connect(flat_op_net);
+      }
+      if (hier_op_net) {
+        buffer_ip_pin_iterm->connect(hier_op_net);
+      }
+      buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
+      top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
+      SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
+      // rename the mod net to match the flat net.
+      if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
+        buffer_ip_pin_iterm->getModNet()->rename(
+            buffer_ip_pin_iterm->getNet()->getName().c_str());
+      }
     }
-    if (hier_op_net) {
-      buffer_ip_pin_iterm->connect(hier_op_net);
-    }
-    buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
-    top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
-    SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
-    // rename the mod net to match the flat net.
-    if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
-      buffer_ip_pin_iterm->getModNet()->rename(
-          buffer_ip_pin_iterm->getNet()->getName().c_str());
-    }
+  } else {
+    // New insert buffer behavior
+    odb::dbInst* new_buffer = insertBufferBeforeLoad(
+        const_cast<Pin*>(top_pin), buffer_cell, nullptr, "output");
+
+    inserted_buffer_count_++;
+
+    // jk: rm
+    buffer = db_network_->dbToSta(new_buffer);
+    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
   }
 
   // jk: post buffer output
@@ -3404,6 +3420,15 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
                                  separation_dbu);
       designAreaIncr(area(db_network_->cell(tie_cell)));
       tie_count++;
+
+      // jk: sanity check
+      if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 6)) {
+        logger_->report("Add tie cell #{} - {}",
+                        tie_count,
+                        db_network_->pathName(load_pin));
+        db_network_->checkAxioms();
+        sta_->checkSanity();
+      }
     }
 
     if (keep_tie == false) {
@@ -4982,10 +5007,11 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
 
   odb::dbNet* db_net = db_network_->staToDb(net);
   if (!db_net) {
+    const char* net_name = network_->pathName(net);
     logger_->error(RSZ,
                    3005,
                    "Cannot convert STA net {} to dbNet",
-                   network_->pathName(net));
+                   net_name ? net_name : "<unknown>");
     return nullptr;
   }
 
