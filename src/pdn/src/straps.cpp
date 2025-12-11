@@ -883,6 +883,9 @@ void PadDirectConnectionStraps::report() const
       break;
   }
   logger->report("    Connection type: {}", connection_type);
+  if (type_ == ConnectionType::Edge) {
+    logger->report("    Edge: {}", pad_edge_.getString());
+  }
 }
 
 std::string PadDirectConnectionStraps::getName() const
@@ -1012,12 +1015,16 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
     return;
   }
 
-  std::set<odb::dbTechLayer*> connectable_layers;
+  std::set<odb::dbTechLayer*> pin_layers;
+  std::map<odb::dbTechLayer*, std::set<odb::dbTechLayer*>> connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& shape : shapes) {
       if (shape->getType() == target_shapes_type_) {
         const auto layers = getGrid()->connectableLayers(layer);
-        connectable_layers.insert(layers.begin(), layers.end());
+        pin_layers.insert(layers.begin(), layers.end());
+        for (auto* clayer : layers) {
+          connectable_layers[clayer].insert(layer);
+        }
       }
     }
   }
@@ -1033,14 +1040,20 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
     transform.apply(pin_rect);
 
     auto* layer = pin->getTechLayer();
-    if (connectable_layers.find(layer) == connectable_layers.end()) {
+    if (pin_layers.find(layer) == pin_layers.end()) {
       // layer is not connectable to a target
       continue;
     }
 
+    const auto& connect_layers = connectable_layers[layer];
+
     // find nearest target
     for (const auto& [search_layer, search_shape_tree] : other_shapes) {
       if (layer == search_layer) {
+        continue;
+      }
+      if (connect_layers.find(search_layer) == connect_layers.end()) {
+        // cannot connect to this layer
         continue;
       }
 
@@ -1049,6 +1062,16 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
       if (closest_shape == nullptr) {
         continue;
       }
+
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Pad",
+                 2,
+                 "Connect iterm {} ({}/{}) -> {}",
+                 iterm_->getName(),
+                 layer->getName(),
+                 pin->getName(),
+                 closest_shape->getReportText());
 
       odb::Rect shape_rect;
       if (!snapRectToClosestShape(closest_shape, pin_rect, shape_rect)) {

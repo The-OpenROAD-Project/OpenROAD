@@ -4130,11 +4130,9 @@ class PinModDbNetConnection : public PinVisitor
                         Logger* logger,
                         const Net* net_to_search);
   void operator()(const Pin* pin) override;
-  const std::set<dbModNet*>& getModNets() const { return modnets_; }
   dbNet* getNet() const { return dbnet_; }
 
  private:
-  std::set<dbModNet*> modnets_;
   dbNet* dbnet_;
   Logger* logger_ = nullptr;
   bool db_net_search_ = false;
@@ -4165,14 +4163,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
   dbModITerm* moditerm;
 
   db_network_->staToDb(pin, iterm, bterm, moditerm);
-
-  if (iterm && iterm->getModNet()) {
-    modnets_.insert(iterm->getModNet());
-  } else if (bterm && bterm->getModNet()) {
-    modnets_.insert(bterm->getModNet());
-  } else if (moditerm && moditerm->getModNet()) {
-    modnets_.insert(moditerm->getModNet());
-  }
 
   dbNet* candidate_flat_net = db_network_->flatNet(pin);
   if (candidate_flat_net) {

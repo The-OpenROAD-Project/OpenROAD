@@ -190,6 +190,9 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
 
       bool repaired_net = false;
+      if (max_fanout <= 0) {
+        max_fanout = 1e9;
+      }
 
       if (performGainBuffering(net, drvr_pin, max_fanout)) {
         debugPrint(logger_,
