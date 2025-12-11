@@ -2454,28 +2454,43 @@ void dbBlock::setMaxLayerForClock(const int max_layer_for_clock)
 int dbBlock::getGCellTileSize()
 {
   _dbBlock* block = (_dbBlock*) this;
-  // Use the pitch of the third routing layer to compute the gcell tile size.
-  int layer_for_gcell_size = 3;
-  if (block->max_routing_layer_ < layer_for_gcell_size) {
-    layer_for_gcell_size = block->max_routing_layer_;
-  }
+
+  // lambda function to get the average track spacing of a given layer
+  auto getAverageTrackSpacing = [this](int layer_idx) -> int {
+    dbTech* tech = getTech();
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
+
+    if (track_grid == nullptr) {
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          358,
+          "Track grid for routing layer {} not found.",
+          tech_layer->getName());
+    }
+
+    int track_spacing, track_init, num_tracks;
+    track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
+    // for layers with multiple track patterns, ensure even track spacing
+    return (track_spacing % 2 == 0) ? track_spacing : track_spacing - 1;
+  };
+
+  // Use the pitch of the fourth routing layer as the top option to compute the
+  // gcell tile size.
+  const int upper_layer_for_gcell_size = 4;
   const int pitches_in_tile = 15;
 
-  dbTech* tech = getTech();
-  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_for_gcell_size);
-  odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
-
-  if (track_grid == nullptr) {
-    getImpl()->getLogger()->error(utl::ODB,
-                                  358,
-                                  "Track grid for routing layer {} not found.",
-                                  tech_layer->getName());
+  if (block->max_routing_layer_ < upper_layer_for_gcell_size) {
+    return getAverageTrackSpacing(block->max_routing_layer_) * pitches_in_tile;
   }
 
-  int track_spacing, track_init, num_tracks;
-  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
+  // Use the middle track spacing between M2, M3 and M4
+  std::vector<int> track_spacings = {getAverageTrackSpacing(2),
+                                     getAverageTrackSpacing(3),
+                                     getAverageTrackSpacing(4)};
+  std::ranges::sort(track_spacings);
 
-  return pitches_in_tile * track_spacing;
+  return track_spacings[1] * pitches_in_tile;
 }
 
 void dbBlock::getExtCornerNames(std::list<std::string>& ecl)

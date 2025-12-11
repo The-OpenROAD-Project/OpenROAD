@@ -209,11 +209,11 @@ int Gui::gifStart(const std::string& filename)
   return 0;
 }
 
-void Gui::gifEnd(const int key)
+void Gui::gifEnd(std::optional<int> key)
 {
 }
 
-void Gui::gifAddFrame(const int key,
+void Gui::gifAddFrame(std::optional<int> key,
                       const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
