@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChip.h"
 
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 
