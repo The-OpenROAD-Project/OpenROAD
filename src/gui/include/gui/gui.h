@@ -827,12 +827,12 @@ class Gui
   // Start returns the key for use by add and end.  This allows multiple
   // gifs to be open at once.
   int gifStart(const std::string& filename);
-  void gifAddFrame(int key,
+  void gifAddFrame(std::optional<int> key,
                    const odb::Rect& region = odb::Rect(),
                    int width_px = 0,
                    double dbu_per_pixel = 0,
                    std::optional<int> delay = {});
-  void gifEnd(int key);
+  void gifEnd(std::optional<int> key);
 
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
