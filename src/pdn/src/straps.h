@@ -58,6 +58,10 @@ class Straps : public GridComponent
   {
     return direction_ == odb::dbTechLayerDir::HORIZONTAL;
   }
+  void setAllowOutsideCoreArea(bool allow_out_of_core)
+  {
+    allow_out_of_core_ = allow_out_of_core;
+  }
 
   void report() const override;
   Type type() const override { return GridComponent::Strap; }
@@ -70,6 +74,7 @@ class Straps : public GridComponent
 
  protected:
   bool checkLayerOffsetSpecification(bool error = false) const;
+  std::string getNetString() const;
 
  private:
   odb::dbTechLayer* layer_;
@@ -83,6 +88,7 @@ class Straps : public GridComponent
   ExtensionMode extend_mode_ = ExtensionMode::CORE;
   int strap_start_ = 0;
   int strap_end_ = 0;
+  bool allow_out_of_core_ = false;
 
   void makeStraps(int x_start,
                   int y_start,
@@ -275,8 +281,6 @@ class RepairChannelStraps : public Straps
                        int extra_offset = 0,
                        int bisect_dist = 0,
                        int level = 0);
-
-  std::string getNetString() const;
 
   static std::vector<RepairChannelArea> findRepairChannels(
       Grid* grid,

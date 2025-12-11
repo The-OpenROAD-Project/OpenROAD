@@ -410,6 +410,7 @@ def add_pdn_stripe(
     extend_to_core_ring=False,
     extend_to_boundary=False,
     snap_to_grid=False,
+    allow_out_of_core=False,
 ):
     pdngen = design.getPdnGen()
 
@@ -433,7 +434,7 @@ def add_pdn_stripe(
     nets_list = []
     if bool(nets):
         for net_name in nets:
-            net = design.getBlock.findNet(net_name)
+            net = design.getBlock().findNet(net_name)
             if net == None:
                 utl.error(utl.PDN, 1530, f"Unable to find net {net_name}.")
             nets_list.append(net)
@@ -484,6 +485,7 @@ def add_pdn_stripe(
                 starts_with,
                 extend,
                 nets_list,
+                allow_out_of_core,
             )
 
 

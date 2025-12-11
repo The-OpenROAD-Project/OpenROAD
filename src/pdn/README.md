@@ -215,6 +215,7 @@ add_pdn_stripe
     [-spacing spacing_value]
     [-starts_with POWER|GROUND]
     [-width width_value]
+    [-allow_out_of_core]
 ```
 
 #### Options
@@ -234,6 +235,7 @@ add_pdn_stripe
 | `[-spacing]` | Optional specification of the spacing between power/ground pairs within a single pitch (Default: pitch / 2). |
 | `[-starts_with]` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting). This cannot be used with -followpins (Flip sites when initializing floorplan to change followpin power/ground order). |
 | `[-width]` | Value for the width of stripe. |
+| `-allow_out_of_core` | Allow stripes to continue beyond the core area. |
 
 ### Add Sroute Connect
 

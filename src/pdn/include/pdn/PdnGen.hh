@@ -143,7 +143,8 @@ class PdnGen
                  bool snap,
                  StartsWith starts_with,
                  ExtensionMode extend,
-                 const std::vector<odb::dbNet*>& nets);
+                 const std::vector<odb::dbNet*>& nets,
+                 bool allow_out_of_core);
   void makeConnect(
       Grid* grid,
       odb::dbTechLayer* layer0,

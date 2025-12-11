@@ -231,7 +231,8 @@ void make_strap(const char* grid_name,
                 bool use_grid_power_order,
                 bool starts_with_power,
                 pdn::ExtensionMode extend,
-                const std::vector<odb::dbNet*>& nets)
+                const std::vector<odb::dbNet*>& nets,
+                bool allow_out_of_core)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = GRID;
@@ -253,7 +254,8 @@ void make_strap(const char* grid_name,
                       snap,
                       starts_with,
                       extend,
-                      nets);
+                      nets,
+                      allow_out_of_core);
   }
 }
 
