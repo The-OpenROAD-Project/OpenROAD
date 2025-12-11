@@ -496,31 +496,96 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
 
   odb::dbInst* returnBuffer = nullptr;
   odb::dbInst* lastBuffer = nullptr;
-  for (int i = 0; i < numBuffers; i++) {
-    double locX = (double) (srcX + offsetX * (i + 1)) / wireSegmentUnit_;
-    double locY = (double) (srcY + offsetY * (i + 1)) / wireSegmentUnit_;
-    Point<double> bufferLoc(locX, locY);
-    Point<double> legalBufferLoc
-        = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
-    lastBuffer = createDelayBuffer(drivingNet,
-                                   root_->getClock().getSdcName(),
-                                   legalBufferLoc.getX() * wireSegmentUnit_,
-                                   legalBufferLoc.getY() * wireSegmentUnit_);
 
-    drivingNet = lastBuffer->getFirstOutput()->getNet();
-    if (returnBuffer == nullptr) {
-      returnBuffer = lastBuffer;
+  if (logger_->debugCheck(utl::RSZ, "cts_insert_delay_buffer_old", 1)) {
+    for (int i = 0; i < numBuffers; i++) {
+      double locX = (double) (srcX + offsetX * (i + 1)) / wireSegmentUnit_;
+      double locY = (double) (srcY + offsetY * (i + 1)) / wireSegmentUnit_;
+      Point<double> bufferLoc(locX, locY);
+      Point<double> legalBufferLoc
+          = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
+      lastBuffer = createDelayBuffer(drivingNet,
+                                     root_->getClock().getSdcName(),
+                                     legalBufferLoc.getX() * wireSegmentUnit_,
+                                     legalBufferLoc.getY() * wireSegmentUnit_);
+
+      drivingNet = lastBuffer->getFirstOutput()->getNet();
+      if (returnBuffer == nullptr) {
+        returnBuffer = lastBuffer;
+      }
+    }
+
+    for (odb::dbITerm* sinkInput : sinksInput) {
+      sinkInput->connect(drivingNet);
+      if (network_->hasHierarchy()) {
+        network_->hierarchicalConnect(lastBuffer->getFirstOutput(),
+                                      sinkInput,
+                                      drivingNet->getName().c_str());
+      }
+    }
+  } else {
+    // New insert buffer behavior
+    odb::dbObject* drvrPin = drivingNet->getFirstDriverTerm();
+    for (int i = 0; i < numBuffers; i++) {
+      // Set the location
+      double locX = (double) (srcX + offsetX * (i + 1)) / wireSegmentUnit_;
+      double locY = (double) (srcY + offsetY * (i + 1)) / wireSegmentUnit_;
+      Point<double> bufferLoc(locX, locY);
+      Point<double> legalBufferLoc
+          = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
+
+      odb::Point loc{
+          static_cast<int>(legalBufferLoc.getX() * wireSegmentUnit_),
+          static_cast<int>(legalBufferLoc.getY() * wireSegmentUnit_)};
+
+      // Insert buffer
+      std::string clkName = root_->getClock().getSdcName();
+      std::string newBufferName
+          = std::format("delaybuf_{}_{}", delayBufIndex_++, clkName);
+      odb::dbMaster* bufferMaster
+          = db_->findMaster(options_->getRootBuffer().c_str());
+
+      odb::dbInst* lastBuffer = nullptr;
+      if (i < numBuffers - 1) {
+        // Use driver pin buffering
+        lastBuffer = drivingNet->insertBufferAfterDriver(
+            drvrPin, bufferMaster, &loc, newBufferName.c_str());
+      } else {
+        // Set the load pins
+        // jk: Not sure if sinksInput is a set of partial load pins or
+        // not (sinksInput contains the load pins of the driving net).
+        // If sinksInput contains the all load pins always, the expensive
+        // insertBufferBeforeLoads() is not needed.
+        std::set<odb::dbObject*> load_pins;
+        for (odb::dbITerm* sinkInput : sinksInput) {
+          load_pins.insert(sinkInput);
+        }
+
+        // Use load pins buffering at the end
+        lastBuffer = drivingNet->insertBufferBeforeLoads(
+            load_pins, bufferMaster, &loc, newBufferName.c_str());
+      }
+
+      debugPrint(logger_,
+                 CTS,
+                 "insertion delay",
+                 1,
+                 "new delay buffer {} is inserted at ({} {})",
+                 lastBuffer->getName(),
+                 loc.getX(),
+                 loc.getY());
+
+      // Update the driving iterm & net to insert a next buffer on it
+      drvrPin = lastBuffer->getFirstOutput();
+      drivingNet = static_cast<odb::dbITerm*>(drvrPin)->getNet();
+
+      // Update return buffer (the first buffer inserted)
+      if (returnBuffer == nullptr) {
+        returnBuffer = lastBuffer;
+      }
     }
   }
 
-  for (odb::dbITerm* sinkInput : sinksInput) {
-    sinkInput->connect(drivingNet);
-    if (network_->hasHierarchy()) {
-      network_->hierarchicalConnect(lastBuffer->getFirstOutput(),
-                                    sinkInput,
-                                    drivingNet->getName().c_str());
-    }
-  }
   return getFirstInput(returnBuffer);
 }
 
