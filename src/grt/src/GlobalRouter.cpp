@@ -5253,6 +5253,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     }
   }
 
+  fastroute_->setIncrementalGrt(false);
+
   return dirty_nets;
 }
 
@@ -5292,6 +5294,7 @@ void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
 {
   initNetlist(nets);
   fastroute_->initAuxVar();
+  fastroute_->setIncrementalGrt(true);
 }
 
 GRouteDbCbk::GRouteDbCbk(GlobalRouter* grouter) : grouter_(grouter)
