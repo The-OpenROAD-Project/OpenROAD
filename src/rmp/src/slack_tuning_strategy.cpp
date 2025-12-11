@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/optimization.h"
 #include "absl/random/random.h"
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
@@ -95,7 +94,6 @@ SolutionSlack::Type SolutionSlack::RandomNeighbor(
     } break;
     case Move::COUNT:
       // TODO replace with std::unreachable() once we reach c++23
-      ABSL_UNREACHABLE();
       break;
   }
   return sol;
