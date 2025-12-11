@@ -2621,10 +2621,8 @@ class dbNet : public dbObject
 
   // jk: move into _dbNet
  private:
-  dbNet* createBufferNet(dbBTerm* bterm,
-                         const char* suffix,
-                         dbModNet* mod_net,
-                         dbModule* parent_mod,
+  dbNet* createBufferNet(std::set<dbObject*>& terms,
+                         dbModule* target_module,
                          const dbNameUniquifyType& uniquify);
   std::string makeUniqueHierName(dbModule* module,
                                  const std::string& base_name,

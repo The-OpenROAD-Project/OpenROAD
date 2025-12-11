@@ -257,41 +257,58 @@ Point computeCentroid(const std::set<dbObject*>& pins)
 
 }  // anonymous namespace
 
-dbNet* dbNet::createBufferNet(dbBTerm* bterm,
-                              const char* suffix,
-                              dbModNet* mod_net,
-                              dbModule* parent_mod,
+dbNet* dbNet::createBufferNet(std::set<dbObject*>& terms,
+                              dbModule* target_module,
                               const dbNameUniquifyType& uniquify)
 {
+  // Algorithm:
+  // - Create a new net for buffering.
+  // - If the original net name conflicts with any port name, rename it with the
+  //   port name. This is to avoid net name conflicts when verilog is generated
+  //   from the design.
+  // - If the name collision occurs, the new net name will use the port name.
+  // - The new net resides in the target_module hierarchy
+
   dbBlock* block = getBlock();
-  if (bterm == nullptr) {
-    // If not connecting to a BTerm, just append the suffix.
-    const std::string new_net_name_str = std::string(getName()) + suffix;
-    return dbNet::create(block, new_net_name_str.c_str(), uniquify, parent_mod);
-  }
+  std::string new_net_name = "net";
+  dbNameUniquifyType new_net_uniquify = uniquify;
 
-  // If the connected term is a port, the new net should take the name of the
-  // port to maintain connectivity.
-  const char* port_name = bterm->getConstName();
+  // Check if the net name conflicts with any port name
+  for (dbObject* obj : terms) {
+    if (obj->getObjectType() != dbBTermObj) {
+      continue;
+    }
 
-  // If the original net name is the same as the port name, it should be
-  // renamed to avoid conflict.
-  if (std::string_view(block->getBaseName(getConstName())) == port_name) {
-    const std::string new_orig_net_name = block->makeNewNetName(
-        parent_mod ? parent_mod->getModInst() : nullptr, "net", uniquify);
-    rename(new_orig_net_name.c_str());
+    dbBTerm* bterm = static_cast<dbBTerm*>(obj);
+    std::string_view bterm_name{bterm->getConstName()};
+    if (bterm_name == block->getBaseName(getConstName())) {
+      // Rename this net if its name is the same as a port name in loads_pins
+      std::string new_orig_net_name = block->makeNewNetName(
+          target_module ? target_module->getModInst() : nullptr,
+          "net",
+          uniquify);
+      rename(new_orig_net_name.c_str());
 
-    // Rename modnet if it has name conflict.
-    if (mod_net && std::string_view(mod_net->getConstName()) == port_name) {
-      mod_net->rename(new_orig_net_name.c_str());
+      // Rename the mod net name connected to the load pin if it is the
+      // same as the port name
+      dbModNet* load_mnet = bterm->getModNet();
+      if (load_mnet) {
+        std::string_view mnet_name{load_mnet->getConstName()};
+        if (mnet_name == bterm_name) {
+          load_mnet->rename(new_orig_net_name.c_str());
+        }
+      }
+
+      // New net name should be the port name
+      new_net_name = bterm_name;
+      new_net_uniquify = dbNameUniquifyType::IF_NEEDED;
+      break;
     }
   }
 
-  // The new net takes the name of the port.
-  // The uniquify parameter is not strictly needed here if we assume port names
-  // are unique, but we pass it for safety.
+  // Create a new net
   return dbNet::create(
-      block, port_name, dbNameUniquifyType::IF_NEEDED, parent_mod);
+      block, new_net_name.c_str(), new_net_uniquify, target_module);
 }
 
 // Helper to generate unique name for port punching. jk: inefficient
@@ -3725,9 +3742,10 @@ dbInst* dbNet::insertBufferCommon(dbObject* term_obj,
   }
 
   // 4. Create new net for one side of the buffer
-  const char* suffix = insertBefore ? "_load" : "_drvr";
-  dbNet* new_net
-      = createBufferNet(term_bterm, suffix, orig_mod_net, parent_mod, uniquify);
+  std::set<dbObject*> terms;
+  terms.insert(term_obj);
+
+  dbNet* new_net = createBufferNet(terms, parent_mod, uniquify);
   if (new_net == nullptr) {
     dbInst::destroy(buffer_inst);
     return nullptr;
@@ -3954,10 +3972,13 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   }
 
   // 3. Create the New Net (Buffer Output Net)
-  //    The new net resides in the same hierarchy as the buffer.
-  dbNet* new_flat_net = dbNet::create(block, "net", uniquify, target_module);
+  // - The new net resides in the same hierarchy as the buffer.
+  // - If the net name conflicts with any port name, rename it with the port
+  //   name. This is to avoid net name conflicts when verilog is generated
+  //   from the design.
+  dbNet* new_flat_net = createBufferNet(load_pins, target_module, uniquify);
 
-  // Check if we need a dbModNet (Logical Net)
+  // Check if we need a dbModNet (Logical Net).
   // dbModNet is required only if:
   //   1. Any load is a BTerm and buffer hierarchy is not top.
   //   2. Any load is an ITerm in a different hierarchy (Requires Port Punching,
@@ -4165,7 +4186,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
   return buffer_inst;
 }
 
-// jk: move to proper location
+// jk: move to proper location. unused.
 dbModNet* dbNet::getFirstModNetInFaninOfLoads(
     const std::set<dbObject*>& load_pins,
     const std::set<dbModNet*>& modnets_in_target_module)

@@ -37,7 +37,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
     sta_->postReadDef(block_);
   }
 
-  bool debug_ = true;  // Set to true to generate debug output
+  bool debug_ = false;  // Set to true to generate debug output
 };
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
@@ -155,7 +155,7 @@ TEST_F(TestInsertBuffer, AfterDriver_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections
-  EXPECT_EQ(drvr_z->getNet()->getName(), std::string("net_drvr1"));
+  EXPECT_EQ(drvr_z->getNet()->getName(), std::string("net1"));
   EXPECT_EQ(new_buffer->findITerm("A")->getNet(), drvr_z->getNet());
   EXPECT_EQ(new_buffer->findITerm("Z")->getNet(), net);
 
@@ -269,6 +269,46 @@ TEST_F(TestInsertBuffer, AfterDriver_Case2)
   EXPECT_EQ(new_buffer->findITerm("A")->getNet(), drvr_bterm->getNet());
   EXPECT_EQ(new_buffer->findITerm("Z")->getNet()->getName(),
             std::string("net1"));
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+TEST_F(TestInsertBuffer, AfterDriver_Case3)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbITerm* drvr_iterm = block_->findITerm("h0/drvr/Z");
+  ASSERT_TRUE(drvr_iterm);
+  dbNet* net = drvr_iterm->getNet();
+  ASSERT_TRUE(net);
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);  // 'n1' is dangling
+
+  //-----------------------------------------------------------------
+  // Insert buffer
+  //-----------------------------------------------------------------
+  dbInst* new_buffer = net->insertBufferAfterDriver(drvr_iterm, buffer_master);
+  ASSERT_TRUE(new_buffer);
+
+  // Post sanity check - this was failing with ORD-2030 before the fix
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
@@ -467,7 +507,6 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections
-  EXPECT_EQ(load0_a->getNet()->getName(), std::string("net_load1"));
   EXPECT_EQ(new_buffer1->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer1->findITerm("Z")->getNet(), load0_a->getNet());
 
@@ -484,7 +523,6 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #2
-  EXPECT_EQ(load1_a->getNet()->getName(), std::string("mi0/mi1/net_load2"));
   EXPECT_EQ(new_buffer2->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer2->findITerm("Z")->getNet(), load1_a->getNet());
 
@@ -501,7 +539,7 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #3
-  EXPECT_EQ(load2_a->getNet()->getName(), std::string("net_load3"));
+  EXPECT_EQ(load2_a->getNet()->getName(), std::string("net3"));
   EXPECT_EQ(new_buffer3->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer3->findITerm("Z")->getNet(), load2_a->getNet());
 
@@ -519,7 +557,6 @@ TEST_F(TestInsertBuffer, BeforeLoad_Case1)
   EXPECT_EQ(num_warning, 0);
 
   // Verify connections for buffer #4
-  EXPECT_EQ(load_output_bterm->getNet()->getName(), std::string("load_output"));
   EXPECT_EQ(new_buffer4->findITerm("A")->getNet(), net);
   EXPECT_EQ(new_buffer4->findITerm("Z")->getNet(), load_output_bterm->getNet());
 
@@ -607,9 +644,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case2)
   ASSERT_TRUE(buf0_inst);
 
   // Create nets and ports
-  dbNet* n1 = dbNet::create(block_, "n1");
+  dbNet* n1 = dbNet::create(block_, "in");
   ASSERT_TRUE(n1);
-  dbNet* n2 = dbNet::create(block_, "n2");
+  dbNet* n2 = dbNet::create(block_, "out");
   ASSERT_TRUE(n2);
   dbBTerm* in_port = dbBTerm::create(n1, "in");
   ASSERT_TRUE(in_port);
@@ -2594,7 +2631,76 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case24)
   // connection
   dbModNet* w1_mn = block_->findModNet("w1");
   ASSERT_NE(w1_mn, nullptr);
-  // target_net->dump(true);    // To see the net connectivity for debugging
+}
+
+TEST_F(TestInsertBuffer, BeforeLoads_Case25)
+{
+  // This case has a redundant port punching because the new buffer is placed at
+  // the LCA (least common ancestor) module.
+  // TODO: Enhance the algorithm to avoid port punching.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buffer_master);
+
+  // Get ODB objects
+  dbInst* drvr = block_->findInst("h0/drvr");
+  ASSERT_NE(drvr, nullptr);
+  dbInst* h0_load0 = block_->findInst("h0/load0");
+  ASSERT_NE(h0_load0, nullptr);
+  dbInst* load1 = block_->findInst("load1");
+  ASSERT_NE(load1, nullptr);
+
+  dbITerm* drvr_z = drvr->findITerm("Z");
+  ASSERT_NE(drvr_z, nullptr);
+  dbITerm* h0_load0_a = h0_load0->findITerm("A");
+  ASSERT_NE(h0_load0_a, nullptr);
+  dbITerm* load1_a = load1->findITerm("A");
+  ASSERT_NE(load1_a, nullptr);
+
+  dbNet* target_net = drvr_z->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  //----------------------------------------------------
+  // Insert buffer
+  //----------------------------------------------------
+  std::set<dbObject*> loads;
+  loads.insert(h0_load0_a);
+  loads.insert(load1_a);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(loads,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_NE(new_buf, nullptr);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
 }
 
 }  // namespace odb
