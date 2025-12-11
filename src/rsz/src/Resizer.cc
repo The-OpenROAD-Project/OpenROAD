@@ -1201,71 +1201,105 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
         RSZ, 214, "Buffering input port {}.", network_->name(top_pin));
   }
 
-  // make the buffer and its output net.
-  Instance* parent = db_network_->topInstance();
-  Net* buffer_out = db_network_->makeNet(parent);
-  dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
-  Point pin_loc = db_network_->location(top_pin);
-  Instance* buffer = makeBuffer(buffer_cell, "input", parent, pin_loc);
-  inserted_buffer_count_++;
-
   Pin* buffer_ip_pin = nullptr;
   Pin* buffer_op_pin = nullptr;
-  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+  Instance* buffer = nullptr;
+  if (logger_->debugCheck(utl::RSZ, "buffer_input_old", 1)) {
+    // make the buffer and its output net.
+    Instance* parent = db_network_->topInstance();
+    Net* buffer_out = db_network_->makeNet(parent);
+    dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
+    Point pin_loc = db_network_->location(top_pin);
+    buffer = makeBuffer(buffer_cell, "input", parent, pin_loc);
+    inserted_buffer_count_++;
 
-  pin_iter
-      = network_->connectedPinIterator(db_network_->dbToSta(top_pin_flat_net));
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (pin != top_pin) {
-      odb::dbBTerm* dest_bterm;
-      odb::dbModITerm* dest_moditerm;
-      odb::dbITerm* dest_iterm;
-      db_network_->staToDb(pin, dest_iterm, dest_bterm, dest_moditerm);
-      odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
-      sta_->disconnectPin(const_cast<Pin*>(pin));
-      if (dest_modnet) {
+    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+
+    pin_iter = network_->connectedPinIterator(
+        db_network_->dbToSta(top_pin_flat_net));
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      if (pin != top_pin) {
+        odb::dbBTerm* dest_bterm;
+        odb::dbModITerm* dest_moditerm;
+        odb::dbITerm* dest_iterm;
+        db_network_->staToDb(pin, dest_iterm, dest_bterm, dest_moditerm);
+        odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
+        sta_->disconnectPin(const_cast<Pin*>(pin));
+        if (dest_modnet) {
+          if (dest_iterm) {
+            dest_iterm->connect(dest_modnet);
+          }
+          if (dest_moditerm) {
+            dest_moditerm->connect(dest_modnet);
+          }
+        }
         if (dest_iterm) {
-          dest_iterm->connect(dest_modnet);
+          dest_iterm->connect(buffer_out_flat_net);
+        } else if (dest_bterm) {
+          dest_bterm->connect(buffer_out_flat_net);
         }
-        if (dest_moditerm) {
-          dest_moditerm->connect(dest_modnet);
-        }
-      }
-      if (dest_iterm) {
-        dest_iterm->connect(buffer_out_flat_net);
-      } else if (dest_bterm) {
-        dest_bterm->connect(buffer_out_flat_net);
       }
     }
-  }
-  delete pin_iter;
+    delete pin_iter;
 
-  db_network_->connectPin(buffer_ip_pin,
-                          db_network_->dbToSta(top_pin_flat_net));
-  db_network_->connectPin(buffer_op_pin,
-                          db_network_->dbToSta(buffer_out_flat_net));
-  //
-  // we are going to push the top mod net into the core
-  // so we rename it to avoid conflict with top level
-  // name. We name it the same as the flat net used on
-  // the buffer output.
-  //
-
-  if (top_pin_hier_net) {
-    top_pin_hier_net->rename(buffer_out_flat_net->getName().c_str());
-    db_network_->connectPin(buffer_op_pin,
-                            db_network_->dbToSta(top_pin_hier_net));
-  }
-
-  //
-  // Remove the top net connection to the mod net, if any
-  // and make sure top pin connected to just the flat net.
-  //
-  if (top_pin_hier_net) {
-    db_network_->disconnectPin(const_cast<Pin*>(top_pin));
-    db_network_->connectPin(const_cast<Pin*>(top_pin),
+    db_network_->connectPin(buffer_ip_pin,
                             db_network_->dbToSta(top_pin_flat_net));
+    db_network_->connectPin(buffer_op_pin,
+                            db_network_->dbToSta(buffer_out_flat_net));
+    //
+    // we are going to push the top mod net into the core
+    // so we rename it to avoid conflict with top level
+    // name. We name it the same as the flat net used on
+    // the buffer output.
+    //
+
+    if (top_pin_hier_net) {
+      top_pin_hier_net->rename(buffer_out_flat_net->getName().c_str());
+      db_network_->connectPin(buffer_op_pin,
+                              db_network_->dbToSta(top_pin_hier_net));
+    }
+
+    //
+    // Remove the top net connection to the mod net, if any
+    // and make sure top pin connected to just the flat net.
+    //
+    if (top_pin_hier_net) {
+      db_network_->disconnectPin(const_cast<Pin*>(top_pin));
+      db_network_->connectPin(const_cast<Pin*>(top_pin),
+                              db_network_->dbToSta(top_pin_flat_net));
+    }
+  } else {
+    // New bufferInput() behavior
+    Net* target_net = db_network_->dbToSta(top_pin_flat_net);
+    odb::dbInst* new_buffer
+        = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
+
+    // jk: dbg
+    // odb::dbObject* drvr_pin = db_network_->staToDb(top_pin);
+    // odb::dbMaster* buffer_master = db_network_->staToDb(buffer_cell);
+    // odb::dbInst* new_buffer = top_pin_flat_net->insertBufferAfterDriver(
+    //     drvr_pin, buffer_master, nullptr, "input");
+
+    buffer = db_network_->dbToSta(new_buffer);
+    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+
+    inserted_buffer_count_++;
+  }
+
+  // jk: post buffer input
+  if (logger_->debugCheck(RSZ, "insert_buffer_check_sanity", 5)) {
+    debugPrint(logger_,
+               RSZ,
+               "insert_buffer_check_sanity",
+               10,
+               "post_buffer_input sanity check");
+    db_network_->checkSanityNetConnectivity(
+        db_network_->staToDb(buffer_ip_pin));
+    db_network_->checkSanityNetConnectivity(
+        db_network_->staToDb(buffer_op_pin));
+    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_ip_pin));
+    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_op_pin));
   }
 
   return buffer;
@@ -1417,6 +1451,21 @@ void Resizer::bufferOutput(const Pin* top_pin,
       buffer_ip_pin_iterm->getModNet()->rename(
           buffer_ip_pin_iterm->getNet()->getName().c_str());
     }
+  }
+
+  // jk: post buffer output
+  if (logger_->debugCheck(RSZ, "insert_buffer_check_sanity", 5)) {
+    debugPrint(logger_,
+               RSZ,
+               "insert_buffer_check_sanity",
+               10,
+               "post_buffer_output sanity check");
+    db_network_->checkSanityNetConnectivity(
+        db_network_->staToDb(buffer_ip_pin));
+    db_network_->checkSanityNetConnectivity(
+        db_network_->staToDb(buffer_op_pin));
+    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_ip_pin));
+    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_op_pin));
   }
 }
 
@@ -4803,7 +4852,7 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
 
 odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
                                               LibertyCell* buffer_cell,
-                                              const Point& loc,
+                                              const Point* loc,
                                               const char* name_suffix)
 {
   // Find the driver of the current net
@@ -4813,7 +4862,6 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
     drvr_pin = *drivers->begin();
   }
 
-  // jk: change error code
   if (!drvr_pin) {
     logger_->error(
         RSZ, 3000, "No driver found for net {}", network_->pathName(net));
@@ -4821,8 +4869,9 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
   }
 
   odb::dbObject* drvr_obj = db_network_->staToDb(drvr_pin);
-  if (!drvr_obj || drvr_obj->getObjectType() != odb::dbObjectType::dbITermObj
-      || drvr_obj->getObjectType() != odb::dbObjectType::dbBTermObj) {
+  if (!drvr_obj
+      || (drvr_obj->getObjectType() != odb::dbObjectType::dbITermObj
+          && drvr_obj->getObjectType() != odb::dbObjectType::dbBTermObj)) {
     logger_->error(RSZ,
                    3001,
                    "Driver pin {} is not an ITerm or BTerm",
@@ -4834,12 +4883,11 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
       = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
 
   odb::dbNet* db_net = db_network_->staToDb(net);
-  Point buffer_loc = loc;
 
   odb::dbInst* buffer_inst
       = db_net->insertBufferAfterDriver(drvr_obj,
                                         buffer_master,
-                                        &buffer_loc,
+                                        loc,
                                         name_suffix,
                                         odb::dbNameUniquifyType::ALWAYS);
 
@@ -4851,6 +4899,60 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
     return nullptr;
   }
 
+  // Legalize the buffer position and update the design area
+  insertBufferPostProcess(buffer_inst);
+
+  return buffer_inst;
+}
+
+odb::dbInst* Resizer::insertBufferBeforeLoad(Pin* load_pin,
+                                             LibertyCell* buffer_cell,
+                                             const Point* loc,
+                                             const char* name_suffix)
+{
+  // Get the dbObject of the load_pin
+  odb::dbObject* db_load_pin = db_network_->staToDb(load_pin);
+  if (!db_load_pin
+      || (db_load_pin->getObjectType() != odb::dbObjectType::dbITermObj
+          && db_load_pin->getObjectType() != odb::dbObjectType::dbBTermObj)) {
+    logger_->error(RSZ,
+                   3007,
+                   "Load pin '{}' is not an ITerm or BTerm",
+                   network_->pathName(load_pin));
+    return nullptr;
+  }
+
+  // Find the flat net of the load_pin
+  dbNet* db_net = nullptr;
+  if (db_load_pin->getObjectType() == odb::dbObjectType::dbITermObj) {
+    odb::dbITerm* iterm = static_cast<odb::dbITerm*>(db_load_pin);
+    db_net = iterm->getNet();
+  } else if (db_load_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
+    odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(db_load_pin);
+    db_net = bterm->getNet();
+  }
+
+  // Insert buffer before the load_pin
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+  odb::dbInst* buffer_inst
+      = db_net->insertBufferBeforeLoad(db_load_pin,
+                                       buffer_master,
+                                       loc,
+                                       name_suffix,
+                                       odb::dbNameUniquifyType::ALWAYS);
+
+  if (!buffer_inst) {
+    logger_->error(RSZ,
+                   3008,
+                   "Failed to insert buffer before load for load pin '{}'",
+                   network_->pathName(load_pin));
+    return nullptr;
+  }
+
+  // Legalize the buffer position and update the design area
+  insertBufferPostProcess(buffer_inst);
+
   return buffer_inst;
 }
 
@@ -4858,7 +4960,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     Net* net,
     const std::set<odb::dbObject*>& loads,
     LibertyCell* buffer_cell,
-    const Point& loc,
+    const Point* loc,
     const char* name_suffix,
     bool loads_on_same_db_net)
 {
@@ -4887,7 +4989,12 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  Point buffer_loc = loc;
+  if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 3)) {
+    for (odb::dbObject* load : loads) {
+      sta_->checkSanityDrvrVertexEdges(load);
+      db_network_->checkSanityNetConnectivity(load);
+    }
+  }
 
   // Make a non-const copy for dbNet API
   std::set<odb::dbObject*> loads_copy = loads;
@@ -4895,7 +5002,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
   odb::dbInst* buffer_inst
       = db_net->insertBufferBeforeLoads(loads_copy,
                                         buffer_master,
-                                        &buffer_loc,
+                                        loc,
                                         name_suffix,
                                         odb::dbNameUniquifyType::ALWAYS,
                                         loads_on_same_db_net);
@@ -4908,8 +5015,15 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
+  // Legalize the buffer position and update the design area
+  insertBufferPostProcess(buffer_inst);
+
   // jk: added sanity check
   if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 1)) {
+    dbITerm* in_iterm = buffer_inst->getFirstInput();
+    sta_->checkSanityDrvrVertexEdges(in_iterm);
+    db_network_->checkSanityNetConnectivity(in_iterm);
+
     dbITerm* out_iterm = buffer_inst->getFirstOutput();
     sta_->checkSanityDrvrVertexEdges(out_iterm);
     db_network_->checkSanityNetConnectivity(out_iterm);
@@ -4945,6 +5059,20 @@ Instance* Resizer::makeInstance(LibertyCell* cell,
   }
   designAreaIncr(area(db_inst->getMaster()));
   return inst;
+}
+
+void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
+{
+  // Legalize the position of the buffer in case it leaves the die
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
+    opendp_->legalCellPos(buffer_inst);
+  }
+
+  // Increment the design area
+  designAreaIncr(area(buffer_inst->getMaster()));
 }
 
 void Resizer::setLocation(dbInst* db_inst, const Point& pt)

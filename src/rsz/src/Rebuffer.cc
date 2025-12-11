@@ -2030,11 +2030,12 @@ int Rebuffer::exportBufferTree(
 
         // In this rebuffer logic, target loads can be on different dbNets.
         // So we pass 'false' to 'loads_on_same_db_net' argument.
+        Point buffer_loc = node->location();
         odb::dbInst* buf_inst
             = resizer_->insertBufferBeforeLoads(net,
                                                 child_loads,
                                                 buffer_cell,
-                                                node->location(),
+                                                &buffer_loc,
                                                 instance_base_name,
                                                 false /*loads_on_same_db_net*/);
 

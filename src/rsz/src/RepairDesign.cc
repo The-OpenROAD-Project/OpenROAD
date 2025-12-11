@@ -2853,10 +2853,12 @@ bool RepairDesign::makeRepeater(
 
     odb::dbInst* new_buffer = load_db_net->insertBufferBeforeLoads(
         load_objs, buffer_master, &loc, reason);
-
     if (!new_buffer) {
       return false;
     }
+
+    // jk: should avoid this call
+    resizer_->insertBufferPostProcess(new_buffer);
 
     buffer = db_network_->dbToSta(new_buffer);
     inserted_buffer_count_++;

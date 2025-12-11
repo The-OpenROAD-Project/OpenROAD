@@ -278,6 +278,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     return true;
   }
 
+  // jk: new behavior
   {
     // Identify loads to split (top 50% with most slack)
     std::set<odb::dbObject*> load_pins;
@@ -310,6 +311,9 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
         odb::dbNameUniquifyType::IF_NEEDED);
 
     if (buffer_inst) {
+      // jk: should avoid this call
+      resizer_->insertBufferPostProcess(buffer_inst);
+
       Instance* buffer = db_network_->dbToSta(buffer_inst);
       debugPrint(logger_,
                  RSZ,

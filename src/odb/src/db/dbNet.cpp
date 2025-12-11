@@ -4139,7 +4139,13 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
              placement_loc.getY());
   placeNewBuffer(buffer_inst, &placement_loc, nullptr, nullptr);
 
-  // 6. Propagate NDR if exists
+  // 6. Set buffer attributes
+  new_flat_net->setSigType(this->getSigType());
+
+  // jk: why SOURCE TIMING attribute is removed for input buffer?
+  buffer_inst->setSourceType(dbSourceType::TIMING);
+
+  // 7. Propagate NDR if exists
   if (dbTechNonDefaultRule* rule = getNonDefaultRule()) {
     new_flat_net->setNonDefaultRule(rule);
   }
