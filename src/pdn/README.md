@@ -64,6 +64,8 @@ set_voltage_domain
     [-region region_name]
     [-secondary_power secondary_power_net]
     [-switched_power switched_power_net]
+    [-connect_to_pad_layers layers]
+    [-connect_to_pads]
 ```
 
 #### Options
@@ -76,6 +78,8 @@ set_voltage_domain
 | `[-region]` | Specifies a region of the design occupied by this voltage domain. |
 | `[-secondary_power]` | Specifies the name of the secondary power net for this voltage domain. |
 | `[-switched_power]` | Specifies the name of the switched power net for switched power domains. |
+| `[-connect_to_pad_layers]` | Restrict the pad pins layers to this list. |
+| `[-connect_to_pads]` | The core side of the pad pins will be connected to the grid. |
 
 ### Define Power Grids
 

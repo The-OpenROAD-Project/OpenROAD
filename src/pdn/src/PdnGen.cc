@@ -421,7 +421,8 @@ void PdnGen::makeCoreGrid(
     const std::vector<odb::dbTechLayer*>& generate_obstructions,
     PowerCell* powercell,
     odb::dbNet* powercontrol,
-    const char* powercontrolnetwork)
+    const char* powercontrolnetwork,
+    const std::vector<odb::dbTechLayer*>& pad_pin_layers)
 {
   auto grid = std::make_unique<CoreGrid>(
       domain, name, starts_with == POWER, generate_obstructions);
@@ -449,6 +450,9 @@ void PdnGen::makeCoreGrid(
           powercontrol,
           GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
     }
+  }
+  if (!pad_pin_layers.empty()) {
+    grid->setupDirectConnect(pad_pin_layers);
   }
   domain->addGrid(std::move(grid));
 }
@@ -574,6 +578,13 @@ void PdnGen::makeRing(Grid* grid,
   if (!pad_pin_layers.empty() && grid->type() == Grid::Core) {
     auto* core_grid = static_cast<CoreGrid*>(grid);
     core_grid->setupDirectConnect(pad_pin_layers);
+    for (const auto& comp : core_grid->getStraps()) {
+      PadDirectConnectionStraps* straps
+          = dynamic_cast<PadDirectConnectionStraps*>(comp.get());
+      if (straps) {
+        straps->setTargetType(odb::dbWireShapeType::RING);
+      }
+    }
   }
 }
 
