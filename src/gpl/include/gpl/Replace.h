@@ -75,6 +75,7 @@ struct PlaceOptions
   float density = 0.7;
 
   float routabilityCheckOverflow = 0.3;
+  float routabilitySnapshotOverflow = 0.6;
   float routabilityMaxDensity = 0.99;
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;

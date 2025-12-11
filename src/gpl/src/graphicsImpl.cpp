@@ -78,56 +78,55 @@ void GraphicsImpl::debugForNesterovPlace(
   draw_bins_ = draw_bins;
   mode_ = Nesterov;
 
-  if (gui::Gui::enabled()) {
-    // Setup the chart
-    gui::Gui* gui = gui::Gui::get();
-    main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
-    main_chart_->setXAxisFormat("%d");
-    main_chart_->setYAxisFormats({"%.2e", "%.2f"});
-    main_chart_->setYAxisMin({std::nullopt, 0});
+  if(gui::Gui::enabled() == false) {
+    return;
+  }
+  // Setup charts
+  gui::Gui* gui = gui::Gui::get();
+  main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
+  main_chart_->setXAxisFormat("%d");
+  main_chart_->setYAxisFormats({"%.2e", "%.2f"});
+  main_chart_->setYAxisMin({std::nullopt, 0});
 
-    // Useful for debugging : Density penalty and PhiCoef
 
-    if (!nbVec_.empty()) {
-    density_chart_ = gui->addChart(
-      "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
-    density_chart_->setXAxisFormat("%d");
-    density_chart_->setYAxisFormats({"%.2e", "%.2f"});
-    density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
+  density_chart_ = gui->addChart(
+    "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
+  density_chart_->setXAxisFormat("%d");
+  density_chart_->setYAxisFormats({"%.2e", "%.2f"});
+  density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
 
-    stepLength_chart_ = gui->addChart(
-      "GPL StepLength",
-      "Iteration",
-      {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
-    stepLength_chart_->setXAxisFormat("%d");
-    stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
-    stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
-    
-    routing_chart_ = gui->addChart(
-      "GPL Routing", "Iteration", {"avg RUDY", "Std area", "Overflowed Tiles", "% Overflow Tiles", "Total RUDY Overflow"});
-    routing_chart_->setXAxisFormat("%d");
-    routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f", "%.2f", "%.2f"});
-    routing_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0, 0.0});
-    }
 
-    initHeatmap();
-    if (inst) {
-      for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
-        auto cell = nbc_->getGCellByIndex(idx);
-        if (cell->contains(inst)) {
-          selected_ = idx;
-          break;
-        }
+  stepLength_chart_ = gui->addChart(
+    "GPL StepLength",
+    "Iteration",
+    {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
+  stepLength_chart_->setXAxisFormat("%d");
+  stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
+  stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+  
+  routing_chart_ = gui->addChart(
+    "GPL Routing", "Iteration", {"avg RUDY", "Std area", "Overflowed Tiles", "% Overflow Tiles", "Total RUDY Overflow"});
+  routing_chart_->setXAxisFormat("%d");
+  routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f", "%.2f", "%.2f"});
+  routing_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0, 0.0});
+
+  initHeatmap();
+  if (inst) {
+    for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+      auto cell = nbc_->getGCellByIndex(idx);
+      if (cell->contains(inst)) {
+        selected_ = idx;
+        break;
       }
     }
+  }
 
-    for (const auto& nb : nbVec_) {
-      for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
-        GCellHandle cell_handle = nb->getGCells()[idx];
-        if (cell_handle->contains(inst)) {
-          nb_selected_index_ = idx;
-          break;
-        }
+  for (const auto& nb : nbVec_) {
+    for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
+      GCellHandle cell_handle = nb->getGCells()[idx];
+      if (cell_handle->contains(inst)) {
+        nb_selected_index_ = idx;
+        break;
       }
     }
   }
@@ -281,6 +280,7 @@ void GraphicsImpl::drawSingleGCell(const GCell* gCell,
   switch (gCell->changeType()) {
     case GCell::GCellChange::kRoutability:
       color = gui::Painter::kWhite;
+      color.a = 75;
       break;
     case GCell::GCellChange::kNewInstance:
       color = gui::Painter::kDarkRed;
@@ -585,11 +585,8 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
       values.push_back(
           static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
           values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()));
-          double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
-          double overflow_percentage = (total_tiles > 0.0) 
-              ? (static_cast<double>(rb_->getOverflowedTilesCount()) / total_tiles * 100.0)
-              : 0.0;
-          values.push_back(overflow_percentage);
+          values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()) / 
+                   static_cast<double>(rb_->getTotalTilesCount()) * 100.0);
           values.push_back((rb_->getTotalRudyOverflow()));
     } else {
       values.push_back(0.0);

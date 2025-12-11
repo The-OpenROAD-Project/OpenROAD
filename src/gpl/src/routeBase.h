@@ -166,7 +166,6 @@ class RouteBase
   int getTotalTilesCount() const { return tg_->tiles().size(); }
   double getTotalRudyOverflow() const { return total_route_overflow_; }
   
-
   bool isMinRc() const { return is_min_rc_; }
 
   // first: is Routability Need

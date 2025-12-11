@@ -23,6 +23,7 @@ sta::define_cmd_args "global_placement" {\
     [-routability_use_grt]\
     [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_check_overflow routability_check_overflow]\
+    [-routability_snapshot_overflow routability_snapshot_overflow]\
     [-routability_max_density routability_max_density]\
     [-routability_max_inflation_iter routability_max_inflation_iter]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
@@ -45,7 +46,8 @@ proc global_placement { args } {
       -min_phi_coef -max_phi_coef -overflow \
       -reference_hpwl \
       -initial_place_max_iter -initial_place_max_fanout \
-      -routability_check_overflow -routability_max_density \
+      -routability_check_overflow -routability_snapshot_overflow \
+      -routability_max_density \
       -routability_max_inflation_iter \
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \

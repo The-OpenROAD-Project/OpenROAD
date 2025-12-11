@@ -670,7 +670,7 @@ void NesterovPlace::routabilitySnapshot(
     float& route_snapshotA)
 {
   if (!is_routability_snapshot_saved && npVars_.routability_driven_mode
-      && routability_save_snapshot_ >= average_overflow_unscaled_) {
+      && npVars_.routability_snapshot_overflow >= average_overflow_unscaled_) {
     route_snapshot_WlCoefX = wireLengthCoefX_;
     route_snapshot_WlCoefY = wireLengthCoefY_;
     route_snapshotA = curA;

@@ -37,6 +37,10 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-initial_place_max_fanout", options.initialPlaceMaxFanout);
   checkKey(
       keys, "-routability_check_overflow", options.routabilityCheckOverflow);
+  checkKey(
+      keys,
+      "-routability_snapshot_overflow",
+      options.routabilitySnapshotOverflow);
   checkKey(keys, "-routability_max_density", options.routabilityMaxDensity);
   checkKey(keys,
            "-routability_max_inflation_iter",
