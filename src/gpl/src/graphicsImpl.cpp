@@ -78,7 +78,7 @@ void GraphicsImpl::debugForNesterovPlace(
   draw_bins_ = draw_bins;
   mode_ = Nesterov;
 
-  if(gui::Gui::enabled() == false) {
+  if (gui::Gui::enabled() == false) {
     return;
   }
   // Setup charts
@@ -88,24 +88,27 @@ void GraphicsImpl::debugForNesterovPlace(
   main_chart_->setYAxisFormats({"%.2e", "%.2f"});
   main_chart_->setYAxisMin({std::nullopt, 0});
 
-
   density_chart_ = gui->addChart(
-    "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
+      "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
   density_chart_->setXAxisFormat("%d");
   density_chart_->setYAxisFormats({"%.2e", "%.2f"});
   density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
 
-
   stepLength_chart_ = gui->addChart(
-    "GPL StepLength",
-    "Iteration",
-    {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
+      "GPL StepLength",
+      "Iteration",
+      {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
   stepLength_chart_->setXAxisFormat("%d");
   stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
   stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
-  
-  routing_chart_ = gui->addChart(
-    "GPL Routing", "Iteration", {"avg RUDY", "Std area", "Overflowed Tiles", "% Overflow Tiles", "Total RUDY Overflow"});
+
+  routing_chart_ = gui->addChart("GPL Routing",
+                                 "Iteration",
+                                 {"avg RUDY",
+                                  "Std area",
+                                  "Overflowed Tiles",
+                                  "% Overflow Tiles",
+                                  "Total RUDY Overflow"});
   routing_chart_->setXAxisFormat("%d");
   routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f", "%.2f", "%.2f"});
   routing_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0, 0.0});
@@ -541,7 +544,7 @@ void GraphicsImpl::reportSelected()
 
 void GraphicsImpl::addIter(const int iter, const double overflow)
 {
-  if(gui::Gui::enabled() == false) {
+  if (gui::Gui::enabled() == false) {
     return;
   }
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
@@ -565,10 +568,8 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
       values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
       values.push_back(
           static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
-      values.push_back(
-          static_cast<double>(nbVec_[0]->getStoredGradDistance()));
-      values.push_back(
-          static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+      values.push_back(static_cast<double>(nbVec_[0]->getStoredGradDistance()));
+      values.push_back(static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
     } else {
       values.push_back(0.0);
       values.push_back(0.0);
@@ -582,12 +583,12 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
     std::vector<double> values;
     if (!nbVec_.empty() && nbVec_[0]) {
       values.push_back(static_cast<double>(rb_->getRudyAverage()));
-      values.push_back(
-          static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
-          values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()));
-          values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()) / 
-                   static_cast<double>(rb_->getTotalTilesCount()) * 100.0);
-          values.push_back((rb_->getTotalRudyOverflow()));
+      values.push_back(static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+      values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()));
+      values.push_back(static_cast<double>(rb_->getOverflowedTilesCount())
+                       / static_cast<double>(rb_->getTotalTilesCount())
+                       * 100.0);
+      values.push_back((rb_->getTotalRudyOverflow()));
     } else {
       values.push_back(0.0);
       values.push_back(0.0);
@@ -614,8 +615,8 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
   gui::Painter::Color color
       = revert ? gui::Painter::kRed : gui::Painter::kGreen;
   main_chart_->addVerticalMarker(iter, color);
-  routing_chart_->addVerticalMarker(iter, rb_->isMinRc() ? gui::Painter::kMagenta
-                                         : gui::Painter::kBlack);
+  routing_chart_->addVerticalMarker(
+      iter, rb_->isMinRc() ? gui::Painter::kMagenta : gui::Painter::kBlack);
 }
 
 void GraphicsImpl::cellPlotImpl(bool pause)

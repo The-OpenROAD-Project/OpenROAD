@@ -284,15 +284,15 @@ void NesterovPlace::updateIterGraphics(
   updateDb();
 
   // When debug mode, calculate RUDY every iteration
-  if(npVars_.routability_driven_mode && npVars_.debug) {
+  if (npVars_.routability_driven_mode && npVars_.debug) {
     rb_->calculateRudyTiles();
     rb_->updateRudyAverage(/*verbose=*/false);
-    //log_->report("RUDY: {}", rb_->getRudyAverage());
+    // log_->report("RUDY: {}", rb_->getRudyAverage());
   }
 
   graphics_->addIter(iter, average_overflow_unscaled_);
 
-  if(!npVars_.debug) {
+  if (!npVars_.debug) {
     return;
   }
   int debug_start_iter = npVars_.debug_start_iter;
@@ -584,7 +584,8 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
     num_region_diverged_ += nb->checkDivergence();
   }
 
-  if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0 && !is_routability_need_) {
+  if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0
+      && !is_routability_need_) {
     if (is_min_hpwl_) {
       diverge_snapshot_WlCoefX = wireLengthCoefX_;
       diverge_snapshot_WlCoefY = wireLengthCoefY_;
@@ -925,9 +926,10 @@ void NesterovPlace::reportResults(int nesterov_iter,
     // Final plot point
     graphics_->addIter(nesterov_iter, average_overflow_unscaled_);
 
-    if(npVars_.debug_generate_images) {
+    if (npVars_.debug_generate_images) {
       updateDb();
-      std::string label = fmt::format("Final Iter {} |R: ? |T: ?", nesterov_iter);
+      std::string label
+          = fmt::format("Final Iter {} |R: ? |T: ?", nesterov_iter);
 
       graphics_->saveLabeledImage(
           fmt::format(

@@ -836,13 +836,15 @@ void RouteBase::updateRudyAverage(bool verbose)
   }
 
   if (verbose) {
-    log_->info(GPL, 41, "Total routing overflow: {:.4f}", total_route_overflow_);
+    log_->info(
+        GPL, 41, "Total routing overflow: {:.4f}", total_route_overflow_);
     log_->info(
         GPL,
         42,
         "Number of overflowed tiles: {} ({:.2f}%)",
         overflowed_tiles_count_,
-        (static_cast<double>(overflowed_tiles_count_) / tg_->tiles().size()) * 100);
+        (static_cast<double>(overflowed_tiles_count_) / tg_->tiles().size())
+            * 100);
   }
 
   int arraySize = edge_cong_array.size();
@@ -872,9 +874,10 @@ void RouteBase::updateRudyAverage(bool verbose)
   avg010RC /= ceil(0.010 * arraySize);
   avg020RC /= ceil(0.020 * arraySize);
   avg050RC /= ceil(0.050 * arraySize);
-  final_average_rc_ = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
-                   + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
-                  / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
+  final_average_rc_
+      = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
+         + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
+        / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
   if (verbose) {
     log_->info(

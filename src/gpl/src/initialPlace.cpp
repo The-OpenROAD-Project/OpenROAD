@@ -50,8 +50,9 @@ void InitialPlace::doBicgstabPlace(int threads)
   ResidualError error;
 
   // Initial place only uses graphics if debug is enabled
-  const bool graphics_enabled = ipVars_.debug && graphics_ && graphics_->enabled();
-  
+  const bool graphics_enabled
+      = ipVars_.debug && graphics_ && graphics_->enabled();
+
   if (graphics_enabled) {
     graphics_->setDebugOn(true);
     graphics_->debugForInitialPlace(pbc_, pbVec_);

@@ -3144,7 +3144,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
       log_->info(GPL,
                  1005,
                  "Routability final weighted congestion: {:.4f}",
-                  rb->getRudyAverage());
+                 rb->getRudyAverage());
     }
 
     log_->info(GPL,
