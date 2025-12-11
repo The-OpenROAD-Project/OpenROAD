@@ -21,7 +21,7 @@ jobs:
           build_dir: "./build"
           cmake_command: cmake . -B build
           config_file: ".clang-tidy"
-          exclude: "*/codeGenerator/templates/*,*/third-party/*,*/test/orfs/*"
+          exclude: "*/codeGenerator/templates/*,third-party/*,test/orfs/*"
           split_workflow: true
           apt_packages: libomp-15-dev,libfl-dev,libyaml-cpp-dev
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
