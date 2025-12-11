@@ -2238,7 +2238,6 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case20)
 
 // Partial-load buffering on loads connected with both input & output
 // dbModBTerms.
-// jk: TODO: If assign* is changed to `assign`, write_verilog crashes.
 TEST_F(TestInsertBuffer, BeforeLoads_Case21)
 {
   // Get the test name dynamically from the gtest framework.

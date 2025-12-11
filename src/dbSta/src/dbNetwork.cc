@@ -2668,7 +2668,7 @@ void dbNetwork::connectPinAfter(Pin* pin)
 {
   if (isDriver(pin)) {
     Net* net = this->net(pin);
-    // jk: TODO: change to use drivers()
+    // jk: changed to use drivers()
     // PinSet* drvrs = net_drvr_pin_map_.findKey(net);
     // if (drvrs) {
     //  drvrs->insert(pin);
