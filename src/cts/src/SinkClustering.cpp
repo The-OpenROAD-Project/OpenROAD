@@ -12,6 +12,7 @@
 #include <sstream>
 #include <vector>
 
+#include "TreeBuilder.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -28,9 +29,15 @@ SinkClustering::SinkClustering(const CtsOptions* options,
       techChar_(techChar),
       maxInternalDiameter_(10),
       capPerUnit_(0.0),
+      use_max_diameter_((HTree->getTreeType() == TreeType::MacroTree)
+                            ? options->isMacroMaxDiameterSet()
+                            : options->isMaxDiameterSet()),
+      use_max_size_((HTree->getTreeType() == TreeType::MacroTree)
+                        ? options->isMacroSinkClusteringSizeSet()
+                        : options->isSinkClusteringSizeSet()),
       useMaxCapLimit_((HTree->getTreeType() == TreeType::MacroTree)
                           ? false
-                          : options->getSinkClusteringUseMaxCap()),
+                          : !(use_max_size_ && use_max_diameter_)),
       scaleFactor_(1),
       HTree_(HTree)
 {
@@ -414,11 +421,20 @@ bool SinkClustering::isLimitExceeded(const unsigned size,
                                      const double capCost,
                                      const unsigned sizeLimit)
 {
+  bool is_limit_exceeded = false;
   if (useMaxCapLimit_) {
-    return (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
+    is_limit_exceeded
+        |= (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
   }
-
-  return (size >= sizeLimit || cost > maxInternalDiameter_);
+  // size is defined by the user
+  if (use_max_size_) {
+    is_limit_exceeded |= (size >= sizeLimit);
+  }
+  // diameter is defined by the user
+  if (use_max_diameter_) {
+    is_limit_exceeded |= (cost > maxInternalDiameter_);
+  }
+  return is_limit_exceeded;
 }
 
 void SinkClustering::writePlotFile(unsigned groupSize)
