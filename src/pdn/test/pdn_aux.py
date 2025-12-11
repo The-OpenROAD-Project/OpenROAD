@@ -243,7 +243,7 @@ def define_pdn_grid_real(
     if bool(connect_to_pads):
         if not bool(connect_to_pad_layers):
             for layer in design.getTech().getDB().getTech().getLayers():
-                if layer.getType() == "ROUTING":
+                if layer.getRoutingLevel() > 0:
                     connect_to_pad_layers.append(layer)
         else:
             connect_to_pad_layers = [
@@ -691,7 +691,7 @@ def add_pdn_ring(
     if bool(connect_to_pads):
         if not bool(connect_to_pad_layers):
             for layer in design.getTech().getDB().getTech().getLayers():
-                if layer.getType() == "ROUTING":
+                if layer.getRoutingLevel() > 0:
                     connect_to_pad_layers.append(layer)
         else:
             connect_to_pad_layers = [

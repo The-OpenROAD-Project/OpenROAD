@@ -504,7 +504,7 @@ proc add_pdn_ring { args } {
   if { [info exists flags(-connect_to_pads)] } {
     if { ![info exists keys(-connect_to_pad_layers)] } {
       foreach layer [[ord::get_db_tech] getLayers] {
-        if { [$layer getType] == "ROUTING" } {
+        if { [$layer getRoutingLevel] > 0 } {
           lappend connect_to_pad_layers $layer
         }
       }
@@ -906,7 +906,7 @@ proc define_pdn_grid { args } {
   if { [info exists flags(-connect_to_pads)] } {
     if { ![info exists keys(-connect_to_pad_layers)] } {
       foreach layer [[ord::get_db_tech] getLayers] {
-        if { [$layer getType] == "ROUTING" } {
+        if { [$layer getRoutingLevel] > 0 } {
           lappend connect_to_pad_layers $layer
         }
       }
