@@ -78,7 +78,7 @@ void GraphicsImpl::debugForNesterovPlace(
   draw_bins_ = draw_bins;
   mode_ = Nesterov;
 
-  if (gui::Gui::enabled() == false) {
+  if (!gui::Gui::enabled()) {
     return;
   }
   // Setup charts
@@ -544,7 +544,7 @@ void GraphicsImpl::reportSelected()
 
 void GraphicsImpl::addIter(const int iter, const double overflow)
 {
-  if (gui::Gui::enabled() == false) {
+  if (!gui::Gui::enabled()) {
     return;
   }
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
