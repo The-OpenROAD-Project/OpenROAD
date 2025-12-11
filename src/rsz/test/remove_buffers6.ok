@@ -14,7 +14,7 @@ original HPWL            2531.1 u
 legalized HPWL           2533.0 u
 delta HPWL                    0 %
 
-worst slack max -0.39
+worst slack max -0.38
 [INFO RSZ-0026] Removed 1 buffers.
 worst slack max -0.31
 worst slack max -0.31
