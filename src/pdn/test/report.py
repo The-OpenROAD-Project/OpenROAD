@@ -33,7 +33,7 @@ pdn_aux.add_pdn_stripe(
 )
 
 pdn_aux.add_pdn_stripe(
-    design, layer="metal4", width=0.48, pitch=56.0, offset=2.0, extend_to_core_ring=True
+    design, layer="metal4", width=0.48, pitch=56.0, offset=2.0, extend_to_core_ring=True, nets=["VDD"]
 )
 pdn_aux.add_pdn_stripe(
     design, layer="metal7", width=1.40, pitch=40.0, offset=2.0, extend_to_core_ring=True

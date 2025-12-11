@@ -598,7 +598,8 @@ void PdnGen::makeStrap(Grid* grid,
                        bool snap,
                        StartsWith starts_with,
                        ExtensionMode extend,
-                       const std::vector<odb::dbNet*>& nets)
+                       const std::vector<odb::dbNet*>& nets,
+                       bool allow_out_of_core)
 {
   auto strap = std::make_unique<Straps>(
       grid, layer, width, pitch, spacing, number_of_straps);
@@ -609,6 +610,7 @@ void PdnGen::makeStrap(Grid* grid,
     strap->setStartWithPower(starts_with == POWER);
   }
   strap->setNets(nets);
+  strap->setAllowOutsideCoreArea(allow_out_of_core);
   grid->addStrap(std::move(strap));
 }
 
