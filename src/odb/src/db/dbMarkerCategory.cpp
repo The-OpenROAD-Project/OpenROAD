@@ -132,6 +132,9 @@ void _dbMarkerCategory::collectMemInfo(MemInfo& info)
 
 _dbMarkerCategory::~_dbMarkerCategory()
 {
+  if (name_) {
+    free((void*) name_);
+  }
   delete marker_tbl_;
   delete categories_tbl_;
 }

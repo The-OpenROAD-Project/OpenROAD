@@ -158,9 +158,9 @@ namespace odb {
     _{{klass.name}}::~_{{klass.name}}()
     {
       {% for field in klass.fields %}
-        {% if field.name == '_name' and 'no-destruct' not in field.flags %}
-          if (_name) {
-            free((void*) _name);
+        {% if field.name == 'name_' and field.type == "char *" %}
+          if (name_) {
+            free((void*) name_);
           }
         {% endif %}
         {% if field.table %}

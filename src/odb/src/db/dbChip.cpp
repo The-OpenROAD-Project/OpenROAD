@@ -22,6 +22,8 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <cstdlib>
+
 #include "dbChipConnItr.h"
 #include "dbChipInst.h"
 #include "dbChipInstItr.h"
@@ -329,6 +331,9 @@ void _dbChip::collectMemInfo(MemInfo& info)
 
 _dbChip::~_dbChip()
 {
+  if (name_) {
+    free((void*) name_);
+  }
   delete prop_tbl_;
   delete chip_region_tbl_;
   delete marker_categories_tbl_;
