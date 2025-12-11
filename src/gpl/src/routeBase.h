@@ -160,9 +160,13 @@ class RouteBase
 
   void calculateRudyTiles();
   void updateRudyAverage(bool verbose = true);
+
   float getRudyAverage() const { return final_average_rc_; }
   int getOverflowedTilesCount() const { return overflowed_tiles_count_; }
-  double getTotalRouteOverflow() const { return total_route_overflow_; }
+  int getTotalTilesCount() const { return tg_->tiles().size(); }
+  double getTotalRudyOverflow() const { return total_route_overflow_; }
+  
+
   bool isMinRc() const { return is_min_rc_; }
 
   // first: is Routability Need

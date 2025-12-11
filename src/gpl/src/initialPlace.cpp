@@ -49,8 +49,11 @@ void InitialPlace::doBicgstabPlace(int threads)
 {
   ResidualError error;
 
-  graphics_->setDebugOn(ipVars_.debug);
-  if (ipVars_.debug) {
+  // Initial place only uses graphics if debug is enabled
+  const bool graphics_enabled = ipVars_.debug && graphics_ && graphics_->enabled();
+  
+  if (graphics_enabled) {
+    graphics_->setDebugOn(true);
     graphics_->debugForInitialPlace(pbc_, pbVec_);
   }
 
@@ -59,7 +62,7 @@ void InitialPlace::doBicgstabPlace(int threads)
   // set ExtId for idx reference // easy recovery
   setPlaceInstExtId();
 
-  if (graphics_ && graphics_->enabled()) {
+  if (graphics_enabled) {
     graphics_->gifStart("initPlacement.gif");
   }
 
@@ -77,7 +80,7 @@ void InitialPlace::doBicgstabPlace(int threads)
                            log_,
                            threads);
 
-    if (graphics_ && graphics_->enabled()) {
+    if (graphics_enabled) {
       graphics_->cellPlot(true);
 
       odb::Rect region;
@@ -110,7 +113,7 @@ void InitialPlace::doBicgstabPlace(int threads)
     }
   }
 
-  if (graphics_ && graphics_->enabled()) {
+  if (graphics_enabled) {
     graphics_->gifEnd();
   }
 }

@@ -79,7 +79,6 @@ void GraphicsImpl::debugForNesterovPlace(
   mode_ = Nesterov;
 
   if (gui::Gui::enabled()) {
-    logger_->report("gui is enabled!");
     // Setup the chart
     gui::Gui* gui = gui::Gui::get();
     main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
@@ -88,36 +87,29 @@ void GraphicsImpl::debugForNesterovPlace(
     main_chart_->setYAxisMin({std::nullopt, 0});
 
     // Useful for debugging : Density penalty and PhiCoef
-    // if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) 
-    {
-      if (!nbVec_.empty()) {
-      density_chart_ = gui->addChart(
-        "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
-      density_chart_->setXAxisFormat("%d");
-      density_chart_->setYAxisFormats({"%.2e", "%.2f"});
-      density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
 
-      stepLength_chart_ = gui->addChart(
-        "GPL StepLength",
-        "Iteration",
-        {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
-      stepLength_chart_->setXAxisFormat("%d");
-      stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
-      stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+    if (!nbVec_.empty()) {
+    density_chart_ = gui->addChart(
+      "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
+    density_chart_->setXAxisFormat("%d");
+    density_chart_->setYAxisFormats({"%.2e", "%.2f"});
+    density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
 
-      // routing_chart_ = gui->addChart(
-      //   "GPL Routing", "Iteration", {"RUDY", "Std area", "% inflated"});
-      // routing_chart_->setXAxisFormat("%d");
-      // routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f"});
-      // routing_chart_->setYAxisMin({0.0, 0.0, 0.0});
-      
-      routing_chart_ = gui->addChart(
-        "GPL Routing", "Iteration", {"RUDY", "Std area", "Overflowed Tiles"});
-      routing_chart_->setXAxisFormat("%d");
-      routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f"});
-      routing_chart_->setYAxisMin({0.0, 0.0, 0.0});
-      }
+    stepLength_chart_ = gui->addChart(
+      "GPL StepLength",
+      "Iteration",
+      {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
+    stepLength_chart_->setXAxisFormat("%d");
+    stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
+    stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+    
+    routing_chart_ = gui->addChart(
+      "GPL Routing", "Iteration", {"avg RUDY", "Std area", "Overflowed Tiles", "% Overflow Tiles", "Total RUDY Overflow"});
+    routing_chart_->setXAxisFormat("%d");
+    routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f", "%.2f", "%.2f"});
+    routing_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0, 0.0});
     }
+
     initHeatmap();
     if (inst) {
       for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -549,57 +541,62 @@ void GraphicsImpl::reportSelected()
 
 void GraphicsImpl::addIter(const int iter, const double overflow)
 {
+  if(gui::Gui::enabled() == false) {
+    return;
+  }
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
   main_chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
 
-  // if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) 
-  {
-    if (density_chart_) {
-      std::vector<double> values;
-      if (!nbVec_.empty() && nbVec_[0]) {
-        values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
-        values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
-      } else {
-        values.push_back(0.0);
-        values.push_back(0.0);
-      }
-      density_chart_->addPoint(iter, values);
+  if (density_chart_) {
+    std::vector<double> values;
+    if (!nbVec_.empty() && nbVec_[0]) {
+      values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
+      values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
+    } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
     }
+    density_chart_->addPoint(iter, values);
+  }
 
-    if (stepLength_chart_) {
-      std::vector<double> values;
-      if (!nbVec_.empty() && nbVec_[0]) {
-        values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
-        values.push_back(
-            static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
-        values.push_back(
-            static_cast<double>(nbVec_[0]->getStoredGradDistance()));
-        values.push_back(
-            static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
-      } else {
-        values.push_back(0.0);
-        values.push_back(0.0);
-        values.push_back(0.0);
-        values.push_back(0.0);
-      }
-      stepLength_chart_->addPoint(iter, values);
+  if (stepLength_chart_) {
+    std::vector<double> values;
+    if (!nbVec_.empty() && nbVec_[0]) {
+      values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
+      values.push_back(
+          static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
+      values.push_back(
+          static_cast<double>(nbVec_[0]->getStoredGradDistance()));
+      values.push_back(
+          static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+    } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
     }
+    stepLength_chart_->addPoint(iter, values);
+  }
 
-    if (routing_chart_) {
-      std::vector<double> values;
-      if (!nbVec_.empty() && nbVec_[0]) {
-        values.push_back(static_cast<double>(rb_->getRudyAverage()));
-        values.push_back(
-            static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
-            values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()));
-        // values.push_back(static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
-      } else {
-        values.push_back(0.0);
-        values.push_back(0.0);
-        values.push_back(0.0);
-      }
-      routing_chart_->addPoint(iter, values);
+  if (routing_chart_) {
+    std::vector<double> values;
+    if (!nbVec_.empty() && nbVec_[0]) {
+      values.push_back(static_cast<double>(rb_->getRudyAverage()));
+      values.push_back(
+          static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+          values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()));
+          double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
+          double overflow_percentage = (total_tiles > 0.0) 
+              ? (static_cast<double>(rb_->getOverflowedTilesCount()) / total_tiles * 100.0)
+              : 0.0;
+          values.push_back(overflow_percentage);
+          values.push_back((rb_->getTotalRudyOverflow()));
+    } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
     }
+    routing_chart_->addPoint(iter, values);
   }
 }
 

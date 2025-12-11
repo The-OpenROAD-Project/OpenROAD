@@ -50,7 +50,8 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
     db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
   }
 
-  if (npVars_.debug) {
+  // if (npVars_.debug) {
+  if (graphics) {
     graphics_ = std::move(graphics);
     graphics_->setDebugOn(npVars.debug);
     graphics_->debugForNesterovPlace(this,
@@ -282,9 +283,20 @@ void NesterovPlace::updateIterGraphics(
   // For JPEG Saving
   updateDb();
 
+  // When debug mode, calculate RUDY every iteration
+  if(npVars_.routability_driven_mode && npVars_.debug) {
+    rb_->calculateRudyTiles();
+    rb_->updateRudyAverage(/*verbose=*/false);
+    //log_->report("RUDY: {}", rb_->getRudyAverage());
+  }
+
+  graphics_->addIter(iter, average_overflow_unscaled_);
+
+  if(!npVars_.debug) {
+    return;
+  }
   int debug_start_iter = npVars_.debug_start_iter;
   if (debug_start_iter == 0 || iter + 1 >= debug_start_iter) {
-    graphics_->addIter(iter, average_overflow_unscaled_);
     bool update
         = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
     if (update) {
@@ -531,10 +543,12 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->checkConsistency();
       }
 
-      if (npVars_.routability_driven_mode) {
-        rb_->calculateRudyTiles();
-        rb_->updateRudyAverage();
-      }
+      // Recalculate RUDY after non-virtual TD
+      // TODO not sure to make this default behavior
+      // if (npVars_.routability_driven_mode) {
+      //   rb_->calculateRudyTiles();
+      //   rb_->updateRudyAverage();
+      // }
 
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
@@ -905,15 +919,20 @@ void NesterovPlace::reportResults(int nesterov_iter,
 {
   auto block = pbc_->db()->getChip()->getBlock();
 
-  if (graphics_ && npVars_.debug_generate_images) {
-    updateDb();
-    std::string label = fmt::format("Final Iter {} |R: ? |T: ?", nesterov_iter);
+  if (graphics_ && graphics_->enabled()) {
+    // Final plot point
+    graphics_->addIter(nesterov_iter, average_overflow_unscaled_);
 
-    graphics_->saveLabeledImage(
-        fmt::format(
-            "{}/final_nesterov_{:05d}.png", getReportsDir(), nesterov_iter),
-        label,
-        /* select_buffers = */ false);
+    if(npVars_.debug_generate_images) {
+      updateDb();
+      std::string label = fmt::format("Final Iter {} |R: ? |T: ?", nesterov_iter);
+
+      graphics_->saveLabeledImage(
+          fmt::format(
+              "{}/final_nesterov_{:05d}.png", getReportsDir(), nesterov_iter),
+          label,
+          /* select_buffers = */ false);
+    }
   }
 
   if (nesterov_iter >= npVars_.maxNesterovIter) {
@@ -992,7 +1011,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   int64_t td_accumulated_delta_area = 0;
   int64_t end_routability_area = 0;
 
-  if (graphics_ && graphics_->enabled()
+  if (graphics_ && graphics_->enabled() && npVars_.debug
       && npVars_.debug_start_iter == start_iter) {
     graphics_->cellPlot(true);
   }
@@ -1014,7 +1033,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       = reports_dir + "/gpl_routability_driven";
 
   cleanReportsDirs(timing_driven_dir, routability_driven_dir);
-  if (graphics_ && npVars_.debug_generate_images) {
+  if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
     updateDb();
     std::string label = fmt::format("init_nesterov");
 
@@ -1087,11 +1106,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                         route_snapshot_WlCoefY,
                         route_snapshotA);
 
-    if(average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
-      rb_->calculateRudyTiles();
-      rb_->updateRudyAverage(false);
-      log_->report("RUDY: {}", rb_->getRudyAverage());
-    }
     runRoutability(nesterov_iter,
                    timing_driven_count,
                    routability_driven_dir,
@@ -1103,7 +1117,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                    end_routability_area);
 
     if (isConverged(nesterov_iter, routability_gpl_iter_count_)) {
-      graphics_->addIter(nesterov_iter, average_overflow_unscaled_);
       break;
     }
   }
@@ -1120,7 +1133,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  if (graphics_ && graphics_->enabled()) {
+  if (graphics_ && graphics_->enabled() && npVars_.debug) {
     graphics_->status("End placement");
     graphics_->cellPlot(true);
 
