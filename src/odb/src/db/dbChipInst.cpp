@@ -144,7 +144,6 @@ void dbChipInst::setOrient(dbOrientType3D orient)
   _dbChipInst* obj = (_dbChipInst*) this;
 
   obj->orient_ = orient;
-  setLoc(getLoc());
 }
 
 void dbChipInst::setLoc(const Point3D& loc)
