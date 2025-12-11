@@ -17,6 +17,7 @@ ChipletDef:
     regions:
       r1:
         side: front
+        bmap: SoC_r1.bmap
         coords:
           - [0, 0]
           - [955, 0]
