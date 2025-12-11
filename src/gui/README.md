@@ -193,7 +193,7 @@ save_animated_gif
 | `-resolution`| resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.|
 | `-width`| width of the output image in pixels, default will be computed from the resolution. Cannot be used with ``-resolution``.|
 | `-delay`| delay between frames in the GIF.|
-| `-key`| used to distinguish multiple GIF files (returned by -add).|
+| `-key`| used to distinguish multiple GIF files (returned by -add). Defaults to the most recent GIF.|
 
 ### Select Objects
 

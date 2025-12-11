@@ -5,6 +5,7 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -122,6 +123,8 @@ class PadDirectConnectionStraps : public Straps
   // true if the iterm can be connected to a ring
   bool canConnect() const;
 
+  void setTargetType(odb::dbWireShapeType type) { target_shapes_type_ = type; }
+
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
   bool refineShapes(Shape::ShapeTreeMap& all_shapes,
                     Shape::ObstructionTreeMap& all_obstructions) override;
@@ -151,7 +154,7 @@ class PadDirectConnectionStraps : public Straps
   };
 
   odb::dbITerm* iterm_;
-  odb::dbWireShapeType target_shapes_type_ = odb::dbWireShapeType::RING;
+  std::optional<odb::dbWireShapeType> target_shapes_type_;
   std::map<Shape*, Shape*> target_shapes_;
   std::map<Shape*, odb::Rect> target_pin_shape_;
   odb::dbDirection pad_edge_;
@@ -196,6 +199,7 @@ class PadDirectConnectionStraps : public Straps
                    const odb::Rect& pin_shape,
                    Shape::ShapeTreeMap& all_shapes,
                    Shape::ObstructionTreeMap& all_obstructions);
+  bool isTargetShape(const Shape* shape) const;
 };
 
 class RepairChannelStraps : public Straps
