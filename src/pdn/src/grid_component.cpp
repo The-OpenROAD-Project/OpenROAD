@@ -62,6 +62,23 @@ std::string GridComponent::typeToString(Type type)
   return "Unknown";
 }
 
+bool GridComponent::make(Shape::ShapeTreeMap& shapes,
+                         Shape::ObstructionTreeMap& obstructions)
+{
+  const int shape_count = getShapeCount();
+
+  // make initial shapes
+  makeShapes(shapes);
+  // cut shapes to avoid obstructions
+  cutShapes(obstructions);
+  // add shapes and obstructions to they are accounted for in future
+  // components
+  getObstructions(obstructions);
+  getShapes(shapes);
+
+  return shape_count != getShapeCount();
+}
+
 ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 {
   debugPrint(getLogger(),

@@ -10,6 +10,7 @@ add_library(3dblox
   dbxParser.cpp
   baseWriter.cpp
   dbvWriter.cpp
+  dbxWriter.cpp
   3dblox.cpp
   checker.cpp
 )
