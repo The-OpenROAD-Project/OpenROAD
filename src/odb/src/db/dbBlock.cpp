@@ -2471,7 +2471,8 @@ int dbBlock::getGCellTileSize()
 
     int track_spacing, track_init, num_tracks;
     track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
-    return track_spacing;
+    // for layers with multiple track patterns, ensure even track spacing
+    return (track_spacing % 2 == 0) ? track_spacing : track_spacing - 1;
   };
 
   // Use the pitch of the fourth routing layer as the top option to compute the
