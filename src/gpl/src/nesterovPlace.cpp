@@ -584,7 +584,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
     num_region_diverged_ += nb->checkDivergence();
   }
 
-  if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0) {
+  if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0 && !is_routability_need_) {
     if (is_min_hpwl_) {
       diverge_snapshot_WlCoefX = wireLengthCoefX_;
       diverge_snapshot_WlCoefY = wireLengthCoefY_;
@@ -748,6 +748,8 @@ void NesterovPlace::runRoutability(int iter,
           "Heat Maps/Estimated Congestion (RUDY)");
     }
 
+    log_->report("call routability with average_overflow_unscaled_: {:.3f}",
+                 average_overflow_unscaled_);
     // recover the densityPenalty values
     // if further routability-driven is needed
     std::pair<bool, bool> result
