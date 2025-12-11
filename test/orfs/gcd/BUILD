@@ -1,6 +1,5 @@
-load("@bazel-orfs//:eqy.bzl", "eqy_test")
-load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
-load("//test/orfs/mock-array:mock-array.bzl", "ASAP7_REMOVE_CELLS")
+load("@bazel-orfs//:openroad.bzl", "orfs_flow")
+load(":eqy.bzl", "eqy_flow_test")
 
 package(features = ["layering_check"])
 
@@ -34,68 +33,10 @@ orfs_flow(
     verilog_files = ["gcd.v"],
 )
 
-STAGES = [
-    "source",
-    # _source tests original source to source transition,
-    # which checks that the eqy setup works.
-    "source",
-    # _synth tests synthesis output, and so on
-    # for the next stages.
-    "synth",
-    "floorplan",
-    "place",
-    "cts",
-    "grt",
-    "route",
-    "final",
-]
-
-[orfs_run(
-    name = "gcd_{stage}_verilog".format(stage = stage),
-    src = ":gcd_{stage}".format(stage = stage),
-    outs = [
-        "gcd_{stage}.v".format(stage = stage),
-    ],
-    arguments = {
-        "ASAP7_REMOVE_CELLS": " ".join(ASAP7_REMOVE_CELLS),
-        "OUTPUT": "$(location :gcd_{stage}.v)".format(stage = stage),
-    },
-    script = "//test/orfs/mock-array:write_verilog.tcl",
-    tags = ["manual"],
-) for stage in STAGES[2:]]
-
-filegroup(
-    name = "gcd_source_files",
-    srcs = [
-        "gcd.v",
-    ],
-)
-
-[filegroup(
-    name = "gcd_{stage}_files".format(stage = stage),
-    srcs = [
-        ":gcd_{stage}_verilog".format(stage = stage),
-    ],
-) for stage in STAGES[2:]]
-
-[eqy_test(
-    name = "eqy_{stage}_test".format(stage = STAGES[i + 1]),
-    depth = 1,
-    gate_verilog_files = [
-        ":gcd_{stage}_files".format(stage = STAGES[i + 1]),
-    ] + ([] if STAGES[i + 1] == "source" else ["//test/orfs/mock-array:asap7_files"]),
-    gold_verilog_files = [
-        ":gcd_{stage}_files".format(stage = STAGES[i]),
-    ] + ([] if STAGES[i] == "source" else ["//test/orfs/mock-array:asap7_files"]),
+eqy_flow_test(
+    name = "gcd_eqy",
+    flow = "gcd",
     module_top = "gcd",
     tags = ["manual"],
-) for i in range(len(STAGES) - 1)]
-
-test_suite(
-    name = "eqy_tests",
-    tags = ["manual"],
-    tests = [
-        "eqy_{stage}_test".format(stage = STAGES[i + 1])
-        for i in range(len(STAGES) - 1)
-    ],
+    verilog_files = ["gcd.v"],
 )
