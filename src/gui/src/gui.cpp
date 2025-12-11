@@ -1470,8 +1470,7 @@ void Gui::gifAddFrame(std::optional<int> key,
   if (!key.has_value()) {
     key = gifs_.size() - 1;
   }
-  if (gifs_.empty() || *key < 0 || *key >= gifs_.size()
-      || gifs_[*key] == nullptr) {
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 51, "GIF not active");
     return;
   }
@@ -1558,8 +1557,7 @@ void Gui::gifEnd(std::optional<int> key)
   if (!key.has_value()) {
     key = gifs_.size() - 1;
   }
-  if (gifs_.empty() || *key < 0 || *key >= gifs_.size()
-      || gifs_[*key] == nullptr) {
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 58, "GIF not active");
     return;
   }
