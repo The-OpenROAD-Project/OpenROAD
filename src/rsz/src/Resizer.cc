@@ -3422,7 +3422,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       tie_count++;
 
       // jk: sanity check
-      if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 6)) {
+      if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 10)) {
         logger_->report("Add tie cell #{} - {}",
                         tie_count,
                         db_network_->pathName(load_pin));
