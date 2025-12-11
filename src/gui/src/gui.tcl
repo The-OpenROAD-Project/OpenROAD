@@ -190,7 +190,7 @@ proc save_animated_gif { args } {
     set delay $keys(-delay)
   }
 
-  set key 0
+  set key -1
   if { [info exists keys(-key)] } {
     set key $keys(-key)
   }
