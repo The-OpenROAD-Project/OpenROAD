@@ -606,6 +606,7 @@ void GraphicsImpl::addTimingDrivenIter(const int iter)
 void GraphicsImpl::addRoutabilitySnapshot(int iter)
 {
   main_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  routing_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
 }
 
 void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
