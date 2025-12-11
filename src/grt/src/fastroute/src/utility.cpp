@@ -590,8 +590,8 @@ void FastRouteCore::updateSlacks(float percentage)
     net->setSlack(slack);
 
     // Enable res-aware for clock nets by default
-    // net->setIsResAware(net->isClock());
-    net->setIsResAware(false);
+    net->setIsResAware(net->isClock());
+    // net->setIsResAware(false);
 
     // Skip positive slacks above threshold
     // TODO: need to check this positive slack threshold
