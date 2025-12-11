@@ -7,8 +7,8 @@
 [WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 330.569
- Total capacitance: 360.545-363.807
+ Wire capacitance: 0.000
+ Total capacitance: 29.975-33.238
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36
@@ -55,8 +55,8 @@ Load pins
 
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 660.869
- Total capacitance: 690.845-694.107
+ Wire capacitance: 0.000
+ Total capacitance: 29.975-33.238
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

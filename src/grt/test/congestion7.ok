@@ -29,15 +29,15 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical        24769          2209          91.08%
-metal3     Horizontal      33120          2208          93.33%
-metal4     Vertical        16826             0          100.00%
-metal5     Horizontal      16560             0          100.00%
-metal6     Vertical        16826             0          100.00%
-metal7     Horizontal       5796             0          100.00%
-metal8     Vertical         5922             0          100.00%
-metal9     Horizontal       2898             0          100.00%
-metal10    Vertical         2961             0          100.00%
+metal2     Vertical        17918          1190          93.36%
+metal3     Horizontal      24480          2380          90.28%
+metal4     Vertical        12172             0          100.00%
+metal5     Horizontal      12240             0          100.00%
+metal6     Vertical        12172             0          100.00%
+metal7     Horizontal       4284             0          100.00%
+metal8     Vertical         4284             0          100.00%
+metal9     Horizontal       2142             0          100.00%
+metal10    Vertical         2142             0          100.00%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
@@ -92,18 +92,18 @@ metal10    Vertical         2961             0          100.00%
 [INFO GRT-0102] Start extra iteration 48/50
 [INFO GRT-0102] Start extra iteration 49/50
 [INFO GRT-0102] Start extra iteration 50/50
-[INFO GRT-0197] Via related to pin nodes: 2997
-[INFO GRT-0198] Via related Steiner nodes: 84
+[INFO GRT-0197] Via related to pin nodes: 2868
+[INFO GRT-0198] Via related Steiner nodes: 61
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 4623
-[INFO GRT-0112] Final usage 3D: 18556
+[INFO GRT-0111] Final number of vias: 4180
+[INFO GRT-0112] Final usage 3D: 15960
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            2209          2327          105.34%             1 /  4 / 856
-metal3            2208          2360          106.88%             5 /  1 / 831
+metal2            1190          1502          126.22%             1 /  4 / 606
+metal3            2380          1918           80.59%             4 /  2 / 440
 metal4               0             0            0.00%             0 /  0 /  0
 metal5               0             0            0.00%             0 /  0 /  0
 metal6               0             0            0.00%             0 /  0 /  0
@@ -112,9 +112,9 @@ metal8               0             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
 metal10              0             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total             4417          4687          106.11%             6 /  5 / 1687
+Total             3570          3420           95.80%             5 /  6 / 1046
 
-[INFO GRT-0018] Total wirelength: 14282 um
+[INFO GRT-0018] Total wirelength: 14634 um
 [INFO GRT-0014] Routed nets: 563
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.
