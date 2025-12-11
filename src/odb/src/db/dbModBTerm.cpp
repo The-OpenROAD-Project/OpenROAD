@@ -145,6 +145,9 @@ void _dbModBTerm::collectMemInfo(MemInfo& info)
 
 _dbModBTerm::~_dbModBTerm()
 {
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

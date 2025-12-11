@@ -175,7 +175,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   gui::Chart* density_chart_{nullptr};  
   gui::Chart* stepLength_chart_{nullptr};
   gui::Chart* routing_chart_{nullptr};
-  bool debug_on_ = false;
+  bool debug_on_{false};
+  int gif_key_{0};
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

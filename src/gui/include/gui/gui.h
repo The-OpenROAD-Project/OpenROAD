@@ -824,12 +824,15 @@ class Gui
   const Selected& getInspectorSelection();
 
   // GIF API
-  void gifStart(const std::string& filename);
-  void gifAddFrame(const odb::Rect& region = odb::Rect(),
+  // Start returns the key for use by add and end.  This allows multiple
+  // gifs to be open at once.
+  int gifStart(const std::string& filename);
+  void gifAddFrame(int key,
+                   const odb::Rect& region = odb::Rect(),
                    int width_px = 0,
                    double dbu_per_pixel = 0,
                    std::optional<int> delay = {});
-  void gifEnd();
+  void gifEnd(int key);
 
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
@@ -947,7 +950,7 @@ class Gui
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
   std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
 
-  std::unique_ptr<GIF> gif_;
+  std::vector<std::unique_ptr<GIF>> gifs_;
   static constexpr int kDefaultGifDelay = 250;
 
   std::string main_window_title_ = "OpenROAD";

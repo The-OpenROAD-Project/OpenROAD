@@ -133,6 +133,9 @@ void _dbModITerm::collectMemInfo(MemInfo& info)
 
 _dbModITerm::~_dbModITerm()
 {
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
