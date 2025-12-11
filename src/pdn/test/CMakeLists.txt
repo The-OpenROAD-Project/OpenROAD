@@ -100,10 +100,12 @@ or_integration_tests(
     pads_black_parrot_flipchip
     pads_black_parrot_flipchip_connect_bumps
     pads_black_parrot_flipchip_connect_overpads
+    pads_black_parrot_grid_define
     pads_black_parrot_limit_connect
     pads_black_parrot_max_width
     pads_black_parrot_no_connect
     pads_black_parrot_offset
+    pads_black_parrot_straps
     pads_connect_from_non_pref_edge
     power_switch
     power_switch_cut_rows
