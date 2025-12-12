@@ -471,7 +471,6 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   void initGridAndNets();
-  void ensureLayerForGuideDimension(int max_routing_layer);
   void configFastRoute();
 
   utl::Logger* logger_;
@@ -495,7 +494,6 @@ class GlobalRouter
   // Flow variables
   bool is_incremental_;
   float adjustment_;
-  int layer_for_guide_dimension_;
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
   bool allow_congestion_;
