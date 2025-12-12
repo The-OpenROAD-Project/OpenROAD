@@ -787,6 +787,8 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
     return;
   }
 
+  // Store edges and load vertices to check for consistency
+  std::set<std::string> edge_str_set;
   std::set<sta::Vertex*> visited_to_vertices;
   sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph);
   while (edge_iter.hasNext()) {
@@ -798,17 +800,18 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
                utl::RSZ,
                "insert_buffer_check_sanity",
                10,
-               "    Edge from {} to {}",
-               drvr_vertex->to_string(this).c_str(),
-               to_vertex->to_string(this).c_str());
+               "    Edge({})",
+               edge->to_string(this).c_str());
 
-    if (visited_to_vertices.find(to_vertex) != visited_to_vertices.end()) {
+    // Check duplicate edges
+    if (edge_str_set.find(edge->to_string(this)) != edge_str_set.end()) {
       logger_->error(utl::STA,
                      2059,
-                     "Duplicate edge found from {} to {}",
-                     drvr_vertex->to_string(this).c_str(),
-                     to_vertex->to_string(this).c_str());
+                     "Duplicate edge found: {}",
+                     edge->to_string(this).c_str());
     }
+
+    edge_str_set.insert(edge->to_string(this));
     visited_to_vertices.insert(to_vertex);
   }
 
@@ -842,16 +845,8 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
       sta_loads.insert(to_vertex->pin());
     }
 
-    for (sta::Pin* sta_load : sta_loads) {
-      if (odb_loads.find(sta_load) == odb_loads.end()) {
-        logger_->warn(utl::STA,
-                      2062,
-                      "Inconsistent load: STA has load '{}', but ODB does not.",
-                      db_network_->pathName(sta_load));
-        has_inconsistency = true;
-      }
-    }
-
+    // Loads in ODB must appear in STA edges.
+    // - STA can have more edges than loads in ODB
     for (sta::Pin* odb_load : odb_loads) {
       if (sta_loads.find(odb_load) == sta_loads.end()) {
         logger_->warn(utl::STA,
