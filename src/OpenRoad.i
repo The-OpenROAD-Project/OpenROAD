@@ -384,6 +384,13 @@ write_3dbv_cmd(const char *filename)
 }
 
 void
+write_3dbx_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->write3Dbx(filename);
+}
+
+void
 read_db_cmd(const char *filename, bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();

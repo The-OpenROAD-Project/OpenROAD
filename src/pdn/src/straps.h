@@ -5,6 +5,7 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -57,6 +58,10 @@ class Straps : public GridComponent
   {
     return direction_ == odb::dbTechLayerDir::HORIZONTAL;
   }
+  void setAllowOutsideCoreArea(bool allow_out_of_core)
+  {
+    allow_out_of_core_ = allow_out_of_core;
+  }
 
   void report() const override;
   Type type() const override { return GridComponent::Strap; }
@@ -69,6 +74,7 @@ class Straps : public GridComponent
 
  protected:
   bool checkLayerOffsetSpecification(bool error = false) const;
+  std::string getNetString() const;
 
  private:
   odb::dbTechLayer* layer_;
@@ -82,6 +88,7 @@ class Straps : public GridComponent
   ExtensionMode extend_mode_ = ExtensionMode::CORE;
   int strap_start_ = 0;
   int strap_end_ = 0;
+  bool allow_out_of_core_ = false;
 
   void makeStraps(int x_start,
                   int y_start,
@@ -122,6 +129,8 @@ class PadDirectConnectionStraps : public Straps
   // true if the iterm can be connected to a ring
   bool canConnect() const;
 
+  void setTargetType(odb::dbWireShapeType type) { target_shapes_type_ = type; }
+
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
   bool refineShapes(Shape::ShapeTreeMap& all_shapes,
                     Shape::ObstructionTreeMap& all_obstructions) override;
@@ -151,7 +160,7 @@ class PadDirectConnectionStraps : public Straps
   };
 
   odb::dbITerm* iterm_;
-  odb::dbWireShapeType target_shapes_type_ = odb::dbWireShapeType::RING;
+  std::optional<odb::dbWireShapeType> target_shapes_type_;
   std::map<Shape*, Shape*> target_shapes_;
   std::map<Shape*, odb::Rect> target_pin_shape_;
   odb::dbDirection pad_edge_;
@@ -196,6 +205,7 @@ class PadDirectConnectionStraps : public Straps
                    const odb::Rect& pin_shape,
                    Shape::ShapeTreeMap& all_shapes,
                    Shape::ObstructionTreeMap& all_obstructions);
+  bool isTargetShape(const Shape* shape) const;
 };
 
 class RepairChannelStraps : public Straps
@@ -271,8 +281,6 @@ class RepairChannelStraps : public Straps
                        int extra_offset = 0,
                        int bisect_dist = 0,
                        int level = 0);
-
-  std::string getNetString() const;
 
   static std::vector<RepairChannelArea> findRepairChannels(
       Grid* grid,

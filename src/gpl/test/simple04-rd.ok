@@ -76,11 +76,11 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-0040] Routability iteration: 1
 [INFO GPL-0041] Total routing overflow: 0.0000
 [INFO GPL-0042] Number of overflowed tiles: 0 (0.00%)
-[INFO GPL-0043] Average top 0.5% routing congestion: 0.4737
-[INFO GPL-0044] Average top 1.0% routing congestion: 0.4651
-[INFO GPL-0045] Average top 2.0% routing congestion: 0.4568
-[INFO GPL-0046] Average top 5.0% routing congestion: 0.4382
-[INFO GPL-0047] Routability iteration weighted routing congestion: 0.4694
+[INFO GPL-0043] Average top 0.5% routing congestion: 0.4498
+[INFO GPL-0044] Average top 1.0% routing congestion: 0.4498
+[INFO GPL-0045] Average top 2.0% routing congestion: 0.4368
+[INFO GPL-0046] Average top 5.0% routing congestion: 0.4256
+[INFO GPL-0047] Routability iteration weighted routing congestion: 0.4498
 [INFO GPL-0050] Weighted routing congestion is lower than target routing congestion(0.6700), end routability optimization.
 [INFO GPL-0090] Routability finished. Target routing congestion achieved succesfully.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
@@ -96,7 +96,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 355
 [INFO GPL-1003] Routability mode iteration count: 64
-[INFO GPL-1005] Routability final weighted congestion: 0.4360
+[INFO GPL-1005] Routability final weighted congestion: 0.4179
 [INFO GPL-1002] Placed Cell Area              619.7347
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6500 (cell_area / free_area)

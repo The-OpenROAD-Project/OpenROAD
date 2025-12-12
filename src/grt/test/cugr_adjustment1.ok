@@ -37,6 +37,6 @@ total via count:       4074
 total wire overflow:   0
 min resource: 0.5
 bottleneck:   (8, 0, 1)
-[INFO GRT-0018] Total wirelength: 9815 um
+[INFO GRT-0018] Total wirelength: 10822 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

@@ -28,45 +28,45 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical        24769         24769          0.00%
-metal3     Horizontal      33120         33120          0.00%
-metal4     Vertical        16826         16826          0.00%
-metal5     Horizontal      16560         16560          0.00%
-metal6     Vertical        16826         16826          0.00%
-metal7     Horizontal       5796          5796          0.00%
-metal8     Vertical         5922          5922          0.00%
-metal9     Horizontal       2898          2898          0.00%
-metal10    Vertical         2961          2961          0.00%
+metal2     Vertical        17918         17918          0.00%
+metal3     Horizontal      24480         24480          0.00%
+metal4     Vertical        12172         12172          0.00%
+metal5     Horizontal      12240         12240          0.00%
+metal6     Vertical        12172         12172          0.00%
+metal7     Horizontal       4284          4284          0.00%
+metal8     Vertical         4284          4284          0.00%
+metal9     Horizontal       2142          2142          0.00%
+metal10    Vertical         2142          2142          0.00%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 2818
-[INFO GRT-0198] Via related Steiner nodes: 56
+[INFO GRT-0197] Via related to pin nodes: 2686
+[INFO GRT-0198] Via related Steiner nodes: 44
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3733
-[INFO GRT-0112] Final usage 3D: 14638
+[INFO GRT-0111] Final number of vias: 3503
+[INFO GRT-0112] Final usage 3D: 13033
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2           24769          1588            6.41%             0 /  0 /  0
-metal3           33120          1651            4.98%             0 /  0 /  0
-metal4           16826            70            0.42%             0 /  0 /  0
-metal5           16560            62            0.37%             0 /  0 /  0
-metal6           16826            68            0.40%             0 /  0 /  0
-metal7            5796             0            0.00%             0 /  0 /  0
-metal8            5922             0            0.00%             0 /  0 /  0
-metal9            2898             0            0.00%             0 /  0 /  0
-metal10           2961             0            0.00%             0 /  0 /  0
+metal2           17918          1172            6.54%             0 /  0 /  0
+metal3           24480          1212            4.95%             0 /  0 /  0
+metal4           12172            41            0.34%             0 /  0 /  0
+metal5           12240            51            0.42%             0 /  0 /  0
+metal6           12172            48            0.39%             0 /  0 /  0
+metal7            4284             0            0.00%             0 /  0 /  0
+metal8            4284             0            0.00%             0 /  0 /  0
+metal9            2142             0            0.00%             0 /  0 /  0
+metal10           2142             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           125678          3439            2.74%             0 /  0 /  0
+Total            91834          2524            2.75%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 10258 um
+[INFO GRT-0018] Total wirelength: 10767 um
 [INFO GRT-0014] Routed nets: 563
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 17.039-17.039
- Total capacitance: 47.014-50.276
+ Wire capacitance: 17.314-17.314
+ Total capacitance: 47.290-50.552
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36
