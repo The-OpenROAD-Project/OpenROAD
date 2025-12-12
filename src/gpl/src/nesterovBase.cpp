@@ -2577,6 +2577,10 @@ void NesterovBase::initDensity1()
 
   initCoordi_.resize(gCellSize, FloatPoint());
 
+  snapshotCoordi_.resize(gCellSize, FloatPoint());
+  snapshotSLPCoordi_.resize(gCellSize, FloatPoint());
+  snapshotSLPSumGrads_.resize(gCellSize, FloatPoint());
+
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     GCell* gCell = *it;  // old-style loop for old OpenMP
