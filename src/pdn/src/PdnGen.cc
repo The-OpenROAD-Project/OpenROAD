@@ -813,6 +813,15 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
+  // Remove empty swires
+  for (auto& [net, swire] : net_map) {
+    if (swire->getWires().empty()) {
+      odb::dbSWire::destroy(swire);
+      logger_->warn(
+          utl::PDN, 213, "No shapes were created for net {}.", net->getName());
+    }
+  }
+
   // remove stale results
   odb::dbMarkerCategory* category = block->findMarkerCategory("PDN");
   if (category != nullptr) {
