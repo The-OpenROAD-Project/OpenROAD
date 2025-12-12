@@ -27,6 +27,7 @@ target_link_libraries(ram
     odb
     dbSta
     OpenSTA
+    pdn
 )
 
 messages(
@@ -46,6 +47,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       ram
       odb
+      pdn
   )
 
 endif()

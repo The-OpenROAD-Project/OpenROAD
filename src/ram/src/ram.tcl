@@ -181,12 +181,12 @@ proc generate_ram { args } {
     utl::error RAM 18 "The -filler_cells argument must be specified."
   }
 
-  add_global_connection -net VDD -pin_pattern $power_net -power
-  add_global_connection -net VSS -pin_pattern $ground_net -ground
+#  add_global_connection -net VDD -pin_pattern $power_net -power
+#  add_global_connection -net VSS -pin_pattern $ground_net -ground
+#
+#  global_connect
 
-  global_connect
-
-  set_voltage_domain -power VDD -ground VSS
+#  set_voltage_domain -power VDD -ground VSS
   define_pdn_grid -name ram_grid -voltage_domains {CORE}
 
   add_pdn_stripe -grid ram_grid -layer $route_name \

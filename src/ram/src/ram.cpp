@@ -21,6 +21,7 @@
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
+#include "pdn/PdnGen.hh"
 
 namespace ram {
 
@@ -627,6 +628,28 @@ void RamGen::generate(const int bytes_per_word,
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
+
+  auto power_net = dbNet::create(block_, "VDD");
+  auto ground_net = dbNet::create(block_, "VSS");
+
+  power_net->setSpecial();
+  power_net->setSigType(odb::dbSigType::POWER);
+  ground_net->setSpecial();
+  ground_net->setSigType(odb::dbSigType::GROUND);
+
+  block_->addGlobalConnect(nullptr, ".*", "VPWR", power_net, true);
+  block_->addGlobalConnect(nullptr, ".*", "VGND", ground_net, true);
+
+  block_->globalConnect();
+
+  auto pdn_ = pdn::PdnGen(db_, logger_);
+  pdn_.setCoreDomain(power_net, nullptr, ground_net, {});
+//  pdn_.makeCoreGrid(pdn_.findDomain("Core"), "ram_grid", pdn::StartsWith::GROUND, {}, {}, nullptr, nullptr, "STAR");
+
+//  auto routing_tech = dbTech::create(db_)  
+//  pdn_.makeStrap(pdn_.findGrid("ram_grid")[0], 
+
+   
 }
 
 }  // namespace ram
