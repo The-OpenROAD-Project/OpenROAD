@@ -586,12 +586,16 @@ void FastRouteCore::updateSlacks(float percentage)
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
 
-    const float slack = getNetSlack(net->getDbNet());
+    float slack = 0;
+
+    // Do not update slack during rsz repair
+    if (en_estimate_parasitics_) {
+      slack = getNetSlack(net->getDbNet());
+    }
     net->setSlack(slack);
 
     // Enable res-aware for clock nets by default
     net->setIsResAware(net->isClock());
-    // net->setIsResAware(false);
 
     // Skip positive slacks above threshold
     // TODO: need to check this positive slack threshold
