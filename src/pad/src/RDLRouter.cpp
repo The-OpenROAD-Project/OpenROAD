@@ -28,6 +28,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "pad/ICeWall.h"
 #include "utl/Logger.h"
@@ -1802,7 +1803,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   // Get already routed nets obstructions, excluding those that will be routed
   // now
   for (auto* net : block_->getNets()) {
-    const bool is_routing_net = std::find(nets.begin(), nets.end(), net) != nets.end();
+    const bool is_routing_net = std::ranges::find(nets, net) != nets.end();
 
     for (auto* swire : net->getSWires()) {
       if (is_routing_net && swire->getWireType() != odb::dbWireType::FIXED) {
