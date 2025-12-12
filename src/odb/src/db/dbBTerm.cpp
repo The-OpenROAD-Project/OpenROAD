@@ -269,9 +269,9 @@ void dbBTerm::setSigType(dbSigType type)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {} setSigType {}",
+             "EDIT: {} setSigType {}",
              bterm->getDebugName(),
              type.getValue());
 
@@ -301,9 +301,9 @@ void dbBTerm::setIoType(dbIoType type)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {} setIoType {}",
+             "EDIT: {} setIoType {}",
              bterm->getDebugName(),
              type.getValue());
 
@@ -632,9 +632,9 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: create {} on {}",
+             "EDIT: create {} on {}",
              bterm->getDebugName(),
              net->getDebugName());
 
@@ -684,9 +684,9 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: connect {} to {}",
+             "EDIT: connect {} to {}",
              bterm->getDebugName(),
              mod_net->getDebugName());
 
@@ -718,9 +718,9 @@ void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: connect {} to {}",
+             "EDIT: connect {} to {}",
              bterm->getDebugName(),
              net->getDebugName());
 
@@ -783,9 +783,9 @@ void dbBTerm::destroy(dbBTerm* bterm_)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: delete {}",
+             "EDIT: delete {}",
              bterm->getDebugName());
 
   if (block->journal_) {
@@ -807,9 +807,9 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
 
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
-               "DB_ECO",
+               "DB_EDIT",
                1,
-               "ECO: disconnect {} from {}",
+               "EDIT: disconnect {} from {}",
                bterm->getDebugName(),
                net->getDebugName());
 
@@ -862,9 +862,9 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
 
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
-               "DB_ECO",
+               "DB_EDIT",
                1,
-               "ECO: disconnect {} from {}",
+               "EDIT: disconnect {} from {}",
                bterm->getDebugName(),
                mod_net->getDebugName());
 

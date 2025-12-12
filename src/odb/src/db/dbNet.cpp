@@ -396,9 +396,9 @@ bool dbNet::rename(const char* name)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: {}, rename to '{}'",
+             "EDIT: {}, rename to '{}'",
              net->getDebugName(),
              name);
 
@@ -425,9 +425,9 @@ void dbNet::swapNetNames(dbNet* source, bool ok_to_journal)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: swap dbNet name between {} and {}",
+             "EDIT: swap dbNet name between {} and {}",
              source->getDebugName(),
              dest_net->getDebugName());
 
@@ -562,9 +562,9 @@ void dbNet::setWireType(dbWireType wire_type)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setWireType: {}",
+             "EDIT: {}, setWireType: {}",
              net->getDebugName(),
              wire_type.getValue());
 
@@ -595,9 +595,9 @@ void dbNet::setSigType(dbSigType sig_type)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setSigType: {}",
+             "EDIT: {}, setSigType: {}",
              net->getDebugName(),
              sig_type.getValue());
 
@@ -883,9 +883,9 @@ void dbNet::setSpef(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setSpef: {}",
+             "EDIT: {}, setSpef: {}",
              net->getDebugName(),
              value);
 
@@ -910,9 +910,9 @@ void dbNet::setSelect(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setSelect: {}",
+             "EDIT: {}, setSelect: {}",
              net->getDebugName(),
              value);
 
@@ -971,9 +971,9 @@ void dbNet::setMark(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setMark: {}",
+             "EDIT: {}, setMark: {}",
              net->getDebugName(),
              value);
 
@@ -998,9 +998,9 @@ void dbNet::setMark_1(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setMark_1: {}",
+             "EDIT: {}, setMark_1: {}",
              net->getDebugName(),
              value);
 
@@ -1027,9 +1027,9 @@ void dbNet::setWireOrdered(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setWireOrdered: {}",
+             "EDIT: {}, setWireOrdered: {}",
              net->getDebugName(),
              value);
 
@@ -1056,9 +1056,9 @@ void dbNet::setDisconnected(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setDisconnected: {}",
+             "EDIT: {}, setDisconnected: {}",
              net->getDebugName(),
              value);
 
@@ -1082,9 +1082,9 @@ void dbNet::setWireAltered(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setWireAltered: {}",
+             "EDIT: {}, setWireAltered: {}",
              net->getDebugName(),
              value);
 
@@ -1111,9 +1111,9 @@ void dbNet::setExtracted(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setExtracted: {}",
+             "EDIT: {}, setExtracted: {}",
              net->getDebugName(),
              value);
 
@@ -1140,9 +1140,9 @@ void dbNet::setRCgraph(bool value)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setRCgraph: {}",
+             "EDIT: {}, setRCgraph: {}",
              net->getDebugName(),
              value);
 
@@ -1306,9 +1306,9 @@ bool dbNet::setIOflag()
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: {}, setIOFlag",
+             "EDIT: {}, setIOFlag",
              net->getDebugName());
 
   if (block->journal_) {
@@ -1358,9 +1358,9 @@ void dbNet::setSpecial()
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setSpecial",
+             "EDIT: {}, setSpecial",
              net->getDebugName());
 
   if (block->journal_) {
@@ -1380,9 +1380,9 @@ void dbNet::clearSpecial()
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, clearSpecial",
+             "EDIT: {}, clearSpecial",
              net->getDebugName());
 
   if (block->journal_) {
@@ -1468,9 +1468,9 @@ void dbNet::setWildConnected()
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setWildConnected",
+             "EDIT: {}, setWildConnected",
              net->getDebugName());
 
   if (block->journal_) {
@@ -1491,9 +1491,9 @@ void dbNet::clearWildConnected()
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, clearWildConnected",
+             "EDIT: {}, clearWildConnected",
              net->getDebugName());
 
   if (block->journal_) {
@@ -1517,9 +1517,9 @@ void dbNet::reverseRSegs()
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, reverse rsegs sequence",
+             "EDIT: {}, reverse rsegs sequence",
              getDebugName());
 
   if (block->journal_) {
@@ -1550,9 +1550,9 @@ void dbNet::set1stRSegId(uint rid)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, set 1stRSegNode {}",
+             "EDIT: {}, set 1stRSegNode {}",
              getDebugName(),
              rid);
 
@@ -1609,9 +1609,9 @@ void dbNet::setTermExtIds(int capId)  // 1: capNodeId, 0: reset
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {} {} term extId",
+             "EDIT: {} {} term extId",
              (capId) ? "set" : "reset",
              getDebugName());
 
@@ -1651,9 +1651,9 @@ void dbNet::set1stCapNodeId(uint capn_id)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {} set 1stCapNode {}",
+             "EDIT: {} set 1stCapNode {}",
              net->getDebugName(),
              capn_id);
 
@@ -1951,9 +1951,9 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {}, setNonDefaultRule: ",
+             "EDIT: {}, setNonDefaultRule: ",
              getDebugName(),
              (rule) ? rule->getImpl()->getOID() : 0);
 
@@ -2155,9 +2155,9 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: create {}",
+             "EDIT: create {}",
              net->getDebugName());
 
   for (auto cb : block->callbacks_) {
@@ -2223,9 +2223,9 @@ void dbNet::destroy(dbNet* net_)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: delete {}",
+             "EDIT: delete {}",
              net->getDebugName());
 
   if (block->journal_) {

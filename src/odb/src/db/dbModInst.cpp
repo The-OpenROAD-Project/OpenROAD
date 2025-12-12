@@ -224,9 +224,9 @@ dbModInst* dbModInst::create(dbModule* parentModule,
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: create {}",
+             "EDIT: create {}",
              modinst->getDebugName());
 
   for (dbBlockCallBackObj* cb : block->callbacks_) {
@@ -286,9 +286,9 @@ void dbModInst::destroy(dbModInst* modinst)
 
   debugPrint(_block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: delete {}",
+             "EDIT: delete {}",
              modinst->getDebugName());
 
   // Assure that dbModInst obj is restored first by being journalled last.

@@ -370,9 +370,9 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: create {}",
+             "EDIT: create {}",
              module->getDebugName());
 
   if (_block->journal_) {
@@ -459,9 +459,9 @@ void dbModule::destroy(dbModule* module)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: delete {}",
+             "EDIT: delete {}",
              module->getDebugName());
 
   // Journal the deletion of the dbModule after its ports

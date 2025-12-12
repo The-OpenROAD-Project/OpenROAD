@@ -202,9 +202,9 @@ void dbModNet::rename(const char* new_name)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: {}, rename to '{}'",
+             "EDIT: {}, rename to '{}'",
              obj->getDebugName(),
              new_name);
 
@@ -324,9 +324,9 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: create {}",
+             "EDIT: create {}",
              modnet->getDebugName());
 
   if (block->journal_) {
@@ -355,9 +355,9 @@ void dbModNet::destroy(dbModNet* mod_net)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: delete {}",
+             "EDIT: delete {}",
              mod_net->getDebugName());
 
   // journalling
