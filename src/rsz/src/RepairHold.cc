@@ -503,7 +503,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 int& pass)
 {
   estimate_parasitics_->updateParasitics();
-  sort(hold_failures, [=](Vertex* end1, Vertex* end2) {
+  sort(hold_failures, [=, this](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
   for (Vertex* end_vertex : hold_failures) {

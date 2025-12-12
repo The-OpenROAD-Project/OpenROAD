@@ -58,6 +58,8 @@ class Net
   bool isMergedNet() const { return is_merged_net_; }
   void setDirtyNet(bool is_dirty_net) { is_dirty_net_ = is_dirty_net; }
   bool isDirtyNet() const { return is_dirty_net_; }
+  void setIsClockNet(bool is_clk) { is_clk_ = is_clk; }
+  bool isClockNet() const { return is_clk_; }
 
  private:
   int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
@@ -71,6 +73,7 @@ class Net
   odb::dbNet* merged_net_;
   bool is_merged_net_;
   bool is_dirty_net_;
+  bool is_clk_;
 };
 
 }  // namespace grt

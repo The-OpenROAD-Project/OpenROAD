@@ -16,11 +16,12 @@
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 300.
-[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
+[INFO CTS-0060]  Register sinks will be clustered in groups of up to 8 and based on buffer max cap.
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 18900  dbu (18 um).
 [INFO CTS-0021]  Distance between buffers: 2 units (100 um).
-[INFO CTS-0206] Best clustering solution was found from clustering size of 8 and clustering diameter of 50.
+[INFO CTS-0204] A clustering solution was found from clustering size of 8 and clustering diameter of 50.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 50.
 [INFO CTS-0024]  Normalized sink region: [(0.808748, 0.583104), (10.0189, 9.59732)].
 [INFO CTS-0025]     Width:  9.2102.
@@ -53,5 +54,5 @@
 [INFO CTS-0100]  Leaf buffers 50
 [INFO CTS-0101]  Average sink wire length 262.20 um
 [INFO CTS-0102]  Path depth 2 - 3
-[INFO CTS-0207]  Leaf load cells 40
+[INFO CTS-0207]  Dummy loads inserted 40
 Found 0 unconnected buffers.

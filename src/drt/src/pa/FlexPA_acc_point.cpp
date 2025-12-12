@@ -1357,6 +1357,13 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 template <typename T>
 int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 {
+  // IO term pin always only have one access
+  const int pin_access_idx
+      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
+  if (pin->getPinAccess(pin_access_idx)->getNumAccessPoints() > 0) {
+    pin->getPinAccess(pin_access_idx)->clearAccessPoints();
+  }
+
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
@@ -1448,9 +1455,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   }
 
   updatePinStats(aps, inst_term);
-  // IO term pin always only have one access
-  const int pin_access_idx
-      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
   // write to pa
   for (auto& ap : aps) {
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
@@ -1554,39 +1558,46 @@ void FlexPA::genAllAccessPoints()
     logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
+void FlexPA::revertAccessPoints(frInst* inst)
+{
+  const odb::dbTransform xform = inst->getTransform();
+  const odb::Point offset(xform.getOffset());
+  odb::dbTransform revertXform(odb::Point(-offset.getX(), -offset.getY()));
+
+  const auto pin_access_idx = inst->getPinAccessIdx();
+  for (auto& inst_term : inst->getInstTerms()) {
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      auto pin_access = pin->getPinAccess(pin_access_idx);
+      for (auto& access_point : pin_access->getAccessPoints()) {
+        odb::Point unique_AP_point(access_point->getPoint());
+        revertXform.apply(unique_AP_point);
+        access_point->setPoint(unique_AP_point);
+        for (auto& ps : access_point->getPathSegs()) {
+          odb::Point begin = ps.getBeginPoint();
+          odb::Point end = ps.getEndPoint();
+          revertXform.apply(begin);
+          revertXform.apply(end);
+          if (end < begin) {
+            odb::Point tmp = begin;
+            begin = end;
+            end = tmp;
+          }
+          ps.setPoints(begin, end);
+        }
+      }
+    }
+  }
+}
 
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUniqueClasses();
   for (const auto& unique_class : unique) {
-    auto candidate_inst = unique_class->getFirstInst();
-    const odb::dbTransform xform = candidate_inst->getTransform();
-    const odb::Point offset(xform.getOffset());
-    odb::dbTransform revertXform(odb::Point(-offset.getX(), -offset.getY()));
-
-    const auto pin_access_idx = candidate_inst->getPinAccessIdx();
-    for (auto& inst_term : candidate_inst->getInstTerms()) {
-      for (auto& pin : inst_term->getTerm()->getPins()) {
-        auto pin_access = pin->getPinAccess(pin_access_idx);
-        for (auto& access_point : pin_access->getAccessPoints()) {
-          odb::Point unique_AP_point(access_point->getPoint());
-          revertXform.apply(unique_AP_point);
-          access_point->setPoint(unique_AP_point);
-          for (auto& ps : access_point->getPathSegs()) {
-            odb::Point begin = ps.getBeginPoint();
-            odb::Point end = ps.getEndPoint();
-            revertXform.apply(begin);
-            revertXform.apply(end);
-            if (end < begin) {
-              odb::Point tmp = begin;
-              begin = end;
-              end = tmp;
-            }
-            ps.setPoints(begin, end);
-          }
-        }
-      }
+    if (unique_class->getInsts().empty()) {
+      continue;
     }
+    auto inst = unique_class->getFirstInst();
+    revertAccessPoints(inst);
   }
 }
 

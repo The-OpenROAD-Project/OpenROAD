@@ -22,10 +22,10 @@ class _dbDatabase;
 
 struct dbTechLayerSpacingTablePrlRuleFlags
 {
-  bool wrong_direction_ : 1;
-  bool same_mask_ : 1;
-  bool exceept_eol_ : 1;
-  uint spare_bits_ : 29;
+  bool wrong_direction : 1;
+  bool same_mask : 1;
+  bool exceept_eol : 1;
+  uint spare_bits : 29;
 };
 
 class _dbTechLayerSpacingTablePrlRule : public _dbObject
@@ -56,7 +56,7 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   dbVector<std::tuple<int, int, int>> influence_tbl_;
 
   // User Code Begin Fields
-  std::map<uint, std::pair<int, int>> _within_tbl;
+  std::map<uint, std::pair<int, int>> _within_tbl_;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);

@@ -122,6 +122,15 @@ TEST_F(CallbackFixture, test_bpin)
   EXPECT_EQ(cb_.events.size(), 1);
   EXPECT_EQ(cb_.events[0], "Create BPin for IN1");
   cb_.clearEvents();
+  dbBox* box
+      = dbBox::create(pin, db_->getTech()->findLayer("L1"), 0, 0, 100, 100);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Create BPin box (0,0) (100,100)");
+  cb_.clearEvents();
+  dbBox::destroy(box);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Destroy bpin box");
+  cb_.clearEvents();
   dbBPin::destroy(pin);
   EXPECT_EQ(cb_.events.size(), 1);
   EXPECT_EQ(cb_.events[0], "Destroy BPin");

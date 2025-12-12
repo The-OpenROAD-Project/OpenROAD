@@ -8,7 +8,7 @@
 #include <string_view>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 

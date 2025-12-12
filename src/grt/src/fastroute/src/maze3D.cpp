@@ -695,6 +695,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
+  if (enable_resistance_aware_) {
+    updateSlacks(.8);
+    netpinOrderInc();
+  }
+
   const int endIND = tree_order_pv_.size() * 0.9;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
@@ -720,6 +725,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
         continue;
       }
+
+      // Force resistance-aware if edge length > 100
+      if (enable_resistance_aware_) {
+        if (treeedge->len > 100) {
+          resistance_aware_ = true;
+        } else {
+          resistance_aware_ = net->isResAware();
+        }
+      }
+
       int n1 = treeedge->n1;
       int n2 = treeedge->n2;
       const int n1x = treenodes[n1].x;

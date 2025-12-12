@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -25,8 +25,6 @@
 namespace gpl {
 using utl::GPL;
 
-NesterovPlace::NesterovPlace() = default;
-
 NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              const std::shared_ptr<PlacerBaseCommon>& pbc,
                              const std::shared_ptr<NesterovBaseCommon>& nbc,
@@ -36,9 +34,8 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::shared_ptr<TimingBase> tb,
                              std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
-    : NesterovPlace()
+    : npVars_(npVars)
 {
-  npVars_ = npVars;
   pbc_ = pbc;
   nbc_ = nbc;
   pbVec_ = pbVec;
@@ -250,7 +247,6 @@ void NesterovPlace::init()
 // clear reset
 void NesterovPlace::reset()
 {
-  npVars_.reset();
   log_ = nullptr;
 
   densityPenaltyStor_.clear();
@@ -1213,11 +1209,12 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 {
   auto gcell_index = nbc_->createCbkGCell(db_inst);
-  for (auto& nesterov : nbVec_) {
-    // TODO: manage regions, not every NB should create a
-    // gcell.
-    nesterov->createCbkGCell(db_inst, gcell_index);
-  }
+  // Always create gcell on top-level
+  nbVec_[0]->createCbkGCell(db_inst, gcell_index);
+  // TODO: create new gcell in its proper region
+  // for (auto& nesterov : nbVec_) {
+  //   nesterov->createCbkGCell(db_inst, gcell_index);
+  // }
 }
 
 void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)

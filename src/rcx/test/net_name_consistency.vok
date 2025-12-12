@@ -17,10 +17,12 @@ module block (i,
  input i;
  output [1:0] o;
 
+ wire net1;
  wire net2;
 
  LOGIC0_X1 leaf_2 (.Z(net2));
- LOGIC0_X1 buf0_1 (.Z(o[1]));
+ LOGIC0_X1 buf0_1 (.Z(net1));
  INV_X1 leaf (.A(net2),
     .ZN(o[0]));
+ assign o[1] = net1;
 endmodule

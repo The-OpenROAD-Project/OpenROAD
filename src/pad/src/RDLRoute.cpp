@@ -4,12 +4,18 @@
 #include "RDLRoute.h"
 
 #include <algorithm>
+#include <array>
 #include <map>
 #include <memory>
+#include <set>
 #include <tuple>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "boost/polygon/polygon_90_set_data.hpp"
+#include "boost/polygon/polygon_90_with_holes_data.hpp"
+#include "boost/polygon/rectangle_concept.hpp"
+#include "boost/polygon/rectangle_data.hpp"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -18,7 +24,12 @@ namespace pad {
 
 RDLRoute::RDLRoute(odb::dbITerm* source,
                    const std::vector<odb::dbITerm*>& dests)
-    : iterm_(source), priority_(0), terminals_(dests)
+    : iterm_(source),
+      priority_(0),
+      route_pending_(false),
+      locked_(false),
+      routed_(false),
+      terminals_(dests)
 {
   terminals_.erase(std::remove_if(terminals_.begin(),
                                   terminals_.end(),
@@ -117,10 +128,18 @@ void RDLRoute::setRoute(
       route_edges_.push_back(edge);
     }
   }
+
+  routed_ = true;
 }
 
 void RDLRoute::resetRoute()
 {
+  if (locked_) {
+    return;
+  }
+
+  routed_ = false;
+
   route_vertex_.clear();
   route_pts_.clear();
   route_edges_.clear();
@@ -212,6 +231,117 @@ bool RDLRoute::contains(const odb::Point& pt) const
 {
   return std::find(route_pts_.begin(), route_pts_.end(), pt)
          != route_pts_.end();
+}
+
+void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
+{
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+
+  using Rectangle = boost::polygon::rectangle_data<int>;
+  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+  using Pt = Polygon90::point_type;
+
+  auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {
+    std::array<Pt, 4> pts = {Pt(rect.xMin(), rect.yMin()),
+                             Pt(rect.xMax(), rect.yMin()),
+                             Pt(rect.xMax(), rect.yMax()),
+                             Pt(rect.xMin(), rect.yMax())};
+
+    Polygon90 poly;
+    poly.set(pts.begin(), pts.end());
+    return poly;
+  };
+
+  Polygon90Set source_iterms;
+
+  bool has_layer = false;
+  for (const auto& [iterm_layer, iterm_rect] : iterm_->getGeometries()) {
+    if (iterm_layer == layer) {
+      has_layer = true;
+      source_iterms += rect_to_poly(iterm_rect);
+    }
+  }
+  if (!has_layer) {
+    return;
+  }
+
+  std::map<odb::dbITerm*, Polygon90Set> iterms_geoms;
+
+  // Create geom of all shapes
+  for (odb::dbITerm* iterm : terminals_) {
+    bool iterm_has_layer = false;
+    for (const auto& [iterm_layer, iterm_rect] : iterm->getGeometries()) {
+      if (iterm_layer == layer) {
+        iterm_has_layer = true;
+        iterms_geoms[iterm] += rect_to_poly(iterm_rect);
+      }
+    }
+    if (!iterm_has_layer) {
+      return;
+    }
+  }
+
+  // check if route is even needed, ie, shapes overlap
+  for (const auto& [iterm, polys] : iterms_geoms) {
+    Polygon90Set check = polys;
+    check.interact(source_iterms);
+    if (!check.empty()) {
+      // There is nothing to do
+      locked_ = true;
+      routed_ = true;
+
+      routed_terminals_.insert(iterm_);
+      routed_terminals_.insert(iterm);
+      return;
+    }
+  }
+
+  const int min_dist = layer->getSpacing();
+
+  for (const auto& [iterm, polys] : iterms_geoms) {
+    Polygon90Set check = polys;
+    check.bloat(min_dist, min_dist, min_dist, min_dist);
+    check.interact(source_iterms);
+    if (!check.empty()) {
+      Polygon90Set source_bloat = source_iterms;
+      source_bloat.bloat(min_dist, min_dist, min_dist, min_dist);
+      check += source_bloat;
+      check.shrink(min_dist, min_dist, min_dist, min_dist);
+      check -= source_iterms;
+
+      std::vector<Rectangle> combined_rects;
+      check.get_rectangles(combined_rects);
+      for (const auto& rect : combined_rects) {
+        stubs_.emplace(xl(rect), yl(rect), xh(rect), yh(rect));
+      }
+      // There is nothing to do
+      locked_ = true;
+      routed_ = true;
+      routed_terminals_.insert(iterm_);
+      routed_terminals_.insert(iterm);
+
+      return;
+    }
+  }
+}
+
+std::set<odb::dbITerm*> RDLRoute::getRoutedTerminals() const
+{
+  if (!routed_terminals_.empty()) {
+    return routed_terminals_;
+  }
+
+  std::set<odb::dbITerm*> terms;
+  if (route_source_) {
+    terms.insert(route_source_->terminal);
+  }
+  if (route_dest_) {
+    terms.insert(route_dest_->terminal);
+  }
+
+  return terms;
 }
 
 }  // namespace pad

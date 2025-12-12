@@ -42,6 +42,7 @@ class Pin;
 class Net;
 class GCell;
 class PlacerBaseCommon;
+struct PlaceOptions;
 
 class Instance
 {
@@ -92,7 +93,7 @@ class Instance
   int cy() const;
   int dx() const;
   int dy() const;
-  int64_t area() const;
+  int64_t getArea() const;
 
   void setExtId(int extId);
   int getExtId() const { return extId_; }
@@ -100,6 +101,7 @@ class Instance
   void addPin(Pin* pin);
   const std::vector<Pin*>& getPins() const { return pins_; }
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
+  void extendSizeByScale(double scale, utl::Logger* logger);
 
  private:
   odb::dbInst* inst_ = nullptr;
@@ -266,22 +268,19 @@ class Die
   int coreUy_ = 0;
 };
 
-class PlacerBaseVars
+struct PlacerBaseVars
 {
- public:
-  int padLeft;
-  int padRight;
-  bool skipIoMode;
+  PlacerBaseVars(const PlaceOptions& options);
 
-  PlacerBaseVars();
-  void reset();
+  const int padLeft;
+  const int padRight;
+  const bool skipIoMode;
 };
 
 // Class includes everything from PlacerBase that is not region specific
 class PlacerBaseCommon
 {
  public:
-  PlacerBaseCommon();
   // temp padLeft/Right before OpenDB supporting...
   PlacerBaseCommon(odb::dbDatabase* db,
                    PlacerBaseVars pbVars,
@@ -390,7 +389,7 @@ class PlacerBase
   int64_t stdInstsArea() const { return stdInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
-  odb::dbGroup* group() const { return group_; }
+  odb::dbGroup* getGroup() const { return group_; }
 
   void unlockAll();
 

@@ -15,6 +15,7 @@
 #include "grid.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/isotropy.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
 #include "utl/Logger.h"
@@ -176,23 +177,23 @@ void SRoute::createSrouteWires(
     odb::dbSWire* nwsw = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
 
     bool first = true;
-    int direction;
     // find closest metal stripe vertical (horizontal)
     // for vertical power ring connection
-    if (ring[index]->getDir() == 0) {
+    if (ring[index]->getDir() == odb::vertical) {
       for (auto* swire : net->getSWires()) {
         for (auto* wire : swire->getWires()) {
           stripe_metal_layer = wire->getTechLayer();
-          direction = wire->getDir();
+          const odb::Orientation2D direction = wire->getDir();
           if (first) {
-            if ((direction == 1) && (stripe_metal_layer == metal_layer)
+            if ((direction == odb::horizontal)
+                && (stripe_metal_layer == metal_layer)
                 && (wire->getDY() != Hdy)) {
               first = false;
               pdn_wire = wire;
             }
           } else {
-            if ((direction == 1) && (stripe_metal_layer == metal_layer)
-                && (wire->getDY() != Hdy)
+            if ((direction == odb::horizontal)
+                && (stripe_metal_layer == metal_layer) && (wire->getDY() != Hdy)
                 && (std::abs(wire->yMin() - avg_iterm_y)
                     < std::abs(pdn_wire->yMin() - avg_iterm_y))) {
               pdn_wire = wire;
@@ -205,14 +206,15 @@ void SRoute::createSrouteWires(
       // find closest wire to right of the center point
       for (auto* swire : outer_net->getSWires()) {
         for (auto* wire : swire->getWires()) {
-          direction = wire->getDir();
+          const odb::Orientation2D direction = wire->getDir();
           if (first) {
-            if ((direction == 0) && (wire->xMax() > avg_iterm_x)) {
+            if ((direction == odb::vertical) && (wire->xMax() > avg_iterm_x)) {
               first = false;
               right_pdn_wire = wire;
             }
           } else {
-            if ((direction == 0) && (wire->xMax() < pdn_wire->xMax())
+            if ((direction == odb::vertical)
+                && (wire->xMax() < pdn_wire->xMax())
                 && (wire->xMax() > avg_iterm_x)) {
               right_pdn_wire = wire;
             }
@@ -225,14 +227,15 @@ void SRoute::createSrouteWires(
       first = true;
       for (auto* swire : outer_net->getSWires()) {
         for (auto* wire : swire->getWires()) {
-          direction = wire->getDir();
+          const odb::Orientation2D direction = wire->getDir();
           if (first) {
-            if ((direction == 0) && (wire->xMin() < avg_iterm_x)) {
+            if ((direction == odb::vertical) && (wire->xMin() < avg_iterm_x)) {
               first = false;
               left_pdn_wire = wire;
             }
           } else {
-            if ((direction == 0) && (wire->xMin() > pdn_wire->xMin())
+            if ((direction == odb::vertical)
+                && (wire->xMin() > pdn_wire->xMin())
                 && (wire->xMin() < avg_iterm_x)) {
               left_pdn_wire = wire;
             }

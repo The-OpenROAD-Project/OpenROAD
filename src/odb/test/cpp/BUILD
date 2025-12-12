@@ -224,6 +224,25 @@ cc_test(
     ],
     deps = [
         "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "Test3DBloxChecker",
+    srcs = [
+        "Test3DBloxChecker.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb",
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",

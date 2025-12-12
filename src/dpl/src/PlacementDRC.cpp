@@ -13,6 +13,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace dpl {
 
@@ -36,7 +37,7 @@ odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
 odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
 {
   odb::Rect query_rect(edge_box);
-  bool is_vertical_edge = edge_box.getDir() == 0;
+  bool is_vertical_edge = edge_box.getDir() == odb::vertical;
   if (is_vertical_edge) {
     // vertical edge
     query_rect = query_rect.bloat(spc, odb::Orientation2D::Horizontal);
@@ -89,7 +90,7 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
                   + 1;  // +1 to account for EXACT rules
     odb::Rect edge1_box = cell_edges::transformEdgeRect(
         edge1.getBBox(), cell, x_real, y_real, orient);
-    bool is_vertical_edge = edge1_box.getDir() == 0;
+    bool is_vertical_edge = edge1_box.getDir() == odb::vertical;
     odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
     GridX xMin = grid_->gridX(DbuX(query_rect.xMin()));
     GridX xMax = grid_->gridEndX(DbuX(query_rect.xMax()));

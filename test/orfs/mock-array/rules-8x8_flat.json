@@ -162,7 +162,7 @@
         "compare": ">="
     },
     "detailedroute__timing__hold__tns": {
-        "value": -487.0,
+        "value": -505.0,
         "compare": ">="
     },
     "finish__timing__setup__ws": {

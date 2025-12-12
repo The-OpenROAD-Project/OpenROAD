@@ -268,6 +268,21 @@ void set_bterm_top_layer_grid(dbBlock* block,
   block->setBTermTopLayerGrid(top_layer_grid);
 }
 
+bool dbHasCoreRows(dbDatabase* db)
+{
+  if (!db->getChip() || !db->getChip()->getBlock()) {
+    return false;
+  }
+
+  for (odb::dbRow* row : db->getChip()->getBlock()->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool hasOneSiteMaster(dbDatabase* db)
 {
   for (dbLib* lib : db->getLibs()) {

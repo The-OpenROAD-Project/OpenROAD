@@ -45,4 +45,32 @@ Path Type: max
 
 [INFO RSZ-0026] Removed 1 buffers.
 After removal:
-No paths found.
+m1/inv1/Y -> B wire
+  ^ -> ^ 0.00:0.00
+  v -> v 0.00:0.00
+Startpoint: i (input port)
+Endpoint: k (output port)
+Path Group: path delay
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 ^ input external delay
+   0.00    0.00 ^ i (in)
+   3.41    3.41 v inv1/Y (INVx1_ASAP7_75t_R)
+   6.33    9.74 ^ m1/inv1/Y (INVx1_ASAP7_75t_R)
+  20.12   29.86 ^ m1/gate1/Y (AND3x1_ASAP7_75t_R)
+   3.90   33.77 v inv3/Y (INVx1_ASAP7_75t_R)
+   0.00   33.77 v k (out)
+          33.77   data arrival time
+
+  10.00   10.00   max_delay
+   0.00   10.00   output external delay
+          10.00   data required time
+---------------------------------------------------------
+          10.00   data required time
+         -33.77   data arrival time
+---------------------------------------------------------
+         -23.77   slack (VIOLATED)
+
+

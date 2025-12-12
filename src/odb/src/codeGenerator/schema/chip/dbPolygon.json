@@ -3,7 +3,7 @@
   "type":"dbObject",
   "fields":[
     {
-      "name": "owner_type_",
+      "name": "owner_type",
       "type": "uint",
       "bits": 4,
       "flags": [
@@ -11,7 +11,7 @@
       ]
     },
     {
-      "name": "layer_id_",
+      "name": "layer_id",
       "type": "uint",
       "bits": 9,
       "flags": [

@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@openroad_rules_python//python:defs.bzl", "py_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -44,9 +46,9 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/gpl/AbstractGraphics.h",
         "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
+        "src/AbstractGraphics.h",
         "src/graphicsNone.h",
         "src/mbff.h",
     ],
@@ -83,6 +85,37 @@ cc_library(
     ],
 )
 
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_gpl.so",
+    srcs = [
+        ":swig-py",
+    ],
+    defines = [PYTHON_STABLE_API_DEFINE],
+    includes = ["src"],
+    linkshared = True,
+    deps = [
+        "//src/gpl",
+        "//src/odb",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@openroad_rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (gpl.py) and the
+# compiled C++ extension (_gpl.so) together.
+py_library(
+    name = "gpl_py",
+    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_gpl.so"],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public"],
+)
+
 tcl_encode(
     name = "tcl",
     srcs = [
@@ -90,6 +123,7 @@ tcl_encode(
     ],
     char_array_name = "gpl_tcl_inits",
     namespace = "gpl",
+    visibility = ["//visibility:public"],
 )
 
 tcl_wrap_cc(
@@ -97,6 +131,7 @@ tcl_wrap_cc(
     srcs = [
         "src/replace.i",
         "//:error_swig",
+        "//:options_swig",
     ],
     module = "gpl",
     namespace_prefix = "gpl",
@@ -104,6 +139,7 @@ tcl_wrap_cc(
     swig_includes = [
         "src/gpl/src",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "//src/odb:swig",
     ],

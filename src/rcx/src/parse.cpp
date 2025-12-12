@@ -10,8 +10,8 @@
 #include <cstring>
 #include <filesystem>
 
-#include "odb/array1.h"
 #include "odb/odb.h"
+#include "rcx/array1.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -49,8 +49,6 @@ static char* ATH__allocCharWord(int n, utl::Logger* logger)
 Ath__parser::Ath__parser(utl::Logger* logger)
 {
   _logger = logger;
-  _lineSize = 10000;
-  _maxWordCnt = 100;
   init();
 }
 
@@ -69,7 +67,6 @@ Ath__parser::~Ath__parser()
   }
   delete[] _inputFile;
   delete[] _line;
-  delete[] _tmpLine;
   delete[] _wordSeparators;
 
   for (int ii = 0; ii < _maxWordCnt; ii++) {
@@ -86,7 +83,6 @@ Ath__parser::~Ath__parser()
 void Ath__parser::init()
 {
   _line = ATH__allocCharWord(_lineSize, _logger);
-  _tmpLine = ATH__allocCharWord(_lineSize, _logger);
 
   _wordArray = new char*[_maxWordCnt];
 
@@ -98,15 +94,11 @@ void Ath__parser::init()
 
   strcpy(_wordSeparators, " \n\t");
 
-  _commentChar = '#';
-
   _lineNum = 0;
   _currentWordCnt = -1;
 
   _inFP = nullptr;
   _inputFile = ATH__allocCharWord(512, _logger);
-
-  _progressLineChunk = 1000000;
 }
 
 int Ath__parser::getLineNum()
@@ -224,7 +216,7 @@ double Ath__parser::getDouble(int ii)
   return atof(get(ii));
 }
 
-void Ath__parser::getDoubleArray(odb::Ath__array1D<double>* A,
+void Ath__parser::getDoubleArray(Ath__array1D<double>* A,
                                  int start,
                                  double mult)
 {
@@ -239,8 +231,8 @@ void Ath__parser::getDoubleArray(odb::Ath__array1D<double>* A,
   }
 }
 
-odb::Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
-                                                        int start1)
+Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
+                                                   int start1)
 {
   if ((keyword != nullptr) && (strcmp(keyword, get(0)) != 0)) {
     return nullptr;
@@ -250,7 +242,7 @@ odb::Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
     return nullptr;
   }
 
-  auto* A = new odb::Ath__array1D<double>(getWordCnt());
+  auto* A = new Ath__array1D<double>(getWordCnt());
   int start = 0;
   if (keyword != nullptr) {
     start = start1;

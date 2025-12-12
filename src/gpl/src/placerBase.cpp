@@ -4,6 +4,7 @@
 #include "placerBase.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -54,19 +55,19 @@ static int64_t getOverlapWithCoreArea(Die& die, Instance& inst);
 Instance::Instance() = default;
 
 // for movable real instances
-Instance::Instance(odb::dbInst* inst,
+Instance::Instance(odb::dbInst* db_inst,
                    PlacerBaseCommon* pbc,
                    utl::Logger* logger)
     : Instance()
 {
-  inst_ = inst;
+  inst_ = db_inst;
   copyDbLocation(pbc);
 
   // Masters more than row_limit rows tall are treated as macros
   constexpr int row_limit = 6;
-  dbBox* bbox = inst->getBBox();
+  dbBox* bbox = db_inst->getBBox();
 
-  if (inst->getMaster()->getType().isBlock()) {
+  if (db_inst->getMaster()->getType().isBlock()) {
     is_macro_ = true;
   } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
     is_macro_ = true;
@@ -74,7 +75,7 @@ Instance::Instance(odb::dbInst* inst,
                  134,
                  "Master {} is not marked as a BLOCK in LEF but is more "
                  "than {} rows tall.  It will be treated as a macro.",
-                 inst->getMaster()->getName(),
+                 db_inst->getMaster()->getName(),
                  row_limit);
   }
 }
@@ -231,7 +232,7 @@ int Instance::dy() const
   return (uy_ - ly_);
 }
 
-int64_t Instance::area() const
+int64_t Instance::getArea() const
 {
   return static_cast<int64_t>(dx()) * dy();
 }
@@ -282,6 +283,23 @@ void Instance::snapOutward(const odb::Point& origin, int step_x, int step_y)
   ly_ = snapDown(ly_, origin.y(), step_y);
   ux_ = snapUp(ux_, origin.x(), step_x);
   uy_ = snapUp(uy_, origin.y(), step_y);
+}
+
+void Instance::extendSizeByScale(double scale, utl::Logger* logger)
+{
+  if (getArea() == 0) {
+    return;
+  }
+
+  int center_x = cx();
+  int center_y = cy();
+  int new_dx = static_cast<int>((ux_ - lx_) * scale);
+  int new_dy = static_cast<int>((uy_ - ly_) * scale);
+
+  lx_ = center_x - new_dx / 2;
+  ux_ = center_x + new_dx / 2;
+  ly_ = center_y - new_dy / 2;
+  uy_ = center_y + new_dy / 2;
 }
 
 ////////////////////////////////////////////////////////
@@ -701,30 +719,23 @@ int64_t Die::coreArea() const
   return static_cast<int64_t>(coreDx()) * static_cast<int64_t>(coreDy());
 }
 
-PlacerBaseVars::PlacerBaseVars()
+PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
+    : padLeft(options.padLeft),
+      padRight(options.padRight),
+      skipIoMode(options.skipIoMode)
 {
-  reset();
-}
-
-void PlacerBaseVars::reset()
-{
-  padLeft = padRight = 0;
-  skipIoMode = false;
 }
 
 ////////////////////////////////////////////////////////
 // PlacerBaseCommon
 
-PlacerBaseCommon::PlacerBaseCommon() = default;
-
 PlacerBaseCommon::PlacerBaseCommon(odb::dbDatabase* db,
                                    PlacerBaseVars pbVars,
                                    utl::Logger* log)
-    : PlacerBaseCommon()
+    : pbVars_(pbVars)
 {
   db_ = db;
   log_ = log;
-  pbVars_ = pbVars;
   init();
 }
 
@@ -813,7 +824,62 @@ void PlacerBaseCommon::init()
     instStor_.push_back(temp_inst);
 
     if (temp_inst.dy() > siteSizeY_ * 6) {
-      macroInstsArea_ += temp_inst.area();
+      macroInstsArea_ += temp_inst.getArea();
+    }
+  }
+
+  // Extending instances by average pin density.
+  auto count_signal_pins = [](const Instance& inst) -> int {
+    return std::ranges::count_if(
+        inst.dbInst()->getITerms(),
+        [](odb::dbITerm* iterm) { return !iterm->getSigType().isSupply(); });
+  };
+
+  int total_signal_pins = 0;
+  int64_t total_area = 0;
+  for (auto& inst : instStor_) {
+    if (!inst.isFixed() && inst.isInstance()) {
+      int pin_count = count_signal_pins(inst);
+      total_signal_pins += pin_count;
+      total_area += inst.getArea();
+    }
+  }
+
+  double avg_density = (total_area > 0)
+                           ? static_cast<double>(total_signal_pins) / total_area
+                           : 0.0;
+  if (log_->debugCheck(GPL, "extendPinDensity", 1)) {
+    double avg_density_micron = block->dbuToMicrons(avg_density);
+    double avg_area_per_pin_dbu
+        = (total_signal_pins > 0)
+              ? static_cast<double>(total_area) / total_signal_pins
+              : 0.0;
+    double avg_area_per_pin_micron
+        = block->dbuAreaToMicrons(avg_area_per_pin_dbu);
+    log_->report("Average pin density: {:.6f} pins per DBU^2", avg_density);
+    log_->report("Average pin density: {:.6f} pins per micron^2",
+                 avg_density_micron);
+    log_->report("Average area per pin: {:.2f} DBU^2 ({:.6f} micron^2)",
+                 avg_area_per_pin_dbu,
+                 avg_area_per_pin_micron);
+  }
+
+  // Adjust each movable instance to match the average density
+  for (auto& inst : instStor_) {
+    if (!inst.isFixed() && inst.isInstance()) {
+      int pin_count = count_signal_pins(inst);
+      if (pin_count > 2 && avg_density > 0.0) {
+        double target_area = static_cast<double>(pin_count) / avg_density;
+        double scale
+            = std::sqrt(target_area / static_cast<double>(inst.getArea()));
+        // Cap scaling, avoid later excessive routability inflation
+        if (scale > 1.2) {
+          scale = 1.2;
+        } else if (scale < 0.95) {
+          scale = 0.95;
+        }
+        inst.extendSizeByScale(scale, log_);
+      }
     }
   }
 
@@ -904,7 +970,6 @@ void PlacerBaseCommon::init()
 void PlacerBaseCommon::reset()
 {
   db_ = nullptr;
-  pbVars_.reset();
 
   instStor_.clear();
   pinStor_.clear();
@@ -1053,7 +1118,7 @@ void PlacerBase::init()
       }
     } else {
       placeInsts_.push_back(inst);
-      int64_t instArea = inst->area();
+      int64_t instArea = inst->getArea();
       placeInstsArea_ += instArea;
       // macro cells should be
       // macroInstsArea_
@@ -1078,7 +1143,7 @@ void PlacerBase::init()
     if (inst.isDummy()) {
       dummyInsts_.push_back(&inst);
       nonPlaceInsts_.push_back(&inst);
-      nonPlaceInstsArea_ += inst.area();
+      nonPlaceInstsArea_ += inst.getArea();
     }
     insts_.push_back(&inst);
   }

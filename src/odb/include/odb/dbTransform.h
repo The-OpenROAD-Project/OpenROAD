@@ -17,41 +17,37 @@ class dbIStream;
 //
 class dbTransform
 {
-  friend class _dbBlock;
-  dbOrientType::Value _orient = dbOrientType::R0;
-  Point _offset;
-
  public:
   // T = <R0, (0,0)>
   dbTransform() = default;
 
   //  T = <R0, offset>
-  dbTransform(const Point offset) : _offset(offset) {}
+  dbTransform(const Point offset) : offset_(offset) {}
 
   //  T = <orient, (0,0)>
-  dbTransform(const dbOrientType orient) : _orient(orient) {}
+  dbTransform(const dbOrientType orient) : orient_(orient) {}
 
   //  T = <orient, offset>
   dbTransform(const dbOrientType orient, const Point& offset)
-      : _orient(orient), _offset(offset)
+      : orient_(orient), offset_(offset)
   {
   }
 
   bool operator==(const dbTransform& t) const
   {
-    return (_orient == t._orient) && (_offset == t._offset);
+    return (orient_ == t.orient_) && (offset_ == t.offset_);
   }
 
   bool operator!=(const dbTransform& t) const { return !operator==(t); }
 
-  void setOrient(const dbOrientType orient) { _orient = orient; }
+  void setOrient(const dbOrientType orient) { orient_ = orient; }
 
-  void setOffset(const Point offset) { _offset = offset; }
+  void setOffset(const Point offset) { offset_ = offset; }
 
   void setTransform(const dbOrientType orient, const Point& offset)
   {
-    _orient = orient;
-    _offset = offset;
+    orient_ = orient;
+    offset_ = offset;
   }
 
   // Apply transform to this point
@@ -75,11 +71,17 @@ class dbTransform
   // Compute inverse transform
   void invert();
 
-  dbOrientType getOrient() const { return _orient; }
-  Point getOffset() const { return _offset; }
+  dbOrientType getOrient() const { return orient_; }
+  Point getOffset() const { return offset_; }
 
   friend dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
   friend dbIStream& operator>>(dbIStream& stream, dbTransform& t);
+
+ private:
+  friend class _dbBlock;
+
+  dbOrientType::Value orient_ = dbOrientType::R0;
+  Point offset_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t);

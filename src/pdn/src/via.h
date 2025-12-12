@@ -674,8 +674,7 @@ class TechViaGenerator : public ViaGenerator
 
   static std::set<odb::Rect> getViaObstructionRects(utl::Logger* logger,
                                                     odb::dbTechVia* via,
-                                                    int x,
-                                                    int y);
+                                                    const odb::Point& pt);
 
  protected:
   void getMinimumEnclosures(std::vector<Enclosure>& bottom,

@@ -20,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbCCSegItr::reversible()
+bool dbCCSegItr::reversible() const
 {
   return true;
 }
 
-bool dbCCSegItr::orderReversed()
+bool dbCCSegItr::orderReversed() const
 {
   return true;
 }
@@ -33,27 +33,27 @@ bool dbCCSegItr::orderReversed()
 void dbCCSegItr::reverse(dbObject* parent)
 {
   _dbCapNode* node = (_dbCapNode*) parent;
-  uint id = node->_cc_segs;
+  uint id = node->cc_segs_;
   uint pid = parent->getId();
   uint list = 0;
 
   while (id != 0) {
-    _dbCCSeg* seg = _seg_tbl->getPtr(id);
+    _dbCCSeg* seg = seg_tbl_->getPtr(id);
     uint n = seg->next(pid);
     seg->next(pid) = list;
     list = id;
     id = n;
   }
 
-  node->_cc_segs = list;
+  node->cc_segs_ = list;
 }
 
-uint dbCCSegItr::sequential()
+uint dbCCSegItr::sequential() const
 {
   return 0;
 }
 
-uint dbCCSegItr::size(dbObject* parent)
+uint dbCCSegItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -66,30 +66,30 @@ uint dbCCSegItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbCCSegItr::begin(dbObject* parent)
+uint dbCCSegItr::begin(dbObject* parent) const
 {
   _dbCapNode* node = (_dbCapNode*) parent;
-  return node->_cc_segs;
+  return node->cc_segs_;
 }
 
-uint dbCCSegItr::end(dbObject* /* unused: parent */)
+uint dbCCSegItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbCCSegItr::next(uint id, ...)
+uint dbCCSegItr::next(uint id, ...) const
 {
   va_list ap;
   va_start(ap, id);
   uint pid = va_arg(ap, uint);
   va_end(ap);
-  _dbCCSeg* seg = _seg_tbl->getPtr(id);
+  _dbCCSeg* seg = seg_tbl_->getPtr(id);
   return seg->next(pid);
 }
 
 dbObject* dbCCSegItr::getObject(uint id, ...)
 {
-  return _seg_tbl->getPtr(id);
+  return seg_tbl_->getPtr(id);
 }
 
 }  // namespace odb

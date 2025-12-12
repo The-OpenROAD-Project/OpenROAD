@@ -112,3 +112,19 @@ To hunt down missing `tags = ["manual"]` run a query like:
     bazelisk query 'kind(".*", //test/orfs/mock-array/...) except attr(tags, "manual", //test/orfs/mock-array/...)'
 
 Note that OpenROAD *does* want `bazelisk test ...` to run all tests, so test targets should be marked `tags = ["orfs"]` instead, so that `.bazelrc` can skip builds of those targets with the `build --build_tag_filters=-orfs` line.
+
+## eqy tests
+
+`eqy_test` is used to run equivalence checks before and after an ORFS stage, such as before and after floorplan for mock-array. To run the test and keep all the files from the test and see interactive output, run:
+
+    bazelisk test //test/orfs/mock-array:MockArray_4x4_eqy_test --test_output=streamed --sandbox_debug
+
+If this fails, then it will output the line below. `eqy` uses a very, very large number of files and copying out these files to the bazel-testlogs folder for inspection takes some time:
+
+    Copying 114462 files to bazel-testlogs/test/orfs/mock-array/MockArray_4x4_eqy_test/test.outputs for inspection.
+
+If you just want the files needed to run a locally installed `eqy`, build all the files used in the run above by:
+
+    bazelisk build //test/orfs/mock-array:MockArray_4x4_eqy_test
+
+The files used to run the test are then in `bazel-bin/test/orfs/mock-array/`.

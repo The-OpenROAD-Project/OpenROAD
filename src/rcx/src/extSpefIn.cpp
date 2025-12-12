@@ -8,17 +8,16 @@
 #include <vector>
 
 #include "name.h"
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/grids.h"
 #include "utl/Logger.h"
 
-using odb::Ath__array1D;
 using odb::dbBTerm;
 using odb::dbCapNode;
 using odb::dbCCSeg;

@@ -47,11 +47,14 @@ COMPULSORY_TESTS = [
     "core_grid_start_power",
     "core_grid_start_power_strap_ground",
     "core_grid_strap_count",
+    "core_grid_strap_outside_core",
     "core_grid_via_snap",
     "core_grid_with_M6_min_area",
     "core_grid_with_M7_pins",
+    "core_grid_with_bterms",
     "core_grid_with_dual_rings",
     "core_grid_with_fixed_pins",
+    "core_grid_with_m2_straps",
     "core_grid_with_rings",
     "core_grid_with_rings_connect",
     "core_grid_with_rings_different_offset",
@@ -101,10 +104,12 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_flipchip",
     "pads_black_parrot_flipchip_connect_bumps",
     "pads_black_parrot_flipchip_connect_overpads",
+    "pads_black_parrot_grid_define",
     "pads_black_parrot_limit_connect",
     "pads_black_parrot_max_width",
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
+    "pads_black_parrot_straps",
     "pads_connect_from_non_pref_edge",
     "power_switch",
     "power_switch_cut_rows",
@@ -137,11 +142,7 @@ MANUAL_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "pads_black_parrot",
-    "pads_black_parrot_flipchip",
-    "pads_black_parrot_flipchip_connect_bumps",
     "pads_black_parrot_flipchip_connect_overpads",
-    "pads_black_parrot_offset",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS

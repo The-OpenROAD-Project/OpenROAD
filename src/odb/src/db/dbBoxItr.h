@@ -16,32 +16,29 @@ class _dbPolygon;
 template <uint page_size>
 class dbBoxItr : public dbIterator
 {
- protected:
-  dbTable<_dbBox, page_size>* _box_tbl;
-  dbTable<_dbPolygon, page_size>* _pbox_tbl;
-
  public:
   dbBoxItr(dbTable<_dbBox, page_size>* box_tbl,
            dbTable<_dbPolygon, page_size>* pbox_tbl,
            bool include_polygons)
   {
-    _box_tbl = box_tbl;
-    _pbox_tbl = pbox_tbl;
+    box_tbl_ = box_tbl;
+    pbox_tbl_ = pbox_tbl;
     include_polygons_ = include_polygons;
   }
 
-  bool reversible() override;
-  bool orderReversed() override;
+  bool reversible() const override;
+  bool orderReversed() const override;
   void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
+  uint sequential() const override;
+  uint size(dbObject* parent) const override;
+  uint begin(dbObject* parent) const override;
+  uint end(dbObject* parent) const override;
+  uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
 
  private:
-  // include polygons in iterations
+  dbTable<_dbBox, page_size>* box_tbl_;
+  dbTable<_dbPolygon, page_size>* pbox_tbl_;
   bool include_polygons_;
 };
 

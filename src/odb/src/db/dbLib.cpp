@@ -34,63 +34,63 @@ template class dbHashTable<_dbSite>;
 
 bool _dbLib::operator==(const _dbLib& rhs) const
 {
-  if (_lef_units != rhs._lef_units) {
+  if (lef_units_ != rhs.lef_units_) {
     return false;
   }
 
-  if (_dbu_per_micron != rhs._dbu_per_micron) {
+  if (dbu_per_micron_ != rhs.dbu_per_micron_) {
     return false;
   }
 
-  if (_hier_delimiter != rhs._hier_delimiter) {
+  if (hier_delimiter_ != rhs.hier_delimiter_) {
     return false;
   }
 
-  if (_left_bus_delimiter != rhs._left_bus_delimiter) {
+  if (left_bus_delimiter_ != rhs.left_bus_delimiter_) {
     return false;
   }
 
-  if (_right_bus_delimiter != rhs._right_bus_delimiter) {
+  if (right_bus_delimiter_ != rhs.right_bus_delimiter_) {
     return false;
   }
 
-  if (_spare != rhs._spare) {
+  if (spare_ != rhs.spare_) {
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
-  if (_master_hash != rhs._master_hash) {
+  if (master_hash_ != rhs.master_hash_) {
     return false;
   }
 
-  if (_site_hash != rhs._site_hash) {
+  if (site_hash_ != rhs.site_hash_) {
     return false;
   }
 
-  if (*_master_tbl != *rhs._master_tbl) {
+  if (*master_tbl_ != *rhs.master_tbl_) {
     return false;
   }
 
-  if (*_site_tbl != *rhs._site_tbl) {
+  if (*site_tbl_ != *rhs.site_tbl_) {
     return false;
   }
 
-  if (*_prop_tbl != *rhs._prop_tbl) {
+  if (*prop_tbl_ != *rhs.prop_tbl_) {
     return false;
   }
 
-  if (_tech != rhs._tech) {
+  if (tech_ != rhs.tech_) {
     return false;
   }
 
-  if (*_name_cache != *rhs._name_cache) {
+  if (*name_cache_ != *rhs.name_cache_) {
     return false;
   }
 
@@ -104,85 +104,85 @@ bool _dbLib::operator==(const _dbLib& rhs) const
 ////////////////////////////////////////////////////////////////////
 _dbLib::_dbLib(_dbDatabase* db)
 {
-  _lef_units = 0;
-  _dbu_per_micron = 1000;
-  _hier_delimiter = '/';
-  _left_bus_delimiter = 0;
-  _right_bus_delimiter = 0;
-  _spare = 0;
-  _name = nullptr;
+  lef_units_ = 0;
+  dbu_per_micron_ = 1000;
+  hier_delimiter_ = '/';
+  left_bus_delimiter_ = 0;
+  right_bus_delimiter_ = 0;
+  spare_ = 0;
+  name_ = nullptr;
 
-  _master_tbl = new dbTable<_dbMaster>(
+  master_tbl_ = new dbTable<_dbMaster>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbMasterObj);
 
-  _site_tbl = new dbTable<_dbSite>(
+  site_tbl_ = new dbTable<_dbSite>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbSiteObj);
 
-  _prop_tbl = new dbTable<_dbProperty>(
+  prop_tbl_ = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbLib::getObjectTable, dbPropertyObj);
 
-  _name_cache
+  name_cache_
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbLib::getObjectTable);
 
-  _prop_itr = new dbPropertyItr(_prop_tbl);
+  prop_itr_ = new dbPropertyItr(prop_tbl_);
 
-  _master_hash.setTable(_master_tbl);
-  _site_hash.setTable(_site_tbl);
+  master_hash_.setTable(master_tbl_);
+  site_hash_.setTable(site_tbl_);
 }
 
 _dbLib::~_dbLib()
 {
-  delete _master_tbl;
-  delete _site_tbl;
-  delete _prop_tbl;
-  delete _name_cache;
-  delete _prop_itr;
+  delete master_tbl_;
+  delete site_tbl_;
+  delete prop_tbl_;
+  delete name_cache_;
+  delete prop_itr_;
 
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib)
 {
-  dbOStreamScope scope(stream, fmt::format("dbLib({})", lib._name));
-  stream << lib._lef_units;
-  stream << lib._dbu_per_micron;
-  stream << lib._hier_delimiter;
-  stream << lib._left_bus_delimiter;
-  stream << lib._right_bus_delimiter;
-  stream << lib._spare;
-  stream << lib._name;
-  stream << lib._master_hash;
-  stream << lib._site_hash;
-  stream << lib._tech;
-  stream << NamedTable("master_tbl", lib._master_tbl);
-  stream << NamedTable("site_tbl", lib._site_tbl);
-  stream << NamedTable("prop_tbl", lib._prop_tbl);
-  stream << *lib._name_cache;
+  dbOStreamScope scope(stream, fmt::format("dbLib({})", lib.name_));
+  stream << lib.lef_units_;
+  stream << lib.dbu_per_micron_;
+  stream << lib.hier_delimiter_;
+  stream << lib.left_bus_delimiter_;
+  stream << lib.right_bus_delimiter_;
+  stream << lib.spare_;
+  stream << lib.name_;
+  stream << lib.master_hash_;
+  stream << lib.site_hash_;
+  stream << lib.tech_;
+  stream << NamedTable("master_tbl", lib.master_tbl_);
+  stream << NamedTable("site_tbl", lib.site_tbl_);
+  stream << NamedTable("prop_tbl", lib.prop_tbl_);
+  stream << *lib.name_cache_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
 {
-  stream >> lib._lef_units;
-  stream >> lib._dbu_per_micron;
-  stream >> lib._hier_delimiter;
-  stream >> lib._left_bus_delimiter;
-  stream >> lib._right_bus_delimiter;
-  stream >> lib._spare;
-  stream >> lib._name;
-  stream >> lib._master_hash;
-  stream >> lib._site_hash;
+  stream >> lib.lef_units_;
+  stream >> lib.dbu_per_micron_;
+  stream >> lib.hier_delimiter_;
+  stream >> lib.left_bus_delimiter_;
+  stream >> lib.right_bus_delimiter_;
+  stream >> lib.spare_;
+  stream >> lib.name_;
+  stream >> lib.master_hash_;
+  stream >> lib.site_hash_;
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
   if (lib.getDatabase()->isSchema(db_schema_block_tech)) {
-    stream >> lib._tech;
+    stream >> lib.tech_;
   }
-  stream >> *lib._master_tbl;
-  stream >> *lib._site_tbl;
-  stream >> *lib._prop_tbl;
-  stream >> *lib._name_cache;
+  stream >> *lib.master_tbl_;
+  stream >> *lib.site_tbl_;
+  stream >> *lib.prop_tbl_;
+  stream >> *lib.name_cache_;
 
   return stream;
 }
@@ -191,11 +191,11 @@ dbObjectTable* _dbLib::getObjectTable(dbObjectType type)
 {
   switch (type) {
     case dbMasterObj:
-      return _master_tbl;
+      return master_tbl_;
     case dbSiteObj:
-      return _site_tbl;
+      return site_tbl_;
     case dbPropertyObj:
-      return _prop_tbl;
+      return prop_tbl_;
     default:
       break;
   }
@@ -212,13 +212,13 @@ dbObjectTable* _dbLib::getObjectTable(dbObjectType type)
 std::string dbLib::getName()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_name;
+  return lib->name_;
 }
 
 const char* dbLib::getConstName()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_name;
+  return lib->name_;
 }
 
 dbTech* dbLib::getTech()
@@ -230,69 +230,69 @@ dbTech* dbLib::getTech()
 _dbTech* _dbLib::getTech()
 {
   _dbDatabase* db = getDatabase();
-  return db->_tech_tbl->getPtr(_tech);
+  return db->tech_tbl_->getPtr(tech_);
 }
 
 int dbLib::getDbUnitsPerMicron()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_dbu_per_micron;
+  return lib->dbu_per_micron_;
 }
 
 dbSet<dbMaster> dbLib::getMasters()
 {
   _dbLib* lib = (_dbLib*) this;
-  return dbSet<dbMaster>(lib, lib->_master_tbl);
+  return dbSet<dbMaster>(lib, lib->master_tbl_);
 }
 
 dbMaster* dbLib::findMaster(const char* name)
 {
   _dbLib* lib = (_dbLib*) this;
-  return (dbMaster*) lib->_master_hash.find(name);
+  return (dbMaster*) lib->master_hash_.find(name);
 }
 
 dbSet<dbSite> dbLib::getSites()
 {
   _dbLib* lib = (_dbLib*) this;
-  return dbSet<dbSite>(lib, lib->_site_tbl);
+  return dbSet<dbSite>(lib, lib->site_tbl_);
 }
 
 dbSite* dbLib::findSite(const char* name)
 {
   _dbLib* lib = (_dbLib*) this;
-  return (dbSite*) lib->_site_hash.find(name);
+  return (dbSite*) lib->site_hash_.find(name);
 }
 
 int dbLib::getLefUnits()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_lef_units;
+  return lib->lef_units_;
 }
 
 void dbLib::setLefUnits(int units)
 {
   _dbLib* lib = (_dbLib*) this;
-  lib->_lef_units = units;
+  lib->lef_units_ = units;
 }
 
 char dbLib::getHierarchyDelimiter()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_hier_delimiter;
+  return lib->hier_delimiter_;
 }
 
 void dbLib::setBusDelimiters(char left, char right)
 {
   _dbLib* lib = (_dbLib*) this;
-  lib->_left_bus_delimiter = left;
-  lib->_right_bus_delimiter = right;
+  lib->left_bus_delimiter_ = left;
+  lib->right_bus_delimiter_ = right;
 }
 
 void dbLib::getBusDelimiters(char& left, char& right)
 {
   _dbLib* lib = (_dbLib*) this;
-  left = lib->_left_bus_delimiter;
-  right = lib->_right_bus_delimiter;
+  left = lib->left_bus_delimiter_;
+  right = lib->right_bus_delimiter_;
 }
 
 dbLib* dbLib::create(dbDatabase* db_,
@@ -308,18 +308,18 @@ dbLib* dbLib::create(dbDatabase* db_,
     return nullptr;
   }
   _dbDatabase* db = (_dbDatabase*) db_;
-  _dbLib* lib = db->_lib_tbl->create();
-  lib->_name = safe_strdup(name);
-  lib->_hier_delimiter = hier_delimiter;
-  lib->_dbu_per_micron = tech->getDbUnitsPerMicron();
-  lib->_tech = tech->getId();
+  _dbLib* lib = db->lib_tbl_->create();
+  lib->name_ = safe_strdup(name);
+  lib->hier_delimiter_ = hier_delimiter;
+  lib->dbu_per_micron_ = tech->getDbUnitsPerMicron();
+  lib->tech_ = tech->getId();
   return (dbLib*) lib;
 }
 
 dbLib* dbLib::getLib(dbDatabase* db_, uint dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
-  return (dbLib*) db->_lib_tbl->getPtr(dbid_);
+  return (dbLib*) db->lib_tbl_->getPtr(dbid_);
 }
 
 void dbLib::destroy(dbLib* lib_)
@@ -327,7 +327,7 @@ void dbLib::destroy(dbLib* lib_)
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();
   dbProperty::destroyProperties(lib);
-  db->_lib_tbl->destroy(lib);
+  db->lib_tbl_->destroy(lib);
 }
 
 void _dbLib::collectMemInfo(MemInfo& info)
@@ -335,13 +335,13 @@ void _dbLib::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
-  info.children_["master_hash"].add(_master_hash);
-  info.children_["site_hash"].add(_site_hash);
-  _master_tbl->collectMemInfo(info.children_["master"]);
-  _site_tbl->collectMemInfo(info.children_["site"]);
-  _prop_tbl->collectMemInfo(info.children_["prop"]);
-  _name_cache->collectMemInfo(info.children_["name_cache"]);
+  info.children_["name"].add(name_);
+  info.children_["master_hash"].add(master_hash_);
+  info.children_["site_hash"].add(site_hash_);
+  master_tbl_->collectMemInfo(info.children_["master"]);
+  site_tbl_->collectMemInfo(info.children_["site"]);
+  prop_tbl_->collectMemInfo(info.children_["prop"]);
+  name_cache_->collectMemInfo(info.children_["name_cache"]);
 }
 
 }  // namespace odb

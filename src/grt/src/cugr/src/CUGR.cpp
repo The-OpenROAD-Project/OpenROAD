@@ -8,6 +8,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -20,6 +21,8 @@
 #include "MazeRoute.h"
 #include "Netlist.h"
 #include "PatternRoute.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "geo.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
@@ -30,17 +33,25 @@ namespace grt {
 
 CUGR::CUGR(odb::dbDatabase* db,
            utl::Logger* log,
-           stt::SteinerTreeBuilder* stt_builder)
-    : db_(db), logger_(log), stt_builder_(stt_builder)
+           stt::SteinerTreeBuilder* stt_builder,
+           sta::dbSta* sta)
+    : db_(db), logger_(log), stt_builder_(stt_builder), sta_(sta)
 {
 }
 
 CUGR::~CUGR() = default;
 
-void CUGR::init(const int min_routing_layer, const int max_routing_layer)
+void CUGR::init(const int min_routing_layer,
+                const int max_routing_layer,
+                const std::set<odb::dbNet*>& clock_nets)
 {
-  design_ = std::make_unique<Design>(
-      db_, logger_, constants_, min_routing_layer, max_routing_layer);
+  design_ = std::make_unique<Design>(db_,
+                                     logger_,
+                                     sta_,
+                                     constants_,
+                                     min_routing_layer,
+                                     max_routing_layer,
+                                     clock_nets);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();

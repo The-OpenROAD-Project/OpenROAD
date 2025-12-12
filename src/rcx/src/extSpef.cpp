@@ -15,17 +15,16 @@
 #include <vector>
 
 #include "name.h"
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
-using odb::Ath__array1D;
 using odb::dbBlock;
 using odb::dbCapNode;
 using odb::dbCCSeg;
@@ -622,8 +621,6 @@ uint extSpef::getMappedCapNode(const uint nodeId)
 
 void extSpef::computeCaps(dbSet<dbRSeg>& rcSet, double* totCap)
 {
-  dbSet<dbRSeg>::iterator rc_itr;
-
   double cap[ADS_MAX_CORNER];
   for (dbRSeg* rc : rcSet) {
     rc->getCapTable(cap);

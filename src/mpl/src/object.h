@@ -214,10 +214,7 @@ class Cluster
   void addConnection(Cluster* cluster, float connection_weight);
   void removeConnection(int cluster_id);
   const ConnectionsMap& getConnectionsMap() const;
-  bool isSameConnSignature(const Cluster& cluster, float net_threshold);
-  bool hasMacroConnectionWith(const Cluster& cluster, float net_threshold);
-  int getCloseCluster(const std::vector<int>& candidate_clusters,
-                      float net_threshold);
+  float allConnectionsWeight() const;
 
   // virtual connections
   // TODO: return const reference iff precondition ok (see comment in Cluster)
@@ -502,7 +499,7 @@ struct BundledNet
     this->weight = weight;
   }
 
-  bool operator==(const BundledNet& net)
+  bool operator==(const BundledNet& net) const
   {
     return (terminals.first == net.terminals.first)
            && (terminals.second == net.terminals.second);

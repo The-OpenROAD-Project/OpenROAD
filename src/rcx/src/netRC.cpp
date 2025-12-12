@@ -14,13 +14,13 @@
 #include <vector>
 
 #include "find_some_net.h"
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extViaModel.h"
@@ -33,7 +33,6 @@ namespace rcx {
 FILE* fp;
 #endif
 
-using odb::Ath__array1D;
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;

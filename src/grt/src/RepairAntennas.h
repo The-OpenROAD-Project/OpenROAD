@@ -110,10 +110,6 @@ class RepairAntennas
   }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
-  void setAntennaViolations(AntennaViolations antenna_violations)
-  {
-    antenna_violations_ = antenna_violations;
-  }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
   void destroyNetWires(const std::vector<odb::dbNet*>& nets_to_repair);

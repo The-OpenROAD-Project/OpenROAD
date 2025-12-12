@@ -80,63 +80,15 @@ void HTreeBuilder::preSinkClustering(
 
   unsigned bestClusterSize = 0;
   float bestDiameter = 0.0;
-  if (clusterSizeSet && maxDiameterSet) {
-    // clang-format off
-      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                 clusterSize, maxDiameter, wireSegmentUnit_);
-    // clang-format on
-    matching.run(clusterSize,
-                 maxDiameter,
-                 wireSegmentUnit_,
-                 bestClusterSize,
-                 bestDiameter);
-  } else if (!clusterSizeSet && maxDiameterSet) {
-    // only diameter is set, try clustering sizes of 10, 20 and 30
-    for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
-      // clang-format off
-      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                 clusterSize2, maxDiameter, wireSegmentUnit_);
-      // clang-format on
-      matching.run(clusterSize2,
-                   maxDiameter,
-                   wireSegmentUnit_,
-                   bestClusterSize,
-                   bestDiameter);
-    }
-  } else if (clusterSizeSet && !maxDiameterSet) {
-    // only clustering size is set, try diameters of 50, 100 and 200 um
-    for (unsigned clusterDiameter2 : options_->getSinkClusteringDiameters()) {
-      // clang-format off
-      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                 clusterSize, clusterDiameter2, wireSegmentUnit_);
-      // clang-format on
-      float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
-                           / wireSegmentUnit_;
-      matching.run(clusterSize,
-                   maxDiameter2,
-                   wireSegmentUnit_,
-                   bestClusterSize,
-                   bestDiameter);
-    }
-  } else {  // neighther clustering size nor diameter is set
-    // try diameters of 50, 100 and 200 um
-    for (unsigned clusterDiameter2 : clusterDiameters()) {
-      // try clustering sizes of 10, 20 and 30
-      for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
-        // clang-format off
-        debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                   clusterSize2, clusterDiameter2, wireSegmentUnit_);
-        // clang-format on
-        float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
-                             / wireSegmentUnit_;
-        matching.run(clusterSize2,
-                     maxDiameter2,
-                     wireSegmentUnit_,
-                     bestClusterSize,
-                     bestDiameter);
-      }
-    }
-  }
+  // clang-format off
+  debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+             clusterSize, maxDiameter, wireSegmentUnit_);
+  // clang-format on
+  matching.run(clusterSize,
+               maxDiameter,
+               wireSegmentUnit_,
+               bestClusterSize,
+               bestDiameter);
 
   if (clusterSizeSet || maxDiameterSet) {
     logger_->info(
@@ -1176,18 +1128,21 @@ void HTreeBuilder::run()
   unsigned clusterSize = (type_ == TreeType::MacroTree)
                              ? options_->getMacroSinkClusteringSize()
                              : options_->getSinkClusteringSize();
+  bool use_max_diameter = (type_ == TreeType::MacroTree)
+                              ? options_->isMacroMaxDiameterSet()
+                              : options_->isMaxDiameterSet();
+  bool use_max_size = (type_ == TreeType::MacroTree)
+                          ? options_->isMacroSinkClusteringSizeSet()
+                          : options_->isSinkClusteringSizeSet();
   bool useMaxCap = (type_ == TreeType::MacroTree)
                        ? false
-                       : options_->getSinkClusteringUseMaxCap();
+                       : !(use_max_size && use_max_diameter);
 
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
   logger_->info(CTS, 28, " Total number of sinks: {}.", clock_.getNumSinks());
   if (options_->getSinkClustering()) {
-    if (useMaxCap) {
-      logger_->info(
-          CTS, 90, " Sinks will be clustered based on buffer max cap.");
-    } else {
+    if (!useMaxCap) {
       logger_->info(
           CTS,
           29,
@@ -1196,6 +1151,23 @@ void HTreeBuilder::run()
           type_ == TreeType::MacroTree ? "Macro " : "Register",
           clusterSize,
           clusterDiameter);
+    } else if (use_max_diameter && !use_max_size) {
+      logger_->info(CTS,
+                    59,
+                    " {} sinks will be clustered with maximum cluster diameter "
+                    "of {:.1f} um and based on buffer max cap.",
+                    type_ == TreeType::MacroTree ? "Macro " : "Register",
+                    clusterDiameter);
+    } else if (!use_max_diameter && use_max_size) {
+      logger_->info(CTS,
+                    60,
+                    " {} sinks will be clustered in groups of up to {} and "
+                    "based on buffer max cap.",
+                    type_ == TreeType::MacroTree ? "Macro " : "Register",
+                    clusterSize);
+    } else {
+      logger_->info(
+          CTS, 90, " Sinks will be clustered based on buffer max cap.");
     }
   }
   logger_->info(

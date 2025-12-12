@@ -10,6 +10,7 @@
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -19,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModulePortItr::reversible()
+bool dbModulePortItr::reversible() const
 {
   return true;
 }
 
-bool dbModulePortItr::orderReversed()
+bool dbModulePortItr::orderReversed() const
 {
   return true;
 }
@@ -33,12 +34,12 @@ void dbModulePortItr::reverse(dbObject* parent)
 {
 }
 
-uint dbModulePortItr::sequential()
+uint dbModulePortItr::sequential() const
 {
   return 0;
 }
 
-uint dbModulePortItr::size(dbObject* parent)
+uint dbModulePortItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -51,32 +52,32 @@ uint dbModulePortItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbModulePortItr::begin(dbObject* parent)
+uint dbModulePortItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
-  return _module->_modbterms;
+  return _module->modbterms_;
   // User Code End begin
 }
 
-uint dbModulePortItr::end(dbObject* /* unused: parent */)
+uint dbModulePortItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModulePortItr::next(uint id, ...)
+uint dbModulePortItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbModBTerm* modbterm = _modbterm_tbl->getPtr(id);
-  if (modbterm->_busPort != 0) {
+  _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
+  if (modbterm->busPort_ != 0) {
     _dbBlock* block = (_dbBlock*) modbterm->getOwner();
-    _dbBusPort* bus_port = block->_busport_tbl->getPtr(modbterm->_busPort);
+    _dbBusPort* bus_port = block->busport_tbl_->getPtr(modbterm->busPort_);
     if (bus_port) {
-      modbterm = _modbterm_tbl->getPtr(bus_port->_last);
+      modbterm = modbterm_tbl_->getPtr(bus_port->last_);
     }
   }
   if (modbterm) {
-    return modbterm->_next_entry;
+    return modbterm->next_entry_;
   }
   return 0;
   // User Code End next
@@ -84,7 +85,7 @@ uint dbModulePortItr::next(uint id, ...)
 
 dbObject* dbModulePortItr::getObject(uint id, ...)
 {
-  return _modbterm_tbl->getPtr(id);
+  return modbterm_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp

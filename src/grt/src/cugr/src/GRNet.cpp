@@ -18,6 +18,7 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
   db_net_ = baseNet.getDbNet();
   const int numPins = baseNet.getNumPins();
   pin_access_points_.resize(numPins);
+  layer_range_ = baseNet.getLayerRange();
   for (CUGRPin& pin : baseNet.getPins()) {
     const std::vector<BoxOnLayer> pinShapes = pin.getPinShapes();
     std::unordered_set<uint64_t> included;
@@ -41,6 +42,12 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
       bounding_box_.Update(point);
     }
   }
+}
+
+bool GRNet::isInsideLayerRange(int layer_index) const
+{
+  return layer_index >= layer_range_.min_layer
+         && layer_index <= layer_range_.max_layer;
 }
 
 }  // namespace grt

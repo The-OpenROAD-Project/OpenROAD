@@ -42,7 +42,11 @@ TESTS = [
     "remove_buffers_hier1",
     "remove_buffers1",
     "remove_buffers2",
-    "remove_buffers3",
+    "remove_buffers4",
+    "remove_buffers4_hier",
+    "remove_buffers5",
+    "remove_buffers5_hier",
+    "remove_buffers6",
     "repair_cap1",
     "repair_cap2",
     "repair_cap3",
@@ -241,12 +245,15 @@ MANUAL_FOR_BAZEL_TESTS = [
     "split_load_hier",
 ]
 
-[regression_test(
-    name = test_name,
-    size = "large" if test_name in BIG_TESTS else "medium",
-    data = [":test_resources"] + extra_deps.get(test_name, []),
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
-) for test_name in TESTS]
+[
+    regression_test(
+        name = test_name,
+        size = "large" if test_name in BIG_TESTS else "medium",
+        data = [":test_resources"] + extra_deps.get(test_name, []),
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
+    )
+    for test_name in TESTS
+]
 
 cc_test(
     name = "rsz_buffer_removal",
@@ -261,6 +268,7 @@ cc_test(
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
+        "//src/dpl",
         "//src/est",
         "//src/grt",
         "//src/odb",
@@ -268,6 +276,62 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_buffer_removal2",
+    srcs = [
+        "cpp/TestBufferRemoval2.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_buffer_removal3",
+    srcs = ["cpp/TestBufferRemoval3.cc"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "cpp/TestBufferRemoval3_0.v",
+        "cpp/TestBufferRemoval3_1.v",
+        "cpp/TestBufferRemoval3_2.v",
+        "cpp/TestBufferRemoval3_3.v",
+        "cpp/TestBufferRemoval3_4.v",
+        "cpp/TestBufferRemoval3_5.v",
+        "cpp/TestBufferRemoval3_6.v",
+        "cpp/TestBufferRemoval3_7.v",
+        "cpp/TestBufferRemoval3_8.v",
+        "cpp/TestBufferRemoval3_9.v",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

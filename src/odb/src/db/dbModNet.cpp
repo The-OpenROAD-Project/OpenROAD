@@ -25,12 +25,14 @@
 #include <string>
 #include <vector>
 
+#include "dbCommon.h"
 #include "dbModuleModNetBTermItr.h"
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
-#include "dbUtil.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbSet.h"
+#include "odb/dbUtil.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -38,28 +40,28 @@ template class dbTable<_dbModNet>;
 
 bool _dbModNet::operator==(const _dbModNet& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_parent != rhs._parent) {
+  if (parent_ != rhs.parent_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_prev_entry != rhs._prev_entry) {
+  if (prev_entry_ != rhs.prev_entry_) {
     return false;
   }
-  if (_moditerms != rhs._moditerms) {
+  if (moditerms_ != rhs.moditerms_) {
     return false;
   }
-  if (_modbterms != rhs._modbterms) {
+  if (modbterms_ != rhs.modbterms_) {
     return false;
   }
-  if (_iterms != rhs._iterms) {
+  if (iterms_ != rhs.iterms_) {
     return false;
   }
-  if (_bterms != rhs._bterms) {
+  if (bterms_ != rhs.bterms_) {
     return false;
   }
 
@@ -73,42 +75,42 @@ bool _dbModNet::operator<(const _dbModNet& rhs) const
 
 _dbModNet::_dbModNet(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._name;
+    stream >> obj.name_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._parent;
+    stream >> obj.parent_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._next_entry;
+    stream >> obj.next_entry_;
   }
   if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
-    stream >> obj._prev_entry;
+    stream >> obj.prev_entry_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._moditerms;
+    stream >> obj.moditerms_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._modbterms;
+    stream >> obj.modbterms_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._iterms;
+    stream >> obj.iterms_;
   }
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._bterms;
+    stream >> obj.bterms_;
   }
   // User Code Begin >>
   if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
     dbDatabase* db = (dbDatabase*) (obj.getDatabase());
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      module->_modnet_hash[obj._name] = dbId<_dbModNet>(obj.getId());
+    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
+    if (obj.name_) {
+      module->modnet_hash_[obj.name_] = dbId<_dbModNet>(obj.getId());
     }
   }
   // User Code End >>
@@ -117,14 +119,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
 {
-  stream << obj._name;
-  stream << obj._parent;
-  stream << obj._next_entry;
-  stream << obj._prev_entry;
-  stream << obj._moditerms;
-  stream << obj._modbterms;
-  stream << obj._iterms;
-  stream << obj._bterms;
+  stream << obj.name_;
+  stream << obj.parent_;
+  stream << obj.next_entry_;
+  stream << obj.prev_entry_;
+  stream << obj.moditerms_;
+  stream << obj.modbterms_;
+  stream << obj.iterms_;
+  stream << obj.bterms_;
   return stream;
 }
 
@@ -134,15 +136,8 @@ void _dbModNet::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   // User Code End collectMemInfo
-}
-
-_dbModNet::~_dbModNet()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -154,11 +149,11 @@ _dbModNet::~_dbModNet()
 dbModule* dbModNet::getParent() const
 {
   _dbModNet* obj = (_dbModNet*) this;
-  if (obj->_parent == 0) {
+  if (obj->parent_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->_module_tbl->getPtr(obj->_parent);
+  return (dbModule*) par->module_tbl_->getPtr(obj->parent_);
 }
 
 // User Code Begin dbModNetPublicMethods
@@ -166,13 +161,13 @@ dbModule* dbModNet::getParent() const
 std::string dbModNet::getName() const
 {
   _dbModNet* obj = (_dbModNet*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 const char* dbModNet::getConstName() const
 {
   _dbModNet* obj = (_dbModNet*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 std::string dbModNet::getHierarchicalName() const
@@ -199,13 +194,13 @@ std::string dbModNet::getHierarchicalName() const
 void dbModNet::rename(const char* new_name)
 {
   _dbModNet* obj = (_dbModNet*) this;
-  if (strcmp(obj->_name, new_name) == 0) {
+  if (strcmp(obj->name_, new_name) == 0) {
     return;
   }
 
   _dbBlock* block = (_dbBlock*) obj->getOwner();
 
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -215,14 +210,14 @@ void dbModNet::rename(const char* new_name)
                static_cast<void*>(this),
                getHierarchicalName(),
                new_name);
-    block->_journal->updateField(this, _dbModNet::NAME, obj->_name, new_name);
+    block->journal_->updateField(this, _dbModNet::kName, obj->name_, new_name);
   }
 
-  _dbModule* parent = block->_module_tbl->getPtr(obj->_parent);
-  parent->_modnet_hash.erase(obj->_name);
-  free((void*) (obj->_name));
-  obj->_name = safe_strdup(new_name);
-  parent->_modnet_hash[new_name] = obj->getOID();
+  _dbModule* parent = block->module_tbl_->getPtr(obj->parent_);
+  parent->modnet_hash_.erase(obj->name_);
+  free((void*) (obj->name_));
+  obj->name_ = safe_strdup(new_name);
+  parent->modnet_hash_[new_name] = obj->getOID();
 }
 
 void dbModNet::disconnectAllTerms()
@@ -304,7 +299,7 @@ void dbModNet::dump() const
 dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
 {
   _dbBlock* block_ = (_dbBlock*) block;
-  _dbModNet* ret = block_->_modnet_tbl->getPtr(id);
+  _dbModNet* ret = block_->modnet_tbl_->getPtr(id);
   return (dbModNet*) ret;
 }
 
@@ -315,20 +310,20 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   // give illusion of scoping.
   _dbModule* parent = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
-  _dbModNet* modnet = block->_modnet_tbl->create();
+  _dbModNet* modnet = block->modnet_tbl_->create();
   // defaults
-  modnet->_name = strdup(base_name);
-  modnet->_parent = parent->getOID();  // dbmodule
-  modnet->_next_entry = parent->_modnets;
-  modnet->_prev_entry = 0;
-  if (parent->_modnets != 0) {
-    _dbModNet* new_next = block->_modnet_tbl->getPtr(parent->_modnets);
-    new_next->_prev_entry = modnet->getOID();
+  modnet->name_ = safe_strdup(base_name);
+  modnet->parent_ = parent->getOID();  // dbmodule
+  modnet->next_entry_ = parent->modnets_;
+  modnet->prev_entry_ = 0;
+  if (parent->modnets_ != 0) {
+    _dbModNet* new_next = block->modnet_tbl_->getPtr(parent->modnets_);
+    new_next->prev_entry_ = modnet->getOID();
   }
-  parent->_modnets = modnet->getOID();
-  parent->_modnet_hash[base_name] = modnet->getOID();
+  parent->modnets_ = modnet->getOID();
+  parent->modnet_hash_[base_name] = modnet->getOID();
 
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -336,15 +331,15 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
                "ECO: create dbModNet {} at id {}",
                base_name,
                modnet->getId());
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
-    block->_journal->pushParam(dbModNetObj);
-    block->_journal->pushParam(base_name);
-    block->_journal->pushParam(modnet->getId());
-    block->_journal->pushParam(parent->getId());
-    block->_journal->endAction();
+    block->journal_->beginAction(dbJournal::kCreateObject);
+    block->journal_->pushParam(dbModNetObj);
+    block->journal_->pushParam(base_name);
+    block->journal_->pushParam(modnet->getId());
+    block->journal_->pushParam(parent->getId());
+    block->journal_->endAction();
   }
 
-  for (auto cb : block->_callbacks) {
+  for (auto cb : block->callbacks_) {
     cb->inDbModNetCreate((dbModNet*) modnet);
   }
 
@@ -355,12 +350,12 @@ void dbModNet::destroy(dbModNet* mod_net)
 {
   _dbModNet* _modnet = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) _modnet->getOwner();
-  _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
+  _dbModule* module = block->module_tbl_->getPtr(_modnet->parent_);
 
   mod_net->disconnectAllTerms();
 
   // journalling
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -368,34 +363,34 @@ void dbModNet::destroy(dbModNet* mod_net)
                "ECO: delete dbModNet {} at id {}",
                mod_net->getName(),
                mod_net->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    block->_journal->pushParam(dbModNetObj);
-    block->_journal->pushParam(mod_net->getName());
-    block->_journal->pushParam(mod_net->getId());
-    block->_journal->pushParam(module->getId());
-    block->_journal->endAction();
+    block->journal_->beginAction(dbJournal::kDeleteObject);
+    block->journal_->pushParam(dbModNetObj);
+    block->journal_->pushParam(mod_net->getName());
+    block->journal_->pushParam(mod_net->getId());
+    block->journal_->pushParam(module->getId());
+    block->journal_->endAction();
   }
 
-  for (auto cb : block->_callbacks) {
+  for (auto cb : block->callbacks_) {
     cb->inDbModNetDestroy(mod_net);
   }
 
-  uint prev = _modnet->_prev_entry;
-  uint next = _modnet->_next_entry;
+  uint prev = _modnet->prev_entry_;
+  uint next = _modnet->next_entry_;
   if (prev == 0) {
-    module->_modnets = next;
+    module->modnets_ = next;
   } else {
-    _dbModNet* prev_modnet = block->_modnet_tbl->getPtr(prev);
-    prev_modnet->_next_entry = next;
+    _dbModNet* prev_modnet = block->modnet_tbl_->getPtr(prev);
+    prev_modnet->next_entry_ = next;
   }
   if (next != 0) {
-    _dbModNet* next_modnet = block->_modnet_tbl->getPtr(next);
-    next_modnet->_prev_entry = prev;
+    _dbModNet* next_modnet = block->modnet_tbl_->getPtr(next);
+    next_modnet->prev_entry_ = prev;
   }
-  _modnet->_prev_entry = 0;
-  _modnet->_next_entry = 0;
-  module->_modnet_hash.erase(mod_net->getName());
-  block->_modnet_tbl->destroy(_modnet);
+  _modnet->prev_entry_ = 0;
+  _modnet->next_entry_ = 0;
+  module->modnet_hash_.erase(mod_net->getName());
+  block->modnet_tbl_->destroy(_modnet);
 }
 
 dbSet<dbModNet>::iterator dbModNet::destroy(dbSet<dbModNet>::iterator& itr)
@@ -410,28 +405,28 @@ dbSet<dbModITerm> dbModNet::getModITerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbModITerm>(_mod_net, _block->_module_modnet_moditerm_itr);
+  return dbSet<dbModITerm>(_mod_net, _block->module_modnet_moditerm_itr_);
 }
 
 dbSet<dbModBTerm> dbModNet::getModBTerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbModBTerm>(_mod_net, _block->_module_modnet_modbterm_itr);
+  return dbSet<dbModBTerm>(_mod_net, _block->module_modnet_modbterm_itr_);
 }
 
 dbSet<dbBTerm> dbModNet::getBTerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbBTerm>(_mod_net, _block->_module_modnet_bterm_itr);
+  return dbSet<dbBTerm>(_mod_net, _block->module_modnet_bterm_itr_);
 }
 
 dbSet<dbITerm> dbModNet::getITerms() const
 {
   _dbModNet* _mod_net = (_dbModNet*) this;
   _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
+  return dbSet<dbITerm>(_mod_net, _block->module_modnet_iterm_itr_);
 }
 
 unsigned dbModNet::connectionCount() const
@@ -521,6 +516,94 @@ void dbModNet::checkSanity() const
   dbUtil::findModITermDrivers(this, drvr_info_list);
 
   dbUtil::checkNetSanity(this, drvr_info_list);
+}
+
+void dbModNet::mergeModNet(dbModNet* in_modnet)
+{
+  _dbModNet* net = (_dbModNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbModNetPreMerge(this, in_modnet);
+  }
+
+  // 1. Connect all terminals of in_modnet to this modnet.
+  // - Create vectors for safe iteration, as connect() can invalidate iterators.
+  auto iterms_set = in_modnet->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  for (dbITerm* iterm : iterms) {
+    iterm->connect(this);
+  }
+
+  auto bterms_set = in_modnet->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
+    bterm->connect(this);
+  }
+
+  auto moditerms_set = in_modnet->getModITerms();
+  std::vector<dbModITerm*> moditerms(moditerms_set.begin(),
+                                     moditerms_set.end());
+  for (dbModITerm* moditerm : moditerms) {
+    moditerm->connect(this);
+  }
+
+  auto modbterms_set = in_modnet->getModBTerms();
+  std::vector<dbModBTerm*> modbterms(modbterms_set.begin(),
+                                     modbterms_set.end());
+  for (dbModBTerm* modbterm : modbterms) {
+    modbterm->connect(this);
+  }
+
+  // 2. Destroy in_modnet
+  destroy(in_modnet);
+}
+
+void dbModNet::connectTermsOf(dbNet* in_net)
+{
+  _dbModNet* net = (_dbModNet*) this;
+  _dbBlock* block = (_dbBlock*) net->getOwner();
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbModNetPreConnectTermsOf(this, in_net);
+  }
+
+  // Create vectors for safe iteration, as connect() can invalidate iterators.
+  auto iterms_set = in_net->getITerms();
+  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  dbModule* modnet_parent = getParent();
+  for (dbITerm* iterm : iterms) {
+    // Only connect terminals that are in the same module as the modnet
+    if (iterm->getInst()->getModule() == modnet_parent) {
+      iterm->connect(this);
+    }
+  }
+
+  auto bterms_set = in_net->getBTerms();
+  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  for (dbBTerm* bterm : bterms) {
+    // Only connect terminals that are in the same module as the modnet
+    // BTerms are considered to be in the top module of the block.
+    if (bterm->getBlock()->getTopModule() == modnet_parent) {
+      bterm->connect(this);
+    }
+  }
+}
+
+bool dbModNet::isConnected(const dbNet* other) const
+{
+  dbNet* net = findRelatedNet();
+  return (net == other);
+}
+
+bool dbModNet::isConnected(const dbModNet* other) const
+{
+  if (other == nullptr) {
+    return false;
+  }
+  dbNet* net = findRelatedNet();
+  dbNet* other_net = other->findRelatedNet();
+  return (net == other_net);
 }
 
 // User Code End dbModNetPublicMethods

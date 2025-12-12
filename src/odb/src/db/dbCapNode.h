@@ -19,15 +19,15 @@ class dbOStream;
 
 struct _dbCapNodeFlags
 {
-  uint _internal : 1;
-  uint _iterm : 1;
-  uint _bterm : 1;
-  uint _branch : 1;
-  uint _foreign : 1;
-  uint _childrenCnt : 5;
-  uint _select : 1;
-  uint _name : 1;
-  uint _sort_index : 20;
+  uint internal : 1;
+  uint iterm : 1;
+  uint bterm : 1;
+  uint branch : 1;
+  uint foreign : 1;
+  uint childrenCnt : 5;
+  uint select : 1;
+  uint name : 1;
+  uint sort_index : 20;
 };
 
 class _dbCapNode : public _dbObject
@@ -35,20 +35,13 @@ class _dbCapNode : public _dbObject
  public:
   enum Fields  // dbJournal field names
   {
-    FLAGS,
-    NODE_NUM,
-    CAPACITANCE,
-    ADDCAPNCAPACITANCE,
-    SETNET,
-    SETNEXT
+    kFlags,
+    kNodeNum,
+    kCapacitance,
+    kAddCapnCapacitance,
+    kSetNet,
+    kSetNext
   };
-
-  // PERSISTANT-MEMBERS
-  _dbCapNodeFlags _flags;
-  uint _node_num;  // rc-network node-id
-  dbId<_dbNet> _net;
-  dbId<_dbCapNode> _next;
-  dbId<_dbCCSeg> _cc_segs;
 
   _dbCapNode(_dbDatabase*);
   _dbCapNode(_dbDatabase*, const _dbCapNode& n);
@@ -64,25 +57,32 @@ class _dbCapNode : public _dbObject
   }
 
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  _dbCapNodeFlags flags_;
+  uint node_num_;  // rc-network node-id
+  dbId<_dbNet> net_;
+  dbId<_dbCapNode> next_;
+  dbId<_dbCCSeg> cc_segs_;
 };
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*)
 {
-  _flags._internal = 0;
-  _flags._iterm = 0;
-  _flags._bterm = 0;
-  _flags._branch = 0;
-  _flags._foreign = 0;
-  _flags._childrenCnt = 0;
-  _flags._select = 0;
-  _flags._name = 0;
-  _flags._sort_index = 0;
-  _net = 0;
-  _node_num = 0;
+  flags_.internal = 0;
+  flags_.iterm = 0;
+  flags_.bterm = 0;
+  flags_.branch = 0;
+  flags_.foreign = 0;
+  flags_.childrenCnt = 0;
+  flags_.select = 0;
+  flags_.name = 0;
+  flags_.sort_index = 0;
+  net_ = 0;
+  node_num_ = 0;
 }
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*, const _dbCapNode& n)
-    : _flags(n._flags), _node_num(n._node_num), _net(n._net), _next(n._next)
+    : flags_(n.flags_), node_num_(n.node_num_), net_(n.net_), next_(n.next_)
 {
 }
 
@@ -92,24 +92,24 @@ inline _dbCapNode::~_dbCapNode()
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbCapNode& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream << *bit_field;
 
-  stream << seg._node_num;
-  stream << seg._net;
-  stream << seg._next;
-  stream << seg._cc_segs;
+  stream << seg.node_num_;
+  stream << seg.net_;
+  stream << seg.next_;
+  stream << seg.cc_segs_;
   return stream;
 }
 
 inline dbIStream& operator>>(dbIStream& stream, _dbCapNode& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint* bit_field = (uint*) &seg.flags_;
   stream >> *bit_field;
-  stream >> seg._node_num;
-  stream >> seg._net;
-  stream >> seg._next;
-  stream >> seg._cc_segs;
+  stream >> seg.node_num_;
+  stream >> seg.net_;
+  stream >> seg.next_;
+  stream >> seg.cc_segs_;
   return stream;
 }
 

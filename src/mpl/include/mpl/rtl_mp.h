@@ -51,7 +51,6 @@ class MacroPlacer
              int max_num_level,
              float coarsening_ratio,
              int large_net_threshold,
-             int signature_net_threshold,
              float halo_width,
              float halo_height,
              float fence_lx,

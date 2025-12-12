@@ -7,6 +7,7 @@
 #include "dbGuide.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbNet.h"
 // User Code End Includes
@@ -19,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbGuideItr::reversible()
+bool dbGuideItr::reversible() const
 {
   return true;
 }
 
-bool dbGuideItr::orderReversed()
+bool dbGuideItr::orderReversed() const
 {
   return true;
 }
@@ -37,7 +38,7 @@ void dbGuideItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbGuide* _child = _guide_tbl->getPtr(id);
+    _dbGuide* _child = guide_tbl_->getPtr(id);
     uint n = _child->guide_next_;
     _child->guide_next_ = list;
     list = id;
@@ -47,12 +48,12 @@ void dbGuideItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbGuideItr::sequential()
+uint dbGuideItr::sequential() const
 {
   return 0;
 }
 
-uint dbGuideItr::size(dbObject* parent)
+uint dbGuideItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -65,7 +66,7 @@ uint dbGuideItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbGuideItr::begin(dbObject* parent)
+uint dbGuideItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbNet* _parent = (_dbNet*) parent;
@@ -73,22 +74,22 @@ uint dbGuideItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbGuideItr::end(dbObject* /* unused: parent */)
+uint dbGuideItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbGuideItr::next(uint id, ...)
+uint dbGuideItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbGuide* _guide = _guide_tbl->getPtr(id);
+  _dbGuide* _guide = guide_tbl_->getPtr(id);
   return _guide->guide_next_;
   // User Code End next
 }
 
 dbObject* dbGuideItr::getObject(uint id, ...)
 {
-  return _guide_tbl->getPtr(id);
+  return guide_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

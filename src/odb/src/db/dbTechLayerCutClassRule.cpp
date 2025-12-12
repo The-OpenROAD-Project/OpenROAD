@@ -14,6 +14,7 @@
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbHashTable.hpp"
 // User Code End Includes
 namespace odb {
@@ -22,13 +23,13 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
+  if (flags_.length_valid != rhs.flags_.length_valid) {
     return false;
   }
-  if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_) {
+  if (flags_.cuts_valid != rhs.flags_.cuts_valid) {
     return false;
   }
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (width_ != rhs.width_) {
@@ -40,7 +41,7 @@ bool _dbTechLayerCutClassRule::operator==(
   if (num_cuts_ != rhs.num_cuts_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -56,7 +57,7 @@ bool _dbTechLayerCutClassRule::operator<(
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   flags_ = {};
-  _name = nullptr;
+  name_ = nullptr;
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;
@@ -68,11 +69,11 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj._name;
+  stream >> obj.name_;
   stream >> obj.width_;
   stream >> obj.length_;
   stream >> obj.num_cuts_;
-  stream >> obj._next_entry;
+  stream >> obj.next_entry_;
   return stream;
 }
 
@@ -82,11 +83,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj.width_;
   stream << obj.length_;
   stream << obj.num_cuts_;
-  stream << obj._next_entry;
+  stream << obj.next_entry_;
   return stream;
 }
 
@@ -96,15 +97,8 @@ void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children_["name"].add(name_);
   // User Code End collectMemInfo
-}
-
-_dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -116,7 +110,7 @@ _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 const char* dbTechLayerCutClassRule::getName() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbTechLayerCutClassRule::setWidth(int width)
@@ -162,28 +156,28 @@ void dbTechLayerCutClassRule::setLengthValid(bool length_valid)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->flags_.length_valid_ = length_valid;
+  obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerCutClassRule::isLengthValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->flags_.length_valid_;
+  return obj->flags_.length_valid;
 }
 
 void dbTechLayerCutClassRule::setCutsValid(bool cuts_valid)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->flags_.cuts_valid_ = cuts_valid;
+  obj->flags_.cuts_valid = cuts_valid;
 }
 
 bool dbTechLayerCutClassRule::isCutsValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->flags_.cuts_valid_;
+  return obj->flags_.cuts_valid;
 }
 
 // User Code Begin dbTechLayerCutClassRulePublicMethods
@@ -195,7 +189,7 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
   }
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerCutClassRule* newrule = layer->cut_class_rules_tbl_->create();
-  newrule->_name = safe_strdup(name);
+  newrule->name_ = safe_strdup(name);
   layer->cut_class_rules_hash_.insert(newrule);
   return ((dbTechLayerCutClassRule*) newrule);
 }

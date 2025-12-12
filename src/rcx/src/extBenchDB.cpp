@@ -10,19 +10,18 @@
 #include <memory>
 #include <vector>
 
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/util.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extViaModel.h"
 #include "rcx/extprocess.h"
+#include "rcx/util.h"
 #include "utl/Logger.h"
 
-using odb::Ath__array1D;
 using odb::dbBTerm;
 using odb::dbCapNode;
 using odb::dbCCSeg;
@@ -46,7 +45,7 @@ extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
   _modelTable[0]->allocateInitialTables(widthCnt, true, true, true);
   return _modelTable[0];
 }
-odb::AthPool<extDistRC>* extMetRCTable::getRCPool()
+AthPool<extDistRC>* extMetRCTable::getRCPool()
 {
   return _rcPoolPtr;
 }
@@ -65,7 +64,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
 
   extMetRCTable* rcModel = extRulesModel->initCapTables(layerCnt, widthCnt);
 
-  odb::AthPool<extDistRC>* rcPool = rcModel->getRCPool();
+  AthPool<extDistRC>* rcPool = rcModel->getRCPool();
   extMeasure m(nullptr);
   m._diagModel = 1;
   uint openWireNumber = 1;

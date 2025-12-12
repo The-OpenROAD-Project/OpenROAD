@@ -34,6 +34,7 @@ COMPULSORY_TESTS = [
     "jpeg_gf180",
     "multiple_calls",
     "no_endcap",
+    "overlap_cover",
     "region1",
     "symmetry",
 ]
@@ -148,6 +149,7 @@ filegroup(
             ],
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
+            "overlap_cover": ["sky130hs_data/cover.lef"],
         }.get(
             test_name,
             ["boundary_macros.def"],

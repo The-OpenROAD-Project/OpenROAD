@@ -50,25 +50,39 @@ void FlexPA::buildInstsSet()
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    if (!unique_insts_.hasUnique(inst.get())) {
-      continue;
-    }
-    if (!isStdCell(inst.get())) {
-      continue;
-    }
-    if (isSkipInst(inst.get())) {
-      continue;
-    }
-    insts_set_.insert(inst.get());
+    addToInstsSet(inst.get());
   }
+}
+
+void FlexPA::removeFromInstsSet(frInst* inst)
+{
+  // find then erase
+  auto it = insts_set_.find(inst);
+  bool found = it != insts_set_.end() && (*it) == inst;
+  if (found) {
+    insts_set_.erase(it);
+  }
+}
+
+void FlexPA::addToInstsSet(frInst* inst)
+{
+  if (insts_set_.find(inst) != insts_set_.end()) {
+    return;
+  }
+  if (!unique_insts_.hasUnique(inst)) {
+    return;
+  }
+  if (!isStdCell(inst)) {
+    return;
+  }
+  if (isSkipInst(inst)) {
+    return;
+  }
+  insts_set_.insert(inst);
 }
 
 void FlexPA::prepPatternInst(frInst* unique_inst)
 {
-  auto unique_class = unique_insts_.getUniqueClass(unique_inst);
-#pragma omp critical
-  unique_inst_patterns_[unique_class]
-      = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
   int num_valid_pattern = prepPatternInstHelper(unique_inst, true);
 
   if (num_valid_pattern > 0) {
@@ -660,8 +674,8 @@ bool FlexPA::genPatternsCommit(
   if (target_obj != nullptr
       && genPatternsGC({target_obj}, objs, Commit, &owners)) {
     pin_access_pattern->updateCost();
-    unique_inst_patterns_[unique_insts_.getUniqueClass(unique_inst)].push_back(
-        std::move(pin_access_pattern));
+    unique_inst_patterns_.at(unique_insts_.getUniqueClass(unique_inst))
+        .push_back(std::move(pin_access_pattern));
     // genPatternsPrint(nodes, pins);
     is_valid = true;
   } else {

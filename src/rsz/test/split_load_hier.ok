@@ -27,26 +27,26 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:        138.054 um^2
-[INFO GPL-0019] Utilization:                     0.288 %
-[INFO GPL-0020] Standard cells area:           138.054 um^2
+[INFO GPL-0018] Movable instances area:        126.132 um^2
+[INFO GPL-0019] Utilization:                     0.263 %
+[INFO GPL-0020] Standard cells area:           126.132 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 2586120
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 206121
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 202551
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 203116
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 203118
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 207311
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 203741
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 204306
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 204308
 Placement Analysis
 ---------------------------------
-total displacement        365.5 u
+total displacement        365.9 u
 average displacement        7.8 u
-max displacement           11.2 u
-original HPWL               6.0 u
-legalized HPWL            303.8 u
-delta HPWL                 4997 %
+max displacement           11.1 u
+original HPWL               6.9 u
+legalized HPWL            304.7 u
+delta HPWL                 4338 %
 
 worst slack max -0.68
-tns max -10.580
+tns max -10.578
 [INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
@@ -54,9 +54,9 @@ tns max -10.580
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.684 |      -10.6 |     26 | u1/r21/D
-    final |       0 |      16 |        3 |      0 |     0 |   +13.5% |   -0.509 |      -10.9 |     26 | u1/r21/D
+    final |       0 |      22 |        3 |      0 |     0 |   +20.6% |   -0.515 |      -11.1 |     26 | u1/r21/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 16 instances: 16 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 22 instances: 22 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

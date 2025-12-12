@@ -141,19 +141,18 @@ LayoutViewer::LayoutViewer(
       focus_nets_(focus_nets),
       route_guides_(route_guides),
       net_tracks_(net_tracks),
-      viewer_thread_(this),
-      loading_timer_(new QTimer(this))
+      viewer_thread_(this)
 {
   setMouseTracking(true);
 
   addMenuAndActions();
 
-  loading_timer_->setInterval(300 /*ms*/);
+  loading_timer_.setInterval(300 /*ms*/);
 
   connect(
       &viewer_thread_, &RenderThread::done, this, &LayoutViewer::updatePixmap);
 
-  connect(loading_timer_,
+  connect(&loading_timer_,
           &QTimer::timeout,
           this,
           &LayoutViewer::handleLoadingIndication);
@@ -161,12 +160,15 @@ LayoutViewer::LayoutViewer(
   connect(&search_, &Search::modified, this, &LayoutViewer::fullRepaint);
 
   connect(&search_, &Search::newChip, this, &LayoutViewer::setChip);
+
+  repaint_timer_.setSingleShot(true);
+  repaint_timer_.callOnTimeout(this, &LayoutViewer::fullRepaint);
 }
 
 void LayoutViewer::handleLoadingIndication()
 {
   if (!viewer_thread_.isRendering()) {
-    loading_timer_->stop();
+    loading_timer_.stop();
     return;
   }
 
@@ -176,7 +178,7 @@ void LayoutViewer::handleLoadingIndication()
 void LayoutViewer::setLoadingState()
 {
   loading_indicator_.clear();
-  loading_timer_->start();
+  loading_timer_.start();
 }
 
 void LayoutViewer::setChip(odb::dbChip* chip)
@@ -1933,8 +1935,7 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 void LayoutViewer::fullRepaint()
 {
   if (command_executing_ && !paused_) {
-    QTimer::singleShot(
-        5 /*ms*/, this, &LayoutViewer::fullRepaint);  // retry later
+    repaint_timer_.start(5 /* ms */);
     return;
   }
 

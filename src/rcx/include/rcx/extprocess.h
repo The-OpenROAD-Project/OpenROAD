@@ -5,8 +5,8 @@
 
 #include <cstdio>
 
-#include "odb/array1.h"
 #include "odb/odb.h"
+#include "rcx/array1.h"
 
 namespace utl {
 class Logger;
@@ -258,22 +258,22 @@ class extVarTable
                          const char* keyword2,
                          const char* keyword3,
                          const char* key);
-  odb::Ath__array1D<double>* readDoubleArray(Ath__parser* parser,
-                                             const char* keyword);
+  Ath__array1D<double>* readDoubleArray(Ath__parser* parser,
+                                        const char* keyword);
   void printOneLine(FILE* fp,
-                    odb::Ath__array1D<double>* A,
+                    Ath__array1D<double>* A,
                     const char* header,
                     const char* trail);
   void printTable(FILE* fp, const char* valKey);
   double getVal(uint ii, uint jj) { return _vTable[ii]->get(jj); };
 
  private:
-  odb::Ath__array1D<double>* _width;
-  odb::Ath__array1D<double>* _space;
-  odb::Ath__array1D<double>* _density;
-  odb::Ath__array1D<double>* _p;
+  Ath__array1D<double>* _width;
+  Ath__array1D<double>* _space;
+  Ath__array1D<double>* _density;
+  Ath__array1D<double>* _p;
   uint _rowCnt;
-  odb::Ath__array1D<double>** _vTable;
+  Ath__array1D<double>** _vTable;
 
   friend class extVariation;
 };
@@ -288,10 +288,10 @@ class extVariation
                             const char* key3,
                             const char* endKey);
   void printVariation(FILE* fp, uint n);
-  odb::Ath__array1D<double>* getWidthTable();
-  odb::Ath__array1D<double>* getSpaceTable();
-  odb::Ath__array1D<double>* getDataRateTable();
-  odb::Ath__array1D<double>* getPTable();
+  Ath__array1D<double>* getWidthTable();
+  Ath__array1D<double>* getSpaceTable();
+  Ath__array1D<double>* getDataRateTable();
+  Ath__array1D<double>* getPTable();
   double getTopWidth(uint ii, uint jj);
   double getTopWidthR(uint ii, uint jj);
   double getBottomWidth(double w, uint dIndex);
@@ -300,8 +300,8 @@ class extVariation
   double getThicknessR(double w, uint dIndex);
   double getP(double w);
   double interpolate(double w,
-                     odb::Ath__array1D<double>* X,
-                     odb::Ath__array1D<double>* Y);
+                     Ath__array1D<double>* X,
+                     Ath__array1D<double>* Y);
   void setLogger(Logger* logger) { logger_ = logger; }
 
  private:
@@ -430,10 +430,10 @@ class extProcess
                                bool diag = false);
 
   extVariation* getVariation(uint met);
-  odb::Ath__array1D<double>* getWidthTable(uint met);
-  odb::Ath__array1D<double>* getSpaceTable(uint met);
-  odb::Ath__array1D<double>* getDiagSpaceTable(uint met);
-  odb::Ath__array1D<double>* getDataRateTable(uint met);
+  Ath__array1D<double>* getWidthTable(uint met);
+  Ath__array1D<double>* getSpaceTable(uint met);
+  Ath__array1D<double>* getDiagSpaceTable(uint met);
+  Ath__array1D<double>* getDataRateTable(uint met);
   void readDataRateTable(Ath__parser* parser, const char* keyword);
   double adjustMasterLayersForHeight(uint met, double thickness);
   double adjustMasterDielectricsForHeight(uint met, double dth);
@@ -447,12 +447,12 @@ class extProcess
   uint _dielectricCnt;
   bool _maxMinFlag;
   bool _thickVarFlag;
-  odb::Ath__array1D<extConductor*>* _condTable;
-  odb::Ath__array1D<extDielectric*>* _dielTable;
-  odb::Ath__array1D<extMasterConductor*>* _masterConductorTable;
-  odb::Ath__array1D<extMasterConductor*>* _masterDielectricTable;
-  odb::Ath__array1D<extVariation*>* _varTable;
-  odb::Ath__array1D<double>* _dataRateTable;
+  Ath__array1D<extConductor*>* _condTable;
+  Ath__array1D<extDielectric*>* _dielTable;
+  Ath__array1D<extMasterConductor*>* _masterConductorTable;
+  Ath__array1D<extMasterConductor*>* _masterDielectricTable;
+  Ath__array1D<extVariation*>* _varTable;
+  Ath__array1D<double>* _dataRateTable;
 };
 
 }  // namespace rcx

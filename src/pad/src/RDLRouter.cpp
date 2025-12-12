@@ -215,8 +215,9 @@ int RDLRouter::getRoutingInstanceCount() const
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      insts.insert(route->getRouteTargetSource()->terminal->getInst());
-      insts.insert(route->getRouteTargetDestination()->terminal->getInst());
+      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
+        insts.insert(iterm->getInst());
+      }
     } else {
       insts.insert(route->getTerminal()->getInst());
       for (const auto* iterm : route->getTerminals()) {
@@ -232,8 +233,9 @@ std::set<odb::dbInst*> RDLRouter::getRoutedInstances() const
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      insts.insert(route->getRouteTargetSource()->terminal->getInst());
-      insts.insert(route->getRouteTargetDestination()->terminal->getInst());
+      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
+        insts.insert(iterm->getInst());
+      }
     }
   }
   return insts;
@@ -245,13 +247,10 @@ std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
   std::set<odb::dbInst*> success_covers;
   for (auto& route : routes_) {
     if (route->isRouted()) {
-      if (isCoverTerm(route->getRouteTargetSource()->terminal)) {
-        success_covers.insert(
-            route->getRouteTargetSource()->terminal->getInst());
-      }
-      if (isCoverTerm(route->getRouteTargetDestination()->terminal)) {
-        success_covers.insert(
-            route->getRouteTargetDestination()->terminal->getInst());
+      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
+        if (isCoverTerm(iterm)) {
+          success_covers.insert(iterm->getInst());
+        }
       }
     }
   }
@@ -366,12 +365,19 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // Build list of routes
   buildIntialRouteSet();
 
+  // Process preprocessing
+  for (const auto& route : routes_) {
+    route->preprocess(layer_, logger_);
+  }
+
   // create priority queue
   auto route_compare
       = [](const std::shared_ptr<RDLRoute>& lhs,
            const std::shared_ptr<RDLRoute>& rhs) { return lhs->compare(rhs); };
-  std::priority_queue route_queue(
-      routes_.begin(), routes_.end(), route_compare);
+  std::priority_queue<RDLRoutePtr,
+                      std::vector<RDLRoutePtr>,
+                      decltype(route_compare)>
+      route_queue;
 
   logger_->info(utl::PAD, 5, "Routing {} nets", nets.size());
 
@@ -384,6 +390,29 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // track iteration information
   int iteration_count = 0;
   std::set<odb::dbInst*> last_itr_routed;
+
+  // add initial queue
+  for (const auto& route : routes_) {
+    if (route->isRouted()) {
+      for (odb::dbITerm* iterm0 : route->getRoutedTerminals()) {
+        if (isCoverTerm(iterm0)) {
+          routed_covers.insert(iterm0->getInst());
+        } else {
+          routed_non_covers.insert(iterm0);
+        }
+        for (odb::dbITerm* iterm1 : route->getRoutedTerminals()) {
+          if (iterm0 == iterm1) {
+            continue;
+          }
+          routed_pairs[iterm0] = iterm1;
+          routed_pairs[iterm1] = iterm0;
+        }
+      }
+    } else {
+      // Only add routes that need to routed
+      route_queue.push(route);
+    }
+  }
   while (!route_queue.empty()) {
     RDLRoutePtr route = route_queue.top();
     odb::dbITerm* src = route->getTerminal();
@@ -644,8 +673,9 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     if (route->isRouted()) {
       writeToDb(route->getNet(),
                 route->getRoutePoints(),
-                *route->getRouteTargetSource(),
-                *route->getRouteTargetDestination());
+                route->getRouteTargetSource(),
+                route->getRouteTargetDestination(),
+                route->getStubs());
     }
   }
 
@@ -765,7 +795,15 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
 
         for (const auto& edge : getVertexEdges(itr->second)) {
           const odb::Point& pt0 = vertex_point_map_.at(edge.m_source);
+          if (pt0 == line.pt0() || pt0 == line.pt1()) {
+            // lines will connect, so keep
+            continue;
+          }
           const odb::Point& pt1 = vertex_point_map_.at(edge.m_target);
+          if (pt1 == line.pt0() || pt1 == line.pt1()) {
+            // lines will connect, so keep
+            continue;
+          }
           const odb::Line edge_line(pt0, pt1);
 
           if (boost::geometry::intersects(line.getPoints(),
@@ -1198,18 +1236,13 @@ void RDLRouter::makeGraph()
 
   graph_weight_ = boost::get(boost::edge_weight, graph_);
 
-  std::vector<int> x_grid;
-  std::vector<int> y_grid;
-
   odb::dbTrackGrid* tracks = block_->findTrackGrid(layer_);
-  tracks->getGridX(x_grid);
-  tracks->getGridY(y_grid);
 
   // filter grid points based on spacing requirements
   const int pitch = width_ + spacing_ - 1;
   const int start = width_ / 2 + 1;
   x_grid_.clear();
-  for (const auto& x : x_grid) {
+  for (const auto& x : tracks->getGridX()) {
     bool add = false;
     if (x_grid_.empty()) {
       if (x >= start) {
@@ -1226,7 +1259,7 @@ void RDLRouter::makeGraph()
     }
   }
   y_grid_.clear();
-  for (const auto& y : y_grid) {
+  for (const auto& y : tracks->getGridY()) {
     bool add = false;
     if (y_grid_.empty()) {
       if (y >= start) {
@@ -1564,80 +1597,97 @@ odb::Rect RDLRouter::correctEndPoint(const odb::Rect& route,
 
 void RDLRouter::writeToDb(odb::dbNet* net,
                           const std::vector<odb::Point>& route,
-                          const RouteTarget& source,
-                          const RouteTarget& target)
+                          const RouteTarget* source,
+                          const RouteTarget* target,
+                          const std::set<odb::Rect>& stubs)
 {
   Utilities::makeSpecial(net);
 
-  auto* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
-  const auto simplified_route = simplifyRoute(route);
-  for (size_t i = 0; i < simplified_route.size(); i++) {
-    const auto& [s, t] = simplified_route[i];
-    odb::Rect shape(s, t);
-    shape.bloat(width_ / 2, shape);
-    odb::dbSBox::Direction dir;
-    if (s.x() == t.x()) {
-      shape.set_ylo(shape.yMin() + width_ / 2);
-      shape.set_yhi(shape.yMax() - width_ / 2);
-      dir = odb::dbSBox::VERTICAL;
-    } else if (s.y() == t.y()) {
-      shape.set_xlo(shape.xMin() + width_ / 2);
-      shape.set_xhi(shape.xMax() - width_ / 2);
-      dir = odb::dbSBox::HORIZONTAL;
-    } else {
-      dir = odb::dbSBox::OCTILINEAR;
-    }
+  if (source == nullptr && target == nullptr && stubs.empty()) {
+    // Nothing to create a wire for, so return
+    return;
+  }
 
-    if (dir != odb::dbSBox::OCTILINEAR) {
-      if (i == 0) {
-        shape = correctEndPoint(shape, s.y() == t.y(), source.shape);
-      } else if (i + 1 == simplified_route.size()) {
-        shape = correctEndPoint(shape, s.y() == t.y(), target.shape);
+  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  for (const odb::Rect& stub : stubs) {
+    odb::dbSBox::create(swire,
+                        layer_,
+                        stub.xMin(),
+                        stub.yMin(),
+                        stub.xMax(),
+                        stub.yMax(),
+                        odb::dbWireShapeType::IOWIRE);
+  }
+  if (source != nullptr && target != nullptr) {
+    const auto simplified_route = simplifyRoute(route);
+    for (size_t i = 0; i < simplified_route.size(); i++) {
+      const auto& [s, t] = simplified_route[i];
+      odb::Rect shape(s, t);
+      shape.bloat(width_ / 2, shape);
+      odb::dbSBox::Direction dir;
+      if (s.x() == t.x()) {
+        shape.set_ylo(shape.yMin() + (width_ / 2));
+        shape.set_yhi(shape.yMax() - (width_ / 2));
+        dir = odb::dbSBox::VERTICAL;
+      } else if (s.y() == t.y()) {
+        shape.set_xlo(shape.xMin() + (width_ / 2));
+        shape.set_xhi(shape.xMax() - (width_ / 2));
+        dir = odb::dbSBox::HORIZONTAL;
+      } else {
+        dir = odb::dbSBox::OCTILINEAR;
+      }
+
+      if (dir != odb::dbSBox::OCTILINEAR) {
+        if (i == 0) {
+          shape = correctEndPoint(shape, s.y() == t.y(), source->shape);
+        } else if (i + 1 == simplified_route.size()) {
+          shape = correctEndPoint(shape, s.y() == t.y(), target->shape);
+        }
+      }
+
+      if (dir != odb::dbSBox::OCTILINEAR) {
+        odb::dbSBox::create(swire,
+                            layer_,
+                            shape.xMin(),
+                            shape.yMin(),
+                            shape.xMax(),
+                            shape.yMax(),
+                            odb::dbWireShapeType::IOWIRE);
+      } else {
+        odb::dbSBox::create(swire,
+                            layer_,
+                            s.x(),
+                            s.y(),
+                            t.x(),
+                            t.y(),
+                            odb::dbWireShapeType::IOWIRE,
+                            odb::dbSBox::OCTILINEAR,
+                            width_);
       }
     }
 
-    if (dir != odb::dbSBox::OCTILINEAR) {
+    if (source->layer != layer_) {
+      odb::dbTechVia* via = pad_accessvia_;
+      if (isCoverTerm(source->terminal)) {
+        via = bump_accessvia_;
+      }
       odb::dbSBox::create(swire,
-                          layer_,
-                          shape.xMin(),
-                          shape.yMin(),
-                          shape.xMax(),
-                          shape.yMax(),
+                          via,
+                          source->center.x(),
+                          source->center.y(),
                           odb::dbWireShapeType::IOWIRE);
-    } else {
+    }
+    if (target->layer != layer_) {
+      odb::dbTechVia* via = pad_accessvia_;
+      if (isCoverTerm(target->terminal)) {
+        via = bump_accessvia_;
+      }
       odb::dbSBox::create(swire,
-                          layer_,
-                          s.x(),
-                          s.y(),
-                          t.x(),
-                          t.y(),
-                          odb::dbWireShapeType::IOWIRE,
-                          odb::dbSBox::OCTILINEAR,
-                          width_);
+                          via,
+                          target->center.x(),
+                          target->center.y(),
+                          odb::dbWireShapeType::IOWIRE);
     }
-  }
-
-  if (source.layer != layer_) {
-    odb::dbTechVia* via = pad_accessvia_;
-    if (isCoverTerm(source.terminal)) {
-      via = bump_accessvia_;
-    }
-    odb::dbSBox::create(swire,
-                        via,
-                        source.center.x(),
-                        source.center.y(),
-                        odb::dbWireShapeType::IOWIRE);
-  }
-  if (target.layer != layer_) {
-    odb::dbTechVia* via = pad_accessvia_;
-    if (isCoverTerm(target.terminal)) {
-      via = bump_accessvia_;
-    }
-    odb::dbSBox::create(swire,
-                        via,
-                        target.center.x(),
-                        target.center.y(),
-                        odb::dbWireShapeType::IOWIRE);
   }
 }
 

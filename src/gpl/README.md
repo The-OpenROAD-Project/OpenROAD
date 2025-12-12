@@ -67,8 +67,6 @@ Timing-driven arguments
 global_placement
     [-timing_driven]
     [-routability_driven]
-    [-disable_timing_driven]
-    [-disable_routability_driven]
     [-skip_initial_place]
     [-incremental]
     [-bin_grid_count grid_count]

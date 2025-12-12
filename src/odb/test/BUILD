@@ -147,6 +147,7 @@ COMPULSORY_TESTS = [
     "bterm_hier_create",
     "check_routing_tracks",
     "create_blockage",
+    "create_obstruction",
     "create_sboxes",
     "def_dup_net",
     "def_parser",
@@ -198,6 +199,8 @@ COMPULSORY_TESTS = [
     "transform",
     "wire_encoder",
     "write_cdl",
+    "write_3dbv",
+    "write_3dbx",
     "write_def58",
     "write_def58_gzip",
     "write_lef_and_def",
@@ -279,6 +282,7 @@ filegroup(
         "data/example.3dbv",
         "data/example.3dbx",
         "data/example.bmap",
+        "data/example1.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
@@ -348,6 +352,9 @@ filegroup(
             ],
             "all_pins_placed2": [
                 "design_is_routed1.def",
+            ],
+            "create_obstruction": [
+                "create_blockage.def",
             ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",

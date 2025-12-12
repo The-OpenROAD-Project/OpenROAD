@@ -15,17 +15,15 @@ class _dbDatabase;
 
 struct dbTechLayerCutClassRuleFlags
 {
-  bool length_valid_ : 1;
-  bool cuts_valid_ : 1;
-  uint spare_bits_ : 30;
+  bool length_valid : 1;
+  bool cuts_valid : 1;
+  uint spare_bits : 30;
 };
 
 class _dbTechLayerCutClassRule : public _dbObject
 {
  public:
   _dbTechLayerCutClassRule(_dbDatabase*);
-
-  ~_dbTechLayerCutClassRule();
 
   bool operator==(const _dbTechLayerCutClassRule& rhs) const;
   bool operator!=(const _dbTechLayerCutClassRule& rhs) const
@@ -36,11 +34,11 @@ class _dbTechLayerCutClassRule : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutClassRuleFlags flags_;
-  char* _name;
+  char* name_;
   int width_;
   int length_;
   int num_cuts_;
-  dbId<_dbTechLayerCutClassRule> _next_entry;
+  dbId<_dbTechLayerCutClassRule> next_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj);

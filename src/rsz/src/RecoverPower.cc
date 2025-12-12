@@ -76,7 +76,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     }
   }
 
-  sort(ends_with_slack, [=](Vertex* end1, Vertex* end2) {
+  sort(ends_with_slack, [this](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, max_) > sta_->vertexSlack(end2, max_);
   });
 
@@ -401,7 +401,7 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
     sort(&swappable_cells,
-         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
            LibertyPort* port1
                = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            const LibertyPort* port2

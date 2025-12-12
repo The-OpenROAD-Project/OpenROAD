@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "gpl/AbstractGraphics.h"
+#include "AbstractGraphics.h"
 
 namespace gpl {
 

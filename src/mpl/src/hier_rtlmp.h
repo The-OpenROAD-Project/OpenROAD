@@ -42,6 +42,9 @@ class SACoreSoftMacro;
 class SACoreHardMacro;
 
 using BoundaryToRegionsMap = std::map<Boundary, std::queue<odb::Rect>>;
+using SoftMacroNameToIdMap = std::map<std::string, int>;
+using ClusterToMacroMap = std::map<int, int>;  // cluster_id -> macro_id
+using BundledNetList = std::vector<BundledNet>;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
@@ -92,7 +95,6 @@ class HierRTLMP
   void setMaxNumLevel(int max_num_level);
   void setClusterSizeRatioPerLevel(float coarsening_ratio);
   void setLargeNetThreshold(int large_net_threshold);
-  void setSignatureNetThreshold(int signature_net_threshold);
   void setAreaWeight(float area_weight);
   void setOutlineWeight(float outline_weight);
   void setWirelengthWeight(float wirelength_weight);
@@ -210,9 +212,14 @@ class HierRTLMP
                             const UniqueClusterVector& macro_clusters,
                             std::map<int, int>& cluster_to_macro,
                             std::vector<HardMacro>& sa_macros);
-  std::vector<BundledNet> computeBundledNets(
-      const UniqueClusterVector& macro_clusters,
-      const std::map<int, int>& cluster_to_macro);
+  // For cluster placement.
+  BundledNetList buildBundledNets(
+      Cluster* parent,
+      const SoftMacroNameToIdMap& soft_macro_id_map) const;
+  // For macro placement.
+  BundledNetList buildBundledNets(
+      const UniqueClusterVector& clusters,
+      const ClusterToMacroMap& cluster_to_macro) const;
   SequencePair computeArraySequencePair(Cluster* cluster,
                                         bool& array_has_empty_space);
 

@@ -438,6 +438,16 @@ void EstimateParasitics::updateParasitics(bool save_guides)
       break;
   }
 
+  // Router calls into the timer. This means the timer could be caching
+  // delays calculated in the interim period before we had put new parasitic
+  // annotations on the nets affected by a network edit. We need to explicitly
+  // invalidate those delays. Do it in bulk instead of interleaving with each
+  // groute call.
+  if (parasitics_src_ != ParasiticsSrc::none) {
+    for (const Net* net : parasitics_invalid_) {
+      sta_->delaysInvalidFromFanin(net);
+    }
+  }
   parasitics_invalid_.clear();
 }
 
@@ -526,7 +536,13 @@ void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
   initBlock();
   MakeWireParasitics builder(
       logger_, this, sta_, db_->getTech(), block_, global_router_);
-  builder.estimateParasitics(net, route);
+
+  // Check if we are estimating parasitics after layer assignment
+  if (route.at(0).is3DRoute()) {
+    builder.estimateParasitics(net, route, nullptr);
+  } else {
+    builder.estimateParasitics(net, route);
+  }
 }
 
 void EstimateParasitics::clearParasitics()

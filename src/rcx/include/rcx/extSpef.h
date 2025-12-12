@@ -7,11 +7,11 @@
 #include <map>
 #include <vector>
 
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/odb.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 
 namespace utl {
@@ -166,9 +166,9 @@ class extSpef
   uint getITermMapping(uint b);
   void resetTermTables();
   void resetCapTables(uint maxNode);
-  void initCapTable(odb::Ath__array1D<double*>* table);
-  void deleteTableCap(odb::Ath__array1D<double*>* table);
-  void reinitCapTable(odb::Ath__array1D<double*>* table, uint n);
+  void initCapTable(Ath__array1D<double*>* table);
+  void deleteTableCap(Ath__array1D<double*>* table);
+  void reinitCapTable(Ath__array1D<double*>* table, uint n);
   void addCap(const double* cap, double* totCap, uint n);
   void addHalfCap(double* totCap, const double* cap, uint n = 0);
   void getCaps(odb::dbNet* net, double* totCap);
@@ -349,17 +349,17 @@ class extSpef
 
   bool _extracted = false;
 
-  odb::Ath__array1D<uint>* _nodeTable = nullptr;
-  odb::Ath__array1D<uint>* _btermTable = nullptr;
-  odb::Ath__array1D<uint>* _itermTable = nullptr;
-  odb::Ath__array1D<double*>* _nodeCapTable = nullptr;
-  odb::Ath__array1D<double*>* _btermCapTable = nullptr;
-  odb::Ath__array1D<double*>* _itermCapTable = nullptr;
+  Ath__array1D<uint>* _nodeTable = nullptr;
+  Ath__array1D<uint>* _btermTable = nullptr;
+  Ath__array1D<uint>* _itermTable = nullptr;
+  Ath__array1D<double*>* _nodeCapTable = nullptr;
+  Ath__array1D<double*>* _btermCapTable = nullptr;
+  Ath__array1D<double*>* _itermCapTable = nullptr;
 
   const char* _spefName;
   uint _maxMapId;
-  odb::Ath__array1D<uint>* _idMapTable;
-  odb::Ath__array1D<const char*>* _nameMapTable = nullptr;
+  Ath__array1D<uint>* _idMapTable;
+  Ath__array1D<const char*>* _nameMapTable = nullptr;
   uint _lastNameMapIndex = 0;
 
   uint _cCnt;
@@ -444,7 +444,7 @@ class extSpef
   uint _cc_merge_cnt = 0;
   uint _cc_app_print_limit = 0;
   int _appcnt[16];
-  odb::Ath__array1D<int>* _ccidmap = nullptr;
+  Ath__array1D<int>* _ccidmap = nullptr;
 
   uint _dbCorner;
   const char* _tmpNetName = nullptr;
@@ -456,15 +456,15 @@ class extSpef
 
   std::vector<odb::dbNet*> _netV1;
 
-  odb::Ath__array1D<uint>* _capNodeTable = nullptr;
-  odb::Ath__array1D<double>* _xCoordTable = nullptr;
-  odb::Ath__array1D<double>* _yCoordTable = nullptr;
-  odb::Ath__array1D<int>* _x1CoordTable = nullptr;
-  odb::Ath__array1D<int>* _y1CoordTable = nullptr;
-  odb::Ath__array1D<int>* _x2CoordTable = nullptr;
-  odb::Ath__array1D<int>* _y2CoordTable = nullptr;
-  odb::Ath__array1D<uint>* _levelTable = nullptr;
-  odb::Ath__array1D<uint>* _idTable = nullptr;
+  Ath__array1D<uint>* _capNodeTable = nullptr;
+  Ath__array1D<double>* _xCoordTable = nullptr;
+  Ath__array1D<double>* _yCoordTable = nullptr;
+  Ath__array1D<int>* _x1CoordTable = nullptr;
+  Ath__array1D<int>* _y1CoordTable = nullptr;
+  Ath__array1D<int>* _x2CoordTable = nullptr;
+  Ath__array1D<int>* _y2CoordTable = nullptr;
+  Ath__array1D<uint>* _levelTable = nullptr;
+  Ath__array1D<uint>* _idTable = nullptr;
   double _lengthUnit;
   double _nodeCoordFactor;
   bool _doSortRSeg = true;
@@ -478,9 +478,9 @@ class extSpef
   uint _bigLoop;
   uint _multipleLoop;
   uint _srii;
-  odb::Ath__array1D<uint>* _srsegi;
-  odb::Ath__array1D<odb::dbRSeg*>* _nrseg;
-  odb::Ath__array1D<odb::Ath__array1D<int>*>* _hcnrc;
+  Ath__array1D<uint>* _srsegi;
+  Ath__array1D<odb::dbRSeg*>* _nrseg;
+  Ath__array1D<Ath__array1D<int>*>* _hcnrc;
   uint _rsegCnt;
 
   bool _readAllCorners = false;

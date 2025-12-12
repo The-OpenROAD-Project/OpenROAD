@@ -92,6 +92,25 @@ class GuideProcessor
                           const Point3D& best_pin_loc_coords,
                           int closest_guide_idx);
   /**
+   * @brief Connects the guides with the best pin shape location (on the 2D
+   * plane only)
+   *
+   * The function creates a patch guide that connects the closest guide to
+   * best_pin_loc_coords (without consideration to different layers)
+   *
+   * @param guide_pt The center of the gcell on the guide that is closest to
+   * best_pin_loc_coords
+   * @param best_pin_loc_coords The gcell center point of the chosen pin shape
+   * @param gcell_half_size_horz Half the horizontal size of the gcell
+   * @param gcell_half_size_vert Half the vertical size of the gcell
+   */
+  void connectGuidesWithBestPinLoc(Point3D& guide_pt,
+                                   const odb::Point& best_pin_loc_coords,
+                                   frCoord gcell_half_size_horz,
+                                   frCoord gcell_half_size_vert,
+                                   frNet* net,
+                                   std::vector<frRect>& guides);
+  /**
    * @brief Patches guides to cover part of the pin if needed.
    *
    * The function checks all the pin shapes against the guides to see if any of

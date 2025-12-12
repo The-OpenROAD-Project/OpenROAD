@@ -30,27 +30,27 @@ template class dbTable<_dbProperty>;
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
-  if (flags_._type != rhs.flags_._type) {
+  if (flags_.type != rhs.flags_.type) {
     return false;
   }
-  if (flags_._owner_type != rhs.flags_._owner_type) {
+  if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next != rhs._next) {
+  if (next_ != rhs.next_) {
     return false;
   }
 
   // User Code Begin ==
-  if (flags_._owner_type
+  if (flags_.owner_type
       != dbDatabaseObj) {  // database owners are never the same...
-    if (_owner != rhs._owner) {
+    if (owner_ != rhs.owner_) {
       return false;
     }
   }
-  if (_value != rhs._value) {
+  if (value_ != rhs.value_) {
     return false;
   }
   // User Code End ==
@@ -60,7 +60,7 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
 bool _dbProperty::operator<(const _dbProperty& rhs) const
 {
   // User Code Begin <
-  if (_name >= rhs._name) {
+  if (name_ >= rhs.name_) {
     return false;
   }
   // User Code End <
@@ -70,10 +70,10 @@ bool _dbProperty::operator<(const _dbProperty& rhs) const
 _dbProperty::_dbProperty(_dbDatabase* db)
 {
   flags_ = {};
-  _owner = 0;
+  owner_ = 0;
   // User Code Begin Constructor
-  flags_._type = DB_STRING_PROP;
-  _name = 0;
+  flags_.type = kDbStringProp;
+  name_ = 0;
   // User Code End Constructor
 }
 
@@ -83,39 +83,39 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj._name;
-  stream >> obj._next;
-  stream >> obj._owner;
+  stream >> obj.name_;
+  stream >> obj.next_;
+  stream >> obj.owner_;
   // User Code Begin >>
-  switch (obj.flags_._type) {
-    case DB_BOOL_PROP: {
+  switch (obj.flags_.type) {
+    case kDbBoolProp: {
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
       uint boolean;
       stream >> boolean;
-      obj._value = static_cast<bool>(boolean);
+      obj.value_ = static_cast<bool>(boolean);
       break;
     }
-    case DB_INT_PROP: {
+    case kDbIntProp: {
       int integer;
       stream >> integer;
-      obj._value = integer;
+      obj.value_ = integer;
       break;
     }
-    case DB_STRING_PROP: {
+    case kDbStringProp: {
       char* char_string;
       stream >> char_string;
-      obj._value = "";
+      obj.value_ = "";
       if (char_string != nullptr) {
-        obj._value = std::string(char_string);
+        obj.value_ = std::string(char_string);
         free(char_string);
       }
       break;
     }
-    case DB_DOUBLE_PROP: {
+    case kDbDoubleProp: {
       double double_property;
       stream >> double_property;
-      obj._value = double_property;
+      obj.value_ = double_property;
       break;
     }
   }
@@ -129,27 +129,27 @@ dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  stream << obj._name;
-  stream << obj._next;
-  stream << obj._owner;
+  stream << obj.name_;
+  stream << obj.next_;
+  stream << obj.owner_;
   // User Code Begin <<
-  switch (obj.flags_._type) {
-    case DB_BOOL_PROP:
+  switch (obj.flags_.type) {
+    case kDbBoolProp:
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
-      stream << static_cast<uint>(std::get<bool>(obj._value));
+      stream << static_cast<uint>(std::get<bool>(obj.value_));
       break;
 
-    case DB_INT_PROP:
-      stream << std::get<int>(obj._value);
+    case kDbIntProp:
+      stream << std::get<int>(obj.value_);
       break;
 
-    case DB_STRING_PROP:
-      stream << std::get<std::string>(obj._value).c_str();
+    case kDbStringProp:
+      stream << std::get<std::string>(obj.value_).c_str();
       break;
 
-    case DB_DOUBLE_PROP:
-      stream << std::get<double>(obj._value);
+    case kDbDoubleProp:
+      stream << std::get<double>(obj.value_);
       break;
   }
   // User Code End <<
@@ -162,8 +162,8 @@ void _dbProperty::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  if (flags_._type == DB_STRING_PROP) {
-    info.children_["string"].add(std::get<std::string>(_value));
+  if (flags_.type == kDbStringProp) {
+    info.children_["string"].add(std::get<std::string>(value_));
   }
   // User Code End collectMemInfo
 }
@@ -171,10 +171,10 @@ void _dbProperty::collectMemInfo(MemInfo& info)
 // User Code Begin PrivateMethods
 _dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
     : flags_(n.flags_),
-      _name(n._name),
-      _next(n._next),
-      _owner(n._owner),
-      _value(n._value)
+      name_(n.name_),
+      next_(n.next_),
+      owner_(n.owner_),
+      value_(n.value_)
 {
 }
 dbPropertyItr* _dbProperty::getItr(dbObject* object)
@@ -183,27 +183,27 @@ next_object:
   switch (object->getObjectType()) {
     case dbDatabaseObj: {
       _dbDatabase* db = (_dbDatabase*) object;
-      return db->_prop_itr;
+      return db->prop_itr_;
     }
 
     case dbChipObj: {
       _dbChip* chip = (_dbChip*) object;
-      return chip->_prop_itr;
+      return chip->prop_itr_;
     }
 
     case dbBlockObj: {
       _dbBlock* blk = (_dbBlock*) object;
-      return blk->_prop_itr;
+      return blk->prop_itr_;
     }
 
     case dbLibObj: {
       _dbLib* lib = (_dbLib*) object;
-      return lib->_prop_itr;
+      return lib->prop_itr_;
     }
 
     case dbTechObj: {
       _dbTech* tech = (_dbTech*) object;
-      return tech->_prop_itr;
+      return tech->prop_itr_;
     }
 
     default:
@@ -221,27 +221,27 @@ next_object:
   switch (object->getObjectType()) {
     case dbDatabaseObj: {
       _dbDatabase* db = (_dbDatabase*) object;
-      return db->_name_cache;
+      return db->name_cache_;
     }
 
     case dbChipObj: {
       _dbChip* chip = (_dbChip*) object;
-      return chip->_name_cache;
+      return chip->name_cache_;
     }
 
     case dbBlockObj: {
       _dbBlock* blk = (_dbBlock*) object;
-      return blk->_name_cache;
+      return blk->name_cache_;
     }
 
     case dbLibObj: {
       _dbLib* lib = (_dbLib*) object;
-      return lib->_name_cache;
+      return lib->name_cache_;
     }
 
     case dbTechObj: {
       _dbTech* tech = (_dbTech*) object;
-      return tech->_name_cache;
+      return tech->name_cache_;
     }
 
     default:
@@ -264,22 +264,22 @@ next_object:
 
     case dbChipObj: {
       _dbChip* chip = (_dbChip*) object;
-      return chip->_prop_tbl;
+      return chip->prop_tbl_;
     }
 
     case dbBlockObj: {
       _dbBlock* blk = (_dbBlock*) object;
-      return blk->_prop_tbl;
+      return blk->prop_tbl_;
     }
 
     case dbLibObj: {
       _dbLib* lib = (_dbLib*) object;
-      return lib->_prop_tbl;
+      return lib->prop_tbl_;
     }
 
     case dbTechObj: {
       _dbTech* tech = (_dbTech*) object;
-      return tech->_prop_tbl;
+      return tech->prop_tbl_;
     }
 
     default:
@@ -301,19 +301,19 @@ _dbProperty* _dbProperty::createProperty(dbObject* object_,
   // Create property
   _dbProperty* prop = propTable->create();
   uint oid = object->getOID();
-  prop->flags_._type = type;
-  prop->flags_._owner_type = object->getType();
-  prop->_owner = oid;
+  prop->flags_.type = type;
+  prop->flags_.owner_type = object->getType();
+  prop->owner_ = oid;
 
   // Get name-id, increment reference count
   _dbNameCache* cache = getNameCache(object);
   uint name_id = cache->addName(name);
-  prop->_name = name_id;
+  prop->name_ = name_id;
 
   // Link property into owner's prop-list
   dbObjectTable* table = object->getTable();
   dbId<_dbProperty> propList = table->getPropList(oid);
-  prop->_next = propList;
+  prop->next_ = propList;
   propList = prop->getImpl()->getOID();
   table->setPropList(oid, propList);
   return prop;
@@ -331,14 +331,14 @@ _dbProperty* _dbProperty::createProperty(dbObject* object_,
 dbProperty::Type dbProperty::getType()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return (dbProperty::Type) prop->flags_._type;
+  return (dbProperty::Type) prop->flags_.type;
 }
 
 std::string dbProperty::getName()
 {
   _dbProperty* prop = (_dbProperty*) this;
   _dbNameCache* cache = _dbProperty::getNameCache(this);
-  const char* name = cache->getName(prop->_name);
+  const char* name = cache->getName(prop->name_);
   return name;
 }
 
@@ -346,8 +346,8 @@ dbObject* dbProperty::getPropOwner()
 {
   _dbProperty* prop = (_dbProperty*) this;
   dbObjectTable* table = prop->getTable()->getObjectTable(
-      (dbObjectType) prop->flags_._owner_type);
-  return table->getObject(prop->_owner);
+      (dbObjectType) prop->flags_.owner_type);
+  return table->getObject(prop->owner_);
 }
 
 dbProperty* dbProperty::find(dbObject* object, const char* name)
@@ -363,7 +363,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
   for (dbProperty* p : getProperties(object)) {
     _dbProperty* p_impl = (_dbProperty*) p;
 
-    if (p_impl->_name == name_id) {
+    if (p_impl->name_ == name_id) {
       return p;
     }
   }
@@ -384,8 +384,8 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
   for (dbProperty* p : getProperties(object)) {
     _dbProperty* p_impl = (_dbProperty*) p;
 
-    if ((p_impl->_name == name_id)
-        && (p_impl->flags_._type == (_PropTypeEnum) type)) {
+    if ((p_impl->name_ == name_id)
+        && (p_impl->flags_.type == (_PropTypeEnum) type)) {
       return p;
     }
   }
@@ -406,9 +406,9 @@ void dbProperty::destroy(dbProperty* prop_)
   // unlink property from owner
   dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(prop);
   dbObjectTable* ownerTable = prop->getTable()->getObjectTable(
-      (dbObjectType) prop->flags_._owner_type);
+      (dbObjectType) prop->flags_.owner_type);
 
-  dbId<_dbProperty> propList = ownerTable->getPropList(prop->_owner);
+  dbId<_dbProperty> propList = ownerTable->getPropList(prop->owner_);
   dbId<_dbProperty> cur = propList;
   uint oid = prop->getOID();
 
@@ -417,20 +417,20 @@ void dbProperty::destroy(dbProperty* prop_)
 
     if (cur == oid) {
       if (cur == propList) {
-        ownerTable->setPropList(prop->_owner, p->_next);
+        ownerTable->setPropList(prop->owner_, p->next_);
       } else {
-        p->_next = prop->_next;
+        p->next_ = prop->next_;
       }
 
       break;
     }
 
-    cur = p->_next;
+    cur = p->next_;
   }
 
   // Remove reference to name
   _dbNameCache* cache = _dbProperty::getNameCache(prop);
-  cache->removeName(prop->_name);
+  cache->removeName(prop->name_);
 
   // destroy hier. props.
   dbProperty::destroyProperties(prop);
@@ -453,8 +453,8 @@ void dbProperty::destroyProperties(dbObject* obj)
   dbTable<_dbProperty>* propTable = _dbProperty::getPropTable(obj);
   while (cur) {
     _dbProperty* p = propTable->getPtr(cur);
-    cache->removeName(p->_name);
-    cur = p->_next;
+    cache->removeName(p->name_);
+    cur = p->next_;
     dbProperty::destroyProperties(p);
     propTable->destroy(p);
   }
@@ -477,13 +477,13 @@ dbSet<dbProperty>::iterator dbProperty::destroy(dbSet<dbProperty>::iterator itr)
 bool dbBoolProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return std::get<bool>(prop->_value);
+  return std::get<bool>(prop->value_);
 }
 
 void dbBoolProperty::setValue(bool value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value = value;
+  prop->value_ = value;
 }
 
 dbBoolProperty* dbBoolProperty::create(dbObject* object,
@@ -494,8 +494,8 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
     return nullptr;
   }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
-  prop->_value = value;
+  _dbProperty* prop = _dbProperty::createProperty(object, name, kDbBoolProp);
+  prop->value_ = value;
   return (dbBoolProperty*) prop;
 }
 
@@ -512,14 +512,14 @@ dbBoolProperty* dbBoolProperty::find(dbObject* object, const char* name)
 std::string dbStringProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return std::get<std::string>(prop->_value);
+  return std::get<std::string>(prop->value_);
 }
 
 void dbStringProperty::setValue(const char* value)
 {
   _dbProperty* prop = (_dbProperty*) this;
   assert(value);
-  prop->_value = std::string(value);
+  prop->value_ = std::string(value);
 }
 
 dbStringProperty* dbStringProperty::create(dbObject* object,
@@ -528,12 +528,12 @@ dbStringProperty* dbStringProperty::create(dbObject* object,
 {
   _dbProperty* prop = (_dbProperty*) find(object, name);
   if (prop) {
-    prop->_value = std::get<std::string>(prop->_value) + " " + value;
+    prop->value_ = std::get<std::string>(prop->value_) + " " + value;
     return (dbStringProperty*) prop;
   }
 
-  prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
-  prop->_value = std::string(value);
+  prop = _dbProperty::createProperty(object, name, kDbStringProp);
+  prop->value_ = std::string(value);
   return (dbStringProperty*) prop;
 }
 
@@ -550,13 +550,13 @@ dbStringProperty* dbStringProperty::find(dbObject* object, const char* name)
 int dbIntProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return std::get<int>(prop->_value);
+  return std::get<int>(prop->value_);
 }
 
 void dbIntProperty::setValue(int value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value = value;
+  prop->value_ = value;
 }
 
 dbIntProperty* dbIntProperty::create(dbObject* object,
@@ -567,8 +567,8 @@ dbIntProperty* dbIntProperty::create(dbObject* object,
     return nullptr;
   }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_INT_PROP);
-  prop->_value = value;
+  _dbProperty* prop = _dbProperty::createProperty(object, name, kDbIntProp);
+  prop->value_ = value;
   return (dbIntProperty*) prop;
 }
 
@@ -584,13 +584,13 @@ dbIntProperty* dbIntProperty::find(dbObject* object, const char* name)
 double dbDoubleProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return std::get<double>(prop->_value);
+  return std::get<double>(prop->value_);
 }
 
 void dbDoubleProperty::setValue(double value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value = value;
+  prop->value_ = value;
 }
 
 dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
@@ -601,8 +601,8 @@ dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
     return nullptr;
   }
 
-  _dbProperty* prop = _dbProperty::createProperty(object, name, DB_DOUBLE_PROP);
-  prop->_value = value;
+  _dbProperty* prop = _dbProperty::createProperty(object, name, kDbDoubleProp);
+  prop->value_ = value;
   return (dbDoubleProperty*) prop;
 }
 

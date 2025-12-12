@@ -14,17 +14,17 @@ class _dbDatabase;
 
 struct dbTechLayerMinStepRuleFlags
 {
-  bool max_edges_valid_ : 1;
-  bool min_adj_length1_valid_ : 1;
-  bool no_between_eol_ : 1;
-  bool min_adj_length2_valid_ : 1;
-  bool convex_corner_ : 1;
-  bool min_between_length_valid_ : 1;
-  bool except_same_corners_ : 1;
-  bool concave_corner_ : 1;
-  bool except_rectangle_ : 1;
-  bool no_adjacent_eol_ : 1;
-  uint spare_bits_ : 22;
+  bool max_edges_valid : 1;
+  bool min_adj_length1_valid : 1;
+  bool no_between_eol : 1;
+  bool min_adj_length2_valid : 1;
+  bool convex_corner : 1;
+  bool min_between_length_valid : 1;
+  bool except_same_corners : 1;
+  bool concave_corner : 1;
+  bool except_rectangle : 1;
+  bool no_adjacent_eol : 1;
+  uint spare_bits : 22;
 };
 
 class _dbTechLayerMinStepRule : public _dbObject

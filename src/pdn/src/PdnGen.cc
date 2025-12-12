@@ -71,8 +71,15 @@ void PdnGen::buildGrids(bool trim)
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
+  std::set<odb::dbNet*> grid_nets;
+  for (auto* grid : grids) {
+    const auto nets = grid->getNets();
+    grid_nets.insert(nets.begin(), nets.end());
+  }
+
   ShapeVectorMap block_obs_vec;
-  Grid::makeInitialObstructions(block, block_obs_vec, insts_in_grids, logger_);
+  Grid::makeInitialObstructions(
+      block, block_obs_vec, insts_in_grids, grid_nets, logger_);
   for (auto* grid : grids) {
     grid->getGridLevelObstructions(block_obs_vec);
   }
@@ -134,11 +141,13 @@ void PdnGen::buildGrids(bool trim)
                   Grid::typeToString(grid->type()));
     failed = true;
   }
+
+  updateRenderer();
+
   if (failed) {
     logger_->error(utl::PDN, 233, "Failed to generate full power grid.");
   }
 
-  updateRenderer();
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - end");
 }
 
@@ -154,6 +163,8 @@ void PdnGen::cleanupVias()
 
 void PdnGen::updateVias()
 {
+  debugPrint(logger_, utl::PDN, "Make", 2, "Update vias - start");
+
   const auto grids = getGrids();
 
   for (auto* grid : grids) {
@@ -171,6 +182,8 @@ void PdnGen::updateVias()
       via->getUpperShape()->addVia(via);
     }
   }
+
+  debugPrint(logger_, utl::PDN, "Make", 2, "Update vias - end");
 }
 
 void PdnGen::trimShapes()
@@ -408,7 +421,8 @@ void PdnGen::makeCoreGrid(
     const std::vector<odb::dbTechLayer*>& generate_obstructions,
     PowerCell* powercell,
     odb::dbNet* powercontrol,
-    const char* powercontrolnetwork)
+    const char* powercontrolnetwork,
+    const std::vector<odb::dbTechLayer*>& pad_pin_layers)
 {
   auto grid = std::make_unique<CoreGrid>(
       domain, name, starts_with == POWER, generate_obstructions);
@@ -436,6 +450,9 @@ void PdnGen::makeCoreGrid(
           powercontrol,
           GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
     }
+  }
+  if (!pad_pin_layers.empty()) {
+    grid->setupDirectConnect(pad_pin_layers);
   }
   domain->addGrid(std::move(grid));
 }
@@ -561,6 +578,13 @@ void PdnGen::makeRing(Grid* grid,
   if (!pad_pin_layers.empty() && grid->type() == Grid::Core) {
     auto* core_grid = static_cast<CoreGrid*>(grid);
     core_grid->setupDirectConnect(pad_pin_layers);
+    for (const auto& comp : core_grid->getStraps()) {
+      PadDirectConnectionStraps* straps
+          = dynamic_cast<PadDirectConnectionStraps*>(comp.get());
+      if (straps) {
+        straps->setTargetType(odb::dbWireShapeType::RING);
+      }
+    }
   }
 }
 
@@ -585,7 +609,8 @@ void PdnGen::makeStrap(Grid* grid,
                        bool snap,
                        StartsWith starts_with,
                        ExtensionMode extend,
-                       const std::vector<odb::dbNet*>& nets)
+                       const std::vector<odb::dbNet*>& nets,
+                       bool allow_out_of_core)
 {
   auto strap = std::make_unique<Straps>(
       grid, layer, width, pitch, spacing, number_of_straps);
@@ -596,6 +621,7 @@ void PdnGen::makeStrap(Grid* grid,
     strap->setStartWithPower(starts_with == POWER);
   }
   strap->setNets(nets);
+  strap->setAllowOutsideCoreArea(allow_out_of_core);
   grid->addStrap(std::move(strap));
 }
 

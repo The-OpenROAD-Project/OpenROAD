@@ -415,7 +415,7 @@
       "child":"dbProperty",
       "type":"1_n", 
       "flags": ["no-serial", "private"],
-      "tbl_name":"_prop_tbl"
+      "tbl_name":"prop_tbl_"
     },
     {
       "parent":"dbChip",
@@ -424,6 +424,14 @@
       "flags": [],
       "schema":"db_schema_chip_region",
       "tbl_name":"chip_region_tbl_"
+    },
+    {
+      "parent":"dbChip",
+      "child":"dbMarkerCategory",
+      "type":"1_n",
+      "flags": [],
+      "tbl_name":"marker_categories_tbl_",
+      "schema":"db_schema_chip_marker_categories"
     },
     {
       "parent":"dbChipRegion",

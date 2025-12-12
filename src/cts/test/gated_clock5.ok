@@ -22,14 +22,14 @@
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(5700, 50400), (53595, 166180)].
-[INFO CTS-0024]  Normalized sink region: [(0.407143, 3.6), (3.82821, 11.87)].
-[INFO CTS-0025]     Width:  3.4211.
-[INFO CTS-0026]     Height: 8.2700.
+[INFO CTS-0023]  Original sink region: [(5700, 50400), (106225, 135380)].
+[INFO CTS-0024]  Normalized sink region: [(0.407143, 3.6), (7.5875, 9.67)].
+[INFO CTS-0025]     Width:  7.1804.
+[INFO CTS-0026]     Height: 6.0700.
  Level 1
-    Direction: Vertical
+    Direction: Horizontal
     Sinks per sub-region: 1
-    Sub-region size: 3.4211 X 4.1350
+    Sub-region size: 3.5902 X 6.0700
 [INFO CTS-0034]     Segment length (rounded): 2.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 2.
@@ -120,28 +120,27 @@
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 121.52 um
+[INFO CTS-0101]  Average sink wire length 121.01 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Leaf load cells 28
+[INFO CTS-0207]  Dummy loads inserted 1
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 147
 [INFO CTS-0100]  Leaf buffers 0
 [INFO CTS-0101]  Average sink wire length 43.85 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Leaf load cells 28
+[INFO CTS-0207]  Dummy loads inserted 13
 [INFO CTS-0098] Clock net "gclk1"
 [INFO CTS-0099]  Sinks 158
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 83.63 um
+[INFO CTS-0101]  Average sink wire length 46.39 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Leaf load cells 28
+[INFO CTS-0207]  Dummy loads inserted 14
 [INFO CTS-0033] Balancing latency for clock clk
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (29897 104848)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (29897 100181)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (29897 95515)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (29897 90848)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (29897 86181)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (101013 149105)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (102026 98350)
-[INFO CTS-0036]  inserted 7 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 7
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (50612 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (45012 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (39412 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (33812 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (101013 149105)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (102026 98350)
+[INFO CTS-0036]  inserted 6 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 6

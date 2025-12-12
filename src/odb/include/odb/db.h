@@ -192,74 +192,69 @@ class dbBox : public dbObject
   ///
   /// Get the lower coordinate.
   ///
-  int xMin();
+  int xMin() const;
 
   ///
   /// Get the lower y coordinate.
   ///
-  int yMin();
+  int yMin() const;
 
   ///
   /// Get the high x coordinate.
   ///
-  int xMax();
+  int xMax() const;
 
   ///
   /// Get the high y coordinate.
   ///
-  int yMax();
+  int yMax() const;
 
   ///
   /// Returns true if this box represents a via
   ///
-  bool isVia();
+  bool isVia() const;
 
   ///
   /// Get tech-via this box represents.
   /// returns nullptr if this box does not represent a tech-via
   ///
-  dbTechVia* getTechVia();
+  dbTechVia* getTechVia() const;
 
   ///
   /// Get block-via this box represents.
   /// returns nullptr if this box does not represent a block-via
   ///
-  dbVia* getBlockVia();
+  dbVia* getBlockVia() const;
 
   ///
   /// Return the placed location of this via.
   ///
-  void getViaXY(int& x, int& y);
-
-  ///
-  /// Return the placed location of this via.
-  ///
-  Point getViaXY();
+  Point getViaXY() const;
 
   ///
   /// Get the box bounding points.
   ///
-  Rect getBox();
+  Rect getBox() const;
 
   ///
   /// Get the translated boxes of this via
   ///
-  void getViaBoxes(std::vector<dbShape>& shapes);
+  void getViaBoxes(std::vector<dbShape>& shapes) const;
 
   ///
   /// Get the translated boxes of this via on the given layer
   ///
-  void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes);
+  void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes) const;
+
+  ///
+  /// Get the orientation of the box.
+  ///
+  Orientation2D getDir() const;
 
   ///
   /// Get the width (xMax-xMin) of the box.
   ///
-  int getDir();
-
-  ///
-  /// Get the width (xMax-xMin) of the box.
-  ///
-  uint getDX();
+  uint getDX() const;
 
   int getDesignRuleWidth() const;
 
@@ -268,25 +263,23 @@ class dbBox : public dbObject
   ///
   /// Get the height (yMax-yMin) of the box.
   ///
-  uint getDY();
-  uint getWidth(uint dir = 1);
-  uint getLength(uint dir = 1);
+  uint getDY() const;
 
   ///
   /// Set temporary flag visited
   ///
   void setVisited(bool value);
-  bool isVisited();
+  bool isVisited() const;
 
   ///
   /// Get the owner of this box
   ///
-  dbObject* getBoxOwner();
+  dbObject* getBoxOwner() const;
 
   ///
   /// Get the owner type of this box
   ///
-  dbBoxOwner getOwnerType();
+  dbBoxOwner getOwnerType() const;
 
   ///
   /// Get the layer of this box.
@@ -300,13 +293,13 @@ class dbBox : public dbObject
   /// These bboxes have no layer.
   ///    All dbBox(s) that represent VIA's.
   ///
-  dbTechLayer* getTechLayer();
+  dbTechLayer* getTechLayer() const;
 
   ///
   /// Get the layer mask assigned to this box.
   /// Returns 0 is not assigned or bbox has no layer
   ///
-  uint getLayerMask();
+  uint getLayerMask() const;
 
   ///
   /// Sets the layer mask for this box.
@@ -433,37 +426,37 @@ class dbSBox : public dbBox
   ///
   /// Get the shape type of this wire.
   ///
-  dbWireShapeType getWireShapeType();
+  dbWireShapeType getWireShapeType() const;
 
   ///
   /// Return the specified direction of this segment
   ///
-  Direction getDirection();
+  Direction getDirection() const;
 
   ///
   /// Get the swire of this shape
   ///
-  dbSWire* getSWire();
+  dbSWire* getSWire() const;
 
   ///
   /// Get Oct Wire Shape
   ///
-  Oct getOct();
+  Oct getOct() const;
 
   ///
   /// Get via mask for bottom layer of via
   ///
-  uint getViaBottomLayerMask();
+  uint getViaBottomLayerMask() const;
 
   ///
   /// Get via mask for cut layer of via
   ///
-  uint getViaCutLayerMask();
+  uint getViaCutLayerMask() const;
 
   ///
   /// Get via mask for top layer of via
   ///
-  uint getViaTopLayerMask();
+  uint getViaTopLayerMask() const;
 
   ///
   /// Set via masks
@@ -473,7 +466,7 @@ class dbSBox : public dbBox
   ///
   /// Has via mask
   ///
-  bool hasViaLayerMasks();
+  bool hasViaLayerMasks() const;
 
   ///
   /// Create a set of new sboxes from a via array
@@ -794,6 +787,20 @@ class dbBlock : public dbObject
   dbModInst* findModInst(const char* path);
 
   ///
+  /// Find a specific moditerm in this block. path is
+  /// master_module_name/modinst_name/term_name Returns nullptr if the object
+  /// was not found.
+  ///
+  dbModITerm* findModITerm(const char* hierarchical_name);
+
+  ///
+  /// Find a specific modbterm in this block. path is
+  /// master_module_name/modinst_name/term_name Returns nullptr if the object
+  /// was not found.
+  ///
+  dbModBTerm* findModBTerm(const char* hierarchical_name);
+
+  ///
   /// Find a specific PowerDomain in this block.
   /// Returns nullptr if the object was not found.
   ///
@@ -869,7 +876,13 @@ class dbBlock : public dbObject
   /// Find a specific net of this block.
   /// Returns nullptr if the object was not found.
   ///
-  dbNet* findNet(const char* name);
+  dbNet* findNet(const char* name) const;
+
+  ///
+  /// Find a specific mod net of this block.
+  /// Returns nullptr if the object was not found.
+  ///
+  dbModNet* findModNet(const char* hierarchical_name) const;
 
   //
   // Utility to write db file
@@ -1415,12 +1428,12 @@ class dbBTerm : public dbObject
   ///
   /// Get the block-terminal name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the block-terminal name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Change the name of the bterm.
@@ -1442,7 +1455,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the signal type of this block-terminal.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Set the IO direction of this block-terminal.
@@ -1452,7 +1465,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the IO direction of this block-terminal.
   ///
-  dbIoType getIoType();
+  dbIoType getIoType() const;
 
   ///
   /// Set spef mark of this block-terminal.
@@ -1497,11 +1510,11 @@ class dbBTerm : public dbObject
   ///
   /// Get the net of this block-terminal.
   ///
-  dbNet* getNet();
+  dbNet* getNet() const;
 
   ///
   /// Get the mod net of this block-terminal.
-  dbModNet* getModNet();
+  dbModNet* getModNet() const;
   ///
 
   /// Disconnect the block-terminal from its net.
@@ -1673,7 +1686,7 @@ class dbBPin : public dbObject
   ///
   /// Get the placement status of this block-terminal.
   ///
-  dbPlacementStatus getPlacementStatus();
+  dbPlacementStatus getPlacementStatus() const;
 
   ///
   /// Set the placement status of this block-terminal.
@@ -1698,7 +1711,7 @@ class dbBPin : public dbObject
   ///
   /// Returns true if this bpin has an effective-width rule.
   ///
-  bool hasEffectiveWidth();
+  bool hasEffectiveWidth() const;
 
   ///
   /// Set the effective width rule.
@@ -1708,12 +1721,12 @@ class dbBPin : public dbObject
   ///
   /// Return the effective width rule.
   ///
-  int getEffectiveWidth();
+  int getEffectiveWidth() const;
 
   ///
   /// Returns true if this bpin has an min-spacing rule.
   ///
-  bool hasMinSpacing();
+  bool hasMinSpacing() const;
 
   ///
   /// Set the min spacing rule.
@@ -1723,7 +1736,7 @@ class dbBPin : public dbObject
   ///
   /// Return the min spacing rule.
   ///
-  int getMinSpacing();
+  int getMinSpacing() const;
 
   std::vector<dbAccessPoint*> getAccessPoints() const;
 
@@ -2041,6 +2054,16 @@ class dbNet : public dbObject
   /// Unmark this dbNet as special.
   ///
   void clearSpecial();
+
+  ///
+  /// Returns true if this dbNet is connected to other dbNet.
+  ///
+  bool isConnected(const dbNet* other) const;
+
+  ///
+  /// Returns true if this dbNet is connected to other dbModNet.
+  ///
+  bool isConnected(const dbModNet* other) const;
 
   ///
   /// Returns true if this dbNet has its pins connected by abutment
@@ -2521,7 +2544,18 @@ class dbNet : public dbObject
   ///
   void dump() const;
 
+  ///
+  /// Check consistency between the terminals connected to this dbNet and
+  /// the terminals connected to all related dbModNets. This ensures that
+  /// the flat and hierarchical representations of the net's connectivity
+  /// are consistent
+  //
   void checkSanityModNetConsistency() const;
+
+  ///
+  /// Dump dbNet connectivity for debugging
+  ///
+  void dumpConnectivity(int level = 1) const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2845,7 +2879,7 @@ class dbInst : public dbObject
   ///
   /// Get the instance-terminals of this instance.
   ///
-  dbSet<dbITerm> getITerms();
+  dbSet<dbITerm> getITerms() const;
 
   ///
   /// Get the first output terminal of this instance.
@@ -3108,9 +3142,9 @@ class dbITerm : public dbObject
   /// Returns nullptr if this instance-terminal has NOT been connected
   /// to a net.
   ///
-  dbNet* getNet();
+  dbNet* getNet() const;
 
-  dbModNet* getModNet();
+  dbModNet* getModNet() const;
 
   ///
   /// Get the master-terminal that this instance-terminal is representing.
@@ -3136,12 +3170,12 @@ class dbITerm : public dbObject
   ///
   /// Get the signal type of this instance-terminal.
   ///
-  dbSigType getSigType();
+  dbSigType getSigType() const;
 
   ///
   /// Get the IO direction of this instance-terminal.
   ///
-  dbIoType getIoType();
+  dbIoType getIoType() const;
 
   ///
   /// True is iterm is input of signal type; if io false INOUT is not considered
@@ -3728,11 +3762,13 @@ class dbTrackGrid : public dbObject
   /// Get the "X" track coordinates for a this tech-layer.
   ///
   void getGridX(std::vector<int>& x_grid);
+  const std::vector<int>& getGridX();
 
   ///
   /// Get the "Y" track coordinates for a this tech-layer.
   ///
   void getGridY(std::vector<int>& y_grid);
+  const std::vector<int>& getGridY();
 
   ///
   /// Get the block this grid belongs too.
@@ -5481,6 +5517,11 @@ class dbMaster : public dbObject
   int getMasterId();
 
   ///
+  /// Clear the access points of all pins.
+  ///
+  void clearPinAccess(int pin_access_idx);
+
+  ///
   /// Create a new master.
   /// Returns nullptr if a master with this name already exists
   ///
@@ -5674,6 +5715,8 @@ class dbMPin : public dbObject
   Rect getBBox();
 
   std::vector<std::vector<odb::dbAccessPoint*>> getPinAccess() const;
+
+  void clearPinAccess(int pin_access_idx);
 
   ///
   /// Create a new physical pin.
@@ -7082,6 +7125,8 @@ class dbChip : public dbObject
 
   dbSet<dbChipRegion> getChipRegions() const;
 
+  dbSet<dbMarkerCategory> getMarkerCategories() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7104,6 +7149,10 @@ class dbChip : public dbObject
   dbTech* getTech() const;
 
   Rect getBBox() const;
+
+  Cuboid getCuboid() const;
+
+  dbMarkerCategory* findMarkerCategory(const char* name) const;
 
   ///
   /// Create a new chip.
@@ -7216,6 +7265,8 @@ class dbChipInst : public dbObject
 
   Rect getBBox() const;
 
+  Cuboid getCuboid() const;
+
   dbSet<dbChipRegionInst> getRegions() const;
 
   dbChipRegionInst* findChipRegionInst(dbChipRegion* chip_region) const;
@@ -7271,6 +7322,8 @@ class dbChipRegion : public dbObject
   dbSet<dbChipBump> getChipBumps() const;
 
   // User Code Begin dbChipRegion
+  Cuboid getCuboid() const;
+
   dbChip* getChip() const;
 
   Side getSide() const;
@@ -7289,6 +7342,7 @@ class dbChipRegionInst : public dbObject
 {
  public:
   // User Code Begin dbChipRegionInst
+  Cuboid getCuboid() const;
 
   dbChipInst* getChipInst() const;
 
@@ -8177,6 +8231,9 @@ class dbMarkerCategory : public dbObject
   static dbMarkerCategory* create(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrReplace(dbBlock* block, const char* name);
   static dbMarkerCategory* createOrGet(dbBlock* block, const char* name);
+  static dbMarkerCategory* create(dbChip* chip, const char* name);
+  static dbMarkerCategory* createOrReplace(dbChip* chip, const char* name);
+  static dbMarkerCategory* createOrGet(dbChip* chip, const char* name);
   static dbMarkerCategory* create(dbMarkerCategory* category, const char* name);
   static dbMarkerCategory* createOrGet(dbMarkerCategory* category,
                                        const char* name);
@@ -8290,14 +8347,15 @@ class dbModBTerm : public dbObject
   void setModNet(dbModNet* modNet);
   dbModNet* getModNet() const;
   void setSigType(const dbSigType& type);
-  dbSigType getSigType();
+  dbSigType getSigType() const;
   void setIoType(const dbIoType& type);
-  dbIoType getIoType();
+  dbIoType getIoType() const;
   void connect(dbModNet* net);
   void disconnect();
   bool isBusPort() const;
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
+
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
   static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
@@ -8367,6 +8425,7 @@ class dbModITerm : public dbObject
   dbModBTerm* getChildModBTerm() const;
   void connect(dbModNet* modnet);
   void disconnect();
+
   static dbModITerm* create(dbModInst* parentInstance,
                             const char* name,
                             dbModBTerm* modbterm = nullptr);
@@ -8401,6 +8460,26 @@ class dbModNet : public dbObject
   dbNet* findRelatedNet() const;
   void checkSanity() const;
 
+  ///
+  /// Merge the terminals of the in_modnet with this modnet
+  ///
+  void mergeModNet(dbModNet* in_modnet);
+
+  ///
+  /// Connect the terminals of the in_net with this modnet
+  ///
+  void connectTermsOf(dbNet* in_net);
+
+  ///
+  /// Returns true if this dbModNet is connected to other dbNet.
+  ///
+  bool isConnected(const dbNet* other) const;
+
+  ///
+  /// Returns true if this dbModNet is connected to other dbModNet.
+  ///
+  bool isConnected(const dbModNet* other) const;
+
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* base_name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
@@ -8421,7 +8500,7 @@ class dbModule : public dbObject
   std::string getHierarchicalName() const;
 
   // Get a mod net by name
-  dbModNet* getModNet(const char* net_name);
+  dbModNet* getModNet(const char* net_name) const;
 
   // Adding an inst to a new module will remove it from its previous
   // module.

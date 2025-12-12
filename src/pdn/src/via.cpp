@@ -407,7 +407,7 @@ DbVia::ViaLayerShape DbTechVia::generate(
   odb::Point new_via_center;
   ViaLayerShape via_shapes;
 
-  auto add_via = [&via_shapes, this](odb::dbSBox* via,
+  auto add_via = [this, &via_shapes](odb::dbSBox* via,
                                      const odb::Point& center) {
     ViaLayerShape new_via_shapes = getLayerShapes(via);
 
@@ -2844,8 +2844,7 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
 std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(
     utl::Logger* logger,
     odb::dbTechVia* via,
-    int x,
-    int y)
+    const odb::Point& pt)
 {
   const TechViaGenerator generator(logger, via, {}, {}, {}, {});
 
@@ -2854,7 +2853,7 @@ std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(
 
   std::set<odb::Rect> obs;
 
-  const odb::dbTransform xform(odb::Point(x, y));
+  const odb::dbTransform xform(pt);
   for (auto* box : via->getBoxes()) {
     auto* layer = box->getTechLayer();
     if (layer->getType() != odb::dbTechLayerType::CUT) {
@@ -2941,7 +2940,7 @@ void Via::writeToDb(odb::dbSWire* wire,
   }
 
   auto check_shapes
-      = [this, obstructions](
+      = [this, &obstructions](
             const ShapePtr& shape,
             const std::set<DbVia::ViaLayerShape::RectBoxPair>& via_shapes)
       -> std::set<odb::dbSBox*> {
@@ -3025,17 +3024,77 @@ void Via::writeToDb(odb::dbSWire* wire,
   ripup_shapes.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
 
   if (!ripup_shapes.empty()) {
+    // Check if via stack continuity will be broken
+
+    // Collect remaining shapes
+    std::set<odb::dbTechLayer*> layers;
+    for (const auto& viashapes : {shapes.bottom, shapes.middle, shapes.top}) {
+      for (const auto& [rect, box] : viashapes) {
+        if (ripup_shapes.find(box) == ripup_shapes.end()) {
+          if (box->isVia()) {
+            if (auto* via = box->getBlockVia()) {
+              for (auto* viabox : via->getBoxes()) {
+                layers.insert(viabox->getTechLayer());
+              }
+            } else if (auto* via = box->getTechVia()) {
+              for (auto* viabox : via->getBoxes()) {
+                layers.insert(viabox->getTechLayer());
+              }
+            }
+          } else {
+            layers.insert(box->getTechLayer());
+          }
+        }
+      }
+    }
+
+    bool broken = false;
+    for (auto* layer : connect_->getAllLayers()) {
+      if (layers.find(layer) == layers.end()) {
+        // stack is broken
+        broken = true;
+      }
+    }
+
+    if (broken) {
+      for (const auto& viashapes : {shapes.bottom, shapes.middle, shapes.top}) {
+        for (const auto& [rect, box] : viashapes) {
+          ripup_shapes.insert(box);
+        }
+      }
+    }
+  }
+
+  if (!ripup_shapes.empty()) {
     const TechLayer tech_layer(lower_->getLayer());
     int x = 0;
     int y = 0;
     int ripup_count = 0;
+    int via_ripup_count = 0;
     for (auto* shape : ripup_shapes) {
-      int via_x, via_y;
       if (shape->getBlockVia() != nullptr || shape->getTechVia() != nullptr) {
-        shape->getViaXY(via_x, via_y);
-        x += via_x;
-        y += via_y;
+        const odb::Point pt = shape->getViaXY();
+        x += pt.getX();
+        y += pt.getY();
         ripup_count++;
+
+        if (odb::dbVia* via = shape->getBlockVia()) {
+          for (auto* box : via->getBoxes()) {
+            if (box->getTechLayer() != nullptr
+                && box->getTechLayer()->getType()
+                       == odb::dbTechLayerType::CUT) {
+              via_ripup_count++;
+            }
+          }
+        } else if (odb::dbTechVia* via = shape->getTechVia()) {
+          for (auto* box : via->getBoxes()) {
+            if (box->getTechLayer() != nullptr
+                && box->getTechLayer()->getType()
+                       == odb::dbTechLayerType::CUT) {
+              via_ripup_count++;
+            }
+          }
+        }
       }
 
       odb::dbSBox::destroy(shape);
@@ -3049,7 +3108,7 @@ void Via::writeToDb(odb::dbSWire* wire,
         utl::PDN,
         195,
         "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
-        ripup_count,
+        via_ripup_count,
         lower_->getLayer()->getName(),
         upper_->getLayer()->getName(),
         tech_layer.dbuToMicron(x / ripup_count),

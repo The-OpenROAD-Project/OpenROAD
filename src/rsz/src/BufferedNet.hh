@@ -247,6 +247,7 @@ class BufferedNet
   }
 
   bool fitsEnvelope(Metrics target);
+  const Corner* corner() { return corner_; }
 
  private:
   BufferedNetType type_;
@@ -283,6 +284,8 @@ class BufferedNet
 
   // Delay from driver pin to here
   FixedDelay arrival_delay_ = FixedDelay::ZERO;
+
+  const Corner* corner_ = nullptr;
 };
 
 }  // namespace rsz

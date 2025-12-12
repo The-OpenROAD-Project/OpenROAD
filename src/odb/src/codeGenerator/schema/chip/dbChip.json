@@ -19,7 +19,7 @@
   ],
   "fields": [
     {
-      "name": "_name",
+      "name": "name_",
       "type": "char *",
       "schema": "db_schema_chip_extended",
       "default": "nullptr",
@@ -118,28 +118,28 @@
       "schema": "db_schema_chip_extended"
     },
     {
-      "name": "_top",
+      "name": "top_",
       "type": "dbId<_dbBlock>",
       "flags": ["private", "cmpgt"],
       "parent": "dbBlock"
     },
     {
-      "name": "_block_tbl",
+      "name": "block_tbl_",
       "type": "dbTable<_dbBlock>*",
       "flags": ["private", "no-serial"]
     },
     {
-      "name": "_name_cache",
+      "name": "name_cache_",
       "type": "_dbNameCache*",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
-      "name": "_block_itr",
+      "name": "block_itr_",
       "type": "dbBlockItr*", 
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
-      "name": "_prop_itr",
+      "name": "prop_itr_",
       "type": "dbPropertyItr*",
       "flags": ["private", "no-cmp", "no-serial"]
     },
@@ -176,6 +176,11 @@
       "type": "dbId<_dbTech>",
       "flags": ["private"],
       "schema": "db_schema_chip_tech"
+    },
+    {
+      "name": "marker_categories_map_",
+      "type": "std::unordered_map<std::string, dbId<_dbMarkerCategory>>",
+      "flags": ["private", "no-serial"]
     }
   ],
   "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],

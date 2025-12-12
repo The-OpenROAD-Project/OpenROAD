@@ -131,7 +131,7 @@ void TimingWidget::setColumnDisplayMenu()
     action->setCheckable(true);
     action->setChecked(true);
 
-    connect(action, &QAction::triggered, this, [=](bool checked) {
+    connect(action, &QAction::triggered, this, [=, this](bool checked) {
       hideColumn(column_index, checked);
     });
 

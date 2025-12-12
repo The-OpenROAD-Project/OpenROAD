@@ -21,6 +21,7 @@ class _dbNameCache;
 class dbBlockItr;
 class _dbProperty;
 class _dbChipRegion;
+class _dbMarkerCategory;
 class _dbBlock;
 class _dbChipInst;
 class _dbChipConn;
@@ -40,7 +41,7 @@ class _dbChip : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
+  char* name_;
   uint type_;
   Point offset_;
   int width_;
@@ -57,20 +58,23 @@ class _dbChip : public _dbObject
   int scribe_line_north_;
   int scribe_line_south_;
   bool tsv_;
-  dbId<_dbBlock> _top;
-  dbTable<_dbBlock>* _block_tbl;
-  _dbNameCache* _name_cache;
-  dbBlockItr* _block_itr;
-  dbPropertyItr* _prop_itr;
+  dbId<_dbBlock> top_;
+  dbTable<_dbBlock>* block_tbl_;
+  _dbNameCache* name_cache_;
+  dbBlockItr* block_itr_;
+  dbPropertyItr* prop_itr_;
   dbId<_dbChipInst> chipinsts_;
   dbId<_dbChipConn> conns_;
   dbId<_dbChipNet> nets_;
   std::unordered_map<std::string, dbId<_dbChipInst>> chipinsts_map_;
   std::unordered_map<std::string, dbId<_dbChipRegion>> chip_region_map_;
   dbId<_dbTech> tech_;
-  dbTable<_dbProperty>* _prop_tbl;
+  std::unordered_map<std::string, dbId<_dbMarkerCategory>>
+      marker_categories_map_;
+  dbTable<_dbProperty>* prop_tbl_;
   dbTable<_dbChipRegion>* chip_region_tbl_;
-  dbId<_dbChip> _next_entry;
+  dbTable<_dbMarkerCategory>* marker_categories_tbl_;
+  dbId<_dbChip> next_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChip& obj);

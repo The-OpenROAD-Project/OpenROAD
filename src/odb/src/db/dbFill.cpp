@@ -20,15 +20,15 @@ template class dbTable<_dbFill>;
 
 bool _dbFill::operator==(const _dbFill& rhs) const
 {
-  if (_flags._opc != rhs._flags._opc) {
+  if (flags_.opc != rhs.flags_.opc) {
     return false;
   }
 
-  if (_flags._mask_id != rhs._flags._mask_id) {
+  if (flags_.mask_id != rhs.flags_.mask_id) {
     return false;
   }
 
-  if (_flags._layer_id != rhs._flags._layer_id) {
+  if (flags_.layer_id != rhs.flags_.layer_id) {
     return false;
   }
 
@@ -49,27 +49,27 @@ bool _dbFill::operator<(const _dbFill& rhs) const
     return false;
   }
 
-  if (_flags._opc < rhs._flags._opc) {
+  if (flags_.opc < rhs.flags_.opc) {
     return true;
   }
 
-  if (_flags._opc > rhs._flags._opc) {
+  if (flags_.opc > rhs.flags_.opc) {
     return false;
   }
 
-  if (_flags._mask_id < rhs._flags._mask_id) {
+  if (flags_.mask_id < rhs.flags_.mask_id) {
     return true;
   }
 
-  if (_flags._mask_id > rhs._flags._mask_id) {
+  if (flags_.mask_id > rhs.flags_.mask_id) {
     return false;
   }
 
-  if (_flags._layer_id < rhs._flags._layer_id) {
+  if (flags_.layer_id < rhs.flags_.layer_id) {
     return true;
   }
 
-  if (_flags._layer_id > rhs._flags._layer_id) {
+  if (flags_.layer_id > rhs.flags_.layer_id) {
     return false;
   }
 
@@ -80,7 +80,7 @@ _dbTechLayer* _dbFill::getTechLayer() const
 {
   _dbBlock* block = (_dbBlock*) getOwner();
   _dbTech* tech = block->getTech();
-  return tech->_layer_tbl->getPtr(_flags._layer_id);
+  return tech->layer_tbl_->getPtr(flags_.layer_id);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -98,13 +98,13 @@ void dbFill::getRect(Rect& rect)
 bool dbFill::needsOPC()
 {
   _dbFill* fill = (_dbFill*) this;
-  return fill->_flags._opc;
+  return fill->flags_.opc;
 }
 
 uint dbFill::maskNumber()
 {
   _dbFill* fill = (_dbFill*) this;
-  return fill->_flags._mask_id;
+  return fill->flags_.mask_id;
 }
 
 dbTechLayer* dbFill::getTechLayer()
@@ -123,13 +123,13 @@ dbFill* dbFill::create(dbBlock* block,
                        int y2)
 {
   _dbBlock* block_internal = (_dbBlock*) block;
-  _dbFill* fill = block_internal->_fill_tbl->create();
-  fill->_flags._opc = needs_opc;
-  fill->_flags._mask_id = mask_number;
-  fill->_flags._layer_id = layer->getImpl()->getOID();
+  _dbFill* fill = block_internal->fill_tbl_->create();
+  fill->flags_.opc = needs_opc;
+  fill->flags_.mask_id = mask_number;
+  fill->flags_.layer_id = layer->getImpl()->getOID();
   fill->_rect.init(x1, y1, x2, y2);
 
-  for (auto cb : block_internal->_callbacks) {
+  for (auto cb : block_internal->callbacks_) {
     cb->inDbFillCreate((dbFill*) fill);
   }
 
@@ -141,7 +141,7 @@ void dbFill::destroy(dbFill* fill_)
   _dbFill* fill = (_dbFill*) fill_;
   _dbBlock* block = (_dbBlock*) fill->getOwner();
   dbProperty::destroyProperties(fill);
-  block->_fill_tbl->destroy(fill);
+  block->fill_tbl_->destroy(fill);
 }
 
 dbSet<dbFill>::iterator dbFill::destroy(dbSet<dbFill>::iterator& itr)
@@ -155,7 +155,7 @@ dbSet<dbFill>::iterator dbFill::destroy(dbSet<dbFill>::iterator& itr)
 dbFill* dbFill::getFill(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbFill*) block->_fill_tbl->getPtr(dbid_);
+  return (dbFill*) block->fill_tbl_->getPtr(dbid_);
 }
 
 void _dbFill::collectMemInfo(MemInfo& info)

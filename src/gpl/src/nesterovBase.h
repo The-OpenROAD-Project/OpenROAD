@@ -740,45 +740,45 @@ inline std::vector<Bin>& BinGrid::getBins()
   return bins_;
 }
 
-class NesterovBaseVars
+struct NesterovBaseVars
 {
- public:
-  float targetDensity = 1.0;
-  int binCntX = 0;
-  int binCntY = 0;
-  float minWireLengthForceBar = -300;
-  // temp variables
-  bool isSetBinCnt = false;
-  bool useUniformTargetDensity = false;
+  NesterovBaseVars(const PlaceOptions& options);
 
-  float minPhiCoef = 0.95;  // pcof_min
-  float maxPhiCoef = 1.05;  // pcof_max
-  bool isMaxPhiCoefChanged = false;
+  const bool isSetBinCnt;
+  const bool useUniformTargetDensity;
+  bool isMaxPhiCoefChanged = false;  // not user config
+  const float targetDensity;
+  const int binCntX;
+  const int binCntY;
 
-  void reset();
+  const float minPhiCoef;
+  float maxPhiCoef;  // may be updated after initialization
+
+  static constexpr float minWireLengthForceBar = -300;
 };
 
-class NesterovPlaceVars
+struct NesterovPlaceVars
 {
- public:
-  int maxNesterovIter = 5000;
-  int maxBackTrack = 10;
-  float initDensityPenalty = 0.00008;       // INIT_LAMBDA
-  float initWireLengthCoef = 0.25;          // base_wcof
-  float targetOverflow = 0.1;               // overflow
-  float minPreconditioner = 1.0;            // MIN_PRE
-  float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
-  float referenceHpwl = 446000000;          // refDeltaHpwl
-  float routability_end_overflow = 0.30;
-  float keepResizeBelowOverflow = 0.3;
+  NesterovPlaceVars(const PlaceOptions& options);
 
-  static const int maxRecursionWlCoef = 10;
-  static const int maxRecursionInitSLPCoef = 10;
+  int maxNesterovIter;
+  static constexpr int maxBackTrack = 10;
+  const float initDensityPenalty;                  // INIT_LAMBDA
+  const float initWireLengthCoef;                  // base_wcof
+  float targetOverflow;                            // overflow
+  static constexpr float minPreconditioner = 1.0;  // MIN_PRE
+  float initialPrevCoordiUpdateCoef = 100;         // z_ref_alpha
+  const float referenceHpwl;                       // refDeltaHpwl
+  const float routability_end_overflow;
+  const float keepResizeBelowOverflow;
 
-  bool timingDrivenMode = true;
+  static constexpr int maxRecursionWlCoef = 10;
+  static constexpr int maxRecursionInitSLPCoef = 10;
+
+  bool timingDrivenMode;
   int timingDrivenIterCounter = 0;
-  bool routability_driven_mode = true;
-  bool disableRevertIfDiverge = false;
+  const bool routability_driven_mode;
+  const bool disableRevertIfDiverge;
 
   bool debug = false;
   int debug_pause_iterations = 10;
@@ -788,8 +788,6 @@ class NesterovPlaceVars
   int debug_start_iter = 0;
   bool debug_generate_images = false;
   std::string debug_images_path = "REPORTS_DIR";
-
-  void reset();
 };
 
 // Stores all pins, nets, and actual instances (static and movable)
@@ -803,6 +801,7 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
+  void reportInstanceExtensionByPinDensity() const;
   const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
   const std::vector<GNet*>& getGNets() const { return gNets_; }
   const std::vector<GPin*>& getGPins() const { return gPins_; }
@@ -1035,7 +1034,7 @@ class NesterovBase
   // Nesterov Loop
   void initDensity1();
   float initDensity2(float wlCoeffX, float wlCoeffY);
-  void setNpVars(NesterovPlaceVars* npVars) { npVars_ = npVars; }
+  void setNpVars(const NesterovPlaceVars* npVars) { npVars_ = npVars; }
   void setIter(int iter) { iter_ = iter; }
   void setMaxPhiCoefChanged(bool maxPhiCoefChanged)
   {
@@ -1132,6 +1131,8 @@ class NesterovBase
                               int gcell_index_stride = 10) const;
 
   std::shared_ptr<PlacerBase> getPb() const { return pb_; }
+
+  odb::dbGroup* getGroup() const { return pb_->getGroup(); }
 
  private:
   NesterovBaseVars nbVars_;
@@ -1259,7 +1260,7 @@ class NesterovBase
 
   bool isDiverged_ = false;
 
-  NesterovPlaceVars* npVars_ = nullptr;
+  const NesterovPlaceVars* npVars_ = nullptr;
 
   float minSumOverflow_ = 1e30;
   float hpwlWithMinSumOverflow_ = 1e30;
@@ -1349,5 +1350,12 @@ inline bool isValidSigType(const odb::dbSigType& db_type)
   return (db_type == odb::dbSigType::SIGNAL
           || db_type == odb::dbSigType::CLOCK);
 }
+
+inline constexpr const char* format_label_int = "{:27} {:10}";
+inline constexpr const char* format_label_float = "{:27} {:10.4f}";
+inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
+inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
+inline constexpr const char* format_label_um2_with_delta
+    = "{:27} {:10.3f} um^2 ({:+.2f}%)";
 
 }  // namespace gpl

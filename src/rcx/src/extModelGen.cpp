@@ -14,8 +14,9 @@
 #include <vector>
 
 #include "odb/dbSet.h"
-#include "odb/util.h"
 #include "parse.h"
+#include "rcx/extRCap.h"
+#include "rcx/util.h"
 
 namespace rcx {
 
@@ -501,7 +502,7 @@ uint extModelGen::ReadRCDB(odb::dbBlock* block,
   uint layerCnt = getLayerCnt();
   extMetRCTable* rcModel = initCapTables(layerCnt, widthCnt);
 
-  odb::AthPool<extDistRC>* rcPool = rcModel->getRCPool();
+  AthPool<extDistRC>* rcPool = rcModel->getRCPool();
   extMeasure m(nullptr);
   m._diagModel = 1;
   uint openWireNumber = 1;

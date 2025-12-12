@@ -175,6 +175,28 @@ class CallBack : public dbBlockCallBackObj
       events.push_back("Create BPin for " + pin->getBTerm()->getName());
     }
   }
+
+  void inDbBPinAddBox(dbBox* box) override
+  {
+    if (!_pause) {
+      char buffer[100];
+      sprintf(buffer,
+              "Create BPin box (%d,%d) (%d,%d)",
+              box->xMin(),
+              box->yMin(),
+              box->xMax(),
+              box->yMax());
+      events.emplace_back(buffer);
+    }
+  }
+
+  void inDbBPinRemoveBox(dbBox* box) override
+  {
+    if (!_pause) {
+      events.emplace_back("Destroy bpin box");
+    }
+  }
+
   void inDbBPinDestroy(dbBPin*) override
   {
     if (!_pause) {

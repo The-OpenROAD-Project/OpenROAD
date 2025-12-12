@@ -210,9 +210,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(this, &MainWindow::rulersChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(this, &MainWindow::labelsChanged, viewers_, &LayoutTabs::fullRepaint);
 
-  connect(controls_, &DisplayControls::selected, [=](const Selected& selected) {
-    setSelected(selected);
-  });
+  connect(controls_,
+          &DisplayControls::selected,
+          [this](const Selected& selected) { setSelected(selected); });
 
   connect(inspector_,
           &Inspector::selected,
@@ -250,12 +250,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &Inspector::loadActions);
   connect(inspector_,
           &Inspector::removeHighlight,
-          [=](const QList<const Selected*>& selected) {
+          [this](const QList<const Selected*>& selected) {
             removeFromHighlighted(selected);
           });
   connect(inspector_,
           &Inspector::addHighlight,
-          [=](const SelectionSet& selected) { addHighlighted(selected); });
+          [this](const SelectionSet& selected) { addHighlighted(selected); });
   connect(
       inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
   connect(script_,
@@ -269,14 +269,14 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
-          [=](const SelectionSet& selected) { setSelected(selected); });
+          [this](const SelectionSet& selected) { setSelected(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeSelect,
           this,
           &MainWindow::removeSelected);
   connect(hierarchy_widget_,
           &BrowserWidget::highlight,
-          [=](const SelectionSet& selected) { addHighlighted(selected); });
+          [this](const SelectionSet& selected) { addHighlighted(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeHighlight,
           this,
@@ -337,13 +337,13 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearHighlightedItems,
-          [=](const QList<const Selected*>& selected) {
+          [this](const QList<const Selected*>& selected) {
             removeFromHighlighted(selected);
           });
 
   connect(selection_browser_,
           &SelectHighlightWindow::highlightSelectedItemsSig,
-          [=](const QList<const Selected*>& items) {
+          [this](const QList<const Selected*>& items) {
             updateHighlightedSet(items);
           });
 
@@ -634,8 +634,6 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new LibertyLibraryDescriptor(sta));
   gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
   gui->registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));
-  gui->registerDescriptor<sta::LibertyPgPort*>(
-      new LibertyPgPortDescriptor(sta));
   gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
@@ -1649,6 +1647,8 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
   }
   auto block = chip->getBlock();
   if (block == nullptr) {
+    // It is a top chip
+    emit chipLoaded(chip);
     return;
   }
 
@@ -1870,7 +1870,17 @@ void MainWindow::showGlobalConnect()
 
 void MainWindow::openDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz", ".db", ".db.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getOpenFileName(
       this, "Open Design", QString(), filefilter);
 
@@ -1879,16 +1889,22 @@ void MainWindow::openDesign()
   }
 
   try {
-    if (file.endsWith(".odb", Qt::CaseInsensitive)) {
-      open_->setEnabled(false);
-      ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
-      logger_->warn(utl::GUI,
-                    77,
-                    "Timing data is not stored in {} and must be loaded "
-                    "separately, if needed.",
-                    file.toStdString());
-    } else {
-      logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
+    bool found = false;
+    for (const auto& ext : exts) {
+      if (file.endsWith(ext, Qt::CaseInsensitive)) {
+        open_->setEnabled(false);
+        ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
+        logger_->warn(utl::GUI,
+                      109,
+                      "Timing data is not stored in {} and must be loaded "
+                      "separately, if needed.",
+                      file.toStdString());
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      logger_->error(utl::GUI, 108, "Unknown filetype: {}", file.toStdString());
     }
   } catch (const std::exception&) {
     // restore option
@@ -1898,7 +1914,17 @@ void MainWindow::openDesign()
 
 void MainWindow::saveDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getSaveFileName(
       this, "Save Design", QString(), filefilter);
 

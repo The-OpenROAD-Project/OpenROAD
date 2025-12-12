@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "odb/util.h"
+#include "rcx/util.h"
 
 namespace rcx {
 
@@ -61,8 +61,8 @@ NameTable::NameTable(uint n, char* zero)
     zero = strdup("zeroName");
   }
 
-  _hashTable = new rcx::AthHash<int>(n, 0);
-  _bucketPool = new odb::AthPool<NameBucket>(0);
+  _hashTable = new AthHash<int>(n, 0);
+  _bucketPool = new AthPool<NameBucket>(0);
 
   addNewName(zero, 0);
 }

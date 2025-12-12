@@ -23,6 +23,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbModBTerm.h"
 #include "dbModNet.h"
@@ -36,28 +37,28 @@ template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_parent != rhs._parent) {
+  if (parent_ != rhs.parent_) {
     return false;
   }
-  if (_module_next != rhs._module_next) {
+  if (module_next_ != rhs.module_next_) {
     return false;
   }
-  if (_master != rhs._master) {
+  if (master_ != rhs.master_) {
     return false;
   }
-  if (_group_next != rhs._group_next) {
+  if (group_next_ != rhs.group_next_) {
     return false;
   }
-  if (_group != rhs._group) {
+  if (group_ != rhs.group_) {
     return false;
   }
-  if (_moditerms != rhs._moditerms) {
+  if (moditerms_ != rhs.moditerms_) {
     return false;
   }
 
@@ -67,7 +68,7 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
 bool _dbModInst::operator<(const _dbModInst& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0) {
+  if (strcmp(name_, rhs.name_) >= 0) {
     return false;
   }
   // User Code End <
@@ -77,36 +78,36 @@ bool _dbModInst::operator<(const _dbModInst& rhs) const
 _dbModInst::_dbModInst(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  _name = nullptr;
-  _parent = 0;
-  _module_next = 0;
-  _moditerms = 0;
-  _master = 0;
-  _group = 0;
-  _group_next = 0;
+  name_ = nullptr;
+  parent_ = 0;
+  module_next_ = 0;
+  moditerms_ = 0;
+  master_ = 0;
+  group_ = 0;
+  group_next_ = 0;
   // User Code End Constructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
-  stream >> obj._parent;
-  stream >> obj._module_next;
-  stream >> obj._master;
-  stream >> obj._group_next;
-  stream >> obj._group;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
+  stream >> obj.parent_;
+  stream >> obj.module_next_;
+  stream >> obj.master_;
+  stream >> obj.group_next_;
+  stream >> obj.group_;
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
   if (db_->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._moditerms;
+    stream >> obj.moditerms_;
   }
   if (db_->isSchema(db_schema_db_remove_hash)) {
     _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
-    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      module->_modinst_hash[obj._name] = obj.getId();
+    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
+    if (obj.name_) {
+      module->modinst_hash_[obj.name_] = obj.getId();
     }
   }
   // User Code End >>
@@ -115,15 +116,15 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
-  stream << obj._parent;
-  stream << obj._module_next;
-  stream << obj._master;
-  stream << obj._group_next;
-  stream << obj._group;
+  stream << obj.name_;
+  stream << obj.next_entry_;
+  stream << obj.parent_;
+  stream << obj.module_next_;
+  stream << obj.master_;
+  stream << obj.group_next_;
+  stream << obj.group_;
   // User Code Begin <<
-  stream << obj._moditerms;
+  stream << obj.moditerms_;
   // User Code End <<
   return stream;
 }
@@ -134,16 +135,9 @@ void _dbModInst::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
-  info.children_["moditerm_hash"].add(_moditerm_hash);
+  info.children_["name"].add(name_);
+  info.children_["moditerm_hash"].add(moditerm_hash_);
   // User Code End collectMemInfo
-}
-
-_dbModInst::~_dbModInst()
-{
-  if (_name) {
-    free((void*) _name);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -155,37 +149,37 @@ _dbModInst::~_dbModInst()
 const char* dbModInst::getName() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbModule* dbModInst::getParent() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  if (obj->_parent == 0) {
+  if (obj->parent_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->_module_tbl->getPtr(obj->_parent);
+  return (dbModule*) par->module_tbl_->getPtr(obj->parent_);
 }
 
 dbModule* dbModInst::getMaster() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  if (obj->_master == 0) {
+  if (obj->master_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->_module_tbl->getPtr(obj->_master);
+  return (dbModule*) par->module_tbl_->getPtr(obj->master_);
 }
 
 dbGroup* dbModInst::getGroup() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  if (obj->_group == 0) {
+  if (obj->group_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
+  return (dbGroup*) par->group_tbl_->getPtr(obj->group_);
 }
 
 // User Code Begin dbModInstPublicMethods
@@ -197,7 +191,7 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   _dbBlock* block = (_dbBlock*) module->getOwner();
   _dbModule* master = (_dbModule*) masterModule;
 
-  if (master->_mod_inst != 0) {
+  if (master->mod_inst_ != 0) {
     return nullptr;
   }
 
@@ -207,9 +201,9 @@ dbModInst* dbModInst::create(dbModule* parentModule,
     return nullptr;
   }
 
-  _dbModInst* modinst = block->_modinst_tbl->create();
+  _dbModInst* modinst = block->modinst_tbl_->create();
 
-  if (block->_journal) {
+  if (block->journal_) {
     debugPrint(block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -217,25 +211,25 @@ dbModInst* dbModInst::create(dbModule* parentModule,
                "ECO: create dbModInst {} at id {}",
                name,
                modinst->getId());
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
-    block->_journal->pushParam(dbModInstObj);
-    block->_journal->pushParam(name);
-    block->_journal->pushParam(modinst->getId());
-    block->_journal->pushParam(module->getId());
-    block->_journal->pushParam(master->getId());
-    block->_journal->endAction();
+    block->journal_->beginAction(dbJournal::kCreateObject);
+    block->journal_->pushParam(dbModInstObj);
+    block->journal_->pushParam(name);
+    block->journal_->pushParam(modinst->getId());
+    block->journal_->pushParam(module->getId());
+    block->journal_->pushParam(master->getId());
+    block->journal_->endAction();
   }
 
-  modinst->_name = safe_strdup(name);
-  modinst->_master = master->getOID();
-  modinst->_parent = module->getOID();
+  modinst->name_ = safe_strdup(name);
+  modinst->master_ = master->getOID();
+  modinst->parent_ = module->getOID();
   // push to head of list in block
-  modinst->_module_next = module->_modinsts;
-  module->_modinsts = modinst->getOID();
-  master->_mod_inst = modinst->getOID();
-  module->_modinst_hash[modinst->_name] = modinst->getOID();
+  modinst->module_next_ = module->modinsts_;
+  module->modinsts_ = modinst->getOID();
+  master->mod_inst_ = modinst->getOID();
+  module->modinst_hash_[modinst->name_] = modinst->getOID();
 
-  for (dbBlockCallBackObj* cb : block->_callbacks) {
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
     cb->inDbModInstCreate((dbModInst*) modinst);
   }
 
@@ -250,8 +244,6 @@ void dbModInst::destroy(dbModInst* modinst)
 
   _dbModule* _master = (_dbModule*) modinst->getMaster();
 
-  _master->_mod_inst = dbId<_dbModInst>();  // clear
-
   // Note that we only destroy the module instance, not the module
   // itself
 
@@ -265,32 +257,35 @@ void dbModInst::destroy(dbModInst* modinst)
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 
-  for (auto cb : _block->_callbacks) {
+  for (auto cb : _block->callbacks_) {
     cb->inDbModInstDestroy(modinst);
   }
+
+  // This must be called after callbacks because they need _mod_inst
+  _master->mod_inst_.clear();
 
   // unlink from parent start
   uint id = _modinst->getOID();
   _dbModInst* prev = nullptr;
-  uint cur = _module->_modinsts;
+  uint cur = _module->modinsts_;
   while (cur) {
-    _dbModInst* c = _block->_modinst_tbl->getPtr(cur);
+    _dbModInst* c = _block->modinst_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
-        _module->_modinsts = _modinst->_module_next;
+        _module->modinsts_ = _modinst->module_next_;
       } else {
-        prev->_module_next = _modinst->_module_next;
+        prev->module_next_ = _modinst->module_next_;
       }
       break;
     }
     prev = c;
-    cur = c->_module_next;
+    cur = c->module_next_;
   }
 
   dbProperty::destroyProperties(_modinst);
 
   // Assure that dbModInst obj is restored first by being journalled last.
-  if (_block->_journal) {
+  if (_block->journal_) {
     debugPrint(_block->getImpl()->getLogger(),
                utl::ODB,
                "DB_ECO",
@@ -298,24 +293,24 @@ void dbModInst::destroy(dbModInst* modinst)
                "ECO: delete dbModInst {} at id {}",
                modinst->getName(),
                modinst->getId());
-    _block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    _block->_journal->pushParam(dbModInstObj);
-    _block->_journal->pushParam(modinst->getName());
-    _block->_journal->pushParam(modinst->getId());
-    _block->_journal->pushParam(_module->getId());
-    _block->_journal->pushParam(_master->getId());
-    _block->_journal->pushParam(_modinst->_group);
-    _block->_journal->endAction();
+    _block->journal_->beginAction(dbJournal::kDeleteObject);
+    _block->journal_->pushParam(dbModInstObj);
+    _block->journal_->pushParam(modinst->getName());
+    _block->journal_->pushParam(modinst->getId());
+    _block->journal_->pushParam(_module->getId());
+    _block->journal_->pushParam(_master->getId());
+    _block->journal_->pushParam(_modinst->group_);
+    _block->journal_->endAction();
   }
 
   // unlink from parent end
-  if (_modinst->_group) {
+  if (_modinst->group_) {
     modinst->getGroup()->removeModInst(modinst);
   }
 
   _dbModule* _parent = (_dbModule*) (modinst->getParent());
-  _parent->_modinst_hash.erase(modinst->getName());
-  _block->_modinst_tbl->destroy(_modinst);
+  _parent->modinst_hash_.erase(modinst->getName());
+  _block->modinst_tbl_->destroy(_modinst);
 }
 
 dbSet<dbModInst>::iterator dbModInst::destroy(dbSet<dbModInst>::iterator& itr)
@@ -330,13 +325,13 @@ dbSet<dbModITerm> dbModInst::getModITerms()
 {
   _dbModInst* _mod_inst = (_dbModInst*) this;
   _dbBlock* _block = (_dbBlock*) _mod_inst->getOwner();
-  return dbSet<dbModITerm>(_mod_inst, _block->_module_modinstmoditerm_itr);
+  return dbSet<dbModITerm>(_mod_inst, _block->module_modinstmoditerm_itr_);
 }
 
 dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbModInst*) block->_modinst_tbl->getPtr(dbid_);
+  return (dbModInst*) block->modinst_tbl_->getPtr(dbid_);
 }
 
 std::string dbModInst::getHierarchicalName() const
@@ -358,10 +353,10 @@ dbModITerm* dbModInst::findModITerm(const char* name)
 {
   _dbModInst* obj = (_dbModInst*) this;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_moditerm_hash.find(name);
-  if (it != obj->_moditerm_hash.end()) {
+  auto it = obj->moditerm_hash_.find(name);
+  if (it != obj->moditerm_hash_.end()) {
     auto db_id = (*it).second;
-    return (dbModITerm*) par->_moditerm_tbl->getPtr(db_id);
+    return (dbModITerm*) par->moditerm_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
@@ -558,10 +553,18 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     }
   }
 
-  // 2. Create a uniquified copy of new_module
+  // 2. Create a uniquified copy of new_module and its ports
+  _dbModule::modBTMap mod_bt_map;
   dbModule* new_module_copy = dbModule::makeUniqueDbModule(
       new_module->getName(), this->getName(), getMaster()->getOwner());
   if (new_module_copy) {
+    // Copy module ports from new_module to new_module_copy.
+    // - This allows dbModITerms to be connected to dbModBTerms when they are
+    //   created later.
+    _dbModule::copyModulePorts(  // NOLINT
+        new_module,
+        new_module_copy,
+        mod_bt_map);
     debugRDPrint1("Created uniquified module {} in block {}",
                   new_module_copy->getName(),
                   new_module_copy->getOwner()->getName());
@@ -654,7 +657,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
   // 7. Create mod iterms and connect to old mod nets
   for (const auto& [name, old_mod_net] : name_mod_net_map) {
-    dbModITerm* new_mod_iterm = dbModITerm::create(new_mod_inst, name.c_str());
+    // Find the corresponding ModBTerm in the new master module
+    dbModBTerm* new_mod_bterm = new_module_copy->findModBTerm(name.c_str());
+    assert(new_mod_bterm != nullptr);
+    dbModITerm* new_mod_iterm
+        = dbModITerm::create(new_mod_inst, name.c_str(), new_mod_bterm);
     if (new_mod_iterm && old_mod_net) {
       new_mod_iterm->connect(old_mod_net);
     }
@@ -678,7 +685,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   // 11. Deep copy contents of new_module to new_module_copy
   // - This will create internal nets and instances under new_module_copy
   // - But nets crossing the module boundary are not connected yet.
-  _dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
+  _dbModule::copy(  // NOLINT
+      new_module,
+      new_module_copy,
+      new_mod_inst,
+      mod_bt_map);
   if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
     for (dbInst* inst : new_module_copy->getInsts()) {
       logger->report("new_module_copy {} instance {} has the following iterms:",

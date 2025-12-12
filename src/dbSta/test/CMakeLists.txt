@@ -19,6 +19,7 @@ or_integration_tests(
     network_edit1
     power1
     read_liberty1
+    read_vcd
     read_verilog1
     read_verilog2
     read_verilog3

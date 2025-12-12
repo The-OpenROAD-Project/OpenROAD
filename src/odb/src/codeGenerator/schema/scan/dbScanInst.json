@@ -44,13 +44,13 @@
       "flags": ["private"]
     },
     {
-      "name": "_next_list_scan_inst",
+      "name": "next_list_scan_inst_",
       "type": "dbId<_dbScanInst>",
       "flags": ["private"],
       "schema":"db_schema_block_owns_scan_insts"
     },
     {
-      "name": "_prev_list_scan_inst",
+      "name": "prev_list_scan_inst_",
       "type": "dbId<_dbScanInst>",
       "flags": ["private"],
       "schema":"db_schema_block_owns_scan_insts"

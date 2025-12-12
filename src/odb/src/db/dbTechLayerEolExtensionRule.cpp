@@ -18,7 +18,7 @@ template class dbTable<_dbTechLayerEolExtensionRule>;
 bool _dbTechLayerEolExtensionRule::operator==(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
-  if (flags_.parallel_only_ != rhs.flags_.parallel_only_) {
+  if (flags_.parallel_only != rhs.flags_.parallel_only) {
     return false;
   }
   if (spacing_ != rhs.spacing_) {
@@ -108,14 +108,14 @@ void dbTechLayerEolExtensionRule::setParallelOnly(bool parallel_only)
 {
   _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
 
-  obj->flags_.parallel_only_ = parallel_only;
+  obj->flags_.parallel_only = parallel_only;
 }
 
 bool dbTechLayerEolExtensionRule::isParallelOnly() const
 {
   _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
 
-  return obj->flags_.parallel_only_;
+  return obj->flags_.parallel_only;
 }
 
 // User Code Begin dbTechLayerEolExtensionRulePublicMethods

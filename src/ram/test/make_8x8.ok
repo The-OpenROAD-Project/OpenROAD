@@ -60,9 +60,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO DRT-0036] mcon guide region query size = 0.
 [INFO DRT-0036] met1 guide region query size = 350.
 [INFO DRT-0036] via guide region query size = 0.
-[INFO DRT-0036] met2 guide region query size = 107.
+[INFO DRT-0036] met2 guide region query size = 102.
 [INFO DRT-0036] via2 guide region query size = 0.
-[INFO DRT-0036] met3 guide region query size = 48.
+[INFO DRT-0036] met3 guide region query size = 44.
 [INFO DRT-0036] via3 guide region query size = 0.
 [INFO DRT-0036] met4 guide region query size = 0.
 [INFO DRT-0036] via4 guide region query size = 0.

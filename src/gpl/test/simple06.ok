@@ -20,13 +20,13 @@
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                   953.876 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:        569.772 um^2
-[INFO GPL-0019] Utilization:                    59.732 %
-[INFO GPL-0020] Standard cells area:           569.772 um^2
+[INFO GPL-0018] Movable instances area:        619.735 um^2
+[INFO GPL-0019] Utilization:                    64.970 %
+[INFO GPL-0020] Standard cells area:           619.735 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000009 HPWL: 5668660
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 5048725
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5034377
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5036666
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5036282
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 5065828
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5052664
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5056873
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5056105
 No differences found.

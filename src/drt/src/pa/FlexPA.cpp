@@ -101,36 +101,105 @@ void FlexPA::init()
   initAllSkipInstTerm();
 }
 
-void FlexPA::addInst(frInst* inst)
+void FlexPA::addDirtyInst(frInst* inst)
 {
-  const bool new_unique = unique_insts_.addInst(inst);
-  auto unique_class = unique_insts_.getUniqueClass(inst);
-  if (new_unique) {
-    unique_insts_.initUniqueInstPinAccess(unique_class);
-    initSkipInstTerm(unique_class);
-    genInstAccessPoints(inst);
-    prepPatternInst(inst);
-  }
-  inst->setPinAccessIdx(unique_class->getPinAccessIdx());
+  dirty_insts_.insert(inst);
+}
 
-  insts_set_.insert(inst);
-  if (isSkipInst(inst)) {
-    return;
+void FlexPA::removeDirtyInst(frInst* inst)
+{
+  dirty_insts_.erase(inst);
+}
+
+void FlexPA::updateDirtyInsts()
+{
+  std::set<UniqueClass*> dirty_unique_classes;
+  frOrderedIdSet<frInst*>
+      pattern_insts;  // list of insts that need row pattern generation
+  for (const auto& inst : dirty_insts_) {
+    removeFromInstsSet(inst);
+    const auto& old_unique_class = unique_insts_.getUniqueClass(inst);
+    const auto& new_unique_class = unique_insts_.computeUniqueClass(inst);
+    if (old_unique_class == new_unique_class) {  // same unique class
+      if (updateSkipInstTerm(inst)) {            // a new connection added
+        dirty_unique_classes.insert(old_unique_class);
+      } else if (inst->getLatestPATransform()
+                 != inst->getTransform()) {  // cell has been moved
+        pattern_insts.insert(inst);
+      }
+    } else {  // cell changed unique class
+      if (old_unique_class != nullptr) {
+        unique_insts_.deleteInst(inst);
+      }
+      const bool is_new_unique = unique_insts_.addInst(inst);
+      if (is_new_unique || updateSkipInstTerm(inst)) {
+        dirty_unique_classes.insert(new_unique_class);
+      } else {
+        pattern_insts.insert(inst);
+      }
+    }
   }
-  std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
-  genInstRowPattern(inst_row);
+  for (auto& unique_class : dirty_unique_classes) {
+    if (!unique_class->isInitialized()) {
+      unique_insts_.initUniqueInstPinAccess(unique_class);
+    }
+    unique_class->getMaster()->setHasPinAccessUpdate(
+        unique_class->getPinAccessIdx());
+    for (auto inst : unique_class->getInsts()) {
+      pattern_insts.insert(inst);
+    }
+  }
+  std::vector<UniqueClass*> dirty_unique_classes_vec(
+      dirty_unique_classes.begin(), dirty_unique_classes.end());
+  for (auto& unique_class : dirty_unique_classes_vec) {
+    unique_inst_patterns_[unique_class]
+        = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
+  }
+#pragma omp parallel for schedule(dynamic)
+  for (auto& unique_class : dirty_unique_classes_vec) {
+    initSkipInstTerm(unique_class);
+    auto candidate_inst = unique_class->getFirstInst();
+    genInstAccessPoints(candidate_inst);
+    if (isStdCell(candidate_inst)) {
+      prepPatternInst(candidate_inst);
+    }
+    revertAccessPoints(candidate_inst);
+  }
+  for (auto& inst : dirty_insts_) {
+    addToInstsSet(inst);
+  }
+  for (auto& unique_class : dirty_unique_classes) {
+    // In case of unique class that was previously skipped
+    for (auto& inst : unique_class->getInsts()) {
+      addToInstsSet(inst);
+    }
+  }
+  frOrderedIdSet<frInst*> processed_insts;
+  std::vector<std::vector<frInst*>> inst_rows;
+  for (auto& inst : pattern_insts) {
+    if (processed_insts.find(inst) != processed_insts.end() || isSkipInst(inst)
+        || !isStdCell(inst)) {
+      continue;
+    }
+    std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
+    processed_insts.insert(inst_row.begin(), inst_row.end());
+    inst_rows.push_back(inst_row);
+  }
+#pragma omp parallel for schedule(dynamic)
+  for (auto& inst_row : inst_rows) {
+    genInstRowPattern(inst_row);
+  }
+  dirty_insts_.clear();
 }
 
 void FlexPA::deleteInst(frInst* inst)
 {
-  auto old_unique_class = unique_insts_.getUniqueClass(inst);
-  unique_insts_.deleteInst(inst);
-  // whole class has to be deleted
-  if (old_unique_class->getInsts().empty()) {
-    unique_inst_patterns_.erase(old_unique_class);
-    unique_insts_.deleteUniqueClass(old_unique_class);
+  removeDirtyInst(inst);
+  auto unique_class = unique_insts_.getUniqueClass(inst);
+  if (unique_class == nullptr) {
+    return;
   }
-  insts_set_.erase(inst);
+  unique_insts_.deleteInst(inst);
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
@@ -208,8 +277,12 @@ void FlexPA::prepPattern()
 
   const auto& unique = unique_insts_.getUniqueClasses();
 
-  // revert access points to origin
+  // reserve space for unique_inst_patterns_
   unique_inst_patterns_.reserve(unique.size());
+  for (auto& unique_class : unique) {
+    unique_inst_patterns_[unique_class.get()]
+        = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
+  }
 
   int cnt = 0;
 
@@ -308,13 +381,13 @@ bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
 
 bool FlexPA::isSkipInstTerm(frInstTerm* in)
 {
-  auto inst_class = unique_insts_.getUniqueClass(in->getInst());
-  if (inst_class == nullptr) {
+  auto unique_class = unique_insts_.getUniqueClass(in->getInst());
+  if (unique_class == nullptr) {
     return isSkipInstTermLocal(in);
   }
 
   // This should be already computed in initSkipInstTerm()
-  return inst_class->isSkipTerm(in->getTerm());
+  return unique_class->isSkipTerm(in->getTerm());
 }
 
 bool FlexPA::isSkipInst(frInst* inst)

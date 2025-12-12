@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "odb/array1.h"
+#include "rcx/array1.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -26,10 +26,8 @@ class Ath__parser
   int getInt(int ii);
   int getInt(int n, int start);
   double getDouble(int ii);
-  void getDoubleArray(odb::Ath__array1D<double>* A,
-                      int start,
-                      double mult = 1.0);
-  odb::Ath__array1D<double>* readDoubleArray(const char* keyword, int start);
+  void getDoubleArray(Ath__array1D<double>* A, int start, double mult = 1.0);
+  Ath__array1D<double>* readDoubleArray(const char* keyword, int start);
   void printWords(FILE* fp);
 
   int getWordCnt();
@@ -56,17 +54,18 @@ class Ath__parser
   char* _tmpLine;
   char* _wordSeparators;
   char** _wordArray;
-  char _commentChar;
-  int _maxWordCnt;
 
   int _lineNum;
   int _currentWordCnt;
-  int _lineSize;
   FILE* _inFP;
   char* _inputFile;
 
-  int _progressLineChunk;
   utl::Logger* _logger;
+
+  static constexpr int _progressLineChunk = 1000000;
+  static constexpr char _commentChar = '#';
+  static constexpr int _maxWordCnt = 100;
+  static constexpr int _lineSize = 10000;
 };
 
 }  // namespace rcx

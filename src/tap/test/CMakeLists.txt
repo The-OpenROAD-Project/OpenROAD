@@ -29,6 +29,7 @@ or_integration_tests(
     jpeg_gf180
     multiple_calls
     no_endcap
+    overlap_cover
     region1
     symmetry
 )

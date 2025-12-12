@@ -9,6 +9,7 @@
 #include "dbChipRegionInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,12 +19,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbChipRegionInstItr::reversible()
+bool dbChipRegionInstItr::reversible() const
 {
   return true;
 }
 
-bool dbChipRegionInstItr::orderReversed()
+bool dbChipRegionInstItr::orderReversed() const
 {
   return true;
 }
@@ -36,7 +37,7 @@ void dbChipRegionInstItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbChipRegionInst* regioninst = _chip_region_inst_tbl->getPtr(id);
+    _dbChipRegionInst* regioninst = chip_region_inst_tbl_->getPtr(id);
     uint n = regioninst->chip_region_inst_next_;
     regioninst->chip_region_inst_next_ = list;
     list = id;
@@ -46,12 +47,12 @@ void dbChipRegionInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipRegionInstItr::sequential()
+uint dbChipRegionInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipRegionInstItr::size(dbObject* parent)
+uint dbChipRegionInstItr::size(dbObject* parent) const
 {
   uint id;
   uint cnt = 0;
@@ -65,7 +66,7 @@ uint dbChipRegionInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbChipRegionInstItr::begin(dbObject* parent)
+uint dbChipRegionInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChipInst* chipinst = (_dbChipInst*) parent;
@@ -73,22 +74,22 @@ uint dbChipRegionInstItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbChipRegionInstItr::end(dbObject* /* unused: parent */)
+uint dbChipRegionInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipRegionInstItr::next(uint id, ...)
+uint dbChipRegionInstItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbChipRegionInst* regioninst = _chip_region_inst_tbl->getPtr(id);
+  _dbChipRegionInst* regioninst = chip_region_inst_tbl_->getPtr(id);
   return regioninst->chip_region_inst_next_;
   // User Code End next
 }
 
 dbObject* dbChipRegionInstItr::getObject(uint id, ...)
 {
-  return _chip_region_inst_tbl->getPtr(id);
+  return chip_region_inst_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp

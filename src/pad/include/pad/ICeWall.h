@@ -31,7 +31,8 @@ enum class PlacementStrategy
   DEFAULT,
   BUMP_ALIGNED,
   UNIFORM,
-  LINEAR
+  LINEAR,
+  PLACER
 };
 
 class ICeWall

@@ -117,14 +117,8 @@ struct PhysicalHierarchy
 
   int max_level{0};
   int large_net_threshold{0};  // used to ignore global nets
-  int min_net_count_for_connection{0};
   float cluster_size_ratio{0.0f};
   float cluster_size_tolerance{0.0f};
-
-  // Virtual connection weight between each macro cluster
-  // and its corresponding standard-cell cluster to bias
-  // the macro placer to place them together.
-  const float virtual_weight = 10.0f;
 
   const int io_bundles_per_edge = 5;
 };
@@ -170,6 +164,12 @@ class ClusteringEngine
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
 
+  struct Net
+  {
+    int driver_id{-1};
+    std::vector<int> loads_ids;
+  };
+
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
@@ -212,6 +212,15 @@ class ClusteringEngine
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
+  bool sameConnectionSignature(Cluster* a, Cluster* b) const;
+  bool strongConnection(Cluster* a,
+                        Cluster* b,
+                        const float* connection_weight = nullptr) const;
+  Cluster* findSingleWellFormedConnectedCluster(
+      Cluster* target_cluster,
+      const std::vector<int>& small_clusters_id_list) const;
+  std::vector<int> findNeighbors(Cluster* target_cluster,
+                                 Cluster* ignored_cluster) const;
   bool attemptMerge(Cluster* receiver, Cluster* incomer);
   void fetchMixedLeaves(Cluster* parent,
                         std::vector<std::vector<Cluster*>>& mixed_leaves);
@@ -241,6 +250,8 @@ class ClusteringEngine
   void clearConnections();
   void buildNetListConnections();
   void buildDataFlowConnections();
+  Net buildNet(odb::dbNet* db_net) const;
+  void connectClusters(const Net& net);
   void connect(Cluster* a, Cluster* b, float connection_weight) const;
 
   // Methods for data flow
@@ -303,6 +314,8 @@ class ClusteringEngine
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
   const int max_num_of_hops_ = 5;
+
+  const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;

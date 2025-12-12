@@ -25,22 +25,22 @@ namespace odb::gds {
 
 using utl::ODB;
 
-GDSWriter::GDSWriter(utl::Logger* logger) : _logger(logger)
+GDSWriter::GDSWriter(utl::Logger* logger) : logger_(logger)
 {
 }
 
 void GDSWriter::write_gds(dbGDSLib* lib, const std::string& filename)
 {
-  _lib = lib;
-  _file.open(filename, std::ios::binary);
-  if (!_file) {
-    _logger->error(ODB, 447, "Could not open file {}", filename);
+  lib_ = lib;
+  file_.open(filename, std::ios::binary);
+  if (!file_) {
+    logger_->error(ODB, 447, "Could not open file {}", filename);
   }
   writeLib();
-  if (_file.is_open()) {
-    _file.close();
+  if (file_.is_open()) {
+    file_.close();
   }
-  _lib = nullptr;
+  lib_ = nullptr;
 }
 
 void GDSWriter::calcRecSize(record_t& r)
@@ -64,7 +64,7 @@ void GDSWriter::calcRecSize(record_t& r)
       break;
     case DataType::kReal4:
     case DataType::kInvalid:
-      _logger->error(ODB, 448, "Invalid data type");
+      logger_->error(ODB, 448, "Invalid data type");
       break;
   }
 }
@@ -72,24 +72,24 @@ void GDSWriter::calcRecSize(record_t& r)
 void GDSWriter::writeReal8(double real)
 {
   const uint64_t value = htobe64(double_to_real8(real));
-  _file.write(reinterpret_cast<const char*>(&value), sizeof(uint64_t));
+  file_.write(reinterpret_cast<const char*>(&value), sizeof(uint64_t));
 }
 
 void GDSWriter::writeInt32(int32_t i)
 {
   const int32_t value = htobe32(i);
-  _file.write(reinterpret_cast<const char*>(&value), sizeof(int32_t));
+  file_.write(reinterpret_cast<const char*>(&value), sizeof(int32_t));
 }
 
 void GDSWriter::writeInt16(int16_t i)
 {
   const int16_t value = htobe16(i);
-  _file.write(reinterpret_cast<const char*>(&value), sizeof(int16_t));
+  file_.write(reinterpret_cast<const char*>(&value), sizeof(int16_t));
 }
 
 void GDSWriter::writeInt8(int8_t i)
 {
-  _file.write(reinterpret_cast<const char*>(&i), sizeof(int8_t));
+  file_.write(reinterpret_cast<const char*>(&i), sizeof(int8_t));
 }
 
 void GDSWriter::writeRecord(record_t& r)
@@ -120,7 +120,7 @@ void GDSWriter::writeRecord(record_t& r)
     }
     case DataType::kAsciiString:
     case DataType::kBitArray: {
-      _file.write(r.data8.c_str(), r.data8.size());
+      file_.write(r.data8.c_str(), r.data8.size());
       break;
     }
     case DataType::kNoData: {
@@ -128,7 +128,7 @@ void GDSWriter::writeRecord(record_t& r)
     }
     case DataType::kReal4:
     case DataType::kInvalid:
-      _logger->error(ODB, 449, "Invalid data type");
+      logger_->error(ODB, 449, "Invalid data type");
       break;
   }
 }
@@ -164,18 +164,18 @@ void GDSWriter::writeLib()
   record_t r2;
   r2.type = RecordType::LIBNAME;
   r2.dataType = DataType::kAsciiString;
-  r2.data8 = _lib->getLibname();
+  r2.data8 = lib_->getLibname();
   writeRecord(r2);
 
   record_t r3;
 
   r3.type = RecordType::UNITS;
   r3.dataType = DataType::kReal8;
-  auto units = _lib->getUnits();
+  auto units = lib_->getUnits();
   r3.data64 = {units.first, units.second};
   writeRecord(r3);
 
-  auto structures = _lib->getGDSStructures();
+  auto structures = lib_->getGDSStructures();
   for (auto s : structures) {
     writeStruct(s);
   }
@@ -469,23 +469,23 @@ void GDSWriter::writeSTrans(const dbGDSSTrans& strans)
   r.type = RecordType::STRANS;
   r.dataType = DataType::kBitArray;
 
-  char data0 = strans._flipX << 7;
+  char data0 = strans.flipX_ << 7;
   r.data8 = {data0, 0};
   writeRecord(r);
 
-  if (strans._mag != 1.0) {
+  if (strans.mag_ != 1.0) {
     record_t r2;
     r2.type = RecordType::MAG;
     r2.dataType = DataType::kReal8;
-    r2.data64 = {strans._mag};
+    r2.data64 = {strans.mag_};
     writeRecord(r2);
   }
 
-  if (strans._angle != 0.0) {
+  if (strans.angle_ != 0.0) {
     record_t r3;
     r3.type = RecordType::ANGLE;
     r3.dataType = DataType::kReal8;
-    r3.data64 = {strans._angle};
+    r3.data64 = {strans.angle_};
     writeRecord(r3);
   }
 }
@@ -496,8 +496,8 @@ void GDSWriter::writeTextPres(const dbGDSTextPres& pres)
   r.type = RecordType::PRESENTATION;
   r.dataType = DataType::kBitArray;
   r.data8 = {0, 0};
-  r.data8[1] |= pres._vPres << 2;
-  r.data8[1] |= pres._hPres;
+  r.data8[1] |= pres.v_pres_ << 2;
+  r.data8[1] |= pres.h_pres_;
   writeRecord(r);
 }
 

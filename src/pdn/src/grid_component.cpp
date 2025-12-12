@@ -62,6 +62,23 @@ std::string GridComponent::typeToString(Type type)
   return "Unknown";
 }
 
+bool GridComponent::make(Shape::ShapeTreeMap& shapes,
+                         Shape::ObstructionTreeMap& obstructions)
+{
+  const int shape_count = getShapeCount();
+
+  // make initial shapes
+  makeShapes(shapes);
+  // cut shapes to avoid obstructions
+  cutShapes(obstructions);
+  // add shapes and obstructions to they are accounted for in future
+  // components
+  getObstructions(obstructions);
+  getShapes(shapes);
+
+  return shape_count != getShapeCount();
+}
+
 ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 {
   debugPrint(getLogger(),
@@ -180,6 +197,12 @@ ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 
 void GridComponent::removeShape(Shape* shape)
 {
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Shape",
+             3,
+             "Removing shape {}.",
+             shape->getReportText());
   for (const auto& via : shape->getVias()) {
     via->removeShape(shape);
   }
@@ -337,7 +360,7 @@ std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
       all_shapes.begin(), all_shapes.end(), [](const auto& l, const auto& r) {
         auto* l_layer = l->getLayer();
         int l_level = l_layer->getNumber();
-        auto* r_layer = l->getLayer();
+        auto* r_layer = r->getLayer();
         int r_level = r_layer->getNumber();
 
         return std::tie(l_level, l->getRect())

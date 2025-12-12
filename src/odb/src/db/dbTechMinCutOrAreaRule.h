@@ -19,26 +19,20 @@ class _dbTechMinCutRule : public _dbObject
 {
  public:
   // PERSISTENT-MEMBERS
-  enum _RuleType
+  enum RuleType
   {
-    NONE,
-    MINIMUM_CUT,
-    MINIMUM_CUT_ABOVE,
-    MINIMUM_CUT_BELOW
+    kNone,
+    kMinimumCut,
+    kMinimumCutAbove,
+    kMinimumCutBelow
   };
 
-  struct _Flword
+  struct Flags
   {
-    _RuleType _rule : 3;
-    uint _cuts_length : 1;
-    uint _spare_bits : 28;
+    RuleType rule : 3;
+    uint cuts_length : 1;
+    uint spare_bits : 28;
   };
-  _Flword _flags;
-  uint _num_cuts;
-  uint _width;
-  int _cut_distance;
-  uint _length;
-  uint _distance;
 
   _dbTechMinCutRule(_dbDatabase* db, const _dbTechMinCutRule& r);
   _dbTechMinCutRule(_dbDatabase* db);
@@ -50,29 +44,36 @@ class _dbTechMinCutRule : public _dbObject
     return !operator==(rhs);
   }
   void collectMemInfo(MemInfo& info);
+
+  Flags flags_;
+  uint num_cuts_;
+  uint width_;
+  int cut_distance_;
+  uint length_;
+  uint distance_;
 };
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
                                             const _dbTechMinCutRule& r)
-    : _flags(r._flags),
-      _num_cuts(r._num_cuts),
-      _width(r._width),
-      _cut_distance(r._cut_distance),
-      _length(r._length),
-      _distance(r._distance)
+    : flags_(r.flags_),
+      num_cuts_(r.num_cuts_),
+      width_(r.width_),
+      cut_distance_(r.cut_distance_),
+      length_(r.length_),
+      distance_(r.distance_)
 {
 }
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
 {
-  _flags._rule = _dbTechMinCutRule::NONE;
-  _flags._cuts_length = 0;
-  _flags._spare_bits = 0;
-  _num_cuts = 0;
-  _width = 0;
-  _cut_distance = -1;
-  _length = 0;
-  _distance = 0;
+  flags_.rule = _dbTechMinCutRule::kNone;
+  flags_.cuts_length = 0;
+  flags_.spare_bits = 0;
+  num_cuts_ = 0;
+  width_ = 0;
+  cut_distance_ = -1;
+  length_ = 0;
+  distance_ = 0;
 }
 
 inline _dbTechMinCutRule::~_dbTechMinCutRule()
@@ -87,12 +88,13 @@ class _dbTechMinEncRule : public _dbObject
  public:
   // PERSISTENT-MEMBERS
 
-  struct _Flword
+  struct Flags
   {
     uint _has_width : 1;
     uint _spare_bits : 31;
-  } _flags;
+  };
 
+  Flags flags_;
   uint _area;
   uint _width;
 
@@ -109,14 +111,14 @@ class _dbTechMinEncRule : public _dbObject
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */,
                                             const _dbTechMinEncRule& r)
-    : _flags(r._flags), _area(r._area), _width(r._width)
+    : flags_(r.flags_), _area(r._area), _width(r._width)
 {
 }
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */)
 {
-  _flags._has_width = 0;
-  _flags._spare_bits = 0;
+  flags_._has_width = 0;
+  flags_._spare_bits = 0;
   _area = 0;
   _width = 0;
 }

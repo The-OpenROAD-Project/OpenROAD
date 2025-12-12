@@ -10,15 +10,16 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/dbObject.h"
+#include "odb/odb.h"
 
 namespace odb {
 
-bool dbBlockItr::reversible()
+bool dbBlockItr::reversible() const
 {
   return true;
 }
 
-bool dbBlockItr::orderReversed()
+bool dbBlockItr::orderReversed() const
 {
   return false;
 }
@@ -26,32 +27,32 @@ bool dbBlockItr::orderReversed()
 void dbBlockItr::reverse(dbObject* parent)
 {
   _dbBlock* block = (_dbBlock*) parent;
-  std::reverse(block->_children.begin(), block->_children.end());
+  std::reverse(block->children_.begin(), block->children_.end());
 }
 
-uint dbBlockItr::sequential()
+uint dbBlockItr::sequential() const
 {
   return 0;
 }
 
-uint dbBlockItr::size(dbObject* parent)
+uint dbBlockItr::size(dbObject* parent) const
 {
   _dbBlock* block = (_dbBlock*) parent;
-  return block->_children.size();
+  return block->children_.size();
 }
 
-uint dbBlockItr::begin(dbObject*)
+uint dbBlockItr::begin(dbObject*) const
 {
   return 0;
 }
 
-uint dbBlockItr::end(dbObject* parent)
+uint dbBlockItr::end(dbObject* parent) const
 {
   _dbBlock* block = (_dbBlock*) parent;
-  return block->_children.size();
+  return block->children_.size();
 }
 
-uint dbBlockItr::next(uint id, ...)
+uint dbBlockItr::next(uint id, ...) const
 {
   return ++id;
 }
@@ -67,8 +68,8 @@ dbObject* dbBlockItr::getObject(uint id, ...)
   va_start(ap, id);
   _dbBlock* parent = (_dbBlock*) va_arg(ap, dbObject*);
   va_end(ap);
-  uint cid = parent->_children[id];
-  return _block_tbl->getPtr(cid);
+  uint cid = parent->children_[id];
+  return block_tbl_->getPtr(cid);
 }
 
 }  // namespace odb

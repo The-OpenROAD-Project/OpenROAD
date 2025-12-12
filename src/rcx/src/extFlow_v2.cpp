@@ -9,20 +9,20 @@
 #include <vector>
 
 #include "gseq.h"
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
-#include "odb/util.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
+#include "rcx/extSegment.h"
 #include "rcx/grids.h"
+#include "rcx/util.h"
 #include "utl/Logger.h"
 
-using odb::Ath__array1D;
 using odb::dbCapNode;
 using odb::dbInst;
 using odb::dbInstShapeItr;
@@ -198,7 +198,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   // TODO mrc->_progressTracker =
   // std::make_unique<ExtProgressTracker>(totWireCnt);
 
-  mrc->_seqmentPool = new odb::AthPool<extSegment>(1024);
+  mrc->_seqmentPool = new AthPool<extSegment>(1024);
 
   uint totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
@@ -301,7 +301,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
               tables.maxWidth,
               1000);
 
-  mrc->_seqmentPool = new odb::AthPool<extSegment>(1024);
+  mrc->_seqmentPool = new AthPool<extSegment>(1024);
 
   uint totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
@@ -384,7 +384,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
   return 0;
 }
 
-void extMain::setExtControl_v2(odb::AthPool<SEQ>* seqPool)
+void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
 {
   OverlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;

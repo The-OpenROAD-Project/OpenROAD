@@ -33,6 +33,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
+#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -41,39 +42,39 @@ template class dbTable<_dbTech>;
 
 bool _dbTech::operator==(const _dbTech& rhs) const
 {
-  if (_flags._namecase != rhs._flags._namecase) {
+  if (flags_.namecase != rhs.flags_.namecase) {
     return false;
   }
 
-  if (_flags._haswireext != rhs._flags._haswireext) {
+  if (flags_.has_wire_ext != rhs.flags_.has_wire_ext) {
     return false;
   }
 
-  if (_flags._nowireext != rhs._flags._nowireext) {
+  if (flags_.no_wire_ext != rhs.flags_.no_wire_ext) {
     return false;
   }
 
-  if (_flags._hasclmeas != rhs._flags._hasclmeas) {
+  if (flags_.has_clearance_measure != rhs.flags_.has_clearance_measure) {
     return false;
   }
 
-  if (_flags._clmeas != rhs._flags._clmeas) {
+  if (flags_.clearance_measure != rhs.flags_.clearance_measure) {
     return false;
   }
 
-  if (_flags._hasminspobs != rhs._flags._hasminspobs) {
+  if (flags_.has_use_min_spacing_obs != rhs.flags_.has_use_min_spacing_obs) {
     return false;
   }
 
-  if (_flags._minspobs != rhs._flags._minspobs) {
+  if (flags_.use_min_spacing_obs != rhs.flags_.use_min_spacing_obs) {
     return false;
   }
 
-  if (_flags._hasminsppin != rhs._flags._hasminsppin) {
+  if (flags_.has_use_min_spacing_pin != rhs.flags_.has_use_min_spacing_pin) {
     return false;
   }
 
-  if (_flags._minsppin != rhs._flags._minsppin) {
+  if (flags_.use_min_spacing_pin != rhs.flags_.use_min_spacing_pin) {
     return false;
   }
 
@@ -81,95 +82,95 @@ bool _dbTech::operator==(const _dbTech& rhs) const
     return false;
   }
 
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
 
-  if (_via_cnt != rhs._via_cnt) {
+  if (via_cnt_ != rhs.via_cnt_) {
     return false;
   }
 
-  if (_layer_cnt != rhs._layer_cnt) {
+  if (layer_cnt_ != rhs.layer_cnt_) {
     return false;
   }
 
-  if (_rlayer_cnt != rhs._rlayer_cnt) {
+  if (rlayer_cnt_ != rhs.rlayer_cnt_) {
     return false;
   }
 
-  if (_lef_units != rhs._lef_units) {
+  if (lef_units_ != rhs.lef_units_) {
     return false;
   }
 
-  if (_mfgrid != rhs._mfgrid) {
+  if (manufacturing_grid_ != rhs.manufacturing_grid_) {
     return false;
   }
 
-  if (_bottom != rhs._bottom) {
+  if (bottom_ != rhs.bottom_) {
     return false;
   }
 
-  if (_top != rhs._top) {
+  if (top_ != rhs.top_) {
     return false;
   }
 
-  if (_non_default_rules != rhs._non_default_rules) {
+  if (non_default_rules_ != rhs.non_default_rules_) {
     return false;
   }
 
-  if (_samenet_rules != rhs._samenet_rules) {
+  if (samenet_rules_ != rhs.samenet_rules_) {
     return false;
   }
 
-  if (_samenet_matrix != rhs._samenet_matrix) {
+  if (samenet_matrix_ != rhs.samenet_matrix_) {
     return false;
   }
 
-  if (*_layer_tbl != *rhs._layer_tbl) {
+  if (*layer_tbl_ != *rhs.layer_tbl_) {
     return false;
   }
 
-  if (*_via_tbl != *rhs._via_tbl) {
+  if (*via_tbl_ != *rhs.via_tbl_) {
     return false;
   }
 
-  if (*_non_default_rule_tbl != *rhs._non_default_rule_tbl) {
+  if (*non_default_rule_tbl_ != *rhs.non_default_rule_tbl_) {
     return false;
   }
 
-  if (*_layer_rule_tbl != *rhs._layer_rule_tbl) {
+  if (*layer_rule_tbl_ != *rhs.layer_rule_tbl_) {
     return false;
   }
 
-  if (*_box_tbl != *rhs._box_tbl) {
+  if (*box_tbl_ != *rhs.box_tbl_) {
     return false;
   }
 
-  if (*_samenet_rule_tbl != *rhs._samenet_rule_tbl) {
+  if (*samenet_rule_tbl_ != *rhs.samenet_rule_tbl_) {
     return false;
   }
 
-  if (*_antenna_rule_tbl != *rhs._antenna_rule_tbl) {
+  if (*antenna_rule_tbl_ != *rhs.antenna_rule_tbl_) {
     return false;
   }
 
-  if (*_via_rule_tbl != *rhs._via_rule_tbl) {
+  if (*via_rule_tbl_ != *rhs.via_rule_tbl_) {
     return false;
   }
 
-  if (*_via_layer_rule_tbl != *rhs._via_layer_rule_tbl) {
+  if (*via_layer_rule_tbl_ != *rhs.via_layer_rule_tbl_) {
     return false;
   }
 
-  if (*_via_generate_rule_tbl != *rhs._via_generate_rule_tbl) {
+  if (*via_generate_rule_tbl_ != *rhs.via_generate_rule_tbl_) {
     return false;
   }
 
-  if (*_prop_tbl != *rhs._prop_tbl) {
+  if (*prop_tbl_ != *rhs.prop_tbl_) {
     return false;
   }
 
-  if (*_metal_width_via_map_tbl != *rhs._metal_width_via_map_tbl) {
+  if (*metal_width_via_map_tbl_ != *rhs.metal_width_via_map_tbl_) {
     return false;
   }
 
@@ -177,11 +178,11 @@ bool _dbTech::operator==(const _dbTech& rhs) const
     return false;
   }
 
-  if (*_name_cache != *rhs._name_cache) {
+  if (*name_cache_ != *rhs.name_cache_) {
     return false;
   }
 
-  if (_via_hash != rhs._via_hash) {
+  if (via_hash_ != rhs.via_hash_) {
     return false;
   }
 
@@ -195,140 +196,140 @@ bool _dbTech::operator==(const _dbTech& rhs) const
 ////////////////////////////////////////////////////////////////////
 _dbTech::_dbTech(_dbDatabase* db)
 {
-  _via_cnt = 0;
-  _layer_cnt = 0;
-  _rlayer_cnt = 0;
-  _lef_units = 0;
-  _mfgrid = 0;
+  via_cnt_ = 0;
+  layer_cnt_ = 0;
+  rlayer_cnt_ = 0;
+  lef_units_ = 0;
+  manufacturing_grid_ = 0;
 
-  _flags._namecase = dbOnOffType::ON;
-  _flags._haswireext = dbOnOffType::OFF;
-  _flags._nowireext = dbOnOffType::OFF;
-  _flags._hasclmeas = dbOnOffType::OFF;
-  _flags._clmeas = dbClMeasureType::EUCLIDEAN;
-  _flags._hasminspobs = dbOnOffType::OFF;
-  _flags._minspobs = dbOnOffType::ON;
-  _flags._hasminsppin = dbOnOffType::OFF;
-  _flags._minsppin = dbOnOffType::OFF;
-  _flags._spare_bits = 0;
+  flags_.namecase = dbOnOffType::ON;
+  flags_.has_wire_ext = dbOnOffType::OFF;
+  flags_.no_wire_ext = dbOnOffType::OFF;
+  flags_.has_clearance_measure = dbOnOffType::OFF;
+  flags_.clearance_measure = dbClMeasureType::EUCLIDEAN;
+  flags_.has_use_min_spacing_obs = dbOnOffType::OFF;
+  flags_.use_min_spacing_obs = dbOnOffType::ON;
+  flags_.has_use_min_spacing_pin = dbOnOffType::OFF;
+  flags_.use_min_spacing_pin = dbOnOffType::OFF;
+  flags_.spare_bits = 0;
   _version = 5.4;
 
-  _layer_tbl = new dbTable<_dbTechLayer>(
+  layer_tbl_ = new dbTable<_dbTechLayer>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerObj);
 
-  _via_tbl = new dbTable<_dbTechVia>(
+  via_tbl_ = new dbTable<_dbTechVia>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechViaObj);
 
-  _non_default_rule_tbl = new dbTable<_dbTechNonDefaultRule, 4>(
+  non_default_rule_tbl_ = new dbTable<_dbTechNonDefaultRule, 4>(
       db,
       this,
       (GetObjTbl_t) &_dbTech::getObjectTable,
       dbTechNonDefaultRuleObj);
 
-  _layer_rule_tbl = new dbTable<_dbTechLayerRule, 4>(
+  layer_rule_tbl_ = new dbTable<_dbTechLayerRule, 4>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerRuleObj);
 
-  _box_tbl = new dbTable<_dbBox>(
+  box_tbl_ = new dbTable<_dbBox>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbBoxObj);
 
-  _samenet_rule_tbl = new dbTable<_dbTechSameNetRule, 16>(
+  samenet_rule_tbl_ = new dbTable<_dbTechSameNetRule, 16>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechSameNetRuleObj);
 
-  _antenna_rule_tbl = new dbTable<_dbTechLayerAntennaRule, 16>(
+  antenna_rule_tbl_ = new dbTable<_dbTechLayerAntennaRule, 16>(
       db,
       this,
       (GetObjTbl_t) &_dbTech::getObjectTable,
       dbTechLayerAntennaRuleObj);
 
-  _via_rule_tbl = new dbTable<_dbTechViaRule, 16>(
+  via_rule_tbl_ = new dbTable<_dbTechViaRule, 16>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechViaRuleObj);
 
-  _via_layer_rule_tbl = new dbTable<_dbTechViaLayerRule, 16>(
+  via_layer_rule_tbl_ = new dbTable<_dbTechViaLayerRule, 16>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechViaLayerRuleObj);
 
-  _via_generate_rule_tbl = new dbTable<_dbTechViaGenerateRule, 16>(
+  via_generate_rule_tbl_ = new dbTable<_dbTechViaGenerateRule, 16>(
       db,
       this,
       (GetObjTbl_t) &_dbTech::getObjectTable,
       dbTechViaGenerateRuleObj);
 
-  _prop_tbl = new dbTable<_dbProperty>(
+  prop_tbl_ = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbPropertyObj);
 
-  _metal_width_via_map_tbl = new dbTable<_dbMetalWidthViaMap>(
+  metal_width_via_map_tbl_ = new dbTable<_dbMetalWidthViaMap>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbMetalWidthViaMapObj);
 
   cell_edge_spacing_tbl_ = new dbTable<_dbCellEdgeSpacing>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbCellEdgeSpacingObj);
 
-  _via_hash.setTable(_via_tbl);
+  via_hash_.setTable(via_tbl_);
 
-  _name_cache
+  name_cache_
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbTech::getObjectTable);
 
-  _layer_itr = new dbTechLayerItr(_layer_tbl);
+  layer_itr_ = new dbTechLayerItr(layer_tbl_);
 
-  _box_itr = new dbBoxItr(_box_tbl, (dbTable<_dbPolygon>*) nullptr, false);
+  box_itr_ = new dbBoxItr(box_tbl_, (dbTable<_dbPolygon>*) nullptr, false);
 
-  _prop_itr = new dbPropertyItr(_prop_tbl);
+  prop_itr_ = new dbPropertyItr(prop_tbl_);
 }
 
 _dbTech::~_dbTech()
 {
-  delete _layer_tbl;
-  delete _via_tbl;
-  delete _non_default_rule_tbl;
-  delete _layer_rule_tbl;
-  delete _box_tbl;
-  delete _samenet_rule_tbl;
-  delete _antenna_rule_tbl;
-  delete _via_rule_tbl;
-  delete _via_layer_rule_tbl;
-  delete _via_generate_rule_tbl;
-  delete _prop_tbl;
-  delete _metal_width_via_map_tbl;
+  delete layer_tbl_;
+  delete via_tbl_;
+  delete non_default_rule_tbl_;
+  delete layer_rule_tbl_;
+  delete box_tbl_;
+  delete samenet_rule_tbl_;
+  delete antenna_rule_tbl_;
+  delete via_rule_tbl_;
+  delete via_layer_rule_tbl_;
+  delete via_generate_rule_tbl_;
+  delete prop_tbl_;
+  delete metal_width_via_map_tbl_;
   delete cell_edge_spacing_tbl_;
-  delete _name_cache;
-  delete _layer_itr;
-  delete _box_itr;
-  delete _prop_itr;
+  delete name_cache_;
+  delete layer_itr_;
+  delete box_itr_;
+  delete prop_itr_;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 {
   dbOStreamScope scope(stream, "dbTech");
-  stream << tech._name;
-  stream << tech._via_cnt;
-  stream << tech._layer_cnt;
-  stream << tech._rlayer_cnt;
-  stream << tech._lef_units;
-  stream << tech._mfgrid;
+  stream << tech.name_;
+  stream << tech.via_cnt_;
+  stream << tech.layer_cnt_;
+  stream << tech.rlayer_cnt_;
+  stream << tech.lef_units_;
+  stream << tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech._flags;
+  uint* bit_field = (uint*) &tech.flags_;
   stream << *bit_field;
 
-  stream << tech._getLefVersion();
-  stream << tech._bottom;
-  stream << tech._top;
-  stream << tech._non_default_rules;
-  stream << tech._samenet_rules;
-  stream << tech._samenet_matrix;
-  stream << NamedTable("layer_tbl", tech._layer_tbl);
-  stream << NamedTable("via_tbl", tech._via_tbl);
-  stream << NamedTable("non_default_rule_tbl", tech._non_default_rule_tbl);
-  stream << NamedTable("layer_rule_tbl", tech._layer_rule_tbl);
-  stream << NamedTable("box_tbl", tech._box_tbl);
-  stream << NamedTable("samenet_rule_tbl", tech._samenet_rule_tbl);
-  stream << NamedTable("antenna_rule_tbl", tech._antenna_rule_tbl);
-  stream << NamedTable("via_rule_tbl", tech._via_rule_tbl);
-  stream << NamedTable("via_layer_rule_tbl", tech._via_layer_rule_tbl);
-  stream << NamedTable("via_generate_rule_tbl", tech._via_generate_rule_tbl);
-  stream << NamedTable("prop_tbl", tech._prop_tbl);
+  stream << tech.getLefVersion();
+  stream << tech.bottom_;
+  stream << tech.top_;
+  stream << tech.non_default_rules_;
+  stream << tech.samenet_rules_;
+  stream << tech.samenet_matrix_;
+  stream << NamedTable("layer_tbl", tech.layer_tbl_);
+  stream << NamedTable("via_tbl", tech.via_tbl_);
+  stream << NamedTable("non_default_rule_tbl", tech.non_default_rule_tbl_);
+  stream << NamedTable("layer_rule_tbl", tech.layer_rule_tbl_);
+  stream << NamedTable("box_tbl", tech.box_tbl_);
+  stream << NamedTable("samenet_rule_tbl", tech.samenet_rule_tbl_);
+  stream << NamedTable("antenna_rule_tbl", tech.antenna_rule_tbl_);
+  stream << NamedTable("via_rule_tbl", tech.via_rule_tbl_);
+  stream << NamedTable("via_layer_rule_tbl", tech.via_layer_rule_tbl_);
+  stream << NamedTable("via_generate_rule_tbl", tech.via_generate_rule_tbl_);
+  stream << NamedTable("prop_tbl", tech.prop_tbl_);
   stream << NamedTable("metal_width_via_map_tbl",
-                       tech._metal_width_via_map_tbl);
+                       tech.metal_width_via_map_tbl_);
   stream << NamedTable("cell_edge_spacing_tbl_", tech.cell_edge_spacing_tbl_);
-  stream << *tech._name_cache;
-  stream << tech._via_hash;
+  stream << *tech.name_cache_;
+  stream << tech.via_hash_;
   return stream;
 }
 
@@ -336,50 +337,50 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 {
   _dbDatabase* db = tech.getImpl()->getDatabase();
   if (db->isSchema(db_schema_block_tech)) {
-    stream >> tech._name;
+    stream >> tech.name_;
   } else {
-    tech._name = "";
+    tech.name_ = "";
   }
-  stream >> tech._via_cnt;
-  stream >> tech._layer_cnt;
-  stream >> tech._rlayer_cnt;
-  stream >> tech._lef_units;
+  stream >> tech.via_cnt_;
+  stream >> tech.layer_cnt_;
+  stream >> tech.rlayer_cnt_;
+  stream >> tech.lef_units_;
   if (db->isLessThanSchema(db_schema_remove_dbu_per_micron)) {
     int dbu_per_micron;
     stream >> dbu_per_micron;
     db->dbu_per_micron_ = dbu_per_micron;
   }
-  stream >> tech._mfgrid;
+  stream >> tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech._flags;
+  uint* bit_field = (uint*) &tech.flags_;
   stream >> *bit_field;
 
   double lef_version;
   stream >> lef_version;
-  tech._setLefVersion(lef_version);
+  tech.setLefVersion(lef_version);
 
-  stream >> tech._bottom;
-  stream >> tech._top;
-  stream >> tech._non_default_rules;
-  stream >> tech._samenet_rules;
-  stream >> tech._samenet_matrix;
-  stream >> *tech._layer_tbl;
-  stream >> *tech._via_tbl;
-  stream >> *tech._non_default_rule_tbl;
-  stream >> *tech._layer_rule_tbl;
-  stream >> *tech._box_tbl;
-  stream >> *tech._samenet_rule_tbl;
-  stream >> *tech._antenna_rule_tbl;
-  stream >> *tech._via_rule_tbl;
-  stream >> *tech._via_layer_rule_tbl;
-  stream >> *tech._via_generate_rule_tbl;
-  stream >> *tech._prop_tbl;
-  stream >> *tech._metal_width_via_map_tbl;
+  stream >> tech.bottom_;
+  stream >> tech.top_;
+  stream >> tech.non_default_rules_;
+  stream >> tech.samenet_rules_;
+  stream >> tech.samenet_matrix_;
+  stream >> *tech.layer_tbl_;
+  stream >> *tech.via_tbl_;
+  stream >> *tech.non_default_rule_tbl_;
+  stream >> *tech.layer_rule_tbl_;
+  stream >> *tech.box_tbl_;
+  stream >> *tech.samenet_rule_tbl_;
+  stream >> *tech.antenna_rule_tbl_;
+  stream >> *tech.via_rule_tbl_;
+  stream >> *tech.via_layer_rule_tbl_;
+  stream >> *tech.via_generate_rule_tbl_;
+  stream >> *tech.prop_tbl_;
+  stream >> *tech.metal_width_via_map_tbl_;
   if (tech.getDatabase()->isSchema(db_schema_cell_edge_spc_tbl)) {
     stream >> *tech.cell_edge_spacing_tbl_;
   }
-  stream >> *tech._name_cache;
-  stream >> tech._via_hash;
+  stream >> *tech.name_cache_;
+  stream >> tech.via_hash_;
 
   return stream;
 }
@@ -387,15 +388,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 std::string dbTech::getName()
 {
   auto tech = (_dbTech*) this;
-  return tech->_name;
+  return tech->name_;
 }
 
-double _dbTech::_getLefVersion() const
+double _dbTech::getLefVersion() const
 {
   return _version;
 }
 
-std::string _dbTech::_getLefVersionStr() const
+std::string _dbTech::getLefVersionStr() const
 {
   int major_version = (int) floor(_version);
   int minor_version = ((int) floor(_version * 10.0)) - (major_version * 10);
@@ -413,7 +414,7 @@ std::string _dbTech::_getLefVersionStr() const
 // Version stored as double in %d.%1d%2d format;
 // the last two digits are optional
 //
-void _dbTech::_setLefVersion(double inver)
+void _dbTech::setLefVersion(double inver)
 {
   _version = inver;
 }
@@ -422,29 +423,29 @@ dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
 {
   switch (type) {
     case dbTechLayerObj:
-      return _layer_tbl;
+      return layer_tbl_;
     case dbTechViaObj:
-      return _via_tbl;
+      return via_tbl_;
     case dbTechNonDefaultRuleObj:
-      return _non_default_rule_tbl;
+      return non_default_rule_tbl_;
     case dbTechLayerRuleObj:
-      return _layer_rule_tbl;
+      return layer_rule_tbl_;
     case dbBoxObj:
-      return _box_tbl;
+      return box_tbl_;
     case dbTechSameNetRuleObj:
-      return _samenet_rule_tbl;
+      return samenet_rule_tbl_;
     case dbTechLayerAntennaRuleObj:
-      return _antenna_rule_tbl;
+      return antenna_rule_tbl_;
     case dbTechViaRuleObj:
-      return _via_rule_tbl;
+      return via_rule_tbl_;
     case dbTechViaLayerRuleObj:
-      return _via_layer_rule_tbl;
+      return via_layer_rule_tbl_;
     case dbTechViaGenerateRuleObj:
-      return _via_generate_rule_tbl;
+      return via_generate_rule_tbl_;
     case dbPropertyObj:
-      return _prop_tbl;
+      return prop_tbl_;
     case dbMetalWidthViaMapObj:
-      return _metal_width_via_map_tbl;
+      return metal_width_via_map_tbl_;
     case dbCellEdgeSpacingObj:
       return cell_edge_spacing_tbl_;
     default:
@@ -463,7 +464,7 @@ dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
 dbSet<dbTechLayer> dbTech::getLayers()
 {
   _dbTech* tech = (_dbTech*) this;
-  return dbSet<dbTechLayer>(tech, tech->_layer_itr);
+  return dbSet<dbTechLayer>(tech, tech->layer_itr_);
 }
 
 dbTechLayer* dbTech::findLayer(const char* name)
@@ -507,179 +508,180 @@ int dbTech::getDbUnitsPerMicron()
 dbSet<dbTechVia> dbTech::getVias()
 {
   _dbTech* tech = (_dbTech*) this;
-  return dbSet<dbTechVia>(tech, tech->_via_tbl);
+  return dbSet<dbTechVia>(tech, tech->via_tbl_);
 }
 
 dbTechVia* dbTech::findVia(const char* name)
 {
   _dbTech* tech = (_dbTech*) this;
-  return (dbTechVia*) tech->_via_hash.find(name);
+  return (dbTechVia*) tech->via_hash_.find(name);
 }
 
 int dbTech::getLefUnits()
 {
   _dbTech* tech = (_dbTech*) this;
-  return tech->_lef_units;
+  return tech->lef_units_;
 }
 
 void dbTech::setLefUnits(int units)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_lef_units = units;
+  tech->lef_units_ = units;
 }
 
 double dbTech::getLefVersion() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return tech->_getLefVersion();
+  return tech->getLefVersion();
 }
 
 std::string dbTech::getLefVersionStr() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return tech->_getLefVersionStr();
+  return tech->getLefVersionStr();
 }
 
 void dbTech::setLefVersion(double inver)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_setLefVersion(inver);
+  tech->setLefVersion(inver);
 }
 
 bool dbTech::hasNoWireExtAtPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._haswireext == dbOnOffType::ON);
+  return (tech->flags_.has_wire_ext == dbOnOffType::ON);
 }
 
 dbOnOffType dbTech::getNoWireExtAtPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasNoWireExtAtPin() ? dbOnOffType(tech->_flags._nowireext)
+  return (hasNoWireExtAtPin() ? dbOnOffType(tech->flags_.no_wire_ext)
                               : dbOnOffType(dbOnOffType::OFF));
 }
 
 void dbTech::setNoWireExtAtPin(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._haswireext = dbOnOffType::ON;
-  tech->_flags._nowireext = intyp.getValue();
+  tech->flags_.has_wire_ext = dbOnOffType::ON;
+  tech->flags_.no_wire_ext = intyp.getValue();
 }
 
 dbOnOffType dbTech::getNamesCaseSensitive() const
 {
   _dbTech* tech = (_dbTech*) this;
 
-  return dbOnOffType((bool) tech->_flags._namecase);
-  // return dbOnOffType(tech->_flags._namecase);
+  return dbOnOffType((bool) tech->flags_.namecase);
+  // return dbOnOffType(tech->flags_._namecase);
 }
 
 void dbTech::setNamesCaseSensitive(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._namecase = intyp.getValue();
+  tech->flags_.namecase = intyp.getValue();
 }
 
 bool dbTech::hasClearanceMeasure() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._hasclmeas == dbOnOffType::ON);
+  return (tech->flags_.has_clearance_measure == dbOnOffType::ON);
 }
 
 dbClMeasureType dbTech::getClearanceMeasure() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasClearanceMeasure() ? dbClMeasureType(tech->_flags._clmeas)
-                                : dbClMeasureType(dbClMeasureType::EUCLIDEAN));
+  return (hasClearanceMeasure()
+              ? dbClMeasureType(tech->flags_.clearance_measure)
+              : dbClMeasureType(dbClMeasureType::EUCLIDEAN));
 }
 
 void dbTech::setClearanceMeasure(dbClMeasureType inmeas)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._hasclmeas = dbOnOffType::ON;
-  tech->_flags._clmeas = inmeas.getValue();
+  tech->flags_.has_clearance_measure = dbOnOffType::ON;
+  tech->flags_.clearance_measure = inmeas.getValue();
 }
 
 bool dbTech::hasUseMinSpacingObs() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._hasminspobs == dbOnOffType::ON);
+  return (tech->flags_.has_use_min_spacing_obs == dbOnOffType::ON);
 }
 
 dbOnOffType dbTech::getUseMinSpacingObs() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasUseMinSpacingObs() ? dbOnOffType(tech->_flags._minspobs)
+  return (hasUseMinSpacingObs() ? dbOnOffType(tech->flags_.use_min_spacing_obs)
                                 : dbOnOffType(dbOnOffType::ON));
 }
 
 void dbTech::setUseMinSpacingObs(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._hasminspobs = dbOnOffType::ON;
-  tech->_flags._minspobs = intyp.getValue();
+  tech->flags_.has_use_min_spacing_obs = dbOnOffType::ON;
+  tech->flags_.use_min_spacing_obs = intyp.getValue();
 }
 
 bool dbTech::hasUseMinSpacingPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_flags._hasminsppin == dbOnOffType::ON);
+  return (tech->flags_.has_use_min_spacing_pin == dbOnOffType::ON);
 }
 
 dbOnOffType dbTech::getUseMinSpacingPin() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (hasUseMinSpacingPin() ? dbOnOffType(tech->_flags._minsppin)
+  return (hasUseMinSpacingPin() ? dbOnOffType(tech->flags_.use_min_spacing_pin)
                                 : dbOnOffType(dbOnOffType::ON));
 }
 
 void dbTech::setUseMinSpacingPin(dbOnOffType intyp)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_flags._hasminsppin = dbOnOffType::ON;
-  tech->_flags._minsppin = intyp.getValue();
+  tech->flags_.has_use_min_spacing_pin = dbOnOffType::ON;
+  tech->flags_.use_min_spacing_pin = intyp.getValue();
 }
 
 bool dbTech::hasManufacturingGrid() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return (tech->_mfgrid > 0);
+  return (tech->manufacturing_grid_ > 0);
 }
 
 int dbTech::getManufacturingGrid() const
 {
   _dbTech* tech = (_dbTech*) this;
-  return tech->_mfgrid;
+  return tech->manufacturing_grid_;
 }
 
 void dbTech::setManufacturingGrid(int ingrd)
 {
   _dbTech* tech = (_dbTech*) this;
-  tech->_mfgrid = ingrd;
+  tech->manufacturing_grid_ = ingrd;
 }
 
 int dbTech::getLayerCount()
 {
   _dbTech* tech = (_dbTech*) this;
-  return tech->_layer_cnt;
+  return tech->layer_cnt_;
 }
 
 int dbTech::getRoutingLayerCount()
 {
   _dbTech* tech = (_dbTech*) this;
-  return tech->_rlayer_cnt;
+  return tech->rlayer_cnt_;
 }
 
 int dbTech::getViaCount()
 {
   _dbTech* tech = (_dbTech*) this;
-  return tech->_via_cnt;
+  return tech->via_cnt_;
 }
 
 dbSet<dbTechNonDefaultRule> dbTech::getNonDefaultRules()
 {
   _dbTech* tech = (_dbTech*) this;
-  dbSet<dbTechNonDefaultRule> ndr(tech, tech->_non_default_rule_tbl);
+  dbSet<dbTechNonDefaultRule> ndr(tech, tech->non_default_rule_tbl_);
   return ndr;
 }
 
@@ -700,13 +702,13 @@ dbTechSameNetRule* dbTech::findSameNetRule(dbTechLayer* l1_, dbTechLayer* l2_)
   _dbTechLayer* l1 = (_dbTechLayer*) l1_;
   _dbTechLayer* l2 = (_dbTechLayer*) l2_;
   dbId<_dbTechSameNetRule> rule
-      = tech->_samenet_matrix(l1->_number, l2->_number);
+      = tech->samenet_matrix_(l1->number_, l2->number_);
 
   if (rule == 0) {
     return nullptr;
   }
 
-  return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(rule);
+  return (dbTechSameNetRule*) tech->samenet_rule_tbl_->getPtr(rule);
 }
 
 void dbTech::getSameNetRules(std::vector<dbTechSameNetRule*>& rules)
@@ -714,27 +716,27 @@ void dbTech::getSameNetRules(std::vector<dbTechSameNetRule*>& rules)
   _dbTech* tech = (_dbTech*) this;
   rules.clear();
 
-  for (const auto& r : tech->_samenet_rules) {
-    rules.push_back((dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(r));
+  for (const auto& r : tech->samenet_rules_) {
+    rules.push_back((dbTechSameNetRule*) tech->samenet_rule_tbl_->getPtr(r));
   }
 }
 
 dbSet<dbTechViaRule> dbTech::getViaRules()
 {
   _dbTech* tech = (_dbTech*) this;
-  return dbSet<dbTechViaRule>(tech, tech->_via_rule_tbl);
+  return dbSet<dbTechViaRule>(tech, tech->via_rule_tbl_);
 }
 
 dbSet<dbTechViaGenerateRule> dbTech::getViaGenerateRules()
 {
   _dbTech* tech = (_dbTech*) this;
-  return dbSet<dbTechViaGenerateRule>(tech, tech->_via_generate_rule_tbl);
+  return dbSet<dbTechViaGenerateRule>(tech, tech->via_generate_rule_tbl_);
 }
 
 dbSet<dbMetalWidthViaMap> dbTech::getMetalWidthViaMap()
 {
   _dbTech* tech = (_dbTech*) this;
-  return dbSet<dbMetalWidthViaMap>(tech, tech->_metal_width_via_map_tbl);
+  return dbSet<dbMetalWidthViaMap>(tech, tech->metal_width_via_map_tbl_);
 }
 
 dbSet<dbCellEdgeSpacing> dbTech::getCellEdgeSpacingTable()
@@ -826,15 +828,15 @@ dbTech* dbTech::create(dbDatabase* db_, const char* name)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
 
-  _dbTech* tech = db->_tech_tbl->create();
-  tech->_name = name;
+  _dbTech* tech = db->tech_tbl_->create();
+  tech->name_ = name;
   return (dbTech*) tech;
 }
 
 dbTech* dbTech::getTech(dbDatabase* db_, uint dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
-  return (dbTech*) db->_tech_tbl->getPtr(dbid_);
+  return (dbTech*) db->tech_tbl_->getPtr(dbid_);
 }
 
 void dbTech::destroy(dbTech* tech_)
@@ -842,7 +844,7 @@ void dbTech::destroy(dbTech* tech_)
   _dbTech* tech = (_dbTech*) tech_;
   _dbDatabase* db = tech->getDatabase();
   dbProperty::destroyProperties(tech);
-  db->_tech_tbl->destroy(tech);
+  db->tech_tbl_->destroy(tech);
 }
 
 void _dbTech::collectMemInfo(MemInfo& info)
@@ -850,27 +852,27 @@ void _dbTech::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
-  info.children_["samenet_rules"].add(_samenet_rules);
-  info.children_["samenet_matrix"].add(_samenet_matrix);
-  info.children_["via_hash"].add(_via_hash);
+  info.children_["name"].add(name_);
+  info.children_["samenet_rules"].add(samenet_rules_);
+  info.children_["samenet_matrix"].add(samenet_matrix_);
+  info.children_["via_hash"].add(via_hash_);
 
-  _layer_tbl->collectMemInfo(info.children_["layer"]);
-  _via_tbl->collectMemInfo(info.children_["via"]);
-  _non_default_rule_tbl->collectMemInfo(info.children_["non_default_rule"]);
-  _layer_rule_tbl->collectMemInfo(info.children_["layer_rule"]);
-  _box_tbl->collectMemInfo(info.children_["box"]);
-  _samenet_rule_tbl->collectMemInfo(info.children_["samenet_rule"]);
-  _antenna_rule_tbl->collectMemInfo(info.children_["antenna_rule"]);
-  _via_rule_tbl->collectMemInfo(info.children_["via_rule"]);
-  _via_layer_rule_tbl->collectMemInfo(info.children_["via_layer_rule"]);
-  _via_generate_rule_tbl->collectMemInfo(info.children_["via_generate_rule"]);
-  _prop_tbl->collectMemInfo(info.children_["prop"]);
-  _metal_width_via_map_tbl->collectMemInfo(
+  layer_tbl_->collectMemInfo(info.children_["layer"]);
+  via_tbl_->collectMemInfo(info.children_["via"]);
+  non_default_rule_tbl_->collectMemInfo(info.children_["non_default_rule"]);
+  layer_rule_tbl_->collectMemInfo(info.children_["layer_rule"]);
+  box_tbl_->collectMemInfo(info.children_["box"]);
+  samenet_rule_tbl_->collectMemInfo(info.children_["samenet_rule"]);
+  antenna_rule_tbl_->collectMemInfo(info.children_["antenna_rule"]);
+  via_rule_tbl_->collectMemInfo(info.children_["via_rule"]);
+  via_layer_rule_tbl_->collectMemInfo(info.children_["via_layer_rule"]);
+  via_generate_rule_tbl_->collectMemInfo(info.children_["via_generate_rule"]);
+  prop_tbl_->collectMemInfo(info.children_["prop"]);
+  metal_width_via_map_tbl_->collectMemInfo(
       info.children_["metal_width_via_map"]);
   cell_edge_spacing_tbl_->collectMemInfo(info.children_["cell_edge_spacing"]);
 
-  _name_cache->collectMemInfo(info.children_["name_cache"]);
+  name_cache_->collectMemInfo(info.children_["name_cache"]);
 }
 
 }  // namespace odb

@@ -23,12 +23,6 @@ class _dbGDSStructure;
 class _dbGDSLib : public _dbObject
 {
  public:
-  std::string _libname;
-  double _uu_per_dbu;
-  double _dbu_per_meter;
-  dbHashTable<_dbGDSStructure> _gdsstructure_hash;
-  dbTable<_dbGDSStructure>* _gdsstructure_tbl;
-
   _dbGDSLib(_dbDatabase*, const _dbGDSLib& r);
   _dbGDSLib(_dbDatabase*);
   ~_dbGDSLib();
@@ -39,6 +33,12 @@ class _dbGDSLib : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   _dbGDSStructure* findStructure(const char* name);
+
+  std::string lib_name_;
+  double uu_per_dbu_;
+  double dbu_per_meter_;
+  dbHashTable<_dbGDSStructure> gdsstructure_hash_;
+  dbTable<_dbGDSStructure>* gdsstructure_tbl_;
 };
 
 dbIStream& operator>>(dbIStream& stream, std::tm& tm);

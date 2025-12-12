@@ -39,7 +39,7 @@ proc detailed_placement { args } {
     utl::warn DPL 3 "-disallow_one_site_gaps is deprecated"
   }
 
-  if { [ord::db_has_rows] } {
+  if { [ord::db_has_core_rows] } {
     set site [dpl::get_row_site]
     # Convert displacement from microns to sites.
     set max_displacement_x [expr [ord::microns_to_dbu $max_displacement_x] \

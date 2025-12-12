@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
@@ -637,7 +638,7 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
     sort(swappable_cells,
-         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
            LibertyPort* port1
                = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            LibertyPort* port2
@@ -681,26 +682,127 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
   const char* replacement_name = replacement->name();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
 
-  if (replacement_master) {
-    dbInst* dinst = db_network_->staToDb(inst);
-    dbMaster* master = dinst->getMaster();
-    resizer_->designAreaIncr(-area(master));
-    Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
-    sta_->replaceCell(inst, replacement_cell1);
-    resizer_->designAreaIncr(area(replacement_master));
-
-    // Legalize the position of the instance in case it leaves the die
-    if (estimate_parasitics_->getParasiticsSrc()
-            == est::ParasiticsSrc::global_routing
-        || estimate_parasitics_->getParasiticsSrc()
-               == est::ParasiticsSrc::detailed_routing) {
-      opendp_->legalCellPos(db_network_->staToDb(inst));
-    }
-
-    return true;
+  if (!replacement_master) {
+    return false;
   }
-  return false;
+
+  // Check if replacement would cause max_cap violations on input nets
+  if (!checkMaxCapViolation(inst, replacement)) {
+    return false;
+  }
+
+  dbInst* dinst = db_network_->staToDb(inst);
+  dbMaster* master = dinst->getMaster();
+  resizer_->designAreaIncr(-area(master));
+  Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
+  sta_->replaceCell(inst, replacement_cell1);
+  resizer_->designAreaIncr(area(replacement_master));
+
+  // Legalize the position of the instance in case it leaves the die
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
+    opendp_->legalCellPos(db_network_->staToDb(inst));
+  }
+
+  return true;
 }
+
+// Check if replacing inst with replacement cell would cause max_cap violation
+// on any of the fanin nets.
+bool BaseMove::checkMaxCapViolation(Instance* inst,
+                                    const LibertyCell* replacement)
+{
+  LibertyCell* current_cell = network_->libertyCell(inst);
+  if (!current_cell) {
+    return true;  // Nothing to check, just allow it
+  }
+
+  // Iterate through all input pins of the instance
+  InstancePinIterator* pin_iter = network_->pinIterator(inst);
+  while (pin_iter->hasNext()) {
+    Pin* pin = pin_iter->next();
+
+    // Only check input pins
+    if (!network_->direction(pin)->isAnyInput()) {
+      continue;
+    }
+    PinSet* drivers = network_->drivers(pin);
+    if (drivers) {
+      // Calculate capacitance delta (new - old)
+      float old_cap = getInputPinCapacitance(pin, current_cell);
+      float new_cap = getInputPinCapacitance(pin, replacement);
+      float cap_delta = new_cap - old_cap;
+      if (cap_delta <= 0.0) {
+        continue;
+      }
+      for (const Pin* drvr_pin : *drivers) {
+        if (!checkMaxCapOK(drvr_pin, cap_delta)) {
+          delete pin_iter;
+          return false;
+        }
+      }
+    }
+  }
+
+  delete pin_iter;
+  return true;
+}
+
+// Get input capacitance for a specific port in a liberty cell
+float BaseMove::getInputPinCapacitance(Pin* pin, const LibertyCell* cell)
+{
+  LibertyPort* port = network_->libertyPort(pin);
+  if (!port) {
+    return 0.0;
+  }
+
+  // Find corresponding port in the new cell
+  LibertyPort* cell_port = cell->findLibertyPort(port->name());
+  if (!cell_port) {
+    return 0.0;
+  }
+
+  // Get worst capacitance
+  float cap = 0.0;
+  for (auto rf : RiseFall::range()) {
+    float port_cap = cell_port->capacitance(rf, resizer_->max_);
+    cap = max(cap, port_cap);
+  }
+
+  return cap;
+}
+
+// Check for possible max cap violation with new cap_delta
+// If max cap is already violating, accept a solution only if
+// it does not worsen the violation
+bool BaseMove::checkMaxCapOK(const Pin* drvr_pin, float cap_delta)
+{
+  float cap, max_cap, cap_slack;
+  const Corner* corner;
+  const RiseFall* tr;
+  sta_->checkCapacitance(drvr_pin,
+                         nullptr /* corner */,
+                         resizer_->max_,
+                         // return values
+                         corner,
+                         tr,
+                         cap,
+                         max_cap,
+                         cap_slack);
+
+  if (max_cap > 0.0 && corner) {
+    float new_cap = cap + cap_delta;
+    // If it is already violating, accept only if violation is no worse
+    if (cap_slack < 0.0) {
+      return new_cap <= cap;
+    }
+    return new_cap <= max_cap;
+  }
+  return true;
+}
+
 Slack BaseMove::getWorstInputSlack(Instance* inst)
 {
   Slack worst_slack = INF;
@@ -762,7 +864,7 @@ vector<const LibertyPort*> BaseMove::getOutputPorts(const LibertyCell* cell)
   sta::LibertyCellPortIterator port_iter(cell);
   while (port_iter.hasNext()) {
     const LibertyPort* port = port_iter.next();
-    if (port->direction()->isOutput()) {
+    if (!port->isPwrGnd() && port->direction()->isOutput()) {
       fanouts.push_back(port);
     }
   }

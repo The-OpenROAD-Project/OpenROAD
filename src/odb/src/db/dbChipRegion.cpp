@@ -18,6 +18,7 @@
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
 #include "dbTech.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -133,6 +134,22 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 }
 
 // User Code Begin dbChipRegionPublicMethods
+
+Cuboid dbChipRegion::getCuboid() const
+{
+  _dbChipRegion* obj = (_dbChipRegion*) this;
+  Rect box = obj->box_;
+  int z = 0;
+  if (getSide() == dbChipRegion::Side::FRONT) {
+    z = getChip()->getThickness();
+  } else if (getSide() == dbChipRegion::Side::BACK) {
+    z = 0;
+  } else {
+    z = getChip()->getThickness() / 2;
+  }
+  return Cuboid(box.xMin(), box.yMin(), z, box.xMax(), box.yMax(), z);
+}
+
 dbChip* dbChipRegion::getChip() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
@@ -155,7 +172,7 @@ dbTechLayer* dbChipRegion::getLayer() const
   }
 
   _dbTech* tech = (_dbTech*) chip->getBlock()->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(obj->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
 }
 
 dbChipRegion* dbChipRegion::create(dbChip* chip,

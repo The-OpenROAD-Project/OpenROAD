@@ -16,21 +16,21 @@ class dbGroupModInstItr : public dbIterator
  public:
   dbGroupModInstItr(dbTable<_dbModInst>* modinst_tbl)
   {
-    _modinst_tbl = modinst_tbl;
+    modinst_tbl_ = modinst_tbl;
   }
 
-  bool reversible() override;
-  bool orderReversed() override;
+  bool reversible() const override;
+  bool orderReversed() const override;
   void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
+  uint sequential() const override;
+  uint size(dbObject* parent) const override;
+  uint begin(dbObject* parent) const override;
+  uint end(dbObject* parent) const override;
+  uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbModInst>* _modinst_tbl;
+  dbTable<_dbModInst>* modinst_tbl_;
 };
 
 }  // namespace odb

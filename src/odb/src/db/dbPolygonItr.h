@@ -13,21 +13,21 @@ class _dbPolygon;
 
 class dbPolygonItr : public dbIterator
 {
- protected:
-  dbTable<_dbPolygon, 8>* pbox_tbl_;
-
  public:
   dbPolygonItr(dbTable<_dbPolygon, 8>* pbox_tbl) { pbox_tbl_ = pbox_tbl; }
 
-  bool reversible() override;
-  bool orderReversed() override;
+  bool reversible() const override;
+  bool orderReversed() const override;
   void reverse(dbObject* parent) override;
-  uint sequential() override;
-  uint size(dbObject* parent) override;
-  uint begin(dbObject* parent) override;
-  uint end(dbObject* parent) override;
-  uint next(uint id, ...) override;
+  uint sequential() const override;
+  uint size(dbObject* parent) const override;
+  uint begin(dbObject* parent) const override;
+  uint end(dbObject* parent) const override;
+  uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbPolygon, 8>* pbox_tbl_;
 };
 
 }  // namespace odb

@@ -12,6 +12,7 @@
 #include "dbChipConn.h"
 #include "dbChipRegion.h"
 #include "dbDatabase.h"
+#include "dbMarkerCategory.h"
 #include "dbNameCache.h"
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
@@ -21,18 +22,23 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <cstdlib>
+
 #include "dbChipConnItr.h"
 #include "dbChipInst.h"
 #include "dbChipInstItr.h"
 #include "dbChipNet.h"
 #include "dbChipNetItr.h"
+#include "dbCommon.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
 
 bool _dbChip::operator==(const _dbChip& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
   if (type_ != rhs.type_) {
@@ -80,7 +86,7 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (tsv_ != rhs.tsv_) {
     return false;
   }
-  if (_top != rhs._top) {
+  if (top_ != rhs.top_) {
     return false;
   }
   if (chipinsts_ != rhs.chipinsts_) {
@@ -95,21 +101,24 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (tech_ != rhs.tech_) {
     return false;
   }
-  if (*_prop_tbl != *rhs._prop_tbl) {
+  if (*prop_tbl_ != *rhs.prop_tbl_) {
     return false;
   }
   if (*chip_region_tbl_ != *rhs.chip_region_tbl_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (*marker_categories_tbl_ != *rhs.marker_categories_tbl_) {
+    return false;
+  }
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
   // User Code Begin ==
-  if (*_block_tbl != *rhs._block_tbl) {
+  if (*block_tbl_ != *rhs.block_tbl_) {
     return false;
   }
-  if (*_name_cache != *rhs._name_cache) {
+  if (*name_cache_ != *rhs.name_cache_) {
     return false;
   }
   // User Code End ==
@@ -118,7 +127,7 @@ bool _dbChip::operator==(const _dbChip& rhs) const
 
 bool _dbChip::operator<(const _dbChip& rhs) const
 {
-  if (_top >= rhs._top) {
+  if (top_ >= rhs.top_) {
     return false;
   }
 
@@ -127,7 +136,7 @@ bool _dbChip::operator<(const _dbChip& rhs) const
 
 _dbChip::_dbChip(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
   type_ = 0;
   offset_ = {};
   width_ = 0;
@@ -143,26 +152,28 @@ _dbChip::_dbChip(_dbDatabase* db)
   scribe_line_north_ = 0;
   scribe_line_south_ = 0;
   tsv_ = false;
-  _prop_tbl = new dbTable<_dbProperty>(
+  prop_tbl_ = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbPropertyObj);
   chip_region_tbl_ = new dbTable<_dbChipRegion>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipRegionObj);
+  marker_categories_tbl_ = new dbTable<_dbMarkerCategory>(
+      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbMarkerCategoryObj);
   // User Code Begin Constructor
-  _block_tbl = new dbTable<_dbBlock>(
+  block_tbl_ = new dbTable<_dbBlock>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbBlockObj);
-  _name_cache
+  name_cache_
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbChip::getObjectTable);
 
-  _block_itr = new dbBlockItr(_block_tbl);
+  block_itr_ = new dbBlockItr(block_tbl_);
 
-  _prop_itr = new dbPropertyItr(_prop_tbl);
+  prop_itr_ = new dbPropertyItr(prop_tbl_);
   // User Code End Constructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
-    stream >> obj._name;
+    stream >> obj.name_;
   }
   if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
     stream >> obj.type_;
@@ -209,7 +220,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
     stream >> obj.tsv_;
   }
-  stream >> obj._top;
+  stream >> obj.top_;
   if (obj.getDatabase()->isSchema(db_schema_chip_inst)) {
     stream >> obj.chipinsts_;
   }
@@ -225,16 +236,23 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
     stream >> *obj.chip_region_tbl_;
   }
+  if (obj.getDatabase()->isSchema(db_schema_chip_marker_categories)) {
+    stream >> *obj.marker_categories_tbl_;
+  }
   // User Code Begin >>
-  stream >> *obj._block_tbl;
-  stream >> *obj._prop_tbl;
-  stream >> *obj._name_cache;
+  stream >> *obj.block_tbl_;
+  stream >> *obj.prop_tbl_;
+  stream >> *obj.name_cache_;
   if (obj.getDatabase()->isSchema(db_schema_chip_hash_table)) {
-    stream >> obj._next_entry;
+    stream >> obj.next_entry_;
   }
   auto chip = (dbChip*) &obj;
   for (const auto& chip_region : chip->getChipRegions()) {
     obj.chip_region_map_[chip_region->getName()] = chip_region->getId();
+  }
+  for (const auto& marker_category : ((dbChip*) &obj)->getMarkerCategories()) {
+    obj.marker_categories_map_[marker_category->getName()]
+        = marker_category->getId();
   }
   // User Code End >>
   return stream;
@@ -243,7 +261,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
 {
   dbOStreamScope scope(stream, "dbChip");
-  stream << obj._name;
+  stream << obj.name_;
   stream << obj.type_;
   stream << obj.offset_;
   stream << obj.width_;
@@ -259,17 +277,18 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.scribe_line_north_;
   stream << obj.scribe_line_south_;
   stream << obj.tsv_;
-  stream << obj._top;
+  stream << obj.top_;
   stream << obj.chipinsts_;
   stream << obj.conns_;
   stream << obj.nets_;
   stream << obj.tech_;
   stream << *obj.chip_region_tbl_;
+  stream << *obj.marker_categories_tbl_;
   // User Code Begin <<
-  stream << *obj._block_tbl;
-  stream << NamedTable("prop_tbl", obj._prop_tbl);
-  stream << *obj._name_cache;
-  stream << obj._next_entry;
+  stream << *obj.block_tbl_;
+  stream << NamedTable("prop_tbl", obj.prop_tbl_);
+  stream << *obj.name_cache_;
+  stream << obj.next_entry_;
   // User Code End <<
   return stream;
 }
@@ -278,12 +297,14 @@ dbObjectTable* _dbChip::getObjectTable(dbObjectType type)
 {
   switch (type) {
     case dbPropertyObj:
-      return _prop_tbl;
+      return prop_tbl_;
     case dbChipRegionObj:
       return chip_region_tbl_;
+    case dbMarkerCategoryObj:
+      return marker_categories_tbl_;
       // User Code Begin getObjectTable
     case dbBlockObj:
-      return _block_tbl;
+      return block_tbl_;
     // User Code End getObjectTable
     default:
       break;
@@ -295,28 +316,32 @@ void _dbChip::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  _prop_tbl->collectMemInfo(info.children_["_prop_tbl"]);
+  prop_tbl_->collectMemInfo(info.children_["prop_tbl_"]);
 
   chip_region_tbl_->collectMemInfo(info.children_["chip_region_tbl_"]);
 
+  marker_categories_tbl_->collectMemInfo(
+      info.children_["marker_categories_tbl_"]);
+
   // User Code Begin collectMemInfo
-  _block_tbl->collectMemInfo(info.children_["block"]);
-  _name_cache->collectMemInfo(info.children_["name_cache"]);
+  block_tbl_->collectMemInfo(info.children_["block"]);
+  name_cache_->collectMemInfo(info.children_["name_cache"]);
   // User Code End collectMemInfo
 }
 
 _dbChip::~_dbChip()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
-  delete _prop_tbl;
+  delete prop_tbl_;
   delete chip_region_tbl_;
+  delete marker_categories_tbl_;
   // User Code Begin Destructor
-  delete _block_tbl;
-  delete _name_cache;
-  delete _block_itr;
-  delete _prop_itr;
+  delete block_tbl_;
+  delete name_cache_;
+  delete block_itr_;
+  delete prop_itr_;
   // User Code End Destructor
 }
 
@@ -329,7 +354,7 @@ _dbChip::~_dbChip()
 const char* dbChip::getName() const
 {
   _dbChip* obj = (_dbChip*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbChip::setOffset(Point offset)
@@ -520,6 +545,12 @@ dbSet<dbChipRegion> dbChip::getChipRegions() const
   return dbSet<dbChipRegion>(obj, obj->chip_region_tbl_);
 }
 
+dbSet<dbMarkerCategory> dbChip::getMarkerCategories() const
+{
+  _dbChip* obj = (_dbChip*) this;
+  return dbSet<dbMarkerCategory>(obj, obj->marker_categories_tbl_);
+}
+
 // User Code Begin dbChipPublicMethods
 
 dbChip::ChipType dbChip::getChipType() const
@@ -532,11 +563,11 @@ dbBlock* dbChip::getBlock()
 {
   _dbChip* chip = (_dbChip*) this;
 
-  if (chip->_top == 0) {
+  if (chip->top_ == 0) {
     return nullptr;
   }
 
-  return (dbBlock*) chip->_block_tbl->getPtr(chip->_top);
+  return (dbBlock*) chip->block_tbl_->getPtr(chip->top_);
 }
 
 dbSet<dbChipInst> dbChip::getChipInsts() const
@@ -588,7 +619,7 @@ dbTech* dbChip::getTech() const
     return nullptr;
   }
   _dbDatabase* db = (_dbDatabase*) chip->getOwner();
-  return (dbTech*) db->_tech_tbl->getPtr(chip->tech_);
+  return (dbTech*) db->tech_tbl_->getPtr(chip->tech_);
 }
 
 Rect dbChip::getBBox() const
@@ -605,6 +636,24 @@ Rect dbChip::getBBox() const
   return box;
 }
 
+Cuboid dbChip::getCuboid() const
+{
+  _dbChip* _chip = (_dbChip*) this;
+  Rect box = getBBox();
+  return Cuboid(
+      box.xMin(), box.yMin(), 0, box.xMax(), box.yMax(), _chip->thickness_);
+}
+
+dbMarkerCategory* dbChip::findMarkerCategory(const char* name) const
+{
+  _dbChip* obj = (_dbChip*) this;
+  auto it = obj->marker_categories_map_.find(name);
+  if (it != obj->marker_categories_map_.end()) {
+    return (dbMarkerCategory*) obj->marker_categories_tbl_->getPtr(it->second);
+  }
+  return nullptr;
+}
+
 dbChip* dbChip::create(dbDatabase* db_,
                        dbTech* tech,
                        const std::string& name,
@@ -615,10 +664,10 @@ dbChip* dbChip::create(dbDatabase* db_,
     db->getLogger()->error(utl::ODB, 385, "Chip {} already exists", name);
   }
   _dbChip* chip = db->chip_tbl_->create();
-  chip->_name = safe_strdup(name.c_str());
+  chip->name_ = safe_strdup(name.c_str());
   chip->type_ = (uint) type;
-  if (db->_chip == 0) {
-    db->_chip = chip->getOID();
+  if (db->chip_ == 0) {
+    db->chip_ = chip->getOID();
   }
   db->chip_hash_.insert(chip);
   if (tech) {
@@ -656,8 +705,8 @@ void dbChip::destroy(dbChip* chip_)
   // TODO: destroy instances of the current chip
   // Destroy chip
   _dbDatabase* db = chip->getDatabase();
-  if (db->_chip == chip->getOID()) {
-    db->_chip = 0;
+  if (db->chip_ == chip->getOID()) {
+    db->chip_ = 0;
   }
   dbProperty::destroyProperties(chip);
   db->chip_hash_.remove(chip);

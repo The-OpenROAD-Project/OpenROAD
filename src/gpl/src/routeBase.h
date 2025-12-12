@@ -26,6 +26,7 @@ class NesterovBaseCommon;
 class NesterovBase;
 class GNet;
 class Die;
+struct PlaceOptions;
 
 // for GGrid
 class Tile
@@ -120,30 +121,27 @@ class TileGrid
   int numRoutingLayers_ = 0;
 };
 
-class RouteBaseVars
+struct RouteBaseVars
 {
- public:
-  bool useRudy;
-  float targetRC;
-  float inflationRatioCoef;
-  float maxInflationRatio;
-  float maxDensity;
-  float ignoreEdgeRatio;
-  float minInflationRatio;
+  RouteBaseVars(const PlaceOptions& options);
+
+  const bool useRudy;
+  const float targetRC;
+  const float inflationRatioCoef;
+  const float maxInflationRatio;
+  const float maxDensity;
+  const float ignoreEdgeRatio;
+  const float minInflationRatio;
 
   // targetRC metric coefficients.
-  float rcK1, rcK2, rcK3, rcK4;
+  const float rcK1, rcK2, rcK3, rcK4;
 
-  int maxInflationIter;
-
-  RouteBaseVars();
-  void reset();
+  const int maxInflationIter;
 };
 
 class RouteBase
 {
  public:
-  RouteBase();
   RouteBase(RouteBaseVars rbVars,
             odb::dbDatabase* db,
             grt::GlobalRouter* grouter,
@@ -169,7 +167,7 @@ class RouteBase
   //         (e.g. calling NesterovPlace's init())
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
-  int64_t inflatedAreaDelta() const;
+  std::vector<int64_t> inflatedAreaDelta() const;
   int numCall() const;
 
  private:
@@ -183,7 +181,7 @@ class RouteBase
 
   std::unique_ptr<TileGrid> tg_;
 
-  int64_t inflatedAreaDelta_ = 0;
+  std::vector<int64_t> inflatedAreaDelta_;
 
   int numCall_ = 0;
 
@@ -192,13 +190,14 @@ class RouteBase
   // minRcInflationSize_ will store
   // GCell's width and height
   float minRc_ = 1e30;
-  float minRcTargetDensity_ = 0;
+  std::vector<float> minRcTargetDensity_;
   int min_RC_violated_cnt_ = 0;
   int max_routability_no_improvement_ = 3;
   int max_routability_revert_ = 50;
 
   void init();
   void resetRoutabilityResources();
+  void revertToMinCongestion();
 
   // update numCall_
   void increaseCounter();

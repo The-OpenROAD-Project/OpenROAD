@@ -2,6 +2,7 @@
 
 #include <csignal>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,7 +11,12 @@
 
 namespace odb {
 class dbDatabase;
+class dbNet;
 }  // namespace odb
+
+namespace sta {
+class dbSta;
+}  // namespace sta
 
 namespace stt {
 class SteinerTreeBuilder;
@@ -58,9 +64,12 @@ class CUGR
  public:
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
-       stt::SteinerTreeBuilder* stt_builder);
+       stt::SteinerTreeBuilder* stt_builder,
+       sta::dbSta* sta);
   ~CUGR();
-  void init(int min_routing_layer, int max_routing_layer);
+  void init(int min_routing_layer,
+            int max_routing_layer,
+            const std::set<odb::dbNet*>& clock_nets);
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
@@ -83,6 +92,7 @@ class CUGR
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+  sta::dbSta* sta_;
 
   Constants constants_;
 
