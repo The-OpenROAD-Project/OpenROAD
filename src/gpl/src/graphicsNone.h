@@ -11,6 +11,7 @@
 #include "AbstractGraphics.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "routeBase.h"
 
 namespace gpl {
 
