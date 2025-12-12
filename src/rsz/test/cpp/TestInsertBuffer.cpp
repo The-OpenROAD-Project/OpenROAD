@@ -2700,7 +2700,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case25)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 }  // namespace odb
