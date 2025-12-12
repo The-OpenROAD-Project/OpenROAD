@@ -135,8 +135,6 @@ struct RouteBaseVars
 
   // targetRC metric coefficients.
   const float rcK1, rcK2, rcK3, rcK4;
-
-  const int maxInflationIter;
 };
 
 class RouteBase

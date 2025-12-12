@@ -42,9 +42,6 @@ static gpl::PlaceOptions getOptions(
       "-routability_snapshot_overflow",
       options.routabilitySnapshotOverflow);
   checkKey(keys, "-routability_max_density", options.routabilityMaxDensity);
-  checkKey(keys,
-           "-routability_max_inflation_iter",
-           options.routabilityMaxInflationIter);
   checkKey(
       keys, "-routability_target_rc_metric", options.routabilityTargetRcMetric);
   checkKey(keys,

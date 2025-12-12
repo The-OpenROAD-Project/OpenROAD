@@ -50,7 +50,6 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
     db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
   }
 
-  // if (npVars_.debug) {
   if (graphics) {
     graphics_ = std::move(graphics);
     graphics_->setDebugOn(npVars.debug);
@@ -283,12 +282,11 @@ void NesterovPlace::updateIterGraphics(
   // For JPEG Saving
   updateDb();
 
-  // When debug mode, calculate RUDY every iteration
-  if (npVars_.routability_driven_mode && npVars_.debug) {
-    rb_->calculateRudyTiles();
-    rb_->updateRudyAverage(/*verbose=*/false);
-    // log_->report("RUDY: {}", rb_->getRudyAverage());
-  }
+  // Calculate RUDY every iteration
+  // if (npVars_.routability_driven_mode && npVars_.debug) {
+  //   rb_->calculateRudyTiles();
+  //   rb_->updateRudyAverage(/*verbose=*/false);
+  // }
 
   graphics_->addIter(iter, average_overflow_unscaled_);
 

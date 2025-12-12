@@ -225,8 +225,7 @@ RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
       rcK1(options.routabilityRcK1),
       rcK2(options.routabilityRcK2),
       rcK3(options.routabilityRcK3),
-      rcK4(options.routabilityRcK4),
-      maxInflationIter(options.routabilityMaxInflationIter)
+      rcK4(options.routabilityRcK4)
 {
 }
 
@@ -659,24 +658,6 @@ std::pair<bool, bool> RouteBase::routability(
       // deltaArea is equal to area * deltaRatio
       // both of original and density size will be changed
       inflatedAreaDelta_[i] += newCellArea - prevCellArea;
-
-      //    inflatedAreaDelta_
-      //      = static_cast<int64_t>(round(
-      //        static_cast<int64_t>(gCell->dx())
-      //        * static_cast<int64_t>(gCell->dy())
-      //        * (tile->inflatedRatio() - 1.0)));
-    }
-
-    // target ratio
-    float targetInflationDeltaAreaRatio
-        = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
-
-    // TODO: will be implemented
-    if (inflatedAreaDelta_[i] > targetInflationDeltaAreaRatio
-                                    * (nbVec_[i]->getWhiteSpaceArea()
-                                       - (nbVec_[i]->getNesterovInstsArea()
-                                          + nbVec_[i]->getTotalFillerArea()))) {
-      // TODO dynamic inflation procedure?
     }
 
     float inflated_area_delta_microns
