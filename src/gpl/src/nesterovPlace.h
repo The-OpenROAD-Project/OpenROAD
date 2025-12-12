@@ -170,6 +170,9 @@ class NesterovPlace
   int recursionCntWlCoef_ = 0;
   int recursionCntInitSLPCoef_ = 0;
 
+  int placement_gif_key_ = -1;
+  int routability_gif_key_ = -1;
+
   void init();
   void reset();
 

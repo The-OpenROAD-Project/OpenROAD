@@ -53,9 +53,10 @@ class GraphicsNone : public AbstractGraphics
   bool enabled() override { return false; }
   void setDebugOn(bool set_on) override {}
 
-  void gifStart(std::string_view path) override {};
+  int gifStart(std::string_view path) override { return 0; };
   void deleteLabel(std::string_view label_name) override {}
-  void gifEnd() override {}
+  void gifEnd(int key) override {}
+  void setDisplayControl(std::string_view name, bool value) override {}
 
  protected:
   void cellPlotImpl(bool pause) override {}
@@ -73,7 +74,8 @@ class GraphicsNone : public AbstractGraphics
                             int image_width_px) override
   {
   }
-  void gifAddFrameImpl(const odb::Rect& region,
+  void gifAddFrameImpl(int key,
+                       const odb::Rect& region,
                        int width_px,
                        double dbu_per_pixel,
                        std::optional<int> delay) override

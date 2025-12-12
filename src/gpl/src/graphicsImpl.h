@@ -74,9 +74,11 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
   void setDebugOn(bool set_on) override { debug_on_ = set_on; }
 
-  void gifStart(std::string_view path) override;
+  void setDisplayControl(std::string_view name, bool value) override;
+
+  int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
-  void gifEnd() override;
+  void gifEnd(int key) override;
 
  protected:
   void cellPlotImpl(bool pause) override;
@@ -90,7 +92,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
                             bool select_buffers,
                             std::string_view heatmap_control,
                             int image_width_px) override;
-  void gifAddFrameImpl(const odb::Rect& region,
+  void gifAddFrameImpl(int key,
+                       const odb::Rect& region,
                        int width_px,
                        double dbu_per_pixel,
                        std::optional<int> delay) override;
@@ -176,7 +179,6 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   gui::Chart* stepLength_chart_{nullptr};
   gui::Chart* routing_chart_{nullptr};
   bool debug_on_{false};
-  int gif_key_{0};
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

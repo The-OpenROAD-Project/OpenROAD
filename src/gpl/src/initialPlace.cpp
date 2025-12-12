@@ -64,7 +64,7 @@ void InitialPlace::doBicgstabPlace(int threads)
   setPlaceInstExtId();
 
   if (graphics_enabled) {
-    graphics_->gifStart("initPlacement.gif");
+    gif_key_ = graphics_->gifStart("initPlacement.gif");
   }
 
   for (size_t iter = 1; iter <= ipVars_.maxIter; iter++) {
@@ -88,7 +88,7 @@ void InitialPlace::doBicgstabPlace(int threads)
       odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
       int max_dim = std::max(bbox.dx(), bbox.dy());
       double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
-      graphics_->gifAddFrame(region, 500, dbu_per_pixel, 20);
+      graphics_->gifAddFrame(gif_key_, region, 500, dbu_per_pixel, 20);
     }
 
     if (std::isnan(error.x) || std::isnan(error.y)) {
@@ -115,7 +115,7 @@ void InitialPlace::doBicgstabPlace(int threads)
   }
 
   if (graphics_enabled) {
-    graphics_->gifEnd();
+    graphics_->gifEnd(gif_key_);
   }
 }
 

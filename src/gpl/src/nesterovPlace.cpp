@@ -308,7 +308,7 @@ void NesterovPlace::updateIterGraphics(
 
   if (npVars_.debug_generate_images && iter == 0) {
     std::string gif_path = fmt::format("{}/placement.gif", reports_dir);
-    graphics_->gifStart(gif_path);
+    placement_gif_key_ = graphics_->gifStart(gif_path);
   }
 
   if (npVars_.debug_generate_images && iter % 10 == 0) {
@@ -325,7 +325,8 @@ void NesterovPlace::updateIterGraphics(
     std::string label_name = fmt::format("frame_label_{}", iter);
 
     graphics_->addFrameLabel(bbox, label, label_name);
-    graphics_->gifAddFrame(region, width_px, dbu_per_pixel, delay);
+    graphics_->gifAddFrame(
+        placement_gif_key_, region, width_px, dbu_per_pixel, delay);
     graphics_->deleteLabel(label_name);
   }
 
@@ -747,10 +748,35 @@ void NesterovPlace::runRoutability(int iter,
           label,
           /* select_buffers = */ false,
           "Heat Maps/Estimated Congestion (RUDY)");
+
+      odb::Rect region;
+      int width_px = 500;
+      odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+      int max_dim = std::max(bbox.dx(), bbox.dy());
+      double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
+      int delay = 20;
+      std::string label_name = fmt::format("frame_label_routability_{}", iter);
+
+      if (routability_gif_key_ == -1) {
+        log_->report("start routability gif at iter {}", iter);
+        std::string gif_path
+            = fmt::format("{}/routability.gif", routability_driven_dir);
+        gif_path = fmt::format("{}/routability.gif", routability_driven_dir);
+        routability_gif_key_ = graphics_->gifStart(gif_path);
+      }
+
+      graphics_->addFrameLabel(bbox, label, label_name);
+
+      graphics_->setDisplayControl("Heat Maps/Estimated Congestion (RUDY)",
+                                   true);
+      graphics_->gifAddFrame(
+          routability_gif_key_, region, width_px, dbu_per_pixel, delay);
+      graphics_->setDisplayControl("Heat Maps/Estimated Congestion (RUDY)",
+                                   false);
+
+      graphics_->deleteLabel(label_name);
     }
 
-    log_->report("call routability with average_overflow_unscaled_: {:.3f}",
-                 average_overflow_unscaled_);
     // recover the densityPenalty values
     // if further routability-driven is needed
     std::pair<bool, bool> result
@@ -799,6 +825,11 @@ void NesterovPlace::runRoutability(int iter,
     }
 
     if (!is_routability_need_) {
+      if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images
+          && routability_gif_key_ != -1) {
+        graphics_->gifEnd(routability_gif_key_);
+        routability_gif_key_ = -1;
+      }
       for (auto& nb : nbVec_) {
         end_routability_area += nb->getNesterovInstsArea();
       }
@@ -818,7 +849,7 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
 
   if (num_region_converge == nbVec_.size()) {
     if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
-      graphics_->gifEnd();
+      graphics_->gifEnd(placement_gif_key_);
     }
     return true;
   }
