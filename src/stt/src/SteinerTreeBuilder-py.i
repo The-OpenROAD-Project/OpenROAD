@@ -18,7 +18,9 @@
 %include <std_vector.i>
 
 namespace std {
+#ifndef BAZEL
 %template(xy) vector<int>;
+#endif
 }
 
 %include "stt/SteinerTreeBuilder.h"
