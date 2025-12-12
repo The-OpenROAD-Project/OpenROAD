@@ -13,6 +13,7 @@
 // User Code Begin Includes
 #include "dbBlock.h"
 #include "dbJournal.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGuide>;
