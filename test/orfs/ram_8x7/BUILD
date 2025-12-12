@@ -1,6 +1,6 @@
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
-load("//test/orfs/mock-array:mock-array.bzl", "ASAP7_REMOVE_CELLS")
+load("//test/orfs/mock-array:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":sim.bzl", "sim_test")
 
 package(
