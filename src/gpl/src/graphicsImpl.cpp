@@ -102,16 +102,13 @@ void GraphicsImpl::debugForNesterovPlace(
   stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
   stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
 
-  routing_chart_ = gui->addChart("GPL Routing",
-                                 "Iteration",
-                                 {"avg RUDY",
-                                  "Std area",
-                                  "Overflowed Tiles",
-                                  "% Overflow Tiles",
-                                  "Total RUDY Overflow"});
+  routing_chart_ = gui->addChart(
+      "GPL Routing",
+      "Iteration",
+      {"avg RUDY", "Std area", "% Overflow Tiles", "Total RUDY Overflow"});
   routing_chart_->setXAxisFormat("%d");
-  routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f", "%.2f", "%.2f"});
-  routing_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0, 0.0});
+  routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f", "%.2f"});
+  routing_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0});
 
   initHeatmap();
   if (inst) {
@@ -569,7 +566,8 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
       values.push_back(
           static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
       values.push_back(static_cast<double>(nbVec_[0]->getStoredGradDistance()));
-      values.push_back(static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
+      values.push_back(
+          block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
     } else {
       values.push_back(0.0);
       values.push_back(0.0);
@@ -583,13 +581,17 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
     std::vector<double> values;
     if (!nbVec_.empty() && nbVec_[0]) {
       values.push_back(static_cast<double>(rb_->getRudyAverage()));
-      values.push_back(static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
-      values.push_back(static_cast<double>(rb_->getOverflowedTilesCount()));
-      values.push_back(static_cast<double>(rb_->getOverflowedTilesCount())
-                       / static_cast<double>(rb_->getTotalTilesCount())
-                       * 100.0);
+      values.push_back(
+          block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
+      const double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
+      values.push_back(total_tiles > 0.0 ? (static_cast<double>(
+                                                rb_->getOverflowedTilesCount())
+                                            / total_tiles * 100.0)
+                                         : 0.0);
       values.push_back((rb_->getTotalRudyOverflow()));
     } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
       values.push_back(0.0);
       values.push_back(0.0);
       values.push_back(0.0);
