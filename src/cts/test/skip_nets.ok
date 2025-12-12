@@ -20,7 +20,7 @@ CTS config:
 -sink_buffer_max_cap_derate:         0.01
 -sink_clustering_levels:             0
 -sink_clustering_max_diameter:       50.0
--sink_clustering_size:               20
+-sink_clustering_size:               30
 -skip_nets:                          gclk1 gclk3 
 -tree_buf:                           undefined
 -wire_unit:                          20
