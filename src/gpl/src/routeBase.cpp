@@ -820,6 +820,8 @@ std::pair<bool, bool> RouteBase::routability(
 void RouteBase::updateRudyAverage(bool verbose)
 {
   grt::Rudy* rudy = grouter_->getRudy();
+  total_route_overflow_ = 0.0;
+  overflowed_tiles_count_ = 0;
   std::vector<double> edge_cong_array;
 
   for (auto& tile : tg_->tiles()) {
@@ -848,7 +850,8 @@ void RouteBase::updateRudyAverage(bool verbose)
   }
 
   int arraySize = edge_cong_array.size();
-  std::ranges::sort(edge_cong_array, std::less<double>());
+  // std::ranges::sort(edge_cong_array, std::less<double>());
+  std::sort(edge_cong_array.rbegin(), edge_cong_array.rend());
 
   double avg005RC = 0;
   double avg010RC = 0;
