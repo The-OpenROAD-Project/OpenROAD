@@ -25,7 +25,6 @@ sta::define_cmd_args "global_placement" {\
     [-routability_check_overflow routability_check_overflow]\
     [-routability_snapshot_overflow routability_snapshot_overflow]\
     [-routability_max_density routability_max_density]\
-    [-routability_max_inflation_iter routability_max_inflation_iter]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
     [-routability_rc_coefficients routability_rc_coefficients]\
@@ -48,7 +47,6 @@ proc global_placement { args } {
       -initial_place_max_iter -initial_place_max_fanout \
       -routability_check_overflow -routability_snapshot_overflow \
       -routability_max_density \
-      -routability_max_inflation_iter \
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
