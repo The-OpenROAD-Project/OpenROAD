@@ -15,6 +15,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-variable"
 #include "map/if/if.h"
 #pragma GCC diagnostic pop
 #include "cut/abc_library_factory.h"
