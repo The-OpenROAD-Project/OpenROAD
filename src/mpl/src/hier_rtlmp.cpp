@@ -106,7 +106,11 @@ void HierRTLMP::setGlobalFence(float fence_lx,
                                float fence_ux,
                                float fence_uy)
 {
-  tree_->global_fence = Rect(fence_lx, fence_ly, fence_ux, fence_uy);
+  const float x_max
+      = fence_ux == 0.0 ? std::numeric_limits<float>::max() : fence_ux;
+  const float y_max
+      = fence_uy == 0.0 ? std::numeric_limits<float>::max() : fence_uy;
+  tree_->global_fence = Rect(fence_lx, fence_ly, x_max, y_max);
 }
 
 void HierRTLMP::setHaloWidth(float halo_width)
