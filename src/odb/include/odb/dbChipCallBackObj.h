@@ -21,6 +21,9 @@ class dbMarkerCategory;
 class dbChipCallBackObj
 {
  public:
+  dbChipCallBackObj() { _owner = nullptr; }
+  virtual ~dbChipCallBackObj() { removeOwner(); }
+
   // dbMarkerCategory Start
   virtual void inDbMarkerCategoryCreate(dbMarkerCategory*) {}
   virtual void inDbMarkerCategoryDestroy(dbMarkerCategory*) {}
@@ -38,9 +41,6 @@ class dbChipCallBackObj
   void addOwner(dbChip* new_owner);
   bool hasOwner() const { return (_owner != nullptr); }
   void removeOwner();
-
-  dbChipCallBackObj() { _owner = nullptr; }
-  virtual ~dbChipCallBackObj() { removeOwner(); }
 
  private:
   dbChip* _owner = nullptr;

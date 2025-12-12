@@ -46,6 +46,9 @@ class dbWire;
 class dbBlockCallBackObj
 {
  public:
+  dbBlockCallBackObj() { owner_ = nullptr; }
+  virtual ~dbBlockCallBackObj() { removeOwner(); }
+
   // dbInst Start
   virtual void inDbInstCreate(dbInst*) {}
   virtual void inDbInstCreate(dbInst*, dbRegion*) {}
@@ -193,9 +196,6 @@ class dbBlockCallBackObj
   void addOwner(dbBlock* new_owner);
   bool hasOwner() const { return (owner_ != nullptr); }
   void removeOwner();
-
-  dbBlockCallBackObj() { owner_ = nullptr; }
-  virtual ~dbBlockCallBackObj() { removeOwner(); }
 
  private:
   dbBlock* owner_;
