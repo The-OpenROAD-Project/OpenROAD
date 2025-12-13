@@ -29,7 +29,8 @@ using namespace pdn;
 // before these definitions
 namespace std {
   %template() std::pair<int, bool>;
-#ifndef BAZEL
+#ifndef SWIG_VECTOR_INT
+#define SWIG_VECTOR_INT
   %template(split_cuts_stuff) std::vector<int>;
 #endif
   %template(stuff)        std::array<int, 4>;

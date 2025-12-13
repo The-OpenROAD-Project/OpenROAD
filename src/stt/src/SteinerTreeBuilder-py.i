@@ -18,7 +18,8 @@
 %include <std_vector.i>
 
 namespace std {
-#ifndef BAZEL
+#ifndef SWIG_VECTOR_INT
+#define SWIG_VECTOR_INT
 %template(xy) vector<int>;
 #endif
 }
