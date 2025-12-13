@@ -36,7 +36,6 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 #include "options.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
