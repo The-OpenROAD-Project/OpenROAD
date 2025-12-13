@@ -3934,7 +3934,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
                "insert_buffer",
-               1,
+               2,
                "[Dump this dbNet]");
     dump(true);
 
@@ -3943,7 +3943,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
       debugPrint(getImpl()->getLogger(),
                  utl::ODB,
                  "insert_buffer",
-                 1,
+                 2,
                  "[Dump other dbNet {}]",
                  other_dbnet_idx++);
       other_dbnet->dump(true);
