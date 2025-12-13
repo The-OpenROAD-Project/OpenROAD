@@ -8,20 +8,11 @@ orfs_flow(
     name = "gcd",
     # buildifier: disable=unsorted-dict-items
     arguments = {
-        # Faster builds
-        "GPL_TIMING_DRIVEN": "0",
-        "SKIP_INCREMENTAL_REPAIR": "1",
-        "SKIP_LAST_GASP": "1",
         # Various
         "CORE_AREA": "1.08 1.08 15.12 15.12",
         "DIE_AREA": "0 0 16.2 16.2",
         "PLACE_DENSITY": "0.35",
         "OPENROAD_HIERARCHICAL": "1",
-        # Start simple with eqy
-        "SKIP_PIN_SWAP": "1",
-        "SKIP_GATE_CLONING": "1",
-        "SKIP_VT_SWAP": "1",
-        "SKIP_CRIT_VT_SWAP": "1",
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],
