@@ -10,7 +10,13 @@
 #include "dbBlock.h"
 #include "dbBlockItr.h"
 #include "dbChipConn.h"
+#include "dbChipConnItr.h"
+#include "dbChipInst.h"
+#include "dbChipInstItr.h"
+#include "dbChipNet.h"
+#include "dbChipNetItr.h"
 #include "dbChipRegion.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbMarkerCategory.h"
 #include "dbNameCache.h"
@@ -20,18 +26,13 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
+#include "odb/dbChipCallBackObj.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include <cstdlib>
-
-#include "dbChipConnItr.h"
-#include "dbChipInst.h"
-#include "dbChipInstItr.h"
-#include "dbChipNet.h"
-#include "dbChipNetItr.h"
-#include "dbCommon.h"
-#include "odb/dbObject.h"
-#include "odb/geom.h"
+#include <list>
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
@@ -342,6 +343,11 @@ _dbChip::~_dbChip()
   delete name_cache_;
   delete block_itr_;
   delete prop_itr_;
+
+  while (!callbacks_.empty()) {
+    auto _cbitr = callbacks_.begin();
+    (*_cbitr)->removeOwner();
+  }
   // User Code End Destructor
 }
 

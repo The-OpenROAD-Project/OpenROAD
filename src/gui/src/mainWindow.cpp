@@ -362,7 +362,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::reportSlackHistogramPaths);
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
-  connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
+  connect(this, &MainWindow::chipLoaded, drc_viewer_, &DRCWidget::setChip);
   connect(
       this, &MainWindow::blockLoaded, clock_viewer_, &ClockWidget::setBlock);
   connect(drc_viewer_,
