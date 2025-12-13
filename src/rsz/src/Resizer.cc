@@ -2719,8 +2719,19 @@ NetSeq Resizer::resizeWorstSlackNets()
   for (auto pair : net_slack_map_) {
     nets.push_back(pair.first);
   }
-  sort(nets, [this](const Net* net1, const Net* net2) {
-    return resizeNetSlack(net1) < resizeNetSlack(net2);
+  // We are manually breaking ties to enforce stability, so use std::sort since
+  // there is no need to pay the cost for stable sorting here
+  std::ranges::sort(nets, [this](const Net* net1, const Net* net2) {
+    auto slack1 = resizeNetSlack(net1);
+    auto slack2 = resizeNetSlack(net2);
+    if (slack1 != slack2) {
+      return slack1 < slack2;
+    }
+
+    // In the event of a tie use ID to keep the sort stable.
+    auto dbnet1 = db_network_->staToDb(net1);
+    auto dbnet2 = db_network_->staToDb(net2);
+    return dbnet1->getId() < dbnet2->getId();
   });
 
   int nworst_nets = std::ceil(nets.size() * worst_slack_nets_percent_ / 100.0);
