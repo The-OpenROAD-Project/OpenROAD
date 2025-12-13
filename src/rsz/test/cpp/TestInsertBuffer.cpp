@@ -2703,4 +2703,74 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case25)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+TEST_F(TestInsertBuffer, BeforeLoads_Case26)
+{
+  // This case has a redundant port punching because the new buffer is placed at
+  // the LCA (least common ancestor) module.
+  // TODO: Enhance the algorithm to avoid port punching.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buffer_master);
+
+  // Get ODB objects
+  dbInst* h0_drvr = block_->findInst("h0/drvr");
+  ASSERT_NE(h0_drvr, nullptr);
+  dbInst* h1_load0 = block_->findInst("h1/load0");
+  ASSERT_NE(h1_load0, nullptr);
+  dbInst* h1_load1 = block_->findInst("h1/load1");
+  ASSERT_NE(h1_load1, nullptr);
+
+  dbITerm* h0_drvr_z = h0_drvr->findITerm("Z");
+  ASSERT_NE(h0_drvr_z, nullptr);
+  dbITerm* h1_load0_a = h1_load0->findITerm("A");
+  ASSERT_NE(h1_load0_a, nullptr);
+  dbITerm* h1_load1_a = h1_load1->findITerm("A");
+  ASSERT_NE(h1_load1_a, nullptr);
+
+  dbNet* target_net = h0_drvr_z->getNet();
+  ASSERT_NE(target_net, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  //----------------------------------------------------
+  // Insert buffer
+  //----------------------------------------------------
+  std::set<dbObject*> loads;
+  loads.insert(h1_load0_a);
+  loads.insert(h1_load1_a);
+
+  dbInst* new_buf
+      = target_net->insertBufferBeforeLoads(loads,
+                                            buffer_master,
+                                            nullptr,
+                                            "new_buf",
+                                            odb::dbNameUniquifyType::ALWAYS,
+                                            false);
+  ASSERT_NE(new_buf, nullptr);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+}
+
 }  // namespace odb
