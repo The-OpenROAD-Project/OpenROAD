@@ -365,8 +365,7 @@ TEST_F(BufRemTest3, RemoveBufferCase5)
  output out;
 
 
- BUF_X1 buf0 (.A(in),
-    .Z(out));
+ assign out = in;
 endmodule
 )";
 
@@ -448,10 +447,6 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
  output out6;
 
 
- BUF_X1 load_top2 (.A(out1),
-    .Z(out2));
- BUF_X1 load_top3 (.A(out1),
-    .Z(out3));
  MOD1 mod1_inst (.clk_in(clk),
     .d_in(in1),
     .q_out(out1));
@@ -462,6 +457,8 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
     .in3(out4),
     .out1(out5),
     .out2(out6));
+ assign out2 = out1;
+ assign out3 = out1;
 endmodule
 module MOD1 (clk_in,
     d_in,
