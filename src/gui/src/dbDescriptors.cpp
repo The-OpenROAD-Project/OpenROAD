@@ -2948,6 +2948,38 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     props.push_back({std::move(title), widths});
   }
 
+  if (layer->hasTwoWidthsSpacingRules()) {
+    const int widths = layer->getTwoWidthsSpacingTableNumWidths();
+
+    PropertyList spacing_rules;
+    for (int i = 0; i < widths; i++) {
+      const std::string prefix_title = Property::convert_dbu(
+          layer->getTwoWidthsSpacingTableWidth(i), true);
+      const std::string prl_title
+          = layer->getTwoWidthsSpacingTableHasPRL(i)
+                ? " - PRL "
+                      + Property::convert_dbu(
+                          layer->getTwoWidthsSpacingTablePRL(i), true)
+                : "";
+
+      for (int j = 0; j < widths; j++) {
+        std::string title = prefix_title;
+        title += " - ";
+        title += Property::convert_dbu(layer->getTwoWidthsSpacingTableWidth(j),
+                                       true);
+        title += prl_title;
+        spacing_rules.emplace_back(
+            title,
+            Property::convert_dbu(layer->getTwoWidthsSpacingTableEntry(i, j),
+                                  true));
+      }
+    }
+
+    if (!spacing_rules.empty()) {
+      props.push_back({"Two width spacing rules", spacing_rules});
+    }
+  }
+
   PropertyList cutclasses;
   for (auto* cutclass : layer->getTechLayerCutClassRules()) {
     std::string text
