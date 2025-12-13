@@ -54,9 +54,9 @@ class Graphics : public gui::Renderer, public MplObserver
   void drawObjects(gui::Painter& painter) override;
 
   void setMacroBlockages(
-      const std::vector<mpl::Rect>& macro_blockages) override;
+      const std::vector<odb::Rect>& macro_blockages) override;
   void setPlacementBlockages(
-      const std::vector<mpl::Rect>& placement_blockages) override;
+      const std::vector<odb::Rect>& placement_blockages) override;
   void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
@@ -66,8 +66,8 @@ class Graphics : public gui::Renderer, public MplObserver
   void setTargetClusterId(int target_cluster_id) override;
   void setOutline(const odb::Rect& outline) override;
   void setCurrentCluster(Cluster* current_cluster) override;
-  void setGuides(const std::map<int, Rect>& guides) override;
-  void setFences(const std::map<int, Rect>& fences) override;
+  void setGuides(const std::map<int, odb::Rect>& guides) override;
+  void setFences(const std::map<int, odb::Rect>& fences) override;
   void setIOConstraintsMap(
       const ClusterToBoundaryRegionMap& io_cluster_to_constraint) override;
   void setBlockedRegionsForPins(
@@ -83,7 +83,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawBlockedRegionsIndication(gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
-  void drawOffsetRect(const Rect& rect,
+  void drawOffsetRect(const odb::Rect& rect,
                       const std::string& center_text,
                       gui::Painter& painter);
   void drawFences(gui::Painter& painter);
@@ -111,8 +111,8 @@ class Graphics : public gui::Renderer, public MplObserver
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
-  std::vector<mpl::Rect> macro_blockages_;
-  std::vector<mpl::Rect> placement_blockages_;
+  std::vector<odb::Rect> macro_blockages_;
+  std::vector<odb::Rect> placement_blockages_;
   std::vector<BundledNet> bundled_nets_;
   odb::Rect outline_;
   int target_cluster_id_{-1};
@@ -125,8 +125,8 @@ class Graphics : public gui::Renderer, public MplObserver
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.
   Cluster* current_cluster_{nullptr};
-  std::map<int, Rect> guides_;  // Id -> Guidance Region
-  std::map<int, Rect> fences_;  // Id -> Fence
+  std::map<int, odb::Rect> guides_;  // Id -> Guidance Region
+  std::map<int, odb::Rect> fences_;  // Id -> Fence
 
   int x_mark_size_{0};  // For blocked regions.
 
