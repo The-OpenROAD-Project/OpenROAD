@@ -2948,7 +2948,6 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
   }
 
   if (layer->hasTwoWidthsSpacingRules()) {
-    std::vector<std::vector<odb::uint>> spacing_table;
     const int widths = layer->getTwoWidthsSpacingTableNumWidths();
 
     PropertyList spacing_rules;
