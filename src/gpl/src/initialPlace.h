@@ -50,6 +50,7 @@ class InitialPlace
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   std::unique_ptr<AbstractGraphics> graphics_;
   utl::Logger* log_ = nullptr;
+  int gif_key_ = 0;
 
   // Solve two SparseMatrix equations here;
   //
