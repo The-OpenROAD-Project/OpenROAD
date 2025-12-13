@@ -36,6 +36,7 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
+#include "odb/odb.h"
 #include "options.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -2962,10 +2963,11 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
                 : "";
 
       for (int j = 0; j < widths; j++) {
-        std::string title = prefix_title + " - "
-                            + Property::convert_dbu(
-                                layer->getTwoWidthsSpacingTableWidth(j), true)
-                            + prl_title;
+        std::string title = prefix_title;
+        title += " - ";
+        title += Property::convert_dbu(layer->getTwoWidthsSpacingTableWidth(j),
+                                       true);
+        title += prl_title;
         spacing_rules.emplace_back(
             title,
             Property::convert_dbu(layer->getTwoWidthsSpacingTableEntry(i, j),
