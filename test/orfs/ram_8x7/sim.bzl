@@ -24,7 +24,7 @@ def sim_test(
     verilog_library(
         name = "{name}_split".format(name = name),
         srcs = [
-            "//test/orfs/mock-array:asap7_files",
+            "//test/orfs/asap7:asap7_files",
             #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
             #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
             #    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
