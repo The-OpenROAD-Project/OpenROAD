@@ -4043,58 +4043,61 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
              this->getName());
 
   // Also connect to ModNet if it exists in this module
-  std::set<dbModNet*> related_modnets;
-  findRelatedModNets(related_modnets);
-  dbModNet* orig_mod_net = nullptr;
-  std::set<dbModNet*> modnets_in_target_module;
-  for (dbModNet* modnet : related_modnets) {
-    if (modnet->getParent() == target_module) {
-      // There can be multiple modnets in the target module
-      modnets_in_target_module.insert(modnet);
+  if (block->getDb()->hasHierarchy()) {
+    std::set<dbModNet*> related_modnets;
+    findRelatedModNets(related_modnets);
+    dbModNet* orig_mod_net = nullptr;
+    std::set<dbModNet*> modnets_in_target_module;
+    for (dbModNet* modnet : related_modnets) {
+      if (modnet->getParent() == target_module) {
+        // There can be multiple modnets in the target module
+        modnets_in_target_module.insert(modnet);
+      }
     }
-  }
 
-  if (modnets_in_target_module.size() > 1) {
-    // There are multiple modnets in the target module.
-    // Select the first modnet that the driver is connected to.
-    //
-    // Algorithm:
-    // 1. Find the driver terminal of this flat net.
-    // 2. Fanout traversal through modnets from the driver.
-    // 3. Select the first modnet that is included in the
-    //    modnets_in_target_module.
-    orig_mod_net = getFirstDriverModNetInTargetModule(modnets_in_target_module);
-  } else if (modnets_in_target_module.size() == 1) {
-    orig_mod_net = *modnets_in_target_module.begin();
-  }
+    if (modnets_in_target_module.size() > 1) {
+      // There are multiple modnets in the target module.
+      // Select the first modnet that the driver is connected to.
+      //
+      // Algorithm:
+      // 1. Find the driver terminal of this flat net.
+      // 2. Fanout traversal through modnets from the driver.
+      // 3. Select the first modnet that is included in the
+      //    modnets_in_target_module.
+      orig_mod_net
+          = getFirstDriverModNetInTargetModule(modnets_in_target_module);
+    } else if (modnets_in_target_module.size() == 1) {
+      orig_mod_net = *modnets_in_target_module.begin();
+    }
 
-  if (orig_mod_net) {
-    buf_input_iterm->connect(orig_mod_net);
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "insert_buffer",
-               1,
-               "BeforeLoads: Connected buffer input '{}' to "
-               "original hierarchical net '{}'",
-               buf_input_iterm->getName(),
-               orig_mod_net->getHierarchicalName());
-  } else {
-    // If no logical net found in target module, it might be a cross-hierarchy
-    // connection where we need to create the logical connection from scratch.
-    dbObject* drvr = getFirstDriverTerm();
-    // Assuming driver is ITerm for now
-    if (drvr && drvr->getObjectType() == dbITermObj) {
-      dbITerm* drvr_iterm = static_cast<dbITerm*>(drvr);
-      if (drvr_iterm->getInst()->getModule() != target_module) {
-        hierarchicalConnect(drvr_iterm, buf_input_iterm);
-        debugPrint(getImpl()->getLogger(),
-                   utl::ODB,
-                   "insert_buffer",
-                   1,
-                   "BeforeLoads: Connected buffer input '{}' to "
-                   "original hierarchical net '{}' via hierarchicalConnect",
-                   buf_input_iterm->getName(),
-                   drvr_iterm->getName());
+    if (orig_mod_net) {
+      buf_input_iterm->connect(orig_mod_net);
+      debugPrint(getImpl()->getLogger(),
+                 utl::ODB,
+                 "insert_buffer",
+                 1,
+                 "BeforeLoads: Connected buffer input '{}' to "
+                 "original hierarchical net '{}'",
+                 buf_input_iterm->getName(),
+                 orig_mod_net->getHierarchicalName());
+    } else {
+      // If no logical net found in target module, it might be a cross-hierarchy
+      // connection where we need to create the logical connection from scratch.
+      dbObject* drvr = getFirstDriverTerm();
+      // Assuming driver is ITerm for now
+      if (drvr && drvr->getObjectType() == dbITermObj) {
+        dbITerm* drvr_iterm = static_cast<dbITerm*>(drvr);
+        if (drvr_iterm->getInst()->getModule() != target_module) {
+          hierarchicalConnect(drvr_iterm, buf_input_iterm);
+          debugPrint(getImpl()->getLogger(),
+                     utl::ODB,
+                     "insert_buffer",
+                     1,
+                     "BeforeLoads: Connected buffer input '{}' to "
+                     "original hierarchical net '{}' via hierarchicalConnect",
+                     buf_input_iterm->getName(),
+                     drvr_iterm->getName());
+        }
       }
     }
   }
