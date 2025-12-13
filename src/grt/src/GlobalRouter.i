@@ -269,6 +269,11 @@ void write_pin_locations(const char* file_name)
   getGlobalRouter()->writePinLocations(file_name);
 }
 
+float estimate_path_resistance(odb::dbITerm* pin1, odb::dbITerm* pin2)
+{
+  return getGlobalRouter()->estimatePathResistance(pin1, pin2);
+}
+
 } // namespace
 
 %} // inline

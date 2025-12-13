@@ -463,6 +463,36 @@ proc report_wire_length { args } {
   }
 }
 
+sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name }
+
+proc estimate_path_resistance { args } {
+  sta::parse_key_args "estimate_path_resistance" args \
+    keys {} \
+    flags {}
+
+  if { [llength $args] != 2 } {
+    utl::error GRT 282 "estimate_path_resistance requires two pin names."
+  }
+  lassign $args pin1_name pin2_name
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 283 "Missing dbBlock."
+  }
+
+  set pin1 [$block findITerm $pin1_name]
+  if { $pin1 == "NULL" } {
+    utl::error GRT 284 "Pin $pin1_name not found."
+  }
+
+  set pin2 [$block findITerm $pin2_name]
+  if { $pin2 == "NULL" } {
+    utl::error GRT 285 "Pin $pin2_name not found."
+  }
+
+  return [grt::estimate_path_resistance $pin1 $pin2]
+}
+
 namespace eval grt {
 proc check_routing_layer { layer } {
   if { ![ord::db_has_tech] } {

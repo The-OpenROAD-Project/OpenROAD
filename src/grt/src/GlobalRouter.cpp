@@ -3176,6 +3176,170 @@ void GlobalRouter::checkPinPlacement()
   }
 }
 
+double GlobalRouter::dbuToMicrons(int dbu)
+{
+  return (double) dbu / db_->getTech()->getDbUnitsPerMicron();
+}
+
+float GlobalRouter::getLayerResistance(int layer,
+                                       int length,
+                                       odb::dbNet* db_net)
+{
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+  if (!tech_layer) {
+    return 0;
+  }
+
+  int width = tech_layer->getWidth();
+  double resistance = tech_layer->getResistance();
+
+  // If net has NDR, get the correct width value
+  odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
+  if (ndr != nullptr) {
+    odb::dbTechLayerRule* layerRule = ndr->getLayerRule(tech_layer);
+    if (layerRule) {
+      width = layerRule->getWidth();
+    }
+  }
+
+  const float layer_width = dbuToMicrons(width);
+  const float res_ohm_per_micron = resistance / layer_width;
+  float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
+
+  return final_resistance;
+}
+
+float GlobalRouter::getViaResistance(int from_layer, int to_layer)
+{
+  if (abs(to_layer - from_layer) == 0) {
+    return 0.0;
+  }
+
+  odb::dbTech* tech = db_->getTech();
+  float total_via_resistance = 0.0;
+  int start = std::min(from_layer, to_layer);
+  int end = std::max(from_layer, to_layer);
+
+  for (int i = start; i < end; i++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(i);
+    odb::dbTechLayer* cut_layer = tech_layer->getUpperLayer();
+    if (cut_layer) {
+      double resistance = cut_layer->getResistance();
+      total_via_resistance += resistance;
+    }
+  }
+
+  return total_via_resistance;
+}
+
+float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
+                                           odb::dbITerm* pin2)
+{
+  odb::dbNet* db_net = pin1->getNet();
+  if (routes_.find(db_net) == routes_.end()) {
+    return 0.0;
+  }
+
+  std::vector<PinGridLocation> pin_locs = getPinGridPositions(db_net);
+  PinGridLocation* start_loc = nullptr;
+  PinGridLocation* end_loc = nullptr;
+
+  for (auto& loc : pin_locs) {
+    if (loc.iterm == pin1) {
+      start_loc = &loc;
+    } else if (loc.iterm == pin2) {
+      end_loc = &loc;
+    }
+  }
+
+  if (!start_loc || !end_loc) {
+    return 0.0;
+  }
+
+  RoutePt start_pt(start_loc->grid_pt.getX(),
+                   start_loc->grid_pt.getY(),
+                   start_loc->conn_layer);
+  RoutePt end_pt(
+      end_loc->grid_pt.getX(), end_loc->grid_pt.getY(), end_loc->conn_layer);
+
+  // Build graph
+  std::map<RoutePt, std::vector<RoutePt>> adj;
+  GRoute& route = routes_[db_net];
+
+  for (const GSegment& seg : route) {
+    RoutePt p1(seg.init_x, seg.init_y, seg.init_layer);
+    RoutePt p2(seg.final_x, seg.final_y, seg.final_layer);
+    adj[p1].push_back(p2);
+    adj[p2].push_back(p1);
+  }
+
+  // BFS
+  std::queue<RoutePt> q;
+  q.push(start_pt);
+  std::map<RoutePt, RoutePt> parent;
+  std::set<RoutePt> visited;
+  visited.insert(start_pt);
+  bool found = false;
+
+  while (!q.empty()) {
+    RoutePt curr = q.front();
+    q.pop();
+
+    if (curr == end_pt) {
+      found = true;
+      break;
+    }
+
+    for (const RoutePt& neighbor : adj[curr]) {
+      if (visited.find(neighbor) == visited.end()) {
+        visited.insert(neighbor);
+        parent[neighbor] = curr;
+        q.push(neighbor);
+      }
+    }
+  }
+
+  if (!found) {
+    return 0.0;
+  }
+
+  // Calculate resistance
+  float total_resistance = 0.0;
+
+  // Path resistance
+  RoutePt curr = end_pt;
+  while (!(curr == start_pt)) {
+    RoutePt prev = parent[curr];
+
+    if (curr.layer() != prev.layer()) {
+      // Via
+      total_resistance += getViaResistance(prev.layer(), curr.layer());
+      logger_->report("Via resistance: {} - From {} to {} at ({}, {})",
+                      getViaResistance(prev.layer(), curr.layer()),
+                      curr.layer(),
+                      prev.layer(),
+                      curr.x(),
+                      curr.y());
+    } else {
+      // Wire
+      int length = abs(curr.x() - prev.x()) + abs(curr.y() - prev.y());
+      total_resistance += getLayerResistance(curr.layer(), length, db_net);
+      logger_->report(
+          "Wire resistance: {} - From ({}, {}) - To ({}, {}) - Layer {}",
+          getLayerResistance(curr.layer(), length, db_net),
+          prev.x(),
+          prev.y(),
+          curr.x(),
+          curr.y(),
+          curr.layer());
+    }
+    curr = prev;
+  }
+
+  return total_resistance;
+}
+
 int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
 {
   auto iter = routes_.find(db_net);

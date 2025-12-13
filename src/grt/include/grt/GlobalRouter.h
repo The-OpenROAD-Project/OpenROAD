@@ -286,6 +286,12 @@ class GlobalRouter
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
+  // Report wire resistance
+  float getLayerResistance(int layer, int length, odb::dbNet* net);
+  float getViaResistance(int from_layer, int to_layer);
+  double dbuToMicrons(int dbu);
+  float estimatePathResistance(odb::dbITerm* pin1, odb::dbITerm* pin2);
+
   bool findPinAccessPointPositions(
       const Pin& pin,
       std::map<int, std::vector<PointPair>>& ap_positions);
