@@ -5173,7 +5173,7 @@ Descriptor::Properties DbSBoxDescriptor::getDBProperties(odb::dbSBox* box) const
 
   props.push_back({"SWire", gui->makeSelected(box->getSWire())});
   props.push_back({"Shape type", box->getWireShapeType().getString()});
-  std::string direction = "";
+  std::string direction;
   switch (box->getDirection()) {
     case odb::dbSBox::UNDEFINED:
       direction = "Undefined";
