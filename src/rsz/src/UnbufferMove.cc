@@ -243,11 +243,12 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     return false;
   }
 
+  // jk: canRemoveBuffer fix1
   // Do not remove buffers connected to input/output ports
   // because verilog netlists use the net name for the port.
-  if (bufferBetweenPorts(buffer)) {
-    return false;
-  }
+  // if (bufferBetweenPorts(buffer)) {
+  //  return false;
+  //}
 
   // Don't remove buffers connected to modnets on both input and output
   // These buffers occupy as special place in hierarchy and cannot
@@ -300,9 +301,10 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   odb::dbNet* db_net_survivor = nullptr;
   odb::dbNet* db_net_removed = nullptr;
   if (out_net_ports) {
-    if (db_network_->hasPort(in_net)) {
-      return false;
-    }
+    // jk: canRemoveBuffer fix2
+    // if (db_network_->hasPort(in_net)) {
+    //  return false;
+    //}
     removed = in_net;
     db_net_survivor = out_db_net;
     db_net_removed = in_db_net;
