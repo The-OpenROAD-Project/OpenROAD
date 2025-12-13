@@ -12,7 +12,9 @@ estimate_parasitics -placement
 
 
 write_verilog_for_eqy eqy_repair_setup2 before "None"
-run_equivalence_test eqy_repair_setup2 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test eqy_repair_setup2 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 set db [ord::get_db]
 set chip [$db getChip]
 set block [$chip getBlock]
@@ -21,7 +23,9 @@ odb::dbInst_destroy $inst
 
 # handle the case where we are not really running the equivalence checks.
 if { [info exists ::env(EQUIVALENCE_CHECK)] } {
-  run_equivalence_test eqy_repair_setup2 ./Nangate45/work_around_yosys/ "None"
+  run_equivalence_test eqy_repair_setup2 \
+    -lib_dir ./Nangate45/work_around_yosys/ \
+    -remove_cells "None"
 } else {
   puts "Repair timing output failed equivalence test"
 }

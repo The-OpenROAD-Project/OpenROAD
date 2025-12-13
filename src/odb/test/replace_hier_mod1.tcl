@@ -36,7 +36,9 @@ report_checks -through r2/D -digits 3
 # - it looks like "-through" creates a cache internally.
 #report_checks -through u1z -through r2/D -digits 3
 puts "Equivalence check - pre"
-run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod1 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 
 puts "### swap bc1 to inv_chain ###"
 #set_debug_level ODB replace_design 1
@@ -50,7 +52,9 @@ estimate_parasitics -placement
 report_checks -through r2/D -digits 3
 #report_checks -through u1z -through r2/D -digits 3
 puts "Equivalence check - swap (buffer_chain -> inv_chain)"
-run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod1 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 
 puts "### swap bc1 back to buffer_chain ###"
 replace_hier_module bc1 buffer_chain
@@ -63,7 +67,9 @@ estimate_parasitics -placement
 report_checks -through r2/D -digits 3
 #report_checks -through u1z -through r2/D -digits 3
 puts "Equivalence check - swap for rollback (inv_chain -> buffer_chain)"
-run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod1 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 
 puts "### swap bc1 back to inv_chain ###"
 replace_hier_module bc1 inv_chain
@@ -76,4 +82,6 @@ estimate_parasitics -placement
 report_checks -through r2/D -digits 3
 #report_checks -through u1z -through r2/D -digits 3
 puts "Equivalence check - redo swap (buffer_chain -> inv_chain)"
-run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod1 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
