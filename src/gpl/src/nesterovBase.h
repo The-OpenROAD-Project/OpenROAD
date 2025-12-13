@@ -132,10 +132,14 @@ class GCell
 
   void print(utl::Logger* logger, bool print_only_name) const;
   void writeAttributesToCSV(std::ostream& out) const;
+  
+  // void setInflationAreaDelta(int64_t delta) { inflation_area_delta_ = delta; }
+  // int64_t getInflationAreaDelta() const { return inflation_area_delta_; }
 
  private:
   std::vector<Instance*> insts_;
   std::vector<GPin*> gPins_;
+  int64_t inflation_area_delta_ = 0;
   int lx_ = 0;
   int ly_ = 0;
   int ux_ = 0;

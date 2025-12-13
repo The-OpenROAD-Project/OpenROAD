@@ -50,6 +50,9 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys,
            "-routability_max_inflation_ratio",
            options.routabilityMaxInflationRatio);
+  checkKey(keys,
+           "-routability_min_inflation_ratio",
+           options.routabilityMinInflationRatio);
   checkKey(keys, "-pad_left", options.padLeft);
   checkKey(keys, "-pad_right", options.padRight);
   checkKey(keys,
