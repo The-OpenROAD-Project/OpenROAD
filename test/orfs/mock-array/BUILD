@@ -1,6 +1,6 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
-load(":asap7.bzl", "ASAP7_REMOVE_CELLS")
+load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
 package(
@@ -139,15 +139,3 @@ orfs_run(
         "Element_4x4",
     ]
 ]
-
-filegroup(
-    name = "asap7_files",
-    srcs = [
-        "asap7/asap7sc7p5t_AO_RVT_TT_201020.v",
-        "asap7/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
-        "asap7/asap7sc7p5t_OA_RVT_TT_201020.v",
-        "asap7/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
-    ],
-    visibility = ["//visibility:public"],
-)

@@ -1,6 +1,6 @@
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
-load("//test/orfs/mock-array:asap7.bzl", "ASAP7_REMOVE_CELLS")
+load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":sim.bzl", "sim_test")
 
 package(
@@ -83,10 +83,10 @@ filegroup(
     depth = 1,
     gate_verilog_files = [
         ":ram_8x7_{stage}_files".format(stage = STAGES[i + 1]),
-    ] + ([] if STAGES[i + 1] == "source" else ["//test/orfs/mock-array:asap7_files"]),
+    ] + ([] if STAGES[i + 1] == "source" else ["//test/orfs/asap7:asap7_files"]),
     gold_verilog_files = [
         ":ram_8x7_{stage}_files".format(stage = STAGES[i]),
-    ] + ([] if STAGES[i] == "source" else ["//test/orfs/mock-array:asap7_files"]),
+    ] + ([] if STAGES[i] == "source" else ["//test/orfs/asap7:asap7_files"]),
     module_top = "ram_8x7",
     tags = ["manual"],
 ) for i in range(len(STAGES) - 1)]
@@ -117,11 +117,11 @@ eqy_test(
     depth = 1,
     gate_verilog_files = [
         "bad.v",
-        "//test/orfs/mock-array:asap7_files",
+        "//test/orfs/asap7:asap7_files",
     ],
     gold_verilog_files = [
         "good.v",
-        "//test/orfs/mock-array:asap7_files",
+        "//test/orfs/asap7:asap7_files",
     ],
     module_top = "ram_8x7",
     tags = ["manual"],
