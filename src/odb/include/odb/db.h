@@ -2619,6 +2619,12 @@ class dbNet : public dbObject
                                   = dbNameUniquifyType::ALWAYS,
                                   bool loads_on_same_db_net = true);
 
+  ///
+  /// Connect a driver iterm to a load iterm, punching ports through hierarchy
+  /// as needed.
+  ///
+  void hierarchicalConnect(dbITerm* driver, dbITerm* load);
+
   // jk: move into _dbNet
  private:
   dbNet* createBufferNet(std::set<dbObject*>& terms,

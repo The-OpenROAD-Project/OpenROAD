@@ -37,7 +37,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
     sta_->postReadDef(block_);
   }
 
-  bool debug_ = false;  // Set to true to generate debug output
+  bool debug_ = true;  // Set to true to generate debug output
 };
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
@@ -2770,7 +2770,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case26)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 }  // namespace odb
