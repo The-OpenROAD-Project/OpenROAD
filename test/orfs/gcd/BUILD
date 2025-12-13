@@ -1,5 +1,5 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_flow")
-load(":eqy.bzl", "eqy_flow_test")
+load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
 package(features = ["layering_check"])
 

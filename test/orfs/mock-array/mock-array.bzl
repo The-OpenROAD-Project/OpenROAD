@@ -9,7 +9,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
-load("//test/orfs/gcd:eqy.bzl", "eqy_flow_test")
+load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
 FIRTOOL_OPTIONS = [
     "-disable-all-randomization",
