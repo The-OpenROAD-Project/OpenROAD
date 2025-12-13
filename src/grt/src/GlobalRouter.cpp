@@ -3234,7 +3234,8 @@ float GlobalRouter::getViaResistance(int from_layer, int to_layer)
 }
 
 float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
-                                           odb::dbITerm* pin2)
+                                           odb::dbITerm* pin2,
+                                           bool verbose)
 {
   odb::dbNet* db_net = pin1->getNet();
   if (routes_.find(db_net) == routes_.end()) {
@@ -3315,24 +3316,28 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
     if (curr.layer() != prev.layer()) {
       // Via
       total_resistance += getViaResistance(prev.layer(), curr.layer());
-      logger_->report("Via resistance: {} - From {} to {} at ({}, {})",
-                      getViaResistance(prev.layer(), curr.layer()),
-                      curr.layer(),
-                      prev.layer(),
-                      curr.x(),
-                      curr.y());
+      if (verbose) {
+        logger_->report("Via resistance: {} - From {} to {} at ({}, {})",
+                        getViaResistance(prev.layer(), curr.layer()),
+                        curr.layer(),
+                        prev.layer(),
+                        curr.x(),
+                        curr.y());
+      }
     } else {
       // Wire
       int length = abs(curr.x() - prev.x()) + abs(curr.y() - prev.y());
       total_resistance += getLayerResistance(curr.layer(), length, db_net);
-      logger_->report(
-          "Wire resistance: {} - From ({}, {}) - To ({}, {}) - Layer {}",
-          getLayerResistance(curr.layer(), length, db_net),
-          prev.x(),
-          prev.y(),
-          curr.x(),
-          curr.y(),
-          curr.layer());
+      if (verbose) {
+        logger_->report(
+            "Wire resistance: {} - From ({}, {}) - To ({}, {}) - Layer {}",
+            getLayerResistance(curr.layer(), length, db_net),
+            prev.x(),
+            prev.y(),
+            curr.x(),
+            curr.y(),
+            curr.layer());
+      }
     }
     curr = prev;
   }

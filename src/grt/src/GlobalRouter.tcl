@@ -463,12 +463,12 @@ proc report_wire_length { args } {
   }
 }
 
-sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name }
+sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name [-verbose] }
 
 proc estimate_path_resistance { args } {
   sta::parse_key_args "estimate_path_resistance" args \
     keys {} \
-    flags {}
+    flags {-verbose}
 
   if { [llength $args] != 2 } {
     utl::error GRT 282 "estimate_path_resistance requires two pin names."
@@ -490,7 +490,9 @@ proc estimate_path_resistance { args } {
     utl::error GRT 285 "Pin $pin2_name not found."
   }
 
-  return [grt::estimate_path_resistance $pin1 $pin2]
+  set verbose [info exists flags(-verbose)]
+
+  return [grt::estimate_path_resistance $pin1 $pin2 $verbose]
 }
 
 namespace eval grt {
