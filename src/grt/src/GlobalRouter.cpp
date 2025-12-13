@@ -3259,6 +3259,15 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
     return 0.0;
   }
 
+  if (verbose) {
+    logger_->report(
+        "Estimating Path Resistance between pin ({}) and pin ({}) through net "
+        "({})",
+        start_loc->iterm->getName(),
+        end_loc->iterm->getName(),
+        db_net->getConstName());
+  }
+
   RoutePt start_pt(start_loc->grid_pt.getX(),
                    start_loc->grid_pt.getY(),
                    start_loc->conn_layer);
@@ -3341,6 +3350,10 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
       }
     }
     curr = prev;
+  }
+
+  if (verbose) {
+    logger_->report("Total Resistance: {} ohms", total_resistance);
   }
 
   return total_resistance;
