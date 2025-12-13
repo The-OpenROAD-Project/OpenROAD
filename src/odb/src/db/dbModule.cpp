@@ -371,14 +371,14 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
   module->name_ = safe_strdup(name);
   _block->module_hash_.insert(module);
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: create {}",
+             module->getDebugName());
+
   if (_block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbModule {} at id {}",
-               module->name_,
-               module->getId());
     _block->journal_->beginAction(dbJournal::kCreateObject);
     _block->journal_->pushParam(dbModuleObj);
     _block->journal_->pushParam(module->name_);
@@ -460,17 +460,17 @@ void dbModule::destroy(dbModule* module)
 
   dbProperty::destroyProperties(_module);
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: delete {}",
+             module->getDebugName());
+
   // Journal the deletion of the dbModule after its ports
   // and properties deleted, so that on restore we have
   // dbModule to hang objects on.
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbModule {} at id {}",
-               module->getName(),
-               module->getId());
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbModuleObj);
     block->journal_->pushParam(module->getName());
