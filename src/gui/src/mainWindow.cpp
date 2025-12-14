@@ -574,6 +574,8 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
                           viewers_->getFocusNets(),
                           viewers_->getRouteGuides(),
                           viewers_->getNetTracks()));
+  gui->registerDescriptor<odb::dbWire*>(new DbWireDescriptor(db_));
+  gui->registerDescriptor<odb::dbSWire*>(new DbSWireDescriptor(db_));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(
       db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
   gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
@@ -622,6 +624,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbScanPartitionDescriptor(db_));
   gui->registerDescriptor<odb::dbScanChain*>(new DbScanChainDescriptor(db_));
   gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
+  gui->registerDescriptor<odb::dbSBox*>(new DbSBoxDescriptor(db_));
   gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
       new DbBoxDescriptor(db_));
   gui->registerDescriptor<odb::dbMasterEdgeType*>(
