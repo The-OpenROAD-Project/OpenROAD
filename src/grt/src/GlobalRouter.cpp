@@ -3179,7 +3179,7 @@ void GlobalRouter::checkPinPlacement()
 
 double GlobalRouter::dbuToMicrons(int dbu)
 {
-  return (double) dbu / db_->getTech()->getDbUnitsPerMicron();
+  return (double) dbu / db_->getDbuPerMicron();
 }
 
 float GlobalRouter::getLayerResistance(int layer,
@@ -3234,11 +3234,19 @@ float GlobalRouter::getViaResistance(int from_layer, int to_layer)
   return total_via_resistance;
 }
 
-float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
-                                           odb::dbITerm* pin2,
+float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
+                                           odb::dbObject* pin2,
                                            bool verbose)
 {
-  odb::dbNet* db_net = pin1->getNet();
+  odb::dbNet* db_net = nullptr;
+  if (pin1->getObjectType() == odb::dbITermObj) {
+    db_net = ((odb::dbITerm*) pin1)->getNet();
+  } else if (pin1->getObjectType() == odb::dbBTermObj) {
+    db_net = ((odb::dbBTerm*) pin1)->getNet();
+  } else {
+    return 0.0;
+  }
+
   if (routes_.find(db_net) == routes_.end()) {
     return 0.0;
   }
@@ -3249,9 +3257,9 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
   odb::dbTech* tech = db_->getTech();
 
   for (auto& loc : pin_locs) {
-    if (loc.iterm == pin1) {
+    if (loc.iterm == pin1 || loc.bterm == pin1) {
       start_loc = &loc;
-    } else if (loc.iterm == pin2) {
+    } else if (loc.iterm == pin2 || loc.bterm == pin2) {
       end_loc = &loc;
     }
   }
@@ -3261,11 +3269,17 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
   }
 
   if (verbose) {
+    std::string pin1_name = (pin1->getObjectType() == odb::dbITermObj)
+                                ? ((odb::dbITerm*) pin1)->getName()
+                                : ((odb::dbBTerm*) pin1)->getName();
+    std::string pin2_name = (pin2->getObjectType() == odb::dbITermObj)
+                                ? ((odb::dbITerm*) pin2)->getName()
+                                : ((odb::dbBTerm*) pin2)->getName();
     logger_->report(
         "Estimating Path Resistance between pin ({}) and pin ({}) through net "
         "({})",
-        start_loc->iterm->getName(),
-        end_loc->iterm->getName(),
+        pin1_name,
+        pin2_name,
         db_net->getConstName());
   }
 
@@ -3364,22 +3378,30 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
 
 // Estimate Path Resistance between two pins considering the vertical and
 // horizontal metal layers defined by the user
-float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
-                                           odb::dbITerm* pin2,
+float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
+                                           odb::dbObject* pin2,
                                            odb::dbTechLayer* layer1,
                                            odb::dbTechLayer* layer2,
                                            bool verbose)
 {
-  odb::dbNet* db_net = pin1->getNet();
+  odb::dbNet* db_net = nullptr;
+  if (pin1->getObjectType() == odb::dbITermObj) {
+    db_net = ((odb::dbITerm*) pin1)->getNet();
+  } else if (pin1->getObjectType() == odb::dbBTermObj) {
+    db_net = ((odb::dbBTerm*) pin1)->getNet();
+  } else {
+    return 0.0;
+  }
+
   std::vector<PinGridLocation> pin_locs = getPinGridPositions(db_net);
   PinGridLocation* start_loc = nullptr;
   PinGridLocation* end_loc = nullptr;
   odb::dbTech* tech = db_->getTech();
 
   for (auto& loc : pin_locs) {
-    if (loc.iterm == pin1) {
+    if (loc.iterm == pin1 || loc.bterm == pin1) {
       start_loc = &loc;
-    } else if (loc.iterm == pin2) {
+    } else if (loc.iterm == pin2 || loc.bterm == pin2) {
       end_loc = &loc;
     }
   }
@@ -3389,11 +3411,17 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
   }
 
   if (verbose) {
+    std::string pin1_name = (pin1->getObjectType() == odb::dbITermObj)
+                                ? ((odb::dbITerm*) pin1)->getName()
+                                : ((odb::dbBTerm*) pin1)->getName();
+    std::string pin2_name = (pin2->getObjectType() == odb::dbITermObj)
+                                ? ((odb::dbITerm*) pin2)->getName()
+                                : ((odb::dbBTerm*) pin2)->getName();
     logger_->report(
         "Estimating Path Resistance between pin ({}) and pin ({}) using layers "
         "{} and {}",
-        start_loc->iterm->getName(),
-        end_loc->iterm->getName(),
+        pin1_name,
+        pin2_name,
         layer1->getName(),
         layer2->getName());
   }

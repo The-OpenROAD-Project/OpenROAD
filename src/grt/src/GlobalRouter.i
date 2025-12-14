@@ -269,15 +269,25 @@ void write_pin_locations(const char* file_name)
   getGlobalRouter()->writePinLocations(file_name);
 }
 
-float estimate_path_resistance(odb::dbITerm* pin1,
-                                 odb::dbITerm* pin2,
+odb::dbObject* iterm_to_object(odb::dbITerm* iterm)
+{
+  return (odb::dbObject*) iterm;
+}
+
+odb::dbObject* bterm_to_object(odb::dbBTerm* bterm)
+{
+  return (odb::dbObject*) bterm;
+}
+
+float estimate_path_resistance(odb::dbObject* pin1,
+                                 odb::dbObject* pin2,
                                  bool verbose = false)
 {
   return getGlobalRouter()->estimatePathResistance(pin1, pin2, verbose);
 }
 
-float estimate_path_resistance(odb::dbITerm* pin1,
-				 odb::dbITerm* pin2,
+float estimate_path_resistance(odb::dbObject* pin1,
+				 odb::dbObject* pin2,
 				 odb::dbTechLayer* layer1,
 				 odb::dbTechLayer* layer2,
 				 bool verbose = false)

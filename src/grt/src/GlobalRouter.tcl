@@ -484,11 +484,27 @@ proc estimate_path_resistance { args } {
   }
 
   set pin1 [$block findITerm $pin1_name]
+  if { $pin1 != "NULL" } {
+    set pin1 [grt::iterm_to_object $pin1]
+  } else {
+    set pin1 [$block findBTerm $pin1_name]
+    if { $pin1 != "NULL" } {
+      set pin1 [grt::bterm_to_object $pin1]
+    }
+  }
   if { $pin1 == "NULL" } {
     utl::error GRT 284 "Pin $pin1_name not found."
   }
 
   set pin2 [$block findITerm $pin2_name]
+  if { $pin2 != "NULL" } {
+    set pin2 [grt::iterm_to_object $pin2]
+  } else {
+    set pin2 [$block findBTerm $pin2_name]
+    if { $pin2 != "NULL" } {
+      set pin2 [grt::bterm_to_object $pin2]
+    }
+  }
   if { $pin2 == "NULL" } {
     utl::error GRT 285 "Pin $pin2_name not found."
   }
@@ -516,7 +532,7 @@ proc estimate_path_resistance { args } {
 
     return [grt::estimate_path_resistance $pin1 $pin2 $layer1 $layer2 $verbose]
   } elseif { [info exists keys(-layer1)] || [info exists keys(-layer2)] } {
-    utl::error GRT 288 "Both -layer1 and -layer2 must be provided."
+    utl::error GRT 288 "Both or neither -layer1 and -layer2 must be provided."
   }
 
   return [grt::estimate_path_resistance $pin1 $pin2 $verbose]
