@@ -3246,6 +3246,7 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
   std::vector<PinGridLocation> pin_locs = getPinGridPositions(db_net);
   PinGridLocation* start_loc = nullptr;
   PinGridLocation* end_loc = nullptr;
+  odb::dbTech* tech = db_->getTech();
 
   for (auto& loc : pin_locs) {
     if (loc.iterm == pin1) {
@@ -3331,8 +3332,8 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
       if (verbose) {
         logger_->report("Via resistance: {} - From {} to {} at ({}, {})",
                         getViaResistance(prev.layer(), curr.layer()),
-                        curr.layer(),
-                        prev.layer(),
+                        tech->findRoutingLayer(curr.layer())->getConstName(),
+                        tech->findRoutingLayer(prev.layer())->getConstName(),
                         curr.x(),
                         curr.y());
       }
@@ -3348,7 +3349,7 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
             prev.y(),
             curr.x(),
             curr.y(),
-            curr.layer());
+            tech->findRoutingLayer(curr.layer())->getConstName());
       }
     }
     curr = prev;
@@ -3373,6 +3374,7 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
   std::vector<PinGridLocation> pin_locs = getPinGridPositions(db_net);
   PinGridLocation* start_loc = nullptr;
   PinGridLocation* end_loc = nullptr;
+  odb::dbTech* tech = db_->getTech();
 
   for (auto& loc : pin_locs) {
     if (loc.iterm == pin1) {
@@ -3517,10 +3519,11 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
       total_resistance
           += getViaResistance(start_loc->conn_layer, start_layer_id);
       if (verbose) {
-        logger_->report("Via resistance (Start): {} - From Layer {} to {}",
-                        getViaResistance(start_loc->conn_layer, start_layer_id),
-                        start_loc->conn_layer,
-                        start_layer_id);
+        logger_->report(
+            "Via resistance (Start): {} - From Layer {} to {}",
+            getViaResistance(start_loc->conn_layer, start_layer_id),
+            tech->findRoutingLayer(start_loc->conn_layer)->getConstName(),
+            tech->findRoutingLayer(start_layer_id)->getConstName());
       }
     }
 
@@ -3533,8 +3536,8 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
         if (verbose) {
           logger_->report("Via resistance (Corner): {} - Between {} and {}",
                           user_via_res,
-                          h_layer->getName(),
-                          v_layer->getName());
+                          h_layer->getConstName(),
+                          v_layer->getConstName());
         }
       }
     }
@@ -3549,7 +3552,7 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
           p0.y(),
           p1.x(),
           p1.y(),
-          mapped_layer);
+          tech->findRoutingLayer(mapped_layer)->getConstName());
     }
 
     // End via
@@ -3558,10 +3561,11 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
                                        : v_layer->getRoutingLevel();
       total_resistance += getViaResistance(end_loc->conn_layer, end_layer_id);
       if (verbose) {
-        logger_->report("Via resistance (End): {} - From Layer {} to {}",
-                        getViaResistance(end_loc->conn_layer, end_layer_id),
-                        end_loc->conn_layer,
-                        end_layer_id);
+        logger_->report(
+            "Via resistance (End): {} - From Layer {} to {}",
+            getViaResistance(end_loc->conn_layer, end_layer_id),
+            tech->findRoutingLayer(end_loc->conn_layer)->getConstName(),
+            tech->findRoutingLayer(end_layer_id)->getConstName());
       }
     }
   }
