@@ -557,7 +557,7 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
     if (port == nullptr) {
       // reject the transform if we can't estimate
       // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                  "because pin {} has no liberty port",
                  db_network_->name(params.driver), db_network_->name(pin));
       // clang-format on
@@ -581,7 +581,7 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
     if ((accept_if_slack_improves && fuzzyGreater(old_slack, new_slack))
         || (!accept_if_slack_improves && new_slack < 0)) {
       // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                  "because pin {} will have a violating or worse slack of {}",
                  db_network_->name(params.driver), db_network_->name(pin),
                  new_slack);
