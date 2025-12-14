@@ -12,12 +12,16 @@ namespace odb {
 class Rect;
 }
 namespace dpl {
-
-namespace legacy {
 class Edge;
 class Architecture;
 class DetailedMgr;
 class Network;
+
+namespace legacy {
+using ::dpl::Edge;
+using ::dpl::Architecture;
+using ::dpl::DetailedMgr;
+using ::dpl::Network;
 
 class DetailedGlobalSwap : public DetailedGenerator
 {
