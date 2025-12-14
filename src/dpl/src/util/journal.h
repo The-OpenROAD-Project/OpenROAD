@@ -114,6 +114,9 @@ class Journal
   size_t size() const { return actions_.size(); }
   const std::set<Node*>& getAffectedNodes() const { return affected_nodes_; }
   const std::set<Edge*>& getAffectedEdges() const { return affected_edges_; }
+  // iterator support for range-based for loops
+  auto begin() const { return actions_.begin(); }
+  auto end() const { return actions_.end(); }
   // other
   void clear();
   void undo(bool positions_only = false) const;
