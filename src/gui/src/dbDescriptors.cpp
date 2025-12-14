@@ -1696,12 +1696,8 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
         drawPathSegmentWithGraph(net, sink_object, painter);
       }
 
-      odb::dbWireShapeItr it;
-      it.begin(wire);
-      odb::dbShape shape;
-      while (it.next(shape)) {
-        painter.drawRect(shape.getBox());
-      }
+      auto* wire_descriptor = Gui::get()->getDescriptor<odb::dbWire*>();
+      wire_descriptor->highlight(wire, painter);
     } else {
       auto guides = net->getGuides();
       if (!guides.empty()) {
@@ -1809,15 +1805,9 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
   }
 
   // Draw special (i.e. geometric) routing
+  auto* swire_descriptor = Gui::get()->getDescriptor<odb::dbSWire*>();
   for (auto swire : net->getSWires()) {
-    for (auto sbox : swire->getWires()) {
-      if (sbox->getDirection() == odb::dbSBox::OCTILINEAR) {
-        painter.drawOctagon(sbox->getOct());
-      } else {
-        odb::Rect rect = sbox->getBox();
-        painter.drawRect(rect);
-      }
-    }
+    swire_descriptor->highlight(swire, painter);
   }
 }
 
@@ -1866,6 +1856,18 @@ Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
 
   if (BufferTree::isAggregate(net)) {
     props.push_back({"Buffer tree", gui->makeSelected(BufferTree(net))});
+  }
+
+  odb::dbWire* wire = net->getWire();
+  if (wire != nullptr) {
+    props.push_back({"Wire", gui->makeSelected(wire)});
+  }
+  SelectionSet swires;
+  for (auto* swire : net->getSWires()) {
+    swires.insert(gui->makeSelected(swire));
+  }
+  if (!swires.empty()) {
+    props.push_back({"Special wires", swires});
   }
 
   return props;
@@ -2944,6 +2946,38 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
       widths.emplace_back(Property::convert_dbu(width, true));
     }
     props.push_back({std::move(title), widths});
+  }
+
+  if (layer->hasTwoWidthsSpacingRules()) {
+    const int widths = layer->getTwoWidthsSpacingTableNumWidths();
+
+    PropertyList spacing_rules;
+    for (int i = 0; i < widths; i++) {
+      const std::string prefix_title = Property::convert_dbu(
+          layer->getTwoWidthsSpacingTableWidth(i), true);
+      const std::string prl_title
+          = layer->getTwoWidthsSpacingTableHasPRL(i)
+                ? " - PRL "
+                      + Property::convert_dbu(
+                          layer->getTwoWidthsSpacingTablePRL(i), true)
+                : "";
+
+      for (int j = 0; j < widths; j++) {
+        std::string title = prefix_title;
+        title += " - ";
+        title += Property::convert_dbu(layer->getTwoWidthsSpacingTableWidth(j),
+                                       true);
+        title += prl_title;
+        spacing_rules.emplace_back(
+            title,
+            Property::convert_dbu(layer->getTwoWidthsSpacingTableEntry(i, j),
+                                  true));
+      }
+    }
+
+    if (!spacing_rules.empty()) {
+      props.push_back({"Two width spacing rules", spacing_rules});
+    }
   }
 
   PropertyList cutclasses;
@@ -5011,7 +5045,12 @@ bool DbBoxDescriptor::lessThan(const std::any& l, const std::any& r) const
 Descriptor::Properties DbBoxDescriptor::getDBProperties(odb::dbBox* box) const
 {
   Properties props;
+  populateProperties(box, props);
+  return props;
+}
 
+void DbBoxDescriptor::populateProperties(odb::dbBox* box, Properties& props)
+{
   auto* gui = Gui::get();
 
   switch (box->getOwnerType()) {
@@ -5084,8 +5123,6 @@ Descriptor::Properties DbBoxDescriptor::getDBProperties(odb::dbBox* box) const
   } else if (auto* via = box->getBlockVia()) {
     props.push_back({"Block via", gui->makeSelected(via)});
   }
-
-  return props;
 }
 
 odb::dbBox* DbBoxDescriptor::getObject(const std::any& object) const
@@ -5104,6 +5141,88 @@ odb::dbTransform DbBoxDescriptor::getTransform(const std::any& object) const
     return box_xform->xform;
   }
   return odb::dbTransform();
+}
+
+//////////////////////////////////////////////////
+
+DbSBoxDescriptor::DbSBoxDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbSBox>(db)
+{
+}
+
+std::string DbSBoxDescriptor::getName(const std::any& object) const
+{
+  odb::Rect box;
+  getBBox(object, box);
+
+  std::string shape_text
+      = fmt::format("({}, {}), ({}, {})",
+                    Property::convert_dbu(box.xMin(), false),
+                    Property::convert_dbu(box.yMin(), false),
+                    Property::convert_dbu(box.xMax(), false),
+                    Property::convert_dbu(box.yMax(), false));
+
+  return fmt::format("SBox of {}: {}",
+                     getObject(object)->getOwnerType().getString(),
+                     shape_text);
+}
+
+std::string DbSBoxDescriptor::getTypeName() const
+{
+  return "SBox";
+}
+
+bool DbSBoxDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+{
+  bbox = getObject(object)->getBox();
+  return true;
+}
+
+void DbSBoxDescriptor::highlight(const std::any& object, Painter& painter) const
+{
+  auto* box = getObject(object);
+
+  if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
+    painter.drawOctagon(box->getOct());
+  } else {
+    odb::Rect rect = box->getBox();
+    painter.drawRect(rect);
+  }
+}
+
+void DbSBoxDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+}
+
+Descriptor::Properties DbSBoxDescriptor::getDBProperties(odb::dbSBox* box) const
+{
+  Properties props;
+
+  auto* gui = Gui::get();
+
+  DbBoxDescriptor::populateProperties(box, props);
+
+  props.push_back({"SWire", gui->makeSelected(box->getSWire())});
+  props.push_back({"Shape type", box->getWireShapeType().getString()});
+  std::string direction;
+  switch (box->getDirection()) {
+    case odb::dbSBox::UNDEFINED:
+      direction = "Undefined";
+      break;
+    case odb::dbSBox::HORIZONTAL:
+      direction = "Horizontal";
+      break;
+    case odb::dbSBox::VERTICAL:
+      direction = "Vertical";
+      break;
+    case odb::dbSBox::OCTILINEAR:
+      direction = "Octilinear";
+      break;
+  }
+  props.push_back({"Direction", direction});
+
+  return props;
 }
 
 //////////////////////////////////////////////////
@@ -5322,6 +5441,168 @@ Descriptor::Properties DbCellEdgeSpacingDescriptor::getDBProperties(
   props.push_back({"Optional", rule->isOptional()});
   props.push_back({"Soft", rule->isSoft()});
   props.push_back({"Exact", rule->isExact()});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbWireDescriptor::DbWireDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbWire>(db)
+{
+}
+
+std::string DbWireDescriptor::getName(const std::any& object) const
+{
+  auto* obj = getObject(object);
+  return obj->getNet()->getName();
+}
+
+std::string DbWireDescriptor::getTypeName() const
+{
+  return "Net Wire";
+}
+
+bool DbWireDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+{
+  auto* obj = getObject(object);
+  const auto box = obj->getBBox();
+  if (box.has_value()) {
+    bbox = *box;
+    return true;
+  }
+  return false;
+}
+
+void DbWireDescriptor::highlight(const std::any& object, Painter& painter) const
+{
+  auto* wire = getObject(object);
+
+  odb::dbWireShapeItr it;
+  it.begin(wire);
+  odb::dbShape shape;
+  while (it.next(shape)) {
+    painter.drawRect(shape.getBox());
+  }
+}
+
+void DbWireDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  for (auto* net : block->getNets()) {
+    odb::dbWire* wire = net->getWire();
+    if (wire != nullptr) {
+      func({wire, this});
+    }
+  }
+}
+
+Descriptor::Properties DbWireDescriptor::getDBProperties(
+    odb::dbWire* wire) const
+{
+  Properties props;
+  auto* gui = Gui::get();
+
+  props.push_back({"Net", gui->makeSelected(wire->getNet())});
+  props.push_back({"Is global", wire->isGlobalWire()});
+  props.push_back({"Count", wire->count()});
+  props.push_back({"Entries", wire->length()});
+  props.push_back({"Length", Property::convert_dbu(wire->getLength(), true)});
+
+  return props;
+}
+
+//////////////////////////////////////////////////
+
+DbSWireDescriptor::DbSWireDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbSWire>(db)
+{
+}
+
+std::string DbSWireDescriptor::getName(const std::any& object) const
+{
+  auto* obj = getObject(object);
+  return obj->getNet()->getName();
+}
+
+std::string DbSWireDescriptor::getTypeName() const
+{
+  return "Net SWire";
+}
+
+bool DbSWireDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+{
+  auto* obj = getObject(object);
+  if (obj->getWires().empty()) {
+    return false;
+  }
+  bbox.mergeInit();
+  for (auto* box : obj->getWires()) {
+    bbox.merge(box->getBox());
+  }
+  return true;
+}
+
+void DbSWireDescriptor::highlight(const std::any& object,
+                                  Painter& painter) const
+{
+  auto* wire = getObject(object);
+
+  auto* sbox_descriptor = Gui::get()->getDescriptor<odb::dbSBox*>();
+
+  for (auto* box : wire->getWires()) {
+    sbox_descriptor->highlight(box, painter);
+  }
+}
+
+void DbSWireDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  for (auto* net : block->getNets()) {
+    for (auto* swire : net->getSWires()) {
+      func({swire, this});
+    }
+  }
+}
+
+Descriptor::Properties DbSWireDescriptor::getDBProperties(
+    odb::dbSWire* wire) const
+{
+  Properties props;
+  auto* gui = Gui::get();
+
+  props.push_back({"Net", gui->makeSelected(wire->getNet())});
+  props.push_back({"Type", wire->getWireType().getString()});
+  if (wire->getShield() != nullptr) {
+    props.push_back({"Sheild net", gui->makeSelected(wire->getShield())});
+  }
+  if (wire->getWires().size() > kMaxBoxes) {
+    props.push_back({"Boxes", wire->getWires().size()});
+  } else {
+    SelectionSet boxes;
+    for (odb::dbSBox* box : wire->getWires()) {
+      boxes.insert(gui->makeSelected(box));
+    }
+    props.push_back({"Boxes", boxes});
+  }
 
   return props;
 }
