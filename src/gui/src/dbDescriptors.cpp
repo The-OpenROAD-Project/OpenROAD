@@ -2951,32 +2951,28 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
   if (layer->hasTwoWidthsSpacingRules()) {
     const int widths = layer->getTwoWidthsSpacingTableNumWidths();
 
-    PropertyList spacing_rules;
+    PropertyTable table(widths, widths);
     for (int i = 0; i < widths; i++) {
       const std::string prefix_title = Property::convert_dbu(
           layer->getTwoWidthsSpacingTableWidth(i), true);
       const std::string prl_title
           = layer->getTwoWidthsSpacingTableHasPRL(i)
-                ? " - PRL "
+                ? "\nPRL "
                       + Property::convert_dbu(
                           layer->getTwoWidthsSpacingTablePRL(i), true)
                 : "";
-
+      table.setRowHeader(i, prefix_title + prl_title);
+      table.setColumnHeader(i, prefix_title + prl_title);
       for (int j = 0; j < widths; j++) {
-        std::string title = prefix_title;
-        title += " - ";
-        title += Property::convert_dbu(layer->getTwoWidthsSpacingTableWidth(j),
-                                       true);
-        title += prl_title;
-        spacing_rules.emplace_back(
-            title,
-            Property::convert_dbu(layer->getTwoWidthsSpacingTableEntry(i, j),
-                                  true));
+        table.setData(i,
+                      j,
+                      Property::convert_dbu(
+                          layer->getTwoWidthsSpacingTableEntry(i, j), true));
       }
     }
 
-    if (!spacing_rules.empty()) {
-      props.push_back({"Two width spacing rules", spacing_rules});
+    if (!table.empty()) {
+      props.push_back({"Two width spacing rules", table});
     }
   }
 
