@@ -159,12 +159,14 @@ proc optimize_mirroring { args } {
 sta::define_cmd_args "improve_placement" {\
     [-random_seed seed]\
     [-max_displacement disp|{disp_x disp_y}]\
+    [-global_swap_args {options}]\
     [-disallow_one_site_gaps]\
 }
 
 proc improve_placement { args } {
   sta::parse_key_args "improve_placement" args \
-    keys {-random_seed -max_displacement} flags {-disallow_one_site_gaps}
+    keys {-random_seed -max_displacement -global_swap_args} \
+    flags {-disallow_one_site_gaps}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DPL 342 "No design block found."
@@ -194,6 +196,87 @@ proc improve_placement { args } {
     # use default displacement
     set max_displacement_x 0
     set max_displacement_y 0
+  }
+
+  dpl::reset_global_swap_params_cmd
+  if { [info exists keys(-global_swap_args)] } {
+    set global_swap_passes -1
+    set global_swap_tolerance -1
+    set global_swap_tradeoff -1
+    set global_swap_area_weight -1
+    set global_swap_pin_weight -1
+    set global_swap_user_weight -1
+    set global_swap_sampling -1
+    set global_swap_normalization -1
+    set global_swap_profiling_excess -1
+    set global_swap_budget_list {}
+
+    set global_swap_args $keys(-global_swap_args)
+    if { [expr {[llength $global_swap_args] % 2}] != 0 } {
+      sta::error DPL 345 "-global_swap_args must be key/value pairs"
+    }
+    foreach {opt value} $global_swap_args {
+      switch -- $opt {
+        -passes {
+          set global_swap_passes $value
+        }
+        -tolerance {
+          set global_swap_tolerance $value
+        }
+        -tradeoff {
+          set global_swap_tradeoff $value
+        }
+        -area_weight {
+          set global_swap_area_weight $value
+        }
+        -pin_weight {
+          set global_swap_pin_weight $value
+        }
+        -congestion_user_weight {
+          set global_swap_user_weight $value
+        }
+        -sampling_moves {
+          set global_swap_sampling $value
+        }
+        -normalization_interval {
+          set global_swap_normalization $value
+        }
+        -profiling_excess {
+          set global_swap_profiling_excess $value
+        }
+        -budget_multipliers {
+          set global_swap_budget_list {}
+          foreach multiplier $value {
+            set trimmed [string trim $multiplier]
+            if {$trimmed eq ""} {
+              continue
+            }
+            if {[catch {expr {double($trimmed)}} parsed]} {
+              sta::error DPL 347 "Invalid -budget_multipliers value \"$multiplier\""
+            }
+            lappend global_swap_budget_list $parsed
+          }
+        }
+        default {
+          sta::error DPL 346 "Unknown -global_swap_args option $opt"
+        }
+      }
+    }
+    set global_swap_budget_str ""
+    if {[llength $global_swap_budget_list] > 0} {
+      set global_swap_budget_str [join $global_swap_budget_list " "]
+    }
+    dpl::configure_global_swap_params_cmd \
+        $global_swap_passes \
+        $global_swap_tolerance \
+        $global_swap_tradeoff \
+        $global_swap_area_weight \
+        $global_swap_pin_weight \
+        $global_swap_user_weight \
+        $global_swap_sampling \
+        $global_swap_normalization \
+        $global_swap_profiling_excess \
+        $global_swap_budget_str
   }
 
   sta::check_argc_eq0 "improve_placement" $args
