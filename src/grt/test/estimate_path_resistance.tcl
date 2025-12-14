@@ -27,10 +27,10 @@ puts "Resistance: $res"
 
 # Test 4: Error handling - Invalid pin
 puts "\nTest 4: Error handling - Invalid pin"
-catch {estimate_path_resistance "invalid_pin" _762_/Z} err
+catch { estimate_path_resistance "invalid_pin" _762_/Z } err
 puts "Expected error: $err"
 
 # Test 5: Error handling - Missing layer
 puts "\nTest 5: Error handling - Missing layer"
-catch {estimate_path_resistance _858_/D _762_/Z -layer1 metal2} err
+catch { estimate_path_resistance _858_/D _762_/Z -layer1 metal2 } err
 puts "Expected error: $err"
