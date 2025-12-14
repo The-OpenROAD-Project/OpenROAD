@@ -2776,9 +2776,7 @@ void Resizer::findResizeSlacks1()
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
-    Net* net = network_->isTopLevelPort(drvr_pin)
-                   ? network_->net(network_->term(drvr_pin))
-                   : network_->net(drvr_pin);
+    Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
         && !drvr->isConstant()
         // Hands off special nets.
