@@ -601,7 +601,7 @@ void FastRouteCore::updateSlacks(float percentage)
     // TODO: need to check this positive slack threshold
     // const float pos_threshold = 100e-12;
 
-      res_aware_list.emplace_back(net_id, slack);
+    res_aware_list.emplace_back(net_id, slack);
   }
 
   // Sort by worst slack and ID
