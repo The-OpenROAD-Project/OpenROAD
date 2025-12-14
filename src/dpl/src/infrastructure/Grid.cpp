@@ -9,6 +9,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -780,6 +781,68 @@ DbuY Grid::rowHeight(GridY index)
   return row_index_to_pixel_height_.at(index.v);
 }
 
+int Grid::countValidPixels(GridX x_begin,
+                           GridY y_begin,
+                           GridX x_end,
+                           GridY y_end) const
+{
+  int count = 0;
+  for (GridY y = y_begin; y < y_end; y++) {
+    for (GridX x = x_begin; x < x_end; x++) {
+      Pixel* pixel = gridPixel(x, y);
+      if (pixel != nullptr && pixel->is_valid) {
+        ++count;
+      }
+    }
+  }
+  return count;
+}
+
+void Grid::applyCellContribution(Node* node,
+                                 GridX x_begin,
+                                 GridY y_begin,
+                                 GridX x_end,
+                                 GridY y_end,
+                                 float scale)
+{
+  const int cell_pixel_count = countValidPixels(x_begin, y_begin, x_end, y_end);
+  if (cell_pixel_count == 0) {
+    return;
+  }
+  if (total_area_.empty()) {
+    return;
+  }
+
+  const float cell_area
+      = static_cast<float>(node->getWidth().v * node->getHeight().v);
+  const float area_per_pixel
+      = (cell_area / static_cast<float>(cell_pixel_count)) * scale;
+  const float pins_per_pixel
+      = (static_cast<float>(node->getNumPins()) / cell_pixel_count) * scale;
+
+  const int grid_size = static_cast<int>(total_area_.size());
+  for (GridY y = y_begin; y < y_end; y++) {
+    for (GridX x = x_begin; x < x_end; x++) {
+      Pixel* pixel = gridPixel(x, y);
+      if (pixel == nullptr || !pixel->is_valid) {
+        continue;
+      }
+      const int pixel_idx = (y.v * row_site_count_.v) + x.v;
+      if (pixel_idx < 0 || pixel_idx >= grid_size) {
+        continue;
+      }
+      total_area_[pixel_idx] += area_per_pixel;
+      total_pins_[pixel_idx] += pins_per_pixel;
+      if (total_area_[pixel_idx] < 0.0f) {
+        total_area_[pixel_idx] = 0.0f;
+      }
+      if (total_pins_[pixel_idx] < 0.0f) {
+        total_pins_[pixel_idx] = 0.0f;
+      }
+    }
+  }
+}
+
 void Grid::computeUtilizationMap(Network* network,
                                  float area_weight,
                                  float pin_weight)
@@ -807,49 +870,12 @@ void Grid::computeUtilizationMap(Network* network,
       continue;  // Skip fixed cells and non-standard cells
     }
 
-    const float cell_area
-        = static_cast<float>(node->getWidth().v * node->getHeight().v);
-    const int num_pins = node->getNumPins();
-
-    // Count pixels covered by this cell first
-    int cell_pixel_count = 0;
-    GridRect cell_grid = gridCovering(node);
-
-    for (GridY y = cell_grid.ylo; y < cell_grid.yhi; y++) {
-      for (GridX x = cell_grid.xlo; x < cell_grid.xhi; x++) {
-        Pixel* pixel = gridPixel(x, y);
-        if (pixel && pixel->is_valid) {
-          cell_pixel_count++;
-        }
-      }
-    }
-
-    if (cell_pixel_count == 0) {
-      continue;  // Cell doesn't cover any valid pixels
-    }
-
-    // Distribute cell's contribution across its pixels
-    const float area_per_pixel
-        = cell_area / static_cast<float>(cell_pixel_count);
-    const float pins_per_pixel = static_cast<float>(num_pins)
-                                 / static_cast<float>(cell_pixel_count);
-
-    for (GridY y = cell_grid.ylo; y < cell_grid.yhi; y++) {
-      for (GridX x = cell_grid.xlo; x < cell_grid.xhi; x++) {
-        Pixel* pixel = gridPixel(x, y);
-        if (pixel && pixel->is_valid) {
-          const int pixel_idx = y.v * row_site_count_.v + x.v;
-          if (pixel_idx >= 0 && pixel_idx < grid_size) {
-            total_area_[pixel_idx] += area_per_pixel;
-            total_pins_[pixel_idx] += pins_per_pixel;
-          }
-        }
-      }
-    }
+    const GridRect cell_grid = gridCovering(node);
+    applyCellContribution(
+        node, cell_grid.xlo, cell_grid.ylo, cell_grid.xhi, cell_grid.yhi, 1.0f);
   }
 
   normalizeUtilization();
-  utilization_dirty_ = false;
 }
 
 void Grid::normalizeUtilization()
@@ -864,28 +890,38 @@ void Grid::normalizeUtilization()
   float max_pins = 0.0f;
   
   // We iterate manually to find max to avoid multiple passes or copies
-  for(float v : total_area_) {
-      if(v > max_area) max_area = v;
+  for (float value : total_area_) {
+    max_area = std::max(value, max_area);
   }
-  for(float v : total_pins_) {
-      if(v > max_pins) max_pins = v;
+  for (float value : total_pins_) {
+    max_pins = std::max(value, max_pins);
   }
 
-  // Avoid division by zero
-  if (max_area == 0.0f)
-    max_area = 1.0f;
-  if (max_pins == 0.0f)
-    max_pins = 1.0f;
+  if (max_area <= 0.0f || max_pins <= 0.0f) {
+    if (logger_ != nullptr) {
+      logger_->error(
+          DPL,
+          1300,
+          "Utilization normalization failed: max area {} max pins {}.",
+          max_area,
+          max_pins);
+    } else {
+      throw std::runtime_error(
+          "Utilization normalization failed: zero area or pins detected.");
+    }
+  }
+  last_max_area_ = max_area;
+  last_max_pins_ = max_pins;
 
   // Calculate weighted power density for each pixel
   float max_util_density = 0.0f;
   for (int i = 0; i < grid_size; i++) {
     const float normalized_area = total_area_[i] / max_area;
     const float normalized_pins = total_pins_[i] / max_pins;
-    float val = area_weight_ * normalized_area
-                                          + pin_weight_ * normalized_pins;
+    const float val = (area_weight_ * normalized_area)
+                      + (pin_weight_ * normalized_pins);
     utilization_density_[i] = val;
-    if(val > max_util_density) max_util_density = val;
+    max_util_density = std::max(val, max_util_density);
   }
 
   // Final normalization of power density to [0, 1] range
@@ -894,6 +930,8 @@ void Grid::normalizeUtilization()
       density /= max_util_density;
     }
   }
+  last_max_utilization_
+      = max_util_density > 0.0f ? max_util_density : 1.0f;
   utilization_dirty_ = false;
 }
 
@@ -903,86 +941,43 @@ void Grid::updateUtilizationMap(Node* node, DbuX x, DbuY y, bool add)
     return;  // Skip invalid, fixed, or non-standard cells
   }
 
-  const float cell_area
-      = static_cast<float>(node->getWidth().v * node->getHeight().v);
-  const int num_pins = node->getNumPins();
-
   // Calculate grid rectangle for the cell at the given position
   const GridX grid_x = gridX(x);
   const GridY grid_y = gridSnapDownY(y);
   const GridX grid_x_end = grid_x + gridWidth(node);
   const GridY grid_y_end = gridEndY(y + node->getHeight());
 
-  // Count valid pixels for this cell
-  int cell_pixel_count = 0;
-  for (GridY gy = grid_y; gy < grid_y_end; gy++) {
-    for (GridX gx = grid_x; gx < grid_x_end; gx++) {
-      Pixel* pixel = gridPixel(gx, gy);
-      if (pixel && pixel->is_valid) {
-        cell_pixel_count++;
-      }
-    }
-  }
-
-  if (cell_pixel_count == 0) {
-    return;  // Cell doesn't cover any valid pixels
-  }
-
-  // Calculate per-pixel contributions
-  const float area_per_pixel
-      = cell_area / static_cast<float>(cell_pixel_count);
-  const float pins_per_pixel = static_cast<float>(num_pins)
-                               / static_cast<float>(cell_pixel_count);
   const float sign = add ? 1.0f : -1.0f;
-
-  // Update raw totals for affected pixels
-  for (GridY gy = grid_y; gy < grid_y_end; gy++) {
-    for (GridX gx = grid_x; gx < grid_x_end; gx++) {
-      Pixel* pixel = gridPixel(gx, gy);
-      if (pixel && pixel->is_valid) {
-        const int pixel_idx = gy.v * row_site_count_.v + gx.v;
-        if (pixel_idx >= 0
-            && pixel_idx < static_cast<int>(total_area_.size())) {
-          total_area_[pixel_idx] += sign * area_per_pixel;
-          total_pins_[pixel_idx] += sign * pins_per_pixel;
-
-          // Ensure non-negative values (floating point precision safety)
-          if (total_area_[pixel_idx] < 0.0f)
-            total_area_[pixel_idx] = 0.0f;
-          if (total_pins_[pixel_idx] < 0.0f)
-            total_pins_[pixel_idx] = 0.0f;
-        }
-      }
-    }
-  }
-
+  applyCellContribution(node, grid_x, grid_y, grid_x_end, grid_y_end, sign);
   utilization_dirty_ = true;
 }
 
 float Grid::getUtilizationDensity(int pixel_idx) const
 {
-  // Ideally we would normalize here if dirty, but this is a const method
-  // and we want to avoid mutexes/mutable.
-  // The optimization loop should call normalizeUtilization() explicitly
-  // periodically if it needs fresh normalized values, OR we accept
-  // that we are using slightly stale normalized values based on fresh raw data
-  // (which is what we are doing here - we don't re-normalize on every read).
-  //
-  // However, to respect the expert advice: "Only call normalize... once per
-  // outer pass".
-  // So we return the value from the `utilization_density_` vector which might
-  // be stale relative to `total_area_`.
-  // To make this work better without re-normalizing, we could return
-  // the raw value scaled by the *old* max, but that's complex.
-  //
-  // For now, return the stored (potentially stale) normalized value.
-  // The user of this class is responsible for calling normalizeUtilization()
-  // when they want to "commit" the raw updates to the normalized view.
+  // When the map is marked dirty we reuse the maxima from the last full
+  // normalization to produce an approximate normalized value. This avoids
+  // recomputing the entire map on every query while still reflecting the most
+  // recent raw contributions.
 
-  if (pixel_idx >= 0 && pixel_idx < utilization_density_.size()) {
+  if (pixel_idx < 0
+      || pixel_idx >= static_cast<int>(utilization_density_.size())) {
+    return 0.0f;
+  }
+
+  if (!utilization_dirty_) {
     return utilization_density_[pixel_idx];
   }
-  return 0.0f;
+
+  if (last_max_area_ <= 0.0f || last_max_pins_ <= 0.0f
+      || last_max_utilization_ <= 0.0f) {
+    return utilization_density_[pixel_idx];
+  }
+
+  const float normalized_area = total_area_[pixel_idx] / last_max_area_;
+  const float normalized_pins = total_pins_[pixel_idx] / last_max_pins_;
+  const float val = (area_weight_ * normalized_area)
+                    + (pin_weight_ * normalized_pins);
+  return std::min(val / last_max_utilization_, 1.0f);
 }
 
 }  // namespace dpl
