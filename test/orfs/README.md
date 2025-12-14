@@ -145,7 +145,7 @@ Reproduction instructions:
 Comments:
 
 - `~/oss-cad-suite/` should be familiar with anyone versed in eqy as it refers to the [official binary release binaries](https://github.com/YosysHQ/oss-cad-suite-build)
-- Reproduction cases should be minimal in terms of size and context. The above recipe contains some unecessary files, unecessary directory structure, etc. Prune the test case further manually to get to the core of the matter.
+- Reproduction cases should be minimal in terms of size and context. The above recipe contains some unnecessary files, unnecessary directory structure, etc. Prune the test case further manually to get to the core of the matter.
 
 ## Running eqy tests standalone outside bazel
 
