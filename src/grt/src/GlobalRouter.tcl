@@ -463,11 +463,11 @@ proc report_wire_length { args } {
   }
 }
 
-sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name [-verbose] }
+sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name [-layer1 layer1] [-layer2 layer2] [-verbose] }
 
 proc estimate_path_resistance { args } {
   sta::parse_key_args "estimate_path_resistance" args \
-    keys {} \
+    keys {-layer1 -layer2} \
     flags {-verbose}
 
   if { [llength $args] != 2 } {
@@ -491,6 +491,25 @@ proc estimate_path_resistance { args } {
   }
 
   set verbose [info exists flags(-verbose)]
+
+  if { [info exists keys(-layer1)] && [info exists keys(-layer2)] } {
+    set layer1_name $keys(-layer1)
+    set layer2_name $keys(-layer2)
+    
+    set tech [ord::get_db_tech]
+    set layer1 [$tech findLayer $layer1_name]
+    if { $layer1 == "NULL" } {
+      utl::error GRT 286 "Layer $layer1_name not found."
+    }
+    set layer2 [$tech findLayer $layer2_name]
+    if { $layer2 == "NULL" } {
+      utl::error GRT 287 "Layer $layer2_name not found."
+    }
+
+    return [grt::estimate_path_resistance $pin1 $pin2 $layer1 $layer2 $verbose]
+  } elseif { [info exists keys(-layer1)] || [info exists keys(-layer2)] } {
+    utl::error GRT 288 "Both -layer1 and -layer2 must be provided."
+  }
 
   return [grt::estimate_path_resistance $pin1 $pin2 $verbose]
 }

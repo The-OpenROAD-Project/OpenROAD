@@ -293,6 +293,11 @@ class GlobalRouter
   float estimatePathResistance(odb::dbITerm* pin1,
                                odb::dbITerm* pin2,
                                bool verbose = false);
+  float estimatePathResistance(odb::dbITerm* pin1,
+                               odb::dbITerm* pin2,
+                               odb::dbTechLayer* layer1,
+                               odb::dbTechLayer* layer2,
+                               bool verbose = false);
 
   bool findPinAccessPointPositions(
       const Pin& pin,

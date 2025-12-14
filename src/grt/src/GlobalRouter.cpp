@@ -3318,6 +3318,8 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
   // Calculate resistance
   float total_resistance = 0.0;
 
+  // TODO: Resistance from pin to grid
+
   // Path resistance
   RoutePt curr = end_pt;
   while (!(curr == start_pt)) {
@@ -3350,6 +3352,218 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
       }
     }
     curr = prev;
+  }
+
+  if (verbose) {
+    logger_->report("Total Resistance: {} ohms", total_resistance);
+  }
+
+  return total_resistance;
+}
+
+// Estimate Path Resistance between two pins considering the vertical and
+// horizontal metal layers defined by the user
+float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
+                                           odb::dbITerm* pin2,
+                                           odb::dbTechLayer* layer1,
+                                           odb::dbTechLayer* layer2,
+                                           bool verbose)
+{
+  odb::dbNet* db_net = pin1->getNet();
+  std::vector<PinGridLocation> pin_locs = getPinGridPositions(db_net);
+  PinGridLocation* start_loc = nullptr;
+  PinGridLocation* end_loc = nullptr;
+
+  for (auto& loc : pin_locs) {
+    if (loc.iterm == pin1) {
+      start_loc = &loc;
+    } else if (loc.iterm == pin2) {
+      end_loc = &loc;
+    }
+  }
+
+  if (!start_loc || !end_loc) {
+    return 0.0;
+  }
+
+  if (verbose) {
+    logger_->report(
+        "Estimating Path Resistance between pin ({}) and pin ({}) using layers "
+        "{} and {}",
+        start_loc->iterm->getName(),
+        end_loc->iterm->getName(),
+        layer1->getName(),
+        layer2->getName());
+  }
+
+  odb::dbTechLayer* h_layer = nullptr;
+  odb::dbTechLayer* v_layer = nullptr;
+
+  if (layer1->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    h_layer = layer1;
+  } else if (layer1->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    v_layer = layer1;
+  }
+
+  if (layer2->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    h_layer = layer2;
+  } else if (layer2->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    v_layer = layer2;
+  }
+
+  if (!h_layer || !v_layer) {
+    logger_->warn(
+        GRT,
+        289,
+        "Could not identify horizontal and vertical layers from {} and "
+        "{}. Please provide one horizontal and one vertical layer.",
+        layer1->getName(),
+        layer2->getName());
+    return 0.0;
+  }
+
+  RoutePt start_pt(start_loc->grid_pt.getX(),
+                   start_loc->grid_pt.getY(),
+                   start_loc->conn_layer);
+  RoutePt end_pt(
+      end_loc->grid_pt.getX(), end_loc->grid_pt.getY(), end_loc->conn_layer);
+
+  // Build graph
+  std::map<RoutePt, std::vector<RoutePt>> adj;
+  GRoute& route = routes_[db_net];
+
+  for (const GSegment& seg : route) {
+    RoutePt p1(seg.init_x, seg.init_y, seg.init_layer);
+    RoutePt p2(seg.final_x, seg.final_y, seg.final_layer);
+    adj[p1].push_back(p2);
+    adj[p2].push_back(p1);
+  }
+
+  // BFS
+  std::queue<RoutePt> q;
+  q.push(start_pt);
+  std::map<RoutePt, RoutePt> parent;
+  std::set<RoutePt> visited;
+  visited.insert(start_pt);
+  bool found = false;
+
+  while (!q.empty()) {
+    RoutePt curr = q.front();
+    q.pop();
+
+    if (curr == end_pt) {
+      found = true;
+      break;
+    }
+
+    for (const RoutePt& neighbor : adj[curr]) {
+      if (visited.find(neighbor) == visited.end()) {
+        visited.insert(neighbor);
+        parent[neighbor] = curr;
+        q.push(neighbor);
+      }
+    }
+  }
+
+  if (!found) {
+    return 0.0;
+  }
+
+  // Calculate resistance
+  float total_resistance = 0.0;
+
+  // TODO: Resistance from pin to grid
+
+  // Calculate via resistance between the two user layers
+  float user_via_res = getViaResistance(h_layer->getRoutingLevel(),
+                                        v_layer->getRoutingLevel());
+
+  // Reconstruct path from end to start
+  std::vector<RoutePt> path;
+  RoutePt curr = end_pt;
+  path.push_back(curr);
+  while (!(curr == start_pt)) {
+    curr = parent[curr];
+    path.push_back(curr);
+  }
+  std::reverse(path.begin(), path.end());
+
+  // Filter out vias (points with same x,y as previous)
+  std::vector<RoutePt> clean_path;
+  if (!path.empty()) {
+    clean_path.push_back(path[0]);
+    for (size_t i = 1; i < path.size(); ++i) {
+      if (path[i].x() != clean_path.back().x()
+          || path[i].y() != clean_path.back().y()) {
+        clean_path.push_back(path[i]);
+      }
+    }
+  }
+
+  // Process segments
+  for (size_t i = 1; i < clean_path.size(); ++i) {
+    RoutePt p0 = clean_path[i - 1];
+    RoutePt p1 = clean_path[i];
+
+    int length = abs(p1.x() - p0.x()) + abs(p1.y() - p0.y());
+    bool is_horizontal = (p1.y() == p0.y());
+    int mapped_layer = is_horizontal ? h_layer->getRoutingLevel()
+                                     : v_layer->getRoutingLevel();
+
+    // Start via
+    if (i == 1) {
+      int start_layer_id = is_horizontal ? h_layer->getRoutingLevel()
+                                         : v_layer->getRoutingLevel();
+      total_resistance
+          += getViaResistance(start_loc->conn_layer, start_layer_id);
+      if (verbose) {
+        logger_->report("Via resistance (Start): {} - From Layer {} to {}",
+                        getViaResistance(start_loc->conn_layer, start_layer_id),
+                        start_loc->conn_layer,
+                        start_layer_id);
+      }
+    }
+
+    // Check for orientation change (corner)
+    if (i > 1) {
+      RoutePt p_prev = clean_path[i - 2];
+      bool prev_is_horizontal = (p0.y() == p_prev.y());
+      if (prev_is_horizontal != is_horizontal) {
+        total_resistance += user_via_res;
+        if (verbose) {
+          logger_->report("Via resistance (Corner): {} - Between {} and {}",
+                          user_via_res,
+                          h_layer->getName(),
+                          v_layer->getName());
+        }
+      }
+    }
+
+    float wire_res = getLayerResistance(mapped_layer, length, db_net);
+    total_resistance += wire_res;
+    if (verbose && wire_res > 0) {
+      logger_->report(
+          "Wire resistance: {} - From ({}, {}) - To ({}, {}) - Mapped Layer {}",
+          wire_res,
+          p0.x(),
+          p0.y(),
+          p1.x(),
+          p1.y(),
+          mapped_layer);
+    }
+
+    // End via
+    if (i == clean_path.size() - 1) {
+      int end_layer_id = is_horizontal ? h_layer->getRoutingLevel()
+                                       : v_layer->getRoutingLevel();
+      total_resistance += getViaResistance(end_loc->conn_layer, end_layer_id);
+      if (verbose) {
+        logger_->report("Via resistance (End): {} - From Layer {} to {}",
+                        getViaResistance(end_loc->conn_layer, end_layer_id),
+                        end_loc->conn_layer,
+                        end_layer_id);
+      }
+    }
   }
 
   if (verbose) {
@@ -3427,8 +3641,8 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
         && segment1.init_layer == segment1.final_layer
         // segments are on the same layer
         && segment0.init_layer == segment1.init_layer
-        // prevent merging guides below the min routing layer (guides for pin
-        // access)
+        // prevent merging guides below the min routing layer (guides for
+        // pin access)
         && segment0.init_layer >= getMinRoutingLayer()) {
       // if segment 0 connects to the end of segment 1
       if (!segmentsConnect(segment0, segment1, segment1, segs_at_point)) {
@@ -3679,8 +3893,8 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
     int layer_width = layer->getWidth();
     int L2V_up = -1;
     int L2V_down = -1;
-    // Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL >
-    // SPACING
+    // Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL
+    // > SPACING
     bool min_spc_valid = false;
     int min_spc_up = -1;
     int min_spc_down = -1;
@@ -4058,12 +4272,12 @@ void GlobalRouter::makeItermPins(Net* net,
     }
 
     if (pin_layers.empty()) {
-      logger_->error(
-          GRT,
-          29,
-          "Pin {} does not have geometries below the max routing layer ({}).",
-          getITermName(iterm),
-          getLayerName(max_routing_layer, db_));
+      logger_->error(GRT,
+                     29,
+                     "Pin {} does not have geometries below the max "
+                     "routing layer ({}).",
+                     getITermName(iterm),
+                     getLayerName(max_routing_layer, db_));
     }
 
     Pin pin(iterm,
@@ -4189,14 +4403,15 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
     if (level >= min_layer && level <= max_layer) {
       int max_int = std::numeric_limits<int>::max();
 
-      // Gets the smallest possible minimum spacing that won't cause violations
-      // for ANY configuration of PARALLELRUNLENGTH (the biggest value in the
-      // table)
+      // Gets the smallest possible minimum spacing that won't cause
+      // violations for ANY configuration of PARALLELRUNLENGTH (the biggest
+      // value in the table)
 
       int spacing_extension = obstruct_layer->getSpacing(max_int, max_int);
 
-      // Check for EOL spacing values and, if the spacing is higher than the one
-      // found, use them as the macro extension instead of PARALLELRUNLENGTH
+      // Check for EOL spacing values and, if the spacing is higher than the
+      // one found, use them as the macro extension instead of
+      // PARALLELRUNLENGTH
 
       for (auto rule : obstruct_layer->getV54SpacingRules()) {
         int spacing = rule->getSpacing();
@@ -4205,8 +4420,9 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
         }
       }
 
-      // Check for TWOWIDTHS table values and, if the spacing is higher than the
-      // one found, use them as the macro extension instead of PARALLELRUNLENGTH
+      // Check for TWOWIDTHS table values and, if the spacing is higher than
+      // the one found, use them as the macro extension instead of
+      // PARALLELRUNLENGTH
 
       if (obstruct_layer->hasTwoWidthsSpacingRules()) {
         std::vector<std::vector<odb::uint>> spacing_table;
@@ -4897,11 +5113,13 @@ void GlobalRouter::reportCongestion()
   logger_->report("");
   logger_->info(GRT, 96, "Final congestion report:");
   logger_->report(
-      "Layer         Resource        Demand        Usage (%)    Max H / Max "
+      "Layer         Resource        Demand        Usage (%)    Max H / "
+      "Max "
       "V "
       "/ Total Overflow");
   logger_->report(
-      "----------------------------------------------------------------------"
+      "--------------------------------------------------------------------"
+      "--"
       "-----------------");
 
   for (size_t l = 0; l < resources.size(); l++) {
@@ -4921,7 +5139,8 @@ void GlobalRouter::reportCongestion()
 
     odb::dbTechLayer* layer = routing_layers_[l + 1];
     logger_->report(
-        "{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
+        "{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} "
+        "/ "
         "{:2}",
         layer->getName(),
         resources[l],
@@ -4935,10 +5154,12 @@ void GlobalRouter::reportCongestion()
                           ? 0
                           : (float) total_demand / (float) total_resource * 100;
   logger_->report(
-      "----------------------------------------------------------------------"
+      "--------------------------------------------------------------------"
+      "--"
       "-----------------");
   logger_->report(
-      "Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
+      "Total        {:9}       {:7}        {:8.2f}%            {:2} / {:2} "
+      "/ "
       "{:2}",
       total_resource,
       total_demand,
