@@ -3486,7 +3486,7 @@ float GlobalRouter::estimatePathResistance(odb::dbITerm* pin1,
     curr = parent[curr];
     path.push_back(curr);
   }
-  std::reverse(path.begin(), path.end());
+  std::ranges::reverse(path.begin(), path.end());
 
   // Filter out vias (points with same x,y as previous)
   std::vector<RoutePt> clean_path;

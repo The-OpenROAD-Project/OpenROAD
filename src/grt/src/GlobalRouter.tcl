@@ -492,18 +492,15 @@ proc estimate_path_resistance { args } {
 
   set verbose [info exists flags(-verbose)]
 
-  if { [info exists keys(-layer1)] && [info exists keys(-layer2)] } {
-    set layer1_name $keys(-layer1)
-    set layer2_name $keys(-layer2)
-    
+  if { [info exists keys(-layer1)] && [info exists keys(-layer2)] } {   
     set tech [ord::get_db_tech]
-    set layer1 [$tech findLayer $layer1_name]
+    set layer1 [$tech findLayer $keys(-layer1)]
     if { $layer1 == "NULL" } {
-      utl::error GRT 286 "Layer $layer1_name not found."
+      utl::error GRT 286 "Layer $keys(-layer1) not found."
     }
-    set layer2 [$tech findLayer $layer2_name]
+    set layer2 [$tech findLayer $keys(-layer2)]
     if { $layer2 == "NULL" } {
-      utl::error GRT 287 "Layer $layer2_name not found."
+      utl::error GRT 287 "Layer $keys(-layer2) not found."
     }
 
     return [grt::estimate_path_resistance $pin1 $pin2 $layer1 $layer2 $verbose]
