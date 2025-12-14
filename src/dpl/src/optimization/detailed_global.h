@@ -16,6 +16,7 @@ class Edge;
 class Architecture;
 class DetailedMgr;
 class Network;
+struct GlobalSwapParams;
 
 class DetailedGlobalSwap : public DetailedGenerator
 {
@@ -65,6 +66,7 @@ class DetailedGlobalSwap : public DetailedGenerator
   double tradeoff_ = 0.2;
   double congestion_weight_ = 0.0;
   std::vector<double> congestion_contribution_;
+  const GlobalSwapParams* swap_params_ = nullptr;
 };
 
 }  // namespace dpl
