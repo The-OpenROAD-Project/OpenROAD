@@ -41,6 +41,7 @@
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
