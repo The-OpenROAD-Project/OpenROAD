@@ -463,7 +463,10 @@ proc report_wire_length { args } {
   }
 }
 
-sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name [-layer1 layer1] [-layer2 layer2] [-verbose] }
+sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name \
+                                                  [-layer1 layer1] \
+                                                  [-layer2 layer2] \
+                                                  [-verbose] }
 
 proc estimate_path_resistance { args } {
   sta::parse_key_args "estimate_path_resistance" args \
@@ -492,7 +495,7 @@ proc estimate_path_resistance { args } {
 
   set verbose [info exists flags(-verbose)]
 
-  if { [info exists keys(-layer1)] && [info exists keys(-layer2)] } {   
+  if { [info exists keys(-layer1)] && [info exists keys(-layer2)] } {
     set layer1_name $keys(-layer1)
     set layer2_name $keys(-layer2)
 
