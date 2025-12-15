@@ -80,7 +80,7 @@ struct PlaceOptions
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
-  float routabilityMinInflationRatio = 0.85s;
+  float routabilityMinInflationRatio = 0.85;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
