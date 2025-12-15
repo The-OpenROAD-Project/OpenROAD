@@ -2877,7 +2877,7 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   new_node.edge[2] = edge_n1n2;
 
   treeedges.push_back(std::move(new_edge));
-  treenodes.push_back(std::move(new_node));
+  treenodes.push_back(new_node);
 
   return new_node_id;
 }
