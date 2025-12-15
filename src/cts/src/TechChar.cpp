@@ -2,7 +2,6 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "TechChar.h"
-#include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <bitset>
@@ -956,7 +955,8 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   // For each possible topology...
   for (unsigned solutionCounterInt = 0; solutionCounterInt < numberOfTopologies;
        solutionCounterInt++) {
-    debugPrint(logger_, CTS, "tech char", 1, "**topology {}", solutionCounterInt + 1);
+    debugPrint(
+        logger_, CTS, "tech char", 1, "**topology {}", solutionCounterInt + 1);
     std::stringstream tmp;
     tmp << "***IN ";
     // Creates a bitset that represents the buffer locations.
@@ -994,7 +994,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
       } else {
         // Buffer, need to create the instance and a new net.
         nodesWithoutBuf++;
-        for(auto i = 0; i < nodesWithoutBuf - 1; i++) {
+        for (int i = 0; i < nodesWithoutBuf - 1; i++) {
           tmp << "-- ";
         }
         tmp << "-> ";
@@ -1045,7 +1045,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
     odb::dbBPin* outPortPin = odb::dbBPin::create(outPort);
     // Updates the topology with the output port, old new, possible instances
     // and other attributes.
-    for(auto i = 0; i < nodesWithoutBuf; i++) {
+    for (int i = 0; i < nodesWithoutBuf; i++) {
       tmp << "-- ";
     }
     tmp << "OUT";
@@ -1353,8 +1353,8 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
 
 std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 {
-  if(solution.isPureWire) {
-    debugPrint(logger_, CTS, "tech char", 1,"**currConfig is a pure wire");
+  if (solution.isPureWire) {
+    debugPrint(logger_, CTS, "tech char", 1, "**currConfig is a pure wire");
     return {};
   }
   std::vector<size_t> config;
@@ -1574,7 +1574,8 @@ void TechChar::create()
   int64_t topologiesCreated = 0;
   for (unsigned setupWirelength : wirelengthsToTest_) {
     // Creates the topologies for the current wirelength.
-    debugPrint(logger_, CTS, "tech char", 1, "Wirelength = {}", setupWirelength);
+    debugPrint(
+        logger_, CTS, "tech char", 1, "Wirelength = {}", setupWirelength);
     std::vector<SolutionData> topologiesVector
         = createPatterns(setupWirelength);
     // Creates an OpenSTA instance.
@@ -1623,7 +1624,7 @@ void TechChar::create()
                                  r1,
                                  c1,
                                  piExists);
-      
+
       // clang-format off
       debugPrint(logger_, CTS, "tech char", 1, "*# bufs = {}; "
                  "# nodes with buf = {}",
@@ -1753,7 +1754,12 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
   std::pair iPair(numBuffers, numNodes);
   auto iter = bufferingComboTable_.find(iPair);
   if (iter != bufferingComboTable_.end()) {
-    debugPrint(logger_, CTS, "tech char", 1,"**Monotonic entries are already hashed: {}", iter->second);
+    debugPrint(logger_,
+               CTS,
+               "tech char",
+               1,
+               "**Monotonic entries are already hashed: {}",
+               iter->second);
     return iter->second;
   }
 
@@ -1786,7 +1792,8 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
     }
     debugPrint(logger_, CTS, "tech char", 1, tmp.str());
   }
-  debugPrint(logger_, CTS, "tech char", 1, "**Monotonic entries: {}", numMonotonic);
+  debugPrint(
+      logger_, CTS, "tech char", 1, "**Monotonic entries: {}", numMonotonic);
   // insert new result into hash table
   bufferingComboTable_[iPair] = numMonotonic;
   return numMonotonic;
