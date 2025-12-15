@@ -494,7 +494,7 @@ class GlobalRouter
   std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
-  bool infinite_capacity_;
+  bool infinite_capacity_ = false;
   float adjustment_;
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
@@ -544,7 +544,7 @@ class GlobalRouter
 
   // incremental grt
   GRouteDbCbk* grouter_cbk_;
-  bool is_incremental_;
+  bool is_incremental_ = false;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;
