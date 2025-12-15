@@ -723,7 +723,12 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
                                                                     horizontal)
                                              : 0;
           min_cap = std::min(min_cap, cap);
-          fastroute_->setEdgeCapacity(x - 1, y - 1, x, y - 1, layer, infinite_capacity_ ?  big_cap : cap);
+          fastroute_->setEdgeCapacity(x - 1,
+                                      y - 1,
+                                      x,
+                                      y - 1,
+                                      layer,
+                                      infinite_capacity_ ? big_cap : cap);
         }
       }
       min_cap = min_cap == BIG_INT ? 0 : min_cap;
@@ -740,11 +745,16 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
                                                                     horizontal)
                                              : 0;
           min_cap = std::min(min_cap, cap);
-          fastroute_->setEdgeCapacity(x - 1, y - 1, x - 1, y, layer, infinite_capacity_ ?  big_cap : cap);
+          fastroute_->setEdgeCapacity(x - 1,
+                                      y - 1,
+                                      x - 1,
+                                      y,
+                                      layer,
+                                      infinite_capacity_ ? big_cap : cap);
         }
       }
       min_cap = min_cap == BIG_INT ? 0 : min_cap;
-      fastroute_->addVCapacity(infinite_capacity_ ?  big_cap : min_cap, layer);
+      fastroute_->addVCapacity(infinite_capacity_ ? big_cap : min_cap, layer);
     }
   }
   fastroute_->initLowerBoundCapacities();
