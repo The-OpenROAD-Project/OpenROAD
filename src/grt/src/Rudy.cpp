@@ -47,7 +47,11 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     }
     pitch_terms += 1.0 / pitch;
   }
-  wire_width_ = (1 / pitch_terms) * 1.25;  // = harm. mean / num_routing_layers
+
+  if (pitch_terms != 0) {
+    wire_width_
+        = (1 / pitch_terms) * 1.25;  // = harm. mean / num_routing_layers
+  }
 
   int x_grids, y_grids;
   grouter_->getGridSize(x_grids, y_grids);
