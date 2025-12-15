@@ -51,6 +51,9 @@ void OdbCallBack::inDbInstCreate(odb::dbInst* inst)
              1,
              "inDbInstCreate {}",
              inst->getName());
+
+  // jk: This code looks redundant because there must be no net connected to 
+  //     an instance at this point. Delete this.
   Instance* sta_inst = db_network_->dbToSta(inst);
   std::unique_ptr<InstancePinIterator> pin_iter{
       network_->pinIterator(sta_inst)};
@@ -59,6 +62,14 @@ void OdbCallBack::inDbInstCreate(odb::dbInst* inst)
     Net* net = network_->net(pin);
     if (net) {
       estimate_parasitics_->parasiticsInvalid(net);
+
+      // jk: delete this
+      estimate_parasitics_->getLogger()->error(
+          utl::EST,
+          9200,
+          "Net {} is connected to an instance {}",
+          db_network_->pathName(net),
+          inst->getName());
     }
   }
 }
@@ -136,7 +147,7 @@ void OdbCallBack::inDbInstSwapMasterAfter(odb::dbInst* inst)
     // the parasitics are updated for each resize.
     if (!port || !port->direction()->isAnyTristate()) {
       // we can only update parasitics for flat net
-      odb::dbNet* db_net = db_network_->flatNet(net);
+      odb::dbNet* db_net = db_network_->findFlatDbNet(net);
       estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_net));
     }
   }
