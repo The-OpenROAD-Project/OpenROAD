@@ -393,7 +393,7 @@ void FastRouteCore::ensurePinCoverage()
 
         TreeEdge new_edge;
         new_edge.assigned = true;
-        new_edge.route = via_route;
+        new_edge.route = std::move(via_route);
         treeedges.emplace_back(new_edge);
       }
     }
@@ -2876,8 +2876,8 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   new_node.edge[1] = new_edge_id;
   new_node.edge[2] = edge_n1n2;
 
-  treeedges.push_back(new_edge);
-  treenodes.push_back(new_node);
+  treeedges.push_back(std::move(new_edge));
+  treenodes.push_back(std::move(new_node));
 
   return new_node_id;
 }
