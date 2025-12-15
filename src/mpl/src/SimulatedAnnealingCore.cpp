@@ -322,7 +322,7 @@ float SimulatedAnnealingCore<T>::computeNetsWireLength(
 }
 
 template <class T>
-double SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
+int64_t SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
     const T& macro,
     const T& unplaced_ios,
     const float net_weight) const
@@ -331,7 +331,7 @@ double SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
   const int max_dist = die_area_.margin() / 2;
 
   if (isOutsideTheOutline(macro)) {
-    return net_weight * block_->dbuToMicrons(max_dist);
+    return net_weight * max_dist;
   }
 
   const odb::Point macro_location(macro.getPinX(), macro.getPinY());
@@ -353,7 +353,7 @@ double SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
         = computeDistToNearestRegion(macro_location, {constraint}, nullptr);
   }
 
-  return net_weight * block_->dbuToMicrons(smallest_distance);
+  return net_weight * smallest_distance;
 }
 
 // We consider the macro outside the outline based on the location of
