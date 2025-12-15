@@ -28,40 +28,40 @@
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      25751         25751          0.00%
-metal2     Vertical        24769         24769          0.00%
-metal3     Horizontal      33120         33120          0.00%
-metal4     Vertical        16826         16826          0.00%
-metal5     Horizontal      16560         16560          0.00%
-metal6     Vertical        16826         16826          0.00%
-metal7     Horizontal       5796          5796          0.00%
-metal8     Vertical         5922          5922          0.00%
-metal9     Horizontal       2898          2898          0.00%
-metal10    Vertical         2961          2961          0.00%
+metal1     Horizontal      18009         18009          0.00%
+metal2     Vertical        17918         17918          0.00%
+metal3     Horizontal      24480         24480          0.00%
+metal4     Vertical        12172         12172          0.00%
+metal5     Horizontal      12240         12240          0.00%
+metal6     Vertical        12172         12172          0.00%
+metal7     Horizontal       4284          4284          0.00%
+metal8     Vertical         4284          4284          0.00%
+metal9     Horizontal       2142          2142          0.00%
+metal10    Vertical         2142          2142          0.00%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 1963
-[INFO GRT-0198] Via related Steiner nodes: 79
+[INFO GRT-0197] Via related to pin nodes: 1881
+[INFO GRT-0198] Via related Steiner nodes: 58
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 2786
-[INFO GRT-0112] Final usage 3D: 11816
+[INFO GRT-0111] Final number of vias: 2602
+[INFO GRT-0112] Final usage 3D: 10343
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1           25751           725            2.82%             0 /  0 /  0
-metal2           24769          1600            6.46%             0 /  0 /  0
-metal3           33120           980            2.96%             0 /  0 /  0
-metal4           16826            48            0.29%             0 /  0 /  0
-metal5           16560            41            0.25%             0 /  0 /  0
-metal6           16826            64            0.38%             0 /  0 /  0
-metal7            5796             0            0.00%             0 /  0 /  0
-metal8            5922             0            0.00%             0 /  0 /  0
-metal9            2898             0            0.00%             0 /  0 /  0
-metal10           2961             0            0.00%             0 /  0 /  0
+metal1           18009           557            3.09%             0 /  0 /  0
+metal2           17918          1175            6.56%             0 /  0 /  0
+metal3           24480           687            2.81%             0 /  0 /  0
+metal4           12172            35            0.29%             0 /  0 /  0
+metal5           12240            27            0.22%             0 /  0 /  0
+metal6           12172            56            0.46%             0 /  0 /  0
+metal7            4284             0            0.00%             0 /  0 /  0
+metal8            4284             0            0.00%             0 /  0 /  0
+metal9            2142             0            0.00%             0 /  0 /  0
+metal10           2142             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           151429          3458            2.28%             0 /  0 /  0
+Total           109843          2537            2.31%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 10367 um
+[INFO GRT-0018] Total wirelength: 10909 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

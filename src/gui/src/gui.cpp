@@ -1461,13 +1461,16 @@ int Gui::gifStart(const std::string& filename)
   return gifs_.size() - 1;
 }
 
-void Gui::gifAddFrame(const int key,
+void Gui::gifAddFrame(std::optional<int> key,
                       const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
                       std::optional<int> delay)
 {
-  if (key >= gifs_.size() || gifs_[key] == nullptr) {
+  if (!key.has_value()) {
+    key = gifs_.size() - 1;
+  }
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 51, "GIF not active");
     return;
   }
@@ -1476,7 +1479,7 @@ void Gui::gifAddFrame(const int key,
     logger_->error(utl::GUI, 50, "No design loaded.");
   }
 
-  auto& gif = gifs_[key];
+  auto& gif = gifs_[*key];
 
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
@@ -1549,14 +1552,17 @@ void Gui::gifAddFrame(const int key,
                 delay.value_or(kDefaultGifDelay));
 }
 
-void Gui::gifEnd(const int key)
+void Gui::gifEnd(std::optional<int> key)
 {
-  if (key >= gifs_.size() || gifs_[key] == nullptr) {
+  if (!key.has_value()) {
+    key = gifs_.size() - 1;
+  }
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 58, "GIF not active");
     return;
   }
 
-  auto& gif = gifs_[key];
+  auto& gif = gifs_[*key];
   if (gif->writer == nullptr) {
     logger_->warn(utl::GUI,
                   107,
@@ -1567,7 +1573,7 @@ void Gui::gifEnd(const int key)
   }
 
   GifEnd(gif->writer.get());
-  gifs_[key] = nullptr;
+  gifs_[*key] = nullptr;
 }
 
 class SafeApplication : public QApplication

@@ -836,7 +836,11 @@ void gif_add(int key, double xlo, double ylo, double xhi, double yhi, int width_
   if (delay > 0) {
     delay_pass = delay;
   }
-  gui->gifAddFrame(key, make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, delay_pass);
+  std::optional<int> key_pass;
+  if (key >= 0) {
+    key_pass = key;
+  }
+  gui->gifAddFrame(key_pass, make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, delay_pass);
 }
 
 void gif_end(int key)
@@ -844,8 +848,12 @@ void gif_end(int key)
   if (!check_gui("gif_end")) {
     return;
   }
+  std::optional<int> key_pass;
+  if (key >= 0) {
+    key_pass = key;
+  }
   auto gui = gui::Gui::get();
-  gui->gifEnd(key);
+  gui->gifEnd(key_pass);
 }
 
 %} // inline

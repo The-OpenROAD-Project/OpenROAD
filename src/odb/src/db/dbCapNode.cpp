@@ -177,15 +177,16 @@ void dbCapNode::adjustCapacitance(float factor, uint corner)
   float prev_value = value;
   value *= factor;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCapNode {}, adjustCapacitance {}, corner {}",
+             seg->getId(),
+             factor,
+             corner);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCapNode {}, adjustCapacitance {}, corner {}",
-               seg->getId(),
-               factor,
-               corner);
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(dbCapNodeObj);
     block->journal_->pushParam(seg->getId());
@@ -311,14 +312,15 @@ void dbCapNode::addCapnCapacitance(dbCapNode* other)
     value += ovalue;
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCapNode {}, other dbCapNode {}, addCapnCapacitance",
+             seg->getId(),
+             oseg->getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCapNode {}, other dbCapNode {}, addCapnCapacitance",
-               seg->getId(),
-               oseg->getId());
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(dbCapNodeObj);
     block->journal_->pushParam(seg->getId());
@@ -339,16 +341,17 @@ void dbCapNode::setCapacitance(double cap, int corner)
   float prev_value = value;
   value = (float) cap;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setCapacitance, corner {}, seg {}, prev: {}, new: {}",
+             corner,
+             seg->getId(),
+             prev_value,
+             value);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setCapacitance, corner {}, seg {}, prev: {}, new: {}",
-               corner,
-               seg->getId(),
-               prev_value,
-               value);
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(dbCapNodeObj);
     block->journal_->pushParam(seg->getId());
@@ -371,16 +374,17 @@ void dbCapNode::addCapacitance(double cap, int corner)
   float prev_value = value;
   value += (float) cap;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: AddCapacitance, corner {}, seg {}, prev: {}, new: {}",
+             corner,
+             seg->getId(),
+             prev_value,
+             value);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: AddCapacitance, corner {}, seg {}, prev: {}, new: {}",
-               corner,
-               seg->getId(),
-               prev_value,
-               value);
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(dbCapNodeObj);
     block->journal_->pushParam(seg->getId());
@@ -507,13 +511,14 @@ void dbCapNode::resetBTermFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.bterm = 0;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: resetBTermFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: resetBTermFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -525,13 +530,14 @@ void dbCapNode::resetITermFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.iterm = 0;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: resetITermFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: resetITermFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -543,13 +549,14 @@ void dbCapNode::resetNameFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.name = 0;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: resetInternalFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: resetInternalFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -561,13 +568,14 @@ void dbCapNode::resetInternalFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.internal = 0;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: resetInternalFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: resetInternalFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -579,13 +587,14 @@ void dbCapNode::resetBranchFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.branch = 0;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: resetBranchFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: resetBranchFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -597,13 +606,14 @@ void dbCapNode::resetForeignFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.foreign = 0;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: resetForeignFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: resetForeignFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -615,13 +625,14 @@ void dbCapNode::setBTermFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.bterm = 1;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setBTermFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setBTermFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -633,13 +644,14 @@ void dbCapNode::setITermFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.iterm = 1;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setITermFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setITermFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -651,13 +663,14 @@ uint dbCapNode::incrChildrenCnt()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.childrenCnt++;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: incrChildrenCnt, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: incrChildrenCnt, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -680,13 +693,14 @@ void dbCapNode::setBranchFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.branch = 1;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setBranchFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setBranchFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -698,13 +712,14 @@ void dbCapNode::setNameFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.name = 1;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setNameFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setInternalFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -716,13 +731,14 @@ void dbCapNode::setInternalFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.internal = 1;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setInternalFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setInternalFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -734,13 +750,14 @@ void dbCapNode::setForeignFlag()
   uint prev_flags = flagsToUInt(seg);
   seg->flags_.foreign = 1;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setForeignFlag, id: {}",
+             getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setForeignFlag, id: {}",
-               getId());
     block->journal_->updateField(
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
@@ -759,15 +776,16 @@ void dbCapNode::setNode(uint node)
   uint prev_node = seg->node_num_;
   seg->node_num_ = node;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setNode, id: {}, prev_node: {}, new node: {}",
+             getId(),
+             prev_node,
+             node);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setNode, id: {}, prev_node: {}, new node: {}",
-               getId(),
-               prev_node,
-               node);
     block->journal_->updateField(this, _dbCapNode::kNodeNum, prev_node, node);
   }
 }
@@ -855,15 +873,16 @@ void dbCapNode::setNext(uint nextid)
   uint prev_next = seg->next_;
   seg->next_ = nextid;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: capNode setNext, id: {}, prev_next: {}, new next: {}",
+             getId(),
+             prev_next,
+             nextid);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: capNode setNext, id: {}, prev_next: {}, new next: {}",
-               getId(),
-               prev_next,
-               nextid);
     block->journal_->updateField(this, _dbCapNode::kSetNext, prev_next, nextid);
   }
 }
@@ -874,15 +893,16 @@ void dbCapNode::setNet(uint netid)
   uint prev_net = seg->net_;
   seg->net_ = netid;
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: setNet, id: {}, prev_net: {}, new net: {}",
+             getId(),
+             prev_net,
+             netid);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setNet, id: {}, prev_net: {}, new net: {}",
-               getId(),
-               prev_net,
-               netid);
     block->journal_->updateField(this, _dbCapNode::kSetNet, prev_net, netid);
   }
 }
@@ -908,15 +928,16 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
   uint cornerCnt = block->corners_per_block_;
   _dbCapNode* seg = block->cap_node_tbl_->create();
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCapNode::create, net id: {}, node: {}, foreign: {}",
+             net->getId(),
+             node,
+             foreign);
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCapNode::create, net id: {}, node: {}, foreign: {}",
-               net->getId(),
-               node,
-               foreign);
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbCapNodeObj);
     block->journal_->pushParam(net->getId());
@@ -989,14 +1010,15 @@ void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
     c = s->next_;
   }
 
+  debugPrint(net->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCapNode::destroy, seg id: {}, net id: {}",
+             seg->getId(),
+             net->getId());
+
   if (block->journal_) {
-    debugPrint(net->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCapNode::destroy, seg id: {}, net id: {}",
-               seg->getId(),
-               net->getId());
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbCapNodeObj);
     block->journal_->pushParam(seg->getId());

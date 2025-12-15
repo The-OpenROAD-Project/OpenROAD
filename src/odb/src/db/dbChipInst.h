@@ -34,7 +34,7 @@ class _dbChipInst : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   std::string name_;
-  Point3D loc_;
+  Point3D origin_;
   dbOrientType3D orient_;
   dbId<_dbChip> master_chip_;
   dbId<_dbChip> parent_chip_;
