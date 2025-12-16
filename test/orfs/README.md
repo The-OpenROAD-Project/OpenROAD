@@ -128,3 +128,108 @@ If you just want the files needed to run a locally installed `eqy`, build all th
     bazelisk build //test/orfs/mock-array:MockArray_4x4_eqy_test
 
 The files used to run the test are then in `bazel-bin/test/orfs/mock-array/`.
+
+### TL;DR creating archive for standalone eqy test
+
+Create `/tmp/issue.tar.gz`
+
+    bazelisk build //test/orfs/gcd:gcd_eqy_synth_test
+    tar --exclude='*oss_cad_suite*' -czvf /tmp/issue.tar.gz -C "$(bazelisk info bazel-bin)/test/orfs/gcd/gcd_eqy_synth_test.run.sh.runfiles" .
+
+Reproduction instructions:
+
+1. untar archive
+2. cd _main
+3. ~/oss-cad-suite/bin/eqy test/orfs/gcd/gcd_eqy_synth_test.eqy
+
+Comments:
+
+- `~/oss-cad-suite/` should be familiar with anyone versed in eqy as it refers to the [official binary release binaries](https://github.com/YosysHQ/oss-cad-suite-build)
+- Reproduction cases should be minimal in terms of size and context. The above recipe contains some unnecessary files, unnecessary directory structure, etc. Prune the test case further manually to get to the core of the matter.
+
+## Running eqy tests standalone outside bazel
+
+Build the test files:
+
+    bazelisk build //test/orfs/gcd:gcd_eqy_synth_test
+
+This outputs:
+
+    Target //test/orfs/gcd:gcd_eqy_synth_test up-to-date:
+      bazel-bin/test/orfs/gcd/gcd_eqy_synth_test.run.sh
+
+Copy all files needed to run the tests into a working folder `foo`:
+
+    rsync -aL "$(bazelisk info bazel-bin)/test/orfs/gcd/gcd_eqy_synth_test.run.sh.runfiles/" foo/
+
+Change cwd for running the tests:
+
+    cd foo/_main
+
+Bazel sets up both binaries and data files to run the tests, to create a reportable standalone test. A report should include only the data files and not the actual binaries used locally to run the test:
+
+    $ find .
+    .
+    ./test
+    ./test/orfs
+    ./test/orfs/asap7
+    ./test/orfs/asap7/asap7sc7p5t_SIMPLE_RVT_TT_201020.v
+    ./test/orfs/asap7/asap7sc7p5t_INVBUF_RVT_TT_201020.v
+    ./test/orfs/asap7/asap7sc7p5t_AO_RVT_TT_201020.v
+    ./test/orfs/asap7/asap7sc7p5t_OA_RVT_TT_201020.v
+    ./test/orfs/gcd
+    ./test/orfs/gcd/gcd.v
+    ./test/orfs/gcd/gcd_eqy_synth_test.run.sh
+    ./test/orfs/gcd/gcd_eqy_synth.v
+    ./test/orfs/gcd/gcd_eqy_synth_test.eqy
+
+Bazel generated `bazel-bin/test/orfs/gcd/gcd_eqy_synth_test.run.sh` to runs the tests. Examine this script to look at that for clues as to how to run the tests standalone:
+
+    $ head -n 5 test/orfs/gcd/gcd_eqy_synth_test.run.sh 
+    # !/bin/sh
+    set -euo pipefail
+    test_status=0
+    (exec ../bazel-orfs++_repo_rules+oss_cad_suite/bin/eqy "$@" test/orfs/gcd/gcd_eqy_synth_test.eqy) || test_status=$?
+
+What we want is:
+
+    ../bazel-orfs++_repo_rules+oss_cad_suite/bin/eqy test/orfs/gcd/gcd_eqy_synth_test.eqy
+
+Running this, we get:
+
+<pre>$ ../bazel-orfs++_repo_rules+oss_cad_suite/bin/eqy test/orfs/gcd/gcd_eqy_synth_test.eqy
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:24</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gold</font>: starting process &quot;yosys -ql gcd_eqy_synth_test/gold.log gcd_eqy_synth_test/gold.ys&quot;
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:24</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gold</font>: finished (returncode=0)
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:24</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gate</font>: starting process &quot;yosys -ql gcd_eqy_synth_test/gate.log gcd_eqy_synth_test/gate.ys&quot;
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gate</font>: finished (returncode=0)
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">combine</font>: starting process &quot;yosys -ql gcd_eqy_synth_test/combine.log gcd_eqy_synth_test/combine.ys&quot;
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">combine</font>: finished (returncode=0)
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A2734C"><b>Warning: Cannot find entity _*_.*.</b></font>
+[deleted]
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:32</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#C01C28"><b>Failed to prove equivalence of partition gcd.resp_msg.1</b></font>
+[deleted]
+<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:32</font> [<font color="#12488B">gcd_eqy_synth_test</font>] DONE (FAIL, rc=2)
+</pre>
+
+
+## using sv-bugpoint to whittle down test-cases
+
+[sv-bugpoint](https://github.com/antmicro/sv-bugpoint) can be used to whittle down test-cases to a minimum example.
+
+Let's say that `bazelisk test test/orfs/gcd:eqy_synth_test` fails, first create a script that looks for the error string in the output, in this case a false positive `Failed to prove equivalence of partition gcd.req_rdy`.
+
+After compiling sv-bugpoint, we create a check.sh script:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+cp $1 test/orfs/gcd/
+(bazelisk test test/orfs/gcd:eqy_synth_test --test_timeout=30 --test_output=streamed || error=$?) | tee /dev/tty | grep "Failed to prove equivalence of partition gcd.req_rdy"
+```
+
+- `--test_timeout=30` is a suitable timeout for this test and machine, adjust. Note that the timeout must be handled by Bazel and not a generic `timeout` utility as it would not work correctly with the bazel server.
+
+
+Next, run sv-bugpoint to whittle `test/orfs/gcd/gcd.v` down to a minimal test case:
+
+    ~/sv-bugpoint/build/sv-bugpoint fail check.sh test/orfs/gcd/gcd.v
