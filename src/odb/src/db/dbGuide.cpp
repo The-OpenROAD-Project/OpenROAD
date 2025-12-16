@@ -13,6 +13,7 @@
 // User Code Begin Includes
 #include "dbBlock.h"
 #include "dbJournal.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGuide>;
@@ -150,15 +151,16 @@ dbGuide* dbGuide::create(dbNet* net,
   _dbBlock* block = (_dbBlock*) owner->getOwner();
   _dbGuide* guide = block->guide_tbl_->create();
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: create dbGuide at id {}, in layer {} box {}",
+             guide->getOID(),
+             layer->getName(),
+             box);
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbGuide at id {}, in layer {} box {}",
-               guide->getOID(),
-               layer->getName(),
-               box);
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbGuideObj);
     block->journal_->pushParam(guide->getOID());
@@ -188,15 +190,16 @@ void dbGuide::destroy(dbGuide* guide)
   _dbNet* net = (_dbNet*) guide->getNet();
   _dbGuide* _guide = (_dbGuide*) guide;
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: delete dbGuide at id {}, in layer {} box {}",
+             guide->getId(),
+             guide->getLayer()->getName(),
+             guide->getBox());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbGuide at id {}, in layer {} box {}",
-               guide->getId(),
-               guide->getLayer()->getName(),
-               guide->getBox());
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbGuideObj);
     block->journal_->pushParam(net->getOID());

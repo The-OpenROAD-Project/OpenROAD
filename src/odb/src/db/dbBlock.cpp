@@ -2779,17 +2779,18 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
 
   // TODO: Should this change be logged in the journal?
   //       Yes !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbBlock {}, setCornerCount cornerCnt {}, extDbCnt {}, "
+             "name_list {}",
+             block->getId(),
+             cornersStoredCnt,
+             extDbCnt,
+             name_list);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbBlock {}, setCornerCount cornerCnt {}, extDbCnt {}, "
-               "name_list {}",
-               block->getId(),
-               cornersStoredCnt,
-               extDbCnt,
-               name_list);
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(dbBlockObj);
     block->journal_->pushParam(block->getId());
@@ -3153,13 +3154,14 @@ void dbBlock::writeDb(char* filename, int allNode)
     return;
   }
   getDataBase()->write(file);
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbBlock {}, writeDb",
+             block->getId());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbBlock {}, writeDb",
-               block->getId());
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(dbBlockObj);
     block->journal_->pushParam(block->getId());
