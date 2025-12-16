@@ -1042,9 +1042,6 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
     // Updates the topology with the output port, old new, possible instances
     // and other attributes.
     topology.outPort = outPortPin;
-    if (isPureWire) {
-      topology.instVector.push_back(nullptr);
-    }
     topology.isPureWire = isPureWire;
     topology.netVector.push_back(net);
     topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
