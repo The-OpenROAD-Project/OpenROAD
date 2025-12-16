@@ -1898,8 +1898,32 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
       brush.a = 100;
     }
 
-    animate_selection_->selection.highlight(
-        gui_painter, Painter::kHighlight, pen_width, brush);
+    odb::Rect bbox;
+    bool draw_hightlight = true;
+    if (animate_selection_->selection.getBBox(bbox)) {
+      const int size = bbox.maxDXDY();
+
+      const int min_size = highlightSizeLimit();
+
+      if (size < min_size) {
+        draw_hightlight = false;
+
+        const int half_size = min_size / 2.0;
+        const int bloat_by = half_size - size;
+
+        odb::Rect draw_rect;
+        bbox.bloat(bloat_by, draw_rect);
+        gui_painter.setPen(Painter::kHighlight, true, pen_width);
+        gui_painter.setBrush(brush, Painter::Brush::kSolid);
+
+        gui_painter.drawRect(draw_rect, 0, 0);
+      }
+    }
+
+    if (draw_hightlight) {
+      animate_selection_->selection.highlight(
+          gui_painter, Painter::kHighlight, pen_width, brush);
+    }
   }
 
   // draw partial ruler if present
@@ -2472,6 +2496,11 @@ int LayoutViewer::shapeSizeLimit() const
   }
 
   return nominalViewableResolution();
+}
+
+int LayoutViewer::highlightSizeLimit() const
+{
+  return coarseViewableResolution();
 }
 
 int LayoutViewer::fineViewableResolution() const

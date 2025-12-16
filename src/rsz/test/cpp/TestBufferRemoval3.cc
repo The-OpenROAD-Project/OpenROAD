@@ -24,7 +24,7 @@ class BufRemTest3 : public tst::IntegratedFixture
                                "_main/src/rsz/test/")
   {
     if (debug_) {
-      logger_.setDebugLevel(utl::ODB, "DB_ECO", 3);
+      logger_.setDebugLevel(utl::ODB, "DB_EDIT", 2);
       logger_.setDebugLevel(utl::RSZ, "remove_buffer", 3);
     }
   }

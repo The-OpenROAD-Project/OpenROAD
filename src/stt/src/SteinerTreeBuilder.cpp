@@ -202,6 +202,10 @@ void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
 
 int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 {
+  if (net->getBTermCount() + net->getITermCount() == 0) {
+    return 0;
+  }
+
   int min_x = std::numeric_limits<int>::max();
   int min_y = std::numeric_limits<int>::max();
   int max_x = std::numeric_limits<int>::min();

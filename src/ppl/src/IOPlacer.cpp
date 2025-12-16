@@ -1004,7 +1004,7 @@ void IOPlacer::findSections(int begin,
     n_sec.used_slots = 0;
     n_sec.edge = edge;
 
-    sections.push_back(n_sec);
+    sections.push_back(std::move(n_sec));
     begin = ++end_slot;
   }
 }
@@ -3023,14 +3023,16 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
 
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
-  for (auto& slot : top_layer_slots_) {
-    odb::Point& point = slot.pos;
-    if (point.x() - top_grid_->pin_width / 2 < die_area.xMin()
-        || point.y() - top_grid_->pin_height / 2 < die_area.yMin()
-        || point.x() + top_grid_->pin_width / 2 > die_area.xMax()
-        || point.y() + top_grid_->pin_height / 2 > die_area.yMax()) {
-      // mark slot as blocked since it extends beyond the die area
-      slot.blocked = true;
+  if (top_grid_ != nullptr) {
+    for (auto& slot : top_layer_slots_) {
+      odb::Point& point = slot.pos;
+      if (point.x() - top_grid_->pin_width / 2 < die_area.xMin()
+          || point.y() - top_grid_->pin_height / 2 < die_area.yMin()
+          || point.x() + top_grid_->pin_width / 2 > die_area.xMax()
+          || point.y() + top_grid_->pin_height / 2 > die_area.yMax()) {
+        // mark slot as blocked since it extends beyond the die area
+        slot.blocked = true;
+      }
     }
   }
 
@@ -3102,7 +3104,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
         n_sec.used_slots = 0;
         n_sec.edge = Edge::invalid;
 
-        sections.push_back(n_sec);
+        sections.push_back(std::move(n_sec));
         edge_begin = ++end_slot;
       }
     }

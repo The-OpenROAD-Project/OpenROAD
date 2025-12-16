@@ -72,8 +72,21 @@ static void cutRow(dbBlock* block,
   vector<std::pair<int, int>> row_blockage_xs;
   row_blockage_xs.reserve(row_blockages.size());
   for (dbBox* row_blockage_bbox : row_blockages) {
-    row_blockage_xs.emplace_back(row_blockage_bbox->xMin(),
-                                 row_blockage_bbox->xMax());
+    if (row_blockage_bbox->getOwnerType() == odb::dbBoxOwner::INST) {
+      odb::dbInst* inst
+          = static_cast<odb::dbInst*>(row_blockage_bbox->getBoxOwner());
+      odb::dbBox* halo = inst->getHalo();
+      if (halo != nullptr) {
+        row_blockage_xs.emplace_back(row_blockage_bbox->xMin() - halo->xMin(),
+                                     row_blockage_bbox->xMax() + halo->xMax());
+      } else {
+        row_blockage_xs.emplace_back(row_blockage_bbox->xMin() - halo_x,
+                                     row_blockage_bbox->xMax() + halo_x);
+      }
+    } else {
+      row_blockage_xs.emplace_back(row_blockage_bbox->xMin() - halo_x,
+                                   row_blockage_bbox->xMax() + halo_x);
+    }
   }
 
   std::sort(row_blockage_xs.begin(), row_blockage_xs.end());
@@ -84,7 +97,7 @@ static void cutRow(dbBlock* block,
   for (std::pair<int, int> blockage : row_blockage_xs) {
     const int blockage_x0 = blockage.first;
     const int new_row_end_x
-        = makeSiteLoc(blockage_x0 - halo_x, site_width, true, start_origin_x);
+        = makeSiteLoc(blockage_x0, site_width, true, start_origin_x);
     buildRow(block,
              row_name + "_" + std::to_string(row_sub_idx),
              row_site,
@@ -97,7 +110,7 @@ static void cutRow(dbBlock* block,
     row_sub_idx++;
     const int blockage_x1 = blockage.second;
     start_origin_x
-        = makeSiteLoc(blockage_x1 + halo_x, site_width, false, start_origin_x);
+        = makeSiteLoc(blockage_x1, site_width, false, start_origin_x);
   }
   // Make last row
   buildRow(block,
@@ -115,11 +128,18 @@ static void cutRow(dbBlock* block,
 
 static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
 {
-  Rect rowBB = row->getBBox();
+  const Rect rowBB = row->getBBox();
+
+  odb::dbBox* halo = nullptr;
+  if (blockage->getOwnerType() == odb::dbBoxOwner::INST) {
+    halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())->getHalo();
+  }
 
   // Check if Y has overlap first since rows are long and skinny
-  const int blockage_lly = blockage->yMin() - halo_y;
-  const int blockage_ury = blockage->yMax() + halo_y;
+  const int blockage_lly
+      = blockage->yMin() - (halo != nullptr ? halo->yMin() : halo_y);
+  const int blockage_ury
+      = blockage->yMax() + (halo != nullptr ? halo->yMax() : halo_y);
   const int row_lly = rowBB.yMin();
   const int row_ury = rowBB.yMax();
 
@@ -127,8 +147,10 @@ static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
     return false;
   }
 
-  const int blockage_llx = blockage->xMin() - halo_x;
-  const int blockage_urx = blockage->xMax() + halo_x;
+  const int blockage_llx
+      = blockage->xMin() - (halo != nullptr ? halo->xMin() : halo_x);
+  const int blockage_urx
+      = blockage->xMax() + (halo != nullptr ? halo->xMax() : halo_x);
   const int row_llx = rowBB.xMin();
   const int row_urx = rowBB.xMax();
 
