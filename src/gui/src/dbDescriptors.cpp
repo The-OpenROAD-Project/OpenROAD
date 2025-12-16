@@ -3831,21 +3831,21 @@ void DbModITermDescriptor::highlight(const std::any& object,
 }
 
 Descriptor::Properties DbModITermDescriptor::getDBProperties(
-    odb::dbModITerm* modbterm) const
+    odb::dbModITerm* moditerm) const
 {
   //auto* mod_inst = module->getModInst();
 
   auto* gui = Gui::get();
 
   Properties props;
-  /*
-  if (modbterm != nullptr) {
-    auto* parent = modbterm->getParent();
+  if (moditerm != nullptr) {
+    auto* parent = moditerm->getParent();
     if (parent != nullptr) {
       props.push_back({"Parent", gui->makeSelected(parent)});
     }
   }
 
+  /*
   SelectionSet children;
   for (auto* child : module->getChildren()) {
     children.insert(gui->makeSelected(child->getMaster()));
@@ -3876,6 +3876,119 @@ Descriptor::Properties DbModITermDescriptor::getDBProperties(
 }
 
 void DbModITermDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  //getModules(block->getTopModule(), func);
+}
+
+//////////////////////////////////////////////////
+
+DbModInstDescriptor::DbModInstDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbModInst>(db)
+{
+}
+
+std::string DbModInstDescriptor::getShortName(const std::any& object) const
+{
+  auto* modInst = std::any_cast<odb::dbModInst*>(object);
+  return modInst->getName();
+}
+
+std::string DbModInstDescriptor::getName(const std::any& object) const
+{
+  auto* modInst = std::any_cast<odb::dbModInst*>(object);
+  return modInst->getHierarchicalName();
+}
+
+std::string DbModInstDescriptor::getTypeName() const
+{
+  return "ModInst";
+}
+
+bool DbModInstDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+{
+  //auto* module = std::any_cast<odb::dbModBTerm*>(object);
+  bbox.mergeInit();
+  /*
+  for (auto* child : module->getChildren()) {
+    odb::Rect child_bbox;
+    if (getBBox(child->getMaster(), child_bbox)) {
+      bbox.merge(child_bbox);
+    }
+  }
+
+  for (auto* inst : module->getInsts()) {
+    auto* box = inst->getBBox();
+    odb::Rect box_rect = box->getBox();
+    bbox.merge(box_rect);
+  }
+  */
+  return !bbox.isInverted();
+}
+
+void DbModInstDescriptor::highlight(const std::any& object,
+                                   Painter& painter) const
+{
+  /*
+  auto* module = std::any_cast<odb::dbModule*>(object);
+
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for (auto* inst : module->getInsts()) {
+    inst_descriptor->highlight(inst, painter);
+  }
+
+  const int level_alpha_scale = 2;
+  painter.saveState();
+  auto pen_color = painter.getPenColor();
+  pen_color.a /= level_alpha_scale;
+  painter.setPen(pen_color, true);
+  for (auto* children : module->getChildren()) {
+    highlight(children->getMaster(), painter);
+  }
+  painter.restoreState();
+  */
+}
+
+Descriptor::Properties DbModInstDescriptor::getDBProperties(
+    odb::dbModInst* modinst) const
+{
+  auto* gui = Gui::get();
+
+  Properties props;
+  auto* parent = modinst->getParent();
+  if (parent != nullptr) {
+    props.push_back({"Parent", gui->makeSelected(parent)});
+  }
+
+  auto* master = modinst->getMaster();
+  if (master != nullptr) {
+    props.push_back({"Master", gui->makeSelected(master)});
+  }
+
+  auto* group = modinst->getGroup();
+  if (group != nullptr) {
+    props.push_back({"Group", gui->makeSelected(group)});
+  }
+
+  SelectionSet moditerms;
+  for (auto* moditerm : modinst->getModITerms()) {
+    moditerms.insert(gui->makeSelected(moditerm));
+  }
+  props.push_back({"ModITerms", moditerms});
+
+  return props;
+}
+
+void DbModInstDescriptor::visitAllObjects(
     const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();

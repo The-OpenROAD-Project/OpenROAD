@@ -577,7 +577,26 @@ class DbModITermDescriptor : public BaseDbDescriptor<odb::dbModITerm>
       const std::function<void(const Selected&)>& func) const override;
 
  protected:
-  Properties getDBProperties(odb::dbModITerm* modbterm) const override;
+  Properties getDBProperties(odb::dbModITerm* moditerm) const override;
+};
+
+class DbModInstDescriptor : public BaseDbDescriptor<odb::dbModInst>
+{
+ public:
+  DbModInstDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbModInst* modinst) const override;
 };
 
 class DbTechViaDescriptor : public BaseDbDescriptor<odb::dbTechVia>
