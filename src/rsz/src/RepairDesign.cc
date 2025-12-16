@@ -402,28 +402,33 @@ void RepairDesign::repairDesign(
               }
             }
             if (slew_viol) {
-              PinSet* drivers = network_->drivers(vertex->pin());
-              for (const Pin* drvr_pin : *drivers) {
-                debugPrint(logger_,
-                           RSZ,
-                           "repair_design",
-                           2,
-                           "last pass: drvr {} has slew {} vs. limit {}",
-                           sdc_network_->pathName(drvr_pin),
-                           delayAsString(actual, this, 3),
-                           delayAsString(limit, this, 3));
-                repairDriver(graph_->pinDrvrVertex(drvr_pin),
-                             true /* check_slew */,
-                             false /* check_cap */,
-                             false /* check_fanout */,
-                             0 /* max_length */,
-                             true /* resize_driver */,
-                             corner,
-                             repaired_net_count2,
-                             slew_violations2,
-                             cap_violations,
-                             fanout_violations,
-                             length_violations);
+              PinSet* drivers_ptr = network_->drivers(vertex->pin());
+              if (drivers_ptr) {
+                // Copy PinSet because repairDriver() can invalidate the
+                // drivers_ptr by invalidating net_drvr_pin_map_ cache.
+                PinSet drivers = *drivers_ptr;
+                for (const Pin* drvr_pin : drivers) {
+                  debugPrint(logger_,
+                             RSZ,
+                             "repair_design",
+                             2,
+                             "last pass: drvr {} has slew {} vs. limit {}",
+                             sdc_network_->pathName(drvr_pin),
+                             delayAsString(actual, this, 3),
+                             delayAsString(limit, this, 3));
+                  repairDriver(graph_->pinDrvrVertex(drvr_pin),
+                               true /* check_slew */,
+                               false /* check_cap */,
+                               false /* check_fanout */,
+                               0 /* max_length */,
+                               true /* resize_driver */,
+                               corner,
+                               repaired_net_count2,
+                               slew_violations2,
+                               cap_violations,
+                               fanout_violations,
+                               length_violations);
+                }
               }
             }
           }
