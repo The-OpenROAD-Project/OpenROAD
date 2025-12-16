@@ -18,24 +18,8 @@ git_override(
     remote = "https://github.com/bazelbuild/rules_scala",
 )
 
-bazel_dep(name = "rules_verilator", version = "5.034")
-single_version_override(
-    module_name = "rules_verilator",
-    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
-    version = "5.034",
-)
-
-single_version_override(
-    module_name = "verilator",
-    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
-    version = "5.034.ar.1",
-)
-
-single_version_override(
-    module_name = "systemc",
-    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
-    version = "3.0.1",
-)
+bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
 # Not all boost libs are available at the latest version yet, so use a
 # slightly older one that has all we need.
