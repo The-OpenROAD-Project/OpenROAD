@@ -1611,16 +1611,16 @@ void TechChar::create()
                                  c1,
                                  piExists);
       // For each possible buffer combination (different sizes).
-      unsigned buffersUpdate
+      unsigned buffersCombinations
           = getBufferingCombo(masterNames_.size(), solution.instVector.size());
       // clang-format off
       debugPrint(logger_, CTS, "tech char", 1, "create #bufs={} "
                  "#soln.instVector.size={}, #bufUpdate={}, #topo={}",
                  masterNames_.size(), solution.instVector.size(),
-                 buffersUpdate, topologiesCreated);
+                 buffersCombinations, topologiesCreated);
       // clang-format on
 
-      if (buffersUpdate == 0) {
+      if (buffersCombinations == 0) {
         continue;
       }
 
@@ -1683,12 +1683,12 @@ void TechChar::create()
           }
         }
         // If the solution is not a pure-wire, update the buffer topologies.
-        if (!solution.isPureWire) {
+        if (!solution.isPureWire && buffersCombinations > 1) {
           updateBufferTopologies(solution);
         }
-        // For pure-wire solution buffersUpdate == 1, so it only runs once.
-        buffersUpdate--;
-      } while (buffersUpdate != 0);
+        // For pure-wire solution buffersCombinations == 1, so it only runs once.
+        buffersCombinations--;
+      } while (buffersCombinations != 0);
     }
     openStaChar_.reset(nullptr);
   }
