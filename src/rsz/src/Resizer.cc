@@ -3356,6 +3356,22 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
   InstanceSeq insts;
   findCellInstances(tie_cell, insts);
 
+  // Deterministic ordering of tie instances by full instance name
+  // - This is to remove non-determinism.
+  std::sort(
+      insts.begin(), insts.end(), [this](const Instance* a, const Instance* b) {
+        return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+      });
+
+  // jk: dbg
+  if (logger_->debugCheck(utl::RSZ, "inst_iteration_debug", 9)) {
+    int idx = 0;
+    for (const Instance* ti : insts) {
+      logger_->report(
+          "Tie instance #{} - name:{}", idx++, db_network_->pathName(ti));
+    }
+  }
+
   for (const Instance* tie_inst : insts) {
     if (dontTouch(tie_inst)) {
       continue;
@@ -3378,7 +3394,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
     // Find load pins
     bool keep_tie = false;
-    std::set<const Pin*> load_pins;
+    PinSet load_pins_set(db_network_);
     std::unique_ptr<NetConnectedPinIterator> pin_iter(
         network_->connectedPinIterator(drvr_net));
     while (pin_iter->hasNext()) {
@@ -3402,8 +3418,16 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       // cell cannot be inserted within the ALU module.
       load_pin = findArithBoundaryPin(load_pin);
 
-      load_pins.insert(load_pin);
+      load_pins_set.insert(load_pin);
     }
+
+    // Convert to vector and sort by pin path name for deterministic order
+    std::vector<const Pin*> load_pins(load_pins_set.begin(),
+                                      load_pins_set.end());
+    std::sort(
+        load_pins.begin(), load_pins.end(), [this](const Pin* a, const Pin* b) {
+          return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+        });
 
     // Create new TIE cell instances for each load pin
     for (const Pin* load_pin : load_pins) {
@@ -3411,21 +3435,24 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
       // Create a new tie cell instance
       const char* tie_inst_name = network_->name(load_inst);
-      createNewTieCellForLoadPin(load_pin,
-                                 tie_inst_name,
-                                 db_network_->parent(load_inst),
-                                 tie_port,
-                                 separation_dbu);
+      Instance* new_tie_inst
+          = createNewTieCellForLoadPin(load_pin,
+                                       tie_inst_name,
+                                       db_network_->parent(load_inst),
+                                       tie_port,
+                                       separation_dbu);
       designAreaIncr(area(db_network_->cell(tie_cell)));
       tie_count++;
 
       // jk: sanity check
-      if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 10)) {
-        logger_->report("Add tie cell #{} - {}",
+      if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 9)) {
+        logger_->report("Add tie cell #{} - load_pin[{}]:{} new_tie_inst:{}",
                         tie_count,
-                        db_network_->pathName(load_pin));
-        db_network_->checkAxioms();
-        sta_->checkSanity();
+                        db_network_->id(load_pin),
+                        db_network_->pathName(load_pin),
+                        db_network_->pathName(new_tie_inst));
+        // db_network_->checkAxioms();
+        // sta_->checkSanity();
       }
     }
 
@@ -3478,11 +3505,11 @@ const Pin* Resizer::findArithBoundaryPin(const Pin* load_pin)
   return load_pin;
 }
 
-void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
-                                         const char* new_inst_name,
-                                         Instance* parent,
-                                         LibertyPort* tie_port,
-                                         int separation_dbu)
+Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
+                                              const char* new_inst_name,
+                                              Instance* parent,
+                                              LibertyPort* tie_port,
+                                              int separation_dbu)
 {
   LibertyCell* tie_cell = tie_port->libertyCell();
 
@@ -3531,7 +3558,7 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
     load_iterm->disconnect();  // This is required
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_iterm, connection_name.c_str());
-    return;
+    return new_tie_inst;
   }
 
   // load_pin is a hier pin
@@ -3542,7 +3569,7 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
     // load_mod_iterm.
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_mod_iterm, connection_name.c_str());
-    return;
+    return new_tie_inst;
   }
 
   // load_pin is an output port
@@ -3553,10 +3580,11 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
         connection_name.c_str(), parent, odb::dbNameUniquifyType::IF_NEEDED);
     new_tie_iterm->connect(db_network_->staToDb(new_net));
     load_bterm->connect(db_network_->staToDb(new_net));
-    return;
+    return new_tie_inst;
   }
 
   assert(false);  // Should not reach here
+  return nullptr;
 }
 
 void Resizer::deleteTieCellAndNet(const Instance* tie_inst,
