@@ -471,7 +471,8 @@
     "https://bcr.bazel.build/modules/rules_cc/0.1.1/MODULE.bazel": "2f0222a6f229f0bf44cd711dc13c858dad98c62d52bd51d8fc3a764a83125513",
     "https://bcr.bazel.build/modules/rules_cc/0.1.2/MODULE.bazel": "557ddc3a96858ec0d465a87c0a931054d7dcfd6583af2c7ed3baf494407fd8d0",
     "https://bcr.bazel.build/modules/rules_cc/0.2.2/MODULE.bazel": "a0656c5a8ff7f76bb1319ebf301bab9d94da5b48894cac25a14ed115f9dd0884",
-    "https://bcr.bazel.build/modules/rules_cc/0.2.2/source.json": "8bf0f0bd1678c611565ac7efa1dc64f1afcb20bc44c9969213c742dc5eb87dbc",
+    "https://bcr.bazel.build/modules/rules_cc/0.2.4/MODULE.bazel": "1ff1223dfd24f3ecf8f028446d4a27608aa43c3f41e346d22838a4223980b8cc",
+    "https://bcr.bazel.build/modules/rules_cc/0.2.4/source.json": "2bd87ef9b41d4753eadf65175745737135cba0e70b479bdc204ef0c67404d0c4",
     "https://bcr.bazel.build/modules/rules_flex/0.3.1/MODULE.bazel": "5aea738f59e47769d219f972fc8426c53693c262895787efafa71fe9795bd7e3",
     "https://bcr.bazel.build/modules/rules_flex/0.4/MODULE.bazel": "543edf994d2c044f3d723374e50eaa739ed7ee9d82b8185adb8413bce269dcf3",
     "https://bcr.bazel.build/modules/rules_flex/0.4/source.json": "98bc56c2139b6ed6387dbabd06f625e82500bed8ba1689a5f4f3c9e8c3289f82",
@@ -1073,8 +1074,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "hUDTFZFC1MZ0pAKoHsqexR2vwS2q99PcATMoQ7d8KyQ=",
-        "usagesDigest": "9QnKrgiDk6uDaRTkVVwiMkwSziUmVOnkn5t1BV8ZpLU=",
+        "bzlTransitiveDigest": "EOQRFHnbMOy3r+eBbRUlRcpbctql9fLEAtN7wrgLoGU=",
+        "usagesDigest": "hsOLMlxvlzItCRaeU38b2d0tZR9EBH0diFfKje1ETkc=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1092,8 +1093,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-4338-g23bfbc7f2",
-              "sha256": "59fa14cf42c9d2ebf388e77e45cee79ba1ae7dae24cf7fe8a004d6b37d160968",
+              "image": "docker.io/openroad/orfs:v3.0-4348-g84ad63b70",
+              "sha256": "0ca6911c33df159481cc39995600239275f15dd383af51771d40f9a00f21a9b8",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
