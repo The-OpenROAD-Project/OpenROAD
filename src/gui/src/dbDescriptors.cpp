@@ -3576,11 +3576,11 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
   }
   props.push_back({"Instances", insts});
 
-  SelectionSet bmodterms;
-  for (auto* bmodterm : module->getModBTerms()) {
-    bmodterms.insert(gui->makeSelected(bmodterm));
+  SelectionSet modbterms;
+  for (auto* modbterm : module->getModBTerms()) {
+    modbterms.insert(gui->makeSelected(modbterm));
   }
-  props.push_back({"ModBTerms", bmodterms});
+  props.push_back({"ModBTerms", modbterms});
 
   if (mod_inst != nullptr) {
     populateODBProperties(props, mod_inst, "Instance");
@@ -3696,6 +3696,12 @@ Descriptor::Properties DbModBTermDescriptor::getDBProperties(
     if (parent != nullptr) {
       props.push_back({"Parent", gui->makeSelected(parent)});
     }
+
+    auto* moditerm = modbterm->getParentModITerm();
+    if (moditerm != nullptr) {
+      props.push_back({"ModITerm", gui->makeSelected(moditerm)});
+    }
+   
   }
 
   /*
@@ -3755,6 +3761,134 @@ void DbModBTermDescriptor::getModules(
   }
 }
 */
+
+//////////////////////////////////////////////////
+
+DbModITermDescriptor::DbModITermDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbModITerm>(db)
+{
+}
+
+std::string DbModITermDescriptor::getShortName(const std::any& object) const
+{
+  auto* modITerm = std::any_cast<odb::dbModITerm*>(object);
+  return modITerm->getName();
+}
+
+std::string DbModITermDescriptor::getName(const std::any& object) const
+{
+  auto* modITerm = std::any_cast<odb::dbModITerm*>(object);
+  return modITerm->getHierarchicalName();
+}
+
+std::string DbModITermDescriptor::getTypeName() const
+{
+  return "ModITerm";
+}
+
+bool DbModITermDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+{
+  //auto* module = std::any_cast<odb::dbModBTerm*>(object);
+  bbox.mergeInit();
+  /*
+  for (auto* child : module->getChildren()) {
+    odb::Rect child_bbox;
+    if (getBBox(child->getMaster(), child_bbox)) {
+      bbox.merge(child_bbox);
+    }
+  }
+
+  for (auto* inst : module->getInsts()) {
+    auto* box = inst->getBBox();
+    odb::Rect box_rect = box->getBox();
+    bbox.merge(box_rect);
+  }
+  */
+  return !bbox.isInverted();
+}
+
+void DbModITermDescriptor::highlight(const std::any& object,
+                                   Painter& painter) const
+{
+  /*
+  auto* module = std::any_cast<odb::dbModule*>(object);
+
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for (auto* inst : module->getInsts()) {
+    inst_descriptor->highlight(inst, painter);
+  }
+
+  const int level_alpha_scale = 2;
+  painter.saveState();
+  auto pen_color = painter.getPenColor();
+  pen_color.a /= level_alpha_scale;
+  painter.setPen(pen_color, true);
+  for (auto* children : module->getChildren()) {
+    highlight(children->getMaster(), painter);
+  }
+  painter.restoreState();
+  */
+}
+
+Descriptor::Properties DbModITermDescriptor::getDBProperties(
+    odb::dbModITerm* modbterm) const
+{
+  //auto* mod_inst = module->getModInst();
+
+  auto* gui = Gui::get();
+
+  Properties props;
+  /*
+  if (modbterm != nullptr) {
+    auto* parent = modbterm->getParent();
+    if (parent != nullptr) {
+      props.push_back({"Parent", gui->makeSelected(parent)});
+    }
+  }
+
+  SelectionSet children;
+  for (auto* child : module->getChildren()) {
+    children.insert(gui->makeSelected(child->getMaster()));
+  }
+  if (!children.empty()) {
+    props.push_back({"Children", children});
+  }
+
+  SelectionSet insts;
+  for (auto* inst : module->getInsts()) {
+    insts.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Instances", insts});
+
+  SelectionSet bmodterms;
+  for (auto* bmodterm : module->getModBTerms()) {
+    std::cout << bmodterm->getName() << std::endl;
+    bmodterms.insert(gui->makeSelected(bmodterm));
+  }
+  props.push_back({"ModBTerms", bmodterms});
+
+  if (mod_inst != nullptr) {
+    populateODBProperties(props, mod_inst, "Instance");
+  }
+  */
+
+  return props;
+}
+
+void DbModITermDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  //getModules(block->getTopModule(), func);
+}
 
 //////////////////////////////////////////////////
 

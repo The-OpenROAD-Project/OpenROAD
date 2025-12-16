@@ -593,6 +593,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
   gui->registerDescriptor<odb::dbModBTerm*>(new DbModBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbModITerm*>(new DbModITermDescriptor(db_));
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaRule*>(
       new DbTechViaRuleDescriptor(db_));
