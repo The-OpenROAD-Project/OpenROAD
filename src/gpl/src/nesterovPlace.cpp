@@ -282,11 +282,14 @@ void NesterovPlace::updateIterGraphics(
   // For JPEG Saving
   updateDb();
 
-  // Calculate RUDY every iteration
-  // if (npVars_.routability_driven_mode && npVars_.debug) {
-  //   rb_->calculateRudyTiles();
-  //   rb_->updateRudyAverage(/*verbose=*/false);
-  // }
+  // Calculate RUDY every stride iteration, depending on debug_rudy_start
+  if (npVars_.routability_driven_mode && npVars_.debug
+      && npVars_.debug_rudy_start > 0 && iter >= npVars_.debug_rudy_start
+      && npVars_.debug_rudy_stride > 0
+      && (iter - npVars_.debug_rudy_start) % npVars_.debug_rudy_stride == 0) {
+    rb_->calculateRudyTiles();
+    rb_->updateRudyAverage(/*verbose=*/false);
+  }
 
   graphics_->addIter(iter, average_overflow_unscaled_);
 
