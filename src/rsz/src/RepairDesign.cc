@@ -409,9 +409,12 @@ void RepairDesign::repairDesign(
               }
             }
             if (slew_viol) {
-              PinSet* drivers = network_->drivers(pin);
-              if (drivers) {
-                for (const Pin* drvr_pin : *drivers) {
+              PinSet* drivers_ptr = network_->drivers(vertex->pin());
+              if (drivers_ptr) {
+                // Copy PinSet because repairDriver() can invalidate the
+                // drivers_ptr by invalidating net_drvr_pin_map_ cache.
+                PinSet drivers = *drivers_ptr;
+                for (const Pin* drvr_pin : drivers) {
                   debugPrint(logger_,
                              RSZ,
                              "repair_design",
@@ -1027,17 +1030,7 @@ void RepairDesign::repairDriver(Vertex* drvr,
   }
 
   Pin* drvr_pin = drvr->pin();
-  if (drvr_pin == nullptr) {
-    return;
-  }
-
-  // hier fix
-  // clang-format off
-  Net* net = network_->isTopLevelPort(drvr_pin)
-                 ? db_network_->dbToSta(
-                       db_network_->flatNet(network_->term(drvr_pin)))
-                 : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  // clang-format on
+  Net* net = db_network_->findFlatNet(drvr_pin);
   if (!net) {
     return;
   }

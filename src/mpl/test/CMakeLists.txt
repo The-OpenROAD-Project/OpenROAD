@@ -28,6 +28,7 @@ or_integration_tests(
     clocked_macro
     keep_clustering_data
     fixed_macros
+    fixed_covers
 )
 
 # Skipped

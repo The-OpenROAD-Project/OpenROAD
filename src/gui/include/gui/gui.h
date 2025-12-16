@@ -397,6 +397,58 @@ class Descriptor
                                   int digits = 3);
 };
 
+class PropertyTable
+{
+ public:
+  PropertyTable(int rows, int columns)
+  {
+    row_header_.resize(rows);
+    column_header_.resize(columns);
+    data_.resize(rows);
+    for (auto& row : data_) {
+      row.resize(columns);
+    }
+  };
+
+  void setRowHeader(int row, const std::string& header)
+  {
+    row_header_.at(row) = header;
+  }
+  const std::vector<std::string>& getRowHeaders() const { return row_header_; }
+
+  void setColumnHeader(int column, const std::string& header)
+  {
+    column_header_.at(column) = header;
+  }
+  const std::vector<std::string>& getColumnHeaders() const
+  {
+    return column_header_;
+  }
+
+  void setData(int row, int column, const std::string& value)
+  {
+    data_.at(row).at(column) = value;
+  }
+  const std::vector<std::vector<std::string>>& getData() const { return data_; }
+
+  bool empty() const
+  {
+    for (const auto& row : data_) {
+      for (const auto& item : row) {
+        if (!item.empty()) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+ private:
+  std::vector<std::string> column_header_;
+  std::vector<std::string> row_header_;
+  std::vector<std::vector<std::string>> data_;
+};
+
 // An object selected in the gui.  The object is stored as a
 // std::any to allow any client objects to be stored.  The descriptor
 // is the API for the object as described above.  This doesn't
@@ -824,12 +876,15 @@ class Gui
   const Selected& getInspectorSelection();
 
   // GIF API
-  void gifStart(const std::string& filename);
-  void gifAddFrame(const odb::Rect& region = odb::Rect(),
+  // Start returns the key for use by add and end.  This allows multiple
+  // gifs to be open at once.
+  int gifStart(const std::string& filename);
+  void gifAddFrame(std::optional<int> key,
+                   const odb::Rect& region = odb::Rect(),
                    int width_px = 0,
                    double dbu_per_pixel = 0,
                    std::optional<int> delay = {});
-  void gifEnd();
+  void gifEnd(std::optional<int> key);
 
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
@@ -947,7 +1002,7 @@ class Gui
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
   std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
 
-  std::unique_ptr<GIF> gif_;
+  std::vector<std::unique_ptr<GIF>> gifs_;
   static constexpr int kDefaultGifDelay = 250;
 
   std::string main_window_title_ = "OpenROAD";

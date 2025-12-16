@@ -117,7 +117,7 @@ void SimulatedAnnealing::run(float init_temperature,
       for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
         std::vector<ppl::InstancePin> pin_sinks;
         netlist_->getSinksOfIO(pin_idx, pin_sinks);
-        all_sinks.push_back(pin_sinks);
+        all_sinks.push_back(std::move(pin_sinks));
       }
 
       annealingStateVisualization(pins, all_sinks, iter);

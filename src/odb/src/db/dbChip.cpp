@@ -22,6 +22,8 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <cstdlib>
+
 #include "dbChipConnItr.h"
 #include "dbChipInst.h"
 #include "dbChipInstItr.h"
@@ -329,6 +331,9 @@ void _dbChip::collectMemInfo(MemInfo& info)
 
 _dbChip::~_dbChip()
 {
+  if (name_) {
+    free((void*) name_);
+  }
   delete prop_tbl_;
   delete chip_region_tbl_;
   delete marker_categories_tbl_;
@@ -620,14 +625,13 @@ dbTech* dbChip::getTech() const
 Rect dbChip::getBBox() const
 {
   _dbChip* _chip = (_dbChip*) this;
-  const int llx = 0 - _chip->scribe_line_east_ - _chip->seal_ring_west_;
-  const int lly = 0 - _chip->scribe_line_south_ - _chip->seal_ring_south_;
-  const int urx
-      = _chip->width_ + _chip->scribe_line_east_ + _chip->seal_ring_east_;
-  const int ury
-      = _chip->height_ + _chip->scribe_line_north_ + _chip->seal_ring_north_;
-  Rect box(llx, lly, urx, ury);
-  box.moveTo(_chip->offset_.x(), _chip->offset_.y());
+  const int dx = _chip->width_ + _chip->scribe_line_east_
+                 + _chip->seal_ring_east_ + _chip->scribe_line_west_
+                 + _chip->seal_ring_west_;
+  const int dy = _chip->height_ + _chip->scribe_line_north_
+                 + _chip->seal_ring_north_ + _chip->scribe_line_south_
+                 + _chip->seal_ring_south_;
+  Rect box(0, 0, dx, dy);
   return box;
 }
 

@@ -78,8 +78,8 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       grid_(new Grid),
+      is_incremental_(false),
       adjustment_(0.0),
-      layer_for_guide_dimension_(3),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
@@ -149,7 +149,6 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   fastroute_->clear();
   h_nets_in_pos_.clear();
   v_nets_in_pos_.clear();
-  ensureLayerForGuideDimension(max_routing_layer);
 
   configFastRoute();
 
@@ -2172,13 +2171,6 @@ void GlobalRouter::initGridAndNets()
   initNetlist(nets);
 }
 
-void GlobalRouter::ensureLayerForGuideDimension(int max_routing_layer)
-{
-  if (max_routing_layer < layer_for_guide_dimension_) {
-    layer_for_guide_dimension_ = max_routing_layer;
-  }
-}
-
 void GlobalRouter::configFastRoute()
 {
   fastroute_->setVerbose(verbose_);
@@ -2338,8 +2330,7 @@ void GlobalRouter::loadGuidesFromDB()
 void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
 {
   std::string pins_not_covered;
-  netIsCovered(db_net, pins_not_covered);
-  if (!pins_not_covered.empty()) {
+  if (!netIsCovered(db_net, pins_not_covered)) {
     Net* net = db_net_map_[db_net];
     for (Pin& pin : net->getPins()) {
       if (pins_not_covered.find(pin.getName()) != std::string::npos) {

@@ -133,6 +133,9 @@ void _dbModITerm::collectMemInfo(MemInfo& info)
 
 _dbModITerm::~_dbModITerm()
 {
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -242,14 +245,14 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
   parent->moditerms_ = moditerm->getOID();
   parent->moditerm_hash_[name] = dbId<_dbModITerm>(moditerm->getOID());
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: create {}",
+             moditerm->getDebugName());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbModITerm {} at id {}",
-               name,
-               moditerm->getId());
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbModITermObj);
     block->journal_->pushParam(name);
@@ -308,16 +311,15 @@ void dbModITerm::connect(dbModNet* net)
   _moditerm->prev_net_moditerm_ = 0;
   _modnet->moditerms_ = getId();
 
+  debugPrint(_block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: connect {} to {}",
+             _moditerm->getDebugName(),
+             _modnet->getDebugName());
+
   if (_block->journal_) {
-    debugPrint(_block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: connect dbModITerm {} at id {} to dbModNet {} at id {}",
-               getName(),
-               getId(),
-               _modnet->name_,
-               _modnet->getId());
     _block->journal_->beginAction(dbJournal::kConnectObject);
     _block->journal_->pushParam(dbModITermObj);
     _block->journal_->pushParam(getId());
@@ -341,17 +343,15 @@ void dbModITerm::disconnect()
   }
   _dbModNet* _modnet = _block->modnet_tbl_->getPtr(_moditerm->mod_net_);
 
+  debugPrint(_block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: disconnect {} from {}",
+             _moditerm->getDebugName(),
+             _modnet->getDebugName());
+
   if (_block->journal_) {
-    debugPrint(
-        _block->getImpl()->getLogger(),
-        utl::ODB,
-        "DB_ECO",
-        1,
-        "ECO: disconnect dbModITerm {} at id {} from dbModNet {} at id {}",
-        getName(),
-        getId(),
-        _modnet->name_,
-        _modnet->getId());
     _block->journal_->beginAction(dbJournal::kDisconnectObject);
     _block->journal_->pushParam(dbModITermObj);
     _block->journal_->pushParam(_moditerm->getId());
@@ -398,14 +398,14 @@ void dbModITerm::destroy(dbModITerm* val)
   _dbBlock* block = static_cast<_dbBlock*>(_moditerm->getOwner());
   _dbModInst* mod_inst = block->modinst_tbl_->getPtr(_moditerm->parent_);
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: delete {}",
+             _moditerm->getDebugName());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbModITerm {} at id {}",
-               val->getName(),
-               val->getId());
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbModITermObj);
     block->journal_->pushParam(val->getName());
