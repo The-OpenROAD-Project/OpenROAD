@@ -174,7 +174,9 @@ void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
   odb::Rect floorplan_shape = micronsToDbu(block_, tree_->floorplan_shape);
 
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (inst->isBlock()) {
+    odb::dbMaster* master = inst->getMaster();
+
+    if (master->isBlock() || master->isCover()) {
       continue;
     }
 
