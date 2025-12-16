@@ -1019,13 +1019,7 @@ void RepairDesign::repairDriver(Vertex* drvr,
                                 int& length_violations)
 {
   Pin* drvr_pin = drvr->pin();
-  // hier fix
-  // clang-format off
-      Net* net = network_->isTopLevelPort(drvr_pin)
-                     ? db_network_->dbToSta(
-                         db_network_->flatNet(network_->term(drvr_pin)))
-                     : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  // clang-format on
+  Net* net = db_network_->findFlatNet(drvr_pin);
   if (!net) {
     return;
   }
