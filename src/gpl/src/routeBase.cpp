@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -831,8 +832,8 @@ void RouteBase::updateRudyAverage(bool verbose)
   }
 
   int arraySize = edge_cong_array.size();
-  // std::ranges::sort(edge_cong_array, std::less<double>());
-  std::sort(edge_cong_array.rbegin(), edge_cong_array.rend());
+  std::ranges::sort(std::ranges::reverse_view(edge_cong_array),
+                    std::less<double>());
 
   double avg005RC = 0;
   double avg010RC = 0;
