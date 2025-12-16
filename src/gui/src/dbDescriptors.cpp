@@ -3838,39 +3838,15 @@ Descriptor::Properties DbModITermDescriptor::getDBProperties(
   auto* gui = Gui::get();
 
   Properties props;
-  if (moditerm != nullptr) {
-    auto* parent = moditerm->getParent();
-    if (parent != nullptr) {
-      props.push_back({"Parent", gui->makeSelected(parent)});
-    }
+  auto* parent = moditerm->getParent();
+  if (parent != nullptr) {
+    props.push_back({"Parent", gui->makeSelected(parent)});
   }
 
-  /*
-  SelectionSet children;
-  for (auto* child : module->getChildren()) {
-    children.insert(gui->makeSelected(child->getMaster()));
+  auto* modnet = moditerm->getModNet();
+  if (modnet != nullptr) {
+    props.push_back({"ModNet", gui->makeSelected(modnet)});
   }
-  if (!children.empty()) {
-    props.push_back({"Children", children});
-  }
-
-  SelectionSet insts;
-  for (auto* inst : module->getInsts()) {
-    insts.insert(gui->makeSelected(inst));
-  }
-  props.push_back({"Instances", insts});
-
-  SelectionSet bmodterms;
-  for (auto* bmodterm : module->getModBTerms()) {
-    std::cout << bmodterm->getName() << std::endl;
-    bmodterms.insert(gui->makeSelected(bmodterm));
-  }
-  props.push_back({"ModBTerms", bmodterms});
-
-  if (mod_inst != nullptr) {
-    populateODBProperties(props, mod_inst, "Instance");
-  }
-  */
 
   return props;
 }
@@ -3989,6 +3965,127 @@ Descriptor::Properties DbModInstDescriptor::getDBProperties(
 }
 
 void DbModInstDescriptor::visitAllObjects(
+    const std::function<void(const Selected&)>& func) const
+{
+  auto* chip = db_->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  auto* block = chip->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  //getModules(block->getTopModule(), func);
+}
+
+//////////////////////////////////////////////////
+
+DbModNetDescriptor::DbModNetDescriptor(odb::dbDatabase* db)
+    : BaseDbDescriptor<odb::dbModNet>(db)
+{
+}
+
+std::string DbModNetDescriptor::getShortName(const std::any& object) const
+{
+  auto* modnet = std::any_cast<odb::dbModNet*>(object);
+  return modnet->getName();
+}
+
+std::string DbModNetDescriptor::getName(const std::any& object) const
+{
+  auto* modnet = std::any_cast<odb::dbModNet*>(object);
+  return modnet->getHierarchicalName();
+}
+
+std::string DbModNetDescriptor::getTypeName() const
+{
+  return "ModNet";
+}
+
+bool DbModNetDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+{
+  //auto* module = std::any_cast<odb::dbModBTerm*>(object);
+  bbox.mergeInit();
+  /*
+  for (auto* child : module->getChildren()) {
+    odb::Rect child_bbox;
+    if (getBBox(child->getMaster(), child_bbox)) {
+      bbox.merge(child_bbox);
+    }
+  }
+
+  for (auto* inst : module->getInsts()) {
+    auto* box = inst->getBBox();
+    odb::Rect box_rect = box->getBox();
+    bbox.merge(box_rect);
+  }
+  */
+  return !bbox.isInverted();
+}
+
+void DbModNetDescriptor::highlight(const std::any& object,
+                                   Painter& painter) const
+{
+  /*
+  auto* module = std::any_cast<odb::dbModule*>(object);
+
+  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for (auto* inst : module->getInsts()) {
+    inst_descriptor->highlight(inst, painter);
+  }
+
+  const int level_alpha_scale = 2;
+  painter.saveState();
+  auto pen_color = painter.getPenColor();
+  pen_color.a /= level_alpha_scale;
+  painter.setPen(pen_color, true);
+  for (auto* children : module->getChildren()) {
+    highlight(children->getMaster(), painter);
+  }
+  painter.restoreState();
+  */
+}
+
+Descriptor::Properties DbModNetDescriptor::getDBProperties(
+    odb::dbModNet* modnet) const
+{
+  auto* gui = Gui::get();
+
+  Properties props;
+  auto* parent = modnet->getParent();
+  if (parent != nullptr) {
+    props.push_back({"Parent", gui->makeSelected(parent)});
+  }
+
+  SelectionSet moditerms;
+  for (auto* moditerm : modnet->getModITerms()) {
+    moditerms.insert(gui->makeSelected(moditerm));
+  }
+  props.push_back({"ModITerms", moditerms});
+
+  SelectionSet modbterms;
+  for (auto* modbterm : modnet->getModBTerms()) {
+    modbterms.insert(gui->makeSelected(modbterm));
+  }
+  props.push_back({"ModBTerms", modbterms});
+
+  SelectionSet iterms;
+  for (auto* iterm : modnet->getITerms()) {
+    iterms.insert(gui->makeSelected(iterm));
+  }
+  props.push_back({"ITerms", iterms});
+
+  SelectionSet bterms;
+  for (auto* bterm : modnet->getBTerms()) {
+    bterms.insert(gui->makeSelected(bterm));
+  }
+  props.push_back({"BTerms", bterms});
+
+  return props;
+}
+
+void DbModNetDescriptor::visitAllObjects(
     const std::function<void(const Selected&)>& func) const
 {
   auto* chip = db_->getChip();
