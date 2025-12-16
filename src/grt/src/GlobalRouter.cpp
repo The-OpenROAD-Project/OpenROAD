@@ -2485,6 +2485,12 @@ void GlobalRouter::computeGCellGridPatternFromGuides(
 
   grid_->setXGrids(x_grids);
   grid_->setYGrids(y_grids);
+
+  // update fastroute grid info with grid pattern calculated from guides
+  fastroute_->setTileSize(std::min(tile_size_x, tile_size_y));
+  fastroute_->setGridsAndLayers(
+      grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
+  fastroute_->init3DEdges();
 }
 
 void GlobalRouter::fillTileSizeMaps(
