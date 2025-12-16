@@ -3245,11 +3245,12 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
   } else if (pin1->getObjectType() == odb::dbBTermObj) {
     db_net = ((odb::dbBTerm*) pin1)->getNet();
   } else {
-    return 0.0;
+    logger_->error(GRT, 81, "Invalid pin type. Expected Iterm or Bterm.");
   }
 
   if (routes_.find(db_net) == routes_.end()) {
-    return 0.0;
+    logger_->error(
+        GRT, 82, "Didn't find a route for net {}", db_net->getName());
   }
 
   std::vector<PinGridLocation> pin_locs = getPinGridPositions(db_net);
@@ -3266,7 +3267,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
   }
 
   if (!start_loc || !end_loc) {
-    return 0.0;
+    logger_->error(GRT, 83, "There is no path between the two pins.");
   }
 
   if (verbose) {
@@ -3391,7 +3392,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
   } else if (pin1->getObjectType() == odb::dbBTermObj) {
     db_net = ((odb::dbBTerm*) pin1)->getNet();
   } else {
-    return 0.0;
+    logger_->error(GRT, 87, "Invalid pin type. Expected Iterm or Bterm.");
   }
 
   std::vector<PinGridLocation> pin_locs = getPinGridPositions(db_net);
@@ -3408,7 +3409,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
   }
 
   if (!start_loc || !end_loc) {
-    return 0.0;
+    logger_->error(GRT, 89, "There is no path between the two pins.");
   }
 
   if (verbose) {
@@ -3443,14 +3444,13 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
   }
 
   if (!h_layer || !v_layer) {
-    logger_->warn(
+    logger_->error(
         GRT,
-        289,
+        91,
         "Could not identify horizontal and vertical layers from {} and "
         "{}. Please provide one horizontal and one vertical layer.",
         layer1->getName(),
         layer2->getName());
-    return 0.0;
   }
 
   RoutePt start_pt(start_loc->grid_pt.getX(),
