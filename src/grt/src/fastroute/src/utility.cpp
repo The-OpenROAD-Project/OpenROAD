@@ -563,6 +563,11 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
   return std::ceil(total_via_resistance / default_res);
 }
 
+void FastRouteCore::setIncrementalGrt(bool is_incremental)
+{
+  is_incremental_grt_ = is_incremental;
+}
+
 // Update and sort the nets by the worst slack. Finally pick a percentage of the
 // nets to use the resistance-aware strategy
 void FastRouteCore::updateSlacks(float percentage)
@@ -581,10 +586,16 @@ void FastRouteCore::updateSlacks(float percentage)
 
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
+    float slack = 0;
 
-    const float slack = getNetSlack(net->getDbNet());
+    // TODO: Do not update slack during rsz repair
+    // if (en_estimate_parasitics_) {
+    slack = getNetSlack(net->getDbNet());
+    // }
     net->setSlack(slack);
-    net->setIsResAware(false);
+
+    // Enable res-aware for clock nets by default
+    net->setIsResAware(net->isClock());
 
     // Skip positive slacks above threshold
     // TODO: need to check this positive slack threshold
@@ -600,6 +611,11 @@ void FastRouteCore::updateSlacks(float percentage)
         };
 
   std::stable_sort(res_aware_list.begin(), res_aware_list.end(), compareSlack);
+
+  // During incremental grt, enable res-aware for all nets
+  if (is_incremental_grt_) {
+    percentage = 1;
+  }
 
   // Decide the percentage of nets that will use resistance aware
   for (int i = 0; i < res_aware_list.size() * percentage; i++) {
