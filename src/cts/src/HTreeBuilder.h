@@ -14,6 +14,7 @@
 #include "CtsObserver.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
+#include "Util.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
 

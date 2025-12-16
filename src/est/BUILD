@@ -20,7 +20,10 @@ cc_library(
         "src/SteinerRenderer.h",
     ],
     visibility = ["//visibility:private"],
-    deps = ["//src/sta:opensta_lib"],
+    deps = [
+        "//src/grt:groute",
+        "//src/sta:opensta_lib",
+    ],
 )
 
 cc_library(
@@ -45,6 +48,7 @@ cc_library(
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/grt",
+        "//src/grt:groute",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/stt",

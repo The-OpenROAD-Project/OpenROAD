@@ -14,6 +14,7 @@
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "Util.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
