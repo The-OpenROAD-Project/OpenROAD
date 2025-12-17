@@ -157,7 +157,9 @@ void ClusteringEngine::setFloorplanShape()
 void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
 {
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (inst->isBlock()) {
+    odb::dbMaster* master = inst->getMaster();
+
+    if (master->isBlock() || master->isCover()) {
       continue;
     }
 

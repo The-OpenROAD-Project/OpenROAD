@@ -18,16 +18,10 @@
 #include <QTextDocument>
 #include <QVariant>
 #include <QWidget>
-#include <algorithm>
 #include <any>
 #include <cmath>
-#include <iterator>
-#include <map>
-#include <set>
 #include <stdexcept>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -194,7 +188,7 @@ QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item,
     name_item->appendRow({index_item, selected_item});
   }
 
-  return makeItem(QString::number(index) + " items");
+  return makeItem(QString(QString::number(index) + " items"));
 }
 
 template <typename Iterator>
@@ -207,7 +201,7 @@ QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item,
     name_item->appendRow({makeItem(name, true), makeItem(value)});
   }
 
-  return makeItem(QString::number(name_item->rowCount()) + " items");
+  return makeItem(QString(QString::number(name_item->rowCount()) + " items"));
 }
 
 QStandardItem* SelectedItemModel::makePropertyTable(QStandardItem* name_item,
@@ -250,7 +244,7 @@ QStandardItem* SelectedItemModel::makePropertyTable(QStandardItem* name_item,
 
   name_item->appendRow({nullptr, table_item});
 
-  return makeItem(QString::number(rows * columns) + " items");
+  return makeItem(QString(QString::number(rows * columns) + " items"));
 }
 
 void SelectedItemModel::makeItemEditor(const std::string& name,
