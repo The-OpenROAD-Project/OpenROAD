@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frVia.h"
 #include "frBaseTypes.h"

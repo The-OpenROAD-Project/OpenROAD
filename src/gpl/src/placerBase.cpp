@@ -4,6 +4,7 @@
 #include "placerBase.h"
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <memory>

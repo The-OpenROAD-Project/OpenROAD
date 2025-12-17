@@ -14,6 +14,7 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frTerm.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 
 namespace drt {
