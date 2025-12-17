@@ -9,6 +9,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "pa/FlexPA_graphics.h"
 
 namespace drt {
 

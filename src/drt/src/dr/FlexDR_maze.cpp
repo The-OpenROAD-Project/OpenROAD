@@ -31,6 +31,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"

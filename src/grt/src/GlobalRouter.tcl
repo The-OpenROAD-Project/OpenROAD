@@ -463,6 +463,81 @@ proc report_wire_length { args } {
   }
 }
 
+sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name \
+                                                  [-layer1 layer1] \
+                                                  [-layer2 layer2] \
+                                                  [-verbose] }
+
+proc estimate_path_resistance { args } {
+  sta::parse_key_args "estimate_path_resistance" args \
+    keys {-layer1 -layer2} \
+    flags {-verbose}
+
+  if { [llength $args] != 2 } {
+    utl::error GRT 289 "estimate_path_resistance requires two pin names."
+  }
+  lassign $args pin1_name pin2_name
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 290 "Missing dbBlock."
+  }
+
+  set pin1 [$block findITerm $pin1_name]
+  if { $pin1 != "NULL" } {
+    set pin1 [grt::iterm_to_object $pin1]
+  } else {
+    set pin1 [$block findBTerm $pin1_name]
+    if { $pin1 != "NULL" } {
+      set pin1 [grt::bterm_to_object $pin1]
+    }
+  }
+  if { $pin1 == "NULL" } {
+    utl::error GRT 291 "Pin $pin1_name not found."
+  }
+
+  set pin2 [$block findITerm $pin2_name]
+  if { $pin2 != "NULL" } {
+    set pin2 [grt::iterm_to_object $pin2]
+  } else {
+    set pin2 [$block findBTerm $pin2_name]
+    if { $pin2 != "NULL" } {
+      set pin2 [grt::bterm_to_object $pin2]
+    }
+  }
+  if { $pin2 == "NULL" } {
+    utl::error GRT 292 "Pin $pin2_name not found."
+  }
+
+  set verbose [info exists flags(-verbose)]
+
+  if { [info exists keys(-layer1)] && [info exists keys(-layer2)] } {
+    set layer1_name $keys(-layer1)
+    set layer2_name $keys(-layer2)
+
+    set tech [ord::get_db_tech]
+    if { [info exists layer1_name] } {
+      set layer1 [$tech findLayer $layer1_name]
+    }
+    if { $layer1 == "NULL" } {
+      utl::error GRT 293 "Layer $layer1_name not found."
+    }
+
+    if { [info exists layer2_name] } {
+      set layer2 [$tech findLayer $layer2_name]
+    }
+    if { $layer2 == "NULL" } {
+      utl::error GRT 287 "Layer $layer2_name not found."
+    }
+
+    return [grt::estimate_path_resistance $pin1 $pin2 $layer1 $layer2 $verbose]
+  } elseif { [info exists keys(-layer1)] || [info exists keys(-layer2)] } {
+    utl::error GRT 288 "Both or neither -layer1 and -layer2 must be provided."
+  }
+
+  return [grt::estimate_path_resistance $pin1 $pin2 $verbose]
+}
+
 namespace eval grt {
 proc check_routing_layer { layer } {
   if { ![ord::db_has_tech] } {

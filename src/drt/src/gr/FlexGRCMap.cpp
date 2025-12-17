@@ -4,6 +4,7 @@
 #include "gr/FlexGRCMap.h"
 
 #include <algorithm>
+#include <climits>
 #include <fstream>
 #include <iostream>
 #include <memory>
