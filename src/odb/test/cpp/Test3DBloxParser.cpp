@@ -308,7 +308,8 @@ TEST_F(SimpleDbFixture, test_bump_map_reader_multiple_bterms)
   try {
     parser.readBMap(path);
     FAIL() << "Expected exception for multiple BTerms connected to same net.";
-  } catch (const std::runtime_error&) {
+  } catch (const std::runtime_error& e) {
+    EXPECT_STREQ(e.what(), "ODB-0542");
   }
 }
 
@@ -349,7 +350,8 @@ TEST_F(SimpleDbFixture, test_bump_map_reader_no_bterms)
   try {
     parser.readBMap(path);
     FAIL() << "Expected exception for no BTerms connected to net.";
-  } catch (const std::runtime_error&) {
+  } catch (const std::runtime_error& e) {
+    EXPECT_STREQ(e.what(), "ODB-0544");
   }
 }
 
