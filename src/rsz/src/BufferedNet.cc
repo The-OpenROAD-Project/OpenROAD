@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "grt/GRoute.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"

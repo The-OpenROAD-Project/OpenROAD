@@ -173,12 +173,8 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                                 std::vector<std::vector<odb::Rect>>& outlines,
                                 int level)
 {
-  Rect outline = parent->getBBox();
-  odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
-                        block_->micronsToDbu(outline.yMin()),
-                        block_->micronsToDbu(outline.xMax()),
-                        block_->micronsToDbu(outline.yMax()));
-  outlines[level].push_back(dbu_outline);
+  odb::Rect outline = parent->getBBox();
+  outlines[level].push_back(outline);
 
   for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
@@ -332,10 +328,10 @@ void Graphics::setXMarksSize()
 
 void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
 {
-  const int lx = block_->micronsToDbu(cluster->getX());
-  const int ly = block_->micronsToDbu(cluster->getY());
-  const int ux = lx + block_->micronsToDbu(cluster->getWidth());
-  const int uy = ly + block_->micronsToDbu(cluster->getHeight());
+  const int lx = cluster->getX();
+  const int ly = cluster->getY();
+  const int ux = lx + cluster->getWidth();
+  const int uy = ly + cluster->getHeight();
   odb::Rect bbox(lx, ly, ux, uy);
 
   painter.drawRect(bbox);
@@ -382,22 +378,17 @@ void Graphics::drawFences(gui::Painter& painter)
   }
 }
 
-void Graphics::drawOffsetRect(const Rect& rect,
+void Graphics::drawOffsetRect(const odb::Rect& rect,
                               const std::string& center_text,
                               gui::Painter& painter)
 {
-  const int lx = block_->micronsToDbu(rect.xMin());
-  const int ly = block_->micronsToDbu(rect.yMin());
-  const int ux = block_->micronsToDbu(rect.xMax());
-  const int uy = block_->micronsToDbu(rect.yMax());
-
-  odb::Rect rect_bbox(lx, ly, ux, uy);
-  rect_bbox.moveDelta(outline_.xMin(), outline_.yMin());
-  painter.drawRect(rect_bbox);
+  odb::Rect movable_rect = rect;
+  movable_rect.moveDelta(outline_.xMin(), outline_.yMin());
+  painter.drawRect(movable_rect);
 
   if (!center_text.empty()) {
-    painter.drawString(rect_bbox.xCenter(),
-                       rect_bbox.yCenter(),
+    painter.drawString(movable_rect.xCenter(),
+                       movable_rect.yCenter(),
                        gui::Painter::kCenter,
                        center_text);
   }
@@ -428,10 +419,10 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     setSoftMacroBrush(painter, macro);
 
-    const int lx = block_->micronsToDbu(macro.getX());
-    const int ly = block_->micronsToDbu(macro.getY());
-    const int ux = lx + block_->micronsToDbu(macro.getWidth());
-    const int uy = ly + block_->micronsToDbu(macro.getHeight());
+    const int lx = macro.getX();
+    const int ly = macro.getY();
+    const int ux = lx + macro.getWidth();
+    const int uy = ly + macro.getHeight();
     odb::Rect bbox(lx, ly, ux, uy);
 
     bbox.moveDelta(outline_.xMin(), outline_.yMin());
@@ -461,10 +452,10 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    const int lx = block_->micronsToDbu(macro.getX());
-    const int ly = block_->micronsToDbu(macro.getY());
-    const int width = block_->micronsToDbu(macro.getWidth());
-    const int height = block_->micronsToDbu(macro.getHeight());
+    const int lx = macro.getX();
+    const int ly = macro.getY();
+    const int width = macro.getWidth();
+    const int height = macro.getHeight();
     const int ux = lx + width;
     const int uy = ly + height;
     odb::Rect bbox(lx, ly, ux, uy);
@@ -563,10 +554,7 @@ void Graphics::drawGuides(gui::Painter& painter)
   painter.setPen(gui::Painter::kGreen, true);
 
   for (const auto& [macro_id, guidance_region] : guides_) {
-    odb::Rect guide(block_->micronsToDbu(guidance_region.xMin()),
-                    block_->micronsToDbu(guidance_region.yMin()),
-                    block_->micronsToDbu(guidance_region.xMax()),
-                    block_->micronsToDbu(guidance_region.yMax()));
+    odb::Rect guide = guidance_region;
     guide.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(guide);
@@ -601,13 +589,8 @@ void Graphics::drawBundledNets(gui::Painter& painter,
       continue;
     }
 
-    const int x1 = block_->micronsToDbu(source.getPinX());
-    const int y1 = block_->micronsToDbu(source.getPinY());
-    odb::Point from(x1, y1);
-
-    const int x2 = block_->micronsToDbu(target.getPinX());
-    const int y2 = block_->micronsToDbu(target.getPinY());
-    odb::Point to(x2, y2);
+    odb::Point from(source.getPinX(), source.getPinY());
+    odb::Point to(target.getPinX(), target.getPinY());
 
     addOutlineOffsetToLine(from, to);
     painter.drawLine(from, to);
@@ -623,8 +606,7 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
     return;
   }
 
-  odb::Point from(block_->micronsToDbu(macro.getPinX()),
-                  block_->micronsToDbu(macro.getPinY()));
+  odb::Point from(macro.getPinX(), macro.getPinY());
   from.addX(outline_.xMin());
   from.addY(outline_.yMin());
 
@@ -644,8 +626,7 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
 template <typename T>
 bool Graphics::isOutsideTheOutline(const T& macro) const
 {
-  return block_->micronsToDbu(macro.getPinX()) > outline_.dx()
-         || block_->micronsToDbu(macro.getPinY()) > outline_.dy();
+  return macro.getPinX() > outline_.dx() || macro.getPinY() > outline_.dy();
 }
 
 void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
@@ -677,13 +658,13 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
   }
 }
 
-void Graphics::setMacroBlockages(const std::vector<mpl::Rect>& macro_blockages)
+void Graphics::setMacroBlockages(const std::vector<odb::Rect>& macro_blockages)
 {
   macro_blockages_ = macro_blockages;
 }
 
 void Graphics::setPlacementBlockages(
-    const std::vector<mpl::Rect>& placement_blockages)
+    const std::vector<odb::Rect>& placement_blockages)
 {
   placement_blockages_ = placement_blockages;
 }
@@ -739,12 +720,12 @@ void Graphics::setCurrentCluster(Cluster* current_cluster)
   current_cluster_ = current_cluster;
 }
 
-void Graphics::setGuides(const std::map<int, Rect>& guides)
+void Graphics::setGuides(const std::map<int, odb::Rect>& guides)
 {
   guides_ = guides;
 }
 
-void Graphics::setFences(const std::map<int, Rect>& fences)
+void Graphics::setFences(const std::map<int, odb::Rect>& fences)
 {
   fences_ = fences;
 }

@@ -10,6 +10,7 @@
 #include "ClockDomain.hh"
 #include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"
+#include "ScanCell.hh"
 #include "ScanCellMock.hh"
 #include "gtest/gtest.h"
 #include "utl/Logger.h"
