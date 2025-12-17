@@ -47,8 +47,8 @@ Total Resistance: 195.89287 ohms
 Resistance: 195.8928680419922
 
 Test 4: Error handling - Invalid pin
-[ERROR GRT-0284] Pin invalid_pin not found.
-Expected error: GRT-0284
+[ERROR GRT-0291] Pin invalid_pin not found.
+Expected error: GRT-0291
 
 Test 5: Error handling - Missing layer
 [ERROR GRT-0288] Both or neither -layer1 and -layer2 must be provided.
