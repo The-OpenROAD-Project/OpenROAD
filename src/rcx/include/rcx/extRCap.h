@@ -946,8 +946,6 @@ class extRCModel
   char* _solverFileName;
 
   FILE* _capLogFP;
-  FILE* _logFP;
-  FILE* _dbg_logFP;
 
   bool _writeFiles;
   bool _readSolver;

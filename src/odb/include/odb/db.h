@@ -787,6 +787,20 @@ class dbBlock : public dbObject
   dbModInst* findModInst(const char* path);
 
   ///
+  /// Find a specific moditerm in this block. path is
+  /// master_module_name/modinst_name/term_name Returns nullptr if the object
+  /// was not found.
+  ///
+  dbModITerm* findModITerm(const char* hierarchical_name);
+
+  ///
+  /// Find a specific modbterm in this block. path is
+  /// master_module_name/modinst_name/term_name Returns nullptr if the object
+  /// was not found.
+  ///
+  dbModBTerm* findModBTerm(const char* hierarchical_name);
+
+  ///
   /// Find a specific PowerDomain in this block.
   /// Returns nullptr if the object was not found.
   ///
@@ -7233,12 +7247,6 @@ class dbChipInst : public dbObject
  public:
   std::string getName() const;
 
-  void setLoc(const Point3D& loc);
-
-  Point3D getLoc() const;
-
-  void setOrient(dbOrientType3D orient);
-
   dbOrientType3D getOrient() const;
 
   dbChip* getMasterChip() const;
@@ -7248,6 +7256,12 @@ class dbChipInst : public dbObject
   // User Code Begin dbChipInst
 
   dbTransform getTransform() const;
+
+  void setOrient(dbOrientType3D orient);
+
+  void setLoc(const Point3D& loc);
+
+  Point3D getLoc() const;
 
   Rect getBBox() const;
 

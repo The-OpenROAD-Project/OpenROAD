@@ -28,9 +28,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 11467.248 um^2
 [INFO GPL-0017] Fixed instances area:         4684.493 um^2
-[INFO GPL-0018] Movable instances area:         93.840 um^2
-[INFO GPL-0019] Utilization:                     1.384 %
-[INFO GPL-0020] Standard cells area:            93.840 um^2
+[INFO GPL-0018] Movable instances area:        103.950 um^2
+[INFO GPL-0019] Utilization:                     1.533 %
+[INFO GPL-0020] Standard cells area:           103.950 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Initializing region: PD_D1
 [INFO GPL-0006] Number of instances:                 3
@@ -45,9 +45,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: PD_D1.
 [INFO GPL-0015] Region area:                   900.864 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:         21.270 um^2
-[INFO GPL-0019] Utilization:                     2.361 %
-[INFO GPL-0020] Standard cells area:            21.270 um^2
+[INFO GPL-0018] Movable instances area:         23.228 um^2
+[INFO GPL-0019] Utilization:                     2.578 %
+[INFO GPL-0020] Standard cells area:            23.228 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Initializing region: PD_D2
 [INFO GPL-0006] Number of instances:                 6
@@ -62,33 +62,33 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: PD_D2.
 [INFO GPL-0015] Region area:                   900.864 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:         43.792 um^2
-[INFO GPL-0019] Utilization:                     4.861 %
-[INFO GPL-0020] Standard cells area:            43.792 um^2
+[INFO GPL-0018] Movable instances area:         47.869 um^2
+[INFO GPL-0019] Utilization:                     5.314 %
+[INFO GPL-0020] Standard cells area:            47.869 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0033] Initializing Nesterov region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      7.218 um^2
-[INFO GPL-0025] Ideal bin area:                 10.312 um^2
-[INFO GPL-0026] Ideal bin count:                  1112
+[INFO GPL-0024] Movable insts average area:      7.996 um^2
+[INFO GPL-0025] Ideal bin area:                 11.423 um^2
+[INFO GPL-0026] Ideal bin count:                  1003
 [INFO GPL-0027] Total bin area:              11467.248 um^2
-[INFO GPL-0028] Bin count (X, Y):          32 ,     32
-[INFO GPL-0029] Bin size (W * H):       3.378 *  3.315 um
-[INFO GPL-0030] Number of bins:                   1024
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       6.756 *  6.630 um
+[INFO GPL-0030] Number of bins:                    256
 [INFO GPL-0033] Initializing Nesterov region: PD_D1
 [INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      7.090 um^2
-[INFO GPL-0025] Ideal bin area:                 10.129 um^2
-[INFO GPL-0026] Ideal bin count:                    88
+[INFO GPL-0024] Movable insts average area:      7.743 um^2
+[INFO GPL-0025] Ideal bin area:                 11.061 um^2
+[INFO GPL-0026] Ideal bin count:                    81
 [INFO GPL-0027] Total bin area:                900.864 um^2
 [INFO GPL-0028] Bin count (X, Y):           8 ,      4
 [INFO GPL-0029] Bin size (W * H):       6.900 *  4.080 um
 [INFO GPL-0030] Number of bins:                     32
 [INFO GPL-0033] Initializing Nesterov region: PD_D2
 [INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      7.299 um^2
-[INFO GPL-0025] Ideal bin area:                 10.427 um^2
-[INFO GPL-0026] Ideal bin count:                    86
+[INFO GPL-0024] Movable insts average area:      7.978 um^2
+[INFO GPL-0025] Ideal bin area:                 11.397 um^2
+[INFO GPL-0026] Ideal bin count:                    79
 [INFO GPL-0027] Total bin area:                900.864 um^2
 [INFO GPL-0028] Bin count (X, Y):           8 ,      4
 [INFO GPL-0029] Bin size (W * H):       6.900 *  4.080 um
@@ -97,75 +97,48 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.5346 |  1.017935e+03 |   +0.00% |  9.25e-14 |      
-        0 |   0.0000 |  1.017935e+03 |   +0.00% |  2.30e-12 |  (PD_D1)
-        0 |   0.0000 |  1.017935e+03 |   +0.00% |  2.87e-12 |  (PD_D2)
-        0 |   0.0000 |  1.017935e+03 |          |  2.39e-12 | PD_D1
+        0 |   0.0000 |  1.027607e+03 |   +0.00% |  2.22e-13 |      
+        0 |   0.0000 |  1.027607e+03 |   +0.00% |  2.55e-12 |  (PD_D1)
+        0 |   0.0418 |  1.027607e+03 |   +0.00% |  2.49e-12 |  (PD_D2)
+        0 |   0.0000 |  1.027607e+03 |          |  2.31e-13 |      
 ---------------------------------------------------------------
-[INFO GPL-1016] Region 'PD_D1' placement finished at iteration 0
-[INFO GPL-1002] Placed Cell Area               21.2704
-[INFO GPL-1003] Available Free Area           900.8640
-[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)
-[INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.0262
-[INFO GPL-1008]     - For 80% usage of free space: 0.0295
-[INFO GPL-1009]     - For 50% usage of free space: 0.0472
-        0 |   0.0000 |  1.017935e+03 |          |  2.98e-12 | PD_D2
----------------------------------------------------------------
-[INFO GPL-1016] Region 'PD_D2' placement finished at iteration 0
-[INFO GPL-1002] Placed Cell Area               43.7920
-[INFO GPL-1003] Available Free Area           900.8640
-[INFO GPL-1004] Minimum Feasible Density        0.0500 (cell_area / free_area)
-[INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.0540
-[INFO GPL-1008]     - For 80% usage of free space: 0.0608
-[INFO GPL-1009]     - For 50% usage of free space: 0.0972
-       10 |   0.3720 |  1.005182e+03 |   -1.25% |  1.51e-13 |      
-       20 |   0.3478 |  1.003894e+03 |   -0.13% |  2.29e-13 |      
-       30 |   0.3699 |  1.004145e+03 |   +0.03% |  3.37e-13 |      
-       40 |   0.3564 |  1.004056e+03 |   -0.01% |  4.97e-13 |      
-       50 |   0.3640 |  1.004102e+03 |   +0.00% |  7.32e-13 |      
-       60 |   0.3608 |  1.004103e+03 |   +0.00% |  1.08e-12 |      
-       70 |   0.3614 |  1.004091e+03 |   -0.00% |  1.59e-12 |      
-       80 |   0.3620 |  1.004093e+03 |   +0.00% |  2.34e-12 |      
-       90 |   0.3610 |  1.004076e+03 |   -0.00% |  3.45e-12 |      
-      100 |   0.3619 |  1.004067e+03 |   -0.00% |  5.08e-12 |      
-      110 |   0.3617 |  1.004039e+03 |   -0.00% |  7.48e-12 |      
-      120 |   0.3620 |  1.004000e+03 |   -0.00% |  1.10e-11 |      
-      130 |   0.3622 |  1.003935e+03 |   -0.01% |  1.62e-11 |      
-      140 |   0.3625 |  1.003947e+03 |   +0.00% |  2.39e-11 |      
-      150 |   0.3631 |  1.004258e+03 |   +0.03% |  3.52e-11 |      
-      160 |   0.3636 |  1.004817e+03 |   +0.06% |  5.19e-11 |      
-      170 |   0.3642 |  1.005798e+03 |   +0.10% |  7.64e-11 |      
-      180 |   0.3645 |  1.007476e+03 |   +0.17% |  1.13e-10 |      
-      190 |   0.3624 |  1.009871e+03 |   +0.24% |  1.66e-10 |      
-      200 |   0.3494 |  1.013254e+03 |   +0.33% |  2.44e-10 |      
-      210 |   0.3092 |  1.018676e+03 |   +0.54% |  3.60e-10 |      
-      220 |   0.2510 |  1.025133e+03 |   +0.63% |  5.30e-10 |      
-      230 |   0.1597 |  1.031799e+03 |   +0.65% |  7.81e-10 |      
-      240 |   0.1560 |  1.032171e+03 |   +0.04% |  1.15e-09 |      
-      250 |   0.1802 |  1.033018e+03 |   +0.08% |  1.70e-09 |      
-      260 |   0.2403 |  1.031067e+03 |   -0.19% |  2.50e-09 |      
-      270 |   0.1974 |  1.036438e+03 |   +0.52% |  3.68e-09 |      
-      273 |   0.0602 |  1.041060e+03 |          |  4.30e-09 |      
----------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 273
-[INFO GPL-1002] Placed Cell Area               93.8400
+[INFO GPL-1001] Global placement finished at iteration 0
+[INFO GPL-1002] Placed Cell Area              103.9499
 [INFO GPL-1003] Available Free Area          6782.7552
 [INFO GPL-1004] Minimum Feasible Density        0.0200 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.0154
-[INFO GPL-1008]     - For 80% usage of free space: 0.0173
-[INFO GPL-1009]     - For 50% usage of free space: 0.0277
-[INFO GPL-1014] Final placement area: 158.90 (+0.00%)
+[INFO GPL-1007]     - For 90% usage of free space: 0.0170
+[INFO GPL-1008]     - For 80% usage of free space: 0.0192
+[INFO GPL-1009]     - For 50% usage of free space: 0.0307
+        0 |   0.0000 |  1.027607e+03 |          |  2.65e-12 | PD_D1
+---------------------------------------------------------------
+[INFO GPL-1016] Region 'PD_D1' placement finished at iteration 0
+[INFO GPL-1002] Placed Cell Area               23.2282
+[INFO GPL-1003] Available Free Area           900.8640
+[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0286
+[INFO GPL-1008]     - For 80% usage of free space: 0.0322
+[INFO GPL-1009]     - For 50% usage of free space: 0.0516
+        0 |   0.0418 |  1.027607e+03 |          |  2.59e-12 | PD_D2
+---------------------------------------------------------------
+[INFO GPL-1016] Region 'PD_D2' placement finished at iteration 0
+[INFO GPL-1002] Placed Cell Area               47.8688
+[INFO GPL-1003] Available Free Area           900.8640
+[INFO GPL-1004] Minimum Feasible Density        0.0600 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0590
+[INFO GPL-1008]     - For 80% usage of free space: 0.0664
+[INFO GPL-1009]     - For 50% usage of free space: 0.1063
+[INFO GPL-1014] Final placement area: 175.05 (+0.00%)
 Placement Analysis
 ---------------------------------
-total displacement         41.3 u
-average displacement        1.9 u
-max displacement            3.9 u
-original HPWL            1041.3 u
-legalized HPWL           1070.2 u
-delta HPWL                    3 %
+total displacement         73.4 u
+average displacement        3.3 u
+max displacement            6.0 u
+original HPWL            1027.5 u
+legalized HPWL           1085.4 u
+delta HPWL                    6 %
 
 Detailed placement improvement.
 [INFO DPL-0401] Setting random seed to 1.
@@ -182,50 +155,33 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPL-0303] Running algorithm for independent set matching.
 [INFO DPL-0300] Set matching objective is wirelength.
-[INFO DPL-0301] Pass   1 of matching; objective is 1.069917e+06.
-[INFO DPL-0302] End of matching; objective is 1.067681e+06, improvement is 0.21 percent.
+[INFO DPL-0301] Pass   1 of matching; objective is 1.085974e+06.
+[INFO DPL-0302] End of matching; objective is 1.080864e+06, improvement is 0.47 percent.
 [INFO DPL-0303] Running algorithm for global swaps.
-[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.046801e+06.
-[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.027185e+06.
-[INFO DPL-0306] Pass   3 of global swaps; hpwl is 1.027185e+06.
-[INFO DPL-0307] End of global swaps; objective is 1.027185e+06, improvement is 3.79 percent.
+[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.056277e+06.
+[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.056277e+06.
+[INFO DPL-0307] End of global swaps; objective is 1.056277e+06, improvement is 2.27 percent.
 [INFO DPL-0303] Running algorithm for vertical swaps.
-[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 9.954200e+05.
-[INFO DPL-0308] Pass   2 of vertical swaps; hpwl is 9.842200e+05.
-[INFO DPL-0308] Pass   3 of vertical swaps; hpwl is 9.768760e+05.
-[INFO DPL-0309] End of vertical swaps; objective is 9.768760e+05, improvement is 4.90 percent.
+[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.004249e+06.
+[INFO DPL-0308] Pass   2 of vertical swaps; hpwl is 9.990840e+05.
+[INFO DPL-0309] End of vertical swaps; objective is 9.990840e+05, improvement is 5.41 percent.
 [INFO DPL-0303] Running algorithm for reordering.
-[INFO DPL-0304] Pass   1 of reordering; objective is 9.754960e+05.
-[INFO DPL-0305] End of reordering; objective is 9.754960e+05, improvement is 0.14 percent.
+[INFO DPL-0304] Pass   1 of reordering; objective is 9.990840e+05.
+[INFO DPL-0305] End of reordering; objective is 9.990840e+05, improvement is 0.00 percent.
 [INFO DPL-0303] Running algorithm for random improvement.
 [INFO DPL-0324] Random improver is using random generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 440, swaps 31, moves   405 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.754960e+05, Scratch cost 9.554520e+05, Incremental cost 9.554520e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.554520e+05.
-[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 2.05 percent.
-[INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 880, swaps 54, moves   816 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.554520e+05, Scratch cost 9.380840e+05, Incremental cost 9.380840e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.380840e+05.
-[INFO DPL-0327] Pass   2 of random improver; improvement in cost is 1.82 percent.
-[INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 1320, swaps 83, moves  1217 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.380840e+05, Scratch cost 9.220040e+05, Incremental cost 9.220040e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.220040e+05.
-[INFO DPL-0327] Pass   3 of random improver; improvement in cost is 1.71 percent.
-[INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 1760, swaps 111, moves  1619 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.220040e+05, Scratch cost 9.160040e+05, Incremental cost 9.160040e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.160040e+05.
-[INFO DPL-0327] Pass   4 of random improver; improvement in cost is 0.65 percent.
-[INFO DPL-0328] End of random improver; improvement is 6.098641 percent.
+[INFO DPL-0335] Generator random, Cumulative attempts 440, swaps 26, moves   408 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.990840e+05, Scratch cost 9.984700e+05, Incremental cost 9.984700e+05, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 9.984700e+05.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 0.06 percent.
+[INFO DPL-0328] End of random improver; improvement is 0.061456 percent.
 [INFO DPL-0380] Cell flipping.
 [INFO DPL-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPL-0383] Performed 6 cell flips.
-[INFO DPL-0384] End of flipping; objective is 9.094360e+05, improvement is 0.72 percent.
+[INFO DPL-0383] Performed 5 cell flips.
+[INFO DPL-0384] End of flipping; objective is 9.929850e+05, improvement is 0.55 percent.
 [INFO DPL-0313] Found 0 cells in wrong regions.
 [INFO DPL-0315] Found 0 row alignment problems.
 [INFO DPL-0314] Found 0 site alignment problems.
@@ -233,8 +189,8 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL             1070.2 u (     578.0,      492.2)
-Final HPWL                 908.5 u (     460.3,      448.3)
-Delta HPWL                 -15.1 % (     -20.4,       -8.9)
+Original HPWL             1085.4 u (     585.5,      499.9)
+Final HPWL                 991.9 u (     528.3,      463.5)
+Delta HPWL                  -8.6 % (      -9.8,       -7.3)
 
 No differences found.

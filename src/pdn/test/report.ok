@@ -26,207 +26,343 @@ Straps:
   Type: Pad connect
     Pin: u_vss_pll/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_9/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_8/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_7/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_6/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_5/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_4/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_32/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_31/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_30/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_3/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_29/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_28/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_27/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_26/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_25/VSS
     Connection type: Edge
+    Edge: WEST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_24/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_23/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_22/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_21/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_20/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_2/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_19/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_18/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_17/VSS
     Connection type: Edge
+    Edge: NORTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_16/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_15/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_14/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_13/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_12/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_11/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_10/VSS
     Connection type: Edge
+    Edge: EAST
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_1/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vss_0/VSS
     Connection type: Edge
+    Edge: SOUTH
+    Net: VSS
   Type: Pad connect
     Pin: u_vdd_pll/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_9/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_8/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_7/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_6/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_5/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_4/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_32/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_31/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_30/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_3/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_29/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_28/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_27/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_26/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_25/VDD
     Connection type: Edge
+    Edge: WEST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_24/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_23/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_22/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_21/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_20/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_2/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_19/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_18/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_17/VDD
     Connection type: Edge
+    Edge: NORTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_16/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_15/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_14/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_13/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_12/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_11/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_10/VDD
     Connection type: Edge
+    Edge: EAST
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_1/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Pad connect
     Pin: u_vdd_0/VDD
     Connection type: Edge
+    Edge: SOUTH
+    Net: VDD
   Type: Followpin
     Layer: metal1
     Width: 0.1700
@@ -241,6 +377,7 @@ Straps:
     Pitch: 56.0000
     Offset: 2.0000
     Snap to grid: false
+    Nets: VDD
   Type: Strap
     Layer: metal7
     Width: 1.4000

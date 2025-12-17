@@ -871,7 +871,7 @@ void SACoreSoftMacro::fillDeadSpace()
   const int num_y = y_grid.size() - 1;
   for (int j = 0; j < num_y; j++) {
     std::vector<int> macro_ids(num_x, -1);
-    grids.push_back(macro_ids);
+    grids.push_back(std::move(macro_ids));
   }
 
   for (int macro_id = 0; macro_id < pos_seq_.size(); macro_id++) {

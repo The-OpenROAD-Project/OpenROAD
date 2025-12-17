@@ -2175,7 +2175,6 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger)
   _solverFileName = new char[1024];
   _wireFileName = new char[1024];
   _capLogFP = nullptr;
-  _logFP = nullptr;
 
   _readCapLog = false;
   _commentFlag = false;
@@ -2211,7 +2210,6 @@ extRCModel::extRCModel(const char* name, Logger* logger)
   _solverFileName = new char[1024];
   _wireFileName = new char[1024];
   _capLogFP = nullptr;
-  _logFP = nullptr;
 
   _readCapLog = false;
   _commentFlag = false;
@@ -2688,9 +2686,6 @@ void extRCModel::mkFileNames(extMeasure* m, char* wiresNameSuffix)
   } else {
     sprintf(_wireFileName, "%s", "wires");
   }
-
-  fprintf(_logFP, "PATTERN %s\n\n", _wireDirName);
-  fflush(_logFP);
 }
 
 double get_nm(extMeasure* m, double n)
@@ -2749,9 +2744,6 @@ void extRCModel::mkNet_prefix(extMeasure* m, const char* wiresNameSuffix)
   } else {
     sprintf(_wireFileName, "%s", "wires");
   }
-
-  // fprintf(_logFP, "pattern Dir %s\n\n", _wireDirName);
-  fflush(_logFP);
 }
 
 FILE* extRCModel::mkPatternFile()
@@ -3022,7 +3014,6 @@ void extRCModel::setOptions(const char* topDir,
                             const char* pattern,
                             bool writeFiles)
 {
-  _logFP = openFile("./", "rulesGen", ".log", "w");
   _filesFP = openFile("./", "patternFiles.", pattern, "w");
   // strcpy(_topDir, topDir);
   strcpy(_topDir, pattern);
@@ -3035,7 +3026,6 @@ void extRCModel::setOptions(const char* topDir,
 
 void extRCModel::setOptions(const char* topDir, const char* pattern)
 {
-  _logFP = openFile("./", "rulesGen", ".log", "w");
   strcpy(_topDir, topDir);
   strcpy(_patternName, pattern);
 
@@ -3046,11 +3036,6 @@ void extRCModel::setOptions(const char* topDir, const char* pattern)
 
 void extRCModel::closeFiles()
 {
-  fflush(_logFP);
-
-  if (_logFP != nullptr) {
-    fclose(_logFP);
-  }
   fflush(_filesFP);
   if (_filesFP != nullptr) {
     fclose(_filesFP);
@@ -3819,9 +3804,6 @@ bool extRCModel::measurePatternVar(extMeasure* m,
   mkFileNames(m, wiresNameSuffix);
 
   printCommentLine('$', m);
-  fprintf(_logFP, "%s\n", _commentLine);
-  fprintf(_logFP, "%c %g thicknessChange\n", '$', thicknessChange);
-  fflush(_logFP);
 
   if (_writeFiles) {
     FILE* wfp = mkPatternFile();

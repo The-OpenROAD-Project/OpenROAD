@@ -1323,7 +1323,7 @@ Tree Flute::flutes_MD(int d,
 
       std::vector<int> tmp_ys(ys.begin() + d - 1 - ms, ys.end());
       t2 = flutes_LMD(ms + 1, xs, tmp_ys, s2, acc);
-      t = dmergetree(t1, t2);
+      t = dmergetree(std::move(t1), std::move(t2));
 
       free(score);
       free(penalty);

@@ -13,8 +13,6 @@ class _dbInst;
 
 class dbRegionInstItr : public dbIterator
 {
-  dbTable<_dbInst>* _inst_tbl;
-
  public:
   dbRegionInstItr(dbTable<_dbInst>* inst_tbl) { _inst_tbl = inst_tbl; }
 
@@ -27,6 +25,9 @@ class dbRegionInstItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbInst>* _inst_tbl;
 };
 
 }  // namespace odb

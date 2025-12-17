@@ -13,8 +13,6 @@ class _dbProperty;
 
 class dbPropertyItr : public dbIterator
 {
-  dbTable<_dbProperty>* _prop_tbl;
-
  public:
   dbPropertyItr(dbTable<_dbProperty>* prop_tbl) { _prop_tbl = prop_tbl; }
 
@@ -27,6 +25,9 @@ class dbPropertyItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbProperty>* _prop_tbl;
 };
 
 }  // namespace odb

@@ -22,18 +22,12 @@ class dbOStream;
 
 struct _dbTechViaRuleFlags
 {
-  uint _spare_bits : 32;
+  uint spare_bits : 32;
 };
 
 class _dbTechViaRule : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  _dbTechViaRuleFlags flags_;
-  char* name_;
-  dbVector<uint> _layer_rules;
-  dbVector<uint> _vias;
-
   _dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v);
   _dbTechViaRule(_dbDatabase*);
   ~_dbTechViaRule();
@@ -46,6 +40,12 @@ class _dbTechViaRule : public _dbObject
   }
 
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  _dbTechViaRuleFlags flags_;
+  char* name_;
+  dbVector<uint> layer_rules_;
+  dbVector<uint> vias_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v);

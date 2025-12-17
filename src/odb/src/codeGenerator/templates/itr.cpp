@@ -75,7 +75,7 @@ uint {{itr.name}}::next(uint id, ...) const
 
 dbObject* {{itr.name}}::getObject(uint id, ...)
 {
-  return _{{itr.tableName}}->getPtr(id);
+  return {{itr.tableName}}_->getPtr(id);
 }
 // User Code Begin Methods
 // User Code End Methods

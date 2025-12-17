@@ -11,27 +11,27 @@ namespace odb {
 
 dbITermShapeItr::dbITermShapeItr(bool expand_vias)
 {
-  _mterm = nullptr;
-  _state = 0;
-  _iterm = nullptr;
-  _mpin = nullptr;
-  _via = nullptr;
-  _expand_vias = expand_vias;
+  mterm_ = nullptr;
+  state_ = 0;
+  iterm_ = nullptr;
+  mpin_ = nullptr;
+  via_ = nullptr;
+  expand_vias_ = expand_vias;
 }
 
 void dbITermShapeItr::begin(dbITerm* iterm)
 {
-  _iterm = iterm;
+  iterm_ = iterm;
   dbInst* inst = iterm->getInst();
-  _mterm = iterm->getMTerm();
-  _transform = inst->getTransform();
-  _state = 0;
+  mterm_ = iterm->getMTerm();
+  transform_ = inst->getTransform();
+  state_ = 0;
 }
 
 void dbITermShapeItr::getShape(dbBox* box, dbShape& shape)
 {
   Rect r = box->getBox();
-  _transform.apply(r);
+  transform_.apply(r);
 
   dbTechVia* via = box->getTechVia();
 
@@ -51,56 +51,56 @@ bool dbITermShapeItr::next(dbShape& shape)
 {
 next_state:
 
-  switch (_state) {
+  switch (state_) {
     case INIT: {
-      _mpins = _mterm->getMPins();
-      _mpin_itr = _mpins.begin();
-      _state = MPIN_ITR;
+      mpins_ = mterm_->getMPins();
+      mpin_itr_ = mpins_.begin();
+      state_ = MPIN_ITR;
       goto next_state;
     }
 
     case MPIN_ITR: {
-      if (_mpin_itr == _mpins.end()) {
+      if (mpin_itr_ == mpins_.end()) {
         return false;
       }
-      _mpin = *_mpin_itr;
-      ++_mpin_itr;
-      _boxes = _mpin->getGeometry();
-      _box_itr = _boxes.begin();
-      _state = MBOX_ITR;
+      mpin_ = *mpin_itr_;
+      ++mpin_itr_;
+      boxes_ = mpin_->getGeometry();
+      box_itr_ = boxes_.begin();
+      state_ = MBOX_ITR;
 
       goto next_state;
     }
 
     case MBOX_ITR: {
-      if (_box_itr == _boxes.end()) {
-        _state = MPIN_ITR;
+      if (box_itr_ == boxes_.end()) {
+        state_ = MPIN_ITR;
       } else {
-        dbBox* box = *_box_itr;
-        ++_box_itr;
+        dbBox* box = *box_itr_;
+        ++box_itr_;
 
-        if ((_expand_vias == false) || (box->isVia() == false)) {
+        if ((expand_vias_ == false) || (box->isVia() == false)) {
           getShape(box, shape);
           return true;
         }
 
-        _via_pt = box->getViaXY();
-        _via = box->getTechVia();
-        assert(_via);
-        _via_boxes = _via->getBoxes();
-        _via_box_itr = _via_boxes.begin();
-        _state = VIA_BOX_ITR;
+        via_pt_ = box->getViaXY();
+        via_ = box->getTechVia();
+        assert(via_);
+        via_boxes_ = via_->getBoxes();
+        via_box_itr_ = via_boxes_.begin();
+        state_ = VIA_BOX_ITR;
       }
 
       goto next_state;
     }
 
     case VIA_BOX_ITR: {
-      if (_via_box_itr == _via_boxes.end()) {
-        _state = MBOX_ITR;
+      if (via_box_itr_ == via_boxes_.end()) {
+        state_ = MBOX_ITR;
       } else {
-        dbBox* box = *_via_box_itr;
-        ++_via_box_itr;
+        dbBox* box = *via_box_itr_;
+        ++via_box_itr_;
         getViaBox(box, shape);
         return true;
       }
@@ -115,9 +115,9 @@ next_state:
 void dbITermShapeItr::getViaBox(dbBox* box, dbShape& shape)
 {
   Rect b = box->getBox();
-  b.moveDelta(_via_pt.getX(), _via_pt.getY());
-  _transform.apply(b);
-  shape.setViaBox(_via, box->getTechLayer(), b);
+  b.moveDelta(via_pt_.getX(), via_pt_.getY());
+  transform_.apply(b);
+  shape.setViaBox(via_, box->getTechLayer(), b);
 }
 
 }  // namespace odb

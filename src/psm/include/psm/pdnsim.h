@@ -56,6 +56,9 @@ class PDNSim : public odb::dbBlockCallBackObj
 
     // Straps
     int strap_track_pitch = 10;
+
+    // Source resistance
+    float resistance = 0.0;  // Ohms
   };
 
   using IRDropByPoint = std::map<odb::Point, double>;

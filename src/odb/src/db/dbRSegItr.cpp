@@ -31,18 +31,18 @@ bool dbRSegItr::orderReversed() const
 void dbRSegItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->_r_segs;
+  uint id = net->r_segs_;
   uint list = 0;
 
   while (id != 0) {
     _dbRSeg* seg = _seg_tbl->getPtr(id);
-    uint n = seg->_next;
-    seg->_next = list;
+    uint n = seg->next_;
+    seg->next_ = list;
     list = id;
     id = n;
   }
 
-  net->_r_segs = list;
+  net->r_segs_ = list;
 }
 
 uint dbRSegItr::sequential() const
@@ -66,11 +66,11 @@ uint dbRSegItr::size(dbObject* parent) const
 uint dbRSegItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
-  if (net->_r_segs == 0) {
+  if (net->r_segs_ == 0) {
     return 0;
   }
-  _dbRSeg* seg = _seg_tbl->getPtr(net->_r_segs);
-  return seg->_next;
+  _dbRSeg* seg = _seg_tbl->getPtr(net->r_segs_);
+  return seg->next_;
 }
 
 uint dbRSegItr::end(dbObject* /* unused: parent */) const
@@ -81,7 +81,7 @@ uint dbRSegItr::end(dbObject* /* unused: parent */) const
 uint dbRSegItr::next(uint id, ...) const
 {
   _dbRSeg* seg = _seg_tbl->getPtr(id);
-  return seg->_next;
+  return seg->next_;
 }
 
 dbObject* dbRSegItr::getObject(uint id, ...)

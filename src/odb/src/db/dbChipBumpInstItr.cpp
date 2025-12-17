@@ -36,7 +36,7 @@ void dbChipBumpInstItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbChipBumpInst* chip_bump_inst = _chip_bump_inst_tbl->getPtr(id);
+    _dbChipBumpInst* chip_bump_inst = chip_bump_inst_tbl_->getPtr(id);
     uint n = chip_bump_inst->region_next_;
     chip_bump_inst->region_next_ = list;
     list = id;
@@ -81,14 +81,14 @@ uint dbChipBumpInstItr::end(dbObject* /* unused: parent */) const
 uint dbChipBumpInstItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbChipBumpInst* chip_bump_inst = _chip_bump_inst_tbl->getPtr(id);
+  _dbChipBumpInst* chip_bump_inst = chip_bump_inst_tbl_->getPtr(id);
   return chip_bump_inst->region_next_;
   // User Code End next
 }
 
 dbObject* dbChipBumpInstItr::getObject(uint id, ...)
 {
-  return _chip_bump_inst_tbl->getPtr(id);
+  return chip_bump_inst_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp

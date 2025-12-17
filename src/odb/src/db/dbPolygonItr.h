@@ -13,9 +13,6 @@ class _dbPolygon;
 
 class dbPolygonItr : public dbIterator
 {
- protected:
-  dbTable<_dbPolygon, 8>* pbox_tbl_;
-
  public:
   dbPolygonItr(dbTable<_dbPolygon, 8>* pbox_tbl) { pbox_tbl_ = pbox_tbl; }
 
@@ -28,6 +25,9 @@ class dbPolygonItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbPolygon, 8>* pbox_tbl_;
 };
 
 }  // namespace odb

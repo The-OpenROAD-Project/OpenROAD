@@ -36,7 +36,7 @@ void dbChipNetItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbChipNet* chipnet = _chip_net_tbl->getPtr(id);
+    _dbChipNet* chipnet = chip_net_tbl_->getPtr(id);
     uint n = chipnet->chip_net_next_;
     chipnet->chip_net_next_ = list;
     list = id;
@@ -80,14 +80,14 @@ uint dbChipNetItr::end(dbObject* /* unused: parent */) const
 uint dbChipNetItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbChipNet* chipnet = _chip_net_tbl->getPtr(id);
+  _dbChipNet* chipnet = chip_net_tbl_->getPtr(id);
   return chipnet->chip_net_next_;
   // User Code End next
 }
 
 dbObject* dbChipNetItr::getObject(uint id, ...)
 {
-  return _chip_net_tbl->getPtr(id);
+  return chip_net_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp

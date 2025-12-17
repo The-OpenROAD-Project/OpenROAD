@@ -16,7 +16,7 @@ class dbChipNetItr : public dbIterator
  public:
   dbChipNetItr(dbTable<_dbChipNet>* chip_net_tbl)
   {
-    _chip_net_tbl = chip_net_tbl;
+    chip_net_tbl_ = chip_net_tbl;
   }
 
   bool reversible() const override;
@@ -30,7 +30,7 @@ class dbChipNetItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbChipNet>* _chip_net_tbl;
+  dbTable<_dbChipNet>* chip_net_tbl_;
 };
 
 }  // namespace odb

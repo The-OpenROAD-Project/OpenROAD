@@ -13,8 +13,6 @@ class _dbTechLayer;
 
 class dbTechLayerItr : public dbIterator
 {
-  dbTable<_dbTechLayer>* _layer_tbl;
-
  public:
   dbTechLayerItr(dbTable<_dbTechLayer>* layer_tbl) { _layer_tbl = layer_tbl; }
 
@@ -27,6 +25,9 @@ class dbTechLayerItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbTechLayer>* _layer_tbl;
 };
 
 }  // namespace odb

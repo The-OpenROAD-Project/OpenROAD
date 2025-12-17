@@ -16,7 +16,7 @@ class dbChipConnItr : public dbIterator
  public:
   dbChipConnItr(dbTable<_dbChipConn>* chip_conn_tbl)
   {
-    _chip_conn_tbl = chip_conn_tbl;
+    chip_conn_tbl_ = chip_conn_tbl;
   }
 
   bool reversible() const override;
@@ -30,7 +30,7 @@ class dbChipConnItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbChipConn>* _chip_conn_tbl;
+  dbTable<_dbChipConn>* chip_conn_tbl_;
 };
 
 }  // namespace odb

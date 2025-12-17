@@ -34,17 +34,17 @@ void dbGroupItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint id = _parent->_groups;
+  uint id = _parent->groups_;
   uint list = 0;
 
   while (id != 0) {
-    _dbGroup* _child = _group_tbl->getPtr(id);
-    uint n = _child->_group_next;
-    _child->_group_next = list;
+    _dbGroup* _child = group_tbl_->getPtr(id);
+    uint n = _child->group_next_;
+    _child->group_next_ = list;
     list = id;
     id = n;
   }
-  _parent->_groups = list;
+  _parent->groups_ = list;
   // User Code End reverse
 }
 
@@ -70,7 +70,7 @@ uint dbGroupItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbGroup* _parent = (_dbGroup*) parent;
-  return _parent->_groups;
+  return _parent->groups_;
   // User Code End begin
 }
 
@@ -82,14 +82,14 @@ uint dbGroupItr::end(dbObject* /* unused: parent */) const
 uint dbGroupItr::next(uint id, ...) const
 {
   // User Code Begin next
-  _dbGroup* _child = _group_tbl->getPtr(id);
-  return _child->_group_next;
+  _dbGroup* _child = group_tbl_->getPtr(id);
+  return _child->group_next_;
   // User Code End next
 }
 
 dbObject* dbGroupItr::getObject(uint id, ...)
 {
-  return _group_tbl->getPtr(id);
+  return group_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

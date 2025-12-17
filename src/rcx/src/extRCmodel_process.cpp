@@ -520,7 +520,6 @@ void extRCModel::setOptions(const char* topDir,
                             bool keepFile,
                             uint metLevel)
 {
-  _logFP = openFile("./", "rulesGen", ".log", "w");
   strcpy(_topDir, topDir);
   strcpy(_patternName, pattern);
 
@@ -1054,9 +1053,6 @@ bool extRCModel::measurePatternVar_3D(extMeasure* m,
   mkFileNames(m, wiresNameSuffix);
 
   printCommentLine('#', m);
-  fprintf(_logFP, "%s\n", _commentLine);
-  fprintf(_logFP, "%c %g thicknessChange\n", '$', thicknessChange);
-  fflush(_logFP);
 
   FILE* wfp = mkPatternFile();
 

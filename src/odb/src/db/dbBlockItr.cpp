@@ -27,7 +27,7 @@ bool dbBlockItr::orderReversed() const
 void dbBlockItr::reverse(dbObject* parent)
 {
   _dbBlock* block = (_dbBlock*) parent;
-  std::reverse(block->_children.begin(), block->_children.end());
+  std::reverse(block->children_.begin(), block->children_.end());
 }
 
 uint dbBlockItr::sequential() const
@@ -38,7 +38,7 @@ uint dbBlockItr::sequential() const
 uint dbBlockItr::size(dbObject* parent) const
 {
   _dbBlock* block = (_dbBlock*) parent;
-  return block->_children.size();
+  return block->children_.size();
 }
 
 uint dbBlockItr::begin(dbObject*) const
@@ -49,7 +49,7 @@ uint dbBlockItr::begin(dbObject*) const
 uint dbBlockItr::end(dbObject* parent) const
 {
   _dbBlock* block = (_dbBlock*) parent;
-  return block->_children.size();
+  return block->children_.size();
 }
 
 uint dbBlockItr::next(uint id, ...) const
@@ -68,8 +68,8 @@ dbObject* dbBlockItr::getObject(uint id, ...)
   va_start(ap, id);
   _dbBlock* parent = (_dbBlock*) va_arg(ap, dbObject*);
   va_end(ap);
-  uint cid = parent->_children[id];
-  return _block_tbl->getPtr(cid);
+  uint cid = parent->children_[id];
+  return block_tbl_->getPtr(cid);
 }
 
 }  // namespace odb

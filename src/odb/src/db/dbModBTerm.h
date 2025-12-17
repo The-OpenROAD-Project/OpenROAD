@@ -31,14 +31,14 @@ class _dbModBTerm : public _dbObject
 
   char* name_;
   uint flags_;
-  dbId<_dbModITerm> _parent_moditerm;
-  dbId<_dbModule> _parent;
-  dbId<_dbModNet> _modnet;
-  dbId<_dbModBTerm> _next_net_modbterm;
-  dbId<_dbModBTerm> _prev_net_modbterm;
-  dbId<_dbBusPort> _busPort;
+  dbId<_dbModITerm> parent_moditerm_;
+  dbId<_dbModule> parent_;
+  dbId<_dbModNet> modnet_;
+  dbId<_dbModBTerm> next_net_modbterm_;
+  dbId<_dbModBTerm> prev_net_modbterm_;
+  dbId<_dbBusPort> busPort_;
   dbId<_dbModBTerm> next_entry_;
-  dbId<_dbModBTerm> _prev_entry;
+  dbId<_dbModBTerm> prev_entry_;
 
   // User Code Begin Fields
   void* _sta_port = nullptr;

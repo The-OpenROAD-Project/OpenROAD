@@ -7,6 +7,7 @@ or_integration_tests(
     bterm_hier_create
     check_routing_tracks
     create_blockage
+    create_obstruction
     create_sboxes
     def_dup_net
     def_parser
@@ -57,6 +58,7 @@ or_integration_tests(
     wire_encoder
     write_cdl
     write_3dbv
+    write_3dbx
     write_def58
     write_def58_gzip
     write_lef_and_def

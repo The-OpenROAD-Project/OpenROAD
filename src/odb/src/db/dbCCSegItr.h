@@ -13,10 +13,8 @@ class _dbCCSeg;
 
 class dbCCSegItr : public dbIterator
 {
-  dbTable<_dbCCSeg, 4096>* _seg_tbl;
-
  public:
-  dbCCSegItr(dbTable<_dbCCSeg, 4096>* seg_tbl) { _seg_tbl = seg_tbl; }
+  dbCCSegItr(dbTable<_dbCCSeg, 4096>* seg_tbl) { seg_tbl_ = seg_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -27,6 +25,9 @@ class dbCCSegItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbCCSeg, 4096>* seg_tbl_;
 };
 
 }  // namespace odb

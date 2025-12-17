@@ -34,8 +34,8 @@ class dbSetIterator
   bool operator==(const dbSetIterator<T>& it) const;
   bool operator!=(const dbSetIterator<T>& it) const;
 
-  T* operator*();
-  T* operator->();
+  T* operator*() const;
+  T* operator->() const;
   dbSetIterator<T>& operator++();
   dbSetIterator<T> operator++(int);
 
@@ -158,13 +158,13 @@ inline bool dbSetIterator<T>::operator!=(const dbSetIterator& it) const
 }
 
 template <class T>
-inline T* dbSetIterator<T>::operator*()
+inline T* dbSetIterator<T>::operator*() const
 {
   return (T*) itr_->getObject(cur_);
 }
 
 template <class T>
-inline T* dbSetIterator<T>::operator->()
+inline T* dbSetIterator<T>::operator->() const
 {
   return (T*) itr_->getObject(cur_);
 }

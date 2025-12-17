@@ -30,18 +30,18 @@ class _dbModNet : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* name_;
-  dbId<_dbModule> _parent;
+  dbId<_dbModule> parent_;
   dbId<_dbModNet> next_entry_;
-  dbId<_dbModNet> _prev_entry;
-  dbId<_dbModITerm> _moditerms;
-  dbId<_dbModBTerm> _modbterms;
-  dbId<_dbITerm> _iterms;
-  dbId<_dbBTerm> _bterms;
+  dbId<_dbModNet> prev_entry_;
+  dbId<_dbModITerm> moditerms_;
+  dbId<_dbModBTerm> modbterms_;
+  dbId<_dbITerm> iterms_;
+  dbId<_dbBTerm> bterms_;
 
   // User Code Begin Fields
   enum Field  // dbJournalField name
   {
-    NAME
+    kName
   };
   // User Code End Fields
 };

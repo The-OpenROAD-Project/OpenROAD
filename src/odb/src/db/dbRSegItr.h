@@ -13,8 +13,6 @@ class _dbRSeg;
 
 class dbRSegItr : public dbIterator
 {
-  dbTable<_dbRSeg, 4096>* _seg_tbl;
-
  public:
   dbRSegItr(dbTable<_dbRSeg, 4096>* seg_tbl) { _seg_tbl = seg_tbl; }
 
@@ -27,6 +25,9 @@ class dbRSegItr : public dbIterator
   uint end(dbObject* parent) const override;
   uint next(uint id, ...) const override;
   dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbRSeg, 4096>* _seg_tbl;
 };
 
 }  // namespace odb

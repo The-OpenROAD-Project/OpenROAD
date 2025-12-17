@@ -14,7 +14,7 @@ class _dbInst;
 class dbGroupInstItr : public dbIterator
 {
  public:
-  dbGroupInstItr(dbTable<_dbInst>* inst_tbl) { _inst_tbl = inst_tbl; }
+  dbGroupInstItr(dbTable<_dbInst>* inst_tbl) { inst_tbl_ = inst_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -27,7 +27,7 @@ class dbGroupInstItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbInst>* _inst_tbl;
+  dbTable<_dbInst>* inst_tbl_;
 };
 
 }  // namespace odb

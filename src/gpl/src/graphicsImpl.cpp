@@ -91,9 +91,10 @@ void GraphicsImpl::debugForNesterovPlace(
         region_names.reserve(nbVec_.size());
         for (size_t i = 0; i < nbVec_.size(); ++i) {
           std::string name;
-          if (nbVec_[i] && nbVec_[i]->getPb() && nbVec_[i]->getPb()->group()) {
+          if (nbVec_[i] && nbVec_[i]->getPb()
+              && nbVec_[i]->getPb()->getGroup()) {
             name = fmt::format(
-                "nb[{}] {}", i, nbVec_[i]->getPb()->group()->getName());
+                "nb[{}] {}", i, nbVec_[i]->getPb()->getGroup()->getName());
           } else {
             name = fmt::format("nb[{}]", i);
           }
@@ -855,7 +856,7 @@ void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
 
 void GraphicsImpl::gifStart(std::string_view path)
 {
-  gui::Gui::get()->gifStart(std::string(path));
+  gif_key_ = gui::Gui::get()->gifStart(std::string(path));
 }
 
 void GraphicsImpl::gifAddFrameImpl(const odb::Rect& region,
@@ -863,7 +864,8 @@ void GraphicsImpl::gifAddFrameImpl(const odb::Rect& region,
                                    double dbu_per_pixel,
                                    std::optional<int> delay)
 {
-  gui::Gui::get()->gifAddFrame(region, width_px, dbu_per_pixel, delay);
+  gui::Gui::get()->gifAddFrame(
+      gif_key_, region, width_px, dbu_per_pixel, delay);
 }
 
 void GraphicsImpl::deleteLabel(std::string_view label_name)
@@ -873,7 +875,7 @@ void GraphicsImpl::deleteLabel(std::string_view label_name)
 
 void GraphicsImpl::gifEnd()
 {
-  gui::Gui::get()->gifEnd();
+  gui::Gui::get()->gifEnd(gif_key_);
 }
 
 }  // namespace gpl

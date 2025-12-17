@@ -16,7 +16,7 @@ class dbChipRegionInstItr : public dbIterator
  public:
   dbChipRegionInstItr(dbTable<_dbChipRegionInst>* chip_region_inst_tbl)
   {
-    _chip_region_inst_tbl = chip_region_inst_tbl;
+    chip_region_inst_tbl_ = chip_region_inst_tbl;
   }
 
   bool reversible() const override;
@@ -30,7 +30,7 @@ class dbChipRegionInstItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbChipRegionInst>* _chip_region_inst_tbl;
+  dbTable<_dbChipRegionInst>* chip_region_inst_tbl_;
 };
 
 }  // namespace odb

@@ -37,8 +37,8 @@ void dbPropertyItr::reverse(dbObject* parent)
 
     while (id != 0) {
       _dbProperty* p = _prop_tbl->getPtr(id);
-      uint n = p->_next;
-      p->_next = list;
+      uint n = p->next_;
+      p->next_ = list;
       list = id;
       id = n;
     }
@@ -80,7 +80,7 @@ uint dbPropertyItr::end(dbObject* /* unused: parent */) const
 uint dbPropertyItr::next(uint id, ...) const
 {
   _dbProperty* prop = _prop_tbl->getPtr(id);
-  return prop->_next;
+  return prop->next_;
 }
 
 dbObject* dbPropertyItr::getObject(uint id, ...)

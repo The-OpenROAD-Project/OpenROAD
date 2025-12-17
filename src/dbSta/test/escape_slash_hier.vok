@@ -1,14 +1,14 @@
 module multi_sink (clk);
  input clk;
 
- wire delaynet_4_core;
- wire clknet_1_0__leaf_clk;
+ wire delaynet_3_core;
+ wire clknet_1_1__leaf_clk;
  wire gclk1;
  wire gclk3;
  wire gclk4;
  wire gclk4_regs;
  wire clknet_0_clk;
- wire clknet_1_1__leaf_clk;
+ wire clknet_1_0__leaf_clk;
  wire \clknet_4_0__leaf_h1/gclk5 ;
  wire \clknet_4_1__leaf_h1/gclk5 ;
  wire \clknet_4_2__leaf_h1/gclk5 ;
@@ -46,22 +46,19 @@ module multi_sink (clk);
  wire delaynet_0_core;
  wire delaynet_1_core;
  wire delaynet_2_core;
- wire delaynet_3_core;
+ wire delaynet_4_core;
  wire delaynet_5_core;
  wire delaynet_6_core;
- wire delaynet_7_core;
 
- CLKBUF_X3 delaybuf_7_core (.A(delaynet_6_core),
-    .Z(delaynet_7_core));
- CLKBUF_X3 delaybuf_6_core (.A(clknet_0_clk),
+ CLKBUF_X3 delaybuf_6_core (.A(delaynet_5_core),
     .Z(delaynet_6_core));
- CLKBUF_X3 delaybuf_5_core (.A(clknet_1_0__leaf_clk),
+ CLKBUF_X3 delaybuf_5_core (.A(delaynet_4_core),
     .Z(delaynet_5_core));
- CLKBUF_X3 delaybuf_4_core (.A(delaynet_3_core),
+ CLKBUF_X3 delaybuf_4_core (.A(clknet_0_clk),
     .Z(delaynet_4_core));
  CLKBUF_X3 delaybuf_3_core (.A(delaynet_2_core),
     .Z(delaynet_3_core));
- CLKBUF_X3 delaybuf_2_core (.A(clknet_1_1__leaf_clk),
+ CLKBUF_X3 delaybuf_2_core (.A(clknet_1_0__leaf_clk),
     .Z(delaynet_2_core));
  CLKBUF_X3 delaybuf_1_core (.A(delaynet_0_core),
     .Z(delaynet_1_core));
@@ -127,9 +124,9 @@ module multi_sink (clk);
  INV_X2 clkload2 (.A(\clknet_4_2__leaf_h1/gclk5 ));
  INV_X4 clkload1 (.A(\clknet_4_1__leaf_h1/gclk5 ));
  INV_X4 clkload0 (.A(\clknet_4_0__leaf_h1/gclk5 ));
- CLKBUF_X3 clkbuf_1_1__f_clk (.A(clknet_0_clk),
+ CLKBUF_X3 clkbuf_1_1__f_clk (.A(delaynet_6_core),
     .Z(clknet_1_1__leaf_clk));
- CLKBUF_X3 clkbuf_1_0__f_clk (.A(delaynet_7_core),
+ CLKBUF_X3 clkbuf_1_0__f_clk (.A(clknet_0_clk),
     .Z(clknet_1_0__leaf_clk));
  CLKBUF_X3 clkbuf_0_clk (.A(clk),
     .Z(clknet_0_clk));
@@ -243,19 +240,19 @@ module multi_sink (clk);
  DFF_X1 ff285 (.CK(clknet_2_0__leaf_gclk3));
  DFF_X1 ff286 (.CK(clknet_2_2__leaf_gclk3));
  DFF_X1 ff287 (.CK(clknet_2_3__leaf_gclk3));
- CLKGATE_X1 gclk1 (.CK(delaynet_5_core),
+ CLKGATE_X1 gclk1 (.CK(clknet_1_1__leaf_clk),
     .GCK(gclk1));
  CLKGATE_X1 gclk3 (.CK(clknet_1_0__leaf_gclk4),
     .GCK(gclk3));
- CLKGATE_X1 gclk4 (.CK(clknet_1_1__leaf_clk),
+ CLKGATE_X1 gclk4 (.CK(clknet_1_0__leaf_clk),
     .GCK(gclk4));
- hier_block h1 (.delaynet_4_core_i(delaynet_4_core),
-    .clknet_1_0__leaf_clk_i(clknet_1_0__leaf_clk));
+ hier_block h1 (.delaynet_3_core_i(delaynet_3_core),
+    .clknet_1_1__leaf_clk_i(clknet_1_1__leaf_clk));
 endmodule
-module hier_block (delaynet_4_core_i,
-    clknet_1_0__leaf_clk_i);
- input delaynet_4_core_i;
- input clknet_1_0__leaf_clk_i;
+module hier_block (delaynet_3_core_i,
+    clknet_1_1__leaf_clk_i);
+ input delaynet_3_core_i;
+ input clknet_1_1__leaf_clk_i;
 
  wire gclk2;
  wire gclk5;
@@ -496,8 +493,8 @@ module hier_block (delaynet_4_core_i,
  DFF_X1 ff97 (.CK(\clknet_4_15__leaf_h1/gclk5 ));
  DFF_X1 ff98 (.CK(\clknet_4_4__leaf_h1/gclk5 ));
  DFF_X1 ff99 (.CK(\clknet_4_13__leaf_h1/gclk5 ));
- CLKGATE_X1 gclk2 (.CK(delaynet_4_core_i),
+ CLKGATE_X1 gclk2 (.CK(clknet_1_1__leaf_clk_i),
     .GCK(gclk2));
- CLKGATE_X1 gclk5 (.CK(clknet_1_0__leaf_clk_i),
+ CLKGATE_X1 gclk5 (.CK(delaynet_3_core_i),
     .GCK(gclk5));
 endmodule

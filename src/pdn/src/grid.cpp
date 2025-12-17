@@ -121,15 +121,21 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
 
   Shape::ShapeTreeMap local_shapes = global_shapes;
   // make shapes
+  std::vector<GridComponent*> deferred;
   for (auto* component : getGridComponents()) {
-    // make initial shapes
-    component->makeShapes(local_shapes);
-    // cut shapes to avoid obstructions
-    component->cutShapes(local_obstructions);
-    // add shapes and obstructions to they are accounted for in future
-    // components
-    component->getObstructions(local_obstructions);
-    component->getShapes(local_shapes);
+    if (!component->make(local_shapes, local_obstructions)) {
+      debugPrint(logger,
+                 utl::PDN,
+                 "Make",
+                 2,
+                 "Deferring shape creation for component in \"{}\".",
+                 getName());
+      deferred.push_back(component);
+    }
+  }
+  // make deferred components
+  for (auto* component : deferred) {
+    component->make(local_shapes, local_obstructions);
   }
 
   // refine shapes
@@ -453,9 +459,21 @@ void Grid::report() const
     }
   }
   if (!connect_.empty()) {
+    std::vector<Connect*> connect;
+    connect.reserve(connect_.size());
+    for (const auto& conn : connect_) {
+      connect.push_back(conn.get());
+    }
+    std::ranges::sort(connect, [](const Connect* l, const Connect* r) {
+      int l_lower = l->getLowerLayer()->getRoutingLevel();
+      int l_upper = l->getUpperLayer()->getRoutingLevel();
+      int r_lower = r->getLowerLayer()->getRoutingLevel();
+      int r_upper = r->getUpperLayer()->getRoutingLevel();
+      return std::tie(l_lower, l_upper) < std::tie(r_lower, r_upper);
+    });
     logger->report("Connect:");
-    for (const auto& connect : connect_) {
-      connect->report();
+    for (Connect* conn : connect) {
+      conn->report();
     }
   }
   if (!pin_layers_.empty()) {
@@ -1282,7 +1300,7 @@ odb::Rect CoreGrid::getDomainBoundary() const
 void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
-  std::set<PadDirectConnectionStraps*> straps;
+  std::vector<PadDirectConnectionStraps*> straps;
   // look for pads that need to be connected
   for (auto* net : getNets()) {
     std::vector<odb::dbITerm*> iterms;
@@ -1299,23 +1317,11 @@ void CoreGrid::setupDirectConnect(
       iterms.push_back(iterm);
     }
 
-    // sort by name to keep stable
-    std::stable_sort(
-        iterms.begin(), iterms.end(), [](odb::dbITerm* l, odb::dbITerm* r) {
-          const int name_compare
-              = r->getInst()->getName().compare(l->getInst()->getName());
-          if (name_compare != 0) {
-            return name_compare < 0;
-          }
-
-          return r->getMTerm()->getName() < l->getMTerm()->getName();
-        });
-
     for (auto* iterm : iterms) {
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
           this, iterm, connect_pad_layers);
       if (pad_connect->canConnect()) {
-        straps.insert(pad_connect.get());
+        straps.push_back(pad_connect.get());
         addStrap(std::move(pad_connect));
       } else {
         debugPrint(getLogger(),

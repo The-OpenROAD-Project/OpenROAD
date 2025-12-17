@@ -14,6 +14,7 @@
 #include "odb/geom_boost.h"
 
 namespace odb {
+class dbBox;
 class dbTechLayer;
 class dbBPin;
 class dbITerm;
@@ -125,9 +126,10 @@ class ITermNode : public TerminalNode
 class BPinNode : public TerminalNode
 {
  public:
-  BPinNode(odb::dbBPin* pin, const odb::Rect& shape, odb::dbTechLayer* layer);
+  BPinNode(odb::dbBPin* pin, odb::dbBox* box, odb::dbTechLayer* layer);
 
   const odb::dbBPin* getBPin() const { return pin_; }
+  bool shouldConnect() const;
 
  protected:
   NodeType getType() const override { return NodeType::kBPin; }
@@ -136,6 +138,9 @@ class BPinNode : public TerminalNode
 
  private:
   odb::dbBPin* pin_;
+  odb::dbBox* box_;
+
+  static constexpr const char* kDisconnectProperty = "PSM_DISCONNECT";
 };
 
 }  // namespace psm

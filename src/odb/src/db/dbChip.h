@@ -58,11 +58,11 @@ class _dbChip : public _dbObject
   int scribe_line_north_;
   int scribe_line_south_;
   bool tsv_;
-  dbId<_dbBlock> _top;
-  dbTable<_dbBlock>* _block_tbl;
-  _dbNameCache* _name_cache;
-  dbBlockItr* _block_itr;
-  dbPropertyItr* _prop_itr;
+  dbId<_dbBlock> top_;
+  dbTable<_dbBlock>* block_tbl_;
+  _dbNameCache* name_cache_;
+  dbBlockItr* block_itr_;
+  dbPropertyItr* prop_itr_;
   dbId<_dbChipInst> chipinsts_;
   dbId<_dbChipConn> conns_;
   dbId<_dbChipNet> nets_;
@@ -71,7 +71,7 @@ class _dbChip : public _dbObject
   dbId<_dbTech> tech_;
   std::unordered_map<std::string, dbId<_dbMarkerCategory>>
       marker_categories_map_;
-  dbTable<_dbProperty>* _prop_tbl;
+  dbTable<_dbProperty>* prop_tbl_;
   dbTable<_dbChipRegion>* chip_region_tbl_;
   dbTable<_dbMarkerCategory>* marker_categories_tbl_;
   dbId<_dbChip> next_entry_;

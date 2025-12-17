@@ -19,19 +19,15 @@ class _dbTechLayer;
 
 struct dbFillFlags
 {
-  uint _opc : 1;
-  uint _mask_id : 2;
-  uint _layer_id : 8;
-  uint _spare_bits : 21;
+  uint opc : 1;
+  uint mask_id : 2;
+  uint layer_id : 8;
+  uint spare_bits : 21;
 };
 
 class _dbFill : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  dbFillFlags flags_;
-  Rect _rect;
-
   _dbFill(_dbDatabase*, const _dbFill& r);
   _dbFill(_dbDatabase*);
 
@@ -41,6 +37,10 @@ class _dbFill : public _dbObject
   bool operator!=(const _dbFill& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbFill& rhs) const;
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  dbFillFlags flags_;
+  Rect _rect;
 };
 
 inline _dbFill::_dbFill(_dbDatabase*, const _dbFill& r)
@@ -50,10 +50,10 @@ inline _dbFill::_dbFill(_dbDatabase*, const _dbFill& r)
 
 inline _dbFill::_dbFill(_dbDatabase*)
 {
-  flags_._opc = false;
-  flags_._mask_id = 0;
-  flags_._layer_id = 0;
-  flags_._spare_bits = 0;
+  flags_.opc = false;
+  flags_.mask_id = 0;
+  flags_.layer_id = 0;
+  flags_.spare_bits = 0;
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbFill& fill)

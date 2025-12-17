@@ -128,7 +128,7 @@ def get_class(schema, name):
 def get_table_name(name):
     if len(name) > 2 and name[:2] == "db":
         name = name[2:]
-    return f"_{name.lower()}_tbl"
+    return f"{name.lower()}_tbl_"
 
 
 def is_ref(type_name):

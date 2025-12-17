@@ -17,9 +17,9 @@ class _dbTechLayer;
 
 struct dbTechLayerWrongDirSpacingRuleFlags
 {
-  bool noneol_valid_ : 1;
-  bool length_valid_ : 1;
-  uint spare_bits_ : 30;
+  bool noneol_valid : 1;
+  bool length_valid : 1;
+  uint spare_bits : 30;
 };
 
 class _dbTechLayerWrongDirSpacingRule : public _dbObject
@@ -42,7 +42,7 @@ class _dbTechLayerWrongDirSpacingRule : public _dbObject
   int prl_length_;
 
   // User Code Begin Fields
-  dbId<_dbTechLayer> _layer;
+  dbId<_dbTechLayer> layer_;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWrongDirSpacingRule& obj);

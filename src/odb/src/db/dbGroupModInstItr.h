@@ -16,7 +16,7 @@ class dbGroupModInstItr : public dbIterator
  public:
   dbGroupModInstItr(dbTable<_dbModInst>* modinst_tbl)
   {
-    _modinst_tbl = modinst_tbl;
+    modinst_tbl_ = modinst_tbl;
   }
 
   bool reversible() const override;
@@ -30,7 +30,7 @@ class dbGroupModInstItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbModInst>* _modinst_tbl;
+  dbTable<_dbModInst>* modinst_tbl_;
 };
 
 }  // namespace odb

@@ -18,9 +18,6 @@ struct MemInfo;
 class _dbNameCache
 {
  public:
-  dbTable<_dbName>* _name_tbl;
-  dbHashTable<_dbName> _name_hash;
-
   _dbNameCache(_dbDatabase* db,
                dbObject* owner,
                dbObjectTable* (dbObject::*m)(dbObjectType));
@@ -42,6 +39,9 @@ class _dbNameCache
 
   // Remove the string this id represents
   const char* getName(uint id);
+
+  dbTable<_dbName>* name_tbl_;
+  dbHashTable<_dbName> name_hash_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbNameCache& net);

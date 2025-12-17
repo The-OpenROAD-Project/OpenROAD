@@ -27,23 +27,23 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                 47872.020 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:          6.916 um^2
-[INFO GPL-0019] Utilization:                     0.014 %
-[INFO GPL-0020] Standard cells area:             6.916 um^2
+[INFO GPL-0018] Movable instances area:          8.438 um^2
+[INFO GPL-0019] Utilization:                     0.018 %
+[INFO GPL-0020] Standard cells area:             8.438 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 9630280
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 55524
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 54667
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 54545
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 54549
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 55526
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 54697
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 54468
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 54373
 Placement Analysis
 ---------------------------------
-total displacement          7.3 u
-average displacement        1.8 u
-max displacement            2.6 u
-original HPWL               9.0 u
+total displacement          7.7 u
+average displacement        1.9 u
+max displacement            2.8 u
+original HPWL               9.2 u
 legalized HPWL             22.1 u
-delta HPWL                  146 %
+delta HPWL                  140 %
 
 worst slack max -0.04
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining

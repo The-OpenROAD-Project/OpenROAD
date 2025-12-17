@@ -23,10 +23,10 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
+  if (flags_.length_valid != rhs.flags_.length_valid) {
     return false;
   }
-  if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_) {
+  if (flags_.cuts_valid != rhs.flags_.cuts_valid) {
     return false;
   }
   if (name_ != rhs.name_) {
@@ -156,28 +156,28 @@ void dbTechLayerCutClassRule::setLengthValid(bool length_valid)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->flags_.length_valid_ = length_valid;
+  obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerCutClassRule::isLengthValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->flags_.length_valid_;
+  return obj->flags_.length_valid;
 }
 
 void dbTechLayerCutClassRule::setCutsValid(bool cuts_valid)
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  obj->flags_.cuts_valid_ = cuts_valid;
+  obj->flags_.cuts_valid = cuts_valid;
 }
 
 bool dbTechLayerCutClassRule::isCutsValid() const
 {
   _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
 
-  return obj->flags_.cuts_valid_;
+  return obj->flags_.cuts_valid;
 }
 
 // User Code Begin dbTechLayerCutClassRulePublicMethods

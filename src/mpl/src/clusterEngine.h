@@ -120,11 +120,6 @@ struct PhysicalHierarchy
   float cluster_size_ratio{0.0f};
   float cluster_size_tolerance{0.0f};
 
-  // Virtual connection weight between each macro cluster
-  // and its corresponding standard-cell cluster to bias
-  // the macro placer to place them together.
-  const float virtual_weight = 10.0f;
-
   const int io_bundles_per_edge = 5;
 };
 
@@ -168,6 +163,12 @@ class ClusteringEngine
 
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
+
+  struct Net
+  {
+    int driver_id{-1};
+    std::vector<int> loads_ids;
+  };
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
@@ -249,6 +250,8 @@ class ClusteringEngine
   void clearConnections();
   void buildNetListConnections();
   void buildDataFlowConnections();
+  Net buildNet(odb::dbNet* db_net) const;
+  void connectClusters(const Net& net);
   void connect(Cluster* a, Cluster* b, float connection_weight) const;
 
   // Methods for data flow

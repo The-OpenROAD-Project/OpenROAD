@@ -174,33 +174,6 @@ class _dbWire;
 
 class dbWireEncoder
 {
-  _dbWire* _wire;
-  dbTech* _tech;
-  dbBlock* _block;
-  std::vector<int> _data;
-  std::vector<unsigned char> _opcodes;
-  dbTechLayer* _layer;
-  int _idx;
-  int _x;
-  int _y;
-  uint _non_default_rule;
-  int _point_cnt;
-  int _via_cnt;
-  bool _prev_extended_colinear_pnt;
-  unsigned char _wire_type;
-  unsigned char _rule_opcode;
-
-  unsigned char getOp(int idx);
-  void updateOp(int idx, unsigned char op);
-  void addOp(unsigned char op, int value);
-  dbWireEncoder(const dbWireEncoder&);
-  dbWireEncoder& operator=(const dbWireEncoder&);
-  unsigned char getWireType(dbWireType type);
-  void initPath(dbTechLayer* layer, unsigned char type);
-  void initPath(dbTechLayer* layer, unsigned char type, dbTechLayerRule* rule);
-  void initPath(dbTechLayer* layer, dbWireType type);
-  void initPath(dbTechLayer* layer, dbWireType type, dbTechLayerRule* rule);
-
  public:
   ///
   /// dbWireEncoder constructor:
@@ -476,6 +449,34 @@ class dbWireEncoder
   /// extending the path with a non-default extension and current wire type.
   ///
   void newPathExt(int junction_id, int ext, dbTechLayerRule* rule);
+
+ private:
+  unsigned char getOp(int idx);
+  void updateOp(int idx, unsigned char op);
+  void addOp(unsigned char op, int value);
+  dbWireEncoder(const dbWireEncoder&);
+  dbWireEncoder& operator=(const dbWireEncoder&);
+  unsigned char getWireType(dbWireType type);
+  void initPath(dbTechLayer* layer, unsigned char type);
+  void initPath(dbTechLayer* layer, unsigned char type, dbTechLayerRule* rule);
+  void initPath(dbTechLayer* layer, dbWireType type);
+  void initPath(dbTechLayer* layer, dbWireType type, dbTechLayerRule* rule);
+
+  _dbWire* wire_;
+  dbTech* tech_;
+  dbBlock* block_;
+  std::vector<int> data_;
+  std::vector<unsigned char> opcodes_;
+  dbTechLayer* layer_;
+  int idx_;
+  int x_;
+  int y_;
+  uint non_default_rule_;
+  int point_cnt_;
+  int via_cnt_;
+  bool prev_extended_colinear_pnt_;
+  unsigned char wire_type_;
+  unsigned char rule_opcode_;
 };
 
 ///
@@ -509,36 +510,6 @@ class dbWireDecoder
     uint8_t top_color;
   };
 
- private:
-  _dbWire* _wire;
-  dbBlock* _block;
-  dbTech* _tech;
-  int _x;
-  int _y;
-  bool _default_width;
-  bool _block_rule;
-  dbTechLayer* _layer;
-  int _operand;
-  int _operand2;
-  int _idx;
-  int _jct_id;
-  int _wire_type;
-  int _point_cnt;
-  OpCode _opcode;
-  uint _property;
-  int _deltaX1;
-  int _deltaY1;
-  int _deltaX2;
-  int _deltaY2;
-  std::optional<uint8_t> _color;
-  std::optional<ViaColor> _viacolor;
-
-  unsigned char nextOp(int& value);
-  unsigned char nextOp(uint& value);
-  unsigned char peekOp();
-  void flushRule();
-
- public:
   ///
   /// Create a decoder.
   ///
@@ -644,6 +615,35 @@ class dbWireDecoder
   /// Get the current via mask color.
   ///
   std::optional<ViaColor> getViaColor() const;
+
+ private:
+  unsigned char nextOp(int& value);
+  unsigned char nextOp(uint& value);
+  unsigned char peekOp();
+  void flushRule();
+
+  _dbWire* wire_;
+  dbBlock* block_;
+  dbTech* tech_;
+  int x_;
+  int y_;
+  bool default_width_;
+  bool _block_rule;
+  dbTechLayer* layer_;
+  int operand_;
+  int operand2_;
+  int idx_;
+  int jct_id_;
+  int wire_type_;
+  int point_cnt_;
+  OpCode opcode_;
+  uint property_;
+  int deltaX1_;
+  int deltaY1_;
+  int deltaX2_;
+  int deltaY2_;
+  std::optional<uint8_t> color_;
+  std::optional<ViaColor> viacolor_;
 };
 
 ///

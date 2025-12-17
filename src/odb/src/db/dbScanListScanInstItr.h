@@ -16,7 +16,7 @@ class dbScanListScanInstItr : public dbIterator
  public:
   dbScanListScanInstItr(dbTable<_dbScanInst>* scan_inst_tbl)
   {
-    _scan_inst_tbl = scan_inst_tbl;
+    scan_inst_tbl_ = scan_inst_tbl;
   }
 
   bool reversible() const override;
@@ -30,7 +30,7 @@ class dbScanListScanInstItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbScanInst>* _scan_inst_tbl;
+  dbTable<_dbScanInst>* scan_inst_tbl_;
 };
 
 }  // namespace odb

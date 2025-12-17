@@ -172,7 +172,7 @@ dbTechLayer* dbChipRegion::getLayer() const
   }
 
   _dbTech* tech = (_dbTech*) chip->getBlock()->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(obj->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
 }
 
 dbChipRegion* dbChipRegion::create(dbChip* chip,

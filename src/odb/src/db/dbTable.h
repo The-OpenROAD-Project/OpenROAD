@@ -21,7 +21,7 @@ class dbOStream;
 class dbTablePage final : public dbObjectPage
 {
  public:
-  char _objects[1];
+  char objects_[1];
 };
 
 template <class T, uint page_size /* = 128 */>
@@ -45,7 +45,7 @@ class dbTable final : public dbObjectTable, public dbIterator
   ~dbTable() override;
 
   // returns the number of instances of "T" allocated
-  uint size() const { return _alloc_cnt; }
+  uint size() const { return alloc_cnt_; }
 
   // Create a "T", calls T( _dbDatabase * )
   T* create();
@@ -93,17 +93,6 @@ class dbTable final : public dbObjectTable, public dbIterator
 
   _dbFreeObject* getFreeObj(dbId<T> id);
 
-  // PERSISTANT-DATA
-  uint _top_idx;        // largest id which has been allocated.
-  uint _bottom_idx;     // smallest id which has been allocated.
-  uint _page_cnt;       // high-water mark of page-table
-  uint _page_tbl_size;  // length of the page table
-  uint _alloc_cnt;      // number of object allocated
-  uint _free_list;      // objects on freelist
-
-  // NON-PERSISTANT-DATA
-  dbTablePage** _pages;  // page-table
-
   template <class U, uint page_size2>
   friend dbOStream& operator<<(dbOStream& stream,
                                const dbTable<U, page_size2>& table);
@@ -111,6 +100,17 @@ class dbTable final : public dbObjectTable, public dbIterator
   template <class U, uint page_size2>
   friend dbIStream& operator>>(dbIStream& stream,
                                dbTable<U, page_size2>& table);
+
+  // PERSISTANT-DATA
+  uint top_idx_;        // largest id which has been allocated.
+  uint bottom_idx_;     // smallest id which has been allocated.
+  uint page_cnt_;       // high-water mark of page-table
+  uint page_tbl_size_;  // length of the page table
+  uint alloc_cnt_;      // number of object allocated
+  uint free_list_;      // objects on freelist
+
+  // NON-PERSISTANT-DATA
+  dbTablePage** pages_;  // page-table
 };
 
 template <class T, uint page_size>

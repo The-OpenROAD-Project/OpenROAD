@@ -20,8 +20,8 @@ class dbMatrix
   dbMatrix() = default;
   dbMatrix(uint n, uint m);
 
-  uint numRows() const { return _matrix.shape()[0]; }
-  uint numCols() const { return _matrix.shape()[1]; }
+  uint numRows() const { return matrix_.shape()[0]; }
+  uint numCols() const { return matrix_.shape()[1]; }
   uint numElems() const;
 
   void resize(uint n, uint m);
@@ -36,7 +36,7 @@ class dbMatrix
   bool operator!=(const dbMatrix<T>& rhs) const { return !operator==(rhs); }
 
  private:
-  boost::multi_array<T, 2> _matrix;
+  boost::multi_array<T, 2> matrix_;
 };
 
 template <class T>
@@ -82,37 +82,37 @@ inline dbMatrix<T>::dbMatrix(uint n, uint m)
 template <class T>
 inline void dbMatrix<T>::clear()
 {
-  _matrix.resize(boost::extents[0][0]);
+  matrix_.resize(boost::extents[0][0]);
 }
 
 template <class T>
 inline uint dbMatrix<T>::numElems() const
 {
-  return _matrix.num_elements();
+  return matrix_.num_elements();
 }
 
 template <class T>
 inline void dbMatrix<T>::resize(uint n, uint m)
 {
-  _matrix.resize(boost::extents[n][m]);
+  matrix_.resize(boost::extents[n][m]);
 }
 
 template <class T>
 inline const T& dbMatrix<T>::operator()(uint i, uint j) const
 {
-  return _matrix[i][j];
+  return matrix_[i][j];
 }
 
 template <class T>
 inline T& dbMatrix<T>::operator()(uint i, uint j)
 {
-  return _matrix[i][j];
+  return matrix_[i][j];
 }
 
 template <class T>
 inline bool dbMatrix<T>::operator==(const dbMatrix<T>& rhs) const
 {
-  return _matrix == rhs._matrix;
+  return matrix_ == rhs.matrix_;
 }
 
 template <class T>
@@ -122,14 +122,14 @@ inline dbMatrix<T>& dbMatrix<T>::operator=(const dbMatrix<T>& rhs)
     return *this;
   }
 
-  const auto lhs_shape = _matrix.shape();
-  const auto rhs_shape = rhs._matrix.shape();
+  const auto lhs_shape = matrix_.shape();
+  const auto rhs_shape = rhs.matrix_.shape();
 
   if (lhs_shape[0] != rhs_shape[0] || lhs_shape[1] != rhs_shape[1]) {
     std::vector<size_t> new_extents{rhs_shape[0], rhs_shape[1]};
-    _matrix.resize(new_extents);
+    matrix_.resize(new_extents);
   }
-  _matrix = rhs._matrix;
+  matrix_ = rhs.matrix_;
 
   return *this;
 }

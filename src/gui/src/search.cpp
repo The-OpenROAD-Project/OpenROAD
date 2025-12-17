@@ -481,7 +481,7 @@ void Search::addNet(
 
   for (itr.begin(wire); itr.next(s);) {
     if (s.isVia()) {
-      addVia(net, &s, itr._prev_x, itr._prev_y, tree_shapes);
+      addVia(net, &s, itr.prev_x_, itr.prev_y_, tree_shapes);
     } else {
       tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), WIRE, net);
     }

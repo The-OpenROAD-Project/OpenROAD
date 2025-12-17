@@ -29,13 +29,13 @@ class _dbModITerm : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* name_;
-  dbId<_dbModInst> _parent;
-  dbId<_dbModBTerm> _child_modbterm;
-  dbId<_dbModNet> _mod_net;
-  dbId<_dbModITerm> _next_net_moditerm;
-  dbId<_dbModITerm> _prev_net_moditerm;
+  dbId<_dbModInst> parent_;
+  dbId<_dbModBTerm> child_modbterm_;
+  dbId<_dbModNet> mod_net_;
+  dbId<_dbModITerm> next_net_moditerm_;
+  dbId<_dbModITerm> prev_net_moditerm_;
   dbId<_dbModITerm> next_entry_;
-  dbId<_dbModITerm> _prev_entry;
+  dbId<_dbModITerm> prev_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj);

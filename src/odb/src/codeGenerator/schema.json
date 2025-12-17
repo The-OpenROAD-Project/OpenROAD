@@ -415,7 +415,7 @@
       "child":"dbProperty",
       "type":"1_n", 
       "flags": ["no-serial", "private"],
-      "tbl_name":"_prop_tbl"
+      "tbl_name":"prop_tbl_"
     },
     {
       "parent":"dbChip",

@@ -29,19 +29,19 @@ class dbJournal
  public:
   enum Action
   {
-    CREATE_OBJECT,
-    DELETE_OBJECT,
-    CONNECT_OBJECT,
-    DISCONNECT_OBJECT,
-    SWAP_OBJECT,
-    UPDATE_FIELD,
-    END_ACTION
+    kCreateObject,
+    kDeleteObject,
+    kConnectObject,
+    kDisconnectObject,
+    kSwapObject,
+    kUpdateField,
+    kEndAction
   };
 
   dbJournal(dbBlock* block);
 
   void clear();
-  int size() const { return _log.size(); }
+  int size() const { return log_.size(); }
 
   //
   // Methods to push entries into the transaction log.
@@ -115,7 +115,7 @@ class dbJournal
   // undo the transaction log
   void undo();
 
-  bool empty() const { return _log.empty(); }
+  bool empty() const { return log_.empty(); }
 
   void append(dbJournal* other);
 
@@ -157,12 +157,12 @@ class dbJournal
   friend dbIStream& operator>>(dbIStream& stream, dbJournal& jrnl);
   friend dbOStream& operator<<(dbOStream& stream, const dbJournal& jrnl);
 
-  dbBlock* _block;
-  utl::Logger* _logger;
-  dbJournalLog _log;
-  bool _start_action{false};
-  uint _action_idx{0};
-  unsigned char _cur_action{0};
+  dbBlock* block_;
+  utl::Logger* logger_;
+  dbJournalLog log_;
+  bool start_action_{false};
+  uint action_idx_{0};
+  unsigned char cur_action_{0};
 };
 
 dbIStream& operator>>(dbIStream& stream, dbJournal& jrnl);
