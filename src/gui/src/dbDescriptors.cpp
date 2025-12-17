@@ -3562,9 +3562,10 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
     }
   }
 
-  SelectionSet children;
+  Descriptor::PropertyList children;
   for (auto* child : module->getChildren()) {
-    children.insert(gui->makeSelected(child->getMaster()));
+    children.push_back(
+        {gui->makeSelected(child->getMaster()), gui->makeSelected(child)});
   }
   if (!children.empty()) {
     props.push_back({"Children", children});
@@ -3575,6 +3576,18 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
     insts.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", insts});
+
+  SelectionSet modnets;
+  for (auto* modnet : module->getModNets()) {
+    modnets.insert(gui->makeSelected(modnet));
+  }
+  props.push_back({"ModNets", modnets});
+
+  SelectionSet ports;
+  for (auto* port : module->getPorts()) {
+    ports.insert(gui->makeSelected(port));
+  }
+  props.push_back({"Ports", ports});
 
   SelectionSet modbterms;
   for (auto* modbterm : module->getModBTerms()) {
@@ -3639,97 +3652,59 @@ std::string DbModBTermDescriptor::getTypeName() const
   return "ModBTerm";
 }
 
-bool DbModBTermDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+bool DbModBTermDescriptor::getBBox(const std::any& object,
+                                   odb::Rect& bbox) const
 {
-  //auto* module = std::any_cast<odb::dbModBTerm*>(object);
-  bbox.mergeInit();
-  /*
-  for (auto* child : module->getChildren()) {
-    odb::Rect child_bbox;
-    if (getBBox(child->getMaster(), child_bbox)) {
-      bbox.merge(child_bbox);
-    }
-  }
-
-  for (auto* inst : module->getInsts()) {
-    auto* box = inst->getBBox();
-    odb::Rect box_rect = box->getBox();
-    bbox.merge(box_rect);
-  }
-  */
-  return !bbox.isInverted();
+  return false;
 }
 
 void DbModBTermDescriptor::highlight(const std::any& object,
-                                   Painter& painter) const
+                                     Painter& painter) const
 {
-  /*
-  auto* module = std::any_cast<odb::dbModule*>(object);
-
-  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
-  for (auto* inst : module->getInsts()) {
-    inst_descriptor->highlight(inst, painter);
-  }
-
-  const int level_alpha_scale = 2;
-  painter.saveState();
-  auto pen_color = painter.getPenColor();
-  pen_color.a /= level_alpha_scale;
-  painter.setPen(pen_color, true);
-  for (auto* children : module->getChildren()) {
-    highlight(children->getMaster(), painter);
-  }
-  painter.restoreState();
-  */
 }
 
 Descriptor::Properties DbModBTermDescriptor::getDBProperties(
     odb::dbModBTerm* modbterm) const
 {
-  //auto* mod_inst = module->getModInst();
-
   auto* gui = Gui::get();
 
   Properties props;
-  if (modbterm != nullptr) {
-    auto* parent = modbterm->getParent();
-    if (parent != nullptr) {
-      props.push_back({"Parent", gui->makeSelected(parent)});
+  auto* parent = modbterm->getParent();
+  if (parent != nullptr) {
+    props.push_back({"Parent", gui->makeSelected(parent)});
+  }
+
+  auto* moditerm = modbterm->getParentModITerm();
+  if (moditerm != nullptr) {
+    props.push_back({"Parent ModITerm", gui->makeSelected(moditerm)});
+  }
+
+  auto* modnet = modbterm->getModNet();
+  if (modnet != nullptr) {
+    props.push_back({"ModNet", gui->makeSelected(modnet)});
+  }
+
+  auto signal = modbterm->getSigType().getString();
+  if (signal) {
+    props.push_back({"Signal type", signal});
+  }
+
+  auto iotype = modbterm->getIoType().getString();
+  if (iotype != nullptr) {
+    props.push_back({"IO type", iotype});
+  }
+
+  auto* bus = modbterm->getBusPort();
+  if (bus) {
+    SelectionSet ports;
+    for (auto port : bus->getBusPortMembers()) {
+      ports.insert(gui->makeSelected(port));
     }
 
-    auto* moditerm = modbterm->getParentModITerm();
-    if (moditerm != nullptr) {
-      props.push_back({"ModITerm", gui->makeSelected(moditerm)});
-    }
-   
+    props.push_back({"Bus port", ports});
+  } else {
+    props.push_back({"Is bus port", false});
   }
-
-  /*
-  SelectionSet children;
-  for (auto* child : module->getChildren()) {
-    children.insert(gui->makeSelected(child->getMaster()));
-  }
-  if (!children.empty()) {
-    props.push_back({"Children", children});
-  }
-
-  SelectionSet insts;
-  for (auto* inst : module->getInsts()) {
-    insts.insert(gui->makeSelected(inst));
-  }
-  props.push_back({"Instances", insts});
-
-  SelectionSet bmodterms;
-  for (auto* bmodterm : module->getModBTerms()) {
-    std::cout << bmodterm->getName() << std::endl;
-    bmodterms.insert(gui->makeSelected(bmodterm));
-  }
-  props.push_back({"ModBTerms", bmodterms});
-
-  if (mod_inst != nullptr) {
-    populateODBProperties(props, mod_inst, "Instance");
-  }
-  */
 
   return props;
 }
@@ -3746,21 +3721,8 @@ void DbModBTermDescriptor::visitAllObjects(
     return;
   }
 
-  //getModules(block->getTopModule(), func);
+  // getModules(block->getTopModule(), func);
 }
-
-/*
-void DbModBTermDescriptor::getModules(
-    odb::dbModule* module,
-    const std::function<void(const Selected&)>& func) const
-{
-  func({module, this});
-
-  for (auto* mod_inst : module->getChildren()) {
-    getModules(mod_inst->getMaster(), func);
-  }
-}
-*/
 
 //////////////////////////////////////////////////
 
@@ -3786,55 +3748,20 @@ std::string DbModITermDescriptor::getTypeName() const
   return "ModITerm";
 }
 
-bool DbModITermDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+bool DbModITermDescriptor::getBBox(const std::any& object,
+                                   odb::Rect& bbox) const
 {
-  //auto* module = std::any_cast<odb::dbModBTerm*>(object);
-  bbox.mergeInit();
-  /*
-  for (auto* child : module->getChildren()) {
-    odb::Rect child_bbox;
-    if (getBBox(child->getMaster(), child_bbox)) {
-      bbox.merge(child_bbox);
-    }
-  }
-
-  for (auto* inst : module->getInsts()) {
-    auto* box = inst->getBBox();
-    odb::Rect box_rect = box->getBox();
-    bbox.merge(box_rect);
-  }
-  */
-  return !bbox.isInverted();
+  return false;
 }
 
 void DbModITermDescriptor::highlight(const std::any& object,
-                                   Painter& painter) const
+                                     Painter& painter) const
 {
-  /*
-  auto* module = std::any_cast<odb::dbModule*>(object);
-
-  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
-  for (auto* inst : module->getInsts()) {
-    inst_descriptor->highlight(inst, painter);
-  }
-
-  const int level_alpha_scale = 2;
-  painter.saveState();
-  auto pen_color = painter.getPenColor();
-  pen_color.a /= level_alpha_scale;
-  painter.setPen(pen_color, true);
-  for (auto* children : module->getChildren()) {
-    highlight(children->getMaster(), painter);
-  }
-  painter.restoreState();
-  */
 }
 
 Descriptor::Properties DbModITermDescriptor::getDBProperties(
     odb::dbModITerm* moditerm) const
 {
-  //auto* mod_inst = module->getModInst();
-
   auto* gui = Gui::get();
 
   Properties props;
@@ -3846,6 +3773,11 @@ Descriptor::Properties DbModITermDescriptor::getDBProperties(
   auto* modnet = moditerm->getModNet();
   if (modnet != nullptr) {
     props.push_back({"ModNet", gui->makeSelected(modnet)});
+  }
+
+  auto* modbterm = moditerm->getChildModBTerm();
+  if (modbterm != nullptr) {
+    props.push_back({"Child ModBTerm", gui->makeSelected(modbterm)});
   }
 
   return props;
@@ -3863,7 +3795,7 @@ void DbModITermDescriptor::visitAllObjects(
     return;
   }
 
-  //getModules(block->getTopModule(), func);
+  // getModules(block->getTopModule(), func);
 }
 
 //////////////////////////////////////////////////
@@ -3892,46 +3824,12 @@ std::string DbModInstDescriptor::getTypeName() const
 
 bool DbModInstDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
-  //auto* module = std::any_cast<odb::dbModBTerm*>(object);
-  bbox.mergeInit();
-  /*
-  for (auto* child : module->getChildren()) {
-    odb::Rect child_bbox;
-    if (getBBox(child->getMaster(), child_bbox)) {
-      bbox.merge(child_bbox);
-    }
-  }
-
-  for (auto* inst : module->getInsts()) {
-    auto* box = inst->getBBox();
-    odb::Rect box_rect = box->getBox();
-    bbox.merge(box_rect);
-  }
-  */
-  return !bbox.isInverted();
+  return false;
 }
 
 void DbModInstDescriptor::highlight(const std::any& object,
-                                   Painter& painter) const
+                                    Painter& painter) const
 {
-  /*
-  auto* module = std::any_cast<odb::dbModule*>(object);
-
-  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
-  for (auto* inst : module->getInsts()) {
-    inst_descriptor->highlight(inst, painter);
-  }
-
-  const int level_alpha_scale = 2;
-  painter.saveState();
-  auto pen_color = painter.getPenColor();
-  pen_color.a /= level_alpha_scale;
-  painter.setPen(pen_color, true);
-  for (auto* children : module->getChildren()) {
-    highlight(children->getMaster(), painter);
-  }
-  painter.restoreState();
-  */
 }
 
 Descriptor::Properties DbModInstDescriptor::getDBProperties(
@@ -3976,7 +3874,7 @@ void DbModInstDescriptor::visitAllObjects(
     return;
   }
 
-  //getModules(block->getTopModule(), func);
+  // getModules(block->getTopModule(), func);
 }
 
 //////////////////////////////////////////////////
@@ -4005,46 +3903,12 @@ std::string DbModNetDescriptor::getTypeName() const
 
 bool DbModNetDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
-  //auto* module = std::any_cast<odb::dbModBTerm*>(object);
-  bbox.mergeInit();
-  /*
-  for (auto* child : module->getChildren()) {
-    odb::Rect child_bbox;
-    if (getBBox(child->getMaster(), child_bbox)) {
-      bbox.merge(child_bbox);
-    }
-  }
-
-  for (auto* inst : module->getInsts()) {
-    auto* box = inst->getBBox();
-    odb::Rect box_rect = box->getBox();
-    bbox.merge(box_rect);
-  }
-  */
-  return !bbox.isInverted();
+  return false;
 }
 
 void DbModNetDescriptor::highlight(const std::any& object,
                                    Painter& painter) const
 {
-  /*
-  auto* module = std::any_cast<odb::dbModule*>(object);
-
-  auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
-  for (auto* inst : module->getInsts()) {
-    inst_descriptor->highlight(inst, painter);
-  }
-
-  const int level_alpha_scale = 2;
-  painter.saveState();
-  auto pen_color = painter.getPenColor();
-  pen_color.a /= level_alpha_scale;
-  painter.setPen(pen_color, true);
-  for (auto* children : module->getChildren()) {
-    highlight(children->getMaster(), painter);
-  }
-  painter.restoreState();
-  */
 }
 
 Descriptor::Properties DbModNetDescriptor::getDBProperties(
@@ -4097,7 +3961,7 @@ void DbModNetDescriptor::visitAllObjects(
     return;
   }
 
-  //getModules(block->getTopModule(), func);
+  // getModules(block->getTopModule(), func);
 }
 
 //////////////////////////////////////////////////
