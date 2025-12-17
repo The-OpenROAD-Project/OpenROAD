@@ -1195,7 +1195,7 @@ void ClusteringEngine::setClusterMetrics(Cluster* cluster)
     std_cell_area += computeArea(std_cell);
   }
 
-  int64_t macro_area = 0.0f;
+  int64_t macro_area = 0;
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
     macro_area += computeArea(macro);
   }
@@ -2525,13 +2525,13 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
     line += fmt::format(" {}", parent->getIsLeafString());
 
     // Using 'or' on purpose to certify that there is no discrepancy going on.
-    if (parent->getNumStdCell() != 0 || parent->getStdCellArea() != 0.0f) {
+    if (parent->getNumStdCell() != 0 || parent->getStdCellArea() != 0) {
       line += fmt::format(", StdCells: {} ({} μ²)",
                           parent->getNumStdCell(),
                           parent->getStdCellArea());
     }
 
-    if (parent->getNumMacro() != 0 || parent->getMacroArea() != 0.0f) {
+    if (parent->getNumMacro() != 0 || parent->getMacroArea() != 0) {
       line += fmt::format(", Macros: {} ({} μ²),",
                           parent->getNumMacro(),
                           parent->getMacroArea());

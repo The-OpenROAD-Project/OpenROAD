@@ -912,7 +912,7 @@ void HierRTLMP::createPinAccessBlockages()
       = tree_->maps.module_to_metrics.at(block_->getTopModule()).get();
 
   // Avoid creating blockages with zero depth.
-  if (top_module_metrics->getStdCellArea() == 0.0) {
+  if (top_module_metrics->getStdCellArea() == 0) {
     return;
   }
 
@@ -1805,8 +1805,8 @@ void HierRTLMP::createFixedTerminal(Cluster* cluster,
   // A conventional fixed terminal is just a point without
   // the cluster data.
   odb::Point location = cluster->getCenter();
-  float width = 0.0f;
-  float height = 0.0f;
+  int width = 0;
+  int height = 0;
   Cluster* terminal_cluster = nullptr;
 
   if (cluster->isClusterOfUnplacedIOPins()) {

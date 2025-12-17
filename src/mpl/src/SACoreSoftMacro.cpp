@@ -855,8 +855,8 @@ void SACoreSoftMacro::fillDeadSpace()
     y_point.insert(macros_[macro_id].getY());
     y_point.insert(macros_[macro_id].getY() + macros_[macro_id].getHeight());
   }
-  x_point.insert(0.0);
-  y_point.insert(0.0);
+  x_point.insert(0);
+  y_point.insert(0);
   x_point.insert(outline_.dx());
   y_point.insert(outline_.dy());
   // create grid
@@ -872,7 +872,7 @@ void SACoreSoftMacro::fillDeadSpace()
   }
 
   for (int macro_id = 0; macro_id < pos_seq_.size(); macro_id++) {
-    if (macros_[macro_id].getArea() <= 0.0) {
+    if (macros_[macro_id].getArea() == 0) {
       continue;
     }
 
@@ -892,7 +892,7 @@ void SACoreSoftMacro::fillDeadSpace()
   // propagate from the MixedCluster and then StdCellCluster
   for (int order = 0; order <= 1; order++) {
     for (int macro_id = 0; macro_id < pos_seq_.size(); macro_id++) {
-      if (macros_[macro_id].getArea() <= 0.0) {
+      if (macros_[macro_id].getArea() == 0) {
         continue;
       }
       const bool forward_flag = (order == 0)
