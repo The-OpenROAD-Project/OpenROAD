@@ -73,7 +73,7 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
   // 1~4: enable sanity checkers in different buffering logics
   // 5: enable sanity checks after buffering
   // 10: print buffering code location info
-  setDebugLevel(RSZ, "insert_buffer_check_sanity", 9);
+  setDebugLevel(RSZ, "insert_buffer_check_sanity", 0);
 
   //// go back to the old buffering logics
   setDebugLevel(RSZ, "rebuffer_old", 0);
