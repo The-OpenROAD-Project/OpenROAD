@@ -21,7 +21,7 @@
 #include "GRNet.h"
 #include "GRTree.h"
 #include "geo.h"
-#include "odb/dbTransform.h"
+#include "odb/db.h"
 #include "robin_hood.h"
 #include "utl/Logger.h"
 
@@ -37,8 +37,8 @@ GridGraph::GridGraph(const Design* design,
       num_layers_(design->getNumLayers()),
       x_size_(gridlines_[0].size() - 1),
       y_size_(gridlines_[1].size() - 1),
-      constants_(constants),
-      design_(design)
+      design_(design),
+      constants_(constants)
 {
   grid_centers_.resize(2);
   for (int dimension = 0; dimension <= 1; dimension++) {
@@ -381,13 +381,16 @@ bool GridGraph::findODBAccessPoints(
         const std::vector<odb::dbAccessPoint*>& bpin_pas
             = bpin->getAccessPoints();
         // Iterates per each AP and converts to CUGR structures
+        access_points.insert(
+            access_points.begin(), bpin_pas.begin(), bpin_pas.end());
         for (auto ap : bpin_pas) {
           auto point = ap->getPoint();
           auto layer = ap->getLayer();
           const PointT selected_point = PointT(point.getX() / amount_per_x,
                                                point.getY() / amount_per_y);
-          const IntervalT selected_layer = IntervalT(layer->getNumber());
-          const AccessPoint ap_new{selected_point, selected_layer};
+          const IntervalT selected_layer = IntervalT(layer->getNumber() - 2);
+          const AccessPoint ap_new{.point = selected_point,
+                                   .layers = selected_layer};
           selected_access_points.emplace(ap_new).first;
         }
       }
@@ -396,6 +399,9 @@ bool GridGraph::findODBAccessPoints(
     for (auto iterms : db_net->getITerms()) {
       auto pref_access_points = iterms->getPrefAccessPoints();
       if (!pref_access_points.empty()) {
+        access_points.insert(access_points.end(),
+                             pref_access_points.begin(),
+                             pref_access_points.end());
         // Iterates in ITerm prefered APs and convert to CUGR strucutres
         for (auto ap : pref_access_points) {
           int x, y;
@@ -405,8 +411,9 @@ bool GridGraph::findODBAccessPoints(
           const PointT selected_point
               = PointT((point.getX() + x) / amount_per_x,
                        (point.getY() + y) / amount_per_y);
-          const IntervalT selected_layer = IntervalT(layer->getNumber());
-          const AccessPoint ap_new{selected_point, selected_layer};
+          const IntervalT selected_layer = IntervalT(layer->getNumber() - 2);
+          const AccessPoint ap_new{.point = selected_point,
+                                   .layers = selected_layer};
           selected_access_points.emplace(ap_new).first;
         }
       }
@@ -415,17 +422,6 @@ bool GridGraph::findODBAccessPoints(
   }
   if (access_points.empty()) {
     return false;
-  }
-  // Update layers for each AP
-  for (auto& selected_point : selected_access_points) {
-    auto it = selected_access_points.find(selected_point);
-    IntervalT& fixedLayerInterval = it->layers;
-    for (const auto& point : selected_access_points) {
-      if (point.point.x() == selected_point.point.x()
-          && point.point.y() == selected_point.point.y()) {
-        fixedLayerInterval.Update(point.layers.high());
-      }
-    }
   }
   return true;
 }
@@ -440,7 +436,6 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
   const PointT netCenter(boundingBox.cx(), boundingBox.cy());
   if (findODBAccessPoints(net, selected_access_points)) {
     // Skips calculations if DRT already created APs in ODB
-    logger_->report("Found ODB accesspoint for net {} \n", net->getName());
   } else {
     for (const std::vector<GRPoint>& accessPoints : net->getPinAccessPoints()) {
       std::pair<int, int> bestAccessDist = {0, std::numeric_limits<int>::max()};
@@ -494,11 +489,11 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
       }
     }
   }
-  // Extend the fixed layers to 2 layers higher to facilitate track switching
+  // TODO: Removing this part is causing issues, but it shouldnt
   for (auto& accessPoint : selected_access_points) {
     IntervalT& fixedLayers = accessPoint.layers;
     fixedLayers.SetHigh(
-        std::min(fixedLayers.high() + 2, (int) getNumLayers() - 1));
+        std::min(fixedLayers.high() + 0, (int) getNumLayers() - 1));
   }
   return selected_access_points;
 }
