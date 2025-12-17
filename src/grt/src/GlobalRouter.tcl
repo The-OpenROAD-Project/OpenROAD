@@ -474,13 +474,13 @@ proc estimate_path_resistance { args } {
     flags {-verbose}
 
   if { [llength $args] != 2 } {
-    utl::error GRT 282 "estimate_path_resistance requires two pin names."
+    utl::error GRT 289 "estimate_path_resistance requires two pin names."
   }
   lassign $args pin1_name pin2_name
 
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GRT 283 "Missing dbBlock."
+    utl::error GRT 290 "Missing dbBlock."
   }
 
   set pin1 [$block findITerm $pin1_name]
@@ -493,7 +493,7 @@ proc estimate_path_resistance { args } {
     }
   }
   if { $pin1 == "NULL" } {
-    utl::error GRT 284 "Pin $pin1_name not found."
+    utl::error GRT 291 "Pin $pin1_name not found."
   }
 
   set pin2 [$block findITerm $pin2_name]
@@ -506,7 +506,7 @@ proc estimate_path_resistance { args } {
     }
   }
   if { $pin2 == "NULL" } {
-    utl::error GRT 285 "Pin $pin2_name not found."
+    utl::error GRT 292 "Pin $pin2_name not found."
   }
 
   set verbose [info exists flags(-verbose)]
@@ -520,7 +520,7 @@ proc estimate_path_resistance { args } {
       set layer1 [$tech findLayer $layer1_name]
     }
     if { $layer1 == "NULL" } {
-      utl::error GRT 286 "Layer $layer1_name not found."
+      utl::error GRT 293 "Layer $layer1_name not found."
     }
 
     if { [info exists layer2_name] } {
