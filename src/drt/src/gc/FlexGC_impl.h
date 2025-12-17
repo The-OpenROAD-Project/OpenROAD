@@ -13,6 +13,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frMarker.h"
 #include "db/tech/frLayer.h"

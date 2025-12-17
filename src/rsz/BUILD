@@ -65,6 +65,7 @@ cc_library(
         "//src/dpl",
         "//src/est",
         "//src/grt",
+        "//src/grt:groute",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",

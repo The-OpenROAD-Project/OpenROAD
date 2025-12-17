@@ -4,6 +4,7 @@
 #include "GrouteRenderer.h"
 
 #include "Net.h"
+#include "grt/GRoute.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
