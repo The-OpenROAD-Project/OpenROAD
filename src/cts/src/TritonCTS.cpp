@@ -142,6 +142,15 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   int fanout = std::numeric_limits<int>::max();
   float tempFanout;
   bool existMaxFanout;
+
+  // Check if top instance has fanout limit
+  sta::Cell* top_cell = network_->cell(network_->topInstance());
+  openSta_->sdc()->fanoutLimit(
+      top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  }
+
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
   sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
   sta::Port* buffer_port = nullptr;
@@ -158,7 +167,7 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return 0;
+    return (existMaxFanout) ? 0 : fanout;
   }
 
   openSta_->sdc()->fanoutLimit(
