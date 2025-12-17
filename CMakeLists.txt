@@ -51,11 +51,14 @@ project(OpenROAD VERSION 1
 
 # LTO setting must come after project() for proper compiler detection
 option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
-if (LINK_TIME_OPTIMIZATION)
+
+string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
+
+if (LINK_TIME_OPTIMIZATION AND NOT UPPER_BUILD_TYPE STREQUAL "DEBUG")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
   message(STATUS "LTO is enabled")
 else()
-  message(STATUS "LTO is disabled: ${LTO_ERROR}")
+  message(STATUS "LTO is disabled")
 endif()
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
