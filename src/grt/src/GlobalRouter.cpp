@@ -78,6 +78,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       grid_(new Grid),
+      is_incremental_(false),
       adjustment_(0.0),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
@@ -214,7 +215,8 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   // TODO: still need to fix this during incremental grt
   if (is_incremental_) {
     for (const auto& [db_net, net] : db_net_map_) {
-      if (routes_[db_net].empty()) {
+      // Do not add local nets, as they are not routed in incremental grt.
+      if (routes_[db_net].empty() && !net->isLocal()) {
         GRoute route;
         net_routes.insert({db_net, route});
         fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
@@ -2329,8 +2331,7 @@ void GlobalRouter::loadGuidesFromDB()
 void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
 {
   std::string pins_not_covered;
-  netIsCovered(db_net, pins_not_covered);
-  if (!pins_not_covered.empty()) {
+  if (!netIsCovered(db_net, pins_not_covered)) {
     Net* net = db_net_map_[db_net];
     for (Pin& pin : net->getPins()) {
       if (pins_not_covered.find(pin.getName()) != std::string::npos) {
@@ -2485,6 +2486,12 @@ void GlobalRouter::computeGCellGridPatternFromGuides(
 
   grid_->setXGrids(x_grids);
   grid_->setYGrids(y_grids);
+
+  // update fastroute grid info with grid pattern calculated from guides
+  fastroute_->setTileSize(std::min(tile_size_x, tile_size_y));
+  fastroute_->setGridsAndLayers(
+      grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
+  fastroute_->init3DEdges();
 }
 
 void GlobalRouter::fillTileSizeMaps(
@@ -5244,6 +5251,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     }
   }
 
+  fastroute_->setIncrementalGrt(false);
+
   return dirty_nets;
 }
 
@@ -5283,6 +5292,7 @@ void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
 {
   initNetlist(nets);
   fastroute_->initAuxVar();
+  fastroute_->setIncrementalGrt(true);
 }
 
 GRouteDbCbk::GRouteDbCbk(GlobalRouter* grouter) : grouter_(grouter)

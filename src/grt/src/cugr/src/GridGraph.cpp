@@ -405,6 +405,14 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
     if (bestAccessDist.first == 0) {
       logger_->warn(utl::GRT, 274, "pin is hard to access.");
     }
+
+    if (bestIndex == -1) {
+      logger_->error(utl::GRT,
+                     283,
+                     "No preferred access point found for pin on net {}.",
+                     net->getName());
+    }
+
     const PointT selectedPoint = accessPoints[bestIndex];
     const AccessPoint ap{selectedPoint, {}};
     auto it = selected_access_points.emplace(ap).first;
