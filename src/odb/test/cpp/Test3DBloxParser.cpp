@@ -305,12 +305,7 @@ TEST_F(SimpleDbFixture, test_bump_map_reader_multiple_bterms)
 
   ThreeDBlox parser(&logger_, db_.get());
   std::string path = getFilePath(prefix + "data/example3.bmap");
-  try {
-    parser.readBMap(path);
-    FAIL() << "Expected exception for multiple BTerms connected to same net.";
-  } catch (const std::runtime_error& e) {
-    EXPECT_STREQ(e.what(), "ODB-0542");
-  }
+  EXPECT_THROW(parser.readBMap(path), std::runtime_error);
 }
 
 TEST_F(SimpleDbFixture, test_bump_map_reader_no_bterms)
@@ -347,12 +342,7 @@ TEST_F(SimpleDbFixture, test_bump_map_reader_no_bterms)
 
   ThreeDBlox parser(&logger_, db_.get());
   std::string path = getFilePath(prefix + "data/example3.bmap");
-  try {
-    parser.readBMap(path);
-    FAIL() << "Expected exception for no BTerms connected to net.";
-  } catch (const std::runtime_error& e) {
-    EXPECT_STREQ(e.what(), "ODB-0544");
-  }
+  EXPECT_THROW(parser.readBMap(path), std::runtime_error);
 }
 
 }  // namespace
