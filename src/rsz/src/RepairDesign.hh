@@ -269,6 +269,8 @@ class RepairDesign : dbStaState
   int print_interval_ = 0;
   std::shared_ptr<ResizerObserver> graphics_;
 
+  float r_strongest_buffer_ = 0;
+
   // Shape factor: what we need to multiply the RC product with
   // to get a slew estimate
   float slew_rc_factor_ = 0;

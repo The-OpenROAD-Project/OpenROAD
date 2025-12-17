@@ -89,6 +89,12 @@ void RepairDesign::init()
   parasitics_src_ = estimate_parasitics_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();
   computeSlewRCFactor();
+
+  r_strongest_buffer_ = std::numeric_limits<float>::max();
+  for (auto buffer : resizer_->buffer_cells_) {
+    r_strongest_buffer_ = std::min(r_strongest_buffer_,
+                                   resizer_->bufferDriveResistance(buffer));
+  }
 }
 
 void RepairDesign::computeSlewRCFactor()
@@ -1452,6 +1458,13 @@ void RepairDesign::repairNetWire(
 
   // Calculate estimated slew based on Elmore
   float r_drvr = resizer_->driveResistance(drvr_pin_);
+
+  // For top ports without a specified input drive, r_drvr is zero
+  // which can make us miss the buffer insertion point. Clip r_drvr
+  // to be no smaller than the drive resistance of the beefiest buffer
+  // to address this.
+  r_drvr = std::max(r_drvr, r_strongest_buffer_);
+
   double r_wire = length1 * wire_res;
   double c_wire = length1 * wire_cap;
 
