@@ -215,7 +215,8 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   // TODO: still need to fix this during incremental grt
   if (is_incremental_) {
     for (const auto& [db_net, net] : db_net_map_) {
-      if (routes_[db_net].empty()) {
+      // Do not add local nets, as they are not routed in incremental grt.
+      if (routes_[db_net].empty() && !net->isLocal()) {
         GRoute route;
         net_routes.insert({db_net, route});
         fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
@@ -2485,6 +2486,12 @@ void GlobalRouter::computeGCellGridPatternFromGuides(
 
   grid_->setXGrids(x_grids);
   grid_->setYGrids(y_grids);
+
+  // update fastroute grid info with grid pattern calculated from guides
+  fastroute_->setTileSize(std::min(tile_size_x, tile_size_y));
+  fastroute_->setGridsAndLayers(
+      grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
+  fastroute_->init3DEdges();
 }
 
 void GlobalRouter::fillTileSizeMaps(
