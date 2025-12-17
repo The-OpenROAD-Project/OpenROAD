@@ -707,6 +707,30 @@ std::pair<dbInst*, odb::dbBTerm*> ThreeDBlox::createBump(
     net = term->getNet();
   }
 
+  // Find term via net
+  if (term == nullptr && entry.net_name != "-") {
+    net = block->findNet(entry.net_name.c_str());
+    if (net == nullptr) {
+      logger_->error(utl::ODB,
+                     543,
+                     "3DBV Parser Error: Bump net {} not found",
+                     entry.net_name);
+    }
+    if (net->getBTerms().empty()) {
+      logger_->error(utl::ODB,
+                     544,
+                     "3DBV Parser Error: Bump net {} has no bterms",
+                     entry.net_name);
+    }
+    if (net->getBTerms().size() > 1) {
+      logger_->error(utl::ODB,
+                     542,
+                     "3DBV Parser Error: Bump net {} has multiple bterms",
+                     entry.net_name);
+    }
+    term = net->get1stBTerm();
+  }
+
   if (net != nullptr) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
       iterm->connect(net);
