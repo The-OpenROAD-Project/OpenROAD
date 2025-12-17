@@ -556,9 +556,9 @@ class DbModBTermDescriptor : public BaseDbDescriptor<odb::dbModBTerm>
  protected:
   Properties getDBProperties(odb::dbModBTerm* modbterm) const override;
 
-// private:
-//  void getModules(odb::dbModBTerm* module,
-//                  const std::function<void(const Selected&)>& func) const;
+ private:
+  void getModBTerms(odb::dbModule* module,
+                    const std::function<void(const Selected&)>& func) const;
 };
 
 class DbModITermDescriptor : public BaseDbDescriptor<odb::dbModITerm>
@@ -578,6 +578,10 @@ class DbModITermDescriptor : public BaseDbDescriptor<odb::dbModITerm>
 
  protected:
   Properties getDBProperties(odb::dbModITerm* moditerm) const override;
+
+ private:
+  void getModITerms(odb::dbModule* module,
+                    const std::function<void(const Selected&)>& func) const;
 };
 
 class DbModInstDescriptor : public BaseDbDescriptor<odb::dbModInst>
@@ -597,6 +601,10 @@ class DbModInstDescriptor : public BaseDbDescriptor<odb::dbModInst>
 
  protected:
   Properties getDBProperties(odb::dbModInst* modinst) const override;
+
+ private:
+  void getModInsts(odb::dbModule* module,
+                   const std::function<void(const Selected&)>& func) const;
 };
 
 class DbModNetDescriptor : public BaseDbDescriptor<odb::dbModNet>
@@ -616,6 +624,10 @@ class DbModNetDescriptor : public BaseDbDescriptor<odb::dbModNet>
 
  protected:
   Properties getDBProperties(odb::dbModNet* modnet) const override;
+
+ private:
+  void getModNets(odb::dbModule* module,
+                  const std::function<void(const Selected&)>& func) const;
 };
 
 class DbTechViaDescriptor : public BaseDbDescriptor<odb::dbTechVia>

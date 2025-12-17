@@ -3551,6 +3551,7 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
 
   Properties props;
   if (mod_inst != nullptr) {
+    props.push_back({"ModInst", gui->makeSelected(mod_inst)});
     auto* parent = mod_inst->getParent();
     if (parent != nullptr) {
       props.push_back({"Parent", gui->makeSelected(parent)});
@@ -3562,10 +3563,9 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
     }
   }
 
-  Descriptor::PropertyList children;
+  SelectionSet children;
   for (auto* child : module->getChildren()) {
-    children.push_back(
-        {gui->makeSelected(child->getMaster()), gui->makeSelected(child)});
+    children.insert(gui->makeSelected(child->getMaster()));
   }
   if (!children.empty()) {
     props.push_back({"Children", children});
@@ -3721,7 +3721,20 @@ void DbModBTermDescriptor::visitAllObjects(
     return;
   }
 
-  // getModules(block->getTopModule(), func);
+  getModBTerms(block->getTopModule(), func);
+}
+
+void DbModBTermDescriptor::getModBTerms(
+    odb::dbModule* module,
+    const std::function<void(const Selected&)>& func) const
+{
+  for (auto* modbterm : module->getModBTerms()) {
+    func({modbterm, this});
+  }
+
+  for (auto* mod_inst : module->getChildren()) {
+    getModBTerms(mod_inst->getMaster(), func);
+  }
 }
 
 //////////////////////////////////////////////////
@@ -3795,7 +3808,23 @@ void DbModITermDescriptor::visitAllObjects(
     return;
   }
 
-  // getModules(block->getTopModule(), func);
+  getModITerms(block->getTopModule(), func);
+}
+
+void DbModITermDescriptor::getModITerms(
+    odb::dbModule* module,
+    const std::function<void(const Selected&)>& func) const
+{
+  auto mod_inst = module->getModInst();
+  if (mod_inst) {
+    for (auto* modbterm : mod_inst->getModITerms()) {
+      func({modbterm, this});
+    }
+  }
+
+  for (auto* mod_inst : module->getChildren()) {
+    getModITerms(mod_inst->getMaster(), func);
+  }
 }
 
 //////////////////////////////////////////////////
@@ -3874,9 +3903,22 @@ void DbModInstDescriptor::visitAllObjects(
     return;
   }
 
-  // getModules(block->getTopModule(), func);
+  getModInsts(block->getTopModule(), func);
 }
 
+void DbModInstDescriptor::getModInsts(
+    odb::dbModule* module,
+    const std::function<void(const Selected&)>& func) const
+{
+  auto mod_inst = module->getModInst();
+  if (mod_inst) {
+    func({mod_inst, this});
+  }
+
+  for (auto* mod_inst : module->getChildren()) {
+    getModInsts(mod_inst->getMaster(), func);
+  }
+}
 //////////////////////////////////////////////////
 
 DbModNetDescriptor::DbModNetDescriptor(odb::dbDatabase* db)
@@ -3961,7 +4003,20 @@ void DbModNetDescriptor::visitAllObjects(
     return;
   }
 
-  // getModules(block->getTopModule(), func);
+  getModNets(block->getTopModule(), func);
+}
+
+void DbModNetDescriptor::getModNets(
+    odb::dbModule* module,
+    const std::function<void(const Selected&)>& func) const
+{
+  for (auto* modnet : module->getModNets()) {
+    func({modnet, this});
+  }
+
+  for (auto* mod_inst : module->getChildren()) {
+    getModNets(mod_inst->getMaster(), func);
+  }
 }
 
 //////////////////////////////////////////////////
