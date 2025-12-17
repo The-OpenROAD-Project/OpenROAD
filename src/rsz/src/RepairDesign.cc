@@ -1408,7 +1408,7 @@ void RepairDesign::repairNetVia(const BufferedNetPtr& bnet,
   bnet->setFanout(bnet->ref()->fanout());
   float r_via = bnet->viaResistance(corner_, resizer_, estimate_parasitics_);
   bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
-                       - r_via * bnet->ref()->cap() * slew_rc_factor_);
+                       - (r_via * bnet->ref()->cap() * slew_rc_factor_));
 }
 
 void RepairDesign::repairNetWire(
@@ -1494,7 +1494,7 @@ void RepairDesign::repairNetWire(
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
   bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
-                       - r_wire * (c_wire / 2 + ref_cap) * slew_rc_factor_);
+                       - (r_wire * (c_wire / 2 + ref_cap) * slew_rc_factor_));
 
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
@@ -1556,8 +1556,8 @@ void RepairDesign::repairNetWire(
       //
       // We solve a quadratic eq. to find the maximum conforming length.
       float a = wire_res * wire_cap / 2;
-      float b = r_drvr * wire_cap + wire_res * ref_cap;
-      float c = r_drvr * ref_cap - max_load_slew_margined / slew_rc_factor_;
+      float b = (r_drvr * wire_cap) + (wire_res * ref_cap);
+      float c = (r_drvr * ref_cap) - (max_load_slew_margined / slew_rc_factor_);
       float l = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
         split_length = min(split_length, metersToDbu(l));
@@ -1628,8 +1628,8 @@ void RepairDesign::repairNetWire(
 
       bnet->setCapacitance(load_cap);
       bnet->setFanout(repeater_fanout);
-      bnet->setMaxLoadSlew(max_load_slew
-                           - r_wire * (c_wire / 2 + ref_cap) * slew_rc_factor_);
+      bnet->setMaxLoadSlew(
+          max_load_slew - (r_wire * (c_wire / 2 + ref_cap) * slew_rc_factor_));
 
       debugPrint(logger_,
                  RSZ,

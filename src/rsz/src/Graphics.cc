@@ -3,6 +3,7 @@
 
 #include "Graphics.hh"
 
+#include "BufferedNet.hh"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"

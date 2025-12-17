@@ -33,6 +33,10 @@
 #include "grt/RoutePt.h"
 #include "sta/Hash.hh"
 
+namespace sta {
+class Port;
+}
+
 namespace rsz {
 
 using sta::Port;
@@ -950,12 +954,11 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
       }
     }
     return bnet;
-  } else {
-    logger_->warn(RSZ,
-                  73,
-                  "driver pin {} not found in global routes",
-                  db_network_->pathName(drvr_pin));
   }
+  logger_->warn(RSZ,
+                73,
+                "driver pin {} not found in global routes",
+                db_network_->pathName(drvr_pin));
   return nullptr;
 }
 

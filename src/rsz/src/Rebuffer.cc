@@ -603,9 +603,8 @@ static std::optional<int> findWireLayer(BnetPtr node)
   }
   if (node->type() == BnetType::wire) {
     return {node->layer()};
-  } else {
-    return {};
   }
+  return {};
 }
 
 // Find initial timing-optimized buffering choice over the provided tree
