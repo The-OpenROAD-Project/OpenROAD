@@ -630,6 +630,11 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
     props.push_back({"Region", gui->makeSelected(region)});
   }
 
+  auto* halo = inst->getHalo();
+  if (halo != nullptr) {
+    props.push_back({"Halo", gui->makeSelected(halo)});
+  }
+
   sta::Instance* sta_inst = sta_->getDbNetwork()->dbToSta(inst);
   if (sta_inst != nullptr) {
     props.push_back({"Timing/Power", gui->makeSelected(sta_inst)});

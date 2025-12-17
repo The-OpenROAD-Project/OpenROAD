@@ -13,7 +13,10 @@
 
 namespace std
 {
+#ifndef SWIG_VECTOR_INT
+#define SWIG_VECTOR_INT
   %template(vector_int) std::vector<int>;
+#endif
   %template(vector_float) std::vector<float>;
 }
 #endif

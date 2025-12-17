@@ -29,6 +29,7 @@
 #include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
+#include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
 #include "drt/TritonRoute.h"
 #include "dst/JobMessage.h"

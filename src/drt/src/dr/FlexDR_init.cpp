@@ -27,6 +27,7 @@
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"

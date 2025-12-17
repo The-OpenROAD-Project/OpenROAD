@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "ScanCell.hh"
 #include "utl/Logger.h"
 
 namespace dft {
