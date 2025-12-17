@@ -454,10 +454,12 @@ bool PlacementDRC::isAllowedInSoftBlockage(const Node* cell) const
   odb::dbMaster* master = db_inst->getMaster();
   odb::dbMasterType type = master->getType();
 
-  // Physical cells are allowed (endcaps, tapcells, fillers)
+  // Physical cells are allowed (endcaps, tapcells, fillers, tie cells)
   switch (type.getValue()) {
     case odb::dbMasterType::CORE_SPACER:  // Filler cells
     case odb::dbMasterType::CORE_WELLTAP:
+    case odb::dbMasterType::CORE_TIEHIGH:
+    case odb::dbMasterType::CORE_TIELOW:
     case odb::dbMasterType::ENDCAP:
     case odb::dbMasterType::ENDCAP_PRE:
     case odb::dbMasterType::ENDCAP_POST:
@@ -497,14 +499,15 @@ bool PlacementDRC::isAllowedInSoftBlockage(const Node* cell) const
     }
   }
 
-  // Fallback: detect buffers/inverters by master name pattern when STA not available
-  // Common naming conventions: BUF_*, INV_*, CLKBUF_*, CLKINV_*, etc.
+  // Fallback: detect buffers/inverters/tie cells by master name pattern when STA not available
+  // Common naming conventions: BUF_*, INV_*, CLKBUF_*, CLKINV_*, TIE*, etc.
   std::string master_name = master->getName();
   // Convert to uppercase for case-insensitive matching
   std::transform(
       master_name.begin(), master_name.end(), master_name.begin(), ::toupper);
   if (master_name.find("BUF") != std::string::npos
-      || master_name.find("INV") != std::string::npos) {
+      || master_name.find("INV") != std::string::npos
+      || master_name.find("TIE") != std::string::npos) {
     return true;
   }
 
