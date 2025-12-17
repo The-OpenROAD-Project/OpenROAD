@@ -81,6 +81,7 @@ void Grid::allocateGrid()
       pixel.is_valid = false;
       pixel.is_hopeless = false;
       pixel.blocked_layers = 0;
+      pixel.is_soft_blocked = false;
     }
   }
 
@@ -190,24 +191,33 @@ void Grid::markBlocked(odb::dbBlock* block)
     }
   }
   for (odb::dbBlockage* blockage : block->getBlockages()) {
-    if (blockage->isSoft()) {
-      continue;
-    }
     odb::Rect bbox = blockage->getBBox()->getBox();
     bbox.moveDelta(-core.xMin(), -core.yMin());
     GridRect grid_rect = gridCovering(bbox);
 
     // Clip to the core area
-    GridRect core{.xlo = GridX{0},
-                  .ylo = GridY{0},
-                  .xhi = GridX{row_site_count_},
-                  .yhi = GridY{row_count_}};
-    grid_rect = grid_rect.intersect(core);
+    GridRect core_rect{.xlo = GridX{0},
+                       .ylo = GridY{0},
+                       .xhi = GridX{row_site_count_},
+                       .yhi = GridY{row_count_}};
+    grid_rect = grid_rect.intersect(core_rect);
 
-    for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
-      for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
-        Pixel& pixel1 = pixel(y, x);
-        pixel1.is_valid = false;
+    if (blockage->isSoft()) {
+      // Soft blockage: mark pixels as soft blocked
+      // Allows buffers/inverters/physical cells but blocks regular cells
+      for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
+        for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
+          Pixel& pixel1 = pixel(y, x);
+          pixel1.is_soft_blocked = true;
+        }
+      }
+    } else {
+      // Hard blockage: mark pixels as invalid
+      for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
+        for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
+          Pixel& pixel1 = pixel(y, x);
+          pixel1.is_valid = false;
+        }
       }
     }
   }

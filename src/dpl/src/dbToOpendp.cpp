@@ -60,7 +60,11 @@ void Opendp::importClear()
 void Opendp::initPlacementDRC()
 {
   drc_engine_ = std::make_unique<PlacementDRC>(
-      grid_.get(), db_->getTech(), padding_.get(), !odb::hasOneSiteMaster(db_));
+      grid_.get(),
+      db_->getTech(),
+      padding_.get(),
+      !odb::hasOneSiteMaster(db_),
+      sta_);
 }
 
 static bool swapWidthHeight(const dbOrientType& orient)

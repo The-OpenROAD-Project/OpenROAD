@@ -14,6 +14,9 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
+#include "sta/Liberty.hh"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 
 namespace dpl {
 
@@ -53,9 +56,11 @@ odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
 PlacementDRC::PlacementDRC(Grid* grid,
                            odb::dbTech* tech,
                            Padding* padding,
-                           bool disallow_one_site_gap)
+                           bool disallow_one_site_gap,
+                           sta::dbSta* sta)
     : grid_(grid),
       padding_(padding),
+      sta_(sta),
       disallow_one_site_gap_(disallow_one_site_gap)
 {
   makeCellEdgeSpacingTable(tech);
@@ -190,7 +195,8 @@ bool PlacementDRC::checkDRC(const Node* cell,
                             const odb::dbOrientType& orient) const
 {
   return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
-         && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);
+         && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y)
+         && checkSoftBlockage(cell, x, y);
 }
 
 namespace {
@@ -427,6 +433,113 @@ int PlacementDRC::getEdgeTypeIdx(const std::string& edge_type) const
 DbuX PlacementDRC::gridToDbu(const GridX grid_x, const DbuX site_width) const
 {
   return DbuX(grid_x.v * site_width.v);
+}
+
+bool PlacementDRC::isAllowedInSoftBlockage(const Node* cell) const
+{
+  if (cell == nullptr) {
+    return true;  // No cell = no violation
+  }
+
+  odb::dbInst* db_inst = cell->getDbInst();
+  if (db_inst == nullptr) {
+    return true;
+  }
+
+  // Fixed instances are always allowed in soft blockage
+  if (db_inst->isFixed()) {
+    return true;
+  }
+
+  odb::dbMaster* master = db_inst->getMaster();
+  odb::dbMasterType type = master->getType();
+
+  // Physical cells are allowed (endcaps, tapcells, fillers)
+  switch (type.getValue()) {
+    case odb::dbMasterType::CORE_SPACER:  // Filler cells
+    case odb::dbMasterType::CORE_WELLTAP:
+    case odb::dbMasterType::ENDCAP:
+    case odb::dbMasterType::ENDCAP_PRE:
+    case odb::dbMasterType::ENDCAP_POST:
+    case odb::dbMasterType::ENDCAP_TOPLEFT:
+    case odb::dbMasterType::ENDCAP_TOPRIGHT:
+    case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
+    case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
+    case odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_TOPEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+    case odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+    case odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+    case odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+    case odb::dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
+      return true;
+    default:
+      break;
+  }
+
+  // Buffer and inverter detection via OpenSTA
+  if (sta_ != nullptr) {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    if (network != nullptr) {
+      sta::Cell* sta_cell = network->dbToSta(master);
+      if (sta_cell != nullptr) {
+        sta::LibertyCell* lib_cell = network->libertyCell(sta_cell);
+        if (lib_cell != nullptr
+            && (lib_cell->isBuffer() || lib_cell->isInverter())) {
+          return true;
+        }
+      }
+    }
+  }
+
+  // Fallback: detect buffers/inverters by master name pattern when STA not available
+  // Common naming conventions: BUF_*, INV_*, CLKBUF_*, CLKINV_*, etc.
+  std::string master_name = master->getName();
+  // Convert to uppercase for case-insensitive matching
+  std::transform(
+      master_name.begin(), master_name.end(), master_name.begin(), ::toupper);
+  if (master_name.find("BUF") != std::string::npos
+      || master_name.find("INV") != std::string::npos) {
+    return true;
+  }
+
+  // Regular cells are NOT allowed in soft blockage
+  return false;
+}
+
+bool PlacementDRC::checkSoftBlockage(const Node* cell) const
+{
+  return checkSoftBlockage(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+}
+
+bool PlacementDRC::checkSoftBlockage(const Node* cell,
+                                      const GridX x,
+                                      const GridY y) const
+{
+  // If cell is allowed in soft blockage, no need to check pixels
+  if (isAllowedInSoftBlockage(cell)) {
+    return true;
+  }
+
+  // Check all pixels the cell would occupy
+  const GridX x_end = x + grid_->gridWidth(cell);
+  const GridY y_end
+      = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+
+  for (GridY y1 = y; y1 < y_end; y1++) {
+    for (GridX x1 = x; x1 < x_end; x1++) {
+      const Pixel* pixel = grid_->gridPixel(x1, y1);
+      if (pixel != nullptr && pixel->is_soft_blocked) {
+        return false;  // Cell overlaps soft blockage and is not allowed
+      }
+    }
+  }
+  return true;  // No soft blockage violation
 }
 
 }  // namespace dpl
