@@ -22,6 +22,7 @@
 #include "spdlog/fmt/fmt.h"
 #include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
+#include "sta/Sdc.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -34,6 +35,7 @@
 
 namespace rsz {
 
+using sta::Port;
 using std::make_shared;
 using std::max;
 using std::min;
@@ -82,11 +84,32 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   load_pin_ = load_pin;
   corner_ = corner;
 
-  LibertyPort* load_port = resizer->network()->libertyPort(load_pin);
+  Network* network = resizer->network();
+  LibertyPort* load_port = network->libertyPort(load_pin);
   if (load_port) {
     cap_ = resizer->portCapacitance(load_port, corner);
     fanout_ = resizer->portFanoutLoad(load_port);
     max_load_slew_ = resizer->maxInputSlew(load_port, corner);
+  } else if (network->isTopLevelPort(load_pin)) {
+    Port* port = network->port(load_pin);
+    for (auto rf : RiseFall::range()) {
+      float pin_cap, wire_cap;
+      int fanout;
+      bool has_pin_cap, has_wire_cap, has_fanout;
+      resizer->sdc_->portExtCap(port,
+                                rf,
+                                corner,
+                                MinMax::max(),
+                                pin_cap,
+                                has_pin_cap,
+                                wire_cap,
+                                has_wire_cap,
+                                fanout,
+                                has_fanout);
+      if (has_pin_cap) {
+        cap_ = std::max(cap_, pin_cap);
+      }
+    }
   }
 }
 
