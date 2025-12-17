@@ -328,7 +328,7 @@ std::vector<int64_t> RouteBase::inflatedAreaDelta() const
   return inflatedAreaDelta_;
 }
 
-int RouteBase::numCall() const
+int RouteBase::getRevertCount() const
 {
   return revert_count_;
 }
@@ -833,8 +833,7 @@ void RouteBase::updateRudyAverage(bool verbose)
   }
 
   int arraySize = edge_cong_array.size();
-  std::ranges::sort(std::ranges::reverse_view(edge_cong_array),
-                    std::less<double>());
+  std::ranges::sort(edge_cong_array, std::greater<double>());
 
   double avg005RC = 0;
   double avg010RC = 0;

@@ -604,7 +604,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
     // overflow.
     // // revert back to the original rb solutions
     // // one more opportunity
-    // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
+    // if (!isDivergeTriedRevert && rb_->getRevertCount() >= 1) {
     //   // get back to the working rc size
     //   rb_->revertGCellSizeToMinRc();
     //   curA = route_snapshotA;
