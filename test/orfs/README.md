@@ -212,3 +212,24 @@ Running this, we get:
 </pre>
 
 
+## using sv-bugpoint to whittle down test-cases
+
+[sv-bugpoint](https://github.com/antmicro/sv-bugpoint) can be used to whittle down test-cases to a minimum example.
+
+Let's say that `bazelisk test test/orfs/gcd:eqy_synth_test` fails, first create a script that looks for the error string in the output, in this case a false positive `Failed to prove equivalence of partition gcd.req_rdy`.
+
+After compiling sv-bugpoint, we create a check.sh script:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+cp $1 test/orfs/gcd/
+(bazelisk test test/orfs/gcd:eqy_synth_test --test_timeout=30 --test_output=streamed || error=$?) | tee /dev/tty | grep "Failed to prove equivalence of partition gcd.req_rdy"
+```
+
+- `--test_timeout=30` is a suitable timeout for this test and machine, adjust. Note that the timeout must be handled by Bazel and not a generic `timeout` utility as it would not work correctly with the bazel server.
+
+
+Next, run sv-bugpoint to whittle `test/orfs/gcd/gcd.v` down to a minimal test case:
+
+    ~/sv-bugpoint/build/sv-bugpoint fail check.sh test/orfs/gcd/gcd.v

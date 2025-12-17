@@ -19,6 +19,7 @@
 #include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
 
@@ -287,6 +288,19 @@ class GlobalRouter
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
+
+  // Report wire resistance
+  float getLayerResistance(int layer, int length, odb::dbNet* net);
+  float getViaResistance(int from_layer, int to_layer);
+  double dbuToMicrons(int dbu);
+  float estimatePathResistance(odb::dbObject* pin1,
+                               odb::dbObject* pin2,
+                               bool verbose = false);
+  float estimatePathResistance(odb::dbObject* pin1,
+                               odb::dbObject* pin2,
+                               odb::dbTechLayer* layer1,
+                               odb::dbTechLayer* layer2,
+                               bool verbose = false);
 
   bool findPinAccessPointPositions(
       const Pin& pin,

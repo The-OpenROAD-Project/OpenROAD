@@ -16,6 +16,7 @@
 #include "Pin.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/pending/disjoint_sets.hpp"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -41,7 +42,10 @@ RepairAntennas::RepairAntennas(GlobalRouter* grouter,
       unique_diode_index_(1),
       illegal_diode_placement_count_(0),
       has_new_violations_(false),
-      routing_source_(RoutingSource::None)
+      routing_source_(RoutingSource::None),
+      tile_size_(0),
+      jumper_size_(0),
+      smaller_seg_size_(0)
 {
   block_ = db_->getChip()->getBlock();
   while (block_->findInst(

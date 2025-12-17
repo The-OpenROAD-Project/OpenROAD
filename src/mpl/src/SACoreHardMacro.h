@@ -11,6 +11,7 @@
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;
@@ -22,7 +23,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 {
  public:
   SACoreHardMacro(PhysicalHierarchy* tree,
-                  const Rect& outline,
+                  const odb::Rect& outline,
                   const std::vector<HardMacro>& macros,
                   const SACoreWeights& core_weights,
                   // probability of each action
