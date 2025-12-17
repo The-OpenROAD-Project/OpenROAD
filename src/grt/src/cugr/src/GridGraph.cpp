@@ -391,7 +391,7 @@ bool GridGraph::findODBAccessPoints(
           const IntervalT selected_layer = IntervalT(layer->getNumber() - 2);
           const AccessPoint ap_new{.point = selected_point,
                                    .layers = selected_layer};
-          selected_access_points.emplace(ap_new).first;
+          selected_access_points.emplace(ap_new);
         }
       }
     }
@@ -414,7 +414,7 @@ bool GridGraph::findODBAccessPoints(
           const IntervalT selected_layer = IntervalT(layer->getNumber() - 2);
           const AccessPoint ap_new{.point = selected_point,
                                    .layers = selected_layer};
-          selected_access_points.emplace(ap_new).first;
+          selected_access_points.emplace(ap_new);
         }
       }
       // Currently ignoring non preferred APs
@@ -470,12 +470,12 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
       if (bestAccessDist.first == 0) {
         logger_->warn(utl::GRT, 274, "pin is hard to access.");
       }
-  
+
       if (bestIndex == -1) {
         logger_->error(utl::GRT,
-                      283,
-                      "No preferred access point found for pin on net {}.",
-                      net->getName());
+                       283,
+                       "No preferred access point found for pin on net {}.",
+                       net->getName());
       }
 
       const PointT selectedPoint = accessPoints[bestIndex];
@@ -492,8 +492,7 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
   // TODO: Removing this part is causing issues, but it shouldnt
   for (auto& accessPoint : selected_access_points) {
     IntervalT& fixedLayers = accessPoint.layers;
-    fixedLayers.SetHigh(
-        std::min(fixedLayers.high() + 0, (int) getNumLayers() - 1));
+    fixedLayers.SetHigh(std::min(fixedLayers.high() + 0, getNumLayers() - 1));
   }
   return selected_access_points;
 }
