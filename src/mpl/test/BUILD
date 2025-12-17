@@ -36,6 +36,7 @@ COMPULSORY_TESTS = [
     "keep_clustering_data",
     "fixed_macros",
     "fixed_covers",
+    "macros_without_pins1",
 ]
 
 # Disabled in CMakeLists.txt
