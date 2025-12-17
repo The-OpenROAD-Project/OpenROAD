@@ -17,6 +17,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iostream>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -942,18 +944,23 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   // can be placed and...
   //...the number of topologies (combinations of buffers, considering only 1
   // drive) that can exist.
+
   const unsigned numberOfNodes
       = setupWirelength / options_->getWireSegmentUnit();
   const unsigned numberOfTopologies = 1 << numberOfNodes;
   std::vector<SolutionData> topologiesVector;
   odb::dbNet* net = nullptr;
   // clang-format off
-  debugPrint(logger_, CTS, "tech char", 1, "createPatterns WL:{} #nodes:{}"
-             "#topo:{}", setupWirelength, numberOfNodes, numberOfTopologies);
+  debugPrint(logger_, CTS, "tech char", 1, "*createPatterns for #nodes = {}"
+             " #topologies = {}", setupWirelength, numberOfNodes, numberOfTopologies);
   // clang-format on
   // For each possible topology...
   for (unsigned solutionCounterInt = 0; solutionCounterInt < numberOfTopologies;
        solutionCounterInt++) {
+    debugPrint(
+        logger_, CTS, "tech char", 1, "**topology {}", solutionCounterInt + 1);
+    std::stringstream tmp;
+    tmp << "***IN ";
     // Creates a bitset that represents the buffer locations.
     const std::bitset<5> solutionCounter(solutionCounterInt);
     int wireCounter = 0;
@@ -983,20 +990,24 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         // Not a buffer, only a wire segment.
         nodesWithoutBuf++;
         // clang-format off
-        debugPrint(logger_, CTS, "tech char", 1, "  wire at node:{} topo:{}",
+        debugPrint(logger_, CTS, "tech char", 2, "***wire at node : {}",
                    nodeIndex, solutionCounterInt);
         // clang-format on
       } else {
         // Buffer, need to create the instance and a new net.
         nodesWithoutBuf++;
+        for (int i = 0; i < nodesWithoutBuf - 1; i++) {
+          tmp << "-- ";
+        }
+        tmp << "-> ";
         // Creates a new buffer instance.
         const std::string bufName = fmt::format("buf_{}_{}_{}",
                                                 setupWirelength,
                                                 solutionCounter.to_string(),
                                                 wireCounter);
         // clang-format off
-        debugPrint(logger_, CTS, "tech char", 1, "  buffer {} at node:{} "
-                   "topo:{}", bufName, nodeIndex, solutionCounterInt);
+        debugPrint(logger_, CTS, "tech char", 2, "***buffer {} at node : {}"
+                  , bufName, nodeIndex, solutionCounterInt);
         // clang-format on
         odb::dbInst* bufInstance
             = odb::dbInst::create(charBlock_, charBuf_, bufName.c_str());
@@ -1020,11 +1031,6 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         // Updates the topology wih the new instance and the current topology
         // (as a vector of strings).
         topology.instVector.push_back(bufInstance);
-        // clang-format off
-        debugPrint(logger_, CTS, "tech char", 1, "  topo instVector size:{} "
-                   "node:{} topo:{}", topology.instVector.size(), nodeIndex,
-                   solutionCounterInt);
-        // clang-format on
         topology.topologyDescriptor.push_back(
             std::to_string(nodesWithoutBuf * options_->getWireSegmentUnit()));
         topology.topologyDescriptor.push_back(charBuf_->getName());
@@ -1041,6 +1047,11 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
     odb::dbBPin* outPortPin = odb::dbBPin::create(outPort);
     // Updates the topology with the output port, old new, possible instances
     // and other attributes.
+    for (int i = 0; i < nodesWithoutBuf; i++) {
+      tmp << "-- ";
+    }
+    tmp << "OUT";
+    debugPrint(logger_, CTS, "tech char", 1, tmp.str());
     topology.outPort = outPortPin;
     topology.isPureWire = isPureWire;
     topology.netVector.push_back(net);
@@ -1191,7 +1202,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
   const float pinArrival = openStaChar_->vertexArrival(
       outPinVert, sta::RiseFall::fall(), charPathAnalysis_);
   results.pinArrival = pinArrival;
-  // Computations for output slew.
+  // Computations for output slew. Avg of rise and fall slew.
   const float pinRise = openStaChar_->vertexSlew(
       outPinVert, sta::RiseFall::rise(), sta::MinMax::max());
   const float pinFall = openStaChar_->vertexSlew(
@@ -1330,7 +1341,7 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
       odb::dbInst* inst = solution.instVector[nodeIndex];
       inst->swapMaster(newMaster);
       // clang-format off
-      debugPrint(logger_, CTS, "tech char", 1, "**updateBufferTopologies swap "
+      debugPrint(logger_, CTS, "tech char", 1, "***updateBufferTopologies swap "
                  "from {} to {}, index:{}", oldMaster->getName(),
                  newMaster->getName(), nodeIndex);
       // clang-format on
@@ -1341,6 +1352,10 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
 
 std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 {
+  if (solution.isPureWire) {
+    debugPrint(logger_, CTS, "tech char", 1, "**currConfig is a pure wire");
+    return {};
+  }
   std::vector<size_t> config;
   for (auto inst : solution.instVector) {
     size_t masterID = cellNameToID(inst->getMaster()->getName());
@@ -1349,11 +1364,11 @@ std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 
   if (logger_->debugCheck(CTS, "tech char", 1)) {
     std::stringstream tmp;
-    tmp << "currConfig: ";
+    tmp << "**currConfig: ";
     for (unsigned i : config) {
       tmp << i << " ";
     }
-    logger_->report(tmp.str());
+    debugPrint(logger_, CTS, "tech char", 1, tmp.str());
   }
   return config;
 }
@@ -1365,7 +1380,7 @@ size_t TechChar::cellNameToID(const std::string& masterName)
   return std::distance(masterNames_.begin(), masterIter);
 }
 
-// Find a buffer config that is monotonic from current buffer config
+// Find a buffer config that is monotonic from current buffer config.
 std::vector<size_t> TechChar::getNextConfig(
     const std::vector<size_t>& currConfig)
 {
@@ -1389,11 +1404,11 @@ std::vector<size_t> TechChar::getNextConfig(
 
   if (logger_->debugCheck(CTS, "tech char", 1)) {
     std::stringstream tmp;
-    tmp << "nextConfig: ";
+    tmp << "**nextConfig: ";
     for (unsigned i : nextConfig) {
       tmp << i << " ";
     }
-    logger_->report(tmp.str());
+    debugPrint(logger_, CTS, "tech char", 1, tmp.str());
   }
 
   return nextConfig;
@@ -1423,7 +1438,7 @@ void TechChar::swapTopologyBuffer(SolutionData& solution,
        topologyIndex++) {
     const std::string topologyS = solution.topologyDescriptor[topologyIndex];
     // clang-format off
-    debugPrint(logger_, CTS, "tech char", 1, "**topo:{} topoIdx:{}",
+    debugPrint(logger_, CTS, "tech char", 1, "***topo:{} topoIdx:{}",
                topologyS, topologyIndex);
     // clang-format on
     if (!(std::find(masterNames_.begin(), masterNames_.end(), topologyS)
@@ -1431,7 +1446,7 @@ void TechChar::swapTopologyBuffer(SolutionData& solution,
       if (topologyCounter == nodeIndex) {
         solution.topologyDescriptor[topologyIndex] = newMasterName;
         // clang-format off
-        debugPrint(logger_, CTS, "tech char", 1, "**soln topo descript at "
+        debugPrint(logger_, CTS, "tech char", 1, "***soln topo descript at "
                    "{} set to {}", topologyIndex, newMasterName);
         // clang-format on
         break;
@@ -1454,7 +1469,11 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       selectedSolutions.push_back(selectedResults);
     }
   }
+  std::ofstream arquivo("test_insetion_delay_techChar_tbl.csv");
 
+  if (!arquivo.is_open()) {
+      logger_->error(CTS, 2, "Erro ao criar o arquivo CSV");
+  }
   // Creates variables to set the max and min values. These are normalized.
   unsigned minResultWirelength = std::numeric_limits<unsigned>::max();
   unsigned maxResultWirelength = 0;
@@ -1462,6 +1481,8 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
   unsigned maxResultCapacitance = 0;
   unsigned minResultSlew = std::numeric_limits<unsigned>::max();
   unsigned maxResultSlew = 0;
+  // Cabeçalho
+  arquivo << "Wl,pinSlew,inSlew,totalcap,load,pinArrival,totalPower\n";
   std::vector<ResultData> convertedSolutions;
   for (ResultData solution : selectedSolutions) {
     if (solution.pinSlew <= options_->getMaxCharSlew()) {
@@ -1494,6 +1515,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       // Add missing information.
       convertedResult.totalPower = solution.totalPower;
       convertedResult.isPureWire = solution.isPureWire;
+      arquivo << convertedResult.wirelength << "," << convertedResult.pinSlew << "," << convertedResult.inSlew << "," << convertedResult.totalcap << "," << convertedResult.load << "," << convertedResult.pinArrival << "," << convertedResult.totalPower << "\n";
       std::vector<std::string> topologyResult;
       for (int topologyIndex = 0; topologyIndex < solution.topology.size();
            topologyIndex++) {
@@ -1514,6 +1536,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       convertedSolutions.push_back(convertedResult);
     }
   }
+  arquivo.close();
   // Sets the min and max values and returns the result vector.
   minSlew_ = minResultSlew;
   maxSlew_ = maxResultSlew;
@@ -1558,6 +1581,8 @@ void TechChar::create()
   int64_t topologiesCreated = 0;
   for (unsigned setupWirelength : wirelengthsToTest_) {
     // Creates the topologies for the current wirelength.
+    debugPrint(
+        logger_, CTS, "tech char", 1, "Wirelength = {}", setupWirelength);
     std::vector<SolutionData> topologiesVector
         = createPatterns(setupWirelength);
     // Creates an OpenSTA instance.
@@ -1569,9 +1594,8 @@ void TechChar::create()
     int topoIndex = 0;
     for (SolutionData solution : topologiesVector) {
       // clang-format off
-      debugPrint(logger_, CTS, "tech char", 1, "create WL:{} of {}, "
-                 "topo:{} of {}", setupWirelength, wirelengthsToTest_.size(),
-                 topoIndex, topologiesVector.size());
+      debugPrint(logger_, CTS, "tech char", 1, "*genrate combinations for "
+                 "topology: {} of {}", topoIndex + 1, topologiesVector.size());
       // clang-format on
       topoIndex++;
       // Gets the input and output port (as terms, pins and vertices).
@@ -1607,15 +1631,15 @@ void TechChar::create()
                                  r1,
                                  c1,
                                  piExists);
+
+      // clang-format off
+      debugPrint(logger_, CTS, "tech char", 1, "*# bufs = {}; "
+                 "# nodes with buf = {}",
+                 masterNames_.size(), solution.instVector.size());
+      // clang-format on
       // For each possible buffer combination (different sizes).
       unsigned buffersCombinations
           = getBufferingCombo(masterNames_.size(), solution.instVector.size());
-      // clang-format off
-      debugPrint(logger_, CTS, "tech char", 1, "create #bufs={} "
-                 "#soln.instVector.size={}, #bufUpdate={}, #topo={}",
-                 masterNames_.size(), solution.instVector.size(),
-                 buffersCombinations, topologiesCreated);
-      // clang-format on
 
       if (buffersCombinations == 0) {
         continue;
@@ -1734,14 +1758,15 @@ void TechChar::create()
 unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
 {
   // check if this has been computed already
-  std::stringstream tmp;
   std::pair iPair(numBuffers, numNodes);
   auto iter = bufferingComboTable_.find(iPair);
   if (iter != bufferingComboTable_.end()) {
-    if (logger_->debugCheck(CTS, "tech char", 1)) {
-      tmp << "Monotonic entries (hashed): " << iter->second << '\n';
-      logger_->report(tmp.str());
-    }
+    debugPrint(logger_,
+               CTS,
+               "tech char",
+               1,
+               "**Monotonic entries are already hashed: {}",
+               iter->second);
     return iter->second;
   }
 
@@ -1759,6 +1784,8 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
 
   unsigned numMonotonic = 0;
   for (const auto& row : matrix) {
+    std::stringstream tmp;
+    tmp << "**";
     for (size_t val : row) {
       if (logger_->debugCheck(CTS, "tech char", 1)) {
         tmp << val << " ";
@@ -1770,15 +1797,10 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
       }
       numMonotonic++;
     }
-    if (logger_->debugCheck(CTS, "tech char", 1)) {
-      logger_->report(tmp.str());
-    }
+    debugPrint(logger_, CTS, "tech char", 1, tmp.str());
   }
-  if (logger_->debugCheck(CTS, "tech char", 1)) {
-    tmp << "Monotonic entries: " << numMonotonic;
-    logger_->report(tmp.str());
-  }
-
+  debugPrint(
+      logger_, CTS, "tech char", 1, "**Monotonic entries: {}", numMonotonic);
   // insert new result into hash table
   bufferingComboTable_[iPair] = numMonotonic;
   return numMonotonic;

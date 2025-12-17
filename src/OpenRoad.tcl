@@ -430,7 +430,7 @@ proc place_inst { args } {
   }
 
   if { [info exists keys(-name)] } {
-    set inst_name [lindex $keys(-name) 0]
+    set inst_name $keys(-name)
   } else {
     utl::error ORD 57 "-name is a required argument to the place_cell command."
   }
