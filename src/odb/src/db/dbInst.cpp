@@ -370,9 +370,9 @@ bool dbInst::rename(const char* name)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: {}, rename to '{}'",
+             "EDIT: {}, rename to '{}'",
              inst->getDebugName(),
              name);
 
@@ -422,9 +422,9 @@ void dbInst::setOrigin(int x, int y)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {} setOrigin {}, {}",
+             "EDIT: {} setOrigin {}, {}",
              inst->getDebugName(),
              x,
              y);
@@ -520,9 +520,9 @@ void dbInst::setOrient(dbOrientType orient)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {} setOrient {}",
+             "EDIT: {} setOrient {}",
              inst->getDebugName(),
              orient.getValue());
 
@@ -562,9 +562,9 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              2,
-             "ECO: {} setPlacementStatus {}",
+             "EDIT: {} setPlacementStatus {}",
              inst->getDebugName(),
              status.getValue());
 
@@ -1121,9 +1121,9 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: swapMaster on {} from master '{}' to '{}'",
+             "EDIT: swapMaster on {} from master '{}' to '{}'",
              inst->getDebugName(),
              oldMasterName,
              newMasterName);
@@ -1315,9 +1315,9 @@ dbInst* dbInst::create(dbBlock* block_,
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: [{}] create {} master '{}'",
+             "EDIT: [{}] create {} master '{}'",
              _i,  // jk: dbg
              inst->getDebugName(),
              master_->getName());
@@ -1521,9 +1521,9 @@ void dbInst::destroy(dbInst* inst_)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: delete {}",
+             "EDIT: delete {}",
              inst->getDebugName());
 
   if (block->journal_) {

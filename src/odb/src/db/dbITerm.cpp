@@ -349,9 +349,9 @@ void dbITerm::connect(dbNet* net_)
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: connect {} to {}",
+             "EDIT: connect {} to {}",
              iterm->getDebugName(),
              net->getDebugName());
 
@@ -425,9 +425,9 @@ void dbITerm::connect(dbModNet* mod_net)
 
   debugPrint(iterm->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: connect {} to {}",
+             "EDIT: connect {} to {}",
              iterm->getDebugName(),
              mod_net->getDebugName());
 
@@ -489,10 +489,9 @@ void dbITerm::disconnect()
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "disconnect {} from {} "
-             "and {}",
+             "EDIT: disconnect {} from {} and {}",
              iterm->getDebugName(),
              (net) ? net->getDebugName() : "dbNet(NULL)",
              (mod_net) ? mod_net->getDebugName() : "dbModNet(NULL)");
@@ -593,9 +592,9 @@ void dbITerm::disconnectDbNet()
 
   debugPrint(iterm->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: disconnect {} from {}",
+             "EDIT: disconnect {} from {}",
              iterm->getDebugName(),
              net->getDebugName());
 
@@ -647,9 +646,9 @@ void dbITerm::disconnectDbModNet()
 
     debugPrint(iterm->getImpl()->getLogger(),
                utl::ODB,
-               "DB_ECO",
+               "DB_EDIT",
                1,
-               "ECO: disconnect {} from {}",
+               "EDIT: disconnect {} from {}",
                iterm->getDebugName(),
                mod_net->getDebugName());
 

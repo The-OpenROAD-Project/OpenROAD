@@ -11,20 +11,17 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPainter>
 #include <QPushButton>
 #include <QString>
+#include <QStyleOptionViewItem>
+#include <QTextDocument>
 #include <QVariant>
 #include <QWidget>
-#include <algorithm>
 #include <any>
 #include <cmath>
-#include <iterator>
-#include <map>
-#include <set>
 #include <stdexcept>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -134,6 +131,8 @@ void SelectedItemModel::makePropertyItem(const Descriptor::Property& property,
   // as children rows
   if (auto sel_set = std::any_cast<Descriptor::PropertyList>(&value)) {
     value_item = makePropertyList(name_item, sel_set->begin(), sel_set->end());
+  } else if (auto sel_set = std::any_cast<PropertyTable>(&value)) {
+    value_item = makePropertyTable(name_item, *sel_set);
   } else if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
     value_item = makeList(name_item, sel_set->begin(), sel_set->end());
   } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
@@ -189,9 +188,7 @@ QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item,
     name_item->appendRow({index_item, selected_item});
   }
 
-  QString items = QString::number(index) + " items";
-
-  return makeItem(items);
+  return makeItem(QString(QString::number(index) + " items"));
 }
 
 template <typename Iterator>
@@ -204,9 +201,50 @@ QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item,
     name_item->appendRow({makeItem(name, true), makeItem(value)});
   }
 
-  QString items = QString::number(name_item->rowCount()) + " items";
+  return makeItem(QString(QString::number(name_item->rowCount()) + " items"));
+}
 
-  return makeItem(items);
+QStandardItem* SelectedItemModel::makePropertyTable(QStandardItem* name_item,
+                                                    const PropertyTable& table)
+{
+  const int rows = table.getData().size();
+  const int columns = table.getColumnHeaders().size();
+
+  QStandardItem* table_item = makeItem(QString());
+
+  QString html;
+  html += "<style>th, td {padding: 2px; border: 1px solid black; text-align: center; vertical-align: middle;}</style>";
+  html += "<table>";
+  // setup column headers
+  html += "<tr><th />";
+  for (int col = 0; col < columns; col++) {
+    html += "<th>";
+    html += QString::fromStdString(table.getColumnHeaders().at(col))
+                .replace("\n", "<br>");
+    html += "</th>";
+  }
+  html += "</tr>";
+  // add rows
+  for (int row = 0; row < rows; row++) {
+    html += "<tr>";
+    html += "<th>";
+    html += QString::fromStdString(table.getRowHeaders().at(row))
+                .replace("\n", "<br>");
+    html += "</th>";
+    for (int col = 0; col < columns; col++) {
+      html += "<td>";
+      html += QString::fromStdString(table.getData().at(row).at(col))
+                  .replace("\n", "<br>");
+      html += "</td>";
+    }
+    html += "</tr>";
+  }
+  html += "</table>";
+  table_item->setData(html, EditorItemDelegate::kHtml);
+
+  name_item->appendRow({nullptr, table_item});
+
+  return makeItem(QString(QString::number(rows * columns) + " items"));
 }
 
 void SelectedItemModel::makeItemEditor(const std::string& name,
@@ -240,7 +278,7 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
 
 EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
                                        QObject* parent)
-    : QItemDelegate(parent),
+    : QStyledItemDelegate(parent),
       model_(model),
       background_(model->getEditableColor())
 {
@@ -381,6 +419,51 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(
     return EditorItemDelegate::kBool;
   }
   return EditorItemDelegate::kString;
+}
+
+void EditorItemDelegate::paint(QPainter* painter,
+                               const QStyleOptionViewItem& option,
+                               const QModelIndex& index) const
+{
+  if (index.model()->data(index, kHtml).toString().isEmpty()) {
+    QStyledItemDelegate::paint(painter, option, index);
+    return;
+  }
+
+  QStyleOptionViewItem options(option);
+  initStyleOption(&options, index);
+
+  painter->save();
+
+  QTextDocument doc;
+  doc.setHtml(index.model()->data(index, kHtml).toString());
+
+  /* Call this to get the focus rect and selection background. */
+  options.text = "";
+  options.widget->style()->drawControl(
+      QStyle::CE_ItemViewItem, &options, painter);
+
+  /* Draw using text document. */
+  painter->translate(options.rect.left(), options.rect.top());
+  const QRectF clip(0, 0, options.rect.width(), options.rect.height());
+  doc.drawContents(painter, clip);
+
+  painter->restore();
+}
+
+QSize EditorItemDelegate::sizeHint(const QStyleOptionViewItem& option,
+                                   const QModelIndex& index) const
+{
+  if (index.model()->data(index, kHtml).toString().isEmpty()) {
+    return QStyledItemDelegate::sizeHint(option, index);
+  }
+  QStyleOptionViewItem options(option);
+  initStyleOption(&options, index);
+
+  QTextDocument doc;
+  doc.setHtml(index.model()->data(index, kHtml).toString());
+  doc.setTextWidth(options.rect.width());
+  return QSize(doc.idealWidth(), doc.size().height());
 }
 
 ////////

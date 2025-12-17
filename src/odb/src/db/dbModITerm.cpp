@@ -133,6 +133,9 @@ void _dbModITerm::collectMemInfo(MemInfo& info)
 
 _dbModITerm::~_dbModITerm()
 {
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -244,9 +247,9 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: create {}",
+             "EDIT: create {}",
              moditerm->getDebugName());
 
   if (block->journal_) {
@@ -310,9 +313,9 @@ void dbModITerm::connect(dbModNet* net)
 
   debugPrint(_block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: connect {} to {}",
+             "EDIT: connect {} to {}",
              _moditerm->getDebugName(),
              _modnet->getDebugName());
 
@@ -342,9 +345,9 @@ void dbModITerm::disconnect()
 
   debugPrint(_block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: disconnect {} from {}",
+             "EDIT: disconnect {} from {}",
              _moditerm->getDebugName(),
              _modnet->getDebugName());
 
@@ -397,9 +400,9 @@ void dbModITerm::destroy(dbModITerm* val)
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
-             "DB_ECO",
+             "DB_EDIT",
              1,
-             "ECO: delete {}",
+             "EDIT: delete {}",
              _moditerm->getDebugName());
 
   if (block->journal_) {

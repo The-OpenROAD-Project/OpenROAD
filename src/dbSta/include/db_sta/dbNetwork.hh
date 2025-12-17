@@ -258,8 +258,26 @@ class dbNetwork : public ConcreteNetwork
   Instance* instance(const Pin* pin) const override;
   Net* net(const Pin* pin) const override;
   void net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const;
+
+  ///
+  /// Get a dbNet connected to the input pin.
+  /// - If both dbNet and dbModNet are connected to the input pin,
+  ///   this function returns the dbNet.
+  /// - NOTE: If only dbModNet is connected to the input pin, this
+  ///   function returns nullptr. If you need to get the dbNet corresponding to
+  ///   the dbModNet, use findFlatDbNet() instead.
+  ///
   dbNet* flatNet(const Pin* pin) const;
+
+  ///
+  /// Get a dbModNet connected to the input pin.
+  /// - If both dbNet and dbModNet are connected to the input pin,
+  ///   this function returns the dbModNet.
+  /// - If only dbNet is connected to the input pin, this function returns
+  ///   nullptr.
+  ///
   dbModNet* hierNet(const Pin* pin) const;
+
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
   dbBlock* getBlockOf(const Pin* pin) const;
