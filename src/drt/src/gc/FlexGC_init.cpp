@@ -11,6 +11,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/drObj/drNet.h"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
