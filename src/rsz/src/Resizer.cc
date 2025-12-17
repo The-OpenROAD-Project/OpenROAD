@@ -3356,13 +3356,6 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
   InstanceSeq insts;
   findCellInstances(tie_cell, insts);
 
-  // Deterministic ordering of tie instances by full instance name
-  // - This is to remove non-determinism.
-  std::sort(
-      insts.begin(), insts.end(), [this](const Instance* a, const Instance* b) {
-        return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
-      });
-
   // jk: dbg
   if (logger_->debugCheck(utl::RSZ, "inst_iteration_debug", 9)) {
     int idx = 0;
@@ -3640,6 +3633,14 @@ void Resizer::findCellInstances(LibertyCell* cell,
     }
   }
   delete inst_iter;
+
+  // jk: iterating dbInsts in dbBlock might be better. try it
+  // Deterministic ordering of tie instances by full instance name
+  // - This is to remove non-determinism.
+  std::sort(
+      insts.begin(), insts.end(), [this](const Instance* a, const Instance* b) {
+        return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+      });
 }
 
 // Place the tie instance on the side of the load pin.
