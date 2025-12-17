@@ -21,12 +21,6 @@ cmake_policy(SET CMP0077 NEW)
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
 
-# Interfers with Qt so off by default.
-option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
-
-if (LINK_TIME_OPTIMIZATION)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 # Allow to use external shared boost libraries
 option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)
@@ -54,6 +48,15 @@ option(UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
+
+# LTO setting must come after project() for proper compiler detection
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
+if (LINK_TIME_OPTIMIZATION)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  message(STATUS "LTO is enabled")
+else()
+  message(STATUS "LTO is disabled: ${LTO_ERROR}")
+endif()
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 set(OPENROAD_SHARE ${CMAKE_INSTALL_PREFIX}/share/openroad)
