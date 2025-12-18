@@ -236,7 +236,7 @@ bool DetailedGlobalSwap::getRange(Node* nd, odb::Rect& nodeBbox)
   mid = t >> 1;
 
   std::ranges::sort(xpts_,);
-  std::sort(ypts_.begin(), ypts_.end());
+  std::ranges::sort(ypts_,);
 
   nodeBbox.set_xlo(xpts_[mid - 1]);
   nodeBbox.set_xhi(xpts_[mid]);
