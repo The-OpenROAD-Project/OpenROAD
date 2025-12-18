@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
 #include "gc/FlexGC_impl.h"

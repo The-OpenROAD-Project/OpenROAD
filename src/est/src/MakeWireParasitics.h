@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "grt/RoutePt.h"
 #include "odb/db.h"

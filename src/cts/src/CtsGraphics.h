@@ -11,6 +11,7 @@
 #include "CtsObserver.h"
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
+#include "Util.h"
 #include "gui/gui.h"
 
 namespace utl {

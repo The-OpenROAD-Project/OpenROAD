@@ -183,7 +183,7 @@
       "flags": ["private", "no-serial"]
     }
   ],
-  "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],
+  "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr","dbChipCallBackObj"],
   "h_includes": [
     "odb/geom.h"
   ],
@@ -195,6 +195,15 @@
     "dbBlock.h", 
     "dbTech.h", 
     "dbPropertyItr.h",
-    "dbChipConn.h"
+    "dbChipConn.h",
+    "dbChipConnItr.h",
+    "dbChipInst.h",
+    "dbChipInstItr.h",
+    "dbChipNet.h",
+    "dbChipNetItr.h",
+    "dbCommon.h",
+    "odb/dbChipCallBackObj.h",
+    "odb/dbObject.h",
+    "odb/geom.h"
   ]
 } 
