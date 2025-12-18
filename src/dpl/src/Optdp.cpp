@@ -102,9 +102,7 @@ void Opendp::improvePlacement(const int seed,
   // Maximum independent set matching.
   dtParams.script += "mis -p 10 -t 0.005;";
   // Global swaps.
-  dtParams.script += "gs -p " + std::to_string(global_swap_params_.passes)
-                     + " -t " + std::to_string(global_swap_params_.tolerance)
-                     + ";";
+  dtParams.script += "gs -p 10 -t 0.005;";
   // Vertical swaps.
   dtParams.script += "vs -p 10 -t 0.005;";
   // Small reordering.
