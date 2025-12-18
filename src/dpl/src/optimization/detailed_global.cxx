@@ -19,7 +19,9 @@
 #include "infrastructure/network.h"
 #include "infrastructure/Objects.h"
 #include "objective/detailed_hpwl.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
+#include "util/journal.h"
 
 namespace dpl {
 
