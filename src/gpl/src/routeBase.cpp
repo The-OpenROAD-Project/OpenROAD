@@ -249,7 +249,8 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   minRcTargetDensity_.resize(nbVec_.size(), 0);
   inflatedAreaDelta_.resize(nbVec_.size(), 0);
   init();
-  log_->report("routability minInflationRatio: {:.2f}", rbVars_.minInflationRatio);
+  log_->report("routability minInflationRatio: {:.2f}",
+               rbVars_.minInflationRatio);
 }
 
 RouteBase::~RouteBase() = default;
@@ -395,7 +396,8 @@ void RouteBase::calculateRudyTiles()
 
     // update inflation Ratio
     if (ratio >= rbVars_.minInflationRatio) {
-      float inflationRatio = std::pow(ratio / rbVars_.minInflationRatio, rbVars_.inflationRatioCoef);
+      float inflationRatio = std::pow(ratio / rbVars_.minInflationRatio,
+                                      rbVars_.inflationRatioCoef);
       inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
       tile->setInflationRatio(inflationRatio);
     }
@@ -421,7 +423,12 @@ void RouteBase::calculateRudyTiles()
       variance += (val - mean) * (val - mean);
     }
     float stddev = std::sqrt(variance / inflationRatios.size());
-    log_->report("Inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std Dev: {:.4f}", mean, median, stddev);
+    log_->report(
+        "Inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std Dev: "
+        "{:.4f}",
+        mean,
+        median,
+        stddev);
 
     // Histogram (10 buckets)
     float min_val = inflationRatios.front();
@@ -446,8 +453,13 @@ void RouteBase::calculateRudyTiles()
       for (int i = 0; i < num_buckets; i++) {
         float range_start = min_val + i * step;
         float range_end = min_val + (i + 1) * step;
-        float percentage = static_cast<float>(bucket_counts[i]) / inflationRatios.size() * 100.0f;
-        log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)", range_start, range_end, bucket_counts[i], percentage);
+        float percentage = static_cast<float>(bucket_counts[i])
+                           / inflationRatios.size() * 100.0f;
+        log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
+                     range_start,
+                     range_end,
+                     bucket_counts[i],
+                     percentage);
       }
     }
   }
@@ -696,7 +708,7 @@ std::pair<bool, bool> RouteBase::routability(
       }
 
       int64_t prev_cell_area = static_cast<int64_t>(gCell->dx())
-                             * static_cast<int64_t>(gCell->dy());
+                               * static_cast<int64_t>(gCell->dy());
 
       // bloat
       gCell->setSize(static_cast<int>(std::round(
@@ -706,10 +718,11 @@ std::pair<bool, bool> RouteBase::routability(
                      GCell::GCellChange::kRoutability);
 
       int64_t new_cell_area = static_cast<int64_t>(gCell->dx())
-                            * static_cast<int64_t>(gCell->dy());
+                              * static_cast<int64_t>(gCell->dy());
 
       // auto master = gCell->insts()[0]->dbInst()->getMaster();
-      // int64_t orig_cell_area = static_cast<int64_t>(master->getWidth()) * static_cast<int64_t>(master->getHeight());
+      // int64_t orig_cell_area = static_cast<int64_t>(master->getWidth()) *
+      // static_cast<int64_t>(master->getHeight());
       // gCell->setInflationAreaDelta(new_cell_area - orig_cell_area);
 
       // deltaArea is equal to area * deltaRatio
@@ -721,22 +734,22 @@ std::pair<bool, bool> RouteBase::routability(
     std::vector<float> cellInflationRatios;
     for (auto& gCellHandle : nbVec_[i]->getGCells()) {
       if (!gCellHandle->isStdInstance()) {
-      continue;
+        continue;
       }
       if (!gCellHandle.isNesterovBaseCommon()) {
-      continue;
+        continue;
       }
       auto gCell = nbc_->getGCellByIndex(gCellHandle.getStorageIndex());
       auto master = gCell->insts()[0]->dbInst()->getMaster();
       int64_t orig_cell_area = static_cast<int64_t>(master->getWidth())
-                   * static_cast<int64_t>(master->getHeight());
+                               * static_cast<int64_t>(master->getHeight());
 
       int64_t cur_cell_area = static_cast<int64_t>(gCell->dx())
-                  * static_cast<int64_t>(gCell->dy());
+                              * static_cast<int64_t>(gCell->dy());
       if (orig_cell_area > 0) {
-      float inflation_ratio
-        = static_cast<float>(cur_cell_area) / orig_cell_area;
-      cellInflationRatios.push_back(inflation_ratio);
+        float inflation_ratio
+            = static_cast<float>(cur_cell_area) / orig_cell_area;
+        cellInflationRatios.push_back(inflation_ratio);
       }
     }
 
@@ -744,53 +757,53 @@ std::pair<bool, bool> RouteBase::routability(
       std::sort(cellInflationRatios.begin(), cellInflationRatios.end());
       float sum = 0.0f;
       for (float val : cellInflationRatios) {
-      sum += val;
+        sum += val;
       }
       float mean = sum / cellInflationRatios.size();
       float median = cellInflationRatios[cellInflationRatios.size() / 2];
       float variance = 0.0f;
       for (float val : cellInflationRatios) {
-      variance += (val - mean) * (val - mean);
+        variance += (val - mean) * (val - mean);
       }
       float stddev = std::sqrt(variance / cellInflationRatios.size());
       log_->report(
-        "Cell inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
-        "Dev: {:.4f}",
-        mean,
-        median,
-        stddev);
+          "Cell inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
+          "Dev: {:.4f}",
+          mean,
+          median,
+          stddev);
 
       // Histogram (10 buckets)
       float min_val = cellInflationRatios.front();
       float max_val = cellInflationRatios.back();
 
       if (max_val - min_val < 1e-6) {
-      log_->report("All cells have inflation ratio: {:.4f}", min_val);
+        log_->report("All cells have inflation ratio: {:.4f}", min_val);
       } else {
-      const int num_buckets = 10;
-      float step = (max_val - min_val) / num_buckets;
-      std::vector<int> bucket_counts(num_buckets, 0);
+        const int num_buckets = 10;
+        float step = (max_val - min_val) / num_buckets;
+        std::vector<int> bucket_counts(num_buckets, 0);
 
-      for (float val : cellInflationRatios) {
-        int bucket = static_cast<int>((val - min_val) / step);
-        if (bucket >= num_buckets) {
-        bucket = num_buckets - 1;
+        for (float val : cellInflationRatios) {
+          int bucket = static_cast<int>((val - min_val) / step);
+          if (bucket >= num_buckets) {
+            bucket = num_buckets - 1;
+          }
+          bucket_counts[bucket]++;
         }
-        bucket_counts[bucket]++;
-      }
 
-      log_->report("Cell inflation ratio distribution:");
-      for (int j = 0; j < num_buckets; j++) {
-        float range_start = min_val + j * step;
-        float range_end = min_val + (j + 1) * step;
-        float percentage = static_cast<float>(bucket_counts[j])
-                 / cellInflationRatios.size() * 100.0f;
-        log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
-               range_start,
-               range_end,
-               bucket_counts[j],
-               percentage);
-      }
+        log_->report("Cell inflation ratio distribution:");
+        for (int j = 0; j < num_buckets; j++) {
+          float range_start = min_val + j * step;
+          float range_end = min_val + (j + 1) * step;
+          float percentage = static_cast<float>(bucket_counts[j])
+                             / cellInflationRatios.size() * 100.0f;
+          log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
+                       range_start,
+                       range_end,
+                       bucket_counts[j],
+                       percentage);
+        }
       }
     }
 
