@@ -496,6 +496,7 @@ void OpenRoad::read3Dbx(const std::string& filename)
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
   parser.check();
+  db_->triggerPostRead3Dbx(db_->getChip());
 }
 
 void OpenRoad::read3DBloxBMap(const std::string& filename)

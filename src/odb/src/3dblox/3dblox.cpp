@@ -88,8 +88,7 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
-  calculateSize(db_->getChip());
-  db_->triggerPostRead3Dbx(chip);
+  calculateSize(chip);
 }
 
 void ThreeDBlox::check()
