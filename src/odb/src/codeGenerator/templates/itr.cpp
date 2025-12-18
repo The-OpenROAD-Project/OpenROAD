@@ -62,9 +62,14 @@ uint {{itr.name}}::begin(dbObject* parent) const
   //User Code End begin
 }
 
-uint {{itr.name}}::end(dbObject* /* unused: parent */) const
+uint {{itr.name}}::end(dbObject* {{ "parent" if itr.customEnd else "/* unused: parent */" }}) const
 {
+{%if itr.customEnd %}
+  //User Code Begin end
+  //User Code End end
+{% else %}
   return 0;
+{% endif %}
 }
 
 uint {{itr.name}}::next(uint id, ...) const
