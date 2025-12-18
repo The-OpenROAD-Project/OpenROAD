@@ -107,11 +107,11 @@ void RepairDesign::computeSlewRCFactor()
     float th_low, th_high;
     if (rf == RiseFall::rise()) {
       // flip
-      th_low = 1.0 - library->slewUpperThreshold(RiseFall::rise());
-      th_high = 1.0 - library->slewLowerThreshold(RiseFall::rise());
+      th_low = 1.0 - library->slewUpperThreshold(rf);
+      th_high = 1.0 - library->slewLowerThreshold(rf);
     } else {
-      th_low = library->slewLowerThreshold(RiseFall::rise());
-      th_high = library->slewUpperThreshold(RiseFall::rise());
+      th_low = library->slewLowerThreshold(rf);
+      th_high = library->slewUpperThreshold(rf);
     }
     // compute crossing times assuming RC=1 where R is driving resistance and C
     // is load
