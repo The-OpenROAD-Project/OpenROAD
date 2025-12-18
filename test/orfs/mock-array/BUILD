@@ -1,5 +1,5 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
-load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
+load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary", "chisel_test")
 load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
@@ -139,3 +139,12 @@ orfs_run(
         "Element_4x4",
     ]
 ]
+
+# Used to validate Verilator dependency; verilator is used for
+# simulation of MockArray.
+chisel_test(
+    name = "TinyAdder_test",
+    srcs = ["src/test/scala/TinyAdderTest.scala"],
+    tags = ["manual"],
+    deps = [],
+)
