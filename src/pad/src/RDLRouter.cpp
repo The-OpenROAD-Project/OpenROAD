@@ -1892,7 +1892,7 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
       continue;
     }
 
-    auto* prop = odb::dbBoolProperty::find(iterm, kRouteProperty_);
+    auto* prop = odb::dbBoolProperty::find(iterm, kRouteProperty);
     if (prop && !prop->getValue()) {
       debugPrint(logger_,
                  utl::PAD,
