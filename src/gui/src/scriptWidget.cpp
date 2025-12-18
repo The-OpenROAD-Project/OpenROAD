@@ -17,10 +17,8 @@
 #include <QWidget>
 #include <cerrno>
 #include <functional>
-#include <memory>
 #include <mutex>
 #include <stdexcept>
-#include <string>
 
 #include "gui/gui.h"
 #include "spdlog/formatter.h"

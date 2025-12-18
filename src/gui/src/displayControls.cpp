@@ -16,13 +16,8 @@
 #include <QWidget>
 #include <algorithm>
 #include <array>
-#include <map>
 #include <memory>
-#include <optional>
-#include <set>
 #include <utility>
-#include <variant>
-#include <vector>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else

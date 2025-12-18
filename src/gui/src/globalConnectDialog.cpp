@@ -13,10 +13,6 @@
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QWidget>
-#include <regex>
-#include <set>
-#include <stdexcept>
-#include <string>
 
 #include "odb/db.h"
 #include "utl/Logger.h"

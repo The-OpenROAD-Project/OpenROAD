@@ -11,12 +11,9 @@
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QWidget>
-#include <algorithm>
 #include <any>
-#include <memory>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #include "dbDescriptors.h"
 #include "gui/gui.h"

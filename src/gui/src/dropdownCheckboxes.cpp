@@ -9,7 +9,6 @@
 #include <QString>
 #include <QWidget>
 #include <string>
-#include <vector>
 
 namespace gui {
 

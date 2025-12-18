@@ -13,17 +13,13 @@
 #include <cstring>
 #include <fstream>
 #include <functional>
-#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <limits>
-#include <map>
 #include <memory>
 #include <mutex>
-#include <set>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

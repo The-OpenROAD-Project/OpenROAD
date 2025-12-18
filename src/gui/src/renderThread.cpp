@@ -10,13 +10,8 @@
 #include <QPolygon>
 #include <algorithm>
 #include <cmath>
-#include <exception>
-#include <iterator>
 #include <mutex>
-#include <set>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "boost/geometry/geometry.hpp"
 #include "gui/gui.h"

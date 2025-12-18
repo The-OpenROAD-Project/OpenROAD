@@ -7,7 +7,6 @@
 #include <QDialog>
 #include <QPalette>
 #include <QWidget>
-#include <vector>
 
 #include "gui/gui.h"
 

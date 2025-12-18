@@ -6,12 +6,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
-#include <iterator>
-#include <limits>
 #include <map>
 #include <memory>
-#include <optional>
 #include <set>
 #include <utility>
 #include <vector>

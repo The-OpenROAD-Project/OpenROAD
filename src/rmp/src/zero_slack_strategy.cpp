@@ -3,8 +3,6 @@
 
 #include "zero_slack_strategy.h"
 
-#include <vector>
-
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"

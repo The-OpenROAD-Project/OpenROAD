@@ -19,18 +19,10 @@
 #include <QVariant>
 #include <QWidget>
 #include <algorithm>
-#include <cstddef>
 #include <functional>
-#include <iterator>
 #include <limits>
-#include <map>
-#include <memory>
 #include <mutex>
-#include <set>
 #include <string>
-#include <utility>
-#include <variant>
-#include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"

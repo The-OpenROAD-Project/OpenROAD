@@ -1,6 +1,5 @@
 #include "Design.h"
 
-#include <iostream>
 #include <set>
 #include <vector>
 

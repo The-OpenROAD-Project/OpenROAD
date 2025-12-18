@@ -5,7 +5,6 @@
 
 #include <atomic>
 #include <mutex>
-#include <vector>
 
 #include "boost/geometry/geometry.hpp"
 #include "odb/db.h"

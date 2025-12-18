@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <any>
 #include <cstddef>
-#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <map>

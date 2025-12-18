@@ -17,11 +17,8 @@
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <memory>
-#include <set>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "gui_utils.h"

@@ -15,14 +15,9 @@
 #include <QString>
 #include <QWidget>
 #include <algorithm>
-#include <any>
 #include <cstdint>
-#include <map>
-#include <optional>
-#include <set>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"

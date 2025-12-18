@@ -30,15 +30,9 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <deque>
 #include <functional>
 #include <limits>
-#include <map>
-#include <memory>
-#include <set>
-#include <tuple>
 #include <utility>
-#include <vector>
 
 #include "boost/geometry/geometry.hpp"
 #include "dbDescriptors.h"

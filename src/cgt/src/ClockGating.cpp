@@ -13,11 +13,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
 #include "ClockGatingImpl.h"
 #include "base/abc/abc.h"

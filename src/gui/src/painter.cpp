@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <map>
 #include <string>
 
 #include "gui/gui.h"

@@ -12,7 +12,6 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <variant>
 
 namespace gui {
 

@@ -16,13 +16,9 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <optional>
-#include <set>
 #include <string>
-#include <tuple>
 #include <utility>
-#include <vector>
 
 #include "gui/gui.h"
 #include "gui_utils.h"

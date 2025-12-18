@@ -9,10 +9,8 @@
 #include <QTextCharFormat>
 #include <QTextDocument>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace gui {
 

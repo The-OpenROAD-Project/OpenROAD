@@ -10,14 +10,10 @@
 #include <QSize>
 #include <QWidget>
 #include <algorithm>
-#include <any>
 #include <exception>
-#include <limits>
 #include <memory>
 #include <optional>
-#include <set>
 #include <variant>
-#include <vector>
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QDesktopWidget>
 #endif

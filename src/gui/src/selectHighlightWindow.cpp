@@ -13,7 +13,6 @@
 #include <QVariant>
 #include <QWidget>
 #include <string>
-#include <utility>
 
 #include "gui/gui.h"
 #include "odb/geom.h"

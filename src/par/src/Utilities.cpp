@@ -11,13 +11,9 @@
 #include <cassert>
 #include <climits>
 #include <cmath>
-#include <functional>
 #include <iterator>
-#include <map>
-#include <memory>
 #include <numeric>
 #include <string>
-#include <vector>
 
 #include "ortools/linear_solver/linear_solver.h"
 

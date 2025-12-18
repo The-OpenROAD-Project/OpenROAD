@@ -30,13 +30,9 @@
 #include <QtAlgorithms>
 #include <algorithm>
 #include <cmath>
-#include <limits>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "colorGenerator.h"
 #include "dbDescriptors.h"

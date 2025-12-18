@@ -6,7 +6,6 @@
 #include <QFont>
 #include <any>
 #include <functional>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
