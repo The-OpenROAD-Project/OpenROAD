@@ -376,7 +376,7 @@ void DetailedGlobalSwap::init(DetailedMgr* mgr)
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
-  std::fill(edgeMask_.begin(), edgeMask_.end(), 0);
+  std::ranges::fill(edgeMask_,, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
