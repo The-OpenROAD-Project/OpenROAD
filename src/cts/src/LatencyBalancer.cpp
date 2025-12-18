@@ -16,6 +16,7 @@
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
+#include "Util.h"
 #include "cts/TritonCTS.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"

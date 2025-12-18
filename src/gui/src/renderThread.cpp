@@ -226,7 +226,14 @@ void RenderThread::draw(QImage& image,
   }
 
   drawChips(&painter, viewer_->getChip(), dbu_bounds, 0);
-
+  for (auto* renderer : Gui::get()->renderers()) {
+    if (restart_) {
+      break;
+    }
+    gui_painter.saveState();
+    renderer->drawObjects(gui_painter);
+    gui_painter.restoreState();
+  }
   // draw selected and over top level and fast painting events
   drawSelected(gui_painter, selected);
   // Always last so on top
@@ -820,7 +827,8 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
 
 void RenderThread::drawBlockages(QPainter* painter,
                                  odb::dbBlock* block,
-                                 const Rect& bounds)
+                                 const Rect& bounds,
+                                 const std::vector<odb::dbInst*>& insts)
 {
   if (!viewer_->options_->areBlockagesVisible()) {
     return;
@@ -843,6 +851,23 @@ void RenderThread::drawBlockages(QPainter* painter,
     }
     Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
+
+  for (odb::dbInst* inst : insts) {
+    if (restart_) {
+      break;
+    }
+    odb::dbBox* halo = inst->getHalo();
+    if (halo != nullptr) {
+      Rect instbox = inst->getBBox()->getBox();
+      Rect halobox = halo->getBox();
+      instbox.set_xlo(instbox.xMin() - halobox.xMin());
+      instbox.set_ylo(instbox.yMin() - halobox.yMin());
+      instbox.set_xhi(instbox.xMax() + halobox.xMax());
+      instbox.set_yhi(instbox.yMax() + halobox.yMax());
+      painter->drawRect(
+          instbox.xMin(), instbox.yMin(), instbox.dx(), instbox.dy());
+    }
   }
 }
 
@@ -1198,7 +1223,7 @@ void RenderThread::drawChip(QPainter* painter,
 
   // draw blockages
   utl::Timer inst_blockages;
-  drawBlockages(painter, block, bounds);
+  drawBlockages(painter, block, bounds, insts);
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block->getTech();
@@ -1255,17 +1280,6 @@ void RenderThread::drawChip(QPainter* painter,
   utl::Timer inst_cell_grid;
   drawGCellGrid(painter, bounds);
   debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
-
-  utl::Timer inst_save_restore;
-  for (auto* renderer : Gui::get()->renderers()) {
-    if (restart_) {
-      break;
-    }
-    gui_painter.saveState();
-    renderer->drawObjects(gui_painter);
-    gui_painter.restoreState();
-  }
-  debugPrint(logger_, GUI, "draw", 1, "renderers {}", inst_save_restore);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }

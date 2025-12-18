@@ -14,6 +14,7 @@
 #include "db/grObj/grNet.h"
 #include "db/obj/frBlockObject.h"
 #include "db/tech/frTechObject.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"

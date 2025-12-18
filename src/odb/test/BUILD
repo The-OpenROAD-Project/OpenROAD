@@ -283,6 +283,8 @@ filegroup(
         "data/example.3dbx",
         "data/example.bmap",
         "data/example1.bmap",
+        "data/example2.bmap",
+        "data/example3.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
