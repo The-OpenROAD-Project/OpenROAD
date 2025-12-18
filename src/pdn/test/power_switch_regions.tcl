@@ -24,6 +24,9 @@ add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPWR
 add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPB \
   -region TEMP_ANALOG
 
+global_connect -verbose
+global_connect -force -verbose
+
 define_power_switch_cell -name POWER_SWITCH -control SLEEP -acknowledge SLEEP_OUT \
   -power_switchable VPWR -power VDDG -ground VGND
 
