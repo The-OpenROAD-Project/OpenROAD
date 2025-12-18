@@ -372,8 +372,8 @@ bool GridGraph::findODBAccessPoints(
     AccessPointSet& selected_access_points) const
 {
   std::vector<odb::dbAccessPoint*> access_points;
-  int amount_per_x = design_->getDieRegion().hx() / x_size_;
-  int amount_per_y = design_->getDieRegion().hy() / y_size_;
+  const int amount_per_x = design_->getDieRegion().hx() / x_size_;
+  const int amount_per_y = design_->getDieRegion().hy() / y_size_;
   odb::dbNet* db_net = net->getDbNet();
   if (db_net->getBTermCount() != 0) {
     for (odb::dbBTerm* bterms : db_net->getBTerms()) {
@@ -434,9 +434,8 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
   selected_access_points.reserve(net->getNumPins());
   const auto& boundingBox = net->getBoundingBox();
   const PointT netCenter(boundingBox.cx(), boundingBox.cy());
-  if (findODBAccessPoints(net, selected_access_points)) {
-    // Skips calculations if DRT already created APs in ODB
-  } else {
+  // Skips calculations if DRT already created APs in ODB
+  if (!findODBAccessPoints(net, selected_access_points)) {
     for (const std::vector<GRPoint>& accessPoints : net->getPinAccessPoints()) {
       std::pair<int, int> bestAccessDist = {0, std::numeric_limits<int>::max()};
       int bestIndex = -1;
@@ -479,7 +478,7 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
       }
 
       const PointT selectedPoint = accessPoints[bestIndex];
-      const AccessPoint ap{selectedPoint, {}};
+      const AccessPoint ap{.point = selectedPoint, .layers = {}};
       auto it = selected_access_points.emplace(ap).first;
       IntervalT& fixedLayerInterval = it->layers;
       for (const auto& point : accessPoints) {
