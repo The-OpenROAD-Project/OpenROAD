@@ -174,6 +174,8 @@ class RouteBase
   std::vector<int64_t> inflatedAreaDelta() const;
   int getRevertCount() const;
 
+  void printGCellInflation() const;
+
  private:
   RouteBaseVars rbVars_;
   odb::dbDatabase* db_ = nullptr;
@@ -209,8 +211,6 @@ class RouteBase
 
   // update revert_count_
   void increaseCounter();
-
-  // routability funcs
-  void initGCells();
 };
+
 }  // namespace gpl
