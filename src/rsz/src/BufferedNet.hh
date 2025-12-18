@@ -280,7 +280,7 @@ class BufferedNet
   int layer_{null_layer};
   // only used by via type
   int ref_layer_{null_layer};
-  // only used by buffer, wire, and junc types
+  // only used by buffer, wire, via, and junc types
   BufferedNetPtr ref_;
   // only used by junc type
   BufferedNetPtr ref2_;
