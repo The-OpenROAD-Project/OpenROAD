@@ -75,11 +75,11 @@ struct PlaceOptions
   float density = 0.7;
 
   float routabilityCheckOverflow = 0.3;
+  float routabilitySnapshotOverflow = 0.6;
   float routabilityMaxDensity = 0.99;
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
-  int routabilityMaxInflationIter = 4;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
@@ -135,6 +135,8 @@ class Replace
                 bool initial,
                 odb::dbInst* inst,
                 int start_iter,
+                int start_rudy,
+                int rudy_stride,
                 bool generate_images,
                 const std::string& images_path);
 
@@ -171,6 +173,8 @@ class Replace
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
+  int gui_debug_rudy_start_ = 0;
+  int gui_debug_rudy_stride_ = 0;
   bool gui_debug_generate_images_ = false;
   std::string gui_debug_images_path_ = "REPORTS_DIR";
 };

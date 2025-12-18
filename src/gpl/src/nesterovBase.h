@@ -770,6 +770,7 @@ struct NesterovPlaceVars
   float initialPrevCoordiUpdateCoef = 100;         // z_ref_alpha
   const float referenceHpwl;                       // refDeltaHpwl
   const float routability_end_overflow;
+  const float routability_snapshot_overflow;
   const float keepResizeBelowOverflow;
 
   static constexpr int maxRecursionWlCoef = 10;
@@ -786,6 +787,8 @@ struct NesterovPlaceVars
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
   int debug_start_iter = 0;
+  int debug_rudy_start = 5000;
+  int debug_rudy_stride = 1;
   bool debug_generate_images = false;
   std::string debug_images_path = "REPORTS_DIR";
 };
