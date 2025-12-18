@@ -246,6 +246,9 @@ class RDLRouter
   // Debugging
   RDLGui* gui_;
   odb::dbNet* debug_net_{nullptr};
+
+  // Consts
+  static constexpr const char* kRouteProperty_ = "RDL_ROUTE";
 };
 
 }  // namespace pad
