@@ -235,7 +235,7 @@ bool DetailedGlobalSwap::getRange(Node* nd, odb::Rect& nodeBbox)
   // Get the median values.
   mid = t >> 1;
 
-  std::sort(xpts_.begin(), xpts_.end());
+  std::ranges::sort(xpts_,);
   std::sort(ypts_.begin(), ypts_.end());
 
   nodeBbox.set_xlo(xpts_[mid - 1]);
