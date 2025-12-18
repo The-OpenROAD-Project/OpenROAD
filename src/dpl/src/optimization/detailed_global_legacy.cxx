@@ -135,7 +135,7 @@ void DetailedGlobalSwap::globalSwap()
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
-  std::ranges::fill(edgeMask_,, 0);
+  std::ranges::fill(edgeMask_, 0);
 
   mgr_->resortSegments();
 
@@ -238,8 +238,8 @@ bool DetailedGlobalSwap::getRange(Node* nd, odb::Rect& nodeBbox)
   // Get the median values.
   mid = t >> 1;
 
-  std::ranges::sort(xpts_,);
-  std::ranges::sort(ypts_,);
+  std::ranges::sort(xpts_);
+  std::ranges::sort(ypts_);
 
   nodeBbox.set_xlo(xpts_[mid - 1]);
   nodeBbox.set_xhi(xpts_[mid]);
@@ -379,7 +379,7 @@ void DetailedGlobalSwap::init(DetailedMgr* mgr)
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
-  std::ranges::fill(edgeMask_,, 0);
+  std::ranges::fill(edgeMask_, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
