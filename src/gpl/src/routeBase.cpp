@@ -726,10 +726,9 @@ std::pair<bool, bool> RouteBase::routability(
 
       // deltaArea is equal to area * deltaRatio
       // both of original and density size will be changed
-      inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;
-
-      printGCellInflation();
+      inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;      
     }
+    printGCellInflation();
 
     float inflated_area_delta_microns
         = block->dbuAreaToMicrons(inflatedAreaDelta_[nb_index]);
