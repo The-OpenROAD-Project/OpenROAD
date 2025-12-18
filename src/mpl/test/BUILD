@@ -109,6 +109,7 @@ filegroup(
         "testcases/no_unfixed_macros.def",
         "testcases/orientation_improve1.def",
         "testcases/orientation_improve1.lef",
+        "testcases/macros_without_pins1.def",
     ],
 )
 
