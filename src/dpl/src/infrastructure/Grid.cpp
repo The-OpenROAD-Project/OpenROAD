@@ -833,12 +833,8 @@ void Grid::applyCellContribution(Node* node,
       }
       total_area_[pixel_idx] += area_per_pixel;
       total_pins_[pixel_idx] += pins_per_pixel;
-      if (total_area_[pixel_idx] < 0.0f) {
-        total_area_[pixel_idx] = 0.0f;
-      total_area_[pixel_idx] = std::max(total_area_[pixel_idx], 0.0f);
-      if (total_pins_[pixel_idx] < 0.0f) {
-        total_pins_[pixel_idx] = 0.0f;
-      total_pins_[pixel_idx] = std::max(total_pins_[pixel_idx], 0.0f);
+      total_area_[pixel_idx] = max(total_area_[pixel_idx], 0.0f);
+      total_pins_[pixel_idx] = max(total_pins_[pixel_idx], 0.0f);
     }
   }
 }
