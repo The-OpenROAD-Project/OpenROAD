@@ -66,7 +66,7 @@ proc write_verilog_for_eqy { test stage remove_cells } {
 # Argument Description
 # lib_dir:         specifies directory with Verilog library files to be read
 #                  alongside tested design
-# liberty_files:   specifies list of SDK liberty files to be read
+# liberty_files:   specifies list of PDK liberty files to be read
 # remove_cells:    specifies remove_cells mode for write_verilog_for_eqy call
 
 sta::define_cmd_args "run_equivalence_test" {
