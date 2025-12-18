@@ -1185,6 +1185,13 @@ void RepairDesign::repairNet(Net* net,
     // For tristate nets all we can do is resize the driver.
     if (!resizer_->isTristateDriver(drvr_pin)) {
       BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner);
+
+      if (!bnet) {
+        // Create a Steiner bnet in case we haven't selected a source of
+        // parasitics
+        bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
+      }
+
       if (bnet) {
         int wire_length = bnet->maxLoadWireLength();
         repair_wire
