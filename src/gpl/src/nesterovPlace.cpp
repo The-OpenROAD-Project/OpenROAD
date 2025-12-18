@@ -282,11 +282,14 @@ void NesterovPlace::updateIterGraphics(
   // For JPEG Saving
   updateDb();
 
-  // Calculate RUDY every iteration
-  // if (npVars_.routability_driven_mode && npVars_.debug) {
-  //   rb_->calculateRudyTiles();
-  //   rb_->updateRudyAverage(/*verbose=*/false);
-  // }
+  // Calculate RUDY every stride iteration, depending on debug_rudy_start
+  if (npVars_.routability_driven_mode && npVars_.debug
+      && npVars_.debug_rudy_start > 0 && iter >= npVars_.debug_rudy_start
+      && npVars_.debug_rudy_stride > 0
+      && (iter - npVars_.debug_rudy_start) % npVars_.debug_rudy_stride == 0) {
+    rb_->calculateRudyTiles();
+    rb_->updateRudyAverage(/*verbose=*/false);
+  }
 
   graphics_->addIter(iter, average_overflow_unscaled_);
 
@@ -542,13 +545,6 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->checkConsistency();
       }
 
-      // Recalculate RUDY after non-virtual TD
-      // TODO not sure to make this default behavior
-      // if (npVars_.routability_driven_mode) {
-      //   rb_->calculateRudyTiles();
-      //   rb_->updateRudyAverage();
-      // }
-
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
       if (average_overflow_unscaled_ <= 0.25) {
@@ -608,7 +604,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
     // overflow.
     // // revert back to the original rb solutions
     // // one more opportunity
-    // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
+    // if (!isDivergeTriedRevert && rb_->getRevertCount() >= 1) {
     //   // get back to the working rc size
     //   rb_->revertGCellSizeToMinRc();
     //   curA = route_snapshotA;

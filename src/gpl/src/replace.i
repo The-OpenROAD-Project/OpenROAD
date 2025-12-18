@@ -177,6 +177,8 @@ set_debug_cmd(int pause_iterations,
               bool initial,
               const char* inst_name,
               int start_iter,
+              int start_rudy,
+              int rudy_stride,
               bool generate_images,
               const char* images_path)
 {
@@ -192,8 +194,8 @@ set_debug_cmd(int pause_iterations,
                                   : "REPORTS_DIR";
 
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst, start_iter, generate_images,
-                    resolved_path);
+                    initial, inst, start_iter, start_rudy, rudy_stride,
+                    generate_images, resolved_path);
 }
 
 %} // inline

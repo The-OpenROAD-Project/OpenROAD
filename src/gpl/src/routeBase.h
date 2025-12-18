@@ -172,7 +172,7 @@ class RouteBase
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
   std::vector<int64_t> inflatedAreaDelta() const;
-  int numCall() const;
+  int getRevertCount() const;
 
  private:
   RouteBaseVars rbVars_;
@@ -207,7 +207,7 @@ class RouteBase
   void resetRoutabilityResources();
   void revertToMinCongestion();
 
-  // update numCall_
+  // update revert_count_
   void increaseCounter();
 
   // routability funcs

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <string>
@@ -327,7 +328,7 @@ std::vector<int64_t> RouteBase::inflatedAreaDelta() const
   return inflatedAreaDelta_;
 }
 
-int RouteBase::numCall() const
+int RouteBase::getRevertCount() const
 {
   return revert_count_;
 }
@@ -964,8 +965,7 @@ void RouteBase::updateRudyAverage(bool verbose)
   }
 
   int arraySize = edge_cong_array.size();
-  // std::ranges::sort(edge_cong_array, std::less<double>());
-  std::sort(edge_cong_array.rbegin(), edge_cong_array.rend());
+  std::ranges::sort(edge_cong_array, std::greater<double>());
 
   double avg005RC = 0;
   double avg010RC = 0;
