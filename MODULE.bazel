@@ -11,13 +11,8 @@ bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
-bazel_dep(name = "rules_scala")
-git_override(
-    module_name = "rules_scala",
-    commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
-    remote = "https://github.com/bazelbuild/rules_scala",
-)
-
+bazel_dep(name = "rules_java", version = "8.14.0")
+bazel_dep(name = "rules_scala", version = "7.1.5")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
 bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
@@ -163,26 +158,15 @@ orfs.default(
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
-SCALA_VERSION = "2.13.16"
-
-scala_config = use_extension(
-    "@rules_scala//scala/extensions:config.bzl",
-    "scala_config",
-)
-scala_config.settings(
-    scala_version = SCALA_VERSION,
-)
+# Configure BCR rules_scala
+scala_config = use_extension("@rules_scala//scala/extensions:config.bzl", "scala_config")
+scala_config.settings(scala_version = "2.13.17")
 use_repo(scala_config, "rules_scala_config")
 
-scala_deps = use_extension(
-    "@rules_scala//scala/extensions:deps.bzl",
-    "scala_deps",
-)
-scala_deps.settings(
-    fetch_sources = True,
-)
-scala_deps.scala()
-scala_deps.scalatest()
+scala_deps = use_extension("@rules_scala//scala/extensions:deps.bzl", "scala_deps")
+scala_deps.scala()  # Provides scala-compiler, scala-library, scala-reflect
+scala_deps.scalatest()  # Provides scalatest framework
+use_repo(scala_deps, "rules_scala_toolchains")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
