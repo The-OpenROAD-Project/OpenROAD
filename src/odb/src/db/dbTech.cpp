@@ -78,7 +78,7 @@ bool _dbTech::operator==(const _dbTech& rhs) const
     return false;
   }
 
-  if (_version != rhs._version) {
+  if (version_ != rhs.version_) {
     return false;
   }
 
@@ -212,7 +212,7 @@ _dbTech::_dbTech(_dbDatabase* db)
   flags_.has_use_min_spacing_pin = dbOnOffType::OFF;
   flags_.use_min_spacing_pin = dbOnOffType::OFF;
   flags_.spare_bits = 0;
-  _version = 5.4;
+  version_ = 5.4;
 
   layer_tbl_ = new dbTable<_dbTechLayer>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerObj);
@@ -393,14 +393,14 @@ std::string dbTech::getName()
 
 double _dbTech::getLefVersion() const
 {
-  return _version;
+  return version_;
 }
 
 std::string _dbTech::getLefVersionStr() const
 {
-  int major_version = (int) floor(_version);
-  int minor_version = ((int) floor(_version * 10.0)) - (major_version * 10);
-  int opt_minor_version = ((int) floor(_version * 1000.0))
+  int major_version = (int) floor(version_);
+  int minor_version = ((int) floor(version_ * 10.0)) - (major_version * 10);
+  int opt_minor_version = ((int) floor(version_ * 1000.0))
                           - (major_version * 1000) - (minor_version * 100);
 
   if (opt_minor_version > 0) {
@@ -416,7 +416,7 @@ std::string _dbTech::getLefVersionStr() const
 //
 void _dbTech::setLefVersion(double inver)
 {
-  _version = inver;
+  version_ = inver;
 }
 
 dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
