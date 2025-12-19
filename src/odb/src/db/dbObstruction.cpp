@@ -42,7 +42,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   flags_.has_min_spacing = 0;
   flags_.has_effective_width = 0;
   flags_.spare_bits = 0;
-  flags_._is_system_reserved = 0;
+  flags_.is_system_reserved = 0;
   min_spacing_ = 0;
   effective_width_ = 0;
 }
@@ -79,7 +79,7 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
 
   if (!db->isSchema(db_schema_die_area_is_polygon)) {
     // assume false for older databases
-    obs.flags_._is_system_reserved = false;
+    obs.flags_.is_system_reserved = false;
   }
 
   return stream;
@@ -341,13 +341,13 @@ dbBlock* dbObstruction::getBlock()
 bool dbObstruction::isSystemReserved()
 {
   _dbObstruction* obs = (_dbObstruction*) this;
-  return obs->flags_._is_system_reserved;
+  return obs->flags_.is_system_reserved;
 }
 
 void dbObstruction::setIsSystemReserved(bool is_system_reserved)
 {
   _dbObstruction* obs = (_dbObstruction*) this;
-  obs->flags_._is_system_reserved = is_system_reserved;
+  obs->flags_.is_system_reserved = is_system_reserved;
 }
 
 dbObstruction* dbObstruction::create(dbBlock* block_,

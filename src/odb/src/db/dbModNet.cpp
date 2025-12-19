@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbModNet.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
@@ -136,8 +138,15 @@ void _dbModNet::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
+}
+
+_dbModNet::~_dbModNet()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

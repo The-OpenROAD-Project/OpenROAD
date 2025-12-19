@@ -17,5 +17,6 @@
   <file alias="cancel.png">google_icons/round_cancel_black_36dp.png</file>
   <file alias="expand_more.png">google_icons/round_unfold_more_black_36dp.png</file>
   <file alias="expand_less.png">google_icons/round_unfold_less_black_36dp.png</file>
+  <file alias="resume.png">google_icons/resume.png</file>
 </qresource>
 </RCC>

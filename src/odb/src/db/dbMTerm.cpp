@@ -486,22 +486,22 @@ void _dbMTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 
   // These fields have unusal pointer ownship semantics relative to
   // the rest of odb (not a table but a vector of owning pointers).
   // Should be just by value.
-  info.children_["_par_met_area"].add(par_met_area_);
-  info.children_["_par_met_area"].size
+  info.children["_par_met_area"].add(par_met_area_);
+  info.children["_par_met_area"].size
       += par_met_area_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_par_met_sidearea"].add(par_met_sidearea_);
-  info.children_["_par_met_sidearea"].size
+  info.children["_par_met_sidearea"].add(par_met_sidearea_);
+  info.children["_par_met_sidearea"].size
       += par_met_sidearea_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_par_cut_area"].add(par_cut_area_);
-  info.children_["_par_cut_area"].size
+  info.children["_par_cut_area"].add(par_cut_area_);
+  info.children["_par_cut_area"].size
       += par_cut_area_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_diffarea"].add(diffarea_);
-  info.children_["_diffarea"].size
+  info.children["_diffarea"].add(diffarea_);
+  info.children["_diffarea"].size
       += diffarea_.size() * sizeof(_dbTechAntennaAreaElement);
 }
 

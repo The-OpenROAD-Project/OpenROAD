@@ -349,14 +349,14 @@ void _dbTrackGrid::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["x_origin"].add(x_origin_);
-  info.children_["x_count"].add(x_count_);
-  info.children_["x_step"].add(x_step_);
-  info.children_["y_origin"].add(y_origin_);
-  info.children_["y_count"].add(y_count_);
-  info.children_["y_step"].add(y_step_);
-  info.children_["first_mask"].add(first_mask_);
-  info.children_["samemask"].add(samemask_);
+  info.children["x_origin"].add(x_origin_);
+  info.children["x_count"].add(x_count_);
+  info.children["x_step"].add(x_step_);
+  info.children["y_origin"].add(y_origin_);
+  info.children["y_count"].add(y_count_);
+  info.children["y_step"].add(y_step_);
+  info.children["first_mask"].add(first_mask_);
+  info.children["samemask"].add(samemask_);
 }
 
 void _dbTrackGrid::getAverageTrackPattern(bool is_x,

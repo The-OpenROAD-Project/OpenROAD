@@ -292,7 +292,7 @@ void _dbRow::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 }
 
 }  // namespace odb

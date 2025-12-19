@@ -2503,8 +2503,8 @@ void _dbNet::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["groups"].add(groups_);
+  info.children["name"].add(name_);
+  info.children["groups"].add(groups_);
 }
 
 bool dbNet::isDeeperThan(const dbNet* net) const

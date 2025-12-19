@@ -226,7 +226,14 @@ void RenderThread::draw(QImage& image,
   }
 
   drawChips(&painter, viewer_->getChip(), dbu_bounds, 0);
-
+  for (auto* renderer : Gui::get()->renderers()) {
+    if (restart_) {
+      break;
+    }
+    gui_painter.saveState();
+    renderer->drawObjects(gui_painter);
+    gui_painter.restoreState();
+  }
   // draw selected and over top level and fast painting events
   drawSelected(gui_painter, selected);
   // Always last so on top
@@ -1273,17 +1280,6 @@ void RenderThread::drawChip(QPainter* painter,
   utl::Timer inst_cell_grid;
   drawGCellGrid(painter, bounds);
   debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
-
-  utl::Timer inst_save_restore;
-  for (auto* renderer : Gui::get()->renderers()) {
-    if (restart_) {
-      break;
-    }
-    gui_painter.saveState();
-    renderer->drawObjects(gui_painter);
-    gui_painter.restoreState();
-  }
-  debugPrint(logger_, GUI, "draw", 1, "renderers {}", inst_save_restore);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }

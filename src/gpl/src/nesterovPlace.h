@@ -163,13 +163,15 @@ class NesterovPlace
 
   int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
-  float routability_save_snapshot_ = 0.6;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
 
   int recursionCntWlCoef_ = 0;
   int recursionCntInitSLPCoef_ = 0;
+
+  int placement_gif_key_ = -1;
+  int routability_gif_key_ = -1;
 
   void init();
   void reset();

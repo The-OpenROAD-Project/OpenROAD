@@ -44,7 +44,7 @@ class _dbTechVia : public _dbObject
   char* name_;
   char* pattern_;
   dbId<_dbBox> bbox_;  // Caching the bbox speeds up defin imports.
-  dbId<_dbBox> _boxes;
+  dbId<_dbBox> boxes_;
   dbId<_dbTechLayer> top_;     // Caching the layer speeds up defin imports.
   dbId<_dbTechLayer> bottom_;  // Caching the layer speeds up defin imports.
   dbId<_dbTechNonDefaultRule> non_default_rule_;

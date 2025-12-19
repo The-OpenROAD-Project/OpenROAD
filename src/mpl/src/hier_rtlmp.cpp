@@ -1268,7 +1268,7 @@ void HierRTLMP::setPlacementBlockages()
 }
 
 // Merge nets to reduce runtime
-void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
+void HierRTLMP::mergeNets(BundledNetList& nets)
 {
   std::vector<int> net_class(nets.size(), -1);
   for (int i = 0; i < nets.size(); i++) {
@@ -1287,18 +1287,14 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
     }
   }
 
-  std::vector<BundledNet> merged_nets;
+  BundledNetList merged_nets;
   for (int i = 0; i < net_class.size(); i++) {
     if (net_class[i] == -1) {
       merged_nets.push_back(nets[i]);
     }
   }
-  nets.clear();
-  nets = std::move(merged_nets);
 
-  if (graphics_) {
-    graphics_->setBundledNets(nets);
-  }
+  nets = std::move(merged_nets);
 }
 
 void HierRTLMP::considerFixedMacro(const odb::Rect& outline,
@@ -1476,6 +1472,10 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
 
   BundledNetList nets = buildBundledNets(parent, soft_macro_id_map);
   mergeNets(nets);
+
+  if (graphics_) {
+    graphics_->setNets(nets);
+  }
 
   std::string file_name_prefix
       = report_directory_ + "/"
@@ -2085,7 +2085,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   BundledNetList nets = buildBundledNets(macro_clusters, cluster_to_macro);
 
   if (graphics_) {
-    graphics_->setBundledNets(nets);
+    graphics_->setNets(nets);
   }
 
   // Use exchange more often when there are more instances of a common
@@ -2380,7 +2380,7 @@ BundledNetList HierRTLMP::buildBundledNets(
     const UniqueClusterVector& clusters,
     const ClusterToMacroMap& cluster_to_macro) const
 {
-  std::vector<BundledNet> nets;
+  BundledNetList nets;
 
   for (const auto& cluster : clusters) {
     const int source_macro_id = cluster_to_macro.at(cluster->getId());
@@ -2821,7 +2821,7 @@ void HierRTLMP::printPlacementResult(Cluster* parent,
 
 void HierRTLMP::writeNetFile(const std::string& file_name_prefix,
                              std::vector<SoftMacro>& macros,
-                             std::vector<BundledNet>& nets)
+                             BundledNetList& nets)
 {
   std::ofstream file(file_name_prefix + ".net.txt");
   for (auto& net : nets) {

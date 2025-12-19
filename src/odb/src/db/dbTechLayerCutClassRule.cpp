@@ -5,6 +5,7 @@
 #include "dbTechLayerCutClassRule.h"
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #include "dbDatabase.h"
@@ -97,8 +98,15 @@ void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
+}
+
+_dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

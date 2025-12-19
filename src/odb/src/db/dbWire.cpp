@@ -1210,8 +1210,8 @@ void _dbWire::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["data"].add(data_);
-  info.children_["opcodes"].add(opcodes_);
+  info.children["data"].add(data_);
+  info.children["opcodes"].add(opcodes_);
 }
 
 }  // namespace odb

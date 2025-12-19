@@ -172,16 +172,16 @@ void _dbGCellGrid::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["x_origin"].add(x_origin_);
-  info.children_["x_count_"].add(x_count_);
-  info.children_["x_step_"].add(x_step_);
-  info.children_["y_origin_"].add(y_origin_);
-  info.children_["y_count_"].add(y_count_);
-  info.children_["y_step_"].add(y_step_);
-  info.children_["x_grid_"].add(x_grid_);
-  info.children_["y_grid_"].add(y_grid_);
+  info.children["x_origin"].add(x_origin_);
+  info.children["x_count_"].add(x_count_);
+  info.children["x_step_"].add(x_step_);
+  info.children["y_origin_"].add(y_origin_);
+  info.children["y_count_"].add(y_count_);
+  info.children["y_step_"].add(y_step_);
+  info.children["x_grid_"].add(x_grid_);
+  info.children["y_grid_"].add(y_grid_);
 
-  MemInfo& congestion_info = info.children_["congestion"];
+  MemInfo& congestion_info = info.children["congestion"];
   for (auto& [layer, data] : congestion_map_) {
     congestion_info.add(data);
   }

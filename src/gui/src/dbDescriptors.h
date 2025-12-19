@@ -538,6 +538,98 @@ class DbModuleDescriptor : public BaseDbDescriptor<odb::dbModule>
                   const std::function<void(const Selected&)>& func) const;
 };
 
+class DbModBTermDescriptor : public BaseDbDescriptor<odb::dbModBTerm>
+{
+ public:
+  DbModBTermDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbModBTerm* modbterm) const override;
+
+ private:
+  void getModBTerms(odb::dbModule* module,
+                    const std::function<void(const Selected&)>& func) const;
+};
+
+class DbModITermDescriptor : public BaseDbDescriptor<odb::dbModITerm>
+{
+ public:
+  DbModITermDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbModITerm* moditerm) const override;
+
+ private:
+  void getModITerms(odb::dbModule* module,
+                    const std::function<void(const Selected&)>& func) const;
+};
+
+class DbModInstDescriptor : public BaseDbDescriptor<odb::dbModInst>
+{
+ public:
+  DbModInstDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbModInst* modinst) const override;
+
+ private:
+  void getModInsts(odb::dbModule* module,
+                   const std::function<void(const Selected&)>& func) const;
+};
+
+class DbModNetDescriptor : public BaseDbDescriptor<odb::dbModNet>
+{
+ public:
+  DbModNetDescriptor(odb::dbDatabase* db);
+
+  std::string getName(const std::any& object) const override;
+  std::string getShortName(const std::any& object) const override;
+  std::string getTypeName() const override;
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override;
+
+  void highlight(const std::any& object, Painter& painter) const override;
+
+  void visitAllObjects(
+      const std::function<void(const Selected&)>& func) const override;
+
+ protected:
+  Properties getDBProperties(odb::dbModNet* modnet) const override;
+
+ private:
+  void getModNets(odb::dbModule* module,
+                  const std::function<void(const Selected&)>& func) const;
+};
+
 class DbTechViaDescriptor : public BaseDbDescriptor<odb::dbTechVia>
 {
  public:

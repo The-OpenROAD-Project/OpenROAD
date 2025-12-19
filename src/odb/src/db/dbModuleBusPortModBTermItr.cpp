@@ -60,9 +60,12 @@ uint dbModuleBusPortModBTermItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbModuleBusPortModBTermItr::end(dbObject* /* unused: parent */) const
+uint dbModuleBusPortModBTermItr::end(dbObject* parent) const
 {
-  return 0;
+  // User Code Begin end
+  _dbBusPort* _busport = (_dbBusPort*) parent;
+  return next(_busport->last_);
+  // User Code End end
 }
 
 uint dbModuleBusPortModBTermItr::next(uint id, ...) const

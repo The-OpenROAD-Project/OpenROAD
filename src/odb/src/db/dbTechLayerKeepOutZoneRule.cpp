@@ -131,8 +131,8 @@ void _dbTechLayerKeepOutZoneRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["first_cut_class"].add(first_cut_class_);
-  info.children_["second_cut_class"].add(second_cut_class_);
+  info.children["first_cut_class"].add(first_cut_class_);
+  info.children["second_cut_class"].add(second_cut_class_);
   // User Code End collectMemInfo
 }
 

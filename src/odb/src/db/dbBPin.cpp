@@ -284,7 +284,7 @@ void _dbBPin::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["ap"].add(aps_);
+  info.children["ap"].add(aps_);
 }
 
 void _dbBPin::removeBox(_dbBox* box)
