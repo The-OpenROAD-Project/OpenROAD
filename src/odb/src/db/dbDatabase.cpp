@@ -396,26 +396,25 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  chip_tbl_->collectMemInfo(info.children_["chip_tbl_"]);
+  chip_tbl_->collectMemInfo(info.children["chip_tbl_"]);
 
-  _prop_tbl->collectMemInfo(info.children_["_prop_tbl"]);
+  _prop_tbl->collectMemInfo(info.children["_prop_tbl"]);
 
-  chip_inst_tbl_->collectMemInfo(info.children_["chip_inst_tbl_"]);
+  chip_inst_tbl_->collectMemInfo(info.children["chip_inst_tbl_"]);
 
-  chip_region_inst_tbl_->collectMemInfo(
-      info.children_["chip_region_inst_tbl_"]);
+  chip_region_inst_tbl_->collectMemInfo(info.children["chip_region_inst_tbl_"]);
 
-  chip_conn_tbl_->collectMemInfo(info.children_["chip_conn_tbl_"]);
+  chip_conn_tbl_->collectMemInfo(info.children["chip_conn_tbl_"]);
 
-  chip_bump_inst_tbl_->collectMemInfo(info.children_["chip_bump_inst_tbl_"]);
+  chip_bump_inst_tbl_->collectMemInfo(info.children["chip_bump_inst_tbl_"]);
 
-  chip_net_tbl_->collectMemInfo(info.children_["chip_net_tbl_"]);
+  chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
 
   // User Code Begin collectMemInfo
-  tech_tbl_->collectMemInfo(info.children_["tech"]);
-  lib_tbl_->collectMemInfo(info.children_["lib"]);
-  gds_lib_tbl_->collectMemInfo(info.children_["gds_lib"]);
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  tech_tbl_->collectMemInfo(info.children["tech"]);
+  lib_tbl_->collectMemInfo(info.children["lib"]);
+  gds_lib_tbl_->collectMemInfo(info.children["gds_lib"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
   // User Code End collectMemInfo
 }
 
@@ -923,7 +922,7 @@ void dbDatabase::report()
                        info.cnt,
                        info.size,
                        avg_size);
-        for (auto [name, child] : info.children_) {
+        for (auto [name, child] : info.children) {
           total_size += print(child, std::string(depth, ' ') + name, depth + 1);
         }
         return total_size;

@@ -70,7 +70,7 @@ void _dbScanPartition::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  scan_lists_->collectMemInfo(info.children_["scan_lists_"]);
+  scan_lists_->collectMemInfo(info.children["scan_lists_"]);
 }
 
 _dbScanPartition::~_dbScanPartition()

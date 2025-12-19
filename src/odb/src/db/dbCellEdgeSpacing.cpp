@@ -88,8 +88,8 @@ void _dbCellEdgeSpacing::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["first_edge_type"].add(first_edge_type_);
-  info.children_["second_edge_type"].add(second_edge_type_);
+  info.children["first_edge_type"].add(first_edge_type_);
+  info.children["second_edge_type"].add(second_edge_type_);
   // User Code End collectMemInfo
 }
 

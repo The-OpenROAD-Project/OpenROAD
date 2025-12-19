@@ -540,8 +540,8 @@ void _dbTechVia::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["pattern"].add(pattern_);
+  info.children["name"].add(name_);
+  info.children["pattern"].add(pattern_);
 }
 
 }  // namespace odb

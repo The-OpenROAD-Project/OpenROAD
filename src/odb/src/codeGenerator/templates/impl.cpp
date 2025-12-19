@@ -146,7 +146,7 @@ namespace odb {
 
     {% for field in klass.fields %}
       {% if field.table %} 
-        {{field.name}}->collectMemInfo(info.children_["{{field.name}}"]);
+        {{field.name}}->collectMemInfo(info.children["{{field.name}}"]);
       {% endif %}
     {% endfor %}
 

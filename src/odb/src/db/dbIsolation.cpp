@@ -95,13 +95,13 @@ void _dbIsolation::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["applies_to"].add(applies_to_);
-  info.children_["clamp_value"].add(clamp_value_);
-  info.children_["isolation_signal"].add(isolation_signal_);
-  info.children_["isolation_sense"].add(isolation_sense_);
-  info.children_["location"].add(location_);
-  info.children_["isolation_cells"].add(isolation_cells_);
+  info.children["name"].add(name_);
+  info.children["applies_to"].add(applies_to_);
+  info.children["clamp_value"].add(clamp_value_);
+  info.children["isolation_signal"].add(isolation_signal_);
+  info.children["isolation_sense"].add(isolation_sense_);
+  info.children["location"].add(location_);
+  info.children["isolation_cells"].add(isolation_cells_);
   // User Code End collectMemInfo
 }
 

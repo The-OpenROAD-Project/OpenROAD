@@ -163,7 +163,7 @@ void _dbProperty::collectMemInfo(MemInfo& info)
 
   // User Code Begin collectMemInfo
   if (flags_.type == kDbStringProp) {
-    info.children_["string"].add(std::get<std::string>(value_));
+    info.children["string"].add(std::get<std::string>(value_));
   }
   // User Code End collectMemInfo
 }

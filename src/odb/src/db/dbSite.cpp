@@ -293,8 +293,8 @@ void _dbSite::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["row_pattern"].add(row_pattern_);
+  info.children["name"].add(name_);
+  info.children["row_pattern"].add(row_pattern_);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)

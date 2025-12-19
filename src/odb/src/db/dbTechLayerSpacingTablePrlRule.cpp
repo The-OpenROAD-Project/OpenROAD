@@ -89,14 +89,14 @@ void _dbTechLayerSpacingTablePrlRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["length_tbl"].add(length_tbl_);
-  info.children_["width_tbl"].add(width_tbl_);
-  MemInfo& spacing_info = info.children_["spacing_tbl"];
+  info.children["length_tbl"].add(length_tbl_);
+  info.children["width_tbl"].add(width_tbl_);
+  MemInfo& spacing_info = info.children["spacing_tbl"];
   for (const auto& s : spacing_tbl_) {
     spacing_info.add(s);
   }
-  info.children_["influence_tbl"].add(influence_tbl_);
-  info.children_["within_tbl"].add(_within_tbl_);
+  info.children["influence_tbl"].add(influence_tbl_);
+  info.children["within_tbl"].add(_within_tbl_);
   // User Code End collectMemInfo
 }
 

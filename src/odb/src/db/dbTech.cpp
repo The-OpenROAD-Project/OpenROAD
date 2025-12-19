@@ -852,27 +852,27 @@ void _dbTech::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["samenet_rules"].add(samenet_rules_);
-  info.children_["samenet_matrix"].add(samenet_matrix_);
-  info.children_["via_hash"].add(via_hash_);
+  info.children["name"].add(name_);
+  info.children["samenet_rules"].add(samenet_rules_);
+  info.children["samenet_matrix"].add(samenet_matrix_);
+  info.children["via_hash"].add(via_hash_);
 
-  layer_tbl_->collectMemInfo(info.children_["layer"]);
-  via_tbl_->collectMemInfo(info.children_["via"]);
-  non_default_rule_tbl_->collectMemInfo(info.children_["non_default_rule"]);
-  layer_rule_tbl_->collectMemInfo(info.children_["layer_rule"]);
-  box_tbl_->collectMemInfo(info.children_["box"]);
-  samenet_rule_tbl_->collectMemInfo(info.children_["samenet_rule"]);
-  antenna_rule_tbl_->collectMemInfo(info.children_["antenna_rule"]);
-  via_rule_tbl_->collectMemInfo(info.children_["via_rule"]);
-  via_layer_rule_tbl_->collectMemInfo(info.children_["via_layer_rule"]);
-  via_generate_rule_tbl_->collectMemInfo(info.children_["via_generate_rule"]);
-  prop_tbl_->collectMemInfo(info.children_["prop"]);
+  layer_tbl_->collectMemInfo(info.children["layer"]);
+  via_tbl_->collectMemInfo(info.children["via"]);
+  non_default_rule_tbl_->collectMemInfo(info.children["non_default_rule"]);
+  layer_rule_tbl_->collectMemInfo(info.children["layer_rule"]);
+  box_tbl_->collectMemInfo(info.children["box"]);
+  samenet_rule_tbl_->collectMemInfo(info.children["samenet_rule"]);
+  antenna_rule_tbl_->collectMemInfo(info.children["antenna_rule"]);
+  via_rule_tbl_->collectMemInfo(info.children["via_rule"]);
+  via_layer_rule_tbl_->collectMemInfo(info.children["via_layer_rule"]);
+  via_generate_rule_tbl_->collectMemInfo(info.children["via_generate_rule"]);
+  prop_tbl_->collectMemInfo(info.children["prop"]);
   metal_width_via_map_tbl_->collectMemInfo(
-      info.children_["metal_width_via_map"]);
-  cell_edge_spacing_tbl_->collectMemInfo(info.children_["cell_edge_spacing"]);
+      info.children["metal_width_via_map"]);
+  cell_edge_spacing_tbl_->collectMemInfo(info.children["cell_edge_spacing"]);
 
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
 }
 
 }  // namespace odb

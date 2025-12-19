@@ -142,8 +142,8 @@ void _dbTechLayerCornerSpacingRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["width_tbl"].add(_width_tbl);
-  info.children_["spacing_tbl"].add(_spacing_tbl);
+  info.children["width_tbl"].add(_width_tbl);
+  info.children["spacing_tbl"].add(_spacing_tbl);
   // User Code End collectMemInfo
 }
 

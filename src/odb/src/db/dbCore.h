@@ -114,7 +114,7 @@ struct MemInfo
   {
     cnt += 1;
     size += map.size() * (sizeof(std::string) + sizeof(T));
-    MemInfo& key_info = children_["key"];
+    MemInfo& key_info = children["key"];
     for (const auto& [key, value] : map) {
       key_info.cnt += 1;
       key_info.size += key.size();
@@ -140,7 +140,7 @@ struct MemInfo
   {
     cnt += 1;
     size += map.size() * (sizeof(std::string) + sizeof(T));
-    MemInfo& key_info = children_["key"];
+    MemInfo& key_info = children["key"];
     for (const auto& [key, value] : map) {
       key_info.cnt += 1;
       key_info.size += key.size();
@@ -154,7 +154,7 @@ struct MemInfo
     size += set.size() * sizeof(T);
   }
 
-  std::map<const char*, MemInfo> children_;
+  std::map<const char*, MemInfo> children;
   int cnt{0};
   uint64_t size{0};
 };
@@ -227,8 +227,8 @@ class dbObjectTable
 class _dbFreeObject : public _dbObject
 {
  public:
-  uint _next;
-  uint _prev;
+  uint next_;
+  uint prev_;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -237,12 +237,12 @@ class _dbFreeObject : public _dbObject
 class dbObjectPage
 {
  public:
-  bool valid_page() const { return _alloccnt != 0; }
+  bool valid_page() const { return alloc_cnt_ != 0; }
 
   // NON-PERSISTANT DATA
-  dbObjectTable* _table;
-  uint _page_addr;
-  uint _alloccnt;
+  dbObjectTable* table_;
+  uint page_addr_;
+  uint alloc_cnt_;
 };
 
 ///////////////////////////////////////////////////////////////
@@ -277,31 +277,31 @@ inline uint _dbObject::getOID() const
 {
   dbObjectPage* page = getObjectPage();
   uint offset = (oid_ & DB_OFFSET_MASK);
-  return page->_page_addr | offset / page->_table->obj_size_;
+  return page->page_addr_ | offset / page->table_->obj_size_;
 }
 
 inline dbObjectTable* _dbObject::getTable() const
 {
   dbObjectPage* page = getObjectPage();
-  return page->_table;
+  return page->table_;
 }
 
 inline _dbDatabase* _dbObject::getDatabase() const
 {
   dbObjectPage* page = getObjectPage();
-  return page->_table->db_;
+  return page->table_->db_;
 }
 
 inline dbObject* _dbObject::getOwner() const
 {
   dbObjectPage* page = getObjectPage();
-  return page->_table->owner_;
+  return page->table_->owner_;
 }
 
 inline dbObjectType _dbObject::getType() const
 {
   dbObjectPage* page = getObjectPage();
-  return page->_table->type_;
+  return page->table_->type_;
 }
 
 inline dbObjectPage* _dbObject::getObjectPage() const
