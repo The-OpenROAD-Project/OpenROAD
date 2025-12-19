@@ -398,7 +398,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   chip_tbl_->collectMemInfo(info.children["chip_tbl_"]);
 
-  prop_tbl_->collectMemInfo(info.children["_prop_tbl"]);
+  prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
 
   chip_inst_tbl_->collectMemInfo(info.children["chip_inst_tbl_"]);
 

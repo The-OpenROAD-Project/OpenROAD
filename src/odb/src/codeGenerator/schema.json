@@ -455,7 +455,7 @@
       "parent":"dbDatabase",
       "child":"dbProperty",
       "type":"1_n",
-      "tbl_name":"_prop_tbl",
+      "tbl_name":"prop_tbl_",
       "flags": ["no-serial"]
     },
     {
