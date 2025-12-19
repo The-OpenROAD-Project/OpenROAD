@@ -6,6 +6,7 @@
 #include <array>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -738,7 +739,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
-  std::set<LibertyCell*> buffer_fast_sizes_;
+  std::unordered_set<LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;

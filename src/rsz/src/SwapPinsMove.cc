@@ -11,12 +11,14 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #include "BaseMove.hh"
 #include "odb/db.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -85,7 +87,7 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
     // We get the driver port and the cell for that port.
     LibertyPort* input_port = network_->libertyPort(in_pin);
     LibertyPort* swap_port = input_port;
-    sta::LibertyPortSet ports;
+    LibertyPortVec ports;
 
     // Skip output to output paths
     if (input_port->direction()->isOutput()) {
@@ -204,7 +206,7 @@ void SwapPinsMove::swapPins(Instance* inst,
 // (depending on agreement).
 void SwapPinsMove::equivCellPins(const LibertyCell* cell,
                                  LibertyPort* input_port,
-                                 sta::LibertyPortSet& ports)
+                                 LibertyPortVec& ports)
 {
   if (cell->hasSequentials() || cell->isIsolationCell()) {
     ports.clear();
@@ -230,51 +232,59 @@ void SwapPinsMove::equivCellPins(const LibertyCell* cell,
     }
   }
 
-  if (outputs >= 1 && inputs >= 2) {
-    sta::LibertyCellPortIterator port_iter2(cell);
-    while (port_iter2.hasNext()) {
-      LibertyPort* candidate_port = port_iter2.next();
-      if (!candidate_port->direction()->isInput()) {
+  if (outputs < 1 || inputs < 2) {
+    return;
+  }
+
+  sta::LibertyCellPortIterator port_iter2(cell);
+  std::unordered_set<LibertyPort*> seen_ports;
+  while (port_iter2.hasNext()) {
+    LibertyPort* candidate_port = port_iter2.next();
+    if (!candidate_port->direction()->isInput()) {
+      continue;
+    }
+
+    sta::LibertyCellPortIterator output_port_iter(cell);
+    std::optional<bool> is_equivalent;
+    // Loop through all the output ports and make sure they are equivalent
+    // under swaps of candidate_port and input_port. For multi-ouput gates
+    // like full adders.
+    while (output_port_iter.hasNext()) {
+      LibertyPort* output_candidate_port = output_port_iter.next();
+      sta::FuncExpr* output_expr = output_candidate_port->function();
+      if (!output_candidate_port->direction()->isOutput()) {
         continue;
       }
 
-      sta::LibertyCellPortIterator output_port_iter(cell);
-      std::optional<bool> is_equivalent;
-      // Loop through all the output ports and make sure they are equivalent
-      // under swaps of candidate_port and input_port. For multi-ouput gates
-      // like full adders.
-      while (output_port_iter.hasNext()) {
-        LibertyPort* output_candidate_port = output_port_iter.next();
-        sta::FuncExpr* output_expr = output_candidate_port->function();
-        if (!output_candidate_port->direction()->isOutput()) {
-          continue;
-        }
-
-        if (output_expr == nullptr) {
-          continue;
-        }
-
-        if (input_port == candidate_port) {
-          continue;
-        }
-
-        bool is_equivalent_result
-            = isPortEqiv(output_expr, cell, input_port, candidate_port);
-
-        if (!is_equivalent.has_value()) {
-          is_equivalent = is_equivalent_result;
-          continue;
-        }
-
-        is_equivalent = is_equivalent.value() && is_equivalent_result;
+      if (output_expr == nullptr) {
+        continue;
       }
 
-      // candidate_port is equivalent to input_port under all output ports
-      // of this cell.
-      if (is_equivalent.has_value() && is_equivalent.value()) {
-        ports.insert(candidate_port);
+      if (input_port == candidate_port) {
+        continue;
       }
+
+      bool is_equivalent_result
+          = isPortEqiv(output_expr, cell, input_port, candidate_port);
+
+      if (!is_equivalent.has_value()) {
+        is_equivalent = is_equivalent_result;
+        continue;
+      }
+
+      is_equivalent = is_equivalent.value() && is_equivalent_result;
     }
+
+    // candidate_port is equivalent to input_port under all output ports
+    // of this cell.
+    if (is_equivalent.has_value() && is_equivalent.value()
+        && !seen_ports.contains(candidate_port)) {
+      seen_ports.insert(candidate_port);
+      ports.push_back(candidate_port);
+    }
+  }
+  if (!seen_ports.empty()) {  // If we added any ports sort them.
+    std::ranges::sort(ports, {}, [](auto* p1) { return p1->id(); });
   }
 }
 
@@ -293,7 +303,7 @@ void SwapPinsMove::reportSwappablePins()
         if (!port->direction()->isInput()) {
           continue;
         }
-        sta::LibertyPortSet ports;
+        LibertyPortVec ports;
         equivCellPins(cell, port, ports);
         std::ostringstream ostr;
         for (auto port : ports) {
@@ -310,7 +320,7 @@ void SwapPinsMove::reportSwappablePins()
 // where 2 paths go through the same gate (we could end up swapping pins twice)
 void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
                                         LibertyPort* drvr_port,
-                                        const sta::LibertyPortSet& equiv_ports,
+                                        const LibertyPortVec& equiv_ports,
                                         float load_cap,
                                         const DcalcAnalysisPt* dcalc_ap,
                                         LibertyPort** swap_port)
@@ -359,18 +369,21 @@ void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
   }
 
   for (LibertyPort* port : equiv_ports) {
-    if (port_delays.find(port) == port_delays.end()) {
-      // It's possible than an equivalent pin doesn't have
-      // a path to the driver.
+    // Guard Clause:
+    // 1. Check if port delay exists
+    // 2. Check if port is NOT an input
+    // 3. Check if port is equivalent to input_port
+    // 4. Check if port is equivalent to drvr_port
+    if (!port_delays.contains(port) || !port->direction()->isInput()
+        || sta::LibertyPort::equiv(input_port, port)
+        || sta::LibertyPort::equiv(drvr_port, port)) {
       continue;
     }
 
-    if (port->direction()->isInput()
-        && !sta::LibertyPort::equiv(input_port, port)
-        && !sta::LibertyPort::equiv(drvr_port, port)
-        && port_delays[port] < base_delay) {
+    auto port_delay = port_delays[port];
+    if (port_delay < base_delay) {
       *swap_port = port;
-      base_delay = port_delays[port];
+      base_delay = port_delay;
     }
   }
 }
