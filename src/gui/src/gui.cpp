@@ -782,6 +782,7 @@ void Gui::saveImage(const std::string& filename,
     const double dbu_per_micron = tech->getDbUnitsPerMicron();
 
     std::string save_cmds;
+
     // build display control commands
     save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
     for (const auto& [control, value] : display_settings) {
@@ -861,6 +862,13 @@ void Gui::saveHistogramImage(const std::string& filename,
       = main_window->getChartsWidget()->modeFromString(mode);
   main_window->getChartsWidget()->saveImage(
       filename, chart_mode, width, height);
+}
+
+void Gui::showWorstPath(bool setup)
+{
+  if (main_window->getTimingWidget()) {
+    main_window->getTimingWidget()->showWorstPath(setup);
+  }
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name,
