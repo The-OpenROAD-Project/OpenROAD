@@ -17,8 +17,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <fstream>
-#include <iostream>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -952,7 +950,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   odb::dbNet* net = nullptr;
   // clang-format off
   debugPrint(logger_, CTS, "tech char", 1, "*createPatterns for #nodes = {}"
-             " #topologies = {}", setupWirelength, numberOfNodes, numberOfTopologies);
+             " #topologies = {}", numberOfNodes, numberOfTopologies);
   // clang-format on
   // For each possible topology...
   for (unsigned solutionCounterInt = 0; solutionCounterInt < numberOfTopologies;
@@ -1469,11 +1467,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       selectedSolutions.push_back(selectedResults);
     }
   }
-  std::ofstream arquivo("test_insetion_delay_techChar_tbl.csv");
 
-  if (!arquivo.is_open()) {
-      logger_->error(CTS, 2, "Erro ao criar o arquivo CSV");
-  }
   // Creates variables to set the max and min values. These are normalized.
   unsigned minResultWirelength = std::numeric_limits<unsigned>::max();
   unsigned maxResultWirelength = 0;
@@ -1481,8 +1475,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
   unsigned maxResultCapacitance = 0;
   unsigned minResultSlew = std::numeric_limits<unsigned>::max();
   unsigned maxResultSlew = 0;
-  // Cabeçalho
-  arquivo << "Wl,pinSlew,inSlew,totalcap,load,pinArrival,totalPower\n";
+
   std::vector<ResultData> convertedSolutions;
   for (ResultData solution : selectedSolutions) {
     if (solution.pinSlew <= options_->getMaxCharSlew()) {
@@ -1515,7 +1508,6 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       // Add missing information.
       convertedResult.totalPower = solution.totalPower;
       convertedResult.isPureWire = solution.isPureWire;
-      arquivo << convertedResult.wirelength << "," << convertedResult.pinSlew << "," << convertedResult.inSlew << "," << convertedResult.totalcap << "," << convertedResult.load << "," << convertedResult.pinArrival << "," << convertedResult.totalPower << "\n";
       std::vector<std::string> topologyResult;
       for (int topologyIndex = 0; topologyIndex < solution.topology.size();
            topologyIndex++) {
@@ -1536,7 +1528,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       convertedSolutions.push_back(convertedResult);
     }
   }
-  arquivo.close();
+
   // Sets the min and max values and returns the result vector.
   minSlew_ = minResultSlew;
   maxSlew_ = maxResultSlew;
