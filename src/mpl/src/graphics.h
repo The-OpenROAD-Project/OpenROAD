@@ -57,7 +57,7 @@ class Graphics : public gui::Renderer, public MplObserver
       const std::vector<odb::Rect>& macro_blockages) override;
   void setPlacementBlockages(
       const std::vector<odb::Rect>& placement_blockages) override;
-  void setNets(const BundledNetList& bundled_nets) override;
+  void setNets(const BundledNetList& nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
   void setSkipSteps(bool skip_steps) override;
