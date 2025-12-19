@@ -120,9 +120,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule);
 class _dbTechV55InfluenceEntry : public _dbObject
 {
  public:
-  uint _width;
-  uint _within;
-  uint _spacing;
+  uint width_;
+  uint within_;
+  uint spacing_;
 
   _dbTechV55InfluenceEntry(_dbDatabase* db, const _dbTechV55InfluenceEntry& e);
   _dbTechV55InfluenceEntry(_dbDatabase* db);
@@ -138,16 +138,16 @@ class _dbTechV55InfluenceEntry : public _dbObject
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
     _dbDatabase* /* unused: db */,
     const _dbTechV55InfluenceEntry& e)
-    : _width(e._width), _within(e._within), _spacing(e._spacing)
+    : width_(e.width_), within_(e.within_), spacing_(e.spacing_)
 {
 }
 
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
     _dbDatabase* /* unused: db */)
 {
-  _width = 0;
-  _within = 0;
-  _spacing = 0;
+  width_ = 0;
+  within_ = 0;
+  spacing_ = 0;
 }
 
 inline _dbTechV55InfluenceEntry::~_dbTechV55InfluenceEntry()
