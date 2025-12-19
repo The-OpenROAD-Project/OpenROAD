@@ -190,6 +190,13 @@ void _dbPowerSwitch::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbPowerSwitch::~_dbPowerSwitch()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbPowerSwitch - Methods

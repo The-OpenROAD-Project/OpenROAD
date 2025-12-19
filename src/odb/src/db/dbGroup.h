@@ -32,6 +32,8 @@ class _dbGroup : public _dbObject
  public:
   _dbGroup(_dbDatabase*);
 
+  ~_dbGroup();
+
   bool operator==(const _dbGroup& rhs) const;
   bool operator!=(const _dbGroup& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGroup& rhs) const;

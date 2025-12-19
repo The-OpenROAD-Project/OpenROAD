@@ -140,6 +140,13 @@ void _dbModInst::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbModInst::~_dbModInst()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbModInst - Methods

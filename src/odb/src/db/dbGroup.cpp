@@ -150,6 +150,13 @@ void _dbGroup::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbGroup::~_dbGroup()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbGroup - Methods

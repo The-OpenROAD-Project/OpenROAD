@@ -24,6 +24,8 @@ class _dbChipConn : public _dbObject
  public:
   _dbChipConn(_dbDatabase*);
 
+  ~_dbChipConn();
+
   bool operator==(const _dbChipConn& rhs) const;
   bool operator!=(const _dbChipConn& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbChipConn& rhs) const;

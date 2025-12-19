@@ -74,6 +74,13 @@ void _dbLogicPort::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbLogicPort::~_dbLogicPort()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbLogicPort - Methods

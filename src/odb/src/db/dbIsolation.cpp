@@ -105,6 +105,13 @@ void _dbIsolation::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbIsolation::~_dbIsolation()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbIsolation - Methods

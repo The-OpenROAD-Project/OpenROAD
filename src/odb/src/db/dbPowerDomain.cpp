@@ -124,6 +124,13 @@ void _dbPowerDomain::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbPowerDomain::~_dbPowerDomain()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbPowerDomain - Methods

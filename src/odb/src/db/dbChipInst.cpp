@@ -93,6 +93,10 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 }
 
+_dbChipInst::~_dbChipInst()
+{
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbChipInst - Methods

@@ -195,6 +195,13 @@ void _dbLevelShifter::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbLevelShifter::~_dbLevelShifter()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbLevelShifter - Methods

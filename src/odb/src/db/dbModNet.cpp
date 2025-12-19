@@ -140,6 +140,13 @@ void _dbModNet::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbModNet::~_dbModNet()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbModNet - Methods

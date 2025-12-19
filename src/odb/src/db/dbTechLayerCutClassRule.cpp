@@ -101,6 +101,13 @@ void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
   // User Code End collectMemInfo
 }
 
+_dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
+{
+  if (name_) {
+    free((void*) name_);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutClassRule - Methods

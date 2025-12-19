@@ -27,6 +27,8 @@ class _dbChipNet : public _dbObject
  public:
   _dbChipNet(_dbDatabase*);
 
+  ~_dbChipNet();
+
   bool operator==(const _dbChipNet& rhs) const;
   bool operator!=(const _dbChipNet& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbChipNet& rhs) const;
