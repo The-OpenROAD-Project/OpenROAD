@@ -1830,6 +1830,7 @@ bool DbNetDescriptor::isNet(const std::any& object) const
 Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
 {
   auto gui = Gui::get();
+
   Properties props({{"Block", gui->makeSelected(net->getBlock())},
                     {"Signal type", net->getSigType().getString()},
                     {"Source type", net->getSourceType().getString()},
@@ -1853,6 +1854,15 @@ Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
     bterms.insert(gui->makeSelected(bterm));
   }
   props.push_back({"BTerms", bterms});
+
+  std::set<odb::dbModNet*> modnet_set;
+  if (net->findRelatedModNets(modnet_set)) {
+    SelectionSet mod_nets;
+    for (odb::dbModNet* mod_net : modnet_set) {
+      mod_nets.insert(gui->makeSelected(mod_net));
+    }
+    props.push_back({"ModNets", mod_nets});
+  }
 
   auto* ndr = net->getNonDefaultRule();
   if (ndr != nullptr) {
@@ -2119,6 +2129,13 @@ Descriptor::Properties DbITermDescriptor::getDBProperties(
   } else {
     net_value = "<none>";
   }
+  auto mod_net = iterm->getModNet();
+  std::any mod_net_value;
+  if (mod_net != nullptr) {
+    mod_net_value = gui->makeSelected(mod_net);
+  } else {
+    mod_net_value = "<none>";
+  }
   SelectionSet aps;
   for (const auto& [mpin, ap_vec] : iterm->getAccessPoints()) {
     for (const auto& ap : ap_vec) {
@@ -2128,6 +2145,7 @@ Descriptor::Properties DbITermDescriptor::getDBProperties(
   }
   Properties props{{"Instance", gui->makeSelected(iterm->getInst())},
                    {"Net", std::move(net_value)},
+                   {"ModNet", std::move(mod_net_value)},
                    {"Special", iterm->isSpecial()},
                    {"MTerm", gui->makeSelected(iterm->getMTerm())},
                    {"Access Points", aps}};
@@ -2209,8 +2227,16 @@ Descriptor::Properties DbBTermDescriptor::getDBProperties(
       aps.insert(gui->makeSelected(bap));
     }
   }
+  auto mod_net = bterm->getModNet();
+  std::any mod_net_value;
+  if (mod_net != nullptr) {
+    mod_net_value = gui->makeSelected(mod_net);
+  } else {
+    mod_net_value = "<none>";
+  }
   Properties props{{"Block", gui->makeSelected(bterm->getBlock())},
                    {"Net", gui->makeSelected(bterm->getNet())},
+                   {"ModNet", std::move(mod_net_value)},
                    {"Signal type", bterm->getSigType().getString()},
                    {"IO type", bterm->getIoType().getString()},
                    {"Access Points", aps}};
@@ -3992,6 +4018,7 @@ Descriptor::Properties DbModNetDescriptor::getDBProperties(
     bterms.insert(gui->makeSelected(bterm));
   }
   props.push_back({"BTerms", bterms});
+  props.push_back({"Net", gui->makeSelected(modnet->findRelatedNet())});
 
   return props;
 }
