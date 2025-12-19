@@ -588,10 +588,10 @@ void Graphics::drawBundledNets(gui::Painter& painter,
 template <typename T>
 void Graphics::drawBundledNet(gui::Painter& painter,
                               const std::vector<T>& macros,
-                              const BundledNet& bundled_net)
+                              const BundledNet& net)
 {
-  const T& source = macros[bundled_net.terminals.first];
-  const T& target = macros[bundled_net.terminals.second];
+  const T& source = macros[net.terminals.first];
+  const T& target = macros[net.terminals.second];
 
   if (target.isClusterOfUnplacedIOPins()) {
     drawDistToRegion(painter, source, target);
