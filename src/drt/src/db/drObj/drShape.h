@@ -181,7 +181,7 @@ class drPathSeg : public drShape
   {
     return {beginMazeIdx_, endMazeIdx_};
   }
-  void setMazeIdx(FlexMazeIdx& bi, FlexMazeIdx& ei)
+  void setMazeIdx(const FlexMazeIdx& bi, const FlexMazeIdx& ei) override
   {
     beginMazeIdx_.set(bi);
     endMazeIdx_.set(ei);

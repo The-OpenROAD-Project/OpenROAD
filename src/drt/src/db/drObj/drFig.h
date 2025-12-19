@@ -7,6 +7,7 @@
 
 #include "db/drObj/drBlockObject.h"
 #include "db/infra/frBox.h"
+#include "dr/FlexMazeTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -34,6 +35,8 @@ class drConnFig : public drFig
 
   virtual void addToNet(drNet* in) = 0;
   virtual void removeFromNet() = 0;
+
+  virtual void setMazeIdx(const FlexMazeIdx& bi, const FlexMazeIdx& ei) {}
 
   /* drom drFig
    * getBBox
