@@ -1973,9 +1973,9 @@ void ViaGenerator::determineRowsAndColumns(
 
       for (const auto& [rule_cuts, rule_spacing] :
            rule->getCutsArraySpacing()) {
-        if (rule_cuts > array_size_min + rule->isLongArray() ? 1 : 0) {
-          // this rules does not apply because the smaller dimension of the array is
-          // less than the rule
+        if (rule_cuts > array_size_min + (rule->isLongArray() ? 1 : 0)) {
+          // this rules does not apply because the smaller dimension of the
+          // array is less than the rule
           continue;
         }
 
