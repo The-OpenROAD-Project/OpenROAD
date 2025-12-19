@@ -92,7 +92,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (chip_hash_ != rhs.chip_hash_) {
     return false;
   }
-  if (*_prop_tbl != *rhs._prop_tbl) {
+  if (*prop_tbl_ != *rhs.prop_tbl_) {
     return false;
   }
   if (*chip_inst_tbl_ != *rhs.chip_inst_tbl_) {
@@ -155,7 +155,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
   chip_hash_.setTable(chip_tbl_);
-  _prop_tbl = new dbTable<_dbProperty>(
+  prop_tbl_ = new dbTable<_dbProperty>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
   chip_inst_tbl_ = new dbTable<_dbChipInst>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipInstObj);
@@ -194,7 +194,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   name_cache_ = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
 
-  prop_itr_ = new dbPropertyItr(_prop_tbl);
+  prop_itr_ = new dbPropertyItr(prop_tbl_);
 
   chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
 
@@ -258,7 +258,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (obj.isSchema(db_schema_gds_lib_in_block)) {
     stream >> *obj.gds_lib_tbl_;
   }
-  stream >> *obj._prop_tbl;
+  stream >> *obj.prop_tbl_;
   stream >> *obj.name_cache_;
   if (obj.isSchema(db_schema_chip_hash_table)) {
     stream >> obj.chip_hash_;
@@ -308,7 +308,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   // Fix up the owner id of properties of this db, this value changes.
   const uint oid = obj.getId();
 
-  for (_dbProperty* p : dbSet<_dbProperty>(&obj, obj._prop_tbl)) {
+  for (_dbProperty* p : dbSet<_dbProperty>(&obj, obj.prop_tbl_)) {
     p->owner_ = oid;
   }
 
@@ -346,7 +346,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.lib_tbl_;
   stream << *obj.chip_tbl_;
   stream << *obj.gds_lib_tbl_;
-  stream << NamedTable("prop_tbl", obj._prop_tbl);
+  stream << NamedTable("prop_tbl", obj.prop_tbl_);
   stream << *obj.name_cache_;
   stream << obj.chip_hash_;
   stream << *obj.chip_inst_tbl_;
@@ -365,7 +365,7 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
     case dbChipObj:
       return chip_tbl_;
     case dbPropertyObj:
-      return _prop_tbl;
+      return prop_tbl_;
     case dbChipInstObj:
       return chip_inst_tbl_;
     case dbChipRegionInstObj:
@@ -398,7 +398,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   chip_tbl_->collectMemInfo(info.children["chip_tbl_"]);
 
-  _prop_tbl->collectMemInfo(info.children["_prop_tbl"]);
+  prop_tbl_->collectMemInfo(info.children["_prop_tbl"]);
 
   chip_inst_tbl_->collectMemInfo(info.children["chip_inst_tbl_"]);
 
@@ -421,7 +421,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 _dbDatabase::~_dbDatabase()
 {
   delete chip_tbl_;
-  delete _prop_tbl;
+  delete prop_tbl_;
   delete chip_inst_tbl_;
   delete chip_region_inst_tbl_;
   delete chip_conn_tbl_;
@@ -469,13 +469,13 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   lib_tbl_ = new dbTable<_dbLib>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbLibObj);
 
-  _prop_tbl = new dbTable<_dbProperty>(
+  prop_tbl_ = new dbTable<_dbProperty>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
 
   name_cache_ = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
 
-  prop_itr_ = new dbPropertyItr(_prop_tbl);
+  prop_itr_ = new dbPropertyItr(prop_tbl_);
 
   chip_inst_itr_ = new dbChipInstItr(chip_inst_tbl_);
 
@@ -539,7 +539,7 @@ dbChip* dbDatabase::findChip(const char* name) const
 dbSet<dbProperty> dbDatabase::getProperties() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
-  return dbSet<dbProperty>(obj, obj->_prop_tbl);
+  return dbSet<dbProperty>(obj, obj->prop_tbl_);
 }
 
 dbSet<dbChipInst> dbDatabase::getChipInsts() const

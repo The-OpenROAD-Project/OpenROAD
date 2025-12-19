@@ -259,7 +259,7 @@ next_object:
   switch (object->getObjectType()) {
     case dbDatabaseObj: {
       _dbDatabase* db = (_dbDatabase*) object;
-      return db->_prop_tbl;
+      return db->prop_tbl_;
     }
 
     case dbChipObj: {
