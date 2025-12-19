@@ -95,8 +95,8 @@ class _dbTechMinEncRule : public _dbObject
   };
 
   Flags flags_;
-  uint _area;
-  uint _width;
+  uint area_;
+  uint width_;
 
   _dbTechMinEncRule(_dbDatabase* db);
   _dbTechMinEncRule(_dbDatabase* db, const _dbTechMinEncRule& r);
@@ -111,7 +111,7 @@ class _dbTechMinEncRule : public _dbObject
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */,
                                             const _dbTechMinEncRule& r)
-    : flags_(r.flags_), _area(r._area), _width(r._width)
+    : flags_(r.flags_), area_(r.area_), width_(r.width_)
 {
 }
 
@@ -119,8 +119,8 @@ inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */)
 {
   flags_.has_width = 0;
   flags_.spare_bits = 0;
-  _area = 0;
-  _width = 0;
+  area_ = 0;
+  width_ = 0;
 }
 
 inline _dbTechMinEncRule::~_dbTechMinEncRule()

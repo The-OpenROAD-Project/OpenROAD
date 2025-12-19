@@ -71,11 +71,11 @@ bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
     return false;
   }
 
-  if (_area != rhs._area) {
+  if (area_ != rhs.area_) {
     return false;
   }
 
-  if (_width != rhs._width) {
+  if (width_ != rhs.width_) {
     return false;
   }
 
@@ -122,8 +122,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechMinEncRule& rule)
 {
   uint* bit_field = (uint*) &rule.flags_;
   stream << *bit_field;
-  stream << rule._area;
-  stream << rule._width;
+  stream << rule.area_;
+  stream << rule.width_;
   return stream;
 }
 
@@ -131,8 +131,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechMinEncRule& rule)
 {
   uint* bit_field = (uint*) &rule.flags_;
   stream >> *bit_field;
-  stream >> rule._area;
-  stream >> rule._width;
+  stream >> rule.area_;
+  stream >> rule.width_;
   return stream;
 }
 
@@ -293,7 +293,7 @@ bool dbTechMinEncRule::getEnclosure(uint& area) const
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  area = _lsm->_area;
+  area = _lsm->area_;
   return true;
 }
 
@@ -301,7 +301,7 @@ void dbTechMinEncRule::setEnclosure(uint area)
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  _lsm->_area = area;
+  _lsm->area_ = area;
 }
 
 bool dbTechMinEncRule::getEnclosureWidth(uint& width) const
@@ -312,7 +312,7 @@ bool dbTechMinEncRule::getEnclosureWidth(uint& width) const
     return false;
   }
 
-  width = _lsm->_width;
+  width = _lsm->width_;
   return true;
 }
 
@@ -321,7 +321,7 @@ void dbTechMinEncRule::setEnclosureWidth(uint width)
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
   _lsm->flags_.has_width = 1;
-  _lsm->_width = width;
+  _lsm->width_ = width;
 }
 
 void dbTechMinEncRule::writeLef(lefout& writer) const
