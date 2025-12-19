@@ -57,7 +57,7 @@ class Graphics : public gui::Renderer, public MplObserver
       const std::vector<odb::Rect>& macro_blockages) override;
   void setPlacementBlockages(
       const std::vector<odb::Rect>& placement_blockages) override;
-  void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
+  void setNets(const BundledNetList& bundled_nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
   void setSkipSteps(bool skip_steps) override;
@@ -91,6 +91,10 @@ class Graphics : public gui::Renderer, public MplObserver
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
   template <typename T>
+  void drawBundledNet(gui::Painter& painter,
+                      const std::vector<T>& macros,
+                      const BundledNet& net);
+  template <typename T>
   void drawDistToRegion(gui::Painter& painter, const T& macro, const T& io);
   template <typename T>
   bool isOutsideTheOutline(const T& macro) const;
@@ -113,7 +117,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::vector<HardMacro> hard_macros_;
   std::vector<odb::Rect> macro_blockages_;
   std::vector<odb::Rect> placement_blockages_;
-  std::vector<BundledNet> bundled_nets_;
+  BundledNetList nets_;
   odb::Rect outline_;
   int target_cluster_id_{-1};
   std::vector<std::vector<odb::Rect>> outlines_;
