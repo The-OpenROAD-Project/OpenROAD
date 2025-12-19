@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rmp/Restructure.h"
-
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -27,7 +25,9 @@
 #include "cut/abc_library_factory.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
+#include "extended_technology_mapping.h"
 #include "odb/db.h"
+#include "rmp/Restructure.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -707,4 +707,24 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
   }
   return status;
 }
+
+void Restructure::resynthEmap(sta::Corner* corner,
+                              const char* genlib_file_name,
+                              bool map_multioutput,
+                              bool verbose,
+                              char* workdir_name)
+{
+  bool area_oriented_mapping = opt_mode_ == Mode::AREA_1;
+
+  extended_technology_mapping(open_sta_,
+                              db_,
+                              corner,
+                              genlib_file_name,
+                              map_multioutput,
+                              area_oriented_mapping,
+                              verbose,
+                              resizer_,
+                              logger_);
+}
+
 }  // namespace rmp

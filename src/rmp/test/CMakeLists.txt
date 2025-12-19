@@ -14,6 +14,8 @@ or_integration_tests(
     gcd_restructure
     aes_asap7
     gcd_asap7
+    aes_asap7_emap
+    gcd_asap7_emap
     memory_nangate45
     aes_dontuse_nangate45
     aes_donttouch_nangate45
