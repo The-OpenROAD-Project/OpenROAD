@@ -93,4 +93,10 @@ build --remote_upload_local_results=false
 # Without this, bazelisk build ... builds the bazel-orfs tests
 build --build_tag_filters=-orfs
 
+# Avoid future strange failures because bazel is looking for locally installed
+# JDK, use bazel bcr provided JDK.
+#
+# https://bazel.build/docs/bazel-and-java#hermetic-testing
+test --java_runtime_version=remotejdk_11
+
 try-import %workspace%/user.bazelrc
