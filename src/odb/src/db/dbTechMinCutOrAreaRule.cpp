@@ -67,7 +67,7 @@ bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
 
 bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
 {
-  if (flags_._has_width != rhs.flags_._has_width) {
+  if (flags_.has_width != rhs.flags_.has_width) {
     return false;
   }
 
@@ -308,7 +308,7 @@ bool dbTechMinEncRule::getEnclosureWidth(uint& width) const
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  if (!(_lsm->flags_._has_width)) {
+  if (!(_lsm->flags_.has_width)) {
     return false;
   }
 
@@ -320,7 +320,7 @@ void dbTechMinEncRule::setEnclosureWidth(uint width)
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  _lsm->flags_._has_width = 1;
+  _lsm->flags_.has_width = 1;
   _lsm->_width = width;
 }
 

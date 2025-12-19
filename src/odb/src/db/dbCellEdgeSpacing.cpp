@@ -18,7 +18,7 @@ template class dbTable<_dbCellEdgeSpacing>;
 
 bool _dbCellEdgeSpacing::operator==(const _dbCellEdgeSpacing& rhs) const
 {
-  if (flags_.except_abutted_ != rhs.flags_.except_abutted_) {
+  if (flags_.except_abutted != rhs.flags_.except_abutted) {
     return false;
   }
   if (flags_.except_non_filler_in_between
@@ -142,14 +142,14 @@ void dbCellEdgeSpacing::setExceptAbutted(bool except_abutted)
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  obj->flags_.except_abutted_ = except_abutted;
+  obj->flags_.except_abutted = except_abutted;
 }
 
 bool dbCellEdgeSpacing::isExceptAbutted() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
 
-  return obj->flags_.except_abutted_;
+  return obj->flags_.except_abutted;
 }
 
 void dbCellEdgeSpacing::setExceptNonFillerInBetween(

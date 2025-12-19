@@ -31,7 +31,7 @@ template class dbTable<_dbTechViaGenerateRule>;
 
 bool _dbTechViaGenerateRule::operator==(const _dbTechViaGenerateRule& rhs) const
 {
-  if (flags_._default != rhs.flags_._default) {
+  if (flags_.default_via != rhs.flags_.default_via) {
     return false;
   }
 
@@ -62,7 +62,7 @@ _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*)
 {
   name_ = nullptr;
-  flags_._default = 0;
+  flags_.default_via = 0;
   flags_.spare_bits = 0;
 }
 
@@ -106,7 +106,7 @@ std::string dbTechViaGenerateRule::getName()
 bool dbTechViaGenerateRule::isDefault()
 {
   _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) this;
-  return rule->flags_._default == 1;
+  return rule->flags_.default_via == 1;
 }
 
 uint dbTechViaGenerateRule::getViaLayerRuleCount()
@@ -139,7 +139,7 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech* tech_,
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaGenerateRule* rule = tech->via_generate_rule_tbl_->create();
   rule->name_ = safe_strdup(name);
-  rule->flags_._default = is_default;
+  rule->flags_.default_via = is_default;
   return (dbTechViaGenerateRule*) rule;
 }
 

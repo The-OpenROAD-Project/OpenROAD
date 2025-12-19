@@ -90,8 +90,8 @@ class _dbTechMinEncRule : public _dbObject
 
   struct Flags
   {
-    uint _has_width : 1;
-    uint _spare_bits : 31;
+    uint has_width : 1;
+    uint spare_bits : 31;
   };
 
   Flags flags_;
@@ -117,8 +117,8 @@ inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */,
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */)
 {
-  flags_._has_width = 0;
-  flags_._spare_bits = 0;
+  flags_.has_width = 0;
+  flags_.spare_bits = 0;
   _area = 0;
   _width = 0;
 }
