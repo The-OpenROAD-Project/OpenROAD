@@ -26,6 +26,7 @@ target_sources(cut
 
 target_link_libraries(cut
   PUBLIC
+    mockturtle
     rsz_lib
     ${ABC_LIBRARY}
   PRIVATE
