@@ -135,9 +135,16 @@ void _dbModInst::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["moditerm_hash"].add(moditerm_hash_);
+  info.children["name"].add(name_);
+  info.children["moditerm_hash"].add(moditerm_hash_);
   // User Code End collectMemInfo
+}
+
+_dbModInst::~_dbModInst()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

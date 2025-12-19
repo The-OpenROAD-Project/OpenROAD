@@ -140,12 +140,12 @@ void _dbAccessPoint::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["iterms"].add(iterms_);
-  MemInfo& via_info = info.children_["vias"];
+  info.children["iterms"].add(iterms_);
+  MemInfo& via_info = info.children["vias"];
   for (const auto& v : vias_) {
     via_info.add(v);
   }
-  info.children_["path_segs"].add(path_segs_);
+  info.children["path_segs"].add(path_segs_);
   // User Code End collectMemInfo
 }
 

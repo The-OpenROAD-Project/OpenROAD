@@ -144,10 +144,17 @@ void _dbGroup::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["power_nets"].add(power_nets_);
-  info.children_["ground_nets"].add(ground_nets_);
+  info.children["name"].add(name_);
+  info.children["power_nets"].add(power_nets_);
+  info.children["ground_nets"].add(ground_nets_);
   // User Code End collectMemInfo
+}
+
+_dbGroup::~_dbGroup()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

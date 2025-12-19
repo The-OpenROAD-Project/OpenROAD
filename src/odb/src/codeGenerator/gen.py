@@ -202,7 +202,7 @@ def add_field_attributes(field, klass, flags_struct, schema):
 
     # For fields that we need to free/destroy in the destructor
     if (
-        field["name"] == "_name"
+        field["name"] == "name_"
         and "no-destruct" not in field["flags"]
         or "table" in field
     ):

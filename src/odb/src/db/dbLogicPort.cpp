@@ -69,9 +69,16 @@ void _dbLogicPort::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["direction"].add(direction);
+  info.children["name"].add(name_);
+  info.children["direction"].add(direction);
   // User Code End collectMemInfo
+}
+
+_dbLogicPort::~_dbLogicPort()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

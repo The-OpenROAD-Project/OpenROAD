@@ -317,16 +317,16 @@ void _dbChip::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  prop_tbl_->collectMemInfo(info.children_["prop_tbl_"]);
+  prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
 
-  chip_region_tbl_->collectMemInfo(info.children_["chip_region_tbl_"]);
+  chip_region_tbl_->collectMemInfo(info.children["chip_region_tbl_"]);
 
   marker_categories_tbl_->collectMemInfo(
-      info.children_["marker_categories_tbl_"]);
+      info.children["marker_categories_tbl_"]);
 
   // User Code Begin collectMemInfo
-  block_tbl_->collectMemInfo(info.children_["block"]);
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  block_tbl_->collectMemInfo(info.children["block"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
   // User Code End collectMemInfo
 }
 

@@ -28,7 +28,7 @@ struct _dbViaFlags
   uint is_tech_via : 1;
   uint has_params : 1;
   dbOrientType::Value orient : 4;
-  bool default_ : 1;
+  bool default_via : 1;
   uint spare_bits : 24;
 };
 

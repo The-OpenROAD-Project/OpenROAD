@@ -90,8 +90,8 @@ void _dbGlobalConnect::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["inst_pattern"].add(inst_pattern_);
-  info.children_["pin_pattern"].add(pin_pattern_);
+  info.children["inst_pattern"].add(inst_pattern_);
+  info.children["pin_pattern"].add(pin_pattern_);
   // User Code End collectMemInfo
 }
 

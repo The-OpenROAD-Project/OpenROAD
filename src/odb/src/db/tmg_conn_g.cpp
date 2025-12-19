@@ -20,7 +20,7 @@ tmg_conn_graph::tmg_conn_graph()
 {
   ptNmax_ = 1024;
   shortNmax_ = 1024;
-  _eNmax = 1024;
+  eNmax_ = 1024;
   ptV_ = (tcg_pt*) safe_malloc(ptNmax_ * sizeof(tcg_pt));
   path_vis_ = (int*) safe_malloc(ptNmax_ * sizeof(int));
   eV_ = (tcg_edge*) safe_malloc(2UL * ptNmax_ * sizeof(tcg_edge));
@@ -49,13 +49,13 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
     free(stackV_);
     stackV_ = (tcg_edge**) safe_malloc(shortNmax_ * sizeof(tcg_edge*));
   }
-  if (4 * ptN + 2 * shortN > _eNmax) {
-    _eNmax *= 2;
-    if (4 * ptN + 2 * shortN > _eNmax) {
-      _eNmax = 4 * ptN + 2 * shortN;
+  if (4 * ptN + 2 * shortN > eNmax_) {
+    eNmax_ *= 2;
+    if (4 * ptN + 2 * shortN > eNmax_) {
+      eNmax_ = 4 * ptN + 2 * shortN;
     }
     free(eV_);
-    eV_ = (tcg_edge*) safe_malloc(_eNmax * sizeof(tcg_edge));
+    eV_ = (tcg_edge*) safe_malloc(eNmax_ * sizeof(tcg_edge));
   }
   eN_ = 0;
   for (int j = 0; j < ptN; j++) {
@@ -693,7 +693,7 @@ void tmg_conn::checkVisited()
   tcg_pt* pgV = graph_->ptV_;
   for (int j = 0; j < ptV_.size(); j++) {
     if (!pgV[j].visited) {
-      _connected = false;
+      connected_ = false;
       break;
     }
   }

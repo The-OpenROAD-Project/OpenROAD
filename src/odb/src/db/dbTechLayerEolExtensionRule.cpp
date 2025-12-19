@@ -74,7 +74,7 @@ void _dbTechLayerEolExtensionRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["extension_tbl"].add(extension_tbl_);
+  info.children["extension_tbl"].add(extension_tbl_);
   // User Code End collectMemInfo
 }
 

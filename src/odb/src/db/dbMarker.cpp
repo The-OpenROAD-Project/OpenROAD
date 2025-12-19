@@ -190,9 +190,9 @@ void _dbMarker::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["comment"].add(comment_);
-  info.children_["sources"].add(sources_);
-  info.children_["shapes"].add(shapes_);
+  info.children["comment"].add(comment_);
+  info.children["sources"].add(sources_);
+  info.children["shapes"].add(shapes_);
   // User Code End collectMemInfo
 }
 

@@ -889,7 +889,7 @@ void _dbITerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["aps"].add(aps_);
+  info.children["aps"].add(aps_);
 }
 
 }  // namespace odb

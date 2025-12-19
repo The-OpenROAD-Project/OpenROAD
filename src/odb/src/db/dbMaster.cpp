@@ -828,14 +828,14 @@ void _dbMaster::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["mterm_hash"].add(mterm_hash_);
-  mterm_tbl_->collectMemInfo(info.children_["mterm"]);
-  mpin_tbl_->collectMemInfo(info.children_["mpin"]);
-  box_tbl_->collectMemInfo(info.children_["box"]);
-  poly_box_tbl_->collectMemInfo(info.children_["poly_box"]);
-  antenna_pin_model_tbl_->collectMemInfo(info.children_["antenna_pin_model"]);
-  edge_types_tbl_->collectMemInfo(info.children_["edge_types"]);
+  info.children["name"].add(name_);
+  info.children["mterm_hash"].add(mterm_hash_);
+  mterm_tbl_->collectMemInfo(info.children["mterm"]);
+  mpin_tbl_->collectMemInfo(info.children["mpin"]);
+  box_tbl_->collectMemInfo(info.children["box"]);
+  poly_box_tbl_->collectMemInfo(info.children["poly_box"]);
+  antenna_pin_model_tbl_->collectMemInfo(info.children["antenna_pin_model"]);
+  edge_types_tbl_->collectMemInfo(info.children["edge_types"]);
 }
 
 }  // namespace odb
