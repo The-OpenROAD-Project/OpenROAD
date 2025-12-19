@@ -3473,7 +3473,7 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
                                }),
                 insts.end());
 
-    inst_map[inst_pattern] = insts;
+    inst_map[inst_pattern] = std::move(insts);
 
     for (dbInst* inst : remove_insts) {
       if (gc->needsModification(inst)) {
