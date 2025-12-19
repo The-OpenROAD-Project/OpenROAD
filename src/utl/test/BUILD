@@ -108,3 +108,26 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "TestCriticalPrintsBacktrace",
+    srcs = ["cpp/TestLoggerCriticalPrintsBackTrace.cpp"],
+    deps = [
+        "//src/utl:utl_without_decode",
+        "@com_google_absl//absl/debugging:stacktrace",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "TestBackTraceOnDebugError",
+    srcs = ["cpp/TestBackTraceOnErrorWithDebug.cpp"],
+    deps = [
+        "//src/utl:utl_without_decode",
+        "@com_google_absl//absl/debugging:stacktrace",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

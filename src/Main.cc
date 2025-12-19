@@ -221,6 +221,9 @@ int main(int argc, char* argv[])
   signal(SIGILL, handler);
   signal(SIGSEGV, handler);
 
+  // Initialize absl's symbolizer
+  absl::InitializeSymbolizer(argv[0]);
+
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
     return 0;
@@ -302,6 +305,8 @@ int main(int argc, char* argv[])
   }
 #endif  // ENABLE_PYTHON3
 
+  utl::Logger logger; 
+  logger.critical(utl::GPL, 9997, "Backtrace test");
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);

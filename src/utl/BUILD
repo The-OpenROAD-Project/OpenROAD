@@ -13,11 +13,28 @@ package(
     features = ["layering_check"],
 )
 
+cc_library(
+    name = "decode",
+    srcs = [
+        "src/decode.cpp",
+    ],
+    hdrs = [
+        "include/utl/decode.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "@tk_tcl//:tcl",
+    ],
+)
+
 # TODO: the prometheus target should be broken out, and possibly logger.
 # However, there are cyclic dependencies currently between all these, which
 # need to be taken care of first
 cc_library(
-    name = "utl",
+    name = "utl_without_decode",
     srcs = [
         "src/CFileUtils.cpp",
         "src/CallBack.cpp",
@@ -29,12 +46,70 @@ cc_library(
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
         "src/SuppressStdout.cpp",
-        "src/decode.cpp",
         "src/histogram.cpp",
         "src/mem_stats.cpp",
         "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
     ],
+    hdrs = [
+        "include/utl/CFileUtils.h",
+        "include/utl/CallBack.h",
+        "include/utl/CallBackHandler.h",
+        "include/utl/Logger.h",
+        "include/utl/Metrics.h",
+        "include/utl/Progress.h",
+        "include/utl/ScopedTemporaryFile.h",
+        "include/utl/SuppressStdout.h",
+        "include/utl/algorithms.h",
+        "include/utl/deleter.h",
+        "include/utl/exception.h",
+        "include/utl/histogram.h",
+        "include/utl/mem_stats.h",
+        "include/utl/options.h",
+        "include/utl/prometheus/atomic_floating.h",
+        "include/utl/prometheus/benchmark.h",
+        "include/utl/prometheus/builder.h",
+        "include/utl/prometheus/ckms_quantiles.h",
+        "include/utl/prometheus/client_metric.h",
+        "include/utl/prometheus/collectable.h",
+        "include/utl/prometheus/counter.h",
+        "include/utl/prometheus/family.h",
+        "include/utl/prometheus/gauge.h",
+        "include/utl/prometheus/hash.h",
+        "include/utl/prometheus/histogram.h",
+        "include/utl/prometheus/metric_family.h",
+        "include/utl/prometheus/metrics_server.h",
+        "include/utl/prometheus/prometheus_metric.h",
+        "include/utl/prometheus/registry.h",
+        "include/utl/prometheus/save_to_file.h",
+        "include/utl/prometheus/summary.h",
+        "include/utl/prometheus/text_serializer.h",
+        "include/utl/prometheus/time_window_quantiles.h",
+        "include/utl/scope.h",
+        "include/utl/timer.h",
+        "include/utl/unique_name.h",
+        "include/utl/validation.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "@boost.algorithm",
+        "@boost.asio",
+        "@boost.beast",
+        "@boost.core",
+        "@boost.iostreams",
+        "@boost.iterator",
+        "@boost.random",
+        "@com_google_absl//absl/debugging:stacktrace",
+        "@com_google_absl//absl/debugging:symbolize",
+        "@spdlog",
+    ],
+)
+
+cc_library(
+    name = "utl",
     hdrs = [
         "include/utl/CFileUtils.h",
         "include/utl/CallBack.h",
@@ -75,21 +150,9 @@ cc_library(
         "include/utl/unique_name.h",
         "include/utl/validation.h",
     ],
-    includes = [
-        "include",
-        "src",
-    ],
     deps = [
-        "//src/sta:opensta_lib",
-        "@boost.algorithm",
-        "@boost.asio",
-        "@boost.beast",
-        "@boost.core",
-        "@boost.iostreams",
-        "@boost.iterator",
-        "@boost.random",
-        "@spdlog",
-        "@tk_tcl//:tcl",
+        ":decode",
+        ":utl_without_decode",
     ],
 )
 

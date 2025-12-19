@@ -159,6 +159,7 @@ cc_binary(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
+        "@com_google_absl//absl/debugging:symbolize",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
     ],

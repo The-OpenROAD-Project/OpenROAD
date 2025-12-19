@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <unistd.h>
+
 #include <array>
 #include <atomic>
 #include <cassert>
@@ -25,6 +27,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
@@ -95,6 +99,9 @@ enum ToolId
   FOREACH_TOOL(GENERATE_ENUM)
       SIZE  // the number of tools, do not put anything after this
 };
+
+// Testing function for critical method
+extern "C" __attribute__((noinline)) void TestFuncForCheckingBacktrace();
 
 class Logger
 {
@@ -167,11 +174,21 @@ class Logger
   {
     error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
+    // If debugging is enabled dump the backtrace
+    if (anyDebugLevel(tool)) {
+      std::string backtrace_message = GetStackTrace();
+      log(tool, spdlog::level::err, id, backtrace_message);
+    }
+
     char tool_id[32];
     sprintf(tool_id, "%s-%04d", tool_names_[tool], id);
     // Exception should be caught by swig error handler.
     throw std::runtime_error(tool_id);
   }
+
+  // Friend needed to properly test critical, function needs to be able to call
+  // setRedirectSink
+  friend void TestFuncForCheckingBacktrace();
 
   template <typename... Args>
   __attribute__((noreturn)) void critical(ToolId tool,
@@ -179,7 +196,24 @@ class Logger
                                           const std::string& message,
                                           const Args&... args)
   {
-    log(tool, spdlog::level::level_enum::critical, id, message, args...);
+    std::string final_msg;
+
+    // format the message as before
+    try {
+      final_msg = fmt::format(fmt::runtime(message), args...);
+    } catch (...) {
+      final_msg = fmt::format("CRITICAL ERROR (fmt failed): {}", message);
+    }
+
+    final_msg += "\nStack Trace:\n";
+    final_msg += GetStackTrace();
+
+    log(tool, spdlog::level::critical, id, "{}", final_msg);
+
+    if (logger_) {
+      logger_->flush();
+    }
+
     exit(EXIT_FAILURE);
   }
 
@@ -270,6 +304,45 @@ class Logger
   std::vector<MetricsPolicy> metrics_policies_;
 
   std::unique_ptr<Progress> progress_;
+
+  // Returns a formatted stack trace string.
+  // skip_count: Number of frames to ignore at the top of the stack.
+  //             Default 0 includes this function itself (usually not desired).
+  //             Use 1 to skip this function.
+  //             Use 2 to skip this function AND the caller (e.g. the critical()
+  //             wrapper).
+  std::string GetStackTrace(int skip_count = 2)
+  {
+    // 64 frames is usually enough; increase if you have very deep recursion
+    void* result[64];
+    int depth = absl::GetStackTrace(result, 64, skip_count);
+
+    std::string trace;
+    trace.reserve(512);  // Pre-allocate some memory to avoid re-allocs
+
+    for (int i = 0; i < depth; ++i) {
+      char tmp[4096];  // Large buffer for C++ template symbols
+      const char* symbol = "(unknown)";
+
+      if (absl::Symbolize(result[i], tmp, sizeof(tmp))) {
+        symbol = tmp;
+      }
+
+      trace += fmt::format("#{} {} @ {}\n", i, symbol, result[i]);
+    }
+
+    return trace;
+  }
+
+  bool anyDebugLevel(ToolId tool)
+  {
+    if (!debug_on_) {
+      return false;
+    }
+    auto& groups = debug_group_level_[tool];
+    return std::ranges::any_of(groups,
+                               [](auto const& kv) { return kv.second >= 1; });
+  }
 
   template <typename... Args>
   void log(ToolId tool,
@@ -398,9 +471,9 @@ struct test_ostream
 {
  public:
   template <class T>
-  static auto test(int) -> decltype(std::declval<std::ostream>()
-                                        << std::declval<T>(),
-                                    std::true_type());
+  static auto test(int)
+      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
+                  std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;
