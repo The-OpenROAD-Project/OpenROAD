@@ -1047,7 +1047,7 @@
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
         "bzlTransitiveDigest": "mXT67CG7L5OLVmAL21N/b1fUYtLkKfGcDS9/BHvSBuY=",
-        "usagesDigest": "kfWei6B/Kh2icsOQdtUiHUjML0lX4Y7EQZc30VWPlMQ=",
+        "usagesDigest": "4SoJ3Uh9OA7BCbTABuk/iAKa6RXwwFDlK7SKCqtKTgs=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1065,8 +1065,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-4362-gaec1d8d35",
-              "sha256": "5f94f0481d1339493918208060be116da101405251bce22691ac4b2d662d276e",
+              "image": "docker.io/openroad/orfs:v3.0-4367-g79b6a48ab",
+              "sha256": "0d0dd3d8d346360a71f6325ce776a984c5a6296fc6e51956b53f136e1dd13462",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -4730,7 +4730,7 @@
     "@@rules_scala+//scala/extensions:config.bzl%scala_config": {
       "general": {
         "bzlTransitiveDigest": "TYEDBdoN7s4wE8er7JwzFt7+3iw57BHsTSLyWmxbgZo=",
-        "usagesDigest": "uliesOoMg751pSX5T2zzlIvJ584BZtCMn+lyizgjFQ4=",
+        "usagesDigest": "kIa14GxlFzFPszaJsUwGJ6HiTDEgyEIJ3PoO9RCzoSw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {
@@ -4755,7 +4755,7 @@
     "@@rules_scala+//scala/extensions:deps.bzl%scala_deps": {
       "general": {
         "bzlTransitiveDigest": "YsA4jOMweScag0E8uduDscdeffQYq2QvIZVzNUfcFug=",
-        "usagesDigest": "6e/wlT46JXlimBfSzfvDdhkNBat2824OdqmJ+kpuGqg=",
+        "usagesDigest": "BEkppMsG8BB85MjwSlCQl05N70CRaJ7aQeS0cea4zUs=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
