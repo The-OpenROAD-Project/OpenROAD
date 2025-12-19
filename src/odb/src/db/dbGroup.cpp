@@ -5,6 +5,7 @@
 #include "dbGroup.h"
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #include "dbBlock.h"

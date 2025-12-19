@@ -277,7 +277,7 @@ inline uint _dbObject::getOID() const
 {
   dbObjectPage* page = getObjectPage();
   uint offset = (oid_ & DB_OFFSET_MASK);
-  return page->page_addr_ | offset / page->table_->obj_size_;
+  return page->page_addr_ | (offset / page->table_->obj_size_);
 }
 
 inline dbObjectTable* _dbObject::getTable() const

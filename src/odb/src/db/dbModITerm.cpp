@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbModITerm.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"

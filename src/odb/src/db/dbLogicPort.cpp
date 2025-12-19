@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbLogicPort.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "dbBlock.h"

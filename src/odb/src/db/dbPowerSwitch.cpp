@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbPowerSwitch.h"
 
+#include <cstdlib>
 #include <map>
 #include <string>
 

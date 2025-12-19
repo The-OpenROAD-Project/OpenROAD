@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbLevelShifter.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "dbBlock.h"

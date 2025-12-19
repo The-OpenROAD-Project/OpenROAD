@@ -12,6 +12,8 @@
 #include <vector>
 
 // Generator Code Begin Cpp
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
