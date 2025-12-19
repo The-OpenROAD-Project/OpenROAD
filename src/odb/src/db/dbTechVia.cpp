@@ -66,7 +66,7 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
     return false;
   }
 
-  if (_boxes != rhs._boxes) {
+  if (boxes_ != rhs.boxes_) {
     return false;
   }
 
@@ -109,7 +109,7 @@ _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
       name_(nullptr),
       pattern_(nullptr),
       bbox_(v.bbox_),
-      _boxes(v._boxes),
+      boxes_(v.boxes_),
       top_(v.top_),
       bottom_(v.bottom_),
       non_default_rule_(v.non_default_rule_),
@@ -155,7 +155,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechVia& via)
   stream << via.resistance_;
   stream << via.name_;
   stream << via.bbox_;
-  stream << via._boxes;
+  stream << via.boxes_;
   stream << via.top_;
   stream << via.bottom_;
   stream << via.non_default_rule_;
@@ -173,7 +173,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechVia& via)
   stream >> via.resistance_;
   stream >> via.name_;
   stream >> via.bbox_;
-  stream >> via._boxes;
+  stream >> via.boxes_;
   stream >> via.top_;
   stream >> via.bottom_;
   stream >> via.non_default_rule_;
@@ -365,7 +365,7 @@ void dbTechVia::setViaParams(const dbViaParams& params)
     tech->box_tbl_->destroy(box);
   }
 
-  via->_boxes = 0U;
+  via->boxes_ = 0U;
   via->via_params_ = params;
   via->top_ = params.top_layer_;
   via->bottom_ = params.bot_layer_;
@@ -421,7 +421,7 @@ dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
   via->flags_ = _invia->flags_;
   via->resistance_ = _invia->resistance_;
   via->bbox_ = _invia->bbox_;
-  via->_boxes = _invia->_boxes;
+  via->boxes_ = _invia->boxes_;
   via->top_ = _invia->top_;
   via->bottom_ = _invia->bottom_;
   via->non_default_rule_ = (rule) ? rule->getOID() : 0;

@@ -950,8 +950,8 @@ dbBox* dbBox::create(dbTechVia* via_,
   }
 
   // link box to via
-  box->next_box_ = via->_boxes;
-  via->_boxes = box->getOID();
+  box->next_box_ = via->boxes_;
+  via->boxes_ = box->getOID();
   return (dbBox*) box;
 }
 
