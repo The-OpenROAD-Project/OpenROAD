@@ -49,18 +49,6 @@ project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
 
-# LTO setting must come after project() for proper compiler detection
-option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
-
-string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
-
-if (LINK_TIME_OPTIMIZATION AND NOT UPPER_BUILD_TYPE STREQUAL "DEBUG")
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-  message(STATUS "LTO is enabled")
-else()
-  message(STATUS "LTO is disabled")
-endif()
-
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 set(OPENROAD_SHARE ${CMAKE_INSTALL_PREFIX}/share/openroad)
 
@@ -113,6 +101,27 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
 message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
+
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
+if (LINK_TIME_OPTIMIZATION)
+  include(CheckIPOSupported)
+  # 1. Check if the compiler/linker even supports LTO
+  check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
+  if(lto_supported)
+    # LTO is enabled globally for Release builds
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO FALSE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
+
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
+    if(UPPER_BUILD_TYPE STREQUAL "RELEASE")
+      message(STATUS "LTO/IPO is enabled")
+    else()
+      message(STATUS "LTO/IPO is disabled")
+    endif()
+    message(STATUS "LTO/IPO is not supported: ${lto_error}")
+  endif()
+endif()
 
 # configure a header file to pass some of the CMake settings
 configure_file(
