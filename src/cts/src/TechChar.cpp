@@ -1699,7 +1699,8 @@ void TechChar::create()
         if (!solution.isPureWire && buffersCombinations > 1) {
           updateBufferTopologies(solution);
         }
-        // For pure-wire solution buffersCombinations == 1, so it only runs once.
+        // For pure-wire solution buffersCombinations == 1, so it only runs
+        // once.
         buffersCombinations--;
       } while (buffersCombinations != 0);
     }
