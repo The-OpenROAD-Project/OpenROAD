@@ -2,7 +2,6 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iterator>
