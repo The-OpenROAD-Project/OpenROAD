@@ -137,20 +137,20 @@ namespace odb {
 
 struct OldTransform
 {
-  int _orient;
-  int _originX;
-  int _originY;
-  int _sizeX;
-  int _sizeY;
+  int orient;
+  int originX;
+  int originY;
+  int sizeX;
+  int sizeY;
 };
 
 dbIStream& operator>>(dbIStream& stream, OldTransform& t)
 {
-  stream >> t._orient;
-  stream >> t._originX;
-  stream >> t._originY;
-  stream >> t._sizeX;
-  stream >> t._sizeY;
+  stream >> t.orient;
+  stream >> t.originX;
+  stream >> t.originY;
+  stream >> t.sizeX;
+  stream >> t.sizeY;
   return stream;
 }
 
