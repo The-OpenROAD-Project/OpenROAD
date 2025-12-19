@@ -2,7 +2,6 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iterator>
@@ -12,6 +11,8 @@
 #include <vector>
 
 // Generator Code Begin Cpp
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"

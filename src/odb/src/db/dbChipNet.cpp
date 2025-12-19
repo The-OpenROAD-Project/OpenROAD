@@ -67,10 +67,6 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 }
 
-_dbChipNet::~_dbChipNet()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbChipNet - Methods

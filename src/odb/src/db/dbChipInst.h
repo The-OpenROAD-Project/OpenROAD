@@ -28,8 +28,6 @@ class _dbChipInst : public _dbObject
  public:
   _dbChipInst(_dbDatabase*);
 
-  ~_dbChipInst();
-
   bool operator==(const _dbChipInst& rhs) const;
   bool operator!=(const _dbChipInst& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbChipInst& rhs) const;
