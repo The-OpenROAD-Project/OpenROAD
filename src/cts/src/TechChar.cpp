@@ -950,7 +950,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   odb::dbNet* net = nullptr;
   // clang-format off
   debugPrint(logger_, CTS, "tech char", 1, "*createPatterns for #nodes = {}"
-             " #topologies = {}", setupWirelength, numberOfNodes, numberOfTopologies);
+             " #topologies = {}", numberOfNodes, numberOfTopologies);
   // clang-format on
   // For each possible topology...
   for (unsigned solutionCounterInt = 0; solutionCounterInt < numberOfTopologies;
@@ -1051,9 +1051,6 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
     tmp << "OUT";
     debugPrint(logger_, CTS, "tech char", 1, tmp.str());
     topology.outPort = outPortPin;
-    if (isPureWire) {
-      topology.instVector.push_back(nullptr);
-    }
     topology.isPureWire = isPureWire;
     topology.netVector.push_back(net);
     topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
@@ -1478,6 +1475,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
   unsigned maxResultCapacitance = 0;
   unsigned minResultSlew = std::numeric_limits<unsigned>::max();
   unsigned maxResultSlew = 0;
+
   std::vector<ResultData> convertedSolutions;
   for (ResultData solution : selectedSolutions) {
     if (solution.pinSlew <= options_->getMaxCharSlew()) {
@@ -1530,6 +1528,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       convertedSolutions.push_back(convertedResult);
     }
   }
+
   // Sets the min and max values and returns the result vector.
   minSlew_ = minResultSlew;
   maxSlew_ = maxResultSlew;
@@ -1631,10 +1630,10 @@ void TechChar::create()
                  masterNames_.size(), solution.instVector.size());
       // clang-format on
       // For each possible buffer combination (different sizes).
-      unsigned buffersUpdate
+      unsigned buffersCombinations
           = getBufferingCombo(masterNames_.size(), solution.instVector.size());
 
-      if (buffersUpdate == 0) {
+      if (buffersCombinations == 0) {
         continue;
       }
 
@@ -1697,12 +1696,13 @@ void TechChar::create()
           }
         }
         // If the solution is not a pure-wire, update the buffer topologies.
-        if (!solution.isPureWire) {
+        if (!solution.isPureWire && buffersCombinations > 1) {
           updateBufferTopologies(solution);
         }
-        // For pure-wire solution buffersUpdate == 1, so it only runs once.
-        buffersUpdate--;
-      } while (buffersUpdate != 0);
+        // For pure-wire solution buffersCombinations == 1, so it only runs
+        // once.
+        buffersCombinations--;
+      } while (buffersCombinations != 0);
     }
     openStaChar_.reset(nullptr);
   }
