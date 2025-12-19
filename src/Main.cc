@@ -305,8 +305,6 @@ int main(int argc, char* argv[])
   }
 #endif  // ENABLE_PYTHON3
 
-  utl::Logger logger; 
-  logger.critical(utl::GPL, 9997, "Backtrace test");
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
