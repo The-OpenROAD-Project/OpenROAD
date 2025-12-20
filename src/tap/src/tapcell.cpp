@@ -1256,8 +1256,43 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
   for (auto* row : rows) {
     auto check_row = corners.find(row);
     if (check_row != corners.end()) {
-      // corner is already placed in this row
-      continue;
+      bool skip = false;
+      for (odb::dbInst* inst : check_row->second) {
+        switch (edge.type) {
+          case EdgeType::Right: {
+            if (inst->getBBox()->xMax() == row->getBBox().xMax()) {
+              // this edge is already placed
+              skip = true;
+            }
+            break;
+          }
+          case EdgeType::Left: {
+            if (inst->getBBox()->xMin() == row->getBBox().xMin()) {
+              // this edge is already placed
+              skip = true;
+            }
+            break;
+          }
+          case EdgeType::Top:
+          case EdgeType::Bottom:
+          case EdgeType::Unknown:
+            break;
+        }
+        if (skip) {
+          break;
+        }
+      }
+
+      if (skip) {
+        debugPrint(logger_,
+                   utl::TAP,
+                   "Endcap",
+                   2,
+                   "Skipping {} due to corners in {}",
+                   row->getName(),
+                   toString(edge.type));
+        continue;
+      }
     }
 
     const int width = edge_master->getWidth();

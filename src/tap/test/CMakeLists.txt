@@ -19,6 +19,7 @@ or_integration_tests(
     endcap_autoselection_error2
     endcap_autoselection_error3
     endcap_autoselection_error4
+    endcap_corners
     gcd_asap7
     gcd_fakeram
     gcd_nangate45
