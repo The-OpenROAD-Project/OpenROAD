@@ -25,7 +25,7 @@
 // User Code Begin Includes
 #include "dbChip.h"
 #include "dbCore.h"
-#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
 // User Code End Includes
 namespace odb {
@@ -190,9 +190,9 @@ void _dbMarker::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["comment"].add(comment_);
-  info.children_["sources"].add(sources_);
-  info.children_["shapes"].add(shapes_);
+  info.children["comment"].add(comment_);
+  info.children["sources"].add(sources_);
+  info.children["shapes"].add(shapes_);
   // User Code End collectMemInfo
 }
 
@@ -806,11 +806,9 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
 
   _dbMarker* marker = _category->marker_tbl_->create();
 
-  _dbBlock* block = marker->getBlock();
-  if (block) {
-    for (auto cb : block->callbacks_) {
-      cb->inDbMarkerCreate((dbMarker*) marker);
-    }
+  _dbChip* chip = marker->getChip();
+  for (auto cb : chip->callbacks_) {
+    cb->inDbMarkerCreate((dbMarker*) marker);
   }
 
   return (dbMarker*) marker;
@@ -820,8 +818,8 @@ void dbMarker::destroy(dbMarker* marker)
 {
   _dbMarker* _marker = (_dbMarker*) marker;
 
-  _dbBlock* block = _marker->getBlock();
-  for (auto cb : block->callbacks_) {
+  _dbChip* chip = _marker->getChip();
+  for (auto cb : chip->callbacks_) {
     cb->inDbMarkerDestroy(marker);
   }
 

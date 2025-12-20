@@ -938,17 +938,17 @@ void _dbTechAntennaPinModel::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["_gate_area"].add(gate_area_);
-  info.children_["_gate_area"].size
+  info.children["_gate_area"].add(gate_area_);
+  info.children["_gate_area"].size
       += gate_area_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_max_area_car"].add(max_area_car_);
-  info.children_["_max_area_car"].size
+  info.children["_max_area_car"].add(max_area_car_);
+  info.children["_max_area_car"].size
       += max_area_car_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_max_sidearea_car"].add(max_sidearea_car_);
-  info.children_["_max_sidearea_car"].size
+  info.children["_max_sidearea_car"].add(max_sidearea_car_);
+  info.children["_max_sidearea_car"].size
       += max_sidearea_car_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_max_cut_car"].add(max_cut_car_);
-  info.children_["_max_cut_car"].size
+  info.children["_max_cut_car"].add(max_cut_car_);
+  info.children["_max_cut_car"].size
       += max_cut_car_.size() * sizeof(_dbTechAntennaAreaElement);
 }
 

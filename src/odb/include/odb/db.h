@@ -747,8 +747,8 @@ class dbBlock : public dbObject
   /// and helper functions for global connections
   /// on this block.
   ///
-  int globalConnect();
-  int globalConnect(dbGlobalConnect* gc);
+  int globalConnect(bool force, bool verbose);
+  int globalConnect(dbGlobalConnect* gc, bool force, bool verbose);
   int addGlobalConnect(dbRegion* region,
                        const char* instPattern,
                        const char* pinPattern,
@@ -7974,7 +7974,7 @@ class dbGlobalConnect : public dbObject
   // User Code Begin dbGlobalConnect
   std::vector<dbInst*> getInsts() const;
 
-  int connect(dbInst* inst);
+  int connect(dbInst* inst, bool force);
 
   static dbGlobalConnect* create(dbNet* net,
                                  dbRegion* region,
@@ -8325,15 +8325,15 @@ class dbMarkerCategory : public dbObject
   void writeTR(const std::string& path) const;
   void writeTR(std::ofstream& report) const;
 
-  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+  static std::set<dbMarkerCategory*> fromJSON(dbChip* chip,
                                               const std::string& path);
-  static std::set<dbMarkerCategory*> fromJSON(dbBlock* block,
+  static std::set<dbMarkerCategory*> fromJSON(dbChip* chip,
                                               const char* source,
                                               std::ifstream& report);
-  static dbMarkerCategory* fromTR(dbBlock* block,
+  static dbMarkerCategory* fromTR(dbChip* chip,
                                   const char* name,
                                   const std::string& path);
-  static dbMarkerCategory* fromTR(dbBlock* block,
+  static dbMarkerCategory* fromTR(dbChip* chip,
                                   const char* name,
                                   const char* source,
                                   std::ifstream& report);

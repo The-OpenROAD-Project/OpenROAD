@@ -16,7 +16,7 @@ class _dbDatabase;
 
 struct dbCellEdgeSpacingFlags
 {
-  bool except_abutted_ : 1;
+  bool except_abutted : 1;
   bool except_non_filler_in_between : 1;
   bool optional : 1;
   bool soft : 1;

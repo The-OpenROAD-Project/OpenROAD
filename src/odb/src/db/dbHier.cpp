@@ -151,7 +151,7 @@ void _dbHier::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["child_bterms"].add(child_bterms_);
+  info.children["child_bterms"].add(child_bterms_);
 }
 
 }  // namespace odb

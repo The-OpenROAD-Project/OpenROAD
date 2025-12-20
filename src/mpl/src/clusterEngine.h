@@ -3,18 +3,21 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <queue>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace par {
 class PartitionMgr;
@@ -92,17 +95,17 @@ struct PhysicalHierarchy
   BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
-  float halo_width{0.0f};
-  float halo_height{0.0f};
-  float macro_with_halo_area{0.0f};
+  int halo_width{0};
+  int halo_height{0};
+  int64_t macro_with_halo_area{0};
 
   // The constraint set by the user.
-  Rect global_fence;
+  odb::Rect global_fence;
 
   // The actual area used by MPL - computed using the dimensions
   // of the core versus the global fence set by the user.
-  Rect floorplan_shape;
-  Rect die_area;
+  odb::Rect floorplan_shape;
+  odb::Rect die_area;
 
   bool has_io_clusters{true};
   bool has_only_macros{false};
@@ -159,7 +162,7 @@ class ClusteringEngine
 
   int getNumberOfIOs(Cluster* target) const;
 
-  static bool isIgnoredInst(odb::dbInst* inst);
+  bool isIgnoredInst(odb::dbInst* inst);
 
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
@@ -177,8 +180,7 @@ class ClusteringEngine
   std::vector<odb::dbInst*> getUnfixedMacros();
   void setDieArea();
   void setFloorplanShape();
-  void searchForFixedInstsInsideFloorplanShape();
-  float computeMacroWithHaloArea(
+  int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
   void reportDesignData();
@@ -282,7 +284,7 @@ class ClusteringEngine
   float computeConnWeight(int hops);
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
-  float computeMicronArea(odb::dbInst* inst);
+  int64_t computeArea(odb::dbInst* inst);
 
   bool isValidNet(odb::dbNet* net);
 
@@ -314,11 +316,12 @@ class ClusteringEngine
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
   const int max_num_of_hops_ = 5;
-
   const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
+
+  std::unordered_set<odb::dbInst*> ignorable_macros_;
 };
 
 }  // namespace mpl

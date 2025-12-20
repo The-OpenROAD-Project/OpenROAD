@@ -23,6 +23,7 @@ or_integration_tests(
     est_rc2
     est_rc3
     est_rc4
+    estimate_path_resistance
     gcd
     gcd_cugr
     gcd_flute

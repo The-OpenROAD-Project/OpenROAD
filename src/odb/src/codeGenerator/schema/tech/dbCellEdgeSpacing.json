@@ -4,7 +4,7 @@
   "fields": [
     {
       "type": "bit",
-      "name": "except_abutted_"
+      "name": "except_abutted"
     },
     {
       "type": "bit",

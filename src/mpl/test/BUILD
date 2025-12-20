@@ -36,6 +36,7 @@ COMPULSORY_TESTS = [
     "keep_clustering_data",
     "fixed_macros",
     "fixed_covers",
+    "macros_without_pins1",
 ]
 
 # Disabled in CMakeLists.txt
@@ -104,6 +105,7 @@ filegroup(
         "testcases/macro_only.lef",
         "testcases/macro_only.lib",
         "testcases/macro_only.v",
+        "testcases/macros_without_pins1.def",
         "testcases/mixed_ios1.def",
         "testcases/no_unfixed_macros.def",
         "testcases/orientation_improve1.def",

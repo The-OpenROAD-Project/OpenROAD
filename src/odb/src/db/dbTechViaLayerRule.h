@@ -57,7 +57,7 @@ class _dbTechViaLayerRule : public _dbObject
   int metal_overhang_;
   int spacing_x_;
   int spacing_y_;
-  double _resistance;
+  double resistance_;
   Rect rect_;
   dbId<_dbTechLayer> layer_;
 };

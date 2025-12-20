@@ -58,15 +58,15 @@ class sortMTerm
 
 class sortITerm
 {
-  _dbBlock* _block;
+  _dbBlock* block_;
 
  public:
-  sortITerm(_dbBlock* block) { _block = block; }
+  sortITerm(_dbBlock* block) { block_ = block; }
 
   bool operator()(uint it1, uint it2)
   {
-    _dbITerm* iterm1 = _block->iterm_tbl_->getPtr(it1);
-    _dbITerm* iterm2 = _block->iterm_tbl_->getPtr(it2);
+    _dbITerm* iterm1 = block_->iterm_tbl_->getPtr(it1);
+    _dbITerm* iterm2 = block_->iterm_tbl_->getPtr(it2);
     return iterm1->flags_.mterm_idx < iterm2->flags_.mterm_idx;
   }
 };
@@ -1649,8 +1649,8 @@ void _dbInst::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["iterms"].add(iterms_);
+  info.children["name"].add(name_);
+  info.children["iterms"].add(iterms_);
 }
 
 }  // namespace odb

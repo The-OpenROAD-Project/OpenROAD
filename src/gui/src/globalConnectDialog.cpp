@@ -50,6 +50,7 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
       add_(new QPushButton(this)),
       clear_(new QPushButton(this)),
       run_(new QPushButton(this)),
+      run_force_(new QPushButton(this)),
       rules_({}),
       inst_pattern_(new QLineEdit(this)),
       pin_pattern_(new QLineEdit(this)),
@@ -64,6 +65,7 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   QHBoxLayout* button_layout = new QHBoxLayout;
   button_layout->addWidget(clear_);
   button_layout->addWidget(run_);
+  button_layout->addWidget(run_force_);
   layout->addLayout(button_layout);
   layout->addWidget(connections_);
 
@@ -75,10 +77,15 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   add_->setDefault(false);
   add_->setEnabled(false);
 
-  run_->setIcon(QIcon(":/play.png"));
+  run_->setIcon(QIcon(":/resume.png"));
   run_->setToolTip(tr("Run"));
   run_->setAutoDefault(false);
   run_->setDefault(false);
+
+  run_force_->setIcon(QIcon(":/play.png"));
+  run_force_->setToolTip(tr("Run with forced connections"));
+  run_force_->setAutoDefault(false);
+  run_force_->setDefault(false);
 
   clear_->setIcon(QIcon(":/delete.png"));
   clear_->setToolTip(tr("Clear"));
@@ -87,6 +94,10 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
 
   connect(add_, &QPushButton::pressed, this, &GlobalConnectDialog::makeRule);
   connect(run_, &QPushButton::pressed, this, &GlobalConnectDialog::runRules);
+  connect(run_force_,
+          &QPushButton::pressed,
+          this,
+          &GlobalConnectDialog::runRulesWithForce);
   connect(
       clear_, &QPushButton::pressed, this, &GlobalConnectDialog::clearRules);
 
@@ -157,7 +168,12 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
 
 void GlobalConnectDialog::runRules()
 {
-  runRule(nullptr);
+  runRule(nullptr, false);
+}
+
+void GlobalConnectDialog::runRulesWithForce()
+{
+  runRule(nullptr, true);
 }
 
 void GlobalConnectDialog::clearRules()
@@ -242,7 +258,8 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.run->setToolTip(tr("Run"));
   widgets.run->setAutoDefault(false);
   widgets.run->setDefault(false);
-  connect(widgets.run, &QPushButton::pressed, [this, gc]() { runRule(gc); });
+  connect(
+      widgets.run, &QPushButton::pressed, [this, gc]() { runRule(gc, false); });
   layout_->addWidget(
       widgets.run, row_idx, toValue(GlobalConnectField::kRun), Qt::AlignCenter);
 
@@ -311,15 +328,15 @@ void GlobalConnectDialog::announceConnections(int connections)
       QString::fromStdString(fmt::format("Connected {} pin(s)", connections)));
 }
 
-void GlobalConnectDialog::runRule(odb::dbGlobalConnect* gc)
+void GlobalConnectDialog::runRule(odb::dbGlobalConnect* gc, bool force)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   QApplication::processEvents();
   int connections = 0;
   if (gc == nullptr) {
-    connections = block_->globalConnect();
+    connections = block_->globalConnect(force, true);
   } else {
-    connections = block_->globalConnect(gc);
+    connections = block_->globalConnect(gc, force, true);
   }
   QApplication::restoreOverrideCursor();
   emit connectionsMade(connections);

@@ -66,11 +66,11 @@ inline bool dbTable<T, page_size>::validId(dbId<T> id) const
 template <class T, uint page_size>
 inline void dbTable<T, page_size>::pushQ(uint& Q, _dbFreeObject* e)
 {
-  e->_prev = 0;
-  e->_next = Q;
+  e->prev_ = 0;
+  e->next_ = Q;
   const uint head_id = e->getImpl()->getOID();
   if (Q != 0) {
-    getFreeObj(Q)->_prev = head_id;
+    getFreeObj(Q)->prev_ = head_id;
   }
   Q = head_id;
 }
@@ -79,11 +79,11 @@ template <class T, uint page_size>
 inline _dbFreeObject* dbTable<T, page_size>::popQ(uint& Q)
 {
   _dbFreeObject* e = getFreeObj(Q);
-  Q = e->_next;
+  Q = e->next_;
 
   if (Q) {
     _dbFreeObject* head = getFreeObj(Q);
-    head->_prev = 0;
+    head->prev_ = 0;
   }
 
   return e;
@@ -177,9 +177,9 @@ void dbTable<T, page_size>::newPage()
   }
 
   ++page_cnt_;
-  page->_table = this;
-  page->_page_addr = page_id << page_shift;
-  page->_alloccnt = 0;
+  page->table_ = this;
+  page->page_addr_ = page_id << page_shift;
+  page->alloc_cnt_ = 0;
   pages_[page_id] = page;
 
   // The objects are put on the list in reverse order, so they can be removed
@@ -224,7 +224,7 @@ T* dbTable<T, page_size>::create()
   t->oid_ = oid | DB_ALLOC_BIT;
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
-  page->_alloccnt++;
+  page->alloc_cnt_++;
 
   const uint id = t->getOID();
 
@@ -363,13 +363,13 @@ void dbTable<T, page_size>::destroy(T* t)
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   _dbFreeObject* o = (_dbFreeObject*) t;
 
-  page->_alloccnt--;
+  page->alloc_cnt_--;
   const uint oid = t->oid_;
   t->~T();  // call destructor
   o->oid_ = oid & ~DB_ALLOC_BIT;
 
   const uint offset = t - (T*) page->objects_;
-  const uint id = page->_page_addr + offset;
+  const uint id = page->page_addr_ + offset;
 
   // Add to freelist
   pushQ(free_list_, o);
@@ -486,8 +486,8 @@ void dbTable<T, page_size>::writePage(dbOStream& stream,
       const char allocated = 0;
       stream << allocated;
       _dbFreeObject* o = (_dbFreeObject*) t;
-      stream << o->_next;
-      stream << o->_prev;
+      stream << o->next_;
+      stream << o->prev_;
     }
   }
 }
@@ -497,7 +497,7 @@ void dbTable<T, page_size>::readPage(dbIStream& stream, dbTablePage* page)
 {
   T* t = (T*) page->objects_;
   T* e = &t[pageSize()];
-  page->_alloccnt = 0;
+  page->alloc_cnt_ = 0;
 
   for (; t < e; t++) {
     char allocated;
@@ -506,14 +506,14 @@ void dbTable<T, page_size>::readPage(dbIStream& stream, dbTablePage* page)
     if (!allocated) {
       t->oid_ = (uint) ((char*) t - page->objects_);
       _dbFreeObject* o = (_dbFreeObject*) t;
-      stream >> o->_next;
-      stream >> o->_prev;
+      stream >> o->next_;
+      stream >> o->prev_;
     } else {
       new (t) T(db_);
       uint oid = uint((char*) t - page->objects_) | DB_ALLOC_BIT;
       t->oid_ = oid;  // Set the oid so the stream code can call the dbObject
                       // methods.
-      page->_alloccnt++;
+      page->alloc_cnt_++;
       stream >> *t;
       // Check that the streaming code did not overwrite the oid
       assert(t->oid_ == oid);
@@ -592,8 +592,8 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T, page_size>& table)
     uint size = table.pageSize() * sizeof(T) + sizeof(dbObjectPage);
     dbTablePage* page = (dbTablePage*) safe_malloc(size);
     memset(page, 0, size);
-    page->_page_addr = i << table.page_shift;
-    page->_table = &table;
+    page->page_addr_ = i << table.page_shift;
+    page->table_ = &table;
     table.pages_[i] = page;
     table.readPage(stream, page);
   }

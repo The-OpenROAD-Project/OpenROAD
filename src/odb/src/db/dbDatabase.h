@@ -304,7 +304,7 @@ class _dbDatabase : public _dbObject
   uint dbu_per_micron_;
   dbTable<_dbChip, 2>* chip_tbl_;
   dbHashTable<_dbChip, 2> chip_hash_;
-  dbTable<_dbProperty>* _prop_tbl;
+  dbTable<_dbProperty>* prop_tbl_;
   dbTable<_dbChipInst>* chip_inst_tbl_;
   dbTable<_dbChipRegionInst>* chip_region_inst_tbl_;
   dbTable<_dbChipConn>* chip_conn_tbl_;

@@ -163,7 +163,7 @@ void _dbProperty::collectMemInfo(MemInfo& info)
 
   // User Code Begin collectMemInfo
   if (flags_.type == kDbStringProp) {
-    info.children_["string"].add(std::get<std::string>(value_));
+    info.children["string"].add(std::get<std::string>(value_));
   }
   // User Code End collectMemInfo
 }
@@ -259,7 +259,7 @@ next_object:
   switch (object->getObjectType()) {
     case dbDatabaseObj: {
       _dbDatabase* db = (_dbDatabase*) object;
-      return db->_prop_tbl;
+      return db->prop_tbl_;
     }
 
     case dbChipObj: {

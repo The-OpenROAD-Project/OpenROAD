@@ -4,13 +4,20 @@
 // Generator Code Begin Cpp
 #include "dbChip.h"
 
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 
 #include "dbBlock.h"
 #include "dbBlockItr.h"
 #include "dbChipConn.h"
+#include "dbChipConnItr.h"
+#include "dbChipInst.h"
+#include "dbChipInstItr.h"
+#include "dbChipNet.h"
+#include "dbChipNetItr.h"
 #include "dbChipRegion.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbMarkerCategory.h"
 #include "dbNameCache.h"
@@ -20,18 +27,13 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
+#include "odb/dbChipCallBackObj.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include <cstdlib>
-
-#include "dbChipConnItr.h"
-#include "dbChipInst.h"
-#include "dbChipInstItr.h"
-#include "dbChipNet.h"
-#include "dbChipNetItr.h"
-#include "dbCommon.h"
-#include "odb/dbObject.h"
-#include "odb/geom.h"
+#include <list>
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
@@ -316,16 +318,16 @@ void _dbChip::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  prop_tbl_->collectMemInfo(info.children_["prop_tbl_"]);
+  prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
 
-  chip_region_tbl_->collectMemInfo(info.children_["chip_region_tbl_"]);
+  chip_region_tbl_->collectMemInfo(info.children["chip_region_tbl_"]);
 
   marker_categories_tbl_->collectMemInfo(
-      info.children_["marker_categories_tbl_"]);
+      info.children["marker_categories_tbl_"]);
 
   // User Code Begin collectMemInfo
-  block_tbl_->collectMemInfo(info.children_["block"]);
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  block_tbl_->collectMemInfo(info.children["block"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
   // User Code End collectMemInfo
 }
 
@@ -342,6 +344,11 @@ _dbChip::~_dbChip()
   delete name_cache_;
   delete block_itr_;
   delete prop_itr_;
+
+  while (!callbacks_.empty()) {
+    auto _cbitr = callbacks_.begin();
+    (*_cbitr)->removeOwner();
+  }
   // User Code End Destructor
 }
 

@@ -938,7 +938,7 @@ void _dbBTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)

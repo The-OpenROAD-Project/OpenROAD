@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "odb/geom.h"

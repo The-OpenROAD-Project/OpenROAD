@@ -16,6 +16,7 @@
 #include "Pin.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/pending/disjoint_sets.hpp"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"

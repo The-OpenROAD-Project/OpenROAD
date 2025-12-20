@@ -1330,7 +1330,7 @@ void tmg_conn::analyzeNet(dbNet* net)
     relocateShorts();
     treeReorder(noConvert);
   }
-  net->setDisconnected(!_connected);
+  net->setDisconnected(!connected_);
   net->setWireOrdered(true);
 }
 
@@ -1422,7 +1422,7 @@ bool tmg_conn::checkConnected()
 
 void tmg_conn::treeReorder(const bool no_convert)
 {
-  _connected = true;
+  connected_ = true;
   need_short_wire_id_ = false;
   if (ptV_.empty()) {
     return;
@@ -1442,7 +1442,7 @@ void tmg_conn::treeReorder(const bool no_convert)
   for (tmg_rcterm& x : termV_) {
     x.first_pt = nullptr;
     if (x.pt == nullptr) {
-      _connected = false;
+      connected_ = false;
     }
   }
 
@@ -1531,7 +1531,7 @@ void tmg_conn::treeReorder(const bool no_convert)
       last_term_index = j;
       if (j < termV_.size()) {
         // disconnected, start new path from another term
-        _connected = false;
+        connected_ = false;
         last_id_ = -1;
         tstackV_.push_back(x);
         pt = x->pt;

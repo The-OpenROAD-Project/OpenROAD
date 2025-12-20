@@ -35,7 +35,7 @@ void dbRegionInstItr::reverse(dbObject* parent)
   uint list = 0;
 
   while (id != 0) {
-    _dbInst* inst = _inst_tbl->getPtr(id);
+    _dbInst* inst = inst_tbl_->getPtr(id);
     uint n = inst->region_next_;
     inst->region_next_ = list;
     list = id;
@@ -46,7 +46,7 @@ void dbRegionInstItr::reverse(dbObject* parent)
   id = list;
 
   while (id != 0) {
-    _dbInst* inst = _inst_tbl->getPtr(id);
+    _dbInst* inst = inst_tbl_->getPtr(id);
     inst->region_prev_ = prev;
     prev = id;
     id = inst->region_next_;
@@ -86,13 +86,13 @@ uint dbRegionInstItr::end(dbObject* /* unused: parent */) const
 
 uint dbRegionInstItr::next(uint id, ...) const
 {
-  _dbInst* inst = _inst_tbl->getPtr(id);
+  _dbInst* inst = inst_tbl_->getPtr(id);
   return inst->region_next_;
 }
 
 dbObject* dbRegionInstItr::getObject(uint id, ...)
 {
-  return _inst_tbl->getPtr(id);
+  return inst_tbl_->getPtr(id);
 }
 
 }  // namespace odb
