@@ -523,7 +523,7 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
   // treat this as a hierarchical network.
-  if (hierarchy) {
+  if (hierarchy || db_->hasHierarchy()) {
     logger_->warn(
         ORD,
         12,

@@ -181,6 +181,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   master_id_ = 0;
   logger_ = utl::Logger::defaultLogger();
   unique_id_ = db_unique_id++;
+  hierarchy_ = false;
 
   gds_lib_tbl_ = new dbTable<_dbGDSLib, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
@@ -291,6 +292,11 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
       stream >> obj.dbu_per_micron_;
     }
   }
+  if (obj.isSchema(db_schema_hierarchy_flag)) {
+    stream >> obj.hierarchy_;
+  } else {
+    obj.hierarchy_ = false;
+  }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(db_schema_block_tech)) {
     if (obj.chip_) {
@@ -355,6 +361,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
   stream << obj.dbu_per_micron_;
+  stream << obj.hierarchy_;
   // User Code End <<
   return stream;
 }
@@ -456,6 +463,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   logger_ = nullptr;
   unique_id_ = id;
   dbu_per_micron_ = 0;
+  hierarchy_ = false;
 
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
@@ -694,6 +702,18 @@ dbTech* dbDatabase::getTech()
   auto impl = (_dbDatabase*) this;
   impl->logger_->error(
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
+}
+
+void dbDatabase::setHierarchy(bool value)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  db->hierarchy_ = value;
+}
+
+bool dbDatabase::hasHierarchy() const
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  return db->hierarchy_;
 }
 
 void dbDatabase::read(std::istream& file)
