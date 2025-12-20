@@ -213,7 +213,7 @@ proc improve_placement { args } {
     set global_swap_budget_list {}
 
     set global_swap_args $keys(-global_swap_args)
-    if { [expr {[llength $global_swap_args] % 2}] != 0 } {
+    if { ([llength $global_swap_args] % 2) != 0 } {
       sta::error DPL 345 "-global_swap_args must be key/value pairs"
     }
     foreach {opt value} $global_swap_args {
@@ -249,10 +249,10 @@ proc improve_placement { args } {
           set global_swap_budget_list {}
           foreach multiplier $value {
             set trimmed [string trim $multiplier]
-            if {$trimmed eq ""} {
+            if { $trimmed eq "" } {
               continue
             }
-            if {[catch {expr {double($trimmed)}} parsed]} {
+            if { [catch { expr { double($trimmed) } } parsed] } {
               sta::error DPL 347 "Invalid -budget_multipliers value \"$multiplier\""
             }
             lappend global_swap_budget_list $parsed
@@ -264,20 +264,20 @@ proc improve_placement { args } {
       }
     }
     set global_swap_budget_str ""
-    if {[llength $global_swap_budget_list] > 0} {
+    if { [llength $global_swap_budget_list] > 0 } {
       set global_swap_budget_str [join $global_swap_budget_list " "]
     }
     dpl::configure_global_swap_params_cmd \
-        $global_swap_passes \
-        $global_swap_tolerance \
-        $global_swap_tradeoff \
-        $global_swap_area_weight \
-        $global_swap_pin_weight \
-        $global_swap_user_weight \
-        $global_swap_sampling \
-        $global_swap_normalization \
-        $global_swap_profiling_excess \
-        $global_swap_budget_str
+      $global_swap_passes \
+      $global_swap_tolerance \
+      $global_swap_tradeoff \
+      $global_swap_area_weight \
+      $global_swap_pin_weight \
+      $global_swap_user_weight \
+      $global_swap_sampling \
+      $global_swap_normalization \
+      $global_swap_profiling_excess \
+      $global_swap_budget_str
   }
 
   set extra_dpl_enabled 0
@@ -286,7 +286,7 @@ proc improve_placement { args } {
   } elseif { [info exists ::env(ENABLE_EXTRA_DPL)] } {
     set extra_dpl_enabled $::env(ENABLE_EXTRA_DPL)
   }
-  set extra_dpl_enabled [expr {$extra_dpl_enabled ? 1 : 0}]
+  set extra_dpl_enabled [expr { $extra_dpl_enabled ? 1 : 0 }]
   dpl::set_extra_dpl_cmd $extra_dpl_enabled
 
   sta::check_argc_eq0 "improve_placement" $args
