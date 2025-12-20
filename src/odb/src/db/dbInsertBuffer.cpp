@@ -27,6 +27,7 @@ void dbInsertBuffer::resetMembers()
   buffer_master_ = nullptr;
   base_name_ = nullptr;
   uniquify_ = dbNameUniquifyType::ALWAYS;
+  orig_drvr_pin_ = nullptr;
 }
 
 dbInst* dbInsertBuffer::insertBufferBeforeLoad(
@@ -36,7 +37,7 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoad(
     const char* base_name,
     const dbNameUniquifyType& uniquify)
 {
-  return insertBufferCommon(load_input_term,
+  return insertBufferSimple(load_input_term,
                             buffer_master,
                             loc,
                             base_name,
@@ -51,7 +52,7 @@ dbInst* dbInsertBuffer::insertBufferAfterDriver(
     const char* base_name,
     const dbNameUniquifyType& uniquify)
 {
-  return insertBufferCommon(drvr_output_term,
+  return insertBufferSimple(drvr_output_term,
                             buffer_master,
                             loc,
                             base_name,
@@ -59,7 +60,7 @@ dbInst* dbInsertBuffer::insertBufferAfterDriver(
                             /* insertBefore */ false);
 }
 
-dbInst* dbInsertBuffer::insertBufferCommon(dbObject* term_obj,
+dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
                                            const dbMaster* buffer_master,
                                            const Point* loc,
                                            const char* base_name,
@@ -71,31 +72,31 @@ dbInst* dbInsertBuffer::insertBufferCommon(dbObject* term_obj,
   }
 
   // 1. Check terminal type and connectivity.
-  dbITerm* term_iterm = nullptr;
-  dbBTerm* term_bterm = nullptr;
   dbModNet* orig_mod_net = nullptr;
-  if (!checkAndGetTerm(term_obj, term_iterm, term_bterm, orig_mod_net)) {
+  if (!validateTermAndGetModNet(term_obj, orig_mod_net)) {
     return nullptr;
   }
 
-  // 2. Check if dont_touch attribute is present
-  if (checkDontTouch(term_iterm, nullptr)) {
-    return nullptr;
-  }
+  // 3. Initialize members
+  resetMembers();
 
-  // 3. Check buffer validity and create buffer instance
-  target_module_ = (term_iterm) ? term_iterm->getInst()->getModule() : nullptr;
+  target_module_ = (term_obj->getObjectType() == dbITermObj)
+                       ? static_cast<dbITerm*>(term_obj)->getInst()->getModule()
+                       : nullptr;
   buffer_master_ = buffer_master;
   base_name_ = base_name;
   uniquify_ = uniquify;
 
-  // 1. Create Buffer Instance
+  // Store original driver pin before buffer insertion modifies net structure
+  orig_drvr_pin_ = net_->getFirstDriverTerm();
+
+  // 4. Check buffer validity and create buffer instance
   dbInst* buffer_inst = checkAndCreateBuffer();
   if (buffer_inst == nullptr) {
     return nullptr;
   }
 
-  // 4. Create new net for one side of the buffer
+  // 5. Create new net for one side of the buffer
   std::set<dbObject*> terms;
   terms.insert(term_obj);
 
@@ -105,20 +106,13 @@ dbInst* dbInsertBuffer::insertBufferCommon(dbObject* term_obj,
     return nullptr;
   }
 
-  // 5. Rewire
-  rewireBufferSimple(insertBefore,
-                     buf_input_iterm_,
-                     buf_output_iterm_,
-                     net_,
-                     orig_mod_net,
-                     new_flat_net_,
-                     term_iterm,
-                     term_bterm);
+  // 6. Rewire
+  rewireBufferSimple(insertBefore, orig_mod_net, term_obj);
 
-  // 6. Place the new buffer
-  placeNewBuffer(buffer_inst, loc, term_iterm, term_bterm);
+  // 7. Place the new buffer
+  placeNewBuffer(buffer_inst, loc, term_obj);
 
-  // 7. Set buffer attributes
+  // 8. Set buffer attributes
   setBufferAttributes(buffer_inst);
 
   return buffer_inst;
@@ -151,6 +145,9 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   base_name_ = base_name;
   uniquify_ = uniquify;
 
+  // Store original driver pin before buffer insertion modifies net structure
+  orig_drvr_pin_ = net_->getFirstDriverTerm();
+
   dlogBeforeLoadsParams(load_pins, loc, loads_on_same_db_net);
 
   // 1. Validate Load Pins & Find Lowest Common Ancestor (Hierarchy)
@@ -161,20 +158,18 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
     return nullptr;  // Validation failed
   }
 
-  // 1. Create Buffer Instance
+  // 2. Create Buffer Instance
   dbInst* buffer_inst = checkAndCreateBuffer();
   if (buffer_inst == nullptr) {
-    resetMembers();
     logger_->error(
         utl::ODB, 1205, "BeforeLoads: Failed to create buffer instance.");
     return nullptr;
   }
 
-  // 2. Create Buffer Net
+  // 3. Create Buffer Net
   createNewBufferNet(load_pins);
   if (new_flat_net_ == nullptr) {
     dbInst::destroy(buffer_inst);
-    resetMembers();
     return nullptr;
   }
 
@@ -193,23 +188,26 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   return buffer_inst;
 }
 
-bool dbInsertBuffer::checkAndGetTerm(dbObject* term_obj,
-                                     dbITerm*& iterm,
-                                     dbBTerm*& bterm,
-                                     dbModNet*& mod_net)
+bool dbInsertBuffer::validateTermAndGetModNet(dbObject* term_obj,
+                                              dbModNet*& mod_net) const
 {
-  iterm = nullptr;
-  bterm = nullptr;
   mod_net = nullptr;
 
+  // 1. Validate term type and connectivity
   if (term_obj->getObjectType() == dbITermObj) {
-    iterm = static_cast<dbITerm*>(term_obj);
+    dbITerm* iterm = static_cast<dbITerm*>(term_obj);
     if (iterm->getNet() != net_) {
       return false;  // Not connected to this net
     }
+
+    // Check dont_touch attribute
+    if (checkDontTouch(iterm)) {
+      return false;
+    }
+
     mod_net = iterm->getModNet();
   } else if (term_obj->getObjectType() == dbBTermObj) {
-    bterm = static_cast<dbBTerm*>(term_obj);
+    dbBTerm* bterm = static_cast<dbBTerm*>(term_obj);
     if (bterm->getNet() != net_) {
       return false;  // Not connected to this net
     }
@@ -217,6 +215,7 @@ bool dbInsertBuffer::checkAndGetTerm(dbObject* term_obj,
   } else {
     return false;  // Invalid term type
   }
+
   return true;
 }
 
@@ -267,17 +266,13 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
   return buffer_inst;
 }
 
-bool dbInsertBuffer::checkDontTouch(dbITerm* drvr_iterm, dbITerm* load_iterm)
+bool dbInsertBuffer::checkDontTouch(dbITerm* iterm) const
 {
   if (net_->isDoNotTouch()) {
     return true;
   }
 
-  if (drvr_iterm && drvr_iterm->getInst()->isDoNotTouch()) {
-    return true;
-  }
-
-  if (load_iterm && load_iterm->getInst()->isDoNotTouch()) {
+  if (iterm && iterm->getInst()->isDoNotTouch()) {
     return true;
   }
 
@@ -286,8 +281,7 @@ bool dbInsertBuffer::checkDontTouch(dbITerm* drvr_iterm, dbITerm* load_iterm)
 
 void dbInsertBuffer::placeNewBuffer(dbInst* buffer_inst,
                                     const Point* loc,
-                                    dbITerm* term,
-                                    dbBTerm* bterm)
+                                    dbObject* term)
 {
   int x = 0;
   int y = 0;
@@ -295,19 +289,7 @@ void dbInsertBuffer::placeNewBuffer(dbInst* buffer_inst,
     x = loc->getX();
     y = loc->getY();
   } else {
-    if (term) {
-      Point origin = term->getInst()->getOrigin();
-      x = origin.getX();
-      y = origin.getY();
-    } else {  // bterm
-      auto bpins = bterm->getBPins();
-      if (bpins.empty() == false) {
-        dbBPin* first_bpin = *bpins.begin();
-        Rect box = first_bpin->getBBox();
-        x = box.xMin();
-        y = box.yMin();
-      }
-    }
+    getPinLocation(term, x, y);
   }
 
   buffer_inst->setLocation(x, y);
@@ -315,62 +297,87 @@ void dbInsertBuffer::placeNewBuffer(dbInst* buffer_inst,
 }
 
 void dbInsertBuffer::rewireBufferSimple(bool insertBefore,
-                                        dbITerm* buf_input_iterm,
-                                        dbITerm* buf_output_iterm,
-                                        dbNet* orig_net,
                                         dbModNet* orig_mod_net,
-                                        dbNet* new_net,
-                                        dbITerm* term_iterm,
-                                        dbBTerm* term_bterm)
+                                        dbObject* term)
 {
-  dbNet* in_net = insertBefore ? orig_net : new_net;
-  dbNet* out_net = insertBefore ? new_net : orig_net;
+  dbNet* in_net = insertBefore ? net_ : new_flat_net_;
+  dbNet* out_net = insertBefore ? new_flat_net_ : net_;
   dbModNet* in_mod_net = insertBefore ? orig_mod_net : nullptr;
   dbModNet* out_mod_net = insertBefore ? nullptr : orig_mod_net;
 
   // Connect buffer input
-  buf_input_iterm->connect(in_net);
+  buf_input_iterm_->connect(in_net);
   if (in_mod_net) {
-    buf_input_iterm->connect(in_mod_net);
+    buf_input_iterm_->connect(in_mod_net);
   }
 
   // Connect buffer output
-  buf_output_iterm->connect(out_net);
+  buf_output_iterm_->connect(out_net);
   if (out_mod_net) {
-    buf_output_iterm->connect(out_mod_net);
+    buf_output_iterm_->connect(out_mod_net);
   }
 
   // Connect the original terminal (load or driver) to the new net
-  if (term_iterm) {
-    term_iterm->disconnect();
-    term_iterm->connect(new_net);
-  } else {  // term_bterm
-    term_bterm->disconnect();
-    term_bterm->connect(new_net);
+  if (term->getObjectType() == dbITermObj) {
+    dbITerm* iterm = static_cast<dbITerm*>(term);
+    iterm->disconnect();  // Disconnect both flat and mod nets
+    iterm->connect(new_flat_net_);
+  } else if (term->getObjectType() == dbBTermObj) {
+    dbBTerm* bterm = static_cast<dbBTerm*>(term);
+    bterm->disconnect();
+    bterm->connect(new_flat_net_);
   }
 }
 
-Point dbInsertBuffer::computeCentroid(const std::set<dbObject*>& pins)
+bool dbInsertBuffer::getPinLocation(dbObject* pin, int& x, int& y) const
+{
+  if (pin == nullptr) {
+    return false;
+  }
+
+  if (pin->getObjectType() == dbITermObj) {
+    dbITerm* iterm = static_cast<dbITerm*>(pin);
+    if (iterm->getAvgXY(&x, &y)) {
+      return true;
+    }
+
+    // Fallback to instance origin
+    dbInst* inst = iterm->getInst();
+    Point origin = inst->getOrigin();
+    x = origin.getX();
+    y = origin.getY();
+    return true;
+  }
+
+  if (pin->getObjectType() == dbBTermObj) {
+    dbBTerm* bterm = static_cast<dbBTerm*>(pin);
+    return bterm->getFirstPinLocation(x, y);
+  }
+
+  return false;
+}
+
+Point dbInsertBuffer::computeCentroid(
+    dbObject* drvr_pin,
+    const std::set<dbObject*>& load_pins) const
 {
   uint64_t sum_x = 0;
   uint64_t sum_y = 0;
   int count = 0;
 
-  for (dbObject* term_obj : pins) {
-    if (term_obj->getObjectType() != dbITermObj) {
-      continue;
-    }
-    dbITerm* term = static_cast<dbITerm*>(term_obj);
-    int x = 0, y = 0;
-    if (term->getAvgXY(&x, &y)) {
+  // Include driver pin
+  int x = 0, y = 0;
+  if (getPinLocation(drvr_pin, x, y)) {
+    sum_x += x;
+    sum_y += y;
+    count++;
+  }
+
+  // Include load pins
+  for (dbObject* pin : load_pins) {
+    if (getPinLocation(pin, x, y)) {
       sum_x += x;
       sum_y += y;
-      count++;
-    } else {
-      dbInst* inst = term->getInst();
-      Point origin = inst->getOrigin();
-      sum_x += origin.getX();
-      sum_y += origin.getY();
       count++;
     }
   }
@@ -855,7 +862,7 @@ bool dbInsertBuffer::createHierarchicalConnection(
 
 dbModNet* dbInsertBuffer::getFirstModNetInFaninOfLoads(
     const std::set<dbObject*>& load_pins,
-    const std::set<dbModNet*>& modnets_in_target_module)
+    const std::set<dbModNet*>& modnets_in_target_module) const
 {
   for (dbObject* load : load_pins) {
     dbModNet* curr_mod_net = nullptr;
@@ -891,7 +898,7 @@ dbModNet* dbInsertBuffer::getFirstModNetInFaninOfLoads(
 }
 
 dbModNet* dbInsertBuffer::getFirstDriverModNetInTargetModule(
-    const std::set<dbModNet*>& modnets_in_target_module)
+    const std::set<dbModNet*>& modnets_in_target_module) const
 {
   // 1. Find the driver terminal of this flat net
   dbObject* driver_term = net_->getFirstDriverTerm();
@@ -1142,7 +1149,7 @@ void dbInsertBuffer::hierarchicalConnect(dbITerm* driver, dbITerm* load)
 dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
     std::set<dbObject*>& load_pins,
     std::set<dbNet*>& other_dbnets,
-    bool loads_on_same_db_net)
+    bool loads_on_same_db_net) const
 {
   dbModule* target_module = nullptr;
   bool first = true;
@@ -1157,7 +1164,6 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
     dbModule* curr_mod = nullptr;
     dbNet* load_net = nullptr;
     std::string load_name;
-    dbITerm* iterm_for_check = nullptr;
 
     // 1. Extract type-specific values
     if (load_obj->getObjectType() == dbITermObj) {
@@ -1165,7 +1171,16 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
       load_net = iterm->getNet();
       load_name = iterm->getName();
       curr_mod = iterm->getInst()->getModule();
-      iterm_for_check = iterm;
+
+      // dont_touch check
+      if (checkDontTouch(iterm)) {
+        logger_->warn(utl::ODB,
+                      1201,
+                      "BeforeLoads: Load pin {} or "
+                      "net is dont_touch.",
+                      load_name);
+        return nullptr;
+      }
     } else if (load_obj->getObjectType() == dbBTermObj) {
       dbBTerm* bterm = static_cast<dbBTerm*>(load_obj);
       load_net = bterm->getNet();
@@ -1192,16 +1207,6 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
                        net_->getName());
         return nullptr;
       }
-    }
-
-    // 3. Common logic: dont_touch check
-    if (checkDontTouch(nullptr, iterm_for_check)) {
-      logger_->warn(utl::ODB,
-                    1201,
-                    "BeforeLoads: Load pin {} or "
-                    "net is dont_touch.",
-                    load_name);
-      return nullptr;
     }
 
     // 4. Find LCA (Lowest Common Ancestor)
@@ -1336,10 +1341,10 @@ void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst,
   if (loc) {
     placement_loc = *loc;
   } else {
-    placement_loc = computeCentroid(load_pins);
+    placement_loc = computeCentroid(orig_drvr_pin_, load_pins);
   }
   dlogPlacingBuffer(buffer_inst, placement_loc);
-  placeNewBuffer(buffer_inst, &placement_loc, nullptr, nullptr);
+  placeNewBuffer(buffer_inst, &placement_loc, nullptr);
 }
 
 void dbInsertBuffer::setBufferAttributes(dbInst* buffer_inst)

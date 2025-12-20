@@ -44,31 +44,22 @@ class dbInsertBuffer
 
  private:
   void resetMembers();
-  dbInst* insertBufferCommon(dbObject* term_obj,
+  dbInst* insertBufferSimple(dbObject* term_obj,
                              const dbMaster* buffer_master,
                              const Point* loc,
                              const char* base_name,
                              const dbNameUniquifyType& uniquify,
                              bool insertBefore);
-  bool checkAndGetTerm(dbObject* term_obj,
-                       dbITerm*& iterm,
-                       dbBTerm*& bterm,
-                       dbModNet*& mod_net);
+  bool validateTermAndGetModNet(dbObject* term_obj, dbModNet*& mod_net) const;
   dbInst* checkAndCreateBuffer();
-  bool checkDontTouch(dbITerm* drvr_iterm, dbITerm* load_iterm);
-  void placeNewBuffer(dbInst* buffer_inst,
-                      const Point* loc,
-                      dbITerm* term,
-                      dbBTerm* bterm);
+  bool checkDontTouch(dbITerm* iterm) const;
+  void placeNewBuffer(dbInst* buffer_inst, const Point* loc, dbObject* term);
   void rewireBufferSimple(bool insertBefore,
-                          dbITerm* buf_input_iterm,
-                          dbITerm* buf_output_iterm,
-                          dbNet* orig_net,
                           dbModNet* orig_mod_net,
-                          dbNet* new_net,
-                          dbITerm* term_iterm,
-                          dbBTerm* term_bterm);
-  Point computeCentroid(const std::set<dbObject*>& pins);
+                          dbObject* term);
+  bool getPinLocation(dbObject* pin, int& x, int& y) const;
+  Point computeCentroid(dbObject* drvr_pin,
+                        const std::set<dbObject*>& load_pins) const;
   dbNet* createBufferNet(std::set<dbObject*>& connected_terms);
   std::string makeUniqueHierName(dbModule* module,
                                  const std::string& base_name,
@@ -80,16 +71,16 @@ class dbInsertBuffer
                                     const std::set<dbObject*>& load_pins);
   dbModNet* getFirstModNetInFaninOfLoads(
       const std::set<dbObject*>& load_pins,
-      const std::set<dbModNet*>& modnets_in_target_module);
+      const std::set<dbModNet*>& modnets_in_target_module) const;
   dbModNet* getFirstDriverModNetInTargetModule(
-      const std::set<dbModNet*>& modnets_in_target_module);
+      const std::set<dbModNet*>& modnets_in_target_module) const;
 
   //------------------------------------------------------------------
   // Step functions for insertBufferBeforeLoads
   //------------------------------------------------------------------
   dbModule* validateLoadPinsAndFindLCA(std::set<dbObject*>& load_pins,
                                        std::set<dbNet*>& other_dbnets,
-                                       bool loads_on_same_db_net);
+                                       bool loads_on_same_db_net) const;
   void createNewBufferNet(std::set<dbObject*>& load_pins);
   void rewireBufferLoadPins(std::set<dbObject*>& load_pins);
   void placeBufferAtLocation(dbInst* buffer_inst,
@@ -133,6 +124,7 @@ class dbInsertBuffer
   const dbMaster* buffer_master_ = nullptr;
   const char* base_name_ = nullptr;
   dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;
+  dbObject* orig_drvr_pin_ = nullptr;
 };
 
 }  // namespace odb
