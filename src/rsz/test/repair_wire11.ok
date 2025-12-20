@@ -32,3 +32,5 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0039] Resized 1 instances.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 pad1 (2000000 2000000) outside of core (20140 22400 779760 778400)
+wire1 (1456164 1434335) outside of core (20140 22400 779760 778400)
+wire2 (882328 868170) outside of core (20140 22400 779760 778400)
