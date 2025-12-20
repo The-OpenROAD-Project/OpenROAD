@@ -1102,10 +1102,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 
 dbIStream& operator>>(dbIStream& stream, _dbBox& box)
 {
-  if (box.getDatabase()->isSchema(db_schema_dbbox_mask)) {
+  if (box.getDatabase()->isSchema(kSchemaDbBoxMask)) {
     uint* bit_field = (uint*) &box.flags_;
     stream >> *bit_field;
-  } else if (box.getDatabase()->isSchema(db_schema_box_layer_bits)) {
+  } else if (box.getDatabase()->isSchema(kSchemaBoxLayerBits)) {
     _dbBoxFlagsWithoutMask old;
     uint* bit_field = (uint*) &old;
     stream >> *bit_field;

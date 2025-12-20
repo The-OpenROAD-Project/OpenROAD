@@ -191,7 +191,7 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst.pin_access_idx_;
 
   dbDatabase* db = (dbDatabase*) (inst.getDatabase());
-  if (((_dbDatabase*) db)->isSchema(db_schema_db_remove_hash)) {
+  if (((_dbDatabase*) db)->isSchema(kSchemaDbRemoveHash)) {
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModule* module = nullptr;
     // if the instance has no module parent put in the top module

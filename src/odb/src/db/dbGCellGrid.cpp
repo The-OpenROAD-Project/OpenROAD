@@ -107,9 +107,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   stream >> obj.y_grid_;
   // User Code Begin >>
   _dbDatabase* db = obj.getDatabase();
-  if (db->isSchema(db_schema_float_gcelldata)) {
+  if (db->isSchema(kSchemaFloatGCellData)) {
     stream >> obj.congestion_map_;
-  } else if (db->isSchema(db_schema_gcell_grid_matrix)) {
+  } else if (db->isSchema(kSchemaGcellGridMatrix)) {
     std::map<dbId<_dbTechLayer>, dbMatrix<OldGCellData>> old_format;
     stream >> old_format;
     for (const auto& [lid, cells] : old_format) {
@@ -192,7 +192,7 @@ void _dbGCellGrid::collectMemInfo(MemInfo& info)
 
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 {
-  if (stream.getDatabase()->isSchema(db_schema_smaler_gcelldata)) {
+  if (stream.getDatabase()->isSchema(kSchemaSmalerGcelldata)) {
     stream >> obj.usage;
     stream >> obj.capacity;
   } else {

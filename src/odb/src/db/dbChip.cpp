@@ -174,78 +174,78 @@ _dbChip::_dbChip(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.name_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.type_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.offset_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.width_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.height_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.thickness_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.shrink_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_east_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_west_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_north_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_south_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_east_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_west_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_north_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_south_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.tsv_;
   }
   stream >> obj.top_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_inst)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipInst)) {
     stream >> obj.chipinsts_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
     stream >> obj.conns_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> obj.nets_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_tech)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipTech)) {
     stream >> obj.tech_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
     stream >> *obj.chip_region_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_marker_categories)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipMarkerCategories)) {
     stream >> *obj.marker_categories_tbl_;
   }
   // User Code Begin >>
   stream >> *obj.block_tbl_;
   stream >> *obj.prop_tbl_;
   stream >> *obj.name_cache_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_hash_table)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipHashTable)) {
     stream >> obj.next_entry_;
   }
   auto chip = (dbChip*) &obj;

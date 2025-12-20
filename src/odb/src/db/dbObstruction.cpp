@@ -72,12 +72,12 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   stream >> obs.effective_width_;
 
   _dbDatabase* db = obs.getImpl()->getDatabase();
-  if (!db->isSchema(db_schema_except_pg_nets_obstruction)) {
+  if (!db->isSchema(kSchemaExceptPgNetsObstruction)) {
     // assume false for older databases
     obs.flags_.except_pg_nets = false;
   }
 
-  if (!db->isSchema(db_schema_die_area_is_polygon)) {
+  if (!db->isSchema(kSchemaDieAreaIsPolygon)) {
     // assume false for older databases
     obs.flags_.is_system_reserved = false;
   }

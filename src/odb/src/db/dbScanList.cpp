@@ -39,10 +39,10 @@ _dbScanList::_dbScanList(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> obj.unused_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> obj.first_scan_inst_;
   }
   return stream;

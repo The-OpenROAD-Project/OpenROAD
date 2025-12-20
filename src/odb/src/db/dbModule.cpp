@@ -94,10 +94,10 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj.insts_;
   stream >> obj.mod_inst_;
   stream >> obj.modinsts_;
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.modnets_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.modbterms_;
   }
   return stream;
