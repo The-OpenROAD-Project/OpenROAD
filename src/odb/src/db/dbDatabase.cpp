@@ -706,13 +706,13 @@ dbTech* dbDatabase::getTech()
 
 void dbDatabase::setHierarchy(bool value)
 {
-  _dbDatabase* db = (_dbDatabase*) this;
+  _dbDatabase* db = reinterpret_cast<_dbDatabase*>(this);
   db->hierarchy_ = value;
 }
 
 bool dbDatabase::hasHierarchy() const
 {
-  _dbDatabase* db = (_dbDatabase*) this;
+  const _dbDatabase* db = reinterpret_cast<const _dbDatabase*>(this);
   return db->hierarchy_;
 }
 
