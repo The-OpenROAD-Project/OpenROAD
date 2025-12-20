@@ -335,13 +335,13 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
 
 std::string dbMaster::getName() const
 {
-  _dbMaster* master = (_dbMaster*) this;
+  const _dbMaster* master = (const _dbMaster*) this;
   return master->name_;
 }
 
-const char* dbMaster::getConstName()
+const char* dbMaster::getConstName() const
 {
-  _dbMaster* master = (_dbMaster*) this;
+  const _dbMaster* master = (const _dbMaster*) this;
   return master->name_;
 }
 

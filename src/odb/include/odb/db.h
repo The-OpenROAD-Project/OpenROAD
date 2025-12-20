@@ -5382,7 +5382,7 @@ class dbMaster : public dbObject
   ///
   /// Get the master cell name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Get the x,y origin of this master
