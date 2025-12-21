@@ -671,7 +671,7 @@ void SACoreSoftMacro::calNotchPenalty()
   std::set<int> x_point;
   std::set<int> y_point;
   for (auto& macro : macros_) {
-    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
+    if (!macro.isMacroCluster() && !macro.isMixedCluster() && !macro.isFixed()) {
       continue;
     }
     x_point.insert(macro.getX());
