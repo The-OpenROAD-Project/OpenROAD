@@ -35,7 +35,7 @@ void dbRegionGroupItr::reverse(dbObject* parent)
   // User Code Begin reverse
   _dbRegion* _parent = (_dbRegion*) parent;
   uint curr_id = _parent->groups_;
-  uint last_id;
+  uint last_id = 0;
 
   while (curr_id != 0) {
     _dbGroup* _child = group_tbl_->getPtr(curr_id);
