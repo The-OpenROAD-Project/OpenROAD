@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <string.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <new>

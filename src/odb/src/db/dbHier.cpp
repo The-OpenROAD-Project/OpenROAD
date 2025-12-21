@@ -49,10 +49,6 @@ _dbHier::_dbHier(_dbDatabase*, const _dbHier& i)
 {
 }
 
-_dbHier::~_dbHier()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbHier& hier)
 {
   stream << hier.inst_;

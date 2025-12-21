@@ -23,7 +23,6 @@ class _dbMPin : public _dbObject
  public:
   _dbMPin(_dbDatabase*, const _dbMPin& p);
   _dbMPin(_dbDatabase*);
-  ~_dbMPin();
 
   bool operator==(const _dbMPin& rhs) const;
   bool operator!=(const _dbMPin& rhs) const { return !operator==(rhs); }

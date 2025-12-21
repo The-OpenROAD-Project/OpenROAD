@@ -174,16 +174,6 @@ std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
   return scan_enable->getPin();
 }
 
-std::string_view getName(odb::dbBTerm* bterm)
-{
-  return bterm->getConstName();
-}
-
-std::string_view getName(odb::dbITerm* iterm)
-{
-  return iterm->getMTerm()->getConstName();
-}
-
 void dbScanInst::setAccessPins(const AccessPins& access_pins)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;

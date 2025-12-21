@@ -50,7 +50,6 @@
 #include "dbLib.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
-#include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
 #include "dbTech.h"
@@ -491,8 +490,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 utl::Logger* _dbDatabase::getLogger() const
 {
   if (!logger_) {
-    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
-              << std::endl;
+    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb.\n";
     exit(1);
   }
   return logger_;
@@ -647,8 +645,7 @@ int dbDatabase::removeUnusedMasters()
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     // Filter out the master that matches inst_master
-    auto masterIt
-        = std::find(unused_masters.begin(), unused_masters.end(), master);
+    auto masterIt = std::ranges::find(unused_masters, master);
     if (masterIt != unused_masters.end()) {
       // erase used maseters from container
       unused_masters.erase(masterIt);

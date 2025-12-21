@@ -505,28 +505,28 @@ dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffPAR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->par_area_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffCAR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->cum_area_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffPSR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->par_sidearea_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffCSR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->cum_sidearea_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 void dbTechLayerAntennaRule::setPAR(double ratio)
@@ -665,7 +665,7 @@ dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getAreaDiffReduce()
 {
   _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->area_diff_reduce_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 void dbTechLayerAntennaRule::setAreaDiffReduce(
@@ -681,12 +681,6 @@ void dbTechLayerAntennaRule::setAreaDiffReduce(
 // _dbTechAntennaAreaElement - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-_dbTechAntennaAreaElement::_dbTechAntennaAreaElement(
-    const _dbTechAntennaAreaElement& e)
-    : area_(e.area_), lyidx_(e.lyidx_)
-{
-}
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechAntennaAreaElement* aae)
 {

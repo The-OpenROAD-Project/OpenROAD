@@ -8,9 +8,6 @@
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/odb.h"
-// User Code Begin Includes
-#include "dbVector.h"
-// User Code End Includes
 
 namespace odb {
 class dbIStream;

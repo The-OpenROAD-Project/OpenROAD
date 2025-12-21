@@ -39,8 +39,6 @@ class _dbSWire : public _dbObject
   {
   }
 
-  ~_dbSWire() {}
-
   void addSBox(_dbSBox* box);
   void removeSBox(_dbSBox* box);
 
