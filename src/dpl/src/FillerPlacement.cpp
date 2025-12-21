@@ -223,6 +223,27 @@ void Opendp::placeRowFillers(GridY row,
                                                 /* physical_only */ true);
         DbuX x{core_.xMin() + gridToDbu(k, site_width)};
         DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
+
+        // Handling name conflicts
+        int tries = 0;
+        const int MAX_TRIES = 1000;
+        while (!inst && (tries < MAX_TRIES)) {
+          inst = odb::dbInst::create(
+              block_,
+              master,
+              (inst_name + "__" + to_string(tries++)).c_str(),
+              /* physical_only */ true);
+        }
+        if (!inst) {
+          logger_->error(DPL,
+                         5,
+                         "could not create the filler cell {} {} {} {}",
+                         gap,
+                         x,
+                         y,
+                         gridInstName(row, j - 1),
+                         gridInstName(row, k + 1));
+        }
         inst->setOrient(orient);
         inst->setLocation(x.v, y.v);
         inst->setPlacementStatus(dbPlacementStatus::PLACED);
