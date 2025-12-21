@@ -336,7 +336,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 {
   _dbDatabase* db = tech.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_block_tech)) {
+  if (db->isSchema(kSchemaBlockTech)) {
     stream >> tech.name_;
   } else {
     tech.name_ = "";
@@ -345,7 +345,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> tech.layer_cnt_;
   stream >> tech.rlayer_cnt_;
   stream >> tech.lef_units_;
-  if (db->isLessThanSchema(db_schema_remove_dbu_per_micron)) {
+  if (db->isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
     int dbu_per_micron;
     stream >> dbu_per_micron;
     db->dbu_per_micron_ = dbu_per_micron;
@@ -376,7 +376,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> *tech.via_generate_rule_tbl_;
   stream >> *tech.prop_tbl_;
   stream >> *tech.metal_width_via_map_tbl_;
-  if (tech.getDatabase()->isSchema(db_schema_cell_edge_spc_tbl)) {
+  if (tech.getDatabase()->isSchema(kSchemaCellEdgeSpcTbl)) {
     stream >> *tech.cell_edge_spacing_tbl_;
   }
   stream >> *tech.name_cache_;

@@ -84,10 +84,6 @@ void _dbChipConn::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 }
 
-_dbChipConn::~_dbChipConn()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbChipConn - Methods

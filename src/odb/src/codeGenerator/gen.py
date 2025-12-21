@@ -201,12 +201,16 @@ def add_field_attributes(field, klass, flags_struct, schema):
         field["setterArgumentType"] = field["getterReturnType"] = field["type"]
 
     # For fields that we need to free/destroy in the destructor
-    if (
+    needs_free = (
         field["name"] == "name_"
+        and field["type"] == "char *"
         and "no-destruct" not in field["flags"]
-        or "table" in field
-    ):
+    )
+
+    if needs_free or "table" in field:
         klass["needs_non_default_destructor"] = True
+        if needs_free:
+            klass["cpp_sys_includes"].extend(["cstdlib"])
     return flag_num_bits
 
 

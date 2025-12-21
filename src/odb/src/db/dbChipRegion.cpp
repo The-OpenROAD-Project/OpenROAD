@@ -63,7 +63,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.side_;
   stream >> obj.layer_;
   stream >> obj.box_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_bump_tbl_;
   }
   return stream;

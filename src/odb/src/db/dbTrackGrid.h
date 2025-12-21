@@ -112,7 +112,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbTrackGrid& grid)
   stream >> grid.y_origin_;
   stream >> grid.y_count_;
   stream >> grid.y_step_;
-  if (db->isSchema(db_track_mask)) {
+  if (db->isSchema(kSchemaTrackMask)) {
     stream >> grid.first_mask_;
     stream >> grid.samemask_;
   } else {

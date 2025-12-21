@@ -3,6 +3,7 @@
 
 #include "tmg_conn_g.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
@@ -51,9 +52,7 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
   }
   if (4 * ptN + 2 * shortN > eNmax_) {
     eNmax_ *= 2;
-    if (4 * ptN + 2 * shortN > eNmax_) {
-      eNmax_ = 4 * ptN + 2 * shortN;
-    }
+    eNmax_ = std::max((4 * ptN) + (2 * shortN), eNmax_);
     free(eV_);
     eV_ = (tcg_edge*) safe_malloc(eNmax_ * sizeof(tcg_edge));
   }

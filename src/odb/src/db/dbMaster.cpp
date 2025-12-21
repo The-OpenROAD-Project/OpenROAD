@@ -276,10 +276,10 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master.leq_;
   stream >> master.eeq_;
   stream >> master.obstructions_;
-  if (db->isSchema(db_schema_polygon)) {
+  if (db->isSchema(kSchemaPolygon)) {
     stream >> master.poly_obstructions_;
   }
-  if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
+  if (db->isSchema(kSchemaDbmasterLibForSite)) {
     stream >> master.lib_for_site_;
   } else {
     // The site was copied into the same dbLib previously
@@ -289,17 +289,17 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master.mterm_hash_;
   stream >> *master.mterm_tbl_;
   stream >> *master.mpin_tbl_;
-  if (!db->isSchema(db_rm_target)) {
+  if (!db->isSchema(kSchemaRmTarget)) {
     // obsolete table is always unpopulated so type/values unimportant
     dbTable<_dbMaster, 4> dummy(nullptr, nullptr, nullptr, dbDatabaseObj);
     stream >> dummy;
   }
   stream >> *master.box_tbl_;
-  if (db->isSchema(db_schema_polygon)) {
+  if (db->isSchema(kSchemaPolygon)) {
     stream >> *master.poly_box_tbl_;
   }
   stream >> *master.antenna_pin_model_tbl_;
-  if (db->isSchema(db_schema_master_edge_type)) {
+  if (db->isSchema(kSchemaMasterEdgeType)) {
     stream >> *master.edge_types_tbl_;
   }
   return stream;
