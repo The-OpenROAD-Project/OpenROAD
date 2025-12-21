@@ -652,10 +652,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void deleteTieCellAndNet(const Instance* tie_inst, LibertyPort* tie_port);
   const Pin* findArithBoundaryPin(const Pin* load_pin);
   Instance* createNewTieCellForLoadPin(const Pin* load_pin,
-                                  const char* new_inst_name,
-                                  Instance* parent,
-                                  LibertyPort* tie_port,
-                                  int separation_dbu);
+                                       const char* new_inst_name,
+                                       Instance* parent,
+                                       LibertyPort* tie_port,
+                                       int separation_dbu);
   void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
   Instance* makeBuffer(LibertyCell* cell,
@@ -670,7 +670,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   odb::dbInst* insertBufferAfterDriver(Net* net,
                                        LibertyCell* buffer_cell,
                                        const Point* loc,
-                                       const char* name_suffix);
+                                       const char* new_buf_base_name = nullptr,
+                                       const char* new_net_base_name = nullptr);
 
   ///
   /// Wrapper for dbNet::insertBufferBeforeDriver().
@@ -679,7 +680,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   odb::dbInst* insertBufferBeforeLoad(Pin* load_pin,
                                       LibertyCell* buffer_cell,
                                       const Point* loc,
-                                      const char* name_suffix);
+                                      const char* new_buf_base_name = nullptr,
+                                      const char* new_net_base_name = nullptr);
 
   ///
   /// Wrapper for dbNet::insertBufferBeforeLoads().
@@ -689,7 +691,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
                                        const std::set<odb::dbObject*>& loads,
                                        LibertyCell* buffer_cell,
                                        const Point* loc,
-                                       const char* name_suffix,
+                                       const char* new_buf_base_name = nullptr,
+                                       const char* new_net_base_name = nullptr,
                                        bool loads_on_same_db_net = true);
 
   void insertBufferPostProcess(dbInst* buffer_inst);

@@ -2037,6 +2037,7 @@ int Rebuffer::exportBufferTree(
                                                 buffer_cell,
                                                 &buffer_loc,
                                                 instance_base_name,
+                                                nullptr,
                                                 false /*loads_on_same_db_net*/);
 
         if (buf_inst) {

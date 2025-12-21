@@ -4916,7 +4916,8 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
 odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
                                               LibertyCell* buffer_cell,
                                               const Point* loc,
-                                              const char* name_suffix)
+                                              const char* new_buf_base_name,
+                                              const char* new_net_base_name)
 {
   // Find the driver of the current net
   const sta::Pin* drvr_pin = nullptr;
@@ -4951,8 +4952,8 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
       = db_net->insertBufferAfterDriver(drvr_obj,
                                         buffer_master,
                                         loc,
-                                        name_suffix,
-                                        nullptr,
+                                        new_buf_base_name,
+                                        new_net_base_name,
                                         odb::dbNameUniquifyType::ALWAYS);
 
   if (!buffer_inst) {
@@ -4972,7 +4973,8 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
 odb::dbInst* Resizer::insertBufferBeforeLoad(Pin* load_pin,
                                              LibertyCell* buffer_cell,
                                              const Point* loc,
-                                             const char* name_suffix)
+                                             const char* new_buf_base_name,
+                                             const char* new_net_base_name)
 {
   // Get the dbObject of the load_pin
   odb::dbObject* db_load_pin = db_network_->staToDb(load_pin);
@@ -5003,8 +5005,8 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(Pin* load_pin,
       = db_net->insertBufferBeforeLoad(db_load_pin,
                                        buffer_master,
                                        loc,
-                                       name_suffix,
-                                       nullptr,
+                                       new_buf_base_name,
+                                       new_net_base_name,
                                        odb::dbNameUniquifyType::ALWAYS);
 
   if (!buffer_inst) {
@@ -5026,7 +5028,8 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     const std::set<odb::dbObject*>& loads,
     LibertyCell* buffer_cell,
     const Point* loc,
-    const char* name_suffix,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
     bool loads_on_same_db_net)
 {
   if (loads.empty()) {
@@ -5069,8 +5072,8 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
       = db_net->insertBufferBeforeLoads(loads_copy,
                                         buffer_master,
                                         loc,
-                                        name_suffix,
-                                        nullptr,
+                                        new_buf_base_name,
+                                        new_net_base_name,
                                         odb::dbNameUniquifyType::ALWAYS,
                                         loads_on_same_db_net);
 
