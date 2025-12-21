@@ -668,24 +668,43 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 
   // Create grids based on location of MixedCluster and HardMacroCluster
-  std::set<int> x_point;
-  std::set<int> y_point;
+  std::vector<int> x_point;
+  std::vector<int> y_point;
   for (auto& macro : macros_) {
     if (!macro.isMacroCluster() && !macro.isMixedCluster() && !macro.isFixed()) {
       continue;
     }
-    x_point.insert(macro.getX());
-    x_point.insert(macro.getX() + macro.getWidth());
-    y_point.insert(macro.getY());
-    y_point.insert(macro.getY() + macro.getHeight());
+    x_point.push_back(macro.getX());
+    x_point.push_back(macro.getX() + macro.getWidth());
+    y_point.push_back(macro.getY());
+    y_point.push_back(macro.getY() + macro.getHeight());
   }
-  x_point.insert(0);
-  y_point.insert(0);
-  x_point.insert(outline_.dx());
-  y_point.insert(outline_.dy());
+  x_point.push_back(0);
+  y_point.push_back(0);
+  x_point.push_back(outline_.dx());
+  y_point.push_back(outline_.dy());
 
-  std::vector<int> x_coords(x_point.begin(), x_point.end());
-  std::vector<int> y_coords(y_point.begin(), y_point.end());
+  std::ranges::sort(x_point);
+  std::ranges::sort(y_point);
+
+  std::vector<int> x_coords;
+  int epsilon = outline_.dx() / 100;
+  for (size_t i = 0; i < x_point.size(); ++i) {
+    if (i + 1 < x_point.size() && std::abs(x_point[i+1] - x_point[i]) <= epsilon) {
+        continue; 
+    }
+    x_coords.push_back(x_point[i]);
+  }
+
+  std::vector<int> y_coords;
+  epsilon = outline_.dy() / 100;
+  for (size_t i = 0; i < y_point.size(); ++i) {
+    if (i + 1 < y_point.size() && std::abs(y_point[i+1] - y_point[i]) <= epsilon) {
+        continue; 
+    }
+    y_coords.push_back(y_point[i]);
+  }
+
   int num_x = x_coords.size() - 1;
   int num_y = y_coords.size() - 1;
 
@@ -713,35 +732,30 @@ void SACoreSoftMacro::calNotchPenalty()
         continue;
       }
 
-      int surroundings = 0;
-      if (row == 0 || grid[row - 1][col]) {
-        surroundings++;
-      }
-      if (row == num_y - 1 || grid[row + 1][col]) {
-        surroundings++;
-      }
-      if (col == 0 || grid[row][col - 1]) {
-        surroundings++;
-      }
-      if (col == num_x - 1 || grid[row][col + 1]) {
-        surroundings++;
+      bool is_notch = false;
+      bool bottom = (row == 0 || grid[row - 1][col]);
+      bool top = (row == num_y - 1 || grid[row + 1][col]);
+      bool left = (col == 0 || grid[row][col - 1]);
+      bool right = (col == num_x - 1 || grid[row][col + 1]);
+
+      width = x_coords[col + 1] - x_coords[col];
+      height = y_coords[row + 1] - y_coords[row];
+
+      if (top && bottom && left && right) {
+        is_notch = true;
+      } else if (top && bottom) {
+        is_notch = height <= notch_h_th_;
+      } else if (left && right) {
+        is_notch = width <= notch_v_th_;
       }
 
-      if (surroundings >= 3) {
-        width = x_coords[col + 1] - x_coords[col];
-        height = y_coords[row + 1] - y_coords[row];
-
-        if (width <= notch_h_th_ || height <= notch_v_th_) {
-          notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
-                                                  block_->dbuToMicrons(height));
-          if (graphics_) {
-            graphics_->addNotch(odb::Rect(x_coords[col], y_coords[row], x_coords[col+1], y_coords[row+1]), true);
-          }
-        }
-      } else {
-        if (graphics_) {
-          graphics_->addNotch(odb::Rect(x_coords[col], y_coords[row], x_coords[col+1], y_coords[row+1]), false);
-        }
+      if (is_notch) {
+        notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
+                                                block_->dbuToMicrons(height));
+      }
+      
+      if (graphics_) {
+        graphics_->addNotch(odb::Rect(x_coords[col], y_coords[row], x_coords[col + 1], y_coords[row + 1]), is_notch);
       }
     }
   }
