@@ -60,7 +60,7 @@ class dbInsertBuffer
   bool getPinLocation(dbObject* pin, int& x, int& y) const;
   Point computeCentroid(dbObject* drvr_pin,
                         const std::set<dbObject*>& load_pins) const;
-  dbNet* createBufferNet(std::set<dbObject*>& connected_terms);
+  dbNet* createNewFlatNet(std::set<dbObject*>& connected_terms);
   std::string makeUniqueHierName(dbModule* module,
                                  const std::string& base_name,
                                  const char* suffix) const;
@@ -81,7 +81,7 @@ class dbInsertBuffer
   dbModule* validateLoadPinsAndFindLCA(std::set<dbObject*>& load_pins,
                                        std::set<dbNet*>& other_dbnets,
                                        bool loads_on_same_db_net) const;
-  void createNewBufferNet(std::set<dbObject*>& load_pins);
+  void createNewFlatAndHierNets(std::set<dbObject*>& load_pins);
   void rewireBufferLoadPins(std::set<dbObject*>& load_pins);
   void placeBufferAtLocation(dbInst* buffer_inst,
                              const Point* loc,

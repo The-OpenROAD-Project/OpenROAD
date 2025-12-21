@@ -100,7 +100,7 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
   std::set<dbObject*> terms;
   terms.insert(term_obj);
 
-  new_flat_net_ = createBufferNet(terms);
+  new_flat_net_ = createNewFlatNet(terms);
   if (new_flat_net_ == nullptr) {
     dbInst::destroy(buffer_inst);
     return nullptr;
@@ -167,7 +167,7 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   }
 
   // 3. Create Buffer Net
-  createNewBufferNet(load_pins);
+  createNewFlatAndHierNets(load_pins);
   if (new_flat_net_ == nullptr) {
     dbInst::destroy(buffer_inst);
     return nullptr;
@@ -390,15 +390,17 @@ Point dbInsertBuffer::computeCentroid(
                static_cast<int>(sum_y / count));
 }
 
-dbNet* dbInsertBuffer::createBufferNet(std::set<dbObject*>& connected_terms)
+dbNet* dbInsertBuffer::createNewFlatNet(std::set<dbObject*>& connected_terms)
 {
+  // Create a new net for buffering in the target module.
+  //
   // Algorithm:
-  // - Create a new net for buffering.
-  // - If the original net name conflicts with any port name, rename it with the
-  //   port name. This is to avoid net name conflicts when verilog is generated
-  //   from the design.
-  // - If the name collision occurs, the new net name will use the port name.
-  // - The new net resides in the target_module hierarchy
+  // - The new net will drive the connected_terms, and the original net will be
+  //   connected to the buffer terminal.
+  // - If the original net name matches a connected BTerm, rename the original
+  //   net to a unique name and assign the BTerm's name to the new net.
+  //   This ensures that the net name matches the port name for Verilog
+  //   compatibility.
 
   std::string new_net_name = "net";
   dbNameUniquifyType new_net_uniquify = uniquify_;
@@ -412,6 +414,7 @@ dbNet* dbInsertBuffer::createBufferNet(std::set<dbObject*>& connected_terms)
     dbBTerm* bterm = static_cast<dbBTerm*>(obj);
     std::string_view bterm_name{bterm->getConstName()};
     if (bterm_name == block_->getBaseName(net_->getConstName())) {
+      // The original net names uses the BTerm name.
       // Rename this net if its name is the same as a port name in loads_pins
       std::string new_orig_net_name = block_->makeNewNetName(
           target_module_ ? target_module_->getModInst() : nullptr,
@@ -1228,17 +1231,19 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
   return target_module;
 }
 
-void dbInsertBuffer::createNewBufferNet(std::set<dbObject*>& load_pins)
+void dbInsertBuffer::createNewFlatAndHierNets(std::set<dbObject*>& load_pins)
 {
   // Create a new flat net
   std::set<dbObject*> connected_terms;
   connected_terms.insert(load_pins.begin(), load_pins.end());
-  new_flat_net_ = createBufferNet(connected_terms);
+  new_flat_net_ = createNewFlatNet(connected_terms);
   if (new_flat_net_ == nullptr) {
     return;
   }
 
   // Check if we need to create a mod net
+  // - If the new buffer module and the terminal module are different, new mod
+  //   net is needed.
   bool needs_mod_net = false;
   if (net_->getDb()->hasHierarchy()) {
     for (dbObject* load_obj : load_pins) {
