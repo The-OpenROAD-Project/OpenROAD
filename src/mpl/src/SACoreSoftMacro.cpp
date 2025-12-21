@@ -2,10 +2,13 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "SACoreSoftMacro.h"
+#include <bits/ranges_algo.h>
 
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <limits>
+#include <ranges>
 #include <set>
 #include <utility>
 #include <vector>
@@ -633,6 +636,10 @@ float SACoreSoftMacro::calSingleNotchPenalty(float width, float height)
 // If there is no HardMacroCluster, we do not consider the notch penalty
 void SACoreSoftMacro::calNotchPenalty()
 {
+  if (graphics_) {
+    graphics_->clearNotches();
+  }
+
   if (notch_weight_ <= 0.0) {
     return;
   }
@@ -651,6 +658,12 @@ void SACoreSoftMacro::calNotchPenalty()
     height = std::max(height_, outline_.dy());
     notch_penalty_ = calSingleNotchPenalty(block_->dbuToMicrons(width),
                                            block_->dbuToMicrons(height));
+
+    if (graphics_) {
+      graphics_->addNotch(odb::Rect(0, 0, width, height), false);
+      graphics_->setNotchPenalty(
+          {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
+    }
     return;
   }
 
@@ -721,6 +734,13 @@ void SACoreSoftMacro::calNotchPenalty()
         if (width <= notch_h_th_ || height <= notch_v_th_) {
           notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
                                                   block_->dbuToMicrons(height));
+          if (graphics_) {
+            graphics_->addNotch(odb::Rect(x_coords[col], y_coords[row], x_coords[col+1], y_coords[row+1]), true);
+          }
+        }
+      } else {
+        if (graphics_) {
+          graphics_->addNotch(odb::Rect(x_coords[col], y_coords[row], x_coords[col+1], y_coords[row+1]), false);
         }
       }
     }
@@ -998,9 +1018,9 @@ void SACoreSoftMacro::fillDeadSpace()
 int SACoreSoftMacro::getSegmentIndex(const int segment,
                                      const std::vector<int>& coords)
 {
-  int index = std::distance(coords.begin(),
-                            std::ranges::lower_bound(coords, segment));
-  return index;
+  auto it = std::ranges::lower_bound(coords, segment);
+  
+  return static_cast<int>(std::distance(coords.begin(), it));
 }
 
 // The blockages here are only those that overlap with the annealing outline.

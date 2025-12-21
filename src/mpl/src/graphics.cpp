@@ -536,6 +536,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     drawGuides(painter);
     drawFences(painter);
+    drawNotches(painter);
   }
 }
 
@@ -561,6 +562,24 @@ void Graphics::drawGuides(gui::Painter& painter)
                        gui::Painter::Anchor::kCenter,
                        std::to_string(macro_id),
                        false /* rotate 90 */);
+  }
+}
+
+void Graphics::drawNotches(gui::Painter& painter) {
+  painter.setPen(gui::Painter::kYellow, true);
+
+  for (const auto& [notch, value] : notches_) {
+    odb::Rect rect = notch;
+    rect.moveDelta(outline_.xMin(), outline_.yMin());
+
+    if (value) {
+      logger_->report("hatched {}", rect);
+      painter.setBrush(gui::Painter::kYellow, gui::Painter::kDiagonal);
+    } else {
+      painter.setBrush(gui::Painter::kYellow, gui::Painter::kNone);
+    }
+
+    painter.drawRect(rect);
   }
 }
 
@@ -736,6 +755,14 @@ void Graphics::setGuides(const std::map<int, odb::Rect>& guides)
 void Graphics::setFences(const std::map<int, odb::Rect>& fences)
 {
   fences_ = fences;
+}
+
+void Graphics::addNotch(const odb::Rect& notch, bool value) {
+  notches_.emplace_back(notch, value);
+}
+
+void Graphics::clearNotches() {
+  notches_.clear();
 }
 
 void Graphics::setIOConstraintsMap(
