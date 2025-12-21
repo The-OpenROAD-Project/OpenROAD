@@ -237,7 +237,8 @@ void Opendp::placeRowFillers(GridY row,
         if (!inst) {
           logger_->error(DPL,
                          5,
-                         "could not create the filler cell {} {} {} {}",
+                         "Cannot create the filler cell for the gap of size {} "
+                         "at {},{} dbu between {} and {}",
                          gap,
                          x,
                          y,
