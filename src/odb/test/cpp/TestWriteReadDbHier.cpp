@@ -70,6 +70,8 @@ class TestWriteReadDbHier : public tst::IntegratedFixture
   std::vector<dbInst*> instances_;
 };
 
+// Construct hierarchical netlist and write/read it back.
+// The hierarchical netlist should be read back successfully.
 TEST_F(TestWriteReadDbHier, WriteReadOdb)
 {
   SetUpTmpPath("WriteReadOdb");
