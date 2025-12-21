@@ -292,7 +292,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
       stream >> obj.dbu_per_micron_;
     }
   }
-  if (obj.isSchema(db_schema_hierarchy_flag)) {
+  if (obj.isSchema(kSchemaHierarchyFlag)) {
     stream >> obj.hierarchy_;
   } else {
     obj.hierarchy_ = false;
