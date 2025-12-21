@@ -27,19 +27,25 @@ class dbInsertBuffer
   dbInst* insertBufferBeforeLoad(dbObject* load_input_term,
                                  const dbMaster* buffer_master,
                                  const Point* loc,
-                                 const char* base_name,
-                                 const dbNameUniquifyType& uniquify);
+                                 const char* new_buf_base_name,
+                                 const char* new_net_base_name = nullptr,
+                                 const dbNameUniquifyType& uniquify
+                                 = dbNameUniquifyType::ALWAYS);
   dbInst* insertBufferAfterDriver(dbObject* drvr_output_term,
                                   const dbMaster* buffer_master,
                                   const Point* loc,
-                                  const char* base_name,
-                                  const dbNameUniquifyType& uniquify);
+                                  const char* new_buf_base_name,
+                                  const char* new_net_base_name = nullptr,
+                                  const dbNameUniquifyType& uniquify
+                                  = dbNameUniquifyType::ALWAYS);
   dbInst* insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                   const dbMaster* buffer_master,
                                   const Point* loc,
-                                  const char* base_name,
-                                  const dbNameUniquifyType& uniquify,
-                                  bool loads_on_same_db_net);
+                                  const char* new_buf_base_name,
+                                  const char* new_net_base_name = nullptr,
+                                  const dbNameUniquifyType& uniquify
+                                  = dbNameUniquifyType::ALWAYS,
+                                  bool loads_on_same_db_net = false);
   void hierarchicalConnect(dbITerm* driver, dbITerm* load);
 
  private:
@@ -47,7 +53,8 @@ class dbInsertBuffer
   dbInst* insertBufferSimple(dbObject* term_obj,
                              const dbMaster* buffer_master,
                              const Point* loc,
-                             const char* base_name,
+                             const char* new_buf_base_name,
+                             const char* new_net_base_name,
                              const dbNameUniquifyType& uniquify,
                              bool insertBefore);
   bool validateTermAndGetModNet(dbObject* term_obj, dbModNet*& mod_net) const;
@@ -122,7 +129,8 @@ class dbInsertBuffer
   dbModNet* new_mod_net_ = nullptr;
   dbModule* target_module_ = nullptr;
   const dbMaster* buffer_master_ = nullptr;
-  const char* base_name_ = nullptr;
+  const char* new_buf_base_name_ = nullptr;
+  const char* new_net_base_name_ = nullptr;
   dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;
   dbObject* orig_drvr_pin_ = nullptr;
 };

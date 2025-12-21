@@ -308,6 +308,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
         buffer_master,
         &drvr_loc,
         "split",
+        nullptr,
         odb::dbNameUniquifyType::IF_NEEDED);
 
     if (buffer_inst) {

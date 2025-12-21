@@ -25,7 +25,8 @@ void dbInsertBuffer::resetMembers()
   new_mod_net_ = nullptr;
   target_module_ = nullptr;
   buffer_master_ = nullptr;
-  base_name_ = nullptr;
+  new_buf_base_name_ = nullptr;
+  new_net_base_name_ = nullptr;
   uniquify_ = dbNameUniquifyType::ALWAYS;
   orig_drvr_pin_ = nullptr;
 }
@@ -34,13 +35,15 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoad(
     dbObject* load_input_term,
     const dbMaster* buffer_master,
     const Point* loc,
-    const char* base_name,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
     const dbNameUniquifyType& uniquify)
 {
   return insertBufferSimple(load_input_term,
                             buffer_master,
                             loc,
-                            base_name,
+                            new_buf_base_name,
+                            new_net_base_name,
                             uniquify,
                             /* insertBefore */ true);
 }
@@ -49,13 +52,15 @@ dbInst* dbInsertBuffer::insertBufferAfterDriver(
     dbObject* drvr_output_term,
     const dbMaster* buffer_master,
     const Point* loc,
-    const char* base_name,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
     const dbNameUniquifyType& uniquify)
 {
   return insertBufferSimple(drvr_output_term,
                             buffer_master,
                             loc,
-                            base_name,
+                            new_buf_base_name,
+                            new_net_base_name,
                             uniquify,
                             /* insertBefore */ false);
 }
@@ -63,7 +68,8 @@ dbInst* dbInsertBuffer::insertBufferAfterDriver(
 dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
                                            const dbMaster* buffer_master,
                                            const Point* loc,
-                                           const char* base_name,
+                                           const char* new_buf_base_name,
+                                           const char* new_net_base_name,
                                            const dbNameUniquifyType& uniquify,
                                            bool insertBefore)
 {
@@ -84,7 +90,8 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
                        ? static_cast<dbITerm*>(term_obj)->getInst()->getModule()
                        : nullptr;
   buffer_master_ = buffer_master;
-  base_name_ = base_name;
+  new_buf_base_name_ = new_buf_base_name;
+  new_net_base_name_ = new_net_base_name;
   uniquify_ = uniquify;
 
   // Store original driver pin before buffer insertion modifies net structure
@@ -122,7 +129,8 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
     std::set<dbObject*>& load_pins,
     const dbMaster* buffer_master,
     const Point* loc,
-    const char* base_name,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
     const dbNameUniquifyType& uniquify,
     bool loads_on_same_db_net)
 {
@@ -142,7 +150,8 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   resetMembers();
 
   buffer_master_ = buffer_master;
-  base_name_ = base_name;
+  new_buf_base_name_ = new_buf_base_name;
+  new_net_base_name_ = new_net_base_name;
   uniquify_ = uniquify;
 
   // Store original driver pin before buffer insertion modifies net structure
@@ -253,7 +262,8 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
   }
 
   // Create a new buffer instance
-  const char* inst_base_name = (base_name_) ? base_name_ : "buf";
+  const char* inst_base_name
+      = (new_buf_base_name_) ? new_buf_base_name_ : "buf";
   dbInst* buffer_inst = dbInst::create(block_,
                                        const_cast<dbMaster*>(buffer_master_),
                                        inst_base_name,
@@ -402,7 +412,7 @@ dbNet* dbInsertBuffer::createNewFlatNet(std::set<dbObject*>& connected_terms)
   //   This ensures that the net name matches the port name for Verilog
   //   compatibility.
 
-  std::string new_net_name = "net";
+  std::string new_net_name = (new_net_base_name_) ? new_net_base_name_ : "net";
   dbNameUniquifyType new_net_uniquify = uniquify_;
 
   // Check if the net name conflicts with any port name
@@ -1372,14 +1382,15 @@ void dbInsertBuffer::dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
       "insert_buffer",
       1,
       "BeforeLoads: Try inserting a buffer on dbNet={}, load_pins_size={}, "
-      "buffer_master={}, loc=({}, {}), base_name={}, uniquify={}, "
-      "loads_on_same_db_net={}",
+      "buffer_master={}, loc=({}, {}), new_buf_base_name={}, "
+      "new_net_base_name={}, uniquify={}, loads_on_same_db_net={}",
       net_->getName(),
       load_pins.size(),
       buffer_master_->getName(),
       loc ? loc->getX() : -1,
       loc ? loc->getY() : -1,
-      base_name_ ? base_name_ : "buf",
+      new_buf_base_name_ ? new_buf_base_name_ : "buf",
+      new_net_base_name_ ? new_net_base_name_ : "net",
       static_cast<int>(uniquify_),
       loads_on_same_db_net);
 }

@@ -1686,8 +1686,14 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case14)
   loads.insert(load2_inst->findITerm("A"));
 
   // Call with loads_on_same_db_net = false
-  dbInst* buf_inst = drvr_net->insertBufferBeforeLoads(
-      loads, buf_master, nullptr, "buf", dbNameUniquifyType::IF_NEEDED, false);
+  dbInst* buf_inst
+      = drvr_net->insertBufferBeforeLoads(loads,
+                                          buf_master,
+                                          nullptr,
+                                          "buf",
+                                          nullptr,
+                                          dbNameUniquifyType::IF_NEEDED,
+                                          false);
 
   // 3. Verify
   ASSERT_NE(buf_inst, nullptr);
@@ -1985,6 +1991,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case17)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_TRUE(new_buf);
@@ -2065,6 +2072,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case18)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_TRUE(new_buf);
@@ -2167,6 +2175,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case19)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_TRUE(new_buf);
@@ -2256,6 +2265,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case20)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_TRUE(new_buf);
@@ -2333,6 +2343,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case21)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_TRUE(new_buf);
@@ -2402,6 +2413,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case22)
                                           buffer_master,
                                           nullptr,
                                           "new_buf",
+                                          nullptr,
                                           odb::dbNameUniquifyType::ALWAYS,
                                           false);
   ASSERT_TRUE(new_buf);
@@ -2469,6 +2481,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case23)
                                           buffer_master,
                                           nullptr,
                                           "new_buf",
+                                          nullptr,
                                           odb::dbNameUniquifyType::ALWAYS,
                                           false);
   ASSERT_TRUE(new_buf);
@@ -2603,6 +2616,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case24)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_NE(new_buf, nullptr);
@@ -2686,6 +2700,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case25)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_NE(new_buf, nullptr);
@@ -2756,6 +2771,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case26)
                                             buffer_master,
                                             nullptr,
                                             "new_buf",
+                                            nullptr,
                                             odb::dbNameUniquifyType::ALWAYS,
                                             false);
   ASSERT_NE(new_buf, nullptr);

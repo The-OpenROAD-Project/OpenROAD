@@ -2582,7 +2582,8 @@ class dbNet : public dbObject
   dbInst* insertBufferBeforeLoad(dbObject* load_input_term,
                                  const dbMaster* buffer_master,
                                  const Point* loc = nullptr,
-                                 const char* base_name = nullptr,
+                                 const char* new_buf_base_name = nullptr,
+                                 const char* new_net_base_name = nullptr,
                                  const dbNameUniquifyType& uniquify
                                  = dbNameUniquifyType::ALWAYS);
 
@@ -2595,7 +2596,8 @@ class dbNet : public dbObject
   dbInst* insertBufferAfterDriver(dbObject* drvr_output_term,
                                   const dbMaster* buffer_master,
                                   const Point* loc = nullptr,
-                                  const char* base_name = nullptr,
+                                  const char* new_buf_base_name = nullptr,
+                                  const char* new_net_base_name = nullptr,
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS);
 
@@ -2614,7 +2616,8 @@ class dbNet : public dbObject
   dbInst* insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                   const dbMaster* buffer_master,
                                   const Point* loc = nullptr,
-                                  const char* base_name = nullptr,
+                                  const char* new_buf_base_name = nullptr,
+                                  const char* new_net_base_name = nullptr,
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS,
                                   bool loads_on_same_db_net = true);
@@ -2641,7 +2644,8 @@ class dbNet : public dbObject
   dbInst* insertBufferCommon(dbObject* term_obj,
                              const dbMaster* buffer_master,
                              const Point* loc,
-                             const char* base_name,
+                             const char* new_buf_base_name,
+                             const char* new_net_base_name,
                              const dbNameUniquifyType& uniquify,
                              bool insertBefore);
   dbModNet* getFirstModNetInFaninOfLoads(

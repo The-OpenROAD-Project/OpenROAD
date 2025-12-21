@@ -2994,35 +2994,51 @@ void _dbNet::dumpModNetConnectivity(const dbModNet* modnet,
 dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
                                       const dbMaster* buffer_master,
                                       const Point* loc,
-                                      const char* base_name,
+                                      const char* new_buf_base_name,
+                                      const char* new_net_base_name,
                                       const dbNameUniquifyType& uniquify)
 {
   dbInsertBuffer insert_buffer(this);
-  return insert_buffer.insertBufferBeforeLoad(
-      load_input_term, buffer_master, loc, base_name, uniquify);
+  return insert_buffer.insertBufferBeforeLoad(load_input_term,
+                                              buffer_master,
+                                              loc,
+                                              new_buf_base_name,
+                                              new_net_base_name,
+                                              uniquify);
 }
 
 dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
                                        const dbMaster* buffer_master,
                                        const Point* loc,
-                                       const char* base_name,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
                                        const dbNameUniquifyType& uniquify)
 {
   dbInsertBuffer insert_buffer(this);
-  return insert_buffer.insertBufferAfterDriver(
-      drvr_output_term, buffer_master, loc, base_name, uniquify);
+  return insert_buffer.insertBufferAfterDriver(drvr_output_term,
+                                               buffer_master,
+                                               loc,
+                                               new_buf_base_name,
+                                               new_net_base_name,
+                                               uniquify);
 }
 
 dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                        const dbMaster* buffer_master,
                                        const Point* loc,
-                                       const char* base_name,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
                                        const dbNameUniquifyType& uniquify,
                                        bool loads_on_same_db_net)
 {
   dbInsertBuffer insert_buffer(this);
-  return insert_buffer.insertBufferBeforeLoads(
-      load_pins, buffer_master, loc, base_name, uniquify, loads_on_same_db_net);
+  return insert_buffer.insertBufferBeforeLoads(load_pins,
+                                               buffer_master,
+                                               loc,
+                                               new_buf_base_name,
+                                               new_net_base_name,
+                                               uniquify,
+                                               loads_on_same_db_net);
 }
 
 void dbNet::hierarchicalConnect(dbITerm* driver, dbITerm* load)

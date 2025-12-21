@@ -4952,6 +4952,7 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
                                         buffer_master,
                                         loc,
                                         name_suffix,
+                                        nullptr,
                                         odb::dbNameUniquifyType::ALWAYS);
 
   if (!buffer_inst) {
@@ -5003,6 +5004,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(Pin* load_pin,
                                        buffer_master,
                                        loc,
                                        name_suffix,
+                                       nullptr,
                                        odb::dbNameUniquifyType::ALWAYS);
 
   if (!buffer_inst) {
@@ -5068,6 +5070,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
                                         buffer_master,
                                         loc,
                                         name_suffix,
+                                        nullptr,
                                         odb::dbNameUniquifyType::ALWAYS,
                                         loads_on_same_db_net);
 
