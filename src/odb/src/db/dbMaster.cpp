@@ -775,7 +775,7 @@ bool dbMaster::isFiller()
 bool dbMaster::isCoreAutoPlaceable()
 {
   // Use switch so if new types are added we get a compiler warning.
-  switch (getType()) {
+  switch (getType().getValue()) {
     case dbMasterType::CORE:
     case dbMasterType::CORE_FEEDTHRU:
     case dbMasterType::CORE_TIEHIGH:

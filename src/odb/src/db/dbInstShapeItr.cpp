@@ -11,7 +11,7 @@ namespace odb {
 
 dbInstShapeItr::dbInstShapeItr(bool expand_vias)
 {
-  state_ = 0;
+  state_ = kInit;
   inst_ = nullptr;
   master_ = nullptr;
   _mpin_ = nullptr;
@@ -26,7 +26,7 @@ void dbInstShapeItr::begin(dbInst* inst, IteratorType type)
   master_ = inst_->getMaster();
   transform_ = inst_->getTransform();
   type_ = type;
-  state_ = 0;
+  state_ = kInit;
 }
 
 void dbInstShapeItr::begin(dbInst* inst,
@@ -38,7 +38,7 @@ void dbInstShapeItr::begin(dbInst* inst,
   transform_ = inst_->getTransform();
   transform_.concat(t);
   type_ = type;
-  state_ = 0;
+  state_ = kInit;
 }
 
 void dbInstShapeItr::getViaBox(dbBox* box, dbShape& shape)
@@ -63,64 +63,56 @@ void dbInstShapeItr::getShape(dbBox* box, dbShape& shape)
   }
 }
 
-#define INIT 0
-#define MTERM_ITR 1
-#define MPIN_ITR 2
-#define MBOX_ITR 3
-#define OBS_ITR 4
-#define VIA_BOX_ITR 5
-#define PINS_DONE 6
-
 bool dbInstShapeItr::next(dbShape& shape)
 {
 next_state:
 
   switch (state_) {
-    case INIT: {
+    case kInit: {
       if (type_ == OBSTRUCTIONS) {
         boxes_ = master_->getObstructions();
         box_itr_ = boxes_.begin();
-        state_ = OBS_ITR;
+        state_ = kObsItr;
       } else {
         mterms_ = master_->getMTerms();
         mterm_itr_ = mterms_.begin();
-        state_ = MTERM_ITR;
+        state_ = kMtermItr;
       }
 
       goto next_state;
     }
 
-    case MTERM_ITR: {
+    case kMtermItr: {
       if (mterm_itr_ == mterms_.end()) {
-        state_ = PINS_DONE;
+        state_ = kPinsDone;
       } else {
         dbMTerm* mterm = *mterm_itr_;
         ++mterm_itr_;
         mpins_ = mterm->getMPins();
         mpin_itr_ = mpins_.begin();
-        state_ = MPIN_ITR;
+        state_ = kMpinItr;
       }
 
       goto next_state;
     }
 
-    case MPIN_ITR: {
+    case kMpinItr: {
       if (mpin_itr_ == mpins_.end()) {
-        state_ = MTERM_ITR;
+        state_ = kMtermItr;
       } else {
         _mpin_ = *mpin_itr_;
         ++mpin_itr_;
         boxes_ = _mpin_->getGeometry();
         box_itr_ = boxes_.begin();
-        state_ = MBOX_ITR;
+        state_ = kMboxItr;
       }
 
       goto next_state;
     }
 
-    case MBOX_ITR: {
+    case kMboxItr: {
       if (box_itr_ == boxes_.end()) {
-        state_ = MPIN_ITR;
+        state_ = kMpinItr;
       } else {
         dbBox* box = *box_itr_;
         ++box_itr_;
@@ -135,14 +127,14 @@ next_state:
         assert(via_);
         via_boxes_ = via_->getBoxes();
         via_box_itr_ = via_boxes_.begin();
-        prev_state_ = MBOX_ITR;
-        state_ = VIA_BOX_ITR;
+        prev_state_ = kMboxItr;
+        state_ = kViaBoxItr;
       }
 
       goto next_state;
     }
 
-    case OBS_ITR: {
+    case kObsItr: {
       if (box_itr_ == boxes_.end()) {
         return false;
       }
@@ -159,12 +151,12 @@ next_state:
       assert(via_);
       via_boxes_ = via_->getBoxes();
       via_box_itr_ = via_boxes_.begin();
-      prev_state_ = OBS_ITR;
-      state_ = VIA_BOX_ITR;
+      prev_state_ = kObsItr;
+      state_ = kViaBoxItr;
       goto next_state;
     }
 
-    case VIA_BOX_ITR: {
+    case kViaBoxItr: {
       if (via_box_itr_ == via_boxes_.end()) {
         state_ = prev_state_;
       } else {
@@ -177,10 +169,10 @@ next_state:
       goto next_state;
     }
 
-    case PINS_DONE: {
+    case kPinsDone: {
       if (type_ == ALL) {
         type_ = OBSTRUCTIONS;
-        state_ = INIT;
+        state_ = kInit;
         goto next_state;
       }
 

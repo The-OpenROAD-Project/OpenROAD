@@ -32,7 +32,7 @@ class _dbPolygon : public _dbObject
   bool operator<(const _dbPolygon& rhs) const;
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
-  static Polygon checkPolygon(std::vector<Point> polygon);
+  static Polygon checkPolygon(const std::vector<Point>& polygon);
   void decompose();
   // User Code End Methods
 

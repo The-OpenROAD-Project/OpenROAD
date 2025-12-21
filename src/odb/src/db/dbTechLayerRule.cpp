@@ -44,10 +44,6 @@ _dbTechLayerRule::_dbTechLayerRule(_dbDatabase*)
   wire_extension_ = 0;
 }
 
-_dbTechLayerRule::~_dbTechLayerRule()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRule& rule)
 {
   uint* bit_field = (uint*) &rule.flags_;
@@ -121,7 +117,7 @@ _dbTech* _dbTechLayerRule::getTech()
     return (_dbTech*) getOwner();
   }
 
-  return (_dbTech*) getBlock()->getTech();
+  return getBlock()->getTech();
 }
 
 _dbBlock* _dbTechLayerRule::getBlock()

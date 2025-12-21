@@ -35,8 +35,6 @@ class _dbWire : public _dbObject
   {
   }
 
-  ~_dbWire() {}
-
   uint length() { return opcodes_.size(); }
 
   bool operator==(const _dbWire& rhs) const;

@@ -47,10 +47,6 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   effective_width_ = 0;
 }
 
-_dbObstruction::~_dbObstruction()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbObstruction& obs)
 {
   uint* bit_field = (uint*) &obs.flags_;

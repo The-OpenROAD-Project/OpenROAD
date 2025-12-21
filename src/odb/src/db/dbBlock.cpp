@@ -144,16 +144,6 @@ struct OldTransform
   int sizeY;
 };
 
-dbIStream& operator>>(dbIStream& stream, OldTransform& t)
-{
-  stream >> t.orient;
-  stream >> t.originX;
-  stream >> t.originY;
-  stream >> t.sizeX;
-  stream >> t.sizeY;
-  return stream;
-}
-
 static void unlink_child_from_parent(_dbBlock* child, _dbBlock* parent);
 
 // TODO: Bounding box updates...
@@ -2495,9 +2485,9 @@ void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
 {
   _dbBlock* block = (_dbBlock*) this;
   if (block->corner_name_list_) {
-    ecl.push_back(block->corner_name_list_);
+    ecl.emplace_back(block->corner_name_list_);
   } else {
-    ecl.push_back("");
+    ecl.emplace_back();
   }
 }
 
@@ -2517,7 +2507,7 @@ dbTechNonDefaultRule* dbBlock::findNonDefaultRule(const char* name)
 {
   for (dbTechNonDefaultRule* r : getNonDefaultRules()) {
     if (strcmp(r->getConstName(), name) == 0) {
-      return (dbTechNonDefaultRule*) r;
+      return r;
     }
   }
 
@@ -2875,34 +2865,31 @@ void dbBlock::setCornerNameList(const char* name_list)
 
   block->corner_name_list_ = strdup(name_list);
 }
-void dbBlock::getExtCornerName(int corner, char* cName)
+std::string dbBlock::getExtCornerName(const int corner)
 {
-  cName[0] = '\0';
   _dbBlock* block = (_dbBlock*) this;
   if (block->num_ext_corners_ == 0) {
-    return;
+    return "";
   }
   assert((corner >= 0) && (corner < block->num_ext_corners_));
 
   if (block->corner_name_list_ == nullptr) {
-    return;
+    return "";
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
-
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
   int ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (ii == corner) {
-      strcpy(cName, word);
-      return;
-    }
 
-    word = strtok(nullptr, " ");
+  while (ss >> word) {
+    if (ii == corner) {
+      return word;
+    }
     ii++;
   }
+  return "";
 }
+
 int dbBlock::getExtCornerIndex(const char* cornerName)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2911,21 +2898,19 @@ int dbBlock::getExtCornerIndex(const char* cornerName)
     return -1;
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
+  int ii = 0;
 
-  uint ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (strcmp(cornerName, word) == 0) {
+  while (ss >> word) {
+    if (cornerName == word) {
       return ii;
     }
-
-    word = strtok(nullptr, " ");
     ii++;
   }
   return -1;
 }
+
 void dbBlock::setCornerCount(int cnt)
 {
   setCornerCount(cnt, cnt, nullptr);
@@ -3186,7 +3171,7 @@ void dbBlock::writeGuides(const char* filename) const
       nets.push_back(net);
     }
   }
-  std::sort(nets.begin(), nets.end(), [](odb::dbNet* net1, odb::dbNet* net2) {
+  std::ranges::sort(nets, [](odb::dbNet* net1, odb::dbNet* net2) {
     return strcmp(net1->getConstName(), net2->getConstName()) < 0;
   });
   for (auto net : nets) {
@@ -3463,13 +3448,10 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
         remove_insts.insert(inst);
       }
     }
-    insts.erase(std::remove_if(insts.begin(),
-                               insts.end(),
-                               [&](dbInst* inst) {
-                                 return remove_insts.find(inst)
-                                        != remove_insts.end();
-                               }),
-                insts.end());
+    auto [first, last] = std::ranges::remove_if(insts, [&](dbInst* inst) {
+      return remove_insts.find(inst) != remove_insts.end();
+    });
+    insts.erase(first, last);
 
     inst_map[inst_pattern] = std::move(insts);
 
@@ -3606,7 +3588,7 @@ void dbBlock::debugPrintContent(std::ostream& str_db)
     }
     str_db << fmt::format("\tModule {} {}\n",
                           (cur_obj == getTopModule()) ? "(Top Module)" : "",
-                          ((dbModule*) cur_obj)->getName());
+                          cur_obj->getName());
     // in case of top level, care as the bterms double up as pins
     if (cur_obj == getTopModule()) {
       for (auto bterm : getBTerms()) {

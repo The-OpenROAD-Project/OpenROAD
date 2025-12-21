@@ -38,7 +38,6 @@ class _dbTechViaLayerRule : public _dbObject
  public:
   _dbTechViaLayerRule(_dbDatabase*, const _dbTechViaLayerRule& v);
   _dbTechViaLayerRule(_dbDatabase*);
-  ~_dbTechViaLayerRule();
 
   bool operator==(const _dbTechViaLayerRule& rhs) const;
   bool operator!=(const _dbTechViaLayerRule& rhs) const

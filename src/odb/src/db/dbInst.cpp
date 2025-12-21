@@ -42,6 +42,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace odb {
 
@@ -921,10 +922,7 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
     }
   }
 
-  // remove duplicates
-  std::sort(result.begin(), result.end());
-  auto end_itr = std::unique(result.begin(), result.end());
-  result.erase(end_itr, result.end());
+  utl::sort_and_unique(result);
 }
 
 bool dbInst::resetHierarchy(bool verbose)
@@ -1171,8 +1169,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   }
 
   std::vector<uint> idx_map(old_terms.size());
-  std::sort(new_terms.begin(), new_terms.end(), sortMTerm());
-  std::sort(old_terms.begin(), old_terms.end(), sortMTerm());
+  std::ranges::sort(new_terms, sortMTerm());
+  std::ranges::sort(old_terms, sortMTerm());
   std::vector<_dbMTerm*>::iterator i1 = new_terms.begin();
   std::vector<_dbMTerm*>::iterator i2 = old_terms.begin();
 
@@ -1214,8 +1212,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // create a new inst-hdr if needed
   if (new_inst_hdr == nullptr) {
-    new_inst_hdr = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block,
-                                                   (dbMaster*) new_master_);
+    new_inst_hdr
+        = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, new_master_);
   }
 
   new_inst_hdr->inst_cnt_++;
@@ -1238,7 +1236,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // 2) reorder the iterms vector
   sortITerm itermCmp(block);
-  std::sort(inst->iterms_.begin(), inst->iterms_.end(), itermCmp);
+  std::ranges::sort(inst->iterms_, itermCmp);
 
   // Notification
   for (auto cb : block->callbacks_) {
@@ -1475,11 +1473,9 @@ void dbInst::destroy(dbInst* inst_)
       for (const auto& [pin, aps] : iterm->getAccessPoints()) {
         for (auto ap : aps) {
           _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-          _ap->iterms_.erase(
-              std::remove_if(_ap->iterms_.begin(),
-                             _ap->iterms_.end(),
-                             [id](const auto& id_in) { return id_in == id; }),
-              _ap->iterms_.end());
+          auto [first, last] = std::ranges::remove_if(
+              _ap->iterms_, [id](const auto& id_in) { return id_in == id; });
+          _ap->iterms_.erase(first, last);
         }
       }
     }
