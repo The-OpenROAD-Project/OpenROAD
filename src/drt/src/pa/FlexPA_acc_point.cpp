@@ -887,6 +887,10 @@ void FlexPA::filterViaAccess(
   if (via_defs.empty()) {  // no via map entry
     // hardcode first two single vias
     for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
+      if (inst_term && inst_term->isStubborn()
+          && avoid_via_defs_.contains(via_def)) {
+        continue;
+      }
       via_defs.emplace_back(via_defs.size(), via_def);
       if (via_defs.size() >= max_num_via_trial && !deep_search) {
         break;
