@@ -52,7 +52,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
   stream >> mpin.mterm_;
   stream >> mpin.geoms_;
   _dbDatabase* db = mpin.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_polygon)) {
+  if (db->isSchema(kSchemaPolygon)) {
     stream >> mpin.poly_geoms_;
   }
   stream >> mpin.next_mpin_;
@@ -186,7 +186,7 @@ void _dbMPin::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  MemInfo& ap_info = info.children_["aps"];
+  MemInfo& ap_info = info.children["aps"];
   for (const auto& v : aps_) {
     ap_info.add(v);
   }

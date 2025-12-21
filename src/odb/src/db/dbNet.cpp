@@ -177,7 +177,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net.groups_;
   stream >> net.guides_;
   _dbDatabase* db = net.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_net_tracks)) {
+  if (db->isSchema(kSchemaNetTracks)) {
     stream >> net.tracks_;
   }
 
@@ -2368,7 +2368,7 @@ bool dbNet::hasJumpers()
   bool has_jumpers = false;
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
+  if (db->isSchema(kSchemaHasJumpers)) {
     has_jumpers = net->flags_.has_jumpers == 1;
   }
   return has_jumpers;
@@ -2378,7 +2378,7 @@ void dbNet::setJumpers(bool has_jumpers)
 {
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
+  if (db->isSchema(kSchemaHasJumpers)) {
     net->flags_.has_jumpers = has_jumpers ? 1 : 0;
   }
 }
@@ -2503,8 +2503,8 @@ void _dbNet::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["groups"].add(groups_);
+  info.children["name"].add(name_);
+  info.children["groups"].add(groups_);
 }
 
 bool dbNet::isDeeperThan(const dbNet* net) const

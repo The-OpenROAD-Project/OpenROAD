@@ -157,7 +157,7 @@ class tmg_conn
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
-  bool isConnected() { return _connected; }
+  bool isConnected() { return connected_; }
   int ptDist(int fr, int to) const;
   const tmg_rcpt& pt(const int index) const { return ptV_[index]; }
   void checkConnOrdered();
@@ -225,7 +225,7 @@ class tmg_conn
   std::vector<tmg_rcshort> shortV_;
   dbNet* net_;
   bool hasSWire_;
-  bool _connected;
+  bool connected_;
   dbWireEncoder encoder_;
   dbWire* newWire_;
   dbTechNonDefaultRule* net_rule_;

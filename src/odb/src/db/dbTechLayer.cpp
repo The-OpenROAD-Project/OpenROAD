@@ -527,7 +527,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  if (obj.getDatabase()->isSchema(db_schema_orth_spc_tbl)) {
+  if (obj.getDatabase()->isSchema(kSchemaOrthSpcTbl)) {
     stream >> obj.orth_spacing_tbl_;
   }
   stream >> *obj.cut_class_rules_tbl_;
@@ -543,27 +543,26 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaMaxSpacing)) {
     stream >> *obj.max_spacing_rules_tbl_;
   }
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58ForbiddenSpacing)) {
     stream >> *obj.forbidden_spacing_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
+  if (obj.getDatabase()->isSchema(kSchemaKeepoutZone)) {
     stream >> *obj.keepout_zone_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaWrongdirSpacing)) {
     stream >> *obj.wrongdir_spacing_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(
-          db_schema_lef58_two_wires_forbidden_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58TwoWiresForbiddenSpacing)) {
     stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
   }
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_layer_adjustment)) {
+  if (obj.getDatabase()->isSchema(kSchemaLayerAdjustment)) {
     stream >> obj.layer_adjustment_;
   } else {
     obj.layer_adjustment_ = 0.0;
@@ -606,7 +605,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj.two_widths_sp_spacing_;
   stream >> obj.oxide1_;
   stream >> obj.oxide2_;
-  if (obj.getDatabase()->isSchema(db_schema_wrongway_width)) {
+  if (obj.getDatabase()->isSchema(kSchemaWrongwayWidth)) {
     stream >> obj.wrong_way_width_;
   } else {
     obj.wrong_way_width_ = obj.width_;
@@ -617,7 +616,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
       }
     }
   }
-  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58Pitch)) {
     stream >> obj.first_last_pitch_;
   }
   // User Code End >>
@@ -764,75 +763,75 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  cut_class_rules_tbl_->collectMemInfo(info.children_["cut_class_rules_tbl_"]);
+  cut_class_rules_tbl_->collectMemInfo(info.children["cut_class_rules_tbl_"]);
 
   spacing_eol_rules_tbl_->collectMemInfo(
-      info.children_["spacing_eol_rules_tbl_"]);
+      info.children["spacing_eol_rules_tbl_"]);
 
   cut_spacing_rules_tbl_->collectMemInfo(
-      info.children_["cut_spacing_rules_tbl_"]);
+      info.children["cut_spacing_rules_tbl_"]);
 
-  minstep_rules_tbl_->collectMemInfo(info.children_["minstep_rules_tbl_"]);
+  minstep_rules_tbl_->collectMemInfo(info.children["minstep_rules_tbl_"]);
 
   corner_spacing_rules_tbl_->collectMemInfo(
-      info.children_["corner_spacing_rules_tbl_"]);
+      info.children["corner_spacing_rules_tbl_"]);
 
   spacing_table_prl_rules_tbl_->collectMemInfo(
-      info.children_["spacing_table_prl_rules_tbl_"]);
+      info.children["spacing_table_prl_rules_tbl_"]);
 
   cut_spacing_table_orth_tbl_->collectMemInfo(
-      info.children_["cut_spacing_table_orth_tbl_"]);
+      info.children["cut_spacing_table_orth_tbl_"]);
 
   cut_spacing_table_def_tbl_->collectMemInfo(
-      info.children_["cut_spacing_table_def_tbl_"]);
+      info.children["cut_spacing_table_def_tbl_"]);
 
-  cut_enc_rules_tbl_->collectMemInfo(info.children_["cut_enc_rules_tbl_"]);
+  cut_enc_rules_tbl_->collectMemInfo(info.children["cut_enc_rules_tbl_"]);
 
-  eol_ext_rules_tbl_->collectMemInfo(info.children_["eol_ext_rules_tbl_"]);
+  eol_ext_rules_tbl_->collectMemInfo(info.children["eol_ext_rules_tbl_"]);
 
   array_spacing_rules_tbl_->collectMemInfo(
-      info.children_["array_spacing_rules_tbl_"]);
+      info.children["array_spacing_rules_tbl_"]);
 
   eol_keep_out_rules_tbl_->collectMemInfo(
-      info.children_["eol_keep_out_rules_tbl_"]);
+      info.children["eol_keep_out_rules_tbl_"]);
 
   max_spacing_rules_tbl_->collectMemInfo(
-      info.children_["max_spacing_rules_tbl_"]);
+      info.children["max_spacing_rules_tbl_"]);
 
   width_table_rules_tbl_->collectMemInfo(
-      info.children_["width_table_rules_tbl_"]);
+      info.children["width_table_rules_tbl_"]);
 
-  min_cuts_rules_tbl_->collectMemInfo(info.children_["min_cuts_rules_tbl_"]);
+  min_cuts_rules_tbl_->collectMemInfo(info.children["min_cuts_rules_tbl_"]);
 
-  area_rules_tbl_->collectMemInfo(info.children_["area_rules_tbl_"]);
+  area_rules_tbl_->collectMemInfo(info.children["area_rules_tbl_"]);
 
   forbidden_spacing_rules_tbl_->collectMemInfo(
-      info.children_["forbidden_spacing_rules_tbl_"]);
+      info.children["forbidden_spacing_rules_tbl_"]);
 
   keepout_zone_rules_tbl_->collectMemInfo(
-      info.children_["keepout_zone_rules_tbl_"]);
+      info.children["keepout_zone_rules_tbl_"]);
 
   wrongdir_spacing_rules_tbl_->collectMemInfo(
-      info.children_["wrongdir_spacing_rules_tbl_"]);
+      info.children["wrongdir_spacing_rules_tbl_"]);
 
   two_wires_forbidden_spc_rules_tbl_->collectMemInfo(
-      info.children_["two_wires_forbidden_spc_rules_tbl_"]);
+      info.children["two_wires_forbidden_spc_rules_tbl_"]);
 
   // User Code Begin collectMemInfo
-  info.children_["orth_spacing"].add(orth_spacing_tbl_);
-  info.children_["cut_class_rules_hash"].add(cut_class_rules_hash_);
-  info.children_["name"].add(name_);
-  info.children_["alias"].add(alias_);
-  spacing_rules_tbl_->collectMemInfo(info.children_["spacing_rules_tbl"]);
-  min_cut_rules_tbl_->collectMemInfo(info.children_["min_cut_rules_tbl"]);
-  min_enc_rules_tbl_->collectMemInfo(info.children_["min_enc_rules_tbl"]);
-  v55inf_tbl_->collectMemInfo(info.children_["v55inf_tbl"]);
-  info.children_["v55sp_length_idx"].add(v55sp_length_idx_);
-  info.children_["v55sp_width_idx"].add(v55sp_width_idx_);
-  info.children_["v55sp_spacing"].add(v55sp_spacing_);
-  info.children_["two_widths_sp_idx"].add(two_widths_sp_idx_);
-  info.children_["two_widths_sp_prl"].add(two_widths_sp_prl_);
-  info.children_["two_widths_sp_spacing"].add(two_widths_sp_spacing_);
+  info.children["orth_spacing"].add(orth_spacing_tbl_);
+  info.children["cut_class_rules_hash"].add(cut_class_rules_hash_);
+  info.children["name"].add(name_);
+  info.children["alias"].add(alias_);
+  spacing_rules_tbl_->collectMemInfo(info.children["spacing_rules_tbl"]);
+  min_cut_rules_tbl_->collectMemInfo(info.children["min_cut_rules_tbl"]);
+  min_enc_rules_tbl_->collectMemInfo(info.children["min_enc_rules_tbl"]);
+  v55inf_tbl_->collectMemInfo(info.children["v55inf_tbl"]);
+  info.children["v55sp_length_idx"].add(v55sp_length_idx_);
+  info.children["v55sp_width_idx"].add(v55sp_width_idx_);
+  info.children["v55sp_spacing"].add(v55sp_spacing_);
+  info.children["two_widths_sp_idx"].add(two_widths_sp_idx_);
+  info.children["two_widths_sp_prl"].add(two_widths_sp_prl_);
+  info.children["two_widths_sp_spacing"].add(two_widths_sp_spacing_);
   // User Code End collectMemInfo
 }
 

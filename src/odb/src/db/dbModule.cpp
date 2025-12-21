@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbModule.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
@@ -92,10 +94,10 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj.insts_;
   stream >> obj.mod_inst_;
   stream >> obj.modinsts_;
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.modnets_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.modbterms_;
   }
   return stream;
@@ -119,11 +121,11 @@ void _dbModule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["_dbinst_hash"].add(dbinst_hash_);
-  info.children_["_modinst_hash"].add(modinst_hash_);
-  info.children_["_modbterm_hash"].add(modbterm_hash_);
-  info.children_["_modnet_hash"].add(modnet_hash_);
+  info.children["name"].add(name_);
+  info.children["_dbinst_hash"].add(dbinst_hash_);
+  info.children["_modinst_hash"].add(modinst_hash_);
+  info.children["_modbterm_hash"].add(modbterm_hash_);
+  info.children["_modnet_hash"].add(modnet_hash_);
   // User Code End collectMemInfo
 }
 

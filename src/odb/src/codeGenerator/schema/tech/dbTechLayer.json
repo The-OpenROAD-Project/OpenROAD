@@ -142,7 +142,7 @@
     {
       "name" : "orth_spacing_tbl_",
       "type":"std::vector<std::pair<int, int>>",
-      "schema" : "db_schema_orth_spc_tbl",
+      "schema" : "kSchemaOrthSpcTbl",
       "flags":[
         "no-template",
         "no-set"

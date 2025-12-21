@@ -173,9 +173,9 @@ void _dbTechViaRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["layer_rules"].add(layer_rules_);
-  info.children_["vias"].add(vias_);
+  info.children["name"].add(name_);
+  info.children["layer_rules"].add(layer_rules_);
+  info.children["vias"].add(vias_);
 }
 
 }  // namespace odb

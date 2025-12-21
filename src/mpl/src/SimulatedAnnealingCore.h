@@ -64,7 +64,7 @@ class SimulatedAnnealingCore
   {
     number_of_sequence_pair_macros_ = number_of_sequence_pair_macros;
   };
-  void setNets(const std::vector<BundledNet>& nets);
+  void setNets(const BundledNetList& nets);
   void setFences(const std::map<int, odb::Rect>& fences);
   void setGuides(const std::map<int, odb::Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
@@ -118,7 +118,7 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
-  float computeNetsWireLength(const std::vector<BundledNet>& nets) const;
+  float computeNetsWireLength(const BundledNetList& nets) const;
   int64_t computeWLForClusterOfUnplacedIOPins(const T& macro,
                                               const T& unplaced_ios,
                                               float net_weight) const;
@@ -154,7 +154,7 @@ class SimulatedAnnealingCore
 
   int number_of_sequence_pair_macros_ = 0;
 
-  std::vector<BundledNet> nets_;
+  BundledNetList nets_;
   std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 

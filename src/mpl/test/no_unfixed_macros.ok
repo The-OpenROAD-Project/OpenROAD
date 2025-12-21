@@ -4,6 +4,16 @@
 [INFO ODB-0128] Design: macro_only
 [INFO ODB-0253]     Updated 10 components.
 [INFO ODB-0254]     Updated 12 nets and 24 connections.
+[INFO MPL-0062] Found fixed macro U1.
+[INFO MPL-0062] Found fixed macro U10.
+[INFO MPL-0062] Found fixed macro U2.
+[INFO MPL-0062] Found fixed macro U3.
+[INFO MPL-0062] Found fixed macro U4.
+[INFO MPL-0062] Found fixed macro U5.
+[INFO MPL-0062] Found fixed macro U6.
+[INFO MPL-0062] Found fixed macro U7.
+[INFO MPL-0062] Found fixed macro U8.
+[INFO MPL-0062] Found fixed macro U9.
 [INFO MPL-0017] No unfixed macros.
 [INFO MPL-0013] Skipping macro placement.
 No differences found.

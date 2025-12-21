@@ -194,7 +194,7 @@ void _dbInstHdr::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["mterms"].add(mterms_);
+  info.children["mterms"].add(mterms_);
 }
 
 }  // namespace odb

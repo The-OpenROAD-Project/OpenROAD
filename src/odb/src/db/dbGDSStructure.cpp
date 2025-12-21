@@ -130,20 +130,20 @@ void _dbGDSStructure::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  boundaries_->collectMemInfo(info.children_["boundaries_"]);
+  boundaries_->collectMemInfo(info.children["boundaries_"]);
 
-  boxes_->collectMemInfo(info.children_["boxes_"]);
+  boxes_->collectMemInfo(info.children["boxes_"]);
 
-  paths_->collectMemInfo(info.children_["paths_"]);
+  paths_->collectMemInfo(info.children["paths_"]);
 
-  srefs_->collectMemInfo(info.children_["srefs_"]);
+  srefs_->collectMemInfo(info.children["srefs_"]);
 
-  arefs_->collectMemInfo(info.children_["arefs_"]);
+  arefs_->collectMemInfo(info.children["arefs_"]);
 
-  texts_->collectMemInfo(info.children_["texts_"]);
+  texts_->collectMemInfo(info.children["texts_"]);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

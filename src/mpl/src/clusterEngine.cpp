@@ -42,7 +42,6 @@ ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
 
 void ClusteringEngine::run()
 {
-  design_metrics_ = computeModuleMetrics(block_->getTopModule());
   init();
 
   if (!tree_->has_unfixed_macros) {
@@ -88,16 +87,17 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 // initialize the tree with data from the design.
 void ClusteringEngine::init()
 {
+  setDieArea();
+  setFloorplanShape();
+
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
+
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
     return;
   }
-
-  setDieArea();
-  setFloorplanShape();
-  searchForFixedInstsInsideFloorplanShape();
 
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
   const float inst_area_with_halos
@@ -154,25 +154,6 @@ void ClusteringEngine::setFloorplanShape()
   tree_->floorplan_shape = block_->getCoreArea().intersect(tree_->global_fence);
 }
 
-void ClusteringEngine::searchForFixedInstsInsideFloorplanShape()
-{
-  for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-
-    if (master->isBlock() || master->isCover()) {
-      continue;
-    }
-
-    if (inst->isFixed()
-        && inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
-      logger_->error(MPL,
-                     50,
-                     "Found fixed instance {} inside the floorplan area.",
-                     inst->getName());
-    }
-  }
-}
-
 Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
 {
   unsigned int num_std_cell = 0;
@@ -183,15 +164,25 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   const odb::Rect& core = block_->getCoreArea();
 
   for (odb::dbInst* inst : module->getInsts()) {
-    if (isIgnoredInst(inst)) {
-      continue;
-    }
-
-    int64_t inst_area = computeArea(inst);
-
-    if (inst->isBlock()) {  // a macro
+    if (inst->isBlock()) {
       num_macro += 1;
-      macro_area += inst_area;
+      macro_area += computeArea(inst);
+
+      if (inst->isFixed()) {
+        logger_->info(MPL, 62, "Found fixed macro {}.", inst->getName());
+
+        if (!inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
+          ignorable_macros_.insert(inst);
+          logger_->info(MPL,
+                        63,
+                        "{} is outside the macro placement area and will be "
+                        "ignored.",
+                        inst->getName());
+          continue;
+        }
+
+        tree_->has_fixed_macros = true;
+      }
 
       auto macro = std::make_unique<HardMacro>(
           inst, tree_->halo_width, tree_->halo_height);
@@ -205,14 +196,17 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
             generateMacroAndCoreDimensionsTable(macro.get(), core));
       }
 
-      if (macro->isFixed()) {
-        tree_->has_fixed_macros = true;
-      }
-
       tree_->maps.inst_to_hard[inst] = std::move(macro);
-    } else {
+    } else if (inst->isFixed() && !inst->getMaster()->isCover()
+               && inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
+      logger_->error(MPL,
+                     50,
+                     "Found fixed non-macro instance {} inside the macro "
+                     "placement area.",
+                     inst->getName());
+    } else if (!isIgnoredInst(inst)) {
       num_std_cell += 1;
-      std_cell_area += inst_area;
+      std_cell_area += computeArea(inst);
     }
   }
 
@@ -856,12 +850,15 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
   return graph;
 }
 
-/* static */
 bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
 {
+  if (inst->isBlock()
+      && (ignorable_macros_.find(inst) != ignorable_macros_.end())) {
+    return true;
+  }
+
   odb::dbMaster* master = inst->getMaster();
-  return master->isPad() || master->isCover() || master->isEndCap()
-         || inst->getITerms().empty();
+  return master->isPad() || master->isCover() || master->isEndCap();
 }
 
 // Forward or Backward DFS search to find sequential paths from/to IO pins based
@@ -1195,7 +1192,7 @@ void ClusteringEngine::setClusterMetrics(Cluster* cluster)
     std_cell_area += computeArea(std_cell);
   }
 
-  int64_t macro_area = 0.0f;
+  int64_t macro_area = 0;
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
     macro_area += computeArea(macro);
   }
@@ -2525,13 +2522,13 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
     line += fmt::format(" {}", parent->getIsLeafString());
 
     // Using 'or' on purpose to certify that there is no discrepancy going on.
-    if (parent->getNumStdCell() != 0 || parent->getStdCellArea() != 0.0f) {
+    if (parent->getNumStdCell() != 0 || parent->getStdCellArea() != 0) {
       line += fmt::format(", StdCells: {} ({} μ²)",
                           parent->getNumStdCell(),
                           parent->getStdCellArea());
     }
 
-    if (parent->getNumMacro() != 0 || parent->getMacroArea() != 0.0f) {
+    if (parent->getNumMacro() != 0 || parent->getMacroArea() != 0) {
       line += fmt::format(", Macros: {} ({} μ²),",
                           parent->getNumMacro(),
                           parent->getMacroArea());

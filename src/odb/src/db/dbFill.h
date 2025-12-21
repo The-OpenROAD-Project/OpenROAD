@@ -40,11 +40,11 @@ class _dbFill : public _dbObject
 
   // PERSISTANT-MEMBERS
   dbFillFlags flags_;
-  Rect _rect;
+  Rect rect_;
 };
 
 inline _dbFill::_dbFill(_dbDatabase*, const _dbFill& r)
-    : flags_(r.flags_), _rect(r._rect)
+    : flags_(r.flags_), rect_(r.rect_)
 {
 }
 
@@ -60,7 +60,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbFill& fill)
 {
   uint* bit_field = (uint*) &fill.flags_;
   stream << *bit_field;
-  stream << fill._rect;
+  stream << fill.rect_;
   return stream;
 }
 
@@ -68,7 +68,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbFill& fill)
 {
   uint* bit_field = (uint*) &fill.flags_;
   stream >> *bit_field;
-  stream >> fill._rect;
+  stream >> fill.rect_;
   return stream;
 }
 

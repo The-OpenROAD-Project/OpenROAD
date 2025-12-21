@@ -14,7 +14,7 @@ class _dbProperty;
 class dbPropertyItr : public dbIterator
 {
  public:
-  dbPropertyItr(dbTable<_dbProperty>* prop_tbl) { _prop_tbl = prop_tbl; }
+  dbPropertyItr(dbTable<_dbProperty>* prop_tbl) { prop_tbl_ = prop_tbl; }
 
   bool reversible() const override;
   bool orderReversed() const override;
@@ -27,7 +27,7 @@ class dbPropertyItr : public dbIterator
   dbObject* getObject(uint id, ...) override;
 
  private:
-  dbTable<_dbProperty>* _prop_tbl;
+  dbTable<_dbProperty>* prop_tbl_;
 };
 
 }  // namespace odb

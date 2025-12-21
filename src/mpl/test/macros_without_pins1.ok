@@ -1,0 +1,23 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./Nangate45_io/dummy_pads.lef, created 29 library cells
+[INFO ODB-0227] LEF file: ./testcases/orientation_improve1.lef, created 10 library cells
+[INFO ODB-0128] Design: boundary_push1
+[INFO ODB-0131]     Created 402 components and 2402 component-terminals.
+[INFO MPL-0062] Found fixed macro MACRO_1.
+Die Area: (0.00, 0.00) (220.02, 221.20),  Floorplan Area: (0.00, 0.00) (220.02, 221.20)
+	Number of std cell instances: 400
+	Area of std cell instances: 1808.80
+	Number of macros: 2
+	Area of macros: 20000.00
+	Halo width: 0.30
+	Halo height: 0.30
+	Area of macros with halos: 10120.36
+	Area of std cell instances + Area of macros: 21808.80
+	Floorplan area: 48668.42
+	Design Utilization: 0.45
+	Floorplan Utilization: 0.06
+	Manufacturing Grid: 10
+
+[WARNING MPL-0014] No Liberty data found for std cells. Continuing without dataflow.
+[WARNING MPL-0026] Design has no IO pins!
+No differences found.

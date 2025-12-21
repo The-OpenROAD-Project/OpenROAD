@@ -128,7 +128,7 @@ void _dbTechLayerMinCutRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["cut_class_cuts_map"].add(cut_class_cuts_map_);
+  info.children["cut_class_cuts_map"].add(cut_class_cuts_map_);
   // User Code End collectMemInfo
 }
 

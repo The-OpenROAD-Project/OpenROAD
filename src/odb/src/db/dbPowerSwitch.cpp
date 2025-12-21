@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbPowerSwitch.h"
 
+#include <cstdlib>
 #include <map>
 #include <string>
 
@@ -86,7 +87,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj.name_;
   stream >> obj.next_entry_;
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_update_db_power_switch)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateDbPowerSwitch)) {
     stream >> obj.in_supply_port_;
     stream >> obj.out_supply_port_;
     stream >> obj.control_port_;
@@ -119,7 +120,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
     stream >> net;  // unused
   }
   stream >> obj.power_domain_;
-  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpfPowerSwitchMapping)) {
     stream >> obj.lib_cell_;
     stream >> obj.lib_;
     stream >> obj.port_map_;
@@ -181,13 +182,20 @@ void _dbPowerSwitch::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["in_supply_port"].add(in_supply_port_);
-  info.children_["control_port"].add(control_port_);
-  info.children_["acknowledge_port"].add(acknowledge_port_);
-  info.children_["on_state"].add(on_state_);
-  info.children_["port_map"].add(port_map_);
+  info.children["name"].add(name_);
+  info.children["in_supply_port"].add(in_supply_port_);
+  info.children["control_port"].add(control_port_);
+  info.children["acknowledge_port"].add(acknowledge_port_);
+  info.children["on_state"].add(on_state_);
+  info.children["port_map"].add(port_map_);
   // User Code End collectMemInfo
+}
+
+_dbPowerSwitch::~_dbPowerSwitch()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

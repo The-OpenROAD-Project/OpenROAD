@@ -11,6 +11,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "routeBase.h"
 
 namespace gpl {
 
@@ -48,6 +49,7 @@ class AbstractGraphics
       NesterovPlace* np,
       std::shared_ptr<PlacerBaseCommon> pbc,
       std::shared_ptr<NesterovBaseCommon> nbc,
+      std::shared_ptr<RouteBase> rb,
       std::vector<std::shared_ptr<PlacerBase>>& pbVec,
       std::vector<std::shared_ptr<NesterovBase>>& nbVec,
       bool draw_bins,
@@ -103,16 +105,19 @@ class AbstractGraphics
   }
 
   // Gui functions.
-  virtual void gifStart(std::string_view path) = 0;
-  void gifAddFrame(const odb::Rect& region = odb::Rect(),
+  // Gui functions.
+  virtual int gifStart(std::string_view path) = 0;
+  void gifAddFrame(int key,
+                   const odb::Rect& region = odb::Rect(),
                    int width_px = 0,
                    double dbu_per_pixel = 0,
                    std::optional<int> delay = std::nullopt)
   {
-    gifAddFrameImpl(region, width_px, dbu_per_pixel, delay);
+    gifAddFrameImpl(key, region, width_px, dbu_per_pixel, delay);
   }
   virtual void deleteLabel(std::string_view label_name) = 0;
-  virtual void gifEnd() = 0;
+  virtual void gifEnd(int key) = 0;
+  virtual void setDisplayControl(std::string_view name, bool value) = 0;
 
  protected:
   virtual void cellPlotImpl(bool pause) = 0;
@@ -128,7 +133,8 @@ class AbstractGraphics
                                     std::string_view heatmap_control,
                                     int image_width_px)
       = 0;
-  virtual void gifAddFrameImpl(const odb::Rect& region,
+  virtual void gifAddFrameImpl(int key,
+                               const odb::Rect& region,
                                int width_px,
                                double dbu_per_pixel,
                                std::optional<int> delay)

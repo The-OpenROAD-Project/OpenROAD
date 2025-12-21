@@ -8,13 +8,13 @@
             "type":"char *",
             "flags":["no-set"],
             "default":"nullptr",
-	    "schema":"db_schema_update_hierarchy"	
+	    "schema":"kSchemaUpdateHierarchy"
         },
         {
 	    "name":"parent_",
             "type":"dbId<_dbModInst>",
             "flags":["no-set"],
-	    "schema":"db_schema_update_hierarchy",	    	
+	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
 	{
@@ -22,44 +22,44 @@
 	    "type":"dbId<_dbModBTerm>",
 	    "parent":"dbBlock",
 	    "flags":["private"],
-	    "schema":"db_schema_update_hierarchy"	    	    	
+	    "schema":"kSchemaUpdateHierarchy"
         },
         {
 	    "name":"mod_net_",
             "type":"dbId<_dbModNet>",
 	    "flags":["private"],
-	    "schema":"db_schema_update_hierarchy",	    	    	    	
+	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
         {
 	    "name":"next_net_moditerm_",
             "type":"dbId<_dbModITerm>",
-	    "flags":["private"],	
+	    "flags":["private"],
             "parent":"dbBlock",
-	    "schema":"db_schema_update_hierarchy"	    	    	    	    	
+	    "schema":"kSchemaUpdateHierarchy"
         },
 	{
 	    "name":"prev_net_moditerm_",
             "type":"dbId<_dbModITerm>",
 	    "flags":["private"],
-	    "schema":"db_schema_update_hierarchy",	    	    	    	    	    	
+	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
 	{
 	    "name":"next_entry_",
             "type":"dbId<_dbModITerm>",
 	    "flags":["private"],
-	    "schema":"db_schema_update_hierarchy",	    	    	    	    	      	
+	    "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
 	},
 	{
 	    "name":"prev_entry_",
             "type":"dbId<_dbModITerm>",
 	    "flags":["private"],
-	    "schema":"db_schema_hier_port_removal",	    	    	    	    	      	
+	    "schema":"kSchemaHierPortRemoval",
             "parent":"dbBlock"
 	}
-	
+
     ],
     "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp","dbModBTerm.h", "dbJournal.h"]
 }
