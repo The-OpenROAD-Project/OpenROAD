@@ -902,7 +902,7 @@ void FlexPA::filterViaAccess(
   for (auto& [idx, via_def] : via_defs) {
     auto via = std::make_unique<frVia>(via_def, begin_point);
     const odb::Rect box = via->getLayer1BBox();
-    if (inst_term) {
+    if (inst_term && !deep_search) {
       odb::Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
       if (!boundary_bbox.contains(box)) {
         continue;
