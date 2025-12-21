@@ -78,38 +78,38 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.name_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.flags_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.parent_moditerm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.parent_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.modnet_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.next_net_modbterm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.prev_net_modbterm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
     stream >> obj.busPort_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.next_entry_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
+  if (obj.getDatabase()->isSchema(kSchemaHierPortRemoval)) {
     stream >> obj.prev_entry_;
   }
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
+  if (obj.getDatabase()->isSchema(kSchemaDbRemoveHash)) {
     dbDatabase* db = (dbDatabase*) (obj.getDatabase());
     _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
     _dbModule* module = block->module_tbl_->getPtr(obj.parent_);

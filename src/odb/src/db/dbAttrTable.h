@@ -35,8 +35,8 @@ class dbAttrTable
   unsigned int page_cnt_ = 0;
   T** pages_ = nullptr;
 
-  static constexpr uint page_size = 32;
-  static constexpr uint page_shift = 5;
+  static constexpr uint kPageSize = 32;
+  static constexpr uint kPageShift = 5;
 
   template <class U>
   friend dbOStream& operator<<(dbOStream& stream, const dbAttrTable<U>& t);
@@ -51,7 +51,7 @@ inline T dbAttrTable<T>::getAttr(const uint id) const
   // Pages are not created util the prop-list is being set.
   // This approach allows objects to test for properties without populating
   // pages. (which would populate the table).
-  const unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+  const unsigned int page = (id & ~(kPageSize - 1)) >> kPageShift;
 
   if (page >= page_cnt_) {  // Page not present...
     return T();
@@ -61,16 +61,16 @@ inline T dbAttrTable<T>::getAttr(const uint id) const
     return T();
   }
 
-  const unsigned int offset = id & (page_size - 1);
+  const unsigned int offset = id & (kPageSize - 1);
   return pages_[page][offset];
 }
 
 template <typename T>
 inline void dbAttrTable<T>::setAttr(const uint id, const T& attr)
 {
-  const unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+  const unsigned int page = (id & ~(kPageSize - 1)) >> kPageShift;
   T* pg = getPage(page);
-  const unsigned int offset = id & (page_size - 1);
+  const unsigned int offset = id & (kPageSize - 1);
   pg[offset] = attr;
 }
 
@@ -97,9 +97,9 @@ inline T* dbAttrTable<T>::getPage(const uint page)
   }
 
   if (pages_[page] == nullptr) {
-    pages_[page] = new T[page_size];
+    pages_[page] = new T[kPageSize];
 
-    for (int i = 0; i < page_size; ++i) {
+    for (int i = 0; i < kPageSize; ++i) {
       pages_[page][i] = 0U;
     }
   }
@@ -143,7 +143,7 @@ inline bool dbAttrTable<T>::operator==(const dbAttrTable<T>& rhs) const
     return false;
   }
 
-  const uint n = page_cnt_ * page_size;
+  const uint n = page_cnt_ * kPageSize;
 
   for (int i = 0; i < n; ++i) {
     if (getAttr(i) != rhs.getAttr(i)) {
@@ -167,7 +167,7 @@ inline dbOStream& operator<<(dbOStream& stream, const dbAttrTable<T>& t)
 
       uint j;
 
-      for (j = 0; j < dbAttrTable<T>::page_size; ++j) {
+      for (j = 0; j < dbAttrTable<T>::kPageSize; ++j) {
         stream << t.pages_[i][j];
       }
     }
@@ -196,10 +196,10 @@ inline dbIStream& operator>>(dbIStream& stream, dbAttrTable<T>& t)
     if (p == 0U) {
       t.pages_[i] = nullptr;
     } else {
-      t.pages_[i] = new T[dbAttrTable<T>::page_size];
+      t.pages_[i] = new T[dbAttrTable<T>::kPageSize];
       uint j;
 
-      for (j = 0; j < dbAttrTable<T>::page_size; j++) {
+      for (j = 0; j < dbAttrTable<T>::kPageSize; j++) {
         stream >> t.pages_[i][j];
       }
     }

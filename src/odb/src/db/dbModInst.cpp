@@ -101,10 +101,10 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
-  if (db_->isSchema(db_schema_update_hierarchy)) {
+  if (db_->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.moditerms_;
   }
-  if (db_->isSchema(db_schema_db_remove_hash)) {
+  if (db_->isSchema(kSchemaDbRemoveHash)) {
     _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
     _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
     if (obj.name_) {

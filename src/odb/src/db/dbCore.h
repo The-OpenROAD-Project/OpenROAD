@@ -50,8 +50,8 @@ class dbMatrix;
 template <class T, const uint P, const uint S>
 class dbPagedVector;
 
-constexpr uint DB_ALLOC_BIT = 0x80000000;
-constexpr uint DB_OFFSET_MASK = ~DB_ALLOC_BIT;
+constexpr uint kAllocBit = 0x80000000;
+constexpr uint kOffsetMask = ~kAllocBit;
 
 using GetObjTbl_t = dbObjectTable* (dbObject::*) (dbObjectType);
 
@@ -172,7 +172,7 @@ class _dbObject : public dbObject
   dbObjectType getType() const;
   uint getOID() const;
   utl::Logger* getLogger() const;
-  bool isValid() const { return oid_ & DB_ALLOC_BIT; };
+  bool isValid() const { return oid_ & kAllocBit; };
 
  private:
   uint oid_;
@@ -276,7 +276,7 @@ inline const _dbObject* dbObject::getImpl() const
 inline uint _dbObject::getOID() const
 {
   dbObjectPage* page = getObjectPage();
-  uint offset = (oid_ & DB_OFFSET_MASK);
+  uint offset = (oid_ & kOffsetMask);
   return page->page_addr_ | (offset / page->table_->obj_size_);
 }
 
@@ -306,7 +306,7 @@ inline dbObjectType _dbObject::getType() const
 
 inline dbObjectPage* _dbObject::getObjectPage() const
 {
-  uint offset = (oid_ & DB_OFFSET_MASK);
+  uint offset = (oid_ & kOffsetMask);
   char* base = (char*) this - offset;
   dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
   return page;
