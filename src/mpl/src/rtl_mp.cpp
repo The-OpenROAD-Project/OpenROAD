@@ -54,7 +54,6 @@ bool MacroPlacer::place(const int num_threads,
                         const float notch_weight,
                         const float macro_blockage_weight,
                         const float target_util,
-                        const float target_dead_space,
                         const float min_ar,
                         const char* report_directory,
                         const bool keep_clustering_data)
@@ -78,7 +77,6 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setNotchWeight(notch_weight);
   hier_rtlmp_->setMacroBlockageWeight(macro_blockage_weight);
   hier_rtlmp_->setTargetUtil(target_util);
-  hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
