@@ -669,6 +669,9 @@ insert_buffer_after_driver_cmd(Net *net,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+
   Instance* inst = nullptr;
   const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
   const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
@@ -692,6 +695,9 @@ insert_buffer_before_load_cmd(Pin *load_pin,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+
   Instance* inst = nullptr;
   const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
   const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
@@ -717,6 +723,8 @@ insert_buffer_before_loads_cmd(Net *net,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
   
   Instance* inst = nullptr;
   const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
