@@ -1480,7 +1480,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
   std::vector<float> utilizations;
   if (!ignore_std_cell_area) {
     for (int i = 0; i < total_number_of_runs; i++) {
-      utilizations.push_back(target_utilization_ + i * utilization_step);
+      utilizations.push_back(target_utilization_ + (i * utilization_step));
     }
   } else {
     utilizations.resize(check_interval, std::numeric_limits<float>::max());
