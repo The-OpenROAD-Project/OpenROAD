@@ -26,22 +26,22 @@ class dbInsertBuffer
   dbInsertBuffer(dbNet* net);
   dbInst* insertBufferBeforeLoad(dbObject* load_input_term,
                                  const dbMaster* buffer_master,
-                                 const Point* loc,
-                                 const char* new_buf_base_name,
+                                 const Point* loc = nullptr,
+                                 const char* new_buf_base_name = nullptr,
                                  const char* new_net_base_name = nullptr,
                                  const dbNameUniquifyType& uniquify
                                  = dbNameUniquifyType::ALWAYS);
   dbInst* insertBufferAfterDriver(dbObject* drvr_output_term,
                                   const dbMaster* buffer_master,
-                                  const Point* loc,
-                                  const char* new_buf_base_name,
+                                  const Point* loc = nullptr,
+                                  const char* new_buf_base_name = nullptr,
                                   const char* new_net_base_name = nullptr,
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS);
   dbInst* insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                   const dbMaster* buffer_master,
-                                  const Point* loc,
-                                  const char* new_buf_base_name,
+                                  const Point* loc = nullptr,
+                                  const char* new_buf_base_name = nullptr,
                                   const char* new_net_base_name = nullptr,
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS,
@@ -118,21 +118,21 @@ class dbInsertBuffer
   void dlogSeparator() const;
 
  private:
-  dbNet* net_ = nullptr;
+  dbNet* net_ = nullptr;  // Target net. The net to which the buffer is inserted
   dbBlock* block_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
   // Insert buffer state
-  dbITerm* buf_input_iterm_ = nullptr;
-  dbITerm* buf_output_iterm_ = nullptr;
-  dbNet* new_flat_net_ = nullptr;
-  dbModNet* new_mod_net_ = nullptr;
-  dbModule* target_module_ = nullptr;
-  const dbMaster* buffer_master_ = nullptr;
-  const char* new_buf_base_name_ = nullptr;
-  const char* new_net_base_name_ = nullptr;
-  dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;
-  dbObject* orig_drvr_pin_ = nullptr;
+  dbITerm* buf_input_iterm_ = nullptr;   // Input iterm of the new buffer
+  dbITerm* buf_output_iterm_ = nullptr;  // Output iterm of the new buffer
+  dbNet* new_flat_net_ = nullptr;    // New flat net connected to the new buffer
+  dbModNet* new_mod_net_ = nullptr;  // New modnet connected to the new buffer
+  dbModule* target_module_ = nullptr;        // Target module for the new buffer
+  const dbMaster* buffer_master_ = nullptr;  // Buffer master
+  const char* new_buf_base_name_ = nullptr;  // Base name for the new buffer
+  const char* new_net_base_name_ = nullptr;  // Base name for the new nets
+  dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;  // Uniquify type
+  dbObject* orig_drvr_pin_ = nullptr;  // Original driver pin of net_
 };
 
 }  // namespace odb

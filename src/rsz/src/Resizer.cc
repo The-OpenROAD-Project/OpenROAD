@@ -1273,8 +1273,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
     odb::dbInst* new_buffer
         = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
 
-    inserted_buffer_count_++;
-
     // jk: dbg
     // odb::dbObject* drvr_pin = db_network_->staToDb(top_pin);
     // odb::dbMaster* buffer_master = db_network_->staToDb(buffer_cell);
@@ -1459,8 +1457,6 @@ void Resizer::bufferOutput(const Pin* top_pin,
     // New insert buffer behavior
     odb::dbInst* new_buffer = insertBufferBeforeLoad(
         const_cast<Pin*>(top_pin), buffer_cell, nullptr, "output");
-
-    inserted_buffer_count_++;
 
     // jk: rm
     buffer = db_network_->dbToSta(new_buffer);
@@ -5156,6 +5152,14 @@ void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 
   // Increment the design area
   designAreaIncr(area(buffer_inst->getMaster()));
+
+  // Update GUI
+  if (graphics_) {
+    graphics_->makeBuffer(buffer_inst);
+  }
+
+  // Increment the inserted buffer count
+  inserted_buffer_count_++;
 }
 
 void Resizer::setLocation(dbInst* db_inst, const Point& pt)

@@ -25,7 +25,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "ord/OpenRoad.hh"  // jk: dbg
+// #include "ord/OpenRoad.hh"  // jk: dbg
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -40,7 +40,7 @@
 #include "sta/Search.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
-#include "sta/VerilogWriter.hh"  // jk: dbg
+// #include "sta/VerilogWriter.hh"  // jk: dbg
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -2278,10 +2278,11 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     if (logger_->debugCheck(RSZ, "dbg", 1)) {
       if (iter == 59638) {
         printf("jk: #%d rebuffer pin = %s\n", iter, network_->name(drvr_pin));
-        if (logger_->debugCheck(RSZ, "dbg", 100)) {
-          sta::writeVerilog(
-              fmt::format("pre_{}.v", iter).c_str(), true, false, {}, network_);
-        }
+        // if (logger_->debugCheck(RSZ, "dbg", 100)) {
+        //   sta::writeVerilog(
+        //       fmt::format("pre_{}.v", iter).c_str(), true, false, {},
+        //       network_);
+        // }
       }
     }
 
@@ -2465,13 +2466,13 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       if (iter == 59638) {
         printf(
             "jk: #%d post rebuffer pin = %s\n", iter, network_->name(drvr_pin));
-        if (logger_->debugCheck(RSZ, "dbg", 100)) {
-          sta::writeVerilog(fmt::format("post_{}.v", iter).c_str(),
-                            true,
-                            false,
-                            {},
-                            network_);
-        }
+        // if (logger_->debugCheck(RSZ, "dbg", 100)) {
+        //   sta::writeVerilog(fmt::format("post_{}.v", iter).c_str(),
+        //                     true,
+        //                     false,
+        //                     {},
+        //                     network_);
+        // }
         if (logger_->debugCheck(RSZ, "dbg", 101)) {
           odb::dbBlock* block = db_network_->block();
           odb::dbNet* target_net = block->findNet("be_mmu.dcache/net3960");
@@ -2759,8 +2760,8 @@ void BufferMove::rebufferNet(const Pin* drvr_pin)
   rebuffer->init();
   rebuffer->initOnCorner(sta_->cmdCorner());
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-  int inserted_buffer_count_ = rebuffer->rebufferPin(drvr_pin);
-  logger_->report("Inserted {} buffers.", inserted_buffer_count_);
+  int inserted_buffer_count = rebuffer->rebufferPin(drvr_pin);
+  logger_->report("Inserted {} buffers.", inserted_buffer_count);
 }
 
 };  // namespace rsz
