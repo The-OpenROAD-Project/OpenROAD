@@ -251,4 +251,25 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestWriteReadDbHier",
+    srcs = [
+        "TestWriteReadDbHier.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # TODO: more to come.

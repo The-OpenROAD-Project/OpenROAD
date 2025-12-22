@@ -48,7 +48,10 @@ namespace odb {
 inline constexpr uint kSchemaMajor = 0;  // Not used...
 inline constexpr uint kSchemaInitial = 57;
 
-inline constexpr uint kSchemaMinor = 123;  // Current revision number
+inline constexpr uint kSchemaMinor = 124;  // Current revision number
+
+// Revision where _dbDatabase::hierarchy_ was added
+inline constexpr uint kSchemaHierarchyFlag = 124;
 
 // Revision where dbMarkerCategory was moved from dbBlock to dbChip
 inline constexpr uint kSchemaChipMarkerCategories = 123;
@@ -320,6 +323,7 @@ class _dbDatabase : public _dbObject
   dbChipBumpInstItr* chip_bump_inst_itr_;
   dbChipNetItr* chip_net_itr_;
   int unique_id_;
+  bool hierarchy_;
 
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
