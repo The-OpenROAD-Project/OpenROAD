@@ -102,15 +102,15 @@ bool _dbTechLayerSpacingRule::operator==(
 bool _dbTechV55InfluenceEntry::operator==(
     const _dbTechV55InfluenceEntry& rhs) const
 {
-  if (_width != rhs._width) {
+  if (width_ != rhs.width_) {
     return false;
   }
 
-  if (_within != rhs._within) {
+  if (within_ != rhs.within_) {
     return false;
   }
 
-  if (_spacing != rhs._spacing) {
+  if (spacing_ != rhs.spacing_) {
     return false;
   }
 
@@ -166,17 +166,17 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule)
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechV55InfluenceEntry& infitem)
 {
-  stream << infitem._width;
-  stream << infitem._within;
-  stream << infitem._spacing;
+  stream << infitem.width_;
+  stream << infitem.within_;
+  stream << infitem.spacing_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechV55InfluenceEntry& infitem)
 {
-  stream >> infitem._width;
-  stream >> infitem._within;
-  stream >> infitem._spacing;
+  stream >> infitem.width_;
+  stream >> infitem.within_;
+  stream >> infitem.spacing_;
   return stream;
 }
 
@@ -769,9 +769,9 @@ bool dbTechV55InfluenceEntry::getV55InfluenceEntry(uint& width,
                                                    uint& spacing) const
 {
   _dbTechV55InfluenceEntry* _v55ie = (_dbTechV55InfluenceEntry*) this;
-  width = _v55ie->_width;
-  within = _v55ie->_within;
-  spacing = _v55ie->_spacing;
+  width = _v55ie->width_;
+  within = _v55ie->within_;
+  spacing = _v55ie->spacing_;
   return true;
 }
 
@@ -780,9 +780,9 @@ void dbTechV55InfluenceEntry::setV55InfluenceEntry(const uint& width,
                                                    const uint& spacing)
 {
   _dbTechV55InfluenceEntry* _v55ie = (_dbTechV55InfluenceEntry*) this;
-  _v55ie->_width = width;
-  _v55ie->_within = within;
-  _v55ie->_spacing = spacing;
+  _v55ie->width_ = width;
+  _v55ie->within_ = within;
+  _v55ie->spacing_ = spacing;
 }
 
 void dbTechV55InfluenceEntry::writeLef(lefout& writer) const

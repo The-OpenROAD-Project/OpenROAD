@@ -50,7 +50,7 @@ DRCWidget::DRCWidget(QWidget* parent)
       logger_(nullptr),
       view_(new ObjectTree(this)),
       model_(new DRCItemModel(this)),
-      block_(nullptr),
+      chip_(nullptr),
       categories_(new QComboBox(this)),
       load_(new QPushButton("Load...", this)),
       renderer_(std::make_unique<DRCRenderer>())
@@ -119,7 +119,7 @@ void DRCWidget::setLogger(utl::Logger* logger)
 
 void DRCWidget::selectReport()
 {
-  if (!block_) {
+  if (!chip_) {
     logger_->error(utl::GUI, 104, "No database has been loaded");
   }
 
@@ -227,17 +227,19 @@ void DRCWidget::doubleClicked(const QModelIndex& index)
   showMarker(index, true);
 }
 
-void DRCWidget::setBlock(odb::dbBlock* block)
+void DRCWidget::setChip(odb::dbChip* chip)
 {
-  block_ = block;
+  chip_ = chip;
 
-  addOwner(block_);
+  addOwner(chip_);
   updateMarkerGroups();
 }
 
 void DRCWidget::showEvent(QShowEvent* event)
 {
-  addOwner(block_);
+  if (chip_) {
+    addOwner(chip_);
+  }
 
   updateMarkerGroups();
   toggleRenderer(true);
@@ -267,7 +269,7 @@ void DRCWidget::toggleRenderer(bool visible)
 void DRCWidget::updateModel()
 {
   const std::string name = categories_->currentText().toStdString();
-  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+  odb::dbMarkerCategory* category = chip_->findMarkerCategory(name.c_str());
 
   model_->removeRows(0, model_->rowCount());
 
@@ -385,13 +387,13 @@ void DRCWidget::loadReport(const QString& filename)
 odb::dbMarkerCategory* DRCWidget::loadTRReport(const QString& filename)
 {
   const std::string file = filename.toStdString();
-  return odb::dbMarkerCategory::fromTR(block_, "DRC", file);
+  return odb::dbMarkerCategory::fromTR(chip_, "DRC", file);
 }
 
 odb::dbMarkerCategory* DRCWidget::loadJSONReport(const QString& filename)
 {
   const std::string file = filename.toStdString();
-  const auto categories = odb::dbMarkerCategory::fromJSON(block_, file);
+  const auto categories = odb::dbMarkerCategory::fromJSON(chip_, file);
 
   if (categories.size() > 1) {
     logger_->warn(utl::GUI,
@@ -414,7 +416,7 @@ void DRCWidget::updateMarkerGroups()
 
 void DRCWidget::updateMarkerGroupsWithIgnore(odb::dbMarkerCategory* ignore)
 {
-  if (block_ == nullptr) {
+  if (chip_ == nullptr) {
     return;
   }
 
@@ -425,7 +427,7 @@ void DRCWidget::updateMarkerGroupsWithIgnore(odb::dbMarkerCategory* ignore)
   categories_->clear();
 
   categories_->addItem("");
-  for (auto* category : block_->getMarkerCategories()) {
+  for (auto* category : chip_->getMarkerCategories()) {
     if (ignore == category) {
       continue;
     }
@@ -452,7 +454,7 @@ void DRCWidget::inDbMarkerCategoryDestroy(odb::dbMarkerCategory* category)
 void DRCWidget::inDbMarkerCreate(odb::dbMarker* marker)
 {
   const std::string name = categories_->currentText().toStdString();
-  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+  odb::dbMarkerCategory* category = chip_->findMarkerCategory(name.c_str());
 
   if (marker->getCategory()->getTopCategory() == category) {
     updateModel();
@@ -462,7 +464,7 @@ void DRCWidget::inDbMarkerCreate(odb::dbMarker* marker)
 void DRCWidget::inDbMarkerDestroy(odb::dbMarker* marker)
 {
   const std::string name = categories_->currentText().toStdString();
-  odb::dbMarkerCategory* category = block_->findMarkerCategory(name.c_str());
+  odb::dbMarkerCategory* category = chip_->findMarkerCategory(name.c_str());
 
   if (marker->getCategory()->getTopCategory() == category) {
     updateModel();

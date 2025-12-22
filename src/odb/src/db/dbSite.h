@@ -22,7 +22,7 @@ struct dbSiteFlags
   uint x_symmetry : 1;
   uint y_symmetry : 1;
   uint R90_symmetry : 1;
-  dbSiteClass::Value _class : 4;
+  dbSiteClass::Value site_class : 4;
   uint is_hybrid : 1;
   uint spare_bits : 24;
 };

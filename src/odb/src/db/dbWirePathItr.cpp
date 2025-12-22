@@ -36,10 +36,6 @@ dbWirePathItr::dbWirePathItr()
   wire_ = nullptr;
 }
 
-dbWirePathItr::~dbWirePathItr()
-{
-}
-
 void dbWirePathItr::begin(dbWire* wire)
 {
   decoder_.begin(wire);

@@ -1892,6 +1892,18 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
       continue;
     }
 
+    auto* prop = odb::dbBoolProperty::find(iterm, kRouteProperty);
+    if (prop && !prop->getValue()) {
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Router",
+                 2,
+                 "Skipping termininal on {}: {}",
+                 net->getName(),
+                 iterm->getName());
+      continue;
+    }
+
     odb::dbTechLayer* other_layer;
     odb::dbTechVia* via;
     if (isCoverTerm(iterm)) {

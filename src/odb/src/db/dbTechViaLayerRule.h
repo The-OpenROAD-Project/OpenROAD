@@ -38,7 +38,6 @@ class _dbTechViaLayerRule : public _dbObject
  public:
   _dbTechViaLayerRule(_dbDatabase*, const _dbTechViaLayerRule& v);
   _dbTechViaLayerRule(_dbDatabase*);
-  ~_dbTechViaLayerRule();
 
   bool operator==(const _dbTechViaLayerRule& rhs) const;
   bool operator!=(const _dbTechViaLayerRule& rhs) const
@@ -57,7 +56,7 @@ class _dbTechViaLayerRule : public _dbObject
   int metal_overhang_;
   int spacing_x_;
   int spacing_y_;
-  double _resistance;
+  double resistance_;
   Rect rect_;
   dbId<_dbTechLayer> layer_;
 };

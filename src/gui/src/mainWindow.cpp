@@ -362,7 +362,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::reportSlackHistogramPaths);
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
-  connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
+  connect(this, &MainWindow::chipLoaded, drc_viewer_, &DRCWidget::setChip);
   connect(
       this, &MainWindow::blockLoaded, clock_viewer_, &ClockWidget::setBlock);
   connect(drc_viewer_,
@@ -592,6 +592,10 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbModBTerm*>(new DbModBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbModITerm*>(new DbModITermDescriptor(db_));
+  gui->registerDescriptor<odb::dbModInst*>(new DbModInstDescriptor(db_));
+  gui->registerDescriptor<odb::dbModNet*>(new DbModNetDescriptor(db_));
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaRule*>(
       new DbTechViaRuleDescriptor(db_));

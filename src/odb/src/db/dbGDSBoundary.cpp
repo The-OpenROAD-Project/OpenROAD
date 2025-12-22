@@ -64,10 +64,10 @@ void _dbGDSBoundary::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["xy"].add(xy_);
-  info.children_["propattr"].add(propattr_);
+  info.children["xy"].add(xy_);
+  info.children["propattr"].add(propattr_);
   for (auto& [i, s] : propattr_) {
-    info.children_["propattr"].add(s);
+    info.children["propattr"].add(s);
   }
   // User Code End collectMemInfo
 }

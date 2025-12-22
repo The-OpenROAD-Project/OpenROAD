@@ -152,7 +152,7 @@ _dbTech* _dbTechNonDefaultRule::getTech()
     return (_dbTech*) getOwner();
   }
 
-  return (_dbTech*) getBlock()->getTech();
+  return getBlock()->getTech();
 }
 
 _dbBlock* _dbTechNonDefaultRule::getBlock()
@@ -166,15 +166,15 @@ void _dbTechNonDefaultRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["_layer_rules"].add(layer_rules_);
-  info.children_["_vias"].add(vias_);
-  info.children_["_samenet_rules"].add(samenet_rules_);
-  info.children_["_samenet_matrix"].add(samenet_matrix_);
-  info.children_["_use_vias"].add(use_vias_);
-  info.children_["_use_rules"].add(use_rules_);
-  info.children_["_cut_layers"].add(cut_layers_);
-  info.children_["_min_cuts"].add(min_cuts_);
+  info.children["name"].add(name_);
+  info.children["_layer_rules"].add(layer_rules_);
+  info.children["_vias"].add(vias_);
+  info.children["_samenet_rules"].add(samenet_rules_);
+  info.children["_samenet_matrix"].add(samenet_matrix_);
+  info.children["_use_vias"].add(use_vias_);
+  info.children["_use_rules"].add(use_rules_);
+  info.children["_cut_layers"].add(cut_layers_);
+  info.children["_min_cuts"].add(min_cuts_);
 }
 
 bool _dbTechNonDefaultRule::operator<(const _dbTechNonDefaultRule& rhs) const

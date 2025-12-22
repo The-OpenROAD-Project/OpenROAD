@@ -233,6 +233,9 @@ sta::define_cmd_args "write_db" {filename}
 sta::define_cmd_args "read_db" {[-hier] filename}
 
 proc read_db { args } {
+  # TODO: -hier is not needed anymore.
+  # - It will be removed in a future release.
+  # - It is currently retained for backward compatibility.
   sta::parse_key_args "read_db" args keys {} flags {-hier}
   sta::check_argc_eq1or2 "read_db" $args
   set filename [file nativename [lindex $args 0]]
@@ -320,9 +323,14 @@ proc cpu_count { } {
   return [ord::cpu_count]
 }
 
-sta::define_cmd_args "global_connect" {}
-proc global_connect { } {
-  [ord::get_db_block] globalConnect
+sta::define_cmd_args "global_connect" { [-force] [-verbose] }
+proc global_connect { args } {
+  sta::parse_key_args "global_connect" args \
+    keys {} \
+    flags {-force -verbose}
+
+  sta::check_argc_eq0 "add_global_connection" $args
+  [ord::get_db_block] globalConnect [info exists flags(-force)] [info exists flags(-verbose)]
 }
 
 sta::define_cmd_args "clear_global_connect" {}

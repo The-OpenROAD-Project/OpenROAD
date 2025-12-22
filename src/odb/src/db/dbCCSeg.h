@@ -40,7 +40,6 @@ class _dbCCSeg : public _dbObject
 
   _dbCCSeg(_dbDatabase* db);
   _dbCCSeg(_dbDatabase* db, const _dbCCSeg& s);
-  ~_dbCCSeg();
 
   int idx(dbId<_dbCapNode> n) { return n == cap_node_[0] ? 0 : 1; }
   dbId<_dbCCSeg>& next(dbId<_dbCapNode> n) { return next_[idx(n)]; }
@@ -76,10 +75,6 @@ inline _dbCCSeg::_dbCCSeg(_dbDatabase*, const _dbCCSeg& s) : flags_(s.flags_)
   cap_node_[1] = s.cap_node_[1];
   next_[0] = s.next_[0];
   next_[1] = s.next_[1];
-}
-
-inline _dbCCSeg::~_dbCCSeg()
-{
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbCCSeg& seg)

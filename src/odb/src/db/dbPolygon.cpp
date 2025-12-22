@@ -99,7 +99,7 @@ void _dbPolygon::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["polygon"].add(polygon_.getPoints());
+  info.children["polygon"].add(polygon_.getPoints());
   // User Code End collectMemInfo
 }
 
@@ -188,7 +188,7 @@ dbPolygon* dbPolygon::create(dbMPin* pin_,
   return (dbPolygon*) box;
 }
 
-Polygon _dbPolygon::checkPolygon(std::vector<Point> polygon)
+Polygon _dbPolygon::checkPolygon(const std::vector<Point>& polygon)
 {
   if (polygon.size() < 4) {
     return {};

@@ -1,5 +1,6 @@
-{% macro serializer_in(klass, parent=None, comment_tag = "") %}
+{% macro serializer_in(klass, parent=None, comment_tag = "", static=False) %}
   {% set sname = (parent.name + "::" if parent else '_') + klass.name %}
+  {% if static %}static{% endif %}
   dbIStream& operator>>(dbIStream& stream, {{sname}}& obj)
   {
     {% for field in klass.fields %}

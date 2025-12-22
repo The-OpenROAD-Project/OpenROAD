@@ -106,7 +106,7 @@ namespace odb {
     {% if 'flags' not in _struct
                     or ('no-serializer' not in _struct['flags']
                         and 'no-serializer-in' not in _struct['flags']) %}
-      {{- si.serializer_in(_struct, klass, _struct.name)}}
+      {{- si.serializer_in(_struct, klass, _struct.name, static=True)}}
     {% endif %}
   {% endfor %}
   {{- si.serializer_in(klass)}}
@@ -116,7 +116,7 @@ namespace odb {
     {% if 'flags' not in _struct
                     or ('no-serializer' not in _struct['flags']
                         and 'no-serializer-out' not in _struct['flags']) %}
-      {{- so.serializer_out(_struct, klass, _struct.name)}}
+      {{- so.serializer_out(_struct, klass, _struct.name, static=True)}}
     {% endif %}
   {% endfor %}
   {{- so.serializer_out(klass)}}
@@ -146,7 +146,7 @@ namespace odb {
 
     {% for field in klass.fields %}
       {% if field.table %} 
-        {{field.name}}->collectMemInfo(info.children_["{{field.name}}"]);
+        {{field.name}}->collectMemInfo(info.children["{{field.name}}"]);
       {% endif %}
     {% endfor %}
 

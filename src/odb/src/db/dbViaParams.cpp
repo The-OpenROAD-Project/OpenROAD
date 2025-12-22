@@ -96,53 +96,6 @@ bool _dbViaParams::operator==(const _dbViaParams& rhs) const
   return true;
 }
 
-_dbViaParams::_dbViaParams(const _dbViaParams& v)
-    : x_cut_size_(v.x_cut_size_),
-      y_cut_size_(v.y_cut_size_),
-      x_cut_spacing_(v.x_cut_spacing_),
-      y_cut_spacing_(v.y_cut_spacing_),
-      x_top_enclosure_(v.x_top_enclosure_),
-      y_top_enclosure_(v.y_top_enclosure_),
-      x_bot_enclosure_(v.x_bot_enclosure_),
-      y_bot_enclosure_(v.y_bot_enclosure_),
-      num_cut_rows_(v.num_cut_rows_),
-      num_cut_cols_(v.num_cut_cols_),
-      x_origin_(v.x_origin_),
-      y_origin_(v.y_origin_),
-      x_top_offset_(v.x_top_offset_),
-      y_top_offset_(v.y_top_offset_),
-      x_bot_offset_(v.x_bot_offset_),
-      y_bot_offset_(v.y_bot_offset_),
-      top_layer_(v.top_layer_),
-      cut_layer_(v.cut_layer_),
-      bot_layer_(v.bot_layer_)
-{
-}
-
-_dbViaParams::_dbViaParams()
-{
-  x_cut_size_ = 0;
-  y_cut_size_ = 0;
-  x_cut_spacing_ = 0;
-  y_cut_spacing_ = 0;
-  x_top_enclosure_ = 0;
-  y_top_enclosure_ = 0;
-  x_bot_enclosure_ = 0;
-  y_bot_enclosure_ = 0;
-  num_cut_rows_ = 1;
-  num_cut_cols_ = 1;
-  x_origin_ = 0;
-  y_origin_ = 0;
-  x_top_offset_ = 0;
-  y_top_offset_ = 0;
-  x_bot_offset_ = 0;
-  y_bot_offset_ = 0;
-}
-
-_dbViaParams::~_dbViaParams()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbViaParams& v)
 {
   stream << v.x_cut_size_;
@@ -201,16 +154,8 @@ dbViaParams::dbViaParams() : _tech(nullptr)
 {
 }
 
-dbViaParams::dbViaParams(const dbViaParams& p) : _dbViaParams(p), _tech(p._tech)
-{
-}
-
 dbViaParams::dbViaParams(const _dbViaParams& p)
     : _dbViaParams(p), _tech(nullptr)
-{
-}
-
-dbViaParams::~dbViaParams()
 {
 }
 

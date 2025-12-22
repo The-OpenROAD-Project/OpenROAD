@@ -29,7 +29,6 @@ class _dbTechLayerRule : public _dbObject
  public:
   _dbTechLayerRule(_dbDatabase*);
   _dbTechLayerRule(_dbDatabase*, const _dbTechLayerRule& r);
-  ~_dbTechLayerRule();
 
   _dbTech* getTech();
   _dbBlock* getBlock();

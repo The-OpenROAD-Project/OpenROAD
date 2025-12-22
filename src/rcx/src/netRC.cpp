@@ -1166,7 +1166,7 @@ void extMain::getExtractedCorners()
 
   uint cornerCnt = 0;
   uint ii, jj;
-  char cName[128];
+  std::string cName;
   for (ii = 0; ii < pCornerCnt; ii++) {
     extCorner* t = new extCorner();
     t->_model = parser.getInt(ii);
@@ -1200,12 +1200,12 @@ void extMain::getExtractedCorners()
       t->_extCornerPtr = _processCornerTable->get(jj);
       break;
     }
-    _block->getExtCornerName(pCornerCnt + ii, &cName[0]);
+    cName = _block->getExtCornerName(pCornerCnt + ii);
     if (jj == pCornerCnt) {
       logger_->warn(RCX,
                     120,
                     "No matching process corner for scaled corner {}, model {}",
-                    &cName[0],
+                    cName,
                     t->_model);
     }
     t->_dbIndex = cornerCnt++;
@@ -1251,7 +1251,7 @@ void extMain::makeCornerMapFromExtControl()
     return;
   }
 
-  char cName[128];
+  std::string cName;
   for (uint ii = 0; ii < wordCnt; ii++) {
     int index = parser.getInt(ii);
     extCorner* t = nullptr;
@@ -1262,9 +1262,9 @@ void extMain::makeCornerMapFromExtControl()
       t = _scaledCornerTable->get((-index) - 1);
     }
     t->_dbIndex = ii;
-    _block->getExtCornerName(ii, &cName[0]);
+    cName = _block->getExtCornerName(ii);
     free(t->_name);
-    t->_name = strdup(&cName[0]);
+    t->_name = strdup(cName.c_str());
   }
 }
 

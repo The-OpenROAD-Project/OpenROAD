@@ -68,7 +68,7 @@ class _dbTech : public _dbObject
   void collectMemInfo(MemInfo& info);
 
  private:
-  double _version;
+  double version_;
 
  public:
   // PERSISTANT-MEMBERS
