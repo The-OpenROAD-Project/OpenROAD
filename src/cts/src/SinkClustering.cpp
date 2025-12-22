@@ -40,9 +40,7 @@ SinkClustering::SinkClustering(const CtsOptions* options,
       use_max_size_((HTree->getTreeType() == TreeType::MacroTree)
                         ? options->isMacroSinkClusteringSizeSet()
                         : options->isSinkClusteringSizeSet()),
-      useMaxCapLimit_((HTree->getTreeType() == TreeType::MacroTree)
-                          ? false
-                          : !(use_max_size_ && use_max_diameter_)),
+      useMaxCapLimit_(!(use_max_size_ && use_max_diameter_)),
       scaleFactor_(1),
       HTree_(HTree)
 {

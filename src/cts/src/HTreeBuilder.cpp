@@ -1195,9 +1195,7 @@ void HTreeBuilder::run()
   bool use_max_size = (type_ == TreeType::MacroTree)
                           ? options_->isMacroSinkClusteringSizeSet()
                           : options_->isSinkClusteringSizeSet();
-  bool useMaxCap = (type_ == TreeType::MacroTree)
-                       ? false
-                       : !(use_max_size && use_max_diameter);
+  bool useMaxCap = !(use_max_size && use_max_diameter);
 
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
