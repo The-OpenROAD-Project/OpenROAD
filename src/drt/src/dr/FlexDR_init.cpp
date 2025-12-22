@@ -1775,7 +1775,7 @@ void FlexDRWorker::initMazeIdx_connFig(drConnFig* connFig)
       FlexMazeIdx bi, ei;
       gridGraph_.getMazeIdx(bi, bp, lNum);
       gridGraph_.getMazeIdx(ei, ep, lNum);
-      connFig->setMazeIdx(bi, ei);
+      obj->setMazeIdx(bi, ei);
     } else {
       std::cout << "Error: initMazeIdx_connFig pathseg no idx (" << bp.x()
                 << ", " << bp.y() << ") (" << ep.x() << ", " << ep.y() << ") "
@@ -1791,7 +1791,7 @@ void FlexDRWorker::initMazeIdx_connFig(drConnFig* connFig)
       FlexMazeIdx bi, ei;
       gridGraph_.getMazeIdx(bi, bp, layer1Num);
       gridGraph_.getMazeIdx(ei, bp, layer2Num);
-      connFig->setMazeIdx(bi, ei);
+      obj->setMazeIdx(bi, ei);
       // std::cout <<"has idx via" <<std::endl;
     } else {
       std::cout << "Error: initMazeIdx_connFig via no idx (" << bp.x() << ", "

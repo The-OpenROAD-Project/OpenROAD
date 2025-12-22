@@ -128,7 +128,7 @@ class drVia : public drRef
   {
     return {beginMazeIdx_, endMazeIdx_};
   }
-  void setMazeIdx(const FlexMazeIdx& bi, const FlexMazeIdx& ei) override
+  void setMazeIdx(const FlexMazeIdx& bi, const FlexMazeIdx& ei)
   {
     beginMazeIdx_.set(bi);
     endMazeIdx_.set(ei);
