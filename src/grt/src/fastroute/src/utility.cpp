@@ -601,6 +601,19 @@ void FastRouteCore::updateSlacks(float percentage)
     // TODO: need to check this positive slack threshold
     // const float pos_threshold = 100e-12;
 
+    auto& treeedges = sttrees_[net_id].edges;
+    int net_size = 0;
+    for (const auto& edge : treeedges) {
+      net_size += edge.len;
+    }
+    bool is_short_net = net_size <= 3;
+    bool is_unconstrained_net = slack == sta::INF;
+
+    // Dont apply res-aware to unconstrained and short nets
+    if (is_unconstrained_net || is_short_net) {
+      continue;
+    }
+
     res_aware_list.emplace_back(net_id, slack);
   }
 
