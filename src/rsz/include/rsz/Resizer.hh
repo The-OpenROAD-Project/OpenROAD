@@ -253,8 +253,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
   /// Wrapper for dbNet::insertBufferAfterDriver().
   /// - This accepts STA objects instead of db objects.
   ///
-  odb::dbInst* insertBufferAfterDriver(Net* net,
-                                       LibertyCell* buffer_cell,
+  Instance* insertBufferAfterDriver(Net* net,
+                                    LibertyCell* buffer_cell,
+                                    const Point* loc = nullptr,
+                                    const char* new_buf_base_name = nullptr,
+                                    const char* new_net_base_name = nullptr);
+  odb::dbInst* insertBufferAfterDriver(odb::dbNet* net,
+                                       odb::dbMaster* buffer_cell,
                                        const Point* loc = nullptr,
                                        const char* new_buf_base_name = nullptr,
                                        const char* new_net_base_name = nullptr);
@@ -263,8 +268,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
   /// Wrapper for dbNet::insertBufferBeforeLoad().
   /// - This accepts STA objects instead of db objects.
   ///
-  odb::dbInst* insertBufferBeforeLoad(Pin* load_pin,
-                                      LibertyCell* buffer_cell,
+  Instance* insertBufferBeforeLoad(Pin* load_pin,
+                                   LibertyCell* buffer_cell,
+                                   const Point* loc = nullptr,
+                                   const char* new_buf_base_name = nullptr,
+                                   const char* new_net_base_name = nullptr);
+  odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_pin,
+                                      odb::dbMaster* buffer_cell,
                                       const Point* loc = nullptr,
                                       const char* new_buf_base_name = nullptr,
                                       const char* new_net_base_name = nullptr);
@@ -273,9 +283,16 @@ class Resizer : public dbStaState, public dbNetworkObserver
   /// Wrapper for dbNet::insertBufferBeforeLoads().
   /// - This accepts STA objects instead of db objects.
   ///
-  odb::dbInst* insertBufferBeforeLoads(Net* net,
+  Instance* insertBufferBeforeLoads(Net* net,
+                                    const std::set<odb::dbObject*>& loads,
+                                    LibertyCell* buffer_cell,
+                                    const Point* loc = nullptr,
+                                    const char* new_buf_base_name = nullptr,
+                                    const char* new_net_base_name = nullptr,
+                                    bool loads_on_same_db_net = true);
+  odb::dbInst* insertBufferBeforeLoads(odb::dbNet* net,
                                        const std::set<odb::dbObject*>& loads,
-                                       LibertyCell* buffer_cell,
+                                       odb::dbMaster* buffer_cell,
                                        const Point* loc = nullptr,
                                        const char* new_buf_base_name = nullptr,
                                        const char* new_net_base_name = nullptr,

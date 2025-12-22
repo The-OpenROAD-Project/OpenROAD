@@ -1270,8 +1270,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
   } else {
     // New bufferInput() behavior
     Net* target_net = db_network_->dbToSta(top_pin_flat_net);
-    odb::dbInst* new_buffer
-        = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
+    buffer = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
 
     // jk: dbg
     // odb::dbObject* drvr_pin = db_network_->staToDb(top_pin);
@@ -1280,7 +1279,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
     //     drvr_pin, buffer_master, nullptr, "input");
 
     // jk: rm
-    buffer = db_network_->dbToSta(new_buffer);
     getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
   }
 
@@ -1455,11 +1453,10 @@ void Resizer::bufferOutput(const Pin* top_pin,
     }
   } else {
     // New insert buffer behavior
-    odb::dbInst* new_buffer = insertBufferBeforeLoad(
+    buffer = insertBufferBeforeLoad(
         const_cast<Pin*>(top_pin), buffer_cell, nullptr, "output");
 
     // jk: rm
-    buffer = db_network_->dbToSta(new_buffer);
     getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
   }
 
@@ -4907,54 +4904,83 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
   return inst;
 }
 
-odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
-                                              LibertyCell* buffer_cell,
+Instance* Resizer::insertBufferAfterDriver(Net* net,
+                                           LibertyCell* buffer_cell,
+                                           const Point* loc,
+                                           const char* new_buf_base_name,
+                                           const char* new_net_base_name)
+{
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+  if (!buffer_master) {
+    logger_->error(
+        RSZ,
+        3000,
+        "insertBufferAfterDriver: Cannot find dbMaster for buffer cell {}",
+        buffer_cell->name());
+    return nullptr;
+  }
+
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (!db_net) {
+    logger_->error(RSZ,
+                   3001,
+                   "insertBufferAfterDriver: Cannot convert net {} to dbNet",
+                   network_->pathName(net));
+    return nullptr;
+  }
+
+  odb::dbInst* buffer_inst = insertBufferAfterDriver(
+      db_net, buffer_master, loc, new_buf_base_name, new_net_base_name);
+  return db_network_->dbToSta(buffer_inst);
+}
+
+odb::dbInst* Resizer::insertBufferAfterDriver(odb::dbNet* net,
+                                              odb::dbMaster* buffer_cell,
                                               const Point* loc,
                                               const char* new_buf_base_name,
                                               const char* new_net_base_name)
 {
-  // Find the driver of the current net
-  const sta::Pin* drvr_pin = nullptr;
-  sta::PinSet* drivers = network_->drivers(net);
-  if (drivers && !drivers->empty()) {
-    drvr_pin = *drivers->begin();
+  // Find the driver of the current net using ODB API
+  odb::dbITerm* drvr_iterm = net->getFirstOutput();
+  odb::dbObject* drvr_obj = nullptr;
+
+  if (drvr_iterm) {
+    drvr_obj = drvr_iterm;
+  } else {
+    // Check for BTerm driver
+    odb::dbSet<odb::dbBTerm> bterms = net->getBTerms();
+    for (odb::dbBTerm* bterm : bterms) {
+      if (bterm->getIoType() == odb::dbIoType::INPUT
+          || bterm->getIoType() == odb::dbIoType::INOUT) {
+        drvr_obj = bterm;
+        break;
+      }
+    }
   }
 
-  if (!drvr_pin) {
-    logger_->error(
-        RSZ, 3000, "No driver found for net {}", network_->pathName(net));
-    return nullptr;
-  }
-
-  odb::dbObject* drvr_obj = db_network_->staToDb(drvr_pin);
-  if (!drvr_obj
-      || (drvr_obj->getObjectType() != odb::dbObjectType::dbITermObj
-          && drvr_obj->getObjectType() != odb::dbObjectType::dbBTermObj)) {
+  if (!drvr_obj) {
     logger_->error(RSZ,
-                   3001,
-                   "Driver pin {} is not an ITerm or BTerm",
-                   network_->pathName(drvr_pin));
+                   3002,
+                   "insertBufferAfterDriver: No driver found for net {}",
+                   net->getName());
     return nullptr;
   }
-
-  odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
-
-  odb::dbNet* db_net = db_network_->staToDb(net);
 
   odb::dbInst* buffer_inst
-      = db_net->insertBufferAfterDriver(drvr_obj,
-                                        buffer_master,
-                                        loc,
-                                        new_buf_base_name,
-                                        new_net_base_name,
-                                        odb::dbNameUniquifyType::ALWAYS);
+      = net->insertBufferAfterDriver(drvr_obj,
+                                     buffer_cell,
+                                     loc,
+                                     new_buf_base_name,
+                                     new_net_base_name,
+                                     odb::dbNameUniquifyType::ALWAYS);
 
   if (!buffer_inst) {
     logger_->error(RSZ,
-                   3002,
-                   "Failed to insert buffer after driver for net {}",
-                   network_->pathName(net));
+                   3003,
+                   "insertBufferAfterDriver: Failed to insert buffer after "
+                   "driver for net {}",
+                   net->getName());
     return nullptr;
   }
 
@@ -4964,40 +4990,68 @@ odb::dbInst* Resizer::insertBufferAfterDriver(Net* net,
   return buffer_inst;
 }
 
-odb::dbInst* Resizer::insertBufferBeforeLoad(Pin* load_pin,
-                                             LibertyCell* buffer_cell,
-                                             const Point* loc,
-                                             const char* new_buf_base_name,
-                                             const char* new_net_base_name)
+Instance* Resizer::insertBufferBeforeLoad(Pin* load_pin,
+                                          LibertyCell* buffer_cell,
+                                          const Point* loc,
+                                          const char* new_buf_base_name,
+                                          const char* new_net_base_name)
 {
-  // Get the dbObject of the load_pin
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+  if (!buffer_master) {
+    logger_->error(
+        RSZ,
+        3007,
+        "insertBufferBeforeLoad: Cannot find dbMaster for buffer cell {}",
+        buffer_cell->name());
+    return nullptr;
+  }
+
   odb::dbObject* db_load_pin = db_network_->staToDb(load_pin);
   if (!db_load_pin
       || (db_load_pin->getObjectType() != odb::dbObjectType::dbITermObj
           && db_load_pin->getObjectType() != odb::dbObjectType::dbBTermObj)) {
-    logger_->error(RSZ,
-                   3007,
-                   "Load pin '{}' is not an ITerm or BTerm",
-                   network_->pathName(load_pin));
+    logger_->error(
+        RSZ,
+        3008,
+        "insertBufferBeforeLoad: Load pin '{}' is not an ITerm or BTerm",
+        network_->pathName(load_pin));
     return nullptr;
   }
 
+  odb::dbInst* buffer_inst = insertBufferBeforeLoad(
+      db_load_pin, buffer_master, loc, new_buf_base_name, new_net_base_name);
+  return db_network_->dbToSta(buffer_inst);
+}
+
+odb::dbInst* Resizer::insertBufferBeforeLoad(odb::dbObject* load_pin,
+                                             odb::dbMaster* buffer_cell,
+                                             const Point* loc,
+                                             const char* new_buf_base_name,
+                                             const char* new_net_base_name)
+{
   // Find the flat net of the load_pin
   dbNet* db_net = nullptr;
-  if (db_load_pin->getObjectType() == odb::dbObjectType::dbITermObj) {
-    odb::dbITerm* iterm = static_cast<odb::dbITerm*>(db_load_pin);
+  if (load_pin->getObjectType() == odb::dbObjectType::dbITermObj) {
+    odb::dbITerm* iterm = static_cast<odb::dbITerm*>(load_pin);
     db_net = iterm->getNet();
-  } else if (db_load_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
-    odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(db_load_pin);
+  } else if (load_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
+    odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(load_pin);
     db_net = bterm->getNet();
   }
 
+  if (!db_net) {
+    logger_->error(RSZ,
+                   3014,
+                   "insertBufferBeforeLoad: No net found for load pin {}",
+                   load_pin->getName());
+    return nullptr;
+  }
+
   // Insert buffer before the load_pin
-  odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
   odb::dbInst* buffer_inst
-      = db_net->insertBufferBeforeLoad(db_load_pin,
-                                       buffer_master,
+      = db_net->insertBufferBeforeLoad(load_pin,
+                                       buffer_cell,
                                        loc,
                                        new_buf_base_name,
                                        new_net_base_name,
@@ -5005,9 +5059,10 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(Pin* load_pin,
 
   if (!buffer_inst) {
     logger_->error(RSZ,
-                   3008,
-                   "Failed to insert buffer before load for load pin '{}'",
-                   network_->pathName(load_pin));
+                   3017,
+                   "insertBufferBeforeLoad: Failed to insert buffer before "
+                   "load for load pin '{}'",
+                   load_pin->getName());
     return nullptr;
   }
 
@@ -5017,7 +5072,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(Pin* load_pin,
   return buffer_inst;
 }
 
-odb::dbInst* Resizer::insertBufferBeforeLoads(
+Instance* Resizer::insertBufferBeforeLoads(
     Net* net,
     const std::set<odb::dbObject*>& loads,
     LibertyCell* buffer_cell,
@@ -5026,44 +5081,55 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     const char* new_net_base_name,
     bool loads_on_same_db_net)
 {
-  if (loads.empty()) {
-    logger_->warn(RSZ, 3003, "insertBufferBeforeLoads: no loads specified");
-    return nullptr;
-  }
-
   odb::dbMaster* buffer_master
       = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
-
   if (!buffer_master) {
-    logger_->error(RSZ,
-                   3004,
-                   "Cannot find dbMaster for buffer cell {}",
-                   buffer_cell->name());
+    logger_->error(
+        RSZ,
+        3004,
+        "insertBufferBeforeLoads: Cannot find dbMaster for buffer cell {}",
+        buffer_cell->name());
     return nullptr;
   }
 
-  odb::dbNet* db_net = nullptr;
-  if (net == nullptr) {
-    odb::dbObject* first_load = *loads.begin();
-    if (first_load->getObjectType() == odb::dbObjectType::dbITermObj) {
-      db_net = static_cast<odb::dbITerm*>(first_load)->getNet();
-    } else if (first_load->getObjectType() == odb::dbObjectType::dbBTermObj) {
-      db_net = static_cast<odb::dbBTerm*>(first_load)->getNet();
-    }
-  } else {
-    db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = net ? db_network_->staToDb(net) : nullptr;
+
+  odb::dbInst* buffer_inst = insertBufferBeforeLoads(db_net,
+                                                     loads,
+                                                     buffer_master,
+                                                     loc,
+                                                     new_buf_base_name,
+                                                     new_net_base_name,
+                                                     loads_on_same_db_net);
+  return db_network_->dbToSta(buffer_inst);
+}
+
+odb::dbInst* Resizer::insertBufferBeforeLoads(
+    odb::dbNet* net,
+    const std::set<odb::dbObject*>& loads,
+    odb::dbMaster* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    bool loads_on_same_db_net)
+{
+  if (loads.empty()) {
+    logger_->warn(RSZ, 3015, "insertBufferBeforeLoads: no loads specified");
+    return nullptr;
   }
 
-  if (!db_net) {
-    if (net != nullptr) {
-      const char* net_name = network_->pathName(net);
-      logger_->error(RSZ,
-                     3005,
-                     "Cannot convert STA net {} to dbNet",
-                     net_name ? net_name : "<unknown>");
-    } else {
-      logger_->error(RSZ, 3014, "Cannot infer net from loads.");
+  // If no net provided, try to infer from loads
+  if (!net) {
+    odb::dbObject* first_load = *loads.begin();
+    if (first_load->getObjectType() == odb::dbObjectType::dbITermObj) {
+      net = static_cast<odb::dbITerm*>(first_load)->getNet();
+    } else if (first_load->getObjectType() == odb::dbObjectType::dbBTermObj) {
+      net = static_cast<odb::dbBTerm*>(first_load)->getNet();
     }
+  }
+
+  if (!net) {
+    logger_->error(RSZ, 3016, "Cannot infer net from loads.");
     return nullptr;
   }
 
@@ -5078,19 +5144,19 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
   std::set<odb::dbObject*> loads_copy = loads;
 
   odb::dbInst* buffer_inst
-      = db_net->insertBufferBeforeLoads(loads_copy,
-                                        buffer_master,
-                                        loc,
-                                        new_buf_base_name,
-                                        new_net_base_name,
-                                        odb::dbNameUniquifyType::ALWAYS,
-                                        loads_on_same_db_net);
+      = net->insertBufferBeforeLoads(loads_copy,
+                                     buffer_cell,
+                                     loc,
+                                     new_buf_base_name,
+                                     new_net_base_name,
+                                     odb::dbNameUniquifyType::ALWAYS,
+                                     loads_on_same_db_net);
 
   if (!buffer_inst) {
     logger_->error(RSZ,
                    3006,
                    "Failed to insert buffer before loads for net {}",
-                   network_->pathName(net));
+                   net->getName());
     return nullptr;
   }
 

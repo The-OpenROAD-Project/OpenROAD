@@ -786,9 +786,9 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       load_terms.insert(db_network_->staToDb(load_pin));
     }
 
-    dbInst* new_buffer = resizer_->insertBufferBeforeLoads(
+    buffer = resizer_->insertBufferBeforeLoads(
         drvr_net, load_terms, buffer_cell, &loc, "hold");
-    if (new_buffer == nullptr) {
+    if (buffer == nullptr) {
       const char* drvr_pin_name = db_network_->pathName(drvr_pin);
       logger_->error(RSZ,
                      3009,
@@ -797,11 +797,11 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       return;
     }
 
+    dbInst* new_buffer = db_network_->staToDb(buffer);
     debugPrint(
         logger_, RSZ, "repair_hold", 3, " insert {}", new_buffer->getName());
 
     // jk: rm
-    buffer = db_network_->dbToSta(new_buffer);
     buffer_in_pin = db_network_->dbToSta(new_buffer->getFirstInput());
     buffer_out_pin = db_network_->dbToSta(new_buffer->getFirstOutput());
 
