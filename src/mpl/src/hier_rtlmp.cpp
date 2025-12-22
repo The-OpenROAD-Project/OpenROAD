@@ -4,7 +4,6 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -26,6 +25,7 @@
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
 #include "SimulatedAnnealingCore.h"
+#include "boost/polygon/polygon.hpp"
 #include "clusterEngine.h"
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
