@@ -1181,6 +1181,91 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   }
 }
 
+void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
+                            IterationProgress& iter_prog)
+{
+  if (graphics_) {
+    graphics_->startIter(iter_, router_cfg_);
+  }
+  control_.tried_guide_flow = true;
+  std::vector<odb::Rect> workers;
+  for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+    for (auto src : marker->getSrcs()) {
+      if (src->typeId() == frcNet) {
+        auto net = static_cast<frNet*>(src);
+        if (net->getOrigGuides().empty()) {
+          continue;
+        }
+        for (const auto& guide : net->getOrigGuides()) {
+          if (!guide.getBBox().intersects(marker->getBBox())) {
+            continue;
+          }
+          workers.push_back(guide.getBBox());
+        }
+      }
+    }
+  }
+  if (workers.empty()) {
+    return;
+  }
+
+  for (auto itr1 = workers.begin(); itr1 != workers.end(); ++itr1) {
+    for (auto itr2 = itr1 + 1; itr2 != workers.end(); ++itr2) {
+      if (itr1->getDir() == itr2->getDir() && itr1->intersects(*itr2)) {
+        itr1->merge(*itr2);
+        workers.erase(itr2);
+        itr2 = itr1;
+      }
+    }
+  }
+  std::vector<std::set<odb::Rect>> boxes_set;
+  boxes_set.reserve(workers.size());
+  for (auto& worker : workers) {
+    boxes_set.push_back({worker});
+  }
+  auto route_boxes_batches = stub_tiles::getWorkerBatchesBoxes(
+      getDesign(), boxes_set, router_cfg_->MTSAFEDIST);
+  std::vector<std::vector<std::unique_ptr<FlexDRWorker>>> workers_batches(
+      route_boxes_batches.size());
+  iter_prog.total_num_workers = 0;
+  for (int batch_id = 0; batch_id < route_boxes_batches.size(); batch_id++) {
+    auto& batch = route_boxes_batches[batch_id];
+    for (const auto worker_id : batch) {
+      for (auto gcell_box : boxes_set[worker_id]) {
+        auto min_idx = gcell_box.ll();
+        auto max_idx = gcell_box.ur();
+        odb::Rect route_box(
+            getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
+            getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
+        workers_batches[batch_id].emplace_back(
+            createWorker(0, 0, args, route_box));
+        workers_batches[batch_id].back()->setWorkerId(worker_id);
+        iter_prog.total_num_workers++;
+      }
+    }
+  }
+  bool changed = false;
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  for (auto& batch : workers_batches) {
+    processWorkersBatch(batch, iter_prog);
+    std::map<int, FlexDRWorker*>
+        worker_best_result;  // holds the best worker in results
+    for (auto& worker : batch) {
+      const int worker_id = worker->getWorkerId();
+      if (worker_best_result.find(worker_id) == worker_best_result.end()
+          || worker->getBestNumMarkers()
+                 < worker_best_result[worker_id]->getBestNumMarkers()) {
+        worker_best_result[worker_id] = worker.get();
+      }
+    }
+    for (auto [_, worker] : worker_best_result) {
+      changed
+          |= (worker->end(getDesign())
+              && worker->getBestNumMarkers() != worker->getInitNumMarkers());
+    }
+    batch.clear();
+  }
+}
 void FlexDR::optimizationFlow(const SearchRepairArgs& args,
                               IterationProgress& iter_prog)
 {
@@ -1279,7 +1364,14 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     printIteration(logger_, iter_, stubborn_flow);
   }
   if (stubborn_flow) {
-    stubbornTilesFlow(args, iter_prog);
+    if (control_.skip_till_changed && !control_.tried_guide_flow
+        && args.isEqualIgnoringSizeAndOffset(control_.last_args)) {
+      guideTilesFlow(args, iter_prog);
+    } else {
+      control_.skip_till_changed = false;
+      control_.tried_guide_flow = false;
+      stubbornTilesFlow(args, iter_prog);
+    }
   } else {
     optimizationFlow(args, iter_prog);
   }
@@ -1869,14 +1961,14 @@ int FlexDR::main()
       }
     }
     if (control_.skip_till_changed
-        && args.isEqualIgnoringSizeAndOffset(control_.last_args)) {
+        && args.isEqualIgnoringSizeAndOffset(control_.last_args)
+        && control_.tried_guide_flow) {
       if (router_cfg_->VERBOSE > 0) {
         logger_->info(DRT, 200, "Skipping iteration {}", iter_);
       }
       ++iter_;
       continue;
     }
-    control_.skip_till_changed = false;
     searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
