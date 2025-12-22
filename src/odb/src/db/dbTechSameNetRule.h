@@ -28,7 +28,6 @@ class _dbTechSameNetRule : public _dbObject
  public:
   _dbTechSameNetRule(_dbDatabase*, const _dbTechSameNetRule& r);
   _dbTechSameNetRule(_dbDatabase*);
-  ~_dbTechSameNetRule();
 
   bool operator==(const _dbTechSameNetRule& rhs) const;
   bool operator!=(const _dbTechSameNetRule& rhs) const
@@ -58,10 +57,6 @@ inline _dbTechSameNetRule::_dbTechSameNetRule(_dbDatabase*)
   flags_.stack = 0;
   flags_.spare_bits = 0;
   spacing_ = 0;
-}
-
-inline _dbTechSameNetRule::~_dbTechSameNetRule()
-{
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbTechSameNetRule& rule)

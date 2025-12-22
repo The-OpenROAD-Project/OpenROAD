@@ -33,14 +33,14 @@
 	    "name":"modnets_",
 	    "type":"dbId<_dbModNet>",
 	    "flags":["no-set","no-get"],
-	    "schema":"db_schema_update_hierarchy",	    	
+	    "schema":"kSchemaUpdateHierarchy",
 	    "parent":"dbBlock"
 	},
 	{
 	    "name":"modbterms_",
 	    "type":"dbId<_dbModBTerm>",
 	    "flags":["no-set","no-get"],
-	    "schema":"db_schema_update_hierarchy"	    	    	
+	    "schema":"kSchemaUpdateHierarchy"
 	}
     ],
     "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h", "dbModulePortItr.h","dbJournal.h", "dbCommon.h"],
@@ -49,5 +49,3 @@
 	"odb/dbSet.h"
     ]
 }
-
-

@@ -18,6 +18,7 @@
 // User Code Begin Includes
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 // User Code End Includes
 
@@ -54,7 +55,9 @@ class _dbGlobalConnect : public _dbObject
   std::map<dbMaster*, std::set<dbMTerm*>> getMTermMapping();
   std::set<dbMTerm*> getMTermMapping(dbMaster* master,
                                      const std::regex& pin_regex) const;
-  std::set<dbITerm*> connect(const std::vector<dbInst*>& insts);
+  std::pair<std::set<dbITerm*>, std::set<dbITerm*>> connect(
+      const std::vector<dbInst*>& insts,
+      bool force);
   bool appliesTo(dbInst* inst) const;
   bool needsModification(dbInst* inst) const;
   // User Code End Methods

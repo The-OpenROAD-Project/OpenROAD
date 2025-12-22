@@ -24,8 +24,6 @@
 
 namespace odb {
 
-double getExtCCmult(dbNet* aggressor);
-
 template class dbTable<_dbCapNode>;
 
 bool _dbCapNode::operator==(const _dbCapNode& rhs) const
@@ -173,7 +171,7 @@ void dbCapNode::adjustCapacitance(float factor, uint corner)
   assert(seg->flags_.foreign > 0);
   assert(corner < cornerCnt);
   float& value
-      = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value *= factor;
 
@@ -216,7 +214,7 @@ double dbCapNode::getCapacitance(uint corner)
 
   if (seg->flags_.foreign > 0) {
     assert(corner < cornerCnt);
-    return (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+    return (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   }
   return 0.0;
 }
@@ -231,7 +229,7 @@ void dbCapNode::getGndCap(double* gndcap, double* totalcap)
   uint cornerCnt = block->corners_per_block_;
   double gcap;
   for (uint ii = 0; ii < cornerCnt; ii++) {
-    gcap = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+    gcap = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
     if (gndcap) {
       gndcap[ii] = gcap;
     }
@@ -251,7 +249,7 @@ void dbCapNode::addGndCap(double* gndcap, double* totalcap)
   uint cornerCnt = block->corners_per_block_;
   double gcap;
   for (uint ii = 0; ii < cornerCnt; ii++) {
-    gcap = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+    gcap = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
     if (gndcap) {
       gndcap[ii] += gcap;
     }
@@ -294,7 +292,7 @@ void dbCapNode::getCapTable(double* cap)
   uint cornerCnt = block->corners_per_block_;
 
   for (uint ii = 0; ii < cornerCnt; ii++) {
-    cap[ii] = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+    cap[ii] = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
   }
 }
 
@@ -306,9 +304,9 @@ void dbCapNode::addCapnCapacitance(dbCapNode* other)
   uint cornerCnt = block->corners_per_block_;
   for (uint corner = 0; corner < cornerCnt; corner++) {
     float& value
-        = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+        = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
     float& ovalue
-        = (*block->c_val_tbl_)[(oseg->getOID() - 1) * cornerCnt + 1 + corner];
+        = (*block->c_val_tbl_)[((oseg->getOID() - 1) * cornerCnt) + 1 + corner];
     value += ovalue;
   }
 
@@ -337,7 +335,7 @@ void dbCapNode::setCapacitance(double cap, int corner)
   uint cornerCnt = block->corners_per_block_;
   assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
-      = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value = (float) cap;
 
@@ -370,7 +368,7 @@ void dbCapNode::addCapacitance(double cap, int corner)
   uint cornerCnt = block->corners_per_block_;
   assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
-      = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value += (float) cap;
 
@@ -955,7 +953,7 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
     seg->flags_.foreign = 1;
     if (block->max_cap_node_id_ >= seg->getOID()) {
       for (uint ii = 0; ii < cornerCnt; ii++) {
-        (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+        (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii] = 0.0;
       }
     } else {
       block->max_cap_node_id_ = seg->getOID();

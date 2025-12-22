@@ -10,7 +10,7 @@
 
 namespace odb {
 
-inline bool isFiltered(unsigned filter, unsigned mask)
+static bool isFiltered(unsigned filter, unsigned mask)
 {
   return (filter & mask) == mask;
 }
@@ -24,11 +24,11 @@ dbHierInstShapeItr::dbHierInstShapeItr(dbShapeItrCallback* callback)
 void dbHierInstShapeItr::iterate(dbInst* inst, unsigned filter)
 {
   transforms_.clear();
-  transforms_.push_back(dbTransform());
+  transforms_.emplace_back();
   iterate_inst(inst, filter, 0);
 }
 
-void dbHierInstShapeItr::push_transform(dbTransform t)
+void dbHierInstShapeItr::push_transform(const dbTransform& t)
 {
   dbTransform top = transforms_.back();
   top.concat(t);

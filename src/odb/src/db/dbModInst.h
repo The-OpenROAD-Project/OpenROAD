@@ -26,6 +26,8 @@ class _dbModInst : public _dbObject
  public:
   _dbModInst(_dbDatabase*);
 
+  ~_dbModInst();
+
   bool operator==(const _dbModInst& rhs) const;
   bool operator!=(const _dbModInst& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModInst& rhs) const;

@@ -3,11 +3,8 @@
 
 #pragma once
 
-#include <vector>
-
 #include "boost/integer/static_log2.hpp"
 #include "dbCore.h"
-#include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbIterator.h"
 #include "odb/dbObject.h"
@@ -31,10 +28,10 @@ class dbTable final : public dbObjectTable, public dbIterator
                 "page_size must be a power of two");
 
   // number of bits to shift to determine page number
-  constexpr static int page_shift = boost::static_log2<page_size>::value;
+  static constexpr int kPageShift = boost::static_log2<page_size>::value;
 
   // bit-mask to get page-offset
-  constexpr static uint page_mask = page_size - 1;
+  static constexpr uint kPageMask = page_size - 1;
 
  public:
   dbTable(_dbDatabase* db,
@@ -56,7 +53,7 @@ class dbTable final : public dbObjectTable, public dbIterator
   // clear the table
   void clear();
 
-  uint pageSize() const { return page_mask + 1; }
+  uint pageSize() const { return kPageMask + 1; }
 
   // Get the object of this id
   T* getPtr(dbId<T> id) const;

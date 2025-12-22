@@ -215,7 +215,9 @@ void dbJournal::redo()
 
   while (!log_.end()) {
     uint s = log_.idx();
-    log_.pop(cur_action_);
+    unsigned char action;
+    log_.pop(action);
+    cur_action_ = static_cast<Action>(action);
 
     switch (cur_action_) {
       case kCreateObject:
@@ -1629,7 +1631,7 @@ void dbJournal::redo_updateCCSegField()
       log_.pop(cap_id);
       uint cseq;
       log_.pop(cseq);
-      dbCapNode* capn = (dbCapNode*) dbCapNode::getCapNode(block_, cap_id);
+      dbCapNode* capn = dbCapNode::getCapNode(block_, cap_id);
       debugPrint(logger_,
                  utl::ODB,
                  "DB_ECO",
@@ -1644,7 +1646,7 @@ void dbJournal::redo_updateCCSegField()
     case _dbCCSeg::kUnlinkCcSeg: {
       uint cap_id;
       log_.pop(cap_id);
-      dbCapNode* capn = (dbCapNode*) dbCapNode::getCapNode(block_, cap_id);
+      dbCapNode* capn = dbCapNode::getCapNode(block_, cap_id);
       debugPrint(logger_,
                  utl::ODB,
                  "DB_ECO",
@@ -1720,7 +1722,9 @@ void dbJournal::undo()
                "UNDO ECO: Undoing action at index {}",
                action_idx);
     log_.set(action_idx);
-    log_.pop(cur_action_);
+    unsigned char action;
+    log_.pop(action);
+    cur_action_ = static_cast<Action>(action);
 
     switch (cur_action_) {
       case kCreateObject:

@@ -57,7 +57,7 @@ bool _dbVia::operator==(const _dbVia& rhs) const
     return false;
   }
 
-  if (flags_.default_ != rhs.flags_.default_) {
+  if (flags_.default_via != rhs.flags_.default_via) {
     return false;
   }
 
@@ -135,7 +135,7 @@ _dbVia::_dbVia(_dbDatabase*)
   flags_.is_tech_via = 0;
   flags_.has_params = 0;
   flags_.orient = dbOrientType::R0;
-  flags_.default_ = false;
+  flags_.default_via = false;
   flags_.spare_bits = 0;
   name_ = nullptr;
   pattern_ = nullptr;
@@ -386,13 +386,13 @@ dbViaParams dbVia::getViaParams()
 void dbVia::setDefault(bool val)
 {
   _dbVia* via = (_dbVia*) this;
-  via->flags_.default_ = val;
+  via->flags_.default_via = val;
 }
 
 bool dbVia::isDefault()
 {
   _dbVia* via = (_dbVia*) this;
-  return via->flags_.default_;
+  return via->flags_.default_via;
 }
 
 dbVia* dbVia::create(dbBlock* block_, const char* name_)
@@ -615,8 +615,8 @@ void _dbVia::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["pattern"].add(pattern_);
+  info.children["name"].add(name_);
+  info.children["pattern"].add(pattern_);
 }
 
 }  // namespace odb

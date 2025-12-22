@@ -73,7 +73,7 @@ double dbRSeg::getResistance(int corner)
   uint cornerCnt = block->corners_per_block_;
 
   assert((corner >= 0) && ((uint) corner < cornerCnt));
-  return (*block->r_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+  return (*block->r_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
 }
 
 void dbRSeg::getAllRes(double* res)
@@ -83,7 +83,7 @@ void dbRSeg::getAllRes(double* res)
   uint cornerCnt = block->corners_per_block_;
 
   for (uint ii = 0; ii < cornerCnt; ii++) {
-    res[ii] = (*block->r_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+    res[ii] = (*block->r_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
   }
 }
 
@@ -94,7 +94,7 @@ void dbRSeg::addAllRes(double* res)
   uint cornerCnt = block->corners_per_block_;
 
   for (uint ii = 0; ii < cornerCnt; ii++) {
-    res[ii] += (*block->r_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+    res[ii] += (*block->r_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
   }
 }
 
@@ -128,9 +128,9 @@ void dbRSeg::addRSegCapacitance(dbRSeg* other)
 
   for (uint corner = 0; corner < cornerCnt; corner++) {
     float& value
-        = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+        = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
     float& ovalue
-        = (*block->c_val_tbl_)[(oseg->getOID() - 1) * cornerCnt + 1 + corner];
+        = (*block->c_val_tbl_)[((oseg->getOID() - 1) * cornerCnt) + 1 + corner];
     value += ovalue;
   }
 
@@ -161,9 +161,9 @@ void dbRSeg::addRSegResistance(dbRSeg* other)
 
   for (uint corner = 0; corner < cornerCnt; corner++) {
     float& value
-        = (*block->r_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+        = (*block->r_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
     float& ovalue
-        = (*block->r_val_tbl_)[(oseg->getOID() - 1) * cornerCnt + 1 + corner];
+        = (*block->r_val_tbl_)[((oseg->getOID() - 1) * cornerCnt) + 1 + corner];
     value += ovalue;
   }
 
@@ -193,7 +193,7 @@ void dbRSeg::setResistance(double res, int corner)
   assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
-      = (*block->r_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->r_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value = (float) res;
 
@@ -226,7 +226,7 @@ void dbRSeg::adjustResistance(float factor, int corner)
   assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
-      = (*block->r_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->r_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value *= factor;
 
@@ -278,7 +278,7 @@ void dbRSeg::setCapacitance(double cap, int corner)
 
   assert((corner >= 0) && ((uint) corner < cornerCnt));
   float& value
-      = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value = (float) cap;
 
@@ -327,7 +327,7 @@ void dbRSeg::adjustCapacitance(float factor, uint corner)
     node->adjustCapacitance(factor, corner);
   } else {
     float& value
-        = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+        = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
     float prev_value = value;
     value *= factor;
 
@@ -375,7 +375,7 @@ double dbRSeg::getCapacitance(int corner)
     return node->getCapacitance(corner);
   }
   assert((corner >= 0) && ((uint) corner < cornerCnt));
-  return (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+  return (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
 }
 
 void dbRSeg::getGndCap(double* gndcap, double* totalcap)
@@ -389,7 +389,7 @@ void dbRSeg::getGndCap(double* gndcap, double* totalcap)
     node->getGndCap(gndcap, totalcap);
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
-      gcap = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+      gcap = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
       if (gndcap) {
         gndcap[ii] = gcap;
       }
@@ -411,7 +411,7 @@ void dbRSeg::addGndCap(double* gndcap, double* totalcap)
     node->addGndCap(gndcap, totalcap);
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
-      gcap = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+      gcap = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
       if (gndcap) {
         gndcap[ii] += gcap;
       }
@@ -477,7 +477,7 @@ double dbRSeg::getCapacitance(const int corner, const double MillerMult)
     ccCap += cc->getCapacitance(corner);
   }
 
-  return cap + MillerMult * ccCap;
+  return cap + (MillerMult * ccCap);
 }
 
 void dbRSeg::getGndTotalCap(double* gndcap, double* totalcap, double MillerMult)
@@ -540,7 +540,8 @@ void dbRSeg::getCapTable(double* cap)
     node->getCapTable(cap);
   } else {
     for (uint ii = 0; ii < cornerCnt; ii++) {
-      cap[ii] = (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+      cap[ii]
+          = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
     }
   }
 }
@@ -735,7 +736,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
 
   if (valueMem) {
     for (uint ii = 0; ii < cornerCnt; ii++) {
-      (*block->r_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+      (*block->r_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii] = 0.0;
     }
   } else {
     [[maybe_unused]] uint resIdx
@@ -755,7 +756,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
 
     if (valueMem) {
       for (uint ii = 0; ii < cornerCnt; ii++) {
-        (*block->c_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+        (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii] = 0.0;
       }
     } else {
       [[maybe_unused]] const uint capIdx

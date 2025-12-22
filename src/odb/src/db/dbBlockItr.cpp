@@ -27,7 +27,7 @@ bool dbBlockItr::orderReversed() const
 void dbBlockItr::reverse(dbObject* parent)
 {
   _dbBlock* block = (_dbBlock*) parent;
-  std::reverse(block->children_.begin(), block->children_.end());
+  std::ranges::reverse(block->children_);
 }
 
 uint dbBlockItr::sequential() const

@@ -29,7 +29,7 @@ bool dbGroupGroundNetItr::orderReversed() const
 void dbGroupGroundNetItr::reverse(dbObject* parent)
 {
   _dbGroup* group = (_dbGroup*) parent;
-  std::reverse(group->ground_nets_.begin(), group->ground_nets_.end());
+  std::ranges::reverse(group->ground_nets_);
 }
 
 uint dbGroupGroundNetItr::sequential() const

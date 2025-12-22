@@ -50,7 +50,6 @@ class _dbTechLayerSpacingRule : public _dbObject
 
   _dbTechLayerSpacingRule(_dbDatabase*, const _dbTechLayerSpacingRule& r);
   _dbTechLayerSpacingRule(_dbDatabase*);
-  ~_dbTechLayerSpacingRule();
 
   bool operator==(const _dbTechLayerSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingRule& rhs) const
@@ -108,10 +107,6 @@ inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
   cut_area_ = 0;
 }
 
-inline _dbTechLayerSpacingRule::~_dbTechLayerSpacingRule()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingRule& rule);
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule);
 
@@ -120,13 +115,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule);
 class _dbTechV55InfluenceEntry : public _dbObject
 {
  public:
-  uint _width;
-  uint _within;
-  uint _spacing;
+  uint width_;
+  uint within_;
+  uint spacing_;
 
   _dbTechV55InfluenceEntry(_dbDatabase* db, const _dbTechV55InfluenceEntry& e);
   _dbTechV55InfluenceEntry(_dbDatabase* db);
-  ~_dbTechV55InfluenceEntry();
+
   bool operator==(const _dbTechV55InfluenceEntry& rhs) const;
   bool operator!=(const _dbTechV55InfluenceEntry& rhs) const
   {
@@ -138,20 +133,16 @@ class _dbTechV55InfluenceEntry : public _dbObject
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
     _dbDatabase* /* unused: db */,
     const _dbTechV55InfluenceEntry& e)
-    : _width(e._width), _within(e._within), _spacing(e._spacing)
+    : width_(e.width_), within_(e.within_), spacing_(e.spacing_)
 {
 }
 
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
     _dbDatabase* /* unused: db */)
 {
-  _width = 0;
-  _within = 0;
-  _spacing = 0;
-}
-
-inline _dbTechV55InfluenceEntry::~_dbTechV55InfluenceEntry()
-{
+  width_ = 0;
+  within_ = 0;
+  spacing_ = 0;
 }
 
 dbOStream& operator<<(dbOStream& stream,

@@ -201,7 +201,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm.net_;
   stream >> bterm.next_bterm_;
   stream >> bterm.prev_bterm_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> bterm.mnet_;
     stream >> bterm.next_modnet_bterm_;
     stream >> bterm.prev_modnet_bterm_;
@@ -211,13 +211,13 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm.bpins_;
   stream >> bterm.ground_pin_;
   stream >> bterm.supply_pin_;
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+  if (bterm.getDatabase()->isSchema(kSchemaBtermConstraintRegion)) {
     stream >> bterm.constraint_region_;
   }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
+  if (bterm.getDatabase()->isSchema(kSchemaBtermMirroredPin)) {
     stream >> bterm.mirrored_bterm_;
   }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
+  if (bterm.getDatabase()->isSchema(kSchemaBtermIsMirrored)) {
     stream >> bterm.is_mirrored_;
   }
 
@@ -924,7 +924,7 @@ void _dbBTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)

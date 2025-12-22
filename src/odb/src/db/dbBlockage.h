@@ -31,7 +31,6 @@ class _dbBlockage : public _dbObject
  public:
   _dbBlockage(_dbDatabase* db);
   _dbBlockage(_dbDatabase* db, const _dbBlockage& b);
-  ~_dbBlockage();
 
   _dbInst* getInst();
   _dbBox* getBBox() const;
@@ -61,10 +60,6 @@ inline _dbBlockage::_dbBlockage(_dbDatabase*, const _dbBlockage& b)
       inst_(b.inst_),
       bbox_(b.bbox_),
       max_density_(b.max_density_)
-{
-}
-
-inline _dbBlockage::~_dbBlockage()
 {
 }
 

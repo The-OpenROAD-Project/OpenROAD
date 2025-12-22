@@ -7,52 +7,52 @@
           "type":"char *",
           "flags":["no-set","no-get"],
           "default":"nullptr",
-	  "schema":"db_schema_update_hierarchy"	    	    	
+	  "schema":"kSchemaUpdateHierarchy"
            },
           {
 	  "name":"parent_",
           "type":"dbId<_dbModule>",
           "flags":["no-set"],
-	  "schema":"db_schema_update_hierarchy",	    	    	       	
+	  "schema":"kSchemaUpdateHierarchy",
           "parent":"dbBlock"
           },
           {
           "name":"next_entry_",
           "type":"dbId<_dbModNet>",
           "flags":["no-set","no-get"],
-	  "schema":"db_schema_update_hierarchy"	    	    	       	      	
+	  "schema":"kSchemaUpdateHierarchy"
           },
           {
           "name":"prev_entry_",
           "type":"dbId<_dbModNet>",
           "flags":["no-set","no-get"],
-	  "schema":"db_schema_hier_port_removal"	    	    	       	      	
+	  "schema":"kSchemaHierPortRemoval"
           },
 	  {
           "name": "moditerms_",
           "type": "dbId<_dbModITerm>",
           "flags":["no-set","no-get"],
-	  "schema":"db_schema_update_hierarchy"	    	    	       	      	      	
+	  "schema":"kSchemaUpdateHierarchy"
 	  },
 	  {
 	      "name": "modbterms_",
 	      "type": "dbId<_dbModBTerm>",
 	      "flags":["no-set","no-get"],
-	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	
+	      "schema":"kSchemaUpdateHierarchy"
 	  },
 	  {
 	      "name": "iterms_",
 	      "type": "dbId<_dbITerm>",
 	      "flags":["no-set","no-get"],
-	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	      	
+	      "schema":"kSchemaUpdateHierarchy"
 	  },
 	  {
 	      "name": "bterms_",
 	      "type": "dbId<_dbBTerm>",
 	      "flags":["no-set","no-get"],
-	      "schema":"db_schema_update_hierarchy"	    	    	       	      	      	      	      	      	
+	      "schema":"kSchemaUpdateHierarchy"
 	  }
-	
+
 	  ],
 	  "cpp_includes":["dbBlock.h","dbVector.h","dbModule.h","dbModInst.h","dbITerm.h", "dbModITerm.h","dbModBTerm.h","dbHashTable.hpp", "dbJournal.h"],
 	  "h_includes": [

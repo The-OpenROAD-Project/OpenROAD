@@ -65,7 +65,7 @@ void _dbTechLayerWidthTableRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["width_tbl"].add(width_tbl_);
+  info.children["width_tbl"].add(width_tbl_);
   // User Code End collectMemInfo
 }
 

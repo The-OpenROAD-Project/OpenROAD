@@ -93,7 +93,7 @@ bool _dbTechViaLayerRule::operator==(const _dbTechViaLayerRule& rhs) const
     return false;
   }
 
-  if (_resistance != rhs._resistance) {
+  if (resistance_ != rhs.resistance_) {
     return false;
   }
 
@@ -119,7 +119,7 @@ _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*,
       metal_overhang_(v.metal_overhang_),
       spacing_x_(v.spacing_x_),
       spacing_y_(v.spacing_y_),
-      _resistance(v._resistance),
+      resistance_(v.resistance_),
       rect_(v.rect_),
       layer_(v.layer_)
 {
@@ -144,11 +144,7 @@ _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*)
   metal_overhang_ = 0;
   spacing_x_ = 0;
   spacing_y_ = 0;
-  _resistance = 0.0;
-}
-
-_dbTechViaLayerRule::~_dbTechViaLayerRule()
-{
+  resistance_ = 0.0;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaLayerRule& v)
@@ -163,7 +159,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechViaLayerRule& v)
   stream << v.metal_overhang_;
   stream << v.spacing_x_;
   stream << v.spacing_y_;
-  stream << v._resistance;
+  stream << v.resistance_;
   stream << v.rect_;
   stream << v.layer_;
   return stream;
@@ -181,7 +177,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechViaLayerRule& v)
   stream >> v.metal_overhang_;
   stream >> v.spacing_x_;
   stream >> v.spacing_y_;
-  stream >> v._resistance;
+  stream >> v.resistance_;
   stream >> v.rect_;
   stream >> v.layer_;
   return stream;
@@ -348,13 +344,13 @@ void dbTechViaLayerRule::setResistance(double r)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
   rule->flags_.has_resistance = 1;
-  rule->_resistance = r;
+  rule->resistance_ = r;
 }
 
 double dbTechViaLayerRule::getResistance()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_resistance;
+  return rule->resistance_;
 }
 
 dbTechViaLayerRule* dbTechViaLayerRule::create(dbTech* tech_,

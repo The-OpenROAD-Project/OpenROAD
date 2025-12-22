@@ -125,7 +125,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
   stream >> iterm.inst_;
   stream >> iterm.next_net_iterm_;
   stream >> iterm.prev_net_iterm_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> iterm.mnet_;
     stream >> iterm.next_modnet_iterm_;
     stream >> iterm.prev_modnet_iterm_;

@@ -26,6 +26,8 @@ class _dbPowerDomain : public _dbObject
  public:
   _dbPowerDomain(_dbDatabase*);
 
+  ~_dbPowerDomain();
+
   bool operator==(const _dbPowerDomain& rhs) const;
   bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPowerDomain& rhs) const;
