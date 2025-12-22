@@ -354,6 +354,7 @@ void GlobalRouter::globalRoute(bool save_guides,
           cugr_->init(min_layer, max_layer, clock_nets);
           cugr_->route();
           routes_ = cugr_->getRoutes();
+          updatePinAccessPoints();
         } else {
           if (verbose_) {
             reportResources();
@@ -1180,6 +1181,58 @@ void GlobalRouter::computePinPositionOnGrid(
 
   pin.setOnGridPosition(odb::Point(pin_position.x(), pin_position.y()));
   pin.setConnectionLayer(pin_position.layer());
+}
+
+void GlobalRouter::updatePinAccessPoints()
+{
+  for (const auto& [db_net, net] : db_net_map_) {
+    std::map<odb::dbITerm*, std::vector<odb::Point3D>> iterm_to_aps;
+    std::map<odb::dbBTerm*, std::vector<odb::Point3D>> bterm_to_aps;
+    cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
+    cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
+
+    const GRoute& segments = routes_[db_net];
+    for (Pin& pin : net->getPins()) {
+      if (pin.isPort()) {
+        if (bterm_to_aps.find(pin.getBTerm()) != bterm_to_aps.end()) {
+          const auto& bterm_aps = bterm_to_aps[pin.getBTerm()];
+          for (const odb::Point3D& ap : bterm_aps) {
+            pin.setConnectionLayer(ap.z());
+            pin.setOnGridPosition(grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+            bool pin_is_covered = false;
+            for (const GSegment& seg : segments) {
+              if (segmentCoversPin(seg, pin)) {
+                pin_is_covered = true;
+                break;
+              }
+            }
+            if (pin_is_covered) {
+              break;
+            }
+          }
+        }
+      } else {
+        if (iterm_to_aps.find(pin.getITerm()) != iterm_to_aps.end()) {
+          const auto& iterm_aps = iterm_to_aps[pin.getITerm()];
+          for (const odb::Point3D& ap : iterm_aps) {
+            pin.setConnectionLayer(ap.z());
+            pin.setOnGridPosition(
+                grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+            bool pin_is_covered = false;
+            for (const GSegment& seg : segments) {
+              if (segmentCoversPin(seg, pin)) {
+                pin_is_covered = true;
+                break;
+              }
+            }
+            if (pin_is_covered) {
+              break;
+            }
+          } 
+        }
+      }
+    }
+  }
 }
 
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
