@@ -19,6 +19,8 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
   const int numPins = baseNet.getNumPins();
   pin_access_points_.resize(numPins);
   layer_range_ = baseNet.getLayerRange();
+
+  int pin_index = 0;
   for (CUGRPin& pin : baseNet.getPins()) {
     const std::vector<BoxOnLayer> pinShapes = pin.getPinShapes();
     std::unordered_set<uint64_t> included;
@@ -36,7 +38,15 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
         }
       }
     }
+
+    if (pin.isPort()) {
+      bterm_to_pin_index_[pin.getBTerm()] = pin_index;
+    } else {
+      iterm_to_pin_index_[pin.getITerm()] = pin_index;
+    }
+    pin_index++;
   }
+
   for (const auto& accessPoints : pin_access_points_) {
     for (const auto& point : accessPoints) {
       bounding_box_.Update(point);

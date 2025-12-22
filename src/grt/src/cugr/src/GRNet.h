@@ -28,6 +28,25 @@ class GRNet
   {
     return pin_access_points_;
   }
+
+  int getITermIndex(odb::dbITerm* iterm) const
+  {
+    auto it = iterm_to_pin_index_.find(iterm);
+    if (it != iterm_to_pin_index_.end()) {
+      return it->second;
+    }
+    return -1;
+  }
+
+  int getBTermIndex(odb::dbBTerm* bterm) const
+  {
+    auto it = bterm_to_pin_index_.find(bterm);
+    if (it != bterm_to_pin_index_.end()) {
+      return it->second;
+    }
+    return -1;
+  }
+
   const BoxT& getBoundingBox() const { return bounding_box_; }
   const std::shared_ptr<GRTreeNode>& getRoutingTree() const
   {
@@ -45,6 +64,8 @@ class GRNet
   int index_;
   odb::dbNet* db_net_;
   std::vector<std::vector<GRPoint>> pin_access_points_;
+  std::map<odb::dbITerm*, int> iterm_to_pin_index_;
+  std::map<odb::dbBTerm*, int> bterm_to_pin_index_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;
