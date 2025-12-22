@@ -573,7 +573,6 @@ void Graphics::drawNotches(gui::Painter& painter) {
     rect.moveDelta(outline_.xMin(), outline_.yMin());
 
     if (value) {
-      logger_->report("hatched {}", rect);
       painter.setBrush(gui::Painter::kYellow, gui::Painter::kDiagonal);
     } else {
       painter.setBrush(gui::Painter::kYellow, gui::Painter::kNone);

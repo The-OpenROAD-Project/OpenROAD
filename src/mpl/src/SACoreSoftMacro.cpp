@@ -671,7 +671,7 @@ void SACoreSoftMacro::calNotchPenalty()
   std::vector<int> x_point;
   std::vector<int> y_point;
   for (auto& macro : macros_) {
-    if (!macro.isMacroCluster() && !macro.isMixedCluster() && !macro.isFixed()) {
+    if (macro.isStdCellCluster()) {
       continue;
     }
     x_point.push_back(macro.getX());
@@ -710,8 +710,9 @@ void SACoreSoftMacro::calNotchPenalty()
 
   // Assign cluster locations for notch detection
   std::vector<std::vector<bool>> grid(num_y, std::vector<bool>(num_x, false));
+  
   for (auto& macro : macros_) {
-    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
+    if (macro.isStdCellCluster()) {
       continue;
     }
     int x_start = getSegmentIndex(macro.getX(), x_coords);
@@ -725,37 +726,123 @@ void SACoreSoftMacro::calNotchPenalty()
     }
   }
 
-  // An empty grid cell surrounded by 3 or more edges is considered a notch
-  for (int row = 0; row < num_y; row++) {
-    for (int col = 0; col < num_x; col++) {
-      if (grid[row][col]) {
+  auto neighbors = [&](int row1, int col1, int row2, int col2) {
+    bool bottom = true;
+    if (row1 > 0) for (int i = col1; i <= col2; i++) {
+      if (!grid[row1-1][i]) {
+        bottom = false;
+        break;
+      }
+    }
+    bool top = true;
+    if (row2 < num_y-1) for (int i = col1; i <= col2; i++) {
+      if (!grid[row2+1][i]) {
+        top = false;
+        break;
+      }
+    }
+    bool left = true;
+    if (col1 > 0) for (int i = row1; i <= row2; i++) {
+      if (!grid[i][col1-1]) {
+        left = false;
+        break;
+      }
+    }
+    bool right = true;
+    if (col2 < num_x-1) for (int i = row1; i <= row2; i++) {
+      if (!grid[i][col2+1]) {
+        right = false;
+        break;
+      }
+    }
+
+    return top + bottom + left + right;
+  };
+
+  auto valid = [&](int row1, int col1, int row2, int col2) {
+    for (int i = row1; i <= row2; i++) {
+      for (int j = col1; j <= col2; j++) {
+        if (grid[i][j]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+  
+  for (int start_row = 0; start_row < num_y; start_row++) {
+    for (int start_col = 0; start_col < num_x; start_col++) {
+      if (grid[start_row][start_col]) {
         continue;
       }
 
-      bool is_notch = false;
-      bool bottom = (row == 0 || grid[row - 1][col]);
-      bool top = (row == num_y - 1 || grid[row + 1][col]);
-      bool left = (col == 0 || grid[row][col - 1]);
-      bool right = (col == num_x - 1 || grid[row][col + 1]);
+      int end_row = start_row;
+      int end_col = start_col;
 
-      width = x_coords[col + 1] - x_coords[col];
-      height = y_coords[row + 1] - y_coords[row];
+      int n = neighbors(start_row, start_col, end_row, end_col);
+      bool expand_rows = n > 0;
+      bool expand_cols = n > 0;
 
-      if (top && bottom && left && right) {
-        is_notch = true;
-      } else if (top && bottom) {
-        is_notch = height <= notch_h_th_;
-      } else if (left && right) {
-        is_notch = width <= notch_v_th_;
+      while (expand_rows || expand_cols) {
+        if (expand_rows) {
+          end_row += 1;
+          if (end_row < num_y && valid(start_row, start_col, end_row, end_col)) {
+            int new_n = neighbors(start_row, start_col, end_row, end_col);
+            if (new_n >= n) {
+              n = new_n;
+            } else {
+              expand_rows = false;
+              end_row -= 1;
+            }
+          } else {
+            expand_rows = false;
+            end_row -= 1;
+          }
+        } 
+
+        if (expand_cols) {
+          end_col += 1;
+          if (end_col < num_x && valid(start_row, start_col, end_row, end_col)) {
+            int new_n = neighbors(start_row, start_col, end_row, end_col);
+            if (new_n >= n) {
+              n = new_n;
+            } else {
+              expand_cols = false;
+              end_col -= 1;
+            }
+          } else {
+            expand_cols = false;
+            end_col -= 1;
+          }
+        }
       }
 
-      if (is_notch) {
+      width = x_coords[end_col+1] - x_coords[start_col];
+      height = y_coords[end_row+1] - y_coords[start_row];
+      if (n == 4) {
         notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
                                                 block_->dbuToMicrons(height));
+        if (graphics_) {
+          graphics_->addNotch(odb::Rect(x_coords[start_col],
+                                        y_coords[start_row],
+                                        x_coords[end_col + 1],
+                                        y_coords[end_row + 1]),
+                              n > 2);
+        }
       }
-      
-      if (graphics_) {
-        graphics_->addNotch(odb::Rect(x_coords[col], y_coords[row], x_coords[col + 1], y_coords[row + 1]), is_notch);
+      if (n == 3) {
+        if (width < notch_v_th_ || height < notch_h_th_) {
+          notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
+                                                  block_->dbuToMicrons(height));
+          if (graphics_) {
+            graphics_->addNotch(odb::Rect(x_coords[start_col],
+                                          y_coords[start_row],
+                                          x_coords[end_col + 1],
+                                          y_coords[end_row + 1]),
+                                n > 2);
+          }
+        }
       }
     }
   }
