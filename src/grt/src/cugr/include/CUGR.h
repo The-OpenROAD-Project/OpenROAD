@@ -12,6 +12,8 @@
 namespace odb {
 class dbDatabase;
 class dbNet;
+class dbITerm;
+class dbBTerm;
 }  // namespace odb
 
 namespace sta {
@@ -74,6 +76,12 @@ class CUGR
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   void updateDbCongestion();
+  void getITermsAccessPoints(
+      odb::dbNet* net,
+      std::map<odb::dbITerm*, std::vector<odb::Point3D>>& access_points);
+  void getBTermsAccessPoints(
+      odb::dbNet* net,
+      std::map<odb::dbBTerm*, std::vector<odb::Point3D>>& access_points);
 
  private:
   void updateOverflowNets(std::vector<int>& netIndices);
