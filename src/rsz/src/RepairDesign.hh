@@ -80,7 +80,6 @@ class RepairDesign : sta::dbStaState
                                int length_violations,
                                int repaired_net_count);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
-  float getSlewRCFactor();
 
  protected:
   void init();
@@ -244,8 +243,6 @@ class RepairDesign : sta::dbStaState
                      int repaired_net_count,
                      int total_vertices) const;
 
-  void computeSlewRCFactor();
-
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
@@ -275,10 +272,6 @@ class RepairDesign : sta::dbStaState
   std::shared_ptr<ResizerObserver> graphics_;
 
   float r_strongest_buffer_ = 0;
-
-  // Shape factor: what we need to multiply the RC product with
-  // to get a slew estimate
-  std::optional<float> slew_rc_factor_;
 
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;

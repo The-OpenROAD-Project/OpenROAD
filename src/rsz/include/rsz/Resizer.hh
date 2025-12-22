@@ -552,7 +552,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
   // Compute slew RC factor based on library slew thresholds
-  float getSlewRCFactor() const;
+  float getSlewRCFactor() const {
+    return slew_shape_factor_;
+  }
 
   sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
                                   float load,
@@ -931,6 +933,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isRegOutput(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
 
+  void computeSlewShapeFactor();
+  ////////////////////////////////////////////////////////////////
+
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
@@ -1050,6 +1055,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
+
+  // For Elmore slew modeling, see computeSlewShapeFactor()
+  float slew_shape_factor_ = 0.0;
 
   friend class BufferedNet;
   friend class GateCloner;
