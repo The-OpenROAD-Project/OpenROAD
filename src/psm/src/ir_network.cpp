@@ -367,6 +367,13 @@ void IRNetwork::processPolygonToRectangles(
     std::vector<std::unique_ptr<Node>>& new_nodes,
     std::map<Shape*, std::set<Node*>>& terminal_connections)
 {
+  const utl::DebugScopedTimer timer(
+      logger_,
+      utl::PSM,
+      "timer",
+      2,
+      fmt::format("Convert polygons to nodes {}: {{}}", layer->getName()));
+
   using boost::polygon::operators::operator+=;
 
   auto get_layer_orientation
