@@ -432,6 +432,9 @@ class SoftMacro
   // calculate macro utilization
   float getMacroUtil() const;
 
+  // Debug
+  void reportShapeCurve(utl::Logger* logger) const;
+
  private:
   int findIntervalIndex(const IntervalList& interval_list,
                         int& value,
