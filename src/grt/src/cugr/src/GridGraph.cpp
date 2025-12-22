@@ -388,7 +388,11 @@ bool GridGraph::findODBAccessPoints(
           auto layer = ap->getLayer();
           const PointT selected_point = PointT(point.getX() / amount_per_x,
                                                point.getY() / amount_per_y);
-          const IntervalT selected_layer = IntervalT(layer->getNumber() - 2);
+          const int num_layer
+              = ((layer->getNumber() - 2) > (getNumLayers() - 1))
+                    ? getNumLayers() - 1
+                    : layer->getNumber() - 2;
+          const IntervalT selected_layer = IntervalT(num_layer);
           const AccessPoint ap_new{.point = selected_point,
                                    .layers = selected_layer};
           selected_access_points.emplace(ap_new);
@@ -411,7 +415,11 @@ bool GridGraph::findODBAccessPoints(
           const PointT selected_point
               = PointT((point.getX() + x) / amount_per_x,
                        (point.getY() + y) / amount_per_y);
-          const IntervalT selected_layer = IntervalT(layer->getNumber() - 2);
+          const int num_layer
+              = ((layer->getNumber() - 2) > (getNumLayers() - 1))
+                    ? getNumLayers() - 1
+                    : layer->getNumber() - 2;
+          const IntervalT selected_layer = IntervalT(num_layer);
           const AccessPoint ap_new{.point = selected_point,
                                    .layers = selected_layer};
           selected_access_points.emplace(ap_new);
@@ -487,11 +495,6 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
         }
       }
     }
-  }
-  // TODO: Removing this part is causing issues, but it shouldnt
-  for (auto& accessPoint : selected_access_points) {
-    IntervalT& fixedLayers = accessPoint.layers;
-    fixedLayers.SetHigh(std::min(fixedLayers.high() + 0, getNumLayers() - 1));
   }
   return selected_access_points;
 }
