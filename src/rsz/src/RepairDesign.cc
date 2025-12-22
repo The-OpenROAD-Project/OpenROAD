@@ -20,6 +20,7 @@
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -332,9 +333,9 @@ void RepairDesign::repairDesign(
              annotations_to_clean_up.size());
 
   int print_iteration = 0;
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   {
     // Fix violations from outputs to inputs
-    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     if (resizer_->level_drvr_vertices_.size()
         > size_t(5) * max_print_interval_) {
       print_interval_ = max_print_interval_;
@@ -363,8 +364,8 @@ void RepairDesign::repairDesign(
                    cap_violations,
                    fanout_violations,
                    length_violations);
+      estimate_parasitics_->updateParasitics();
     }
-    estimate_parasitics_->updateParasitics();
   }
 
   if (!annotations_to_clean_up.empty()) {
@@ -382,12 +383,18 @@ void RepairDesign::repairDesign(
   {
     // Do one more pass of load slew fixing in case annotated slews interfered
     // with fixing
-    est::IncrementalParasiticsGuard guard(estimate_parasitics_);
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+
     int slew_violations2, repaired_net_count2;
     for (auto vertex : load_vertices) {
       if (!vertex->slewAnnotated()) {
+        Pin* pin = vertex->pin();
+        if (pin == nullptr) {
+          continue;
+        }
         sta_->findDelays(vertex);
-        LibertyPort* port = network_->libertyPort(vertex->pin());
+        LibertyPort* port = network_->libertyPort(pin);
         if (port) {
           for (auto corner : *sta_->corners()) {
             const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
@@ -429,13 +436,13 @@ void RepairDesign::repairDesign(
                                fanout_violations,
                                length_violations);
                 }
+                estimate_parasitics_->updateParasitics();
               }
             }
           }
         }
       }
     }
-    estimate_parasitics_->updateParasitics();
     printProgress(print_iteration, true, true, repaired_net_count);
   }
 
@@ -1018,6 +1025,10 @@ void RepairDesign::repairDriver(Vertex* drvr,
                                 int& fanout_violations,
                                 int& length_violations)
 {
+  if (drvr == nullptr) {
+    return;
+  }
+
   Pin* drvr_pin = drvr->pin();
   Net* net = db_network_->findFlatNet(drvr_pin);
   if (!net) {
