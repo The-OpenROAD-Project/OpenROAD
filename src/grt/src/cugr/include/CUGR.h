@@ -87,7 +87,8 @@ class CUGR
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
-  std::vector<std::unique_ptr<GRNet>> gr_nets_;
+  std::vector<GRNet*> gr_nets_;
+  std::map<odb::dbNet*, GRNet*> db_net_map_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
