@@ -162,7 +162,7 @@ class dbJournal
   dbJournalLog log_;
   bool start_action_{false};
   uint action_idx_{0};
-  unsigned char cur_action_{0};
+  Action cur_action_{kCreateObject};
 };
 
 dbIStream& operator>>(dbIStream& stream, dbJournal& jrnl);

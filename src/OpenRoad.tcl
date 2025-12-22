@@ -320,9 +320,14 @@ proc cpu_count { } {
   return [ord::cpu_count]
 }
 
-sta::define_cmd_args "global_connect" {}
-proc global_connect { } {
-  [ord::get_db_block] globalConnect
+sta::define_cmd_args "global_connect" { [-force] [-verbose] }
+proc global_connect { args } {
+  sta::parse_key_args "global_connect" args \
+    keys {} \
+    flags {-force -verbose}
+
+  sta::check_argc_eq0 "add_global_connection" $args
+  [ord::get_db_block] globalConnect [info exists flags(-force)] [info exists flags(-verbose)]
 }
 
 sta::define_cmd_args "clear_global_connect" {}

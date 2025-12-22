@@ -28,6 +28,9 @@ namespace odb {
   //User Code Begin Classes
   //User Code End Classes
 
+  //User Code Begin Types
+  //User Code End Types
+
   {{ macros.make_structs(klass, is_public=False) }}
   // User Code Begin Structs
   // User Code End Structs

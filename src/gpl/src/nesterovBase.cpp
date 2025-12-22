@@ -1027,6 +1027,7 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
       targetOverflow(options.overflow),
       referenceHpwl(options.referenceHpwl),
       routability_end_overflow(options.routabilityCheckOverflow),
+      routability_snapshot_overflow(options.routabilitySnapshotOverflow),
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),
       timingDrivenMode(options.timingDrivenMode),
       routability_driven_mode(options.routabilityDrivenMode),
@@ -2578,6 +2579,10 @@ void NesterovBase::initDensity1()
 
   initCoordi_.resize(gCellSize, FloatPoint());
 
+  snapshotCoordi_.resize(gCellSize, FloatPoint());
+  snapshotSLPCoordi_.resize(gCellSize, FloatPoint());
+  snapshotSLPSumGrads_.resize(gCellSize, FloatPoint());
+
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     GCell* gCell = *it;  // old-style loop for old OpenMP
@@ -3140,11 +3145,12 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     }
 
     if (npVars_->routability_driven_mode) {
-      rb->getRudyResult();
+      rb->calculateRudyTiles();
+      rb->updateRudyAverage(false);
       log_->info(GPL,
                  1005,
                  "Routability final weighted congestion: {:.4f}",
-                 rb->getRudyRC(false));
+                 rb->getRudyAverage());
     }
 
     log_->info(GPL,

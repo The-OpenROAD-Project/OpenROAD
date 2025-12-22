@@ -351,10 +351,10 @@ void tmg_conn::splitBySj(const int j,
         continue;
       }
       if (ptV_[rcV_[k].from_idx].y > ptV_[rcV_[k].to_idx].y) {
-        rcV_[k].shape.setYmin(ptV_[rcV_[j].from_idx].y - rcV_[k].width / 2);
+        rcV_[k].shape.setYmin(ptV_[rcV_[j].from_idx].y - (rcV_[k].width / 2));
         nymax = ptV_[rcV_[j].from_idx].y + rcV_[k].width / 2;
       } else {
-        rcV_[k].shape.setYmax(ptV_[rcV_[j].from_idx].y + rcV_[k].width / 2);
+        rcV_[k].shape.setYmax(ptV_[rcV_[j].from_idx].y + (rcV_[k].width / 2));
         nymin = ptV_[rcV_[j].from_idx].y - rcV_[k].width / 2;
       }
       x = ptV_[rcV_[k].from_idx].x;
@@ -367,10 +367,10 @@ void tmg_conn::splitBySj(const int j,
         continue;
       }
       if (ptV_[rcV_[k].from_idx].x > ptV_[rcV_[k].to_idx].x) {
-        rcV_[k].shape.setXmin(ptV_[rcV_[j].from_idx].x - rcV_[k].width / 2);
+        rcV_[k].shape.setXmin(ptV_[rcV_[j].from_idx].x - (rcV_[k].width / 2));
         nxmax = ptV_[rcV_[j].from_idx].x + rcV_[k].width / 2;
       } else {
-        rcV_[k].shape.setXmax(ptV_[rcV_[j].from_idx].x + rcV_[k].width / 2);
+        rcV_[k].shape.setXmax(ptV_[rcV_[j].from_idx].x + (rcV_[k].width / 2));
         nxmin = ptV_[rcV_[j].from_idx].x - rcV_[k].width / 2;
       }
       x = ptV_[rcV_[j].from_idx].x;
@@ -1330,7 +1330,7 @@ void tmg_conn::analyzeNet(dbNet* net)
     relocateShorts();
     treeReorder(noConvert);
   }
-  net->setDisconnected(!_connected);
+  net->setDisconnected(!connected_);
   net->setWireOrdered(true);
 }
 
@@ -1422,7 +1422,7 @@ bool tmg_conn::checkConnected()
 
 void tmg_conn::treeReorder(const bool no_convert)
 {
-  _connected = true;
+  connected_ = true;
   need_short_wire_id_ = false;
   if (ptV_.empty()) {
     return;
@@ -1442,7 +1442,7 @@ void tmg_conn::treeReorder(const bool no_convert)
   for (tmg_rcterm& x : termV_) {
     x.first_pt = nullptr;
     if (x.pt == nullptr) {
-      _connected = false;
+      connected_ = false;
     }
   }
 
@@ -1531,7 +1531,7 @@ void tmg_conn::treeReorder(const bool no_convert)
       last_term_index = j;
       if (j < termV_.size()) {
         // disconnected, start new path from another term
-        _connected = false;
+        connected_ = false;
         last_id_ = -1;
         tstackV_.push_back(x);
         pt = x->pt;

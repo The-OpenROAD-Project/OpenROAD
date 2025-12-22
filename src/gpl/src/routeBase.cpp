@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <string>
@@ -225,8 +226,7 @@ RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
       rcK1(options.routabilityRcK1),
       rcK2(options.routabilityRcK2),
       rcK3(options.routabilityRcK3),
-      rcK4(options.routabilityRcK4),
-      maxInflationIter(options.routabilityMaxInflationIter)
+      rcK4(options.routabilityRcK4)
 {
 }
 
@@ -297,12 +297,6 @@ void RouteBase::init()
   nbc_->resizeMinRcCellSize();
 }
 
-void RouteBase::getRudyResult()
-{
-  nbc_->updateDbGCells();
-  updateRudyRoute();
-}
-
 void RouteBase::getGrtResult()
 {
   // update gCells' location to DB for GR
@@ -333,9 +327,9 @@ std::vector<int64_t> RouteBase::inflatedAreaDelta() const
   return inflatedAreaDelta_;
 }
 
-int RouteBase::numCall() const
+int RouteBase::getRevertCount() const
 {
-  return numCall_;
+  return revert_count_;
 }
 
 static float getUsageCapacityRatio(Tile* tile,
@@ -379,8 +373,9 @@ static float getUsageCapacityRatio(Tile* tile,
   return static_cast<float>(curUse) / curCap;
 }
 
-void RouteBase::updateRudyRoute()
+void RouteBase::calculateRudyTiles()
 {
+  nbc_->updateDbGCells();
   grt::Rudy* rudy = grouter_->getRudy();
   rudy->calculateRudy();
   tg_->setNumRoutingLayers(0);
@@ -548,8 +543,9 @@ std::pair<bool, bool> RouteBase::routability(
 
   float curRc;
   if (rbVars_.useRudy) {
-    getRudyResult();
-    curRc = getRudyRC();
+    calculateRudyTiles();
+    updateRudyAverage(true);
+    curRc = getRudyAverage();
   } else {
     getGrtResult();
     curRc = getGrtRC();
@@ -568,6 +564,7 @@ std::pair<bool, bool> RouteBase::routability(
 
   // saving solutions when minRc happen.
   if ((minRc_ - curRc) > 0.001) {
+    is_min_rc_ = true;
     log_->info(GPL,
                48,
                "Routing congestion ({:.4f}) lower than previous minimum "
@@ -585,6 +582,7 @@ std::pair<bool, bool> RouteBase::routability(
     nbc_->updateMinRcCellSize();
 
   } else {
+    is_min_rc_ = false;
     min_RC_violated_cnt_++;
     log_->info(GPL,
                49,
@@ -661,24 +659,6 @@ std::pair<bool, bool> RouteBase::routability(
       // deltaArea is equal to area * deltaRatio
       // both of original and density size will be changed
       inflatedAreaDelta_[i] += newCellArea - prevCellArea;
-
-      //    inflatedAreaDelta_
-      //      = static_cast<int64_t>(round(
-      //        static_cast<int64_t>(gCell->dx())
-      //        * static_cast<int64_t>(gCell->dy())
-      //        * (tile->inflatedRatio() - 1.0)));
-    }
-
-    // target ratio
-    float targetInflationDeltaAreaRatio
-        = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
-
-    // TODO: will be implemented
-    if (inflatedAreaDelta_[i] > targetInflationDeltaAreaRatio
-                                    * (nbVec_[i]->getWhiteSpaceArea()
-                                       - (nbVec_[i]->getNesterovInstsArea()
-                                          + nbVec_[i]->getTotalFillerArea()))) {
-      // TODO dynamic inflation procedure?
     }
 
     float inflated_area_delta_microns
@@ -819,38 +799,40 @@ std::pair<bool, bool> RouteBase::routability(
   return std::make_pair(true, true);
 }
 
-float RouteBase::getRudyRC(bool verbose) const
+void RouteBase::updateRudyAverage(bool verbose)
 {
   grt::Rudy* rudy = grouter_->getRudy();
-  double totalRouteOverflow = 0;
-  int overflowTileCnt = 0;
-  std::vector<double> edgeCongArray;
+  total_route_overflow_ = 0.0;
+  overflowed_tiles_count_ = 0;
+  std::vector<double> edge_cong_array;
 
   for (auto& tile : tg_->tiles()) {
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
     // Escape the case when blockage ratio is too huge
     if (ratio >= 0.0f) {
-      totalRouteOverflow += std::fmax(0.0, -1 + ratio);
-      edgeCongArray.push_back(ratio);
+      total_route_overflow_ += std::fmax(0.0, -1 + ratio);
+      edge_cong_array.push_back(ratio);
 
       if (ratio > 1.0) {
-        overflowTileCnt++;
+        overflowed_tiles_count_++;
       }
     }
   }
 
   if (verbose) {
-    log_->info(GPL, 41, "Total routing overflow: {:.4f}", totalRouteOverflow);
+    log_->info(
+        GPL, 41, "Total routing overflow: {:.4f}", total_route_overflow_);
     log_->info(
         GPL,
         42,
         "Number of overflowed tiles: {} ({:.2f}%)",
-        overflowTileCnt,
-        (static_cast<double>(overflowTileCnt) / tg_->tiles().size()) * 100);
+        overflowed_tiles_count_,
+        (static_cast<double>(overflowed_tiles_count_) / tg_->tiles().size())
+            * 100);
   }
 
-  int arraySize = edgeCongArray.size();
-  std::sort(edgeCongArray.rbegin(), edgeCongArray.rend());
+  int arraySize = edge_cong_array.size();
+  std::ranges::sort(edge_cong_array, std::greater<double>());
 
   double avg005RC = 0;
   double avg010RC = 0;
@@ -859,16 +841,16 @@ float RouteBase::getRudyRC(bool verbose) const
 
   for (int i = 0; i < arraySize; ++i) {
     if (i < 0.005 * arraySize) {
-      avg005RC += edgeCongArray[i];
+      avg005RC += edge_cong_array[i];
     }
     if (i < 0.01 * arraySize) {
-      avg010RC += edgeCongArray[i];
+      avg010RC += edge_cong_array[i];
     }
     if (i < 0.02 * arraySize) {
-      avg020RC += edgeCongArray[i];
+      avg020RC += edge_cong_array[i];
     }
     if (i < 0.05 * arraySize) {
-      avg050RC += edgeCongArray[i];
+      avg050RC += edge_cong_array[i];
     }
   }
 
@@ -876,9 +858,10 @@ float RouteBase::getRudyRC(bool verbose) const
   avg010RC /= ceil(0.010 * arraySize);
   avg020RC /= ceil(0.020 * arraySize);
   avg050RC /= ceil(0.050 * arraySize);
-  float finalRC = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
-                   + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
-                  / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
+  final_average_rc_
+      = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
+         + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
+        / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
   if (verbose) {
     log_->info(
@@ -892,9 +875,8 @@ float RouteBase::getRudyRC(bool verbose) const
     log_->info(GPL,
                47,
                "Routability iteration weighted routing congestion: {:.4f}",
-               finalRC);
+               final_average_rc_);
   }
-  return finalRC;
 }
 
 // extract RC values
@@ -1018,9 +1000,9 @@ float RouteBase::getGrtRC() const
 
 void RouteBase::increaseCounter()
 {
-  numCall_++;
+  revert_count_++;
 
-  log_->info(GPL, 40, "Routability iteration: {}", numCall_);
+  log_->info(GPL, 40, "Routability iteration: {}", revert_count_);
 }
 
 }  // namespace gpl

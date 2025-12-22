@@ -44,7 +44,7 @@ class MplObserver
       const std::vector<odb::Rect>& placement_blockages)
   {
   }
-  virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
+  virtual void setNets(const BundledNetList& nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
   virtual void setShowClustersIds(bool show_clusters_ids) {}
   virtual void setSkipSteps(bool skip_steps) {}

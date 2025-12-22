@@ -25,7 +25,7 @@ class dbOStream;
 //
 struct _dbTechViaGenerateRuleFlags
 {
-  uint _default : 1;
+  uint default_via : 1;
   uint spare_bits : 31;
 };
 

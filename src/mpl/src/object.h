@@ -33,6 +33,7 @@ class Logger;
 }
 
 namespace mpl {
+struct BundledNet;
 class HardMacro;
 class SoftMacro;
 class Cluster;
@@ -42,6 +43,7 @@ using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
+using BundledNetList = std::vector<BundledNet>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP

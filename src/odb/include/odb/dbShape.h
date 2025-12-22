@@ -251,7 +251,6 @@ class dbWireShapeItr
 {
  public:
   dbWireShapeItr();
-  ~dbWireShapeItr();
 
   void begin(dbWire* wire);
   bool next(dbShape& shape);
@@ -311,7 +310,6 @@ class dbWirePathItr
 {
  public:
   dbWirePathItr();
-  ~dbWirePathItr();
 
   void begin(dbWire* wire);
   bool getNextPath(dbWirePath& path);
@@ -352,6 +350,16 @@ class dbInstShapeItr
   bool next(dbShape& shape);
 
  private:
+  enum State
+  {
+    kInit = 0,
+    kMtermItr = 1,
+    kMpinItr = 2,
+    kMboxItr = 3,
+    kObsItr = 4,
+    kViaBoxItr = 5,
+    kPinsDone = 6
+  };
   void getShape(dbBox* box, dbShape& shape);
   void getViaBox(dbBox* box, dbShape& shape);
 
@@ -361,7 +369,7 @@ class dbInstShapeItr
   dbSet<dbBox>::iterator box_itr_;
   dbSet<dbMTerm>::iterator mterm_itr_;
   dbSet<dbMPin>::iterator mpin_itr_;
-  int state_;
+  State state_;
   dbInst* inst_;
   dbMaster* master_;
   dbMPin* _mpin_;
@@ -372,7 +380,7 @@ class dbInstShapeItr
   dbSet<dbBox>::iterator via_box_itr_;
   Point via_pt_;
   bool expand_vias_;
-  int prev_state_;
+  State prev_state_;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -388,6 +396,14 @@ class dbITermShapeItr
   bool next(dbShape& shape);
 
  private:
+  enum State
+  {
+    kInit,
+    kMpinItr,
+    kMboxItr,
+    kViaBoxItr
+  };
+
   void getShape(dbBox* box, dbShape& shape);
   void getViaBox(dbBox* box, dbShape& shape);
 
@@ -396,7 +412,7 @@ class dbITermShapeItr
   dbMTerm* mterm_;
   dbSet<dbBox>::iterator box_itr_;
   dbSet<dbMPin>::iterator mpin_itr_;
-  int state_;
+  State state_;
   dbITerm* iterm_;
   dbMPin* mpin_;
   dbTransform transform_;
@@ -495,7 +511,7 @@ class dbHierInstShapeItr
                     bool draw_vias,
                     bool draw_segments);
   bool iterate_leaf(dbInst* inst, unsigned filter, int level);
-  void push_transform(dbTransform t);
+  void push_transform(const dbTransform& t);
   void transform(dbShape& shape);
 
   std::vector<dbTransform> transforms_;

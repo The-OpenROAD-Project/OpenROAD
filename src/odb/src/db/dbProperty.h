@@ -21,15 +21,8 @@ class _dbNameCache;
 class dbPropertyItr;
 // User Code End Classes
 
-struct dbPropertyFlags
-{
-  uint type : 4;
-  uint owner_type : 8;
-  uint spare_bits : 20;
-};
-
-// User Code Begin Structs
-enum _PropTypeEnum
+// User Code Begin Types
+enum PropTypeEnum : uint
 {
   // Do not change the order of this enum.
   kDbStringProp = 0,
@@ -37,7 +30,14 @@ enum _PropTypeEnum
   kDbIntProp = 2,
   kDbDoubleProp = 3
 };
-// User Code End Structs
+// User Code End Types
+
+struct dbPropertyFlags
+{
+  PropTypeEnum type : 4;
+  uint owner_type : 8;
+  uint spare_bits : 20;
+};
 
 class _dbProperty : public _dbObject
 {
@@ -55,7 +55,7 @@ class _dbProperty : public _dbObject
   static dbPropertyItr* getItr(dbObject* object);
   static _dbProperty* createProperty(dbObject* object,
                                      const char* name,
-                                     _PropTypeEnum type);
+                                     PropTypeEnum type);
   // User Code End Methods
 
   dbPropertyFlags flags_;

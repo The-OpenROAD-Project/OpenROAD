@@ -137,22 +137,12 @@ namespace odb {
 
 struct OldTransform
 {
-  int _orient;
-  int _originX;
-  int _originY;
-  int _sizeX;
-  int _sizeY;
+  int orient;
+  int originX;
+  int originY;
+  int sizeX;
+  int sizeY;
 };
-
-dbIStream& operator>>(dbIStream& stream, OldTransform& t)
-{
-  stream >> t._orient;
-  stream >> t._originX;
-  stream >> t._originY;
-  stream >> t._sizeX;
-  stream >> t._sizeY;
-  return stream;
-}
 
 static void unlink_child_from_parent(_dbBlock* child, _dbBlock* parent);
 
@@ -882,24 +872,23 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.corners_per_block_;
   stream >> block.corner_name_list_;
   stream >> block.name_;
-  if (db->isSchema(db_schema_die_area_is_polygon)) {
+  if (db->isSchema(kSchemaDieAreaIsPolygon)) {
     stream >> block.die_area_;
   } else {
     Rect rect;
     stream >> rect;
     block.die_area_ = rect;
   }
-  if (db->isSchema(db_schema_core_area_is_polygon)) {
+  if (db->isSchema(kSchemaCoreAreaIsPolygon)) {
     stream >> block.core_area_;
   }
-  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
+  if (db->isSchema(kSchemaDbBlockBlockedRegionsForPins)) {
     stream >> block.blocked_regions_for_pins_;
   }
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
   dbId<_dbTech> old_db_tech;
-  if (db->isSchema(db_schema_block_tech)
-      && !db->isSchema(db_schema_chip_tech)) {
+  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
     stream >> old_db_tech;
   }
   stream >> block.chip_;
@@ -914,8 +903,8 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.inst_hash_;
   stream >> block.module_hash_;
   stream >> block.modinst_hash_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    if (!db->isSchema(db_schema_db_remove_hash)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
+    if (!db->isSchema(kSchemaDbRemoveHash)) {
       dbHashTable<_dbModBTerm> unused_modbterm_hash;
       dbHashTable<_dbModITerm> unused_moditerm_hash;
       dbHashTable<_dbModNet> unused_modnet_hash;
@@ -930,7 +919,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.logicport_hash_;
   stream >> block.powerswitch_hash_;
   stream >> block.isolation_hash_;
-  if (db->isSchema(db_schema_level_shifter)) {
+  if (db->isSchema(kSchemaLevelShifter)) {
     stream >> block.levelshifter_hash_;
   }
   stream >> block.group_hash_;
@@ -939,14 +928,14 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.max_cap_node_id_;
   stream >> block.max_rseg_id_;
   stream >> block.max_cc_seg_id_;
-  if (!db->isSchema(db_schema_block_ext_model_index)) {
+  if (!db->isSchema(kSchemaBlockExtModelIndex)) {
     int ignore_minExtModelIndex;
     int ignore_maxExtModelIndex;
     stream >> ignore_minExtModelIndex;
     stream >> ignore_maxExtModelIndex;
   }
   stream >> block.children_;
-  if (db->isSchema(db_schema_block_component_mask_shift)) {
+  if (db->isSchema(kSchemaBlockComponentMaskShift)) {
     stream >> block.component_mask_shift_;
   }
   stream >> block.currentCcAdjOrder_;
@@ -954,20 +943,20 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.iterm_tbl_;
   stream >> *block.net_tbl_;
   stream >> *block.inst_hdr_tbl_;
-  if (db->isSchema(db_schema_db_remove_hash)) {
+  if (db->isSchema(kSchemaDbRemoveHash)) {
     stream >> *block.module_tbl_;
     stream >> *block.inst_tbl_;
   } else {
     stream >> *block.inst_tbl_;
     stream >> *block.module_tbl_;
   }
-  if (db->isSchema(db_schema_block_owns_scan_insts)) {
+  if (db->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> *block.scan_inst_tbl_;
   }
   stream >> *block.modinst_tbl_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> *block.modbterm_tbl_;
-    if (db->isSchema(db_schema_db_remove_hash)) {
+    if (db->isSchema(kSchemaDbRemoveHash)) {
       stream >> *block.busport_tbl_;
     }
     stream >> *block.moditerm_tbl_;
@@ -977,16 +966,16 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.logicport_tbl_;
   stream >> *block.powerswitch_tbl_;
   stream >> *block.isolation_tbl_;
-  if (db->isSchema(db_schema_level_shifter)) {
+  if (db->isSchema(kSchemaLevelShifter)) {
     stream >> *block.levelshifter_tbl_;
   }
   stream >> *block.group_tbl_;
   stream >> *block.ap_tbl_;
-  if (db->isSchema(db_schema_add_global_connect)) {
+  if (db->isSchema(kSchemaAddGlobalConnect)) {
     stream >> *block.global_connect_tbl_;
   }
   stream >> *block.guide_tbl_;
-  if (db->isSchema(db_schema_net_tracks)) {
+  if (db->isSchema(kSchemaNetTracks)) {
     stream >> *block.net_tracks_tbl_;
   }
   stream >> *block.box_tbl_;
@@ -1014,33 +1003,33 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.r_seg_tbl_;     // DKF
   stream >> *block.cc_seg_tbl_;
   stream >> *block.ext_control_;
-  if (db->isSchema(db_schema_add_scan)) {
+  if (db->isSchema(kSchemaAddScan)) {
     stream >> block.dft_;
     stream >> *block.dft_tbl_;
   }
-  if (db->isSchema(db_schema_dbmarkergroup)
-      && db->isLessThanSchema(db_schema_chip_marker_categories)) {
+  if (db->isSchema(kSchemaDbMarkerGroup)
+      && db->isLessThanSchema(kSchemaChipMarkerCategories)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
     stream >> *chip->marker_categories_tbl_;
     dbHashTable<_dbMarkerCategory> tmp_hash;
     stream >> tmp_hash;
   }
-  if (db->isSchema(db_schema_dbblock_layers_ranges)) {
+  if (db->isSchema(kSchemaDbBlockLayersRanges)) {
     stream >> block.min_routing_layer_;
     stream >> block.max_routing_layer_;
     stream >> block.min_layer_for_clock_;
     stream >> block.max_layer_for_clock_;
   }
-  if (db->isSchema(db_schema_block_pin_groups)) {
+  if (db->isSchema(kSchemaBlockPinGroups)) {
     stream >> block.bterm_groups_;
   }
-  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
+  if (db->isSchema(kSchemaBtermTopLayerGrid)) {
     stream >> block.bterm_top_layer_grid_;
   }
-  if (db->isSchema(db_schema_map_insts_to_scan_insts)) {
+  if (db->isSchema(kSchemaMapInstsToScanInsts)) {
     stream >> block.inst_scan_inst_map_;
   }
-  if (db->isSchema(db_schema_unique_indices)) {
+  if (db->isSchema(kSchemaUniqueIndices)) {
     stream >> block.unique_net_index_;
     stream >> block.unique_inst_index_;
   }
@@ -1061,13 +1050,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   // TOM
   //-------------------------------------------------------------------------------
 
-  if (db->isSchema(db_schema_block_tech)
-      && !db->isSchema(db_schema_chip_tech)) {
+  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
     chip->tech_ = old_db_tech;
   }
 
-  if (!db->isSchema(db_schema_core_area_is_polygon)) {
+  if (!db->isSchema(kSchemaCoreAreaIsPolygon)) {
     // Wait for rows to be available
     dbBlock* blk = (dbBlock*) (&block);
     block.core_area_ = blk->computeCoreArea();
@@ -2497,9 +2485,9 @@ void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
 {
   _dbBlock* block = (_dbBlock*) this;
   if (block->corner_name_list_) {
-    ecl.push_back(block->corner_name_list_);
+    ecl.emplace_back(block->corner_name_list_);
   } else {
-    ecl.push_back("");
+    ecl.emplace_back();
   }
 }
 
@@ -2519,7 +2507,7 @@ dbTechNonDefaultRule* dbBlock::findNonDefaultRule(const char* name)
 {
   for (dbTechNonDefaultRule* r : getNonDefaultRules()) {
     if (strcmp(r->getConstName(), name) == 0) {
-      return (dbTechNonDefaultRule*) r;
+      return r;
     }
   }
 
@@ -2877,34 +2865,31 @@ void dbBlock::setCornerNameList(const char* name_list)
 
   block->corner_name_list_ = strdup(name_list);
 }
-void dbBlock::getExtCornerName(int corner, char* cName)
+std::string dbBlock::getExtCornerName(const int corner)
 {
-  cName[0] = '\0';
   _dbBlock* block = (_dbBlock*) this;
   if (block->num_ext_corners_ == 0) {
-    return;
+    return "";
   }
   assert((corner >= 0) && (corner < block->num_ext_corners_));
 
   if (block->corner_name_list_ == nullptr) {
-    return;
+    return "";
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
-
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
   int ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (ii == corner) {
-      strcpy(cName, word);
-      return;
-    }
 
-    word = strtok(nullptr, " ");
+  while (ss >> word) {
+    if (ii == corner) {
+      return word;
+    }
     ii++;
   }
+  return "";
 }
+
 int dbBlock::getExtCornerIndex(const char* cornerName)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2913,21 +2898,19 @@ int dbBlock::getExtCornerIndex(const char* cornerName)
     return -1;
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
+  int ii = 0;
 
-  uint ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (strcmp(cornerName, word) == 0) {
+  while (ss >> word) {
+    if (cornerName == word) {
       return ii;
     }
-
-    word = strtok(nullptr, " ");
     ii++;
   }
   return -1;
 }
+
 void dbBlock::setCornerCount(int cnt)
 {
   setCornerCount(cnt, cnt, nullptr);
@@ -3188,7 +3171,7 @@ void dbBlock::writeGuides(const char* filename) const
       nets.push_back(net);
     }
   }
-  std::sort(nets.begin(), nets.end(), [](odb::dbNet* net1, odb::dbNet* net2) {
+  std::ranges::sort(nets, [](odb::dbNet* net1, odb::dbNet* net2) {
     return strcmp(net1->getConstName(), net2->getConstName()) < 0;
   });
   for (auto net : nets) {
@@ -3347,18 +3330,18 @@ void dbBlock::destroyNetWires()
   }
 }
 
-int dbBlock::globalConnect()
+int dbBlock::globalConnect(bool force, bool verbose)
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
   const std::vector<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
   _dbBlock* dbblock = (_dbBlock*) this;
-  return dbblock->globalConnect(connects);
+  return dbblock->globalConnect(connects, force, verbose);
 }
 
-int dbBlock::globalConnect(dbGlobalConnect* gc)
+int dbBlock::globalConnect(dbGlobalConnect* gc, bool force, bool verbose)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
-  return dbblock->globalConnect({gc});
+  return dbblock->globalConnect({gc}, force, verbose);
 }
 
 void dbBlock::clearGlobalConnect()
@@ -3419,12 +3402,14 @@ int dbBlock::addGlobalConnect(dbRegion* region,
       = odb::dbGlobalConnect::create(net, region, instPattern, pinPattern);
 
   if (gc != nullptr && do_connect) {
-    return globalConnect(gc);
+    return globalConnect(gc, false, false);
   }
   return 0;
 }
 
-int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
+int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
+                            bool force,
+                            bool verbose)
 {
   _dbBlock* dbblock = (_dbBlock*) this;
   utl::Logger* logger = dbblock->getImpl()->getLogger();
@@ -3439,6 +3424,7 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   std::vector<_dbGlobalConnect*> region_rules;
 
   std::set<dbITerm*> connected_iterms;
+  std::set<dbITerm*> skipped_iterms;
   // only search for instances once
   std::map<std::string, std::vector<dbInst*>> inst_map;
   std::set<dbInst*> donottouchinsts;
@@ -3462,19 +3448,15 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
         remove_insts.insert(inst);
       }
     }
-    insts.erase(std::remove_if(insts.begin(),
-                               insts.end(),
-                               [&](dbInst* inst) {
-                                 return remove_insts.find(inst)
-                                        != remove_insts.end();
-                               }),
-                insts.end());
+    auto [first, last] = std::ranges::remove_if(insts, [&](dbInst* inst) {
+      return remove_insts.find(inst) != remove_insts.end();
+    });
+    insts.erase(first, last);
 
-    inst_map[inst_pattern] = insts;
+    inst_map[inst_pattern] = std::move(insts);
 
-    _dbGlobalConnect* connect_rule = (_dbGlobalConnect*) connect;
     for (dbInst* inst : remove_insts) {
-      if (connect_rule->needsModification(inst)) {
+      if (gc->needsModification(inst)) {
         donottouchinsts.insert(inst);
       }
     }
@@ -3491,12 +3473,25 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   }
 
   for (_dbGlobalConnect* connect : non_region_rules) {
-    const auto connections = connect->connect(inst_map[connect->inst_pattern_]);
+    const auto& [connections, skipped]
+        = connect->connect(inst_map[connect->inst_pattern_], force);
     connected_iterms.insert(connections.begin(), connections.end());
+    skipped_iterms.insert(skipped.begin(), skipped.end());
   }
   for (_dbGlobalConnect* connect : region_rules) {
-    const auto connections = connect->connect(inst_map[connect->inst_pattern_]);
+    const auto& [connections, skipped]
+        = connect->connect(inst_map[connect->inst_pattern_], force);
     connected_iterms.insert(connections.begin(), connections.end());
+    skipped_iterms.insert(skipped.begin(), skipped.end());
+  }
+
+  if (verbose) {
+    logger->info(utl::ODB,
+                 403,
+                 "{} connections made, {} conflicts skipped{}",
+                 connected_iterms.size(),
+                 skipped_iterms.size(),
+                 skipped_iterms.empty() ? "." : ", use -force to connect.");
   }
 
   return connected_iterms.size();
@@ -3593,7 +3588,7 @@ void dbBlock::debugPrintContent(std::ostream& str_db)
     }
     str_db << fmt::format("\tModule {} {}\n",
                           (cur_obj == getTopModule()) ? "(Top Module)" : "",
-                          ((dbModule*) cur_obj)->getName());
+                          cur_obj->getName());
     // in case of top level, care as the bterms double up as pins
     if (cur_obj == getTopModule()) {
       for (auto bterm : getBTerms()) {
@@ -3696,75 +3691,75 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["corner_name"].add(corner_name_list_);
-  info.children_["blocked_regions_for_pins"].add(blocked_regions_for_pins_);
+  info.children["name"].add(name_);
+  info.children["corner_name"].add(corner_name_list_);
+  info.children["blocked_regions_for_pins"].add(blocked_regions_for_pins_);
 
-  info.children_["net_hash"].add(net_hash_);
-  info.children_["inst_hash"].add(inst_hash_);
-  info.children_["module_hash"].add(module_hash_);
-  info.children_["modinst_hash"].add(modinst_hash_);
-  info.children_["powerdomain_hash"].add(powerdomain_hash_);
-  info.children_["logicport_hash"].add(logicport_hash_);
-  info.children_["powerswitch_hash"].add(powerswitch_hash_);
-  info.children_["isolation_hash"].add(isolation_hash_);
-  info.children_["levelshifter_hash"].add(levelshifter_hash_);
-  info.children_["group_hash"].add(group_hash_);
-  info.children_["inst_hdr_hash"].add(inst_hdr_hash_);
-  info.children_["bterm_hash"].add(bterm_hash_);
+  info.children["net_hash"].add(net_hash_);
+  info.children["inst_hash"].add(inst_hash_);
+  info.children["module_hash"].add(module_hash_);
+  info.children["modinst_hash"].add(modinst_hash_);
+  info.children["powerdomain_hash"].add(powerdomain_hash_);
+  info.children["logicport_hash"].add(logicport_hash_);
+  info.children["powerswitch_hash"].add(powerswitch_hash_);
+  info.children["isolation_hash"].add(isolation_hash_);
+  info.children["levelshifter_hash"].add(levelshifter_hash_);
+  info.children["group_hash"].add(group_hash_);
+  info.children["inst_hdr_hash"].add(inst_hdr_hash_);
+  info.children["bterm_hash"].add(bterm_hash_);
 
-  info.children_["children"].add(children_);
-  info.children_["component_mask_shift"].add(component_mask_shift_);
+  info.children["children"].add(children_);
+  info.children["component_mask_shift"].add(component_mask_shift_);
 
-  bterm_tbl_->collectMemInfo(info.children_["bterm"]);
-  iterm_tbl_->collectMemInfo(info.children_["iterm"]);
-  net_tbl_->collectMemInfo(info.children_["net"]);
-  inst_hdr_tbl_->collectMemInfo(info.children_["inst_hdr"]);
-  inst_tbl_->collectMemInfo(info.children_["inst"]);
-  box_tbl_->collectMemInfo(info.children_["box"]);
-  via_tbl_->collectMemInfo(info.children_["via"]);
-  gcell_grid_tbl_->collectMemInfo(info.children_["gcell_grid"]);
-  track_grid_tbl_->collectMemInfo(info.children_["track_grid"]);
-  obstruction_tbl_->collectMemInfo(info.children_["obstruction"]);
-  blockage_tbl_->collectMemInfo(info.children_["blockage"]);
-  wire_tbl_->collectMemInfo(info.children_["wire"]);
-  swire_tbl_->collectMemInfo(info.children_["swire"]);
-  sbox_tbl_->collectMemInfo(info.children_["sbox"]);
-  row_tbl_->collectMemInfo(info.children_["row"]);
-  fill_tbl_->collectMemInfo(info.children_["fill"]);
-  region_tbl_->collectMemInfo(info.children_["region"]);
-  hier_tbl_->collectMemInfo(info.children_["hier"]);
-  bpin_tbl_->collectMemInfo(info.children_["bpin"]);
-  non_default_rule_tbl_->collectMemInfo(info.children_["non_default_rule"]);
-  layer_rule_tbl_->collectMemInfo(info.children_["layer_rule"]);
-  prop_tbl_->collectMemInfo(info.children_["prop"]);
-  module_tbl_->collectMemInfo(info.children_["module"]);
-  powerdomain_tbl_->collectMemInfo(info.children_["powerdomain"]);
-  logicport_tbl_->collectMemInfo(info.children_["logicport"]);
-  powerswitch_tbl_->collectMemInfo(info.children_["powerswitch"]);
-  isolation_tbl_->collectMemInfo(info.children_["isolation"]);
-  levelshifter_tbl_->collectMemInfo(info.children_["levelshifter"]);
-  modinst_tbl_->collectMemInfo(info.children_["modinst"]);
-  group_tbl_->collectMemInfo(info.children_["group"]);
-  ap_tbl_->collectMemInfo(info.children_["ap"]);
-  global_connect_tbl_->collectMemInfo(info.children_["global_connect"]);
-  guide_tbl_->collectMemInfo(info.children_["guide"]);
-  net_tracks_tbl_->collectMemInfo(info.children_["net_tracks"]);
-  dft_tbl_->collectMemInfo(info.children_["dft"]);
-  modbterm_tbl_->collectMemInfo(info.children_["modbterm"]);
-  moditerm_tbl_->collectMemInfo(info.children_["moditerm"]);
-  modnet_tbl_->collectMemInfo(info.children_["modnet"]);
-  busport_tbl_->collectMemInfo(info.children_["busport"]);
-  cap_node_tbl_->collectMemInfo(info.children_["cap_node"]);
-  r_seg_tbl_->collectMemInfo(info.children_["r_seg"]);
-  cc_seg_tbl_->collectMemInfo(info.children_["cc_seg"]);
+  bterm_tbl_->collectMemInfo(info.children["bterm"]);
+  iterm_tbl_->collectMemInfo(info.children["iterm"]);
+  net_tbl_->collectMemInfo(info.children["net"]);
+  inst_hdr_tbl_->collectMemInfo(info.children["inst_hdr"]);
+  inst_tbl_->collectMemInfo(info.children["inst"]);
+  box_tbl_->collectMemInfo(info.children["box"]);
+  via_tbl_->collectMemInfo(info.children["via"]);
+  gcell_grid_tbl_->collectMemInfo(info.children["gcell_grid"]);
+  track_grid_tbl_->collectMemInfo(info.children["track_grid"]);
+  obstruction_tbl_->collectMemInfo(info.children["obstruction"]);
+  blockage_tbl_->collectMemInfo(info.children["blockage"]);
+  wire_tbl_->collectMemInfo(info.children["wire"]);
+  swire_tbl_->collectMemInfo(info.children["swire"]);
+  sbox_tbl_->collectMemInfo(info.children["sbox"]);
+  row_tbl_->collectMemInfo(info.children["row"]);
+  fill_tbl_->collectMemInfo(info.children["fill"]);
+  region_tbl_->collectMemInfo(info.children["region"]);
+  hier_tbl_->collectMemInfo(info.children["hier"]);
+  bpin_tbl_->collectMemInfo(info.children["bpin"]);
+  non_default_rule_tbl_->collectMemInfo(info.children["non_default_rule"]);
+  layer_rule_tbl_->collectMemInfo(info.children["layer_rule"]);
+  prop_tbl_->collectMemInfo(info.children["prop"]);
+  module_tbl_->collectMemInfo(info.children["module"]);
+  powerdomain_tbl_->collectMemInfo(info.children["powerdomain"]);
+  logicport_tbl_->collectMemInfo(info.children["logicport"]);
+  powerswitch_tbl_->collectMemInfo(info.children["powerswitch"]);
+  isolation_tbl_->collectMemInfo(info.children["isolation"]);
+  levelshifter_tbl_->collectMemInfo(info.children["levelshifter"]);
+  modinst_tbl_->collectMemInfo(info.children["modinst"]);
+  group_tbl_->collectMemInfo(info.children["group"]);
+  ap_tbl_->collectMemInfo(info.children["ap"]);
+  global_connect_tbl_->collectMemInfo(info.children["global_connect"]);
+  guide_tbl_->collectMemInfo(info.children["guide"]);
+  net_tracks_tbl_->collectMemInfo(info.children["net_tracks"]);
+  dft_tbl_->collectMemInfo(info.children["dft"]);
+  modbterm_tbl_->collectMemInfo(info.children["modbterm"]);
+  moditerm_tbl_->collectMemInfo(info.children["moditerm"]);
+  modnet_tbl_->collectMemInfo(info.children["modnet"]);
+  busport_tbl_->collectMemInfo(info.children["busport"]);
+  cap_node_tbl_->collectMemInfo(info.children["cap_node"]);
+  r_seg_tbl_->collectMemInfo(info.children["r_seg"]);
+  cc_seg_tbl_->collectMemInfo(info.children["cc_seg"]);
 
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
-  info.children_["r_val"].add(*r_val_tbl_);
-  info.children_["c_val"].add(*c_val_tbl_);
-  info.children_["cc_val"].add(*cc_val_tbl_);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
+  info.children["r_val"].add(*r_val_tbl_);
+  info.children["c_val"].add(*c_val_tbl_);
+  info.children["cc_val"].add(*cc_val_tbl_);
 
-  info.children_["module_name_id_map"].add(module_name_id_map_);
+  info.children["module_name_id_map"].add(module_name_id_map_);
 }
 
 void _dbBlock::ensureConstraintRegion(const Direction2D& edge,

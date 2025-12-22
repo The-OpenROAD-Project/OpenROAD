@@ -24,6 +24,8 @@ class _dbModNet : public _dbObject
  public:
   _dbModNet(_dbDatabase*);
 
+  ~_dbModNet();
+
   bool operator==(const _dbModNet& rhs) const;
   bool operator!=(const _dbModNet& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModNet& rhs) const;

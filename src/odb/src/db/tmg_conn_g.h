@@ -59,7 +59,7 @@ class tmg_conn_graph
   tcg_edge* e_;
   int ptNmax_;
   int shortNmax_;
-  int _eNmax;
+  int eNmax_;
   tcg_edge* eV_;
   int eN_;
 };

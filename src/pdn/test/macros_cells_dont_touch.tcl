@@ -23,6 +23,8 @@ add_global_connection -net VDD2 -pin_pattern {^VDDCE$}
 add_global_connection -net VSS2 -pin_pattern {^VSS$} -ground
 add_global_connection -net VSS2 -pin_pattern {^VSSE$}
 
+global_connect -force
+
 set def_file [make_result_file macros_cells_dont_touch.def]
 write_def $def_file
 diff_files macros_cells_dont_touch.defok $def_file

@@ -65,10 +65,10 @@ dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
   stream >> obj.inst_;
   stream >> obj.scan_clock_;
   stream >> obj.clock_edge_;
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> obj.next_list_scan_inst_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> obj.prev_list_scan_inst_;
   }
   return stream;
@@ -172,16 +172,6 @@ std::variant<dbBTerm*, dbITerm*> dbScanInst::getScanEnable() const
   const dbScanPin* scan_enable = (dbScanPin*) dft->scan_pins_->getPtr(
       (dbId<_dbScanPin>) scan_inst->scan_enable_);
   return scan_enable->getPin();
-}
-
-std::string_view getName(odb::dbBTerm* bterm)
-{
-  return bterm->getConstName();
-}
-
-std::string_view getName(odb::dbITerm* iterm)
-{
-  return iterm->getMTerm()->getConstName();
 }
 
 void dbScanInst::setAccessPins(const AccessPins& access_pins)
