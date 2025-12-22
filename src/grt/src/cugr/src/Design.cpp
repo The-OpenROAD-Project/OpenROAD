@@ -74,15 +74,10 @@ void Design::readLayers()
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
       if (track_grid != nullptr) {
         layers_.emplace_back(tech_layer, track_grid);
-        if (tech_layer->getRoutingLevel() == 3) {
-          int track_step, track_init, num_tracks;
-          track_grid->getAverageTrackSpacing(
-              track_step, track_init, num_tracks);
-          default_gridline_spacing_ = track_step * 15;
-        }
       }
     }
   }
+  default_gridline_spacing_ = block_->getGCellTileSize();
 }
 
 void Design::readNetlist()
