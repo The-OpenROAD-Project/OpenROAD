@@ -45,7 +45,7 @@ class dbInsertBuffer
                                   const char* new_net_base_name = nullptr,
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS,
-                                  bool loads_on_same_db_net = false);
+                                  bool loads_on_diff_nets = false);
   void hierarchicalConnect(dbITerm* driver, dbITerm* load);
 
  private:
@@ -87,7 +87,7 @@ class dbInsertBuffer
   //------------------------------------------------------------------
   dbModule* validateLoadPinsAndFindLCA(std::set<dbObject*>& load_pins,
                                        std::set<dbNet*>& other_dbnets,
-                                       bool loads_on_same_db_net) const;
+                                       bool loads_on_diff_nets) const;
   void createNewFlatAndHierNets(std::set<dbObject*>& load_pins);
   void rewireBufferLoadPins(std::set<dbObject*>& load_pins);
   void placeBufferAtLocation(dbInst* buffer_inst,
@@ -101,7 +101,7 @@ class dbInsertBuffer
   //------------------------------------------------------------------
   void dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
                              const Point* loc,
-                             bool loads_on_same_db_net) const;
+                             bool loads_on_diff_nets) const;
   void dlogTargetLoadPin(dbObject* load_obj) const;
   void dlogDifferentDbNet(const std::string& net_name) const;
   void dlogLCAModule(dbModule* target_module) const;

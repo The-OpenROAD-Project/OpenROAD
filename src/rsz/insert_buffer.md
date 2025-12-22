@@ -25,7 +25,7 @@ insert_buffer -buffer_cell lib_cell
               [-location {x y}]
               [-buffer_name name]
               [-net_name name]
-              [-loads_on_same_net]
+              [-load_pins_on_diff_nets]
 ```
 
 ### Arguments
@@ -39,7 +39,7 @@ insert_buffer -buffer_cell lib_cell
 | `-net` | Specifies the net to be buffered. When used without `-load_pins`, it performs driver-side buffering. |
 | `-load_pin` | Specifies a single load pin (input ITerm or BTerm) to buffer. |
 | `-load_pins` | Specifies a list of load pins to buffer together. |
-| `-loads_on_same_net` | A flag indicating that the specified `-load_pins` are on the same ODB net. If specified, multiple load pins on different flat nets can be buffered together and the target net among the multiple flat nets can be selected by `-net`. This option should be used with caution not to change the logical function of the design. |
+| `-load_pins_on_diff_nets` | A flag indicating that the specified `-load_pins` are on the different nets. If specified, multiple load pins on different flat nets can be buffered together and the target net among the multiple flat nets can be selected by `-net`. This option should be used with caution not to change the logical function of the design. |
 
 ---
 
@@ -51,7 +51,7 @@ Inserts a buffer immediately after the driver pin of the specified net. The orig
 **Example:**
 ```tcl
 set net [get_nets u_mid1/u_leaf1/n1]
-insert_buffer -net $net -buffer_cell BUF_X1 -buffer_name b_after_drvr
+insert_buffer -net $net -buffer_cell BUF_X1 -buffer_name buf
 ```
 
 ### 2. Single Load Buffering (`-load_pin`)
@@ -63,21 +63,35 @@ set pin [get_pins u_mid1/u_leaf1/buf2/A]
 insert_buffer -load_pin $pin -buffer_cell BUF_X1 -location {10.0 20.0}
 ```
 
-### 3. Multiple Loads Buffering (`-load_pins` and optional `-net`)
+### 3. Multiple Loads Buffering (`-load_pins`)
 Inserts a buffer that drives a specific subset of loads on a net. A new net is created for the buffer output to drive only the specified load pins. Other loads on the same net remain driven by the original driver.
 
 **Example:**
 ```tcl
-set net [get_nets u_mid1/l2_out1]
 set loads [get_pins {u_mid1/dff_load1/D u_mid1/dff_load2/D}]
-insert_buffer -net $net -load_pins $loads -buffer_cell BUF_X1
+insert_buffer -load_pins $loads -buffer_cell BUF_X1
 ```
 
-If `-net` is omitted, the command will attempt to infer the net from 
-the first load pin.
-`-net` may be required to specify the target net clearly when 
-`-load_pins_on_same_net` is specified because the target load pins are not 
-on the same net.
+If `-net` is not specified, the command will attempt to infer the net 
+from the first load pin.
+
+### 4. Multiple Loads Buffering with loads on different nets (`-load_pins_on_diff_nets` and optional `-net`)
+
+- **Load pins on the same net mode (Default)**: Omit `-load_pins_on_diff_nets`. 
+The command expects all provided pins to be on the same flat net.
+- **Load pins on different nets mode**: Specify `-load_pins_on_diff_nets` to 
+allow buffering load pins from different `dbNet`s. With `-net` option, 
+the target net on which the buffer is inserted can be selected.
+If `-net` is not specified, the net connected to the first load pin will be 
+selected as the target net.
+
+**Example:**
+```tcl
+# Buffer pins across hierarchical boundaries
+set loads [get_pins {u_load0/A h0/u_load1/B}]
+set net [get_net -of_object [get_pins h0/u_load1/B]]
+insert_buffer -net $net -load_pins $loads -buffer_cell BUF_X1 -load_pins_on_diff_nets
+```
 
 ---
 
@@ -90,7 +104,7 @@ The `Resizer` API is the recommended way to insert buffers as it handles higher-
 - Legalizing the buffer position (using `opendp`).
 - Updating the design area.
 - Updating the GUI.
-- Incrementing the internal `inserted_buffer_count_`.
+- Incrementing the internal `Resizer::inserted_buffer_count_`.
 - Accepts STA objects (`sta::Net*`, `sta::PinSet`, etc.) which are easier to work with in the resizer context.
 
 #### Methods in `Resizer` (rsz/Resizer.hh)
@@ -110,12 +124,12 @@ Instance* insertBufferBeforeLoad(Pin* load_pin,
                                  const char* new_net_base_name = nullptr);
 
 Instance* insertBufferBeforeLoads(Net* net,
-                                  const std::set<odb::dbObject*>& loads,
+                                  PinSet* loads,
                                   LibertyCell* buffer_cell,
                                   const Point* loc = nullptr,
                                   const char* new_buf_base_name = nullptr,
                                   const char* new_net_base_name = nullptr,
-                                  bool loads_on_same_db_net = true);
+                                  bool loads_on_diff_nets = false);
 
 // ODB-based overloads
 odb::dbInst* insertBufferAfterDriver(odb::dbNet* net,
@@ -136,7 +150,7 @@ odb::dbInst* insertBufferBeforeLoads(odb::dbNet* net,
                                      const Point* loc = nullptr,
                                      const char* new_buf_base_name = nullptr,
                                      const char* new_net_base_name = nullptr,
-                                     bool loads_on_same_db_net = true);
+                                     bool loads_on_diff_nets = false);
 ```
 
 ### 2. `dbNet` API
@@ -165,7 +179,7 @@ odb::dbInst* insertBufferBeforeLoads(std::set<odb::dbObject*>& load_pins,
                                      const char* new_buf_base_name = nullptr,
                                      const char* new_net_base_name = nullptr,
                                      const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
-                                     bool loads_on_same_db_net = true);
+                                     bool loads_on_diff_nets = false);
 ```
 
 ---
@@ -182,7 +196,7 @@ odb::dbInst* insertBufferBeforeLoads(std::set<odb::dbObject*>& load_pins,
 
 ### C++ API Usage Examples
 
-#### Using the `Resizer` API (High-Level)
+#### Using the `Resizer` API (High-level)
 
 ```cpp
 #include "rsz/Resizer.hh"
@@ -198,13 +212,13 @@ rsz::Pin* load_pin = network->findPin("u2/A");
 rsz::Instance* buf2 = resizer->insertBufferBeforeLoad(load_pin, buffer_cell);
 
 // 3. Before Multiple Loads
-std::set<odb::dbObject*> loads;
-loads.insert(db_network->staToDb(network->findPin("u3/A")));
-loads.insert(db_network->staToDb(network->findPin("u4/A")));
-rsz::Instance* buf3 = resizer->insertBufferBeforeLoads(nullptr, loads, buffer_cell);
+rsz::PinSet loads(network);
+loads.insert(network->findPin("u3/A"));
+loads.insert(network->findPin("u4/A"));
+rsz::Instance* buf3 = resizer->insertBufferBeforeLoads(nullptr, &loads, buffer_cell);
 ```
 
-#### Using the `dbNet` API (Low-Level)
+#### Using the `dbNet` API (Low-level)
 
 ```cpp
 #include "odb/db.h"
@@ -216,6 +230,7 @@ odb::dbMaster* master = db->findMaster("BUF_X1");
 odb::dbInst* buf = db_net->insertBufferAfterDriver(drvr, master, nullptr, "buf1");
 
 // 2. Before Load
+odb::dbInst* inst = db->findInst("u2");
 odb::dbITerm* iterm = inst->findITerm("A");
 odb::dbInst* buf = db_net->insertBufferBeforeLoad(iterm, master);
 

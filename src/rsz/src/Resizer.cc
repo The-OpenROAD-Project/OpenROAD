@@ -5072,14 +5072,13 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(odb::dbObject* load_pin,
   return buffer_inst;
 }
 
-Instance* Resizer::insertBufferBeforeLoads(
-    Net* net,
-    const std::set<odb::dbObject*>& loads,
-    LibertyCell* buffer_cell,
-    const Point* loc,
-    const char* new_buf_base_name,
-    const char* new_net_base_name,
-    bool loads_on_same_db_net)
+Instance* Resizer::insertBufferBeforeLoads(Net* net,
+                                           PinSet* loads,
+                                           LibertyCell* buffer_cell,
+                                           const Point* loc,
+                                           const char* new_buf_base_name,
+                                           const char* new_net_base_name,
+                                           bool loads_on_diff_nets)
 {
   odb::dbMaster* buffer_master
       = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
@@ -5092,15 +5091,22 @@ Instance* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
+  std::set<odb::dbObject*> db_loads;
+  if (loads) {
+    for (const Pin* pin : *loads) {
+      db_loads.insert(db_network_->staToDb(pin));
+    }
+  }
+
   odb::dbNet* db_net = net ? db_network_->staToDb(net) : nullptr;
 
   odb::dbInst* buffer_inst = insertBufferBeforeLoads(db_net,
-                                                     loads,
+                                                     db_loads,
                                                      buffer_master,
                                                      loc,
                                                      new_buf_base_name,
                                                      new_net_base_name,
-                                                     loads_on_same_db_net);
+                                                     loads_on_diff_nets);
   return db_network_->dbToSta(buffer_inst);
 }
 
@@ -5111,7 +5117,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     const Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
-    bool loads_on_same_db_net)
+    bool loads_on_diff_nets)
 {
   if (loads.empty()) {
     logger_->warn(RSZ, 3015, "insertBufferBeforeLoads: no loads specified");
@@ -5150,7 +5156,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
                                      new_buf_base_name,
                                      new_net_base_name,
                                      odb::dbNameUniquifyType::ALWAYS,
-                                     loads_on_same_db_net);
+                                     loads_on_diff_nets);
 
   if (!buffer_inst) {
     logger_->error(RSZ,

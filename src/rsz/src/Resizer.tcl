@@ -880,12 +880,12 @@ sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \
                                        [-net net] \
                                        [-load_pin pin] \
                                        [-load_pins list_of_pins] \
-                                       [-loads_on_same_net] }
+                                       [-load_pins_on_diff_nets] }
 
 proc insert_buffer { args } {
   sta::parse_key_args "insert_buffer" args \
     keys {-buffer_cell -location -buffer_name -net_name -net -load_pin -load_pins} \
-    flags {-loads_on_same_net}
+    flags {-load_pins_on_diff_nets}
 
   # Validate mutually exclusive arguments
   set has_net [info exists keys(-net)]
@@ -935,10 +935,10 @@ proc insert_buffer { args } {
       set net [sta::get_net_arg "-net" $keys(-net)]
     }
     set loads [sta::get_port_pins_error "insert_buffer" $keys(-load_pins)]
-    set loads_on_same_db_net [info exists flags(-loads_on_same_net)]
+    set loads_on_diff_nets [info exists flags(-load_pins_on_diff_nets)]
     return [rsz::insert_buffer_before_loads_cmd $net $loads $buffer_cell $x $y $has_loc \
       $new_buf_base_name $new_net_base_name \
-      $loads_on_same_db_net]
+      $loads_on_diff_nets]
   }
 
   if { $has_pin } {

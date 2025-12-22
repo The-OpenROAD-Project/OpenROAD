@@ -284,19 +284,19 @@ class Resizer : public dbStaState, public dbNetworkObserver
   /// - This accepts STA objects instead of db objects.
   ///
   Instance* insertBufferBeforeLoads(Net* net,
-                                    const std::set<odb::dbObject*>& loads,
+                                    PinSet* loads,
                                     LibertyCell* buffer_cell,
                                     const Point* loc = nullptr,
                                     const char* new_buf_base_name = nullptr,
                                     const char* new_net_base_name = nullptr,
-                                    bool loads_on_same_db_net = true);
+                                    bool loads_on_diff_nets = false);
   odb::dbInst* insertBufferBeforeLoads(odb::dbNet* net,
                                        const std::set<odb::dbObject*>& loads,
                                        odb::dbMaster* buffer_cell,
                                        const Point* loc = nullptr,
                                        const char* new_buf_base_name = nullptr,
                                        const char* new_net_base_name = nullptr,
-                                       bool loads_on_same_db_net = true);
+                                       bool loads_on_diff_nets = false);
   bool dontTouch(const Pin* pin) const;
   void reportDontTouch();
 

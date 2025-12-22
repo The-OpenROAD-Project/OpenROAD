@@ -1969,11 +1969,10 @@ int Rebuffer::exportBufferTree(
   // Return: A set of dbObjects (dbITerm, dbBTerm, or dbModITerm) representing
   //         the terminals that this subtree drives (i.e., the "loads" seen
   //         from the parent's perspective).
-  std::function<void(const BufferedNetPtr&, std::set<odb::dbObject*>&, int&)>
-      insertBuffers;
+  std::function<void(const BufferedNetPtr&, PinSet&, int&)> insertBuffers;
 
   insertBuffers = [&](const BufferedNetPtr& node,
-                      std::set<odb::dbObject*>& current_loads,
+                      PinSet& current_loads,
                       int& count) {
     if (!node) {
       return;
@@ -2006,15 +2005,16 @@ int Rebuffer::exportBufferTree(
         }
 
         // Collect physical terminal
-        odb::dbObject* load_term = db_network_->staToDb(load_pin);
-        assert(load_term != nullptr);
-        current_loads.insert(load_term);
+        if (load_pin != nullptr) {
+          assert(db_network_->staToDb(load_pin) != nullptr);
+          current_loads.insert(const_cast<Pin*>(load_pin));
+        }
         break;
       }
 
       case BufferedNetType::buffer: {
         // 1. Collect loads from children first (Bottom-Up)
-        std::set<odb::dbObject*> child_loads;
+        PinSet child_loads(network_);
         insertBuffers(node->ref(), child_loads, count);
 
         if (child_loads.empty()) {
@@ -2029,16 +2029,16 @@ int Rebuffer::exportBufferTree(
         LibertyCell* buffer_cell = node->bufferCell();
 
         // In this rebuffer logic, target loads can be on different dbNets.
-        // So we pass 'false' to 'loads_on_same_db_net' argument.
+        // So we pass 'true' to 'loads_on_diff_nets' argument.
         Point buffer_loc = node->location();
         odb::dbInst* buf_inst = db_network_->staToDb(
             resizer_->insertBufferBeforeLoads(net,
-                                              child_loads,
+                                              &child_loads,
                                               buffer_cell,
                                               &buffer_loc,
                                               instance_base_name,
                                               nullptr /*new_net_base_name*/,
-                                              false /*loads_on_same_db_net*/));
+                                              true /*loads_on_diff_nets*/));
 
         if (buf_inst) {
           count++;
@@ -2051,7 +2051,16 @@ int Rebuffer::exportBufferTree(
           // node
           odb::dbITerm* input_term = buf_inst->findITerm(input->name());
           if (input_term) {
-            current_loads.insert(input_term);
+            Pin* sta_input_pin = db_network_->dbToSta(input_term);
+            if (sta_input_pin != nullptr) {
+              current_loads.insert(sta_input_pin);
+            } else {
+              logger_->warn(
+                  RSZ,
+                  2023,
+                  "rebuffer: dbToSta failed for newly created buffer pin '{}'",
+                  input_term->getInst()->getName());
+            }
           }
 
           debugPrint(logger_,
@@ -2065,8 +2074,7 @@ int Rebuffer::exportBufferTree(
 
           // Print each load pin's full hierarchical name
           if (logger_->debugCheck(RSZ, "rebuffer", 3)) {
-            for (odb::dbObject* load_obj : child_loads) {
-              const Pin* load_pin = db_network_->dbToSta(load_obj);
+            for (const Pin* load_pin : child_loads) {
               if (load_pin) {
                 debugPrint(logger_,
                            RSZ,
@@ -2088,7 +2096,7 @@ int Rebuffer::exportBufferTree(
   };
 
   int inserted_count = 0;
-  std::set<odb::dbObject*> top_loads;
+  PinSet top_loads(network_);
 
   // Start the bottom-up traversal
   insertBuffers(choice, top_loads, inserted_count);

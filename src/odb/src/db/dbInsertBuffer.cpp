@@ -132,7 +132,7 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const dbNameUniquifyType& uniquify,
-    bool loads_on_same_db_net)
+    bool loads_on_diff_nets)
 {
   // jk: dbg
   static int i = 0;
@@ -157,12 +157,12 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   // Store original driver pin before buffer insertion modifies net structure
   orig_drvr_pin_ = net_->getFirstDriverTerm();
 
-  dlogBeforeLoadsParams(load_pins, loc, loads_on_same_db_net);
+  dlogBeforeLoadsParams(load_pins, loc, loads_on_diff_nets);
 
   // 1. Validate Load Pins & Find Lowest Common Ancestor (Hierarchy)
   std::set<dbNet*> other_dbnets;
-  target_module_ = validateLoadPinsAndFindLCA(
-      load_pins, other_dbnets, loads_on_same_db_net);
+  target_module_
+      = validateLoadPinsAndFindLCA(load_pins, other_dbnets, loads_on_diff_nets);
   if (target_module_ == nullptr) {
     return nullptr;  // Validation failed
   }
@@ -1162,7 +1162,7 @@ void dbInsertBuffer::hierarchicalConnect(dbITerm* driver, dbITerm* load)
 dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
     std::set<dbObject*>& load_pins,
     std::set<dbNet*>& other_dbnets,
-    bool loads_on_same_db_net) const
+    bool loads_on_diff_nets) const
 {
   dbModule* target_module = nullptr;
   bool first = true;
@@ -1211,7 +1211,7 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
       other_dbnets.insert(load_net);
       dlogDifferentDbNet(load_net->getName());
 
-      if (loads_on_same_db_net) {
+      if (!loads_on_diff_nets) {
         logger_->error(utl::ODB,
                        1200,
                        "BeforeLoads: Load pin {} is "
@@ -1374,7 +1374,7 @@ void dbInsertBuffer::setBufferAttributes(dbInst* buffer_inst)
 
 void dbInsertBuffer::dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
                                            const Point* loc,
-                                           bool loads_on_same_db_net) const
+                                           bool loads_on_diff_nets) const
 {
   debugPrint(
       logger_,
@@ -1383,7 +1383,7 @@ void dbInsertBuffer::dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
       1,
       "BeforeLoads: Try inserting a buffer on dbNet={}, load_pins_size={}, "
       "buffer_master={}, loc=({}, {}), new_buf_base_name={}, "
-      "new_net_base_name={}, uniquify={}, loads_on_same_db_net={}",
+      "new_net_base_name={}, uniquify={}, loads_on_diff_nets={}",
       net_->getName(),
       load_pins.size(),
       buffer_master_->getName(),
@@ -1392,7 +1392,7 @@ void dbInsertBuffer::dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
       new_buf_base_name_ ? new_buf_base_name_ : "buf",
       new_net_base_name_ ? new_net_base_name_ : "net",
       static_cast<int>(uniquify_),
-      loads_on_same_db_net);
+      loads_on_diff_nets);
 }
 
 void dbInsertBuffer::dlogTargetLoadPin(dbObject* load_obj) const

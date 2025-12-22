@@ -3029,7 +3029,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                        const char* new_buf_base_name,
                                        const char* new_net_base_name,
                                        const dbNameUniquifyType& uniquify,
-                                       bool loads_on_same_db_net)
+                                       bool loads_on_diff_nets)
 {
   dbInsertBuffer insert_buffer(this);
   return insert_buffer.insertBufferBeforeLoads(load_pins,
@@ -3038,7 +3038,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                                new_buf_base_name,
                                                new_net_base_name,
                                                uniquify,
-                                               loads_on_same_db_net);
+                                               loads_on_diff_nets);
 }
 
 void dbNet::hierarchicalConnect(dbITerm* driver, dbITerm* load)

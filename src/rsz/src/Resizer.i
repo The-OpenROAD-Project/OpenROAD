@@ -713,17 +713,10 @@ insert_buffer_before_loads_cmd(Net *net,
                               bool has_loc,
                               const char *new_buf_base_name,
                               const char *new_net_base_name,
-                              bool loads_on_same_db_net)
+                              bool loads_on_diff_nets)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  std::set<odb::dbObject*> loads;
-  if (pins) {
-    for (const Pin *pin : *pins) {
-      loads.insert(resizer->getDbNetwork()->staToDb(pin));
-    }
-    delete pins;
-  }
   
   Instance* inst = nullptr;
   const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
@@ -731,10 +724,12 @@ insert_buffer_before_loads_cmd(Net *net,
 
   if (has_loc) {
     odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
-    inst = resizer->insertBufferBeforeLoads(net, loads, buffer_cell, &loc, buf_name, net_name, loads_on_same_db_net);
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, &loc, buf_name, net_name, loads_on_diff_nets);
   } else {
-    inst = resizer->insertBufferBeforeLoads(net, loads, buffer_cell, nullptr, buf_name, net_name, loads_on_same_db_net);
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, nullptr, buf_name, net_name, loads_on_diff_nets);
   }
+
+  delete pins;
   return inst;
 }
 

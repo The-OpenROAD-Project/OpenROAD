@@ -2608,8 +2608,8 @@ class dbNet : public dbObject
   /// - If loc is null, the buffer is inserted at the center of the load pins.
   /// - Note that the new buffer drives the specified load pins only.
   ///   It does not drive other unspecified loads driven by the same net.
-  /// - loads_on_same_db_net: Flag indicating if loads are on the same dbNet.
-  ///   If false, the loads can be on different dbNets. This should be carefully
+  /// - loads_on_diff_nets: Flag indicating if loads can be on different dbNets.
+  ///   If true, the loads can be on different dbNets. This should be carefully
   ///   used because it may break the function of the design if the loads
   ///   contain an irrelevant load.
   ///
@@ -2620,7 +2620,7 @@ class dbNet : public dbObject
                                   const char* new_net_base_name = nullptr,
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS,
-                                  bool loads_on_same_db_net = true);
+                                  bool loads_on_diff_nets = false);
 
   ///
   /// Connect a driver iterm to a load iterm, punching ports through hierarchy

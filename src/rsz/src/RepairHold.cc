@@ -775,19 +775,19 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
     Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
 
-    // PinSeq -> dbObject* set
-    std::set<odb::dbObject*> load_terms;
+    // PinSeq -> PinSet
+    PinSet load_pins_set(network_);
     for (const Pin* load_pin : load_pins) {
-      // jk: move this into insertBuffer API
-      if (resizer_->dontTouch(load_pin)) {
-        continue;
+      if (load_pin != nullptr) {
+        if (resizer_->dontTouch(load_pin)) {
+          continue;
+        }
+        load_pins_set.insert(const_cast<Pin*>(load_pin));
       }
-
-      load_terms.insert(db_network_->staToDb(load_pin));
     }
 
     buffer = resizer_->insertBufferBeforeLoads(
-        drvr_net, load_terms, buffer_cell, &loc, "hold");
+        drvr_net, &load_pins_set, buffer_cell, &loc, "hold");
     if (buffer == nullptr) {
       const char* drvr_pin_name = db_network_->pathName(drvr_pin);
       logger_->error(RSZ,
