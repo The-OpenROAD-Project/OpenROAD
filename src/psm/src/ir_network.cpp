@@ -904,13 +904,6 @@ void IRNetwork::cleanupNodes()
 
   auto node_connection_map = getConnectionMap();
 
-  std::map<Node*, bool> marked_deleted;
-  for (const auto& [layer, nodes] : nodes_) {
-    for (const auto& node : nodes) {
-      marked_deleted[node.get()] = false;
-    }
-  }
-
   cleanupOverlappingNodes(node_connection_map);
 
   mergeNodes(node_connection_map);
