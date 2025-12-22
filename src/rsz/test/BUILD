@@ -33,6 +33,8 @@ TESTS = [
     "gain_buffering1",
     "gain_buffering1_hier",
     "gcd_resize",
+    "insert_buffer",
+    "insert_buffer_hier",
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
@@ -331,10 +333,7 @@ cc_test(
 cc_test(
     name = "rsz_insert_buffer",
     srcs = ["cpp/TestInsertBuffer.cpp"],
-    data = [
-        "Nangate45/Nangate45.lef",
-        "Nangate45/Nangate45_typ.lib",
-    ] + glob(["cpp/TestInsertBuffer*.v"]),
+    data = glob(["cpp/TestInsertBuffer*.v"]),
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
