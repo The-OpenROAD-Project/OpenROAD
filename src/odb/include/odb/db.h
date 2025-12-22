@@ -3089,8 +3089,8 @@ class dbInst : public dbObject
   static dbInst* makeUniqueDbInst(dbBlock* block,
                                   dbMaster* master,
                                   const char* name,
-                                  bool physical_only,
-                                  dbModule* target_module);
+                                  bool physical_only = false,
+                                  dbModule* target_module = nullptr);
 
   ///
   /// Create a new instance of child_block in top_block.
@@ -7376,6 +7376,9 @@ class dbDatabase : public dbObject
   dbSet<dbChipNet> getChipNets() const;
 
   // User Code Begin dbDatabase
+
+  void setHierarchy(bool value);
+  bool hasHierarchy() const;
 
   void setTopChip(dbChip* chip);
   ///

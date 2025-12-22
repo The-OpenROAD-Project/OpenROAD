@@ -195,9 +195,6 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(BundledNetList& nets);
-  void considerFixedMacro(const odb::Rect& outline,
-                          std::vector<SoftMacro>& sa_macros,
-                          Cluster* fixed_macro_cluster) const;
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
