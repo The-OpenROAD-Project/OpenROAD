@@ -367,6 +367,13 @@ void IRNetwork::processPolygonToRectangles(
     std::vector<std::unique_ptr<Node>>& new_nodes,
     std::map<Shape*, std::set<Node*>>& terminal_connections)
 {
+  const utl::DebugScopedTimer timer(
+      logger_,
+      utl::PSM,
+      "timer",
+      2,
+      fmt::format("Convert polygons to nodes {}: {{}}", layer->getName()));
+
   using boost::polygon::operators::operator+=;
 
   auto get_layer_orientation
@@ -903,13 +910,6 @@ void IRNetwork::cleanupNodes()
       logger_, utl::PSM, "timer", 1, "Cleanup nodes: {}");
 
   auto node_connection_map = getConnectionMap();
-
-  std::map<Node*, bool> marked_deleted;
-  for (const auto& [layer, nodes] : nodes_) {
-    for (const auto& node : nodes) {
-      marked_deleted[node.get()] = false;
-    }
-  }
 
   cleanupOverlappingNodes(node_connection_map);
 
