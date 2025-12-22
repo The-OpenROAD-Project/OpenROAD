@@ -248,6 +248,38 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool dontTouch(const Instance* inst) const;
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net) const;
+
+  ///
+  /// Wrapper for dbNet::insertBufferAfterDriver().
+  /// - This accepts STA objects instead of db objects.
+  ///
+  odb::dbInst* insertBufferAfterDriver(Net* net,
+                                       LibertyCell* buffer_cell,
+                                       const Point* loc,
+                                       const char* new_buf_base_name = nullptr,
+                                       const char* new_net_base_name = nullptr);
+
+  ///
+  /// Wrapper for dbNet::insertBufferBeforeLoad().
+  /// - This accepts STA objects instead of db objects.
+  ///
+  odb::dbInst* insertBufferBeforeLoad(Pin* load_pin,
+                                      LibertyCell* buffer_cell,
+                                      const Point* loc,
+                                      const char* new_buf_base_name = nullptr,
+                                      const char* new_net_base_name = nullptr);
+
+  ///
+  /// Wrapper for dbNet::insertBufferBeforeLoads().
+  /// - This accepts STA objects instead of db objects.
+  ///
+  odb::dbInst* insertBufferBeforeLoads(Net* net,
+                                       const std::set<odb::dbObject*>& loads,
+                                       LibertyCell* buffer_cell,
+                                       const Point* loc,
+                                       const char* new_buf_base_name = nullptr,
+                                       const char* new_net_base_name = nullptr,
+                                       bool loads_on_same_db_net = true);
   bool dontTouch(const Pin* pin) const;
   void reportDontTouch();
 
@@ -662,38 +694,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
                        const char* name,
                        Instance* parent,
                        const Point& loc);
-
-  ///
-  /// Wrapper for dbNet::insertBufferAfterDriver().
-  /// - This accepts STA objects instead of db objects.
-  ///
-  odb::dbInst* insertBufferAfterDriver(Net* net,
-                                       LibertyCell* buffer_cell,
-                                       const Point* loc,
-                                       const char* new_buf_base_name = nullptr,
-                                       const char* new_net_base_name = nullptr);
-
-  ///
-  /// Wrapper for dbNet::insertBufferBeforeDriver().
-  /// - This accepts STA objects instead of db objects.
-  ///
-  odb::dbInst* insertBufferBeforeLoad(Pin* load_pin,
-                                      LibertyCell* buffer_cell,
-                                      const Point* loc,
-                                      const char* new_buf_base_name = nullptr,
-                                      const char* new_net_base_name = nullptr);
-
-  ///
-  /// Wrapper for dbNet::insertBufferBeforeLoads().
-  /// - This accepts STA objects instead of db objects.
-  ///
-  odb::dbInst* insertBufferBeforeLoads(Net* net,
-                                       const std::set<odb::dbObject*>& loads,
-                                       LibertyCell* buffer_cell,
-                                       const Point* loc,
-                                       const char* new_buf_base_name = nullptr,
-                                       const char* new_net_base_name = nullptr,
-                                       bool loads_on_same_db_net = true);
 
   void insertBufferPostProcess(dbInst* buffer_inst);
 

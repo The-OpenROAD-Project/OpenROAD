@@ -67,9 +67,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
-#include "sta/StaMain.hh"
 #include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
@@ -2570,7 +2568,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
       float highest_cin = 0;
       for (LibertyCell* size : equiv_cells) {
         float size_cin;
-        if ((!cell->isBuffer() || buffer_fast_sizes_.count(size))
+        if ((!cell->isBuffer() || buffer_fast_sizes_.contains(size))
             && getCin(size, size_cin)) {
           if (load_cap < size_cin * cap_ratio) {
             if (upsize_only && size == cell) {
@@ -5048,13 +5046,28 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  odb::dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = nullptr;
+  if (net == nullptr) {
+    odb::dbObject* first_load = *loads.begin();
+    if (first_load->getObjectType() == odb::dbObjectType::dbITermObj) {
+      db_net = static_cast<odb::dbITerm*>(first_load)->getNet();
+    } else if (first_load->getObjectType() == odb::dbObjectType::dbBTermObj) {
+      db_net = static_cast<odb::dbBTerm*>(first_load)->getNet();
+    }
+  } else {
+    db_net = db_network_->staToDb(net);
+  }
+
   if (!db_net) {
-    const char* net_name = network_->pathName(net);
-    logger_->error(RSZ,
-                   3005,
-                   "Cannot convert STA net {} to dbNet",
-                   net_name ? net_name : "<unknown>");
+    if (net != nullptr) {
+      const char* net_name = network_->pathName(net);
+      logger_->error(RSZ,
+                     3005,
+                     "Cannot convert STA net {} to dbNet",
+                     net_name ? net_name : "<unknown>");
+    } else {
+      logger_->error(RSZ, 3014, "Cannot infer net from loads.");
+    }
     return nullptr;
   }
 
@@ -5324,7 +5337,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   std::set<const Instance*> kept_instances;
 
   auto keepInst = [&](const Instance* inst) {
-    if (!kept_instances.count(inst)) {
+    if (!kept_instances.contains(inst)) {
       kept_instances.insert(inst);
       queue.push_back(inst);
     }
@@ -5387,7 +5400,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
 
   int remove_inst_count = 0, remove_net_count = 0;
   for (auto inst : network_->leafInstances()) {
-    if (!kept_instances.count(inst)) {
+    if (!kept_instances.contains(inst)) {
       sta_->deleteInstance((Instance*) inst);
       remove_inst_count++;
     }

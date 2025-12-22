@@ -12,6 +12,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/Network.hh"
 #include "sta/Corner.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
@@ -656,6 +657,85 @@ fully_rebuffer(Pin *pin)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->fullyRebuffer(pin);
+}
+
+Instance*
+insert_buffer_after_driver_cmd(Net *net,
+                              LibertyCell *buffer_cell,
+                              double x, double y,
+                              bool has_loc,
+                              const char *new_buf_base_name,
+                              const char *new_net_base_name)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  odb::dbInst* db_inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    db_inst = resizer->insertBufferAfterDriver(net, buffer_cell, &loc, buf_name, net_name);
+  } else {
+    db_inst = resizer->insertBufferAfterDriver(net, buffer_cell, nullptr, buf_name, net_name);
+  }
+  return resizer->getDbNetwork()->dbToSta(db_inst);
+}
+
+Instance*
+insert_buffer_before_load_cmd(Pin *load_pin,
+                             LibertyCell *buffer_cell,
+                             double x, double y,
+                             bool has_loc,
+                             const char *new_buf_base_name,
+                             const char *new_net_base_name)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  odb::dbInst* db_inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    db_inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, &loc, buf_name, net_name);
+  } else {
+    db_inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, nullptr, buf_name, net_name);
+  }
+  return resizer->getDbNetwork()->dbToSta(db_inst);
+}
+
+Instance*
+insert_buffer_before_loads_cmd(Net *net,
+                              PinSet *pins,
+                              LibertyCell *buffer_cell,
+                              double x, double y,
+                              bool has_loc,
+                              const char *new_buf_base_name,
+                              const char *new_net_base_name,
+                              bool loads_on_same_db_net)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  std::set<odb::dbObject*> loads;
+  if (pins) {
+    for (const Pin *pin : *pins) {
+      loads.insert(resizer->getDbNetwork()->staToDb(pin));
+    }
+    delete pins;
+  }
+  
+  odb::dbInst* db_inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    db_inst = resizer->insertBufferBeforeLoads(net, loads, buffer_cell, &loc, buf_name, net_name, loads_on_same_db_net);
+  } else {
+    db_inst = resizer->insertBufferBeforeLoads(net, loads, buffer_cell, nullptr, buf_name, net_name, loads_on_same_db_net);
+  }
+  return resizer->getDbNetwork()->dbToSta(db_inst);
 }
 
 } // namespace
