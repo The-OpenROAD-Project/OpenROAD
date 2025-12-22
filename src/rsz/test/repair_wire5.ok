@@ -21,7 +21,7 @@ u1/Z                                   60.65  104.41  -43.75 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +333.3% |       0 |       2 |             1 |         0
+    final |   +466.7% |       0 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
