@@ -318,7 +318,7 @@ dbIStream& operator>>(dbIStream& stream, _dbSite& site)
   stream >> site.width_;
   stream >> site.next_entry_;
   _dbDatabase* db = site.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_site_row_pattern)) {
+  if (db->isSchema(kSchemaSiteRowPattern)) {
     stream >> site.row_pattern_;
   }
   return stream;

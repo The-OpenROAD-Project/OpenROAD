@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbLevelShifter.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "dbBlock.h"
@@ -128,7 +129,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
   stream >> obj.name_suffix_;
   stream >> obj.instances_;
   // User Code Begin >>
-  if (stream.getDatabase()->isSchema(db_schema_level_shifter_cell)) {
+  if (stream.getDatabase()->isSchema(kSchemaLevelShifterCell)) {
     stream >> obj.cell_name_;
     stream >> obj.cell_input_;
     stream >> obj.cell_output_;

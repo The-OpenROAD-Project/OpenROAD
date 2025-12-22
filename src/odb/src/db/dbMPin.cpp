@@ -33,10 +33,6 @@ _dbMPin::_dbMPin(_dbDatabase* db, const _dbMPin& p)
 {
 }
 
-_dbMPin::~_dbMPin()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
 {
   stream << mpin.mterm_;
@@ -52,7 +48,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
   stream >> mpin.mterm_;
   stream >> mpin.geoms_;
   _dbDatabase* db = mpin.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_polygon)) {
+  if (db->isSchema(kSchemaPolygon)) {
     stream >> mpin.poly_geoms_;
   }
   stream >> mpin.next_mpin_;
@@ -142,7 +138,7 @@ std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
   _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
   std::vector<std::vector<odb::dbAccessPoint*>> result;
   for (const auto& pa : pin->aps_) {
-    result.push_back(std::vector<odb::dbAccessPoint*>());
+    result.emplace_back();
     for (const auto& ap : pa) {
       result.back().push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
     }

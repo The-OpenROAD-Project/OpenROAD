@@ -35,11 +35,6 @@ dbIntHashTable<T>::dbIntHashTable(const dbIntHashTable<T>& t)
 }
 
 template <class T>
-dbIntHashTable<T>::~dbIntHashTable()
-{
-}
-
-template <class T>
 bool dbIntHashTable<T>::operator==(const dbIntHashTable<T>& rhs) const
 {
   if (num_entries_ != rhs.num_entries_) {

@@ -30,9 +30,6 @@ template class dbTable<_dbProperty>;
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
-  if (flags_.type != rhs.flags_.type) {
-    return false;
-  }
   if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
@@ -293,7 +290,7 @@ next_object:
 
 _dbProperty* _dbProperty::createProperty(dbObject* object_,
                                          const char* name,
-                                         _PropTypeEnum type)
+                                         PropTypeEnum type)
 {
   _dbObject* object = (_dbObject*) object_;
   dbTable<_dbProperty>* propTable = getPropTable(object);
@@ -385,7 +382,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
     _dbProperty* p_impl = (_dbProperty*) p;
 
     if ((p_impl->name_ == name_id)
-        && (p_impl->flags_.type == (_PropTypeEnum) type)) {
+        && (p_impl->flags_.type == (PropTypeEnum) type)) {
       return p;
     }
   }

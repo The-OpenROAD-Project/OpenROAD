@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbModule.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
@@ -19,7 +21,6 @@
 // User Code Begin Includes
 #include <cassert>
 #include <cstddef>
-#include <cstdlib>
 #include <cstring>
 #include <map>
 #include <string>
@@ -92,10 +93,10 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj.insts_;
   stream >> obj.mod_inst_;
   stream >> obj.modinsts_;
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.modnets_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.modbterms_;
   }
   return stream;
@@ -689,7 +690,7 @@ void _dbModule::copyModulePorts(dbModule* old_module,
   utl::Logger* logger = old_module->getImpl()->getLogger();
   for (dbModBTerm* old_port : old_module->getModBTerms()) {
     dbModBTerm* new_port = nullptr;
-    if (mod_bt_map.count(old_port) > 0) {
+    if (mod_bt_map.contains(old_port)) {
       new_port = mod_bt_map[old_port];
       debugPrint(logger,
                  utl::ODB,
@@ -976,7 +977,7 @@ void _dbModule::copyModuleModNets(dbModule* old_module,
     // Connect dbModBTerms to new mod net
     for (dbModBTerm* old_mbterm : old_net->getModBTerms()) {
       dbModBTerm* new_mbterm = nullptr;
-      if (mod_bt_map.count(old_mbterm) > 0) {
+      if (mod_bt_map.contains(old_mbterm)) {
         new_mbterm = mod_bt_map[old_mbterm];
       }
       if (new_mbterm) {
@@ -1010,7 +1011,7 @@ void _dbModule::copyModuleModNets(dbModule* old_module,
                old_net->getITerms().size());
     for (dbITerm* old_iterm : old_net->getITerms()) {
       dbITerm* new_iterm = nullptr;
-      if (it_map.count(old_iterm) > 0) {
+      if (it_map.contains(old_iterm)) {
         new_iterm = it_map[old_iterm];
       }
       if (new_iterm) {

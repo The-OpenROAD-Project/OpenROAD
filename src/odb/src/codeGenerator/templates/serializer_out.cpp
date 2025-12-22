@@ -1,5 +1,6 @@
-{% macro serializer_out(klass, parent=None, comment_tag = "") %}
+{% macro serializer_out(klass, parent=None, comment_tag = "", static=False) %}
   {% set sname = (parent.name + "::" if parent else '_') + klass.name %}
+  {% if static %}static{% endif %}
   dbOStream& operator<<(dbOStream& stream, const {{sname}}& obj)
   {
     {% if klass.ostream_scope %}

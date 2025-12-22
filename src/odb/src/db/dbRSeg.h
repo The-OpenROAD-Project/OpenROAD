@@ -42,7 +42,6 @@ class _dbRSeg : public _dbObject
 
   _dbRSeg(_dbDatabase*, const _dbRSeg& s);
   _dbRSeg(_dbDatabase*);
-  ~_dbRSeg();
 
   bool operator==(const _dbRSeg& rhs) const;
   bool operator!=(const _dbRSeg& rhs) const { return !operator==(rhs); }
@@ -84,17 +83,6 @@ inline _dbRSeg::_dbRSeg(_dbDatabase*)
   target_ = 0;
   xcoord_ = 0;
   ycoord_ = 0;
-}
-
-inline _dbRSeg::~_dbRSeg()
-{
-  /*
-  if ( _res )
-      free( (void *) _res );
-
-  if (( _cap ) && (flags_._allocated_cap>0))
-      free( (void *) _cap );
-  */
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbRSeg& seg)

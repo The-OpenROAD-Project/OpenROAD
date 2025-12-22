@@ -50,7 +50,6 @@
 #include "dbLib.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
-#include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
 #include "dbTech.h"
@@ -66,8 +65,8 @@ template class dbTable<_dbDatabase>;
 //
 // Magic number is: ATHENADB
 //
-constexpr int DB_MAGIC1 = 0x41544845;  // ATHE
-constexpr int DB_MAGIC2 = 0x4E414442;  // NADB
+constexpr int kMagic1 = 0x41544845;  // ATHE
+constexpr int kMagic2 = 0x4E414442;  // NADB
 
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
@@ -174,13 +173,14 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   chip_net_tbl_ = new dbTable<_dbChipNet>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
   // User Code Begin Constructor
-  magic1_ = DB_MAGIC1;
-  magic2_ = DB_MAGIC2;
-  schema_major_ = db_schema_major;
-  schema_minor_ = db_schema_minor;
+  magic1_ = kMagic1;
+  magic2_ = kMagic2;
+  schema_major_ = kSchemaMajor;
+  schema_minor_ = kSchemaMinor;
   master_id_ = 0;
   logger_ = utl::Logger::defaultLogger();
   unique_id_ = db_unique_id++;
+  hierarchy_ = false;
 
   gds_lib_tbl_ = new dbTable<_dbGDSLib, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
@@ -213,35 +213,35 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   // User Code Begin >>
   stream >> obj.magic1_;
 
-  if (obj.magic1_ != DB_MAGIC1) {
+  if (obj.magic1_ != kMagic1) {
     throw std::runtime_error("database file is not an OpenDB Database");
   }
 
   stream >> obj.magic2_;
 
-  if (obj.magic2_ != DB_MAGIC2) {
+  if (obj.magic2_ != kMagic2) {
     throw std::runtime_error("database file is not an OpenDB Database");
   }
 
   stream >> obj.schema_major_;
 
-  if (obj.schema_major_ != db_schema_major) {
+  if (obj.schema_major_ != kSchemaMajor) {
     throw std::runtime_error("Incompatible database schema revision");
   }
 
   stream >> obj.schema_minor_;
 
-  if (obj.schema_minor_ < db_schema_initial) {
+  if (obj.schema_minor_ < kSchemaInitial) {
     throw std::runtime_error("incompatible database schema revision");
   }
 
-  if (obj.schema_minor_ > db_schema_minor) {
+  if (obj.schema_minor_ > kSchemaMinor) {
     throw std::runtime_error(
         fmt::format("incompatible database schema revision {}.{} > {}.{}",
                     obj.schema_major_,
                     obj.schema_minor_,
-                    db_schema_major,
-                    db_schema_minor));
+                    kSchemaMajor,
+                    kSchemaMinor));
   }
 
   stream >> obj.master_id_;
@@ -249,37 +249,37 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   stream >> obj.chip_;
 
   dbId<_dbTech> old_db_tech;
-  if (!obj.isSchema(db_schema_block_tech)) {
+  if (!obj.isSchema(kSchemaBlockTech)) {
     stream >> old_db_tech;
   }
   stream >> *obj.tech_tbl_;
   stream >> *obj.lib_tbl_;
   stream >> *obj.chip_tbl_;
-  if (obj.isSchema(db_schema_gds_lib_in_block)) {
+  if (obj.isSchema(kSchemaGdsLibInBlock)) {
     stream >> *obj.gds_lib_tbl_;
   }
   stream >> *obj.prop_tbl_;
   stream >> *obj.name_cache_;
-  if (obj.isSchema(db_schema_chip_hash_table)) {
+  if (obj.isSchema(kSchemaChipHashTable)) {
     stream >> obj.chip_hash_;
   }
-  if (obj.isSchema(db_schema_chip_inst)) {
+  if (obj.isSchema(kSchemaChipInst)) {
     stream >> *obj.chip_inst_tbl_;
   }
-  if (obj.isSchema(db_schema_chip_region)) {
+  if (obj.isSchema(kSchemaChipRegion)) {
     stream >> *obj.chip_region_inst_tbl_;
   }
-  if (obj.isSchema(db_schema_chip_region)) {
+  if (obj.isSchema(kSchemaChipRegion)) {
     stream >> *obj.chip_conn_tbl_;
   }
-  if (obj.isSchema(db_schema_chip_bump)) {
+  if (obj.isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_bump_inst_tbl_;
   }
-  if (obj.isSchema(db_schema_chip_bump)) {
+  if (obj.isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_net_tbl_;
   }
-  if (obj.isSchema(db_schema_dbu_per_micron)) {
-    if (obj.isLessThanSchema(db_schema_remove_dbu_per_micron)) {
+  if (obj.isSchema(kSchemaDbuPerMicron)) {
+    if (obj.isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
       // Should already have a value from dbTech, so only need to update this if
       // its been set.
       uint dbu_per_micron;
@@ -291,8 +291,13 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
       stream >> obj.dbu_per_micron_;
     }
   }
+  if (obj.isSchema(kSchemaHierarchyFlag)) {
+    stream >> obj.hierarchy_;
+  } else {
+    obj.hierarchy_ = false;
+  }
   // Set the _tech on the block & libs now they are loaded
-  if (!obj.isSchema(db_schema_block_tech)) {
+  if (!obj.isSchema(kSchemaBlockTech)) {
     if (obj.chip_) {
       _dbChip* chip = obj.chip_tbl_->getPtr(obj.chip_);
       chip->tech_ = old_db_tech;
@@ -313,8 +318,8 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   }
 
   // Set the revision of the database to the current revision
-  obj.schema_major_ = db_schema_major;
-  obj.schema_minor_ = db_schema_minor;
+  obj.schema_major_ = kSchemaMajor;
+  obj.schema_minor_ = kSchemaMinor;
 
   // Set the chipinsts_map_ of the chip
   dbDatabase* db = (dbDatabase*) &obj;
@@ -355,6 +360,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
   stream << obj.dbu_per_micron_;
+  stream << obj.hierarchy_;
   // User Code End <<
   return stream;
 }
@@ -448,14 +454,15 @@ _dbDatabase::~_dbDatabase()
 //
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 {
-  magic1_ = DB_MAGIC1;
-  magic2_ = DB_MAGIC2;
-  schema_major_ = db_schema_major;
-  schema_minor_ = db_schema_minor;
+  magic1_ = kMagic1;
+  magic2_ = kMagic2;
+  schema_major_ = kSchemaMajor;
+  schema_minor_ = kSchemaMinor;
   master_id_ = 0;
   logger_ = nullptr;
   unique_id_ = id;
   dbu_per_micron_ = 0;
+  hierarchy_ = false;
 
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
@@ -491,8 +498,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 utl::Logger* _dbDatabase::getLogger() const
 {
   if (!logger_) {
-    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
-              << std::endl;
+    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb.\n";
     exit(1);
   }
   return logger_;
@@ -647,8 +653,7 @@ int dbDatabase::removeUnusedMasters()
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     // Filter out the master that matches inst_master
-    auto masterIt
-        = std::find(unused_masters.begin(), unused_masters.end(), master);
+    auto masterIt = std::ranges::find(unused_masters, master);
     if (masterIt != unused_masters.end()) {
       // erase used maseters from container
       unused_masters.erase(masterIt);
@@ -694,6 +699,18 @@ dbTech* dbDatabase::getTech()
   auto impl = (_dbDatabase*) this;
   impl->logger_->error(
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
+}
+
+void dbDatabase::setHierarchy(bool value)
+{
+  _dbDatabase* db = reinterpret_cast<_dbDatabase*>(this);
+  db->hierarchy_ = value;
+}
+
+bool dbDatabase::hasHierarchy() const
+{
+  const _dbDatabase* db = reinterpret_cast<const _dbDatabase*>(this);
+  return db->hierarchy_;
 }
 
 void dbDatabase::read(std::istream& file)

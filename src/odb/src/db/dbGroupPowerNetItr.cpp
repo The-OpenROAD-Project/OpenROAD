@@ -28,7 +28,7 @@ bool dbGroupPowerNetItr::orderReversed() const
 void dbGroupPowerNetItr::reverse(dbObject* parent)
 {
   _dbGroup* group = (_dbGroup*) parent;
-  std::reverse(group->power_nets_.begin(), group->power_nets_.end());
+  std::ranges::reverse(group->power_nets_);
 }
 
 uint dbGroupPowerNetItr::sequential() const

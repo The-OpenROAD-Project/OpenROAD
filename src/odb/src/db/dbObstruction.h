@@ -32,7 +32,6 @@ class _dbObstruction : public _dbObject
  public:
   _dbObstruction(_dbDatabase*, const _dbObstruction& o);
   _dbObstruction(_dbDatabase*);
-  ~_dbObstruction();
 
   bool operator==(const _dbObstruction& rhs) const;
   bool operator!=(const _dbObstruction& rhs) const { return !operator==(rhs); }

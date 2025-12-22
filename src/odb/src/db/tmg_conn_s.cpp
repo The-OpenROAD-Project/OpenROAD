@@ -99,7 +99,7 @@ class tmg_conn_search::Impl
   // first searchStart happens
   bool sorted_{false};
 
-  static constexpr int sort_threshold = 1024;
+  static constexpr int kSortThreshold = 1024;
 };
 
 tmg_conn_search::Impl::Impl()
@@ -258,7 +258,7 @@ static void tcs_level_wrap(tcs_level* bin)
 
 void tmg_conn_search::Impl::sort_level(tcs_level* bin)
 {
-  if (bin->num_shapes < sort_threshold) {
+  if (bin->num_shapes < kSortThreshold) {
     return;
   }
   tcs_level* left = &levels_.emplace_back();

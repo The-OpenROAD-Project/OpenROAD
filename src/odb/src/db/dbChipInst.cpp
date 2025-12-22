@@ -69,7 +69,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipInst& obj)
   stream >> obj.master_chip_;
   stream >> obj.parent_chip_;
   stream >> obj.chipinst_next_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
     stream >> obj.chip_region_insts_;
   }
   return stream;
@@ -91,10 +91,6 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
-}
-
-_dbChipInst::~_dbChipInst()
-{
 }
 
 ////////////////////////////////////////////////////////////////////

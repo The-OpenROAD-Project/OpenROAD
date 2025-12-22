@@ -1787,7 +1787,7 @@ bool ViaGenerator::updateCutSpacing(int rows, int cols)
       continue;
     }
 
-    if (rule->getNumCuts() <= adj_cuts) {
+    if (rule->getAdjacentCuts() <= adj_cuts) {
       if (max_dim == rows) {
         cut_pitch_y_ = cut.dy() + rule->getCutSpacing();
         changed = true;
@@ -1950,8 +1950,9 @@ void ViaGenerator::determineRowsAndColumns(
 
   bool used_array = false;
 
-  const int array_size = std::max(rows, cols);
-  if (array_size >= 2) {
+  const int array_size_max = std::max(rows, cols);
+  const int array_size_min = std::min(rows, cols);
+  if (array_size_max >= 2) {
     // if array rules might apply
     const int array_area_x
         = width
@@ -1972,8 +1973,9 @@ void ViaGenerator::determineRowsAndColumns(
 
       for (const auto& [rule_cuts, rule_spacing] :
            rule->getCutsArraySpacing()) {
-        if (rule_cuts > array_size) {
-          // this rule is ignored due to cuts
+        if (rule_cuts > array_size_min + (rule->isLongArray() ? 1 : 0)) {
+          // this rules does not apply because the smaller dimension of the
+          // array is less than the rule
           continue;
         }
 
