@@ -205,6 +205,9 @@ void TritonCTS::setupCharacterization()
     }
   }
 
+  block_ = db_->getChip()->getBlock();
+  options_->setDbUnits(block_->getDbUnitsPerMicron());
+
   openSta_->checkFanoutLimitPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
@@ -225,6 +228,10 @@ void TritonCTS::setupCharacterization()
       options_->setMaxFanout(sinkMaxFanout);
     }
   }
+
+  double maxWlMicrons
+      = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
+  options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
 
   // A new characteriztion is always created.
   techChar_ = std::make_unique<TechChar>(options_,
@@ -1079,9 +1086,7 @@ void TritonCTS::findLongEdges(
     odb::Point driverPt,
     std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
 {
-  double maxWlMicrons
-      = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
-  const int threshold = block_->micronsToDbu(maxWlMicrons);
+  const int threshold = options_->getMaxWl();
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
 
@@ -1339,9 +1344,6 @@ void TritonCTS::findLongEdges(
 
 void TritonCTS::populateTritonCTS()
 {
-  block_ = db_->getChip()->getBlock();
-  options_->setDbUnits(block_->getDbUnitsPerMicron());
-
   clearNumClocks();
 
   // Use dbSta to find all clock nets in the design.

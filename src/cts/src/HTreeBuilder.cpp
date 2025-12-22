@@ -14,6 +14,7 @@
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "TechChar.h"
 #include "Util.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
@@ -1407,6 +1408,7 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
       = options_->getVertexBufferDistance() / (techChar_->getLengthUnit() * 2);
   int remainingLength
       = options_->getBufferDistance() / (techChar_->getLengthUnit());
+  int currWl = 0;
   unsigned inputCap = minInputCap_;
   unsigned inputSlew = 1;
   if (level > 1) {
@@ -1414,16 +1416,28 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
     inputCap = previousLevel.getOutputCap();
     inputSlew = previousLevel.getOutputSlew();
     remainingLength = previousLevel.getRemainingLength();
+    currWl = previousLevel.getCurrWl();
   }
 
   const unsigned SLEW_THRESHOLD = options_->getMaxSlew();
   const unsigned INIT_TOLERANCE = 1;
+  const int WIRELENGTH_THRESHOLD
+      = options_->getMaxWl() / techChar_->getLengthUnit();
+  debugPrint(
+      logger_, CTS, "tech char", 1, "slew threshold = {}", SLEW_THRESHOLD);
+  debugPrint(logger_,
+             CTS,
+             "tech char",
+             1,
+             "wirelength threshold = {}",
+             WIRELENGTH_THRESHOLD);
   unsigned length = 0;
   for (int charSegLength = techChar_->getMaxSegmentLength(); charSegLength >= 1;
        --charSegLength) {
     const unsigned numWires = (segmentLength - length) / charSegLength;
 
     if (numWires >= 1) {
+      debugPrint(logger_, CTS, "tech char", 1, "curr wl = {}", currWl);
       for (int wireCount = 0; wireCount < numWires; ++wireCount) {
         unsigned outCap = 0, outSlew = 0;
         unsigned key = 0;
@@ -1474,9 +1488,11 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
                                        inputSlew,
                                        inputCap,
                                        SLEW_THRESHOLD,
+                                       WIRELENGTH_THRESHOLD,
                                        INIT_TOLERANCE,
                                        outSlew,
-                                       outCap);
+                                       outCap,
+                                       currWl);
         }
 
         if (key == std::numeric_limits<unsigned>::max()) {
@@ -1501,6 +1517,7 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
 
   topology.setOutputSlew(inputSlew);
   topology.setOutputCap(inputCap);
+  topology.setCurrWl(currWl);
 
   computeBranchingPoints(level, topology);
   topologyForEachLevel_.push_back(topology);
@@ -1529,9 +1546,11 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
                                               const unsigned inputSlew,
                                               const unsigned inputCap,
                                               const unsigned slewThreshold,
+                                              const int wirelengthThreshold,
                                               const unsigned tolerance,
                                               unsigned& outputSlew,
-                                              unsigned& outputCap) const
+                                              unsigned& outputCap,
+                                              int& currWl) const
 {
   unsigned minKey = std::numeric_limits<unsigned>::max();
   unsigned minDelay = std::numeric_limits<unsigned>::max();
@@ -1545,6 +1564,17 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
             if (std::abs((int) seg.getInputCap() - (int) inputCap) > tolerance
                 || std::abs((int) seg.getInputSlew() - (int) inputSlew)
                        > tolerance) {
+              return;
+            }
+
+            if (seg.isBuffered()
+                && (currWl + seg.getWl2FisrtBuffer() > wirelengthThreshold)) {
+              return;
+            }
+
+            if (!seg.isBuffered()
+                && (currWl + seg.getWl2FisrtBuffer()
+                    > wirelengthThreshold - techChar_->getMinSegmentLength())) {
               return;
             }
 
@@ -1567,6 +1597,7 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
       const WireSegment& bestBufSegment = techChar_->getWireSegment(minBufKey);
       outputSlew = bestBufSegment.getOutputSlew();
       outputCap = bestBufSegment.getLoad();
+      currWl = bestBufSegment.getLastWl();
       return minBufKey;
     }
     if (tolerance < MAX_TOLERANCE) {
@@ -1575,9 +1606,11 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
                                     inputSlew,
                                     inputCap,
                                     slewThreshold,
+                                    wirelengthThreshold,
                                     tolerance + 1,
                                     outputSlew,
-                                    outputCap);
+                                    outputCap,
+                                    currWl);
     }
   }
 
@@ -1590,13 +1623,22 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
                                   inputSlew,
                                   inputCap,
                                   slewThreshold,
+                                  wirelengthThreshold,
                                   tolerance + 1,
                                   outputSlew,
-                                  outputCap);
+                                  outputCap,
+                                  currWl);
   }
 
   const WireSegment& bestSegment = techChar_->getWireSegment(minKey);
-  outputSlew = std::max((unsigned) bestSegment.getOutputSlew(), inputSlew + 1);
+  if (bestSegment.isBuffered()) {
+    outputSlew = bestSegment.getOutputSlew();
+    currWl = bestSegment.getLastWl();
+  } else {
+    outputSlew
+        = std::max((unsigned) bestSegment.getOutputSlew(), inputSlew + 1);
+    currWl += bestSegment.getLastWl();
+  }
   outputCap = bestSegment.getLoad();
 
   return minKey;
