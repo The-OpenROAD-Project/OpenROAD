@@ -747,8 +747,8 @@ class dbBlock : public dbObject
   /// and helper functions for global connections
   /// on this block.
   ///
-  int globalConnect();
-  int globalConnect(dbGlobalConnect* gc);
+  int globalConnect(bool force, bool verbose);
+  int globalConnect(dbGlobalConnect* gc, bool force, bool verbose);
   int addGlobalConnect(dbRegion* region,
                        const char* instPattern,
                        const char* pinPattern,
@@ -1034,7 +1034,7 @@ class dbBlock : public dbObject
   ///
   /// Get ext corner name by the index in ext Db
   ///
-  void getExtCornerName(int corner, char* cName);
+  std::string getExtCornerName(int corner);
 
   ///
   /// Get the index in ext Db by name
@@ -3089,8 +3089,8 @@ class dbInst : public dbObject
   static dbInst* makeUniqueDbInst(dbBlock* block,
                                   dbMaster* master,
                                   const char* name,
-                                  bool physical_only,
-                                  dbModule* target_module);
+                                  bool physical_only = false,
+                                  dbModule* target_module = nullptr);
 
   ///
   /// Create a new instance of child_block in top_block.
@@ -6863,8 +6863,7 @@ class dbViaParams : private _dbViaParams
 {
  public:
   dbViaParams();
-  dbViaParams(const dbViaParams& p);
-  ~dbViaParams();
+  dbViaParams(const dbViaParams& p) = default;
 
   int getXCutSize() const;
   int getYCutSize() const;
@@ -7378,6 +7377,9 @@ class dbDatabase : public dbObject
 
   // User Code Begin dbDatabase
 
+  void setHierarchy(bool value);
+  bool hasHierarchy() const;
+
   void setTopChip(dbChip* chip);
   ///
   /// Return the libs contained in the database. A database can contain
@@ -7864,7 +7866,7 @@ class dbGlobalConnect : public dbObject
   // User Code Begin dbGlobalConnect
   std::vector<dbInst*> getInsts() const;
 
-  int connect(dbInst* inst);
+  int connect(dbInst* inst, bool force);
 
   static dbGlobalConnect* create(dbNet* net,
                                  dbRegion* region,
@@ -10141,37 +10143,44 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
   bool isOppositeEnclosureResizeSpacingValid() const;
 
   // User Code Begin dbTechLayerCutSpacingTableDefRule
-  void addPrlForAlignedCutEntry(std::string from, std::string to);
+  void addPrlForAlignedCutEntry(const std::string& from, const std::string& to);
 
-  void addCenterToCenterEntry(std::string from, std::string to);
+  void addCenterToCenterEntry(const std::string& from, const std::string& to);
 
-  void addCenterAndEdgeEntry(std::string from, std::string to);
+  void addCenterAndEdgeEntry(const std::string& from, const std::string& to);
 
-  void addPrlEntry(std::string from, std::string to, int ccPrl);
+  void addPrlEntry(const std::string& from, const std::string& to, int ccPrl);
 
-  void addEndExtensionEntry(std::string cls, int ext);
+  void addEndExtensionEntry(const std::string& cls, int ext);
 
-  void addSideExtensionEntry(std::string cls, int ext);
+  void addSideExtensionEntry(const std::string& cls, int ext);
 
-  void addExactElignedEntry(std::string cls, int spacing);
+  void addExactElignedEntry(const std::string& cls, int spacing);
 
-  void addNonOppEncSpacingEntry(std::string cls, int spacing);
+  void addNonOppEncSpacingEntry(const std::string& cls, int spacing);
 
-  void addOppEncSpacingEntry(std::string cls, int rsz1, int rsz2, int spacing);
+  void addOppEncSpacingEntry(const std::string& cls,
+                             int rsz1,
+                             int rsz2,
+                             int spacing);
 
   dbTechLayer* getSecondLayer() const;
 
-  bool isCenterToCenter(std::string cutClass1, std::string cutClass2);
+  bool isCenterToCenter(const std::string& cutClass1,
+                        const std::string& cutClass2);
 
-  bool isCenterAndEdge(std::string cutClass1, std::string cutClass2);
+  bool isCenterAndEdge(const std::string& cutClass1,
+                       const std::string& cutClass2);
 
-  bool isPrlForAlignedCutClasses(std::string cutClass1, std::string cutClass2);
+  bool isPrlForAlignedCutClasses(const std::string& cutClass1,
+                                 const std::string& cutClass2);
 
   int getPrlEntry(const std::string& cutClass1, const std::string& cutClass2);
 
-  void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
-                       std::map<std::string, uint> row_map,
-                       std::map<std::string, uint> col_map);
+  void setSpacingTable(
+      const std::vector<std::vector<std::pair<int, int>>>& table,
+      const std::map<std::string, uint>& row_map,
+      const std::map<std::string, uint>& col_map);
 
   void getSpacingTable(std::vector<std::vector<std::pair<int, int>>>& table,
                        std::map<std::string, uint>& row_map,
@@ -10179,10 +10188,10 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   int getMaxSpacing(std::string cutClass, bool SIDE) const;
 
-  int getExactAlignedSpacing(std::string cutClass) const;
+  int getExactAlignedSpacing(const std::string& cutClass) const;
 
-  int getMaxSpacing(std::string cutClass1,
-                    std::string cutClass2,
+  int getMaxSpacing(const std::string& cutClass1,
+                    const std::string& cutClass2,
                     LOOKUP_STRATEGY strategy = MAX) const;
 
   int getSpacing(std::string class1,
@@ -10208,7 +10217,7 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
 
   // User Code Begin dbTechLayerCutSpacingTableOrthRule
-  void setSpacingTable(std::vector<std::pair<int, int>> tbl);
+  void setSpacingTable(const std::vector<std::pair<int, int>>& tbl);
 
   static dbTechLayerCutSpacingTableOrthRule* create(dbTechLayer* parent);
 
@@ -10503,7 +10512,7 @@ class dbTechLayerMinCutRule : public dbObject
 
   // User Code Begin dbTechLayerMinCutRule
 
-  void setCutsPerCutClass(std::string cut_class, int num_cuts);
+  void setCutsPerCutClass(const std::string& cut_class, int num_cuts);
 
   static dbTechLayerMinCutRule* create(dbTechLayer* layer);
 
@@ -10930,17 +10939,17 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 
   static void destroy(dbTechLayerSpacingTablePrlRule* rule);
 
-  void setTable(std::vector<int> width_tbl,
-                std::vector<int> length_tbl,
-                std::vector<std::vector<int>> spacing_tbl,
-                std::map<uint, std::pair<int, int>> excluded_map);
+  void setTable(const std::vector<int>& width_tbl,
+                const std::vector<int>& length_tbl,
+                const std::vector<std::vector<int>>& spacing_tbl,
+                const std::map<uint, std::pair<int, int>>& excluded_map);
   void getTable(std::vector<int>& width_tbl,
                 std::vector<int>& length_tbl,
                 std::vector<std::vector<int>>& spacing_tbl,
                 std::map<uint, std::pair<int, int>>& excluded_map);
 
   void setSpacingTableInfluence(
-      std::vector<std::tuple<int, int, int>> influence_tbl);
+      const std::vector<std::tuple<int, int, int>>& influence_tbl);
 
   int getSpacing(int width, int length) const;
 

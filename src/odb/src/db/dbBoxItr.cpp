@@ -113,7 +113,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbTechViaObj: {
       _dbTechVia* via = (_dbTechVia*) parent;
-      uint id = via->_boxes;
+      uint id = via->boxes_;
       uint list = 0;
 
       while (id != 0) {
@@ -124,7 +124,7 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
         id = n;
       }
 
-      via->_boxes = list;
+      via->boxes_ = list;
       break;
     }
 
@@ -237,7 +237,7 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
 
     case dbTechViaObj: {
       _dbTechVia* via = (_dbTechVia*) parent;
-      return via->_boxes;
+      return via->boxes_;
     }
 
     case dbBPinObj: {

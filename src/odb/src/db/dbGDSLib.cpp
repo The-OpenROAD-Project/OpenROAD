@@ -168,9 +168,9 @@ void _dbGDSLib::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["libname"].add(lib_name_);
-  info.children_["structure_hash"].add(gdsstructure_hash_);
-  gdsstructure_tbl_->collectMemInfo(info.children_["structure"]);
+  info.children["libname"].add(lib_name_);
+  info.children["structure_hash"].add(gdsstructure_hash_);
+  gdsstructure_tbl_->collectMemInfo(info.children["structure"]);
 }
 
 }  // namespace odb

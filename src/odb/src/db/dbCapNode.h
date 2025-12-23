@@ -45,7 +45,6 @@ class _dbCapNode : public _dbObject
 
   _dbCapNode(_dbDatabase*);
   _dbCapNode(_dbDatabase*, const _dbCapNode& n);
-  ~_dbCapNode();
 
   bool operator==(const _dbCapNode& rhs) const;
   bool operator!=(const _dbCapNode& rhs) const { return !operator==(rhs); }
@@ -83,10 +82,6 @@ inline _dbCapNode::_dbCapNode(_dbDatabase*)
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*, const _dbCapNode& n)
     : flags_(n.flags_), node_num_(n.node_num_), net_(n.net_), next_(n.next_)
-{
-}
-
-inline _dbCapNode::~_dbCapNode()
 {
 }
 

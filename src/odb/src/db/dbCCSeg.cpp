@@ -68,7 +68,7 @@ void dbCCSeg::adjustCapacitance(float factor, int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
   float& value
-      = (*block->cc_val_tbl_)[(seg->getOID() - 1) * block->corners_per_block_
+      = (*block->cc_val_tbl_)[((seg->getOID() - 1) * block->corners_per_block_)
                               + 1 + corner];
   float prev_value = value;
   value *= factor;
@@ -109,7 +109,7 @@ double dbCCSeg::getCapacitance(int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
   assert((corner >= 0) && ((uint) corner < cornerCnt));
-  return (*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+  return (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
 }
 
 void dbCCSeg::accAllCcCap(double* ttcap, double MillerMult)
@@ -119,7 +119,7 @@ void dbCCSeg::accAllCcCap(double* ttcap, double MillerMult)
   uint cornerCnt = block->corners_per_block_;
   for (uint ii = 0; ii < cornerCnt; ii++) {
     ttcap[ii]
-        += ((*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii])
+        += ((*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii])
            * MillerMult;
   }
 }
@@ -130,7 +130,8 @@ void dbCCSeg::getAllCcCap(double* ttcap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
   for (uint ii = 0; ii < cornerCnt; ii++) {
-    ttcap[ii] = (*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+    ttcap[ii]
+        = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
   }
 }
 
@@ -140,7 +141,8 @@ void dbCCSeg::setAllCcCap(double* ttcap)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   uint cornerCnt = block->corners_per_block_;
   for (uint ii = 0; ii < cornerCnt; ii++) {
-    (*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = ttcap[ii];
+    (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii]
+        = ttcap[ii];
   }
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -176,7 +178,7 @@ void dbCCSeg::setCapacitance(double cap, int corner)
   assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
-      = (*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value = (float) cap;
 
@@ -209,7 +211,7 @@ void dbCCSeg::addCapacitance(double cap, int corner)
   assert((corner >= 0) && ((uint) corner < cornerCnt));
 
   float& value
-      = (*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value += (float) cap;
 
@@ -243,9 +245,9 @@ void dbCCSeg::addCcCapacitance(dbCCSeg* other)
 
   for (uint ii = 0; ii < cornerCnt; ii++) {
     float& value
-        = (*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+        = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
     float& ovalue
-        = (*block->cc_val_tbl_)[(oseg->getOID() - 1) * cornerCnt + 1 + ii];
+        = (*block->cc_val_tbl_)[((oseg->getOID() - 1) * cornerCnt) + 1 + ii];
     value += ovalue;
   }
 
@@ -543,7 +545,7 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
   uint cornerCnt = block->corners_per_block_;
   if (block->max_cc_seg_id_ >= seg->getOID()) {
     for (uint ii = 0; ii < cornerCnt; ii++) {
-      (*block->cc_val_tbl_)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+      (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii] = 0.0;
     }
   } else {
     block->max_cc_seg_id_ = seg->getOID();

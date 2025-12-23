@@ -144,7 +144,7 @@ class _dbTechAntennaAreaElement
   friend dbIStream& operator>>(dbIStream& stream,
                                _dbTechAntennaAreaElement*& aae);
 
-  _dbTechAntennaAreaElement(const _dbTechAntennaAreaElement& e);
+  _dbTechAntennaAreaElement(const _dbTechAntennaAreaElement& e) = default;
 
   bool operator==(const _dbTechAntennaAreaElement& rhs) const;
   bool operator!=(const _dbTechAntennaAreaElement& rhs) const

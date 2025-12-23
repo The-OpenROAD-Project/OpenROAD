@@ -47,6 +47,7 @@
 	"orderReversed": "true",
         "flags":["private"],	
         "sequential": 0,
+        "customEnd": "true",
 	"includes": ["dbModule.h", "dbBusPort.h"]
     },
     {
@@ -288,7 +289,7 @@
       "child":"dbTechLayerMaxSpacingRule",
       "type":"1_n",
       "tbl_name":"max_spacing_rules_tbl_",
-      "schema":"db_schema_max_spacing"
+      "schema":"kSchemaMaxSpacing"
     },
     {
       "parent":"dbTechLayer",
@@ -313,28 +314,28 @@
       "child":"dbTechLayerForbiddenSpacingRule",
       "type":"1_n",
       "tbl_name":"forbidden_spacing_rules_tbl_",
-      "schema":"db_schema_lef58_forbidden_spacing"
+      "schema":"kSchemaLef58ForbiddenSpacing"
     },
     {
       "parent":"dbTechLayer",
       "child":"dbTechLayerKeepOutZoneRule",
       "type":"1_n",
       "tbl_name":"keepout_zone_rules_tbl_",
-      "schema":"db_schema_keepout_zone"
+      "schema":"kSchemaKeepoutZone"
     },
     {
       "parent":"dbTechLayer",
       "child":"dbTechLayerWrongDirSpacingRule",
       "type":"1_n",
       "tbl_name":"wrongdir_spacing_rules_tbl_",
-      "schema":"db_schema_wrongdir_spacing"
+      "schema":"kSchemaWrongdirSpacing"
     },
     {
       "parent":"dbTechLayer",
       "child":"dbTechLayerTwoWiresForbiddenSpcRule",
       "type":"1_n",
       "tbl_name":"two_wires_forbidden_spc_rules_tbl_",
-      "schema":"db_schema_lef58_two_wires_forbidden_spacing"
+      "schema":"kSchemaLef58TwoWiresForbiddenSpacing"
     },
     {
       "parent": "dbDft",
@@ -422,7 +423,7 @@
       "child":"dbChipRegion",
       "type":"1_n", 
       "flags": [],
-      "schema":"db_schema_chip_region",
+      "schema":"kSchemaChipRegion",
       "tbl_name":"chip_region_tbl_"
     },
     {
@@ -431,14 +432,14 @@
       "type":"1_n",
       "flags": [],
       "tbl_name":"marker_categories_tbl_",
-      "schema":"db_schema_chip_marker_categories"
+      "schema":"kSchemaChipMarkerCategories"
     },
     {
       "parent":"dbChipRegion",
       "child":"dbChipBump",
       "type":"1_n", 
       "flags": [],
-      "schema":"db_schema_chip_bump",
+      "schema":"kSchemaChipBump",
       "tbl_name":"chip_bump_tbl_"
     },
     {
@@ -454,7 +455,7 @@
       "parent":"dbDatabase",
       "child":"dbProperty",
       "type":"1_n",
-      "tbl_name":"_prop_tbl",
+      "tbl_name":"prop_tbl_",
       "flags": ["no-serial"]
     },
     {
@@ -462,7 +463,7 @@
       "child":"dbChipInst",
       "type":"1_n",
       "tbl_name":"chip_inst_tbl_",
-      "schema":"db_schema_chip_inst",
+      "schema":"kSchemaChipInst",
       "flags": ["no-serial"]
     },
     {
@@ -470,7 +471,7 @@
       "child":"dbChipRegionInst",
       "type":"1_n",
       "tbl_name":"chip_region_inst_tbl_",
-      "schema":"db_schema_chip_region",
+      "schema":"kSchemaChipRegion",
       "flags": ["no-serial"]
     },
     {
@@ -478,7 +479,7 @@
       "child":"dbChipConn",
       "type":"1_n",
       "tbl_name":"chip_conn_tbl_",
-      "schema":"db_schema_chip_region",
+      "schema":"kSchemaChipRegion",
       "flags": ["no-serial"]
     },
     {
@@ -486,7 +487,7 @@
       "child":"dbChipBumpInst",
       "type":"1_n",
       "tbl_name":"chip_bump_inst_tbl_",
-      "schema":"db_schema_chip_bump",
+      "schema":"kSchemaChipBump",
       "flags": ["no-serial"]
     },
     {
@@ -494,7 +495,7 @@
       "child":"dbChipNet",
       "type":"1_n",
       "tbl_name":"chip_net_tbl_",
-      "schema":"db_schema_chip_region",
+      "schema":"kSchemaChipRegion",
       "flags": ["no-serial"]
     }
   ]

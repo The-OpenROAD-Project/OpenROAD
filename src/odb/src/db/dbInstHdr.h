@@ -36,7 +36,7 @@ class _dbInstHdr : public _dbObject
  public:
   _dbInstHdr(_dbDatabase* db);
   _dbInstHdr(_dbDatabase* db, const _dbInstHdr& i);
-  ~_dbInstHdr();
+
   bool operator==(const _dbInstHdr& rhs) const;
   bool operator!=(const _dbInstHdr& rhs) const { return !operator==(rhs); }
   void collectMemInfo(MemInfo& info);

@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbModITerm.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
@@ -16,7 +18,6 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 #include <string>
 
@@ -71,32 +72,32 @@ _dbModITerm::_dbModITerm(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.name_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.parent_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.child_modbterm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.mod_net_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.next_net_moditerm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.prev_net_moditerm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.next_entry_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
+  if (obj.getDatabase()->isSchema(kSchemaHierPortRemoval)) {
     stream >> obj.prev_entry_;
   }
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
+  if (obj.getDatabase()->isSchema(kSchemaDbRemoveHash)) {
     dbDatabase* db = reinterpret_cast<dbDatabase*>(obj.getDatabase());
     _dbBlock* block = reinterpret_cast<_dbBlock*>(db->getChip()->getBlock());
     _dbModInst* mod_inst = block->modinst_tbl_->getPtr(obj.parent_);
@@ -127,7 +128,7 @@ void _dbModITerm::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

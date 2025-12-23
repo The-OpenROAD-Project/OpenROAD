@@ -56,13 +56,13 @@ uint dbTechLayerItr::end(dbObject* /* unused: parent */) const
 
 uint dbTechLayerItr::next(uint id, ...) const
 {
-  _dbTechLayer* layer = _layer_tbl->getPtr(id);
+  _dbTechLayer* layer = layer_tbl_->getPtr(id);
   return layer->upper_;
 }
 
 dbObject* dbTechLayerItr::getObject(uint id, ...)
 {
-  return _layer_tbl->getPtr(id);
+  return layer_tbl_->getPtr(id);
 }
 
 }  // namespace odb

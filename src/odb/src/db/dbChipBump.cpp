@@ -103,8 +103,7 @@ dbInst* dbChipBump::getInst() const
   if (obj->inst_ == 0) {
     return nullptr;
   }
-  dbChip* chip = (dbChip*) getChip();
-  _dbBlock* block = (_dbBlock*) chip->getBlock();
+  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
   return (dbInst*) block->inst_tbl_->getPtr(obj->inst_);
 }
 
@@ -114,8 +113,7 @@ dbNet* dbChipBump::getNet() const
   if (obj->net_ == 0) {
     return nullptr;
   }
-  dbChip* chip = (dbChip*) getChip();
-  _dbBlock* block = (_dbBlock*) chip->getBlock();
+  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
   return (dbNet*) block->net_tbl_->getPtr(obj->net_);
 }
 
@@ -125,8 +123,7 @@ dbBTerm* dbChipBump::getBTerm() const
   if (obj->bterm_ == 0) {
     return nullptr;
   }
-  dbChip* chip = (dbChip*) getChip();
-  _dbBlock* block = (_dbBlock*) chip->getBlock();
+  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
   return (dbBTerm*) block->bterm_tbl_->getPtr(obj->bterm_);
 }
 

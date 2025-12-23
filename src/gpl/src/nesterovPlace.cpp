@@ -588,7 +588,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
   }
 
   if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0
-      && !is_routability_need_) {
+      && (!npVars_.routability_driven_mode || !is_routability_need_)) {
     if (is_min_hpwl_) {
       diverge_snapshot_WlCoefX = wireLengthCoefX_;
       diverge_snapshot_WlCoefY = wireLengthCoefY_;

@@ -34,8 +34,10 @@ COMPULSORY_TESTS = [
     "centralization1",
     "clocked_macro",
     "keep_clustering_data",
-    "fixed_macros",
+    "fixed_macros1",
+    "fixed_macros2",
     "fixed_covers",
+    "macros_without_pins1",
 ]
 
 # Disabled in CMakeLists.txt
@@ -94,7 +96,8 @@ filegroup(
         "testcases/clocked_macro.lib",
         "testcases/clocked_macro.v",
         "testcases/fixed_ios1.def",
-        "testcases/fixed_macros.def",
+        "testcases/fixed_macros1.def",
+        "testcases/fixed_macros2.def",
         "testcases/guides1.def",
         "testcases/guides1.v",
         "testcases/io_constraints1.def",
@@ -104,6 +107,7 @@ filegroup(
         "testcases/macro_only.lef",
         "testcases/macro_only.lib",
         "testcases/macro_only.v",
+        "testcases/macros_without_pins1.def",
         "testcases/mixed_ios1.def",
         "testcases/no_unfixed_macros.def",
         "testcases/orientation_improve1.def",

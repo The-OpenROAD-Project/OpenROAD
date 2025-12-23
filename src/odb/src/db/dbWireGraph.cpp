@@ -27,14 +27,6 @@ static void addObject(dbWireEncoder& encoder, dbObject* obj)
   }
 }
 
-dbWireGraph::dbWireGraph()
-{
-}
-
-dbWireGraph::~dbWireGraph()
-{
-}
-
 void dbWireGraph::clear()
 {
   node_iterator itr;
@@ -380,6 +372,10 @@ void dbWireGraph::decode(dbWire* wire)
       }
 
       case dbWireDecoder::ITERM: {
+        if (!prev) {
+          w->getLogger()->error(
+              utl::ODB, 1117, "ITerm found without previous element");
+        }
         if (prev->object_) {
           assert(prev->object_ == (dbObject*) decoder.getITerm());
         }
@@ -388,6 +384,10 @@ void dbWireGraph::decode(dbWire* wire)
       }
 
       case dbWireDecoder::BTERM: {
+        if (!prev) {
+          w->getLogger()->error(
+              utl::ODB, 1116, "BTerm found without previous element");
+        }
         if (prev->object_) {
           assert(prev->object_ == (dbObject*) decoder.getBTerm());
         }

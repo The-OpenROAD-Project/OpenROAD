@@ -22,6 +22,8 @@ class _dbIsolation : public _dbObject
  public:
   _dbIsolation(_dbDatabase*);
 
+  ~_dbIsolation();
+
   bool operator==(const _dbIsolation& rhs) const;
   bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbIsolation& rhs) const;

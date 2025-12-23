@@ -176,7 +176,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
   stream >> lib.site_hash_;
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
-  if (lib.getDatabase()->isSchema(db_schema_block_tech)) {
+  if (lib.getDatabase()->isSchema(kSchemaBlockTech)) {
     stream >> lib.tech_;
   }
   stream >> *lib.master_tbl_;
@@ -335,13 +335,13 @@ void _dbLib::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["master_hash"].add(master_hash_);
-  info.children_["site_hash"].add(site_hash_);
-  master_tbl_->collectMemInfo(info.children_["master"]);
-  site_tbl_->collectMemInfo(info.children_["site"]);
-  prop_tbl_->collectMemInfo(info.children_["prop"]);
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  info.children["name"].add(name_);
+  info.children["master_hash"].add(master_hash_);
+  info.children["site_hash"].add(site_hash_);
+  master_tbl_->collectMemInfo(info.children["master"]);
+  site_tbl_->collectMemInfo(info.children["site"]);
+  prop_tbl_->collectMemInfo(info.children["prop"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
 }
 
 }  // namespace odb

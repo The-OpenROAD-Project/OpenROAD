@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbMarkerCategory.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "dbBlock.h"
@@ -14,7 +15,6 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
-#include <cstdlib>
 #include <fstream>
 #include <regex>
 #include <sstream>
@@ -121,12 +121,12 @@ void _dbMarkerCategory::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  marker_tbl_->collectMemInfo(info.children_["marker_tbl_"]);
+  marker_tbl_->collectMemInfo(info.children["marker_tbl_"]);
 
-  categories_tbl_->collectMemInfo(info.children_["categories_tbl_"]);
+  categories_tbl_->collectMemInfo(info.children["categories_tbl_"]);
 
   // User Code Begin collectMemInfo
-  info.children_["categories_hash"].add(categories_hash_);
+  info.children["categories_hash"].add(categories_hash_);
   // User Code End collectMemInfo
 }
 

@@ -28,6 +28,8 @@ class _dbPowerSwitch : public _dbObject
  public:
   _dbPowerSwitch(_dbDatabase*);
 
+  ~_dbPowerSwitch();
+
   bool operator==(const _dbPowerSwitch& rhs) const;
   bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPowerSwitch& rhs) const;

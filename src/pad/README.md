@@ -410,6 +410,18 @@ rdl_route
 | `-allow45` | Specifies that 45 degree routing is permitted. |
 | `nets` | Nets to route. |
 
+### Selectively routing terminals
+
+If some of of the terminals in the design do not need to be RDL routed, this can be done by assigning `RDL_ROUTE 0` to a terminal.
+
+```tcl
+# Assumes iterm is the pin to be not be routed
+set prop [odb::dbBoolProperty_create $iterm RDL_ROUTE 0]
+
+# Change to route iterm
+$prop setValue 1
+```
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/ICeWall.cpp) or the [swig file](./src/pad.i).

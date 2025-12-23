@@ -25,6 +25,8 @@ class _dbTechLayerCutClassRule : public _dbObject
  public:
   _dbTechLayerCutClassRule(_dbDatabase*);
 
+  ~_dbTechLayerCutClassRule();
+
   bool operator==(const _dbTechLayerCutClassRule& rhs) const;
   bool operator!=(const _dbTechLayerCutClassRule& rhs) const
   {

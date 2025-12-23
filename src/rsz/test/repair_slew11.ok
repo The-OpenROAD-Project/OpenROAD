@@ -19,27 +19,27 @@ in1                                    60.65  151.34  -90.69 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +233.3% |       0 |       7 |             1 |         0
+    final |   +133.3% |       0 |       4 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0038] Inserted 7 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u1/A                                    0.10    0.05    0.05 (MET)
+u1/A                                    0.10    0.08    0.02 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-wire1/Z                                60.65   20.68   39.97 (MET)
+wire1/Z                                60.65   32.51   28.14 (MET)
 
 Net in1
  Pin capacitance: 0.88-0.97
- Wire capacitance: 12.54-12.54
- Total capacitance: 13.42-13.51
+ Wire capacitance: 24.27-24.27
+ Total capacitance: 25.15-25.25
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -48,5 +48,5 @@ Driver pins
  in1 input port (0, 0)
 
 Load pins
- wire7/A input (BUF_X1) 0.88-0.97 (166, 1)
+ wire4/A input (BUF_X1) 0.88-0.97 (322, 1)
 
