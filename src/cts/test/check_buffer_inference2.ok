@@ -3,12 +3,12 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 288 components and 1728 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 288 connections.
-[DEBUG CTS-buffering] CLKBUF_X1 has input port A with LEF USE as CLOCK
-[DEBUG CTS-buffering] CLKBUF_X2 has input port A with LEF USE as CLOCK
-[DEBUG CTS-buffering] CLKBUF_X3 has input port A with LEF USE as CLOCK
-[DEBUG CTS-buffering] CLKBUF_X1 has been inferred as clock buffer
-[DEBUG CTS-buffering] CLKBUF_X2 has been inferred as clock buffer
-[DEBUG CTS-buffering] CLKBUF_X3 has been inferred as clock buffer
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X1 has input port A with LEF USE as CLOCK
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X2 has input port A with LEF USE as CLOCK
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X3 has input port A with LEF USE as CLOCK
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X1 has been inferred as clock buffer
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X2 has been inferred as clock buffer
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X3 has been inferred as clock buffer
 [DEBUG CTS-buffering] CLKBUF_X1 has cap limit:6.0729997e-16 vs. total cap:0, derate:0.01
 [DEBUG CTS-buffering] CLKBUF_X2 has cap limit:1.2145999e-15 vs. total cap:0, derate:0.01
 [DEBUG CTS-buffering] CLKBUF_X3 has cap limit:1.81885e-15 vs. total cap:0, derate:0.01
