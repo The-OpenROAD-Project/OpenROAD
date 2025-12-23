@@ -60,4 +60,15 @@ bool GRNet::isInsideLayerRange(int layer_index) const
          && layer_index <= layer_range_.max_layer;
 }
 
+void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
+{
+  if (pin_index_to_iterm_.find(pin_index) != pin_index_to_iterm_.end()) {
+    odb::dbITerm* iterm = pin_index_to_iterm_[pin_index];
+    iterm_to_ap_[iterm] = ap;
+  } else if (pin_index_to_bterm_.find(pin_index) != pin_index_to_bterm_.end()) {
+    odb::dbBTerm* bterm = pin_index_to_bterm_[pin_index];
+    bterm_to_ap_[bterm] = ap;
+  }
+}
+
 }  // namespace grt

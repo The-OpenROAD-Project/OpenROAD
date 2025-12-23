@@ -107,7 +107,7 @@ class GridGraph
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
-  AccessPointSet selectAccessPoints(const GRNet* net) const;
+  AccessPointSet selectAccessPoints(GRNet* net) const;
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);

@@ -422,7 +422,7 @@ bool GridGraph::findODBAccessPoints(
         for (auto ap : pref_access_points) {
           int x, y;
           iterms->getInst()->getLocation(x, y);
-          translateAccessPointsToGrid(ap, x, y,selected_access_points);
+          translateAccessPointsToGrid(ap, x, y, selected_access_points);
         }
       }
       // Currently ignoring non preferred APs
@@ -434,7 +434,7 @@ bool GridGraph::findODBAccessPoints(
   return true;
 }
 
-AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
+AccessPointSet GridGraph::selectAccessPoints(GRNet* net) const
 {
   AccessPointHash hasher(y_size_);
   AccessPointSet selected_access_points(0, hasher);
@@ -444,6 +444,7 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
   const PointT netCenter(boundingBox.cx(), boundingBox.cy());
   // Skips calculations if DRT already created APs in ODB
   if (!findODBAccessPoints(net, selected_access_points)) {
+    int pin_idx = 0;
     for (const std::vector<GRPoint>& accessPoints : net->getPinAccessPoints()) {
       std::pair<int, int> bestAccessDist = {0, std::numeric_limits<int>::max()};
       int bestIndex = -1;
@@ -494,6 +495,9 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
           fixedLayerInterval.Update(point.getLayerIdx());
         }
       }
+
+      net->addPreferredAccessPoint(pin_idx, *it);
+      pin_idx++;
     }
   }
   return selected_access_points;

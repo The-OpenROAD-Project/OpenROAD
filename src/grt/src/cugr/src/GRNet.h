@@ -29,24 +29,6 @@ class GRNet
     return pin_access_points_;
   }
 
-  int getITermIndex(odb::dbITerm* iterm) const
-  {
-    auto it = iterm_to_pin_index_.find(iterm);
-    if (it != iterm_to_pin_index_.end()) {
-      return it->second;
-    }
-    return -1;
-  }
-
-  int getBTermIndex(odb::dbBTerm* bterm) const
-  {
-    auto it = bterm_to_pin_index_.find(bterm);
-    if (it != bterm_to_pin_index_.end()) {
-      return it->second;
-    }
-    return -1;
-  }
-
   const BoxT& getBoundingBox() const { return bounding_box_; }
   const std::shared_ptr<GRTreeNode>& getRoutingTree() const
   {
@@ -59,6 +41,15 @@ class GRNet
   }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
+  void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
+  std::map<odb::dbBTerm*, AccessPoint>& getBTermAccessPoints()
+  {
+    return bterm_to_ap_;
+  }
+  std::map<odb::dbITerm*, AccessPoint>& getITermAccessPoints()
+  {
+    return iterm_to_ap_;
+  }
 
  private:
   int index_;
@@ -66,6 +57,8 @@ class GRNet
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
+  std::map<odb::dbBTerm*, AccessPoint> bterm_to_ap_;
+  std::map<odb::dbITerm*, AccessPoint> iterm_to_ap_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;
