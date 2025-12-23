@@ -3,8 +3,6 @@
 
 include("openroad")
 
-find_package(Boost CONFIG 1.78 REQUIRED COMPONENTS iostreams)
-
 swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
@@ -35,7 +33,32 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
 endif()
 
-add_library(utl_lib
+#
+# Isolate TCL dependency to decode
+#
+add_library(utl_decode
+  src/decode.cpp
+)
+
+target_include_directories(utl_decode
+  PUBLIC
+    include
+  PRIVATE
+    src
+    ${TCL_INCLUDE_PATH}
+)
+
+target_link_libraries(utl_decode
+  PUBLIC
+    spdlog::spdlog
+  PRIVATE
+    ${TCL_LIBRARY}
+)
+
+#
+# Avoid TCL in the rest of utl
+#
+add_library(utl_base
   src/CallBackHandler.cpp
   src/CallBack.cpp
   src/Metrics.cpp
@@ -47,25 +70,34 @@ add_library(utl_lib
   src/CommandLineProgress.cpp
   src/timer.cpp
   src/mem_stats.cpp
-  src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp
 )
 
-target_include_directories(utl_lib
+target_include_directories(utl_base
   PUBLIC
     include
   PRIVATE
     src
     ${Boost_INCLUDE_DIRS}
-    ${TCL_INCLUDE_PATH}
+    absl::stacktrace
+    absl::symbolize
 )
 
-target_link_libraries(utl_lib
+target_link_libraries(utl_base
   PUBLIC
     spdlog::spdlog
-    ${TCL_LIBRARY}
     ${Boost_LIBRARIES}
+    absl::stacktrace
+    absl::symbolize
+)
+
+add_library(utl_lib INTERFACE)
+
+target_link_libraries(utl_lib
+  INTERFACE
+    utl_base
+    utl_decode
 )
 
 target_sources(utl
@@ -90,6 +122,7 @@ target_compile_definitions(utl
 target_link_libraries(utl
   PUBLIC
     utl_lib
+    utl_decode
 )
 
 messages(

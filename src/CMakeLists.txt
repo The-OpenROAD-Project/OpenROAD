@@ -144,8 +144,10 @@ if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
 endif()
 include(UseSWIG)
 
-find_package(Boost CONFIG REQUIRED)
+find_package(Boost CONFIG REQUIRED COMPONENTS iostreams serialization system thread)
 message(STATUS "boost: ${Boost_VERSION}")
+
+find_package(absl REQUIRED)
 
 if (ENABLE_TESTS)
   find_package(GTest REQUIRED)

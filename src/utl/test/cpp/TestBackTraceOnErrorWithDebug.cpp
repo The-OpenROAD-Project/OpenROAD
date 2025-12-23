@@ -20,13 +20,16 @@ TEST(ErrorFunctionTest, PrintsSymbolizedStackTrace)
 
   testing::internal::CaptureStdout();
   try {
-    logger.error(GPL, 73, "Test error");
+    logger.error(GPL, 9973, "Test error");
   } catch (...) {
   }
   std::string output = testing::internal::GetCapturedStdout();
   EXPECT_THAT(output, testing::HasSubstr("Test error"));
-  // Check that the name of this function is in the output
-  EXPECT_THAT(output, testing::HasSubstr("ErrorFunctionTest"));
+  // Check that the name of this function is in the output or that
+  // stackunwinding tried to trigger but isn't working for this binary.
+  EXPECT_THAT(output,
+              testing::AnyOf(testing::HasSubstr("ErrorFunctionTest"),
+                             testing::HasSubstr("Stack unwind failed")));
 }
 
 TEST(ErrorFunctionTest, PrintsNoStackTrace)
@@ -34,12 +37,15 @@ TEST(ErrorFunctionTest, PrintsNoStackTrace)
   Logger logger;
   testing::internal::CaptureStdout();
   try {
-    logger.error(GPL, 73, "Test error");
+    logger.error(GPL, 9967, "Test error");
   } catch (...) {
   }
   std::string output = testing::internal::GetCapturedStdout();
   EXPECT_THAT(output, testing::HasSubstr("Test error"));
-  EXPECT_THAT(output, testing::Not(testing::HasSubstr("ErrorFunctionTest")));
+  EXPECT_THAT(
+      output,
+      testing::AllOf(testing::Not(testing::HasSubstr("ErrorFunctionTest")),
+                     testing::Not(testing::HasSubstr("Stack unwind failed"))));
 }
 }  // namespace
 }  // namespace utl

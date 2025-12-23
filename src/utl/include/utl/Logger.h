@@ -316,6 +316,11 @@ class Logger
     void* result[64];
     int depth = absl::GetStackTrace(result, 64, skip_count);
 
+    if (depth == 0) {
+      return fmt::format("<Stack unwind failed: depth=0, skip_count={}>",
+                         skip_count);
+    }
+
     std::string trace;
     trace.reserve(512);  // Pre-allocate some memory to avoid re-allocs
 
