@@ -417,16 +417,13 @@ bool GridGraph::findODBAccessPoints(
           iterms->getInst()->getLocation(x, y);
           auto point = ap->getPoint();
           auto layer = ap->getLayer();
-          const int ap_x = (point.getX() + x / amount_per_x >= x_size_)
+          const int ap_x = ((point.getX() + x) / amount_per_x >= x_size_)
                                ? x_size_ - 1
-                               : point.getX() + x / amount_per_x;
-          const int ap_y = (point.getY() + y / amount_per_y >= y_size_)
+                               : (point.getX() + x) / amount_per_x;
+          const int ap_y = ((point.getY() + y) / amount_per_y >= y_size_)
                                ? y_size_ - 1
-                               : point.getY() + y / amount_per_y;
+                               : (point.getY() + y) / amount_per_y;
           const PointT selected_point = PointT(ap_x, ap_y);
-          const PointT selected_point
-              = PointT((point.getX() + x) / amount_per_x,
-                       (point.getY() + y) / amount_per_y);
           const int num_layer
               = ((layer->getNumber() - 2) > (getNumLayers() - 1))
                     ? getNumLayers() - 1
