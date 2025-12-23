@@ -83,7 +83,27 @@ class dbInsertBuffer
       const std::set<dbModNet*>& modnets_in_target_module) const;
 
   //------------------------------------------------------------------
-  // Step functions for insertBufferBeforeLoads
+  // Helper functions for hierarchicalConnect
+  //------------------------------------------------------------------
+  dbModNet* getModNet(dbObject* obj) const;
+  void ensureFlatNetConnection(dbITerm* driver, dbITerm* load);
+  void connectSameModule(dbITerm* driver,
+                         dbITerm* load,
+                         dbModule* driver_mod,
+                         dbModule* load_mod);
+  dbModNet* ensureModNet(dbObject* obj, dbModule* mod, const char* suffix);
+  dbObject* traceUp(dbObject* current_obj,
+                    dbModule* current_mod,
+                    dbModule* target_mod,
+                    dbIoType io_type,
+                    const char* suffix);
+  void connectDifferentModule(dbITerm* driver,
+                              dbITerm* load,
+                              dbModule* driver_mod,
+                              dbModule* load_mod);
+
+  //------------------------------------------------------------------
+  // Helper functions for insertBufferBeforeLoads
   //------------------------------------------------------------------
   dbModule* validateLoadPinsAndFindLCA(std::set<dbObject*>& load_pins,
                                        std::set<dbNet*>& other_dbnets,
@@ -97,7 +117,7 @@ class dbInsertBuffer
 
  private:
   //------------------------------------------------------------------
-  // Debug logging helper functions
+  // Debug logging functions
   //------------------------------------------------------------------
   void dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
                              const Point* loc,
@@ -131,7 +151,7 @@ class dbInsertBuffer
   const dbMaster* buffer_master_ = nullptr;  // Buffer master
   const char* new_buf_base_name_ = nullptr;  // Base name for the new buffer
   const char* new_net_base_name_ = nullptr;  // Base name for the new nets
-  dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;  // Uniquify type
+  dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;
   dbObject* orig_drvr_pin_ = nullptr;  // Original driver pin of net_
 };
 
