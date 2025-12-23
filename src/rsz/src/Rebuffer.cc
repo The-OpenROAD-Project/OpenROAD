@@ -2002,6 +2002,7 @@ int Rebuffer::exportBufferTree(
     }
 
     switch (node->type()) {
+      case BufferedNetType::via:
       case BufferedNetType::wire: {
         insertBuffers(node->ref(), current_loads, count);
         break;
