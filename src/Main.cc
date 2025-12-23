@@ -221,6 +221,9 @@ int main(int argc, char* argv[])
   signal(SIGILL, handler);
   signal(SIGSEGV, handler);
 
+  // Initialize absl's symbolizer
+  absl::InitializeSymbolizer(argv[0]);
+
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
     return 0;

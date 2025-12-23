@@ -399,4 +399,20 @@ std::unique_ptr<Progress> Logger::swapProgress(Progress* progress)
   return current_progress;
 }
 
+// Function used for testing class Logger we need to define it here because some
+// of the .so files won't link without a definition, stopping us from defining
+// it in the test.
+extern "C" void TestFuncForCheckingBacktrace()
+{
+  utl::Logger logger;
+  // Since this function is going to kill the program, we have to test it using
+  // EXPECT_DEATH, but the logger is surpisingly robust at keeping its sink to
+  // the parent process after a fork so we need to strip all the sinks and make
+  // it point towards a sink in the child
+  logger.setRedirectSink(std::cerr, /*keep_sinks=*/false);
+  utl::ToolId id = utl::Logger::findToolId("GPL");
+
+  logger.critical(id, 1234, "Test Trigger Message");
+}
+
 }  // namespace utl
