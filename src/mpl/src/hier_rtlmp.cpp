@@ -1330,11 +1330,11 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   debugPrint(logger_,
-              MPL,
-              "hierarchical_macro_placement",
-              1,
-              "Placing children of cluster {}",
-              parent->getName());
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Placing children of cluster {}",
+             parent->getName());
 
   for (auto& cluster : parent->getChildren()) {
     clustering_engine_->updateInstancesAssociation(cluster.get());
@@ -1464,19 +1464,20 @@ void HierRTLMP::placeChildren(Cluster* parent)
   // target_dead_space is used to determine the utilization for
   // StandardCellCluster We vary the target utilization to generate different
   // tilings
-  std::vector<float> target_utils;
-  std::vector<float> target_dead_spaces;
 
   // In our implementation, the utilization can be larger than 1.
+  std::vector<float> target_utils(num_target_util_);
   for (int i = 0; i < num_target_util_; i++) {
-    target_utils.push_back(target_util_ + i * target_util_step_);
+    target_utils[i] = target_util_ + (i * target_util_step_);
   }
+
   // In our implementation, the target_dead_space should be less than 1.0.
   // The larger the target dead space, the higher the utilization.
+  std::vector<float> target_dead_spaces;
   for (int i = 0; i < num_target_dead_space_; i++) {
     if (target_dead_space_ + i * target_dead_space_step_ < 1.0) {
       target_dead_spaces.push_back(target_dead_space_
-                                    + i * target_dead_space_step_);
+                                   + (i * target_dead_space_step_));
     }
   }
 
