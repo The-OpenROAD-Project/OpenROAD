@@ -501,33 +501,25 @@ void CUGR::updateDbCongestion()
 
 void CUGR::getITermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbITerm*, std::vector<odb::Point3D>>& access_points)
+    std::map<odb::dbITerm*, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
-  const auto& pinAccessPoints = gr_net->getPinAccessPoints();
-  for (const auto& iterm : net->getITerms()) {
-    const int pinIndex = gr_net->getITermIndex(iterm);
-    for (const auto& gpt : pinAccessPoints[pinIndex]) {
-      const int x = grid_graph_->getGridline(0, gpt.x());
-      const int y = grid_graph_->getGridline(1, gpt.y());
-      access_points[iterm].push_back(odb::Point3D(x, y, gpt.getLayerIdx() + 1));
-    }
+  for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
+    const int x = grid_graph_->getGridline(0, ap.point.x());
+    const int y = grid_graph_->getGridline(1, ap.point.y());
+    access_points[iterm] = odb::Point3D(x, y, ap.layers.high() + 1);
   }
 }
 
 void CUGR::getBTermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbBTerm*, std::vector<odb::Point3D>>& access_points)
+    std::map<odb::dbBTerm*, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
-  const auto& pinAccessPoints = gr_net->getPinAccessPoints();
-  for (const auto& bterm : net->getBTerms()) {
-    const int pinIndex = gr_net->getBTermIndex(bterm);
-    for (const auto& gpt : pinAccessPoints[pinIndex]) {
-      const int x = grid_graph_->getGridline(0, gpt.x());
-      const int y = grid_graph_->getGridline(1, gpt.y());
-      access_points[bterm].push_back(odb::Point3D(x, y, gpt.getLayerIdx() + 1));
-    }
+  for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
+    const int x = grid_graph_->getGridline(0, ap.point.x());
+    const int y = grid_graph_->getGridline(1, ap.point.y());
+    access_points[bterm] = odb::Point3D(x, y, ap.layers.high() + 1);
   }
 }
 

@@ -1186,49 +1186,25 @@ void GlobalRouter::computePinPositionOnGrid(
 void GlobalRouter::updatePinAccessPoints()
 {
   for (const auto& [db_net, net] : db_net_map_) {
-    std::map<odb::dbITerm*, std::vector<odb::Point3D>> iterm_to_aps;
-    std::map<odb::dbBTerm*, std::vector<odb::Point3D>> bterm_to_aps;
+    std::map<odb::dbITerm*, odb::Point3D> iterm_to_aps;
+    std::map<odb::dbBTerm*, odb::Point3D> bterm_to_aps;
     cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
     cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
 
-    const GRoute& segments = routes_[db_net];
     for (Pin& pin : net->getPins()) {
       if (pin.isPort()) {
         if (bterm_to_aps.find(pin.getBTerm()) != bterm_to_aps.end()) {
-          const auto& bterm_aps = bterm_to_aps[pin.getBTerm()];
-          for (const odb::Point3D& ap : bterm_aps) {
-            pin.setConnectionLayer(ap.z());
-            pin.setOnGridPosition(grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
-            bool pin_is_covered = false;
-            for (const GSegment& seg : segments) {
-              if (segmentCoversPin(seg, pin)) {
-                pin_is_covered = true;
-                break;
-              }
-            }
-            if (pin_is_covered) {
-              break;
-            }
-          }
+          const auto& bterm_ap = bterm_to_aps[pin.getBTerm()];
+          pin.setConnectionLayer(bterm_ap.z());
+          pin.setOnGridPosition(
+              grid_->getPositionOnGrid(odb::Point(bterm_ap.x(), bterm_ap.y())));
         }
       } else {
         if (iterm_to_aps.find(pin.getITerm()) != iterm_to_aps.end()) {
-          const auto& iterm_aps = iterm_to_aps[pin.getITerm()];
-          for (const odb::Point3D& ap : iterm_aps) {
-            pin.setConnectionLayer(ap.z());
-            pin.setOnGridPosition(
-                grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
-            bool pin_is_covered = false;
-            for (const GSegment& seg : segments) {
-              if (segmentCoversPin(seg, pin)) {
-                pin_is_covered = true;
-                break;
-              }
-            }
-            if (pin_is_covered) {
-              break;
-            }
-          } 
+          const auto& iterm_ap = iterm_to_aps[pin.getITerm()];
+          pin.setConnectionLayer(iterm_ap.z());
+          pin.setOnGridPosition(
+              grid_->getPositionOnGrid(odb::Point(iterm_ap.x(), iterm_ap.y())));
         }
       }
     }

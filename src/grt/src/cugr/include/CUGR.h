@@ -78,10 +78,10 @@ class CUGR
   void updateDbCongestion();
   void getITermsAccessPoints(
       odb::dbNet* net,
-      std::map<odb::dbITerm*, std::vector<odb::Point3D>>& access_points);
+      std::map<odb::dbITerm*, odb::Point3D>& access_points);
   void getBTermsAccessPoints(
       odb::dbNet* net,
-      std::map<odb::dbBTerm*, std::vector<odb::Point3D>>& access_points);
+      std::map<odb::dbBTerm*, odb::Point3D>& access_points);
 
  private:
   void updateOverflowNets(std::vector<int>& netIndices);
