@@ -608,7 +608,7 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
 namespace {
 void printIteration(utl::Logger* logger,
                     const int iter,
-                    const bool stubborn_flow)
+                    const std::string& flow_name)
 {
   std::string suffix;
   if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
@@ -620,12 +620,7 @@ void printIteration(utl::Logger* logger,
   } else {
     suffix = "th";
   }
-  logger->info(DRT,
-               195,
-               "Start {}{} {} iteration.",
-               iter,
-               suffix,
-               stubborn_flow ? "stubborn tiles" : "optimization");
+  logger->info(DRT, 195, "Start {}{} {} iteration.", iter, suffix, flow_name);
 }
 
 void printIterationProgress(utl::Logger* logger,
@@ -1114,6 +1109,8 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   if (graphics_) {
     graphics_->startIter(iter_, router_cfg_);
   }
+  control_.skip_till_changed = false;
+  control_.tried_guide_flow = false;
   std::vector<odb::Rect> drv_boxes;
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
     auto box = marker->getBBox();
@@ -1360,16 +1357,26 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   const bool stubborn_flow = num_drvs <= 11 && ripupMode != RipUpMode::ALL
                              && ripupMode != RipUpMode::INCR
                              && !control_.fixing_max_spacing;
+  const bool skip_stubborn_flow
+      = stubborn_flow && control_.skip_till_changed
+        && args.isEqualIgnoringSizeAndOffset(control_.last_args);
+  const bool guides_flow = skip_stubborn_flow && !control_.tried_guide_flow;
+
   if (router_cfg_->VERBOSE > 0) {
-    printIteration(logger_, iter_, stubborn_flow);
-  }
-  if (stubborn_flow) {
-    if (control_.skip_till_changed && !control_.tried_guide_flow
-        && args.isEqualIgnoringSizeAndOffset(control_.last_args)) {
-      guideTilesFlow(args, iter_prog);
+    std::string flow_name;
+    if (guides_flow) {
+      flow_name = "guides tiles";
+    } else if (stubborn_flow) {
+      flow_name = "stubborn tiles";
     } else {
-      control_.skip_till_changed = false;
-      control_.tried_guide_flow = false;
+      flow_name = "optimization";
+    }
+    printIteration(logger_, iter_, flow_name);
+  }
+  if (guides_flow) {
+    guideTilesFlow(args, iter_prog);
+  } else if (stubborn_flow) {
+    if (!skip_stubborn_flow) {
       stubbornTilesFlow(args, iter_prog);
     }
   } else {
