@@ -113,6 +113,7 @@ class IRNetwork
   NodePtrMap<Connection> getConnectionMap() const;
 
   std::map<odb::dbInst*, Node::NodeSet> getInstanceNodeMapping() const;
+  ShapeTree getShapeTree(odb::dbTechLayer* layer) const;
 
   // For debug only
   void dumpNodes(const std::map<Node*, std::size_t>& node_map,
@@ -178,7 +179,6 @@ class IRNetwork
 
   TerminalTree getTerminalTree(
       const std::vector<TerminalNode*>& terminals) const;
-  ShapeTree getShapeTree(odb::dbTechLayer* layer) const;
   NodeTree getNodeTree(odb::dbTechLayer* layer) const;
 
   void initMinimumNodePitch();
