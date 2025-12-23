@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 [INFO RSZ-0047] Found 1 long wires.
-[INFO RSZ-0048] Inserted 2 buffers in 1 nets.
+[INFO RSZ-0048] Inserted 3 buffers in 1 nets.
 CLOCK
 Driver    length delay
 Startpoint: in1 (clock source 'in1')
@@ -20,16 +20,23 @@ Path Type: max
            0.00    0.00    0.00 ^ u1/A (BUF_X1)
    0.97    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
-  26.70    0.06    0.08    0.10 ^ u2/Z (BUF_X1)
-           0.06    0.00    0.10 ^ wire2/A (BUF_X32)
- 160.44    0.01    0.03    0.13 ^ wire2/Z (BUF_X32)
-           0.52    0.43    0.56 ^ wire1/A (BUF_X4)
-   8.27    0.03    0.02    0.58 ^ wire1/Z (BUF_X4)
-           0.03    0.00    0.58 ^ u3/A (BUF_X1)
-   0.00    0.00    0.02    0.61 ^ u3/Z (BUF_X1)
-           0.00    0.00    0.61 ^ out1 (out)
-                           0.61   data arrival time
+   6.59    0.02    0.03    0.05 ^ u2/Z (BUF_X1)
+           0.02    0.00    0.05 ^ wire3/A (BUF_X8)
+  42.96    0.01    0.03    0.08 ^ wire3/Z (BUF_X8)
+           0.04    0.03    0.11 ^ wire2/A (BUF_X16)
+  55.02    0.01    0.03    0.14 ^ wire2/Z (BUF_X16)
+           0.06    0.05    0.19 ^ wire1/A (BUF_X16)
+  43.61    0.01    0.03    0.22 ^ wire1/Z (BUF_X16)
+           0.04    0.03    0.25 ^ u3/A (BUF_X1)
+   0.00    0.01    0.02    0.27 ^ u3/Z (BUF_X1)
+           0.01    0.00    0.27 ^ out1 (out)
+                           0.27   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 
 
+Instance: u2, Location (unit: DBU): 0 0
+Instance: wire3, Location (unit: DBU): 902584 1383
+Instance: wire2, Location (unit: DBU): 1718366 1341
+Instance: wire1, Location (unit: DBU): 2858308 1283
+Instance: u3, Location (unit: DBU): 3998000 0
