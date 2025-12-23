@@ -3,6 +3,8 @@
 
 #include "dbTechViaLayerRule.h"
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -15,7 +17,6 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -149,7 +150,7 @@ _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaLayerRule& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream << *bit_field;
   stream << v.overhang1_;
   stream << v.overhang2_;
@@ -167,7 +168,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechViaLayerRule& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechViaLayerRule& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream >> *bit_field;
   stream >> v.overhang1_;
   stream >> v.overhang2_;
@@ -378,7 +379,7 @@ dbTechViaLayerRule* dbTechViaLayerRule::create(dbTech* tech_,
 }
 
 dbTechViaLayerRule* dbTechViaLayerRule::getTechViaLayerRule(dbTech* tech_,
-                                                            uint dbid_)
+                                                            uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaLayerRule*) tech->via_layer_rule_tbl_->getPtr(dbid_);

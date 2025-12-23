@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 
 #include "odb/dbIterator.h"
@@ -68,7 +69,7 @@ class dbSetIterator<dbNet>
  private:
   friend class dbSet<dbNet>;
 
-  dbSetIterator(dbIterator* itr, uint id, dbObject* parent)
+  dbSetIterator(dbIterator* itr, uint32_t id, dbObject* parent)
   {
     itr_ = itr;
     cur_ = id;
@@ -76,7 +77,7 @@ class dbSetIterator<dbNet>
   }
 
   dbIterator* itr_;
-  uint cur_;
+  uint32_t cur_;
   dbObject* parent_;
 };
 
@@ -107,7 +108,7 @@ class dbSet<dbNet>
   ///
   /// Returns the number of items in this set.
   ///
-  uint size() { return itr_->size(parent_); }
+  uint32_t size() { return itr_->size(parent_); }
 
   ///
   /// Return a begin() iterator.
@@ -123,7 +124,7 @@ class dbSet<dbNet>
   /// Returns the maximum number sequential elements the this set
   /// may iterate.
   ///
-  uint sequential() { return itr_->sequential(); }
+  uint32_t sequential() { return itr_->sequential(); }
 
   ///
   /// Returns true if this set is reversible.

@@ -193,7 +193,7 @@ void dbWireEncoder::append(dbWire* wire)
 
 #define DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT 0
 
-int dbWireEncoder::addPoint(int x, int y, uint property)
+int dbWireEncoder::addPoint(int x, int y, uint32_t property)
 {
   int jct_id = idx_;
 
@@ -258,7 +258,7 @@ int dbWireEncoder::addPoint(int x, int y, uint property)
 #define DB_WIRE_ENCODER_COLINEAR_EXT_RULE_2() \
   (prev_extended_colinear_pnt_ == false)
 
-int dbWireEncoder::addPoint(int x, int y, int ext, uint property)
+int dbWireEncoder::addPoint(int x, int y, int ext, uint32_t property)
 {
   int jct_id = idx_;
 
@@ -580,7 +580,7 @@ void dbWireEncoder::end()
     return;
   }
 
-  uint n = opcodes_.size();
+  uint32_t n = opcodes_.size();
 
   // Free the old memory
   wire_->data_.~dbVector<int>();
@@ -695,10 +695,10 @@ inline unsigned char dbWireDecoder::nextOp(int& value)
   return wire_->opcodes_[idx_++];
 }
 
-inline unsigned char dbWireDecoder::nextOp(uint& value)
+inline unsigned char dbWireDecoder::nextOp(uint32_t& value)
 {
   assert(idx_ < (int) wire_->length());
-  value = (uint) wire_->data_[idx_];
+  value = (uint32_t) wire_->data_[idx_];
   return wire_->opcodes_[idx_++];
 }
 
@@ -1125,7 +1125,7 @@ void dbWireDecoder::getPoint(int& x, int& y, int& ext) const
   ext = operand2_;
 }
 
-uint dbWireDecoder::getProperty() const
+uint32_t dbWireDecoder::getProperty() const
 {
   assert(((opcode_ == POINT) || (opcode_ == POINT_EXT)) && (point_cnt_ > 1));
   return property_;
@@ -1260,7 +1260,7 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::JUNCTION: {
-        uint jct = decoder.getJunctionValue();
+        uint32_t jct = decoder.getJunctionValue();
         lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
@@ -1328,7 +1328,7 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::SHORT: {
-        uint jval = decoder.getJunctionValue();
+        uint32_t jval = decoder.getJunctionValue();
         lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
@@ -1349,7 +1349,7 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::VWIRE: {
-        uint jval = decoder.getJunctionValue();
+        uint32_t jval = decoder.getJunctionValue();
         lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {

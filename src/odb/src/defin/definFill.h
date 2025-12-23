@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "definBase.h"
@@ -16,7 +17,7 @@ class dbTechLayer;
 class definFill : public definBase
 {
   dbTechLayer* _cur_layer{nullptr};
-  uint _mask_number;
+  uint32_t _mask_number;
   bool _needs_opc;
 
  public:

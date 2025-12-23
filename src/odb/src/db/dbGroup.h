@@ -4,10 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -20,8 +21,8 @@ class _dbRegion;
 
 struct dbGroupFlags
 {
-  uint type : 2;
-  uint spare_bits : 30;
+  uint32_t type : 2;
+  uint32_t spare_bits : 30;
 };
 
 class _dbGroup : public _dbObject

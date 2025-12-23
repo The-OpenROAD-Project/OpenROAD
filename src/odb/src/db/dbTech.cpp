@@ -4,6 +4,7 @@
 #include "dbTech.h"
 
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <vector>
 
@@ -33,7 +34,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -305,7 +305,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << tech.lef_units_;
   stream << tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech.flags_;
+  uint32_t* bit_field = (uint32_t*) &tech.flags_;
   stream << *bit_field;
 
   stream << tech.getLefVersion();
@@ -352,7 +352,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   }
   stream >> tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech.flags_;
+  uint32_t* bit_field = (uint32_t*) &tech.flags_;
   stream >> *bit_field;
 
   double lef_version;
@@ -833,7 +833,7 @@ dbTech* dbTech::create(dbDatabase* db_, const char* name)
   return (dbTech*) tech;
 }
 
-dbTech* dbTech::getTech(dbDatabase* db_, uint dbid_)
+dbTech* dbTech::getTech(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbTech*) db->tech_tbl_->getPtr(dbid_);

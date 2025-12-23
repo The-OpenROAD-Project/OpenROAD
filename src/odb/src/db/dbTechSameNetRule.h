@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -19,8 +20,8 @@ class dbOStream;
 
 struct _dbTechSameNetRuleFlags
 {
-  uint stack : 1;
-  uint spare_bits : 31;
+  uint32_t stack : 1;
+  uint32_t spare_bits : 31;
 };
 
 class _dbTechSameNetRule : public _dbObject
@@ -38,7 +39,7 @@ class _dbTechSameNetRule : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbTechSameNetRuleFlags flags_;
-  uint spacing_;
+  uint32_t spacing_;
   dbId<_dbTechLayer> layer_1_;
   dbId<_dbTechLayer> layer_2_;
 };
@@ -61,7 +62,7 @@ inline _dbTechSameNetRule::_dbTechSameNetRule(_dbDatabase*)
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbTechSameNetRule& rule)
 {
-  uint* bit_field = (uint*) &rule.flags_;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream << *bit_field;
   stream << rule.spacing_;
   stream << rule.layer_1_;
@@ -71,7 +72,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbTechSameNetRule& rule)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbTechSameNetRule& rule)
 {
-  uint* bit_field = (uint*) &rule.flags_;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream >> *bit_field;
   stream >> rule.spacing_;
   stream >> rule.layer_1_;

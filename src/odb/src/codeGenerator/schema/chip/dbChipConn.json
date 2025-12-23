@@ -12,5 +12,6 @@
     { "name": "bottom_region_path_", "type": "std::vector<dbId<_dbChipInst>>", "flags": ["private"] }
   ],
   "h_includes": ["odb/dbId.h"],
-  "cpp_includes": ["dbChipRegionInst.h", "dbChipInst.h", "dbChipRegion.h", "dbChip.h"]
+  "cpp_includes": ["dbChipRegionInst.h", "dbChipInst.h", "dbChipRegion.h", "dbChip.h"],
+  "cpp_sys_includes": ["cstdint"]
 }

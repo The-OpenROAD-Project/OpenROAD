@@ -740,8 +740,8 @@ dbTechLayer* dbTechLayerCutSpacingTableDefRule::getSecondLayer() const
 
 void dbTechLayerCutSpacingTableDefRule::setSpacingTable(
     const std::vector<std::vector<std::pair<int, int>>>& table,
-    const std::map<std::string, uint>& row_map,
-    const std::map<std::string, uint>& col_map)
+    const std::map<std::string, uint32_t>& row_map,
+    const std::map<std::string, uint32_t>& col_map)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -756,8 +756,8 @@ void dbTechLayerCutSpacingTableDefRule::setSpacingTable(
 
 void dbTechLayerCutSpacingTableDefRule::getSpacingTable(
     std::vector<std::vector<std::pair<int, int>>>& table,
-    std::map<std::string, uint>& row_map,
-    std::map<std::string, uint>& col_map)
+    std::map<std::string, uint32_t>& row_map,
+    std::map<std::string, uint32_t>& col_map)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;
@@ -948,7 +948,7 @@ dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
 dbTechLayerCutSpacingTableDefRule*
 dbTechLayerCutSpacingTableDefRule::getTechLayerCutSpacingTableDefSubRule(
     dbTechLayer* parent,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* _parent = (_dbTechLayer*) parent;
   return (dbTechLayerCutSpacingTableDefRule*)
