@@ -88,7 +88,7 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
     case kDbBoolProp: {
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
-      uint boolean;
+      uint32_t boolean;
       stream >> boolean;
       obj.value_ = static_cast<bool>(boolean);
       break;
@@ -134,7 +134,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj)
     case kDbBoolProp:
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
-      stream << static_cast<uint>(std::get<bool>(obj.value_));
+      stream << static_cast<uint32_t>(std::get<bool>(obj.value_));
       break;
 
     case kDbIntProp:
@@ -297,14 +297,14 @@ _dbProperty* _dbProperty::createProperty(dbObject* object_,
 
   // Create property
   _dbProperty* prop = propTable->create();
-  uint oid = object->getOID();
+  uint32_t oid = object->getOID();
   prop->flags_.type = type;
   prop->flags_.owner_type = object->getType();
   prop->owner_ = oid;
 
   // Get name-id, increment reference count
   _dbNameCache* cache = getNameCache(object);
-  uint name_id = cache->addName(name);
+  uint32_t name_id = cache->addName(name);
   prop->name_ = name_id;
 
   // Link property into owner's prop-list
@@ -351,7 +351,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
 {
   _dbNameCache* cache = _dbProperty::getNameCache(object);
 
-  uint name_id = cache->findName(name);
+  uint32_t name_id = cache->findName(name);
 
   if (name_id == 0) {
     return nullptr;
@@ -372,7 +372,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
 {
   _dbNameCache* cache = _dbProperty::getNameCache(object);
 
-  uint name_id = cache->findName(name);
+  uint32_t name_id = cache->findName(name);
 
   if (name_id == 0) {
     return nullptr;
@@ -407,7 +407,7 @@ void dbProperty::destroy(dbProperty* prop_)
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->owner_);
   dbId<_dbProperty> cur = propList;
-  uint oid = prop->getOID();
+  uint32_t oid = prop->getOID();
 
   while (cur) {
     _dbProperty* p = propTable->getPtr(cur);
@@ -438,7 +438,7 @@ void dbProperty::destroy(dbProperty* prop_)
 void dbProperty::destroyProperties(dbObject* obj)
 {
   _dbObject* object = obj->getImpl();
-  uint oid = object->getOID();
+  uint32_t oid = object->getOID();
   dbObjectTable* objTable = object->getTable();
   dbId<_dbProperty> cur = objTable->getPropList(oid);
 

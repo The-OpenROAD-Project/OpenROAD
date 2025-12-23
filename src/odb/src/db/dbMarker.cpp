@@ -102,7 +102,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
   for (std::size_t i = 0; i < item_count; i++) {
     std::string db_type;
     stream >> db_type;
-    uint db_id;
+    uint32_t db_id;
     stream >> db_id;
 
     obj.sources_.emplace(dbObject::getType(db_type.c_str(), obj.getLogger()),

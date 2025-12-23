@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -1037,7 +1038,7 @@ int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
 
       // For a given port, add all boxes/shapes belonging to that port
       for (int i = 0; i < port->numLayer(); ++i) {
-        uint mask = port->layerMask(i);
+        uint32_t mask = port->layerMask(i);
 
         int xl, yl, xh, yh;
         port->bounds(i, &xl, &yl, &xh, &yh);
@@ -1078,7 +1079,7 @@ int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
 
     // Add boxes/shapes for the pin with single port
     for (int i = 0; i < pin->numLayer(); ++i) {
-      uint mask = pin->layerMask(i);
+      uint32_t mask = pin->layerMask(i);
 
       int xl, yl, xh, yh;
       pin->bounds(i, &xl, &yl, &xh, &yh);
@@ -1693,10 +1694,10 @@ int definReader::specialNetCallback(
       std::string layerName;
 
       int pathId;
-      uint next_mask = 0;
-      uint next_via_bottom_mask = 0;
-      uint next_via_cut_mask = 0;
-      uint next_via_top_mask = 0;
+      uint32_t next_mask = 0;
+      uint32_t next_via_bottom_mask = 0;
+      uint32_t next_via_cut_mask = 0;
+      uint32_t next_via_top_mask = 0;
       while ((pathId = path->next()) != DefParser::DEFIPATH_DONE) {
         switch (pathId) {
           case DefParser::DEFIPATH_LAYER:

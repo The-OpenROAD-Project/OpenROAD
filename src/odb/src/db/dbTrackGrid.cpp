@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 #include "dbBlock.h"
@@ -19,7 +20,6 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -90,7 +90,7 @@ const std::vector<int>& dbTrackGrid::getGridX()
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
 
   if (grid->grid_x_.empty()) {
-    uint i;
+    uint32_t i;
 
     for (i = 0; i < grid->x_origin_.size(); ++i) {
       int j;
@@ -129,7 +129,7 @@ const std::vector<int>& dbTrackGrid::getGridY()
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
 
   if (grid->grid_y_.empty()) {
-    uint i;
+    uint32_t i;
 
     for (i = 0; i < grid->y_origin_.size(); ++i) {
       int j;
@@ -322,7 +322,7 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
   return (dbTrackGrid*) grid;
 }
 
-dbTrackGrid* dbTrackGrid::getTrackGrid(dbBlock* block_, uint dbid_)
+dbTrackGrid* dbTrackGrid::getTrackGrid(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbTrackGrid*) block->track_grid_tbl_->getPtr(dbid_);

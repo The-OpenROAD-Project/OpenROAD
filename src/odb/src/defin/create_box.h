@@ -3,9 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace utl {
 class Logger;
@@ -25,7 +26,7 @@ void create_box(dbSWire* wire,
                 int cur_ext,
                 bool has_cur_ext,
                 int width,
-                uint mask,
+                uint32_t mask,
                 utl::Logger* logger);
 
 dbTechLayer* create_via_array(dbSWire* wire,
@@ -38,9 +39,9 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int numY,
                               int stepX,
                               int stepY,
-                              uint bottom_mask,
-                              uint cut_mask,
-                              uint top_mask,
+                              uint32_t bottom_mask,
+                              uint32_t cut_mask,
+                              uint32_t top_mask,
                               utl::Logger* logger);
 
 dbTechLayer* create_via_array(dbSWire* wire,
@@ -53,9 +54,9 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int numY,
                               int stepX,
                               int stepY,
-                              uint bottom_mask,
-                              uint cut_mask,
-                              uint top_mask,
+                              uint32_t bottom_mask,
+                              uint32_t cut_mask,
+                              uint32_t top_mask,
                               utl::Logger* logger);
 
 }  // namespace odb

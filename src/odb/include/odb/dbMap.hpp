@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <map>
 #include <vector>
 
@@ -52,7 +53,7 @@ inline const D& dbMap<T, D>::operator[](T* object) const
     return (*itr).second;
   }
 
-  uint idx = object->getId();
+  uint32_t idx = object->getId();
   assert(idx && (idx < _vector->size()));
   return (*_vector)[idx];
 }
@@ -64,7 +65,7 @@ inline D& dbMap<T, D>::operator[](T* object)
     return map_->at(object);
   }
 
-  uint idx = object->getId();
+  uint32_t idx = object->getId();
   assert(idx && (idx < _vector->size()));
   return (*_vector)[idx];
 }

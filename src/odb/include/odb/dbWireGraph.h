@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 #include "odb/odbDList.h"
 #include "utl/Logger.h"
 
@@ -264,7 +264,7 @@ class dbWireGraph
   // Get the edge of this shape_id.
   // PRECONDITION: The "target" node of this edge must exist (do not delete this
   // node!).
-  Edge* getEdge(uint shape_id);
+  Edge* getEdge(uint32_t shape_id);
 
   // Node Create Method
   Node* createNode(int x, int y, dbTechLayer* l);

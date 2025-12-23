@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <string>
@@ -257,11 +258,11 @@ void setCutClass(
   auto colsNamesAndFirstRowName = at_c<0>(params);
   auto firstRowWithOutName = at_c<1>(params);
   auto allRows = at_c<2>(params);
-  std::map<std::string, odb::uint> cols;
-  std::map<std::string, odb::uint> rows;
+  std::map<std::string, uint32_t> cols;
+  std::map<std::string, uint32_t> rows;
   std::vector<std::vector<std::pair<int, int>>> table;
-  odb::uint colSz = colsNamesAndFirstRowName.size() - 1;
-  for (odb::uint i = 0; i < colSz; i++) {
+  uint32_t colSz = colsNamesAndFirstRowName.size() - 1;
+  for (uint32_t i = 0; i < colSz; i++) {
     std::string name = at_c<0>(colsNamesAndFirstRowName[i]);
     auto OPTION = at_c<1>(colsNamesAndFirstRowName[i]);
     if (OPTION.is_initialized()) {
@@ -279,8 +280,8 @@ void setCutClass(
                at_c<1>(colsNamesAndFirstRowName[colSz]),
                firstRowWithOutName);
   allRows.insert(allRows.begin(), firstRow);
-  odb::uint rowSz = allRows.size();
-  for (odb::uint i = 0; i < rowSz; i++) {
+  uint32_t rowSz = allRows.size();
+  for (uint32_t i = 0; i < rowSz; i++) {
     std::string name = at_c<0>(allRows[i]);
     auto OPTION = at_c<1>(allRows[i]);
     auto items = at_c<2>(allRows[i]);
@@ -289,7 +290,7 @@ void setCutClass(
     }
     rows[name] = i;
     table.push_back(std::vector<std::pair<int, int>>(colSz));
-    for (odb::uint j = 0; j < items.size(); j++) {
+    for (uint32_t j = 0; j < items.size(); j++) {
       auto item = items[j];
       auto spacing1 = at_c<0>(item);
       auto spacing2 = at_c<1>(item);

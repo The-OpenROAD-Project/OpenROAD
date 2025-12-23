@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -13,7 +14,6 @@
 #include "dbVector.h"
 #include "odb/db.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -32,12 +32,12 @@ class _dbScanInst : public _dbObject
   bool operator<(const _dbScanInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  uint bits_;
+  uint32_t bits_;
   std::pair<dbId<dbScanPin>, dbId<dbScanPin>> access_pins_;
   dbId<dbScanPin> scan_enable_;
   dbId<dbInst> inst_;
   std::string scan_clock_;
-  uint clock_edge_;
+  uint32_t clock_edge_;
   dbId<_dbScanInst> next_list_scan_inst_;
   dbId<_dbScanInst> prev_list_scan_inst_;
 };

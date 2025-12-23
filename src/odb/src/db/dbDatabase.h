@@ -4,10 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include <iostream>
 #include <set>
@@ -45,213 +46,213 @@ namespace odb {
 //
 // Schema Revisions
 //
-inline constexpr uint kSchemaMajor = 0;  // Not used...
-inline constexpr uint kSchemaInitial = 57;
+inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
+inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint kSchemaMinor = 124;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 124;  // Current revision number
 
 // Revision where _dbDatabase::hierarchy_ was added
-inline constexpr uint kSchemaHierarchyFlag = 124;
+inline constexpr uint32_t kSchemaHierarchyFlag = 124;
 
 // Revision where dbMarkerCategory was moved from dbBlock to dbChip
-inline constexpr uint kSchemaChipMarkerCategories = 123;
+inline constexpr uint32_t kSchemaChipMarkerCategories = 123;
 
 // Revision where dbTech::dbu_per_micron_ was removed
-inline constexpr uint kSchemaRemoveDbuPerMicron = 122;
+inline constexpr uint32_t kSchemaRemoveDbuPerMicron = 122;
 
 // Revision where core area is stored as a polygon
-inline constexpr uint kSchemaCoreAreaIsPolygon = 121;
+inline constexpr uint32_t kSchemaCoreAreaIsPolygon = 121;
 
 // Revision where _dbDatabase::dbu_per_micron_ was added
-inline constexpr uint kSchemaDbuPerMicron = 120;
+inline constexpr uint32_t kSchemaDbuPerMicron = 120;
 
 // Revision where dbGCellGrid::GCellData moved to float (for cugr)
-inline constexpr uint kSchemaFloatGCellData = 119;
+inline constexpr uint32_t kSchemaFloatGCellData = 119;
 
 // Revision where dbTech was moved from dbBlock to dbChip
-inline constexpr uint kSchemaChipTech = 118;
+inline constexpr uint32_t kSchemaChipTech = 118;
 
 // Revision where dbChipBump was added
-inline constexpr uint kSchemaChipBump = 117;
+inline constexpr uint32_t kSchemaChipBump = 117;
 
 // Revision where dbChipRegion was added
-inline constexpr uint kSchemaChipRegion = 116;
+inline constexpr uint32_t kSchemaChipRegion = 116;
 
 // Revision where dbChipInst was added
-inline constexpr uint kSchemaChipInst = 115;
+inline constexpr uint32_t kSchemaChipInst = 115;
 
 // Revision where dbChip hash table was added
-inline constexpr uint kSchemaChipHashTable = 114;
+inline constexpr uint32_t kSchemaChipHashTable = 114;
 
 // Revision where unique net/inst indices were added to dbBlock
-inline constexpr uint kSchemaUniqueIndices = 113;
+inline constexpr uint32_t kSchemaUniqueIndices = 113;
 
 // Revision where dbChip was extended with new fields
-inline constexpr uint kSchemaChipExtended = 112;
+inline constexpr uint32_t kSchemaChipExtended = 112;
 
 // Revision where the map which associates instances to their
 // scan version was added
-inline constexpr uint kSchemaMapInstsToScanInsts = 111;
+inline constexpr uint32_t kSchemaMapInstsToScanInsts = 111;
 
 // Revision where the ownership of the scan insts was changed
 // from the its scan list to the block
-inline constexpr uint kSchemaBlockOwnsScanInsts = 110;
+inline constexpr uint32_t kSchemaBlockOwnsScanInsts = 110;
 
 // Revision where is_connect_to_term_ flag was added to dbGuide
-inline constexpr uint kSchemaGuideConnectedToTerm = 109;
+inline constexpr uint32_t kSchemaGuideConnectedToTerm = 109;
 
 // Revision where dbTable's mask/shift are compile constants
-inline constexpr uint kSchemaTableMaskShift = 108;
+inline constexpr uint32_t kSchemaTableMaskShift = 108;
 
 // Revision where dbBTerm top layer grid was added to dbBlock
-inline constexpr uint kSchemaBtermTopLayerGrid = 107;
+inline constexpr uint32_t kSchemaBtermTopLayerGrid = 107;
 
 // Revision where die area is converted to a polygon
-inline constexpr uint kSchemaDieAreaIsPolygon = 106;
+inline constexpr uint32_t kSchemaDieAreaIsPolygon = 106;
 
 // Revision where check for mirrored constraint on bterm was added
-inline constexpr uint kSchemaBtermIsMirrored = 105;
+inline constexpr uint32_t kSchemaBtermIsMirrored = 105;
 
 // Revision where support for pin groups was added
-inline constexpr uint kSchemaBlockPinGroups = 104;
+inline constexpr uint32_t kSchemaBlockPinGroups = 104;
 
 // Revision where support for mirrored pins was added
-inline constexpr uint kSchemaBtermMirroredPin = 103;
+inline constexpr uint32_t kSchemaBtermMirroredPin = 103;
 
 // Revision where support for LEF58_CELLEDGESPACINGTABLE was added
-inline constexpr uint kSchemaCellEdgeSpcTbl = 102;
+inline constexpr uint32_t kSchemaCellEdgeSpcTbl = 102;
 
 // Revision where dbMasterEdgeType was added
-inline constexpr uint kSchemaMasterEdgeType = 101;
+inline constexpr uint32_t kSchemaMasterEdgeType = 101;
 
 // Revision where dbTarget was removed
-inline constexpr uint kSchemaRmTarget = 100;
+inline constexpr uint32_t kSchemaRmTarget = 100;
 
 // Revision where mask information was added to track grids
-inline constexpr uint kSchemaTrackMask = 99;
+inline constexpr uint32_t kSchemaTrackMask = 99;
 
 // Revision where the jumper insertion flag is added to dbNet
-inline constexpr uint kSchemaHasJumpers = 98;
+inline constexpr uint32_t kSchemaHasJumpers = 98;
 
 // Revision where the is_congested flag was added to dbGuide
-inline constexpr uint kSchemaDbGuideCongested = 97;
+inline constexpr uint32_t kSchemaDbGuideCongested = 97;
 
 // Revision where the dbMarkerGroup/Categories were added to dbBlock
-inline constexpr uint kSchemaDbMarkerGroup = 96;
+inline constexpr uint32_t kSchemaDbMarkerGroup = 96;
 
 // Revision where orthogonal spacing table support added
-inline constexpr uint kSchemaOrthSpcTbl = 95;
+inline constexpr uint32_t kSchemaOrthSpcTbl = 95;
 
 // Revision where unused hashes removed
-inline constexpr uint kSchemaDbRemoveHash = 94;
+inline constexpr uint32_t kSchemaDbRemoveHash = 94;
 
 // Revision where the dbGDSLib is added to dbDatabase
-inline constexpr uint kSchemaGdsLibInBlock = 93;
+inline constexpr uint32_t kSchemaGdsLibInBlock = 93;
 
 // Reverted Revision where unused hashes removed
-inline constexpr uint kSchemaRevertedDbSchemaDbRemoveHash = 92;
+inline constexpr uint32_t kSchemaRevertedDbSchemaDbRemoveHash = 92;
 
 // Revision where the layers ranges, for signals and clock nets,
 // were moved from GlobalRouter to dbBlock
-inline constexpr uint kSchemaDbBlockLayersRanges = 91;
+inline constexpr uint32_t kSchemaDbBlockLayersRanges = 91;
 
 // Revision where via layer was added to dbGuide
-inline constexpr uint kSchemaDbGuideViaLayer = 90;
+inline constexpr uint32_t kSchemaDbGuideViaLayer = 90;
 
 // Revision where blocked regions for IO pins were added to dbBlock
-inline constexpr uint kSchemaDbBlockBlockedRegionsForPins = 89;
+inline constexpr uint32_t kSchemaDbBlockBlockedRegionsForPins = 89;
 
 // Revision where odb::modITerm,modBTerm,modNet made doubly linked for
 // hiearchical port removal
-inline constexpr uint kSchemaHierPortRemoval = 89;
+inline constexpr uint32_t kSchemaHierPortRemoval = 89;
 
 // Revision where odb::Polygon was added
-inline constexpr uint kSchemaPolygon = 88;
+inline constexpr uint32_t kSchemaPolygon = 88;
 
 // Revision where _dbTechLayer::max_spacing_rules_tbl_ was added
-inline constexpr uint kSchemaMaxSpacing = 87;
+inline constexpr uint32_t kSchemaMaxSpacing = 87;
 
 // Revision where bus ports added to odb
-inline constexpr uint kSchemaOdbBusport = 86;
+inline constexpr uint32_t kSchemaOdbBusport = 86;
 
 // Revision where constraint region was added to dbBTerm
-inline constexpr uint kSchemaBtermConstraintRegion = 85;
+inline constexpr uint32_t kSchemaBtermConstraintRegion = 85;
 
 // Revision where GRT layer adjustment was relocated to dbTechLayer
-inline constexpr uint kSchemaLayerAdjustment = 84;
+inline constexpr uint32_t kSchemaLayerAdjustment = 84;
 
 // Revision where scan structs are added
-inline constexpr uint kSchemaAddScan = 83;
+inline constexpr uint32_t kSchemaAddScan = 83;
 
 // Revision where _dbTechLayer::two_wires_forbidden_spc_rules_tbl_ was added
-inline constexpr uint kSchemaLef58TwoWiresForbiddenSpacing = 82;
+inline constexpr uint32_t kSchemaLef58TwoWiresForbiddenSpacing = 82;
 // Revision where hierarchy schema with modnets, modbterms, moditerms introduced
-inline constexpr uint kSchemaUpdateHierarchy = 81;
+inline constexpr uint32_t kSchemaUpdateHierarchy = 81;
 // Revision where dbPowerSwitch changed from strings to structs
-inline constexpr uint kSchemaUpdateDbPowerSwitch = 80;
+inline constexpr uint32_t kSchemaUpdateDbPowerSwitch = 80;
 
 // Revision where dbGCellGrid::GCellData moved to uint8_t
-inline constexpr uint kSchemaSmalerGcelldata = 79;
+inline constexpr uint32_t kSchemaSmalerGcelldata = 79;
 
 // Revision where _dbBox / flags.mask was added
-inline constexpr uint kSchemaDbBoxMask = 78;
+inline constexpr uint32_t kSchemaDbBoxMask = 78;
 
-inline constexpr uint kSchemaLevelShifterCell = 77;
+inline constexpr uint32_t kSchemaLevelShifterCell = 77;
 
-inline constexpr uint kSchemaPowerDomainVoltage = 76;
+inline constexpr uint32_t kSchemaPowerDomainVoltage = 76;
 
 // Revision where _dbTechLayer::wrongdir_spacing_rules_tbl_ was added
-inline constexpr uint kSchemaWrongdirSpacing = 75;
+inline constexpr uint32_t kSchemaWrongdirSpacing = 75;
 
 // Revision where _dbLevelShifter was added
-inline constexpr uint kSchemaLevelShifter = 74;
+inline constexpr uint32_t kSchemaLevelShifter = 74;
 
 // Revision where _dbSite::_row_pattern/_parent_lib/_parent_site were added
-inline constexpr uint kSchemaSiteRowPattern = 73;
+inline constexpr uint32_t kSchemaSiteRowPattern = 73;
 
 // Revision where _dbMaster::_lib_for_site was added
-inline constexpr uint kSchemaDbmasterLibForSite = 72;
+inline constexpr uint32_t kSchemaDbmasterLibForSite = 72;
 
 // Revision where _dbObstruction::_except_pg_nets was added
-inline constexpr uint kSchemaExceptPgNetsObstruction = 71;
+inline constexpr uint32_t kSchemaExceptPgNetsObstruction = 71;
 
 // Revision where _dbTechLayer::forbidden_spacing_rules_tbl_ was added
-inline constexpr uint kSchemaLef58ForbiddenSpacing = 70;
+inline constexpr uint32_t kSchemaLef58ForbiddenSpacing = 70;
 
 // Revision where upf power switch mapping was added.
-inline constexpr uint kSchemaUpfPowerSwitchMapping = 69;
+inline constexpr uint32_t kSchemaUpfPowerSwitchMapping = 69;
 
 // Revision where _component_shift_mask is added to _dbBlock.
-inline constexpr uint kSchemaBlockComponentMaskShift = 68;
+inline constexpr uint32_t kSchemaBlockComponentMaskShift = 68;
 
 // Revision where _minExtModelIndex & _maxExtModelIndex removed from
 // _dbBlock.
-inline constexpr uint kSchemaBlockExtModelIndex = 67;
+inline constexpr uint32_t kSchemaBlockExtModelIndex = 67;
 
 // Revision where _tech moved to _dbBlock & _dbLib from _dbDatabase.
 // Added name to dbTech.
-inline constexpr uint kSchemaBlockTech = 66;
+inline constexpr uint32_t kSchemaBlockTech = 66;
 
 // Revision where _dbGCellGrid switch to using dbMatrix
-inline constexpr uint kSchemaGcellGridMatrix = 65;
+inline constexpr uint32_t kSchemaGcellGridMatrix = 65;
 
 // Revision where _dbBoxFlags shifted _mark bit to _layer_id
-inline constexpr uint kSchemaBoxLayerBits = 64;
+inline constexpr uint32_t kSchemaBoxLayerBits = 64;
 
 // Revision where _dbTechLayer::keepout_zone_rules_tbl_ was added
-inline constexpr uint kSchemaKeepoutZone = 63;
+inline constexpr uint32_t kSchemaKeepoutZone = 63;
 
 // Revision where _dbBlock::_net_tracks_tbl was added
-inline constexpr uint kSchemaNetTracks = 62;
+inline constexpr uint32_t kSchemaNetTracks = 62;
 
 // Revision where _dbTechLayer::_first_last_pitch was added
-inline constexpr uint kSchemaLef58Pitch = 61;
+inline constexpr uint32_t kSchemaLef58Pitch = 61;
 
 // Revision where _dbTechLayer::wrong_way_width_ was added
-inline constexpr uint kSchemaWrongwayWidth = 60;
+inline constexpr uint32_t kSchemaWrongwayWidth = 60;
 
 // Revision where dbGlobalConnect was added
-inline constexpr uint kSchemaAddGlobalConnect = 58;
+inline constexpr uint32_t kSchemaAddGlobalConnect = 58;
 
 // User Code End Consts
 class dbIStream;
@@ -291,17 +292,17 @@ class _dbDatabase : public _dbObject
   // User Code Begin Methods
   _dbDatabase(_dbDatabase* db, int id);
   utl::Logger* getLogger() const;
-  bool isSchema(uint rev) const { return schema_minor_ >= rev; }
-  bool isLessThanSchema(uint rev) { return schema_minor_ < rev; }
+  bool isSchema(uint32_t rev) const { return schema_minor_ >= rev; }
+  bool isLessThanSchema(uint32_t rev) { return schema_minor_ < rev; }
   // User Code End Methods
 
-  uint magic1_;
-  uint magic2_;
-  uint schema_major_;
-  uint schema_minor_;
-  uint master_id_;
+  uint32_t magic1_;
+  uint32_t magic2_;
+  uint32_t schema_major_;
+  uint32_t schema_minor_;
+  uint32_t master_id_;
   dbId<_dbChip> chip_;
-  uint dbu_per_micron_;
+  uint32_t dbu_per_micron_;
   dbTable<_dbChip, 2>* chip_tbl_;
   dbHashTable<_dbChip, 2> chip_hash_;
   dbTable<_dbProperty>* prop_tbl_;
