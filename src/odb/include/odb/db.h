@@ -2626,7 +2626,7 @@ class dbNet : public dbObject
   /// Connect a driver iterm to a load iterm, punching ports through hierarchy
   /// as needed.
   ///
-  void hierarchicalConnect(dbITerm* driver, dbITerm* load);
+  void hierarchicalConnect(dbObject* driver, dbObject* load);
 
   // jk: move into _dbNet
  private:

@@ -3026,7 +3026,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                                loads_on_diff_nets);
 }
 
-void dbNet::hierarchicalConnect(dbITerm* driver, dbITerm* load)
+void dbNet::hierarchicalConnect(dbObject* driver, dbObject* load)
 {
   dbInsertBuffer insert_buffer(this);
   insert_buffer.hierarchicalConnect(driver, load);

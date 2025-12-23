@@ -2789,4 +2789,56 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case26)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+TEST_F(TestInsertBuffer, BeforeLoads_Case27)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+  dbInst* load1 = block_->findInst("h1/load1");
+  ASSERT_NE(load1, nullptr);
+  dbITerm* load1_a = load1->findITerm("A");
+  ASSERT_NE(load1_a, nullptr);
+  dbNet* target_net = block_->findNet("in");
+  ASSERT_NE(target_net, nullptr);
+  dbModule* mod_h1 = block_->findModule("H1");
+  ASSERT_NE(mod_h1, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Insert buffer before load1/A
+  std::set<dbObject*> targets;
+  targets.insert(load1_a);
+
+  dbInst* new_buf = target_net->insertBufferBeforeLoads(
+      targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+  EXPECT_EQ(new_buf->getModule(), mod_h1);
+  EXPECT_EQ(new_buf->findITerm("A")->getNet(), target_net);
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
 }  // namespace odb

@@ -46,7 +46,12 @@ class dbInsertBuffer
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS,
                                   bool loads_on_diff_nets = false);
-  void hierarchicalConnect(dbITerm* driver, dbITerm* load);
+  // Establish hierarchical connections (dbModNet) between a driver and a load.
+  // - It creates modnet and flat net connections through multiple hierarchies.
+  // - Ensures that the flat net name matches to any of corresponding modnet
+  //   names. If needed, flat net name can be renamed to the modnet name
+  //   connected to the driver pin.
+  void hierarchicalConnect(dbObject* driver, dbObject* load);
 
  private:
   void resetMembers();
@@ -86,24 +91,28 @@ class dbInsertBuffer
   // Helper functions for hierarchicalConnect
   //------------------------------------------------------------------
   dbModNet* getModNet(dbObject* obj) const;
-  void ensureFlatNetConnection(dbITerm* driver, dbITerm* load);
-  void connectSameModule(dbITerm* driver,
-                         dbITerm* load,
-                         dbModule* driver_mod,
-                         dbModule* load_mod);
+  dbNet* getNet(dbObject* obj) const;
+  dbModule* getModule(dbObject* obj) const;
+  std::string getName(dbObject* obj) const;
+  void connect(dbObject* obj, dbNet* net);
+  void connect(dbObject* obj, dbModNet* net);
+  void ensureFlatNetConnection(dbObject* driver, dbObject* load);
+  void connectSameModule(dbObject* driver,
+                         dbObject* load,
+                         dbModule* driver_mod);
   dbModNet* ensureModNet(dbObject* obj, dbModule* mod, const char* suffix);
   dbObject* traceUp(dbObject* current_obj,
                     dbModule* current_mod,
                     dbModule* target_mod,
                     dbIoType io_type,
                     const char* suffix);
-  void connectDifferentModule(dbITerm* driver,
-                              dbITerm* load,
+  void connectDifferentModule(dbObject* driver,
+                              dbObject* load,
                               dbModule* driver_mod,
                               dbModule* load_mod);
 
   //------------------------------------------------------------------
-  // Helper functions for insertBufferBeforeLoads
+  // Step functions for insertBufferBeforeLoads
   //------------------------------------------------------------------
   dbModule* validateLoadPinsAndFindLCA(std::set<dbObject*>& load_pins,
                                        std::set<dbNet*>& other_dbnets,
@@ -129,7 +138,7 @@ class dbInsertBuffer
   void dlogCreatingNewHierNet(const char* base_name) const;
   void dlogConnectedBufferInputFlat() const;
   void dlogConnectedBufferInputHier(dbModNet* orig_mod_net) const;
-  void dlogConnectedBufferInputViaHierConnect(dbITerm* drvr_iterm) const;
+  void dlogConnectedBufferInputViaHierConnect(dbObject* drvr_term) const;
   void dlogConnectedBufferOutput() const;
   void dlogCreatingHierConn(int load_idx, int num_loads, dbITerm* load) const;
   void dlogMovedBTermLoad(int load_idx, int num_loads, dbBTerm* load) const;

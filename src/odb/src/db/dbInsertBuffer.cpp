@@ -3,6 +3,8 @@
 
 #include "dbInsertBuffer.h"
 
+#include <cassert>
+
 #include "dbInst.h"
 #include "dbModule.h"
 #include "dbNet.h"
@@ -947,41 +949,106 @@ dbModNet* dbInsertBuffer::getModNet(dbObject* obj) const
   if (obj->getObjectType() == dbModITermObj) {
     return static_cast<dbModITerm*>(obj)->getModNet();
   }
+  if (obj->getObjectType() == dbBTermObj) {
+    return static_cast<dbBTerm*>(obj)->getModNet();
+  }
+  assert(false);
   return nullptr;
 }
 
-void dbInsertBuffer::ensureFlatNetConnection(dbITerm* driver, dbITerm* load)
+dbNet* dbInsertBuffer::getNet(dbObject* obj) const
 {
-  dbNet* driver_net = driver->getNet();
-  dbNet* load_net = load->getNet();
+  if (obj->getObjectType() == dbITermObj) {
+    return static_cast<dbITerm*>(obj)->getNet();
+  }
+  if (obj->getObjectType() == dbBTermObj) {
+    return static_cast<dbBTerm*>(obj)->getNet();
+  }
+  assert(false);
+  return nullptr;
+}
+
+dbModule* dbInsertBuffer::getModule(dbObject* obj) const
+{
+  if (obj->getObjectType() == dbITermObj) {
+    return static_cast<dbITerm*>(obj)->getInst()->getModule();
+  }
+  if (obj->getObjectType() == dbBTermObj) {
+    return block_->getTopModule();
+  }
+  return nullptr;
+}
+
+std::string dbInsertBuffer::getName(dbObject* obj) const
+{
+  if (obj->getObjectType() == dbITermObj) {
+    return static_cast<dbITerm*>(obj)->getMTerm()->getName();
+  }
+  if (obj->getObjectType() == dbBTermObj) {
+    return static_cast<dbBTerm*>(obj)->getName();
+  }
+  assert(false);
+  return "";
+}
+
+void dbInsertBuffer::connect(dbObject* obj, dbNet* net)
+{
+  if (obj->getObjectType() == dbITermObj) {
+    static_cast<dbITerm*>(obj)->connect(net);
+  } else if (obj->getObjectType() == dbBTermObj) {
+    static_cast<dbBTerm*>(obj)->connect(net);
+  } else {
+    assert(false);
+  }
+}
+
+void dbInsertBuffer::connect(dbObject* obj, dbModNet* net)
+{
+  if (obj->getObjectType() == dbITermObj) {
+    static_cast<dbITerm*>(obj)->connect(net);
+  } else if (obj->getObjectType() == dbModITermObj) {
+    static_cast<dbModITerm*>(obj)->connect(net);
+  } else if (obj->getObjectType() == dbBTermObj) {
+    static_cast<dbBTerm*>(obj)->connect(net);
+  } else {
+    assert(false);
+  }
+}
+
+void dbInsertBuffer::ensureFlatNetConnection(dbObject* driver, dbObject* load)
+{
+  dbNet* driver_net = getNet(driver);
+  dbNet* load_net = getNet(load);
+
   if (driver_net && load_net) {
     if (driver_net != load_net) {
       driver_net->mergeNet(load_net);
     }
   } else if (driver_net) {
-    load->connect(driver_net);
+    connect(load, driver_net);
   } else if (load_net) {
-    driver->connect(load_net);
+    connect(driver, load_net);
   } else {
-    std::string base_name = driver->getMTerm()->getName();
+    std::string base_name = getName(driver);
     dbNet* new_net = dbNet::create(block_, base_name.c_str());
     if (!new_net) {
+      // jk: TODO. Use "net"
       // Fallback for name collision
       new_net = dbNet::create(block_, (base_name + "_conn").c_str());
     }
     if (new_net) {
-      driver->connect(new_net);
-      load->connect(new_net);
+      connect(driver, new_net);
+      connect(load, new_net);
     }
   }
 
   // Check if flat net name matches any of hierarchical net names
-  dbNet* flat_net = driver->getNet();
+  dbNet* flat_net = getNet(driver);
   if (flat_net) {
     bool name_match = false;
     const char* flat_name = flat_net->getConstName();
 
-    // efficient check
+    // Efficient check
     if (dbModNet* mod_net = block_->findModNet(flat_name)) {
       for (dbITerm* iterm : flat_net->getITerms()) {
         if (iterm->getModNet() == mod_net) {
@@ -1000,7 +1067,7 @@ void dbInsertBuffer::ensureFlatNetConnection(dbITerm* driver, dbITerm* load)
     }
 
     if (!name_match) {
-      // Rename to something standard. try driver's mod net first
+      // Rename to the modnet name connected to the driver
       dbModNet* driver_mod_net = getModNet(driver);
       if (driver_mod_net) {
         flat_net->rename(driver_mod_net->getHierarchicalName().c_str());
@@ -1011,30 +1078,33 @@ void dbInsertBuffer::ensureFlatNetConnection(dbITerm* driver, dbITerm* load)
   }
 }
 
-void dbInsertBuffer::connectSameModule(dbITerm* driver,
-                                       dbITerm* load,
-                                       dbModule* driver_mod,
-                                       dbModule* load_mod)
+void dbInsertBuffer::connectSameModule(dbObject* driver,
+                                       dbObject* load,
+                                       dbModule* driver_mod)
 {
-  dbModNet* driver_net = driver->getModNet();
-  dbModNet* load_net = load->getModNet();
+  dbModNet* driver_net = getModNet(driver);
+  dbModNet* load_net = getModNet(load);
 
   if (driver_net && load_net) {
     if (driver_net != load_net) {
       driver_net->mergeModNet(load_net);
     }
   } else if (driver_net) {
-    load->connect(driver_net);
+    connect(load, driver_net);
   } else if (load_net) {
-    driver->connect(load_net);
+    connect(driver, load_net);
   } else {
-    std::string base_name = driver->getMTerm()->getName();
+    std::string base_name;
+    if (driver->getObjectType() == dbITermObj) {
+      base_name = static_cast<dbITerm*>(driver)->getMTerm()->getName();
+    } else {
+      base_name = static_cast<dbBTerm*>(driver)->getName();
+    }
     std::string name = makeUniqueHierName(driver_mod, base_name, "conn");
     dbModNet* new_net = dbModNet::create(driver_mod, name.c_str());
-    driver->connect(new_net);
-    load->connect(new_net);
+    connect(driver, new_net);
+    connect(load, new_net);
   }
-  ensureFlatNetConnection(driver, load);
 }
 
 dbModNet* dbInsertBuffer::ensureModNet(dbObject* obj,
@@ -1046,25 +1116,35 @@ dbModNet* dbInsertBuffer::ensureModNet(dbObject* obj,
     std::string base_name;
     if (obj->getObjectType() == dbITermObj) {
       base_name = static_cast<dbITerm*>(obj)->getMTerm()->getName();
-    } else {
+    } else if (obj->getObjectType() == dbModITermObj) {
       base_name = static_cast<dbModITerm*>(obj)->getChildModBTerm()->getName();
+    } else if (obj->getObjectType() == dbBTermObj) {
+      base_name = static_cast<dbBTerm*>(obj)->getName();
     }
+
     std::string name = makeUniqueHierName(mod, base_name, suffix);
     mod_net = dbModNet::create(mod, name.c_str());
-    if (obj->getObjectType() == dbITermObj) {
-      dbITerm* iterm = static_cast<dbITerm*>(obj);
-      iterm->connect(mod_net);
-      // Connect other ITerms on the same flat net within the same module
-      if (dbNet* flat_net = iterm->getNet()) {
+
+    connect(obj, mod_net);
+
+    if (obj->getObjectType() == dbITermObj
+        || obj->getObjectType() == dbBTermObj) {
+      dbNet* flat_net = getNet(obj);
+      if (flat_net) {
+        // Connect ITerms in the same module
         for (dbITerm* peer_iterm : flat_net->getITerms()) {
-          if (peer_iterm->getInst()->getModule() == mod
-              && peer_iterm != iterm) {
+          if (peer_iterm->getInst()->getModule() == mod) {
             peer_iterm->connect(mod_net);
           }
         }
+
+        // Connect BTerms if this is the top module
+        if (mod == block_->getTopModule()) {
+          for (dbBTerm* peer_bterm : flat_net->getBTerms()) {
+            peer_bterm->connect(mod_net);
+          }
+        }
       }
-    } else {
-      static_cast<dbModITerm*>(obj)->connect(mod_net);
     }
   }
   return mod_net;
@@ -1108,8 +1188,8 @@ dbObject* dbInsertBuffer::traceUp(dbObject* current_obj,
   return current_obj;
 }
 
-void dbInsertBuffer::connectDifferentModule(dbITerm* driver,
-                                            dbITerm* load,
+void dbInsertBuffer::connectDifferentModule(dbObject* driver,
+                                            dbObject* load,
                                             dbModule* driver_mod,
                                             dbModule* load_mod)
 {
@@ -1124,14 +1204,14 @@ void dbInsertBuffer::connectDifferentModule(dbITerm* driver,
   dbObject* load_lca_obj = traceUp(load, load_mod, lca, dbIoType::INPUT, "in");
 
   // Connect at LCA
-  dbModNet* net1 = getModNet(driver_lca_obj);
-  dbModNet* net2 = getModNet(load_lca_obj);
-  dbModNet* lca_net = nullptr;
+  dbModNet* driver_modnet = getModNet(driver_lca_obj);
+  dbModNet* load_modnet = getModNet(load_lca_obj);
+  dbModNet* lca_modnet = nullptr;
 
-  if (net1) {
-    lca_net = net1;
-  } else if (net2) {
-    lca_net = net2;
+  if (driver_modnet) {
+    lca_modnet = driver_modnet;
+  } else if (load_modnet) {
+    lca_modnet = load_modnet;
   } else {
     // Determine base name for new net
     std::string base_name;
@@ -1139,45 +1219,45 @@ void dbInsertBuffer::connectDifferentModule(dbITerm* driver,
       base_name = static_cast<dbModITerm*>(driver_lca_obj)
                       ->getChildModBTerm()
                       ->getName();
-    } else {  // driver_lca_obj is dbITerm
+    } else if (driver_lca_obj->getObjectType() == dbITermObj) {
       base_name = static_cast<dbITerm*>(driver_lca_obj)->getMTerm()->getName();
+    } else if (driver_lca_obj->getObjectType() == dbBTermObj) {
+      base_name = static_cast<dbBTerm*>(driver_lca_obj)->getName();
+    } else {
+      assert(false);
     }
-    std::string name = makeUniqueHierName(lca, base_name, "conn");
-    lca_net = dbModNet::create(lca, name.c_str());
+    std::string name
+        = makeUniqueHierName(lca, base_name, "conn");  // jk: use "net"?
+    lca_modnet = dbModNet::create(lca, name.c_str());
   }
 
-  if (driver_lca_obj->getObjectType() == dbITermObj) {
-    static_cast<dbITerm*>(driver_lca_obj)->connect(lca_net);
-  } else {
-    static_cast<dbModITerm*>(driver_lca_obj)->connect(lca_net);
-  }
-
-  if (load_lca_obj->getObjectType() == dbITermObj) {
-    static_cast<dbITerm*>(load_lca_obj)->connect(lca_net);
-  } else {
-    static_cast<dbModITerm*>(load_lca_obj)->connect(lca_net);
-  }
-
-  // Check and create flat net connection if needed
-  ensureFlatNetConnection(driver, load);
+  connect(driver_lca_obj, lca_modnet);
+  connect(load_lca_obj, lca_modnet);
 }
 
-void dbInsertBuffer::hierarchicalConnect(dbITerm* driver, dbITerm* load)
+void dbInsertBuffer::hierarchicalConnect(dbObject* driver, dbObject* load)
 {
-  dbModule* driver_mod = driver->getInst()->getModule();
-  dbModule* load_mod = load->getInst()->getModule();
+  dbModule* driver_mod = getModule(driver);
+  dbModule* load_mod = getModule(load);
+
+  if (driver_mod == nullptr || load_mod == nullptr) {
+    logger_->error(
+        utl::ODB, 1210, "hierarchicalConnect: Invalid driver or load object.");
+    return;
+  }
 
   // Simple case (driver and load are in the same module)
   // - Connect the modnet.
   if (driver_mod == load_mod) {
-    connectSameModule(driver, load, driver_mod, load_mod);
-    return;
+    connectSameModule(driver, load, driver_mod);
+  } else {
+    // Complex case (driver and load are in different modules)
+    // - Find the LCA of the driver and load modules.
+    // - Connect the modnet of the driver to the modnet of the load.
+    connectDifferentModule(driver, load, driver_mod, load_mod);
   }
 
-  // Complex case (driver and load are in different modules)
-  // - Find the LCA of the driver and load modules.
-  // - Connect the modnet of the driver to the modnet of the load.
-  connectDifferentModule(driver, load, driver_mod, load_mod);
+  ensureFlatNetConnection(driver, load);
 }
 
 dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
@@ -1333,11 +1413,17 @@ void dbInsertBuffer::rewireBufferLoadPins(std::set<dbObject*>& load_pins)
       dlogConnectedBufferInputHier(orig_mod_net);
     } else {
       dbObject* drvr = net_->getFirstDriverTerm();
-      if (drvr && drvr->getObjectType() == dbITermObj) {
-        dbITerm* drvr_iterm = static_cast<dbITerm*>(drvr);
-        if (drvr_iterm->getInst()->getModule() != target_module_) {
-          hierarchicalConnect(drvr_iterm, buf_input_iterm_);
-          dlogConnectedBufferInputViaHierConnect(drvr_iterm);
+      if (drvr) {
+        dbModule* drvr_mod = nullptr;
+        if (drvr->getObjectType() == dbITermObj) {
+          drvr_mod = static_cast<dbITerm*>(drvr)->getInst()->getModule();
+        } else if (drvr->getObjectType() == dbBTermObj) {
+          drvr_mod = block_->getTopModule();
+        }
+
+        if (drvr_mod && drvr_mod != target_module_) {
+          hierarchicalConnect(drvr, buf_input_iterm_);
+          dlogConnectedBufferInputViaHierConnect(drvr);
         }
       }
     }
@@ -1508,7 +1594,7 @@ void dbInsertBuffer::dlogConnectedBufferInputHier(dbModNet* orig_mod_net) const
 }
 
 void dbInsertBuffer::dlogConnectedBufferInputViaHierConnect(
-    dbITerm* drvr_iterm) const
+    dbObject* drvr_term) const
 {
   debugPrint(logger_,
              utl::ODB,
@@ -1517,7 +1603,7 @@ void dbInsertBuffer::dlogConnectedBufferInputViaHierConnect(
              "BeforeLoads: Connected buffer input '{}' to "
              "original hierarchical net '{}' via hierarchicalConnect",
              buf_input_iterm_->getName(),
-             drvr_iterm->getName());
+             drvr_term->getName());
 }
 
 void dbInsertBuffer::dlogConnectedBufferOutput() const
