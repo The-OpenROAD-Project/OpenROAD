@@ -425,6 +425,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   {
     clk_buffers_ = clk_buffers;
   }
+  void inferClockBufferList(const char* lib_name,
+                            std::vector<std::string>& buffers);
+  bool isClockCellCandidate(sta::LibertyCell* cell);
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers

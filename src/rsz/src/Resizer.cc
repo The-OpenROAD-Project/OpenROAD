@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -63,6 +64,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -4376,6 +4378,12 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
+
+  if (clk_buffers_.empty()) {
+    std::vector<std::string> inferred_buffers;
+    inferClockBufferList(nullptr, inferred_buffers);  // update clk_buffers_
+  }
+
   utl::SetAndRestore set_buffers(buffer_cells_, clk_buffers_);
 
   repair_design_->repairClkNets(max_wire_length);
@@ -5655,6 +5663,169 @@ bool Resizer::checkAndMarkVTSwappable(
   }
 
   return true;
+}
+
+bool Resizer::isClockCellCandidate(sta::LibertyCell* cell)
+{
+  return (!cell->dontUse() && !this->dontUse(cell) && !cell->alwaysOn()
+          && !cell->isIsolationCell() && !cell->isLevelShifter());
+}
+
+void Resizer::inferClockBufferList(const char* lib_name,
+                                   std::vector<std::string>& buffers)
+{
+  sta::Vector<sta::LibertyCell*> selected_buffers;
+
+  // first, look for buffers with "is_clock_cell: true" cell attribute
+  sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+      continue;
+    }
+    for (sta::LibertyCell* buffer : *lib->buffers()) {
+      if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
+        // "is_clock_cell: true"
+        selected_buffers.emplace_back(buffer);
+        debugPrint(logger_,
+                   RSZ,
+                   "inferClockBufferList",
+                   1,
+                   "{} has clock cell attribute",
+                   buffer->name());
+      }
+    }
+  }
+  delete lib_iter;
+
+  // second, look for buffers with an input port that has
+  // LEF USE as "CLOCK"
+  if (selected_buffers.empty()) {
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+        continue;
+      }
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
+        odb::dbMaster* master = db_->findMaster(buffer->name());
+        for (odb::dbMTerm* mterm : master->getMTerms()) {
+          if (mterm->getIoType() == odb::dbIoType::INPUT
+              && mterm->getSigType() == odb::dbSigType::CLOCK
+              && isClockCellCandidate(buffer)) {
+            // input port with LEF USE as "CLOCK"
+            selected_buffers.emplace_back(buffer);
+            debugPrint(logger_,
+                       RSZ,
+                       "inferClockBufferList",
+                       1,
+                       "{} has input port {} with LEF USE as CLOCK",
+                       buffer->name(),
+                       mterm->getName());
+          }
+        }
+      }
+    }
+    delete lib_iter;
+  }
+
+  // third, look for all buffers with name CLKBUF or clkbuf
+  if (selected_buffers.empty()) {
+    sta::PatternMatch patternClkBuf(".*CLKBUF.*",
+                                    /* is_regexp */ true,
+                                    /* nocase */ true,
+                                    /* Tcl_interp* */ sta_->tclInterp());
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+        continue;
+      }
+      for (sta::LibertyCell* buffer :
+           lib->findLibertyCellsMatching(&patternClkBuf)) {
+        if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+          debugPrint(logger_,
+                     RSZ,
+                     "inferClockBufferList",
+                     1,
+                     "{} found by 'CLKBUF' pattern match",
+                     buffer->name());
+          selected_buffers.emplace_back(buffer);
+        }
+      }
+    }
+    delete lib_iter;
+  }
+
+  // fourth, look for all buffers with name BUF or buf
+  if (selected_buffers.empty()) {
+    sta::PatternMatch patternBuf(".*BUF.*",
+                                 /* is_regexp */ true,
+                                 /* nocase */ true,
+                                 /* Tcl_interp* */ nullptr);
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+        continue;
+      }
+      for (sta::LibertyCell* buffer :
+           lib->findLibertyCellsMatching(&patternBuf)) {
+        if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+          debugPrint(logger_,
+                     RSZ,
+                     "inferClockBufferList",
+                     1,
+                     "{} found by 'BUF' pattern match",
+                     buffer->name());
+          selected_buffers.emplace_back(buffer);
+        }
+      }
+    }
+    delete lib_iter;
+  }
+
+  // abandon attributes & name patterns, just look for all buffers
+  if (selected_buffers.empty()) {
+    debugPrint(logger_,
+               RSZ,
+               "inferClockBufferList",
+               1,
+               "No buffers with clock attributes or name patterns found, using "
+               "all buffers");
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+        continue;
+      }
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
+        if (isClockCellCandidate(buffer)) {
+          selected_buffers.emplace_back(buffer);
+        }
+      }
+    }
+    delete lib_iter;
+
+    if (selected_buffers.empty()) {
+      logger_->error(
+          RSZ,
+          110,
+          "No clock buffer candidates could be found from any libraries.");
+    }
+  }
+
+  setClockBuffersList(selected_buffers);
+
+  for (sta::LibertyCell* buffer : selected_buffers) {
+    buffers.emplace_back(buffer->name());
+    debugPrint(logger_,
+               RSZ,
+               "inferClockBufferList",
+               1,
+               "{} has been inferred as clock buffer",
+               buffer->name());
+  }
 }
 
 }  // namespace rsz
