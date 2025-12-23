@@ -152,7 +152,7 @@ _dbTech* _dbTechNonDefaultRule::getTech()
     return (_dbTech*) getOwner();
   }
 
-  return (_dbTech*) getBlock()->getTech();
+  return getBlock()->getTech();
 }
 
 _dbBlock* _dbTechNonDefaultRule::getBlock()

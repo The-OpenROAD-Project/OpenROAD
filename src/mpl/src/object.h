@@ -384,7 +384,7 @@ class SoftMacro
             Cluster* cluster);
   SoftMacro(utl::Logger* logger,
             const HardMacro* hard_macro,
-            const odb::Point* offset = nullptr);
+            const odb::Rect* outline = nullptr);
 
   const std::string& getName() const;
 

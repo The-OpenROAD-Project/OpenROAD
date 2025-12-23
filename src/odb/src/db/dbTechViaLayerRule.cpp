@@ -147,10 +147,6 @@ _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*)
   resistance_ = 0.0;
 }
 
-_dbTechViaLayerRule::~_dbTechViaLayerRule()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaLayerRule& v)
 {
   uint* bit_field = (uint*) &v.flags_;

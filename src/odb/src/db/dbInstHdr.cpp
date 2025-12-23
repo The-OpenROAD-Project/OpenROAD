@@ -76,10 +76,6 @@ _dbInstHdr::_dbInstHdr(_dbDatabase*, const _dbInstHdr& i)
 {
 }
 
-_dbInstHdr::~_dbInstHdr()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbInstHdr& inst_hdr)
 {
   stream << inst_hdr.mterm_cnt_;

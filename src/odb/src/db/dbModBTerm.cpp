@@ -18,7 +18,6 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
-#include <cstdlib>
 #include <string>
 
 #include "dbCommon.h"

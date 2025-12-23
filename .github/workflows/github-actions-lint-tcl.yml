@@ -19,7 +19,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python3 -m venv venv
-          venv/bin/pip install tclint==0.6.1
+          venv/bin/pip install tclint==0.7.0
 
       - name: Lint
         run: |

@@ -181,11 +181,6 @@ class dbWireEncoder
   dbWireEncoder();
 
   ///
-  /// dbWireEncoder destructor:
-  ///
-  ~dbWireEncoder();
-
-  ///
   /// Begin a new encoding.
   ///
   void begin(dbWire* wire);
@@ -514,11 +509,6 @@ class dbWireDecoder
   /// Create a decoder.
   ///
   dbWireDecoder();
-
-  ///
-  /// Destroy a decoder.
-  ///
-  ~dbWireDecoder();
 
   ///
   /// Begin decoding a wire.

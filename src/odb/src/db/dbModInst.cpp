@@ -445,7 +445,7 @@ void dbModInst::removeUnusedPortsAndPins()
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     assert(mod_bterm != nullptr);
 
-    if (busmodbterms.count(mod_bterm) > 0) {
+    if (busmodbterms.contains(mod_bterm)) {
       continue;  // Do not remove bus ports
     }
 

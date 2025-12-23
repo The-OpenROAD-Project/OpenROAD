@@ -883,20 +883,17 @@ _dbTechLayer::~_dbTechLayer()
 // User Code Begin PrivateMethods
 uint _dbTechLayer::getV55RowIdx(const int& rowVal) const
 {
-  auto pos = --(std::lower_bound(
-      v55sp_width_idx_.begin(), v55sp_width_idx_.end(), rowVal));
+  auto pos = --(std::ranges::lower_bound(v55sp_width_idx_, rowVal));
   return std::max(0, (int) std::distance(v55sp_width_idx_.begin(), pos));
 }
 uint _dbTechLayer::getV55ColIdx(const int& colVal) const
 {
-  auto pos = --(std::lower_bound(
-      v55sp_length_idx_.begin(), v55sp_length_idx_.end(), colVal));
+  auto pos = --(std::ranges::lower_bound(v55sp_length_idx_, colVal));
   return std::max(0, (int) std::distance(v55sp_length_idx_.begin(), pos));
 }
 uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  auto pos = std::lower_bound(
-      two_widths_sp_idx_.begin(), two_widths_sp_idx_.end(), width);
+  auto pos = std::ranges::lower_bound(two_widths_sp_idx_, width);
   if (pos != two_widths_sp_idx_.begin()) {
     --pos;
   }

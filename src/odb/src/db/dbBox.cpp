@@ -322,7 +322,7 @@ _dbTechVia* _dbBox::getTechVia() const
     case dbBoxOwner::MPIN: {
       _dbMaster* master = (_dbMaster*) getOwner();
       _dbLib* lib = (_dbLib*) master->getOwner();
-      _dbDatabase* db = (_dbDatabase*) master->getDatabase();
+      _dbDatabase* db = master->getDatabase();
       _dbTech* tech = db->tech_tbl_->getPtr(lib->tech_);
       return tech->via_tbl_->getPtr(flags_.via_id);
     }
