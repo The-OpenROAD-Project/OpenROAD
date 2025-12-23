@@ -120,6 +120,8 @@ MANUAL_FOR_BAZEL_TESTS = [
     "cugr_adjustment2",
     "cugr_adjustment3",
     "gcd_cugr",
+    "pin_access1_cugr",
+    "pin_access2_cugr",
 ]
 
 [regression_test(
