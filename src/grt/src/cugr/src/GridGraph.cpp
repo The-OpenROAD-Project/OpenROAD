@@ -396,8 +396,6 @@ bool GridGraph::findODBAccessPoints(
     AccessPointSet& selected_access_points) const
 {
   std::vector<odb::dbAccessPoint*> access_points;
-  const int amount_per_x = design_->getDieRegion().hx() / x_size_;
-  const int amount_per_y = design_->getDieRegion().hy() / y_size_;
   odb::dbNet* db_net = net->getDbNet();
   if (db_net->getBTermCount() != 0) {
     for (odb::dbBTerm* bterms : db_net->getBTerms()) {
