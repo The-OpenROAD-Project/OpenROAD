@@ -1427,12 +1427,12 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     fence.intersection(outline, fence);
     guide.intersection(outline, guide);
 
-    if (!fence.isInverted()) {
+    if (fence.area() > 0) {
       // current macro id is macros.size() - 1
       fence.moveDelta(-outline.xMin(), -outline.yMin());
       fences[macros.size() - 1] = fence;
     }
-    if (!guide.isInverted()) {
+    if (guide.area() > 0) {
       // current macro id is macros.size() - 1
       guide.moveDelta(-outline.xMin(), -outline.yMin());
       guides[macros.size() - 1] = guide;
