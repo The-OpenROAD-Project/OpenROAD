@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <absl/debugging/symbolize.h>
 #include <libgen.h>
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
 #include <strings.h>
@@ -18,6 +17,7 @@
 #include <string>
 #include <system_error>
 
+#include "absl/debugging/symbolize.h"
 #include "boost/stacktrace/stacktrace.hpp"
 #include "tcl.h"
 #ifdef ENABLE_READLINE
