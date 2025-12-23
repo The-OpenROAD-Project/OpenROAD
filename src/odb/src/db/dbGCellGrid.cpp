@@ -21,6 +21,7 @@
 #include "dbBlock.h"
 #include "dbTech.h"
 #include "odb/dbSet.h"
+#include "utl/algorithms.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGCellGrid>;
@@ -31,7 +32,7 @@ struct OldGCellData
   uint8_t capacity = 0;
 };
 
-dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
+static dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
 {
   stream >> obj.usage;
   stream >> obj.capacity;
@@ -107,9 +108,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   stream >> obj.y_grid_;
   // User Code Begin >>
   _dbDatabase* db = obj.getDatabase();
-  if (db->isSchema(db_schema_float_gcelldata)) {
+  if (db->isSchema(kSchemaFloatGCellData)) {
     stream >> obj.congestion_map_;
-  } else if (db->isSchema(db_schema_gcell_grid_matrix)) {
+  } else if (db->isSchema(kSchemaGcellGridMatrix)) {
     std::map<dbId<_dbTechLayer>, dbMatrix<OldGCellData>> old_format;
     stream >> old_format;
     for (const auto& [lid, cells] : old_format) {
@@ -121,7 +122,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
           auto& old = cells(row, col);
           const float usage = old.usage;
           const float capacity = old.capacity;
-          matrix(row, col) = {usage, capacity};
+          matrix(row, col) = {.usage = usage, .capacity = capacity};
         }
       }
     }
@@ -140,7 +141,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj)
+static dbOStream& operator<<(dbOStream& stream,
+                             const dbGCellGrid::GCellData& obj)
 {
   stream << obj.usage;
   stream << obj.capacity;
@@ -192,7 +194,7 @@ void _dbGCellGrid::collectMemInfo(MemInfo& info)
 
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 {
-  if (stream.getDatabase()->isSchema(db_schema_smaler_gcelldata)) {
+  if (stream.getDatabase()->isSchema(kSchemaSmalerGcelldata)) {
     stream >> obj.usage;
     stream >> obj.capacity;
   } else {
@@ -228,8 +230,7 @@ dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(
     const uint num_y = grid.size();
 
     dbMatrix<dbGCellGrid::GCellData> data(num_x, num_y);
-    auto [iter, ins]
-        = congestion_map_.emplace(std::make_pair(lid, std::move(data)));
+    auto [iter, ins] = congestion_map_.emplace(lid, std::move(data));
     return iter->second;
   }
   auto it = congestion_map_.find(lid);
@@ -242,8 +243,7 @@ dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(
   const uint num_cols = it->second.numCols();
 
   dbMatrix<dbGCellGrid::GCellData> data(num_rows, num_cols);
-  auto [iter, ins]
-      = congestion_map_.emplace(std::make_pair(lid, std::move(data)));
+  auto [iter, ins] = congestion_map_.emplace(lid, std::move(data));
   return iter->second;
 }
 
@@ -294,11 +294,7 @@ void dbGCellGrid::getGridX(std::vector<int>& x_grid)
   }
 
   // sort coords in asscending order
-  std::sort(grid->x_grid_.begin(), grid->x_grid_.end());
-
-  // remove any duplicates
-  auto new_end = std::unique(grid->x_grid_.begin(), grid->x_grid_.end());
-  grid->x_grid_.erase(new_end, grid->x_grid_.end());
+  utl::sort_and_unique(grid->x_grid_);
   x_grid = grid->x_grid_;
 }
 
@@ -333,11 +329,7 @@ void dbGCellGrid::getGridY(std::vector<int>& y_grid)
   }
 
   // sort coords in asscending order
-  std::sort(grid->y_grid_.begin(), grid->y_grid_.end());
-
-  // remove any duplicates
-  auto new_end = std::unique(grid->y_grid_.begin(), grid->y_grid_.end());
-  grid->y_grid_.erase(new_end, grid->y_grid_.end());
+  utl::sort_and_unique(grid->y_grid_);
   y_grid = grid->y_grid_;
 }
 
@@ -428,7 +420,7 @@ uint dbGCellGrid::getXIdx(int x)
   if (grid.empty() || grid[0] > x) {
     return 0;
   }
-  auto pos = --(std::upper_bound(grid.begin(), grid.end(), x));
+  auto pos = --(std::ranges::upper_bound(grid, x));
   return (int) std::distance(grid.begin(), pos);
 }
 
@@ -439,7 +431,7 @@ uint dbGCellGrid::getYIdx(int y)
   if (grid.empty() || grid[0] > y) {
     return 0;
   }
-  auto pos = --(std::upper_bound(grid.begin(), grid.end(), y));
+  auto pos = --(std::ranges::upper_bound(grid, y));
   return (int) std::distance(grid.begin(), pos);
 }
 

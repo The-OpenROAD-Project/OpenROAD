@@ -5,7 +5,7 @@ read_lef "./Nangate45/Nangate45.lef"
 read_lef "./Nangate45_io/dummy_pads.lef"
 read_lef "./testcases/orientation_improve1.lef"
 
-read_def "./testcases/fixed_macros.def"
+read_def "./testcases/fixed_macros1.def"
 
 place_inst -cell DUMMY_BUMP -name "test_pad1" -orient R0 -status FIRM -loc "100 100"
 

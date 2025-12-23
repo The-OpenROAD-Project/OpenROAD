@@ -249,8 +249,7 @@ class dbWireGraph
     friend class dbWireGraph;
   };
 
-  dbWireGraph();
-  ~dbWireGraph();
+  dbWireGraph() = default;
 
   // Clear this graph.
   void clear();

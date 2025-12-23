@@ -144,16 +144,6 @@ struct OldTransform
   int sizeY;
 };
 
-dbIStream& operator>>(dbIStream& stream, OldTransform& t)
-{
-  stream >> t.orient;
-  stream >> t.originX;
-  stream >> t.originY;
-  stream >> t.sizeX;
-  stream >> t.sizeY;
-  return stream;
-}
-
 static void unlink_child_from_parent(_dbBlock* child, _dbBlock* parent);
 
 // TODO: Bounding box updates...
@@ -882,24 +872,23 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.corners_per_block_;
   stream >> block.corner_name_list_;
   stream >> block.name_;
-  if (db->isSchema(db_schema_die_area_is_polygon)) {
+  if (db->isSchema(kSchemaDieAreaIsPolygon)) {
     stream >> block.die_area_;
   } else {
     Rect rect;
     stream >> rect;
     block.die_area_ = rect;
   }
-  if (db->isSchema(db_schema_core_area_is_polygon)) {
+  if (db->isSchema(kSchemaCoreAreaIsPolygon)) {
     stream >> block.core_area_;
   }
-  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
+  if (db->isSchema(kSchemaDbBlockBlockedRegionsForPins)) {
     stream >> block.blocked_regions_for_pins_;
   }
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
   dbId<_dbTech> old_db_tech;
-  if (db->isSchema(db_schema_block_tech)
-      && !db->isSchema(db_schema_chip_tech)) {
+  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
     stream >> old_db_tech;
   }
   stream >> block.chip_;
@@ -914,8 +903,8 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.inst_hash_;
   stream >> block.module_hash_;
   stream >> block.modinst_hash_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    if (!db->isSchema(db_schema_db_remove_hash)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
+    if (!db->isSchema(kSchemaDbRemoveHash)) {
       dbHashTable<_dbModBTerm> unused_modbterm_hash;
       dbHashTable<_dbModITerm> unused_moditerm_hash;
       dbHashTable<_dbModNet> unused_modnet_hash;
@@ -930,7 +919,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.logicport_hash_;
   stream >> block.powerswitch_hash_;
   stream >> block.isolation_hash_;
-  if (db->isSchema(db_schema_level_shifter)) {
+  if (db->isSchema(kSchemaLevelShifter)) {
     stream >> block.levelshifter_hash_;
   }
   stream >> block.group_hash_;
@@ -939,14 +928,14 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.max_cap_node_id_;
   stream >> block.max_rseg_id_;
   stream >> block.max_cc_seg_id_;
-  if (!db->isSchema(db_schema_block_ext_model_index)) {
+  if (!db->isSchema(kSchemaBlockExtModelIndex)) {
     int ignore_minExtModelIndex;
     int ignore_maxExtModelIndex;
     stream >> ignore_minExtModelIndex;
     stream >> ignore_maxExtModelIndex;
   }
   stream >> block.children_;
-  if (db->isSchema(db_schema_block_component_mask_shift)) {
+  if (db->isSchema(kSchemaBlockComponentMaskShift)) {
     stream >> block.component_mask_shift_;
   }
   stream >> block.currentCcAdjOrder_;
@@ -954,20 +943,20 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.iterm_tbl_;
   stream >> *block.net_tbl_;
   stream >> *block.inst_hdr_tbl_;
-  if (db->isSchema(db_schema_db_remove_hash)) {
+  if (db->isSchema(kSchemaDbRemoveHash)) {
     stream >> *block.module_tbl_;
     stream >> *block.inst_tbl_;
   } else {
     stream >> *block.inst_tbl_;
     stream >> *block.module_tbl_;
   }
-  if (db->isSchema(db_schema_block_owns_scan_insts)) {
+  if (db->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> *block.scan_inst_tbl_;
   }
   stream >> *block.modinst_tbl_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> *block.modbterm_tbl_;
-    if (db->isSchema(db_schema_db_remove_hash)) {
+    if (db->isSchema(kSchemaDbRemoveHash)) {
       stream >> *block.busport_tbl_;
     }
     stream >> *block.moditerm_tbl_;
@@ -977,16 +966,16 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.logicport_tbl_;
   stream >> *block.powerswitch_tbl_;
   stream >> *block.isolation_tbl_;
-  if (db->isSchema(db_schema_level_shifter)) {
+  if (db->isSchema(kSchemaLevelShifter)) {
     stream >> *block.levelshifter_tbl_;
   }
   stream >> *block.group_tbl_;
   stream >> *block.ap_tbl_;
-  if (db->isSchema(db_schema_add_global_connect)) {
+  if (db->isSchema(kSchemaAddGlobalConnect)) {
     stream >> *block.global_connect_tbl_;
   }
   stream >> *block.guide_tbl_;
-  if (db->isSchema(db_schema_net_tracks)) {
+  if (db->isSchema(kSchemaNetTracks)) {
     stream >> *block.net_tracks_tbl_;
   }
   stream >> *block.box_tbl_;
@@ -1014,33 +1003,33 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.r_seg_tbl_;     // DKF
   stream >> *block.cc_seg_tbl_;
   stream >> *block.ext_control_;
-  if (db->isSchema(db_schema_add_scan)) {
+  if (db->isSchema(kSchemaAddScan)) {
     stream >> block.dft_;
     stream >> *block.dft_tbl_;
   }
-  if (db->isSchema(db_schema_dbmarkergroup)
-      && db->isLessThanSchema(db_schema_chip_marker_categories)) {
+  if (db->isSchema(kSchemaDbMarkerGroup)
+      && db->isLessThanSchema(kSchemaChipMarkerCategories)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
     stream >> *chip->marker_categories_tbl_;
     dbHashTable<_dbMarkerCategory> tmp_hash;
     stream >> tmp_hash;
   }
-  if (db->isSchema(db_schema_dbblock_layers_ranges)) {
+  if (db->isSchema(kSchemaDbBlockLayersRanges)) {
     stream >> block.min_routing_layer_;
     stream >> block.max_routing_layer_;
     stream >> block.min_layer_for_clock_;
     stream >> block.max_layer_for_clock_;
   }
-  if (db->isSchema(db_schema_block_pin_groups)) {
+  if (db->isSchema(kSchemaBlockPinGroups)) {
     stream >> block.bterm_groups_;
   }
-  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
+  if (db->isSchema(kSchemaBtermTopLayerGrid)) {
     stream >> block.bterm_top_layer_grid_;
   }
-  if (db->isSchema(db_schema_map_insts_to_scan_insts)) {
+  if (db->isSchema(kSchemaMapInstsToScanInsts)) {
     stream >> block.inst_scan_inst_map_;
   }
-  if (db->isSchema(db_schema_unique_indices)) {
+  if (db->isSchema(kSchemaUniqueIndices)) {
     stream >> block.unique_net_index_;
     stream >> block.unique_inst_index_;
   }
@@ -1061,13 +1050,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   // TOM
   //-------------------------------------------------------------------------------
 
-  if (db->isSchema(db_schema_block_tech)
-      && !db->isSchema(db_schema_chip_tech)) {
+  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
     chip->tech_ = old_db_tech;
   }
 
-  if (!db->isSchema(db_schema_core_area_is_polygon)) {
+  if (!db->isSchema(kSchemaCoreAreaIsPolygon)) {
     // Wait for rows to be available
     dbBlock* blk = (dbBlock*) (&block);
     block.core_area_ = blk->computeCoreArea();
@@ -2498,9 +2486,9 @@ void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
 {
   _dbBlock* block = (_dbBlock*) this;
   if (block->corner_name_list_) {
-    ecl.push_back(block->corner_name_list_);
+    ecl.emplace_back(block->corner_name_list_);
   } else {
-    ecl.push_back("");
+    ecl.emplace_back();
   }
 }
 
@@ -2520,7 +2508,7 @@ dbTechNonDefaultRule* dbBlock::findNonDefaultRule(const char* name)
 {
   for (dbTechNonDefaultRule* r : getNonDefaultRules()) {
     if (strcmp(r->getConstName(), name) == 0) {
-      return (dbTechNonDefaultRule*) r;
+      return r;
     }
   }
 
@@ -2878,34 +2866,31 @@ void dbBlock::setCornerNameList(const char* name_list)
 
   block->corner_name_list_ = strdup(name_list);
 }
-void dbBlock::getExtCornerName(int corner, char* cName)
+std::string dbBlock::getExtCornerName(const int corner)
 {
-  cName[0] = '\0';
   _dbBlock* block = (_dbBlock*) this;
   if (block->num_ext_corners_ == 0) {
-    return;
+    return "";
   }
   assert((corner >= 0) && (corner < block->num_ext_corners_));
 
   if (block->corner_name_list_ == nullptr) {
-    return;
+    return "";
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
-
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
   int ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (ii == corner) {
-      strcpy(cName, word);
-      return;
-    }
 
-    word = strtok(nullptr, " ");
+  while (ss >> word) {
+    if (ii == corner) {
+      return word;
+    }
     ii++;
   }
+  return "";
 }
+
 int dbBlock::getExtCornerIndex(const char* cornerName)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2914,21 +2899,19 @@ int dbBlock::getExtCornerIndex(const char* cornerName)
     return -1;
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
+  int ii = 0;
 
-  uint ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (strcmp(cornerName, word) == 0) {
+  while (ss >> word) {
+    if (cornerName == word) {
       return ii;
     }
-
-    word = strtok(nullptr, " ");
     ii++;
   }
   return -1;
 }
+
 void dbBlock::setCornerCount(int cnt)
 {
   setCornerCount(cnt, cnt, nullptr);
@@ -3189,7 +3172,7 @@ void dbBlock::writeGuides(const char* filename) const
       nets.push_back(net);
     }
   }
-  std::sort(nets.begin(), nets.end(), [](odb::dbNet* net1, odb::dbNet* net2) {
+  std::ranges::sort(nets, [](odb::dbNet* net1, odb::dbNet* net2) {
     return strcmp(net1->getConstName(), net2->getConstName()) < 0;
   });
   for (auto net : nets) {
@@ -3466,13 +3449,10 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
         remove_insts.insert(inst);
       }
     }
-    insts.erase(std::remove_if(insts.begin(),
-                               insts.end(),
-                               [&](dbInst* inst) {
-                                 return remove_insts.find(inst)
-                                        != remove_insts.end();
-                               }),
-                insts.end());
+    auto [first, last] = std::ranges::remove_if(insts, [&](dbInst* inst) {
+      return remove_insts.find(inst) != remove_insts.end();
+    });
+    insts.erase(first, last);
 
     inst_map[inst_pattern] = std::move(insts);
 
@@ -3609,7 +3589,7 @@ void dbBlock::debugPrintContent(std::ostream& str_db)
     }
     str_db << fmt::format("\tModule {} {}\n",
                           (cur_obj == getTopModule()) ? "(Top Module)" : "",
-                          ((dbModule*) cur_obj)->getName());
+                          cur_obj->getName());
     // in case of top level, care as the bterms double up as pins
     if (cur_obj == getTopModule()) {
       for (auto bterm : getBTerms()) {

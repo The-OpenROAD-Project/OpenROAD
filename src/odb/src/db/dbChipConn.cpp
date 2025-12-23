@@ -163,7 +163,7 @@ std::vector<dbChipInst*> dbChipConn::getBottomRegionPath() const
   return bottom_region_path;
 }
 
-std::vector<dbId<_dbChipInst>> extractChipInstsPath(
+static std::vector<dbId<_dbChipInst>> extractChipInstsPath(
     dbChip* parent_chip,
     const std::vector<dbChipInst*>& chip_insts)
 {

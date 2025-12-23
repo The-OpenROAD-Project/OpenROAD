@@ -527,7 +527,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  if (obj.getDatabase()->isSchema(db_schema_orth_spc_tbl)) {
+  if (obj.getDatabase()->isSchema(kSchemaOrthSpcTbl)) {
     stream >> obj.orth_spacing_tbl_;
   }
   stream >> *obj.cut_class_rules_tbl_;
@@ -543,27 +543,26 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaMaxSpacing)) {
     stream >> *obj.max_spacing_rules_tbl_;
   }
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58ForbiddenSpacing)) {
     stream >> *obj.forbidden_spacing_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
+  if (obj.getDatabase()->isSchema(kSchemaKeepoutZone)) {
     stream >> *obj.keepout_zone_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaWrongdirSpacing)) {
     stream >> *obj.wrongdir_spacing_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(
-          db_schema_lef58_two_wires_forbidden_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58TwoWiresForbiddenSpacing)) {
     stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
   }
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_layer_adjustment)) {
+  if (obj.getDatabase()->isSchema(kSchemaLayerAdjustment)) {
     stream >> obj.layer_adjustment_;
   } else {
     obj.layer_adjustment_ = 0.0;
@@ -606,7 +605,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj.two_widths_sp_spacing_;
   stream >> obj.oxide1_;
   stream >> obj.oxide2_;
-  if (obj.getDatabase()->isSchema(db_schema_wrongway_width)) {
+  if (obj.getDatabase()->isSchema(kSchemaWrongwayWidth)) {
     stream >> obj.wrong_way_width_;
   } else {
     obj.wrong_way_width_ = obj.width_;
@@ -617,7 +616,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
       }
     }
   }
-  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58Pitch)) {
     stream >> obj.first_last_pitch_;
   }
   // User Code End >>
@@ -884,20 +883,17 @@ _dbTechLayer::~_dbTechLayer()
 // User Code Begin PrivateMethods
 uint _dbTechLayer::getV55RowIdx(const int& rowVal) const
 {
-  auto pos = --(std::lower_bound(
-      v55sp_width_idx_.begin(), v55sp_width_idx_.end(), rowVal));
+  auto pos = --(std::ranges::lower_bound(v55sp_width_idx_, rowVal));
   return std::max(0, (int) std::distance(v55sp_width_idx_.begin(), pos));
 }
 uint _dbTechLayer::getV55ColIdx(const int& colVal) const
 {
-  auto pos = --(std::lower_bound(
-      v55sp_length_idx_.begin(), v55sp_length_idx_.end(), colVal));
+  auto pos = --(std::ranges::lower_bound(v55sp_length_idx_, colVal));
   return std::max(0, (int) std::distance(v55sp_length_idx_.begin(), pos));
 }
 uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  auto pos = std::lower_bound(
-      two_widths_sp_idx_.begin(), two_widths_sp_idx_.end(), width);
+  auto pos = std::ranges::lower_bound(two_widths_sp_idx_, width);
   if (pos != two_widths_sp_idx_.begin()) {
     --pos;
   }

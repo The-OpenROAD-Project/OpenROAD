@@ -184,7 +184,7 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net.groups_;
   stream >> net.guides_;
   _dbDatabase* db = net.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_net_tracks)) {
+  if (db->isSchema(kSchemaNetTracks)) {
     stream >> net.tracks_;
   }
 
@@ -727,9 +727,7 @@ uint dbNet::maxInternalCapNum()
     }
 
     const uint n = capn->getNode();
-    if (max_n < n) {
-      max_n = n;
-    }
+    max_n = std::max(max_n, n);
   }
   return max_n;
 }
@@ -1922,7 +1920,6 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
         && !tgtNode->isDangling()) {
       continue;
     }
-    prc = rc;
     mrsegs.clear();
     firstRC = true;
   }
@@ -2425,7 +2422,7 @@ bool dbNet::hasJumpers()
   bool has_jumpers = false;
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
+  if (db->isSchema(kSchemaHasJumpers)) {
     has_jumpers = net->flags_.has_jumpers == 1;
   }
   return has_jumpers;
@@ -2435,7 +2432,7 @@ void dbNet::setJumpers(bool has_jumpers)
 {
   _dbNet* net = (_dbNet*) this;
   _dbDatabase* db = net->getImpl()->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
+  if (db->isSchema(kSchemaHasJumpers)) {
     net->flags_.has_jumpers = has_jumpers ? 1 : 0;
   }
 }
@@ -2676,11 +2673,8 @@ void dbNet::checkSanityModNetConsistency() const
 
   // 4.1. Compare ITerms
   std::vector<dbITerm*> iterms_in_flat_only;
-  std::set_difference(flat_iterms.begin(),
-                      flat_iterms.end(),
-                      hier_iterms.begin(),
-                      hier_iterms.end(),
-                      std::back_inserter(iterms_in_flat_only));
+  std::ranges::set_difference(
+      flat_iterms, hier_iterms, std::back_inserter(iterms_in_flat_only));
 
   if (iterms_in_flat_only.empty() == false) {
     logger->warn(utl::ODB,
@@ -2694,11 +2688,8 @@ void dbNet::checkSanityModNetConsistency() const
   }
 
   std::vector<dbITerm*> iterms_in_hier_only;
-  std::set_difference(hier_iterms.begin(),
-                      hier_iterms.end(),
-                      flat_iterms.begin(),
-                      flat_iterms.end(),
-                      std::back_inserter(iterms_in_hier_only));
+  std::ranges::set_difference(
+      hier_iterms, flat_iterms, std::back_inserter(iterms_in_hier_only));
 
   if (iterms_in_hier_only.empty() == false) {
     logger->warn(utl::ODB,
@@ -2716,11 +2707,8 @@ void dbNet::checkSanityModNetConsistency() const
 
   // 4.2. Compare BTerms
   std::vector<dbBTerm*> bterms_in_flat_only;
-  std::set_difference(flat_bterms.begin(),
-                      flat_bterms.end(),
-                      hier_bterms.begin(),
-                      hier_bterms.end(),
-                      std::back_inserter(bterms_in_flat_only));
+  std::ranges::set_difference(
+      flat_bterms, hier_bterms, std::back_inserter(bterms_in_flat_only));
 
   if (bterms_in_flat_only.empty() == false) {
     logger->warn(utl::ODB,
@@ -2734,11 +2722,8 @@ void dbNet::checkSanityModNetConsistency() const
   }
 
   std::vector<dbBTerm*> bterms_in_hier_only;
-  std::set_difference(hier_bterms.begin(),
-                      hier_bterms.end(),
-                      flat_bterms.begin(),
-                      flat_bterms.end(),
-                      std::back_inserter(bterms_in_hier_only));
+  std::ranges::set_difference(
+      hier_bterms, flat_bterms, std::back_inserter(bterms_in_hier_only));
 
   if (bterms_in_hier_only.empty() == false) {
     logger->warn(utl::ODB,
@@ -2808,7 +2793,7 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
     details = fmt::format(" (io: {})", modbterm->getIoType().getString());
   }
 
-  if (visited.count(obj)) {
+  if (visited.contains(obj)) {
     logger->report("{:>{}}-> {} {} (id={}){}",
                    "",
                    level * 2,

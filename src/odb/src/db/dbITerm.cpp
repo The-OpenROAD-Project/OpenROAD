@@ -844,12 +844,12 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
   }
   // sort to maintain iterator stability, and backwards compatibility with
   // std::map which used to be used to store aps.
-  std::sort(sorted_aps.begin(),
-            sorted_aps.end(),
-            [](const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& a,
-               const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& b) {
-              return a.first < b.first;
-            });
+  std::ranges::sort(
+      sorted_aps,
+      [](const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& a,
+         const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& b) {
+        return a.first < b.first;
+      });
 
   std::vector<dbAccessPoint*> aps;
   aps.reserve(sorted_aps.size());

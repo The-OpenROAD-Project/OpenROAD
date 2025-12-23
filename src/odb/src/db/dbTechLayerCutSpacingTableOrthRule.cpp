@@ -72,7 +72,7 @@ void dbTechLayerCutSpacingTableOrthRule::getSpacingTable(
 
 // User Code Begin dbTechLayerCutSpacingTableOrthRulePublicMethods
 void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(
-    std::vector<std::pair<int, int>> tbl)
+    const std::vector<std::pair<int, int>>& tbl)
 {
   _dbTechLayerCutSpacingTableOrthRule* obj
       = (_dbTechLayerCutSpacingTableOrthRule*) this;

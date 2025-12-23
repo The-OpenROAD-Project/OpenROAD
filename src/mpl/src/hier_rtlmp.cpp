@@ -4,7 +4,6 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -26,6 +25,7 @@
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
 #include "SimulatedAnnealingCore.h"
+#include "boost/polygon/polygon.hpp"
 #include "clusterEngine.h"
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
@@ -403,7 +403,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   std::vector<SoftMacro> macros;
   for (auto& cluster : parent->getChildren()) {
     if (cluster->isFixedMacro()) {
-      considerFixedMacro(outline, macros, cluster.get());
+      macros.emplace_back(logger_, cluster->getHardMacros().front(), &outline);
       continue;
     }
 
@@ -1297,15 +1297,6 @@ void HierRTLMP::mergeNets(BundledNetList& nets)
   nets = std::move(merged_nets);
 }
 
-void HierRTLMP::considerFixedMacro(const odb::Rect& outline,
-                                   std::vector<SoftMacro>& sa_macros,
-                                   Cluster* fixed_macro_cluster) const
-{
-  const HardMacro* hard_macro = fixed_macro_cluster->getHardMacros().front();
-  odb::Point offset(-outline.xMin(), -outline.yMin());
-  sa_macros.emplace_back(logger_, hard_macro, &offset);
-}
-
 // Recommendation from the original implementation:
 // For single level, increase macro blockage weight to
 // half of the outline weight.
@@ -1405,7 +1396,7 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     soft_macro_id_map[cluster->getName()] = macros.size();
 
     if (cluster->isFixedMacro()) {
-      considerFixedMacro(outline, macros, cluster.get());
+      macros.emplace_back(logger_, cluster->getHardMacros().front(), &outline);
       continue;
     }
 

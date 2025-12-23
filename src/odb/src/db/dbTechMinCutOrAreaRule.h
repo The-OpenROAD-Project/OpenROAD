@@ -36,7 +36,6 @@ class _dbTechMinCutRule : public _dbObject
 
   _dbTechMinCutRule(_dbDatabase* db, const _dbTechMinCutRule& r);
   _dbTechMinCutRule(_dbDatabase* db);
-  ~_dbTechMinCutRule();
 
   bool operator==(const _dbTechMinCutRule& rhs) const;
   bool operator!=(const _dbTechMinCutRule& rhs) const
@@ -76,10 +75,6 @@ inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
   distance_ = 0;
 }
 
-inline _dbTechMinCutRule::~_dbTechMinCutRule()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbTechMinCutRule& rule);
 dbIStream& operator>>(dbIStream& stream, _dbTechMinCutRule& rule);
 
@@ -100,7 +95,7 @@ class _dbTechMinEncRule : public _dbObject
 
   _dbTechMinEncRule(_dbDatabase* db);
   _dbTechMinEncRule(_dbDatabase* db, const _dbTechMinEncRule& r);
-  ~_dbTechMinEncRule();
+
   bool operator==(const _dbTechMinEncRule& rhs) const;
   bool operator!=(const _dbTechMinEncRule& rhs) const
   {
@@ -121,10 +116,6 @@ inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */)
   flags_.spare_bits = 0;
   area_ = 0;
   width_ = 0;
-}
-
-inline _dbTechMinEncRule::~_dbTechMinEncRule()
-{
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechMinEncRule& rule);

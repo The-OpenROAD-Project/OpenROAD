@@ -401,9 +401,9 @@ class dbNetwork : public ConcreteNetwork
 
   // hierarchy handler, set in openroad tested in network child traverserser
 
-  void setHierarchy();
-  void disableHierarchy();
-  bool hasHierarchy() const { return hierarchy_; }
+  void setHierarchy() { db_->setHierarchy(true); }
+  void disableHierarchy() { db_->setHierarchy(false); }
+  bool hasHierarchy() const { return db_->hasHierarchy(); }
   bool hasHierarchicalElements() const;
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
@@ -480,7 +480,6 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
-  bool hierarchy_ = false;
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;

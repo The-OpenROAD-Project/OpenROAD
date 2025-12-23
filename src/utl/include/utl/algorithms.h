@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <iomanip>
 #include <ios>
 #include <sstream>
@@ -100,6 +102,22 @@ constexpr T snapUp(const T value, const T step, const T origin = T{0})
     return snapDown(value + step - 1, step, origin);
   }
   return std::ceil((value - origin) / step) * step + origin;
+}
+
+/**
+ * @brief Sorts a container and removes duplicate elements.
+ * @param c The container to modify.
+ * @param comp The comparator (e.g., std::greater<>{}).
+ * @param proj A projection (e.g., &MyStruct::id).
+ */
+template <typename Container,
+          typename Comp = std::ranges::less,
+          typename Proj = std::identity>
+void sort_and_unique(Container& c, Comp comp = {}, Proj proj = {})
+{
+  std::ranges::sort(c, comp, proj);
+  auto [first, last] = std::ranges::unique(c, std::ranges::equal_to{}, proj);
+  c.erase(first, last);
 }
 
 }  // namespace utl

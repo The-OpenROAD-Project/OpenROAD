@@ -3,6 +3,7 @@
 
 #include "Graphics.hh"
 
+#include "BufferedNet.hh"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -90,6 +91,10 @@ void Graphics::repairNetDone()
 void Graphics::drawBNet(const BufferedNetPtr& bnet, gui::Painter& painter)
 {
   switch (bnet->type()) {
+    case BufferedNetType::via: {
+      drawBNet(bnet->ref(), painter);
+      break;
+    }
     case BufferedNetType::wire: {
       painter.drawLine(bnet->location(), bnet->ref()->location());
       drawBNet(bnet->ref(), painter);

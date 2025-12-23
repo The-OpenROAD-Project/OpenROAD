@@ -29,7 +29,7 @@ class dbIntHashTable
  public:
   dbIntHashTable();
   dbIntHashTable(const dbIntHashTable<T>& t);
-  ~dbIntHashTable();
+
   bool operator==(const dbIntHashTable<T>& rhs) const;
   bool operator!=(const dbIntHashTable<T>& rhs) const
   {

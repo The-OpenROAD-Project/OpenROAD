@@ -33,7 +33,7 @@ tmg_conn_graph::~tmg_conn_graph()
   free(ptV_);
   free(path_vis_);
   free(eV_);
-  free(stackV_);
+  free(static_cast<void*>(stackV_));
 }
 
 void tmg_conn_graph::init(const int ptN, const int shortN)
@@ -47,7 +47,7 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
   }
   if (shortN > shortNmax_) {
     shortNmax_ = 2 * shortN;
-    free(stackV_);
+    free(static_cast<void*>(stackV_));
     stackV_ = (tcg_edge**) safe_malloc(shortNmax_ * sizeof(tcg_edge*));
   }
   if (4 * ptN + 2 * shortN > eNmax_) {
@@ -339,7 +339,8 @@ tcg_edge* tmg_conn_graph::getNextEdge(const bool ok_to_descend)
     if (e2) {
       if (stackN_ >= shortNmax_) {
         shortNmax_ = shortNmax_ * 2;
-        stackV_ = (tcg_edge**) realloc(stackV_, shortNmax_ * sizeof(tcg_edge*));
+        stackV_ = (tcg_edge**) realloc(static_cast<void*>(stackV_),
+                                       shortNmax_ * sizeof(tcg_edge*));
       }
       stackV_[stackN_++] = e2;
       return e2;
@@ -399,41 +400,39 @@ void tmg_conn::removeShortLoops()
   npath++;
 
   // remove shorts to same path
-  for (int j = 0; j < shortV_.size(); j++) {
-    tmg_rcshort* s = &shortV_[j];
-    if (s->skip) {
+  for (tmg_rcshort& s : shortV_) {
+    if (s.skip) {
       continue;
     }
-    if (pgV[s->i0].ipath == pgV[s->i1].ipath) {
-      s->skip = true;
+    if (pgV[s.i0].ipath == pgV[s.i1].ipath) {
+      s.skip = true;
     }
   }
 
-  for (int j = 0; j < shortV_.size(); j++) {
-    tmg_rcshort* s = &shortV_[j];
-    if (s->skip) {
+  for (tmg_rcshort& s : shortV_) {
+    if (s.skip) {
       continue;
     }
     tcg_edge* e;
-    for (e = pgV[s->i0].edges; e; e = e->next) {
-      if (e->to == s->i1) {
+    for (e = pgV[s.i0].edges; e; e = e->next) {
+      if (e->to == s.i1) {
         break;
       }
     }
     if (e) {
-      s->skip = true;
+      s.skip = true;
       continue;
     }
-    e = graph_->newShortEdge(this, s->i0, s->i1);
-    tcg_edge* e2 = graph_->newShortEdge(this, s->i1, s->i0);
-    e->s = s;
-    e2->s = s;
+    e = graph_->newShortEdge(this, s.i0, s.i1);
+    tcg_edge* e2 = graph_->newShortEdge(this, s.i1, s.i0);
+    e->s = &s;
+    e2->s = &s;
     e->reverse = e2;
     e2->reverse = e;
-    e->fr = s->i0;
-    e->to = s->i1;
-    e2->fr = s->i1;
-    e2->to = s->i0;
+    e->fr = s.i0;
+    e->to = s.i1;
+    e2->fr = s.i1;
+    e2->to = s.i0;
     e->visited = false;
     e2->visited = false;
   }
