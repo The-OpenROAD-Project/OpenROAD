@@ -20,3 +20,14 @@ puts [[sta::sta_to_db_net [get_net net1]] getSigType]
 
 report_long_wires 4
 report_checks -unconstrained -fields {input slew cap} -rise_to out1
+
+proc location { inst_name args } {
+  set inst [[ord::get_db_block] findInst $inst_name]
+  puts "Instance: $inst_name, Location (unit: DBU): [$inst getLocation]"
+}
+
+location u2
+location wire3
+location wire2
+location wire1
+location u3
