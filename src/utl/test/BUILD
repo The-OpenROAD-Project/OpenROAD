@@ -114,7 +114,7 @@ cc_test(
     srcs = ["cpp/TestLoggerCriticalPrintsBackTrace.cpp"],
     deps = [
         "//src/utl:utl_without_decode",
-        "@com_google_absl//absl/debugging:stacktrace",
+        "@com_google_absl//absl/debugging:symbolize",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@spdlog",
@@ -126,7 +126,7 @@ cc_test(
     srcs = ["cpp/TestBackTraceOnErrorWithDebug.cpp"],
     deps = [
         "//src/utl:utl_without_decode",
-        "@com_google_absl//absl/debugging:stacktrace",
+        "@com_google_absl//absl/debugging:symbolize",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -1,7 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "spdlog/sinks/ostream_sink.h"
+#include "absl/debugging/symbolize.h"
+
 #include "utl/Logger.h"
 
 namespace utl {

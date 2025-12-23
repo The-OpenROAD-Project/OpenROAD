@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include <unistd.h>
-
 #include <array>
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cstdint>
@@ -177,7 +176,7 @@ class Logger
     // If debugging is enabled dump the backtrace
     if (anyDebugLevel(tool)) {
       std::string backtrace_message = GetStackTrace();
-      log(tool, spdlog::level::err, id, backtrace_message);
+      log(tool, spdlog::level::err, id, "{}", backtrace_message);
     }
 
     char tool_id[32];
