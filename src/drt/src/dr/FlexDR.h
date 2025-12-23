@@ -28,6 +28,7 @@
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
+#include "dr/FlexDRFlowStateMachine.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
@@ -95,10 +96,11 @@ class FlexDR
   };
   struct IterationsControl
   {
-    bool skip_till_changed{false};
-    bool tried_guide_flow{false};
     SearchRepairArgs last_args;
     bool fixing_max_spacing{false};
+
+    // State machine for flow decision logic
+    FlexDRFlowStateMachine flow_state_machine;
   };
 
   // constructors
@@ -115,7 +117,8 @@ class FlexDR
   // others
   void init();
   int main();
-  void searchRepair(const SearchRepairArgs& args);
+  void searchRepair(const SearchRepairArgs& args,
+                    FlexDRFlowStateMachine::FlowState flow_state);
   void end(bool done = false);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
@@ -145,6 +148,7 @@ class FlexDR
   void incIter() { ++iter_; }
   // maxSpacing fix
   void fixMaxSpacing();
+  FlexDRFlowStateMachine::FlowState getFlowState(const SearchRepairArgs& args);
 
  private:
   IterationsControl control_;

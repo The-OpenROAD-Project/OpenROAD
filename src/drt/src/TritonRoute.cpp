@@ -696,15 +696,17 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  dr_->searchRepair({size,
-                     offset,
-                     mazeEndIter,
-                     workerDRCCost,
-                     workerMarkerCost,
-                     workerFixedShapeCost,
-                     workerMarkerDecay,
-                     getMode(ripupMode),
-                     followGuide});
+  FlexDR::SearchRepairArgs args = {size,
+                                   offset,
+                                   mazeEndIter,
+                                   workerDRCCost,
+                                   workerMarkerCost,
+                                   workerFixedShapeCost,
+                                   workerMarkerDecay,
+                                   getMode(ripupMode),
+                                   followGuide};
+  FlexDRFlowStateMachine::FlowState flow_state = dr_->getFlowState(args);
+  dr_->searchRepair(args, flow_state);
   dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
