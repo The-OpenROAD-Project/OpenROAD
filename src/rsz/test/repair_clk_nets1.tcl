@@ -21,7 +21,7 @@ foreach net_name {in1 n1 n2 out1} {
   [sta::sta_to_db_net [get_net $net_name]] setSigType CLOCK
 }
 
-# wire length = 1500u -> 2 buffers required
+# wire length = 1500u -> at least 2 buffers are required
 repair_clock_nets -max_wire_length 600
 
 puts "\n# All nets in the path should be CLOCK type."
