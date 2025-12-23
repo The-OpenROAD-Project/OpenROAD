@@ -285,25 +285,70 @@ void IRSolver::reportUnconnectedNodes() const
       tool_category, net_->getName().c_str());
 
   if (!results.unconnected_nodes.empty()) {
-    odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(net_category, "Unconnected node");
-    for (auto* node : results.unconnected_nodes) {
-      logger_->warn(utl::PSM,
-                    38,
-                    "Unconnected node on net {} at location ({:4.3f}um, "
-                    "{:4.3f}um), layer: {}.",
-                    net_->getName(),
-                    node->getPoint().getX() / dbu,
-                    node->getPoint().getY() / dbu,
-                    node->getLayer()->getName());
+    if (logger_->debugCheck(utl::PSM, "reportnodes", 1)) {
+      odb::dbMarkerCategory* category
+          = odb::dbMarkerCategory::create(net_category, "Unconnected node");
+      for (auto* node : results.unconnected_nodes) {
+        logger_->warn(utl::PSM,
+                      42,
+                      "Unconnected node on net {} at location ({:4.3f}um, "
+                      "{:4.3f}um), layer: {}.",
+                      net_->getName(),
+                      node->getPoint().getX() / dbu,
+                      node->getPoint().getY() / dbu,
+                      node->getLayer()->getName());
 
-      odb::dbMarker* marker = odb::dbMarker::create(category);
-      if (marker == nullptr) {
-        continue;
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
+        marker->addSource(net_);
+        marker->setTechLayer(node->getLayer());
+        marker->addShape(node->getPoint());
       }
-      marker->addSource(net_);
-      marker->setTechLayer(node->getLayer());
-      marker->addShape(node->getPoint());
+    }
+    std::map<odb::dbTechLayer*, IRNetwork::ShapeTree> shapes;
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::create(net_category, "Unconnected shape");
+
+    std::set<const Shape*> reported_shapes;
+    for (auto* node : results.unconnected_nodes) {
+      if (shapes.find(node->getLayer()) == shapes.end()) {
+        // get tree is not found
+        shapes[node->getLayer()] = network_->getShapeTree(node->getLayer());
+      }
+      const auto& layer_shapes = shapes[node->getLayer()];
+      for (auto itr = layer_shapes.qbegin(
+               boost::geometry::index::intersects(node->getPoint()));
+           itr != layer_shapes.qend();
+           itr++) {
+        const Shape* shape = *itr;
+
+        if (reported_shapes.find(shape) != reported_shapes.end()) {
+          continue;
+        }
+        reported_shapes.insert(shape);
+
+        const odb::Rect rect = shape->getShape();
+        logger_->warn(utl::PSM,
+                      38,
+                      "Unconnected shape on net {} at ({:4.3f}um, "
+                      "{:4.3f}um) - ({:4.3f}um, {:4.3f}um), layer: {}.",
+                      net_->getName(),
+                      rect.xMin() / dbu,
+                      rect.yMin() / dbu,
+                      rect.xMax() / dbu,
+                      rect.yMax() / dbu,
+                      shape->getLayer()->getName());
+
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          break;
+        }
+        marker->addSource(net_);
+        marker->setTechLayer(shape->getLayer());
+        marker->addShape(rect);
+      }
     }
   }
 
