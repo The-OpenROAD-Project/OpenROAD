@@ -45,7 +45,9 @@ or_integration_tests(
     pd3
     pd4
     pin_access1
+    pin_access1_cugr
     pin_access2
+    pin_access2_cugr
     pin_edge
     pin_track_not_aligned
     pre_routed1

@@ -32,19 +32,19 @@ in1 manhtn 0.7 steiner 0.7 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +177.8% |       1 |       3 |             1 |         0
+    final |   +166.7% |       1 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0039] Resized 1 instances.
-[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 Driver    length delay
-wire1/Z manhtn 589.9 steiner 589.9 0.05
-wire2/Z manhtn 586.2 steiner 586.2 0.05
-u2/Z manhtn 432.3 steiner 432.3 0.03
-wire3/Z manhtn 389.9 steiner 389.9 0.02
+wire1/Z manhtn 759.8 steiner 759.8 0.08
+u2/Z manhtn 651.0 steiner 651.0 0.06
+wire2/Z manhtn 587.7 steiner 587.7 0.05
 u3/Z manhtn 1.3 steiner 1.3 0.00
+in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained
@@ -57,17 +57,15 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    1.811    0.007    0.019    0.019 ^ u1/Z (BUF_X1)
             0.007    0.000    0.019 ^ u2/A (BUF_X2)
-  33.910    0.104    0.120    0.138 ^ u2/Z (BUF_X2)
-            0.000    0.000    0.138 ^ wire3/A (CLKBUF_X3)
-  30.728    0.000    0.000    0.138 ^ wire3/Z (CLKBUF_X3)
-            0.000    0.000    0.138 ^ wire2/A (CLKBUF_X3)
-  45.480    0.000    0.000    0.138 ^ wire2/Z (CLKBUF_X3)
-            0.000    0.000    0.138 ^ wire1/A (CLKBUF_X3)
-  45.311    0.000    0.000    0.138 ^ wire1/Z (CLKBUF_X3)
-            0.199    0.000    0.138 ^ u3/A (BUF_X1)
-   0.000    0.010    0.026    0.164 ^ u3/Z (BUF_X1)
-            0.010    0.000    0.164 ^ out1 (out)
-                              0.164   data arrival time
+  52.329    0.047    0.060    0.079 ^ u2/Z (BUF_X2)
+            0.083    0.056    0.135 ^ wire2/A (BUF_X4)
+  47.573    0.021    0.045    0.180 ^ wire2/Z (BUF_X4)
+            0.056    0.043    0.223 ^ wire1/A (BUF_X4)
+  58.084    0.024    0.046    0.269 ^ wire1/Z (BUF_X4)
+            0.080    0.064    0.333 ^ u3/A (BUF_X1)
+   0.000    0.007    0.027    0.360 ^ u3/Z (BUF_X1)
+            0.007    0.000    0.360 ^ out1 (out)
+                              0.360   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
