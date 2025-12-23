@@ -104,7 +104,7 @@ stage 3: maze routing on sparsified routing graph
 432 / 579 nets have overflow.
 routing statistics
 wire length (metric):  37808
-total via count:       3630
+total via count:       2751
 total wire overflow:   1031
 min resource: -3.899999737739563
 bottleneck:   (1, 19, 17)
