@@ -338,7 +338,7 @@ void show_worst_path(bool setup = true)
     return;
   }
   auto gui = gui::Gui::get();
-  gui->showWorstPath(setup);
+  gui->showWorstTimingPath(setup);
 }
 
 void clear_rulers()

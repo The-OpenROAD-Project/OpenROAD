@@ -789,9 +789,18 @@ void TimingWidget::hideEvent(QHideEvent* event)
   toggleRenderer(false);
 }
 
-void TimingWidget::showWorstPath(bool setup)
+void TimingWidget::showWorstTimingPath(bool setup)
 {
-  populatePaths();
+  if (setup_timing_paths_model_ == nullptr
+      || hold_timing_paths_model_ == nullptr) {
+    return;
+  }
+
+  if (setup_timing_paths_model_->rowCount() == 0
+      && hold_timing_paths_model_->rowCount() == 0) {
+    populatePaths();
+  }
+
   QTableView* table_view
       = setup ? setup_timing_table_view_ : hold_timing_table_view_;
   QAbstractItemModel* model = table_view->model();
@@ -800,13 +809,8 @@ void TimingWidget::showWorstPath(bool setup)
     table_view->setCurrentIndex(index);
     // Ensure the selection signal is emitted even if the index was already
     // selected
-    if (setup) {
-      selectedRowChanged(table_view->selectionModel()->selection(),
-                         QItemSelection());
-    } else {
-      selectedCaptureRowChanged(table_view->selectionModel()->selection(),
-                                QItemSelection());
-    }
+    selectedRowChanged(table_view->selectionModel()->selection(),
+                       QItemSelection());
   }
 }
 

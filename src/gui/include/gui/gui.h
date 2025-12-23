@@ -773,7 +773,7 @@ class Gui
                           int width_px = 0,
                           int height_px = 0);
 
-  void showWorstPath(bool setup);
+  void showWorstTimingPath(bool setup);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);

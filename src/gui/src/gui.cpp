@@ -864,11 +864,12 @@ void Gui::saveHistogramImage(const std::string& filename,
       filename, chart_mode, width, height);
 }
 
-void Gui::showWorstPath(bool setup)
+void Gui::showWorstTimingPath(bool setup)
 {
-  if (main_window->getTimingWidget()) {
-    main_window->getTimingWidget()->showWorstPath(setup);
+  if (!enabled()) {
+    return;
   }
+  main_window->getTimingWidget()->showWorstTimingPath(setup);
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name,
