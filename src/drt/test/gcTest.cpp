@@ -26,6 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -1260,8 +1261,8 @@ TEST_P(CutSpcTblFixture, cut_spc_tbl)
   auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
   dbRule->setDefault(100);
   dbRule->setVertical(true);
-  std::map<std::string, uint> row_map;
-  std::map<std::string, uint> col_map;
+  std::map<std::string, uint32_t> row_map;
+  std::map<std::string, uint32_t> col_map;
   std::vector<std::vector<std::pair<int, int>>> table;
   row_map["Vx/SIDE"] = 1;
   row_map["Vx/END"] = 0;
