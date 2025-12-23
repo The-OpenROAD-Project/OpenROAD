@@ -1194,14 +1194,16 @@ void GlobalRouter::updatePinAccessPoints()
 
     for (Pin& pin : net->getPins()) {
       if (pin.isPort()) {
-        if (auto it = bterm_to_aps.find(pin.getBTerm()); it != bterm_to_aps.end()) {
+        if (auto it = bterm_to_aps.find(pin.getBTerm());
+            it != bterm_to_aps.end()) {
           const auto& bterm_ap = it->second;
           pin.setConnectionLayer(bterm_ap.z());
           pin.setOnGridPosition(
               grid_->getPositionOnGrid(odb::Point(bterm_ap.x(), bterm_ap.y())));
         }
       } else {
-        if (auto it = iterm_to_aps.find(pin.getITerm()); it != iterm_to_aps.end()) {
+        if (auto it = iterm_to_aps.find(pin.getITerm());
+            it != iterm_to_aps.end()) {
           const auto& iterm_ap = it->second;
           pin.setConnectionLayer(iterm_ap.z());
           pin.setOnGridPosition(

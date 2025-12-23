@@ -9,7 +9,6 @@
 #include "GridGraph.h"
 #include "Netlist.h"
 #include "geo.h"
-
 #include "odb/db.h"
 
 namespace grt {
@@ -64,10 +63,12 @@ bool GRNet::isInsideLayerRange(int layer_index) const
 
 void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
 {
-  if (auto it = pin_index_to_iterm_.find(pin_index); it != pin_index_to_iterm_.end()) {
+  if (auto it = pin_index_to_iterm_.find(pin_index);
+      it != pin_index_to_iterm_.end()) {
     odb::dbITerm* iterm = it->second;
     iterm_to_ap_[iterm] = ap;
-  } else if (auto it = pin_index_to_bterm_.find(pin_index); it != pin_index_to_bterm_.end()) {
+  } else if (auto it = pin_index_to_bterm_.find(pin_index);
+             it != pin_index_to_bterm_.end()) {
     odb::dbBTerm* bterm = it->second;
     bterm_to_ap_[bterm] = ap;
   }
