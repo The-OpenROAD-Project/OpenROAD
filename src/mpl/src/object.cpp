@@ -906,7 +906,7 @@ SoftMacro::SoftMacro(utl::Logger* logger,
   odb::Rect hard_macro_bbox = hard_macro->getBBox();
 
   if (outline) {
-    shape = hard_macro_bbox.intersect(*outline);
+    hard_macro_bbox.intersection(*outline, shape);
     shape.moveDelta(-outline->xMin(), -outline->yMin());
   } else {
     shape = hard_macro_bbox;
