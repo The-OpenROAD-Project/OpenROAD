@@ -40,9 +40,9 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
     }
 
     if (pin.isPort()) {
-      bterm_to_pin_index_[pin.getBTerm()] = pin_index;
+      pin_index_to_bterm_[pin_index] = pin.getBTerm();
     } else {
-      iterm_to_pin_index_[pin.getITerm()] = pin_index;
+      pin_index_to_iterm_[pin_index] = pin.getITerm();
     }
     pin_index++;
   }

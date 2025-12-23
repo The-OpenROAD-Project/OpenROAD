@@ -64,8 +64,8 @@ class GRNet
   int index_;
   odb::dbNet* db_net_;
   std::vector<std::vector<GRPoint>> pin_access_points_;
-  std::map<odb::dbITerm*, int> iterm_to_pin_index_;
-  std::map<odb::dbBTerm*, int> bterm_to_pin_index_;
+  std::map<int, odb::dbITerm*> pin_index_to_iterm_;
+  std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;
