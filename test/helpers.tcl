@@ -20,12 +20,23 @@ proc make_result_dir { } {
   return $result_dir
 }
 
+proc make_result_test_dir { subdir } {
+  variable result_dir
+  set full_path [file join $result_dir $subdir]
+  if { ![file exists $full_path] } {
+    file mkdir $full_path
+  }
+  return $full_path
+}
+
 proc make_result_file { filename } {
   variable result_dir
 
   make_result_dir
 
   set root [file rootname $filename]
+  set dir [file dirname $filename]
+  make_result_test_dir $dir
   set ext [file extension $filename]
   set filename "$root-tcl$ext"
   return [file join $result_dir $filename]
