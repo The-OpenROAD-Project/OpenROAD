@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -26,6 +27,7 @@
 #include "geo.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -57,8 +59,8 @@ void CUGR::init(const int min_routing_layer,
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();
   gr_nets_.reserve(baseNets.size());
   for (const CUGRNet& baseNet : baseNets) {
-    gr_nets_.push_back(new GRNet(baseNet, grid_graph_.get()));
-    db_net_map_[baseNet.getDbNet()] = gr_nets_.back();
+    gr_nets_.push_back(std::make_unique<GRNet>(baseNet, grid_graph_.get()));
+    db_net_map_[baseNet.getDbNet()] = gr_nets_.back().get();
   }
 }
 
@@ -79,7 +81,7 @@ void CUGR::patternRoute(std::vector<int>& netIndices)
   logger_->report("stage 1: pattern routing");
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
-    PatternRoute patternRoute(gr_nets_[netIndex],
+    PatternRoute patternRoute(gr_nets_[netIndex].get(),
                               grid_graph_.get(),
                               stt_builder_,
                               constants_,
@@ -104,7 +106,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
   grid_graph_->extractCongestionView(congestionView);
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
-    GRNet* net = gr_nets_[netIndex];
+    GRNet* net = gr_nets_[netIndex].get();
     grid_graph_->commitTree(net->getRoutingTree(), /*ripup*/ true);
     PatternRoute patternRoute(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
@@ -134,7 +136,7 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
   sortNetIndices(netIndices);
   SparseGrid grid(10, 10, 0, 0);
   for (const int netIndex : netIndices) {
-    GRNet* net = gr_nets_[netIndex];
+    GRNet* net = gr_nets_[netIndex].get();
     MazeRoute mazeRoute(net, grid_graph_.get(), logger_);
     mazeRoute.constructSparsifiedGraph(wireCostView, grid);
     mazeRoute.run();
@@ -182,7 +184,7 @@ void CUGR::write(const std::string& guide_file)
   std::stringstream ss;
   for (const auto& net : gr_nets_) {
     std::vector<std::pair<int, BoxT>> guides;
-    getGuides(net, guides);
+    getGuides(net.get(), guides);
 
     ss << net->getName() << '\n';
     ss << "(\n";

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -42,11 +43,11 @@ class GRNet
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
-  std::map<odb::dbBTerm*, AccessPoint>& getBTermAccessPoints()
+  const std::map<odb::dbBTerm*, AccessPoint>& getBTermAccessPoints() const
   {
     return bterm_to_ap_;
   }
-  std::map<odb::dbITerm*, AccessPoint>& getITermAccessPoints()
+  const std::map<odb::dbITerm*, AccessPoint>& getITermAccessPoints() const
   {
     return iterm_to_ap_;
   }

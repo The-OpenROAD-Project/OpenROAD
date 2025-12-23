@@ -45,6 +45,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
@@ -1193,15 +1194,15 @@ void GlobalRouter::updatePinAccessPoints()
 
     for (Pin& pin : net->getPins()) {
       if (pin.isPort()) {
-        if (bterm_to_aps.find(pin.getBTerm()) != bterm_to_aps.end()) {
-          const auto& bterm_ap = bterm_to_aps[pin.getBTerm()];
+        if (auto it = bterm_to_aps.find(pin.getBTerm()); it != bterm_to_aps.end()) {
+          const auto& bterm_ap = it->second;
           pin.setConnectionLayer(bterm_ap.z());
           pin.setOnGridPosition(
               grid_->getPositionOnGrid(odb::Point(bterm_ap.x(), bterm_ap.y())));
         }
       } else {
-        if (iterm_to_aps.find(pin.getITerm()) != iterm_to_aps.end()) {
-          const auto& iterm_ap = iterm_to_aps[pin.getITerm()];
+        if (auto it = iterm_to_aps.find(pin.getITerm()); it != iterm_to_aps.end()) {
+          const auto& iterm_ap = it->second;
           pin.setConnectionLayer(iterm_ap.z());
           pin.setOnGridPosition(
               grid_->getPositionOnGrid(odb::Point(iterm_ap.x(), iterm_ap.y())));
