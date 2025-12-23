@@ -134,7 +134,8 @@ class Graphics : public gui::Renderer, public MplObserver
   Cluster* current_cluster_{nullptr};
   std::map<int, odb::Rect> guides_;  // Id -> Guidance Region
   std::map<int, odb::Rect> fences_;  // Id -> Fence
-  std::vector<std::pair<odb::Rect, bool>> notches_; // <Candidate Notch, True/False Notch> 
+  std::vector<std::pair<odb::Rect, bool>>
+      notches_;  // <Candidate Notch, True/False Notch>
 
   int x_mark_size_{0};  // For blocked regions.
 

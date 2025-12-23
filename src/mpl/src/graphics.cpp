@@ -565,7 +565,8 @@ void Graphics::drawGuides(gui::Painter& painter)
   }
 }
 
-void Graphics::drawNotches(gui::Painter& painter) {
+void Graphics::drawNotches(gui::Painter& painter)
+{
   painter.setPen(gui::Painter::kYellow, true);
 
   for (const auto& [notch, value] : notches_) {
@@ -756,11 +757,13 @@ void Graphics::setFences(const std::map<int, odb::Rect>& fences)
   fences_ = fences;
 }
 
-void Graphics::addNotch(const odb::Rect& notch, bool value) {
+void Graphics::addNotch(const odb::Rect& notch, bool value)
+{
   notches_.emplace_back(notch, value);
 }
 
-void Graphics::clearNotches() {
+void Graphics::clearNotches()
+{
   notches_.clear();
 }
 

@@ -2,6 +2,7 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "SACoreSoftMacro.h"
+
 #include <bits/ranges_algo.h>
 
 #include <algorithm>
@@ -689,18 +690,20 @@ void SACoreSoftMacro::calNotchPenalty()
 
   std::vector<int> x_coords;
   int epsilon = outline_.dx() / 100;
-  for (size_t i = 0; i < x_point.size(); ++i) {
-    if (i + 1 < x_point.size() && std::abs(x_point[i+1] - x_point[i]) <= epsilon) {
-        continue; 
+  for (size_t i = 0; i < x_point.size(); i++) {
+    if (i + 1 < x_point.size()
+        && std::abs(x_point[i + 1] - x_point[i]) <= epsilon) {
+      continue;
     }
     x_coords.push_back(x_point[i]);
   }
 
   std::vector<int> y_coords;
   epsilon = outline_.dy() / 100;
-  for (size_t i = 0; i < y_point.size(); ++i) {
-    if (i + 1 < y_point.size() && std::abs(y_point[i+1] - y_point[i]) <= epsilon) {
-        continue; 
+  for (size_t i = 0; i < y_point.size(); i++) {
+    if (i + 1 < y_point.size()
+        && std::abs(y_point[i + 1] - y_point[i]) <= epsilon) {
+      continue;
     }
     y_coords.push_back(y_point[i]);
   }
@@ -708,9 +711,8 @@ void SACoreSoftMacro::calNotchPenalty()
   int num_x = x_coords.size() - 1;
   int num_y = y_coords.size() - 1;
 
-  // Assign cluster locations for notch detection
   std::vector<std::vector<bool>> grid(num_y, std::vector<bool>(num_x, false));
-  
+
   for (auto& macro : macros_) {
     if (macro.isStdCellCluster()) {
       continue;
@@ -728,31 +730,39 @@ void SACoreSoftMacro::calNotchPenalty()
 
   auto neighbors = [&](int row1, int col1, int row2, int col2) {
     bool bottom = true;
-    if (row1 > 0) for (int i = col1; i <= col2; i++) {
-      if (!grid[row1-1][i]) {
-        bottom = false;
-        break;
+    if (row1 > 0) {
+      for (int i = col1; i <= col2; i++) {
+        if (!grid[row1 - 1][i]) {
+          bottom = false;
+          break;
+        }
       }
     }
     bool top = true;
-    if (row2 < num_y-1) for (int i = col1; i <= col2; i++) {
-      if (!grid[row2+1][i]) {
-        top = false;
-        break;
+    if (row2 < num_y - 1) {
+      for (int i = col1; i <= col2; i++) {
+        if (!grid[row2 + 1][i]) {
+          top = false;
+          break;
+        }
       }
     }
     bool left = true;
-    if (col1 > 0) for (int i = row1; i <= row2; i++) {
-      if (!grid[i][col1-1]) {
-        left = false;
-        break;
+    if (col1 > 0) {
+      for (int i = row1; i <= row2; i++) {
+        if (!grid[i][col1 - 1]) {
+          left = false;
+          break;
+        }
       }
     }
     bool right = true;
-    if (col2 < num_x-1) for (int i = row1; i <= row2; i++) {
-      if (!grid[i][col2+1]) {
-        right = false;
-        break;
+    if (col2 < num_x - 1) {
+      for (int i = row1; i <= row2; i++) {
+        if (!grid[i][col2 + 1]) {
+          right = false;
+          break;
+        }
       }
     }
 
@@ -770,7 +780,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
     return true;
   };
-  
+
   for (int start_row = 0; start_row < num_y; start_row++) {
     for (int start_col = 0; start_col < num_x; start_col++) {
       if (grid[start_row][start_col]) {
@@ -787,7 +797,8 @@ void SACoreSoftMacro::calNotchPenalty()
       while (expand_rows || expand_cols) {
         if (expand_rows) {
           end_row += 1;
-          if (end_row < num_y && valid(start_row, start_col, end_row, end_col)) {
+          if (end_row < num_y
+              && valid(start_row, start_col, end_row, end_col)) {
             int new_n = neighbors(start_row, start_col, end_row, end_col);
             if (new_n >= n) {
               n = new_n;
@@ -799,11 +810,12 @@ void SACoreSoftMacro::calNotchPenalty()
             expand_rows = false;
             end_row -= 1;
           }
-        } 
+        }
 
         if (expand_cols) {
           end_col += 1;
-          if (end_col < num_x && valid(start_row, start_col, end_row, end_col)) {
+          if (end_col < num_x
+              && valid(start_row, start_col, end_row, end_col)) {
             int new_n = neighbors(start_row, start_col, end_row, end_col);
             if (new_n >= n) {
               n = new_n;
@@ -818,8 +830,8 @@ void SACoreSoftMacro::calNotchPenalty()
         }
       }
 
-      width = x_coords[end_col+1] - x_coords[start_col];
-      height = y_coords[end_row+1] - y_coords[start_row];
+      width = x_coords[end_col + 1] - x_coords[start_col];
+      height = y_coords[end_row + 1] - y_coords[start_row];
       if (n == 4) {
         notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
                                                 block_->dbuToMicrons(height));
@@ -1120,7 +1132,7 @@ int SACoreSoftMacro::getSegmentIndex(const int segment,
                                      const std::vector<int>& coords)
 {
   auto it = std::ranges::lower_bound(coords, segment);
-  
+
   return static_cast<int>(std::distance(coords.begin(), it));
 }
 
