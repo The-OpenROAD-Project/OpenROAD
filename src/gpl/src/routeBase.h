@@ -131,7 +131,7 @@ struct RouteBaseVars
   const float maxInflationRatio;
   const float maxDensity;
   const float ignoreEdgeRatio;
-  const float minInflationRatio;
+  const float minCongestionForInflation;
 
   // targetRC metric coefficients.
   const float rcK1, rcK2, rcK3, rcK4;

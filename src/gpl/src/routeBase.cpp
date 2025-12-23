@@ -222,7 +222,7 @@ RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
       maxInflationRatio(options.routabilityMaxInflationRatio),
       maxDensity(options.routabilityMaxDensity),
       ignoreEdgeRatio(0.8),
-      minInflationRatio(options.routabilityMinInflationRatio),
+      minCongestionForInflation(options.routabilityMinCongestionForInflation),
       rcK1(options.routabilityRcK1),
       rcK2(options.routabilityRcK2),
       rcK3(options.routabilityRcK3),
@@ -249,8 +249,8 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   minRcTargetDensity_.resize(nbVec_.size(), 0);
   inflatedAreaDelta_.resize(nbVec_.size(), 0);
   init();
-  log_->report("routability minInflationRatio: {:.2f}",
-               rbVars_.minInflationRatio);
+  log_->report("routability minCongestionForInflation: {:.2f}",
+               rbVars_.minCongestionForInflation);
 }
 
 RouteBase::~RouteBase() = default;
@@ -395,8 +395,8 @@ void RouteBase::calculateRudyTiles()
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
 
     // update inflation Ratio
-    if (ratio >= rbVars_.minInflationRatio) {
-      float inflationRatio = std::pow(ratio / rbVars_.minInflationRatio,
+    if (ratio >= rbVars_.minCongestionForInflation) {
+      float inflationRatio = std::pow(ratio / rbVars_.minCongestionForInflation,
                                       rbVars_.inflationRatioCoef);
       inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
       tile->setInflationRatio(inflationRatio);
@@ -554,7 +554,7 @@ void RouteBase::updateGrtRoute()
         ratio = 0.0;
       }
       //  update inflation Ratio
-      if (ratio >= rbVars_.minInflationRatio) {
+      if (ratio >= rbVars_.minCongestionForInflation) {
         float inflationRatio = std::pow(ratio, rbVars_.inflationRatioCoef);
         inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
         tile->setInflationRatio(inflationRatio);
@@ -726,7 +726,7 @@ std::pair<bool, bool> RouteBase::routability(
 
       // deltaArea is equal to area * deltaRatio
       // both of original and density size will be changed
-      inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;      
+      inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;
     }
     printGCellInflation();
 
