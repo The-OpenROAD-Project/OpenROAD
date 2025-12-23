@@ -367,10 +367,11 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
-void GridGraph::convertODBtoCUGR(AccessPointSet& selected_access_points,
-                                 odb::dbAccessPoint* ap,
-                                 int x,
-                                 int y) const
+void GridGraph::translateAccessPointsToGrid(
+    odb::dbAccessPoint* ap,
+    int x,
+    int y,
+    AccessPointSet& selected_access_points) const
 {
   const int amount_per_x = design_->getDieRegion().hx() / x_size_;
   const int amount_per_y = design_->getDieRegion().hy() / y_size_;
@@ -406,7 +407,7 @@ bool GridGraph::findODBAccessPoints(
         access_points.insert(
             access_points.begin(), bpin_pas.begin(), bpin_pas.end());
         for (auto ap : bpin_pas) {
-          convertODBtoCUGR(selected_access_points, ap, 0, 0);
+          translateAccessPointsToGrid(ap, 0, 0, selected_access_points);
         }
       }
     }
@@ -421,7 +422,7 @@ bool GridGraph::findODBAccessPoints(
         for (auto ap : pref_access_points) {
           int x, y;
           iterms->getInst()->getLocation(x, y);
-          convertODBtoCUGR(selected_access_points, ap, x, y);
+          translateAccessPointsToGrid(ap, x, y,selected_access_points);
         }
       }
       // Currently ignoring non preferred APs
