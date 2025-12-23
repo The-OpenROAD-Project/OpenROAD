@@ -610,9 +610,9 @@ void FastRouteCore::updateSlacks(float percentage)
     bool is_unconstrained_net = slack == sta::INF;
 
     // Dont apply res-aware to unconstrained and short nets
-    if (is_unconstrained_net || is_short_net) {
-      continue;
-    }
+    // if (is_unconstrained_net || is_short_net) {
+    //   continue;
+    // }
 
     res_aware_list.emplace_back(net_id, slack);
   }
@@ -626,9 +626,9 @@ void FastRouteCore::updateSlacks(float percentage)
   std::stable_sort(res_aware_list.begin(), res_aware_list.end(), compareSlack);
 
   // During incremental grt, enable res-aware for all nets
-  // if (is_incremental_grt_) {
-  percentage = 1;
-  // }
+  if (is_incremental_grt_) {
+    percentage = 1;
+  }
 
   // Decide the percentage of nets that will use resistance aware
   for (int i = 0; i < res_aware_list.size() * percentage; i++) {
