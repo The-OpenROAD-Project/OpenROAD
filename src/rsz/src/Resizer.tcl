@@ -780,7 +780,6 @@ proc report_buffers { args } {
 
 sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \
                                        [-net net] \
-                                       [-load_pin pin] \
                                        [-load_pins list_of_pins] \
                                        [-location {x y}] \
                                        [-buffer_name name] \
@@ -789,19 +788,16 @@ sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \
 
 proc insert_buffer { args } {
   sta::parse_key_args "insert_buffer" args \
-    keys {-buffer_cell -location -buffer_name -net_name -net -load_pin -load_pins} \
+    keys {-buffer_cell -location -buffer_name -net_name -net -load_pins} \
     flags {-load_pins_on_diff_nets}
 
   # Validate mutually exclusive arguments
   set has_net [info exists keys(-net)]
-  set has_pin [info exists keys(-load_pin)]
   set has_loads [info exists keys(-load_pins)]
 
-  if { ($has_net && $has_pin) || ($has_pin && $has_loads) } {
-    utl::error RSZ 3010 "Arguments -net, -load_pin, and -load_pins are mutually exclusive."
-  }
-  if { !$has_net && !$has_pin && !$has_loads } {
-    utl::error RSZ 3011 "One of -net, -load_pin, or -load_pins must be specified."
+  # Validate arguments
+  if { !$has_net && !$has_loads } {
+    utl::error RSZ 3011 "One of -net or -load_pins must be specified."
   }
 
   set buffer_cell [rsz::parse_buffer_cell keys]
@@ -840,16 +836,18 @@ proc insert_buffer { args } {
       set net [sta::get_net_arg "-net" $keys(-net)]
     }
     set loads [sta::get_port_pins_error "insert_buffer" $keys(-load_pins)]
-    set loads_on_diff_nets [info exists flags(-load_pins_on_diff_nets)]
-    return [rsz::insert_buffer_before_loads_cmd $net $loads $buffer_cell $x $y $has_loc \
-      $new_buf_base_name $new_net_base_name \
-      $loads_on_diff_nets]
-  }
-
-  if { $has_pin } {
-    set pin [sta::get_pin_error "-load_pin" $keys(-load_pin)]
-    return [rsz::insert_buffer_before_load_cmd $pin $buffer_cell $x $y $has_loc \
-      $new_buf_base_name $new_net_base_name]
+    set load_count [llength $loads]
+    if { $load_count == 1 } {
+      # For a single load pin, use insert_buffer_before_load_cmd
+      set pin [lindex $loads 0]
+      return [rsz::insert_buffer_before_load_cmd $pin $buffer_cell $x $y $has_loc \
+        $new_buf_base_name $new_net_base_name]
+    } else {
+      set loads_on_diff_nets [info exists flags(-load_pins_on_diff_nets)]
+      return [rsz::insert_buffer_before_loads_cmd $net $loads $buffer_cell $x $y $has_loc \
+        $new_buf_base_name $new_net_base_name \
+        $loads_on_diff_nets]
+    }
   }
 
   if { $has_net } {

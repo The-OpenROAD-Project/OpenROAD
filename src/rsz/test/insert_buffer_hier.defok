@@ -881,7 +881,7 @@ COMPONENTS 38 ;
     - u_mid1/dff_out1 DFF_X1 + PLACED ( 380 19600 ) FS ;
     - u_mid1/dff_out2 DFF_X1 + PLACED ( 15580 0 ) N ;
     - u_mid1/u_leaf1/b_after_drvr1 BUF_X1 + SOURCE TIMING + PLACED ( 6270 26610 ) N ;
-    - u_mid1/u_leaf1/b_before_load2 BUF_X1 + SOURCE TIMING + PLACED ( 0 0 ) N ;
+    - u_mid1/u_leaf1/b_before_load2 BUF_X1 + SOURCE TIMING + PLACED ( 20000 40000 ) N ;
     - u_mid1/u_leaf1/buf1 BUF_X1 + PLACED ( 1140 8400 ) FS ;
     - u_mid1/u_leaf1/buf2 BUF_X1 + PLACED ( 1520 11200 ) N ;
     - u_mid1/u_leaf1/dff1 DFF_X1 + PLACED ( 0 25200 ) FS ;

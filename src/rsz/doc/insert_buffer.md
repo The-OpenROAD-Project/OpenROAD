@@ -20,7 +20,6 @@ it provides more features.
 ```tcl
 insert_buffer -buffer_cell lib_cell
               [-net net]
-              [-load_pin pin]
               [-load_pins list_of_pins]
               [-location {x y}]
               [-buffer_name name]
@@ -34,11 +33,10 @@ insert_buffer -buffer_cell lib_cell
 | -------- | ----------- |
 | `-buffer_cell` | Specified the library cell to use for the buffer. (Required) |
 | `-location` | Specifies the `{x y}` coordinates (in microns) where the buffer should be placed. If not specified, the buffer is placed at the driver or load pin location. |
-| `-buffer_name` | Specifies the base name for the new buffer instance. If not specified, "buf" is used. |
-| `-net_name` | Specifies the base name for the new net created by the buffer insertion. If not specified, "net" is used. |
+| `-buffer_name` | Specifies the base name for the new buffer instance. If not specified, "buf" is used. Note that a unique suffix number will always be added to the base name to avoid a name collision. |
+| `-net_name` | Specifies the base name for the new net created by the buffer insertion. If not specified, "net" is used. Note that a unique suffix number will always be added to the base name to avoid a name collision. |
 | `-net` | Specifies the net to be buffered. When used without `-load_pins`, it performs driver-side buffering. |
-| `-load_pin` | Specifies a single load pin (input ITerm or BTerm) to buffer. |
-| `-load_pins` | Specifies a list of load pins to buffer together. |
+| `-load_pins` | Specifies a single load pin or a list of load pins to buffer together. |
 | `-load_pins_on_diff_nets` | A flag indicating that the specified `-load_pins` are on the different nets. If specified, multiple load pins on different flat nets can be buffered together and the target net among the multiple flat nets can be selected by `-net`. This option should be used with caution not to change the logical function of the design. |
 
 ---
@@ -54,13 +52,13 @@ set net [get_nets u_mid1/u_leaf1/n1]
 insert_buffer -net $net -buffer_cell BUF_X1 -buffer_name buf
 ```
 
-### 2. Single Load Buffering (`-load_pin`)
+### 2. Single Load Buffering (`-load_pins`)
 Inserts a buffer immediately before the specified load pin. A new net is created for the buffer output to drive only this specific load pin.
 
 **Example:**
 ```tcl
 set pin [get_pins u_mid1/u_leaf1/buf2/A]
-insert_buffer -load_pin $pin -buffer_cell BUF_X1 -location {10.0 20.0}
+insert_buffer -load_pins $pin -buffer_cell BUF_X1 -location {10.0 20.0}
 ```
 
 ### 3. Multiple Loads Buffering (`-load_pins`)

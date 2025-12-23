@@ -23,7 +23,7 @@ puts "Inserted after driver: [get_name $buf1]"
 puts "--- Test 2: Before Single Load ---"
 set pin [get_pins u_mid1/u_leaf1/buf2/A]
 set buf2 [insert_buffer \
-  -load_pin $pin \
+  -load_pins $pin \
   -buffer_cell BUF_X1 \
   -buffer_name b_before_load \
   -net_name n_before_load \
