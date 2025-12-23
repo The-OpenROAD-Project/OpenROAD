@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "grt/GRoute.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;
