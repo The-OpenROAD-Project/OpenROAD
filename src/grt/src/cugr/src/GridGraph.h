@@ -150,7 +150,10 @@ class GridGraph
   {
     return unit_length_short_costs_[layer_index];
   }
-
+  void convertODBtoCUGR(AccessPointSet& selected_access_points,
+                        odb::dbAccessPoint* ap,
+                        int x,
+                        int y) const;
   bool findODBAccessPoints(const GRNet* net,
                            AccessPointSet& selected_access_points) const;
 

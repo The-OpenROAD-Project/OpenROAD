@@ -367,6 +367,30 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
+void GridGraph::convertODBtoCUGR(AccessPointSet& selected_access_points,
+                                 odb::dbAccessPoint* ap,
+                                 int x,
+                                 int y) const
+{
+  const int amount_per_x = design_->getDieRegion().hx() / x_size_;
+  const int amount_per_y = design_->getDieRegion().hy() / y_size_;
+  auto point = ap->getPoint();
+  auto layer = ap->getLayer();
+  const int ap_x = ((point.getX() + x) / amount_per_x >= x_size_)
+                       ? x_size_ - 1
+                       : (point.getX() + x) / amount_per_x;
+  const int ap_y = ((point.getY() + y) / amount_per_y >= y_size_)
+                       ? y_size_ - 1
+                       : (point.getY() + y) / amount_per_y;
+  const PointT selected_point = PointT(ap_x, ap_y);
+  const int num_layer = ((layer->getNumber() - 2) > (getNumLayers() - 1))
+                            ? getNumLayers() - 1
+                            : layer->getNumber() - 2;
+  const IntervalT selected_layer = IntervalT(num_layer);
+  const AccessPoint ap_new{.point = selected_point, .layers = selected_layer};
+  selected_access_points.emplace(ap_new);
+}
+
 bool GridGraph::findODBAccessPoints(
     const GRNet* net,
     AccessPointSet& selected_access_points) const
@@ -384,23 +408,7 @@ bool GridGraph::findODBAccessPoints(
         access_points.insert(
             access_points.begin(), bpin_pas.begin(), bpin_pas.end());
         for (auto ap : bpin_pas) {
-          auto point = ap->getPoint();
-          auto layer = ap->getLayer();
-          const int ap_x = (point.getX() / amount_per_x >= x_size_)
-                               ? x_size_ - 1
-                               : point.getX() / amount_per_x;
-          const int ap_y = (point.getY() / amount_per_y >= y_size_)
-                               ? y_size_ - 1
-                               : point.getY() / amount_per_y;
-          const PointT selected_point = PointT(ap_x, ap_y);
-          const int num_layer
-              = ((layer->getNumber() - 2) > (getNumLayers() - 1))
-                    ? getNumLayers() - 1
-                    : layer->getNumber() - 2;
-          const IntervalT selected_layer = IntervalT(num_layer);
-          const AccessPoint ap_new{.point = selected_point,
-                                   .layers = selected_layer};
-          selected_access_points.emplace(ap_new);
+          convertODBtoCUGR(selected_access_points, ap, 0, 0);
         }
       }
     }
@@ -415,23 +423,7 @@ bool GridGraph::findODBAccessPoints(
         for (auto ap : pref_access_points) {
           int x, y;
           iterms->getInst()->getLocation(x, y);
-          auto point = ap->getPoint();
-          auto layer = ap->getLayer();
-          const int ap_x = ((point.getX() + x) / amount_per_x >= x_size_)
-                               ? x_size_ - 1
-                               : (point.getX() + x) / amount_per_x;
-          const int ap_y = ((point.getY() + y) / amount_per_y >= y_size_)
-                               ? y_size_ - 1
-                               : (point.getY() + y) / amount_per_y;
-          const PointT selected_point = PointT(ap_x, ap_y);
-          const int num_layer
-              = ((layer->getNumber() - 2) > (getNumLayers() - 1))
-                    ? getNumLayers() - 1
-                    : layer->getNumber() - 2;
-          const IntervalT selected_layer = IntervalT(num_layer);
-          const AccessPoint ap_new{.point = selected_point,
-                                   .layers = selected_layer};
-          selected_access_points.emplace(ap_new);
+          convertODBtoCUGR(selected_access_points, ap, x, y);
         }
       }
       // Currently ignoring non preferred APs
