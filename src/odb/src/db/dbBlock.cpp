@@ -1000,7 +1000,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     }
     stream >> *block.moditerm_tbl_;
     stream >> *block.modnet_tbl_;
-    if (db->isSchema(db_schema_db_remove_hash)) {
+    if (db->isSchema(kSchemaDbRemoveHash)) {
       // Construct modnet_hash_
       dbSet<dbModNet> modnets((dbBlock*) &block, block.modnet_tbl_);
       for (dbModNet* obj : modnets) {
