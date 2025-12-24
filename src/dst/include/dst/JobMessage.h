@@ -19,8 +19,7 @@ class BalancerConnection;
 class JobDescription
 {
  public:
-  JobDescription() {}
-  virtual ~JobDescription() {}
+  virtual ~JobDescription() = default;
 
  private:
   template <class Archive>

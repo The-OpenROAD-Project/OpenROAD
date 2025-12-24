@@ -100,8 +100,6 @@ struct CouplingConfig
       new_calc_flow = level <= metal_flag ? true : false;
     }
   }
-  // Destructor to clean up resources
-  ~CouplingConfig() {}
 
   // Prevent copying
   CouplingConfig(const CouplingConfig&) = delete;

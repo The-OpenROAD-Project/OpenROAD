@@ -43,7 +43,6 @@ class lefiViaRuleLayer
   void Init();
 
   void Destroy();
-  ~lefiViaRuleLayer();
   void clearLayerOverhang();
 
   void setName(const char* name);

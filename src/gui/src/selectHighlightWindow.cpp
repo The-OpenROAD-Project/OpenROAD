@@ -339,10 +339,6 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
   ui_.tabWidget->setCurrentIndex(0);
 }
 
-SelectHighlightWindow::~SelectHighlightWindow()
-{
-}
-
 void SelectHighlightWindow::updateSelectionModel()
 {
   selection_model_.populateModel();

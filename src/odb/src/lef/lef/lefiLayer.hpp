@@ -80,7 +80,6 @@ class lefiAntennaPWL
 class lefiLayerDensity
 {
  public:
-  lefiLayerDensity();
   ~lefiLayerDensity();
 
   void Init(const char* type);

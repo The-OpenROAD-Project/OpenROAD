@@ -155,10 +155,6 @@ double lefiAntennaPWL::PWLratio(int index)
 // *****************************************************************************
 // lefiLayerDensity
 // *****************************************************************************
-lefiLayerDensity::lefiLayerDensity()
-{
-}
-
 void lefiLayerDensity::Init(const char* type)
 {
   int len = strlen(type) + 1;
