@@ -139,9 +139,9 @@ bool RoutingCongestionDataSource::populateMapForLayer(odb::dbTechLayer* layer,
 
   std::vector<int> x_grid, y_grid;
   grid->getGridX(x_grid);
-  const uint32_t x_grid_sz = x_grid.size();
+  const auto x_grid_sz = x_grid.size();
   grid->getGridY(y_grid);
-  const uint32_t y_grid_sz = y_grid.size();
+  const auto y_grid_sz = y_grid.size();
 
   for (uint32_t x_idx = 0; x_idx < congestion_data.numRows(); ++x_idx) {
     for (uint32_t y_idx = 0; y_idx < congestion_data.numCols(); ++y_idx) {
@@ -191,9 +191,9 @@ bool RoutingCongestionDataSource::populateMapForDirection(
 
   std::vector<int> x_grid, y_grid;
   grid->getGridX(x_grid);
-  const uint32_t x_grid_sz = x_grid.size();
+  const auto x_grid_sz = x_grid.size();
   grid->getGridY(y_grid);
-  const uint32_t y_grid_sz = y_grid.size();
+  const auto y_grid_sz = y_grid.size();
 
   for (uint32_t x_idx = 0; x_idx < hor_congestion_data.numRows(); ++x_idx) {
     for (uint32_t y_idx = 0; y_idx < hor_congestion_data.numCols(); ++y_idx) {

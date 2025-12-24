@@ -491,7 +491,7 @@ bool Ext::rc_estimate(const std::string& ext_model_file,
   double version = 0.0;
   std::list<std::string> corner_list
       = extModelGen::GetCornerNames(ext_model_file.c_str(), version, logger_);
-  uint32_t extDbCnt = corner_list.size();
+  const auto extDbCnt = corner_list.size();
 
   uint32_t cornerTable[10];
   for (uint32_t ii = 0; ii < extDbCnt; ii++) {

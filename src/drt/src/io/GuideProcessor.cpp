@@ -1606,7 +1606,7 @@ void GuidePathFinder::updateNodeMap(
 void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
 {
   for (auto& [pt, indices] : node_map_) {
-    const uint32_t num_indices = indices.size();
+    const auto num_indices = indices.size();
     if (num_indices != 1) {
       continue;
     }
@@ -1649,7 +1649,7 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
   };
   for (auto& [pt, indices] : node_map_) {
     std::vector<int> visited_indices = getVisitedIndices(indices, visited_);
-    const uint32_t num_indices = visited_indices.size();
+    const auto num_indices = visited_indices.size();
     if (num_indices == 2) {
       const auto first_idx = *(visited_indices.begin());
       const auto second_idx = *std::prev(visited_indices.end());
