@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbBox.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -19,12 +20,12 @@ class dbOStream;
 struct _dbSBoxFlags
 {
   dbWireShapeType::Value wire_type : 6;
-  uint direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
-                       // octilinear
-  uint via_bottom_mask : 2;
-  uint via_cut_mask : 2;
-  uint via_top_mask : 2;
-  uint spare_bits : 18;
+  uint32_t direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
+                           // octilinear
+  uint32_t via_bottom_mask : 2;
+  uint32_t via_cut_mask : 2;
+  uint32_t via_top_mask : 2;
+  uint32_t spare_bits : 18;
 };
 
 class _dbSBox : public _dbBox

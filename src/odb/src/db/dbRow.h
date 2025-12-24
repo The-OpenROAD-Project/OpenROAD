@@ -3,13 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdlib>
 
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -24,7 +24,7 @@ struct dbRowFlags
 {
   dbOrientType::Value orient : 4;
   dbRowDir::Value dir : 2;
-  uint spare_bits : 26;
+  uint32_t spare_bits : 26;
 };
 
 class _dbRow : public _dbObject
@@ -86,7 +86,7 @@ inline _dbRow::~_dbRow()
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbRow& row)
 {
-  uint* bit_field = (uint*) &row.flags_;
+  uint32_t* bit_field = (uint32_t*) &row.flags_;
   stream << *bit_field;
   stream << row.name_;
   stream << row.lib_;
@@ -100,7 +100,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbRow& row)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbRow& row)
 {
-  uint* bit_field = (uint*) &row.flags_;
+  uint32_t* bit_field = (uint32_t*) &row.flags_;
   stream >> *bit_field;
   stream >> row.name_;
   stream >> row.lib_;

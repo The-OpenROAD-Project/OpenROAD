@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <tuple>
@@ -11,7 +12,6 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -47,7 +47,7 @@ struct dbTechLayerCutSpacingTableDefRuleFlags
   bool prl_vertical : 1;
   bool non_opposite_enclosure_spacing_valid : 1;
   bool opposite_enclosure_resize_spacing_valid : 1;
-  uint spare_bits : 9;
+  uint32_t spare_bits : 9;
 };
 
 class _dbTechLayerCutSpacingTableDefRule : public _dbObject
@@ -78,8 +78,8 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   dbVector<std::pair<std::string, int>> non_opp_enc_spacing_tbl_;
   dbVector<std::tuple<std::string, int, int, int>> opp_enc_spacing_tbl_;
   dbVector<dbVector<std::pair<int, int>>> spacing_tbl_;
-  std::map<std::string, uint> row_map_;
-  std::map<std::string, uint> col_map_;
+  std::map<std::string, uint32_t> row_map_;
+  std::map<std::string, uint32_t> col_map_;
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableDefRule& obj);

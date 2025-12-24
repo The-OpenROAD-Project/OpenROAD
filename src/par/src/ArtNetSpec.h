@@ -16,7 +16,6 @@
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 class Rect;

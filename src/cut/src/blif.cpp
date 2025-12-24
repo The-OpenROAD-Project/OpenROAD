@@ -4,6 +4,7 @@
 #include "cut/blif.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -74,7 +75,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   }
 
   std::set<odb::dbInst*>& insts = this->instances_to_optimize_;
-  std::map<odb::uint, odb::dbInst*> instMap;
+  std::map<uint32_t, odb::dbInst*> instMap;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
 
@@ -82,7 +83,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   int instIndex = 0;
 
   for (auto&& inst : insts) {
-    instMap.insert(std::pair<odb::uint, odb::dbInst*>(inst->getId(), inst));
+    instMap.insert(std::pair<uint32_t, odb::dbInst*>(inst->getId(), inst));
   }
 
   for (auto&& inst : insts) {

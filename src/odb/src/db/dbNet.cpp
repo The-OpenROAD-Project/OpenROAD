@@ -4,6 +4,7 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -52,7 +53,6 @@
 #include "odb/dbTypes.h"
 #include "odb/dbUtil.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -130,7 +130,7 @@ _dbNet::~_dbNet()
 
 dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
 {
-  uint* bit_field = (uint*) &net.flags_;
+  uint32_t* bit_field = (uint32_t*) &net.flags_;
   stream << *bit_field;
   stream << net.name_;
   stream << net.gndc_calibration_factor_;
@@ -156,7 +156,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbNet& net)
 
 dbIStream& operator>>(dbIStream& stream, _dbNet& net)
 {
-  uint* bit_field = (uint*) &net.flags_;
+  uint32_t* bit_field = (uint32_t*) &net.flags_;
   stream >> *bit_field;
   stream >> net.name_;
   stream >> net.gndc_calibration_factor_;
@@ -517,13 +517,13 @@ void dbNet::setCcAdjustFactor(float factor)
   net->cc_adjust_factor_ = factor;
 }
 
-uint dbNet::getCcAdjustOrder()
+uint32_t dbNet::getCcAdjustOrder()
 {
   _dbNet* net = (_dbNet*) this;
   return net->cc_adjust_order_;
 }
 
-void dbNet::setCcAdjustOrder(uint order)
+void dbNet::setCcAdjustOrder(uint32_t order)
 {
   _dbNet* net = (_dbNet*) this;
   net->cc_adjust_order_ = order;
@@ -557,7 +557,7 @@ void dbNet::setWireType(dbWireType wire_type)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
   net->flags_.wire_type = wire_type.getValue();
 
   debugPrint(getImpl()->getLogger(),
@@ -590,7 +590,7 @@ void dbNet::setSigType(dbSigType sig_type)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
   net->flags_.sig_type = sig_type.getValue();
 
   debugPrint(getImpl()->getLogger(),
@@ -697,27 +697,27 @@ void dbNet::calibrateCouplingCap()
   calibrateCouplingCap(-1);
 }
 
-uint dbNet::getRSegCount()
+uint32_t dbNet::getRSegCount()
 {
   return getRSegs().size();
 }
 
-uint dbNet::maxInternalCapNum()
+uint32_t dbNet::maxInternalCapNum()
 {
-  uint max_n = 0;
+  uint32_t max_n = 0;
   for (dbCapNode* capn : getCapNodes()) {
     if (!capn->isInternal()) {
       continue;
     }
 
-    const uint n = capn->getNode();
+    const uint32_t n = capn->getNode();
     max_n = std::max(max_n, n);
   }
   return max_n;
 }
 void dbNet::collapseInternalCapNum(FILE* mapFile)
 {
-  uint cnt = 1;
+  uint32_t cnt = 1;
   for (dbCapNode* capn : getCapNodes()) {
     cnt++;
     if (capn->isInternal()) {
@@ -729,14 +729,14 @@ void dbNet::collapseInternalCapNum(FILE* mapFile)
   }
 }
 
-uint dbNet::getCapNodeCount()
+uint32_t dbNet::getCapNodeCount()
 {
   return getCapNodes().size();
 }
 
-uint dbNet::getCcCount()
+uint32_t dbNet::getCcCount()
 {
-  uint count = 0;
+  uint32_t count = 0;
   for (dbCapNode* node : getCapNodes()) {
     count += node->getCCSegs().size();
   }
@@ -753,7 +753,7 @@ bool dbNet::groundCC(const float gndFactor)
   return grounded;
 }
 
-bool dbNet::adjustCC(uint adjOrder,
+bool dbNet::adjustCC(uint32_t adjOrder,
                      float adjFactor,
                      double ccThreshHold,
                      std::vector<dbCCSeg*>& adjustedCC,
@@ -795,7 +795,7 @@ void dbNet::undoAdjustedCC(std::vector<dbCCSeg*>& adjustedCC,
   if (net->cc_adjust_factor_ < 0) {
     return;
   }
-  const uint adjOrder = net->cc_adjust_order_;
+  const uint32_t adjOrder = net->cc_adjust_order_;
   const float adjFactor = 1 / net->cc_adjust_factor_;
   for (dbCapNode* node : getCapNodes()) {
     node->adjustCC(adjOrder, adjFactor, adjustedCC, halonets);
@@ -804,7 +804,7 @@ void dbNet::undoAdjustedCC(std::vector<dbCCSeg*>& adjustedCC,
   net->cc_adjust_order_ = 0;
 }
 
-void dbNet::adjustNetGndCap(uint corner, float factor)
+void dbNet::adjustNetGndCap(uint32_t corner, float factor)
 {
   if (factor == 1.0) {
     return;
@@ -847,7 +847,7 @@ void dbNet::calibrateCapacitance()
   calibrateGndCap();
   calibrateCouplingCap();
 }
-void dbNet::adjustNetRes(float factor, uint corner)
+void dbNet::adjustNetRes(float factor, uint32_t corner)
 {
   if (factor == 1.0) {
     return;
@@ -876,7 +876,7 @@ void dbNet::setSpef(bool value)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
   net->flags_.spef = (value == true) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -903,7 +903,7 @@ void dbNet::setSelect(bool value)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
   net->flags_.select = (value == true) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -927,7 +927,7 @@ bool dbNet::isEnclosed(Rect* bbox)  // assuming no intersection
   dbWirePath path;
   dbWirePathShape pathShape;
   pitr.begin(wire);
-  uint cnt = 0;
+  uint32_t cnt = 0;
   while (pitr.getNextPath(path)) {
     if (path.point.getX() > bbox->xMax() || path.point.getX() < bbox->xMin()
         || path.point.getY() > bbox->yMax()
@@ -964,7 +964,7 @@ void dbNet::setMark(bool value)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
   net->flags_.mark = (value == true) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -991,7 +991,7 @@ void dbNet::setMark_1(bool value)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
   net->flags_.mark_1 = (value == true) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -1019,7 +1019,7 @@ void dbNet::setWireOrdered(bool value)
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.wire_ordered = (value == true) ? 1 : 0;
 
@@ -1048,7 +1048,7 @@ void dbNet::setDisconnected(bool value)
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.disconnected = (value == true) ? 1 : 0;
 
@@ -1071,7 +1071,7 @@ void dbNet::setWireAltered(bool value)
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.wire_altered = (value == true) ? 1 : 0;
   if (value) {
@@ -1103,7 +1103,7 @@ void dbNet::setExtracted(bool value)
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.extracted = (value == true) ? 1 : 0;
 
@@ -1132,7 +1132,7 @@ void dbNet::setRCgraph(bool value)
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.rc_graph = (value == true) ? 1 : 0;
 
@@ -1293,10 +1293,10 @@ bool dbNet::setIOflag()
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  const uint prev_flags = flagsToUInt(net);
+  const uint32_t prev_flags = flagsToUInt(net);
   net->flags_.set_io = 1;
   net->flags_.io = 0;
-  const uint n = getBTerms().size();
+  const uint32_t n = getBTerms().size();
 
   if (n > 0) {
     net->flags_.io = 1;
@@ -1350,7 +1350,7 @@ void dbNet::setSpecial()
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.special = 1;
 
@@ -1372,7 +1372,7 @@ void dbNet::clearSpecial()
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.special = 0;
 
@@ -1459,8 +1459,8 @@ void dbNet::setWildConnected()
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
-  // uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
+  // uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.wild_connect = 1;
 
@@ -1482,8 +1482,8 @@ void dbNet::clearWildConnected()
   _dbNet* net = (_dbNet*) this;
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
-  // uint prev_flags = flagsToUInt(net);
+  uint32_t prev_flags = flagsToUInt(net);
+  // uint32_t prev_flags = flagsToUInt(net);
 
   net->flags_.wild_connect = 0;
 
@@ -1529,7 +1529,7 @@ void dbNet::reverseRSegs()
   }
 }
 
-dbRSeg* dbNet::findRSeg(uint srcn, uint tgtn)
+dbRSeg* dbNet::findRSeg(uint32_t srcn, uint32_t tgtn)
 {
   for (dbRSeg* rseg : getRSegs()) {
     if (rseg->getSourceNode() == srcn && rseg->getTargetNode() == tgtn) {
@@ -1539,11 +1539,11 @@ dbRSeg* dbNet::findRSeg(uint srcn, uint tgtn)
   return nullptr;
 }
 
-void dbNet::set1stRSegId(uint rid)
+void dbNet::set1stRSegId(uint32_t rid)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint pid = net->r_segs_;
+  uint32_t pid = net->r_segs_;
   net->r_segs_ = rid;
 
   debugPrint(getImpl()->getLogger(),
@@ -1565,7 +1565,7 @@ void dbNet::set1stRSegId(uint rid)
   }
 }
 
-uint dbNet::get1stRSegId()
+uint32_t dbNet::get1stRSegId()
 {
   _dbNet* net = (_dbNet*) this;
   return net->r_segs_;
@@ -1581,7 +1581,7 @@ dbRSeg* dbNet::getZeroRSeg()
   return zrc;
 }
 
-dbCapNode* dbNet::findCapNode(uint nodeId)
+dbCapNode* dbNet::findCapNode(uint32_t nodeId)
 {
   for (dbCapNode* n : getCapNodes()) {
     if (n->getNode() == nodeId) {
@@ -1625,26 +1625,26 @@ void dbNet::setTermExtIds(int capId)  // 1: capNodeId, 0: reset
   for (rc_itr = nodeSet.begin(); rc_itr != nodeSet.end(); ++rc_itr) {
     dbCapNode* capNode = *rc_itr;
     if (capNode->isBTerm()) {
-      uint nodeId = capNode->getNode();
+      uint32_t nodeId = capNode->getNode();
       dbBTerm* bterm = dbBTerm::getBTerm((dbBlock*) block, nodeId);
-      uint extId = capId ? capNode->getId() : 0;
+      uint32_t extId = capId ? capNode->getId() : 0;
       bterm->setExtId(extId);
       continue;
     }
 
     if (capNode->isITerm()) {
-      uint nodeId = capNode->getNode();
+      uint32_t nodeId = capNode->getNode();
       dbITerm* iterm = dbITerm::getITerm((dbBlock*) block, nodeId);
-      uint extId = capId ? capNode->getId() : 0;
+      uint32_t extId = capId ? capNode->getId() : 0;
       iterm->setExtId(extId);
     }
   }
 }
-void dbNet::set1stCapNodeId(uint capn_id)
+void dbNet::set1stCapNodeId(uint32_t capn_id)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint pid = net->cap_nodes_;
+  uint32_t pid = net->cap_nodes_;
   net->cap_nodes_ = capn_id;
 
   debugPrint(getImpl()->getLogger(),
@@ -1666,7 +1666,7 @@ void dbNet::set1stCapNodeId(uint capn_id)
   }
 }
 
-uint dbNet::get1stCapNodeId()
+uint32_t dbNet::get1stCapNodeId()
 {
   _dbNet* net = (_dbNet*) this;
   return net->cap_nodes_;
@@ -1682,7 +1682,7 @@ void dbNet::reverseCCSegs()
 void dbNet::getSrcCCSegs(std::vector<dbCCSeg*>& S)
 {
   for (dbCapNode* node : getCapNodes()) {
-    const uint cap_id = node->getImpl()->getOID();
+    const uint32_t cap_id = node->getImpl()->getOID();
     for (dbCCSeg* seg : node->getCCSegs()) {
       _dbCCSeg* seg_impl = (_dbCCSeg*) seg;
       if (seg_impl->cap_node_[0] == cap_id) {
@@ -1695,7 +1695,7 @@ void dbNet::getSrcCCSegs(std::vector<dbCCSeg*>& S)
 void dbNet::getTgtCCSegs(std::vector<dbCCSeg*>& S)
 {
   for (dbCapNode* node : getCapNodes()) {
-    const uint cap_id = node->getImpl()->getOID();
+    const uint32_t cap_id = node->getImpl()->getOID();
     for (dbCCSeg* seg : node->getCCSegs()) {
       _dbCCSeg* seg_impl = (_dbCCSeg*) seg;
       if (seg_impl->cap_node_[1] == cap_id) {
@@ -1713,7 +1713,7 @@ void dbNet::destroyCapNodes(bool cleanExtid)
 
   for (itr = cap_nodes.begin(); itr != cap_nodes.end();) {
     dbCapNode* cn = *itr;
-    uint oid = cn->getNode();
+    uint32_t oid = cn->getNode();
 
     if (cleanExtid) {
       if (cn->isITerm()) {
@@ -1759,7 +1759,7 @@ void dbNet::destroyCCSegs()
   }
 }
 
-void dbNet::getCouplingNets(const uint corner,
+void dbNet::getCouplingNets(const uint32_t corner,
                             const double ccThreshold,
                             std::set<dbNet*>& cnets)
 {
@@ -1774,7 +1774,7 @@ void dbNet::getCouplingNets(const uint corner,
         tnet = cc->getTargetCapNode()->getNet();
       }
       if (tnet->isMarked()) {
-        for (uint ii = 0; ii < inets.size(); ii++) {
+        for (uint32_t ii = 0; ii < inets.size(); ii++) {
           if (inets[ii] == tnet) {
             netccap[ii] += cccap;
             break;
@@ -1787,7 +1787,7 @@ void dbNet::getCouplingNets(const uint corner,
       tnet->setMark(true);
     }
   }
-  for (uint ii = 0; ii < inets.size(); ii++) {
+  for (uint32_t ii = 0; ii < inets.size(); ii++) {
     if (netccap[ii] >= ccThreshold && cnets.find(inets[ii]) == cnets.end()) {
       cnets.insert(inets[ii]);
     }
@@ -1833,7 +1833,7 @@ void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
   }
 }
 
-void dbNet::preExttreeMergeRC(double max_cap, uint corner)
+void dbNet::preExttreeMergeRC(double max_cap, uint32_t corner)
 {
   dbBlock* block = (dbBlock*) (getImpl()->getOwner());
   double totalcap[ADS_MAX_CORNER];
@@ -1854,7 +1854,7 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
   }
   dbRSeg* prc = getZeroRSeg();
   bool firstRC = true;
-  uint cnt = 1;
+  uint32_t cnt = 1;
   prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
   for (dbRSeg* rc : rSet) {
     mrsegs.push_back(rc);
@@ -1886,7 +1886,7 @@ void dbNet::destroyParasitics()
   block->destroyParasitics(nets);
 }
 
-double dbNet::getTotalCouplingCap(uint corner)
+double dbNet::getTotalCouplingCap(uint32_t corner)
 {
   double cap = 0.0;
   for (dbCapNode* n : getCapNodes()) {
@@ -1898,7 +1898,7 @@ double dbNet::getTotalCouplingCap(uint corner)
   return cap;
 }
 
-double dbNet::getTotalCapacitance(uint corner, bool cc)
+double dbNet::getTotalCapacitance(uint32_t corner, bool cc)
 {
   double cap = 0.0;
   double cap1 = 0.0;
@@ -1921,7 +1921,7 @@ double dbNet::getTotalCapacitance(uint corner, bool cc)
   return cap;
 }
 
-double dbNet::getTotalResistance(uint corner)
+double dbNet::getTotalResistance(uint32_t corner)
 {
   double cap = 0.0;
 
@@ -1935,7 +1935,7 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_rule = net->non_default_rule_;
+  uint32_t prev_rule = net->non_default_rule_;
   bool prev_block_rule = net->flags_.block_rule;
 
   if (rule == nullptr) {
@@ -1962,7 +1962,7 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
     block->journal_->pushParam(rule->getId());
     block->journal_->pushParam(_dbNet::kNonDefaultRule);
     block->journal_->pushParam(prev_rule);
-    block->journal_->pushParam((uint) net->non_default_rule_);
+    block->journal_->pushParam((uint32_t) net->non_default_rule_);
     block->journal_->pushParam(prev_block_rule);
     block->journal_->pushParam((bool) net->flags_.block_rule);
     block->journal_->endAction();
@@ -1990,7 +1990,7 @@ dbTechNonDefaultRule* dbNet::getNonDefaultRule()
       net->non_default_rule_);
 }
 
-void dbNet::getSignalWireCount(uint& wireCnt, uint& viaCnt)
+void dbNet::getSignalWireCount(uint32_t& wireCnt, uint32_t& viaCnt)
 {
   dbWirePath path;
   dbWirePathShape pshape;
@@ -2009,11 +2009,11 @@ void dbNet::getSignalWireCount(uint& wireCnt, uint& viaCnt)
     }
   }
 }
-void dbNet::getNetStats(uint& wireCnt,
-                        uint& viaCnt,
-                        uint& len,
-                        uint& layerCnt,
-                        uint* levelTable)
+void dbNet::getNetStats(uint32_t& wireCnt,
+                        uint32_t& viaCnt,
+                        uint32_t& len,
+                        uint32_t& layerCnt,
+                        uint32_t* levelTable)
 {
   len = 0;
   wireCnt = 0;
@@ -2034,7 +2034,7 @@ void dbNet::getNetStats(uint& wireCnt,
       }
       wireCnt++;
 
-      uint level = pshape.shape.getTechLayer()->getRoutingLevel();
+      uint32_t level = pshape.shape.getTechLayer()->getRoutingLevel();
       if (levelTable) {
         levelTable[level]++;
       }
@@ -2043,7 +2043,7 @@ void dbNet::getNetStats(uint& wireCnt,
     }
   }
 }
-void dbNet::getPowerWireCount(uint& wireCnt, uint& viaCnt)
+void dbNet::getPowerWireCount(uint32_t& wireCnt, uint32_t& viaCnt)
 {
   for (dbSWire* swire : getSWires()) {
     for (dbSBox* s : swire->getWires()) {
@@ -2056,7 +2056,7 @@ void dbNet::getPowerWireCount(uint& wireCnt, uint& viaCnt)
   }
 }
 
-void dbNet::getWireCount(uint& wireCnt, uint& viaCnt)
+void dbNet::getWireCount(uint32_t& wireCnt, uint32_t& viaCnt)
 {
   if (getSigType() == dbSigType::POWER || getSigType() == dbSigType::GROUND) {
     getPowerWireCount(wireCnt, viaCnt);
@@ -2065,17 +2065,17 @@ void dbNet::getWireCount(uint& wireCnt, uint& viaCnt)
   }
 }
 
-uint dbNet::getITermCount()
+uint32_t dbNet::getITermCount()
 {
   return getITerms().size();
 }
 
-uint dbNet::getBTermCount()
+uint32_t dbNet::getBTermCount()
 {
   return getBTerms().size();
 }
 
-uint dbNet::getTermCount()
+uint32_t dbNet::getTermCount()
 {
   return getITermCount() + getBTermCount();
 }
@@ -2230,7 +2230,7 @@ void dbNet::destroy(dbNet* net_)
     block->journal_->pushParam(dbNetObj);
     block->journal_->pushParam(net_->getName());
     block->journal_->pushParam(net->getOID());
-    uint* flags = (uint*) &net->flags_;
+    uint32_t* flags = (uint32_t*) &net->flags_;
     block->journal_->pushParam(*flags);
     block->journal_->pushParam(net->non_default_rule_);
     block->journal_->endAction();
@@ -2253,13 +2253,13 @@ dbSet<dbNet>::iterator dbNet::destroy(dbSet<dbNet>::iterator& itr)
   return next;
 }
 
-dbNet* dbNet::getNet(dbBlock* block_, uint dbid_)
+dbNet* dbNet::getNet(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbNet*) block->net_tbl_->getPtr(dbid_);
 }
 
-dbNet* dbNet::getValidNet(dbBlock* block_, uint dbid_)
+dbNet* dbNet::getValidNet(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (!block->net_tbl_->validId(dbid_)) {

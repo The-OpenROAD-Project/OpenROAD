@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <regex>
 #include <string>
 
@@ -14,7 +15,6 @@
 #include "dbRegion.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include <map>
 #include <set>

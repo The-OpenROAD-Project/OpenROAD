@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,11 +19,11 @@ class dbOStream;
 
 struct _dbRSegFlags
 {
-  uint path_dir : 1;       // 0 == low to hi coord
-  uint allocated_cap : 1;  // 0, cap points to target node cap
-                           // 1, cap is allocated
-  uint update_cap : 1;
-  uint spare_bits_29 : 29;
+  uint32_t path_dir : 1;       // 0 == low to hi coord
+  uint32_t allocated_cap : 1;  // 0, cap points to target node cap
+                               // 1, cap is allocated
+  uint32_t update_cap : 1;
+  uint32_t spare_bits_29 : 29;
 };
 
 class _dbRSeg : public _dbObject
@@ -55,8 +56,8 @@ class _dbRSeg : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbRSegFlags flags_;
-  uint source_;  // rc-network node-id
-  uint target_;  // rc-network node-id
+  uint32_t source_;  // rc-network node-id
+  uint32_t target_;  // rc-network node-id
   int xcoord_;
   int ycoord_;
   dbId<_dbRSeg> next_;
@@ -87,7 +88,7 @@ inline _dbRSeg::_dbRSeg(_dbDatabase*)
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbRSeg& seg)
 {
-  uint* bit_field = (uint*) &seg.flags_;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream << *bit_field;
   stream << seg.source_;
   stream << seg.target_;
@@ -99,7 +100,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbRSeg& seg)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbRSeg& seg)
 {
-  uint* bit_field = (uint*) &seg.flags_;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream >> *bit_field;
   stream >> seg.source_;
   stream >> seg.target_;

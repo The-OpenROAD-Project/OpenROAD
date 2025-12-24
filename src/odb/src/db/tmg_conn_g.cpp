@@ -291,7 +291,7 @@ tcg_edge* tmg_conn_graph::getFirstNonShortEdge(int& jstart)
   if (!e) {
     return nullptr;
   }
-  uint loops = 16;
+  int loops = 16;
   while (loops && e->s) {
     jstart = jstart == e->s->i0 ? e->s->i1 : e->s->i0;
     e = pt(jstart).edges;

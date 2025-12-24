@@ -4,7 +4,7 @@
     "fields": [
         {
             "name":"flags_",
-            "type":"uint",
+            "type":"uint32_t",
             "flags":["private"],
             "default":"0",
             "schema":"kSchemaUpdateHierarchy"

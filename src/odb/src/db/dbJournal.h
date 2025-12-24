@@ -3,12 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbJournalLog.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
-#include "odb/odb.h"
 
 namespace utl {
 class Logger;
@@ -161,7 +161,7 @@ class dbJournal
   utl::Logger* logger_;
   dbJournalLog log_;
   bool start_action_{false};
-  uint action_idx_{0};
+  uint32_t action_idx_{0};
   Action cur_action_{kCreateObject};
 };
 

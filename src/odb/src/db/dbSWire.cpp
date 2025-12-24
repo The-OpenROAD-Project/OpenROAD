@@ -4,6 +4,7 @@
 #include "dbSWire.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 
 #include "dbBlock.h"
@@ -17,7 +18,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -84,7 +84,7 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
 void _dbSWire::addSBox(_dbSBox* box)
 {
   box->owner_ = getOID();
-  box->next_box_ = (uint) wires_;
+  box->next_box_ = (uint32_t) wires_;
   wires_ = box->getOID();
   _dbBlock* block = (_dbBlock*) getOwner();
   for (auto callback : block->callbacks_) {
@@ -95,10 +95,10 @@ void _dbSWire::addSBox(_dbSBox* box)
 void _dbSWire::removeSBox(_dbSBox* box)
 {
   _dbBlock* block = (_dbBlock*) getOwner();
-  uint boxid = box->getOID();
+  uint32_t boxid = box->getOID();
   if (boxid == wires_) {
     // at head of list, need to move head
-    wires_ = (uint) box->next_box_;
+    wires_ = (uint32_t) box->next_box_;
   } else {
     // in the middle of the list, need to iterate and relink
     dbId<_dbSBox> id = wires_;
@@ -107,7 +107,7 @@ void _dbSWire::removeSBox(_dbSBox* box)
     }
     while (id != 0) {
       _dbSBox* nbox = block->sbox_tbl_->getPtr(id);
-      uint nid = nbox->next_box_;
+      uint32_t nid = nbox->next_box_;
 
       if (nid == boxid) {
         nbox->next_box_ = box->next_box_;
@@ -193,7 +193,7 @@ static void destroySBoxes(_dbSWire* wire)
   }
   while (id != 0) {
     _dbSBox* box = block->sbox_tbl_->getPtr(id);
-    uint nid = box->next_box_;
+    uint32_t nid = box->next_box_;
     dbProperty::destroyProperties(box);
     block->sbox_tbl_->destroy(box);
     id = nid;
@@ -242,7 +242,7 @@ dbSet<dbSWire>::iterator dbSWire::destroy(dbSet<dbSWire>::iterator& itr)
   return next;
 }
 
-dbSWire* dbSWire::getSWire(dbBlock* block_, uint dbid_)
+dbSWire* dbSWire::getSWire(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbSWire*) block->swire_tbl_->getPtr(dbid_);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -97,7 +98,7 @@ void addAdjacentCutsSubRule(
   auto className = at_c<6>(params);
   auto sideParallelNoPrl = at_c<7>(params);
   auto sameMask = at_c<8>(params);
-  odb::uint cuts_int = (odb::uint) cuts[0] - (odb::uint) '0';
+  uint32_t cuts_int = (uint32_t) cuts[0] - (uint32_t) '0';
   parser->curRule->setAdjacentCuts(cuts_int);
   if (aligned.is_initialized()) {
     parser->curRule->setExactAligned(true);
