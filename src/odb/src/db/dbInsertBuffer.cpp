@@ -1286,7 +1286,7 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
       }
     }
 
-    // 4. Find LCA (Lowest Common Ancestor)
+    // 3. Find LCA (Lowest Common Ancestor)
     if (first) {
       target_module = curr_mod;
       first = false;
@@ -1409,8 +1409,9 @@ void dbInsertBuffer::rewireBufferLoadPins(std::set<dbObject*>& load_pins)
       stitchLoadToDriver(load, buf_output_iterm_, load_pins);
     } else {
       assert(load_obj->getObjectType() == dbBTermObj);
+      assert(target_module_ == block_->getTopModule());
       dbBTerm* load = static_cast<dbBTerm*>(load_obj);
-      load->disconnect();
+      load->disconnect();  // Disconnect both flat and hier nets
       load->connect(new_flat_net_, new_mod_net_);
       dlogMovedBTermLoad(load_idx, num_loads, load);
     }
