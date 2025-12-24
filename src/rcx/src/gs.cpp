@@ -612,7 +612,6 @@ bool gs::getSeqCol(const int x,
       epix = row - 1;
       return true;
     }
-    continue;
   }
 
   epix = plc.height;

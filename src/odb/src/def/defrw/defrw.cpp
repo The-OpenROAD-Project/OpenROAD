@@ -3312,7 +3312,6 @@ void* reallocCB(void* name, size_t size)
 void freeCB(void* name)
 {
   free(name);
-  return;
 }
 
 BEGIN_DEF_PARSER_NAMESPACE

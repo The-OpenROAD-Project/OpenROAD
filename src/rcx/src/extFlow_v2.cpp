@@ -647,8 +647,8 @@ void extMain::setBranchCapNodeId(dbNet* net, uint32_t junction)
   capId = cap->getId();
 
   _nodeTable->set(junction, -capId);
-  return;
 }
+
 void extMain::markPathHeadTerm(dbWirePath& path)
 {
   if (path.bterm) {

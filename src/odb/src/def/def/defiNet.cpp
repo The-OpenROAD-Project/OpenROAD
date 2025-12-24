@@ -1349,7 +1349,6 @@ void defiNet::changeInstance(const char* instance, int index)
   }
   instances_[index] = (char*) malloc(len);
   strcpy(instances_[index], defData->DEFCASE(instance));
-  return;
 }
 
 void defiNet::changePin(const char* pin, int index)
@@ -1366,7 +1365,6 @@ void defiNet::changePin(const char* pin, int index)
   }
   pins_[index] = (char*) malloc(len);
   strcpy(pins_[index], defData->DEFCASE(pin));
-  return;
 }
 
 const char* defiNet::name() const

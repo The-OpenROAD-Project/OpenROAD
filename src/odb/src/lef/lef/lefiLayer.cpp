@@ -4156,8 +4156,6 @@ void lefiLayer::addAntennaModel(int aOxide)
   amo->setAntennaModel(aOxide);
 
   currentAntennaModel_ = amo;
-
-  return;
 }
 
 // 5.5
@@ -5657,7 +5655,6 @@ void lefiLayer::parseSpacing(int index)
 
   // None of the above statement
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -5876,7 +5873,6 @@ void lefiLayer::parseArraySpacing(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6097,7 +6093,6 @@ void lefiLayer::parseMinstep(int index)
     addMinstepXSameCorners();
   }
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6133,7 +6128,6 @@ void lefiLayer::parseAntennaCumRouting(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6173,7 +6167,6 @@ void lefiLayer::parseAntennaGatePlus(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6213,7 +6206,6 @@ void lefiLayer::parseAntennaAreaMinus(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6291,7 +6283,6 @@ void lefiLayer::parseAntennaAreaDiff(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6507,7 +6498,6 @@ void lefiLayer::parseLayerEnclosure(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // 5.7

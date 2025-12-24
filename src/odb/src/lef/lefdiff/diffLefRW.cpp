@@ -202,7 +202,6 @@ void lefVia(lefiVia* via, char* inName)
       }
     }
   }
-  return;
 }
 
 // Print Spacing

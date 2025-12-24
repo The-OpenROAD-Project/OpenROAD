@@ -140,7 +140,6 @@ void lefiViaRuleLayer::setOverhangToEnclosure(double d)
   } else {
     overhang2_ = d;  // overhang1_ already set, set to overhang2_
   }
-  return;
 }
 
 // 5.5

@@ -245,8 +245,6 @@ void lefVia(lefiVia* via)
     }
   }
   fprintf(fout, "END %s\n", via->lefiVia::name());
-
-  return;
 }
 
 void lefSpacing(lefiSpacing* spacing)
@@ -2758,13 +2756,11 @@ void* reallocCB(void* name, int size)
 void freeCB(void* name)
 {
   free(name);
-  return;
 }
 
 void lineNumberCB(int lineNo)
 {
   fprintf(fout, "Parsed %d number of lines!!\n", lineNo);
-  return;
 }
 
 void printWarning(const char* str)
