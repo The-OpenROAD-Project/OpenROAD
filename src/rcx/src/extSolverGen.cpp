@@ -650,7 +650,7 @@ bool extSolverGen::getMultipliers(const char* input, std::vector<double>& table)
     double v = atof(word.c_str());
     table.push_back(v);
   }
-  return table.size() > 0;
+  return !table.empty();
 }
 bool extSolverGen::setWidthSpaceMultipliers(const char* w_list,
                                             const char* s_list)

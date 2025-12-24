@@ -1253,7 +1253,7 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
   instantiate_logic_ports(logger, block);
 
   auto pds = block->getPowerDomains();
-  if (pds.size() == 0) {  // No power domains defined
+  if (pds.empty()) {  // No power domains defined
     return true;
   }
 

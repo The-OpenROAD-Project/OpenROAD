@@ -373,7 +373,7 @@ int Tapcell::removeCells(const std::string& prefix)
   odb::dbBlock* block = db_->getChip()->getBlock();
   int removed = 0;
 
-  if (prefix.length() == 0) {
+  if (prefix.empty()) {
     // If no prefix is given, return 0 instead of having all cells removed
     return 0;
   }

@@ -569,7 +569,7 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
       if (auto props_selected_set
           = std::any_cast<SelectionSet>(&property.value)) {
         if (Descriptor::Property::toString(value) == "CONNECTED"
-            && (*props_selected_set).size() != 0) {
+            && !props_selected_set->empty()) {
           return true;
         }
         for (const auto& selected : *props_selected_set) {
