@@ -109,6 +109,7 @@ static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
   return std::tie(a.ndr_priority,
                   a.clock,
                   a.res_aware,
+                  a.net_length,
                   a.slack,
                   a.length_per_pin,
                   a.minX,
@@ -116,6 +117,7 @@ static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
          < std::tie(b.ndr_priority,
                     b.clock,
                     b.res_aware,
+                    b.net_length,
                     b.slack,
                     b.length_per_pin,
                     b.minX,
@@ -166,7 +168,8 @@ void FastRouteCore::netpinOrderInc()
                               ndr_priority,
                               res_aware,
                               slack,
-                              is_clock});
+                              is_clock,
+                              -totalLength});
   }
 
   std::stable_sort(
@@ -606,7 +609,7 @@ void FastRouteCore::updateSlacks(float percentage)
     for (const auto& edge : treeedges) {
       net_size += edge.len;
     }
-    bool is_short_net = net_size <= 10;
+    bool is_short_net = net_size <= 3;
     bool is_unconstrained_net = slack == sta::INF;
 
     // Dont apply res-aware to unconstrained and short nets

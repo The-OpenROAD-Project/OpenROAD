@@ -248,6 +248,7 @@ struct OrderNetPin
   int res_aware;
   float slack;
   int clock;
+  int net_length;
 };
 
 struct OrderTree
