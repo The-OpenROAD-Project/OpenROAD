@@ -127,6 +127,9 @@ class dbBlockCallBackObj
   virtual void inDbBPinAddBox(dbBox*) {}
   virtual void inDbBPinRemoveBox(dbBox*) {}
   virtual void inDbBPinDestroy(dbBPin*) {}
+  virtual void inDbBPinPlacementStatusBefore(dbBPin*, const dbPlacementStatus&)
+  {
+  }
   // dbBPin End
 
   // dbBlockage Start
