@@ -78,14 +78,18 @@ class dbInsertBuffer
                                  const char* suffix) const;
   int getModuleDepth(dbModule* mod) const;
   dbModule* findLCA(dbModule* m1, dbModule* m2) const;
-  bool createHierarchicalConnection(dbITerm* load_pin,
-                                    dbITerm* drvr_term,
-                                    const std::set<dbObject*>& load_pins);
+  bool stitchLoadToDriver(dbITerm* load_pin,
+                          dbITerm* drvr_term,
+                          const std::set<dbObject*>& load_pins);
   dbModNet* getFirstModNetInFaninOfLoads(
       const std::set<dbObject*>& load_pins,
       const std::set<dbModNet*>& modnets_in_target_module) const;
   dbModNet* getFirstDriverModNetInTargetModule(
       const std::set<dbModNet*>& modnets_in_target_module) const;
+
+  bool checkAllLoadsAreTargets(dbModNet* net,
+                               const std::set<dbObject*>& load_pins);
+  void populateReusableNets(const std::set<dbObject*>& load_pins);
 
   //------------------------------------------------------------------
   // Helper functions for hierarchicalConnect
@@ -162,6 +166,15 @@ class dbInsertBuffer
   const char* new_net_base_name_ = nullptr;  // Base name for the new nets
   dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;
   dbObject* orig_drvr_pin_ = nullptr;  // Original driver pin of net_
+
+  // Caches for hierarchical connection
+
+  // dbModNet has target loads only (true) or
+  // mixed target and non-target loads (false)
+  std::map<dbModNet*, bool> is_target_only_cache_;
+
+  // Indicates a dbModNet in a module can be reused (w/o port punching) or not
+  std::map<dbModule*, std::set<dbModNet*>> module_reusable_nets_;
 };
 
 }  // namespace odb
