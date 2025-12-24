@@ -890,7 +890,7 @@ SoftMacro::SoftMacro(const odb::Point& location,
 // Represent a fixed macro.
 SoftMacro::SoftMacro(utl::Logger* logger,
                      const HardMacro* hard_macro,
-                     const odb::Point* offset)
+                     const odb::Rect* outline)
 {
   if (!hard_macro->isFixed()) {
     logger->error(
@@ -902,17 +902,21 @@ SoftMacro::SoftMacro(utl::Logger* logger,
 
   name_ = hard_macro->getName();
 
-  x_ = hard_macro->getX();
-  y_ = hard_macro->getY();
+  odb::Rect shape;
+  odb::Rect hard_macro_bbox = hard_macro->getBBox();
 
-  if (offset) {
-    x_ += offset->x();
-    y_ += offset->y();
+  if (outline) {
+    hard_macro_bbox.intersection(*outline, shape);
+    shape.moveDelta(-outline->xMin(), -outline->yMin());
+  } else {
+    shape = hard_macro_bbox;
   }
 
-  width_ = hard_macro->getWidth();
-  height_ = hard_macro->getHeight();
-  area_ = width_ * static_cast<int64_t>(height_);
+  x_ = shape.xMin();
+  y_ = shape.yMin();
+  width_ = shape.dx();
+  height_ = shape.dy();
+  area_ = shape.area();
 
   cluster_ = hard_macro->getCluster();
   fixed_ = true;

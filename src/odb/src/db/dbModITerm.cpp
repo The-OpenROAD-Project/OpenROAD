@@ -18,7 +18,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cassert>
-#include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -388,7 +388,7 @@ void dbModITerm::disconnect()
   }
 }
 
-dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
+dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint32_t dbid)
 {
   _dbBlock* owner = reinterpret_cast<_dbBlock*>(block);
   return reinterpret_cast<dbModITerm*>(owner->moditerm_tbl_->getPtr(dbid));
@@ -430,8 +430,8 @@ void dbModITerm::destroy(dbModITerm* val)
   }
 
   // snip out the mod iterm, from doubly linked list
-  uint prev = _moditerm->prev_entry_;
-  uint next = _moditerm->next_entry_;
+  uint32_t prev = _moditerm->prev_entry_;
+  uint32_t next = _moditerm->next_entry_;
   if (prev == 0) {
     // head of list
     mod_inst->moditerms_ = next;

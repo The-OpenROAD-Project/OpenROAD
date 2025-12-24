@@ -4,6 +4,7 @@
 #include "dbTechNonDefaultRule.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -21,7 +22,6 @@
 #include "dbTechSameNetRule.h"
 #include "dbTechVia.h"
 #include "odb/db.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -62,7 +62,7 @@ _dbTechNonDefaultRule::~_dbTechNonDefaultRule()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechNonDefaultRule& rule)
 {
-  uint* bit_field = (uint*) &rule.flags_;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream << *bit_field;
   stream << rule.name_;
   stream << rule.layer_rules_;
@@ -78,7 +78,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechNonDefaultRule& rule)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechNonDefaultRule& rule)
 {
-  uint* bit_field = (uint*) &rule.flags_;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream >> *bit_field;
   stream >> rule.name_;
   stream >> rule.layer_rules_;
@@ -152,7 +152,7 @@ _dbTech* _dbTechNonDefaultRule::getTech()
     return (_dbTech*) getOwner();
   }
 
-  return (_dbTech*) getBlock()->getTech();
+  return getBlock()->getTech();
 }
 
 _dbBlock* _dbTechNonDefaultRule::getBlock()
@@ -353,8 +353,8 @@ void dbTechNonDefaultRule::setMinCuts(dbTechLayer* cut_layer, const int count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  const uint id = cut_layer->getId();
-  uint idx = 0;
+  const uint32_t id = cut_layer->getId();
+  uint32_t idx = 0;
 
   for (const auto& lid : rule->cut_layers_) {
     if (lid == id) {
@@ -372,8 +372,8 @@ bool dbTechNonDefaultRule::getMinCuts(dbTechLayer* cut_layer, int& count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  const uint id = cut_layer->getId();
-  uint idx = 0;
+  const uint32_t id = cut_layer->getId();
+  uint32_t idx = 0;
 
   for (const auto& lid : rule->cut_layers_) {
     if (lid == id) {
@@ -429,8 +429,9 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
   return (dbTechNonDefaultRule*) rule;
 }
 
-dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(dbTech* tech_,
-                                                                  uint dbid_)
+dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(
+    dbTech* tech_,
+    uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechNonDefaultRule*) tech->non_default_rule_tbl_->getPtr(dbid_);
@@ -438,7 +439,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(dbTech* tech_,
 
 dbTechNonDefaultRule* dbTechNonDefaultRule::getTechNonDefaultRule(
     dbBlock* block_,
-    uint dbid_)
+    uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbTechNonDefaultRule*) block->non_default_rule_tbl_->getPtr(dbid_);

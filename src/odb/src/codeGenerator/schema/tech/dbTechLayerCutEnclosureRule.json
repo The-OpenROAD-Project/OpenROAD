@@ -4,7 +4,7 @@
   "fields": [
     {
       "name": "type",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": [
         "no-set",
         "no-get"
@@ -190,7 +190,7 @@
     },
     {
       "name":"num_corners_",
-      "type":"uint",
+      "type":"uint32_t",
       "default": 0
     }
   ],

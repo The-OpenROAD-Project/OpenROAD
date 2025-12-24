@@ -3,6 +3,7 @@
 
 #include "rcx/ext.h"
 
+#include <cstdint>
 #include <cstdio>
 #include <list>
 #include <string>
@@ -20,7 +21,6 @@ namespace rcx {
 using utl::Logger;
 using utl::RCX;
 
-// Ext::Ext() : _ext(std::make_unique<extMain>())
 Ext::Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version)
     : _db(db), _ext(new extMain()), logger_(logger), spef_version_(spef_version)
 {
@@ -261,7 +261,7 @@ void Ext::write_spef(const SpefOptions& options)
   }
   const char* name = options.ext_corner_name;
 
-  uint netId = options.net_id;
+  uint32_t netId = options.net_id;
   if (netId > 0) {
     _ext->writeSPEF(netId,
                     options.single_pi,
@@ -301,7 +301,7 @@ void Ext::read_spef(ReadSpefOpts& opt)
   logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
 
   bool stampWire = opt.stamp_wire;
-  uint testParsing = opt.test_parsing;
+  uint32_t testParsing = opt.test_parsing;
 
   Ath__parser parser(logger_);
   char* filename = (char*) opt.file;
@@ -491,10 +491,10 @@ bool Ext::rc_estimate(const std::string& ext_model_file,
   double version = 0.0;
   std::list<std::string> corner_list
       = extModelGen::GetCornerNames(ext_model_file.c_str(), version, logger_);
-  uint extDbCnt = corner_list.size();
+  const auto extDbCnt = corner_list.size();
 
-  uint cornerTable[10];
-  for (uint ii = 0; ii < extDbCnt; ii++) {
+  uint32_t cornerTable[10];
+  for (uint32_t ii = 0; ii < extDbCnt; ii++) {
     cornerTable[ii] = ii;
   }
 
@@ -533,7 +533,7 @@ bool Ext::get_model_corners(const std::string& ext_model_file, Logger* logger)
   // out_args->corner_list(corner_list);
 
   std::list<std::string>::iterator it;
-  uint cnt = 0;
+  uint32_t cnt = 0;
   // notice(0, "List of Corners (%d) -- Model Version %g\n", corner_list.size(),
   // version);
 

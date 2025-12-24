@@ -499,7 +499,8 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
     for (const auto& macro_id : pos_seq_) {
       const SoftMacro& soft_macro = macros_[macro_id];
       if (soft_macro.getNumMacro() > 0) {
-        odb::Rect overlap = blockage.intersect(soft_macro.getBBox());
+        odb::Rect overlap;
+        blockage.intersection(soft_macro.getBBox(), overlap);
 
         // If any of the dimensions is negative, then there's no overlap.
         if (overlap.dx() < 0 || overlap.dy() < 0) {
@@ -542,7 +543,8 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
         continue;
       }
 
-      odb::Rect overlap = fixed_macro.intersect(macro.getBBox());
+      odb::Rect overlap;
+      fixed_macro.intersection(macro.getBBox(), overlap);
 
       // If any of the dimensions is negative, then there's no overlap.
       if (overlap.dx() < 0 || overlap.dy() < 0) {

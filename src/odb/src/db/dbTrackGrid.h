@@ -10,7 +10,6 @@
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -24,7 +23,6 @@ class _dbTrackGrid : public _dbObject
  public:
   _dbTrackGrid(_dbDatabase*, const _dbTrackGrid& g);
   _dbTrackGrid(_dbDatabase*);
-  ~_dbTrackGrid();
 
   bool operator==(const _dbTrackGrid& rhs) const;
   bool operator!=(const _dbTrackGrid& rhs) const { return !operator==(rhs); }
@@ -80,10 +78,6 @@ inline _dbTrackGrid::_dbTrackGrid(_dbDatabase*, const _dbTrackGrid& g)
 }
 
 inline _dbTrackGrid::_dbTrackGrid(_dbDatabase*)
-{
-}
-
-inline _dbTrackGrid::~_dbTrackGrid()
 {
 }
 

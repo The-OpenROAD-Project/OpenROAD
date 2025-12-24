@@ -204,7 +204,7 @@ dbTechLayerCutClassRule* dbTechLayerCutClassRule::create(dbTechLayer* _layer,
 
 dbTechLayerCutClassRule* dbTechLayerCutClassRule::getTechLayerCutClassRule(
     dbTechLayer* inly,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCutClassRule*) layer->cut_class_rules_tbl_->getPtr(dbid);

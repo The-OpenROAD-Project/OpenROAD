@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -11,26 +12,24 @@
 
 namespace rcx {
 
-using uint = unsigned int;
-
 class NameTable
 {
  public:
-  NameTable(uint n, char* zero = nullptr);
+  NameTable(uint32_t n, char* zero = nullptr);
   ~NameTable();
 
-  uint addNewName(const char* name, uint dataId);
-  const char* getName(uint poolId);
-  uint getDataId(const char* name,
-                 uint ignoreFlag = 0,
-                 uint exitFlag = 0,
-                 int* nn = nullptr);
+  uint32_t addNewName(const char* name, uint32_t dataId);
+  const char* getName(uint32_t poolId);
+  uint32_t getDataId(const char* name,
+                     uint32_t ignoreFlag = 0,
+                     uint32_t exitFlag = 0,
+                     int* nn = nullptr);
 
  private:
   class NameBucket;
 
-  uint addName(const char* name, uint dataId);
-  uint getDataId(int poolId);
+  uint32_t addName(const char* name, uint32_t dataId);
+  uint32_t getDataId(int poolId);
 
   AthHash<int>* _hashTable;
   AthPool<NameBucket>* _bucketPool;

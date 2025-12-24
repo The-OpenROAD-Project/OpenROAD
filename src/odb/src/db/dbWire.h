@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,8 +18,8 @@ class _dbNet;
 
 struct _dbWireFlags
 {
-  uint is_global : 1;
-  uint spare_bits : 31;
+  uint32_t is_global : 1;
+  uint32_t spare_bits : 31;
 };
 
 class _dbWire : public _dbObject
@@ -35,9 +36,7 @@ class _dbWire : public _dbObject
   {
   }
 
-  ~_dbWire() {}
-
-  uint length() { return opcodes_.size(); }
+  uint32_t length() { return opcodes_.size(); }
 
   bool operator==(const _dbWire& rhs) const;
   bool operator!=(const _dbWire& rhs) const { return !operator==(rhs); }

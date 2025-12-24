@@ -50,7 +50,7 @@
       ]
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "overlap",
       "bits": 2
     },

@@ -4,6 +4,7 @@
 #include "odb/dbWireGraph.h"
 
 #include <cassert>
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -25,14 +26,6 @@ static void addObject(dbWireEncoder& encoder, dbObject* obj)
   } else if (type == dbBTermObj) {
     encoder.addBTerm((dbBTerm*) obj);
   }
-}
-
-dbWireGraph::dbWireGraph()
-{
-}
-
-dbWireGraph::~dbWireGraph()
-{
 }
 
 void dbWireGraph::clear()
@@ -190,7 +183,7 @@ dbWireGraph::edge_iterator dbWireGraph::deleteEdge(edge_iterator itr)
   return next;
 }
 
-dbWireGraph::Edge* dbWireGraph::getEdge(uint shape_id)
+dbWireGraph::Edge* dbWireGraph::getEdge(uint32_t shape_id)
 {
   assert(shape_id < junction_map_.size());
   Node* n = junction_map_[shape_id];
@@ -380,6 +373,10 @@ void dbWireGraph::decode(dbWire* wire)
       }
 
       case dbWireDecoder::ITERM: {
+        if (!prev) {
+          w->getLogger()->error(
+              utl::ODB, 1117, "ITerm found without previous element");
+        }
         if (prev->object_) {
           assert(prev->object_ == (dbObject*) decoder.getITerm());
         }
@@ -388,6 +385,10 @@ void dbWireGraph::decode(dbWire* wire)
       }
 
       case dbWireDecoder::BTERM: {
+        if (!prev) {
+          w->getLogger()->error(
+              utl::ODB, 1116, "BTerm found without previous element");
+        }
         if (prev->object_) {
           assert(prev->object_ == (dbObject*) decoder.getBTerm());
         }

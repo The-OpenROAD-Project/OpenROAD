@@ -210,7 +210,7 @@
     },
     {
       "name": "row_map_",
-      "type": "std::map<std::string, uint>",
+      "type": "std::map<std::string, uint32_t>",
       "flags": [
         "no-set",
         "no-get",
@@ -219,7 +219,7 @@
     },
     {
       "name": "col_map_",
-      "type": "std::map<std::string, uint>",
+      "type": "std::map<std::string, uint32_t>",
       "flags": [
         "no-set",
         "no-get",

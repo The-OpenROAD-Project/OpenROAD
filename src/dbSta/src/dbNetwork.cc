@@ -768,7 +768,7 @@ ObjectId dbNetwork::id(const Port* port) const
     return std::numeric_limits<ObjectId>::max();
   }
 
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     if (isConcretePort(port)) {
       return ConcreteNetwork::id(port);
     }
@@ -790,7 +790,7 @@ ObjectId dbNetwork::id(const Port* port) const
 ObjectId dbNetwork::id(const Cell* cell) const
 {
   // in hierarchical flow we use the object id for the index
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     if (!isConcreteCell(cell)) {
       const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
       return getDbNwkObjectId(obj);
@@ -808,7 +808,7 @@ ObjectId dbNetwork::id(const Instance* instance) const
   if (instance == top_instance_) {
     return 0;
   }
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(instance);
     return getDbNwkObjectId(obj);
   }
@@ -840,7 +840,7 @@ const char* dbNetwork::name(const Port* port) const
     return nullptr;
   }
 
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     size_t last_idx = name.find_last_of('/');
     if (last_idx != std::string::npos) {
       name = name.substr(last_idx + 1);
@@ -887,7 +887,7 @@ const char* dbNetwork::name(const Instance* instance) const
     name = mod_inst->getName();
   }
 
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     size_t last_idx = std::string::npos;
     size_t pos = name.length();
     while ((pos = name.rfind('/', pos)) != std::string::npos) {
@@ -1096,7 +1096,7 @@ Instance* dbNetwork::parent(const Instance* instance) const
 
 Port* dbNetwork::findPort(const Cell* cell, const char* name) const
 {
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     dbMaster* db_master;
     dbModule* db_module;
     staToDb(cell, db_master, db_module);
@@ -1125,7 +1125,7 @@ bool dbNetwork::isLeaf(const Instance* instance) const
   if (instance == top_instance_) {
     return false;
   }
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     dbMaster* db_master;
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
@@ -1140,7 +1140,7 @@ bool dbNetwork::isLeaf(const Instance* instance) const
 
 Instance* dbNetwork::findInstance(const char* path_name) const
 {
-  if (hierarchy_) {  // are we in hierarchical mode ?
+  if (hasHierarchy()) {  // are we in hierarchical mode ?
     // find a hierarchical module instance first
     dbModInst* mod_inst = block()->findModInst(path_name);
     if (mod_inst) {
@@ -1395,7 +1395,7 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
   staToDb(pin, iterm, bterm, moditerm);
 
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     // get the id for hierarchical objects using dbid.
     std::uintptr_t tag_value
         = reinterpret_cast<std::uintptr_t>(pin) & kPointerTagMask;
@@ -1784,7 +1784,7 @@ ObjectId dbNetwork::id(const Net* net) const
   dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(net);
     return getDbNwkObjectId(obj);
   }
@@ -1865,7 +1865,7 @@ const char* dbNetwork::name(const Net* net) const
     // strip out the parent name in hierarchy mode
     // turn this off to get full flat names
 
-    if (hierarchy_) {
+    if (hasHierarchy()) {
       //
       // If this is not a hierarchical name, return it
       //
@@ -2054,7 +2054,7 @@ const Net* dbNetwork::highestConnectedNet(Net* net) const
 
 ObjectId dbNetwork::id(const Term* term) const
 {
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(term);
     return getDbNwkObjectId(obj);
   }
@@ -3408,7 +3408,7 @@ we can decide whether or not to use the ConcreteNetwork api.
 */
 bool dbNetwork::isConcreteCell(const Cell* cell) const
 {
-  if (!hierarchy_) {
+  if (!hasHierarchy()) {
     return true;
   }
 
@@ -3426,7 +3426,7 @@ void dbNetwork::registerConcretePort(const Port* port)
 
 bool dbNetwork::isConcretePort(const Port* port) const
 {
-  if (!hierarchy_) {
+  if (!hasHierarchy()) {
     return true;
   }
   if (concrete_ports_.find(port) != concrete_ports_.end()) {
@@ -3494,7 +3494,7 @@ int dbNetwork::toIndex(const Port* port) const
 
 bool dbNetwork::hasMembers(const Port* port) const
 {
-  if (hierarchy_) {
+  if (hasHierarchy()) {
     dbMTerm* mterm = nullptr;
     dbBTerm* bterm = nullptr;
     dbModBTerm* modbterm = nullptr;
@@ -3580,7 +3580,7 @@ PortMemberIterator* dbNetwork::memberIterator(const Port* port) const
 {
   // top-level port is concrete port. DbNetworkPortMemberIterator cannot handle
   // it.
-  if (!hierarchy_ || isConcretePort(port)) {
+  if (!hasHierarchy() || isConcretePort(port)) {
     return ConcreteNetwork::memberIterator(port);
   }
 

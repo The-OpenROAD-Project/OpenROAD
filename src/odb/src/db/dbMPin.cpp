@@ -3,6 +3,7 @@
 
 #include "dbMPin.h"
 
+#include <cstdint>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -30,10 +31,6 @@ _dbMPin::_dbMPin(_dbDatabase* db)
 
 _dbMPin::_dbMPin(_dbDatabase* db, const _dbMPin& p)
     : mterm_(p.mterm_), geoms_(p.geoms_), next_mpin_(p.next_mpin_)
-{
-}
-
-_dbMPin::~_dbMPin()
 {
 }
 
@@ -81,7 +78,7 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   return true;
 }
 
-void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
+void _dbMPin::addAccessPoint(uint32_t idx, _dbAccessPoint* ap)
 {
   if (aps_.size() <= idx) {
     aps_.resize(idx + 1);
@@ -142,7 +139,7 @@ std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
   _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
   std::vector<std::vector<odb::dbAccessPoint*>> result;
   for (const auto& pa : pin->aps_) {
-    result.push_back(std::vector<odb::dbAccessPoint*>());
+    result.emplace_back();
     for (const auto& ap : pa) {
       result.back().push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
     }
@@ -175,7 +172,7 @@ dbMPin* dbMPin::create(dbMTerm* mterm_)
   return (dbMPin*) mpin;
 }
 
-dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
+dbMPin* dbMPin::getMPin(dbMaster* master_, uint32_t dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMPin*) master->mpin_tbl_->getPtr(dbid_);
