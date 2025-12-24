@@ -1774,14 +1774,14 @@ class Table
   {
     ROBIN_HOOD_TRACE(this)
     if (o.mMask) {
-      mHashMultiplier = std::move(o.mHashMultiplier);
+      mHashMultiplier = o.mHashMultiplier;
       mKeyVals = std::move(o.mKeyVals);
-      mInfo = std::move(o.mInfo);
-      mNumElements = std::move(o.mNumElements);
-      mMask = std::move(o.mMask);
-      mMaxNumElementsAllowed = std::move(o.mMaxNumElementsAllowed);
-      mInfoInc = std::move(o.mInfoInc);
-      mInfoHashShift = std::move(o.mInfoHashShift);
+      mInfo = o.mInfo;
+      mNumElements = o.mNumElements;
+      mMask = o.mMask;
+      mMaxNumElementsAllowed = o.mMaxNumElementsAllowed;
+      mInfoInc = o.mInfoInc;
+      mInfoHashShift = o.mInfoHashShift;
       // set other's mask to 0 so its destructor won't do anything
       o.init();
     }
@@ -1794,14 +1794,14 @@ class Table
       if (o.mMask) {
         // only move stuff if the other map actually has some data
         destroy();
-        mHashMultiplier = std::move(o.mHashMultiplier);
+        mHashMultiplier = o.mHashMultiplier;
         mKeyVals = std::move(o.mKeyVals);
-        mInfo = std::move(o.mInfo);
-        mNumElements = std::move(o.mNumElements);
-        mMask = std::move(o.mMask);
-        mMaxNumElementsAllowed = std::move(o.mMaxNumElementsAllowed);
-        mInfoInc = std::move(o.mInfoInc);
-        mInfoHashShift = std::move(o.mInfoHashShift);
+        mInfo = o.mInfo;
+        mNumElements = o.mNumElements;
+        mMask = o.mMask;
+        mMaxNumElementsAllowed = o.mMaxNumElementsAllowed;
+        mInfoInc = o.mInfoInc;
+        mInfoHashShift = o.mInfoHashShift;
         WHash::operator=(std::move(static_cast<WHash&>(o)));
         WKeyEqual::operator=(std::move(static_cast<WKeyEqual&>(o)));
         DataPool::operator=(std::move(static_cast<DataPool&>(o)));
