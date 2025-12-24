@@ -654,6 +654,8 @@ void SACoreSoftMacro::calNotchPenalty()
     int total() {
       return top + bottom + left + right;
     }
+
+    bool operator==(const Neighbors&) const = default;
   };
 
   // Initialization
@@ -798,8 +800,8 @@ void SACoreSoftMacro::calNotchPenalty()
       int end_col = start_col;
 
       Neighbors n = neighbors(start_row, start_col, end_row, end_col);
-      bool expand_rows = !(n.bottom && n.top);
-      bool expand_cols = !(n.left && n.right);
+      bool expand_rows = true;
+      bool expand_cols = true;
 
       while (expand_rows || expand_cols) {
         if (expand_rows) {
@@ -807,7 +809,7 @@ void SACoreSoftMacro::calNotchPenalty()
           if (end_row < num_y
               && valid(start_row, start_col, end_row, end_col)) {
             Neighbors new_n = neighbors(start_row, start_col, end_row, end_col);
-            if (new_n.total() >= n.total()) {
+            if (new_n.total() > n.total() || new_n == n) {
               n = new_n;
             } else {
               expand_rows = false;
@@ -824,7 +826,7 @@ void SACoreSoftMacro::calNotchPenalty()
           if (end_col < num_x
               && valid(start_row, start_col, end_row, end_col)) {
             Neighbors new_n = neighbors(start_row, start_col, end_row, end_col);
-            if (new_n.total() >= n.total()) {
+            if (new_n.total() > n.total() || new_n == n) {
               n = new_n;
             } else {
               expand_cols = false;
