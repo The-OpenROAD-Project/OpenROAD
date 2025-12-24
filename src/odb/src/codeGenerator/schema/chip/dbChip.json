@@ -27,7 +27,7 @@
     },
     {
       "name": "type_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": 0,
       "schema": "kSchemaChipExtended",
       "flags": ["private"]

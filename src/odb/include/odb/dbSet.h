@@ -4,10 +4,10 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 
 #include "odb/dbIterator.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -40,10 +40,10 @@ class dbSetIterator
   dbSetIterator<T> operator++(int);
 
  private:
-  dbSetIterator(dbIterator* itr, uint id);
+  dbSetIterator(dbIterator* itr, uint32_t id);
 
   dbIterator* itr_{nullptr};
-  uint cur_{0};
+  uint32_t cur_{0};
 
   friend class dbSet<T>;
 };
@@ -89,7 +89,7 @@ class dbSet
   ///
   /// Returns the number of items in this set.
   ///
-  uint size() const { return itr_->size(parent_); }
+  uint32_t size() const { return itr_->size(parent_); }
 
   ///
   /// Return a begin() iterator.
@@ -110,7 +110,7 @@ class dbSet
   ///
   /// If this set is non-sequential then it returns 0.
   ///
-  uint sequential() const { return itr_->sequential(); }
+  uint32_t sequential() const { return itr_->sequential(); }
 
   ///
   /// Returns true if this set is reversible.
@@ -139,7 +139,7 @@ class dbSet
 };
 
 template <class T>
-inline dbSetIterator<T>::dbSetIterator(dbIterator* itr, uint id)
+inline dbSetIterator<T>::dbSetIterator(dbIterator* itr, uint32_t id)
 {
   itr_ = itr;
   cur_ = id;

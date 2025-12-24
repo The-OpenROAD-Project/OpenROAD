@@ -16,6 +16,7 @@
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cstdint>
 #include <vector>
 
 #include "dbBPin.h"
@@ -359,7 +360,7 @@ void dbAccessPoint::addBlockVia(int num_cuts, dbVia* via)
       {via->getObjectType(), via->getImpl()->getOID()});
 }
 
-dbAccessPoint* dbAccessPoint::create(dbBlock* block_, dbMPin* pin, uint idx)
+dbAccessPoint* dbAccessPoint::create(dbBlock* block_, dbMPin* pin, uint32_t idx)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbAccessPoint* ap = block->ap_tbl_->create();
@@ -379,7 +380,7 @@ dbAccessPoint* dbAccessPoint::create(dbBPin* pin)
   return ((dbAccessPoint*) ap);
 }
 
-dbAccessPoint* dbAccessPoint::getAccessPoint(dbBlock* block_, uint dbid)
+dbAccessPoint* dbAccessPoint::getAccessPoint(dbBlock* block_, uint32_t dbid)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbAccessPoint*) block->ap_tbl_->getPtr(dbid);

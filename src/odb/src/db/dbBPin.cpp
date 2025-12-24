@@ -3,6 +3,7 @@
 
 #include "dbBPin.h"
 
+#include <cstdint>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -18,7 +19,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -88,7 +88,7 @@ bool _dbBPin::operator==(const _dbBPin& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
 {
-  uint* bit_field = (uint*) &bpin.flags_;
+  uint32_t* bit_field = (uint32_t*) &bpin.flags_;
   stream << *bit_field;
   stream << bpin.bterm_;
   stream << bpin.boxes_;
@@ -102,7 +102,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
 
 dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin)
 {
-  uint* bit_field = (uint*) &bpin.flags_;
+  uint32_t* bit_field = (uint32_t*) &bpin.flags_;
   stream >> *bit_field;
   stream >> bpin.bterm_;
   stream >> bpin.boxes_;
@@ -231,9 +231,9 @@ void dbBPin::destroy(dbBPin* bpin_)
     callback->inDbBPinDestroy(bpin_);
   }
   // unlink bpin from bterm
-  uint id = bpin->getOID();
+  uint32_t id = bpin->getOID();
   _dbBPin* prev = nullptr;
-  uint cur = bterm->bpins_;
+  uint32_t cur = bterm->bpins_;
   while (cur) {
     _dbBPin* c = block->bpin_tbl_->getPtr(cur);
     if (cur == id) {
@@ -273,7 +273,7 @@ dbSet<dbBPin>::iterator dbBPin::destroy(dbSet<dbBPin>::iterator& itr)
   return next;
 }
 
-dbBPin* dbBPin::getBPin(dbBlock* block_, uint dbid_)
+dbBPin* dbBPin::getBPin(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBPin*) block->bpin_tbl_->getPtr(dbid_);

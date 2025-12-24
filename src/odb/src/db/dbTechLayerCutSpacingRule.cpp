@@ -513,14 +513,14 @@ int dbTechLayerCutSpacingRule::getEolWidth() const
   return obj->eol_width_;
 }
 
-void dbTechLayerCutSpacingRule::setNumCuts(uint num_cuts)
+void dbTechLayerCutSpacingRule::setNumCuts(uint32_t num_cuts)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
   obj->num_cuts_ = num_cuts;
 }
 
-uint dbTechLayerCutSpacingRule::getNumCuts() const
+uint32_t dbTechLayerCutSpacingRule::getNumCuts() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
   return obj->num_cuts_;
@@ -559,40 +559,40 @@ void dbTechLayerCutSpacingRule::setCutClass(dbTechLayerCutClassRule* cut_class)
   obj->cut_class_ = cut_class->getImpl()->getOID();
 }
 
-void dbTechLayerCutSpacingRule::setTwoCuts(uint two_cuts)
+void dbTechLayerCutSpacingRule::setTwoCuts(uint32_t two_cuts)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
   obj->two_cuts_ = two_cuts;
 }
 
-uint dbTechLayerCutSpacingRule::getTwoCuts() const
+uint32_t dbTechLayerCutSpacingRule::getTwoCuts() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
   return obj->two_cuts_;
 }
 
-void dbTechLayerCutSpacingRule::setPrl(uint prl)
+void dbTechLayerCutSpacingRule::setPrl(uint32_t prl)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
   obj->prl_ = prl;
 }
 
-uint dbTechLayerCutSpacingRule::getPrl() const
+uint32_t dbTechLayerCutSpacingRule::getPrl() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
   return obj->prl_;
 }
 
-void dbTechLayerCutSpacingRule::setParLength(uint par_length)
+void dbTechLayerCutSpacingRule::setParLength(uint32_t par_length)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
   obj->par_length_ = par_length;
 }
 
-uint dbTechLayerCutSpacingRule::getParLength() const
+uint32_t dbTechLayerCutSpacingRule::getParLength() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
   return obj->par_length_;
@@ -882,14 +882,14 @@ bool dbTechLayerCutSpacingRule::isWrongDirection() const
   return obj->flags_.wrong_direction;
 }
 
-void dbTechLayerCutSpacingRule::setAdjacentCuts(uint adjacent_cuts)
+void dbTechLayerCutSpacingRule::setAdjacentCuts(uint32_t adjacent_cuts)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
   obj->flags_.adjacent_cuts = adjacent_cuts;
 }
 
-uint dbTechLayerCutSpacingRule::getAdjacentCuts() const
+uint32_t dbTechLayerCutSpacingRule::getAdjacentCuts() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
@@ -1184,7 +1184,7 @@ void dbTechLayerCutSpacingRule::setType(CutSpacingType _type)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
-  obj->flags_.cut_spacing_type = (uint) _type;
+  obj->flags_.cut_spacing_type = (uint32_t) _type;
 }
 
 dbTechLayerCutSpacingRule::CutSpacingType dbTechLayerCutSpacingRule::getType()
@@ -1206,7 +1206,7 @@ dbTechLayerCutSpacingRule* dbTechLayerCutSpacingRule::create(
 
 dbTechLayerCutSpacingRule*
 dbTechLayerCutSpacingRule::getTechLayerCutSpacingRule(dbTechLayer* inly,
-                                                      uint dbid)
+                                                      uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCutSpacingRule*) layer->cut_spacing_rules_tbl_->getPtr(

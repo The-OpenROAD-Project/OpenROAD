@@ -4,10 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <utility>
 
 #include "dbCore.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbVector.h"
 // User Code End Includes
@@ -32,7 +32,7 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool except_same_net : 1;
   bool except_same_metal : 1;
   bool corner_to_corner : 1;
-  uint spare_bits : 19;
+  uint32_t spare_bits : 19;
 };
 
 class _dbTechLayerCornerSpacingRule : public _dbObject

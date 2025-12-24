@@ -4,11 +4,12 @@
 // Generator Code Begin Cpp
 #include "dbChipNetItr.h"
 
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -32,12 +33,12 @@ void dbChipNetItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbChip* chip = (_dbChip*) parent;
-  uint id = chip->nets_;
-  uint list = 0;
+  uint32_t id = chip->nets_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbChipNet* chipnet = chip_net_tbl_->getPtr(id);
-    uint n = chipnet->chip_net_next_;
+    uint32_t n = chipnet->chip_net_next_;
     chipnet->chip_net_next_ = list;
     list = id;
     id = n;
@@ -46,15 +47,15 @@ void dbChipNetItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipNetItr::sequential() const
+uint32_t dbChipNetItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipNetItr::size(dbObject* parent) const
+uint32_t dbChipNetItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbChipNetItr::begin(parent); id != dbChipNetItr::end(parent);
        id = dbChipNetItr::next(id)) {
@@ -64,7 +65,7 @@ uint dbChipNetItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbChipNetItr::begin(dbObject* parent) const
+uint32_t dbChipNetItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChip* chip = (_dbChip*) parent;
@@ -72,12 +73,12 @@ uint dbChipNetItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbChipNetItr::end(dbObject* /* unused: parent */) const
+uint32_t dbChipNetItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipNetItr::next(uint id, ...) const
+uint32_t dbChipNetItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbChipNet* chipnet = chip_net_tbl_->getPtr(id);
@@ -85,7 +86,7 @@ uint dbChipNetItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbChipNetItr::getObject(uint id, ...)
+dbObject* dbChipNetItr::getObject(uint32_t id, ...)
 {
   return chip_net_tbl_->getPtr(id);
 }

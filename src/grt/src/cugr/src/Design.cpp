@@ -1,5 +1,6 @@
 #include "Design.h"
 
+#include <cstdint>
 #include <iostream>
 #include <set>
 #include <vector>
@@ -205,8 +206,8 @@ int Design::readSpecialNetObstructions()
       continue;
     }
 
-    odb::uint wire_cnt = 0;
-    odb::uint via_cnt = 0;
+    uint32_t wire_cnt = 0;
+    uint32_t via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0) {
       continue;

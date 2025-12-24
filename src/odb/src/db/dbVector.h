@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "odb/dbStream.h"
-#include "odb/odb.h"
 
 namespace odb {
 

@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbMatrix.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -25,9 +26,9 @@ class dbOStream;
 
 struct _dbTechNonDefaultRuleFlags
 {
-  uint hard_spacing : 1;
-  uint block_rule : 1;
-  uint spare_bits : 30;
+  uint32_t hard_spacing : 1;
+  uint32_t block_rule : 1;
+  uint32_t spare_bits : 30;
 };
 
 class _dbTechNonDefaultRule : public _dbObject

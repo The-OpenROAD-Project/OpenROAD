@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <string>
@@ -190,8 +191,8 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
 
   // get all the LEF55 rules
   for (auto* min_cut_rule : layer_->getMinCutRules()) {
-    odb::uint numcuts;
-    odb::uint rule_width;
+    uint32_t numcuts;
+    uint32_t rule_width;
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
     rules.push_back(MinCutRule{nullptr,

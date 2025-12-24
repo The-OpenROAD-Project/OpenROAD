@@ -8,7 +8,7 @@
       "default": 0
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "max_edges_",
       "default": 0
     },

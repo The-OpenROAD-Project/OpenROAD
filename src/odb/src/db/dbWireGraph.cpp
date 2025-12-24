@@ -4,6 +4,7 @@
 #include "odb/dbWireGraph.h"
 
 #include <cassert>
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -182,7 +183,7 @@ dbWireGraph::edge_iterator dbWireGraph::deleteEdge(edge_iterator itr)
   return next;
 }
 
-dbWireGraph::Edge* dbWireGraph::getEdge(uint shape_id)
+dbWireGraph::Edge* dbWireGraph::getEdge(uint32_t shape_id)
 {
   assert(shape_id < junction_map_.size());
   Node* n = junction_map_[shape_id];

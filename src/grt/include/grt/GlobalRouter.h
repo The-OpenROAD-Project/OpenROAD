@@ -165,6 +165,7 @@ class GlobalRouter
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void ensurePinsPositions(odb::dbNet* db_net);
+  bool findCoveredAccessPoint(const Net* net, Pin& pin);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -302,7 +303,8 @@ class GlobalRouter
 
   bool findPinAccessPointPositions(
       const Pin& pin,
-      std::map<int, std::vector<PointPair>>& ap_positions);
+      std::map<int, std::vector<PointPair>>& ap_positions,
+      bool all_access_points = false);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();

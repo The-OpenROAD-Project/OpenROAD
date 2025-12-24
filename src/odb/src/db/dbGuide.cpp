@@ -11,6 +11,8 @@
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbJournal.h"
 #include "utl/Logger.h"
@@ -178,7 +180,7 @@ dbGuide* dbGuide::create(dbNet* net,
   return (dbGuide*) guide;
 }
 
-dbGuide* dbGuide::getGuide(dbBlock* block, uint dbid)
+dbGuide* dbGuide::getGuide(dbBlock* block, uint32_t dbid)
 {
   _dbBlock* owner = (_dbBlock*) block;
   return (dbGuide*) owner->guide_tbl_->getPtr(dbid);
@@ -213,9 +215,9 @@ void dbGuide::destroy(dbGuide* guide)
     block->journal_->endAction();
   }
 
-  uint id = _guide->getOID();
+  uint32_t id = _guide->getOID();
   _dbGuide* prev = nullptr;
-  uint cur = net->guides_;
+  uint32_t cur = net->guides_;
   while (cur) {
     _dbGuide* c = block->guide_tbl_->getPtr(cur);
     if (cur == id) {

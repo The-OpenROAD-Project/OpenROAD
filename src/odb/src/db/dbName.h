@@ -3,9 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -34,7 +35,7 @@ class _dbName : public _dbObject
   // PERSISTANT-MEMBERS
   char* name_;
   dbId<_dbName> next_entry_;
-  uint ref_cnt_;
+  uint32_t ref_cnt_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbName& n);

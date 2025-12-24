@@ -1317,48 +1317,27 @@ void HierRTLMP::adjustMacroBlockageWeight()
   }
 }
 
-void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
+void HierRTLMP::placeChildren(Cluster* parent)
 {
-  if (!ignore_std_cell_area) {
-    if (parent->getClusterType() == HardMacroCluster) {
-      placeMacros(parent);
-      return;
-    }
+  if (parent->getClusterType() == HardMacroCluster) {
+    placeMacros(parent);
+    return;
+  }
 
-    // Cover IO Clusters, Leaf Std Cells and Fixed Macros.
-    if (parent->isLeaf()) {
-      return;
-    }
+  // Cover IO Clusters, Leaf Std Cells and Fixed Macros.
+  if (parent->isLeaf()) {
+    return;
+  }
 
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "Placing children of cluster {}",
-               parent->getName());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Placing children of cluster {}",
+             parent->getName());
 
-    for (auto& cluster : parent->getChildren()) {
-      clustering_engine_->updateInstancesAssociation(cluster.get());
-    }
-  } else {
-    if (parent->getClusterType() != MixedCluster) {
-      return;
-    }
-
-    // We only run this enhanced cluster placement version if there are no
-    // further levels ahead in the current branch of the physical hierarchy.
-    for (auto& cluster : parent->getChildren()) {
-      if (cluster->getClusterType() == MixedCluster) {
-        return;
-      }
-    }
-
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "Conventional cluster placement failed. Attempting with minimum "
-               "target utilization.");
+  for (auto& cluster : parent->getChildren()) {
+    clustering_engine_->updateInstancesAssociation(cluster.get());
   }
 
   if (graphics_) {
@@ -1476,40 +1455,30 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     writeNetFile(file_name_prefix, macros, nets);
   }
 
-  // Call Simulated Annealing Engine to place children
-  // set the action probabilities
-  // the summation of probabilities should be one.
+  // The sum of probabilities should be equal to 1.0.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
+
   // In our implementation, target_util and target_dead_space are different
   // target_util is used to determine the utilization for MixedCluster
   // target_dead_space is used to determine the utilization for
   // StandardCellCluster We vary the target utilization to generate different
   // tilings
-  std::vector<float> target_utils;
+
+  // In our implementation, the utilization can be larger than 1.
+  std::vector<float> target_utils(num_target_util_);
+  for (int i = 0; i < num_target_util_; i++) {
+    target_utils[i] = target_util_ + (i * target_util_step_);
+  }
+
+  // In our implementation, the target_dead_space should be less than 1.0.
+  // The larger the target dead space, the higher the utilization.
   std::vector<float> target_dead_spaces;
-
-  if (!ignore_std_cell_area) {
-    // In our implementation, the utilization can be larger than 1.
-    for (int i = 0; i < num_target_util_; i++) {
-      target_utils.push_back(target_util_ + i * target_util_step_);
+  for (int i = 0; i < num_target_dead_space_; i++) {
+    if (target_dead_space_ + i * target_dead_space_step_ < 1.0) {
+      target_dead_spaces.push_back(target_dead_space_
+                                   + (i * target_dead_space_step_));
     }
-    // In our implementation, the target_dead_space should be less than 1.0.
-    // The larger the target dead space, the higher the utilization.
-    for (int i = 0; i < num_target_dead_space_; i++) {
-      if (target_dead_space_ + i * target_dead_space_step_ < 1.0) {
-        target_dead_spaces.push_back(target_dead_space_
-                                     + i * target_dead_space_step_);
-      }
-    }
-  } else {
-    // A high target util minimizes the std cells area inside mixed clusters
-    const float target_util = 1e6;
-    // A dead space closer to 1 minizes the std cell cluster area
-    const float target_dead_space = 0.99999;
-
-    target_utils.push_back(target_util);
-    target_dead_spaces.push_back(target_dead_space);
   }
 
   // Since target_util and target_dead_space are independent variables
@@ -1632,7 +1601,6 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
 
     remaining_runs -= run_thread;
 
-    // add macro tilings
     for (auto& sa : sa_batch) {
       sa_containers.push_back(std::move(sa));
     }
@@ -1657,36 +1625,30 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
     }
   }
 
-  if (best_sa == nullptr) {
-    if (!ignore_std_cell_area) {
-      placeChildren(parent, true);
-    } else {
-      logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
-    }
-  } else {
-    best_sa->fillDeadSpace();
-
-    std::vector<SoftMacro> shaped_macros = best_sa->getMacros();
-
-    if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
-      logger_->report("Cluster Placement Summary");
-      printPlacementResult(parent, outline, best_sa);
-
-      writeFloorplanFile(file_name_prefix, shaped_macros);
-      writeCostFile(file_name_prefix, best_sa);
-    }
-
-    updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
-    updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
+  if (!best_sa) {
+    logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
   }
 
-  if (!ignore_std_cell_area) {
-    for (auto& cluster : parent->getChildren()) {
-      placeChildren(cluster.get());
-    }
+  best_sa->fillDeadSpace();
 
-    clustering_engine_->updateInstancesAssociation(parent);
+  std::vector<SoftMacro> shaped_macros = best_sa->getMacros();
+
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+    logger_->report("Cluster Placement Summary");
+    printPlacementResult(parent, outline, best_sa);
+
+    writeFloorplanFile(file_name_prefix, shaped_macros);
+    writeCostFile(file_name_prefix, best_sa);
   }
+
+  updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
+  updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
+
+  for (auto& cluster : parent->getChildren()) {
+    placeChildren(cluster.get());
+  }
+
+  clustering_engine_->updateInstancesAssociation(parent);
 }
 
 // Find the area of blockages that are inside the outline.

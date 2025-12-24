@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "odb/dbSet.h"
-#include "odb/odb.h"
 
 namespace odb {
 
