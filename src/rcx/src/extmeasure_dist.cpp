@@ -509,15 +509,11 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
       // fr= 0.25 * delta;
       return fr;
       // _useWeighted= true;
-    } else {
-      return 0;
-    }
-  } else {
-    return 0;
+    } 
   }
-
-  return fr;
+  return 0;
 }
+
 bool extMeasureRC::useWeightedAvg(int& dist1, int& dist2, int underMet)
 {
   // only used by Over pattern

@@ -1084,7 +1084,8 @@ std::pair<QColor*, Qt::BrushStyle*> DisplayControls::lookupColor(
     QColor* item_color = &layer_color_[tech_layer];
     Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
     return {item_color, item_pattern};
-  } else if (site != nullptr) {
+  }
+  if (site != nullptr) {
     return {&site_color_[site], nullptr};
   }
 
