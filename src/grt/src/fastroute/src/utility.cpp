@@ -606,7 +606,7 @@ void FastRouteCore::updateSlacks(float percentage)
     for (const auto& edge : treeedges) {
       net_size += edge.len;
     }
-    bool is_short_net = net_size <= 5;
+    bool is_short_net = net_size <= 10;
     bool is_unconstrained_net = slack == sta::INF;
 
     // Dont apply res-aware to unconstrained and short nets
