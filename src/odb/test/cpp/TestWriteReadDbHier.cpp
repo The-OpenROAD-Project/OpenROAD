@@ -178,5 +178,58 @@ TEST_F(TestWriteReadDbHier, WriteReadOdb)
   ASSERT_NE(db2_mi1, nullptr);
 }
 
+// Construct hierarchical netlist with multiple blocks and write/read it back.
+// The hierarchical netlist should be read back successfully.
+TEST_F(TestWriteReadDbHier, WriteReadOdbMultiBlocks)
+{
+  SetUpTmpPath("WriteReadOdbMultiBlocks");
+  db_->setHierarchy(true);
+
+  // Create masters
+  dbMaster* buf_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buf_master);
+
+  // Create child block
+  dbBlock* child_block = dbBlock::create(block_, "CHILD_BLOCK");
+  ASSERT_TRUE(child_block);
+
+  // Create module in child block
+  dbModule* mod0 = dbModule::create(child_block, "MOD0");
+  ASSERT_TRUE(mod0);
+
+  dbModBTerm* mod0_a = dbModBTerm::create(mod0, "A");
+  ASSERT_TRUE(mod0_a);
+
+  // Create instance in child block
+  dbInst* child_inst
+      = dbInst::create(child_block, buf_master, "child_inst", false, mod0);
+  ASSERT_TRUE(child_inst);
+
+  //--------------------------------------------------------------
+  // Write ODB and read back
+  //--------------------------------------------------------------
+  dbDatabase* db2 = writeReadDb();
+  ASSERT_TRUE(db2->hasHierarchy());
+  dbBlock* top_block2 = db2->getChip()->getBlock();
+
+  // Find child block
+  dbBlock* child_block2 = top_block2->findChild("CHILD_BLOCK");
+  ASSERT_NE(child_block2, nullptr);
+
+  // Find module in child block
+  dbModule* mod0_2 = child_block2->findModule("MOD0");
+  ASSERT_NE(mod0_2, nullptr);
+
+  // Verify ModBTerm hash is populated
+  dbModBTerm* mod0_a_2 = mod0_2->findModBTerm("A");
+  ASSERT_NE(mod0_a_2, nullptr);
+  EXPECT_STREQ(mod0_a_2->getName(), "A");
+
+  // Verify Inst hash is populated
+  dbInst* child_inst_2 = child_block2->findInst("child_inst");
+  ASSERT_NE(child_inst_2, nullptr);
+  EXPECT_EQ(child_inst_2->getName(), "child_inst");
+}
+
 }  // namespace
 }  // namespace odb
