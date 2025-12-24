@@ -190,7 +190,7 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 
   // collect shapes to avoid placing straps over
   Shape::ObstructionTree avoid;
-  if (other_shapes.count(layer_) != 0) {
+  if (other_shapes.contains(layer_)) {
     for (const auto& shape : other_shapes.at(layer_)) {
       if (shape->getType() == odb::dbWireShapeType::RING) {
         // avoid ring shapes
@@ -1425,7 +1425,7 @@ bool PadDirectConnectionStraps::strapViaIsObstructed(
   for (int layer = layer0 + 1; layer < layer1; layer++) {
     auto* tech_layer = tech->findRoutingLayer(layer);
 
-    if (other_obstructions.count(tech_layer) == 0) {
+    if (!other_obstructions.contains(tech_layer)) {
       continue;
     }
     const auto& layer_shapes = other_obstructions.at(tech_layer);
@@ -1928,7 +1928,7 @@ bool RepairChannelStraps::determineOffset(
     return false;
   };
   for (auto* layer : check_layers) {
-    if (obstructions.count(layer) != 0) {
+    if (obstructions.contains(layer)) {
       // obstructions possible on this layer
       const auto& shapes = obstructions.at(layer);
       if (check_obstructions(shapes)) {

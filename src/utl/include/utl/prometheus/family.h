@@ -227,7 +227,7 @@ class Family : public Collectable
   {
     std::lock_guard<std::mutex> lock{mutex};
 
-    if (labels_reverse_lookup.count(metric) == 0) {
+    if (!labels_reverse_lookup.contains(metric)) {
       return;
     }
 

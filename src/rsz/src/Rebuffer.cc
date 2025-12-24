@@ -1768,7 +1768,7 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
         LibertyPort *in, *out;
         port->libertyCell()->bufferPorts(in, out);
 
-        if (port == in && !imported_as_loads.count(pin)) {
+        if (port == in && !imported_as_loads.contains(pin)) {
           Instance* inst = network_->instance(pin);
           insts.push_back(inst);
           const Pin* out_pin = network_->findPin(inst, out);

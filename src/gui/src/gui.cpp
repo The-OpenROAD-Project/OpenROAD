@@ -242,7 +242,7 @@ void Gui::registerRenderer(Renderer* renderer)
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
-  if (renderers_.count(renderer) == 0) {
+  if (!renderers_.contains(renderer)) {
     return;
   }
 
@@ -944,7 +944,7 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
 
 void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
 {
-  if (heat_maps_.count(heatmap) == 0) {
+  if (!heat_maps_.contains(heatmap)) {
     return;
   }
 
@@ -994,7 +994,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   } else {
     auto settings = source->getSettings();
 
-    if (settings.count(option) == 0) {
+    if (!settings.contains(option)) {
       QStringList options;
       options.append(QString::fromStdString(rebuild_map_option));
       for (const auto& [key, kv] : settings) {
@@ -1065,7 +1065,7 @@ Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
 
   auto settings = source->getSettings();
 
-  if (settings.count(option) == 0) {
+  if (!settings.contains(option)) {
     QStringList options;
     for (const auto& [key, kv] : settings) {
       options.append(QString::fromStdString(key));

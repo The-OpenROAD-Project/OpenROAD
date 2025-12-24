@@ -880,7 +880,7 @@ void PdnGen::ripUp(odb::dbNet* net)
         if (layer == nullptr) {
           continue;
         }
-        if (net_shapes.count(layer) == 0) {
+        if (!net_shapes.contains(layer)) {
           continue;
         }
 

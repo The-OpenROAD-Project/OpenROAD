@@ -270,7 +270,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 
     for (auto mm : sta::MinMaxAll::all()->range()) {
       for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
-        if (!slew_user_annotated.count(std::make_pair(drvr, rf->index()))) {
+        if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
           const DcalcAnalysisPt* dcalc_ap
               = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
           drvr->setSlewAnnotated(false, rf, dcalc_ap->index());

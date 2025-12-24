@@ -235,7 +235,7 @@ Descriptor::Actions BufferTreeDescriptor::getActions(
   Descriptor::Actions actions;
   bool is_focus = true;
   for (auto* net : bnet.getNets()) {
-    is_focus &= focus_nets_.count(net) != 0;
+    is_focus &= focus_nets_.contains(net);
   }
   if (!is_focus) {
     actions.push_back(Descriptor::Action{"Focus", [this, gui, &bnet]() {
@@ -261,7 +261,7 @@ Descriptor::Actions BufferTreeDescriptor::getActions(
                                            bool guides_on = false;
                                            for (auto* net : bnet.getNets()) {
                                              guides_on
-                                                 |= guide_nets_.count(net) != 0;
+                                                 |= guide_nets_.contains(net);
                                            }
                                            for (auto* net : bnet.getNets()) {
                                              if (!guides_on) {
@@ -282,7 +282,7 @@ Descriptor::Actions BufferTreeDescriptor::getActions(
         Descriptor::Action{"Tracks", [this, gui, &bnet]() {
                              bool tracks_on = false;
                              for (auto* net : bnet.getNets()) {
-                               tracks_on |= tracks_nets_.count(net) != 0;
+                               tracks_on |= tracks_nets_.contains(net);
                              }
                              for (auto* net : bnet.getNets()) {
                                if (!tracks_on) {

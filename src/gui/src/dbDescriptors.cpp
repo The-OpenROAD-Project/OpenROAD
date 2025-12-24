@@ -1923,7 +1923,7 @@ Descriptor::Actions DbNetDescriptor::getActions(const std::any& object) const
 
   auto* gui = Gui::get();
   Descriptor::Actions actions;
-  if (focus_nets_.count(net) == 0) {
+  if (!focus_nets_.contains(net)) {
     actions.push_back(Descriptor::Action{"Focus", [this, gui, net]() {
                                            gui->addFocusNet(net);
                                            return makeSelected(net);
@@ -1963,7 +1963,7 @@ Descriptor::Actions DbNetDescriptor::getActions(const std::any& object) const
                        }});
   }
   if (!net->getGuides().empty()) {
-    if (guide_nets_.count(net) == 0) {
+    if (!guide_nets_.contains(net)) {
       actions.push_back(
           Descriptor::Action{"Show Route Guides", [this, gui, net]() {
                                gui->addRouteGuides(net);
@@ -1978,7 +1978,7 @@ Descriptor::Actions DbNetDescriptor::getActions(const std::any& object) const
     }
   }
   if (!net->getTracks().empty()) {
-    if (tracks_nets_.count(net) == 0) {
+    if (!tracks_nets_.contains(net)) {
       actions.push_back(Descriptor::Action{"Show Tracks", [this, gui, net]() {
                                              gui->addNetTracks(net);
                                              return makeSelected(net);

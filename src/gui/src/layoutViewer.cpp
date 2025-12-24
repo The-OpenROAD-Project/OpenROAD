@@ -1080,7 +1080,7 @@ Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
     std::vector<bool> is_selected;
     is_selected.reserve(selections.size());
     for (auto& sel : selections) {
-      is_selected.push_back(selected_.count(sel) != 0);
+      is_selected.push_back(selected_.contains(sel));
     }
     if (std::all_of(
             is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {

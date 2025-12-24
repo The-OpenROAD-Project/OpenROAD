@@ -249,7 +249,7 @@ void TritonCTS::checkCharacterization()
   techChar_->forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
     for (int buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
       const std::string& master = wireSeg.getBufferMaster(buf);
-      if (visitedMasters.count(master) == 0) {
+      if (!visitedMasters.contains(master)) {
         if (masterExists(master)) {
           visitedMasters.insert(master);
         } else {

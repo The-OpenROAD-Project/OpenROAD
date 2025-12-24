@@ -649,7 +649,7 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
       swig_instance* inst = static_cast<swig_instance*>(info_ptr.objClientData);
       if (inst != nullptr && inst->classptr != nullptr) {
         // make sure cls is in the arguments
-        if (swig_arguments_.count(inst->classptr) != 0) {
+        if (swig_arguments_.contains(inst->classptr)) {
           return inst->classptr;
         }
       }

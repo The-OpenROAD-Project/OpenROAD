@@ -1922,7 +1922,7 @@ QFont DisplayControls::ioPinMarkersFont() const
 
 void DisplayControls::registerRenderer(Renderer* renderer)
 {
-  if (custom_controls_.count(renderer) != 0) {
+  if (custom_controls_.contains(renderer)) {
     // already registered
     return;
   }
@@ -2023,7 +2023,7 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
 {
   saveRendererState(renderer);
 
-  if (custom_controls_.count(renderer) == 0) {
+  if (!custom_controls_.contains(renderer)) {
     return;
   }
 
@@ -2304,7 +2304,7 @@ void DisplayControls::setOnlyVisibleLayers(
   }
 
   for (auto* layer : layers) {
-    if (layer_controls_.count(layer) != 0) {
+    if (layer_controls_.contains(layer)) {
       layer_controls_[layer].visible->setCheckState(Qt::Checked);
     }
   }
