@@ -3,13 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <vector>
 
 #include "definBase.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -52,17 +52,17 @@ class definSNet : public definBase
                     int x2,
                     int y2,
                     const char* type,
-                    uint mask);
+                    uint32_t mask);
   virtual void polygon(const char* layer, std::vector<defPoint>& points);
   virtual void wire(dbWireType type, const char* shield);
   virtual void path(const char* layer, int width);
   virtual void pathShape(const char* type);
-  virtual void pathPoint(int x, int y, uint mask);
-  virtual void pathPoint(int x, int y, int ext, uint mask);
+  virtual void pathPoint(int x, int y, uint32_t mask);
+  virtual void pathPoint(int x, int y, int ext, uint32_t mask);
   virtual void pathVia(const char* via,
-                       uint bottom_mask,
-                       uint cut_mask,
-                       uint top_mask);
+                       uint32_t bottom_mask,
+                       uint32_t cut_mask,
+                       uint32_t top_mask);
   virtual void pathViaArray(const char* via,
                             int numX,
                             int numY,

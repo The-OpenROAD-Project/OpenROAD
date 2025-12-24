@@ -4,10 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -17,9 +18,9 @@ class _dbBox;
 
 struct dbPolygonFlags
 {
-  uint owner_type : 4;
-  uint layer_id : 9;
-  uint spare_bits : 19;
+  uint32_t owner_type : 4;
+  uint32_t layer_id : 9;
+  uint32_t spare_bits : 19;
 };
 
 class _dbPolygon : public _dbObject
@@ -39,7 +40,7 @@ class _dbPolygon : public _dbObject
   dbPolygonFlags flags_;
   Polygon polygon_;
   int design_rule_width_;
-  uint owner_;
+  uint32_t owner_;
   dbId<_dbPolygon> next_pbox_;
   dbId<_dbBox> boxes_;
 };

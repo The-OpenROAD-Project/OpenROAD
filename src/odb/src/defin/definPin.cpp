@@ -4,6 +4,7 @@
 #include "definPin.h"
 
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -195,7 +196,7 @@ void definPin::pinRect(const char* layer_name,
                        int y1,
                        int x2,
                        int y2,
-                       uint mask)
+                       uint32_t mask)
 {
   if (_cur_bterm == nullptr) {
     return;
@@ -214,7 +215,7 @@ void definPin::pinRect(const char* layer_name,
   _rects.emplace_back(_layer, r, mask);
 }
 
-void definPin::pinPolygon(std::vector<defPoint>& points, uint mask)
+void definPin::pinPolygon(std::vector<defPoint>& points, uint32_t mask)
 {
   std::vector<Point> P;
   translate(points, P);

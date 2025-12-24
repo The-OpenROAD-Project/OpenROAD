@@ -10,6 +10,8 @@
 #include "dbTechLayerCutSpacingRule.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbTechLayer.h"
 // User Code End Includes
 namespace odb {
@@ -91,7 +93,7 @@ dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
 dbTechLayerCutSpacingTableOrthRule*
 dbTechLayerCutSpacingTableOrthRule::getTechLayerCutSpacingTableOrthSubRule(
     dbTechLayer* parent,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* _parent = (_dbTechLayer*) parent;
   return (dbTechLayerCutSpacingTableOrthRule*)

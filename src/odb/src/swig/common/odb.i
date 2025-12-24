@@ -35,6 +35,8 @@ using namespace odb;
 
 %typemap(in) (uint) = (int);
 %typemap(out) (uint) = (int);
+%typemap(in) (uint32_t) = (int);
+%typemap(out) (uint32_t) = (int);
 %typemap(out) (uint64) = (long);
 %typemap(out) (int64_t) = (long);
 %apply int* OUTPUT {int* x, int* y, int& ext};

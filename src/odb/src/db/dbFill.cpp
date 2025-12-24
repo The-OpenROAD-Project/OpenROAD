@@ -3,6 +3,8 @@
 
 #include "dbFill.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -101,7 +103,7 @@ bool dbFill::needsOPC()
   return fill->flags_.opc;
 }
 
-uint dbFill::maskNumber()
+uint32_t dbFill::maskNumber()
 {
   _dbFill* fill = (_dbFill*) this;
   return fill->flags_.mask_id;
@@ -115,7 +117,7 @@ dbTechLayer* dbFill::getTechLayer()
 
 dbFill* dbFill::create(dbBlock* block,
                        bool needs_opc,
-                       uint mask_number,
+                       uint32_t mask_number,
                        dbTechLayer* layer,
                        int x1,
                        int y1,
@@ -152,7 +154,7 @@ dbSet<dbFill>::iterator dbFill::destroy(dbSet<dbFill>::iterator& itr)
   return next;
 }
 
-dbFill* dbFill::getFill(dbBlock* block_, uint dbid_)
+dbFill* dbFill::getFill(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbFill*) block->fill_tbl_->getPtr(dbid_);

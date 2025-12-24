@@ -11,7 +11,6 @@
 
 #include "dbCore.h"
 #include "dbGDSStructure.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;

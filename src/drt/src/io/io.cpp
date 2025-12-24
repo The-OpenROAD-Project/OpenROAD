@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <list>
@@ -493,9 +494,9 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
   int y1 = box->yMin();
   int x2 = box->xMax();
   int y2 = box->yMax();
-  uint dx = box->getDX();
-  uint dy = box->getDY();
-  uint w;
+  uint32_t dx = box->getDX();
+  uint32_t dy = box->getDY();
+  uint32_t w;
   switch (box->getDirection()) {
     case odb::dbSBox::UNDEFINED: {
       bool dx_even = ((dx & 1) == 0);
@@ -503,26 +504,26 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
       if (dx_even && dy_even) {
         if (dy < dx) {
           w = dy;
-          uint dw = dy >> 1;
+          uint32_t dw = dy >> 1;
           y1 += dw;
           y2 -= dw;
           assert(y1 == y2);
         } else {
           w = dx;
-          uint dw = dx >> 1;
+          uint32_t dw = dx >> 1;
           x1 += dw;
           x2 -= dw;
           assert(x1 == x2);
         }
       } else if (dx_even) {
         w = dx;
-        uint dw = dx >> 1;
+        uint32_t dw = dx >> 1;
         x1 += dw;
         x2 -= dw;
         assert(x1 == x2);
       } else if (dy_even) {
         w = dy;
-        uint dw = dy >> 1;
+        uint32_t dw = dy >> 1;
         y1 += dw;
         y2 -= dw;
         assert(y1 == y2);
@@ -533,7 +534,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
     }
     case odb::dbSBox::HORIZONTAL: {
       w = dy;
-      uint dw = dy >> 1;
+      uint32_t dw = dy >> 1;
       y1 += dw;
       y2 -= dw;
       assert(y1 == y2);
@@ -541,7 +542,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
     }
     case odb::dbSBox::VERTICAL: {
       w = dx;
-      uint dw = dx >> 1;
+      uint32_t dw = dx >> 1;
       x1 += dw;
       x2 -= dw;
       assert(x1 == x2);
@@ -2380,7 +2381,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     }
 
     frCollection<frSpacingTableTwRowType> rowVals;
-    for (uint j = 0; j < layer->getTwoWidthsSpacingTableNumWidths(); ++j) {
+    for (uint32_t j = 0; j < layer->getTwoWidthsSpacingTableNumWidths(); ++j) {
       frCoord width = layer->getTwoWidthsSpacingTableWidth(j);
       frCoord prl = layer->getTwoWidthsSpacingTablePRL(j);
       rowVals.push_back(frSpacingTableTwRowType(width, prl));
@@ -3996,7 +3997,7 @@ int io::TopLayerBTermHandler::countNetBTermsAboveMaxLayer(odb::dbNet* net)
 bool io::TopLayerBTermHandler::netHasStackedVias(odb::dbNet* net)
 {
   int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
-  uint wire_cnt = 0, via_cnt = 0;
+  uint32_t wire_cnt = 0, via_cnt = 0;
   net->getWireCount(wire_cnt, via_cnt);
 
   if (wire_cnt != 0 || via_cnt == 0) {

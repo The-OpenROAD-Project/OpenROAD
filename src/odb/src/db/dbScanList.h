@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -27,7 +28,7 @@ class _dbScanList : public _dbObject
   // As the elements of a free dbTable are 12 bytes long, we need this
   // additional member in order to make _dbScanList big enough to allow safe
   // casting between table members.
-  uint unused_;
+  uint32_t unused_;
   dbId<_dbScanInst> first_scan_inst_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj);

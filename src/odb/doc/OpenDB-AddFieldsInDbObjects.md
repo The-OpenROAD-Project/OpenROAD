@@ -27,7 +27,7 @@ For example `add_pitchDiag` in object `DbTechLayer`.
     <td>
 
 ``` cpp
-const uint db_schema_minor = 52;
+const uint32_t db_schema_minor = 52;
 ```
   </td></tr>
     <tr>
@@ -37,7 +37,7 @@ const uint db_schema_minor = 52;
     <td>
 
 ``` cpp
-const uint db_schema_add_pitchDiag = 52;
+const uint32_t db_schema_add_pitchDiag = 52;
 ```
   </td></tr>
   </td></tr>

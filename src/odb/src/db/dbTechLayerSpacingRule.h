@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -45,7 +46,7 @@ class _dbTechLayerSpacingRule : public _dbObject
     bool cut_parallel_overlap : 1;
     bool notch_length : 1;
     bool end_of_notch_width : 1;
-    uint spare_bits : 21;
+    uint32_t spare_bits : 21;
   };
 
   _dbTechLayerSpacingRule(_dbDatabase*, const _dbTechLayerSpacingRule& r);
@@ -60,13 +61,13 @@ class _dbTechLayerSpacingRule : public _dbObject
 
   // PERSISTENT-MEMBERS
   Flags flags_;
-  uint spacing_;
-  uint length_or_influence_;
-  uint r1min_;
-  uint r1max_;
-  uint r2min_;
-  uint r2max_;
-  uint cut_area_;
+  uint32_t spacing_;
+  uint32_t length_or_influence_;
+  uint32_t r1min_;
+  uint32_t r1max_;
+  uint32_t r2min_;
+  uint32_t r2max_;
+  uint32_t cut_area_;
   dbId<_dbTechLayer> layer_;
   dbId<_dbTechLayer> cut_layer_below_;
 };
@@ -115,9 +116,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule);
 class _dbTechV55InfluenceEntry : public _dbObject
 {
  public:
-  uint width_;
-  uint within_;
-  uint spacing_;
+  uint32_t width_;
+  uint32_t within_;
+  uint32_t spacing_;
 
   _dbTechV55InfluenceEntry(_dbDatabase* db, const _dbTechV55InfluenceEntry& e);
   _dbTechV55InfluenceEntry(_dbDatabase* db);
