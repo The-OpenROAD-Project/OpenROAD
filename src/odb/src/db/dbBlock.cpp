@@ -950,7 +950,6 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> *block.inst_tbl_;
     stream >> *block.module_tbl_;
   }
-
   if (db->isSchema(kSchemaDbRemoveHash)) {
     // Construct dbinst_hash_
     dbSet<dbInst> insts((dbBlock*) &block, block.inst_tbl_);

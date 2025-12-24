@@ -191,24 +191,6 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst.iterms_;
   stream >> inst.halo_;
   stream >> inst.pin_access_idx_;
-
-  dbDatabase* db = (dbDatabase*) (inst.getDatabase());
-  if (((_dbDatabase*) db)->isSchema(kSchemaDbRemoveHash)) {
-    // _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    // _dbModule* module = nullptr;
-    // // if the instance has no module parent put in the top module
-    // // We sometimes see instances with _module set to 0 (possibly
-    // // introduced downstream) so we stick them in the hash for the
-    // // top module.
-    // if (inst.module_ == 0) {
-    //   module = (_dbModule*) (((dbBlock*) block)->getTopModule());
-    // } else {
-    //   module = block->module_tbl_->getPtr(inst.module_);
-    // }
-    // if (inst.name_) {
-    //   module->dbinst_hash_[inst.name_] = dbId<_dbInst>(inst.getId());
-    // }
-  }
   return stream;
 }
 
