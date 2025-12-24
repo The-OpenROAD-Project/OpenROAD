@@ -1462,6 +1462,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
     writeNetFile(file_name_prefix, macros, nets);
   }
 
+  setMacroClustersShapes(macros);
+
   // The sum of probabilities should be 1.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
@@ -1471,38 +1473,36 @@ void HierRTLMP::placeChildren(Cluster* parent)
   const int num_perturb_per_step
       = std::max(static_cast<int>(macros.size()), num_perturb_per_step_);
 
-  // To give consistency across threads we check the solutions
-  // at a fixed interval independent of how many threads we are using.
-  const int check_interval = 10;
-  const int total_number_of_runs = 100;
   const float utilization_step = 0.002;  // 0.2% Increase per attempt.
+  const int total_number_of_runs
+      = (1.0 - target_utilization_) / utilization_step;
 
-  std::vector<float> utilizations;
-  if (!ignore_std_cell_area) {
-    for (int i = 0; i < total_number_of_runs; i++) {
-      utilizations.push_back(target_utilization_ + (i * utilization_step));
-    }
-  } else {
-    utilizations.resize(check_interval, std::numeric_limits<float>::max());
+  std::vector<float> utilizations(total_number_of_runs);
+  for (int i = 0; i < total_number_of_runs; i++) {
+    utilizations[i] = target_utilization_ + (i * utilization_step);
   }
 
   int remaining_runs = total_number_of_runs;
   int run_id = 0;
-  int begin_check = 0;
-  int end_check = std::min(check_interval, remaining_runs);
 
-  SoftSAVector sa_containers;  // The owner of SACore objects
-  SACoreSoftMacro* best_sa = nullptr;
-  float best_cost = std::numeric_limits<float>::max();
-
-  setMacroClustersShapes(macros);
-
+  std::unique_ptr<SACoreSoftMacro> best_sa;
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
-    const int run_thread
+    const bool first_batch = remaining_runs == total_number_of_runs;
+    const int number_of_attempts
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
 
-    for (int i = 0; i < run_thread; i++) {
+    if (!first_batch) {
+      logger_->warn(MPL,
+                    64,
+                    "Failed to find a valid solution. Attempting annealing "
+                    "with new utilization range: [{}, {}] -- ({} step)",
+                    utilizations[run_id],
+                    utilizations[run_id + number_of_attempts],
+                    utilization_step);
+    }
+
+    for (int i = 0; i < number_of_attempts; i++) {
       const float utilization = utilizations[run_id++];
       if (!validUtilization(utilization, outline, macros)) {
         continue;
@@ -1536,10 +1536,11 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
+
       sa_batch.push_back(std::move(sa));
     }
 
-    if (graphics_) {
+    if (graphics_ && !sa_batch.empty()) {
       runSA<SACoreSoftMacro>(sa_batch.front().get());
     } else {
       std::vector<std::thread> threads;
@@ -1552,50 +1553,39 @@ void HierRTLMP::placeChildren(Cluster* parent)
       }
     }
 
-    remaining_runs -= run_thread;
+    remaining_runs -= number_of_attempts;
 
-    for (auto& sa : sa_batch) {
-      sa_containers.push_back(std::move(sa));
-    }
+    for (int sa_index = 0; sa_index < sa_batch.size(); ++sa_index) {
+      auto& sa = sa_batch[sa_index];
 
-    while (sa_containers.size() >= end_check) {
-      while (begin_check < end_check) {
-        auto& sa = sa_containers[begin_check];
-        if (ignore_std_cell_area) {
-          if (sa->isValid() && sa->getNormCost() < best_cost) {
-            best_cost = sa->getNormCost();
-            best_sa = sa.get();
-          }
+      if (sa->isValid()) {
+        if (!first_batch || sa != sa_batch.front()) {
+          const int utilization_index
+              = (run_id - number_of_attempts) + sa_index;
 
-        } else if (sa->isValid()) {
-          best_sa = sa.get();
-
-          if (best_sa != sa_containers.front().get()) {
-            logger_->info(MPL,
-                          55,
-                          "Couldn't find a solution for the specified "
-                          "utilization. The utilization was adapted to {}.",
-                          utilizations[begin_check]);
-          }
-
-          break;
+          logger_->warn(MPL,
+                        55,
+                        "Couldn't find a solution for the specified "
+                        "utilization. The utilization was adjusted to {}.",
+                        utilizations[utilization_index]);
         }
 
-        ++begin_check;
-      }
-      // add early stop mechanism
-      if (best_sa || remaining_runs == 0) {
+        best_sa = std::move(sa);
         break;
       }
-      end_check = begin_check + std::min(check_interval, remaining_runs);
     }
+
     if (best_sa) {
       break;
     }
   }
 
   if (!best_sa) {
-    logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
+    logger_->error(MPL,
+                   40,
+                   "Cluster placement failed!\nId: {}\nName: {}",
+                   parent->getId(),
+                   parent->getName());
   }
 
   best_sa->fillDeadSpace();
@@ -1604,10 +1594,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
 
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
     logger_->report("Cluster Placement Summary");
-    printPlacementResult(parent, outline, best_sa);
+    printPlacementResult(parent, outline, best_sa.get());
 
     writeFloorplanFile(file_name_prefix, placed_macros);
-    writeCostFile(file_name_prefix, best_sa);
+    writeCostFile(file_name_prefix, best_sa.get());
   }
 
   updateChildrenShapesAndLocations(parent, placed_macros, soft_macro_id_map);
