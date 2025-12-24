@@ -47,6 +47,8 @@ class frInstTerm : public frBlockObject
   odb::Rect getBBox() const;
   void setIndexInOwner(int in) { index_in_owner_ = in; }
   int getIndexInOwner() const { return index_in_owner_; }
+  bool isStubborn() const { return is_stubborn_; }
+  void setStubborn(bool in) { is_stubborn_ = in; }
 
  private:
   // Place this first so it is adjacent to "int id_" inherited from
@@ -56,6 +58,7 @@ class frInstTerm : public frBlockObject
   frMTerm* term_;
   frNet* net_{nullptr};
   std::vector<frAccessPoint*> ap_;  // follows pin index
+  bool is_stubborn_{false};
 };
 
 }  // namespace drt

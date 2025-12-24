@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -29,29 +30,39 @@ struct UniqueClassKey
   odb::dbOrientType orient{odb::dbOrientType::R0};
   std::vector<frCoord> offsets;
   frInst* ndr_inst{nullptr};
+  std::set<frTerm*> stubborn_terms;
 
   UniqueClassKey(frMaster* master_in,
                  const odb::dbOrientType& orient_in,
                  std::vector<frCoord> offsets_in,
-                 frInst* ndr_inst_in = nullptr)
+                 frInst* ndr_inst_in = nullptr,
+                 std::set<frTerm*> stubborn_terms_in = {})
       : master(master_in),
         orient(orient_in),
         offsets(std::move(offsets_in)),
-        ndr_inst(ndr_inst_in)
+        ndr_inst(ndr_inst_in),
+        stubborn_terms(std::move(stubborn_terms_in))
   {
   }
 
   bool operator<(const UniqueClassKey& other) const
   {
-    return std::tie(master, orient, offsets, ndr_inst) < std::tie(
-               other.master, other.orient, other.offsets, other.ndr_inst);
+    return std::tie(master, orient, offsets, ndr_inst, stubborn_terms)
+           < std::tie(other.master,
+                      other.orient,
+                      other.offsets,
+                      other.ndr_inst,
+                      other.stubborn_terms);
   }
 
   bool operator==(const UniqueClassKey& other) const
   {
-    return std::tie(master, orient, offsets, ndr_inst)
-           == std::tie(
-               other.master, other.orient, other.offsets, other.ndr_inst);
+    return std::tie(master, orient, offsets, ndr_inst, stubborn_terms)
+           == std::tie(other.master,
+                       other.orient,
+                       other.offsets,
+                       other.ndr_inst,
+                       other.stubborn_terms);
   }
 };
 
@@ -66,6 +77,10 @@ class UniqueClass
   frMaster* getMaster() const { return key_.master; }
   odb::dbOrientType getOrient() const { return key_.orient; }
   const std::vector<frCoord>& getOffsets() const { return key_.offsets; }
+  const std::set<frTerm*>& getStubbornTerms() const
+  {
+    return key_.stubborn_terms;
+  }
   const InstSet& getInsts() const { return insts_; }
   int getPinAccessIdx() const { return pin_access_idx_; }
   void setPinAccessIdx(int idx) { pin_access_idx_ = idx; }
