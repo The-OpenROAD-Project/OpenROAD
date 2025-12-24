@@ -1193,23 +1193,20 @@ void GlobalRouter::updatePinAccessPoints()
     cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
     cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
 
+    auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
+      if (auto it = ap_map.find(term); it != ap_map.end()) {
+        const auto& ap = it->second;
+        pin.setConnectionLayer(ap.z());
+        pin.setOnGridPosition(
+            grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+      }
+    };
+
     for (Pin& pin : net->getPins()) {
       if (pin.isPort()) {
-        if (auto it = bterm_to_aps.find(pin.getBTerm());
-            it != bterm_to_aps.end()) {
-          const auto& bterm_ap = it->second;
-          pin.setConnectionLayer(bterm_ap.z());
-          pin.setOnGridPosition(
-              grid_->getPositionOnGrid(odb::Point(bterm_ap.x(), bterm_ap.y())));
-        }
+        updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
       } else {
-        if (auto it = iterm_to_aps.find(pin.getITerm());
-            it != iterm_to_aps.end()) {
-          const auto& iterm_ap = it->second;
-          pin.setConnectionLayer(iterm_ap.z());
-          pin.setOnGridPosition(
-              grid_->getPositionOnGrid(odb::Point(iterm_ap.x(), iterm_ap.y())));
-        }
+        updatePinPos(pin, pin.getITerm(), iterm_to_aps);
       }
     }
   }
