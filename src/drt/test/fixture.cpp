@@ -213,9 +213,8 @@ frInst* Fixture::makeInst(const char* name,
                           frMaster* master,
                           odb::dbMaster* db_master)
 {
-  auto ptr_db_inst = std::make_unique<odb::dbInst>();
-  odb::dbInst* db_inst
-      = ptr_db_inst->create(db_->getChip()->getBlock(), db_master, "dummy");
+  auto db_inst
+      = odb::dbInst::create(db_->getChip()->getBlock(), db_master, "dummy");
   odb::dbTransform trans;
   db_inst->setTransform(trans);
   auto uInst = std::make_unique<frInst>(name, master, db_inst);

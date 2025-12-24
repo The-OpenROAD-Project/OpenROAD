@@ -887,7 +887,7 @@ void NesterovPlace::doBackTracking(const float coeff)
 {
   // Back-Tracking loop
   int numBackTrak = 0;
-  for (numBackTrak = 0; numBackTrak < npVars_.maxBackTrack; numBackTrak++) {
+  for (numBackTrak = 0; numBackTrak < NesterovPlaceVars::maxBackTrack; numBackTrak++) {
     // fill in nextCoordinates with given stepLength_
     for (auto& nb : nbVec_) {
       nb->nesterovUpdateCoordinates(coeff);
@@ -931,7 +931,7 @@ void NesterovPlace::doBackTracking(const float coeff)
   }
 
   debugPrint(log_, GPL, "np", 1, "NumBackTrak: {}", numBackTrak + 1);
-  if (npVars_.maxBackTrack == numBackTrak) {
+  if (NesterovPlaceVars::maxBackTrack == numBackTrak) {
     debugPrint(log_,
                GPL,
                "np",

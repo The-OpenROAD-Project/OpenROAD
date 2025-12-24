@@ -2723,8 +2723,8 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
         wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
         wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-    sumPrecondi.x = std::max(sumPrecondi.x, npVars_->minPreconditioner);
-    sumPrecondi.y = std::max(sumPrecondi.y, npVars_->minPreconditioner);
+    sumPrecondi.x = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
+    sumPrecondi.y = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
 
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
@@ -2824,8 +2824,8 @@ void NesterovBase::updateSingleGradient(
       wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
       wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-  sumPrecondi.x = std::max(sumPrecondi.x, npVars_->minPreconditioner);
-  sumPrecondi.y = std::max(sumPrecondi.y, npVars_->minPreconditioner);
+  sumPrecondi.x = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
+  sumPrecondi.y = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
 
   sumGrads[gCellIndex].x /= sumPrecondi.x;
   sumGrads[gCellIndex].y /= sumPrecondi.y;
