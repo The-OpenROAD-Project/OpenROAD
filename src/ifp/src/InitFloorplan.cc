@@ -58,7 +58,6 @@ using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::Rect;
-using odb::uint;
 
 using upf::eval_upf;
 
@@ -438,8 +437,8 @@ void InitFloorplan::makeRows(const odb::Rect& core,
   if (core.xMin() >= 0 && core.yMin() >= 0) {
     eval_upf(network_, logger_, block_);
 
-    const uint site_dx = base_site->getWidth();
-    const uint site_dy = base_site->getHeight();
+    const uint32_t site_dx = base_site->getWidth();
+    const uint32_t site_dy = base_site->getHeight();
     // snap core lower left corner to multiple of site dx/dy.
     const int clx = divCeil(core.xMin(), site_dx) * site_dx;
     const int cly = divCeil(core.yMin(), site_dy) * site_dy;
@@ -683,11 +682,11 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
 {
   const int core_dx = core.dx();
   const int core_dy = core.dy();
-  const uint site_dx = base_site->getWidth();
+  const uint32_t site_dx = base_site->getWidth();
   const int rows_x = core_dx / site_dx;
 
   auto make_rows = [&](dbSite* site) {
-    const uint site_dy = site->getHeight();
+    const uint32_t site_dy = site->getHeight();
     int rows_y = core_dy / site_dy;
     bool flip = flipped_sites.find(site) != flipped_sites.end();
     switch (row_parity) {
@@ -1139,8 +1138,8 @@ void InitFloorplan::makePolygonRowsScanline(
   if (core_bbox.xMin() >= 0 && core_bbox.yMin() >= 0) {
     eval_upf(network_, logger_, block_);
 
-    const uint site_dx = base_site->getWidth();
-    const uint site_dy = base_site->getHeight();
+    const uint32_t site_dx = base_site->getWidth();
+    const uint32_t site_dy = base_site->getHeight();
 
     // Snap core bounding box to site grid
     const int clx = divCeil(core_bbox.xMin(), site_dx) * site_dx;
@@ -1263,8 +1262,8 @@ void InitFloorplan::makeUniformRowsPolygon(
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
-  const uint site_dx = site->getWidth();
-  const uint site_dy = site->getHeight();
+  const uint32_t site_dx = site->getWidth();
+  const uint32_t site_dy = site->getHeight();
   const int core_dy = core_bbox.dy();
 
   // Calculate number of rows

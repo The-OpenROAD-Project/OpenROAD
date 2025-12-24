@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
@@ -16,14 +17,14 @@ using odb::dbCCSeg;
 using odb::dbNet;
 using odb::dbRSeg;
 
-void extMeasure::printTraceNetInfo(const char* msg, uint netId, int rsegId)
+void extMeasure::printTraceNetInfo(const char* msg, uint32_t netId, int rsegId)
 {
   if (rsegId <= 0) {
     return;
   }
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
 
-  uint shapeId = rseg->getTargetCapNode()->getShapeId();
+  uint32_t shapeId = rseg->getTargetCapNode()->getShapeId();
 
   int x, y;
   rseg->getCoords(x, y);
@@ -42,7 +43,7 @@ void extMeasure::printTraceNetInfo(const char* msg, uint netId, int rsegId)
              rseg->getCapacitance(0, 1.0));
 }
 
-double extMeasure::GetDBcoords(uint coord)
+double extMeasure::GetDBcoords(uint32_t coord)
 {
   int db_factor = _extMain->_block->getDbUnitsPerMicron();
   return 1.0 * coord / db_factor;
@@ -102,8 +103,8 @@ void extMeasure::printNetCaps()
 bool extMeasure::printTraceNet(const char* msg,
                                bool init,
                                dbCCSeg* cc,
-                               uint overSub,
-                               uint covered)
+                               uint32_t overSub,
+                               uint32_t covered)
 {
   if (!IsDebugNet()) {
     return false;
@@ -139,14 +140,14 @@ bool extMeasure::printTraceNet(const char* msg,
 }
 
 // -----------------------------------------------------------------
-void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
+void extMeasure::segInfo(const char* msg, uint32_t netId, int rsegId)
 {
   if (rsegId <= 0) {
     return;
   }
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
 
-  uint shapeId = rseg->getTargetCapNode()->getShapeId();
+  uint32_t shapeId = rseg->getTargetCapNode()->getShapeId();
 
   const char* wire
       = rseg != nullptr
@@ -248,7 +249,7 @@ bool extMeasure::ouCovered_debug(int covered)
   return true;
 }
 
-bool extMeasure::isVia(uint rsegId)
+bool extMeasure::isVia(uint32_t rsegId)
 {
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, rsegId);
 
@@ -261,7 +262,7 @@ bool extMeasure::isVia(uint rsegId)
   return rvia1;
 }
 
-bool extMeasure::ouRCvalues(const char* msg, uint jj)
+bool extMeasure::ouRCvalues(const char* msg, uint32_t jj)
 {
   if (!IsDebugNet()) {
     return false;
@@ -380,7 +381,7 @@ bool extMeasure::DebugStart(bool allNets)
                _len,
                GetDBcoords(_len));
   }
-  uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
+  uint32_t debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
 
   dbNet* net = dbNet::getNet(_block, debugTgtId);
   debugPrint(logger_,
@@ -454,8 +455,8 @@ bool extMeasure::DebugDiagCoords(int met,
 
 void extDistRC::printDebug(const char* from,
                            const char* name,
-                           uint len,
-                           uint dist,
+                           uint32_t len,
+                           uint32_t dist,
                            extDistRC* rcUnit)
 {
   if (rcUnit != nullptr) {

@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
@@ -12,7 +13,7 @@
 
 namespace rcx {
 
-void extMain::resetMinMaxRC(uint ii, uint jj)
+void extMain::resetMinMaxRC(uint32_t ii, uint32_t jj)
 {
   _minCapTable[ii][jj] = 0;
   _maxCapTable[ii][jj] = 0;
@@ -20,7 +21,7 @@ void extMain::resetMinMaxRC(uint ii, uint jj)
   _maxResTable[ii][jj] = 0;
 }
 
-void extMain::setMinRC(uint ii, uint jj, extDistRC* rc)
+void extMain::setMinRC(uint32_t ii, uint32_t jj, extDistRC* rc)
 {
   if (rc) {
     _minCapTable[ii][jj] = 2 * rc->getTotalCap();
@@ -31,7 +32,7 @@ void extMain::setMinRC(uint ii, uint jj, extDistRC* rc)
   }
 }
 
-void extMain::setMaxRC(uint ii, uint jj, extDistRC* rc)
+void extMain::setMaxRC(uint32_t ii, uint32_t jj, extDistRC* rc)
 {
   if (rc) {
     _maxCapTable[ii][jj] = 2 * rc->getTotalCap();
@@ -68,11 +69,11 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
   return rc;
 }
 
-uint extMain::calcMinMaxRC()
+uint32_t extMain::calcMinMaxRC()
 {
   _currentModel = getRCmodel(0);
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   for (odb::dbTechLayer* layer : _tech->getLayers()) {
     if (layer->getRoutingLevel() == 0) {
@@ -86,7 +87,7 @@ uint extMain::calcMinMaxRC()
       dist = layer->getPitch() - layer->getWidth();
     }
 
-    for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
+    for (uint32_t jj = 0; jj < _modelMap.getCnt(); jj++) {
       resetMinMaxRC(met, jj);
 
       extDistRC* rcMin = _currentModel->getMinRC(met, width);
@@ -100,15 +101,15 @@ uint extMain::calcMinMaxRC()
   return cnt;
 }
 
-uint extMain::getExtStats(odb::dbNet* net,
-                          uint corner,
-                          int& wlen,
-                          double& min_cap,
-                          double& max_cap,
-                          double& min_res,
-                          double& max_res,
-                          double& via_res,
-                          uint& via_cnt)
+uint32_t extMain::getExtStats(odb::dbNet* net,
+                              uint32_t corner,
+                              int& wlen,
+                              double& min_cap,
+                              double& max_cap,
+                              double& min_res,
+                              double& max_res,
+                              double& via_res,
+                              uint32_t& via_cnt)
 {
   min_cap = 0;
   max_cap = 0;
@@ -117,7 +118,7 @@ uint extMain::getExtStats(odb::dbNet* net,
   via_cnt = 0;
   via_res = 0;
   wlen = 0;
-  uint cnt = 0;
+  uint32_t cnt = 0;
   _tmpLenStats.clear();
 
   odb::dbWire* wire = net->getWire();
@@ -145,7 +146,7 @@ uint extMain::getExtStats(odb::dbNet* net,
       continue;
     }
     cnt++;
-    uint met = s.getTechLayer()->getRoutingLevel();
+    uint32_t met = s.getTechLayer()->getRoutingLevel();
     int width = s.getTechLayer()->getWidth();
 
     odb::Rect r = s.getBox();

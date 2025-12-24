@@ -4,6 +4,7 @@
 #include "dbInst.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -42,6 +43,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace odb {
 
@@ -63,7 +65,7 @@ class sortITerm
  public:
   sortITerm(_dbBlock* block) { block_ = block; }
 
-  bool operator()(uint it1, uint it2)
+  bool operator()(uint32_t it1, uint32_t it2)
   {
     _dbITerm* iterm1 = block_->iterm_tbl_->getPtr(it1);
     _dbITerm* iterm2 = block_->iterm_tbl_->getPtr(it2);
@@ -142,7 +144,7 @@ _dbInst::~_dbInst()
 
 dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
 {
-  uint* bit_field = (uint*) &inst.flags_;
+  uint32_t* bit_field = (uint32_t*) &inst.flags_;
   stream << *bit_field;
   stream << inst.name_;
   stream << inst.x_;
@@ -168,7 +170,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
 
 dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
 {
-  uint* bit_field = (uint*) &inst.flags_;
+  uint32_t* bit_field = (uint32_t*) &inst.flags_;
   stream >> *bit_field;
   stream >> inst.name_;
   stream >> inst.x_;
@@ -514,7 +516,7 @@ void dbInst::setOrient(dbOrientType orient)
   for (auto callback : block->callbacks_) {
     callback->inDbPreMoveInst(this);
   }
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.orient = orient.getValue();
   _dbInst::setInstBBox(inst);
 
@@ -556,7 +558,7 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
     callback->inDbInstPlacementStatusBefore(this, status);
   }
 
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.status = status.getValue();
   block->flags_.valid_bbox = 0;
 
@@ -618,7 +620,7 @@ void dbInst::setEcoCreate(bool v)
 {
   _dbInst* inst = (_dbInst*) this;
   // _dbBlock * block = (_dbBlock *) getOwner();
-  // uint prev_flags = flagsToUInt(inst);
+  // uint32_t prev_flags = flagsToUInt(inst);
   if (v) {
     inst->flags_.eco_create = 1;
   } else {
@@ -634,7 +636,7 @@ void dbInst::setEcoDestroy(bool v)
 {
   _dbInst* inst = (_dbInst*) this;
   // _dbBlock * block = (_dbBlock *) getOwner();
-  // uint prev_flags = flagsToUInt(inst);
+  // uint32_t prev_flags = flagsToUInt(inst);
   if (v) {
     inst->flags_.eco_destroy = 1;
   } else {
@@ -650,7 +652,7 @@ void dbInst::setEcoModify(bool v)
 {
   _dbInst* inst = (_dbInst*) this;
   // _dbBlock * block = (_dbBlock *) getOwner();
-  // uint prev_flags = flagsToUInt(inst);
+  // uint32_t prev_flags = flagsToUInt(inst);
   if (v) {
     inst->flags_.eco_modify = 1;
   } else {
@@ -667,7 +669,7 @@ void dbInst::setUserFlag1()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_1 = 1;
 
   if (block->journal_) {
@@ -680,7 +682,7 @@ void dbInst::clearUserFlag1()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_1 = 0;
 
   if (block->journal_) {
@@ -699,7 +701,7 @@ void dbInst::setUserFlag2()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_2 = 1;
 
   if (block->journal_) {
@@ -712,7 +714,7 @@ void dbInst::clearUserFlag2()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_2 = 0;
 
   if (block->journal_) {
@@ -731,7 +733,7 @@ void dbInst::setUserFlag3()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_3 = 1;
 
   if (block->journal_) {
@@ -744,7 +746,7 @@ void dbInst::clearUserFlag3()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_3 = 0;
 
   if (block->journal_) {
@@ -921,10 +923,7 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
     }
   }
 
-  // remove duplicates
-  std::sort(result.begin(), result.end());
-  auto end_itr = std::unique(result.begin(), result.end());
-  result.erase(end_itr, result.end());
+  utl::sort_and_unique(result);
 }
 
 bool dbInst::resetHierarchy(bool verbose)
@@ -1085,7 +1084,7 @@ dbITerm* dbInst::getITerm(dbMTerm* mterm_)
   _dbITerm* iterm = block->iterm_tbl_->getPtr(inst->iterms_[mterm->order_id_]);
   return (dbITerm*) iterm;
 }
-dbITerm* dbInst::getITerm(uint mterm_order_id)
+dbITerm* dbInst::getITerm(uint32_t mterm_order_id)
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
@@ -1170,9 +1169,9 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     return false;
   }
 
-  std::vector<uint> idx_map(old_terms.size());
-  std::sort(new_terms.begin(), new_terms.end(), sortMTerm());
-  std::sort(old_terms.begin(), old_terms.end(), sortMTerm());
+  std::vector<uint32_t> idx_map(old_terms.size());
+  std::ranges::sort(new_terms, sortMTerm());
+  std::ranges::sort(old_terms, sortMTerm());
   std::vector<_dbMTerm*>::iterator i1 = new_terms.begin();
   std::vector<_dbMTerm*>::iterator i2 = old_terms.begin();
 
@@ -1214,8 +1213,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // create a new inst-hdr if needed
   if (new_inst_hdr == nullptr) {
-    new_inst_hdr = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block,
-                                                   (dbMaster*) new_master_);
+    new_inst_hdr
+        = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, new_master_);
   }
 
   new_inst_hdr->inst_cnt_++;
@@ -1227,18 +1226,18 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   // The next two steps invalidates any dbSet<dbITerm> iterators.
 
   // 1) update the iterm-mterm-idx
-  uint cnt = inst->iterms_.size();
+  uint32_t cnt = inst->iterms_.size();
 
-  uint i;
+  uint32_t i;
   for (i = 0; i < cnt; ++i) {
     _dbITerm* it = block->iterm_tbl_->getPtr(inst->iterms_[i]);
-    uint old_idx = it->flags_.mterm_idx;
+    uint32_t old_idx = it->flags_.mterm_idx;
     it->flags_.mterm_idx = idx_map[old_idx];
   }
 
   // 2) reorder the iterms vector
   sortITerm itermCmp(block);
-  std::sort(inst->iterms_.begin(), inst->iterms_.end(), itermCmp);
+  std::ranges::sort(inst->iterms_, itermCmp);
 
   // Notification
   for (auto cb : block->callbacks_) {
@@ -1248,13 +1247,13 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   return true;
 }
 
-void dbInst::setPinAccessIdx(uint idx)
+void dbInst::setPinAccessIdx(uint32_t idx)
 {
   _dbInst* inst = (_dbInst*) this;
   inst->pin_access_idx_ = idx;
 }
 
-uint dbInst::getPinAccessIdx() const
+uint32_t dbInst::getPinAccessIdx() const
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->pin_access_idx_;
@@ -1318,7 +1317,7 @@ dbInst* dbInst::create(dbBlock* block_,
              master_->getName());
 
   // create the iterms
-  uint mterm_cnt = inst_hdr->mterms_.size();
+  uint32_t mterm_cnt = inst_hdr->mterms_.size();
   inst_impl->iterms_.resize(mterm_cnt);
 
   for (int i = 0; i < mterm_cnt; ++i) {
@@ -1460,8 +1459,8 @@ void dbInst::destroy(dbInst* inst_)
         inst->name_);
   }
 
-  uint i;
-  uint n = inst->iterms_.size();
+  uint32_t i;
+  uint32_t n = inst->iterms_.size();
 
   // Delete these in reverse order so undo creates the in
   // the correct order.
@@ -1475,11 +1474,9 @@ void dbInst::destroy(dbInst* inst_)
       for (const auto& [pin, aps] : iterm->getAccessPoints()) {
         for (auto ap : aps) {
           _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-          _ap->iterms_.erase(
-              std::remove_if(_ap->iterms_.begin(),
-                             _ap->iterms_.end(),
-                             [id](const auto& id_in) { return id_in == id; }),
-              _ap->iterms_.end());
+          auto [first, last] = std::ranges::remove_if(
+              _ap->iterms_, [id](const auto& id_in) { return id_in == id; });
+          _ap->iterms_.erase(first, last);
         }
       }
     }
@@ -1516,7 +1513,7 @@ void dbInst::destroy(dbInst* inst_)
     block->journal_->pushParam(master->getId());
     block->journal_->pushParam(inst_->getName().c_str());
     block->journal_->pushParam(inst_->getId());
-    uint* flags = (uint*) &inst->flags_;
+    uint32_t* flags = (uint32_t*) &inst->flags_;
     block->journal_->pushParam(*flags);
     block->journal_->pushParam(inst->x_);
     block->journal_->pushParam(inst->y_);
@@ -1575,13 +1572,13 @@ dbSet<dbInst>::iterator dbInst::destroy(dbSet<dbInst>::iterator& itr)
   return next;
 }
 
-dbInst* dbInst::getInst(dbBlock* block_, uint dbid_)
+dbInst* dbInst::getInst(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbInst*) block->inst_tbl_->getPtr(dbid_);
 }
 
-dbInst* dbInst::getValidInst(dbBlock* block_, uint dbid_)
+dbInst* dbInst::getValidInst(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (!block->inst_tbl_->validId(dbid_)) {

@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbDatabase.h"
 
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipConn.h"
@@ -50,7 +52,6 @@
 #include "dbLib.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
-#include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
 #include "dbTech.h"
@@ -72,7 +73,7 @@ constexpr int kMagic2 = 0x4E414442;  // NADB
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
 static std::mutex* db_tbl_mutex = new std::mutex;
-static std::atomic<uint> db_unique_id = 0;
+static std::atomic<uint32_t> db_unique_id = 0;
 // User Code End Static
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
@@ -181,6 +182,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   master_id_ = 0;
   logger_ = utl::Logger::defaultLogger();
   unique_id_ = db_unique_id++;
+  hierarchy_ = false;
 
   gds_lib_tbl_ = new dbTable<_dbGDSLib, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
@@ -282,7 +284,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     if (obj.isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
       // Should already have a value from dbTech, so only need to update this if
       // its been set.
-      uint dbu_per_micron;
+      uint32_t dbu_per_micron;
       stream >> dbu_per_micron;
       if (dbu_per_micron != 0) {
         obj.dbu_per_micron_ = dbu_per_micron;
@@ -290,6 +292,11 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     } else {
       stream >> obj.dbu_per_micron_;
     }
+  }
+  if (obj.isSchema(kSchemaHierarchyFlag)) {
+    stream >> obj.hierarchy_;
+  } else {
+    obj.hierarchy_ = false;
   }
   // Set the _tech on the block & libs now they are loaded
   if (!obj.isSchema(kSchemaBlockTech)) {
@@ -306,7 +313,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   }
 
   // Fix up the owner id of properties of this db, this value changes.
-  const uint oid = obj.getId();
+  const uint32_t oid = obj.getId();
 
   for (_dbProperty* p : dbSet<_dbProperty>(&obj, obj.prop_tbl_)) {
     p->owner_ = oid;
@@ -355,6 +362,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
   stream << obj.dbu_per_micron_;
+  stream << obj.hierarchy_;
   // User Code End <<
   return stream;
 }
@@ -456,6 +464,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   logger_ = nullptr;
   unique_id_ = id;
   dbu_per_micron_ = 0;
+  hierarchy_ = false;
 
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
@@ -491,8 +500,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 utl::Logger* _dbDatabase::getLogger() const
 {
   if (!logger_) {
-    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb."
-              << std::endl;
+    std::cerr << "[CRITICAL ODB-0001] No logger is installed in odb.\n";
     exit(1);
   }
   return logger_;
@@ -511,14 +519,14 @@ utl::Logger* _dbObject::getLogger() const
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbDatabase::setDbuPerMicron(uint dbu_per_micron)
+void dbDatabase::setDbuPerMicron(uint32_t dbu_per_micron)
 {
   _dbDatabase* obj = (_dbDatabase*) this;
 
   obj->dbu_per_micron_ = dbu_per_micron;
 }
 
-uint dbDatabase::getDbuPerMicron() const
+uint32_t dbDatabase::getDbuPerMicron() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return obj->dbu_per_micron_;
@@ -647,8 +655,7 @@ int dbDatabase::removeUnusedMasters()
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     // Filter out the master that matches inst_master
-    auto masterIt
-        = std::find(unused_masters.begin(), unused_masters.end(), master);
+    auto masterIt = std::ranges::find(unused_masters, master);
     if (masterIt != unused_masters.end()) {
       // erase used maseters from container
       unused_masters.erase(masterIt);
@@ -661,7 +668,7 @@ int dbDatabase::removeUnusedMasters()
   return unused_masters.size();
 }
 
-uint dbDatabase::getNumberOfMasters()
+uint32_t dbDatabase::getNumberOfMasters()
 {
   _dbDatabase* db = (_dbDatabase*) this;
   return db->master_id_;
@@ -694,6 +701,18 @@ dbTech* dbDatabase::getTech()
   auto impl = (_dbDatabase*) this;
   impl->logger_->error(
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
+}
+
+void dbDatabase::setHierarchy(bool value)
+{
+  _dbDatabase* db = reinterpret_cast<_dbDatabase*>(this);
+  db->hierarchy_ = value;
+}
+
+bool dbDatabase::hasHierarchy() const
+{
+  const _dbDatabase* db = reinterpret_cast<const _dbDatabase*>(this);
+  return db->hierarchy_;
 }
 
 void dbDatabase::read(std::istream& file)
@@ -797,7 +816,7 @@ void dbDatabase::undoEco(dbBlock* block_)
   dbJournal* journal = block->journal_;
   block->journal_ = nullptr;
   journal->undo();
-  delete block->journal_;
+  delete journal;
 }
 
 bool dbDatabase::ecoEmpty(dbBlock* block_)
@@ -892,7 +911,7 @@ void dbDatabase::destroy(dbDatabase* db_)
   db_tbl->destroy(db);
 }
 
-dbDatabase* dbDatabase::getDatabase(uint dbid)
+dbDatabase* dbDatabase::getDatabase(uint32_t dbid)
 {
   std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   return (dbDatabase*) db_tbl->getPtr(dbid);

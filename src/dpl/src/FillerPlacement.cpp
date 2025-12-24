@@ -217,10 +217,11 @@ void Opendp::placeRowFillers(GridY row,
       for (dbMaster* master : fillers) {
         std::string inst_name
             = prefix + to_string(row.v) + "_" + to_string(k.v);
-        odb::dbInst* inst = odb::dbInst::create(block_,
-                                                master,
-                                                inst_name.c_str(),
-                                                /* physical_only */ true);
+        odb::dbInst* inst
+            = odb::dbInst::makeUniqueDbInst(block_,
+                                            master,
+                                            inst_name.c_str(),
+                                            /* physical_only */ true);
         DbuX x{core_.xMin() + gridToDbu(k, site_width)};
         DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
         inst->setOrient(orient);

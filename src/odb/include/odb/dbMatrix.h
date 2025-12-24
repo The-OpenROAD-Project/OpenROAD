@@ -9,7 +9,6 @@
 
 #include "boost/multi_array.hpp"
 #include "odb/dbStream.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,17 +17,17 @@ class dbMatrix
 {
  public:
   dbMatrix() = default;
-  dbMatrix(uint n, uint m);
+  dbMatrix(int n, int m);
 
-  uint numRows() const { return matrix_.shape()[0]; }
-  uint numCols() const { return matrix_.shape()[1]; }
-  uint numElems() const;
+  int numRows() const { return matrix_.shape()[0]; }
+  int numCols() const { return matrix_.shape()[1]; }
+  int numElems() const;
 
-  void resize(uint n, uint m);
+  void resize(int n, int m);
   void clear();
 
-  const T& operator()(uint i, uint j) const;
-  T& operator()(uint i, uint j);
+  const T& operator()(int i, int j) const;
+  T& operator()(int i, int j);
 
   dbMatrix<T>& operator=(const dbMatrix<T>& rhs);
 
@@ -45,8 +44,8 @@ inline dbOStream& operator<<(dbOStream& stream, const dbMatrix<T>& mat)
   stream << mat.numRows();
   stream << mat.numCols();
 
-  for (uint i = 0; i < mat.numRows(); ++i) {
-    for (uint j = 0; j < mat.numCols(); ++j) {
+  for (int i = 0; i < mat.numRows(); ++i) {
+    for (int j = 0; j < mat.numCols(); ++j) {
       stream << mat(i, j);
     }
   }
@@ -57,15 +56,15 @@ inline dbOStream& operator<<(dbOStream& stream, const dbMatrix<T>& mat)
 template <class T>
 inline dbIStream& operator>>(dbIStream& stream, dbMatrix<T>& mat)
 {
-  uint n;
-  uint m;
+  int n;
+  int m;
 
   stream >> n;
   stream >> m;
   mat.resize(n, m);
 
-  for (uint i = 0; i < mat.numRows(); ++i) {
-    for (uint j = 0; j < mat.numCols(); ++j) {
+  for (int i = 0; i < mat.numRows(); ++i) {
+    for (int j = 0; j < mat.numCols(); ++j) {
       stream >> mat(i, j);
     }
   }
@@ -74,7 +73,7 @@ inline dbIStream& operator>>(dbIStream& stream, dbMatrix<T>& mat)
 }
 
 template <class T>
-inline dbMatrix<T>::dbMatrix(uint n, uint m)
+inline dbMatrix<T>::dbMatrix(int n, int m)
 {
   resize(n, m);
 }
@@ -86,25 +85,25 @@ inline void dbMatrix<T>::clear()
 }
 
 template <class T>
-inline uint dbMatrix<T>::numElems() const
+inline int dbMatrix<T>::numElems() const
 {
   return matrix_.num_elements();
 }
 
 template <class T>
-inline void dbMatrix<T>::resize(uint n, uint m)
+inline void dbMatrix<T>::resize(int n, int m)
 {
   matrix_.resize(boost::extents[n][m]);
 }
 
 template <class T>
-inline const T& dbMatrix<T>::operator()(uint i, uint j) const
+inline const T& dbMatrix<T>::operator()(int i, int j) const
 {
   return matrix_[i][j];
 }
 
 template <class T>
-inline T& dbMatrix<T>::operator()(uint i, uint j)
+inline T& dbMatrix<T>::operator()(int i, int j)
 {
   return matrix_[i][j];
 }

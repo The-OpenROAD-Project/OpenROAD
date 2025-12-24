@@ -4,8 +4,9 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -24,7 +25,7 @@ struct dbTechLayerMinStepRuleFlags
   bool concave_corner : 1;
   bool except_rectangle : 1;
   bool no_adjacent_eol : 1;
-  uint spare_bits : 22;
+  uint32_t spare_bits : 22;
 };
 
 class _dbTechLayerMinStepRule : public _dbObject
@@ -42,7 +43,7 @@ class _dbTechLayerMinStepRule : public _dbObject
 
   dbTechLayerMinStepRuleFlags flags_;
   int min_step_length_;
-  uint max_edges_;
+  uint32_t max_edges_;
   int min_adj_length1_;
   int min_adj_length2_;
   int eol_width_;

@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChipConn.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -163,7 +164,7 @@ std::vector<dbChipInst*> dbChipConn::getBottomRegionPath() const
   return bottom_region_path;
 }
 
-std::vector<dbId<_dbChipInst>> extractChipInstsPath(
+static std::vector<dbId<_dbChipInst>> extractChipInstsPath(
     dbChip* parent_chip,
     const std::vector<dbChipInst*>& chip_insts)
 {
@@ -258,7 +259,7 @@ void dbChipConn::destroy(dbChipConn* chipConn)
   if (chip->conns_ == obj->getOID()) {
     chip->conns_ = obj->chip_conn_next_;
   } else {
-    uint id = chip->conns_;
+    uint32_t id = chip->conns_;
     while (id != 0) {
       _dbChipConn* _chipconn = _db->chip_conn_tbl_->getPtr(id);
       if (_chipconn->chip_conn_next_ == obj->getOID()) {

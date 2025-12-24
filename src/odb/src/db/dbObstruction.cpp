@@ -3,6 +3,7 @@
 
 #include "dbObstruction.h"
 
+#include <cstdint>
 #include <cstring>
 
 #include "dbBlock.h"
@@ -17,7 +18,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -47,13 +47,9 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   effective_width_ = 0;
 }
 
-_dbObstruction::~_dbObstruction()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbObstruction& obs)
 {
-  uint* bit_field = (uint*) &obs.flags_;
+  uint32_t* bit_field = (uint32_t*) &obs.flags_;
   stream << *bit_field;
   stream << obs.inst_;
   stream << obs.bbox_;
@@ -64,7 +60,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbObstruction& obs)
 
 dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
 {
-  uint* bit_field = (uint*) &obs.flags_;
+  uint32_t* bit_field = (uint32_t*) &obs.flags_;
   stream >> *bit_field;
   stream >> obs.inst_;
   stream >> obs.bbox_;
@@ -412,7 +408,7 @@ dbSet<dbObstruction>::iterator dbObstruction::destroy(
   return next;
 }
 
-dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)
+dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbObstruction*) block->obstruction_tbl_->getPtr(dbid_);

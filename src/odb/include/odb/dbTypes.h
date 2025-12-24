@@ -9,7 +9,6 @@
 
 #include "odb/dbStream.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -1291,8 +1290,8 @@ class dbSourceType
 // TODO: shouldn't these come from <climits> ?
 inline constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
 inline constexpr uint64_t MIN_UINT64 = 0;
-inline constexpr uint MAX_UINT = 0xffffffff;
-inline constexpr uint MIN_UINT = 0;
+inline constexpr uint32_t MAX_UINT = 0xffffffff;
+inline constexpr uint32_t MIN_UINT = 0;
 
 inline constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
 inline constexpr int64_t MIN_INT64 = 0x8000000000000000LL;

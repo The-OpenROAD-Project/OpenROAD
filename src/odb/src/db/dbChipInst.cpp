@@ -12,6 +12,8 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
@@ -284,14 +286,14 @@ void dbChipInst::destroy(dbChipInst* chipInst)
   _dbDatabase* db = (_dbDatabase*) inst->getOwner();
 
   // remove regions
-  uint region_inst_id = inst->chip_region_insts_;
+  uint32_t region_inst_id = inst->chip_region_insts_;
   while (region_inst_id != 0) {
     _dbChipRegionInst* region_inst
         = db->chip_region_inst_tbl_->getPtr(region_inst_id);
     region_inst_id = region_inst->chip_region_inst_next_;
     db->chip_region_inst_tbl_->destroy(region_inst);
     // remove chipBumpInsts
-    uint bump_inst_id = region_inst->chip_bump_insts_;
+    uint32_t bump_inst_id = region_inst->chip_bump_insts_;
     while (bump_inst_id != 0) {
       _dbChipBumpInst* bump_inst
           = db->chip_bump_inst_tbl_->getPtr(bump_inst_id);
@@ -309,7 +311,7 @@ void dbChipInst::destroy(dbChipInst* chipInst)
     parent->chipinsts_ = inst->chipinst_next_;
   } else {
     // Find the previous node and unlink
-    uint prev_id = parent->chipinsts_;
+    uint32_t prev_id = parent->chipinsts_;
     while (prev_id != 0) {
       _dbChipInst* prev = db->chip_inst_tbl_->getPtr(prev_id);
       if (prev->chipinst_next_ == inst->getOID()) {

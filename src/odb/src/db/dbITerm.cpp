@@ -210,7 +210,7 @@ bool dbITerm::isClocked()
   return iterm->flags_.clocked > 0 || masterFlag ? true : false;
 }
 
-void dbITerm::setMark(uint v)
+void dbITerm::setMark(uint32_t v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
   iterm->flags_.mark = v;
@@ -240,7 +240,7 @@ void dbITerm::clearSpecial()
   iterm->flags_.special = 0;
 }
 
-void dbITerm::setSpef(uint v)
+void dbITerm::setSpef(uint32_t v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
   iterm->flags_.spef = v;
@@ -252,13 +252,13 @@ bool dbITerm::isSpef()
   return (iterm->flags_.spef > 0) ? true : false;
 }
 
-void dbITerm::setExtId(uint v)
+void dbITerm::setExtId(uint32_t v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
   iterm->ext_id_ = v;
 }
 
-uint dbITerm::getExtId()
+uint32_t dbITerm::getExtId()
 {
   _dbITerm* iterm = (_dbITerm*) this;
   return iterm->ext_id_;
@@ -509,7 +509,7 @@ void dbITerm::disconnect()
     callback->inDbITermPreDisconnect(this);
   }
 
-  uint id = iterm->getOID();
+  uint32_t id = iterm->getOID();
 
   if (net) {
     if (net->iterms_ == id) {
@@ -609,7 +609,7 @@ void dbITerm::disconnectDbNet()
     block->journal_->endAction();
   }
 
-  uint id = iterm->getOID();
+  uint32_t id = iterm->getOID();
 
   if (net->iterms_ == id) {
     net->iterms_ = iterm->next_net_iterm_;
@@ -736,7 +736,7 @@ bool dbITerm::isInputSignal(bool io)
   return false;
 }
 
-dbITerm* dbITerm::getITerm(dbBlock* block_, uint dbid)
+dbITerm* dbITerm::getITerm(dbBlock* block_, uint32_t dbid)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbITerm*) block->iterm_tbl_->getPtr(dbid);
@@ -818,7 +818,7 @@ std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   auto mterm = getMTerm();
-  uint pin_access_idx = getInst()->getPinAccessIdx();
+  uint32_t pin_access_idx = getInst()->getPinAccessIdx();
   std::map<dbMPin*, std::vector<dbAccessPoint*>> aps;
   for (auto mpin : mterm->getMPins()) {
     _dbMPin* pin = (_dbMPin*) mpin;
@@ -844,12 +844,12 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
   }
   // sort to maintain iterator stability, and backwards compatibility with
   // std::map which used to be used to store aps.
-  std::sort(sorted_aps.begin(),
-            sorted_aps.end(),
-            [](const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& a,
-               const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& b) {
-              return a.first < b.first;
-            });
+  std::ranges::sort(
+      sorted_aps,
+      [](const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& a,
+         const std::pair<dbId<_dbMPin>, dbId<_dbAccessPoint>>& b) {
+        return a.first < b.first;
+      });
 
   std::vector<dbAccessPoint*> aps;
   aps.reserve(sorted_aps.size());

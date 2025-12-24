@@ -3,6 +3,7 @@
 
 #include "find_some_net.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <vector>
@@ -27,7 +28,7 @@ bool findSomeNet(odb::dbBlock* block,
     char* netName = parser->get(ii);
     odb::dbNet* net = block->findNet(netName);
     if (!net) {
-      uint noid = netName[0] == 'N' ? atoi(&netName[1]) : atoi(&netName[0]);
+      uint32_t noid = netName[0] == 'N' ? atoi(&netName[1]) : atoi(&netName[0]);
       net = odb::dbNet::getValidNet(block, noid);
     }
     if (net) {
