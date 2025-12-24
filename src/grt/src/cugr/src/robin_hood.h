@@ -763,17 +763,17 @@ inline void swap(pair<A, B>& a, pair<A, B>& b) noexcept(
 }
 
 template <typename A, typename B>
-inline constexpr bool operator==(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator==(pair<A, B> const& x, pair<A, B> const& y)
 {
   return (x.first == y.first) && (x.second == y.second);
 }
 template <typename A, typename B>
-inline constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x == y);
 }
 template <typename A, typename B>
-inline constexpr bool
+constexpr bool
 operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
     noexcept(std::declval<A const&>() < std::declval<A const&>())
     && noexcept(std::declval<B const&>() < std::declval<B const&>()))
@@ -781,17 +781,17 @@ operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
   return x.first < y.first || (!(y.first < x.first) && x.second < y.second);
 }
 template <typename A, typename B>
-inline constexpr bool operator>(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator>(pair<A, B> const& x, pair<A, B> const& y)
 {
   return y < x;
 }
 template <typename A, typename B>
-inline constexpr bool operator<=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator<=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x > y);
 }
 template <typename A, typename B>
-inline constexpr bool operator>=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator>=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x < y);
 }
