@@ -54,7 +54,6 @@ class Fixture : public ::testing::Test
 {
  protected:
   Fixture();
-  virtual ~Fixture() = default;
 
   void addLayer(frTechObject* tech,
                 const char* name,
