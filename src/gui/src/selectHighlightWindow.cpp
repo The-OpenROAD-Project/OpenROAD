@@ -146,7 +146,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   }
   std::string obj_name = table_data_[row_index].second->getName();
   std::string obj_type;
-  if (obj_name.starts_width("Net: ")) {
+  if (obj_name.starts_with("Net: ")) {
     obj_name = obj_name.substr(5);
     obj_type = "Net";
   } else if (obj_name.starts_with("Inst: ")) {

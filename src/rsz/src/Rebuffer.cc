@@ -1513,10 +1513,10 @@ void Rebuffer::init()
 void Rebuffer::initOnCorner(Corner* corner)
 {
   corner_ = corner;
-  wire_length_step_ = std::min(
-      resizer_max_wire_length_,
-      std::min(wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
-               wireLengthLimitImpliedByMaxCap(buffer_sizes_.front().cell)));
+  wire_length_step_
+      = std::min({resizer_max_wire_length_,
+                  wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
+                  wireLengthLimitImpliedByMaxCap(buffer_sizes_.front().cell)});
   characterizeBufferLimits();
 }
 

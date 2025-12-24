@@ -842,7 +842,7 @@ void HeatMapRenderer::setSettings(const Settings& settings)
   Renderer::setSettings(settings);
   Renderer::Settings data_settings;
   for (const auto& [name, value] : settings) {
-    if (name.starts_width(kDatasourcePrefix)) {
+    if (name.starts_with(kDatasourcePrefix)) {
       data_settings[name.substr(strlen(kDatasourcePrefix))] = value;
     }
   }
