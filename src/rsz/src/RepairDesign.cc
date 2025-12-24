@@ -945,7 +945,7 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
     LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
-      typedef std::pair<float, LibertyCell*> SizeCandidate;
+      using SizeCandidate = std::pair<float, LibertyCell*>;
       std::vector<SizeCandidate> sizes;
 
       for (LibertyCell* size_cell : equiv_cells) {
