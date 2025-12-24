@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -33,8 +34,6 @@ class Via;
 class ViaGenerator;
 
 using ViaPtr = std::shared_ptr<Via>;
-
-using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
 
@@ -630,7 +629,7 @@ class GenerateViaGenerator : public ViaGenerator
  private:
   odb::dbTechViaGenerateRule* rule_;
 
-  std::array<odb::uint, 3> layers_;
+  std::array<uint32_t, 3> layers_;
 
   bool isLayerValidForWidth(odb::dbTechViaLayerRule*, int width) const;
   bool getLayerEnclosureRule(odb::dbTechViaLayerRule* rule,

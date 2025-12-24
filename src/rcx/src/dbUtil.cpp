@@ -231,8 +231,8 @@ odb::dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
     top = l1;
   }
 
-  uint dx = bbox.dx();
-  uint dy = bbox.dy();
+  uint32_t dx = bbox.dx();
+  uint32_t dy = bbox.dy();
 
   odb::dbTechVia* def = nullptr;
   std::vector<odb::dbTechVia*>& vias = _vias(bot, top);
@@ -246,8 +246,8 @@ odb::dbTechVia* dbCreateNetUtil::getVia(int l1, int l2, odb::Rect& bbox)
     }
 
     odb::dbBox* bbox = via->getBBox();
-    uint vdx = bbox->getDX();
-    uint vdy = bbox->getDY();
+    uint32_t vdx = bbox->getDX();
+    uint32_t vdy = bbox->getDY();
 
     if (vdx == dx && vdy == dy) {  // This is a guess!
       return via;                  // There's no way to determine
@@ -294,7 +294,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   Point p0, p1;
 
   if (dir == odb::dbTechLayerDir::VERTICAL) {
-    uint dx = r.dx();
+    uint32_t dx = r.dx();
 
     // This is dangerous!
     if (dx & 1) {
@@ -309,7 +309,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     p1.setX(r.xMax() - dw);
     p1.setY(r.yMax());
   } else {
-    uint dy = r.dy();
+    uint32_t dy = r.dy();
 
     // This is dangerous!
     if (dy & 1) {
@@ -398,7 +398,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 odb::dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
                                                 odb::Rect& r,
                                                 odb::dbTechLayer* layer,
-                                                uint /* unused: sboxId */)
+                                                uint32_t /* unused: sboxId */)
 {
   dbSWire* swire = nullptr;
   if (mainNet == nullptr) {
@@ -418,7 +418,7 @@ odb::dbSBox* dbCreateNetUtil::createSpecialWire(odb::dbNet* mainNet,
   // MIGHT NOT care abour sboxId!!
 }
 
-uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, odb::dbShape& s)
+uint32_t dbCreateNetUtil::getFirstShape(odb::dbNet* net, odb::dbShape& s)
 {
   dbWirePath path;
   dbWirePathShape pshape;
@@ -426,7 +426,7 @@ uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, odb::dbShape& s)
   dbWirePathItr pitr;
   dbWire* wire = net->getWire();
 
-  uint status = 0;
+  uint32_t status = 0;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
     pitr.getNextShape(pshape);
     s = pshape.shape;
@@ -435,23 +435,23 @@ uint dbCreateNetUtil::getFirstShape(odb::dbNet* net, odb::dbShape& s)
   }
   return status;
 }
-bool dbCreateNetUtil::setFirstShapeProperty(odb::dbNet* net, uint prop)
+bool dbCreateNetUtil::setFirstShapeProperty(odb::dbNet* net, uint32_t prop)
 {
   if (net == nullptr) {
     return false;
   }
 
   odb::dbShape s;
-  uint jid = getFirstShape(net, s);
+  uint32_t jid = getFirstShape(net, s);
   net->getWire()->setProperty(jid, prop);
 
   return true;
 }
 
 odb::dbNet* dbCreateNetUtil::createNetSingleWire(odb::Rect& r,
-                                                 uint level,
-                                                 uint netId,
-                                                 uint shapeId)
+                                                 uint32_t level,
+                                                 uint32_t netId,
+                                                 uint32_t shapeId)
 {
   // bool skipBterms= false;
   char netName[128];
@@ -526,8 +526,8 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   odb::dbTechLayer* layer = _routingLayers[routingLayer];
   odb::Rect r(x1, y1, x2, y2);
-  uint dx = r.dx();
-  uint dy = r.dy();
+  uint32_t dx = r.dx();
+  uint32_t dy = r.dy();
 
   // This is dangerous!
   if ((dx & 1) && (dy & 1)) {
@@ -536,9 +536,9 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     dy = r.dy();
   }
 
-  uint width;
+  uint32_t width;
   Point p0, p1;
-  uint minWidth = layer->getWidth();
+  uint32_t minWidth = layer->getWidth();
   bool make_vertical = false;
 
   if (((dx & 1) == 0) && ((dy & 1) == 1))  // dx == even & dy == odd
@@ -665,10 +665,10 @@ std::pair<odb::dbBTerm*, odb::dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
   term_str = term_str + "_BL";
   odb::dbBTerm* blterm = odb::dbBTerm::create(net, term_str.c_str());
 
-  uint dx = x2 - x1;
-  uint dy = y2 - y1;
-  uint fwidth = dx < dy ? dx : dy;
-  uint hwidth = fwidth / 2;
+  uint32_t dx = x2 - x1;
+  uint32_t dy = y2 - y1;
+  uint32_t fwidth = dx < dy ? dx : dy;
+  uint32_t hwidth = fwidth / 2;
   if (!blterm) {
     return retpr;
   }

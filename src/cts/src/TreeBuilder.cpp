@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
@@ -26,7 +27,7 @@ void TreeBuilder::mergeBlockages()
   namespace gtl = boost::polygon;
   using boost::polygon::operators::operator+=;
 
-  uint macros_max_dx = 0, macros_max_dy = 0;
+  uint32_t macros_max_dx = 0, macros_max_dy = 0;
   odb::dbBlock* block = db_->getChip()->getBlock();
   gtl::polygon_90_set_data<int> blockage_polygons;
   // Add the macros into the polygon set
