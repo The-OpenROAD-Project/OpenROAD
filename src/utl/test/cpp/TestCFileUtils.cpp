@@ -161,7 +161,9 @@ TEST(Utl, stream_handler_write_and_read_gzip)
 TEST(Utl, stream_handler_temp_file_handling)
 {
   const char* filename = "test_temp_file_handling.txt";
-  std::string tmp_filename = std::string(filename) + ".1";
+  const auto pid = static_cast<unsigned int>(::getpid());
+  std::string tmp_filename
+      = std::string(filename) + "." + std::to_string(pid) + ".1";
 
   // Check that the temp file is created
   {
@@ -184,7 +186,9 @@ TEST(Utl, stream_handler_exception_handling)
     OutStreamHandler sh(filename);
     throw std::runtime_error("Simulated exception");
   } catch (...) {
-    std::string tmp_filename = std::string(filename) + ".1";
+    auto pid = static_cast<unsigned int>(::getpid());
+    std::string tmp_filename
+        = std::string(filename) + "." + std::to_string(pid) + ".1";
     // Ensure temporary file is cleaned up
     EXPECT_TRUE(!std::filesystem::exists(tmp_filename));
     // Original file should exist
@@ -214,7 +218,9 @@ TEST(Utl, file_handler_write_and_read)
 TEST(Utl, file_handler_temp_file_handling)
 {
   const char* filename = "test_temp_file_handling_file.txt";
-  std::string tmp_filename = std::string(filename) + ".1";
+  const auto pid = static_cast<unsigned int>(::getpid());
+  std::string tmp_filename
+      = std::string(filename) + "." + std::to_string(pid) + ".1";
 
   // Check that the temp file is created
   {
