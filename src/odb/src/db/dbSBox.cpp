@@ -3,6 +3,7 @@
 
 #include "dbSBox.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -21,7 +22,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -155,19 +155,19 @@ Oct dbSBox::getOct() const
   return box->shape_.oct;
 }
 
-uint dbSBox::getViaBottomLayerMask() const
+uint32_t dbSBox::getViaBottomLayerMask() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
   return box->sflags_.via_bottom_mask;
 }
 
-uint dbSBox::getViaCutLayerMask() const
+uint32_t dbSBox::getViaCutLayerMask() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
   return box->sflags_.via_cut_mask;
 }
 
-uint dbSBox::getViaTopLayerMask() const
+uint32_t dbSBox::getViaTopLayerMask() const
 {
   const _dbSBox* box = (const _dbSBox*) this;
   return box->sflags_.via_top_mask;
@@ -180,7 +180,9 @@ bool dbSBox::hasViaLayerMasks() const
          || box->sflags_.via_top_mask != 0;
 }
 
-void dbSBox::setViaLayerMask(const uint bottom, const uint cut, const uint top)
+void dbSBox::setViaLayerMask(const uint32_t bottom,
+                             const uint32_t cut,
+                             const uint32_t top)
 {
   _dbSBox* box = (_dbSBox*) this;
   box->checkMask(bottom);
@@ -206,8 +208,8 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   _dbSBox* box = block->sbox_tbl_->create();
 
-  const uint dx = std::abs(x2 - x1);
-  const uint dy = std::abs(y2 - y1);
+  const uint32_t dx = std::abs(x2 - x1);
+  const uint32_t dy = std::abs(y2 - y1);
 
   switch (dir) {
     case UNDEFINED:
@@ -325,7 +327,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   return (dbSBox*) box;
 }
 
-dbSBox* dbSBox::getSBox(dbBlock* block_, uint dbid_)
+dbSBox* dbSBox::getSBox(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbSBox*) block->sbox_tbl_->getPtr(dbid_);
@@ -426,7 +428,7 @@ _dbSBox::_dbSBox(_dbDatabase* db) : _dbBox(db)
 dbOStream& operator<<(dbOStream& stream, const _dbSBox& box)
 {
   stream << (_dbBox&) box;
-  uint* bit_field = (uint*) &box.sflags_;
+  uint32_t* bit_field = (uint32_t*) &box.sflags_;
   stream << *bit_field;
   return stream;
 }
@@ -434,7 +436,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbSBox& box)
 dbIStream& operator>>(dbIStream& stream, _dbSBox& box)
 {
   stream >> (_dbBox&) box;
-  uint* bit_field = (uint*) &box.sflags_;
+  uint32_t* bit_field = (uint32_t*) &box.sflags_;
   stream >> *bit_field;
   return stream;
 }

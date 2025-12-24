@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbDatabase.h"
 
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipConn.h"
@@ -71,7 +73,7 @@ constexpr int kMagic2 = 0x4E414442;  // NADB
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
 static std::mutex* db_tbl_mutex = new std::mutex;
-static std::atomic<uint> db_unique_id = 0;
+static std::atomic<uint32_t> db_unique_id = 0;
 // User Code End Static
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
@@ -282,7 +284,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     if (obj.isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
       // Should already have a value from dbTech, so only need to update this if
       // its been set.
-      uint dbu_per_micron;
+      uint32_t dbu_per_micron;
       stream >> dbu_per_micron;
       if (dbu_per_micron != 0) {
         obj.dbu_per_micron_ = dbu_per_micron;
@@ -311,7 +313,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   }
 
   // Fix up the owner id of properties of this db, this value changes.
-  const uint oid = obj.getId();
+  const uint32_t oid = obj.getId();
 
   for (_dbProperty* p : dbSet<_dbProperty>(&obj, obj.prop_tbl_)) {
     p->owner_ = oid;
@@ -517,14 +519,14 @@ utl::Logger* _dbObject::getLogger() const
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbDatabase::setDbuPerMicron(uint dbu_per_micron)
+void dbDatabase::setDbuPerMicron(uint32_t dbu_per_micron)
 {
   _dbDatabase* obj = (_dbDatabase*) this;
 
   obj->dbu_per_micron_ = dbu_per_micron;
 }
 
-uint dbDatabase::getDbuPerMicron() const
+uint32_t dbDatabase::getDbuPerMicron() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return obj->dbu_per_micron_;
@@ -666,7 +668,7 @@ int dbDatabase::removeUnusedMasters()
   return unused_masters.size();
 }
 
-uint dbDatabase::getNumberOfMasters()
+uint32_t dbDatabase::getNumberOfMasters()
 {
   _dbDatabase* db = (_dbDatabase*) this;
   return db->master_id_;
@@ -909,7 +911,7 @@ void dbDatabase::destroy(dbDatabase* db_)
   db_tbl->destroy(db);
 }
 
-dbDatabase* dbDatabase::getDatabase(uint dbid)
+dbDatabase* dbDatabase::getDatabase(uint32_t dbid)
 {
   std::lock_guard<std::mutex> lock(*db_tbl_mutex);
   return (dbDatabase*) db_tbl->getPtr(dbid);

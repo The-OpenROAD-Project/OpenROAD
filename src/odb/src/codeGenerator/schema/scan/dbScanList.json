@@ -15,7 +15,7 @@
   "fields": [
     {
       "name": "unused_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": [
         "private"
       ],

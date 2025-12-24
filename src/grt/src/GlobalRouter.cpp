@@ -3962,8 +3962,8 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
         int minSpc = 0;
         for (auto rule : layer->getV54SpacingRules()) {
           if (rule->hasRange()) {
-            uint rmin;
-            uint rmax;
+            uint32_t rmin;
+            uint32_t rmax;
             rule->getRange(rmin, rmax);
             if (layer_width < rmin || layer_width > rmax) {
               continue;
@@ -4465,11 +4465,11 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
       // PARALLELRUNLENGTH
 
       if (obstruct_layer->hasTwoWidthsSpacingRules()) {
-        std::vector<std::vector<odb::uint>> spacing_table;
+        std::vector<std::vector<uint32_t>> spacing_table;
         obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
         if (!spacing_table.empty()) {
-          std::vector<odb::uint> last_row = spacing_table.back();
-          odb::uint last_value = last_row.back();
+          std::vector<uint32_t> last_row = spacing_table.back();
+          uint32_t last_value = last_row.back();
           if (last_value > spacing_extension) {
             spacing_extension = last_value;
           }
@@ -4726,7 +4726,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
   }
 
   for (odb::dbNet* db_net : nets) {
-    odb::uint wire_cnt = 0, via_cnt = 0;
+    uint32_t wire_cnt = 0, via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0) {
       continue;

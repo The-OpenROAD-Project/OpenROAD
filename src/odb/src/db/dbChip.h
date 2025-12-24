@@ -4,13 +4,13 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include <list>
 // User Code End Includes
@@ -46,7 +46,7 @@ class _dbChip : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* name_;
-  uint type_;
+  uint32_t type_;
   Point offset_;
   int width_;
   int height_;

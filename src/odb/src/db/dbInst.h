@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbVector.h"  // disconnect the child-iterm
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -28,16 +29,16 @@ struct _dbInstFlags
 {
   dbOrientType::Value orient : 4;
   dbPlacementStatus::Value status : 4;
-  uint user_flag_1 : 1;
-  uint user_flag_2 : 1;
-  uint user_flag_3 : 1;
-  uint physical_only : 1;
-  uint dont_touch : 1;
+  uint32_t user_flag_1 : 1;
+  uint32_t user_flag_2 : 1;
+  uint32_t user_flag_3 : 1;
+  uint32_t physical_only : 1;
+  uint32_t dont_touch : 1;
   dbSourceType::Value source : 4;
-  uint eco_create : 1;
-  uint eco_destroy : 1;
-  uint eco_modify : 1;
-  uint level : 11;
+  uint32_t eco_create : 1;
+  uint32_t eco_destroy : 1;
+  uint32_t eco_modify : 1;
+  uint32_t level : 11;
 };
 
 class _dbInst : public _dbObject
@@ -77,9 +78,9 @@ class _dbInst : public _dbObject
   dbId<_dbInst> region_prev_;
   dbId<_dbInst> module_prev_;
   dbId<_dbHier> hierarchy_;
-  dbVector<uint> iterms_;
+  dbVector<uint32_t> iterms_;
   dbId<_dbBox> halo_;
-  uint pin_access_idx_;
+  uint32_t pin_access_idx_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbInst& inst);

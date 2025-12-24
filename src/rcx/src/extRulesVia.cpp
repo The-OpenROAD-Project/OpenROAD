@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
@@ -21,11 +22,11 @@ using namespace odb;
 // dkf 12272023
 extViaModel* extMetRCTable::addViaModel(char* name,
                                         double R,
-                                        uint cCnt,
-                                        uint dx,
-                                        uint dy,
-                                        uint top,
-                                        uint bot)
+                                        uint32_t cCnt,
+                                        uint32_t dx,
+                                        uint32_t dy,
+                                        uint32_t top,
+                                        uint32_t bot)
 {
   int n1;
   if (_viaModelHash.get(name, n1)) {
@@ -81,14 +82,14 @@ void extViaModel::writeViaRule(FILE* fp)
 }
 void extMetRCTable::printViaModels()
 {
-  for (uint ii = 0; ii < _viaModel.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _viaModel.getCnt(); ii++) {
     _viaModel.get(ii)->printViaRule(stdout);
   }
 }
 void extMetRCTable::writeViaRes(FILE* fp)
 {
   fprintf(fp, "\nVIARES %d Default LEF Vias:\n", _viaModel.getCnt());
-  for (uint ii = 0; ii < _viaModel.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _viaModel.getCnt(); ii++) {
     _viaModel.get(ii)->writeViaRule(fp);
   }
 
@@ -161,9 +162,9 @@ bool extMetRCTable::ReadRules(Ath__parser* p)
   }
   return true;
 }
-uint extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
+uint32_t extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   dbSet<dbTechVia> vias = tech->getVias();
   dbSet<dbTechVia>::iterator vitr;
 
@@ -200,7 +201,7 @@ bool extMetRCTable::SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP)
   //                 O6_ U6_ OU6_ DU6_ R6_
 
   // const char *netName = net->getConstName();
-  uint targetWire = 0;
+  uint32_t targetWire = 0;
 
   if (p->getFirstChar() == 'D') {
     if (p->get(0)[1] == 'O') {

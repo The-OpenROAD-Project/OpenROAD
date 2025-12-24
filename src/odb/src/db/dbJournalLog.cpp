@@ -3,6 +3,7 @@
 
 #include "dbJournalLog.h"
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -125,7 +126,7 @@ void dbJournalLog::push(const char* value)
 
 void dbJournalLog::moveBackOneInt()
 {
-  idx_ -= sizeof(uint);
+  idx_ -= sizeof(uint32_t);
   if (debug_) {
     --idx_;
   }
@@ -248,11 +249,11 @@ void dbJournalLog::append(dbJournalLog& other)
     return;
   }
   // Scan from the end to find all action indices
-  std::vector<uint> action_indices;
+  std::vector<uint32_t> action_indices;
   other.moveToEnd();
   other.moveBackOneInt();
   for (;;) {
-    uint idx;
+    uint32_t idx;
     other.pop(idx);
     action_indices.push_back(idx);
     if (idx == 0) {
@@ -265,18 +266,18 @@ void dbJournalLog::append(dbJournalLog& other)
   int shift_idx = size();
   other.begin();
   while (!other.end()) {
-    uint current_idx = other.idx();
-    uint supposed_idx = action_indices.back();
+    uint32_t current_idx = other.idx();
+    uint32_t supposed_idx = action_indices.back();
     action_indices.pop_back();
     if (current_idx != supposed_idx) {
       logger_->critical(
           utl::ODB, 438, "In append, didn't match the expected action index.");
     }
-    uint next_idx = other.size();
+    uint32_t next_idx = other.size();
     if (!action_indices.empty()) {
       next_idx = action_indices.back();
     }
-    next_idx -= sizeof(uint) + 1;
+    next_idx -= sizeof(uint32_t) + 1;
     if (other.debug_) {
       next_idx -= 2;
     }

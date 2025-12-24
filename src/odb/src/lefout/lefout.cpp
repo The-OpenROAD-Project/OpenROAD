@@ -851,7 +851,7 @@ void lefout::writeTechViaRule(dbTechViaRule* rule)
   std::string name = rule->getName();
   fmt::print(_out, "\nVIARULE {}\n", name.c_str());
 
-  uint idx;
+  uint32_t idx;
 
   for (idx = 0; idx < rule->getViaLayerRuleCount(); ++idx) {
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
@@ -894,7 +894,7 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     fmt::print(_out, "\nVIARULE {} GENERATE \n", name.c_str());
   }
 
-  uint idx;
+  uint32_t idx;
 
   for (idx = 0; idx < rule->getViaLayerRuleCount(); ++idx) {
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
@@ -1034,7 +1034,7 @@ void lefout::writeLayer(dbTechLayer* layer)
     fmt::print(_out, "    AREA {:.11g} ;\n", layer->getArea());
   }
 
-  uint thickness;
+  uint32_t thickness;
   if (layer->getThickness(thickness)) {
     fmt::print(_out, "    THICKNESS {:.11g} ;\n", lefdist(thickness));
   }

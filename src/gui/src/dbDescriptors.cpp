@@ -10,6 +10,7 @@
 #include <any>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
@@ -3070,8 +3071,8 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
 
   PropertyList minimum_cuts;
   for (auto* min_cut_rule : layer->getMinCutRules()) {
-    uint numcuts;
-    uint rule_width;
+    uint32_t numcuts;
+    uint32_t rule_width;
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
     std::string text = Property::convert_dbu(rule_width, true);
@@ -3083,8 +3084,8 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
       text += " - below only";
     }
 
-    uint length;
-    uint distance;
+    uint32_t length;
+    uint32_t distance;
     if (min_cut_rule->getLengthForCuts(length, distance)) {
       text += fmt::format(" LENGTH {} WITHIN {}",
                           Property::convert_dbu(length, true),
@@ -3122,7 +3123,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
 
     SelectionSet generate_vias;
     for (auto* via : tech->getViaGenerateRules()) {
-      for (uint l = 0; l < via->getViaLayerRuleCount(); l++) {
+      for (uint32_t l = 0; l < via->getViaLayerRuleCount(); l++) {
         auto* rule = via->getViaLayerRule(l);
         if (rule->getLayer() == layer) {
           generate_vias.insert(gui->makeSelected(via));
@@ -4177,13 +4178,14 @@ Descriptor::Properties DbTechViaRuleDescriptor::getDBProperties(
   Properties props;
 
   SelectionSet vias;
-  for (uint via_index = 0; via_index < via_rule->getViaCount(); via_index++) {
+  for (uint32_t via_index = 0; via_index < via_rule->getViaCount();
+       via_index++) {
     vias.insert(gui->makeSelected(via_rule->getVia(via_index)));
   }
   props.push_back({"Tech Vias", vias});
 
   SelectionSet layer_rules;
-  for (uint rule_index = 0; rule_index < via_rule->getViaLayerRuleCount();
+  for (uint32_t rule_index = 0; rule_index < via_rule->getViaLayerRuleCount();
        rule_index++) {
     layer_rules.insert(
         gui->makeSelected(via_rule->getViaLayerRule(rule_index)));
@@ -4314,7 +4316,7 @@ void DbTechViaLayerRuleDescriptor::visitAllObjects(
   auto tech = db_->getTech();
 
   for (auto via_rule : tech->getViaRules()) {
-    for (uint via_layer_index = 0;
+    for (uint32_t via_layer_index = 0;
          via_layer_index < via_rule->getViaLayerRuleCount();
          via_layer_index++) {
       func({via_rule->getViaLayerRule(via_layer_index), this});
@@ -4417,7 +4419,7 @@ Descriptor::Properties DbGenerateViaDescriptor::getDBProperties(
 
   SelectionSet via_layer_rules;
   PropertyList layers;
-  for (uint l = 0; l < via->getViaLayerRuleCount(); l++) {
+  for (uint32_t l = 0; l < via->getViaLayerRuleCount(); l++) {
     auto* rule = via->getViaLayerRule(l);
     auto* layer = rule->getLayer();
     std::string shape_text;

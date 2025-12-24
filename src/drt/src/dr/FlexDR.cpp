@@ -654,7 +654,7 @@ void FlexDR::reportIterationViolations() const
                   getDesign()->getTopBlock()->getNumMarkers());
     if (getDesign()->getTopBlock()->getNumMarkers() > 0) {
       // report violations
-      std::map<std::string, std::map<frLayerNum, uint>> violations;
+      std::map<std::string, std::map<frLayerNum, uint32_t>> violations;
       std::set<frLayerNum> layers;
       const std::map<std::string, std::string> relabel
           = {{"Lef58SpacingEndOfLine", "EOL"},

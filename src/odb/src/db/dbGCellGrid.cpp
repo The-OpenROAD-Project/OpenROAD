@@ -115,8 +115,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
     stream >> old_format;
     for (const auto& [lid, cells] : old_format) {
       auto& matrix = obj.get(lid);
-      const uint num_rows = cells.numRows();
-      const uint num_cols = cells.numCols();
+      const uint32_t num_rows = cells.numRows();
+      const uint32_t num_cols = cells.numCols();
       for (int row = 0; row < num_rows; ++row) {
         for (int col = 0; col < num_cols; ++col) {
           auto& old = cells(row, col);
@@ -128,7 +128,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
     }
   } else {
     std::map<dbId<_dbTechLayer>,
-             std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
+             std::map<std::pair<uint32_t, uint32_t>, dbGCellGrid::GCellData>>
         old_format;
     stream >> old_format;
     for (const auto& [lid, cells] : old_format) {
@@ -198,12 +198,12 @@ dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
     stream >> obj.usage;
     stream >> obj.capacity;
   } else {
-    uint horizontal_usage;
-    uint vertical_usage;
-    uint up_usage;
-    uint horizontal_capacity;
-    uint vertical_capacity;
-    uint up_capacity;
+    uint32_t horizontal_usage;
+    uint32_t vertical_usage;
+    uint32_t up_usage;
+    uint32_t horizontal_capacity;
+    uint32_t vertical_capacity;
+    uint32_t up_capacity;
 
     stream >> horizontal_usage;
     stream >> vertical_usage;
@@ -225,9 +225,9 @@ dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(
     dbGCellGrid* pub_grid = (dbGCellGrid*) this;
     std::vector<int> grid;
     pub_grid->getGridX(grid);
-    const uint num_x = grid.size();
+    const uint32_t num_x = grid.size();
     pub_grid->getGridY(grid);
-    const uint num_y = grid.size();
+    const uint32_t num_y = grid.size();
 
     dbMatrix<dbGCellGrid::GCellData> data(num_x, num_y);
     auto [iter, ins] = congestion_map_.emplace(lid, std::move(data));
@@ -239,8 +239,8 @@ dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(
   }
 
   it = congestion_map_.begin();
-  const uint num_rows = it->second.numRows();
-  const uint num_cols = it->second.numCols();
+  const uint32_t num_rows = it->second.numRows();
+  const uint32_t num_cols = it->second.numCols();
 
   dbMatrix<dbGCellGrid::GCellData> data(num_rows, num_cols);
   auto [iter, ins] = congestion_map_.emplace(lid, std::move(data));
@@ -273,7 +273,7 @@ void dbGCellGrid::getGridX(std::vector<int>& x_grid)
     return;
   }
   grid->x_grid_.clear();
-  uint i;
+  uint32_t i;
   for (i = 0; i < grid->x_origin_.size(); ++i) {
     int j;
 
@@ -307,7 +307,7 @@ void dbGCellGrid::getGridY(std::vector<int>& y_grid)
   }
   grid->y_grid_.clear();
 
-  uint i;
+  uint32_t i;
 
   for (i = 0; i < grid->y_origin_.size(); ++i) {
     int j;
@@ -407,13 +407,13 @@ dbGCellGrid* dbGCellGrid::create(dbBlock* block_)
   return (dbGCellGrid*) grid;
 }
 
-dbGCellGrid* dbGCellGrid::getGCellGrid(dbBlock* block_, uint dbid_)
+dbGCellGrid* dbGCellGrid::getGCellGrid(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbGCellGrid*) block->gcell_grid_tbl_->getPtr(dbid_);
 }
 
-uint dbGCellGrid::getXIdx(int x)
+uint32_t dbGCellGrid::getXIdx(int x)
 {
   std::vector<int> grid;
   getGridX(grid);
@@ -424,7 +424,7 @@ uint dbGCellGrid::getXIdx(int x)
   return (int) std::distance(grid.begin(), pos);
 }
 
-uint dbGCellGrid::getYIdx(int y)
+uint32_t dbGCellGrid::getYIdx(int y)
 {
   std::vector<int> grid;
   getGridY(grid);
@@ -435,37 +435,41 @@ uint dbGCellGrid::getYIdx(int y)
   return (int) std::distance(grid.begin(), pos);
 }
 
-float dbGCellGrid::getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const
+float dbGCellGrid::getCapacity(dbTechLayer* layer,
+                               uint32_t x_idx,
+                               uint32_t y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
+  uint32_t lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).capacity;
 }
 
-float dbGCellGrid::getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
+float dbGCellGrid::getUsage(dbTechLayer* layer,
+                            uint32_t x_idx,
+                            uint32_t y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
+  uint32_t lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).usage;
 }
 
 void dbGCellGrid::setCapacity(dbTechLayer* layer,
-                              uint x_idx,
-                              uint y_idx,
+                              uint32_t x_idx,
+                              uint32_t y_idx,
                               float capacity)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
+  uint32_t lid = layer->getId();
   _grid->get(lid)(x_idx, y_idx).capacity = capacity;
 }
 
 void dbGCellGrid::setUsage(dbTechLayer* layer,
-                           uint x_idx,
-                           uint y_idx,
+                           uint32_t x_idx,
+                           uint32_t y_idx,
                            float use)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
+  uint32_t lid = layer->getId();
   _grid->get(lid)(x_idx, y_idx).usage = use;
 }
 

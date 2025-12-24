@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "odb/odb.h"
-
 namespace odb {
 
 ///

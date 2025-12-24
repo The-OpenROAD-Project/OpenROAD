@@ -3,10 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+#include <map>
+
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
-#include "odb/odb.h"
 #include "odb/util.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extprocess.h"
@@ -18,8 +20,6 @@
 #define D2I_ROUND (name) name
 #endif
 
-// #define NEW_GS_FLOW
-
 #define HI_ACC_1
 #ifdef HI_ACC_1
 #define HI_ACC_2
@@ -27,8 +27,6 @@
 #define GS_CROSS_LINES_ONLY 1
 #define BUG_LAYER_CNT 1
 #endif
-
-#include <map>
 
 namespace utl {
 class Logger;
@@ -44,7 +42,7 @@ using utl::Logger;
 class extSegment  // assume cross-section on the z-direction
 {
  public:
-  uint _dir;
+  uint32_t _dir;
   int _xy;
   int _base;
   int _len;
@@ -54,22 +52,22 @@ class extSegment  // assume cross-section on the z-direction
 
   int _ll[2];
   int _ur[2];
-  uint _met;
+  uint32_t _met;
   int _metUnder;
   int _metOver;
-  uint _id;
+  uint32_t _id;
 
   Wire* _wire;
   Wire* _up;
   Wire* _down;
 
-  // extSegment(uint dir, Wire *w2, int dist);
+  // extSegment(uint32_t dir, Wire *w2, int dist);
   //  ~extSegment();
 
   // extSegment();
-  // extSegment(uint d, Wire *w, int xy, int len, Wire *up, Wire
+  // extSegment(uint32_t d, Wire *w, int xy, int len, Wire *up, Wire
   // *down, int metOver=-1, int metUnder=-1);
-  void set(uint d,
+  void set(uint32_t d,
            Wire* w,
            int xy,
            int len,

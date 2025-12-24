@@ -36,7 +36,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/isotropy.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -166,7 +165,7 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 {
-  uint* bit_field = (uint*) &bterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &bterm.flags_;
   stream << *bit_field;
   stream << bterm.ext_id_;
   stream << bterm.name_;
@@ -193,7 +192,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 {
   dbBlock* block = (dbBlock*) (bterm.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  uint* bit_field = (uint*) &bterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &bterm.flags_;
   stream >> *bit_field;
   stream >> bterm.ext_id_;
   stream >> bterm.name_;
@@ -263,7 +262,7 @@ void dbBTerm::setSigType(dbSigType type)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  uint prev_flags = flagsToUInt(bterm);
+  uint32_t prev_flags = flagsToUInt(bterm);
 
   bterm->flags_.sig_type = type.getValue();
 
@@ -295,7 +294,7 @@ void dbBTerm::setIoType(dbIoType type)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  uint prev_flags = flagsToUInt(bterm);
+  uint32_t prev_flags = flagsToUInt(bterm);
 
   bterm->flags_.io_type = type.getValue();
 
@@ -323,7 +322,7 @@ dbIoType dbBTerm::getIoType() const
   return dbIoType(bterm->flags_.io_type);
 }
 
-void dbBTerm::setSpefMark(uint v)
+void dbBTerm::setSpefMark(uint32_t v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->flags_.spef = v;
@@ -343,7 +342,7 @@ void dbBTerm::setSpecial()
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->flags_.special = 1;
 }
-void dbBTerm::setMark(uint v)
+void dbBTerm::setMark(uint32_t v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->flags_.mark = v;
@@ -353,12 +352,12 @@ bool dbBTerm::isSetMark()
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->flags_.mark > 0 ? true : false;
 }
-void dbBTerm::setExtId(uint v)
+void dbBTerm::setExtId(uint32_t v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->ext_id_ = v;
 }
-uint dbBTerm::getExtId()
+uint32_t dbBTerm::getExtId()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->ext_id_;
@@ -828,7 +827,7 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
       callback->inDbBTermPreDisconnect((dbBTerm*) this);
     }
 
-    uint id = bterm->getOID();
+    uint32_t id = bterm->getOID();
 
     if (net->bterms_ == id) {
       net->bterms_ = bterm->next_bterm_;
@@ -878,7 +877,7 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
       block->journal_->endAction();
     }
 
-    uint id = bterm->getOID();
+    uint32_t id = bterm->getOID();
     if (mod_net->bterms_ == id) {
       mod_net->bterms_ = bterm->next_modnet_bterm_;
       if (mod_net->bterms_ != 0) {
@@ -935,7 +934,7 @@ dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
   return next;
 }
 
-dbBTerm* dbBTerm::getBTerm(dbBlock* block_, uint oid)
+dbBTerm* dbBTerm::getBTerm(dbBlock* block_, uint32_t oid)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBTerm*) block->bterm_tbl_->getPtr(oid);

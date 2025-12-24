@@ -6,27 +6,27 @@
   "fields": [
     {
       "name": "magic1_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
       "name": "magic2_", 
-      "type": "uint",
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
       "name": "schema_major_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
       "name": "schema_minor_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
       "name": "master_id_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": ["private", "no-serial"]
     },
     {
@@ -36,7 +36,7 @@
     },
     {
       "name": "dbu_per_micron_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": 0,
       "flags": ["no-serial"]
     }

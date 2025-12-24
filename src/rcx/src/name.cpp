@@ -3,8 +3,7 @@
 
 #include "name.h"
 
-#include <string.h>
-
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -16,12 +15,12 @@ namespace rcx {
 class NameTable::NameBucket
 {
  public:
-  void set(const char* name, uint tag);
+  void set(const char* name, uint32_t tag);
   void deallocWord();
 
  private:
   const char* _name;
-  uint _tag;
+  uint32_t _tag;
 
   friend class NameTable;
 };
@@ -36,7 +35,7 @@ static void hashError(const char* msg, int exitFlag)
   }
 }
 
-void NameTable::NameBucket::set(const char* name, uint tag)
+void NameTable::NameBucket::set(const char* name, uint32_t tag)
 {
   int len = strlen(name);
   char* name_copy = new char[len + 1];
@@ -55,7 +54,7 @@ NameTable::~NameTable()
   delete _bucketPool;
 }
 
-NameTable::NameTable(uint n, char* zero)
+NameTable::NameTable(uint32_t n, char* zero)
 {
   if (zero == nullptr) {
     zero = strdup("zeroName");
@@ -67,7 +66,7 @@ NameTable::NameTable(uint n, char* zero)
   addNewName(zero, 0);
 }
 
-uint NameTable::addName(const char* name, uint dataId)
+uint32_t NameTable::addName(const char* name, uint32_t dataId)
 {
   int poolIndex = 0;
   NameBucket* b = _bucketPool->alloc(nullptr, &poolIndex);
@@ -81,7 +80,7 @@ uint NameTable::addName(const char* name, uint dataId)
 // ---------------------------------------------------------
 // Hash Functions
 // ---------------------------------------------------------
-uint NameTable::addNewName(const char* name, uint dataId)
+uint32_t NameTable::addNewName(const char* name, uint32_t dataId)
 {
   int n;
   if (_hashTable->get(name, n)) {
@@ -92,20 +91,20 @@ uint NameTable::addNewName(const char* name, uint dataId)
   return addName(name, dataId);
 }
 
-const char* NameTable::getName(uint poolId)
+const char* NameTable::getName(uint32_t poolId)
 {
   return _bucketPool->get(poolId)->_name;
 }
 
-uint NameTable::getDataId(int poolId)
+uint32_t NameTable::getDataId(int poolId)
 {
   return _bucketPool->get(poolId)->_tag;
 }
 
-uint NameTable::getDataId(const char* name,
-                          uint ignoreFlag,
-                          uint exitFlag,
-                          int* nn)
+uint32_t NameTable::getDataId(const char* name,
+                              uint32_t ignoreFlag,
+                              uint32_t exitFlag,
+                              int* nn)
 {
   int n;
   if (_hashTable->get(name, n)) {

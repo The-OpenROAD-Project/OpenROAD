@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbScanList.h"
 
+#include <cstdint>
+
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"

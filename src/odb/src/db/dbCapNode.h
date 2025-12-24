@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -19,15 +20,15 @@ class dbOStream;
 
 struct _dbCapNodeFlags
 {
-  uint internal : 1;
-  uint iterm : 1;
-  uint bterm : 1;
-  uint branch : 1;
-  uint foreign : 1;
-  uint childrenCnt : 5;
-  uint select : 1;
-  uint name : 1;
-  uint sort_index : 20;
+  uint32_t internal : 1;
+  uint32_t iterm : 1;
+  uint32_t bterm : 1;
+  uint32_t branch : 1;
+  uint32_t foreign : 1;
+  uint32_t childrenCnt : 5;
+  uint32_t select : 1;
+  uint32_t name : 1;
+  uint32_t sort_index : 20;
 };
 
 class _dbCapNode : public _dbObject
@@ -59,7 +60,7 @@ class _dbCapNode : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbCapNodeFlags flags_;
-  uint node_num_;  // rc-network node-id
+  uint32_t node_num_;  // rc-network node-id
   dbId<_dbNet> net_;
   dbId<_dbCapNode> next_;
   dbId<_dbCCSeg> cc_segs_;
@@ -87,7 +88,7 @@ inline _dbCapNode::_dbCapNode(_dbDatabase*, const _dbCapNode& n)
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbCapNode& seg)
 {
-  uint* bit_field = (uint*) &seg.flags_;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream << *bit_field;
 
   stream << seg.node_num_;
@@ -99,7 +100,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbCapNode& seg)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbCapNode& seg)
 {
-  uint* bit_field = (uint*) &seg.flags_;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream >> *bit_field;
   stream >> seg.node_num_;
   stream >> seg.net_;

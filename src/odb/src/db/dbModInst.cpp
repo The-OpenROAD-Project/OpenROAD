@@ -24,6 +24,8 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbModBTerm.h"
@@ -273,9 +275,9 @@ void dbModInst::destroy(dbModInst* modinst)
   _master->mod_inst_.clear();
 
   // unlink from parent start
-  uint id = _modinst->getOID();
+  uint32_t id = _modinst->getOID();
   _dbModInst* prev = nullptr;
-  uint cur = _module->modinsts_;
+  uint32_t cur = _module->modinsts_;
   while (cur) {
     _dbModInst* c = _block->modinst_tbl_->getPtr(cur);
     if (cur == id) {
@@ -336,7 +338,7 @@ dbSet<dbModITerm> dbModInst::getModITerms()
   return dbSet<dbModITerm>(_mod_inst, _block->module_modinstmoditerm_itr_);
 }
 
-dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
+dbModInst* dbModInst::getModInst(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbModInst*) block->modinst_tbl_->getPtr(dbid_);

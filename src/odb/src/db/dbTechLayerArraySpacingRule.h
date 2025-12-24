@@ -4,11 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <map>
 
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -22,7 +22,7 @@ struct dbTechLayerArraySpacingRuleFlags
   bool long_array : 1;
   bool via_width_valid : 1;
   bool within_valid : 1;
-  uint spare_bits : 28;
+  uint32_t spare_bits : 28;
 };
 
 class _dbTechLayerArraySpacingRule : public _dbObject

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
+
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/dbObject.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
-namespace odb {
 
-namespace dbUtil {
+namespace odb::dbUtil {
 
 // Find BTerm drivers
 template <typename NetType>
@@ -183,9 +183,9 @@ void checkNetSanity(const NetType* net,
     }
   }
 
-  const uint iterm_count = net->getITerms().size();
-  const uint bterm_count = net->getBTerms().size();
-  uint term_count;
+  const uint32_t iterm_count = net->getITerms().size();
+  const uint32_t bterm_count = net->getBTerms().size();
+  uint32_t term_count;
 
   if constexpr (std::is_same_v<NetType, dbNet>) {
     term_count = iterm_count + bterm_count;
@@ -241,7 +241,7 @@ void checkNetSanity(const NetType* net,
                    bterm_count);
     } else {
       // A net connected to 1 terminal
-      const uint moditerm_count = net->getModITerms().size();
+      const uint32_t moditerm_count = net->getModITerms().size();
       if (moditerm_count == 1) {
         dbModITerm* moditerm = *(net->getModITerms().begin());
         if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
@@ -250,7 +250,7 @@ void checkNetSanity(const NetType* net,
           }
         }
       }
-      const uint modbterm_count = net->getModBTerms().size();
+      const uint32_t modbterm_count = net->getModBTerms().size();
       if (modbterm_count == 1) {
         dbModBTerm* modbterm = *(net->getModBTerms().begin());
         if (modbterm->getIoType() == dbIoType::INPUT) {
@@ -272,6 +272,4 @@ void checkNetSanity(const NetType* net,
   }
 }
 
-}  // namespace dbUtil
-
-}  // namespace odb
+}  // namespace odb::dbUtil

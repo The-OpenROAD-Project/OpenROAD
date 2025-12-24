@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstring>
 
 #include "dbCore.h"
@@ -10,7 +11,6 @@
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -22,7 +22,7 @@ class dbOStream;
 
 struct _dbTechViaRuleFlags
 {
-  uint spare_bits : 32;
+  uint32_t spare_bits : 32;
 };
 
 class _dbTechViaRule : public _dbObject
@@ -44,8 +44,8 @@ class _dbTechViaRule : public _dbObject
   // PERSISTANT-MEMBERS
   _dbTechViaRuleFlags flags_;
   char* name_;
-  dbVector<uint> layer_rules_;
-  dbVector<uint> vias_;
+  dbVector<uint32_t> layer_rules_;
+  dbVector<uint32_t> vias_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v);

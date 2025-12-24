@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
 #include "definBase.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -16,7 +16,7 @@ class dbTechLayer;
 class definFill : public definBase
 {
   dbTechLayer* _cur_layer{nullptr};
-  uint _mask_number;
+  uint32_t _mask_number;
   bool _needs_opc;
 
  public:
