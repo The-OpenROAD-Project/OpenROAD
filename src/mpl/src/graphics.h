@@ -68,7 +68,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void setCurrentCluster(Cluster* current_cluster) override;
   void setGuides(const std::map<int, odb::Rect>& guides) override;
   void setFences(const std::map<int, odb::Rect>& fences) override;
-  void addNotch(const odb::Rect& notch, bool value) override;
+  void addNotch(const odb::Rect& notch) override;
   void clearNotches() override;
   void setIOConstraintsMap(
       const ClusterToBoundaryRegionMap& io_cluster_to_constraint) override;
@@ -134,8 +134,7 @@ class Graphics : public gui::Renderer, public MplObserver
   Cluster* current_cluster_{nullptr};
   std::map<int, odb::Rect> guides_;  // Id -> Guidance Region
   std::map<int, odb::Rect> fences_;  // Id -> Fence
-  std::vector<std::pair<odb::Rect, bool>>
-      notches_;  // <Candidate Notch, True/False Notch>
+  std::vector<odb::Rect> notches_;
 
   int x_mark_size_{0};  // For blocked regions.
 

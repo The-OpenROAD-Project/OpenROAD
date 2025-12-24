@@ -645,6 +645,17 @@ void SACoreSoftMacro::calNotchPenalty()
     return;
   }
 
+  struct Neighbors {
+    bool top = true;
+    bool bottom = true;
+    bool left = true;
+    bool right = true;
+
+    int total() {
+      return top + bottom + left + right;
+    }
+  };
+
   // Initialization
   notch_penalty_ = 0.0;
   notch_h_th_ = outline_.dy() / 10;
@@ -661,7 +672,6 @@ void SACoreSoftMacro::calNotchPenalty()
                                            block_->dbuToMicrons(height));
 
     if (graphics_) {
-      graphics_->addNotch(odb::Rect(0, 0, width, height), false);
       graphics_->setNotchPenalty(
           {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
     }
@@ -729,44 +739,41 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 
   auto neighbors = [&](int row1, int col1, int row2, int col2) {
-    bool bottom = true;
+    Neighbors neighbors;
     if (row1 > 0) {
       for (int i = col1; i <= col2; i++) {
         if (!grid[row1 - 1][i]) {
-          bottom = false;
+          neighbors.bottom = false;
           break;
         }
       }
     }
-    bool top = true;
     if (row2 < num_y - 1) {
       for (int i = col1; i <= col2; i++) {
         if (!grid[row2 + 1][i]) {
-          top = false;
+          neighbors.top = false;
           break;
         }
       }
     }
-    bool left = true;
     if (col1 > 0) {
       for (int i = row1; i <= row2; i++) {
         if (!grid[i][col1 - 1]) {
-          left = false;
+          neighbors.left = false;
           break;
         }
       }
     }
-    bool right = true;
     if (col2 < num_x - 1) {
       for (int i = row1; i <= row2; i++) {
         if (!grid[i][col2 + 1]) {
-          right = false;
+          neighbors.right = false;
           break;
         }
       }
     }
 
-    return top + bottom + left + right;
+    return neighbors;
   };
 
   auto valid = [&](int row1, int col1, int row2, int col2) {
@@ -790,17 +797,17 @@ void SACoreSoftMacro::calNotchPenalty()
       int end_row = start_row;
       int end_col = start_col;
 
-      int n = neighbors(start_row, start_col, end_row, end_col);
-      bool expand_rows = n > 0;
-      bool expand_cols = n > 0;
+      Neighbors n = neighbors(start_row, start_col, end_row, end_col);
+      bool expand_rows = !(n.bottom && n.top);
+      bool expand_cols = !(n.left && n.right);
 
       while (expand_rows || expand_cols) {
         if (expand_rows) {
           end_row += 1;
           if (end_row < num_y
               && valid(start_row, start_col, end_row, end_col)) {
-            int new_n = neighbors(start_row, start_col, end_row, end_col);
-            if (new_n >= n) {
+            Neighbors new_n = neighbors(start_row, start_col, end_row, end_col);
+            if (new_n.total() >= n.total()) {
               n = new_n;
             } else {
               expand_rows = false;
@@ -816,8 +823,8 @@ void SACoreSoftMacro::calNotchPenalty()
           end_col += 1;
           if (end_col < num_x
               && valid(start_row, start_col, end_row, end_col)) {
-            int new_n = neighbors(start_row, start_col, end_row, end_col);
-            if (new_n >= n) {
+            Neighbors new_n = neighbors(start_row, start_col, end_row, end_col);
+            if (new_n.total() >= n.total()) {
               n = new_n;
             } else {
               expand_cols = false;
@@ -832,27 +839,35 @@ void SACoreSoftMacro::calNotchPenalty()
 
       width = x_coords[end_col + 1] - x_coords[start_col];
       height = y_coords[end_row + 1] - y_coords[start_row];
-      if (n == 4) {
+      if (n.total() == 4) {
         notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
                                                 block_->dbuToMicrons(height));
         if (graphics_) {
           graphics_->addNotch(odb::Rect(x_coords[start_col],
                                         y_coords[start_row],
                                         x_coords[end_col + 1],
-                                        y_coords[end_row + 1]),
-                              n > 2);
+                                        y_coords[end_row + 1]));
         }
-      }
-      if (n == 3) {
-        if (width < notch_v_th_ || height < notch_h_th_) {
+      } else if (n.top && n.bottom) {
+        if (height < notch_h_th_) {
           notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
                                                   block_->dbuToMicrons(height));
           if (graphics_) {
             graphics_->addNotch(odb::Rect(x_coords[start_col],
                                           y_coords[start_row],
                                           x_coords[end_col + 1],
-                                          y_coords[end_row + 1]),
-                                n > 2);
+                                          y_coords[end_row + 1]));
+          }
+        }
+      } else if (n.left && n.right) {
+        if (width < notch_v_th_) {
+          notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
+                                                  block_->dbuToMicrons(height));
+          if (graphics_) {
+            graphics_->addNotch(odb::Rect(x_coords[start_col],
+                                          y_coords[start_row],
+                                          x_coords[end_col + 1],
+                                          y_coords[end_row + 1]));
           }
         }
       }

@@ -56,7 +56,7 @@ class MplObserver
   virtual void setOutline(const odb::Rect& outline) {}
   virtual void setGuides(const std::map<int, odb::Rect>& guides) {}
   virtual void setFences(const std::map<int, odb::Rect>& fences) {}
-  virtual void addNotch(const odb::Rect& notch, bool value) {}
+  virtual void addNotch(const odb::Rect& notch) {}
   virtual void clearNotches() {}
   virtual void setIOConstraintsMap(
       const ClusterToBoundaryRegionMap& io_cluster_to_constraint)
