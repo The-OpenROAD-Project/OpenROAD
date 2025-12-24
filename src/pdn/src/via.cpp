@@ -581,7 +581,7 @@ DbGenerateVia::DbGenerateVia(const odb::Rect& rect,
       cut_(cut),
       top_(top)
 {
-  for (uint32_t l = 0; rule_->getViaLayerRuleCount(); l++) {
+  for (uint32_t l = 0; l < rule_->getViaLayerRuleCount(); l++) {
     auto* layer_rule = rule_->getViaLayerRule(l);
     if (layer_rule->getLayer() == cut_) {
       layer_rule->getRect(cut_rect_);
