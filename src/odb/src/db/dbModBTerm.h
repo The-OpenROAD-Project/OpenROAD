@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -30,7 +31,7 @@ class _dbModBTerm : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* name_;
-  uint flags_;
+  uint32_t flags_;
   dbId<_dbModITerm> parent_moditerm_;
   dbId<_dbModule> parent_;
   dbId<_dbModNet> modnet_;

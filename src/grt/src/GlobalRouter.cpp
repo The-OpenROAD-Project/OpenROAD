@@ -1027,7 +1027,8 @@ Rudy* GlobalRouter::getRudy()
 
 bool GlobalRouter::findPinAccessPointPositions(
     const Pin& pin,
-    std::map<int, std::vector<PointPair>>& ap_positions)
+    std::map<int, std::vector<PointPair>>& ap_positions,
+    bool all_access_points)
 {
   std::vector<odb::dbAccessPoint*> access_points;
   // get APs from odb
@@ -1038,7 +1039,7 @@ bool GlobalRouter::findPinAccessPointPositions(
       access_points.insert(
           access_points.begin(), bpin_pas.begin(), bpin_pas.end());
     }
-  } else if (pin.isCorePin()) {
+  } else if (pin.isCorePin() && !all_access_points) {
     access_points = pin.getITerm()->getPrefAccessPoints();
   } else {
     // For non-core cells, DRT does not assign preferred APs.
@@ -2336,7 +2337,8 @@ void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
   if (!netIsCovered(db_net, pins_not_covered)) {
     Net* net = db_net_map_[db_net];
     for (Pin& pin : net->getPins()) {
-      if (pins_not_covered.find(pin.getName()) != std::string::npos) {
+      if (pins_not_covered.find(pin.getName()) != std::string::npos
+          && !findCoveredAccessPoint(net, pin)) {
         bool has_aps;
         odb::Point pos_on_grid;
         std::vector<RoutePt> pin_positions_on_grid
@@ -2346,6 +2348,27 @@ void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
       }
     }
   }
+}
+
+bool GlobalRouter::findCoveredAccessPoint(const Net* net, Pin& pin)
+{
+  std::map<int, std::vector<PointPair>> ap_positions;
+  if (findPinAccessPointPositions(pin, ap_positions, true)) {
+    const GRoute& segments = routes_[net->getDbNet()];
+    for (const auto& [layer, aps] : ap_positions) {
+      pin.setConnectionLayer(layer);
+      for (const auto& point_pair : aps) {
+        pin.setOnGridPosition(grid_->getPositionOnGrid(point_pair.second));
+        for (const GSegment& seg : segments) {
+          if (segmentCoversPin(seg, pin)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 void GlobalRouter::updateVias()
@@ -3962,8 +3985,8 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
         int minSpc = 0;
         for (auto rule : layer->getV54SpacingRules()) {
           if (rule->hasRange()) {
-            uint rmin;
-            uint rmax;
+            uint32_t rmin;
+            uint32_t rmax;
             rule->getRange(rmin, rmax);
             if (layer_width < rmin || layer_width > rmax) {
               continue;
@@ -4465,11 +4488,11 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
       // PARALLELRUNLENGTH
 
       if (obstruct_layer->hasTwoWidthsSpacingRules()) {
-        std::vector<std::vector<odb::uint>> spacing_table;
+        std::vector<std::vector<uint32_t>> spacing_table;
         obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
         if (!spacing_table.empty()) {
-          std::vector<odb::uint> last_row = spacing_table.back();
-          odb::uint last_value = last_row.back();
+          std::vector<uint32_t> last_row = spacing_table.back();
+          uint32_t last_value = last_row.back();
           if (last_value > spacing_extension) {
             spacing_extension = last_value;
           }
@@ -4726,7 +4749,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
   }
 
   for (odb::dbNet* db_net : nets) {
-    odb::uint wire_cnt = 0, via_cnt = 0;
+    uint32_t wire_cnt = 0, via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0) {
       continue;

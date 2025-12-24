@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 #include "geo.h"
@@ -30,9 +31,9 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   min_length_ = std::max(min_area / width_ - width_, 0);
 
   // Parallel run spacing
-  std::vector<std::vector<uint>> spacing_table;
-  std::vector<uint> widths;
-  std::vector<uint> lengths;
+  std::vector<std::vector<uint32_t>> spacing_table;
+  std::vector<uint32_t> widths;
+  std::vector<uint32_t> lengths;
   tech_layer->getV55SpacingTable(spacing_table);
   tech_layer->getV55SpacingWidthsAndLengths(widths, lengths);
 
@@ -65,7 +66,7 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   auto spacing_rules = tech_layer->getV54SpacingRules();
   for (auto rule : spacing_rules) {
     const int spacing = static_cast<int>(std::round(rule->getSpacing()));
-    uint eol_width, eol_within, parallel_space, parallel_within;
+    uint32_t eol_width, eol_within, parallel_space, parallel_within;
     bool parallel_edge, two_edges;
     if (rule->getEol(eol_width,
                      eol_within,

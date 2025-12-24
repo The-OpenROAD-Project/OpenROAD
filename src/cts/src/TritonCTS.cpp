@@ -1627,7 +1627,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   topClockInstInputPin->connect(topClockNet);
   topClockNet->setSigType(odb::dbSigType::CLOCK);
 
-  std::map<int, odb::uint> fanoutcount;
+  std::map<int, int> fanoutcount;
 
   // create subNets
   numClkNets_ = 0;
@@ -1875,8 +1875,8 @@ int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
   } else if (!layer->getV54SpacingRules().empty()) {
     for (auto rule : layer->getV54SpacingRules()) {
       if (rule->hasRange()) {
-        uint rmin;
-        uint rmax;
+        uint32_t rmin;
+        uint32_t rmax;
         rule->getRange(rmin, rmax);
         if (width1 < rmin || width2 > rmax) {
           continue;

@@ -202,7 +202,7 @@ dbTechLayerWrongDirSpacingRule* dbTechLayerWrongDirSpacingRule::create(
 dbTechLayerWrongDirSpacingRule*
 dbTechLayerWrongDirSpacingRule::getTechLayerWrongDirSpacingRule(
     dbTechLayer* inly,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerWrongDirSpacingRule*)

@@ -402,9 +402,9 @@ bool dbTechLayerCornerSpacingRule::isCornerToCorner() const
 }
 
 // User Code Begin dbTechLayerCornerSpacingRulePublicMethods
-void dbTechLayerCornerSpacingRule::addSpacing(uint width,
-                                              uint spacing1,
-                                              uint spacing2)
+void dbTechLayerCornerSpacingRule::addSpacing(uint32_t width,
+                                              uint32_t spacing1,
+                                              uint32_t spacing2)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
   obj->width_tbl_.push_back(width);
@@ -428,7 +428,7 @@ void dbTechLayerCornerSpacingRule::setType(CornerType _type)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->flags_.corner_type = (uint) _type;
+  obj->flags_.corner_type = (uint32_t) _type;
 }
 
 dbTechLayerCornerSpacingRule::CornerType dbTechLayerCornerSpacingRule::getType()
@@ -450,7 +450,7 @@ dbTechLayerCornerSpacingRule* dbTechLayerCornerSpacingRule::create(
 
 dbTechLayerCornerSpacingRule*
 dbTechLayerCornerSpacingRule::getTechLayerCornerSpacingRule(dbTechLayer* inly,
-                                                            uint dbid)
+                                                            uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCornerSpacingRule*)

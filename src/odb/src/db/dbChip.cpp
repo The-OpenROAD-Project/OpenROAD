@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChip.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <string>
 #include <unordered_map>
@@ -670,7 +671,7 @@ dbChip* dbChip::create(dbDatabase* db_,
   }
   _dbChip* chip = db->chip_tbl_->create();
   chip->name_ = safe_strdup(name.c_str());
-  chip->type_ = (uint) type;
+  chip->type_ = (uint32_t) type;
   if (db->chip_ == 0) {
     db->chip_ = chip->getOID();
   }
@@ -684,7 +685,7 @@ dbChip* dbChip::create(dbDatabase* db_,
   return (dbChip*) chip;
 }
 
-dbChip* dbChip::getChip(dbDatabase* db_, uint dbid_)
+dbChip* dbChip::getChip(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbChip*) db->chip_tbl_->getPtr(dbid_);

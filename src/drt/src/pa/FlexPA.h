@@ -77,6 +77,8 @@ using frInstLocationSet = std::set<frInst*, frInstLocationComp>;
 class FlexPinAccessPattern;
 class FlexDPNode;
 class AbstractPAGraphics;
+class frViaDef;
+class frInstTerm;
 
 class FlexPA
 {
@@ -109,6 +111,7 @@ class FlexPA
 
   void deleteInst(frInst* inst);
   void addDirtyInst(frInst* inst);
+  void addAvoidViaDef(const frViaDef* via_def);
   void removeDirtyInst(frInst* inst);
   void updateDirtyInsts();
   void removeFromInstsSet(frInst* inst);
@@ -139,6 +142,7 @@ class FlexPA
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
+  std::set<const frViaDef*> avoid_via_defs_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;

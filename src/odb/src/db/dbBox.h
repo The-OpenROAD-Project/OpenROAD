@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -23,36 +24,36 @@ class dbOStream;
 struct _dbBoxFlagsBackwardCompatability
 {
   dbBoxOwner::Value owner_type : 4;
-  uint visited : 1;
-  uint mark : 1;
-  uint octilinear : 1;
-  uint is_tech_via : 1;
-  uint is_block_via : 1;
-  uint layer_id : 8;
-  uint via_id : 15;
+  uint32_t visited : 1;
+  uint32_t mark : 1;
+  uint32_t octilinear : 1;
+  uint32_t is_tech_via : 1;
+  uint32_t is_block_via : 1;
+  uint32_t layer_id : 8;
+  uint32_t via_id : 15;
 };
 
 struct _dbBoxFlagsWithoutMask
 {
   dbBoxOwner::Value owner_type : 4;
-  uint visited : 1;
-  uint octilinear : 1;
-  uint is_tech_via : 1;
-  uint is_block_via : 1;
-  uint layer_id : 9;
-  uint via_id : 15;
+  uint32_t visited : 1;
+  uint32_t octilinear : 1;
+  uint32_t is_tech_via : 1;
+  uint32_t is_block_via : 1;
+  uint32_t layer_id : 9;
+  uint32_t via_id : 15;
 };
 
 struct _dbBoxFlags
 {
   dbBoxOwner::Value owner_type : 4;
-  uint visited : 1;
-  uint octilinear : 1;
-  uint is_tech_via : 1;
-  uint is_block_via : 1;
-  uint layer_id : 9;
-  uint via_id : 13;
-  uint layer_mask : 2;
+  uint32_t visited : 1;
+  uint32_t octilinear : 1;
+  uint32_t is_tech_via : 1;
+  uint32_t is_block_via : 1;
+  uint32_t layer_id : 9;
+  uint32_t via_id : 13;
+  uint32_t layer_mask : 2;
 };
 
 static_assert(sizeof(_dbBoxFlagsBackwardCompatability) == 4,
@@ -97,7 +98,7 @@ class _dbBox : public _dbObject
   // PERSISTANT-MEMBERS
   _dbBoxFlags flags_;
   dbBoxShape shape_ = {Rect()};
-  uint owner_;
+  uint32_t owner_;
   dbId<_dbBox> next_box_;
   int design_rule_width_;
 };

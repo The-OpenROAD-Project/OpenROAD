@@ -2,11 +2,12 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
+#include <cstdint>
+
 #include "{{itr.name}}.h"
 #include "{{itr.parentObject}}.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 {% for include in itr.includes %}
   #include "{{include}}"
 {% endfor %}
@@ -38,15 +39,15 @@ void {{itr.name}}::reverse(dbObject* parent)
   //User Code End reverse
 }
 
-uint {{itr.name}}::sequential() const
+uint32_t {{itr.name}}::sequential() const
 {
   return {{itr.sequential}};
 }
 
-uint {{itr.name}}::size(dbObject* parent) const
+uint32_t {{itr.name}}::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = {{itr.name}}::begin(parent); id != {{itr.name}}::end(parent);
        id = {{itr.name}}::next(id)) {
@@ -56,13 +57,13 @@ uint {{itr.name}}::size(dbObject* parent) const
   return cnt;
 }
 
-uint {{itr.name}}::begin(dbObject* parent) const
+uint32_t {{itr.name}}::begin(dbObject* parent) const
 {
   //User Code Begin begin
   //User Code End begin
 }
 
-uint {{itr.name}}::end(dbObject* {{ "parent" if itr.customEnd else "/* unused: parent */" }}) const
+uint32_t {{itr.name}}::end(dbObject* {{ "parent" if itr.customEnd else "/* unused: parent */" }}) const
 {
 {%if itr.customEnd %}
   //User Code Begin end
@@ -72,13 +73,13 @@ uint {{itr.name}}::end(dbObject* {{ "parent" if itr.customEnd else "/* unused: p
 {% endif %}
 }
 
-uint {{itr.name}}::next(uint id, ...) const
+uint32_t {{itr.name}}::next(uint32_t id, ...) const
 {
   //User Code Begin next
   //User Code End next
 }
 
-dbObject* {{itr.name}}::getObject(uint id, ...)
+dbObject* {{itr.name}}::getObject(uint32_t id, ...)
 {
   return {{itr.tableName}}_->getPtr(id);
 }
