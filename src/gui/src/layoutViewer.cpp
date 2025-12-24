@@ -1476,7 +1476,7 @@ LayoutViewer::getRowRects(odb::dbBlock* block, const odb::Rect& bounds)
     bool w_visible = w >= min_resolution_site;
     bool h_visible = h >= min_resolution_row;
 
-    switch (row->getOrient()) {
+    switch (row->getOrient().getValue()) {
       case dbOrientType::R0:
       case dbOrientType::R180:
       case dbOrientType::MY:

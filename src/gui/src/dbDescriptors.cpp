@@ -5493,7 +5493,7 @@ void DbBoxDescriptor::populateProperties(odb::dbBox* box, Properties& props)
 {
   auto* gui = Gui::get();
 
-  switch (box->getOwnerType()) {
+  switch (box->getOwnerType().getValue()) {
     case odb::dbBoxOwner::BLOCK:
       props.push_back(
           {"Owner", gui->makeSelected((odb::dbBlock*) box->getBoxOwner())});

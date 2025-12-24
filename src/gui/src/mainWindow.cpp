@@ -951,7 +951,7 @@ std::string MainWindow::addToolbarButton(const std::string& name,
 
 void MainWindow::removeToolbarButton(const std::string& name)
 {
-  if (!buttons_.contains(name)b) {
+  if (!buttons_.contains(name)) {
     return;
   }
 

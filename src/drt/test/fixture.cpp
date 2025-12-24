@@ -754,6 +754,8 @@ frViaDef* Fixture::makeViaDef(const char* name,
       case 1:
         via_p->addLayer2Fig(std::move(pinFig));
         break;
+      default:
+        logger->error(DRT, 624, "Unexpected layer diff {}", l - layer_num);
     }
   }
 

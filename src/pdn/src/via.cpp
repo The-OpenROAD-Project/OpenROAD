@@ -51,7 +51,7 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule,
       swap(layer);
       break;
     case odb::dbTechLayerCutEnclosureRule::EOL:
-      switch (direction) {
+      switch (direction.getValue()) {
         case odb::dbTechLayerDir::HORIZONTAL:
           x_ = rule->getFirstOverhang();
           y_ = rule->getSecondOverhang();

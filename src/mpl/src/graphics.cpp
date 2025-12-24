@@ -467,7 +467,7 @@ void Graphics::drawObjects(gui::Painter& painter)
                        bbox.yCenter(),
                        gui::Painter::kCenter,
                        std::to_string(i++));
-    switch (macro.getOrientation()) {
+    switch (macro.getOrientation().getValue()) {
       case odb::dbOrientType::R0: {
         painter.drawLine(bbox.xMin(),
                          bbox.yMin() + 0.1 * height,
