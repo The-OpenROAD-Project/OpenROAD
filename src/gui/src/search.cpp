@@ -76,6 +76,12 @@ void Search::inDbBPinDestroy(odb::dbBPin* pin)
   clearShapes();
 }
 
+void Search::inDbBPinPlacementStatusBefore(odb::dbBPin* pin,
+                                           const odb::dbPlacementStatus& status)
+{
+  clearShapes();
+}
+
 void Search::inDbFillCreate(odb::dbFill* fill)
 {
   clearFills();
