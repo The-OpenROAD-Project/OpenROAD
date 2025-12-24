@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-
+# Environment variables
+#   BAZEL      : the bazel binary to invoke (default: baselisk)
+#   BAZEL_OPTS : the preferred bazel options used
 set -eu
 
 # Which bazel and bant to use. If unset, defaults are used.
@@ -13,14 +15,16 @@ BANT="$($(dirname "$0")/get-bant-path.sh)"
 # Important to run with --remote_download_outputs=all to make sure generated
 # files are actually visible locally in case a remote cache (that includes
 # --disk_cache) is used ( https://github.com/hzeller/bazel-gen-file-issue )
-BAZEL_OPTS="-c opt --remote_download_outputs=all"
+BAZEL_OPTS="${BAZEL_OPTS:--c opt --remote_download_outputs=all}"
 
 # Tickle some build targets to fetch all dependencies and generate files,
 # so that they can be seen by the users of the compilation db.
-# Right now, comile everything (which should not be too taxing with the
-# bazel cache), but it could be made more specific to only trigger specific
-# targets that are sufficient to get and regenerate everything.
-"${BAZEL}" build -k ${BAZEL_OPTS} src/...
+# (Note, we need to limit targets to everything below //src, otherwise
+# it requires docker)
+"${BAZEL}" fetch //src/...
+"${BAZEL}" build -k ${BAZEL_OPTS} \
+  @openmp//:omp_header \
+  $("${BANT}" list-targets -g "genrule|tcl_encode|tcl_wrap_cc" -g "//src" | awk '{print $3}')
 
 # Create compilation DB. Command 'compilation-db' would create a huge *.json file,
 # but compile_flags.txt is perfectly sufficient and easier for tools to use as
