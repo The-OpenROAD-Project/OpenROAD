@@ -21,6 +21,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <set>
 #include <string>
@@ -304,7 +305,7 @@ void dbModNet::dump() const
   logger->report("--------------------------------------------------");
 }
 
-dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
+dbModNet* dbModNet::getModNet(dbBlock* block, uint32_t id)
 {
   _dbBlock* block_ = (_dbBlock*) block;
   _dbModNet* ret = block_->modnet_tbl_->getPtr(id);
@@ -383,8 +384,8 @@ void dbModNet::destroy(dbModNet* mod_net)
     cb->inDbModNetDestroy(mod_net);
   }
 
-  uint prev = _modnet->prev_entry_;
-  uint next = _modnet->next_entry_;
+  uint32_t prev = _modnet->prev_entry_;
+  uint32_t next = _modnet->next_entry_;
   if (prev == 0) {
     module->modnets_ = next;
   } else {

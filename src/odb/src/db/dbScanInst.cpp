@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbScanInst.h"
 
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -115,7 +116,7 @@ const std::string& dbScanInst::getScanClock() const
 void dbScanInst::setClockEdge(ClockEdge clock_edge)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
-  scan_inst->clock_edge_ = static_cast<uint>(clock_edge);
+  scan_inst->clock_edge_ = static_cast<uint32_t>(clock_edge);
 }
 
 dbScanInst::ClockEdge dbScanInst::getClockEdge() const
@@ -136,13 +137,13 @@ std::string dbScanInst::getClockEdgeString() const
   return "Unknown";
 }
 
-void dbScanInst::setBits(uint bits)
+void dbScanInst::setBits(uint32_t bits)
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   scan_inst->bits_ = bits;
 }
 
-uint dbScanInst::getBits() const
+uint32_t dbScanInst::getBits() const
 {
   _dbScanInst* scan_inst = (_dbScanInst*) this;
   return scan_inst->bits_;
@@ -245,7 +246,7 @@ dbScanInst* dbScanInst::create(dbScanList* scan_list, dbInst* inst)
 {
   _dbBlock* block = (_dbBlock*) ((_dbInst*) inst)->getOwner();
   _dbScanInst* scan_inst = (_dbScanInst*) block->scan_inst_tbl_->create();
-  odb::uint inst_id = ((_dbInst*) inst)->getId();
+  uint32_t inst_id = ((_dbInst*) inst)->getId();
   scan_inst->inst_ = (dbId<dbInst>) inst_id;
   block->inst_scan_inst_map_[(dbId<_dbInst>) inst_id] = scan_inst->getId();
   return (dbScanInst*) scan_inst;

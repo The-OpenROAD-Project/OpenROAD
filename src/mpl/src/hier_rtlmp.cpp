@@ -1424,15 +1424,15 @@ void HierRTLMP::placeChildren(Cluster* parent, bool ignore_std_cell_area)
       }
     }
 
-    fence = fence.intersect(outline);
-    guide = guide.intersect(outline);
+    fence.intersection(outline, fence);
+    guide.intersection(outline, guide);
 
-    if (!fence.isInverted()) {
+    if (fence.area() > 0) {
       // current macro id is macros.size() - 1
       fence.moveDelta(-outline.xMin(), -outline.yMin());
       fences[macros.size() - 1] = fence;
     }
-    if (!guide.isInverted()) {
+    if (guide.area() > 0) {
       // current macro id is macros.size() - 1
       guide.moveDelta(-outline.xMin(), -outline.yMin());
       guides[macros.size() - 1] = guide;
@@ -2293,12 +2293,12 @@ void HierRTLMP::computeFencesAndGuides(
 {
   for (int i = 0; i < hard_macros.size(); ++i) {
     if (fences_.find(hard_macros[i]->getName()) != fences_.end()) {
-      fences[i] = fences_[hard_macros[i]->getName()].intersect(outline);
+      fences_[hard_macros[i]->getName()].intersection(outline, fences[i]);
       fences[i].moveDelta(-outline.xMin(), -outline.yMin());
     }
     auto itr = guides_.find(hard_macros[i]->getInst());
     if (itr != guides_.end()) {
-      guides[i] = itr->second.intersect(outline);
+      itr->second.intersection(outline, guides[i]);
       guides[i].moveDelta(-outline.xMin(), -outline.yMin());
     }
   }

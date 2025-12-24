@@ -2521,15 +2521,15 @@ dbSet<dbTechNonDefaultRule> dbBlock::getNonDefaultRules()
   return dbSet<dbTechNonDefaultRule>(block, block->non_default_rule_tbl_);
 }
 
-void dbBlock::copyExtDb(uint fr,
-                        uint to,
-                        uint extDbCnt,
+void dbBlock::copyExtDb(uint32_t fr,
+                        uint32_t to,
+                        uint32_t extDbCnt,
                         double resFactor,
                         double ccFactor,
                         double gndcFactor)
 {
   _dbBlock* block = (_dbBlock*) this;
-  uint j;
+  uint32_t j;
   if (resFactor != 1.0) {
     for (j = 1; j < block->r_val_tbl_->size(); j += extDbCnt) {
       (*block->r_val_tbl_)[j + to] = (*block->r_val_tbl_)[j + fr] * resFactor;
@@ -2567,7 +2567,7 @@ bool dbBlock::adjustCC(float adjFactor,
   bool adjusted = false;
   _dbBlock* block = (_dbBlock*) this;
   std::vector<dbCCSeg*> adjustedCC;
-  const uint adjustOrder = block->currentCcAdjOrder_ + 1;
+  const uint32_t adjustOrder = block->currentCcAdjOrder_ + 1;
   for (dbNet* net : nets) {
     adjusted |= net->adjustCC(
         adjustOrder, adjFactor, ccThreshHold, adjustedCC, halonets);
@@ -2611,7 +2611,7 @@ void dbBlock::undoAdjustedCC(std::vector<dbNet*>& nets,
 void dbBlock::adjustRC(double resFactor, double ccFactor, double gndcFactor)
 {
   _dbBlock* block = (_dbBlock*) this;
-  uint j;
+  uint32_t j;
   if (resFactor != 1.0) {
     for (j = 1; j < block->r_val_tbl_->size(); j++) {
       (*block->r_val_tbl_)[j] *= resFactor;
@@ -2801,7 +2801,7 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
     block->corner_name_list_ = strdup((char*) name_list);
   }
 }
-dbBlock* dbBlock::getExtCornerBlock(uint corner)
+dbBlock* dbBlock::getExtCornerBlock(uint32_t corner)
 {
   dbBlock* block = findExtCornerBlock(corner);
   if (!block) {
@@ -2810,14 +2810,14 @@ dbBlock* dbBlock::getExtCornerBlock(uint corner)
   return block;
 }
 
-dbBlock* dbBlock::findExtCornerBlock(uint corner)
+dbBlock* dbBlock::findExtCornerBlock(uint32_t corner)
 {
   char cornerName[64];
   sprintf(cornerName, "extCornerBlock__%d", corner);
   return findChild(cornerName);
 }
 
-dbBlock* dbBlock::createExtCornerBlock(uint corner)
+dbBlock* dbBlock::createExtCornerBlock(uint32_t corner)
 {
   char cornerName[64];
   sprintf(cornerName, "extCornerBlock__%d", corner);
@@ -2948,13 +2948,13 @@ dbBlock* dbBlock::create(dbBlock* parent_,
   return (dbBlock*) child;
 }
 
-dbBlock* dbBlock::getBlock(dbChip* chip_, uint dbid_)
+dbBlock* dbBlock::getBlock(dbChip* chip_, uint32_t dbid_)
 {
   _dbChip* chip = (_dbChip*) chip_;
   return (dbBlock*) chip->block_tbl_->getPtr(dbid_);
 }
 
-dbBlock* dbBlock::getBlock(dbBlock* block_, uint dbid_)
+dbBlock* dbBlock::getBlock(dbBlock* block_, uint32_t dbid_)
 {
   _dbChip* chip = (_dbChip*) block_->getImpl()->getOwner();
   return (dbBlock*) chip->block_tbl_->getPtr(dbid_);
@@ -2984,7 +2984,7 @@ void dbBlock::destroy(dbBlock* block_)
 
 void unlink_child_from_parent(_dbBlock* child, _dbBlock* parent)
 {
-  uint id = child->getOID();
+  uint32_t id = child->getOID();
 
   auto& children = parent->children_;
   for (auto citr = children.begin(); citr != children.end(); ++citr) {
@@ -3054,7 +3054,7 @@ void dbBlock::destroyCNs(std::vector<dbNet*>& nets, bool cleanExtid)
 void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
 {
   std::vector<dbNet*> cnets;
-  uint jj;
+  uint32_t jj;
   for (jj = 0; jj < nets.size(); jj++) {
     dbNet* net = dbNet::getNet(this, nets[jj]->getId());
     cnets.push_back(net);
@@ -3081,7 +3081,7 @@ void dbBlock::destroyParasitics(std::vector<dbNet*>& nets)
 void dbBlock::getCcHaloNets(std::vector<dbNet*>& changedNets,
                             std::vector<dbNet*>& ccHaloNets)
 {
-  uint jj;
+  uint32_t jj;
   dbNet* ccNet;
   for (jj = 0; jj < changedNets.size(); jj++) {
     changedNets[jj]->setMark(true);
@@ -3277,7 +3277,7 @@ void dbBlock::setDrivingItermsforNets()
   }
 }
 
-void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
+void dbBlock::preExttreeMergeRC(double max_cap, uint32_t corner)
 {
   if (!getExtControl()->_exttreePreMerg) {
     return;
@@ -3304,7 +3304,7 @@ bool dbBlock::designIsRouted(bool verbose)
 
     const int pin_count = net->getBTermCount() + net->getITerms().size();
 
-    odb::uint wire_cnt = 0, via_cnt = 0;
+    uint32_t wire_cnt = 0, via_cnt = 0;
     net->getWireCount(wire_cnt, via_cnt);
     bool has_wires = wire_cnt != 0 || via_cnt != 0;
 
@@ -3799,7 +3799,7 @@ std::string _dbBlock::makeNewName(
     dbModInst* parent,
     const char* base_name,
     const dbNameUniquifyType& uniquify,
-    uint& unique_index,
+    uint32_t& unique_index,
     const std::function<bool(const char*)>& exists)
 {
   dbBlock* block = (dbBlock*) this;

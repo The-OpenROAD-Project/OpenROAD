@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 #include "odb/dbObject.h"
@@ -12,10 +13,11 @@
 #include "odb/dbTransform.h"
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
+
 namespace utl {
 class Logger;
 }
+
 namespace odb {
 
 class _dbWire;
@@ -211,12 +213,12 @@ class dbShape
   ///
   /// Get the width (xMax-xMin) of the box.
   ///
-  uint getDX() const;
+  uint32_t getDX() const;
 
   ///
   /// Get the height (yMax-yMin) of the box.
   ///
-  uint getDY() const;
+  uint32_t getDY() const;
 
   ///
   /// Get the length of the box
@@ -580,12 +582,12 @@ inline Rect dbShape::getBox() const
   return rect_;
 }
 
-inline uint dbShape::getDX() const
+inline uint32_t dbShape::getDX() const
 {
   return rect_.dx();
 }
 
-inline uint dbShape::getDY() const
+inline uint32_t dbShape::getDY() const
 {
   return rect_.dy();
 }

@@ -33,7 +33,6 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -234,7 +233,7 @@ _dbMaster::~_dbMaster()
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
 {
-  uint* bit_field = (uint*) &master.flags_;
+  uint32_t* bit_field = (uint32_t*) &master.flags_;
   stream << *bit_field;
   stream << master.x_;
   stream << master.y_;
@@ -263,7 +262,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
 dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
 {
   _dbDatabase* db = master.getImpl()->getDatabase();
-  uint* bit_field = (uint*) &master.flags_;
+  uint32_t* bit_field = (uint32_t*) &master.flags_;
   stream >> *bit_field;
   stream >> master.x_;
   stream >> master.y_;
@@ -370,25 +369,25 @@ void dbMaster::staSetCell(void* cell)
   master->sta_cell_ = cell;
 }
 
-uint dbMaster::getWidth() const
+uint32_t dbMaster::getWidth() const
 {
   _dbMaster* master = (_dbMaster*) this;
   return master->width_;
 }
 
-void dbMaster::setWidth(uint w)
+void dbMaster::setWidth(uint32_t w)
 {
   _dbMaster* master = (_dbMaster*) this;
   master->width_ = w;
 }
 
-uint dbMaster::getHeight() const
+uint32_t dbMaster::getHeight() const
 {
   _dbMaster* master = (_dbMaster*) this;
   return master->height_;
 }
 
-void dbMaster::setHeight(uint h)
+void dbMaster::setHeight(uint32_t h)
 {
   _dbMaster* master = (_dbMaster*) this;
   master->height_ = h;
@@ -491,7 +490,7 @@ dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
     return mterm;
   }
 
-  uint ii = 0;
+  uint32_t ii = 0;
   std::string ttname(name);
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
@@ -626,13 +625,13 @@ bool dbMaster::isSequential()
   _dbMaster* master = (_dbMaster*) this;
   return master->flags_.sequential;
 }
-void dbMaster::setMark(uint mark)
+void dbMaster::setMark(uint32_t mark)
 {
   _dbMaster* master = (_dbMaster*) this;
   master->flags_.mark = mark;
 }
 
-uint dbMaster::isMarked()
+uint32_t dbMaster::isMarked()
 {
   _dbMaster* master = (_dbMaster*) this;
   return master->flags_.mark;
@@ -715,7 +714,7 @@ void dbMaster::destroy(dbMaster* master)
   lib->master_tbl_->destroy(master_impl);
 }
 
-dbMaster* dbMaster::getMaster(dbLib* lib_, uint dbid_)
+dbMaster* dbMaster::getMaster(dbLib* lib_, uint32_t dbid_)
 {
   _dbLib* lib = (_dbLib*) lib_;
   return (dbMaster*) lib->master_tbl_->getPtr(dbid_);

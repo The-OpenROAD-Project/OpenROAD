@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <map>
@@ -136,7 +137,7 @@ void definSNet::rect(const char* layer_name,
                      int x2,
                      int y2,
                      const char* type,
-                     uint mask)
+                     uint32_t mask)
 {
   if (_swire == nullptr) {
     return;
@@ -248,7 +249,7 @@ void definSNet::pathShape(const char* shape)
   _wire_shape_type = dbWireShapeType(shape);
 }
 
-void definSNet::pathPoint(int x, int y, int ext, uint mask)
+void definSNet::pathPoint(int x, int y, int ext, uint32_t mask)
 {
   if ((_skip_shields && (_wire_type == dbWireType::SHIELD))
       || (_skip_block_wires && (_wire_shape_type == dbWireShapeType::BLOCKWIRE))
@@ -288,7 +289,7 @@ void definSNet::pathPoint(int x, int y, int ext, uint mask)
   }
 }
 
-void definSNet::pathPoint(int x, int y, uint mask)
+void definSNet::pathPoint(int x, int y, uint32_t mask)
 {
   if ((_skip_shields && (_wire_type == dbWireType::SHIELD))
       || (_skip_block_wires && (_wire_shape_type == dbWireShapeType::BLOCKWIRE))
@@ -328,9 +329,9 @@ void definSNet::pathPoint(int x, int y, uint mask)
 }
 
 void definSNet::pathVia(const char* via_name,
-                        uint bottom_mask,
-                        uint cut_mask,
-                        uint top_mask)
+                        uint32_t bottom_mask,
+                        uint32_t cut_mask,
+                        uint32_t top_mask)
 {
   if ((_skip_shields && (_wire_type == dbWireType::SHIELD))
       || (_skip_block_wires && (_wire_shape_type == dbWireShapeType::BLOCKWIRE))

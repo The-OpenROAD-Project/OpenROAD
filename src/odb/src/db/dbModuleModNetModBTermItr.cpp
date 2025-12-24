@@ -4,12 +4,13 @@
 // Generator Code Begin Cpp
 #include "dbModuleModNetModBTermItr.h"
 
+#include <cstdint>
+
 #include "dbModBTerm.h"
 #include "dbModNet.h"
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -33,15 +34,15 @@ void dbModuleModNetModBTermItr::reverse(dbObject* parent)
 {
 }
 
-uint dbModuleModNetModBTermItr::sequential() const
+uint32_t dbModuleModNetModBTermItr::sequential() const
 {
   return 0;
 }
 
-uint dbModuleModNetModBTermItr::size(dbObject* parent) const
+uint32_t dbModuleModNetModBTermItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbModuleModNetModBTermItr::begin(parent);
        id != dbModuleModNetModBTermItr::end(parent);
@@ -52,7 +53,7 @@ uint dbModuleModNetModBTermItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbModuleModNetModBTermItr::begin(dbObject* parent) const
+uint32_t dbModuleModNetModBTermItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModNet* mod_net = (_dbModNet*) parent;
@@ -60,12 +61,12 @@ uint dbModuleModNetModBTermItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbModuleModNetModBTermItr::end(dbObject* /* unused: parent */) const
+uint32_t dbModuleModNetModBTermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModuleModNetModBTermItr::next(uint id, ...) const
+uint32_t dbModuleModNetModBTermItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbModBTerm* _modbterm = modbterm_tbl_->getPtr(id);
@@ -73,7 +74,7 @@ uint dbModuleModNetModBTermItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbModuleModNetModBTermItr::getObject(uint id, ...)
+dbObject* dbModuleModNetModBTermItr::getObject(uint32_t id, ...)
 {
   return modbterm_tbl_->getPtr(id);
 }

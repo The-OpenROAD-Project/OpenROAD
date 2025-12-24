@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbModuleBusPortModBTermItr.h"
 #include "dbVector.h"
@@ -34,7 +35,7 @@ class _dbBusPort : public _dbObject
   int size() { return abs(from_ - to_) + 1; }
   // User Code End Methods
 
-  uint flags_;
+  uint32_t flags_;
   int from_;
   int to_;
   dbId<_dbModBTerm> port_;

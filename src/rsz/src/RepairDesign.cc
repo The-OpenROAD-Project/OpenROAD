@@ -1177,6 +1177,8 @@ void RepairDesign::repairNet(Net* net,
     }
 
     if (check_cap && !resizer_->isTristateDriver(drvr_pin)) {
+      // Check that the max cap limit specified is within the bounds of reason.
+      pre_checks_->checkCapLimit(drvr_pin);
       if (needRepairCap(drvr_pin, cap_violations, max_cap, corner)) {
         repair_cap = true;
       }

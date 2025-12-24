@@ -12,13 +12,13 @@
     },
     {
       "name": "owner_type",
-      "type": "uint", 
+      "type": "uint32_t",
       "bits": 8,
       "flags": ["private"]
     },
     {
       "name": "name_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": ["private", "no-destruct"]
     },
     {
@@ -28,7 +28,7 @@
     },
     {
       "name": "owner_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "flags": ["private", "no-cmp"]
     },

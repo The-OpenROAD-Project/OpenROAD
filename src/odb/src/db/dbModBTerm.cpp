@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbModBTerm.h"
 
+#include <cstdint>
 #include <cstdlib>
 
 #include "dbBlock.h"
@@ -22,7 +23,6 @@
 
 #include "dbCommon.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -238,13 +238,13 @@ struct dbModBTermFlags_str
 {
   dbIoType::Value iotype : 4;
   dbSigType::Value sigtype : 4;
-  uint spare_bits : 24;
+  uint32_t spare_bits : 24;
 };
 
 union dbModBTermFlags
 {
   struct dbModBTermFlags_str flags;
-  uint uint_val;
+  uint32_t uint_val;
 };
 
 void dbModBTerm::setSigType(const dbSigType& type)
@@ -467,7 +467,7 @@ void dbModBTerm::setBusPort(dbBusPort* bus_port)
   _modbterm->busPort_ = bus_port->getId();
 }
 
-dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint dbid)
+dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint32_t dbid)
 {
   _dbBlock* owner = (_dbBlock*) block;
   return (dbModBTerm*) (owner->modbterm_tbl_->getPtr(dbid));
@@ -500,8 +500,8 @@ void dbModBTerm::destroy(dbModBTerm* val)
     callback->inDbModBTermDestroy(val);
   }
 
-  uint prev = _modbterm->prev_entry_;
-  uint next = _modbterm->next_entry_;
+  uint32_t prev = _modbterm->prev_entry_;
+  uint32_t next = _modbterm->next_entry_;
   if (prev == 0) {
     // head of list
     module->modbterms_ = next;

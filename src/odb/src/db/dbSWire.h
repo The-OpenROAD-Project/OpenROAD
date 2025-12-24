@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,7 +19,7 @@ class _dbSBox;
 struct _dbSWireFlags
 {
   dbWireType::Value wire_type : 6;
-  uint spare_bits : 26;
+  uint32_t spare_bits : 26;
 };
 
 class _dbSWire : public _dbObject
@@ -57,7 +58,7 @@ class _dbSWire : public _dbObject
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbSWire& wire)
 {
-  uint* bit_field = (uint*) &wire.flags_;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream << *bit_field;
   stream << wire.net_;
   stream << wire.shield_;
@@ -69,7 +70,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbSWire& wire)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbSWire& wire)
 {
-  uint* bit_field = (uint*) &wire.flags_;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream >> *bit_field;
   stream >> wire.net_;
   stream >> wire.shield_;

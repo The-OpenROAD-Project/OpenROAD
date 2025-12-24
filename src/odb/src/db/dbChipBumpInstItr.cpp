@@ -4,11 +4,12 @@
 // Generator Code Begin Cpp
 #include "dbChipBumpInstItr.h"
 
+#include <cstdint>
+
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -32,12 +33,12 @@ void dbChipBumpInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbChipRegionInst* chip_region_inst = (_dbChipRegionInst*) parent;
-  uint id = chip_region_inst->chip_bump_insts_;
-  uint list = 0;
+  uint32_t id = chip_region_inst->chip_bump_insts_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbChipBumpInst* chip_bump_inst = chip_bump_inst_tbl_->getPtr(id);
-    uint n = chip_bump_inst->region_next_;
+    uint32_t n = chip_bump_inst->region_next_;
     chip_bump_inst->region_next_ = list;
     list = id;
     id = n;
@@ -46,15 +47,15 @@ void dbChipBumpInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipBumpInstItr::sequential() const
+uint32_t dbChipBumpInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipBumpInstItr::size(dbObject* parent) const
+uint32_t dbChipBumpInstItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbChipBumpInstItr::begin(parent);
        id != dbChipBumpInstItr::end(parent);
@@ -65,7 +66,7 @@ uint dbChipBumpInstItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbChipBumpInstItr::begin(dbObject* parent) const
+uint32_t dbChipBumpInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChipRegionInst* chip_region_inst = (_dbChipRegionInst*) parent;
@@ -73,12 +74,12 @@ uint dbChipBumpInstItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbChipBumpInstItr::end(dbObject* /* unused: parent */) const
+uint32_t dbChipBumpInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipBumpInstItr::next(uint id, ...) const
+uint32_t dbChipBumpInstItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbChipBumpInst* chip_bump_inst = chip_bump_inst_tbl_->getPtr(id);
@@ -86,7 +87,7 @@ uint dbChipBumpInstItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbChipBumpInstItr::getObject(uint id, ...)
+dbObject* dbChipBumpInstItr::getObject(uint32_t id, ...)
 {
   return chip_bump_inst_tbl_->getPtr(id);
 }
