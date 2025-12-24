@@ -950,17 +950,67 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> *block.inst_tbl_;
     stream >> *block.module_tbl_;
   }
+
+  if (db->isSchema(kSchemaDbRemoveHash)) {
+    // Construct dbinst_hash_
+    dbSet<dbInst> insts((dbBlock*) &block, block.inst_tbl_);
+    for (dbInst* obj : insts) {
+      _dbInst* _obj = (_dbInst*) obj;
+      _dbModule* module = nullptr;
+      if (_obj->module_ == 0) {
+        module = block.module_tbl_->getPtr(block.top_module_);
+      } else {
+        module = block.module_tbl_->getPtr(_obj->module_);
+      }
+      if (_obj->name_) {
+        module->dbinst_hash_[_obj->name_] = _obj->getId();
+      }
+    }
+  }
   if (db->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> *block.scan_inst_tbl_;
   }
   stream >> *block.modinst_tbl_;
+  if (db->isSchema(kSchemaDbRemoveHash)) {
+    // Construct modinst_hash_
+    dbSet<dbModInst> modinsts((dbBlock*) &block, block.modinst_tbl_);
+    for (dbModInst* obj : modinsts) {
+      _dbModInst* _obj = (_dbModInst*) obj;
+      _dbModule* module = block.module_tbl_->getPtr(_obj->parent_);
+      if (_obj->name_) {
+        module->modinst_hash_[_obj->name_] = _obj->getId();
+      }
+    }
+  }
   if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> *block.modbterm_tbl_;
+    if (db->isSchema(kSchemaDbRemoveHash)) {
+      // Construct modbterm_hash_
+      dbSet<dbModBTerm> modbterms((dbBlock*) &block, block.modbterm_tbl_);
+      for (dbModBTerm* obj : modbterms) {
+        _dbModBTerm* _obj = (_dbModBTerm*) obj;
+        _dbModule* module = block.module_tbl_->getPtr(_obj->parent_);
+        if (_obj->name_) {
+          module->modbterm_hash_[_obj->name_] = _obj->getId();
+        }
+      }
+    }
     if (db->isSchema(kSchemaDbRemoveHash)) {
       stream >> *block.busport_tbl_;
     }
     stream >> *block.moditerm_tbl_;
     stream >> *block.modnet_tbl_;
+    if (db->isSchema(db_schema_db_remove_hash)) {
+      // Construct modnet_hash_
+      dbSet<dbModNet> modnets((dbBlock*) &block, block.modnet_tbl_);
+      for (dbModNet* obj : modnets) {
+        _dbModNet* _obj = (_dbModNet*) obj;
+        _dbModule* module = block.module_tbl_->getPtr(_obj->parent_);
+        if (_obj->name_) {
+          module->modnet_hash_[_obj->name_] = _obj->getId();
+        }
+      }
+    }
   }
   stream >> *block.powerdomain_tbl_;
   stream >> *block.logicport_tbl_;

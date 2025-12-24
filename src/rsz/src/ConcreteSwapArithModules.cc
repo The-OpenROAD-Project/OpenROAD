@@ -261,6 +261,11 @@ bool ConcreteSwapArithModules::doSwapInstances(
         logger_->warn(RSZ, 158, "Module {} has no owner block", old_name);
         continue;
       }
+#include "db_sta/dbSta.hh"
+#include "odb/db.h"
+
+// ...
+
       dbModule* new_master = block->findModule(new_name.c_str());
       if (!new_master) {
         logger_->warn(
@@ -271,6 +276,7 @@ bool ConcreteSwapArithModules::doSwapInstances(
                     inst->getName(),
                     old_name,
                     new_name);
+
       inst->swapMaster(new_master);
       swapped_count++;
     }

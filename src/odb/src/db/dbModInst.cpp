@@ -107,11 +107,11 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
     stream >> obj.moditerms_;
   }
   if (db_->isSchema(kSchemaDbRemoveHash)) {
-    _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
-    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
-    if (obj.name_) {
-      module->modinst_hash_[obj.name_] = obj.getId();
-    }
+    // _dbBlock* block = (_dbBlock*) (((dbDatabase*)
+    // db_)->getChip()->getBlock()); _dbModule* module =
+    // block->module_tbl_->getPtr(obj.parent_); if (obj.name_) {
+    //   module->modinst_hash_[obj.name_] = obj.getId();
+    // }
   }
   // User Code End >>
   return stream;
