@@ -106,6 +106,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   if (db_->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.moditerms_;
   }
+  // User Code End >>
   return stream;
 }
 
