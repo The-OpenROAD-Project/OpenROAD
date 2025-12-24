@@ -15,13 +15,16 @@ BANT="$($(dirname "$0")/get-bant-path.sh)"
 # Important to run with --remote_download_outputs=all to make sure generated
 # files are actually visible locally in case a remote cache (that includes
 # --disk_cache) is used ( https://github.com/hzeller/bazel-gen-file-issue )
-BAZEL_OPTS="${BAZEL_OPTS:--c opt --remote_download_outputs=all}"
+BAZEL_REMOTE_MATERIALIZE=--remote_download_outputs=all
+
+# Bazel options
+BAZEL_OPTS="${BAZEL_OPTS:--c opt ${BAZEL_REMOTE_MATERIALIZE}}"
 
 # Tickle some build targets to fetch all dependencies and generate files,
 # so that they can be seen by the users of the compilation db.
 # (Note, we need to limit targets to everything below //src, otherwise
 # it requires docker)
-"${BAZEL}" fetch //src/...
+"${BAZEL}" fetch "${BAZEL_REMOTE_MATERIALIZE}" //src/...
 "${BAZEL}" build -k ${BAZEL_OPTS} \
   @openmp//:omp_header \
   $("${BANT}" list-targets -g "genrule|tcl_encode|tcl_wrap_cc" -g "//src" | awk '{print $3}')
