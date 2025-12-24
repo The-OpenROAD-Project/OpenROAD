@@ -34,7 +34,6 @@ namespace rcx {
 FILE* fp;
 #endif
 
-using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;
 using odb::dbCapNode;

@@ -24,7 +24,6 @@ using odb::dbCCSeg;
 using odb::dbNet;
 using odb::dbRSeg;
 using odb::dbSet;
-using utl::RCX;
 
 namespace rcx {
 

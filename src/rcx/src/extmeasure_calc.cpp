@@ -15,8 +15,6 @@
 #define FRINGE_UP_DOWN
 #endif
 
-using utl::RCX;
-
 namespace rcx {
 
 void extMeasureRC::VerticalCap(Array1D<extSegment*>* segTable, bool look_up)

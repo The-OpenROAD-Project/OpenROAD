@@ -15,8 +15,6 @@
 
 namespace rcx {
 
-using utl::RCX;
-
 using namespace odb;
 
 // dkf 12272023

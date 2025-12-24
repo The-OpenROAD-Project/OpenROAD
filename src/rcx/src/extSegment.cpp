@@ -15,7 +15,6 @@
 
 namespace rcx {
 
-using utl::RCX;
 using namespace odb;
 
 void extSegment::set(uint32_t dir,

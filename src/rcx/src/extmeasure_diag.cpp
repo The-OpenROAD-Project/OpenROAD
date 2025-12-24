@@ -19,7 +19,6 @@
 // #define MIN_FOR_LOOPS
 
 using odb::dbNet;
-using utl::RCX;
 
 namespace rcx {
 

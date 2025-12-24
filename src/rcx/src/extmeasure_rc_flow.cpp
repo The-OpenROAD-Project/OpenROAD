@@ -16,7 +16,6 @@
 #endif
 
 using odb::dbRSeg;
-using utl::RCX;
 
 namespace rcx {
 

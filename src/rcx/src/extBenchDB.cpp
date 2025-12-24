@@ -31,7 +31,6 @@ using odb::dbNet;
 using odb::dbObstruction;
 using odb::dbSet;
 using odb::dbTechLayer;
-using utl::RCX;
 
 namespace rcx {
 

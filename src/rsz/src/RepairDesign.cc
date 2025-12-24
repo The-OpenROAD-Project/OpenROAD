@@ -58,19 +58,16 @@ using std::min;
 using utl::RSZ;
 
 using sta::Clock;
-using sta::delayInf;
 using sta::INF;
 using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
-using sta::Port;
 using sta::PortDirection;
 using sta::RiseFallBoth;
 using sta::TimingArc;
 using sta::TimingArcSet;
 using sta::TimingRole;
-using sta::VertexInEdgeIterator;
 
 RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
 {

@@ -22,7 +22,6 @@
 #include "rcx/util.h"
 #include "utl/Logger.h"
 
-using odb::dbRSeg;
 using utl::RCX;
 
 namespace rcx {

@@ -12,8 +12,6 @@
 
 namespace rcx {
 
-using utl::RCX;
-
 int extMeasureRC::GetDx1Dx2(Wire* w1, Wire* w2, int& dx2)
 {
   int dx1 = w2->getXY() - w1->getXY();

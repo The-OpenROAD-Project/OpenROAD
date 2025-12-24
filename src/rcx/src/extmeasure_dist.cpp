@@ -17,7 +17,6 @@
 
 namespace rcx {
 
-using utl::RCX;
 using namespace odb;
 
 void extMeasureRC::ResetRCs()

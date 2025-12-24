@@ -23,7 +23,6 @@
 
 namespace rcx {
 
-using utl::RCX;
 using namespace odb;
 
 uint32_t extMain::benchPatternsGen(const PatternOptions& opt1)

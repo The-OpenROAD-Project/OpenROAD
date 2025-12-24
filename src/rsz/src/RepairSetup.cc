@@ -63,7 +63,6 @@ using sta::fuzzyEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
-using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
 using sta::PathEndSeq;

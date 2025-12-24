@@ -14,8 +14,6 @@
 #define FRINGE_UP_DOWN
 #endif
 
-using utl::RCX;
-
 namespace rcx {
 
 int extMeasureRC::ConnectWires(uint32_t dir, BoundaryData& bounds)
