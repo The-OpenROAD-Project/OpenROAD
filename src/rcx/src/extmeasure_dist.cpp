@@ -509,7 +509,7 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
       // fr= 0.25 * delta;
       return fr;
       // _useWeighted= true;
-    } 
+    }
   }
   return 0;
 }

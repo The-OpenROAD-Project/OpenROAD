@@ -212,14 +212,14 @@ struct BoundaryData;
 class SegmentTables
 {
  public:
-  Ath__array1D<extSegment*> upTable;
-  Ath__array1D<extSegment*> downTable;
-  Ath__array1D<extSegment*> verticalUpTable;
-  Ath__array1D<extSegment*> verticalDownTable;
-  Ath__array1D<extSegment*> wireSegmentTable;
-  Ath__array1D<extSegment*> aboveTable;
-  Ath__array1D<extSegment*> belowTable;
-  Ath__array1D<extSegment*> whiteTable;
+  Array1D<extSegment*> upTable;
+  Array1D<extSegment*> downTable;
+  Array1D<extSegment*> verticalUpTable;
+  Array1D<extSegment*> verticalDownTable;
+  Array1D<extSegment*> wireSegmentTable;
+  Array1D<extSegment*> aboveTable;
+  Array1D<extSegment*> belowTable;
+  Array1D<extSegment*> whiteTable;
 
   // Default constructor - tables are auto-initialized
   SegmentTables() = default;
@@ -252,7 +252,7 @@ class SegmentTables
 
  private:
   // Helper function to release segments from a single table
-  static void Release(Ath__array1D<extSegment*>* table)
+  static void Release(Array1D<extSegment*>* table)
   {
     for (uint32_t i = 0; i < table->getCnt(); i++) {
       delete table->get(i);
@@ -304,36 +304,36 @@ class extMeasureRC : public extMeasure
 
   void allocateTables(uint32_t colCnt);
   void de_allocateTables(uint32_t colCnt);
-  Ath__array1D<Wire*>** allocTable_wire(uint32_t n);
-  void DeleteTable_wire(Ath__array1D<Wire*>** tbl, uint32_t n);
+  Array1D<Wire*>** allocTable_wire(uint32_t n);
+  void DeleteTable_wire(Array1D<Wire*>** tbl, uint32_t n);
   uint32_t GetCoupleSegments(bool lookUp,
                              Wire* w,
                              uint32_t start_track,
                              CouplingDimensionParams& coupleOptions,
-                             Ath__array1D<Wire*>** firstWireTable,
-                             Ath__array1D<extSegment*>* UpSegTable);
+                             Array1D<Wire*>** firstWireTable,
+                             Array1D<extSegment*>* UpSegTable);
   uint32_t FindCoupleWiresOnTracks_down(Wire* w,
                                         int start_track,
                                         CouplingDimensionParams& coupleOptions,
-                                        Ath__array1D<Wire*>** firstWireTable,
-                                        Ath__array1D<Wire*>* resTable);
+                                        Array1D<Wire*>** firstWireTable,
+                                        Array1D<Wire*>* resTable);
 
   uint32_t FindCoupleWiresOnTracks_up(Wire* w,
                                       uint32_t start_track,
                                       CouplingDimensionParams& coupleOptions,
-                                      Ath__array1D<Wire*>** firstWireTable,
-                                      Ath__array1D<Wire*>* resTable);
+                                      Array1D<Wire*>** firstWireTable,
+                                      Array1D<Wire*>* resTable);
   uint32_t makeCoupleSegments_up(Wire* w,
                                  uint32_t start_track,
                                  CouplingDimensionParams& coupleOptions,
-                                 Ath__array1D<Wire*>** firstWireTable,
-                                 Ath__array1D<extSegment*>* UpSegTable);
+                                 Array1D<Wire*>** firstWireTable,
+                                 Array1D<extSegment*>* UpSegTable);
 
   bool FindDiagonalCoupleSegments(Wire* w,
                                   int current_level,
                                   int max_level,
                                   CouplingDimensionParams& opts,
-                                  Ath__array1D<Wire*>** firstWireTable);
+                                  Array1D<Wire*>** firstWireTable);
   bool VerticalDiagonalCouplingAndCrossOverlap(Wire* w,
                                                extSegment* s,
                                                int overMet,
@@ -347,7 +347,7 @@ class extMeasureRC : public extMeasure
                            CouplingConfig& config,
                            CouplingDimensionParams& coupleOptions,
                            SegmentTables& segments,
-                           Ath__array1D<Wire*>** firstWireTable);
+                           Array1D<Wire*>** firstWireTable);
 
   int _ll_tgt[2];
   int _ur_tgt[2];
@@ -374,7 +374,7 @@ class extMeasureRC : public extMeasure
 
   FILE* OpenFile(const char* name, const char* perms);
   FILE* OpenPrintFile(uint32_t dir, const char* name);
-  void Release(Ath__array1D<extSegment*>* segTable);
+  void Release(Array1D<extSegment*>* segTable);
 
   void PrintCrossSeg(FILE* fp,
                      int x1,
@@ -388,7 +388,7 @@ class extMeasureRC : public extMeasure
                          uint32_t tgt_met,
                          int x1,
                          int x2,
-                         Ath__array1D<extSegment*>* segTable,
+                         Array1D<extSegment*>* segTable,
                          int totLen,
                          const char* prefix,
                          int metOver = -1,
@@ -405,7 +405,7 @@ class extMeasureRC : public extMeasure
                            uint32_t tgt_met,
                            int x1,
                            int len,
-                           Ath__array1D<extSegment*>* segTable,
+                           Array1D<extSegment*>* segTable,
                            int totLen,
                            const char* prefix,
                            int metOver,
@@ -419,7 +419,7 @@ class extMeasureRC : public extMeasure
   void PrintOvelaps(extSegment* w,
                     uint32_t met,
                     uint32_t tgt_met,
-                    Ath__array1D<extSegment*>* segTable,
+                    Array1D<extSegment*>* segTable,
                     const char* ou);
   void PrintOUSeg(FILE* fp,
                   int x1,
@@ -513,7 +513,7 @@ class extMeasureRC : public extMeasure
                     int dist2);
 
   // --------------- dkf 09142023
-  bool measureRC_res_dist(Ath__array1D<SEQ*>* tmpTable);
+  bool measureRC_res_dist(Array1D<SEQ*>* tmpTable);
   void measureRC_ids_flags(CoupleOptions& options);  // dkf 09142023
   void measureRC_091423(CoupleOptions& options);     // dkf 09142023
   void measureRC(CoupleOptions& options);
@@ -636,7 +636,7 @@ class extMeasureRC : public extMeasure
                         int xy1,
                         int len1,
                         Wire* w2_next,
-                        Ath__array1D<extSegment*>* segTable);
+                        Array1D<extSegment*>* segTable);
 
   uint32_t FindSegments_org(bool lookUp,
                             uint32_t dir,
@@ -645,7 +645,7 @@ class extMeasureRC : public extMeasure
                             int xy1,
                             int len1,
                             Wire* w2,
-                            Ath__array1D<extSegment*>* segTable);
+                            Array1D<extSegment*>* segTable);
   int GetDx1Dx2(int xy1, int len1, extSegment* w2, int& dx2);
   int GetDx1Dx2(Wire* w1, Wire* w2, int& dx2);
   int GetDx1Dx2(int xy1, int len1, Wire* w2, int& dx2);
@@ -676,12 +676,12 @@ class extMeasureRC : public extMeasure
   void Print5wires(FILE* fp, Wire* w, uint32_t level = 0);
   Wire* FindOverlap(Wire* w, Wire* first_wire);
   void ResetFirstWires(Grid* netGrid,
-                       Ath__array1D<Wire*>* firstWireTable,
+                       Array1D<Wire*>* firstWireTable,
                        int tr1,
                        int trCnt,
                        uint32_t limitTrackNum);
   // dkf 10022023
-  Wire* FindOverlap(Wire* w, Ath__array1D<Wire*>* firstWireTable, int tr);
+  Wire* FindOverlap(Wire* w, Array1D<Wire*>* firstWireTable, int tr);
   // dkf 10032023
   int FindDiagonalNeighbors(uint32_t dir,
                             uint32_t couplingDist,
@@ -690,20 +690,18 @@ class extMeasureRC : public extMeasure
                             uint32_t limitTrackNum);
   bool IsSegmentOverlap(int x1, int len1, int x2, int len2);
   bool IsOverlap(Wire* w, Wire* w2);
-  Wire* GetNextWire(Grid* netGrid,
-                    uint32_t tr,
-                    Ath__array1D<Wire*>* firstWireTable);
+  Wire* GetNextWire(Grid* netGrid, uint32_t tr, Array1D<Wire*>* firstWireTable);
   Wire* FindOverlap(Wire* w,
                     Grid* netGrid,
                     uint32_t tr,
-                    Ath__array1D<Wire*>* firstWireTable);
+                    Array1D<Wire*>* firstWireTable);
   bool CheckWithNeighbors(Wire* w, Wire* prev);
-  Ath__array1D<Wire*>** allocMarkTable(uint32_t n);
-  void DeleteMarkTable(Ath__array1D<Wire*>** tbl, uint32_t n);
+  Array1D<Wire*>** allocMarkTable(uint32_t n);
+  void DeleteMarkTable(Array1D<Wire*>** tbl, uint32_t n);
   void ResetFirstWires(uint32_t m1,
                        uint32_t m2,
                        uint32_t dir,
-                       Ath__array1D<Wire*>** firstWireTable);
+                       Array1D<Wire*>** firstWireTable);
   int PrintAllGrids(uint32_t dir, FILE* fp, uint32_t mode);
 
   // dkf 10042023
@@ -713,15 +711,12 @@ class extMeasureRC : public extMeasure
                        uint32_t diag_met_limit);
 
   // dkf 10052023
-  void Print(FILE* fp,
-             Ath__array1D<extSegment*>* segTable,
-             uint32_t d,
-             bool lookUp);
+  void Print(FILE* fp, Array1D<extSegment*>* segTable, uint32_t d, bool lookUp);
   void Print(FILE* fp, extSegment* s, uint32_t d, bool lookUp);
-  // void Release(Ath__array1D<extSegment *> *segTable);
+  // void Release(Array1D<extSegment *> *segTable);
 
   // dkf 10062023
-  bool CheckOrdered(Ath__array1D<extSegment*>* segTable);
+  bool CheckOrdered(Array1D<extSegment*>* segTable);
   bool measure_RC_new(int met,
                       uint32_t dir,
                       extSegment* up,
@@ -741,31 +736,31 @@ class extMeasureRC : public extMeasure
                                   int xy1,
                                   int len1,
                                   Wire* down,
-                                  Ath__array1D<extSegment*>* segTable,
+                                  Array1D<extSegment*>* segTable,
                                   int metOver = -1,
                                   int metUnder = -1);
-  uint32_t FindUpDownSegments(Ath__array1D<extSegment*>* upTable,
-                              Ath__array1D<extSegment*>* downTable,
-                              Ath__array1D<extSegment*>* segTable,
+  uint32_t FindUpDownSegments(Array1D<extSegment*>* upTable,
+                              Array1D<extSegment*>* downTable,
+                              Array1D<extSegment*>* segTable,
                               int metOver = -1,
                               int metUnder = -1);
   extSegment* GetNext(uint32_t ii,
                       int& xy1,
                       int& len1,
-                      Ath__array1D<extSegment*>* segTable);
-  extSegment* GetNextSegment(uint32_t ii, Ath__array1D<extSegment*>* segTable);
+                      Array1D<extSegment*>* segTable);
+  extSegment* GetNextSegment(uint32_t ii, Array1D<extSegment*>* segTable);
   uint32_t CopySegments(bool up,
-                        Ath__array1D<extSegment*>* upTable,
+                        Array1D<extSegment*>* upTable,
                         uint32_t start,
                         uint32_t end,
-                        Ath__array1D<extSegment*>* segTable,
+                        Array1D<extSegment*>* segTable,
                         int maxDist = 1000000000,
                         int metOver = -1,
                         int metUnder = -1);
   void PrintUpDown(FILE* fp, extSegment* s);
   void PrintUpDownNet(FILE* fp, Wire* s, int dist, const char* prefix);
-  void PrintUpDown(FILE* fp, Ath__array1D<extSegment*>* segTable);
-  void BubbleSort(Ath__array1D<extSegment*>* segTable);
+  void PrintUpDown(FILE* fp, Array1D<extSegment*>* segTable);
+  void BubbleSort(Array1D<extSegment*>* segTable);
   bool measure_init(extSegment* s);
   bool measure_RC_new(extSegment* s,
                       bool skip_res_calc = false);  // dkf 06182024
@@ -798,24 +793,23 @@ class extMeasureRC : public extMeasure
                                            uint32_t couplingDist,
                                            uint32_t diag_met_limit,
                                            uint32_t limitTrackNum,
-                                           Ath__array1D<Wire*>** upWireTable);
-  void Print(FILE* fp, Ath__array1D<Wire*>* segTable, const char* msg);
+                                           Array1D<Wire*>** upWireTable);
+  void Print(FILE* fp, Array1D<Wire*>* segTable, const char* msg);
   // dkf 10122023
-  Ath__array1D<Wire*>** _verticalPowerTable;
+  Array1D<Wire*>** _verticalPowerTable;
 
   // dkf 10132023
   // uint32_t FindSegments(bool lookUp, uint32_t dir, int maxDist, Wire *w1, int
-  // xy1, int len1, Wire *w2, Ath__array1D<extSegment *> *segTable);
+  // xy1, int len1, Wire *w2, Array1D<extSegment *> *segTable);
 
   // dkf 10152023
-  Wire* FindDiagonalNeighbors_vertical_up_down(
-      Wire* w,
-      bool& found,
-      uint32_t dir,
-      uint32_t level,
-      uint32_t couplingDist,
-      uint32_t limitTrackNum,
-      Ath__array1D<Wire*>** firstWireTable);
+  Wire* FindDiagonalNeighbors_vertical_up_down(Wire* w,
+                                               bool& found,
+                                               uint32_t dir,
+                                               uint32_t level,
+                                               uint32_t couplingDist,
+                                               uint32_t limitTrackNum,
+                                               Array1D<Wire*>** firstWireTable);
   int FindDiagonalNeighbors_vertical_down(uint32_t dir,
                                           uint32_t couplingDist,
                                           uint32_t diag_met_limit,
@@ -829,15 +823,15 @@ class extMeasureRC : public extMeasure
                   int next_tr,
                   bool found,
                   Wire* first_wire,
-                  Ath__array1D<Wire*>* firstWireTable);
+                  Array1D<Wire*>* firstWireTable);
   uint32_t FindAllNeigbors_up(Wire* w,
                               uint32_t start_track,
                               uint32_t dir,
                               uint32_t level,
                               uint32_t couplingDist,
                               uint32_t limitTrackNum,
-                              Ath__array1D<Wire*>** firstWireTable,
-                              Ath__array1D<Wire*>* resTable);
+                              Array1D<Wire*>** firstWireTable,
+                              Array1D<Wire*>* resTable);
   Wire* FindOverlapWire(Wire* w, Wire* first_wire);
 
   // dkf 061824
@@ -856,57 +850,57 @@ class extMeasureRC : public extMeasure
                                   int xy1,
                                   int len1,
                                   Wire* w2,
-                                  Ath__array1D<extSegment*>* segTable);
+                                  Array1D<extSegment*>* segTable);
   void FindSegmentsTrack(Wire* w1,
                          int xy1,
                          int len1,
                          Wire* w2_next,
                          uint32_t ii,
-                         Ath__array1D<Wire*>* trackTable,
+                         Array1D<Wire*>* trackTable,
                          bool lookUp,
                          uint32_t dir,
                          int maxDist,
-                         Ath__array1D<extSegment*>* segTable);
+                         Array1D<extSegment*>* segTable);
   uint32_t FindAllNeigbors_down(Wire* w,
                                 int start_track,
                                 uint32_t dir,
                                 uint32_t level,
                                 uint32_t couplingDist,
                                 uint32_t limitTrackNum,
-                                Ath__array1D<Wire*>** firstWireTable,
-                                Ath__array1D<Wire*>* resTable);
+                                Array1D<Wire*>** firstWireTable,
+                                Array1D<Wire*>* resTable);
   bool PrintInit(FILE* fp, bool dbgOverlaps, Wire* w, int x, int y);
   void PrintTable_coupleWires(FILE* fp1,
                               Wire* w,
                               bool dbgOverlaps,
-                              Ath__array1D<Wire*>* UpTable,
+                              Array1D<Wire*>* UpTable,
                               const char* msg,
                               int level = -1);
   void PrintTable_segments(FILE* fp1,
                            Wire* w,
                            bool lookUp,
                            bool dbgOverlaps,
-                           Ath__array1D<extSegment*>* UpSegTable,
+                           Array1D<extSegment*>* UpSegTable,
                            const char* msg,
                            int level = -1);
   bool DebugWire(Wire* w, int x, int y, int netId = -1);
   uint32_t CreateCouplingSEgments(Wire* w,
-                                  Ath__array1D<extSegment*>* segTable,
-                                  Ath__array1D<extSegment*>* upTable,
-                                  Ath__array1D<extSegment*>* downTable,
+                                  Array1D<extSegment*>* segTable,
+                                  Array1D<extSegment*>* upTable,
+                                  Array1D<extSegment*>* downTable,
                                   bool dbgOverlaps,
                                   FILE* fp);
   void PrintTable_wires(FILE* fp,
                         bool dbgOverlaps,
                         uint32_t colCnt,
-                        Ath__array1D<Wire*>** verticalPowerTable,
+                        Array1D<Wire*>** verticalPowerTable,
                         const char* msg);
 
   // dkf 10182023
-  Ath__array1D<extSegment*>** _upSegTable = nullptr;
-  Ath__array1D<extSegment*>** _downSegTable = nullptr;
-  Ath__array1D<extSegment*>** allocTable(uint32_t n);
-  void DeleteTable(Ath__array1D<extSegment*>** tbl, uint32_t n);
+  Array1D<extSegment*>** _upSegTable = nullptr;
+  Array1D<extSegment*>** _downSegTable = nullptr;
+  Array1D<extSegment*>** allocTable(uint32_t n);
+  void DeleteTable(Array1D<extSegment*>** tbl, uint32_t n);
   uint32_t FindAllSegments_up(FILE* fp,
                               Wire* w,
                               bool lookUp,
@@ -916,14 +910,14 @@ class extMeasureRC : public extMeasure
                               uint32_t maxDist,
                               uint32_t couplingDist,
                               uint32_t limitTrackNum,
-                              Ath__array1D<Wire*>** firstWireTable,
-                              Ath__array1D<extSegment*>** UpSegTable);
+                              Array1D<Wire*>** firstWireTable,
+                              Array1D<extSegment*>** UpSegTable);
   uint32_t FindAllSegments_vertical(FILE* fp,
                                     Wire* w,
                                     bool lookUp,
                                     uint32_t dir,
                                     uint32_t maxDist,
-                                    Ath__array1D<extSegment*>* aboveTable);
+                                    Array1D<extSegment*>* aboveTable);
 
   // dkf 10192023
   odb::dbRSeg* GetRseg(int id);
@@ -935,13 +929,13 @@ class extMeasureRC : public extMeasure
                    uint32_t width,
                    uint32_t tgtWidth,
                    uint32_t diagDist);
-  void VerticalCap(Ath__array1D<extSegment*>* segTable, bool look_up);
+  void VerticalCap(Array1D<extSegment*>* segTable, bool look_up);
   bool DiagCap(FILE* fp,
                Wire* w,
                bool lookUp,
                uint32_t maxDist,
                uint32_t trackLimitCnt,
-               Ath__array1D<extSegment*>* segTable,
+               Array1D<extSegment*>* segTable,
                bool PowerOnly = false);
   bool DiagCouplingCap(uint32_t met,
                        uint32_t tgtMet,
@@ -954,8 +948,8 @@ class extMeasureRC : public extMeasure
 
   // dkf 10202023
   FILE* _segFP;
-  Ath__array1D<extSegment*>** _ovSegTable = nullptr;
-  Ath__array1D<extSegment*>** _whiteSegTable = nullptr;
+  Array1D<extSegment*>** _ovSegTable = nullptr;
+  Array1D<extSegment*>** _whiteSegTable = nullptr;
 
   // void PrintCrossSeg(FILE *fp, int x1, int x2, int met, int metOver, int
   // metUnder, const char *prefix="");
@@ -965,28 +959,28 @@ class extMeasureRC : public extMeasure
                        int x1,
                        int x2,
                        uint32_t dir,
-                       Ath__array1D<extSegment*>* segTable,
-                       Ath__array1D<extSegment*>* whiteTable);
+                       Array1D<extSegment*>* segTable,
+                       Array1D<extSegment*>* whiteTable);
   // void PrintCrossOvelaps(Wire *w, uint32_t tgt_met, int x1, int x2,
-  // Ath__array1D<extSegment *> *segTable, int totLen, const char *prefix,
+  // Array1D<extSegment *> *segTable, int totLen, const char *prefix,
   // int metOver=-1, int metUnder=-1);
 
   // dkf 10212023
   // void PrintCrossOvelapsOU(Wire *w, uint32_t tgt_met, int x1, int len,
-  // Ath__array1D<extSegment *> *segTable, int totLen, const char *prefix,
+  // Array1D<extSegment *> *segTable, int totLen, const char *prefix,
   // int metOver, int metUnder);
 
   // dkf 10232023
   // void PrintOverlapSeg(FILE *fp, extSegment *s, int tgt_met, const char
   // *prefix); void PrintOvelaps(extSegment *w, uint32_t met, uint32_t tgt_met,
-  // Ath__array1D<extSegment *> *segTable, const char *ou); void
+  // Array1D<extSegment *> *segTable, const char *ou); void
   // PrintOUSeg(FILE *fp, int x1, int len, int met, int metOver, int metUnder,
   // const char *prefix, int up_dist, int down_dist);
   void OverUnder(extSegment* cc,
                  uint32_t met,
                  int overMet,
                  int underMet,
-                 Ath__array1D<extSegment*>* segTable,
+                 Array1D<extSegment*>* segTable,
                  const char* ou);
   void OpenEnded2(extSegment* cc,
                   uint32_t len,
@@ -1044,8 +1038,8 @@ class extMeasureRC : public extMeasure
                   int* len3);
   bool FindDiagonalSegments(extSegment* s,
                             extSegment* ww,
-                            Ath__array1D<extSegment*>* segDiagTable,
-                            Ath__array1D<extSegment*>* resultTable,
+                            Array1D<extSegment*>* segDiagTable,
+                            Array1D<extSegment*>* resultTable,
                             bool dbgOverlaps,
                             FILE* fp,
                             bool lookUp,

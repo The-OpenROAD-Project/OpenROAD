@@ -95,10 +95,7 @@ void extMetRCTable::writeViaRes(FILE* fp)
 
   fprintf(fp, "END VIARES\n\n");
 }
-bool extMetRCTable::GetViaRes(Ath__parser* p,
-                              Ath__parser* w,
-                              dbNet* net,
-                              FILE* logFP)
+bool extMetRCTable::GetViaRes(Parser* p, Parser* w, dbNet* net, FILE* logFP)
 {
   // via pattern: V2.W2.M5.M6.DX520.DY1320.C2.V56_1x2_VH_S
 
@@ -142,7 +139,7 @@ bool extMetRCTable::GetViaRes(Ath__parser* p,
           netName);
   return true;
 }
-bool extMetRCTable::ReadRules(Ath__parser* p)
+bool extMetRCTable::ReadRules(Parser* p)
 {
   // 10.1442 V12_VV cuts 1  TopMetal 2 BotMetal 1 dx 200 dy 320
   while (p->parseNextLine() > 0) {
@@ -193,7 +190,7 @@ uint32_t extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
   }
   return cnt;
 }
-bool extMetRCTable::SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP)
+bool extMetRCTable::SkipPattern(Parser* p, dbNet* net, FILE* logFP)
 {
   // This will go away completely when new rules become default
   // This is to track compatibility between original Def Patterns and latest

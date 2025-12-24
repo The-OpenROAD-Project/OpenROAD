@@ -74,8 +74,8 @@ uint32_t extMain::GenExtRules(const char* rulesFileName)
   sprintf(buff, "%s.log", rulesFileName);
   FILE* logFP = fopen(buff, "w");
 
-  Ath__parser* p = new Ath__parser(logger_);
-  Ath__parser* w = new Ath__parser(logger_);
+  Parser* p = new Parser(logger_);
+  Parser* w = new Parser(logger_);
 
   int prev_sep = 0;
   int prev_width = 0;
@@ -440,11 +440,11 @@ uint32_t extMain::benchVerilog_assign(FILE* fp)
 }
 uint32_t extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
 {
-  auto widthTable = std::make_unique<Ath__array1D<double>>(4);
-  auto spaceTable = std::make_unique<Ath__array1D<double>>(4);
-  Ath__array1D<double>* wTable = &opt->_widthTable;
-  Ath__array1D<double>* sTable = &opt->_spaceTable;
-  Ath__array1D<double>* gTable = &opt->_gridTable;
+  auto widthTable = std::make_unique<Array1D<double>>(4);
+  auto spaceTable = std::make_unique<Array1D<double>>(4);
+  Array1D<double>* wTable = &opt->_widthTable;
+  Array1D<double>* sTable = &opt->_spaceTable;
+  Array1D<double>* gTable = &opt->_gridTable;
 
   uint32_t cnt = 0;
   int met = measure->_met;

@@ -74,7 +74,7 @@ uint32_t extMeasureRC::FindSegments(bool lookUp,
                                     int xy1,
                                     int len1,
                                     Wire* w2_next,
-                                    Ath__array1D<extSegment*>* segTable)
+                                    Array1D<extSegment*>* segTable)
 {
   if (w2_next == nullptr) {
     return 0;

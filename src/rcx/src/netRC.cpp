@@ -1160,14 +1160,14 @@ void extMain::getExtractedCorners()
     return;
   }
 
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   uint32_t pCornerCnt
       = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
   if (pCornerCnt <= 0) {
     return;
   }
 
-  _processCornerTable = new Ath__array1D<extCorner*>();
+  _processCornerTable = new Array1D<extCorner*>();
 
   uint32_t cornerCnt = 0;
   uint32_t ii, jj;
@@ -1192,7 +1192,7 @@ void extMain::getExtractedCorners()
   }
 
   if (_scaledCornerTable == nullptr) {
-    _scaledCornerTable = new Ath__array1D<extCorner*>();
+    _scaledCornerTable = new Array1D<extCorner*>();
   }
 
   for (ii = 0; ii < sCornerCnt; ii++) {
@@ -1216,7 +1216,7 @@ void extMain::getExtractedCorners()
     t->_dbIndex = cornerCnt++;
     _scaledCornerTable->add(t);
   }
-  Ath__array1D<double> A;
+  Array1D<double> A;
 
   parser.mkWords(_prevControl->_resFactorList.c_str(), " ");
   parser.getDoubleArray(&A, 0);
@@ -1250,7 +1250,7 @@ void extMain::makeCornerMapFromExtControl()
     return;
   }
 
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   uint32_t wordCnt
       = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
   if (wordCnt <= 0) {
@@ -1282,7 +1282,7 @@ char* extMain::addRCCorner(const char* name, int model, int userDefined)
     model = model - 100;
   }
   if (_processCornerTable == nullptr) {
-    _processCornerTable = new Ath__array1D<extCorner*>();
+    _processCornerTable = new Array1D<extCorner*>();
   }
 
   for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
@@ -1363,7 +1363,7 @@ char* extMain::addRCCornerScaled(const char* name,
     return nullptr;
   }
   if (_scaledCornerTable == nullptr) {
-    _scaledCornerTable = new Ath__array1D<extCorner*>();
+    _scaledCornerTable = new Array1D<extCorner*>();
   }
 
   uint32_t ii = 0;
@@ -1760,8 +1760,8 @@ void extMain::updatePrevControl()
   _prevControl->_mergeViaRes = _mergeViaRes;
   _prevControl->_mergeParallelCC = _mergeParallelCC;
   _prevControl->_useDbSdb = _useDbSdb;
-  _prevControl->_CCnoPowerSource = _CCnoPowerSource;
-  _prevControl->_CCnoPowerTarget = _CCnoPowerTarget;
+  _prevControl->_ccNoPowerSource = _ccNoPowerSource;
+  _prevControl->_ccNoPowerTarget = _ccNoPowerTarget;
   _prevControl->_usingMetalPlanes = _usingMetalPlanes;
   if (_currentModel && _currentModel->getRuleFileName()) {
     _prevControl->_ruleFileName = _currentModel->getRuleFileName();
@@ -1784,8 +1784,8 @@ void extMain::getPrevControl()
   _mergeViaRes = _prevControl->_mergeViaRes;
   _mergeParallelCC = _prevControl->_mergeParallelCC;
   _useDbSdb = _prevControl->_useDbSdb;
-  _CCnoPowerSource = _prevControl->_CCnoPowerSource;
-  _CCnoPowerTarget = _prevControl->_CCnoPowerTarget;
+  _ccNoPowerSource = _prevControl->_ccNoPowerSource;
+  _ccNoPowerTarget = _prevControl->_ccNoPowerTarget;
   _usingMetalPlanes = _prevControl->_usingMetalPlanes;
 }
 bool extMain::modelExists(const char* extRules)
@@ -2201,7 +2201,7 @@ int extSpef::getWriteCorner(int corner, const char* names)
 
   _active_corner_cnt = 0;
   int cn = 0;
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   parser.mkWords(names, nullptr);
   for (int ii = 0; ii < parser.getWordCnt(); ii++) {
     cn = _block->getExtCornerIndex(parser.get(ii));

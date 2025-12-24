@@ -22,7 +22,7 @@ bool findSomeNet(odb::dbBlock* block,
   if (!names || names[0] == '\0') {
     return false;
   }
-  auto parser = std::make_unique<Ath__parser>(logger);
+  auto parser = std::make_unique<Parser>(logger);
   parser->mkWords(names, nullptr);
   for (int ii = 0; ii < parser->getWordCnt(); ii++) {
     char* netName = parser->get(ii);

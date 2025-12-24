@@ -293,7 +293,7 @@ uint32_t gs::getSeq(int* ll,
                     int* ur,
                     const uint32_t order,
                     const uint32_t plane,
-                    Ath__array1D<SEQ*>* array)
+                    Array1D<SEQ*>* array)
 {
   if (!checkPlane(plane)) {
     return 0;

@@ -90,8 +90,8 @@ class extRulesPat
   int _ll_last[2];
   int _ur_last[2];
 
-  int _LL[2000][2];
-  int _UR[2000][2];
+  int _ll_1[2000][2];
+  int _ur_1[2000][2];
   char _patName[2000][2000];
 
   FILE* _def_fp;

@@ -116,19 +116,19 @@ uint32_t extRulesPat::CreatePatternVia(dbTechVia* via,
   Init(s);
 
   uint32_t ii = 1;
-  _LL[ii][_long_dir] = 0;
-  _UR[ii][_long_dir] = _len;
-  _LL[ii][_short_dir] = _UR[ii - 1][_short_dir] + s;
-  _UR[ii][_short_dir] = _LL[ii][_short_dir] + w;
+  _ll_1[ii][_long_dir] = 0;
+  _ur_1[ii][_long_dir] = _len;
+  _ll_1[ii][_short_dir] = _ur_1[ii - 1][_short_dir] + s;
+  _ur_1[ii][_short_dir] = _ll_1[ii][_short_dir] + w;
 
   // dkf 04032024 sprintf(_patName[ii], "V2.%s.W%d", buf, ii);
   sprintf(_patName[ii], "V2-%s-W%d", buf, ii);
 
   ii++;
-  _LL[ii][_long_dir] = 0;
-  _UR[ii][_long_dir] = _len;
-  _LL[ii][_short_dir] = _UR[ii - 1][_short_dir] + s;
-  _UR[ii][_short_dir] = _LL[ii][_short_dir] + w;
+  _ll_1[ii][_long_dir] = 0;
+  _ur_1[ii][_long_dir] = _len;
+  _ll_1[ii][_short_dir] = _ur_1[ii - 1][_short_dir] + s;
+  _ur_1[ii][_short_dir] = _ll_1[ii][_short_dir] + w;
 
   sprintf(_patName[ii], "V2-%s-W%d", buf, ii);
 
@@ -144,11 +144,11 @@ uint32_t extRulesPat::CreatePatternVia(dbTechVia* via,
 }
 void extRulesPat::WriteDBWireVia(uint32_t jj, uint32_t dir, dbTechVia* via)
 {
-  WriteWire(_def_fp, _LL[jj], _UR[jj], _patName[jj]);
+  WriteWire(_def_fp, _ll_1[jj], _ur_1[jj], _patName[jj]);
   // uint32_t d= dir>0 ? 0 :1;
-  int width = _UR[jj][dir] - _LL[jj][dir];
-  int ll[2] = {_LL[jj][0] + _origin[0], _LL[jj][1] + _origin[1]};
-  int ur[2] = {_UR[jj][0] + _origin[0], _UR[jj][1] + _origin[1]};
+  int width = _ur_1[jj][dir] - _ll_1[jj][dir];
+  int ll[2] = {_ll_1[jj][0] + _origin[0], _ll_1[jj][1] + _origin[1]};
+  int ur[2] = {_ur_1[jj][0] + _origin[0], _ur_1[jj][1] + _origin[1]};
 
   WriteWire(_def_fp, ll, ur, _patName[jj]);
 

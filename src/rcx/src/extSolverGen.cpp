@@ -61,7 +61,7 @@ void extSolverGen::init()
   _wireDirName = new char[2048];
   _topDir = new char[1024];
   _patternName = new char[1024];
-  _parser = new Ath__parser(logger_);
+  _parser = new Parser(logger_);
   _solverFileName = new char[1024];
   _wireFileName = new char[1024];
   _capLogFP = nullptr;

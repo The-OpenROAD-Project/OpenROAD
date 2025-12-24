@@ -77,7 +77,7 @@ int extMeasureRC::FindCouplingNeighbors(uint32_t dir, BoundaryData& bounds)
   uint32_t limitTrackNum = bounds.maxCouplingTracks;
   uint32_t couplingDist = bounds.maxCouplingTracks;
 
-  Ath__array1D<Wire*> firstWireTable;
+  Array1D<Wire*> firstWireTable;
 
   uint32_t colCnt = _search->getColCnt();
   for (uint32_t jj = 1; jj < colCnt; jj++) {
@@ -172,7 +172,7 @@ int extMeasureRC::FindCouplingNeighbors_down_opt(uint32_t dir,
                                                  BoundaryData& bounds)
 {
   uint32_t limitTrackNum = bounds.maxCouplingTracks;
-  Ath__array1D<Wire*> firstWireTable;
+  Array1D<Wire*> firstWireTable;
   uint32_t colCnt = _search->getColCnt();
   for (uint32_t jj = 1; jj < colCnt; jj++) {
     Grid* netGrid = _search->getGrid(dir, jj);
@@ -228,7 +228,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint32_t dir,
 {
   uint32_t cnt = 0;
   int levelCnt = _search->getColCnt();
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
+  Array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
   for (uint32_t jj = 1; jj < levelCnt - 1; jj++)  // For all Layers
   {
@@ -300,7 +300,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
 {
   uint32_t cnt = 0;
   int levelCnt = _search->getColCnt();
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
+  Array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
   for (int jj = levelCnt - 1; jj > 1; jj--)  // For all Layers going down
   {
@@ -382,7 +382,7 @@ int extMeasureRC::CouplingFlow_opt(uint32_t dir,
   SegmentTables segments;
 
   // first wire from a Track on all levels and tracks
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(metalLevelCnt);
+  Array1D<Wire*>** firstWireTable = allocMarkTable(metalLevelCnt);
   allocateTables(metalLevelCnt);
 
   _dir = dir;
@@ -460,7 +460,7 @@ int extMeasureRC::CouplingFlow_opt(uint32_t dir,
 
             PrintOverlapSeg(_segFP, s, _met, "\nNEW --");
 
-            // Ath__array1D<extSegment*> crossOvelapTable(8);
+            // Array1D<extSegment*> crossOvelapTable(8);
             uint32_t overMet = _met + 1;
             for (; overMet < metalLevelCnt; overMet++) {
               // _ovSegTable[overMet]->resetCnt();
