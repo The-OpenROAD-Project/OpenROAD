@@ -229,6 +229,9 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void inDbBPinAddBox(odb::dbBox* box) override;
   void inDbBPinRemoveBox(odb::dbBox* box) override;
   void inDbBPinDestroy(odb::dbBPin* pin) override;
+  void inDbBPinPlacementStatusBefore(
+      odb::dbBPin* pin,
+      const odb::dbPlacementStatus& status) override;
   void inDbFillCreate(odb::dbFill* fill) override;
   void inDbWireCreate(odb::dbWire* wire) override;
   void inDbWireDestroy(odb::dbWire* wire) override;
