@@ -173,7 +173,7 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
-  void placeChildren(Cluster* parent, bool ignore_std_cell_area = false);
+  void placeChildren(Cluster* parent);
 
   std::vector<odb::Rect> findBlockagesWithinOutline(
       const odb::Rect& outline) const;
