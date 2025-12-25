@@ -2349,7 +2349,8 @@ Descriptor::Properties DbBPinDescriptor::getDBProperties(
   for (auto* box : bpin->getBoxes()) {
     auto* layer = box->getTechLayer();
     if (layer != nullptr) {
-      boxes.push_back({gui->makeSelected(box->getTechLayer()), box->getBox()});
+      boxes.push_back(
+          {gui->makeSelected(box->getTechLayer()), gui->makeSelected(box)});
     }
   }
   props.push_back({"Boxes", boxes});
@@ -4101,13 +4102,7 @@ Descriptor::Properties DbTechViaDescriptor::getDBProperties(
   PropertyList layers;
   auto make_layer = [gui, &shapes, &layers](odb::dbTechLayer* layer) {
     const auto& shape = shapes[layer];
-    std::string shape_text
-        = fmt::format("({}, {}), ({}, {})",
-                      Property::convert_dbu(shape.xMin(), false),
-                      Property::convert_dbu(shape.yMin(), false),
-                      Property::convert_dbu(shape.xMax(), false),
-                      Property::convert_dbu(shape.yMax(), false));
-    layers.push_back({gui->makeSelected(layer), shape_text});
+    layers.push_back({gui->makeSelected(layer), shape});
   };
   make_layer(via->getBottomLayer());
   if (cut_layer != nullptr) {
@@ -4422,23 +4417,18 @@ Descriptor::Properties DbGenerateViaDescriptor::getDBProperties(
   for (uint32_t l = 0; l < via->getViaLayerRuleCount(); l++) {
     auto* rule = via->getViaLayerRule(l);
     auto* layer = rule->getLayer();
-    std::string shape_text;
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       odb::Rect shape;
       rule->getRect(shape);
-      shape_text = fmt::format("({}, {}), ({}, {})",
-                               Property::convert_dbu(shape.xMin(), false),
-                               Property::convert_dbu(shape.yMin(), false),
-                               Property::convert_dbu(shape.xMax(), false),
-                               Property::convert_dbu(shape.yMax(), false));
+      layers.push_back({gui->makeSelected(layer), shape});
     } else {
       int enc0, enc1;
       rule->getEnclosure(enc0, enc1);
-      shape_text = fmt::format("Enclosure: {} x {}",
-                               Property::convert_dbu(enc0, true),
-                               Property::convert_dbu(enc1, true));
+      std::string shape_text = fmt::format("Enclosure: {} x {}",
+                                           Property::convert_dbu(enc0, true),
+                                           Property::convert_dbu(enc1, true));
+      layers.push_back({gui->makeSelected(layer), shape_text});
     }
-    layers.push_back({gui->makeSelected(layer), shape_text});
     via_layer_rules.insert(gui->makeSelected(rule));
   }
   props.push_back({"Tech Via-Layer Rules", via_layer_rules});
@@ -5423,16 +5413,9 @@ std::string DbBoxDescriptor::getName(const std::any& object) const
   odb::Rect box;
   getBBox(object, box);
 
-  std::string shape_text
-      = fmt::format("({}, {}), ({}, {})",
-                    Property::convert_dbu(box.xMin(), false),
-                    Property::convert_dbu(box.yMin(), false),
-                    Property::convert_dbu(box.xMax(), false),
-                    Property::convert_dbu(box.yMax(), false));
-
   return fmt::format("Box of {}: {}",
                      getObject(object)->getOwnerType().getString(),
-                     shape_text);
+                     Property::toString(box));
 }
 
 std::string DbBoxDescriptor::getTypeName() const
@@ -5556,8 +5539,10 @@ void DbBoxDescriptor::populateProperties(odb::dbBox* box, Properties& props)
     if (box->getLayerMask() > 0) {
       props.push_back({"Mask", box->getLayerMask()});
     }
-    props.push_back({"Design rule width",
-                     Property::convert_dbu(box->getDesignRuleWidth(), true)});
+    if (box->getDesignRuleWidth() >= 0) {
+      props.push_back({"Design rule width",
+                       Property::convert_dbu(box->getDesignRuleWidth(), true)});
+    }
   } else if (auto* via = box->getTechVia()) {
     props.push_back({"Tech via", gui->makeSelected(via)});
   } else if (auto* via = box->getBlockVia()) {
@@ -5595,16 +5580,9 @@ std::string DbSBoxDescriptor::getName(const std::any& object) const
   odb::Rect box;
   getBBox(object, box);
 
-  std::string shape_text
-      = fmt::format("({}, {}), ({}, {})",
-                    Property::convert_dbu(box.xMin(), false),
-                    Property::convert_dbu(box.yMin(), false),
-                    Property::convert_dbu(box.xMax(), false),
-                    Property::convert_dbu(box.yMax(), false));
-
   return fmt::format("SBox of {}: {}",
                      getObject(object)->getOwnerType().getString(),
-                     shape_text);
+                     Property::toString(box));
 }
 
 std::string DbSBoxDescriptor::getTypeName() const
