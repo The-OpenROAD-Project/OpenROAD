@@ -184,6 +184,7 @@ class Replace
   float routabilityRcK4_ = 0.0;
 
   float timingNetWeightMax_ = 5;
+  bool timingNetWeightMax_user_set_ = false;
   float keepResizeBelowOverflow_ = 1.0;
 
   bool timingDrivenMode_ = true;

@@ -343,8 +343,27 @@ proc repair_timing { args } {
   }
 
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
+
+  set orfs_new_openroad 0
+  if { [info exists ::env(ORFS_ENABLE_NEW_OPENROAD)] } {
+    set value [string tolower [string trim $::env(ORFS_ENABLE_NEW_OPENROAD)]]
+    if { [lsearch -exact {1 true yes on} $value] != -1 } {
+      set orfs_new_openroad 1
+    }
+  }
+
   if { [design_is_routed] } {
-    est::set_parasitics_src "detailed_routing"
+    if { $orfs_new_openroad } {
+      set use_detailed_parasitics 1
+      if { [info exists ::env(NG45_USE_DETAILED_PARA)] } {
+        set use_detailed_parasitics [expr {$::env(NG45_USE_DETAILED_PARA) ? 1 : 0}]
+      }
+      set para_src [expr {$use_detailed_parasitics ? "detailed_routing"
+                                               : "global_routing"}]
+      est::set_parasitics_src $para_src
+    } else {
+      est::set_parasitics_src "detailed_routing"
+    }
   }
 
   set max_repairs_per_pass 1
@@ -468,6 +487,29 @@ proc eliminate_dead_logic { } {
 }
 
 namespace eval rsz {
+
+proc set_eliminate_dead_logic_enabled { enabled } {
+  if { ![string is boolean -strict $enabled] } {
+    utl::error "RSZ" 209 \
+      "set_eliminate_dead_logic_enabled argument should be Boolean"
+  }
+
+  set normalized [string tolower $enabled]
+  switch -- $normalized {
+    1 - true - yes - on {
+      set value 1
+    }
+    0 - false - no - off {
+      set value 0
+    }
+    default {
+      set value 0
+    }
+  }
+
+  set_eliminate_dead_logic_enabled_cmd $value
+}
+
 proc get_block { } {
   set db [ord::get_db]
   if { $db eq "NULL" } {
