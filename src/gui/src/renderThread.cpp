@@ -13,12 +13,16 @@
 #include <exception>
 #include <iterator>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/parameters.hpp"
+#include "boost/geometry/index/predicates.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "gui/gui.h"
 #include "layoutViewer.h"
 #include "odb/db.h"
@@ -1607,10 +1611,8 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
         checked.insert(bterm);
 
         QString current_text = QString::fromStdString(pin->getName());
-        int text_width = font_metrics.boundingRect(current_text).width();
-        if (text_width > largest_text_width) {
-          largest_text_width = text_width;
-        }
+        const int text_width = font_metrics.boundingRect(current_text).width();
+        largest_text_width = std::max(text_width, largest_text_width);
         while (largest_text_width > available_space) {
           if (font_size <= minimum_font_size) {
             break;
@@ -1816,7 +1818,7 @@ void RenderThread::drawIOPins(Painter& painter,
 
     bool do_rotate = false;
     auto anchor = pin.anchor;
-    if (pin.can_rotate) {
+    if (pin.can_rotate && pin.rect) {
       if (pin_text_spec_shapes.qbegin(bgi::intersects(*pin.rect)
                                       && bgi::satisfies([&](const auto& other) {
                                            return !bg::equals(other, *pin.rect);
