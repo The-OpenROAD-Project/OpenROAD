@@ -462,7 +462,7 @@ DisplayControls::DisplayControls(QWidget* parent)
                "Vias",
                shape_types_srouting,
                Qt::Checked);
-  makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
+  makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked, true);
   makeLeafItem(shape_types_.pin_names, "Pin Names", shape_types, Qt::Checked);
   shape_types_.pins.visible->setData(
       QVariant::fromValue(&shape_types_.pin_names), kDisableRowItemIdx);
@@ -1882,6 +1882,11 @@ bool DisplayControls::isFlywireHighlightOnly() const
 bool DisplayControls::areIOPinsVisible() const
 {
   return isModelRowVisible(&shape_types_.pins);
+}
+
+bool DisplayControls::areIOPinsSelectable() const
+{
+  return isModelRowSelectable(&shape_types_.pins);
 }
 
 bool DisplayControls::areIOPinNamesVisible() const

@@ -984,6 +984,24 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
         }
       }
     }
+
+    // Look for BPins
+    if (options_->areIOPinsVisible() && options_->areIOPinsSelectable()) {
+      for (auto* layer : block->getTech()->getLayers()) {
+        if (!options_->isVisible(layer)) {
+          continue;
+        }
+        for (const auto& [box, bpin] : search_.searchBPins(block,
+                                                           layer,
+                                                           region.xMin(),
+                                                           region.yMin(),
+                                                           region.xMax(),
+                                                           region.yMax(),
+                                                           shape_limit)) {
+          selections.push_back(gui_->makeSelected(bpin));
+        }
+      }
+    }
   }
 
   if (options_->areRulersVisible() && options_->areRulersSelectable()) {
