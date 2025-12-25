@@ -4,9 +4,13 @@
 #include "RepairSetup.hh"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <limits>
+#include <mutex>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -20,6 +24,7 @@
 #include "Rebuffer.hh"
 #include "SizeDownMove.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/SearchClass.hh"
@@ -34,7 +39,6 @@
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
@@ -50,6 +54,34 @@
 #include "utl/Logger.h"
 #include "utl/mem_stats.h"
 
+namespace {
+bool envVarTruthy(const char* name)
+{
+  const char* raw = std::getenv(name);
+  if (raw == nullptr || *raw == '\0') {
+    return false;
+  }
+
+  std::string value(raw);
+  const size_t start = value.find_first_not_of(" \t\n\r");
+  if (start == std::string::npos) {
+    return false;
+  }
+  const size_t end = value.find_last_not_of(" \t\n\r");
+  value = value.substr(start, end - start + 1);
+  std::transform(
+      value.begin(), value.end(), value.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+      });
+  return value == "1" || value == "true" || value == "yes" || value == "on";
+}
+
+bool useOrfsNewOpenroad()
+{
+  return envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
+}
+}  // namespace
+
 namespace rsz {
 
 using std::max;
@@ -57,6 +89,8 @@ using std::pair;
 using std::string;
 using std::vector;
 using utl::RSZ;
+
+int RepairSetup::decreasing_slack_max_passes_ = 50;
 
 using sta::Edge;
 using sta::fuzzyEqual;
@@ -73,6 +107,37 @@ using sta::VertexOutEdgeIterator;
 
 RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
+  if (!useOrfsNewOpenroad()) {
+    return;
+  }
+
+  static std::once_flag env_once;
+  std::call_once(env_once, [&]() {
+    const char* raw = std::getenv("RSZ_DECR_MAX_PASSES");
+    if (raw == nullptr || *raw == '\0') {
+      return;
+    }
+
+    char* end = nullptr;
+    const int64_t parsed = std::strtoll(raw, &end, 10);
+    Logger* logger = resizer_ != nullptr ? resizer_->logger() : nullptr;
+    if (end == raw || (end != nullptr && *end != '\0')) {
+      if (logger != nullptr) {
+        logger->warn(RSZ,
+                     285,
+                     "Ignoring RSZ_DECR_MAX_PASSES='{}' (not a valid integer).",
+                     raw);
+      }
+      return;
+    }
+
+    if (parsed > 0 && parsed <= std::numeric_limits<int>::max()) {
+      decreasing_slack_max_passes_ = static_cast<int>(parsed);
+    } else if (logger != nullptr) {
+      logger->warn(
+          RSZ, 286, "Ignoring RSZ_DECR_MAX_PASSES='{}' (must be > 0).", raw);
+    }
+  });
 }
 
 void RepairSetup::init()
@@ -100,6 +165,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_vt_swap,
                               const bool skip_crit_vt_swap)
 {
+  const bool use_orfs_new_openroad = useOrfsNewOpenroad();
   bool repaired = false;
   init();
   resizer_->rebuffer_->init();
@@ -303,6 +369,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     int pass = 1;
     int decreasing_slack_passes = 0;
     resizer_->journalBegin();
+    float prev_checkpoint_tns = 0.0F;
+    if (use_orfs_new_openroad) {
+      prev_checkpoint_tns = sta_->totalNegativeSlack(max_);
+    }
     while (pass <= max_passes) {
       opto_iteration++;
       if (verbose || opto_iteration == 1) {
@@ -390,8 +460,16 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       sta_->findRequireds();
       end_slack = sta_->vertexSlack(end, max_);
       sta_->worstSlack(max_, worst_slack, worst_vertex);
+      float curr_tns = 0.0F;
+      bool wns_not_worse = false;
+      if (use_orfs_new_openroad) {
+        curr_tns = sta_->totalNegativeSlack(max_);
+        wns_not_worse = fuzzyGreaterEqual(worst_slack, prev_worst_slack);
+      }
       const bool better
           = (fuzzyGreater(worst_slack, prev_worst_slack)
+             || (use_orfs_new_openroad && wns_not_worse
+                 && curr_tns > prev_checkpoint_tns)
              || (end_index != 1 && fuzzyEqual(worst_slack, prev_worst_slack)
                  && fuzzyGreater(end_slack, prev_end_slack)));
       debugPrint(logger_,
@@ -406,6 +484,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       if (better) {
         if (end_slack > setup_slack_margin) {
           --num_viols;
+        }
+        if (use_orfs_new_openroad) {
+          prev_checkpoint_tns = curr_tns;
         }
         prev_end_slack = end_slack;
         prev_worst_slack = worst_slack;
