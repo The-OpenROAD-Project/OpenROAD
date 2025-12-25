@@ -66,6 +66,18 @@ class CallBack : public dbBlockCallBackObj
       events.push_back("PostMove inst " + inst->getName());
     }
   }
+  void inDbInstPlacementStatusBefore(dbInst* inst,
+                                     const dbPlacementStatus& status) override
+  {
+    if (!_pause) {
+      char buffer[100];
+      sprintf(buffer,
+              "Change inst status: %s -> %s",
+              inst->getConstName(),
+              status.getString());
+      events.emplace_back(buffer);
+    }
+  }
   // dbInst End
 
   // dbNet Start
@@ -201,6 +213,20 @@ class CallBack : public dbBlockCallBackObj
   {
     if (!_pause) {
       events.emplace_back("Destroy BPin");
+    }
+  }
+
+  void inDbBPinPlacementStatusBefore(dbBPin* pin,
+                                     const dbPlacementStatus& status) override
+  {
+    if (!_pause) {
+      char buffer[100];
+      const std::string name = pin->getName();
+      sprintf(buffer,
+              "Change BPin status: %s -> %s",
+              name.c_str(),
+              status.getString());
+      events.emplace_back(buffer);
     }
   }
   // dbBPin End

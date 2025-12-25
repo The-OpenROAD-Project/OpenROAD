@@ -35,17 +35,19 @@ void dbRegionGroupItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbRegion* _parent = (_dbRegion*) parent;
-  uint32_t id = _parent->groups_;
-  uint32_t list = 0;
+  uint32_t curr_id = _parent->groups_;
+  uint32_t last_id = 0;
 
-  while (id != 0) {
-    _dbGroup* _child = group_tbl_->getPtr(id);
-    uint32_t n = _child->region_next_;
-    _child->region_next_ = list;
-    list = id;
-    id = n;
+  while (curr_id != 0) {
+    _dbGroup* _child = group_tbl_->getPtr(curr_id);
+    uint32_t next_id = _child->region_next_;
+    _child->region_next_ = _child->region_prev_;
+    _child->region_prev_ = next_id;
+
+    last_id = curr_id;
+    curr_id = next_id;
   }
-  _parent->groups_ = list;
+  _parent->groups_ = last_id;
   // User Code End reverse
 }
 

@@ -197,7 +197,14 @@ UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
   if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(inst)) {
     ndr_inst = inst;
   }
-  return UniqueClassKey(inst->getMaster(), orient, offset, ndr_inst);
+  std::set<frTerm*> stubborn_terms;
+  for (auto& term : inst->getInstTerms()) {
+    if (term->isStubborn()) {
+      stubborn_terms.insert(term->getTerm());
+    }
+  }
+  return UniqueClassKey(
+      inst->getMaster(), orient, offset, ndr_inst, stubborn_terms);
 }
 
 UniqueClass* UniqueInsts::computeUniqueClass(frInst* inst)
