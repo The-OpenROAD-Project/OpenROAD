@@ -1705,8 +1705,7 @@ void RenderThread::drawIOPins(Painter& painter,
       continue;
     }
 
-    Point pin_center((box->xMin() + box->xMax()) / 2,
-                     (box->yMin() + box->yMax()) / 2);
+    const Point pin_center = box->getBox().center();
 
     auto dist_to_left = std::abs(box->xMin() - die_area.xMin());
     auto dist_to_right = std::abs(box->xMax() - die_area.xMax());
