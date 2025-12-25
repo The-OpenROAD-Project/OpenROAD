@@ -106,7 +106,7 @@ class IRNetwork
 
   std::size_t getNodeCount(bool include_iterms = false) const;
 
-  const std::vector<std::unique_ptr<Connection>>& getConnections() const
+  const Connections& getConnections() const
   {
     return connections_;
   }
@@ -172,7 +172,7 @@ class IRNetwork
       odb::dbSBox* box,
       bool single_via,
       std::vector<std::unique_ptr<Node>>& new_nodes,
-      std::vector<std::unique_ptr<Connection>>& new_connections);
+      Connections& new_connections);
   LayerMap<Polygon90Set> generatePolygonsFromBox(
       odb::dbBox* box,
       const odb::dbTransform& transform) const;
@@ -196,7 +196,7 @@ class IRNetwork
   LayerMap<std::vector<std::unique_ptr<Shape>>> shapes_;
   LayerMap<std::vector<std::unique_ptr<Node>>> nodes_;
 
-  std::vector<std::unique_ptr<Connection>> connections_;
+  Connections connections_;
 
   std::vector<std::unique_ptr<ITermNode>> iterm_nodes_;
   std::vector<std::unique_ptr<BPinNode>> bpin_nodes_;

@@ -232,7 +232,7 @@ class RepairAntennas
   odb::dbOrientType getRowOrient(const odb::Point& point);
   RoutePtPinsMap findRoutePtPins(Net* net);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
-                           const int pin_layer,
+                           int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,
                            const GRoute& route);
 

@@ -442,11 +442,11 @@ class lefiLayer
   void setCurrentPoint(double width, double current);
   void setResistancePoint(double width, double res);
   void setCapacitancePoint(double width, double cap);
-  void addProp(const char* name, const char* value, const char type);
+  void addProp(const char* name, const char* value, char type);
   void addNumProp(const char* name,
-                  const double d,
+                  double d,
                   const char* value,
-                  const char type);
+                  char type);
   void addAccurrentDensity(const char* type);
   void setAcOneEntry(double num);
   void addAcFrequency();

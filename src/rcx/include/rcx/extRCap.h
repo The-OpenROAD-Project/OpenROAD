@@ -1786,14 +1786,14 @@ class extMain
   uint32_t makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint32_t resetMapNodes_v2(odb::dbWire* wire);
 
-  uint32_t getCapNodeId_v2(odb::dbITerm* iterm, const uint32_t junction);
-  uint32_t getCapNodeId_v2(odb::dbBTerm* bterm, const uint32_t junction);
+  uint32_t getCapNodeId_v2(odb::dbITerm* iterm, uint32_t junction);
+  uint32_t getCapNodeId_v2(odb::dbBTerm* bterm, uint32_t junction);
   uint32_t getCapNodeId_v2(odb::dbNet* net,
-                           const int junction,
-                           const bool branch);
+                           int junction,
+                           bool branch);
   uint32_t getCapNodeId_v2(odb::dbNet* net,
                            odb::dbWirePath& path,
-                           const uint32_t junction,
+                           uint32_t junction,
                            bool branch);
   uint32_t getCapNodeId_v2(odb::dbNet* net,
                            const odb::dbWirePathShape& pshape,
@@ -1801,8 +1801,8 @@ class extMain
                            bool branch);
   void initJunctionIdMaps(odb::dbNet* net);
 
-  void print_debug(const bool branch,
-                   const uint32_t junction,
+  void print_debug(bool branch,
+                   uint32_t junction,
                    uint32_t capId,
                    const char* old_new);
   odb::dbRSeg* addRSeg_v2(odb::dbNet* net,
@@ -1810,7 +1810,7 @@ class extMain
                           odb::Point& prevPoint,
                           const odb::dbWirePath& path,
                           const odb::dbWirePathShape& pshape,
-                          const bool isBranch,
+                          bool isBranch,
                           const double* restbl = nullptr,
                           const double* captbl = nullptr);
 

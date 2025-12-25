@@ -57,11 +57,11 @@ class defiNonDefault
   void addVia(const char* name);
   void addViaRule(const char* name);
   void addMinCuts(const char* name, int numCuts);
-  void addProperty(const char* name, const char* value, const char type);
+  void addProperty(const char* name, const char* value, char type);
   void addNumProperty(const char* name,
-                      const double d,
+                      double d,
                       const char* value,
-                      const char type);
+                      char type);
   void end();
 
   const char* name() const;

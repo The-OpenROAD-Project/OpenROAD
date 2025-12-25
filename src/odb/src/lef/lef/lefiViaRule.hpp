@@ -142,11 +142,11 @@ class lefiViaRule
   void setVertical();
   void setHorizontal();
   void setEnclosure(double overhang1, double overhang2);
-  void addProp(const char* name, const char* value, const char type);
+  void addProp(const char* name, const char* value, char type);
   void addNumProp(const char* name,
-                  const double d,
+                  double d,
                   const char* value,
-                  const char type);
+                  char type);
 
   // This routine sets and creates the active layer.
   void setLayer(const char* name);
