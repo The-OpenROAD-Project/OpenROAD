@@ -108,7 +108,7 @@ static void populateODBProperties(Descriptor::Properties& props,
     if (!prefix.empty()) {
       prop_name = prefix + " " + prop_name;
     }
-    props.push_back({std::move(prop_name), prop_list});
+    props.emplace_back(std::move(prop_name), prop_list);
   }
 }
 
@@ -349,40 +349,40 @@ Descriptor::Properties DbTechDescriptor::getDBProperties(
                     {"LEF Version", tech->getLefVersionStr()}});
 
   if (tech->hasManufacturingGrid()) {
-    props.push_back(
-        {"Manufacturing Grid",
-         Property::convert_dbu(tech->getManufacturingGrid(), true)});
+    props.emplace_back(
+        "Manufacturing Grid",
+        Property::convert_dbu(tech->getManufacturingGrid(), true));
   }
 
   SelectionSet tech_layers;
   for (auto tech_layer : tech->getLayers()) {
     tech_layers.insert(gui->makeSelected(tech_layer));
   }
-  props.push_back({"Tech Layers", tech_layers});
+  props.emplace_back("Tech Layers", tech_layers);
 
   SelectionSet tech_vias;
   for (auto tech_via : tech->getVias()) {
     tech_vias.insert(gui->makeSelected(tech_via));
   }
-  props.push_back({"Tech Vias", tech_vias});
+  props.emplace_back("Tech Vias", tech_vias);
 
   SelectionSet via_rules;
   for (auto via_rule : tech->getViaRules()) {
     via_rules.insert(gui->makeSelected(via_rule));
   }
-  props.push_back({"Tech Via Rules", via_rules});
+  props.emplace_back("Tech Via Rules", via_rules);
 
   SelectionSet generate_vias;
   for (auto via : tech->getViaGenerateRules()) {
     generate_vias.insert(gui->makeSelected(via));
   }
-  props.push_back({"Tech Via Generate Rules", generate_vias});
+  props.emplace_back("Tech Via Generate Rules", generate_vias);
 
   SelectionSet via_maps;
   for (auto map : tech->getMetalWidthViaMap()) {
     via_maps.insert(gui->makeSelected(map));
   }
-  props.push_back({"Metal Width Via Map Rules", via_maps});
+  props.emplace_back("Metal Width Via Map Rules", via_maps);
 
   std::vector<odb::dbTechSameNetRule*> rule_samenets;
   tech->getSameNetRules(rule_samenets);
@@ -390,13 +390,13 @@ Descriptor::Properties DbTechDescriptor::getDBProperties(
   for (auto samenet : rule_samenets) {
     samenet_rules.insert(gui->makeSelected(samenet));
   }
-  props.push_back({"Same Net Rules", samenet_rules});
+  props.emplace_back("Same Net Rules", samenet_rules);
 
   SelectionSet nondefault_rules;
   for (auto nondefault : tech->getNonDefaultRules()) {
     nondefault_rules.insert(gui->makeSelected(nondefault));
   }
-  props.push_back({"Non-Default Rules", nondefault_rules});
+  props.emplace_back("Non-Default Rules", nondefault_rules);
 
   return props;
 }
@@ -458,74 +458,74 @@ Descriptor::Properties DbBlockDescriptor::getDBProperties(
   for (auto child : block->getChildren()) {
     children.insert(gui->makeSelected(child));
   }
-  props.push_back({"Child Blocks", children});
+  props.emplace_back("Child Blocks", children);
 
   SelectionSet modules;
   for (auto module : block->getModules()) {
     modules.insert(gui->makeSelected(module));
   }
-  props.push_back({"Modules", modules});
+  props.emplace_back("Modules", modules);
 
-  props.push_back({"Top Module", gui->makeSelected(block->getTopModule())});
+  props.emplace_back("Top Module", gui->makeSelected(block->getTopModule()));
 
   SelectionSet bterms;
   for (auto bterm : block->getBTerms()) {
     bterms.insert(gui->makeSelected(bterm));
   }
-  props.push_back({"BTerms", bterms});
+  props.emplace_back("BTerms", bterms);
 
   SelectionSet vias;
   for (auto via : block->getVias()) {
     vias.insert(gui->makeSelected(via));
   }
-  props.push_back({"Block Vias", vias});
+  props.emplace_back("Block Vias", vias);
 
   SelectionSet nets;
   for (auto net : block->getNets()) {
     nets.insert(gui->makeSelected(net));
   }
-  props.push_back({"Nets", nets});
+  props.emplace_back("Nets", nets);
 
   SelectionSet regions;
   for (auto region : block->getRegions()) {
     regions.insert(gui->makeSelected(region));
   }
-  props.push_back({"Regions", regions});
+  props.emplace_back("Regions", regions);
 
   SelectionSet insts;
   for (auto inst : block->getInsts()) {
     insts.insert(gui->makeSelected(inst));
   }
-  props.push_back({"Instances", insts});
+  props.emplace_back("Instances", insts);
 
   SelectionSet blockages;
   for (auto blockage : block->getBlockages()) {
     blockages.insert(gui->makeSelected(blockage));
   }
-  props.push_back({"Blockages", blockages});
+  props.emplace_back("Blockages", blockages);
 
   SelectionSet obstructions;
   for (auto obstruction : block->getObstructions()) {
     obstructions.insert(gui->makeSelected(obstruction));
   }
-  props.push_back({"Obstructions", obstructions});
+  props.emplace_back("Obstructions", obstructions);
 
   SelectionSet rows;
   for (auto row : block->getRows()) {
     rows.insert(gui->makeSelected(row));
   }
-  props.push_back({"Rows", rows});
+  props.emplace_back("Rows", rows);
 
   SelectionSet markers;
   for (auto marker : block->getMarkerCategories()) {
     markers.insert(gui->makeSelected(marker));
   }
   if (!markers.empty()) {
-    props.push_back({"Markers", markers});
+    props.emplace_back("Markers", markers);
   }
 
-  props.push_back({"Core Area", block->getCoreArea()});
-  props.push_back({"Die Area", block->getDieArea()});
+  props.emplace_back("Core Area", block->getCoreArea());
+  props.emplace_back("Die Area", block->getDieArea());
 
   return props;
 }
@@ -589,17 +589,17 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
   auto placed = inst->getPlacementStatus();
   auto* module = inst->getModule();
   Properties props;
-  props.push_back({"Block", gui->makeSelected(inst->getBlock())});
+  props.emplace_back("Block", gui->makeSelected(inst->getBlock()));
   if (module != nullptr) {
-    props.push_back({"Module", gui->makeSelected(module)});
+    props.emplace_back("Module", gui->makeSelected(module));
   }
-  props.push_back({"Master", gui->makeSelected(inst->getMaster())});
+  props.emplace_back("Master", gui->makeSelected(inst->getMaster()));
 
-  props.push_back(
-      {"Description", sta_->getInstanceTypeText(sta_->getInstanceType(inst))});
-  props.push_back({"Placement status", placed.getString()});
-  props.push_back({"Source type", inst->getSourceType().getString()});
-  props.push_back({"Dont Touch", inst->isDoNotTouch()});
+  props.emplace_back("Description",
+                     sta_->getInstanceTypeText(sta_->getInstanceType(inst)));
+  props.emplace_back("Placement status", placed.getString());
+  props.emplace_back("Source type", inst->getSourceType().getString());
+  props.emplace_back("Dont Touch", inst->isDoNotTouch());
   if (placed.isPlaced()) {
     int x, y;
     inst->getLocation(x, y);
@@ -619,31 +619,31 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
     }
     iterms.push_back({gui->makeSelected(iterm), net_value});
   }
-  props.push_back({"ITerms", iterms});
+  props.emplace_back("ITerms", iterms);
 
   auto* group = inst->getGroup();
   if (group != nullptr) {
-    props.push_back({"Group", gui->makeSelected(group)});
+    props.emplace_back("Group", gui->makeSelected(group));
   }
 
   auto* region = inst->getRegion();
   if (region != nullptr) {
-    props.push_back({"Region", gui->makeSelected(region)});
+    props.emplace_back("Region", gui->makeSelected(region));
   }
 
   auto* halo = inst->getHalo();
   if (halo != nullptr) {
-    props.push_back({"Halo", gui->makeSelected(halo)});
+    props.emplace_back("Halo", gui->makeSelected(halo));
   }
 
   sta::Instance* sta_inst = sta_->getDbNetwork()->dbToSta(inst);
   if (sta_inst != nullptr) {
-    props.push_back({"Timing/Power", gui->makeSelected(sta_inst)});
+    props.emplace_back("Timing/Power", gui->makeSelected(sta_inst));
   }
 
   odb::dbScanInst* scan_inst = inst->getScanInst();
   if (scan_inst != nullptr) {
-    props.push_back({"Scan Inst", gui->makeSelected(scan_inst)});
+    props.emplace_back("Scan Inst", gui->makeSelected(scan_inst));
   }
 
   Descriptor::PropertyList obs_layers;
@@ -660,7 +660,7 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
     }
   }
   if (!obs_layers.empty()) {
-    props.push_back({"Obstructions", obs_layers});
+    props.emplace_back("Obstructions", obs_layers);
   }
 
   return props;
@@ -861,13 +861,13 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   auto gui = Gui::get();
   auto site = master->getSite();
   if (site != nullptr) {
-    props.push_back({"Site", gui->makeSelected(site)});
+    props.emplace_back("Site", gui->makeSelected(site));
   }
   SelectionSet mterms;
   for (auto mterm : master->getMTerms()) {
     mterms.insert(gui->makeSelected(mterm));
   }
-  props.push_back({"MTerms", mterms});
+  props.emplace_back("MTerms", mterms);
 
   std::vector<std::any> symmetry;
   if (master->getSymmetryX()) {
@@ -879,7 +879,7 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   if (master->getSymmetryR90()) {
     symmetry.emplace_back("R90");
   }
-  props.push_back({"Symmetry", symmetry});
+  props.emplace_back("Symmetry", symmetry);
 
   SelectionSet equivalent;
   std::set<odb::dbMaster*> equivalent_masters;
@@ -889,28 +889,28 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
       equivalent.insert(gui->makeSelected(other_master));
     }
   }
-  props.push_back({"Equivalent", equivalent});
+  props.emplace_back("Equivalent", equivalent);
   SelectionSet instances;
   std::set<odb::dbInst*> insts;
   getInstances(master, insts);
   for (auto inst : insts) {
     instances.insert(gui->makeSelected(inst));
   }
-  props.push_back({"Instances", instances});
-  props.push_back({"Origin", master->getOrigin()});
+  props.emplace_back("Instances", instances);
+  props.emplace_back("Origin", master->getOrigin());
 
   std::vector<std::any> edge_types;
   for (auto* edge : master->getEdgeTypes()) {
     edge_types.emplace_back(gui->makeSelected(edge));
   }
   if (!edge_types.empty()) {
-    props.push_back({"Edge types", edge_types});
+    props.emplace_back("Edge types", edge_types);
   }
 
   auto liberty
       = sta_->getDbNetwork()->findLibertyCell(master->getName().c_str());
   if (liberty) {
-    props.push_back({"Liberty", gui->makeSelected(liberty)});
+    props.emplace_back("Liberty", gui->makeSelected(liberty));
   }
 
   return props;
@@ -1849,12 +1849,12 @@ Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
     }
     iterm_item = iterms;
   }
-  props.push_back({"ITerms", std::move(iterm_item)});
+  props.emplace_back("ITerms", std::move(iterm_item));
   SelectionSet bterms;
   for (auto bterm : net->getBTerms()) {
     bterms.insert(gui->makeSelected(bterm));
   }
-  props.push_back({"BTerms", bterms});
+  props.emplace_back("BTerms", bterms);
 
   std::set<odb::dbModNet*> modnet_set;
   if (net->findRelatedModNets(modnet_set)) {
@@ -1862,28 +1862,28 @@ Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
     for (odb::dbModNet* mod_net : modnet_set) {
       mod_nets.insert(gui->makeSelected(mod_net));
     }
-    props.push_back({"ModNets", mod_nets});
+    props.emplace_back("ModNets", mod_nets);
   }
 
   auto* ndr = net->getNonDefaultRule();
   if (ndr != nullptr) {
-    props.push_back({"Non-default rule", gui->makeSelected(ndr)});
+    props.emplace_back("Non-default rule", gui->makeSelected(ndr));
   }
 
   if (BufferTree::isAggregate(net)) {
-    props.push_back({"Buffer tree", gui->makeSelected(BufferTree(net))});
+    props.emplace_back("Buffer tree", gui->makeSelected(BufferTree(net)));
   }
 
   odb::dbWire* wire = net->getWire();
   if (wire != nullptr) {
-    props.push_back({"Wire", gui->makeSelected(wire)});
+    props.emplace_back("Wire", gui->makeSelected(wire));
   }
   SelectionSet swires;
   for (auto* swire : net->getSWires()) {
     swires.insert(gui->makeSelected(swire));
   }
   if (!swires.empty()) {
-    props.push_back({"Special wires", swires});
+    props.emplace_back("Special wires", swires);
   }
 
   return props;
@@ -2244,12 +2244,12 @@ Descriptor::Properties DbBTermDescriptor::getDBProperties(
 
   std::optional<odb::Rect> constraint = bterm->getConstraintRegion();
   if (constraint) {
-    props.push_back({"Constraint Region", constraint.value()});
+    props.emplace_back("Constraint Region", constraint.value());
   }
 
-  props.push_back({"Is Mirrored", bterm->isMirrored()});
+  props.emplace_back("Is Mirrored", bterm->isMirrored());
   if (odb::dbBTerm* mirrored = bterm->getMirroredBTerm()) {
-    props.push_back({"Mirrored", gui->makeSelected(mirrored)});
+    props.emplace_back("Mirrored", gui->makeSelected(mirrored));
   }
 
   SelectionSet pins;
@@ -2257,7 +2257,7 @@ Descriptor::Properties DbBTermDescriptor::getDBProperties(
     pins.insert(gui->makeSelected(pin));
   }
   if (!pins.empty()) {
-    props.push_back({"Pins", pins});
+    props.emplace_back("Pins", pins);
   }
 
   return props;
@@ -2349,19 +2349,19 @@ Descriptor::Properties DbBPinDescriptor::getDBProperties(
   for (auto* box : bpin->getBoxes()) {
     auto* layer = box->getTechLayer();
     if (layer != nullptr) {
-      boxes.push_back(
-          {gui->makeSelected(box->getTechLayer()), gui->makeSelected(box)});
+      boxes.emplace_back(gui->makeSelected(box->getTechLayer()),
+                         gui->makeSelected(box));
     }
   }
-  props.push_back({"Boxes", boxes});
+  props.emplace_back("Boxes", boxes);
 
   if (bpin->hasEffectiveWidth()) {
-    props.push_back(
-        {"Effective width", convertUnits(bpin->getEffectiveWidth())});
+    props.emplace_back("Effective width",
+                       convertUnits(bpin->getEffectiveWidth()));
   }
 
   if (bpin->hasMinSpacing()) {
-    props.push_back({"Min spacing", convertUnits(bpin->getMinSpacing())});
+    props.emplace_back("Min spacing", convertUnits(bpin->getMinSpacing()));
   }
 
   return props;
@@ -2533,63 +2533,62 @@ Descriptor::Properties DbViaDescriptor::getDBProperties(odb::dbVia* via) const
   Properties props({{"Block", gui->makeSelected(via->getBlock())}});
 
   if (!via->getPattern().empty()) {
-    props.push_back({"Pattern", via->getPattern()});
+    props.emplace_back("Pattern", via->getPattern());
   }
 
-  props.push_back(
-      {"Tech Via Generate Rule", gui->makeSelected(via->getViaGenerateRule())});
+  props.emplace_back("Tech Via Generate Rule",
+                     gui->makeSelected(via->getViaGenerateRule()));
 
   if (via->hasParams()) {
     const odb::dbViaParams via_params = via->getViaParams();
 
-    props.push_back(
-        {"Cut Size",
-         fmt::format("X={}, Y={}",
-                     Property::convert_dbu(via_params.getXCutSize(), true),
-                     Property::convert_dbu(via_params.getYCutSize(), true))});
+    props.emplace_back(
+        "Cut Size",
+        fmt::format("X={}, Y={}",
+                    Property::convert_dbu(via_params.getXCutSize(), true),
+                    Property::convert_dbu(via_params.getYCutSize(), true)));
 
-    props.push_back(
-        {"Cut Spacing",
-         fmt::format(
-             "X={}, Y={}",
-             Property::convert_dbu(via_params.getXCutSpacing(), true),
-             Property::convert_dbu(via_params.getYCutSpacing(), true))});
+    props.emplace_back(
+        "Cut Spacing",
+        fmt::format("X={}, Y={}",
+                    Property::convert_dbu(via_params.getXCutSpacing(), true),
+                    Property::convert_dbu(via_params.getYCutSpacing(), true)));
 
-    props.push_back(
-        {"Top Enclosure",
-         fmt::format(
-             "X={}, Y={}",
-             Property::convert_dbu(via_params.getXTopEnclosure(), true),
-             Property::convert_dbu(via_params.getYTopEnclosure(), true))});
+    props.emplace_back(
+        "Top Enclosure",
+        fmt::format(
+            "X={}, Y={}",
+            Property::convert_dbu(via_params.getXTopEnclosure(), true),
+            Property::convert_dbu(via_params.getYTopEnclosure(), true)));
 
-    props.push_back(
-        {"Bottom Enclosure",
-         fmt::format(
-             "X={}, Y={}",
-             Property::convert_dbu(via_params.getXBottomEnclosure(), true),
-             Property::convert_dbu(via_params.getYBottomEnclosure(), true))});
+    props.emplace_back(
+        "Bottom Enclosure",
+        fmt::format(
+            "X={}, Y={}",
+            Property::convert_dbu(via_params.getXBottomEnclosure(), true),
+            Property::convert_dbu(via_params.getYBottomEnclosure(), true)));
 
-    props.push_back({"Number of Cut Rows", via_params.getNumCutRows()});
-    props.push_back({"Number of Cut Columns", via_params.getNumCutCols()});
+    props.emplace_back("Number of Cut Rows", via_params.getNumCutRows());
+    props.emplace_back("Number of Cut Columns", via_params.getNumCutCols());
 
-    props.push_back(
-        {"Origin",
-         fmt::format("X={}, Y={}",
-                     Property::convert_dbu(via_params.getXOrigin(), true),
-                     Property::convert_dbu(via_params.getYOrigin(), true))});
+    props.emplace_back(
+        "Origin",
+        fmt::format("X={}, Y={}",
+                    Property::convert_dbu(via_params.getXOrigin(), true),
+                    Property::convert_dbu(via_params.getYOrigin(), true)));
 
-    props.push_back(
-        {"Top Offset",
-         fmt::format("X={}, Y={}",
-                     Property::convert_dbu(via_params.getXTopOffset(), true),
-                     Property::convert_dbu(via_params.getYTopOffset(), true))});
+    props.emplace_back(
+        "Top Offset",
+        fmt::format("X={}, Y={}",
+                    Property::convert_dbu(via_params.getXTopOffset(), true),
+                    Property::convert_dbu(via_params.getYTopOffset(), true)));
 
-    props.push_back(
-        {"Bottom Offset",
-         fmt::format(
-             "X={}, Y={}",
-             Property::convert_dbu(via_params.getXBottomOffset(), true),
-             Property::convert_dbu(via_params.getYBottomOffset(), true))});
+    props.emplace_back(
+        "Bottom Offset",
+        fmt::format(
+            "X={}, Y={}",
+            Property::convert_dbu(via_params.getXBottomOffset(), true),
+            Property::convert_dbu(via_params.getYBottomOffset(), true)));
 
     PropertyList shapes;
     for (auto box : via->getBoxes()) {
@@ -2597,7 +2596,7 @@ Descriptor::Properties DbViaDescriptor::getDBProperties(odb::dbVia* via) const
       auto rect = box->getBox();
       shapes.push_back({gui->makeSelected(layer), rect});
     }
-    props.push_back({"Shapes", shapes});
+    props.emplace_back("Shapes", shapes);
   } else {
     PropertyList shapes;
     for (auto box : via->getBoxes()) {
@@ -2605,18 +2604,18 @@ Descriptor::Properties DbViaDescriptor::getDBProperties(odb::dbVia* via) const
       auto rect = box->getBox();
       shapes.push_back({gui->makeSelected(layer), rect});
     }
-    props.push_back({"Shapes", shapes});
+    props.emplace_back("Shapes", shapes);
   }
 
-  props.push_back({"Is Rotated", via->isViaRotated()});
+  props.emplace_back("Is Rotated", via->isViaRotated());
 
   if (via->isViaRotated()) {
-    props.push_back({"Orientation", via->getOrient().getString()});
-    props.push_back({"Tech Via", gui->makeSelected(via->getTechVia())});
-    props.push_back({"Block Via", gui->makeSelected(via->getBlockVia())});
+    props.emplace_back("Orientation", via->getOrient().getString());
+    props.emplace_back("Tech Via", gui->makeSelected(via->getTechVia()));
+    props.emplace_back("Block Via", gui->makeSelected(via->getBlockVia()));
   }
 
-  props.push_back({"Is Default", via->isDefault()});
+  props.emplace_back("Is Default", via->isDefault());
 
   return props;
 }
@@ -2813,13 +2812,13 @@ Descriptor::Properties DbObstructionDescriptor::getDBProperties(
        {"Slot", obs->isSlotObstruction()},
        {"Fill", obs->isFillObstruction()}});
   if (obs->hasEffectiveWidth()) {
-    props.push_back({"Effective width",
-                     Property::convert_dbu(obs->getEffectiveWidth(), true)});
+    props.emplace_back("Effective width",
+                       Property::convert_dbu(obs->getEffectiveWidth(), true));
   }
 
   if (obs->hasMinSpacing()) {
-    props.push_back(
-        {"Min spacing", Property::convert_dbu(obs->getMinSpacing(), true)});
+    props.emplace_back("Min spacing",
+                       Property::convert_dbu(obs->getMinSpacing(), true));
   }
 
   return props;
@@ -2909,60 +2908,60 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
                     {"Direction", layer->getDirection().getString()},
                     {"Layer type", layer->getType().getString()}});
   if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
-    props.push_back({"LEF58 type", layer->getLef58TypeString()});
+    props.emplace_back("LEF58 type", layer->getLef58TypeString());
   }
-  props.push_back({"Layer number", layer->getNumber()});
+  props.emplace_back("Layer number", layer->getNumber());
   if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-    props.push_back({"Routing layer", layer->getRoutingLevel()});
+    props.emplace_back("Routing layer", layer->getRoutingLevel());
   }
   if (layer->hasXYPitch()) {
     if (layer->getPitchX() != 0) {
-      props.push_back(
-          {"Pitch X", Property::convert_dbu(layer->getPitchX(), true)});
+      props.emplace_back("Pitch X",
+                         Property::convert_dbu(layer->getPitchX(), true));
     }
     if (layer->getPitchY() != 0) {
-      props.push_back(
-          {"Pitch Y", Property::convert_dbu(layer->getPitchY(), true)});
+      props.emplace_back("Pitch Y",
+                         Property::convert_dbu(layer->getPitchY(), true));
     }
   } else {
     if (layer->getPitch() != 0) {
-      props.push_back(
-          {"Pitch", Property::convert_dbu(layer->getPitch(), true)});
+      props.emplace_back("Pitch",
+                         Property::convert_dbu(layer->getPitch(), true));
     }
   }
   if (layer->getWidth() != 0) {
-    props.push_back(
-        {"Default width", Property::convert_dbu(layer->getWidth(), true)});
+    props.emplace_back("Default width",
+                       Property::convert_dbu(layer->getWidth(), true));
   }
   if (layer->getMinWidth() != 0) {
-    props.push_back(
-        {"Minimum width", Property::convert_dbu(layer->getMinWidth(), true)});
+    props.emplace_back("Minimum width",
+                       Property::convert_dbu(layer->getMinWidth(), true));
   }
   if (layer->hasMaxWidth()) {
-    props.push_back(
-        {"Max width", Property::convert_dbu(layer->getMaxWidth(), true)});
+    props.emplace_back("Max width",
+                       Property::convert_dbu(layer->getMaxWidth(), true));
   }
   if (layer->getSpacing() != 0) {
-    props.push_back(
-        {"Minimum spacing", Property::convert_dbu(layer->getSpacing(), true)});
+    props.emplace_back("Minimum spacing",
+                       Property::convert_dbu(layer->getSpacing(), true));
   }
   if (layer->hasArea()) {
-    props.push_back(
-        {"Minimum area",
-         convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m²"});
+    props.emplace_back(
+        "Minimum area",
+        convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m²");
   }
   if (layer->getResistance() != 0.0) {
-    props.push_back(
-        {"Resistance", convertUnits(layer->getResistance()) + "Ω/sq"});
+    props.emplace_back("Resistance",
+                       convertUnits(layer->getResistance()) + "Ω/sq");
   }
   if (layer->getCapacitance() != 0.0) {
-    props.push_back({"Capacitance",
-                     convertUnits(layer->getCapacitance() * 1e-12) + "F/μm²"});
+    props.emplace_back("Capacitance",
+                       convertUnits(layer->getCapacitance() * 1e-12) + "F/μm²");
   }
   if (layer->getEdgeCapacitance() != 0.0) {
-    props.push_back(
-        {"Edge capacitance",
-         convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/μm"});
+    props.emplace_back(
+        "Edge capacitance",
+        convertUnits(layer->getEdgeCapacitance() * 1e-12) + "F/μm");
   }
 
   for (auto* width_table : layer->getTechLayerWidthTableRules()) {
@@ -2978,7 +2977,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     for (auto width : width_table->getWidthTable()) {
       widths.emplace_back(Property::convert_dbu(width, true));
     }
-    props.push_back({std::move(title), widths});
+    props.emplace_back(std::move(title), widths);
   }
 
   if (layer->hasTwoWidthsSpacingRules()) {
@@ -3005,7 +3004,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     }
 
     if (!table.empty()) {
-      props.push_back({"Two width spacing rules", table});
+      props.emplace_back("Two width spacing rules", table);
     }
   }
 
@@ -3026,7 +3025,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     cutclasses.emplace_back(cutclass->getName(), text);
   }
   if (!cutclasses.empty()) {
-    props.push_back({"Cut classes", cutclasses});
+    props.emplace_back("Cut classes", cutclasses);
   }
 
   PropertyList cut_enclosures;
@@ -3067,7 +3066,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     cut_enclosures.emplace_back(text, enclosure.str());
   }
   if (!cut_enclosures.empty()) {
-    props.push_back({"Cut enclosures", cut_enclosures});
+    props.emplace_back("Cut enclosures", cut_enclosures);
   }
 
   PropertyList minimum_cuts;
@@ -3096,7 +3095,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     minimum_cuts.emplace_back(text, static_cast<int>(numcuts));
   }
   if (!minimum_cuts.empty()) {
-    props.push_back({"Minimum cuts", minimum_cuts});
+    props.emplace_back("Minimum cuts", minimum_cuts);
   }
 
   PropertyList lef58_minimum_cuts;
@@ -3116,7 +3115,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     }
   }
   if (!lef58_minimum_cuts.empty()) {
-    props.push_back({"LEF58 minimum cuts", lef58_minimum_cuts});
+    props.emplace_back("LEF58 minimum cuts", lef58_minimum_cuts);
   }
 
   if (layer->getType() == odb::dbTechLayerType::CUT) {
@@ -3132,7 +3131,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
         }
       }
     }
-    props.push_back({"Generate vias", generate_vias});
+    props.emplace_back("Generate vias", generate_vias);
 
     SelectionSet tech_vias;
     for (auto* via : tech->getVias()) {
@@ -3143,7 +3142,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
         }
       }
     }
-    props.push_back({"Tech vias", tech_vias});
+    props.emplace_back("Tech vias", tech_vias);
   }
 
   return props;
@@ -3249,7 +3248,7 @@ Descriptor::Properties DbTermAccessPointDescriptor::getProperties(
       }
       vias_property.push_back({cnt++, name});
     }
-    props.push_back({fmt::format("{} cut vias", cuts + 1), vias_property});
+    props.emplace_back(fmt::format("{} cut vias", cuts + 1), vias_property);
   }
 
   populateODBProperties(props, ap);
@@ -3360,12 +3359,12 @@ Descriptor::Properties DbGroupDescriptor::getDBProperties(
   Properties props;
   auto* parent = group->getParentGroup();
   if (parent != nullptr) {
-    props.push_back({"Parent", gui->makeSelected(parent)});
+    props.emplace_back("Parent", gui->makeSelected(parent));
   }
 
   auto* region = group->getRegion();
   if (region != nullptr) {
-    props.push_back({"Region", gui->makeSelected(region)});
+    props.emplace_back("Region", gui->makeSelected(region));
   }
 
   SelectionSet groups;
@@ -3373,28 +3372,28 @@ Descriptor::Properties DbGroupDescriptor::getDBProperties(
     groups.insert(gui->makeSelected(subgroup));
   }
   if (!groups.empty()) {
-    props.push_back({"Groups", groups});
+    props.emplace_back("Groups", groups);
   }
 
   SelectionSet insts;
   for (auto* inst : group->getInsts()) {
     insts.insert(gui->makeSelected(inst));
   }
-  props.push_back({"Instances", insts});
+  props.emplace_back("Instances", insts);
 
-  props.push_back({"Group Type", group->getType().getString()});
+  props.emplace_back("Group Type", group->getType().getString());
 
   SelectionSet pwr;
   for (auto* net : group->getPowerNets()) {
     pwr.insert(gui->makeSelected(net));
   }
-  props.push_back({"Power Nets", pwr});
+  props.emplace_back("Power Nets", pwr);
 
   SelectionSet gnd;
   for (auto* net : group->getGroundNets()) {
     gnd.insert(gui->makeSelected(net));
   }
-  props.push_back({"Ground Nets", gnd});
+  props.emplace_back("Ground Nets", gnd);
 
   return props;
 }
@@ -3481,14 +3480,14 @@ Descriptor::Properties DbRegionDescriptor::getDBProperties(
     children.insert(gui->makeSelected(child));
   }
   if (!children.empty()) {
-    props.push_back({"Groups", children});
+    props.emplace_back("Groups", children);
   }
 
   SelectionSet insts;
   for (auto* inst : region->getRegionInsts()) {
     insts.insert(gui->makeSelected(inst));
   }
-  props.push_back({"Instances", insts});
+  props.emplace_back("Instances", insts);
 
   return props;
 }
@@ -3584,15 +3583,15 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
 
   Properties props;
   if (mod_inst != nullptr) {
-    props.push_back({"ModInst", gui->makeSelected(mod_inst)});
+    props.emplace_back("ModInst", gui->makeSelected(mod_inst));
     auto* parent = mod_inst->getParent();
     if (parent != nullptr) {
-      props.push_back({"Parent", gui->makeSelected(parent)});
+      props.emplace_back("Parent", gui->makeSelected(parent));
     }
 
     auto* group = mod_inst->getGroup();
     if (group != nullptr) {
-      props.push_back({"Group", gui->makeSelected(group)});
+      props.emplace_back("Group", gui->makeSelected(group));
     }
   }
 
@@ -3601,32 +3600,32 @@ Descriptor::Properties DbModuleDescriptor::getDBProperties(
     children.insert(gui->makeSelected(child->getMaster()));
   }
   if (!children.empty()) {
-    props.push_back({"Children", children});
+    props.emplace_back("Children", children);
   }
 
   SelectionSet insts;
   for (auto* inst : module->getInsts()) {
     insts.insert(gui->makeSelected(inst));
   }
-  props.push_back({"Instances", insts});
+  props.emplace_back("Instances", insts);
 
   SelectionSet modnets;
   for (auto* modnet : module->getModNets()) {
     modnets.insert(gui->makeSelected(modnet));
   }
-  props.push_back({"ModNets", modnets});
+  props.emplace_back("ModNets", modnets);
 
   SelectionSet ports;
   for (auto* port : module->getPorts()) {
     ports.insert(gui->makeSelected(port));
   }
-  props.push_back({"Ports", ports});
+  props.emplace_back("Ports", ports);
 
   SelectionSet modbterms;
   for (auto* modbterm : module->getModBTerms()) {
     modbterms.insert(gui->makeSelected(modbterm));
   }
-  props.push_back({"ModBTerms", modbterms});
+  props.emplace_back("ModBTerms", modbterms);
 
   if (mod_inst != nullptr) {
     populateODBProperties(props, mod_inst, "Instance");
@@ -3704,27 +3703,27 @@ Descriptor::Properties DbModBTermDescriptor::getDBProperties(
   Properties props;
   auto* parent = modbterm->getParent();
   if (parent != nullptr) {
-    props.push_back({"Parent", gui->makeSelected(parent)});
+    props.emplace_back("Parent", gui->makeSelected(parent));
   }
 
   auto* moditerm = modbterm->getParentModITerm();
   if (moditerm != nullptr) {
-    props.push_back({"Parent ModITerm", gui->makeSelected(moditerm)});
+    props.emplace_back("Parent ModITerm", gui->makeSelected(moditerm));
   }
 
   auto* modnet = modbterm->getModNet();
   if (modnet != nullptr) {
-    props.push_back({"ModNet", gui->makeSelected(modnet)});
+    props.emplace_back("ModNet", gui->makeSelected(modnet));
   }
 
   auto signal = modbterm->getSigType().getString();
   if (signal) {
-    props.push_back({"Signal type", signal});
+    props.emplace_back("Signal type", signal);
   }
 
   auto iotype = modbterm->getIoType().getString();
   if (iotype != nullptr) {
-    props.push_back({"IO type", iotype});
+    props.emplace_back("IO type", iotype);
   }
 
   auto* bus = modbterm->getBusPort();
@@ -3734,9 +3733,9 @@ Descriptor::Properties DbModBTermDescriptor::getDBProperties(
       ports.insert(gui->makeSelected(port));
     }
 
-    props.push_back({"Bus port", ports});
+    props.emplace_back("Bus port", ports);
   } else {
-    props.push_back({"Is bus port", false});
+    props.emplace_back("Is bus port", false);
   }
 
   return props;
@@ -3813,17 +3812,17 @@ Descriptor::Properties DbModITermDescriptor::getDBProperties(
   Properties props;
   auto* parent = moditerm->getParent();
   if (parent != nullptr) {
-    props.push_back({"Parent", gui->makeSelected(parent)});
+    props.emplace_back("Parent", gui->makeSelected(parent));
   }
 
   auto* modnet = moditerm->getModNet();
   if (modnet != nullptr) {
-    props.push_back({"ModNet", gui->makeSelected(modnet)});
+    props.emplace_back("ModNet", gui->makeSelected(modnet));
   }
 
   auto* modbterm = moditerm->getChildModBTerm();
   if (modbterm != nullptr) {
-    props.push_back({"Child ModBTerm", gui->makeSelected(modbterm)});
+    props.emplace_back("Child ModBTerm", gui->makeSelected(modbterm));
   }
 
   return props;
@@ -3902,24 +3901,24 @@ Descriptor::Properties DbModInstDescriptor::getDBProperties(
   Properties props;
   auto* parent = modinst->getParent();
   if (parent != nullptr) {
-    props.push_back({"Parent", gui->makeSelected(parent)});
+    props.emplace_back("Parent", gui->makeSelected(parent));
   }
 
   auto* master = modinst->getMaster();
   if (master != nullptr) {
-    props.push_back({"Master", gui->makeSelected(master)});
+    props.emplace_back("Master", gui->makeSelected(master));
   }
 
   auto* group = modinst->getGroup();
   if (group != nullptr) {
-    props.push_back({"Group", gui->makeSelected(group)});
+    props.emplace_back("Group", gui->makeSelected(group));
   }
 
   SelectionSet moditerms;
   for (auto* moditerm : modinst->getModITerms()) {
     moditerms.insert(gui->makeSelected(moditerm));
   }
-  props.push_back({"ModITerms", moditerms});
+  props.emplace_back("ModITerms", moditerms);
 
   return props;
 }
@@ -3994,33 +3993,33 @@ Descriptor::Properties DbModNetDescriptor::getDBProperties(
   Properties props;
   auto* parent = modnet->getParent();
   if (parent != nullptr) {
-    props.push_back({"Parent", gui->makeSelected(parent)});
+    props.emplace_back("Parent", gui->makeSelected(parent));
   }
 
   SelectionSet moditerms;
   for (auto* moditerm : modnet->getModITerms()) {
     moditerms.insert(gui->makeSelected(moditerm));
   }
-  props.push_back({"ModITerms", moditerms});
+  props.emplace_back("ModITerms", moditerms);
 
   SelectionSet modbterms;
   for (auto* modbterm : modnet->getModBTerms()) {
     modbterms.insert(gui->makeSelected(modbterm));
   }
-  props.push_back({"ModBTerms", modbterms});
+  props.emplace_back("ModBTerms", modbterms);
 
   SelectionSet iterms;
   for (auto* iterm : modnet->getITerms()) {
     iterms.insert(gui->makeSelected(iterm));
   }
-  props.push_back({"ITerms", iterms});
+  props.emplace_back("ITerms", iterms);
 
   SelectionSet bterms;
   for (auto* bterm : modnet->getBTerms()) {
     bterms.insert(gui->makeSelected(bterm));
   }
-  props.push_back({"BTerms", bterms});
-  props.push_back({"Net", gui->makeSelected(modnet->findRelatedNet())});
+  props.emplace_back("BTerms", bterms);
+  props.emplace_back("Net", gui->makeSelected(modnet->findRelatedNet()));
 
   return props;
 }
@@ -4102,26 +4101,26 @@ Descriptor::Properties DbTechViaDescriptor::getDBProperties(
   PropertyList layers;
   auto make_layer = [gui, &shapes, &layers](odb::dbTechLayer* layer) {
     const auto& shape = shapes[layer];
-    layers.push_back({gui->makeSelected(layer), shape});
+    layers.emplace_back(gui->makeSelected(layer), shape);
   };
   make_layer(via->getBottomLayer());
   if (cut_layer != nullptr) {
     make_layer(cut_layer);
   }
   make_layer(via->getTopLayer());
-  props.push_back({"Layers", layers});
+  props.emplace_back("Layers", layers);
 
-  props.push_back({"Is default", via->isDefault()});
-  props.push_back({"Is top of stack", via->isTopOfStack()});
+  props.emplace_back("Is default", via->isDefault());
+  props.emplace_back("Is top of stack", via->isTopOfStack());
 
   if (via->getResistance() != 0.0) {
-    props.push_back(
-        {"Resistance", convertUnits(via->getResistance()) + "Ω/sq"});
+    props.emplace_back("Resistance",
+                       convertUnits(via->getResistance()) + "Ω/sq");
   }
 
   auto* ndr = via->getNonDefaultRule();
   if (ndr != nullptr) {
-    props.push_back({"Non-default Rule", gui->makeSelected(ndr)});
+    props.emplace_back("Non-default Rule", gui->makeSelected(ndr));
   }
 
   return props;
@@ -4177,7 +4176,7 @@ Descriptor::Properties DbTechViaRuleDescriptor::getDBProperties(
        via_index++) {
     vias.insert(gui->makeSelected(via_rule->getVia(via_index)));
   }
-  props.push_back({"Tech Vias", vias});
+  props.emplace_back("Tech Vias", vias);
 
   SelectionSet layer_rules;
   for (uint32_t rule_index = 0; rule_index < via_rule->getViaLayerRuleCount();
@@ -4185,7 +4184,7 @@ Descriptor::Properties DbTechViaRuleDescriptor::getDBProperties(
     layer_rules.insert(
         gui->makeSelected(via_rule->getViaLayerRule(rule_index)));
   }
-  props.push_back({"Tech Via-Layer Rules", layer_rules});
+  props.emplace_back("Tech Via-Layer Rules", layer_rules);
 
   return props;
 }
@@ -4249,7 +4248,7 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getDBProperties(
                       Property::convert_dbu(min_width, true),
                       Property::convert_dbu(max_width, true));
 
-    props.push_back({"Width", width_range});
+    props.emplace_back("Width", width_range);
   }
 
   if (via_layer_rule->hasEnclosure()) {
@@ -4263,26 +4262,25 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getDBProperties(
                       Property::convert_dbu(overhang_1, true),
                       Property::convert_dbu(overhang_2, true));
 
-    props.push_back({"Enclosure", enclosure_rule});
+    props.emplace_back("Enclosure", enclosure_rule);
   }
 
   if (via_layer_rule->hasOverhang()) {
-    props.push_back(
-        {"Overhang",
-         Property::convert_dbu(via_layer_rule->getOverhang(), true)});
+    props.emplace_back(
+        "Overhang", Property::convert_dbu(via_layer_rule->getOverhang(), true));
   }
 
   if (via_layer_rule->hasMetalOverhang()) {
-    props.push_back(
-        {"Metal Overhang",
-         Property::convert_dbu(via_layer_rule->getMetalOverhang(), true)});
+    props.emplace_back(
+        "Metal Overhang",
+        Property::convert_dbu(via_layer_rule->getMetalOverhang(), true));
   }
 
   if (via_layer_rule->hasRect()) {
     odb::Rect rect_rule;
     via_layer_rule->getRect(rect_rule);
 
-    props.push_back({"Rectangle", rect_rule});
+    props.emplace_back("Rectangle", rect_rule);
   }
 
   if (via_layer_rule->hasSpacing()) {
@@ -4291,15 +4289,15 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getDBProperties(
 
     via_layer_rule->getSpacing(x_spacing, y_spacing);
 
-    props.push_back({"Spacing",
-                     fmt::format("{} x {}",
-                                 Property::convert_dbu(x_spacing, true),
-                                 Property::convert_dbu(y_spacing, true))});
+    props.emplace_back("Spacing",
+                       fmt::format("{} x {}",
+                                   Property::convert_dbu(x_spacing, true),
+                                   Property::convert_dbu(y_spacing, true)));
   }
 
   if (via_layer_rule->hasResistance()) {
-    props.push_back(
-        {"Resistance", convertUnits(via_layer_rule->getResistance()) + "Ω/sq"});
+    props.emplace_back("Resistance",
+                       convertUnits(via_layer_rule->getResistance()) + "Ω/sq");
   }
 
   return props;
@@ -4420,21 +4418,21 @@ Descriptor::Properties DbGenerateViaDescriptor::getDBProperties(
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       odb::Rect shape;
       rule->getRect(shape);
-      layers.push_back({gui->makeSelected(layer), shape});
+      layers.emplace_back(gui->makeSelected(layer), shape);
     } else {
       int enc0, enc1;
       rule->getEnclosure(enc0, enc1);
       std::string shape_text = fmt::format("Enclosure: {} x {}",
                                            Property::convert_dbu(enc0, true),
                                            Property::convert_dbu(enc1, true));
-      layers.push_back({gui->makeSelected(layer), shape_text});
+      layers.emplace_back(gui->makeSelected(layer), shape_text);
     }
     via_layer_rules.insert(gui->makeSelected(rule));
   }
-  props.push_back({"Tech Via-Layer Rules", via_layer_rules});
-  props.push_back({"Layers", layers});
+  props.emplace_back("Tech Via-Layer Rules", via_layer_rules);
+  props.emplace_back("Layers", layers);
 
-  props.push_back({"Is default", via->isDefault()});
+  props.emplace_back("Is default", via->isDefault());
 
   return props;
 }
@@ -4491,7 +4489,7 @@ Descriptor::Properties DbNonDefaultRuleDescriptor::getDBProperties(
   for (auto* layer : rule_layers) {
     layers.insert(gui->makeSelected(layer));
   }
-  props.push_back({"Layer rules", layers});
+  props.emplace_back("Layer rules", layers);
 
   std::vector<odb::dbTechVia*> rule_vias;
   rule->getVias(rule_vias);
@@ -4499,7 +4497,7 @@ Descriptor::Properties DbNonDefaultRuleDescriptor::getDBProperties(
   for (auto* via : rule_vias) {
     vias.insert(gui->makeSelected(via));
   }
-  props.push_back({"Tech vias", vias});
+  props.emplace_back("Tech vias", vias);
 
   std::vector<odb::dbTechSameNetRule*> rule_samenets;
   rule->getSameNetRules(rule_samenets);
@@ -4507,9 +4505,9 @@ Descriptor::Properties DbNonDefaultRuleDescriptor::getDBProperties(
   for (auto* samenet : rule_samenets) {
     samenet_rules.insert(gui->makeSelected(samenet));
   }
-  props.push_back({"Same net rules", samenet_rules});
+  props.emplace_back("Same net rules", samenet_rules);
 
-  props.push_back({"Is block rule", rule->isBlockRule()});
+  props.emplace_back("Is block rule", rule->isBlockRule());
 
   return props;
 }
@@ -4571,13 +4569,14 @@ Descriptor::Properties DbTechLayerRuleDescriptor::getDBProperties(
 
   Properties props;
 
-  props.push_back({"Layer", gui->makeSelected(rule->getLayer())});
-  props.push_back(
-      {"Non-default Rule", gui->makeSelected(rule->getNonDefaultRule())});
-  props.push_back({"Is block rule", rule->isBlockRule()});
+  props.emplace_back("Layer", gui->makeSelected(rule->getLayer()));
+  props.emplace_back("Non-default Rule",
+                     gui->makeSelected(rule->getNonDefaultRule()));
+  props.emplace_back("Is block rule", rule->isBlockRule());
 
-  props.push_back({"Width", Property::convert_dbu(rule->getWidth(), true)});
-  props.push_back({"Spacing", Property::convert_dbu(rule->getSpacing(), true)});
+  props.emplace_back("Width", Property::convert_dbu(rule->getWidth(), true));
+  props.emplace_back("Spacing",
+                     Property::convert_dbu(rule->getSpacing(), true));
 
   return props;
 }
@@ -4623,11 +4622,12 @@ Descriptor::Properties DbTechSameNetRuleDescriptor::getDBProperties(
 
   Properties props({{"Tech", gui->makeSelected(db_->getTech())}});
 
-  props.push_back({"Layer 1", gui->makeSelected(rule->getLayer1())});
-  props.push_back({"Layer 2", gui->makeSelected(rule->getLayer2())});
+  props.emplace_back("Layer 1", gui->makeSelected(rule->getLayer1()));
+  props.emplace_back("Layer 2", gui->makeSelected(rule->getLayer2()));
 
-  props.push_back({"Spacing", Property::convert_dbu(rule->getSpacing(), true)});
-  props.push_back({"Allow via stacking", rule->getAllowStackedVias()});
+  props.emplace_back("Spacing",
+                     Property::convert_dbu(rule->getSpacing(), true));
+  props.emplace_back("Allow via stacking", rule->getAllowStackedVias());
 
   return props;
 }
@@ -4677,7 +4677,7 @@ Descriptor::Properties DbSiteDescriptor::getProperties(
   Properties props = BaseDbDescriptor::getProperties(object);
 
   if (auto site = std::any_cast<SpecificSite>(&object)) {
-    props.push_back({"Index", site->index_in_row});
+    props.emplace_back("Index", site->index_in_row);
   }
 
   return props;
@@ -4688,10 +4688,10 @@ Descriptor::Properties DbSiteDescriptor::getDBProperties(
 {
   Properties props;
 
-  props.push_back({"Width", Property::convert_dbu(site->getWidth(), true)});
-  props.push_back({"Height", Property::convert_dbu(site->getHeight(), true)});
+  props.emplace_back("Width", Property::convert_dbu(site->getWidth(), true));
+  props.emplace_back("Height", Property::convert_dbu(site->getHeight(), true));
 
-  props.push_back({"Site class", site->getClass().getString()});
+  props.emplace_back("Site class", site->getClass().getString());
 
   std::vector<std::any> symmetry;
   if (site->getSymmetryX()) {
@@ -4703,7 +4703,7 @@ Descriptor::Properties DbSiteDescriptor::getDBProperties(
   if (site->getSymmetryR90()) {
     symmetry.emplace_back("R90");
   }
-  props.push_back({"Symmetry", symmetry});
+  props.emplace_back("Symmetry", symmetry);
 
   auto* gui = Gui::get();
   SelectionSet masters;
@@ -4715,7 +4715,7 @@ Descriptor::Properties DbSiteDescriptor::getDBProperties(
     }
   }
   if (!masters.empty()) {
-    props.push_back({"Masters", masters});
+    props.emplace_back("Masters", masters);
   }
 
   return props;
@@ -4820,14 +4820,14 @@ Descriptor::Properties DbRowDescriptor::getDBProperties(odb::dbRow* row) const
   PropertyList origin;
   origin.push_back({"X", Property::convert_dbu(origin_pt.x(), true)});
   origin.push_back({"Y", Property::convert_dbu(origin_pt.y(), true)});
-  props.push_back({"Origin", origin});
+  props.emplace_back("Origin", origin);
 
-  props.push_back({"Orientation", row->getOrient().getString()});
-  props.push_back({"Direction", row->getDirection().getString()});
+  props.emplace_back("Orientation", row->getOrient().getString());
+  props.emplace_back("Direction", row->getDirection().getString());
 
-  props.push_back({"Site count", row->getSiteCount()});
-  props.push_back(
-      {"Site spacing", Property::convert_dbu(row->getSpacing(), true)});
+  props.emplace_back("Site count", row->getSiteCount());
+  props.emplace_back("Site spacing",
+                     Property::convert_dbu(row->getSpacing(), true));
 
   return props;
 }
@@ -4891,26 +4891,26 @@ Descriptor::Properties DbMarkerCategoryDescriptor::getDBProperties(
 
   Properties props;
 
-  props.push_back({"Description", category->getDescription()});
-  props.push_back({"Source", category->getSource()});
-  props.push_back({"Max markers", category->getMaxMarkers()});
+  props.emplace_back("Description", category->getDescription());
+  props.emplace_back("Source", category->getSource());
+  props.emplace_back("Max markers", category->getMaxMarkers());
 
   odb::dbMarkerCategory* top = category->getTopCategory();
   if (category != top) {
-    props.push_back({"Top category", gui->makeSelected(top)});
+    props.emplace_back("Top category", gui->makeSelected(top));
   }
 
   odb::dbObject* parent = category->getParent();
   if (parent != top) {
     if (parent->getObjectType() == odb::dbObjectType::dbChipObj) {
       // TODO: fix this
-      props.push_back(
-          {"Parent",
-           gui->makeSelected(static_cast<odb::dbChip*>(parent)->getBlock())});
+      props.emplace_back(
+          "Parent",
+          gui->makeSelected(static_cast<odb::dbChip*>(parent)->getBlock()));
     } else {
-      props.push_back(
-          {"Parent",
-           gui->makeSelected(static_cast<odb::dbMarkerCategory*>(parent))});
+      props.emplace_back(
+          "Parent",
+          gui->makeSelected(static_cast<odb::dbMarkerCategory*>(parent)));
     }
   }
 
@@ -4919,7 +4919,7 @@ Descriptor::Properties DbMarkerCategoryDescriptor::getDBProperties(
     subcategories.insert(gui->makeSelected(subcat));
   }
   if (!subcategories.empty()) {
-    props.push_back({"Categories", subcategories});
+    props.emplace_back("Categories", subcategories);
   }
 
   SelectionSet markers;
@@ -4927,7 +4927,7 @@ Descriptor::Properties DbMarkerCategoryDescriptor::getDBProperties(
     markers.insert(gui->makeSelected(marker));
   }
   if (!markers.empty()) {
-    props.push_back({"Markers", markers});
+    props.emplace_back("Markers", markers);
   }
 
   return props;
@@ -4982,14 +4982,14 @@ Descriptor::Properties DbMarkerDescriptor::getDBProperties(
 
   Properties props;
 
-  props.push_back({"Category", gui->makeSelected(marker->getCategory())});
+  props.emplace_back("Category", gui->makeSelected(marker->getCategory()));
 
-  props.push_back({"Visited", marker->isVisited()});
-  props.push_back({"Waived", marker->isWaived()});
+  props.emplace_back("Visited", marker->isVisited());
+  props.emplace_back("Waived", marker->isWaived());
 
   auto layer = marker->getTechLayer();
   if (layer != nullptr) {
-    props.push_back({"Layer", gui->makeSelected(layer)});
+    props.emplace_back("Layer", gui->makeSelected(layer));
   }
 
   SelectionSet sources;
@@ -5019,17 +5019,17 @@ Descriptor::Properties DbMarkerDescriptor::getDBProperties(
     }
   }
   if (!sources.empty()) {
-    props.push_back({"Sources", sources});
+    props.emplace_back("Sources", sources);
   }
 
   const auto& comment = marker->getComment();
   if (!comment.empty()) {
-    props.push_back({"Comment", comment});
+    props.emplace_back("Comment", comment);
   }
 
   int line_number = marker->getLineNumber();
   if (line_number > 0) {
-    props.push_back({"Line number:", line_number});
+    props.emplace_back("Line number:", line_number);
   }
 
   return props;
@@ -5132,20 +5132,20 @@ Descriptor::Properties DbScanInstDescriptor::getDBProperties(
 {
   Properties props;
 
-  props.push_back({"Scan Clock", scan_inst->getScanClock()});
-  props.push_back({"Clock Edge", scan_inst->getClockEdgeString()});
-  props.push_back(getScanPinProperty("Enable", scan_inst->getScanEnable()));
+  props.emplace_back("Scan Clock", scan_inst->getScanClock());
+  props.emplace_back("Clock Edge", scan_inst->getClockEdgeString());
+  props.emplace_back(getScanPinProperty("Enable", scan_inst->getScanEnable()));
 
   PropertyList access_pins_props;
   odb::dbScanInst::AccessPins access_pins = scan_inst->getAccessPins();
   Property scan_in_prop = getScanPinProperty("In", access_pins.scan_in);
-  access_pins_props.push_back({scan_in_prop.name, scan_in_prop.value});
+  access_pins_props.emplace_back(scan_in_prop.name, scan_in_prop.value);
   Property scan_out_prop = getScanPinProperty("Out", access_pins.scan_out);
-  access_pins_props.push_back({scan_out_prop.name, scan_out_prop.value});
-  props.push_back({"Access Pins", access_pins_props});
+  access_pins_props.emplace_back(scan_out_prop.name, scan_out_prop.value);
+  props.emplace_back("Access Pins", access_pins_props);
 
   auto gui = Gui::get();
-  props.push_back({"Inst", gui->makeSelected(scan_inst->getInst())});
+  props.emplace_back("Inst", gui->makeSelected(scan_inst->getInst()));
 
   return props;
 }
@@ -5238,7 +5238,7 @@ Descriptor::Properties DbScanListDescriptor::getDBProperties(
   for (odb::dbScanInst* scan_inst : scan_list->getScanInsts()) {
     scan_insts.insert(gui->makeSelected(scan_inst));
   }
-  props.push_back({"Scan Insts", scan_insts});
+  props.emplace_back("Scan Insts", scan_insts);
 
   return props;
 }
@@ -5313,7 +5313,7 @@ Descriptor::Properties DbScanPartitionDescriptor::getDBProperties(
   for (odb::dbScanList* scan_list : scan_partition->getScanLists()) {
     scan_lists.insert(gui->makeSelected(scan_list));
   }
-  props.push_back({"Scan Lists", scan_lists});
+  props.emplace_back("Scan Lists", scan_lists);
 
   return props;
 }
@@ -5383,11 +5383,11 @@ Descriptor::Properties DbScanChainDescriptor::getDBProperties(
 {
   Properties props;
 
-  props.push_back(
+  props.emplace_back(
       DbScanInstDescriptor::getScanPinProperty("In", scan_chain->getScanIn()));
-  props.push_back(DbScanInstDescriptor::getScanPinProperty(
+  props.emplace_back(DbScanInstDescriptor::getScanPinProperty(
       "Out", scan_chain->getScanOut()));
-  props.push_back(DbScanInstDescriptor::getScanPinProperty(
+  props.emplace_back(DbScanInstDescriptor::getScanPinProperty(
       "Enable", scan_chain->getScanEnable()));
 
   auto gui = Gui::get();
@@ -5396,7 +5396,7 @@ Descriptor::Properties DbScanChainDescriptor::getDBProperties(
   for (auto* scan_partition : scan_chain->getScanPartitions()) {
     scan_partitions.insert(gui->makeSelected(scan_partition));
   }
-  props.push_back({"Scan Partitions", scan_partitions});
+  props.emplace_back("Scan Partitions", scan_partitions);
 
   return props;
 }
@@ -5478,75 +5478,75 @@ void DbBoxDescriptor::populateProperties(odb::dbBox* box, Properties& props)
 
   switch (box->getOwnerType()) {
     case odb::dbBoxOwner::BLOCK:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbBlock*) box->getBoxOwner())});
+      props.emplace_back("Owner",
+                         gui->makeSelected((odb::dbBlock*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::INST:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbInst*) box->getBoxOwner())});
+      props.emplace_back("Owner",
+                         gui->makeSelected((odb::dbInst*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::BTERM:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbBTerm*) box->getBoxOwner())});
+      props.emplace_back("Owner",
+                         gui->makeSelected((odb::dbBTerm*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::BPIN:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbBPin*) box->getBoxOwner())});
+      props.emplace_back("Owner",
+                         gui->makeSelected((odb::dbBPin*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::VIA:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbVia*) box->getBoxOwner())});
+      props.emplace_back("Owner",
+                         gui->makeSelected((odb::dbVia*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::OBSTRUCTION:
-      props.push_back(
-          {"Owner",
-           gui->makeSelected((odb::dbObstruction*) box->getBoxOwner())});
+      props.emplace_back(
+          "Owner", gui->makeSelected((odb::dbObstruction*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::BLOCKAGE:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbBlockage*) box->getBoxOwner())});
+      props.emplace_back(
+          "Owner", gui->makeSelected((odb::dbBlockage*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::SWIRE:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbSWire*) box->getBoxOwner())});
+      props.emplace_back("Owner",
+                         gui->makeSelected((odb::dbSWire*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::MASTER:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbMaster*) box->getBoxOwner())});
+      props.emplace_back(
+          "Owner", gui->makeSelected((odb::dbMaster*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::MPIN:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbMPin*) box->getBoxOwner())});
+      props.emplace_back("Owner",
+                         gui->makeSelected((odb::dbMPin*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::PBOX:
-      props.push_back({"Owner", "PBOX"});
+      props.emplace_back("Owner", "PBOX");
       break;
     case odb::dbBoxOwner::TECH_VIA:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbTechVia*) box->getBoxOwner())});
+      props.emplace_back(
+          "Owner", gui->makeSelected((odb::dbTechVia*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::REGION:
-      props.push_back(
-          {"Owner", gui->makeSelected((odb::dbRegion*) box->getBoxOwner())});
+      props.emplace_back(
+          "Owner", gui->makeSelected((odb::dbRegion*) box->getBoxOwner()));
       break;
     case odb::dbBoxOwner::UNKNOWN:
-      props.push_back({"Owner", "Unknown"});
+      props.emplace_back("Owner", "Unknown");
       break;
   }
 
   if (auto* layer = box->getTechLayer()) {
-    props.push_back({"Layer", gui->makeSelected(layer)});
+    props.emplace_back("Layer", gui->makeSelected(layer));
     if (box->getLayerMask() > 0) {
-      props.push_back({"Mask", box->getLayerMask()});
+      props.emplace_back("Mask", box->getLayerMask());
     }
     if (box->getDesignRuleWidth() >= 0) {
-      props.push_back({"Design rule width",
-                       Property::convert_dbu(box->getDesignRuleWidth(), true)});
+      props.emplace_back(
+          "Design rule width",
+          Property::convert_dbu(box->getDesignRuleWidth(), true));
     }
   } else if (auto* via = box->getTechVia()) {
-    props.push_back({"Tech via", gui->makeSelected(via)});
+    props.emplace_back("Tech via", gui->makeSelected(via));
   } else if (auto* via = box->getBlockVia()) {
-    props.push_back({"Block via", gui->makeSelected(via)});
+    props.emplace_back("Block via", gui->makeSelected(via));
   }
 }
 
@@ -5621,8 +5621,8 @@ Descriptor::Properties DbSBoxDescriptor::getDBProperties(odb::dbSBox* box) const
 
   DbBoxDescriptor::populateProperties(box, props);
 
-  props.push_back({"SWire", gui->makeSelected(box->getSWire())});
-  props.push_back({"Shape type", box->getWireShapeType().getString()});
+  props.emplace_back("SWire", gui->makeSelected(box->getSWire()));
+  props.emplace_back("Shape type", box->getWireShapeType().getString());
   std::string direction;
   switch (box->getDirection()) {
     case odb::dbSBox::UNDEFINED:
@@ -5638,7 +5638,7 @@ Descriptor::Properties DbSBoxDescriptor::getDBProperties(odb::dbSBox* box) const
       direction = "Octilinear";
       break;
   }
-  props.push_back({"Direction", direction});
+  props.emplace_back("Direction", direction);
 
   return props;
 }
@@ -5752,14 +5752,14 @@ Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
     }
   }
   if (!rules.empty()) {
-    props.push_back({"Rules", rules});
+    props.emplace_back("Rules", rules);
   }
 
   if (edge->getCellRow() != -1) {
-    props.push_back({"Cell row", edge->getCellRow()});
+    props.emplace_back("Cell row", edge->getCellRow());
   }
   if (edge->getHalfRow() != -1) {
-    props.push_back({"Half row", edge->getHalfRow()});
+    props.emplace_back("Half row", edge->getHalfRow());
   }
 
   PropertyList range;
@@ -5770,7 +5770,7 @@ Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
     range.push_back({"End", edge->getRangeEnd()});
   }
   if (!range.empty()) {
-    props.push_back({"Range", range});
+    props.emplace_back("Range", range);
   }
 
   std::string edgedir;
@@ -5788,7 +5788,7 @@ Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
       edgedir = "bottom";
       break;
   }
-  props.push_back({"Edge direction", edgedir});
+  props.emplace_back("Edge direction", edgedir);
 
   return props;
 }
@@ -5849,16 +5849,17 @@ Descriptor::Properties DbCellEdgeSpacingDescriptor::getDBProperties(
 {
   Properties props;
 
-  props.push_back({"First edge", rule->getFirstEdgeType()});
-  props.push_back({"Second edge", rule->getSecondEdgeType()});
+  props.emplace_back("First edge", rule->getFirstEdgeType());
+  props.emplace_back("Second edge", rule->getSecondEdgeType());
 
-  props.push_back({"Spacing", Property::convert_dbu(rule->getSpacing(), true)});
-  props.push_back({"Except abutted", rule->isExceptAbutted()});
-  props.push_back(
-      {"Except non filler in between", rule->isExceptNonFillerInBetween()});
-  props.push_back({"Optional", rule->isOptional()});
-  props.push_back({"Soft", rule->isSoft()});
-  props.push_back({"Exact", rule->isExact()});
+  props.emplace_back("Spacing",
+                     Property::convert_dbu(rule->getSpacing(), true));
+  props.emplace_back("Except abutted", rule->isExceptAbutted());
+  props.emplace_back("Except non filler in between",
+                     rule->isExceptNonFillerInBetween());
+  props.emplace_back("Optional", rule->isOptional());
+  props.emplace_back("Soft", rule->isSoft());
+  props.emplace_back("Exact", rule->isExact());
 
   return props;
 }
@@ -5930,11 +5931,11 @@ Descriptor::Properties DbWireDescriptor::getDBProperties(
   Properties props;
   auto* gui = Gui::get();
 
-  props.push_back({"Net", gui->makeSelected(wire->getNet())});
-  props.push_back({"Is global", wire->isGlobalWire()});
-  props.push_back({"Count", wire->count()});
-  props.push_back({"Entries", wire->length()});
-  props.push_back({"Length", Property::convert_dbu(wire->getLength(), true)});
+  props.emplace_back("Net", gui->makeSelected(wire->getNet()));
+  props.emplace_back("Is global", wire->isGlobalWire());
+  props.emplace_back("Count", wire->count());
+  props.emplace_back("Entries", wire->length());
+  props.emplace_back("Length", Property::convert_dbu(wire->getLength(), true));
 
   return props;
 }
@@ -6007,19 +6008,19 @@ Descriptor::Properties DbSWireDescriptor::getDBProperties(
   Properties props;
   auto* gui = Gui::get();
 
-  props.push_back({"Net", gui->makeSelected(wire->getNet())});
-  props.push_back({"Type", wire->getWireType().getString()});
+  props.emplace_back("Net", gui->makeSelected(wire->getNet()));
+  props.emplace_back("Type", wire->getWireType().getString());
   if (wire->getShield() != nullptr) {
-    props.push_back({"Sheild net", gui->makeSelected(wire->getShield())});
+    props.emplace_back("Sheild net", gui->makeSelected(wire->getShield()));
   }
   if (wire->getWires().size() > kMaxBoxes) {
-    props.push_back({"Boxes", wire->getWires().size()});
+    props.emplace_back("Boxes", wire->getWires().size());
   } else {
     SelectionSet boxes;
     for (odb::dbSBox* box : wire->getWires()) {
       boxes.insert(gui->makeSelected(box));
     }
-    props.push_back({"Boxes", boxes});
+    props.emplace_back("Boxes", boxes);
   }
 
   return props;
