@@ -602,6 +602,14 @@ eliminate_dead_logic_cmd(bool clean_nets)
   resizer->eliminateDeadLogic(clean_nets);
 }
 
+void
+set_eliminate_dead_logic_enabled_cmd(bool enabled)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->setEliminateDeadLogicEnabled(enabled);
+}
+
 void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint,
                             bool report_all_cells, bool report_vt_equiv)
 {
