@@ -58,6 +58,7 @@ struct PlaceOptions
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
   float timingNetWeightMax = 5;
+  bool timingNetWeightMaxUserSet = false;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
   // timing driven check overflow to keep resizer changes (non-virtual resizer)
@@ -163,6 +164,7 @@ class Replace
   std::unique_ptr<NesterovPlace> np_;
 
   int total_placeable_insts_ = 0;
+
 
   Clusters clusters_;
 
