@@ -872,6 +872,14 @@ void Gui::showWorstTimingPath(bool setup)
   main_window->getTimingWidget()->showWorstTimingPath(setup);
 }
 
+void Gui::clearTimingPath()
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->clearSelection();
+}
+
 void Gui::selectClockviewerClock(const std::string& clock_name,
                                  std::optional<int> depth)
 {

@@ -814,6 +814,12 @@ void TimingWidget::showWorstTimingPath(bool setup)
   }
 }
 
+void TimingWidget::clearSelection()
+{
+  setup_timing_table_view_->clearSelection();
+  hold_timing_table_view_->clearSelection();
+}
+
 void TimingWidget::modelWasReset()
 {
   setup_timing_table_view_->resizeColumnsToContents();

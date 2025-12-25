@@ -341,6 +341,15 @@ void show_worst_path(bool setup = true)
   gui->showWorstTimingPath(setup);
 }
 
+void clear_timing_path()
+{
+  if (!check_gui("clear_timing_path")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->clearTimingPath();
+}
+
 void clear_rulers()
 {
   if (!check_gui("clear_rulers")) {
