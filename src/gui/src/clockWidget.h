@@ -122,9 +122,7 @@ class ClockNetGraphicsViewItem : public QGraphicsItem
   void buildTrunkJunction(const std::vector<ClockNodeGraphicsViewItem*>& nodes,
                           bool top_anchor,
                           const QPointF& trunk_junction);
-  void addLeafPath(const QPointF& start,
-                   qreal y_trunk,
-                   const QPointF& end);
+  void addLeafPath(const QPointF& start, qreal y_trunk, const QPointF& end);
 
   void setNetInformation();
 };

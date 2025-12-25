@@ -773,8 +773,7 @@ constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y)
   return !(x == y);
 }
 template <typename A, typename B>
-constexpr bool
-operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
+constexpr bool operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
     noexcept(std::declval<A const&>() < std::declval<A const&>())
     && noexcept(std::declval<B const&>() < std::declval<B const&>()))
 {

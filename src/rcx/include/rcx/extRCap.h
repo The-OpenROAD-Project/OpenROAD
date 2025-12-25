@@ -1788,9 +1788,7 @@ class extMain
 
   uint32_t getCapNodeId_v2(odb::dbITerm* iterm, uint32_t junction);
   uint32_t getCapNodeId_v2(odb::dbBTerm* bterm, uint32_t junction);
-  uint32_t getCapNodeId_v2(odb::dbNet* net,
-                           int junction,
-                           bool branch);
+  uint32_t getCapNodeId_v2(odb::dbNet* net, int junction, bool branch);
   uint32_t getCapNodeId_v2(odb::dbNet* net,
                            odb::dbWirePath& path,
                            uint32_t junction,

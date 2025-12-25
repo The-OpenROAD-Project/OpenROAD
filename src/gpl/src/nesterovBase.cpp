@@ -2723,8 +2723,10 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
         wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
         wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-    sumPrecondi.x = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
-    sumPrecondi.y = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
+    sumPrecondi.x
+        = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
+    sumPrecondi.y
+        = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
 
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;

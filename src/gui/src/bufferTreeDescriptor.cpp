@@ -278,21 +278,21 @@ Descriptor::Actions BufferTreeDescriptor::getActions(
     has_net_tracks |= !net->getTracks().empty();
   }
   if (has_net_tracks) {
-    actions.push_back(
-        Descriptor::Action{"Tracks", [this, gui, &bnet]() {
-                             bool tracks_on = false;
-                             for (auto* net : bnet.getNets()) {
-                               tracks_on |= tracks_nets_.contains(net);
-                             }
-                             for (auto* net : bnet.getNets()) {
-                               if (!tracks_on) {
-                                 gui->addNetTracks(net);
-                               } else {
-                                 gui->removeNetTracks(net);
-                               }
-                             }
-                             return makeSelected(bnet);
-                           }});
+    actions.push_back(Descriptor::Action{"Tracks", [this, gui, &bnet]() {
+                                           bool tracks_on = false;
+                                           for (auto* net : bnet.getNets()) {
+                                             tracks_on
+                                                 |= tracks_nets_.contains(net);
+                                           }
+                                           for (auto* net : bnet.getNets()) {
+                                             if (!tracks_on) {
+                                               gui->addNetTracks(net);
+                                             } else {
+                                               gui->removeNetTracks(net);
+                                             }
+                                           }
+                                           return makeSelected(bnet);
+                                         }});
   }
   return actions;
 }

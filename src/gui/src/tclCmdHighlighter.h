@@ -88,8 +88,7 @@ class TclCmdHighlighter : public QSyntaxHighlighter
                                 const std::string& start_of_command,
                                 const std::string& end_of_command);
   static CommandRulePtr buildRule(const std::string& pattern);
-  static CommandRulePtr buildRule(int command_id,
-                                  const std::string& pattern);
+  static CommandRulePtr buildRule(int command_id, const std::string& pattern);
   static ArgumentRulePtr buildArgumentRule(const std::vector<std::string>& args,
                                            const QTextCharFormat* format);
 

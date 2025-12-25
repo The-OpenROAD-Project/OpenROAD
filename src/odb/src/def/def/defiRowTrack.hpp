@@ -56,10 +56,7 @@ class defiRow
   void setDo(double x_num, double y_num, double x_step, double y_step);
   void setHasDoStep();
   void addProperty(const char* name, const char* value, char type);
-  void addNumProperty(const char* name,
-                      double d,
-                      const char* value,
-                      char type);
+  void addNumProperty(const char* name, double d, const char* value, char type);
 
   const char* name() const;
   const char* macro() const;

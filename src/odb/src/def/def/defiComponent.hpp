@@ -87,10 +87,7 @@ class defiComponent
   void setEEQ(const char* name);
   void addNet(const char* netName);
   void addProperty(const char* name, const char* value, char type);
-  void addNumProperty(const char* name,
-                      double d,
-                      const char* value,
-                      char type);
+  void addNumProperty(const char* name, double d, const char* value, char type);
   void reverseNetOrder();
   void setWeight(int w);
   void setMaskShift(const char* color);

@@ -887,7 +887,8 @@ void NesterovPlace::doBackTracking(const float coeff)
 {
   // Back-Tracking loop
   int numBackTrak = 0;
-  for (numBackTrak = 0; numBackTrak < NesterovPlaceVars::maxBackTrack; numBackTrak++) {
+  for (numBackTrak = 0; numBackTrak < NesterovPlaceVars::maxBackTrack;
+       numBackTrak++) {
     // fill in nextCoordinates with given stepLength_
     for (auto& nb : nbVec_) {
       nb->nesterovUpdateCoordinates(coeff);
