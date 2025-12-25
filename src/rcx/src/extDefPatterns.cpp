@@ -33,9 +33,9 @@ extRulesPat::extRulesPat(const char* pat,
                          bool diag,
                          bool res,
                          uint32_t len,
-                         int org[2],
-                         int LL[2],
-                         int UR[2],
+                         const int org[2],
+                         const int LL[2],
+                         const int UR[2],
                          dbBlock* block,
                          extMain* xt,
                          dbTech* tech)
@@ -90,7 +90,7 @@ extRulesPat::extRulesPat(const char* pat,
   // _create_net_util.setBlock(_block, false);
 }
 void extRulesPat::PrintOrigin(FILE* fp,
-                              int ll[2],
+                              const int ll[2],
                               uint32_t met,
                               const char* msg)
 {
@@ -718,7 +718,7 @@ void extRulesPat::Print(FILE* fp, uint32_t jj)
           _ur_1[jj][1] * units,
           _patName[jj]);
 }
-void extRulesPat::PrintBbox(FILE* fp, int LL[2], int UR[2])
+void extRulesPat::PrintBbox(FILE* fp, const int LL[2], const int UR[2])
 {
   if (!_dbg) {
     return;
@@ -764,7 +764,10 @@ void extRulesPat::WriteDB(uint32_t jj,
 
   createNetSingleWire(_patName[jj], ll, ur, width, dir == 0, met, layer);
 }
-void extRulesPat::WriteWire(FILE* fp, int ll[2], int ur[2], char* name)
+void extRulesPat::WriteWire(FILE* fp,
+                            const int ll[2],
+                            const int ur[2],
+                            char* name)
 {
   if (!_dbg) {
     return;
@@ -1193,8 +1196,8 @@ dbBTerm* extRulesPat::createBterm(bool lo,
 
 dbBTerm* extRulesPat::createBterm1(bool lo,
                                    dbNet* net,
-                                   int ll[2],
-                                   int ur[2],
+                                   const int ll[2],
+                                   const int ur[2],
                                    const char* postFix,
                                    dbTechLayer* layer,
                                    uint32_t width,

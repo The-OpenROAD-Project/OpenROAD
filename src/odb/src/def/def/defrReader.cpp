@@ -1936,7 +1936,7 @@ void defrSetViaWarnings(int warn)
   defContext.settings->ViaWarnings = warn;
 }
 
-void defrDisableParserMsgs(int nMsg, int* msgs)
+void defrDisableParserMsgs(int nMsg, const int* msgs)
 {
   DEF_INIT;
   int i, j;
@@ -1974,7 +1974,7 @@ void defrDisableParserMsgs(int nMsg, int* msgs)
   }
 }
 
-void defrEnableParserMsgs(int nMsg, int* msgs)
+void defrEnableParserMsgs(int nMsg, const int* msgs)
 {
   DEF_INIT;
   int i, j;

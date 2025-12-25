@@ -354,7 +354,8 @@ void lefiParallel::addParallelWidth(double width)
   numWidth_ += 1;
 }
 
-void lefiParallel::addParallelWidthSpacing(int numSpacing, double* spacings)
+void lefiParallel::addParallelWidthSpacing(int numSpacing,
+                                           const double* spacings)
 {
   int i;
   for (i = 0; i < numSpacing; i++) {
@@ -508,7 +509,7 @@ lefiTwoWidths::~lefiTwoWidths()
 void lefiTwoWidths::addTwoWidths(double width,
                                  double prl,
                                  int numSpacing,
-                                 double* spacings,
+                                 const double* spacings,
                                  int hasPRL)
 {
   int i;

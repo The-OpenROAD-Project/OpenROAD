@@ -756,7 +756,7 @@ bool extRCModel::readRules(char* name,
                            bool overUnder,
                            bool diag,
                            uint32_t cornerCnt,
-                           uint32_t* cornerTable,
+                           const uint32_t* cornerTable,
                            double dbFactor)
 {
   bool res_over = false;

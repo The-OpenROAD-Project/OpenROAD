@@ -95,7 +95,7 @@ char* orientStr(int orient)
   return ((char*) "BOGUS");
 }
 
-void lefVia(lefiVia* via)
+void lefVia(const lefiVia* via)
 {
   int i, j;
 
@@ -313,7 +313,7 @@ void lefViaRuleLayer(lefiViaRuleLayer* vLayer)
   return;
 }
 
-void prtGeometry(lefiGeometries* geometry)
+void prtGeometry(const lefiGeometries* geometry)
 {
   int numItems = geometry->lefiGeometries::numItems();
   int i, j;
@@ -558,7 +558,7 @@ int arrayBeginCB(lefrCallbackType_e c, const char* name, lefiUserData)
   return 0;
 }
 
-int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData)
+int arrayCB(lefrCallbackType_e c, const lefiArray* a, lefiUserData)
 {
   int status, i, j, defCaps;
   lefiSitePattern* pattern;
@@ -842,7 +842,7 @@ int irdropBeginCB(lefrCallbackType_e c, void*, lefiUserData)
   return 0;
 }
 
-int irdropCB(lefrCallbackType_e c, lefiIRDrop* irdrop, lefiUserData)
+int irdropCB(lefrCallbackType_e c, const lefiIRDrop* irdrop, lefiUserData)
 {
   int i;
   checkType(c);
@@ -866,7 +866,7 @@ int irdropEndCB(lefrCallbackType_e c, void*, lefiUserData)
   return 0;
 }
 
-int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData)
+int layerCB(lefrCallbackType_e c, const lefiLayer* layer, lefiUserData)
 {
   int i, j, k;
   int numPoints, propNum;
@@ -1648,7 +1648,7 @@ int macroSizeCB(lefrCallbackType_e c, lefiNum, lefiUserData)
   return 0;
 }
 
-int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData)
+int macroCB(lefrCallbackType_e c, const lefiMacro* macro, lefiUserData)
 {
   lefiSitePattern* pattern;
   int propNum, i, hasPrtSym = 0;
@@ -1809,7 +1809,9 @@ int manufacturingCB(lefrCallbackType_e c, double num, lefiUserData)
   return 0;
 }
 
-int maxStackViaCB(lefrCallbackType_e c, lefiMaxStackVia* maxStack, lefiUserData)
+int maxStackViaCB(lefrCallbackType_e c,
+                  const lefiMaxStackVia* maxStack,
+                  lefiUserData)
 {
   checkType(c);
   // if ((long)ud != userData) dataError();
@@ -1835,7 +1837,7 @@ int minFeatureCB(lefrCallbackType_e c, lefiMinFeature* min, lefiUserData)
   return 0;
 }
 
-int nonDefaultCB(lefrCallbackType_e c, lefiNonDefault* def, lefiUserData)
+int nonDefaultCB(lefrCallbackType_e c, const lefiNonDefault* def, lefiUserData)
 {
   int i;
   lefiVia* via;
@@ -1961,7 +1963,7 @@ int obstructionCB(lefrCallbackType_e c, lefiObstruction* obs, lefiUserData)
   return 0;
 }
 
-int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
+int pinCB(lefrCallbackType_e c, const lefiPin* pin, lefiUserData)
 {
   int numPorts, i, j;
   lefiGeometries* geometry;
@@ -2295,7 +2297,7 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData)
   return 0;
 }
 
-int densityCB(lefrCallbackType_e c, lefiDensity* density, lefiUserData)
+int densityCB(lefrCallbackType_e c, const lefiDensity* density, lefiUserData)
 {
   struct lefiGeomRect rect;
 
@@ -2323,7 +2325,7 @@ int propDefBeginCB(lefrCallbackType_e c, void*, lefiUserData)
   return 0;
 }
 
-int propDefCB(lefrCallbackType_e c, lefiProp* prop, lefiUserData)
+int propDefCB(lefrCallbackType_e c, const lefiProp* prop, lefiUserData)
 {
   checkType(c);
   // if ((long)ud != userData) dataError();
@@ -2362,7 +2364,7 @@ int propDefEndCB(lefrCallbackType_e c, void*, lefiUserData)
   return 0;
 }
 
-int siteCB(lefrCallbackType_e c, lefiSite* site, lefiUserData)
+int siteCB(lefrCallbackType_e c, const lefiSite* site, lefiUserData)
 {
   int hasPrtSym = 0;
   int i;
@@ -2442,7 +2444,7 @@ int spacingEndCB(lefrCallbackType_e c, void*, lefiUserData)
   return 0;
 }
 
-int timingCB(lefrCallbackType_e c, lefiTiming* timing, lefiUserData)
+int timingCB(lefrCallbackType_e c, const lefiTiming* timing, lefiUserData)
 {
   int i;
   checkType(c);
@@ -2575,7 +2577,7 @@ int timingCB(lefrCallbackType_e c, lefiTiming* timing, lefiUserData)
   return 0;
 }
 
-int unitsCB(lefrCallbackType_e c, lefiUnits* unit, lefiUserData)
+int unitsCB(lefrCallbackType_e c, const lefiUnits* unit, lefiUserData)
 {
   checkType(c);
   // if ((long)ud != userData) dataError();
@@ -2611,7 +2613,7 @@ int unitsCB(lefrCallbackType_e c, lefiUnits* unit, lefiUserData)
 }
 
 int useMinSpacingCB(lefrCallbackType_e c,
-                    lefiUseMinSpacing* spacing,
+                    const lefiUseMinSpacing* spacing,
                     lefiUserData)
 {
   checkType(c);
@@ -2649,7 +2651,7 @@ int viaCB(lefrCallbackType_e c, lefiVia* via, lefiUserData)
   return 0;
 }
 
-int viaRuleCB(lefrCallbackType_e c, lefiViaRule* viaRule, lefiUserData)
+int viaRuleCB(lefrCallbackType_e c, const lefiViaRule* viaRule, lefiUserData)
 {
   int numLayers, numVias, i;
   lefiViaRuleLayer* vLayer;

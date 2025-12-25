@@ -234,7 +234,7 @@ extPattern::extPattern(int cnt,
                        int under1,
                        const PatternOptions& opt1,
                        FILE* fp,
-                       int org[2],
+                       const int org[2],
                        dbCreateNetUtil* net_util)
 {
   nameHash = new AthHash<int>(10000000, 0);  // TODO: check for memory free
@@ -694,7 +694,7 @@ uint32_t extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
   return _cnt;
 }
 void extPattern::PatternEnd(extWirePattern* mainp,
-                            int max_ur[2],
+                            const int max_ur[2],
                             uint32_t spacingMult)
 {
   _pattern_separation = _minSpacing * spacingMult;
@@ -1033,7 +1033,7 @@ void extWirePattern::printWires(FILE* fp, bool trans)
     }
   }
 }
-void extWirePattern::AddOrigin(float org[2])
+void extWirePattern::AddOrigin(const float org[2])
 {
   for (uint32_t jj = 1; jj < cnt; jj++) {
     for (uint32_t ii = 0; ii < 2; ii++) {
@@ -1042,7 +1042,7 @@ void extWirePattern::AddOrigin(float org[2])
     }
   }
 }
-void extWirePattern::AddOrigin_int(int org[2])
+void extWirePattern::AddOrigin_int(const int org[2])
 {
   for (uint32_t jj = 1; jj < cnt; jj++) {
     for (uint32_t ii = 0; ii < 2; ii++) {
@@ -1442,8 +1442,8 @@ uint32_t extWirePattern::addCoords(float mw,
   cnt++;
   return jj;
 }
-uint32_t extWirePattern::addCoords(int LL[2],
-                                   int UR[2],
+uint32_t extWirePattern::addCoords(const int LL[2],
+                                   const int UR[2],
                                    const char* buff,
                                    int jj,
                                    int met)
@@ -1456,7 +1456,7 @@ uint32_t extWirePattern::addCoords(int LL[2],
   cnt++;
   return jj;
 }
-void extWirePattern::addCoords_temp(int jj, int LL[2], int UR[2])
+void extWirePattern::addCoords_temp(int jj, const int LL[2], const int UR[2])
 {
   for (uint32_t ii = 0; ii < 2; ii++) {
     _trans_ll[ii][jj] = LL[ii];

@@ -269,7 +269,7 @@ int Parser::mkWords(const char* word, const char* sep)
   return _currentWordCnt;
 }
 
-bool Parser::mkDir(char* word)
+bool Parser::mkDir(const char* word)
 {
   return std::filesystem::create_directories(word);
 }

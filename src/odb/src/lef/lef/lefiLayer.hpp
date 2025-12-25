@@ -130,7 +130,7 @@ class lefiParallel
 
   void addParallelLength(int numLength, double* lengths);
   void addParallelWidth(double width);
-  void addParallelWidthSpacing(int numSpacing, double* spacings);
+  void addParallelWidthSpacing(int numSpacing, const double* spacings);
 
   int numLength() const;
   int numWidth() const;
@@ -189,7 +189,7 @@ class lefiTwoWidths
   void addTwoWidths(double width,
                     double runLength,
                     int numSpacing,
-                    double* spacings,
+                    const double* spacings,
                     int hasPRL = 0);
 
   int numWidth() const;

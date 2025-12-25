@@ -965,29 +965,10 @@ uint32_t extMeasure::createContextObstruction(const char* dirName,
   dbObstruction::create(_block, layer, x, y, bboxUR[0], bboxUR[1]);
   return 1;
 }
-/* orf 10/04/20 DF
-uint32_t extMeasure::createContextGrid(char* dirName, int bboxLL[2], int
-bboxUR[2], int met, int s_layout)
-{
-           if (met <= 0)
-               return 0;
 
-                int ll[2]= {bboxLL[0], bboxLL[1]};
-                int ur[2];
-                ur[!this->_dir]= ll[!this->_dir];
-                ur[this->_dir]= bboxUR[this->_dir];
-
-                int xcnt=1;
-                while (ur[!this->_dir]<=bboxUR[!this->_dir]) {
-                        this->createNetSingleWire_cntx(met, dirName, xcnt++,
-!this->_dir, ll, ur, s_layout);
-                }
-                return xcnt;
-}
-*/
 uint32_t extMeasure::createContextGrid(char* dirName,
-                                       int bboxLL[2],
-                                       int bboxUR[2],
+                                       const int bboxLL[2],
+                                       const int bboxUR[2],
                                        int met,
                                        int s_layout)
 {
@@ -1024,8 +1005,8 @@ uint32_t extMeasure::createContextGrid(char* dirName,
 }
 
 uint32_t extMeasure::createContextGrid_dir(char* dirName,
-                                           int bboxLL[2],
-                                           int bboxUR[2],
+                                           const int bboxLL[2],
+                                           const int bboxUR[2],
                                            int met)
 {
   if (met <= 0) {

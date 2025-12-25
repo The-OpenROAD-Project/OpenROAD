@@ -554,16 +554,6 @@ class extRCModel
                          bool& overunder0,
                          bool& overunder1,
                          bool& via_res);
-  bool readRules(char* name,
-                 bool bin,
-                 bool over,
-                 bool under,
-                 bool overUnder,
-                 bool diag,
-                 uint32_t cornerCnt,
-                 uint32_t* cornerTable,
-                 double dbFactor);
-  // dkf 09242023
   uint32_t DefWires(extMainOptions* opt);
   uint32_t OverRulePat(extMainOptions* opt,
                        int len,
@@ -996,16 +986,6 @@ class extMeasure
 {
  public:
   // ------------------------------------------------- v2
-  uint32_t createContextGrid(char* dirName,
-                             int bboxLL[2],
-                             int bboxUR[2],
-                             int met,
-                             int s_layout = -1);
-  uint32_t createContextGrid_dir(char* dirName,
-                                 int bboxLL[2],
-                                 int bboxUR[2],
-                                 int met);
-
   double _topWidthR;
   double _botWidthR;
   double _teffR;

@@ -34,7 +34,7 @@ class Parser
   char getFirstChar();
 
   void syntaxError(const char* msg);
-  bool mkDir(char* word);
+  bool mkDir(const char* word);
   int mkDirTree(const char* word, const char* sep);
 
   void resetSeparator(const char* s);
