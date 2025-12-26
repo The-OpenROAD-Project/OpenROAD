@@ -257,8 +257,8 @@ std::vector<cgCellEdge> FlexPA::genCGraphInterCell(
   // std::cout << fmt::format("Built map of neighboring terms with {} edges.\n",
   // neighbor_terms.size());
 
-  int e_cnt = 0;
-  int e_cntTotal = 0;
+  //int e_cnt = 0;
+  //int e_cntTotal = 0;
   int n_cnt = 0;
 
   std::vector<std::pair<uint64_t, std::array<Access, 2>>> neighbor_terms_cache(
@@ -306,7 +306,7 @@ std::vector<cgCellEdge> FlexPA::genCGraphInterCell(
 #pragma omp atomic
       n_cnt++;
 
-      if (!window_level_parallelism && n_cnt % 10000 == 0) {
+      if (!window_level_parallelism && n_cnt % 100000 == 0) {
 #pragma omp critical
         logger_->info(
             DRT, 205, "Computed {} of {} Neighboring Term Pairs.", n_cnt, neighbor_terms_cache.size());
@@ -345,7 +345,7 @@ cgConflictGraph FlexPA::genConflictGraphForWindow(
        ++it) {
     insts.push_back(it->second);
   }
-  // std::cout << "For window: found window's insts." << std::endl;
+  // std::cout << "Found window's insts." << std::endl;
 
   auto intra_edges = genCGraphInflateIntraCell(insts, intras);
   // std::cout << "Inflated Intra-cell edges" << std::endl;
@@ -360,9 +360,10 @@ std::vector<cgConflictGraph> FlexPA::genConflictGraphsHelper(
     std::vector<odb::Rect> windows,
     bool window_level_parallelism)
 {
+  buildInstsSet();
+
   RTree<frInst*> insts_tree;
-  for (auto& inst_ptr : design_->getTopBlock()->getInsts()) {
-    frInst* inst = inst_ptr.get();
+  for (auto inst : insts_set_) {
     insts_tree.insert(std::make_pair(inst->getBBox(), inst));
   }
 
@@ -451,7 +452,7 @@ void FlexPA::genConflictGraphs(const std::vector<std::string>& paths,
 #pragma omp critical
     {
       cnt++;
-      if (cnt % (cnt > 1000 ? 100 : 10) == 0) {
+      if (cnt % (cnt > 10000 ? 1000 : 100) == 0) {
         logger_->info(
             DRT, 196, "  Wrote {} of {} Conflict Graphs.", cnt, windows.size());
       }
