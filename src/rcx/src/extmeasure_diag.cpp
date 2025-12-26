@@ -631,7 +631,9 @@ int extMeasureRC::PrintAllGrids(uint32_t dir, FILE* fp, uint32_t mode)
 int extMeasureRC::ConnectWires(uint32_t dir)
 {
   if (_extMain->_dbgOption > 1) {
-    PrintAllGrids(dir, OpenPrintFile(dir, "wires.org"), 0);
+    FILE* file = OpenPrintFile(dir, "wires.org");
+    PrintAllGrids(dir, file, 0);
+    fclose(file);
   }
 
   uint32_t cnt = 0;
