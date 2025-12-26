@@ -1523,7 +1523,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiFill* fill;
   defiStyles* styles;
   int xl, yl, xh, yh;
-  char *name, *a1, *b1;
+  char *name;
   char **inst, **inPin, **outPin;
   int* bits;
   int size;
@@ -2186,12 +2186,14 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       sc = (defiScanchain*) cl;
       fprintf(fout, "SCANCHAINS %s", sc->name());
       if (sc->hasStart()) {
-        sc->start(&a1, &b1);
-        fprintf(fout, " START %s %s", sc->name(), a1);
+        const char *a, *b;
+        sc->start(&a, &b);
+        fprintf(fout, " START %s %s", sc->name(), a);
       }
       if (sc->hasStop()) {
-        sc->stop(&a1, &b1);
-        fprintf(fout, " STOP %s %s", sc->name(), a1);
+        const char *a, *b;
+        sc->stop(&a, &b);
+        fprintf(fout, " STOP %s %s", sc->name(), a);
       }
       if (sc->hasCommonInPin() || sc->hasCommonOutPin()) {
         fprintf(fout, " COMMONSCANPINS ");
