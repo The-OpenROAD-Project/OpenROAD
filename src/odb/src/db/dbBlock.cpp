@@ -25,6 +25,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -859,6 +860,43 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   return stream;
 }
 
+/**
+ * @brief Rebuilds the name-to-ID hash maps for hierarchical objects within
+ * their respective modules.
+ *
+ * This function is used during database loading (operator>>) to restore the
+ * fast-lookup hashes that were stored in the ODB.
+ *
+ * @tparam T The public ODB object type (e.g., dbInst, dbModNet).
+ * @tparam T_impl The internal implementation type (e.g., _dbInst, _dbModNet).
+ * @param block The database block containing the objects.
+ * @param table The internal database table storing the object implementations.
+ * @param module_field Member pointer to the field storing the parent module ID
+ *                     (e.g., &_dbInst::module_ or &_dbModInst::parent_).
+ * @param hash_field Member pointer to the hash map member in _dbModule where
+ *                   the object ID should be stored.
+ */
+template <typename T, typename T_impl>
+static void rebuildModuleHash(
+    _dbBlock& block,
+    dbTable<T_impl>* table,
+    dbId<_dbModule> T_impl::*module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
+{
+  dbSet<T> items((dbBlock*) &block, table);
+  for (T* obj : items) {
+    T_impl* _obj = (T_impl*) obj;
+    dbId<_dbModule> mid = _obj->*module_field;
+    if (mid == 0) {
+      mid = block.top_module_;
+    }
+    _dbModule* module = block.module_tbl_->getPtr(mid);
+    if (module && _obj->name_) {
+      (module->*hash_field)[_obj->name_] = _obj->getId();
+    }
+  }
+}
+
 dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
 {
   _dbDatabase* db = block.getImpl()->getDatabase();
@@ -950,17 +988,43 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> *block.inst_tbl_;
     stream >> *block.module_tbl_;
   }
+  if (db->isSchema(kSchemaDbRemoveHash)) {
+    // Construct dbinst_hash_
+    rebuildModuleHash<dbInst>(
+        block, block.inst_tbl_, &_dbInst::module_, &_dbModule::dbinst_hash_);
+  }
   if (db->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> *block.scan_inst_tbl_;
   }
   stream >> *block.modinst_tbl_;
+  if (db->isSchema(kSchemaDbRemoveHash)) {
+    // Construct modinst_hash_
+    rebuildModuleHash<dbModInst>(block,
+                                 block.modinst_tbl_,
+                                 &_dbModInst::parent_,
+                                 &_dbModule::modinst_hash_);
+  }
   if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> *block.modbterm_tbl_;
+    if (db->isSchema(kSchemaDbRemoveHash)) {
+      // Construct modbterm_hash_
+      rebuildModuleHash<dbModBTerm>(block,
+                                    block.modbterm_tbl_,
+                                    &_dbModBTerm::parent_,
+                                    &_dbModule::modbterm_hash_);
+    }
     if (db->isSchema(kSchemaDbRemoveHash)) {
       stream >> *block.busport_tbl_;
     }
     stream >> *block.moditerm_tbl_;
     stream >> *block.modnet_tbl_;
+    if (db->isSchema(kSchemaDbRemoveHash)) {
+      // Construct modnet_hash_
+      rebuildModuleHash<dbModNet>(block,
+                                  block.modnet_tbl_,
+                                  &_dbModNet::parent_,
+                                  &_dbModule::modnet_hash_);
+    }
   }
   stream >> *block.powerdomain_tbl_;
   stream >> *block.logicport_tbl_;
