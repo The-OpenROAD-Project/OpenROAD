@@ -829,10 +829,11 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   TilingList tilings = std::move(tight_packing_tilings);
   int64_t min_tiling_area = valid_tilings.front().area();
   for (auto& tiling : valid_tilings) {
-    if (tiling.area() <= min_tiling_area) {
+    if (tiling.area() <= min_tiling_area && std::ranges::find(tilings, tiling) == tilings.end()) {
       tilings.push_back(tiling);
     }
   }
+
 
   cluster->setTilings(tilings);
 
