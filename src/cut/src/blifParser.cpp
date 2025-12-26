@@ -38,43 +38,43 @@ using qi::lexeme;
 using ascii::char_;
 using ascii::space;
 
-void setNewInput(std::string input, cut::BlifParser* parser)
+void setNewInput(const std::string& input, cut::BlifParser* parser)
 {
   if (input != "\\") {
     parser->addInput(input);
   }
 }
 
-void setNewOutput(std::string output, cut::BlifParser* parser)
+void setNewOutput(const std::string& output, cut::BlifParser* parser)
 {
   if (output != "\\") {
     parser->addOutput(output);
   }
 }
 
-void setNewClock(std::string clock, cut::BlifParser* parser)
+void setNewClock(const std::string& clock, cut::BlifParser* parser)
 {
   if (clock != "\\") {
     parser->addClock(clock);
   }
 }
 
-void setNewInstanceType(std::string type, cut::BlifParser* parser)
+void setNewInstanceType(const std::string& type, cut::BlifParser* parser)
 {
   parser->addNewInstanceType(type);
 }
 
-void setNewGate(std::string gate, cut::BlifParser* parser)
+void setNewGate(const std::string& gate, cut::BlifParser* parser)
 {
   parser->addNewGate(gate);
 }
 
-void setGateNets(std::string net, cut::BlifParser* parser)
+void setGateNets(const std::string& net, cut::BlifParser* parser)
 {
   parser->addConnection(net);
 }
 
-void endParser(std::string end, cut::BlifParser* parser)
+void endParser(const std::string& end, cut::BlifParser* parser)
 {
   parser->endParser();
 }

@@ -600,7 +600,7 @@ class extRCModel
                                   int maxCnt = 1000);
 
   void clear_corners();
-  bool addCorner(std::string w, int ii);
+  bool addCorner(const std::string& w, int ii);
   uint32_t initModel(std::list<std::string>& corners, int met_cnt);
   uint32_t readRCvalues(const char* corner,
                         const char* filename,

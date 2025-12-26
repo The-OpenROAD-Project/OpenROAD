@@ -181,7 +181,7 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
 }
 
 frTerm* Fixture::makeMacroPin(frMaster* master,
-                              std::string name,
+                              const std::string& name,
                               frCoord xl,
                               frCoord yl,
                               frCoord xh,
@@ -383,8 +383,8 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
 
 frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<std::pair<frCoord, frCoord>> valTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<std::pair<frCoord, frCoord>>& valTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -401,8 +401,8 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
 frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
     frLayerNum layer_num,
     frCoord spacing,
-    std::vector<frCoord> eol,
-    std::vector<frCoord> ext,
+    const std::vector<frCoord>& eol,
+    const std::vector<frCoord>& ext,
     bool parallelOnly)
 {
   frTechObject* tech = design->getTech();
@@ -420,9 +420,9 @@ frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
 
 frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<frCoord> prlTbl,
-    std::vector<std::vector<frCoord>> spacingTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<frCoord>& prlTbl,
+    const std::vector<std::vector<frCoord>>& spacingTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);

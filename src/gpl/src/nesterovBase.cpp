@@ -607,6 +607,7 @@ void BinGrid::setRegionPoints(int lx, int ly, int ux, int uy)
   uy_ = uy;
 }
 
+// NOLINTNEXTLINE(performance-unnecessary-value-param)
 void BinGrid::setPlacerBase(std::shared_ptr<PlacerBase> pb)
 {
   pb_ = std::move(pb);
@@ -1039,11 +1040,13 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
 // NesterovBaseCommon
 ///////////////////////////////////////////////
 
-NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
-                                       std::shared_ptr<PlacerBaseCommon> pbc,
-                                       utl::Logger* log,
-                                       int num_threads,
-                                       const Clusters& clusters)
+NesterovBaseCommon::NesterovBaseCommon(
+    NesterovBaseVars nbVars,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::shared_ptr<PlacerBaseCommon> pbc,
+    utl::Logger* log,
+    int num_threads,
+    const Clusters& clusters)
     : nbVars_(nbVars), num_threads_{num_threads}
 {
   assert(omp_get_thread_num() == 0);
@@ -1866,10 +1869,13 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
 ////////////////////////////////////////////////
 // NesterovBase
 
-NesterovBase::NesterovBase(NesterovBaseVars nbVars,
-                           std::shared_ptr<PlacerBase> pb,
-                           std::shared_ptr<NesterovBaseCommon> nbc,
-                           utl::Logger* log)
+NesterovBase::NesterovBase(
+    NesterovBaseVars nbVars,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::shared_ptr<PlacerBase> pb,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    std::shared_ptr<NesterovBaseCommon> nbc,
+    utl::Logger* log)
     : nbVars_(nbVars)
 {
   pb_ = std::move(pb);

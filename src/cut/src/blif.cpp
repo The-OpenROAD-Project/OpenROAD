@@ -613,7 +613,7 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
   return arr;
 }
 
-void Blif::addArrival(sta::Pin* pin, std::string netName)
+void Blif::addArrival(sta::Pin* pin, const std::string& netName)
 {
   if (arrivals_.find(netName) == arrivals_.end()) {
     arrivals_[netName] = std::pair<float, float>(
@@ -621,7 +621,7 @@ void Blif::addArrival(sta::Pin* pin, std::string netName)
   }
 }
 
-void Blif::addRequired(sta::Pin* pin, std::string netName)
+void Blif::addRequired(sta::Pin* pin, const std::string& netName)
 {
   if (requireds_.find(netName) == requireds_.end()) {
     requireds_[netName] = std::pair<float, float>(

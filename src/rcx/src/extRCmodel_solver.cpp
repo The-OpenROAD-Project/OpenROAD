@@ -48,7 +48,7 @@ void extRCModel::clear_corners()
   _cornerMap.clear();
   _cornerTable.clear();
 }
-bool extRCModel::addCorner(std::string w, int ii)
+bool extRCModel::addCorner(const std::string& w, int ii)
 {
   if (_cornerMap.find(w) == _cornerMap.end()) {
     _cornerMap[w] = ii;

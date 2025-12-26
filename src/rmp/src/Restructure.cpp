@@ -505,7 +505,7 @@ void Restructure::removeConstCell(odb::dbInst* inst)
   odb::dbInst::destroy(inst);
 }
 
-bool Restructure::writeAbcScript(std::string file_name)
+bool Restructure::writeAbcScript(const std::string& file_name)
 {
   std::ofstream script(file_name.c_str());
 
@@ -642,7 +642,7 @@ void Restructure::setTieLoPort(sta::LibertyPort* tieLoPort)
   }
 }
 
-bool Restructure::readAbcLog(std::string abc_file_name,
+bool Restructure::readAbcLog(const std::string& abc_file_name,
                              int& level_gain,
                              float& final_delay)
 {
