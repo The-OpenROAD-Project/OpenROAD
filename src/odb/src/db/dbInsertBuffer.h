@@ -88,7 +88,6 @@ class dbInsertBuffer
       const std::set<dbModNet*>& modnets_in_target_module) const;
   dbModNet* getFirstDriverModNetInTargetModule(
       const std::set<dbModNet*>& modnets_in_target_module) const;
-
   bool checkAllLoadsAreTargets(dbModNet* net,
                                const std::set<dbObject*>& load_pins);
   void populateReusableNets(const std::set<dbObject*>& load_pins);
@@ -120,7 +119,25 @@ class dbInsertBuffer
                               dbModule* load_mod);
 
   //------------------------------------------------------------------
-  // Step functions for insertBufferBeforeLoads
+  // Helper functions for stitchLoadToDriver
+  //------------------------------------------------------------------
+  bool tryReuseParentPath(dbObject*& load_obj,
+                          dbModule*& current_module,
+                          dbModITerm*& top_mod_iterm,
+                          const std::set<dbObject*>& load_pins);
+  bool tryReuseModNetInModule(dbObject*& load_obj,
+                              dbModule*& current_module,
+                              dbModITerm*& top_mod_iterm);
+  void createNewHierConnection(dbObject*& load_obj,
+                               dbModule*& current_module,
+                               dbModITerm*& top_mod_iterm,
+                               const std::string& base_name);
+  void performFinalConnections(dbITerm* load_pin,
+                               dbITerm* drvr_term,
+                               dbModITerm* top_mod_iterm);
+
+  //------------------------------------------------------------------
+  // Helper functions for insertBufferBeforeLoads
   //------------------------------------------------------------------
   dbModule* validateLoadPinsAndFindLCA(std::set<dbObject*>& load_pins,
                                        std::set<dbNet*>& other_dbnets,

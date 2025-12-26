@@ -661,6 +661,152 @@ void dbInsertBuffer::populateReusableNets(const std::set<dbObject*>& load_pins)
   }
 }
 
+bool dbInsertBuffer::tryReuseParentPath(dbObject*& load_obj,
+                                        dbModule*& current_module,
+                                        dbModITerm*& top_mod_iterm,
+                                        const std::set<dbObject*>& load_pins)
+{
+  // Check if there's an existing hierarchical connection to reuse.
+  dbModNet* existing_mod_net = getModNet(load_obj);
+
+  if (!existing_mod_net) {
+    return false;
+  }
+
+  if (checkAllLoadsAreTargets(existing_mod_net, load_pins)) {
+    // Check if it goes up (connected to ModBTerm)
+    for (dbModBTerm* modbterm : existing_mod_net->getModBTerms()) {
+      if (modbterm->getIoType() != dbIoType::INPUT) {
+        continue;
+      }
+      dbModITerm* parent_iterm = modbterm->getParentModITerm();
+      if (!parent_iterm) {
+        continue;
+      }
+
+      // Found a reusable path. Move up the hierarchy.
+      debugPrint(logger_,
+                 utl::ODB,
+                 "insert_buffer",
+                 1,
+                 "Reusing existing hierarchical pin '{}'",
+                 parent_iterm->getHierarchicalName());
+
+      // Add to cache BEFORE updating current_module
+      module_reusable_nets_[current_module].insert(existing_mod_net);
+
+      load_obj = static_cast<dbObject*>(parent_iterm);
+      current_module = current_module->getModInst()->getParent();
+      top_mod_iterm = parent_iterm;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool dbInsertBuffer::tryReuseModNetInModule(dbObject*& load_obj,
+                                            dbModule*& current_module,
+                                            dbModITerm*& top_mod_iterm)
+{
+  auto it = module_reusable_nets_.find(current_module);
+  if (it == module_reusable_nets_.end()) {
+    return false;
+  }
+
+  for (dbModNet* candidate_net : it->second) {
+    dbModBTerm* modbterm = nullptr;
+    for (dbModBTerm* bterm : candidate_net->getModBTerms()) {
+      if (bterm->getIoType() == dbIoType::INPUT) {
+        modbterm = bterm;
+        break;
+      }
+    }
+
+    if (modbterm) {
+      dbModITerm* parent_moditerm = modbterm->getParentModITerm();
+      if (parent_moditerm) {
+        connect(load_obj, candidate_net);
+
+        load_obj = static_cast<dbObject*>(parent_moditerm);
+        current_module = current_module->getModInst()->getParent();
+        top_mod_iterm = parent_moditerm;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void dbInsertBuffer::createNewHierConnection(dbObject*& load_obj,
+                                             dbModule*& current_module,
+                                             dbModITerm*& top_mod_iterm,
+                                             const std::string& base_name)
+{
+  // Name generation
+  std::string unique_name = makeUniqueHierName(current_module, base_name);
+
+  // Create Port (ModBTerm) on current module
+  dbModBTerm* mod_bterm
+      = dbModBTerm::create(current_module, unique_name.c_str());
+  mod_bterm->setIoType(dbIoType::INPUT);
+
+  // Create Net (ModNet) inside current module
+  dbModNet* mod_net = dbModNet::create(current_module, unique_name.c_str());
+  mod_bterm->connect(mod_net);
+
+  // Register this new net as reusable for subsequent loads
+  is_target_only_cache_[mod_net] = true;
+  module_reusable_nets_[current_module].insert(mod_net);
+
+  // Connect lower level object (either leaf ITerm or previous ModITerm)
+  connect(load_obj, mod_net);
+
+  // Create Pin (ModITerm) on the instance of current module in the parent
+  dbModInst* parent_mod_inst = current_module->getModInst();
+  dbModITerm* mod_iterm
+      = dbModITerm::create(parent_mod_inst, unique_name.c_str(), mod_bterm);
+
+  // Prepare for next iteration (moving up)
+  load_obj = static_cast<dbObject*>(mod_iterm);
+  current_module = parent_mod_inst->getParent();
+  top_mod_iterm = mod_iterm;
+}
+
+void dbInsertBuffer::performFinalConnections(dbITerm* load_pin,
+                                             dbITerm* drvr_term,
+                                             dbModITerm* top_mod_iterm)
+{
+  // 4.1. Disconnect the load from the original net
+  if (top_mod_iterm) {
+    // If we established a hierarchical connection, we only want to disconnect
+    // the flat net, preserving the ModNet connection we just made (or reused).
+    load_pin->disconnectDbNet();
+  } else {
+    // If no hierarchical connection (same module), disconnect everything
+    // as we will connect to a new ModNet (if applicable) in this module.
+    load_pin->disconnect();
+  }
+
+  // 4.2. Connect load to the new ModNet
+  // - IMPORTANT: dbSta prioritizes hier net connection over flat net
+  //   connection. So hier net connection should be edited first.
+  //   otherwise, STA caches may not be updated correctly.
+  if (dbModNet* drvr_mod_net = drvr_term->getModNet()) {
+    if (top_mod_iterm) {
+      // Connect the top-most hierarchical pin to the buffer's output ModNet
+      top_mod_iterm->disconnect();  // Disconnect both flat and hier nets
+      top_mod_iterm->connect(drvr_mod_net);
+    } else {
+      // Load is in the same module as buffer, connect to ModNet if it exists
+      load_pin->disconnect();
+      load_pin->connect(drvr_mod_net);
+    }
+  }
+
+  // 4.3. Connect load to the new flat net
+  load_pin->connect(drvr_term->getNet());
+}
+
 bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
                                         dbITerm* drvr_term,
                                         const std::set<dbObject*>& load_pins)
@@ -678,10 +824,8 @@ bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
         = block_->getBaseName(load_pin->getNet()->getConstName());
 
     while (current_module != target_module && current_module != nullptr) {
-      dbModInst* parent_mod_inst = current_module->getModInst();
-      if (parent_mod_inst == nullptr) {  // current_module is top module
-        // This should not happen if the hierarchy is structured correctly,
-        // as it implies we've hit the top module before reaching the target.
+      if (current_module->getModInst()
+          == nullptr) {  // current_module is top module
         logger_->error(
             utl::ODB,
             1206,
@@ -692,159 +836,25 @@ bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
         break;
       }
 
-      // Check if there's an existing hierarchical connection to reuse.
-      dbModNet* existing_mod_net = nullptr;
-      if (load_obj->getObjectType() == dbITermObj) {
-        existing_mod_net = (static_cast<dbITerm*>(load_obj))->getModNet();
-      } else if (load_obj->getObjectType() == dbModITermObj) {
-        existing_mod_net = (static_cast<dbModITerm*>(load_obj))->getModNet();
-      }
-
-      bool reused_path = false;
-
       // 1. Check if the current net is reusable (using cache)
-      if (existing_mod_net) {
-        if (checkAllLoadsAreTargets(existing_mod_net, load_pins)) {
-          // Check if it goes up (connected to ModBTerm)
-          for (dbModBTerm* modbterm : existing_mod_net->getModBTerms()) {
-            if (modbterm->getIoType() != dbIoType::INPUT) {
-              continue;
-            }
-            dbModITerm* parent_iterm = modbterm->getParentModITerm();
-            if (!parent_iterm) {
-              continue;
-            }
-
-            // Found a reusable path. Move up the hierarchy.
-            debugPrint(logger_,
-                       utl::ODB,
-                       "insert_buffer",
-                       1,
-                       "Reusing existing hierarchical pin '{}'",
-                       parent_iterm->getHierarchicalName());
-
-            // Add to cache BEFORE updating current_module
-            module_reusable_nets_[current_module].insert(existing_mod_net);
-
-            load_obj = static_cast<dbObject*>(parent_iterm);
-            current_module = parent_mod_inst->getParent();
-            top_mod_iterm = parent_iterm;
-            reused_path = true;
-            break;
-          }
-        }
-      }
-
-      if (reused_path) {
-        continue;  // Continue to the next level up
+      if (tryReuseParentPath(
+              load_obj, current_module, top_mod_iterm, load_pins)) {
+        continue;
       }
 
       // 2. Check if there is ANY other ModNet in this module that we can reuse.
-      auto it = module_reusable_nets_.find(current_module);
-      if (it != module_reusable_nets_.end()) {
-        for (dbModNet* candidate_net : it->second) {
-          dbModBTerm* modbterm = nullptr;
-          for (dbModBTerm* bterm : candidate_net->getModBTerms()) {
-            if (bterm->getIoType() == dbIoType::INPUT) {
-              modbterm = bterm;
-              break;
-            }
-          }
-
-          if (modbterm) {
-            dbModITerm* parent_moditerm = modbterm->getParentModITerm();
-            if (parent_moditerm) {
-              if (load_obj->getObjectType() == dbITermObj) {
-                (static_cast<dbITerm*>(load_obj))->connect(candidate_net);
-              } else if (load_obj->getObjectType() == dbModITermObj) {
-                (static_cast<dbModITerm*>(load_obj))->connect(candidate_net);
-              }
-
-              reused_path = true;
-              load_obj = static_cast<dbObject*>(parent_moditerm);
-              current_module = parent_mod_inst->getParent();
-              top_mod_iterm = parent_moditerm;
-              break;
-            }
-          }
-        }
-      }
-
-      if (reused_path) {
+      if (tryReuseModNetInModule(load_obj, current_module, top_mod_iterm)) {
         continue;
       }
 
       // 3. Create ports & modnet
-
-      // 3.1. Name generation
-      std::string unique_name = makeUniqueHierName(current_module, base_name);
-
-      // 3.2. Create Port (ModBTerm) on current module
-      dbModBTerm* mod_bterm
-          = dbModBTerm::create(current_module, unique_name.c_str());
-      mod_bterm->setIoType(dbIoType::INPUT);
-
-      // 3.3. Create Net (ModNet) inside current module
-      dbModNet* mod_net = dbModNet::create(current_module, unique_name.c_str());
-      mod_bterm->connect(mod_net);
-
-      // 3.4. Register this new net as reusable for subsequent loads
-      is_target_only_cache_[mod_net] = true;
-      module_reusable_nets_[current_module].insert(mod_net);
-
-      // 3.5. Connect lower level object (either leaf ITerm or previous
-      // ModITerm)
-      if (load_obj->getObjectType() == dbITermObj) {
-        dbITerm* load_iterm = static_cast<dbITerm*>(load_obj);
-        // load_iterm->disconnect();  // jk: not ok. STA assert fail.
-        load_iterm->connect(mod_net);
-      } else if (load_obj->getObjectType() == dbModITermObj) {
-        (static_cast<dbModITerm*>(load_obj))->connect(mod_net);
-      }
-
-      // 3.6. Create Pin (ModITerm) on the instance of current module in the
-      // parent
-      dbModITerm* mod_iterm
-          = dbModITerm::create(parent_mod_inst, unique_name.c_str(), mod_bterm);
-
-      // Prepare for next iteration (moving up)
-      load_obj = static_cast<dbObject*>(mod_iterm);
-      current_module = parent_mod_inst->getParent();
-      top_mod_iterm = mod_iterm;
+      createNewHierConnection(
+          load_obj, current_module, top_mod_iterm, base_name);
     }
   }
 
   // 4. Perform connections
-
-  // 4.1. Disconnect the load from the original net
-  if (top_mod_iterm) {
-    // If we established a hierarchical connection, we only want to disconnect
-    // the flat net, preserving the ModNet connection we just made (or reused).
-    load_pin->disconnectDbNet();
-  } else {
-    // If no hierarchical connection (same module), disconnect everything
-    // as we will connect to a new ModNet (if applicable) in this module.
-    load_pin->disconnect();
-  }
-
-  // 4.2. Connect load to the new ModNet
-  // - IMPORTANT: dbSta prioritizes hier net connectino over flat net
-  //   connection. So hier net connection should be edited first.
-  //   otherwise, STA caches may not be updated correctly.
-  if (dbModNet* drvr_mod_net = drvr_term->getModNet()) {
-    if (top_mod_iterm) {
-      // Connect the top-most hierarchical pin to the buffer's output ModNet
-      top_mod_iterm->disconnect();  // jk: needed???
-      top_mod_iterm->connect(drvr_mod_net);
-    } else {
-      // Load is in the same module as buffer, connect to ModNet if it exists
-      load_pin->disconnect();  // jk: needed???
-      load_pin->connect(drvr_mod_net);
-    }
-  }
-
-  // 4.3. Connect load to the new flat net
-  load_pin->connect(drvr_term->getNet());
+  performFinalConnections(load_pin, drvr_term, top_mod_iterm);
 
   return top_mod_iterm != nullptr;
 }
