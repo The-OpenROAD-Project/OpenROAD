@@ -310,7 +310,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options, const int threads)
           timing_net_weight_max = *env_max;
         } else {
           log_->warn(
-              GPL, 159, "Ignoring GPL_WEIGHT_MAX={} (must be > 0).", *env_max);
+              GPL, 160, "Ignoring GPL_WEIGHT_MAX={} (must be > 0).", *env_max);
         }
       }
     }

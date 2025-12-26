@@ -250,7 +250,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
   if (!slack_min_opt || !slack_max_opt) {
     log_->warn(
         GPL,
-        107,
+        111,
         "Timing-driven: missing net slack. Timing-driven mode disabled.");
     return false;
   }
