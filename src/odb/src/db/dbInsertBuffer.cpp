@@ -661,6 +661,16 @@ void dbInsertBuffer::populateReusableNets(const std::set<dbObject*>& load_pins)
   }
 }
 
+void dbInsertBuffer::advanceToParentModule(dbObject*& load_obj,
+                                           dbModule*& current_module,
+                                           dbModITerm*& top_mod_iterm,
+                                           dbModITerm* next_mod_iterm)
+{
+  load_obj = static_cast<dbObject*>(next_mod_iterm);
+  current_module = current_module->getModInst()->getParent();
+  top_mod_iterm = next_mod_iterm;
+}
+
 bool dbInsertBuffer::tryReuseParentPath(dbObject*& load_obj,
                                         dbModule*& current_module,
                                         dbModITerm*& top_mod_iterm,
@@ -695,9 +705,9 @@ bool dbInsertBuffer::tryReuseParentPath(dbObject*& load_obj,
       // Add to cache BEFORE updating current_module
       module_reusable_nets_[current_module].insert(existing_mod_net);
 
-      load_obj = static_cast<dbObject*>(parent_iterm);
-      current_module = current_module->getModInst()->getParent();
-      top_mod_iterm = parent_iterm;
+      // Prepare for next iteration (moving up)
+      advanceToParentModule(
+          load_obj, current_module, top_mod_iterm, parent_iterm);
       return true;
     }
   }
@@ -727,9 +737,9 @@ bool dbInsertBuffer::tryReuseModNetInModule(dbObject*& load_obj,
       if (parent_moditerm) {
         connect(load_obj, candidate_net);
 
-        load_obj = static_cast<dbObject*>(parent_moditerm);
-        current_module = current_module->getModInst()->getParent();
-        top_mod_iterm = parent_moditerm;
+        // Prepare for next iteration (moving up)
+        advanceToParentModule(
+            load_obj, current_module, top_mod_iterm, parent_moditerm);
         return true;
       }
     }
@@ -767,9 +777,7 @@ void dbInsertBuffer::createNewHierConnection(dbObject*& load_obj,
       = dbModITerm::create(parent_mod_inst, unique_name.c_str(), mod_bterm);
 
   // Prepare for next iteration (moving up)
-  load_obj = static_cast<dbObject*>(mod_iterm);
-  current_module = parent_mod_inst->getParent();
-  top_mod_iterm = mod_iterm;
+  advanceToParentModule(load_obj, current_module, top_mod_iterm, mod_iterm);
 }
 
 void dbInsertBuffer::performFinalConnections(dbITerm* load_pin,

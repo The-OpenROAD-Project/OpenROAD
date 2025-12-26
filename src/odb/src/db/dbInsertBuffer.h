@@ -128,11 +128,17 @@ class dbInsertBuffer
   bool tryReuseModNetInModule(dbObject*& load_obj,
                               dbModule*& current_module,
                               dbModITerm*& top_mod_iterm);
-  void createNewHierConnection(dbObject*& load_obj,
+    void createNewHierConnection(dbObject*& load_obj,
+                                 dbModule*& current_module,
+                                 dbModITerm*& top_mod_iterm,
+                                 const std::string& base_name);
+  
+    void advanceToParentModule(dbObject*& load_obj,
                                dbModule*& current_module,
                                dbModITerm*& top_mod_iterm,
-                               const std::string& base_name);
-  void performFinalConnections(dbITerm* load_pin,
+                               dbModITerm* next_mod_iterm);
+  
+    void performFinalConnections(dbITerm* load_pin,
                                dbITerm* drvr_term,
                                dbModITerm* top_mod_iterm);
 
