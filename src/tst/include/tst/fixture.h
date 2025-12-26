@@ -53,7 +53,7 @@ struct BTermOptions
 
   odb::dbIoType io_type{odb::dbIoType::INPUT};
   odb::dbSigType sig_type{odb::dbSigType::SIGNAL};
-  std::vector<BPinInfo> bpins;
+  std::vector<BPinInfo> bpins{};
 };
 
 class Fixture : public ::testing::Test
