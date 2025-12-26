@@ -52,6 +52,8 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoad(
     const char* new_net_base_name,
     const dbNameUniquifyType& uniquify)
 {
+  dlogInsertBufferStart(++insert_buffer_call_count_, "BeforeLoad");
+
   return insertBufferSimple(load_input_term,
                             buffer_master,
                             loc,
@@ -69,6 +71,8 @@ dbInst* dbInsertBuffer::insertBufferAfterDriver(
     const char* new_net_base_name,
     const dbNameUniquifyType& uniquify)
 {
+  dlogInsertBufferStart(++insert_buffer_call_count_, "AfterDriver");
+
   return insertBufferSimple(drvr_output_term,
                             buffer_master,
                             loc,
@@ -146,18 +150,11 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
     const dbNameUniquifyType& uniquify,
     bool loads_on_diff_nets)
 {
-  // jk: dbg
-  static int i = 0;
-  debugPrint(logger_,
-             utl::ODB,
-             "insert_buffer",
-             1,
-             "insert_buffer BeforeLoads#{}",
-             ++i);
-
   if (load_pins.empty() || buffer_master == nullptr || block_ == nullptr) {
     return nullptr;
   }
+
+  dlogInsertBufferStart(++insert_buffer_call_count_, "BeforeLoads");
 
   resetMembers();
 
@@ -1663,6 +1660,17 @@ void dbInsertBuffer::dlogSeparator() const
              "insert_buffer",
              1,
              "-------------------------------------------------------");
+}
+
+void dbInsertBuffer::dlogInsertBufferStart(int count, const char* mode) const
+{
+  debugPrint(logger_,
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "insert_buffer {}#{}",
+             mode,
+             count);
 }
 
 }  // namespace odb

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <set>
 #include <string>
 
@@ -128,17 +129,15 @@ class dbInsertBuffer
   bool tryReuseModNetInModule(dbObject*& load_obj,
                               dbModule*& current_module,
                               dbModITerm*& top_mod_iterm);
-    void createNewHierConnection(dbObject*& load_obj,
-                                 dbModule*& current_module,
-                                 dbModITerm*& top_mod_iterm,
-                                 const std::string& base_name);
-  
-    void advanceToParentModule(dbObject*& load_obj,
+  void createNewHierConnection(dbObject*& load_obj,
                                dbModule*& current_module,
                                dbModITerm*& top_mod_iterm,
-                               dbModITerm* next_mod_iterm);
-  
-    void performFinalConnections(dbITerm* load_pin,
+                               const std::string& base_name);
+  void advanceToParentModule(dbObject*& load_obj,
+                             dbModule*& current_module,
+                             dbModITerm*& top_mod_iterm,
+                             dbModITerm* next_mod_iterm);
+  void performFinalConnections(dbITerm* load_pin,
                                dbITerm* drvr_term,
                                dbModITerm* top_mod_iterm);
 
@@ -175,24 +174,25 @@ class dbInsertBuffer
   void dlogMovedBTermLoad(int load_idx, int num_loads, dbBTerm* load) const;
   void dlogPlacingBuffer(dbInst* buffer_inst, const Point& loc) const;
   void dlogInsertBufferSuccess(dbInst* buffer_inst) const;
+  void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;
 
  private:
-  dbNet* net_ = nullptr;  // Target net. The net to which the buffer is inserted
-  dbBlock* block_ = nullptr;
-  utl::Logger* logger_ = nullptr;
+  dbNet* net_{nullptr};  // Target net. The net to which the buffer is inserted
+  dbBlock* block_{nullptr};
+  utl::Logger* logger_{nullptr};
 
   // Insert buffer state
-  dbITerm* buf_input_iterm_ = nullptr;   // Input iterm of the new buffer
-  dbITerm* buf_output_iterm_ = nullptr;  // Output iterm of the new buffer
-  dbNet* new_flat_net_ = nullptr;    // New flat net connected to the new buffer
-  dbModNet* new_mod_net_ = nullptr;  // New modnet connected to the new buffer
-  dbModule* target_module_ = nullptr;        // Target module for the new buffer
-  const dbMaster* buffer_master_ = nullptr;  // Buffer master
-  const char* new_buf_base_name_ = nullptr;  // Base name for the new buffer
-  const char* new_net_base_name_ = nullptr;  // Base name for the new nets
-  dbNameUniquifyType uniquify_ = dbNameUniquifyType::ALWAYS;
-  dbObject* orig_drvr_pin_ = nullptr;  // Original driver pin of net_
+  dbITerm* buf_input_iterm_{nullptr};   // Input iterm of the new buffer
+  dbITerm* buf_output_iterm_{nullptr};  // Output iterm of the new buffer
+  dbNet* new_flat_net_{nullptr};    // New flat net connected to the new buffer
+  dbModNet* new_mod_net_{nullptr};  // New modnet connected to the new buffer
+  dbModule* target_module_{nullptr};        // Target module for the new buffer
+  const dbMaster* buffer_master_{nullptr};  // Buffer master
+  const char* new_buf_base_name_{nullptr};  // Base name for the new buffer
+  const char* new_net_base_name_{nullptr};  // Base name for the new nets
+  dbNameUniquifyType uniquify_{dbNameUniquifyType::ALWAYS};
+  dbObject* orig_drvr_pin_{nullptr};  // Original driver pin of net_
 
   // Caches for hierarchical connection
 
@@ -202,6 +202,11 @@ class dbInsertBuffer
 
   // Indicates a dbModNet in a module can be reused (w/o port punching) or not
   std::map<dbModule*, std::set<dbModNet*>> module_reusable_nets_;
+
+  //------------------------------------------------------------------
+  // Static attribute
+  //------------------------------------------------------------------
+  inline static std::atomic<int> insert_buffer_call_count_{0};
 };
 
 }  // namespace odb
