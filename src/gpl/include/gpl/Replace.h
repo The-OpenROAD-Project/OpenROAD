@@ -165,7 +165,6 @@ class Replace
 
   int total_placeable_insts_ = 0;
 
-
   Clusters clusters_;
 
   bool gui_debug_ = false;
