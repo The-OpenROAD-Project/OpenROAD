@@ -566,7 +566,6 @@ void lefiPinAntennaModel::addAntennaMaxCutCar(double val, const char* layer)
 void lefiPinAntennaModel::setAntennaReturnFlag(int flag)
 {
   hasReturn_ = flag;
-  return;
 }
 
 int lefiPinAntennaModel::hasAntennaGateArea() const
@@ -1964,8 +1963,6 @@ void lefiPin::addAntennaModel(int oxide)
 
   amo->Init();
   amo->setAntennaModel(oxide);
-
-  return;
 }
 
 // 5.5

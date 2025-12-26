@@ -32,44 +32,6 @@ class PlacementDRC;
 class Network
 {
  public:
-  struct comparePinsByNodeId
-  {
-    bool operator()(const Pin* a, const Pin* b)
-    {
-      return a->getNode()->getId() < b->getNode()->getId();
-    }
-  };
-
-  class comparePinsByEdgeId
-  {
-   public:
-    explicit comparePinsByEdgeId(Network* nw) : nw_(nw) {}
-    bool operator()(const Pin* a, const Pin* b)
-    {
-      return a->getEdge()->getId() < b->getEdge()->getId();
-    }
-
-   private:
-    Network* nw_ = nullptr;
-  };
-
-  class comparePinsByOffset
-  {
-   public:
-    explicit comparePinsByOffset(Network* nw) : nw_(nw) {}
-    bool operator()(const Pin* a, const Pin* b)
-    {
-      if (a->getOffsetX() == b->getOffsetX()) {
-        return a->getOffsetY() < b->getOffsetY();
-      }
-      return a->getOffsetX() < b->getOffsetX();
-    }
-
-   private:
-    Network* nw_ = nullptr;
-  };
-
- public:
   std::vector<std::unique_ptr<Node>>& getNodes() { return nodes_; }
   int getNumNodes() const { return (int) nodes_.size(); }
   uint32_t getNumCells() const { return cells_cnt_; }

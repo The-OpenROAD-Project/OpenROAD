@@ -181,7 +181,7 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
 }
 
 frTerm* Fixture::makeMacroPin(frMaster* master,
-                              std::string name,
+                              const std::string& name,
                               frCoord xl,
                               frCoord yl,
                               frCoord xh,
@@ -213,9 +213,8 @@ frInst* Fixture::makeInst(const char* name,
                           frMaster* master,
                           odb::dbMaster* db_master)
 {
-  auto ptr_db_inst = std::make_unique<odb::dbInst>();
-  odb::dbInst* db_inst
-      = ptr_db_inst->create(db_->getChip()->getBlock(), db_master, "dummy");
+  auto db_inst
+      = odb::dbInst::create(db_->getChip()->getBlock(), db_master, "dummy");
   odb::dbTransform trans;
   db_inst->setTransform(trans);
   auto uInst = std::make_unique<frInst>(name, master, db_inst);
@@ -384,8 +383,8 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
 
 frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<std::pair<frCoord, frCoord>> valTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<std::pair<frCoord, frCoord>>& valTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -402,8 +401,8 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
 frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
     frLayerNum layer_num,
     frCoord spacing,
-    std::vector<frCoord> eol,
-    std::vector<frCoord> ext,
+    const std::vector<frCoord>& eol,
+    const std::vector<frCoord>& ext,
     bool parallelOnly)
 {
   frTechObject* tech = design->getTech();
@@ -421,9 +420,9 @@ frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
 
 frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<frCoord> prlTbl,
-    std::vector<std::vector<frCoord>> spacingTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<frCoord>& prlTbl,
+    const std::vector<std::vector<frCoord>>& spacingTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -755,6 +754,8 @@ frViaDef* Fixture::makeViaDef(const char* name,
       case 1:
         via_p->addLayer2Fig(std::move(pinFig));
         break;
+      default:
+        logger->error(DRT, 624, "Unexpected layer diff {}", l - layer_num);
     }
   }
 

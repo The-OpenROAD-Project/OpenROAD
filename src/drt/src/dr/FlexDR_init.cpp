@@ -1585,7 +1585,7 @@ frLayerNum FlexDRWorker::initTrackCoords_getNonPref(frLayerNum lNum)
   const auto lDir = getTech()->getLayer(lNum)->getDir();
   auto lDir2 = dbTechLayerDir::NONE;
 
-  switch (lDir) {
+  switch (lDir.getValue()) {
     case dbTechLayerDir::HORIZONTAL:
       lDir2 = dbTechLayerDir::VERTICAL;
       break;

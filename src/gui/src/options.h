@@ -20,7 +20,7 @@ namespace gui {
 class Options
 {
  public:
-  virtual ~Options() {}
+  virtual ~Options() = default;
   virtual QColor background() = 0;
   virtual QColor color(const odb::dbTechLayer* layer) = 0;
   virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
@@ -56,6 +56,7 @@ class Options
   virtual bool areNonPrefTracksVisible() = 0;
 
   virtual bool areIOPinsVisible() const = 0;
+  virtual bool areIOPinsSelectable() const = 0;
   virtual bool areIOPinNamesVisible() const = 0;
   virtual QFont ioPinMarkersFont() const = 0;
 

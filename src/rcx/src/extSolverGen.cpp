@@ -61,7 +61,7 @@ void extSolverGen::init()
   _wireDirName = new char[2048];
   _topDir = new char[1024];
   _patternName = new char[1024];
-  _parser = new Ath__parser(logger_);
+  _parser = new Parser(logger_);
   _solverFileName = new char[1024];
   _wireFileName = new char[1024];
   _capLogFP = nullptr;
@@ -650,7 +650,7 @@ bool extSolverGen::getMultipliers(const char* input, std::vector<double>& table)
     double v = atof(word.c_str());
     table.push_back(v);
   }
-  return table.size() > 0;
+  return !table.empty();
 }
 bool extSolverGen::setWidthSpaceMultipliers(const char* w_list,
                                             const char* s_list)

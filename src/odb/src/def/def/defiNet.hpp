@@ -250,11 +250,8 @@ class defiNet
   // WMD -- the following will be removed by the next release
   void setType(const char* typ);  // Either FIXED COVER ROUTED
 
-  void addProp(const char* name, const char* value, const char type);
-  void addNumProp(const char* name,
-                  const double d,
-                  const char* value,
-                  const char type);
+  void addProp(const char* name, const char* value, char type);
+  void addNumProp(const char* name, double d, const char* value, char type);
   void addSubnet(defiSubnet* subnet);
   // NEW: a net can have more than 1 wire
   void addWire(const char* typ, const char* wireShieldName);

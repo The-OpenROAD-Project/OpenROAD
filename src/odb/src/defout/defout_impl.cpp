@@ -358,7 +358,7 @@ void DefOut::Impl::writeVias(dbBlock* block)
 {
   dbSet<dbVia> vias = block->getVias();
 
-  if (vias.size() == 0) {
+  if (vias.empty()) {
     return;
   }
 
@@ -694,7 +694,7 @@ void DefOut::Impl::writeBTerms(dbBlock* block)
 {
   dbSet<dbBTerm> bterms = block->getBTerms();
 
-  if (bterms.size() == 0) {
+  if (bterms.empty()) {
     return;
   }
 
@@ -914,7 +914,7 @@ void DefOut::Impl::writeBTerm(dbBTerm* bterm)
   if (net) {
     dbSet<dbBPin> bpins = bterm->getBPins();
 
-    if (bpins.size() != 0) {
+    if (!bpins.empty()) {
       int cnt = 0;
 
       for (dbBPin* bpin : bpins) {

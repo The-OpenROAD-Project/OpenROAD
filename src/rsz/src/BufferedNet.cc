@@ -640,7 +640,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
   const Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
-  if (sink_map.count(to_loc)
+  if (sink_map.contains(to_loc)
       && pins_visited.find(to_loc) == pins_visited.end()) {
     pins_visited.insert(to_loc);
     for (BufferedNetPtr sink : sink_map[to_loc]) {

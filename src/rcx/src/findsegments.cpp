@@ -12,8 +12,6 @@
 
 namespace rcx {
 
-using utl::RCX;
-
 int extMeasureRC::GetDx1Dx2(Wire* w1, Wire* w2, int& dx2)
 {
   int dx1 = w2->getXY() - w1->getXY();
@@ -74,7 +72,7 @@ uint32_t extMeasureRC::FindSegments(bool lookUp,
                                     int xy1,
                                     int len1,
                                     Wire* w2_next,
-                                    Ath__array1D<extSegment*>* segTable)
+                                    Array1D<extSegment*>* segTable)
 {
   if (w2_next == nullptr) {
     return 0;

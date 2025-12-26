@@ -337,7 +337,7 @@ void PartitionMgr::getRents(float& Rratio, float& p, float& q, float& avgK)
     flag = partitionCluster(triton_part, modMgr, cv);
   }
 
-  if (block->getInsts().size() >= 1 && block->getBTerms().size() >= 1) {
+  if (!block->getInsts().empty() && !block->getBTerms().empty()) {
     auto m = std::make_shared<Module>(modMgr.getNumModules());
     m->setAvgK(avgK);
     m->setAvgInsts(block->getInsts().size());

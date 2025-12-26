@@ -13,15 +13,15 @@ namespace rcx {
 
 void extSpef::initNodeCoordTables(uint32_t memChunk)
 {
-  _capNodeTable = new Ath__array1D<uint32_t>(memChunk);
-  _xCoordTable = new Ath__array1D<double>(memChunk);
-  _yCoordTable = new Ath__array1D<double>(memChunk);
-  _x1CoordTable = new Ath__array1D<int>(memChunk);
-  _x2CoordTable = new Ath__array1D<int>(memChunk);
-  _y1CoordTable = new Ath__array1D<int>(memChunk);
-  _y2CoordTable = new Ath__array1D<int>(memChunk);
-  _levelTable = new Ath__array1D<uint32_t>(memChunk);
-  _idTable = new Ath__array1D<uint32_t>(16);
+  _capNodeTable = new Array1D<uint32_t>(memChunk);
+  _xCoordTable = new Array1D<double>(memChunk);
+  _yCoordTable = new Array1D<double>(memChunk);
+  _x1CoordTable = new Array1D<int>(memChunk);
+  _x2CoordTable = new Array1D<int>(memChunk);
+  _y1CoordTable = new Array1D<int>(memChunk);
+  _y2CoordTable = new Array1D<int>(memChunk);
+  _levelTable = new Array1D<uint32_t>(memChunk);
+  _idTable = new Array1D<uint32_t>(16);
 }
 
 void extSpef::resetNodeCoordTables()

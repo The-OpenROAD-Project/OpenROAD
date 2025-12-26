@@ -1610,7 +1610,6 @@ void defiPin::addAntennaModel(int oxide)
   }
   amo->Init();
   amo->setAntennaModel(oxide);
-  return;
 }
 
 // 5.5

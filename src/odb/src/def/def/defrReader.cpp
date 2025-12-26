@@ -1936,7 +1936,7 @@ void defrSetViaWarnings(int warn)
   defContext.settings->ViaWarnings = warn;
 }
 
-void defrDisableParserMsgs(int nMsg, int* msgs)
+void defrDisableParserMsgs(int nMsg, const int* msgs)
 {
   DEF_INIT;
   int i, j;
@@ -1972,10 +1972,9 @@ void defrDisableParserMsgs(int nMsg, int* msgs)
       }
     }
   }
-  return;
 }
 
-void defrEnableParserMsgs(int nMsg, int* msgs)
+void defrEnableParserMsgs(int nMsg, const int* msgs)
 {
   DEF_INIT;
   int i, j;
@@ -2011,7 +2010,6 @@ void defrEnableParserMsgs(int nMsg, int* msgs)
     defContext.settings->disableDMsgs[j] = 0;  // set to 0
   }
   defContext.settings->nDDMsgs = i;
-  return;
 }
 
 void defrEnableAllMsgs()
@@ -2037,7 +2035,6 @@ void defrSetLimitPerMsg(int msgId, int numMsg)
     return;
   }
   defContext.settings->MsgLimit[msgId - 5000] = numMsg;
-  return;
 }
 
 // *****************************************************************

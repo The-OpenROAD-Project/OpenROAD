@@ -91,17 +91,12 @@ void lefiViaRuleLayer::setName(const char* name)
   hasRect_ = 0;
 }
 
+// Destroy will be called explicitly so not dtor needed
 void lefiViaRuleLayer::Destroy()
 {
   if (name_) {
     lefFree(name_);
   }
-}
-
-lefiViaRuleLayer::~lefiViaRuleLayer()
-{
-  // Destroy will be called explicitly
-  // so do nothing here.
 }
 
 void lefiViaRuleLayer::setHorizontal()
@@ -145,7 +140,6 @@ void lefiViaRuleLayer::setOverhangToEnclosure(double d)
   } else {
     overhang2_ = d;  // overhang1_ already set, set to overhang2_
   }
-  return;
 }
 
 // 5.5

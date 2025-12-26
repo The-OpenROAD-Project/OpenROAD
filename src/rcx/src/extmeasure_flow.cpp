@@ -22,13 +22,12 @@ using utl::RCX;
 
 namespace rcx {
 
-extSegment* extMeasureRC::CreateUpDownSegment(
-    bool lookUp,
-    Wire* w,
-    int xy1,
-    int len1,
-    Wire* w2,
-    Ath__array1D<extSegment*>* segTable)
+extSegment* extMeasureRC::CreateUpDownSegment(bool lookUp,
+                                              Wire* w,
+                                              int xy1,
+                                              int len1,
+                                              Wire* w2,
+                                              Array1D<extSegment*>* segTable)
 {
   if (len1 == 0) {
     return nullptr;
@@ -46,11 +45,11 @@ void extMeasureRC::FindSegmentsTrack(Wire* w1,
                                      int len1,
                                      Wire* w2_next,
                                      uint32_t ii,
-                                     Ath__array1D<Wire*>* trackTable,
+                                     Array1D<Wire*>* trackTable,
                                      bool lookUp,
                                      uint32_t dir,
                                      int maxDist,
-                                     Ath__array1D<extSegment*>* segTable)
+                                     Array1D<extSegment*>* segTable)
 {
   if (w2_next == nullptr) {
     if (ii >= trackTable->getCnt()) {
@@ -170,15 +169,14 @@ void extMeasureRC::FindSegmentsTrack(Wire* w1,
   }
 }
 
-extSegment* extMeasureRC::CreateUpDownSegment(
-    Wire* w,
-    Wire* up,
-    int xy1,
-    int len1,
-    Wire* down,
-    Ath__array1D<extSegment*>* segTable,
-    int metOver,
-    int metUnder)
+extSegment* extMeasureRC::CreateUpDownSegment(Wire* w,
+                                              Wire* up,
+                                              int xy1,
+                                              int len1,
+                                              Wire* down,
+                                              Array1D<extSegment*>* segTable,
+                                              int metOver,
+                                              int metUnder)
 {
   if (len1 == 0) {
     return nullptr;
@@ -193,7 +191,7 @@ extSegment* extMeasureRC::CreateUpDownSegment(
 extSegment* extMeasureRC::GetNext(uint32_t ii,
                                   int& xy1,
                                   int& len1,
-                                  Ath__array1D<extSegment*>* segTable)
+                                  Array1D<extSegment*>* segTable)
 {
   if (ii < segTable->getCnt()) {
     extSegment* s = segTable->get(ii);
@@ -204,7 +202,7 @@ extSegment* extMeasureRC::GetNext(uint32_t ii,
   return nullptr;
 }
 extSegment* extMeasureRC::GetNextSegment(uint32_t ii,
-                                         Ath__array1D<extSegment*>* segTable)
+                                         Array1D<extSegment*>* segTable)
 {
   if (ii < segTable->getCnt()) {
     extSegment* s = segTable->get(ii);
@@ -212,9 +210,9 @@ extSegment* extMeasureRC::GetNextSegment(uint32_t ii,
   }
   return nullptr;
 }
-uint32_t extMeasureRC::FindUpDownSegments(Ath__array1D<extSegment*>* upTable,
-                                          Ath__array1D<extSegment*>* downTable,
-                                          Ath__array1D<extSegment*>* segTable,
+uint32_t extMeasureRC::FindUpDownSegments(Array1D<extSegment*>* upTable,
+                                          Array1D<extSegment*>* downTable,
+                                          Array1D<extSegment*>* segTable,
                                           int metOver,
                                           int metUnder)
 {
@@ -369,10 +367,10 @@ uint32_t extMeasureRC::FindUpDownSegments(Ath__array1D<extSegment*>* upTable,
   return cnt;
 }
 uint32_t extMeasureRC::CopySegments(bool up,
-                                    Ath__array1D<extSegment*>* upTable,
+                                    Array1D<extSegment*>* upTable,
                                     uint32_t start,
                                     uint32_t end,
-                                    Ath__array1D<extSegment*>* segTable,
+                                    Array1D<extSegment*>* segTable,
                                     int maxDist,
                                     int metOver,
                                     int metUnder)
@@ -405,9 +403,7 @@ uint32_t extMeasureRC::CopySegments(bool up,
   }
   return 0;
 }
-void extMeasureRC::Print(FILE* fp,
-                         Ath__array1D<Wire*>* segTable,
-                         const char* msg)
+void extMeasureRC::Print(FILE* fp, Array1D<Wire*>* segTable, const char* msg)
 {
   // fprintf(fp, "%s\n", msg);
   for (uint32_t ii = 0; ii < segTable->getCnt(); ii++) {
@@ -416,7 +412,7 @@ void extMeasureRC::Print(FILE* fp,
   }
 }
 void extMeasureRC::Print(FILE* fp,
-                         Ath__array1D<extSegment*>* segTable,
+                         Array1D<extSegment*>* segTable,
                          uint32_t d,
                          bool lookUp)
 {
@@ -472,7 +468,7 @@ void extMeasureRC::PrintUpDownNet(FILE* fp,
     PrintWire(fp, s, s->getLevel());
   }
 }
-void extMeasureRC::PrintUpDown(FILE* fp, Ath__array1D<extSegment*>* segTable)
+void extMeasureRC::PrintUpDown(FILE* fp, Array1D<extSegment*>* segTable)
 {
   if (fp == nullptr) {
     return;
@@ -514,7 +510,7 @@ void extMeasureRC::PrintUpDown_save(FILE *fp, extSegment *s)
 s->_dist_down, s->_len, s->_wire->getLen(), s->_wire->getOtherId(),
 s->_wire->getRsegId(), net->getId(), net->getConstName());
 }*/
-bool extMeasureRC::CheckOrdered(Ath__array1D<extSegment*>* segTable)
+bool extMeasureRC::CheckOrdered(Array1D<extSegment*>* segTable)
 {
   if (segTable->getCnt() <= 1) {
     return true;
@@ -541,24 +537,24 @@ int extMeasureRC::CouplingFlow_new(uint32_t dir,
   FILE* fp = OpenPrintFile(dir, "Segments");
 
   uint32_t limitTrackNum = 10;
-  Ath__array1D<extSegment*> upTable;
-  Ath__array1D<extSegment*> downTable;
-  Ath__array1D<extSegment*> verticalUpTable;
-  Ath__array1D<extSegment*> verticalDownTable;
-  Ath__array1D<extSegment*> segTable;
-  Ath__array1D<extSegment*> aboveTable;
-  Ath__array1D<extSegment*> belowTable;
-  Ath__array1D<extSegment*> whiteTable;
+  Array1D<extSegment*> upTable;
+  Array1D<extSegment*> downTable;
+  Array1D<extSegment*> verticalUpTable;
+  Array1D<extSegment*> verticalDownTable;
+  Array1D<extSegment*> segTable;
+  Array1D<extSegment*> aboveTable;
+  Array1D<extSegment*> belowTable;
+  Array1D<extSegment*> whiteTable;
 
-  Ath__array1D<Wire*> UpTable;
+  Array1D<Wire*> UpTable;
 
   uint32_t colCnt = _search->getColCnt();
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(colCnt);
+  Array1D<Wire*>** firstWireTable = allocMarkTable(colCnt);
 
   // TODO need to add in constructor/destructor
-  _verticalPowerTable = new Ath__array1D<Wire*>*[colCnt];
+  _verticalPowerTable = new Array1D<Wire*>*[colCnt];
   for (uint32_t ii = 0; ii < colCnt; ii++) {
-    _verticalPowerTable[ii] = new Ath__array1D<Wire*>(4);
+    _verticalPowerTable[ii] = new Array1D<Wire*>(4);
   }
 
   for (uint32_t level = 1; level < colCnt; level++) {
@@ -605,7 +601,7 @@ int extMeasureRC::CouplingFlow_new(uint32_t dir,
         Print(fp1, &UpTable, "");
         fprintf(fp1, "===================================================\n");
 
-        Ath__array1D<extSegment*> UpSegTable;
+        Array1D<extSegment*> UpSegTable;
         bool lookUp = true;
         _dir = dir;
         FindSegmentsTrack(w,
@@ -755,7 +751,7 @@ int extMeasureRC::CouplingFlow_new(uint32_t dir,
   }
   return 0;
 }
-void extMeasureRC::BubbleSort(Ath__array1D<extSegment*>* segTable)
+void extMeasureRC::BubbleSort(Array1D<extSegment*>* segTable)
 {
   int n = segTable->getCnt();
   if (n < 2) {
