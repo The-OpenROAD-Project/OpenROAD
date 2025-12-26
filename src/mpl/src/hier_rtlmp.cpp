@@ -654,8 +654,10 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     return;
   }
 
+  TilingList tight_packing_tilings = getTightPackingTilings(cluster);
+
   if (cluster->isArrayOfInterconnectedMacros()) {
-    setTightPackingTilings(cluster);
+    cluster->setTilings(tight_packing_tilings);
     return;
   }
 
@@ -806,34 +808,36 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                    cluster->getName());
   }
 
-  TilingList tilings_list(tilings_set.begin(), tilings_set.end());
-  std::ranges::sort(tilings_list, isAreaSmaller);
+  TilingList valid_tilings(tilings_set.begin(), tilings_set.end());
+  std::ranges::sort(valid_tilings, isAreaSmaller);
 
-  for (auto& tiling : tilings_list) {
+  for (auto& tiling : valid_tilings) {
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
                2,
-               "width: {}, height: {}",
+               "width: {}, height: {}, area: {}, aspect_ratio: {}",
                tiling.width(),
-               tiling.height());
+               tiling.height(),
+               tiling.area(),
+               tiling.aspectRatio());
   }
 
   // we only keep the minimum area tiling since all the macros has the same size
   // later this can be relaxed.  But this may cause problems because the
   // minimizing the wirelength may leave holes near the boundary
-  TilingList new_tilings_list;
-  float first_tiling_area = tilings_list.front().area();
-  for (auto& tiling : tilings_list) {
-    if (tiling.area() <= first_tiling_area) {
-      new_tilings_list.push_back(tiling);
+  TilingList tilings = std::move(tight_packing_tilings);
+  int64_t min_tiling_area = valid_tilings.front().area();
+  for (auto& tiling : valid_tilings) {
+    if (tiling.area() <= min_tiling_area) {
+      tilings.push_back(tiling);
     }
   }
-  tilings_list = std::move(new_tilings_list);
-  cluster->setTilings(tilings_list);
 
-  std::string line = "Tiling for hard cluster " + cluster->getName() + "  ";
-  for (auto& tiling : tilings_list) {
+  cluster->setTilings(tilings);
+
+  std::string line = "Tiling for hard cluster " + cluster->getName() + "\n";
+  for (auto& tiling : tilings) {
     line += " < " + std::to_string(tiling.width()) + " , ";
     line += std::to_string(tiling.height()) + " >  ";
   }
@@ -842,13 +846,19 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
 }
 
 // Used only for arrays of interconnected macros.
-void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
+TilingList HierRTLMP::getTightPackingTilings(Cluster* cluster)
 {
   TilingList tight_packing_tilings;
 
+<<<<<<< HEAD
   int num_macro = macro_array->getNumMacro();
   float macro_width = macro_array->getHardMacros().front()->getWidth();
   float macro_height = macro_array->getHardMacros().front()->getHeight();
+=======
+  int num_macro = static_cast<int>(cluster->getNumMacro());
+  float macro_width = cluster->getHardMacros().front()->getWidth();
+  float macro_height = cluster->getHardMacros().front()->getHeight();
+>>>>>>> 0ab84211bf (mpl: include tight packing tilings for all macro clsuters)
 
   const odb::Rect outline = tree_->root->getBBox();
 
@@ -865,10 +875,15 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
         tight_packing_tilings.emplace_back(columns * macro_width,
                                            rows * macro_height);
       }
+      if (rows * macro_width <= outline.dx()
+          && columns * macro_height <= outline.dy()) {
+        tight_packing_tilings.emplace_back(rows * macro_width,
+                                           columns * macro_height);
+      }
     }
   }
 
-  macro_array->setTilings(tight_packing_tilings);
+  return tight_packing_tilings;
 }
 
 void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
