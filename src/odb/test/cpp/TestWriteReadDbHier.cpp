@@ -226,9 +226,9 @@ TEST_F(TestWriteReadDbHier, WriteReadOdbMultiBlocks)
   EXPECT_STREQ(mod0_a_2->getName(), "A");
 
   // Verify Inst hash is populated
-  dbInst* child_inst_2 = child_block2->findInst("child_inst");
+  dbInst* child_inst_2 = mod0_2->findDbInst("child_inst");
   ASSERT_NE(child_inst_2, nullptr);
-  EXPECT_EQ(child_inst_2->getName(), "child_inst");
+  EXPECT_EQ(child_inst_2->getName(), "child_inst");  
 }
 
 }  // namespace
