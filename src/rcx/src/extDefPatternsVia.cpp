@@ -16,11 +16,18 @@
 
 namespace rcx {
 
+using odb::dbBox;
+using odb::dbBTerm;
+using odb::dbNet;
+using odb::dbSet;
+using odb::dbSigType;
+using odb::dbTechLayer;
+using odb::dbTechLayerType;
+using odb::dbTechVia;
+using odb::dbWire;
+using odb::dbWireEncoder;
+using odb::dbWireType;
 using utl::RCX;
-
-using namespace odb;
-
-using rcx::extRulesPat;
 
 uint32_t extRulesPat::setLayerInfoVia(dbTechLayer* layer,
                                       uint32_t met,

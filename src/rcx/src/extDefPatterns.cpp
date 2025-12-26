@@ -23,9 +23,23 @@ using odb::dbBlock;
 using odb::dbTechLayerDir;
 using utl::RCX;
 
-using namespace odb;  // This must go
-
 namespace rcx {
+
+using odb::dbBox;
+using odb::dbBPin;
+using odb::dbBTerm;
+using odb::dbChip;
+using odb::dbIoType;
+using odb::dbNet;
+using odb::dbPlacementStatus;
+using odb::dbSigType;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbWire;
+using odb::dbWireEncoder;
+using odb::dbWireType;
+using odb::Rect;
 
 extRulesPat::extRulesPat(const char* pat,
                          bool over,

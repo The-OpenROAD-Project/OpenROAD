@@ -24,7 +24,11 @@
 #include "odb/lefout.h"
 #include "utl/Logger.h"
 
-using namespace boost::polygon::operators;
+using boost::polygon::operators::operator+;
+using boost::polygon::operators::operator-;
+using boost::polygon::operators::operator&;
+using boost::polygon::operators::operator|;
+using boost::polygon::operators::operator|=;
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {

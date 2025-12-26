@@ -11,7 +11,7 @@
 #include "gtest/gtest.h"
 #include "utl/Logger.h"
 
-using namespace dst;
+namespace dst {
 
 TEST(test_suite, test_balancer)
 {
@@ -102,3 +102,5 @@ TEST(test_suite, test_balancer)
   // history i.e have invalid state.
   EXPECT_FALSE(balancer->addWorker(local_ip, worker_port_2));
 }
+
+}  // namespace dst

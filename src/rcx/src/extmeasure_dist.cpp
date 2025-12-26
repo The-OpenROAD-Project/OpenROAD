@@ -17,7 +17,10 @@
 
 namespace rcx {
 
-using namespace odb;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbNet;
+using odb::dbRSeg;
 
 void extMeasureRC::ResetRCs()
 {

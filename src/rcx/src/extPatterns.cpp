@@ -23,7 +23,15 @@
 
 namespace rcx {
 
-using namespace odb;
+using odb::dbBlock;
+using odb::dbBox;
+using odb::dbBTerm;
+using odb::dbChip;
+using odb::dbIoType;
+using odb::dbNet;
+using odb::dbSet;
+using odb::dbTechLayer;
+using odb::Rect;
 
 uint32_t extMain::benchPatternsGen(const PatternOptions& opt1)
 {

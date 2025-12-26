@@ -11,7 +11,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-using namespace odb;
+namespace odb {
 
 void ArraySpacingParser::setCutClass(std::string class_name)
 {
@@ -92,3 +92,5 @@ bool ArraySpacingParser::parse(const std::string& s)
   }
   return valid;
 }
+
+}  // namespace odb

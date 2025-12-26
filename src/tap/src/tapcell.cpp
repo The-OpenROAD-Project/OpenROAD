@@ -409,7 +409,9 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori)
 
 std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+  using boost::polygon::operators::operator&;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
   auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {

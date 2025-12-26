@@ -46,11 +46,14 @@
 #include "utl/Logger.h"
 #include "zero_slack_strategy.h"
 
-using utl::RMP;
-using namespace abc;
-using cut::Blif;
-
 namespace rmp {
+
+using abc::Abc_Frame_t;
+using abc::Abc_FrameGetGlobalFrame;
+using abc::Abc_Start;
+using abc::Abc_Stop;
+using cut::Blif;
+using utl::RMP;
 
 Restructure::Restructure(utl::Logger* logger,
                          sta::dbSta* open_sta,

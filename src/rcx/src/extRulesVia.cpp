@@ -15,9 +15,11 @@
 
 namespace rcx {
 
-using namespace odb;
+using odb::dbNet;
+using odb::dbSet;
+using odb::dbTech;
+using odb::dbTechVia;
 
-// dkf 12272023
 extViaModel* extMetRCTable::addViaModel(char* name,
                                         double R,
                                         uint32_t cCnt,

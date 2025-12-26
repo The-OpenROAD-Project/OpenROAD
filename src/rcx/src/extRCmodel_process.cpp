@@ -12,7 +12,6 @@
 
 namespace rcx {
 
-using namespace odb;
 using utl::RCX;
 
 uint32_t extRCModel::measureWithVar(extMeasure* measure)
