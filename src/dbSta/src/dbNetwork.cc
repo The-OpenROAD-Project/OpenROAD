@@ -2671,15 +2671,10 @@ void dbNetwork::connectPinAfter(Pin* pin)
 {
   if (isDriver(pin)) {
     Net* net = this->net(pin);
-    // jk: changed to use drivers()
-    // PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-    // if (drvrs) {
-    //  drvrs->insert(pin);
-    //}
     drivers(net);
   } else if (isHierarchical(pin)) {
     Net* net = this->net(pin);
-    drivers(net);  // jk: fix. Update cache
+    drivers(net);
   }
 }
 
@@ -2772,10 +2767,24 @@ void dbNetwork::disconnectPin(Pin* pin)
 
 void dbNetwork::disconnectPinBefore(const Pin* pin)
 {
+  // This function is called before a pin is disconnected to update (invalidate)
+  // the internal driver cache (net_drvr_pin_map_).
+  // 1. If load pin, nop because it is not managed by the driver cache
+  // 2. If hierarchical pin:
+  //    Find the associated physical net (dbNet) and all hierarchical nets
+  //    (dbModNet) and remove the driver information from the cache.
+  // 3. If driver pin:
+  //    Find the dbNet and dbModNet driven by this pin and remove the cache.
+  //    Also, clean up the cache for all dbModNets associated with the dbNet
+  //    to maintain cache consistency between multiple hierarchical nets
+  //    corresponding to a single physical net.
+
+  // 1. Load pin case
   if (isLoad(pin)) {
     return;  // No need to update net_drvr_pin_map_ cache.
   }
 
+  // 2. Hierarchical pin case
   if (isHierarchical(pin)) {
     dbITerm* iterm;
     dbBTerm* bterm;
@@ -2807,7 +2816,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     return;
   }
 
-  // Driver pin case
+  // 3. Driver pin case
 
   // Get all the related dbNet & dbModNet with the pin.
   // Incrementally update the net-drvr cache.
@@ -2825,8 +2834,6 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     }
 
     removeDriverFromCache(dbToSta(db_net), pin);
-    // jk: fix
-    // return;
   }
 
   if (mod_net) {
@@ -4397,9 +4404,7 @@ dbNet* dbNetwork::findFlatDbNet(const Net* net) const
   if (db_mod_net) {
     // If it's a hierarchical net, find the associated dbNet
     // by traversing the hierarchy.
-    db_net = db_mod_net->findRelatedNet();  // jk: fix. new
-    // db_net = findRelatedDbNet(db_mod_net); // jk: old. not safe for
-    // intermediate editing
+    db_net = db_mod_net->findRelatedNet();
   }
   return db_net;
 }

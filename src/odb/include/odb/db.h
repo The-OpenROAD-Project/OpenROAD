@@ -2631,32 +2631,6 @@ class dbNet : public dbObject
   /// as needed.
   ///
   void hierarchicalConnect(dbObject* driver, dbObject* load);
-
-  // jk: move into _dbNet
- private:
-  dbNet* createBufferNet(std::set<dbObject*>& terms,
-                         dbModule* target_module,
-                         const dbNameUniquifyType& uniquify);
-  std::string makeUniqueHierName(dbModule* module,
-                                 const std::string& base_name,
-                                 const char* suffix) const;
-  int getModuleDepth(dbModule* mod) const;
-  dbModule* findLCA(dbModule* m1, dbModule* m2) const;
-  bool createHierarchicalConnection(dbITerm* load_pin,
-                                    dbITerm* drvr_term,
-                                    const std::set<dbObject*>& load_pins);
-  dbInst* insertBufferCommon(dbObject* term_obj,
-                             const dbMaster* buffer_master,
-                             const Point* loc,
-                             const char* new_buf_base_name,
-                             const char* new_net_base_name,
-                             const dbNameUniquifyType& uniquify,
-                             bool insertBefore);
-  dbModNet* getFirstModNetInFaninOfLoads(
-      const std::set<dbObject*>& load_pins,
-      const std::set<dbModNet*>& modnets_in_target_module);
-  dbModNet* getFirstDriverModNetInTargetModule(
-      const std::set<dbModNet*>& modnets_in_target_module);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

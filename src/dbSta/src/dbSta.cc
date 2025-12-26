@@ -795,14 +795,6 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
     sta::Edge* edge = edge_iter.next();
     sta::Vertex* to_vertex = edge->to(graph);
 
-    // jk: dbg
-    debugPrint(logger_,
-               utl::RSZ,
-               "insert_buffer_check_sanity",
-               10,
-               "    Edge({})",
-               edge->to_string(this).c_str());
-
     // Check duplicate edges
     if (edge_str_set.find(edge->to_string(this)) != edge_str_set.end()) {
       logger_->error(utl::STA,
@@ -1143,95 +1135,18 @@ void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
   network_->deleteNetBefore(net);
 }
 
-// jk: dbg
-static void printDbgPin(utl::Logger* logger,
-                        dbObject* obj,
-                        dbNetwork* db_network,
-                        dbSta* sta)
-{
-  if (logger->debugCheck(utl::ODB, "dbg", 1) == false) {
-    return;
-  }
-
-  dbBlock* block = obj->getDb()->getChip()->getBlock();
-  if (block == nullptr) {
-    return;
-  }
-
-  // odb::dbITerm* drvr_iterm =
-  // block->findITerm("be_mmu.dcache/load_slew3974/Z");
-  // odb::dbITerm* drvr_iterm =
-  // block->findITerm("e_mmu.dcache/lce/place5133/Z");
-  odb::dbITerm* drvr_iterm = block->findITerm("buf/Z");
-  if (drvr_iterm == nullptr) {
-    return;
-  }
-  Pin* drvr_pin = db_network->dbToSta(drvr_iterm);
-  if (drvr_pin == nullptr) {
-    return;
-  }
-  Graph* graph = sta->graph();
-  if (graph == nullptr) {
-    return;
-  }
-  Vertex* drvr_vertex = graph->pinDrvrVertex(drvr_pin);
-  if (drvr_vertex == nullptr) {
-    return;
-  }
-  VertexOutEdgeIterator edge_iter(drvr_vertex, sta->graph());
-  int num_edge = 0;
-  while (edge_iter.hasNext()) {
-    Edge* edge = edge_iter.next();
-    if (edge == nullptr) {
-      continue;
-    }
-    debugPrint(logger,
-               utl::ODB,
-               "dbg",
-               1,
-               "jk: edge[{}] = {}",
-               num_edge++,
-               edge->to_string(sta));
-  }
-
-  // Sanity check
-  sta->checkSanityDrvrVertexEdges(drvr_pin);
-}
-
 void dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
 {
-  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(iterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
-
-  // jk: dbg
-  debugPrint(logger_,
-             utl::ODB,
-             "dbg",
-             1,
-             "jk: [{}] inDbITermPostConnect({})",
-             i++,
-             iterm->getName());
-  printDbgPin(logger_, iterm, network_, sta_);
 }
 
 void dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
 {
-  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(iterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
-
-  // jk: dbg
-  debugPrint(logger_,
-             utl::ODB,
-             "dbg",
-             1,
-             "jk: [{}] inDbITermPreDisconnect({})",
-             i++,
-             iterm->getName());
-  printDbgPin(logger_, iterm, network_, sta_);
 }
 
 void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
@@ -1241,39 +1156,14 @@ void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
 
 void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
 {
-  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(moditerm);
-  network_->connectPinAfter(pin);  // jk: fix. update net_drvr_pin_map_ cache
-  //   non-hierarchical pin.
-  //   pin sta_->connectPinAfter(pin);  // jk: fix??
-
-  // jk: dbg
-  debugPrint(logger_,
-             utl::ODB,
-             "dbg",
-             1,
-             "jk: [{}] inDbModITermPostConnect({})",
-             i++,
-             moditerm->getName());
-  printDbgPin(logger_, moditerm, network_, sta_);
+  network_->connectPinAfter(pin);
 }
 
 void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
 {
-  static int i = 0;  // jk: dbg
   Pin* pin = network_->dbToSta(moditerm);
-  // sta_->disconnectPinBefore(pin);   // jk: fix???
   network_->disconnectPinBefore(pin);
-
-  // jk: dbg
-  debugPrint(logger_,
-             utl::ODB,
-             "dbg",
-             1,
-             "jk: [{}] inDbModITermPreDisconnect({})",
-             i++,
-             moditerm->getName());
-  printDbgPin(logger_, moditerm, network_, sta_);
 }
 
 void dbStaCbk::inDbModITermDestroy(dbModITerm* moditerm)

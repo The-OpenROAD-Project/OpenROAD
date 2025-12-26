@@ -678,9 +678,9 @@ insert_buffer_after_driver_cmd(Net *net,
 
   if (has_loc) {
     odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
-    inst = resizer->insertBufferAfterDriver(net, buffer_cell, &loc, buf_name, net_name);
+    inst = resizer->insertBufferAfterDriver(net, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
   } else {
-    inst = resizer->insertBufferAfterDriver(net, buffer_cell, nullptr, buf_name, net_name);
+    inst = resizer->insertBufferAfterDriver(net, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
   }
   return inst;
 }
@@ -704,9 +704,9 @@ insert_buffer_before_load_cmd(Pin *load_pin,
 
   if (has_loc) {
     odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
-    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, &loc, buf_name, net_name);
+    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
   } else {
-    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, nullptr, buf_name, net_name);
+    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
   }
   return inst;
 }
@@ -732,9 +732,9 @@ insert_buffer_before_loads_cmd(Net *net,
 
   if (has_loc) {
     odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
-    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, &loc, buf_name, net_name, loads_on_diff_nets);
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS, loads_on_diff_nets);
   } else {
-    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, nullptr, buf_name, net_name, loads_on_diff_nets);
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS, loads_on_diff_nets);
   }
 
   delete pins;

@@ -1257,10 +1257,6 @@ dbInst* dbInst::create(dbBlock* block_,
                        bool physical_only,
                        dbModule* parent_module)
 {
-  // jk: dbg
-  static int _i = 0;
-  _i++;
-
   _dbBlock* block = (_dbBlock*) block_;
   if (block->inst_hash_.hasMember(name_)) {
     return nullptr;
@@ -1298,8 +1294,7 @@ dbInst* dbInst::create(dbBlock* block_,
              utl::ODB,
              "DB_EDIT",
              1,
-             "EDIT: [{}] create {} master '{}'",
-             _i,  // jk: dbg
+             "EDIT: create {} master '{}'",
              inst->getDebugName(),
              master_->getName());
 

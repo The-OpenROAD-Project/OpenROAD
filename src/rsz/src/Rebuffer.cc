@@ -25,7 +25,6 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-// #include "ord/OpenRoad.hh"  // jk: dbg
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -40,7 +39,6 @@
 #include "sta/Search.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
-// #include "sta/VerilogWriter.hh"  // jk: dbg
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -1788,184 +1786,15 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
   return insts;
 }
 
-int Rebuffer::exportBufferTreeOld(const BufferedNetPtr& choice,
-                                  Net* net,  // output of buffer.
-                                  int level,
-                                  Instance* parent_in,
-                                  odb::dbITerm* mod_net_drvr,
-                                  odb::dbModNet* mod_net_in,
-                                  const char* instance_base_name)
-{
-  // HFix, pass in the parent
-  Instance* parent = parent_in;
-  switch (choice->type()) {
-    case BufferedNetType::buffer: {
-      // HFix: make net in hierarchy
-      Net* net2 = db_network_->makeNet(parent);
-
-      LibertyCell* buffer_cell = choice->bufferCell();
-      Instance* buffer = resizer_->makeBuffer(
-          buffer_cell, instance_base_name, parent, choice->location());
-
-      resizer_->level_drvr_vertices_valid_ = false;
-      LibertyPort *input, *output;
-      buffer_cell->bufferPorts(input, output);
-      debugPrint(logger_,
-                 RSZ,
-                 "rebuffer",
-                 3,
-                 "{:{}s}insert {} -> {} ({}) -> {}",
-                 "",
-                 level,
-                 sdc_network_->pathName(net),
-                 sdc_network_->pathName(buffer),
-                 buffer_cell->name(),
-                 sdc_network_->pathName(net2));
-
-      odb::dbNet* db_ip_net = nullptr;
-      odb::dbModNet* db_ip_modnet = nullptr;
-      db_network_->staToDb(net, db_ip_net, db_ip_modnet);
-
-      //      sta_->connectPin(buffer, input, net);  //rebuffer
-      sta_->connectPin(
-          buffer, input, db_network_->dbToSta(db_ip_net));  // rebuffer
-      sta_->connectPin(buffer, output, net2);
-
-      Pin* buffer_ip_pin = nullptr;
-      Pin* buffer_op_pin = nullptr;
-
-      resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-      odb::dbITerm* buffer_op_iterm = nullptr;
-      odb::dbBTerm* buffer_op_bterm = nullptr;
-      odb::dbModITerm* buffer_op_moditerm = nullptr;
-      db_network_->staToDb(
-          buffer_op_pin, buffer_op_iterm, buffer_op_bterm, buffer_op_moditerm);
-
-      // we never expect to see mod_net_in
-      assert(!(mod_net_drvr && mod_net_in));
-
-      int buffer_count = exportBufferTreeOld(choice->ref(),
-                                             net2,
-                                             level + 1,
-                                             parent,
-                                             buffer_op_iterm,
-                                             mod_net_in,
-                                             instance_base_name);
-      return buffer_count + 1;
-    }
-    case BufferedNetType::via:
-    case BufferedNetType::wire:
-      debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire/via", "", level);
-      return exportBufferTreeOld(choice->ref(),
-                                 net,
-                                 level + 1,
-                                 parent,
-                                 mod_net_drvr,
-                                 mod_net_in,
-                                 instance_base_name);
-
-    case BufferedNetType::junction: {
-      debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
-      return exportBufferTreeOld(choice->ref(),
-                                 net,
-                                 level + 1,
-                                 parent,
-                                 mod_net_drvr,
-                                 mod_net_in,
-                                 instance_base_name)
-             + exportBufferTreeOld(choice->ref2(),
-                                   net,
-                                   level + 1,
-                                   parent,
-                                   mod_net_drvr,
-                                   mod_net_in,
-                                   instance_base_name);
-    }
-
-    case BufferedNetType::load: {
-      const Pin* load_pin = choice->loadPin();
-
-      if (resizer_->dontTouch(load_pin)) {
-        debugPrint(logger_,
-                   RSZ,
-                   "rebuffer",
-                   3,
-                   "{:{}s}connect load: skipped on {} due to dont touch",
-                   "",
-                   level,
-                   sdc_network_->pathName(load_pin));
-        return 0;
-      }
-
-      Pin* mod_net_drvr_pin = db_network_->dbToSta(mod_net_drvr);
-      dbNet* db_load_net = db_network_->flatNet(load_pin);
-      odb::dbNet* db_net = db_network_->flatNet(mod_net_drvr_pin);
-      if ((Net*) db_load_net != net) {
-        odb::dbITerm* load_iterm = nullptr;
-        odb::dbBTerm* load_bterm = nullptr;
-        odb::dbModITerm* load_moditerm = nullptr;
-        db_network_->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
-
-        Instance* load_parent_inst = nullptr;
-        if (load_iterm) {
-          dbInst* load_inst = load_iterm->getInst();
-          if (load_inst) {
-            auto top_module = db_network_->block()->getTopModule();
-            if (load_inst->getModule() == top_module) {
-              load_parent_inst = db_network_->topInstance();
-            } else {
-              load_parent_inst
-                  = (Instance*) (load_inst->getModule()->getModInst());
-            }
-          }
-
-          debugPrint(logger_,
-                     RSZ,
-                     "rebuffer",
-                     3,
-                     "{:{}s}connect load {} to {} modnet {}",
-                     "",
-                     level,
-                     sdc_network_->pathName(load_pin),
-                     sdc_network_->pathName((Net*) db_load_net),
-                     (mod_net_in ? mod_net_in->getName() : " none "));
-
-          // disconnect removes everything.
-          sta_->disconnectPin(const_cast<Pin*>(load_pin));
-
-          if (load_parent_inst && parent_in
-              && db_network_->hasHierarchicalElements()
-              && load_parent_inst != parent_in) {
-            // make the flat connection
-            db_network_->connectPin(const_cast<Pin*>(load_pin), net);
-            db_network_->hierarchicalConnect(mod_net_drvr, load_iterm);
-          } else if (mod_net_in) {  // input hierarchical net
-            db_network_->connectPin(
-                const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) mod_net_in);
-          } else {  // flat case
-            load_iterm->connect(db_net);
-          }
-          // sta_->connectPin(load_inst, load_port, net);
-        }
-        return 0;
-      }
-    }
-  }
-  return 0;
-}
-
 // Martin (2024-04-18): This is copied over from original RepairSetup
 // buffering mostly unchanged and is ripe for clean-up/rewrite later.
 // Jaehyun (2025-11-27): Re-implemented using insertBufferBeforeLoads to
 // simplify hierarchy handling and avoid direct use of hierarchicalConnect.
-int Rebuffer::exportBufferTree(
-    const BufferedNetPtr& choice,
-    Net* net,  // Original Driver Net (flat)
-    int level,
-    Instance* parent_in,
-    odb::dbITerm* mod_net_drvr,  // jk: Unused in new impl
-    odb::dbModNet* mod_net_in,   // jk: Unused in new impl
-    const char* instance_base_name)
+int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
+                               Net* net,  // Original Driver Net (flat)
+                               int level,
+                               Instance* parent_in,
+                               const char* instance_base_name)
 {
   // Algorithm: Bottom-Up Buffer Tree Insertion
   //
@@ -2062,6 +1891,7 @@ int Rebuffer::exportBufferTree(
                                               &buffer_loc,
                                               instance_base_name,
                                               nullptr /*new_net_base_name*/,
+                                              odb::dbNameUniquifyType::ALWAYS,
                                               true /*loads_on_diff_nets*/));
 
         if (buf_inst) {
@@ -2271,13 +2101,10 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     Pin* drvr_pin = filtered_pins[iter];
 
     odb::dbNet* db_net = nullptr;
-    odb::dbModNet* db_modnet = nullptr;  // jk: rm
     if (network_->isTopLevelPort(drvr_pin)) {
       db_net = db_network_->flatNet(network_->term(drvr_pin));
-      db_modnet = nullptr;
     } else {
       db_net = db_network_->flatNet(drvr_pin);
-      db_modnet = db_network_->hierNet(drvr_pin);
     }
 
     Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
@@ -2300,23 +2127,6 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
                fanout_limit_,
                delayAsString(drvr_pin_max_slew_, this, 3));
 
-    // jk: dbg
-    if (logger_->debugCheck(RSZ, "insert_buffer_check_sanity", 4)) {
-      sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(drvr_pin));
-      db_network_->checkSanityNetConnectivity(db_network_->staToDb(drvr_pin));
-    }
-
-    // jk: dbg pre
-    if (logger_->debugCheck(RSZ, "dbg", 1)) {
-      if (iter == 59638) {
-        printf("jk: #%d rebuffer pin = %s\n", iter, network_->name(drvr_pin));
-        // if (logger_->debugCheck(RSZ, "dbg", 100)) {
-        //   sta::writeVerilog(
-        //       fmt::format("pre_{}.v", iter).c_str(), true, false, {},
-        //       network_);
-        // }
-      }
-    }
     BnetPtr original_tree = importBufferTree(drvr_pin, corner_);
     if (!original_tree) {
       if (fanout(drvr) != 0) {
@@ -2439,111 +2249,8 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     auto insts = collectImportedTreeBufferInstances(drvr_pin, unbuffered_tree);
 
-    // Hierarchy support
-    //  remove any loads behind a buffer in the buffer tree
-    //  we will wire those in during construction.
-
-    // jk: ok?
-    if (logger_->debugCheck(RSZ, "rebuffer_old", 1)) {
-      if (db_modnet) {
-        std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
-        accumulateBufferTreeFlatLoadPins(
-            false, db_network_, area_opt_tree, buffer_tree_flat_load_pins);
-        for (auto p : buffer_tree_flat_load_pins) {
-          odb::dbModNet* mod_net = db_network_->hierNet(p);
-          if (mod_net == db_modnet) {
-            db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
-          }
-        }
-      }
-    }
-
-    if (logger_->debugCheck(RSZ, "rebuffer_old", 1)) {
-      inserted_count_ += exportBufferTreeOld(area_opt_tree,
-                                             db_network_->dbToSta(db_net),
-                                             1,
-                                             parent,
-                                             drvr_op_iterm,
-                                             nullptr,
-                                             "place");
-    } else {
-      inserted_count_ += exportBufferTree(area_opt_tree,
-                                          db_network_->dbToSta(db_net),
-                                          1,
-                                          parent,
-                                          drvr_op_iterm,
-                                          nullptr,
-                                          "place");
-    }
-
-    // jk: remove this
-    // Hierarchy support
-    // This is to make sure than any surviving hierarchical connections
-    // at this level of hierarchy are associated with the flat net
-    // at this level. Recall we killed any loads in the buffer tree
-    // from the modnet. The reassociateHierFlatNet will restore
-    // any flat/hier net association on the driver side of the buffer tree.
-    if (logger_->debugCheck(RSZ, "rebuffer_old", 1)) {
-      if (db_modnet) {
-        const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
-        dbNet* driver_flat_net = db_network_->flatNet(pin);
-        odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
-        db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
-      }
-    }
-
-    // jk: dbg post
-    if (logger_->debugCheck(RSZ, "dbg", 1)) {
-      if (iter == 59638) {
-        printf(
-            "jk: #%d post rebuffer pin = %s\n", iter, network_->name(drvr_pin));
-        // if (logger_->debugCheck(RSZ, "dbg", 100)) {
-        //   sta::writeVerilog(fmt::format("post_{}.v", iter).c_str(),
-        //                     true,
-        //                     false,
-        //                     {},
-        //                     network_);
-        // }
-        if (logger_->debugCheck(RSZ, "dbg", 101)) {
-          odb::dbBlock* block = db_network_->block();
-          odb::dbNet* target_net = block->findNet("be_mmu.dcache/net3960");
-          if (target_net == nullptr) {
-            logger_->error(
-                RSZ, 9301, "jk: terminate! couldn't find the target net!");
-          }
-
-          target_net->dump();
-
-          odb::dbITerm* drvr_iterm
-              = block->findITerm("be_mmu.dcache/lce/place5133/Z");
-          Pin* drvr_pin = db_network_->dbToSta(drvr_iterm);
-          debugPrint(logger_,
-                     RSZ,
-                     "dbg",
-                     1,
-                     "jk: drvr_pin '{}' fanout = {}",
-                     drvr_iterm->getName(),
-                     resizer_->hasFanout(drvr_pin));
-
-          Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
-          VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
-          int num_edge = 0;
-          while (edge_iter.hasNext()) {
-            Edge* edge = edge_iter.next();
-            debugPrint(logger_,
-                       RSZ,
-                       "dbg",
-                       1,
-                       "jk: edge[{}] = {}",
-                       num_edge++,
-                       edge->to_string(sta_));
-          }
-
-          // jk: terminate
-          logger_->error(RSZ, 9300, "jk: terminate!");
-        }
-      }
-    }
+    inserted_count_ += exportBufferTree(
+        area_opt_tree, db_network_->dbToSta(db_net), 1, parent, "place");
 
     for (auto* inst : insts) {
       resizer_->unbuffer_move_->removeBuffer(inst);
@@ -2630,7 +2337,6 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
 
   Net* const net = network_->net(drvr_pin);
   odb::dbNet* const db_net = db_network_->flatNet(drvr_pin);
-  odb::dbModNet* const db_modnet = db_network_->hierNet(drvr_pin);  // jk: rm
 
   drvr_port_ = network_->libertyPort(drvr_pin);
   if (net && drvr_port_ &&
@@ -2712,59 +2418,9 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     db_network_->staToDb(
         drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
 
-    // Hierarchy support
-    //  remove any loads behind a buffer in the buffer tree
-    //  we will wire those in during construction.
-
-    // jk: ok?
-    if (logger_->debugCheck(RSZ, "rebuffer_old", 1)) {
-      if (db_modnet) {
-        std::unordered_set<const Pin*> buffer_tree_flat_load_pins;
-        accumulateBufferTreeFlatLoadPins(
-            false, db_network_, bnet, buffer_tree_flat_load_pins);
-        for (auto p : buffer_tree_flat_load_pins) {
-          odb::dbModNet* mod_net = db_network_->hierNet(p);
-          if (mod_net == db_modnet) {
-            db_network_->disconnectPin(const_cast<Pin*>(p), (Net*) db_modnet);
-          }
-        }
-      }
-    }
-
     int inserted_count;
-    if (logger_->debugCheck(RSZ, "rebuffer_old", 1)) {
-      inserted_count = exportBufferTreeOld(bnet,
-                                           db_network_->dbToSta(db_net),
-                                           1,
-                                           parent,
-                                           drvr_op_iterm,
-                                           nullptr,
-                                           "rebuffer");
-    } else {
-      inserted_count = exportBufferTree(bnet,
-                                        db_network_->dbToSta(db_net),
-                                        1,
-                                        parent,
-                                        drvr_op_iterm,
-                                        nullptr,
-                                        "rebuffer");
-    }
-
-    // jk: remove this
-    // Hierarchy support
-    // This is to make sure than any surviving hierarchical connections
-    // at this level of hierarchy are associated with the flat net
-    // at this level. Recall we killed any loads in the buffer tree
-    // from the modnet. The reassociateHierFlatNet will restore
-    // any flat/hier net association on the driver side of the buffer tree.
-    if (logger_->debugCheck(RSZ, "rebuffer_old", 1)) {
-      if (db_modnet) {
-        const Pin* pin = db_network_->dbToSta(drvr_op_iterm);
-        dbNet* driver_flat_net = db_network_->flatNet(pin);
-        odb::dbModNet* driver_hier_net = db_network_->hierNet(pin);
-        db_network_->reassociateFromDbNetView(driver_flat_net, driver_hier_net);
-      }
-    }
+    inserted_count = exportBufferTree(
+        bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
 
     if (inserted_count > 0) {
       resizer_->level_drvr_vertices_valid_ = false;

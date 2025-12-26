@@ -1145,7 +1145,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
                                bool verbose)
 {
   dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
-  odb::dbModNet* top_pin_hier_net = db_network_->hierNet(top_pin);
 
   // Filter to see if we need to do anything..
   bool has_non_buffer = false;
@@ -1201,103 +1200,9 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
         RSZ, 214, "Buffering input port {}.", network_->name(top_pin));
   }
 
-  Pin* buffer_ip_pin = nullptr;
-  Pin* buffer_op_pin = nullptr;
   Instance* buffer = nullptr;
-  if (logger_->debugCheck(utl::RSZ, "buffer_input_old", 1)) {
-    // make the buffer and its output net.
-    Instance* parent = db_network_->topInstance();
-    Net* buffer_out = db_network_->makeNet(parent);
-    dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
-    Point pin_loc = db_network_->location(top_pin);
-    buffer = makeBuffer(buffer_cell, "input", parent, pin_loc);
-    inserted_buffer_count_++;
-
-    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-
-    pin_iter = network_->connectedPinIterator(
-        db_network_->dbToSta(top_pin_flat_net));
-    while (pin_iter->hasNext()) {
-      const Pin* pin = pin_iter->next();
-      if (pin != top_pin) {
-        odb::dbBTerm* dest_bterm;
-        odb::dbModITerm* dest_moditerm;
-        odb::dbITerm* dest_iterm;
-        db_network_->staToDb(pin, dest_iterm, dest_bterm, dest_moditerm);
-        odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
-        sta_->disconnectPin(const_cast<Pin*>(pin));
-        if (dest_modnet) {
-          if (dest_iterm) {
-            dest_iterm->connect(dest_modnet);
-          }
-          if (dest_moditerm) {
-            dest_moditerm->connect(dest_modnet);
-          }
-        }
-        if (dest_iterm) {
-          dest_iterm->connect(buffer_out_flat_net);
-        } else if (dest_bterm) {
-          dest_bterm->connect(buffer_out_flat_net);
-        }
-      }
-    }
-    delete pin_iter;
-
-    db_network_->connectPin(buffer_ip_pin,
-                            db_network_->dbToSta(top_pin_flat_net));
-    db_network_->connectPin(buffer_op_pin,
-                            db_network_->dbToSta(buffer_out_flat_net));
-    //
-    // we are going to push the top mod net into the core
-    // so we rename it to avoid conflict with top level
-    // name. We name it the same as the flat net used on
-    // the buffer output.
-    //
-
-    if (top_pin_hier_net) {
-      top_pin_hier_net->rename(buffer_out_flat_net->getName().c_str());
-      db_network_->connectPin(buffer_op_pin,
-                              db_network_->dbToSta(top_pin_hier_net));
-    }
-
-    //
-    // Remove the top net connection to the mod net, if any
-    // and make sure top pin connected to just the flat net.
-    //
-    if (top_pin_hier_net) {
-      db_network_->disconnectPin(const_cast<Pin*>(top_pin));
-      db_network_->connectPin(const_cast<Pin*>(top_pin),
-                              db_network_->dbToSta(top_pin_flat_net));
-    }
-  } else {
-    // New bufferInput() behavior
-    Net* target_net = db_network_->dbToSta(top_pin_flat_net);
-    buffer = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
-
-    // jk: dbg
-    // odb::dbObject* drvr_pin = db_network_->staToDb(top_pin);
-    // odb::dbMaster* buffer_master = db_network_->staToDb(buffer_cell);
-    // odb::dbInst* new_buffer = top_pin_flat_net->insertBufferAfterDriver(
-    //     drvr_pin, buffer_master, nullptr, "input");
-
-    // jk: rm
-    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  }
-
-  // jk: post buffer input
-  if (logger_->debugCheck(RSZ, "insert_buffer_check_sanity", 5)) {
-    debugPrint(logger_,
-               RSZ,
-               "insert_buffer_check_sanity",
-               10,
-               "post_buffer_input sanity check");
-    db_network_->checkSanityNetConnectivity(
-        db_network_->staToDb(buffer_ip_pin));
-    db_network_->checkSanityNetConnectivity(
-        db_network_->staToDb(buffer_op_pin));
-    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_ip_pin));
-    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_op_pin));
-  }
+  Net* target_net = db_network_->dbToSta(top_pin_flat_net);
+  buffer = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
 
   return buffer;
 }
@@ -1391,91 +1296,8 @@ void Resizer::bufferOutput(const Pin* top_pin,
         RSZ, 215, "Buffering output port {}.", network_->name(top_pin));
   }
 
-  Instance* buffer = nullptr;
-  Pin* buffer_ip_pin = nullptr;
-  Pin* buffer_op_pin = nullptr;
-
-  if (logger_->debugCheck(utl::RSZ, "buffer_output_old", 1)) {
-    NetworkEdit* network = networkEdit();
-
-    odb::dbITerm* top_pin_op_iterm;
-    odb::dbBTerm* top_pin_op_bterm;
-    odb::dbModITerm* top_pin_op_moditerm;
-
-    db_network_->staToDb(
-        top_pin, top_pin_op_iterm, top_pin_op_bterm, top_pin_op_moditerm);
-
-    odb::dbNet* flat_op_net = top_pin_op_bterm->getNet();
-    odb::dbModNet* hier_op_net = top_pin_op_bterm->getModNet();
-
-    sta_->disconnectPin(const_cast<Pin*>(top_pin));
-
-    LibertyPort *input, *output;
-    assert(buffer_cell);
-    buffer_cell->bufferPorts(input, output);
-
-    Instance* parent = network->topInstance();
-    Net* buffer_out = db_network_->makeNet(parent);
-
-    Point pin_loc = db_network_->location(top_pin);
-    // buffer made in top level.
-    buffer = makeBuffer(buffer_cell, "output", parent, pin_loc);
-    inserted_buffer_count_++;
-
-    // connect original input (hierarchical or flat) to buffer input
-    // handle hierarchy
-    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-
-    // get the iterms. Note this are never null (makeBuffer properly
-    // instantiates them and we know to always expect an iterm.). However, the
-    // api (flatPin) truly checks to see if the pins could be moditerms & if
-    // they are returns null, so coverity rationally reasons that the iterm
-    // could be null, so we add some extra checking here. This is a consequence
-    // of
-    //"hiding" the full api.
-    //
-    odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
-    odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
-
-    if (buffer_ip_pin_iterm && buffer_op_pin_iterm) {
-      if (flat_op_net) {
-        buffer_ip_pin_iterm->connect(flat_op_net);
-      }
-      if (hier_op_net) {
-        buffer_ip_pin_iterm->connect(hier_op_net);
-      }
-      buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
-      top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
-      SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
-      // rename the mod net to match the flat net.
-      if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
-        buffer_ip_pin_iterm->getModNet()->rename(
-            buffer_ip_pin_iterm->getNet()->getName().c_str());
-      }
-    }
-  } else {
-    // New insert buffer behavior
-    buffer = insertBufferBeforeLoad(
-        const_cast<Pin*>(top_pin), buffer_cell, nullptr, "output");
-
-    // jk: rm
-    getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  }
-
-  // jk: post buffer output
-  if (logger_->debugCheck(RSZ, "insert_buffer_check_sanity", 5)) {
-    debugPrint(logger_,
-               RSZ,
-               "insert_buffer_check_sanity",
-               10,
-               "post_buffer_output sanity check");
-    db_network_->checkSanityNetConnectivity(
-        db_network_->staToDb(buffer_ip_pin));
-    db_network_->checkSanityNetConnectivity(
-        db_network_->staToDb(buffer_op_pin));
-    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_ip_pin));
-    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_op_pin));
-  }
+  insertBufferBeforeLoad(
+      const_cast<Pin*>(top_pin), buffer_cell, nullptr, "output");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1671,7 +1493,6 @@ float Resizer::maxLoad(Cell* cell)
 
 ////////////////////////////////////////////////////////////////
 
-// jk: move to different location?
 bool Resizer::hasFanout(Vertex* drvr)
 {
   VertexOutEdgeIterator edge_iter(drvr, graph_);
@@ -3360,15 +3181,6 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
   InstanceSeq insts;
   findCellInstances(tie_cell, insts);
 
-  // jk: dbg
-  if (logger_->debugCheck(utl::RSZ, "inst_iteration_debug", 9)) {
-    int idx = 0;
-    for (const Instance* ti : insts) {
-      logger_->report(
-          "Tie instance #{} - name:{}", idx++, db_network_->pathName(ti));
-    }
-  }
-
   for (const Instance* tie_inst : insts) {
     if (dontTouch(tie_inst)) {
       continue;
@@ -3432,25 +3244,13 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
       // Create a new tie cell instance
       const char* tie_inst_name = network_->name(load_inst);
-      Instance* new_tie_inst
-          = createNewTieCellForLoadPin(load_pin,
-                                       tie_inst_name,
-                                       db_network_->parent(load_inst),
-                                       tie_port,
-                                       separation_dbu);
+      createNewTieCellForLoadPin(load_pin,
+                                 tie_inst_name,
+                                 db_network_->parent(load_inst),
+                                 tie_port,
+                                 separation_dbu);
       designAreaIncr(area(db_network_->cell(tie_cell)));
       tie_count++;
-
-      // jk: sanity check
-      if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 9)) {
-        logger_->report("Add tie cell #{} - load_pin[{}]:{} new_tie_inst:{}",
-                        tie_count,
-                        db_network_->id(load_pin),
-                        db_network_->pathName(load_pin),
-                        db_network_->pathName(new_tie_inst));
-        // db_network_->checkAxioms();
-        // sta_->checkSanity();
-      }
     }
 
     if (keep_tie == false) {
@@ -3629,6 +3429,7 @@ void Resizer::findCellInstances(LibertyCell* cell,
                                 // Return value.
                                 InstanceSeq& insts)
 {
+  // TODO: iterating dbInsts in dbBlock might be better. try it
   LeafInstanceIterator* inst_iter = network_->leafInstanceIterator();
   while (inst_iter->hasNext()) {
     Instance* inst = inst_iter->next();
@@ -3638,9 +3439,9 @@ void Resizer::findCellInstances(LibertyCell* cell,
   }
   delete inst_iter;
 
-  // jk: iterating dbInsts in dbBlock might be better. try it
   // Deterministic ordering of tie instances by full instance name
-  // - This is to remove non-determinism.
+  // - This sort is to remove non-determinism.
+  // - The sort will be removed when hierarhical flow is enabled by default.
   std::sort(
       insts.begin(), insts.end(), [this](const Instance* a, const Instance* b) {
         return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
@@ -4912,11 +4713,13 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
   return inst;
 }
 
-Instance* Resizer::insertBufferAfterDriver(Net* net,
-                                           LibertyCell* buffer_cell,
-                                           const Point* loc,
-                                           const char* new_buf_base_name,
-                                           const char* new_net_base_name)
+Instance* Resizer::insertBufferAfterDriver(
+    Net* net,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
 {
   odb::dbMaster* buffer_master
       = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
@@ -4938,16 +4741,22 @@ Instance* Resizer::insertBufferAfterDriver(Net* net,
     return nullptr;
   }
 
-  odb::dbInst* buffer_inst = insertBufferAfterDriver(
-      db_net, buffer_master, loc, new_buf_base_name, new_net_base_name);
+  odb::dbInst* buffer_inst = insertBufferAfterDriver(db_net,
+                                                     buffer_master,
+                                                     loc,
+                                                     new_buf_base_name,
+                                                     new_net_base_name,
+                                                     uniquify);
   return db_network_->dbToSta(buffer_inst);
 }
 
-odb::dbInst* Resizer::insertBufferAfterDriver(odb::dbNet* net,
-                                              odb::dbMaster* buffer_cell,
-                                              const Point* loc,
-                                              const char* new_buf_base_name,
-                                              const char* new_net_base_name)
+odb::dbInst* Resizer::insertBufferAfterDriver(
+    odb::dbNet* net,
+    odb::dbMaster* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
 {
   // Find the driver of the current net using ODB API
   odb::dbITerm* drvr_iterm = net->getFirstOutput();
@@ -4975,13 +4784,12 @@ odb::dbInst* Resizer::insertBufferAfterDriver(odb::dbNet* net,
     return nullptr;
   }
 
-  odb::dbInst* buffer_inst
-      = net->insertBufferAfterDriver(drvr_obj,
-                                     buffer_cell,
-                                     loc,
-                                     new_buf_base_name,
-                                     new_net_base_name,
-                                     odb::dbNameUniquifyType::ALWAYS);
+  odb::dbInst* buffer_inst = net->insertBufferAfterDriver(drvr_obj,
+                                                          buffer_cell,
+                                                          loc,
+                                                          new_buf_base_name,
+                                                          new_net_base_name,
+                                                          uniquify);
 
   if (!buffer_inst) {
     logger_->error(RSZ,
@@ -4998,11 +4806,13 @@ odb::dbInst* Resizer::insertBufferAfterDriver(odb::dbNet* net,
   return buffer_inst;
 }
 
-Instance* Resizer::insertBufferBeforeLoad(Pin* load_pin,
-                                          LibertyCell* buffer_cell,
-                                          const Point* loc,
-                                          const char* new_buf_base_name,
-                                          const char* new_net_base_name)
+Instance* Resizer::insertBufferBeforeLoad(
+    Pin* load_pin,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
 {
   odb::dbMaster* buffer_master
       = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
@@ -5027,16 +4837,22 @@ Instance* Resizer::insertBufferBeforeLoad(Pin* load_pin,
     return nullptr;
   }
 
-  odb::dbInst* buffer_inst = insertBufferBeforeLoad(
-      db_load_pin, buffer_master, loc, new_buf_base_name, new_net_base_name);
+  odb::dbInst* buffer_inst = insertBufferBeforeLoad(db_load_pin,
+                                                    buffer_master,
+                                                    loc,
+                                                    new_buf_base_name,
+                                                    new_net_base_name,
+                                                    uniquify);
   return db_network_->dbToSta(buffer_inst);
 }
 
-odb::dbInst* Resizer::insertBufferBeforeLoad(odb::dbObject* load_pin,
-                                             odb::dbMaster* buffer_cell,
-                                             const Point* loc,
-                                             const char* new_buf_base_name,
-                                             const char* new_net_base_name)
+odb::dbInst* Resizer::insertBufferBeforeLoad(
+    odb::dbObject* load_pin,
+    odb::dbMaster* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
 {
   // Find the flat net of the load_pin
   dbNet* db_net = nullptr;
@@ -5057,13 +4873,12 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(odb::dbObject* load_pin,
   }
 
   // Insert buffer before the load_pin
-  odb::dbInst* buffer_inst
-      = db_net->insertBufferBeforeLoad(load_pin,
-                                       buffer_cell,
-                                       loc,
-                                       new_buf_base_name,
-                                       new_net_base_name,
-                                       odb::dbNameUniquifyType::ALWAYS);
+  odb::dbInst* buffer_inst = db_net->insertBufferBeforeLoad(load_pin,
+                                                            buffer_cell,
+                                                            loc,
+                                                            new_buf_base_name,
+                                                            new_net_base_name,
+                                                            uniquify);
 
   if (!buffer_inst) {
     logger_->error(RSZ,
@@ -5080,13 +4895,41 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(odb::dbObject* load_pin,
   return buffer_inst;
 }
 
-Instance* Resizer::insertBufferBeforeLoads(Net* net,
-                                           PinSet* loads,
-                                           LibertyCell* buffer_cell,
-                                           const Point* loc,
-                                           const char* new_buf_base_name,
-                                           const char* new_net_base_name,
-                                           bool loads_on_diff_nets)
+Instance* Resizer::insertBufferBeforeLoads(
+    Net* net,
+    PinSeq* loads,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify,
+    bool loads_on_diff_nets)
+{
+  // PinSeq -> PinSet
+  PinSet load_set{db_network_};
+  for (const Pin* pin : *loads) {
+    load_set.insert(pin);
+  }
+
+  return insertBufferBeforeLoads(net,
+                                 &load_set,
+                                 buffer_cell,
+                                 loc,
+                                 new_buf_base_name,
+                                 new_net_base_name,
+                                 uniquify,
+                                 loads_on_diff_nets);
+}
+
+Instance* Resizer::insertBufferBeforeLoads(
+    Net* net,
+    PinSet* loads,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify,
+    bool loads_on_diff_nets)
 {
   odb::dbMaster* buffer_master
       = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
@@ -5114,6 +4957,7 @@ Instance* Resizer::insertBufferBeforeLoads(Net* net,
                                                      loc,
                                                      new_buf_base_name,
                                                      new_net_base_name,
+                                                     uniquify,
                                                      loads_on_diff_nets);
   return db_network_->dbToSta(buffer_inst);
 }
@@ -5125,6 +4969,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     const Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify,
     bool loads_on_diff_nets)
 {
   if (loads.empty()) {
@@ -5147,24 +4992,16 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 3)) {
-    for (odb::dbObject* load : loads) {
-      sta_->checkSanityDrvrVertexEdges(load);
-      db_network_->checkSanityNetConnectivity(load);
-    }
-  }
-
   // Make a non-const copy for dbNet API
   std::set<odb::dbObject*> loads_copy = loads;
 
-  odb::dbInst* buffer_inst
-      = net->insertBufferBeforeLoads(loads_copy,
-                                     buffer_cell,
-                                     loc,
-                                     new_buf_base_name,
-                                     new_net_base_name,
-                                     odb::dbNameUniquifyType::ALWAYS,
-                                     loads_on_diff_nets);
+  odb::dbInst* buffer_inst = net->insertBufferBeforeLoads(loads_copy,
+                                                          buffer_cell,
+                                                          loc,
+                                                          new_buf_base_name,
+                                                          new_net_base_name,
+                                                          uniquify,
+                                                          loads_on_diff_nets);
 
   if (!buffer_inst) {
     logger_->error(RSZ,
@@ -5176,17 +5013,6 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
 
   // Legalize the buffer position and update the design area
   insertBufferPostProcess(buffer_inst);
-
-  // jk: added sanity check
-  if (logger_->debugCheck(utl::RSZ, "insert_buffer_check_sanity", 1)) {
-    dbITerm* in_iterm = buffer_inst->getFirstInput();
-    sta_->checkSanityDrvrVertexEdges(in_iterm);
-    db_network_->checkSanityNetConnectivity(in_iterm);
-
-    dbITerm* out_iterm = buffer_inst->getFirstOutput();
-    sta_->checkSanityDrvrVertexEdges(out_iterm);
-    db_network_->checkSanityNetConnectivity(out_iterm);
-  }
 
   return buffer_inst;
 }

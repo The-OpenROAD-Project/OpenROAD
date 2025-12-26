@@ -686,142 +686,49 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
                                const Point& loc)
 {
   Instance* buffer = nullptr;
-  Pin* buffer_in_pin = nullptr;
   Pin* buffer_out_pin = nullptr;
 
-  if (logger_->debugCheck(utl::RSZ, "make_hold_delay_old", 1)) {
-    Pin* drvr_pin = drvr->pin();
-    dbNet* db_drvr_net = db_network_->findFlatDbNet(drvr_pin);
-    odb::dbModNet* mod_drvr_net = db_network_->hierNet(drvr_pin);
-    Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
-
-    // If output port is in load pins, do "Driver pin buffering".
-    // - Verilog uses nets as ports, so the net connected to an output port has
-    // - to be preserved.
-    // - Move the driver pin over to gensym'd net.
-    // Otherwise, do "Load pin buffering".
-    bool driver_pin_buffering = loads_have_out_port;
-    Net* buf_input_net = nullptr;
-    Net* buf_output_net = nullptr;
-    if (driver_pin_buffering) {
-      // Do "Driver pin buffering": Buffer drives the existing net.
-      //
-      //     driver --- (new_net) --- new_buffer ---- (existing_net) ---- loads
-      //
-      buf_input_net = db_network_->makeNet(parent);  // New net
-      Port* drvr_port = network_->port(drvr_pin);
-      Instance* drvr_inst = network_->instance(drvr_pin);
-      sta_->disconnectPin(drvr_pin);
-      sta_->connectPin(drvr_inst, drvr_port, buf_input_net);
-      buf_output_net = db_network_->dbToSta(db_drvr_net);
-    } else {
-      // Do "Load pin buffering": The existing net drives the new buffer.
-      //
-      //     driver --- (existing_net) --- new_buffer ---- (new_net) ---- loads
-      //
-      buf_input_net = db_network_->dbToSta(db_drvr_net);
-      buf_output_net = db_network_->makeNet(parent);  // New net
-    }
-
-    // Make the buffer in the driver pin's parent hierarchy
-    buffer = resizer_->makeBuffer(buffer_cell, "hold", parent, loc);
-    inserted_buffer_count_++;
-    debugPrint(
-        logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
-
-    LibertyPort *input, *output;
-    buffer_cell->bufferPorts(input, output);
-    buffer_in_pin = network_->findPin(buffer, input);
-    buffer_out_pin = network_->findPin(buffer, output);
-
-    // Connect input and output of the new buffer
-    sta_->connectPin(buffer, input, buf_input_net);
-    sta_->connectPin(buffer, output, buf_output_net);
-
-    // TODO: Revisit this. Looks not good.
-    if (mod_drvr_net) {
-      //  The input of the buffer is a new load on the original hierarchical
-      //  net.
-      db_network_->connectPin(buffer_in_pin, (Net*) mod_drvr_net);
-    }
-
-    // Buffering target load pins.
-    // - No need in driver pin buffering case
-    if (driver_pin_buffering == false) {
-      // Do load pins buffering
-      for (const Pin* load_pin : load_pins) {
-        if (resizer_->dontTouch(load_pin)) {
-          continue;
-        }
-
-        // Disconnect the load pin
-        db_network_->disconnectPin(const_cast<Pin*>(load_pin));
-
-        // Connect with the buffer output
-        db_network_->hierarchicalConnect(db_network_->flatPin(buffer_out_pin),
-                                         db_network_->flatPin(load_pin));
-      }
-    }
+  // New insert buffer behavior
+  Pin* drvr_pin = drvr->pin();
+  odb::dbObject* drvr_db_pin = db_network_->staToDb(drvr_pin);
+  dbNet* drvr_dbnet = nullptr;
+  if (drvr_db_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
+    drvr_dbnet = static_cast<odb::dbBTerm*>(drvr_db_pin)->getNet();
   } else {
-    // New insert buffer behavior
-    Pin* drvr_pin = drvr->pin();
-    odb::dbObject* drvr_db_pin = db_network_->staToDb(drvr_pin);
-    dbNet* drvr_dbnet = nullptr;
-    if (drvr_db_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
-      drvr_dbnet = static_cast<odb::dbBTerm*>(drvr_db_pin)->getNet();
-    } else {
-      drvr_dbnet = static_cast<odb::dbITerm*>(drvr_db_pin)->getNet();
-    }
+    drvr_dbnet = static_cast<odb::dbITerm*>(drvr_db_pin)->getNet();
+  }
 
-    Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
+  Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
 
-    // PinSeq -> PinSet
-    PinSet load_pins_set(network_);
-    for (const Pin* load_pin : load_pins) {
-      if (load_pin != nullptr) {
-        if (resizer_->dontTouch(load_pin)) {
-          continue;
-        }
-        load_pins_set.insert(const_cast<Pin*>(load_pin));
+  // PinSeq -> PinSet
+  PinSet load_pins_set(network_);
+  for (const Pin* load_pin : load_pins) {
+    if (load_pin != nullptr) {
+      if (resizer_->dontTouch(load_pin)) {
+        continue;
       }
+      load_pins_set.insert(const_cast<Pin*>(load_pin));
     }
-
-    buffer = resizer_->insertBufferBeforeLoads(
-        drvr_net, &load_pins_set, buffer_cell, &loc, "hold");
-    if (buffer == nullptr) {
-      const char* drvr_pin_name = db_network_->pathName(drvr_pin);
-      logger_->error(RSZ,
-                     3009,
-                     "insert_buffer failed on drvr_pin '{}'.",
-                     drvr_pin_name ? drvr_pin_name : "<unknown>");
-      return;
-    }
-
-    dbInst* new_buffer = db_network_->staToDb(buffer);
-    debugPrint(
-        logger_, RSZ, "repair_hold", 3, " insert {}", new_buffer->getName());
-
-    // jk: rm
-    buffer_in_pin = db_network_->dbToSta(new_buffer->getFirstInput());
-    buffer_out_pin = db_network_->dbToSta(new_buffer->getFirstOutput());
-
-    inserted_buffer_count_++;
   }
 
-  // jk: post make_hold_delay sanity check
-  if (logger_->debugCheck(RSZ, "insert_buffer_check_sanity", 5)) {
-    debugPrint(logger_,
-               RSZ,
-               "insert_buffer_check_sanity",
-               10,
-               "post make_hold_delay sanity check");
-    db_network_->checkSanityNetConnectivity(
-        db_network_->staToDb(buffer_in_pin));
-    db_network_->checkSanityNetConnectivity(
-        db_network_->staToDb(buffer_out_pin));
-    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_in_pin));
-    sta_->checkSanityDrvrVertexEdges(db_network_->staToDb(buffer_out_pin));
+  buffer = resizer_->insertBufferBeforeLoads(
+      drvr_net, &load_pins_set, buffer_cell, &loc, "hold");
+  if (buffer == nullptr) {
+    const char* drvr_pin_name = db_network_->pathName(drvr_pin);
+    logger_->error(RSZ,
+                   3009,
+                   "insert_buffer failed on drvr_pin '{}'.",
+                   drvr_pin_name ? drvr_pin_name : "<unknown>");
+    return;
   }
+
+  dbInst* new_buffer = db_network_->staToDb(buffer);
+  debugPrint(
+      logger_, RSZ, "repair_hold", 3, " insert {}", new_buffer->getName());
+
+  buffer_out_pin = db_network_->dbToSta(new_buffer->getFirstOutput());
+
+  inserted_buffer_count_++;
 
   // Update RC and delay. Resize if necessary
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
