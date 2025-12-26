@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <limits>
 #include <list>
 #include <vector>
 
@@ -25,10 +26,22 @@
 
 namespace rcx {
 
+using odb::dbBTerm;
+using odb::dbCapNode;
+using odb::dbITerm;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbShape;
+using odb::dbTechLayer;
+using odb::dbTechVia;
+using odb::dbVia;
+using odb::dbWire;
+using odb::dbWirePath;
+using odb::dbWirePathItr;
+using odb::dbWirePathShape;
+using odb::Point;
+using odb::Rect;
 using utl::RCX;
-using namespace odb;
-
-class extModelGen;
 
 uint32_t extMain::getPeakMemory(const char* msg, int n)
 {
@@ -144,10 +157,10 @@ bool extMain::markNetsToExtract_v2(const char* netNames,
   }
   // DELETE ?
   if (!_allNet) {
-    _ccMinX = MAX_INT;
-    _ccMinY = MAX_INT;
-    _ccMaxX = -MAX_INT;
-    _ccMaxY = -MAX_INT;
+    _ccMinX = std::numeric_limits<int>::max();
+    _ccMinY = std::numeric_limits<int>::max();
+    _ccMaxX = std::numeric_limits<int>::min();
+    _ccMaxY = std::numeric_limits<int>::min();
   }
   return _allNet;
 }

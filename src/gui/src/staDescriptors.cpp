@@ -60,7 +60,7 @@ template <typename T>
 static void add_limit(Descriptor::Properties& props,
                       sta::LibertyPort* port,
                       const char* label,
-                      LimitFunc<T> func,
+                      const LimitFunc<T>& func,
                       const char* suffix)
 {
   for (const auto* elem : T::range()) {

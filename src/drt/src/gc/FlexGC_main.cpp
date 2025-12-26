@@ -450,7 +450,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
       ndrSpc2
           = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
     }
-    reqSpcVal = std::max(reqSpcVal, std::max(ndrSpc1, ndrSpc2));
+    reqSpcVal = std::max({reqSpcVal, ndrSpc1, ndrSpc2});
   }
 
   // no violation if spacing satisfied

@@ -31,7 +31,6 @@ using odb::dbNet;
 using odb::dbObstruction;
 using odb::dbSet;
 using odb::dbTechLayer;
-using utl::RCX;
 
 namespace rcx {
 
@@ -74,8 +73,8 @@ uint32_t extMain::GenExtRules(const char* rulesFileName)
   sprintf(buff, "%s.log", rulesFileName);
   FILE* logFP = fopen(buff, "w");
 
-  Ath__parser* p = new Ath__parser(logger_);
-  Ath__parser* w = new Ath__parser(logger_);
+  Parser* p = new Parser(logger_);
+  Parser* w = new Parser(logger_);
 
   int prev_sep = 0;
   int prev_width = 0;
@@ -440,11 +439,11 @@ uint32_t extMain::benchVerilog_assign(FILE* fp)
 }
 uint32_t extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
 {
-  auto widthTable = std::make_unique<Ath__array1D<double>>(4);
-  auto spaceTable = std::make_unique<Ath__array1D<double>>(4);
-  Ath__array1D<double>* wTable = &opt->_widthTable;
-  Ath__array1D<double>* sTable = &opt->_spaceTable;
-  Ath__array1D<double>* gTable = &opt->_gridTable;
+  auto widthTable = std::make_unique<Array1D<double>>(4);
+  auto spaceTable = std::make_unique<Array1D<double>>(4);
+  Array1D<double>* wTable = &opt->_widthTable;
+  Array1D<double>* sTable = &opt->_spaceTable;
+  Array1D<double>* gTable = &opt->_gridTable;
 
   uint32_t cnt = 0;
   int met = measure->_met;
@@ -966,29 +965,10 @@ uint32_t extMeasure::createContextObstruction(const char* dirName,
   dbObstruction::create(_block, layer, x, y, bboxUR[0], bboxUR[1]);
   return 1;
 }
-/* orf 10/04/20 DF
-uint32_t extMeasure::createContextGrid(char* dirName, int bboxLL[2], int
-bboxUR[2], int met, int s_layout)
-{
-           if (met <= 0)
-               return 0;
 
-                int ll[2]= {bboxLL[0], bboxLL[1]};
-                int ur[2];
-                ur[!this->_dir]= ll[!this->_dir];
-                ur[this->_dir]= bboxUR[this->_dir];
-
-                int xcnt=1;
-                while (ur[!this->_dir]<=bboxUR[!this->_dir]) {
-                        this->createNetSingleWire_cntx(met, dirName, xcnt++,
-!this->_dir, ll, ur, s_layout);
-                }
-                return xcnt;
-}
-*/
 uint32_t extMeasure::createContextGrid(char* dirName,
-                                       int bboxLL[2],
-                                       int bboxUR[2],
+                                       const int bboxLL[2],
+                                       const int bboxUR[2],
                                        int met,
                                        int s_layout)
 {
@@ -1025,8 +1005,8 @@ uint32_t extMeasure::createContextGrid(char* dirName,
 }
 
 uint32_t extMeasure::createContextGrid_dir(char* dirName,
-                                           int bboxLL[2],
-                                           int bboxUR[2],
+                                           const int bboxLL[2],
+                                           const int bboxUR[2],
                                            int met)
 {
   if (met <= 0) {

@@ -92,7 +92,7 @@ class SinkClustering
   float capPerUnit_;
   bool useMaxCapLimit_;
   int scaleFactor_;
-  static constexpr double max_cap__factor_ = 10;
+  static constexpr double kMaxCapFactor = 10;
   HTreeBuilder* HTree_;
   bool firstRun_ = true;
   double xSpan_ = 0.0;

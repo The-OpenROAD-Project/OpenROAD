@@ -338,7 +338,7 @@ bool ILPPartitionInst(
           0.0, 1.0, "");  // represent whether the hyperedge is within block
     }
   }
-  const double infinity = solver->infinity();  // single-side constraints
+  const double infinity = MPSolver::infinity();  // single-side constraints
   // handle different types of constraints
   // balance constraint
   for (int i = 0; i < num_parts; i++) {

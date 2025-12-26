@@ -54,8 +54,6 @@ BEGIN_LEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
 
-extern YYSTYPE lefyylval;
-
 inline std::string strip_case(const char* str)
 {
   std::string result(str);

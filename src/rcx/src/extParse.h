@@ -12,11 +12,11 @@
 
 namespace rcx {
 
-class extParser : public Ath__parser
+class extParser : public Parser
 {
  public:
   // Constructor
-  extParser(utl::Logger* logger) : Ath__parser(logger) {}
+  extParser(utl::Logger* logger) : Parser(logger) {}
   void setDbg(int v) { _dbg = v; }
 
  private:

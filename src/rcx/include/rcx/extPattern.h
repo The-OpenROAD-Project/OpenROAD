@@ -82,7 +82,7 @@ class extPattern
              int under1,
              const PatternOptions& opt,
              FILE* fp,
-             int org[2],
+             const int org[2],
              dbCreateNetUtil* net_util);
   bool SetPatternName();
   std::vector<float> getMultipliers(const char* s);
@@ -161,7 +161,9 @@ class extPattern
   bool RenameBterm1stInput(odb::dbNet* net);
   bool RenameAllBterms(odb::dbNet* net);
 
-  void PatternEnd(extWirePattern* mainp, int max_ur[2], uint32_t spacingMult);
+  void PatternEnd(extWirePattern* mainp,
+                  const int max_ur[2],
+                  uint32_t spacingMult);
   static void PrintStats(uint32_t cnt,
                          int origin[2],
                          int start[2],
@@ -204,10 +206,14 @@ class extWirePattern
                      const char* buff,
                      int ii = -1,
                      int met = -1);
-  uint32_t addCoords(int LL[2], int UR[2], const char* buff, int jj, int met);
-  void addCoords_temp(int jj, int LL[2], int UR[2]);
-  void AddOrigin(float org[2]);
-  void AddOrigin_int(int org[2]);
+  uint32_t addCoords(const int LL[2],
+                     const int UR[2],
+                     const char* buff,
+                     int jj,
+                     int met);
+  void addCoords_temp(int jj, const int LL[2], const int UR[2]);
+  void AddOrigin(const float org[2]);
+  void AddOrigin_int(const int org[2]);
   void print(FILE* fp, uint32_t jj, float units = 0.001);
   void print_trans2(FILE* fp, uint32_t jj, float units = 0.001);
   void print_trans(FILE* fp, uint32_t jj);

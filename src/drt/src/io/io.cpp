@@ -1920,8 +1920,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto spc = table[0][0];
     con->setDefaultSpacing(spc);
     con->setDefaultCenterToCenter(rule->isCenterToCenter(cutClass1, cutClass2));
-    con->setDefaultCenterAndEdge(
-        rule->isCenterAndEdge(std::move(cutClass1), std::move(cutClass2)));
+    con->setDefaultCenterAndEdge(rule->isCenterAndEdge(cutClass1, cutClass2));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());

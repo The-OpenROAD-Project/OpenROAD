@@ -32,7 +32,7 @@ class SegmentBuilder
                  Clock& clock,
                  ClockSubNet& drivingSubNet,
                  const TechChar& techChar,
-                 const unsigned techCharDistUnit,
+                 unsigned techCharDistUnit,
                  TreeBuilder* tree);
 
   void build(const std::string& forceBuffer = "");

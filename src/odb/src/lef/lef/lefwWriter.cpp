@@ -11157,7 +11157,6 @@ void lefwPrintError(int status)
                 versionNum);
       }
   }
-  return;
 }
 
 void lefwAddComment(const char* comment)
@@ -11169,7 +11168,6 @@ void lefwAddComment(const char* comment)
       fprintf(lefwFile, "# %s\n", comment);
     }
   }
-  return;
 }
 
 void lefwAddIndent()
@@ -11179,7 +11177,6 @@ void lefwAddIndent()
   } else {
     fprintf(lefwFile, "   ");
   }
-  return;
 }
 
 // ***************************

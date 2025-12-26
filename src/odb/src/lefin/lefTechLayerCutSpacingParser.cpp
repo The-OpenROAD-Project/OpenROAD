@@ -57,7 +57,7 @@ void addSameMaskSubRule(odb::lefTechLayerCutSpacingParser* parser)
       odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMASK);
 }
 void addLayerSubRule(
-    std::string name,
+    const std::string& name,
     odb::lefTechLayerCutSpacingParser* parser,
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
@@ -310,7 +310,7 @@ void setOrthogonalSpacing(double value,
   parser->curRule->setOrthogonalSpacingValid(true);
   parser->curRule->setOrthogonalSpacingValid(lefinReader->dbdist(value));
 }
-void setCutClass(std::string value,
+void setCutClass(const std::string& value,
                  odb::lefTechLayerCutSpacingParser* parser,
                  odb::dbTechLayer* layer)
 {

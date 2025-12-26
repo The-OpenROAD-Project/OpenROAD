@@ -223,10 +223,10 @@ void FlexDRWorkerRegionQuery::init()
   std::vector<std::vector<rq_box_value_t<drConnFig*>>> allShapes(numLayers);
   for (auto& net : impl_->drWorker->getNets()) {
     for (auto& connFig : net->getRouteConnFigs()) {
-      impl_->add(connFig.get(), allShapes);
+      Impl::add(connFig.get(), allShapes);
     }
     for (auto& connFig : net->getExtConnFigs()) {
-      impl_->add(connFig.get(), allShapes);
+      Impl::add(connFig.get(), allShapes);
     }
   }
   for (auto i = 0; i < numLayers; i++) {

@@ -7,7 +7,11 @@
 
 namespace fin {
 
-using namespace boost::polygon::operators;
+using boost::polygon::operators::operator-=;
+using boost::polygon::operators::operator+=;
+using boost::polygon::operators::operator&;
+using boost::polygon::operators::operator+;
+using boost::polygon::operators::operator-;
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;

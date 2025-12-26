@@ -22,8 +22,9 @@
 #include "spdlog/fmt/ostr.h"
 #include "utl/scope.h"
 
-using namespace boost::polygon::operators;
-using namespace odb;
+namespace odb {
+
+using boost::polygon::operators::operator+=;
 
 int lefout::determineBloat(dbTechLayer* layer) const
 {
@@ -1583,3 +1584,5 @@ void lefout::writeAbstractLef(dbBlock* db_block)
   writeBlock(db_block);
   fmt::print(_out, "END LIBRARY\n");
 }
+
+}  // namespace odb

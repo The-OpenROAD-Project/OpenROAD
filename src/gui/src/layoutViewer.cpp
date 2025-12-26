@@ -87,9 +87,7 @@ using odb::dbRowDir;
 using odb::dbSite;
 using odb::dbTech;
 using odb::dbTechLayer;
-using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
-using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Point;
 using odb::Rect;
@@ -1100,7 +1098,7 @@ Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
     std::vector<bool> is_selected;
     is_selected.reserve(selections.size());
     for (auto& sel : selections) {
-      is_selected.push_back(selected_.count(sel) != 0);
+      is_selected.push_back(selected_.contains(sel));
     }
     if (std::all_of(
             is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
@@ -1496,7 +1494,7 @@ LayoutViewer::getRowRects(odb::dbBlock* block, const odb::Rect& bounds)
     bool w_visible = w >= min_resolution_site;
     bool h_visible = h >= min_resolution_row;
 
-    switch (row->getOrient()) {
+    switch (row->getOrient().getValue()) {
       case dbOrientType::R0:
       case dbOrientType::R180:
       case dbOrientType::MY:

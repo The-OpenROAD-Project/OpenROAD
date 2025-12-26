@@ -1336,7 +1336,7 @@ void ClusteringEngine::breakCluster(Cluster* parent)
     odb::dbModule* module = parent->getDbModules().front();
     // Flat module that will be partitioned with TritonPart when updating
     // the subtree later on.
-    if (module->getChildren().size() == 0) {
+    if (module->getChildren().empty()) {
       if (parent == tree_->root.get()) {
         createFlatCluster(module, parent);
       } else {
