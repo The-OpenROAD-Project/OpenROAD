@@ -608,14 +608,13 @@ grNode* FlexGRWorker::routeNet_getNextDst(
                   << std::flush;
       }
       gridGraph_.getPoint(mazeIdx.x(), mazeIdx.y(), pt);
-      frCoord dx = std::max(std::max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
-      frCoord dy = std::max(std::max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
-      frCoord dz
-          = std::max(std::max(gridGraph_.getZHeight(ccMazeIdx1.z())
-                                  - gridGraph_.getZHeight(mazeIdx.z()),
-                              gridGraph_.getZHeight(mazeIdx.z())
-                                  - gridGraph_.getZHeight(ccMazeIdx2.z())),
-                     0);
+      frCoord dx = std::max({ll.x() - pt.x(), pt.x() - ur.x(), 0});
+      frCoord dy = std::max({ll.y() - pt.y(), pt.y() - ur.y(), 0});
+      frCoord dz = std::max({gridGraph_.getZHeight(ccMazeIdx1.z())
+                                 - gridGraph_.getZHeight(mazeIdx.z()),
+                             gridGraph_.getZHeight(mazeIdx.z())
+                                 - gridGraph_.getZHeight(ccMazeIdx2.z()),
+                             0});
       if (dx + dy + dz < currDist) {
         currDist = dx + dy + dz;
         nextDst = node;

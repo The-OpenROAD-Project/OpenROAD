@@ -336,7 +336,7 @@ class BoxT
   {
     return {x_.GetNearestPointTo(pt.x()), y_.GetNearestPointTo(pt.y())};
   }
-  BoxT GetNearestPointsTo(BoxT val) const
+  BoxT GetNearestPointsTo(const BoxT& val) const
   {
     return {x_.GetNearestPointsTo(val.x_), y_.GetNearestPointsTo(val.y_)};
   }

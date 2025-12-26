@@ -24,7 +24,11 @@
 #include "odb/lefout.h"
 #include "utl/Logger.h"
 
-using namespace boost::polygon::operators;
+using boost::polygon::operators::operator+;
+using boost::polygon::operators::operator-;
+using boost::polygon::operators::operator&;
+using boost::polygon::operators::operator|;
+using boost::polygon::operators::operator|=;
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {
@@ -37,7 +41,7 @@ odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
   return lefParser.createLib(db->getTech(), libname, path);
 }
 
-odb::dbChip* read_def(odb::dbTech* tech, std::string path)
+odb::dbChip* read_def(odb::dbTech* tech, const std::string& path)
 {
   utl::Logger logger(nullptr);
   std::vector<odb::dbLib*> libs;
@@ -249,7 +253,7 @@ std::vector<odb::Point> getPoints(const Polygon90* polygon)
 
 void createSBoxes(odb::dbSWire* swire,
                   odb::dbTechLayer* layer,
-                  std::vector<odb::Rect> rects,
+                  const std::vector<odb::Rect>& rects,
                   odb::dbWireShapeType type)
 {
   for (odb::Rect rect : rects) {
@@ -260,7 +264,7 @@ void createSBoxes(odb::dbSWire* swire,
 
 void createSBoxes(odb::dbSWire* swire,
                   odb::dbVia* via,
-                  std::vector<odb::Point> points,
+                  const std::vector<odb::Point>& points,
                   odb::dbWireShapeType type)
 {
   for (odb::Point point : points) {
@@ -268,7 +272,7 @@ void createSBoxes(odb::dbSWire* swire,
   }
 }
 
-void dumpAPs(odb::dbBlock* block, const std::string file_name)
+void dumpAPs(odb::dbBlock* block, const std::string& file_name)
 {
   std::ofstream os(file_name);
   for (auto inst : block->getInsts()) {

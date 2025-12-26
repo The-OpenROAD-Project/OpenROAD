@@ -123,11 +123,11 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
 void Logger::addSink(spdlog::sink_ptr sink)
 {
   sinks_.push_back(sink);
-  logger_->sinks().push_back(sink);
+  logger_->sinks().emplace_back(std::move(sink));
   setFormatter();  // updates the new sink
 }
 
-void Logger::removeSink(spdlog::sink_ptr sink)
+void Logger::removeSink(const spdlog::sink_ptr& sink)
 {
   // remove from local list of sinks_
   auto sinks_find = std::find(sinks_.begin(), sinks_.end(), sink);

@@ -70,13 +70,13 @@ extSpef::extSpef(odb::dbTech* tech,
   _design[0] = '\0';
 
   // for ABNORMAL and sparse map numbers should be a hash table
-  _idMapTable = new Ath__array1D<uint32_t>(128000);
+  _idMapTable = new Array1D<uint32_t>(128000);
 
-  _srsegi = new Ath__array1D<uint32_t>(1024);
-  _nrseg = new Ath__array1D<dbRSeg*>(1024);
-  _hcnrc = new Ath__array1D<Ath__array1D<int>*>(1024);
+  _srsegi = new Array1D<uint32_t>(1024);
+  _nrseg = new Array1D<dbRSeg*>(1024);
+  _hcnrc = new Array1D<Array1D<int>*>(1024);
   for (uint32_t ii = 0; ii < 1024; ii++) {
-    Ath__array1D<int>* n1d = new Ath__array1D<int>(4);
+    Array1D<int>* n1d = new Array1D<int>(4);
     _hcnrc->set(ii, n1d);
   }
 
@@ -144,7 +144,7 @@ void extSpef::setupMappingForWrite(uint32_t btermCnt, uint32_t itermCnt)
   if (_btermTable) {
     resetTermTables();
     if (!_nodeCapTable) {
-      _nodeCapTable = new Ath__array1D<double*>(16000);
+      _nodeCapTable = new Array1D<double*>(16000);
       initCapTable(_nodeCapTable);
     }
     return;
@@ -160,15 +160,15 @@ void extSpef::setupMappingForWrite(uint32_t btermCnt, uint32_t itermCnt)
     itermCnt = 64000;
   }
 
-  _btermTable = new Ath__array1D<uint32_t>(btermCnt);
-  _itermTable = new Ath__array1D<uint32_t>(itermCnt);
+  _btermTable = new Array1D<uint32_t>(btermCnt);
+  _itermTable = new Array1D<uint32_t>(itermCnt);
 
   _btermTable->add(0);
   _itermTable->add(0);
 
-  _btermCapTable = new Ath__array1D<double*>(btermCnt);
-  _itermCapTable = new Ath__array1D<double*>(itermCnt);
-  _nodeCapTable = new Ath__array1D<double*>(16000);
+  _btermCapTable = new Array1D<double*>(btermCnt);
+  _itermCapTable = new Array1D<double*>(itermCnt);
+  _nodeCapTable = new Array1D<double*>(16000);
 
   initCapTable(_btermCapTable);
   initCapTable(_itermCapTable);
@@ -233,7 +233,7 @@ void extSpef::resetCapTables(const uint32_t maxNode)
   reinitCapTable(_btermCapTable, _btermTable->getCnt() + 1);
 }
 
-void extSpef::initCapTable(Ath__array1D<double*>* table)
+void extSpef::initCapTable(Array1D<double*>* table)
 {
   for (uint32_t ii = 0; ii < table->getSize(); ii++) {
     double* a = new double[_cornerCnt];
@@ -241,7 +241,7 @@ void extSpef::initCapTable(Ath__array1D<double*>* table)
   }
 }
 
-void extSpef::deleteTableCap(Ath__array1D<double*>* table)
+void extSpef::deleteTableCap(Array1D<double*>* table)
 {
   for (uint32_t ii = 0; ii < table->getSize(); ii++) {
     double* a = table->geti(ii);
@@ -249,7 +249,7 @@ void extSpef::deleteTableCap(Ath__array1D<double*>* table)
   }
 }
 
-void extSpef::reinitCapTable(Ath__array1D<double*>* table, const uint32_t n)
+void extSpef::reinitCapTable(Array1D<double*>* table, const uint32_t n)
 {
   if (n > table->getSize()) {
     const uint32_t prevCnt = table->getSize();
@@ -1224,8 +1224,8 @@ bool extSpef::setInSpef(const char* filename, const bool onlyOpen)
   strcpy(_inFile, filename);
 
   if (!onlyOpen) {
-    _nodeParser = new Ath__parser(logger_);
-    _parser = new Ath__parser(logger_);
+    _nodeParser = new Parser(logger_);
+    _parser = new Parser(logger_);
   }
   _parser->openFile(filename);
 

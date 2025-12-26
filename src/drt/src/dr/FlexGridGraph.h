@@ -836,7 +836,7 @@ class FlexGridGraph
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    switch (getZDir(z)) {
+    switch (getZDir(z).getValue()) {
       case odb::dbTechLayerDir::HORIZONTAL:
         for (int i = y1; i <= y2; i++) {
           auto idx1 = getIdx(x1, i, z);
@@ -861,7 +861,7 @@ class FlexGridGraph
     if (x2 < x1 || y2 < y1) {
       return;
     }
-    switch (getZDir(z)) {
+    switch (getZDir(z).getValue()) {
       case odb::dbTechLayerDir::HORIZONTAL:
         for (int i = y1; i <= y2; i++) {
           auto idx1 = getIdx(x1, i, z);

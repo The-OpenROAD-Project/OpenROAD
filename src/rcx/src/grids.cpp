@@ -719,10 +719,7 @@ bool Track::place(Wire* w, const int markIndex1, const int markIndex2)
   }
   return false;
 }
-void Wire::search(int xy1,
-                  int xy2,
-                  uint32_t& cnt,
-                  Ath__array1D<uint32_t>* idTable)
+void Wire::search(int xy1, int xy2, uint32_t& cnt, Array1D<uint32_t>* idTable)
 {
   Wire* e = this;
   for (; e != nullptr; e = e->_next) {
@@ -739,10 +736,7 @@ void Wire::search(int xy1,
     }
   }
 }
-void Wire::search1(int xy1,
-                   int xy2,
-                   uint32_t& cnt,
-                   Ath__array1D<uint32_t>* idTable)
+void Wire::search1(int xy1, int xy2, uint32_t& cnt, Array1D<uint32_t>* idTable)
 {
   Wire* e = this;
   for (; e != nullptr; e = e->_next) {
@@ -763,7 +757,7 @@ uint32_t Track::search(int xy1,
                        int xy2,
                        uint32_t markIndex1,
                        uint32_t markIndex2,
-                       Ath__array1D<uint32_t>* idTable)
+                       Array1D<uint32_t>* idTable)
 {
   uint32_t cnt = 0;
   if (_eMarker[markIndex1]) {
@@ -786,7 +780,7 @@ void Track::resetExtFlag(uint32_t markerCnt)
     }
   }
 }
-uint32_t Track::getAllWires(Ath__array1D<Wire*>* boxTable, uint32_t markerCnt)
+uint32_t Track::getAllWires(Array1D<Wire*>* boxTable, uint32_t markerCnt)
 {
   for (uint32_t ii = 0; ii < markerCnt; ii++) {
     Wire* e = _marker[ii];
@@ -806,7 +800,7 @@ uint32_t Track::search1(int xy1,
                         int xy2,
                         uint32_t markIndex1,
                         uint32_t markIndex2,
-                        Ath__array1D<uint32_t>* idTable)
+                        Array1D<uint32_t>* idTable)
 {
   if (!_ordered) {
     markIndex1 = 0;
@@ -1381,7 +1375,7 @@ void Grid::setDefaultWireType(uint32_t v)
 {
   _wireType = v;  // TODO-OPTIMIZE : can it be 32-bit?
 }
-uint32_t Grid::getBoxes(uint32_t trackIndex, Ath__array1D<uint32_t>* table)
+uint32_t Grid::getBoxes(uint32_t trackIndex, Array1D<uint32_t>* table)
 {
   Track* tr = _trackTable[trackIndex];
   if (tr == nullptr) {
@@ -1401,7 +1395,7 @@ uint32_t Grid::getBoxes(uint32_t trackIndex, Ath__array1D<uint32_t>* table)
   }
   return table->getCnt();
 }
-void Grid::getBoxes(Ath__array1D<uint32_t>* table)
+void Grid::getBoxes(Array1D<uint32_t>* table)
 {
   for (uint32_t ii = 0; ii < _trackCnt; ii++) {
     Track* tr = _trackTable[ii];
@@ -1777,8 +1771,7 @@ Wire* Grid::getWirePtr(uint32_t wireId)
 {
   return _wirePoolPtr->get(wireId);
 }
-void Grid::getBoxIds(Ath__array1D<uint32_t>* wireIdTable,
-                     Ath__array1D<uint32_t>* idtable)
+void Grid::getBoxIds(Array1D<uint32_t>* wireIdTable, Array1D<uint32_t>* idtable)
 {
   // remove duplicate entries
 
@@ -1809,8 +1802,8 @@ void Grid::getBoxIds(Ath__array1D<uint32_t>* wireIdTable,
     }
   }
 }
-void Grid::getWireIds(Ath__array1D<uint32_t>* wireIdTable,
-                      Ath__array1D<uint32_t>* idtable)
+void Grid::getWireIds(Array1D<uint32_t>* wireIdTable,
+                      Array1D<uint32_t>* idtable)
 {
   // remove duplicate entries
 
@@ -1840,10 +1833,10 @@ void Grid::getWireIds(Ath__array1D<uint32_t>* wireIdTable,
   }
 }
 uint32_t Grid::search(SearchBox* bb,
-                      Ath__array1D<uint32_t>* idtable,
+                      Array1D<uint32_t>* idtable,
                       bool wireIdFlag)
 {
-  Ath__array1D<uint32_t> wireIdTable(16000);
+  Array1D<uint32_t> wireIdTable(16000);
 
   // uint32_t d= (_dir>0) ? 0 : 1;
   uint32_t d = !_dir;
@@ -1883,10 +1876,10 @@ uint32_t Grid::search(SearchBox* bb,
 }
 uint32_t Grid::search(SearchBox* bb,
                       const uint32_t* gxy,
-                      Ath__array1D<uint32_t>* idtable,
+                      Array1D<uint32_t>* idtable,
                       Grid* g)
 {
-  Ath__array1D<uint32_t> wireIdTable(1024);
+  Array1D<uint32_t> wireIdTable(1024);
 
   AthPool<Wire>* wirePool = _wirePoolPtr;
   if (g != nullptr) {
@@ -1948,9 +1941,9 @@ uint32_t Grid::search(SearchBox* bb,
 
   return idtable->getCnt();
 }
-void Grid::getBuses(Ath__array1D<Box*>* boxTable, uint32_t width)
+void Grid::getBuses(Array1D<Box*>* boxTable, uint32_t width)
 {
-  Ath__array1D<Wire*> wireTable(32);
+  Array1D<Wire*> wireTable(32);
 
   for (uint32_t ii = 0; ii < _trackCnt; ii++) {
     if (_blockedTrackTable[ii] > 0) {
@@ -2431,7 +2424,7 @@ uint32_t GridTable::getColNum(int x)
 uint32_t GridTable::search(SearchBox* bb,
                            uint32_t row,
                            uint32_t col,
-                           Ath__array1D<uint32_t>* idTable,
+                           Array1D<uint32_t>* idTable,
                            bool wireIdFlag)
 {
   return _gridTable[row][col]->search(bb, idTable, wireIdFlag);
@@ -2440,12 +2433,12 @@ uint32_t GridTable::search(SearchBox* bb,
                            uint32_t* gxy,
                            uint32_t row,
                            uint32_t col,
-                           Ath__array1D<uint32_t>* idtable,
+                           Array1D<uint32_t>* idtable,
                            Grid* g)
 {
   return _gridTable[row][col]->search(bb, gxy, idtable, g);
 }
-uint32_t GridTable::search(SearchBox* bb, Ath__array1D<uint32_t>* idTable)
+uint32_t GridTable::search(SearchBox* bb, Array1D<uint32_t>* idTable)
 {
   uint32_t row1 = getRowNum(bb->loXY(1));
   if (row1 > 0) {
@@ -2631,8 +2624,8 @@ void GridTable::setExtControl(odb::dbBlock* block,
                               uint32_t ccUp,
                               bool allNet,
                               uint32_t contextDepth,
-                              Ath__array1D<int>** contextArray,
-                              Ath__array1D<SEQ*>*** dgContextArray,
+                              Array1D<int>** contextArray,
+                              Array1D<SEQ*>*** dgContextArray,
                               uint32_t* dgContextDepth,
                               uint32_t* dgContextPlanes,
                               uint32_t* dgContextTracks,
@@ -2650,11 +2643,11 @@ void GridTable::setExtControl(odb::dbBlock* block,
   _overlapAdjust = adj;
   _noPowerSource = npsrc;
   _noPowerTarget = nptgt;
-  _CCtargetHighTracks = ccUp;
+  _ccTargetHighTracks = ccUp;
   if (ccUp == 2) {
-    _CCtargetHighMarkedNet = 1;
+    _ccTargetHighMarkedNet = 1;
   } else {
-    _CCtargetHighMarkedNet = 0;
+    _ccTargetHighMarkedNet = 0;
   }
   _targetTrackReversed = false;
   _ccContextDepth = contextDepth;
@@ -2681,9 +2674,9 @@ void GridTable::setExtControl_v2(odb::dbBlock* block,
                                  uint32_t ccUp,
                                  bool allNet,
                                  uint32_t contextDepth,
-                                 Ath__array1D<int>** contextArray,
+                                 Array1D<int>** contextArray,
                                  uint32_t* contextLength,
-                                 Ath__array1D<SEQ*>*** dgContextArray,
+                                 Array1D<SEQ*>*** dgContextArray,
                                  uint32_t* dgContextDepth,
                                  uint32_t* dgContextPlanes,
                                  uint32_t* dgContextTracks,
@@ -2701,11 +2694,11 @@ void GridTable::setExtControl_v2(odb::dbBlock* block,
   _overlapAdjust = adj;
   _noPowerSource = npsrc;
   _noPowerTarget = nptgt;
-  _CCtargetHighTracks = ccUp;
+  _ccTargetHighTracks = ccUp;
   if (ccUp == 2) {
-    _CCtargetHighMarkedNet = 1;
+    _ccTargetHighMarkedNet = 1;
   } else {
-    _CCtargetHighMarkedNet = 0;
+    _ccTargetHighMarkedNet = 0;
   }
   _targetTrackReversed = false;
   _ccContextDepth = contextDepth;
@@ -2727,7 +2720,7 @@ void GridTable::setExtControl_v2(odb::dbBlock* block,
 }
 void GridTable::reverseTargetTrack()
 {
-  _CCtargetHighTracks = _CCtargetHighTracks == 2 ? 0 : 2;
+  _ccTargetHighTracks = _ccTargetHighTracks == 2 ? 0 : 2;
   _targetTrackReversed = _targetTrackReversed ? false : true;
 }
 
@@ -2789,7 +2782,7 @@ uint32_t GridTable::search(int x1,
                            int y2,
                            uint32_t row,
                            uint32_t col,
-                           Ath__array1D<uint32_t>* idTable,
+                           Array1D<uint32_t>* idTable,
                            bool /* unused: wireIdFlag */)
 {
   SearchBox bb(x1, y1, x2, y2, col, row);

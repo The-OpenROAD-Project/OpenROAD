@@ -462,7 +462,7 @@ DisplayControls::DisplayControls(QWidget* parent)
                "Vias",
                shape_types_srouting,
                Qt::Checked);
-  makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
+  makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked, true);
   makeLeafItem(shape_types_.pin_names, "Pin Names", shape_types, Qt::Checked);
   shape_types_.pins.visible->setData(
       QVariant::fromValue(&shape_types_.pin_names), kDisableRowItemIdx);
@@ -1084,7 +1084,8 @@ std::pair<QColor*, Qt::BrushStyle*> DisplayControls::lookupColor(
     QColor* item_color = &layer_color_[tech_layer];
     Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
     return {item_color, item_pattern};
-  } else if (site != nullptr) {
+  }
+  if (site != nullptr) {
     return {&site_color_[site], nullptr};
   }
 
@@ -1884,6 +1885,11 @@ bool DisplayControls::areIOPinsVisible() const
   return isModelRowVisible(&shape_types_.pins);
 }
 
+bool DisplayControls::areIOPinsSelectable() const
+{
+  return isModelRowSelectable(&shape_types_.pins);
+}
+
 bool DisplayControls::areIOPinNamesVisible() const
 {
   return isModelRowVisible(&shape_types_.pin_names);
@@ -1921,7 +1927,7 @@ QFont DisplayControls::ioPinMarkersFont() const
 
 void DisplayControls::registerRenderer(Renderer* renderer)
 {
-  if (custom_controls_.count(renderer) != 0) {
+  if (custom_controls_.contains(renderer)) {
     // already registered
     return;
   }
@@ -2022,7 +2028,7 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
 {
   saveRendererState(renderer);
 
-  if (custom_controls_.count(renderer) == 0) {
+  if (!custom_controls_.contains(renderer)) {
     return;
   }
 
@@ -2303,7 +2309,7 @@ void DisplayControls::setOnlyVisibleLayers(
   }
 
   for (auto* layer : layers) {
-    if (layer_controls_.count(layer) != 0) {
+    if (layer_controls_.contains(layer)) {
       layer_controls_[layer].visible->setCheckState(Qt::Checked);
     }
   }

@@ -46,11 +46,14 @@
 #include "utl/Logger.h"
 #include "zero_slack_strategy.h"
 
-using utl::RMP;
-using namespace abc;
-using cut::Blif;
-
 namespace rmp {
+
+using abc::Abc_Frame_t;
+using abc::Abc_FrameGetGlobalFrame;
+using abc::Abc_Start;
+using abc::Abc_Stop;
+using cut::Blif;
+using utl::RMP;
 
 Restructure::Restructure(utl::Logger* logger,
                          sta::dbSta* open_sta,
@@ -127,7 +130,7 @@ void Restructure::run(char* liberty_file_name,
 
   getBlob(max_depth);
 
-  if (path_insts_.size()) {
+  if (!path_insts_.empty()) {
     runABC();
 
     postABC(worst_slack);
@@ -143,7 +146,7 @@ void Restructure::getBlob(unsigned max_depth)
   sta::PinSet ends(open_sta_->getDbNetwork());
 
   getEndPoints(ends, is_area_mode_, max_depth);
-  if (ends.size()) {
+  if (!ends.empty()) {
     sta::PinSet boundary_points = !is_area_mode_
                                       ? resizer_->findFanins(ends)
                                       : resizer_->findFaninFanouts(ends);
@@ -216,7 +219,7 @@ void Restructure::runABC()
 
     const std::string abc_script_file
         = prefix + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
-    if (logfile_ == "") {
+    if (logfile_.empty()) {
       logfile_ = prefix + "abc.log";
     }
 
@@ -395,7 +398,7 @@ int Restructure::countConsts(odb::dbBlock* top_block)
 
 void Restructure::removeConstCells()
 {
-  if (!hicell_.size() || !locell_.size()) {
+  if (hicell_.empty() || locell_.empty()) {
     return;
   }
 
@@ -502,7 +505,7 @@ void Restructure::removeConstCell(odb::dbInst* inst)
   odb::dbInst::destroy(inst);
 }
 
-bool Restructure::writeAbcScript(std::string file_name)
+bool Restructure::writeAbcScript(const std::string& file_name)
 {
   std::ofstream script(file_name.c_str());
 
@@ -639,7 +642,7 @@ void Restructure::setTieLoPort(sta::LibertyPort* tieLoPort)
   }
 }
 
-bool Restructure::readAbcLog(std::string abc_file_name,
+bool Restructure::readAbcLog(const std::string& abc_file_name,
                              int& level_gain,
                              float& final_delay)
 {
@@ -699,7 +702,7 @@ bool Restructure::readAbcLog(std::string abc_file_name,
   if (level.size() > 1) {
     level_gain = level[0] - level[level.size() - 1];
   }
-  if (delay.size() > 0) {
+  if (!delay.empty()) {
     final_delay = delay[delay.size() - 1];  // last value in file
   }
   return status;

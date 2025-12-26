@@ -396,8 +396,8 @@ void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
   _search->setExtControl_v2(_block,
                             _useDbSdb,
                             (uint32_t) overlapAdj,
-                            _CCnoPowerSource,
-                            _CCnoPowerTarget,
+                            _ccNoPowerSource,
+                            _ccNoPowerTarget,
                             _ccUp,
                             _allNet,
                             _ccContextDepth,
@@ -647,8 +647,8 @@ void extMain::setBranchCapNodeId(dbNet* net, uint32_t junction)
   capId = cap->getId();
 
   _nodeTable->set(junction, -capId);
-  return;
 }
+
 void extMain::markPathHeadTerm(dbWirePath& path)
 {
   if (path.bterm) {
@@ -710,7 +710,7 @@ bool extRCModel::spotModelsInRules(char* name,
 {
   free(_ruleFileName);
   _ruleFileName = strdup(name);
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile(name);
@@ -756,7 +756,7 @@ bool extRCModel::readRules(char* name,
                            bool overUnder,
                            bool diag,
                            uint32_t cornerCnt,
-                           uint32_t* cornerTable,
+                           const uint32_t* cornerTable,
                            double dbFactor)
 {
   bool res_over = false;
@@ -792,7 +792,7 @@ bool extRCModel::readRules(char* name,
   diag = false;
   free(_ruleFileName);
   _ruleFileName = strdup(name);
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile(name);
@@ -1091,7 +1091,7 @@ bool extRCModel::readRules_v2(char* name,
   diag = false;
   free(_ruleFileName);
   _ruleFileName = strdup(name);
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile(name);
@@ -1295,7 +1295,7 @@ bool extRCModel::readRules_v2(char* name,
   return true;
 }
 
-uint32_t extRCModel::readRules_v2(Ath__parser* parser,
+uint32_t extRCModel::readRules_v2(Parser* parser,
                                   uint32_t m,
                                   uint32_t ii,
                                   const char* ouKey,
@@ -1309,7 +1309,7 @@ uint32_t extRCModel::readRules_v2(Ath__parser* parser,
 {
   uint32_t cnt = 0;
   uint32_t met = 0;
-  Ath__array1D<double>* wTable
+  Array1D<double>* wTable
       = readHeaderAndWidth(parser, met, ouKey, wKey, bin, false);
 
   if (wTable == nullptr) {
@@ -1321,7 +1321,7 @@ uint32_t extRCModel::readRules_v2(Ath__parser* parser,
   extDistWidthRCTable* dummy = nullptr;
   if (ignore) {
     dummy = new extDistWidthRCTable(
-        true, met, _layerCnt, widthCnt, _OUREVERSEORDER);
+        true, met, _layerCnt, widthCnt, OUReverseOrder_);
   }
 
   uint32_t diagWidthCnt = 0;
@@ -1416,7 +1416,7 @@ uint32_t extRCModel::readRules_v2(Ath__parser* parser,
 
   return cnt;
 }
-uint32_t extDistWidthRCTable::readRulesUnder(Ath__parser* parser,
+uint32_t extDistWidthRCTable::readRulesUnder(Parser* parser,
                                              uint32_t widthCnt,
                                              bool bin,
                                              bool ignore,
@@ -1526,8 +1526,8 @@ void extDistRC::printBound(FILE* fp,
           res * 1000);
 }
 
-void extMain::addInstsGeometries(const Ath__array1D<uint32_t>* instTable,
-                                 Ath__array1D<uint32_t>* tmpInstIdTable,
+void extMain::addInstsGeometries(const Array1D<uint32_t>* instTable,
+                                 Array1D<uint32_t>* tmpInstIdTable,
                                  const uint32_t dir)
 {
   if (instTable == nullptr) {

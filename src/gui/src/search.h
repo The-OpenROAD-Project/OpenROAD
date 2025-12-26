@@ -60,7 +60,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   using SNetValue = std::tuple<odb::dbSBox*, odb::Polygon, T>;
   template <typename T>
   using SNetDBoxValue = std::pair<odb::dbSBox*, T>;
-  ;
+  template <typename T>
+  using BoxValue = std::pair<odb::dbBox*, T>;
 
   template <typename T>
   struct BBoxIndexableGetter
@@ -72,6 +73,10 @@ class Search : public QObject, public odb::dbBlockCallBackObj
       return std::get<0>(t)->getBox();
     }
     odb::Rect operator()(const SNetDBoxValue<T>& t) const
+    {
+      return std::get<0>(t)->getBox();
+    }
+    odb::Rect operator()(const BoxValue<T>& t) const
     {
       return std::get<0>(t)->getBox();
     }
@@ -102,6 +107,9 @@ class Search : public QObject, public odb::dbBlockCallBackObj
       rtree<SNetDBoxValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
   using RtreeFill
       = bgi::rtree<odb::dbFill*, bgi::quadratic<16>, FillIndexableGetter>;
+  template <typename T>
+  using RtreeBox
+      = bgi::rtree<BoxValue<T>, bgi::quadratic<16>, BBoxIndexableGetter<T>>;
 
   // This is an iterator range for return values
   template <typename Tree>
@@ -130,6 +138,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   using ObstructionRange = Range<RtreeDBox<odb::dbObstruction*>>;
   using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
   using RowRange = Range<RtreeRect<odb::dbRow*>>;
+  using BPinRange = Range<RtreeBox<odb::dbBPin*>>;
 
   ~Search() override;
 
@@ -210,12 +219,23 @@ class Search : public QObject, public odb::dbBlockCallBackObj
                       int y_hi,
                       int min_height = 0);
 
+  // Find all bpin boxes in the given bounds on the given layer which
+  // are at least min_size in either dimension.
+  BPinRange searchBPins(odb::dbBlock* block,
+                        odb::dbTechLayer* layer,
+                        int x_lo,
+                        int y_lo,
+                        int x_hi,
+                        int y_hi,
+                        int min_size = 0);
+
   void clearShapes();
   void clearFills();
   void clearInsts();
   void clearBlockages();
   void clearObstructions();
   void clearRows();
+  void clearBPins();
 
   // From dbBlockCallBackObj
   void inDbNetDestroy(odb::dbNet* net) override;
@@ -229,6 +249,9 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void inDbBPinAddBox(odb::dbBox* box) override;
   void inDbBPinRemoveBox(odb::dbBox* box) override;
   void inDbBPinDestroy(odb::dbBPin* pin) override;
+  void inDbBPinPlacementStatusBefore(
+      odb::dbBPin* pin,
+      const odb::dbPlacementStatus& status) override;
   void inDbFillCreate(odb::dbFill* fill) override;
   void inDbWireCreate(odb::dbWire* wire) override;
   void inDbWireDestroy(odb::dbWire* wire) override;
@@ -272,6 +295,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void updateBlockages(odb::dbBlock* block);
   void updateObstructions(odb::dbBlock* block);
   void updateRows(odb::dbBlock* block);
+  void updateBPins(odb::dbBlock* block);
 
   void clear();
 
@@ -292,6 +316,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     std::mutex blockages_init_mutex;
     std::mutex obstructions_init_mutex;
     std::mutex rows_init_mutex;
+    std::mutex bpins_init_mutex;
 
     // The net is used for filter shapes by net type
     LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes;
@@ -302,6 +327,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     LayerMap<RtreeSNetShapes<odb::dbNet*>> snet_shapes;
     LayerMap<RtreeFill> fills;
     LayerMap<RtreeDBox<odb::dbObstruction*>> obstructions;
+    LayerMap<RtreeBox<odb::dbBPin*>> bpins;
 
     std::atomic_bool shapes_init{false};
     std::atomic_bool fills_init{false};
@@ -309,6 +335,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     std::atomic_bool blockages_init{false};
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
+    std::atomic_bool bpins_init{false};
   };
   std::map<odb::dbBlock*, BlockData> child_block_data_;
   BlockData top_block_data_;

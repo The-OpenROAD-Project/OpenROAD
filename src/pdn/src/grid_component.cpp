@@ -314,7 +314,7 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
              getShapeCount());
 
   for (const auto& [layer, shapes] : shapes_) {
-    if (obstructions.count(layer) == 0) {
+    if (!obstructions.contains(layer)) {
       continue;
     }
     const auto& obs = obstructions.at(layer);
