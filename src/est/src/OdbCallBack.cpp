@@ -51,27 +51,6 @@ void OdbCallBack::inDbInstCreate(odb::dbInst* inst)
              1,
              "inDbInstCreate {}",
              inst->getName());
-
-  // jk: This code looks redundant because there must be no net connected to 
-  //     an instance at this point. Delete this.
-  Instance* sta_inst = db_network_->dbToSta(inst);
-  std::unique_ptr<InstancePinIterator> pin_iter{
-      network_->pinIterator(sta_inst)};
-  while (pin_iter->hasNext()) {
-    Pin* pin = pin_iter->next();
-    Net* net = network_->net(pin);
-    if (net) {
-      estimate_parasitics_->parasiticsInvalid(net);
-
-      // jk: delete this
-      estimate_parasitics_->getLogger()->error(
-          utl::EST,
-          9200,
-          "Net {} is connected to an instance {}",
-          db_network_->pathName(net),
-          inst->getName());
-    }
-  }
 }
 
 void OdbCallBack::inDbNetCreate(odb::dbNet* net)

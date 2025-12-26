@@ -1,5 +1,6 @@
-#include <fstream>
-#include <iterator>
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
 #include <set>
 #include <string>
 
@@ -8,7 +9,6 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
-#include "sta/VerilogWriter.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace odb {

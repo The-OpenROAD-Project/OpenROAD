@@ -4,10 +4,18 @@
 #include "dbInsertBuffer.h"
 
 #include <cassert>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <set>
+#include <string_view>
 
 #include "dbInst.h"
 #include "dbModule.h"
 #include "dbNet.h"
+#include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {

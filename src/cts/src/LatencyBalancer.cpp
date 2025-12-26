@@ -19,6 +19,7 @@
 #include "Util.h"
 #include "cts/TritonCTS.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"
 #include "sta/Clock.hh"

@@ -14,6 +14,7 @@
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
