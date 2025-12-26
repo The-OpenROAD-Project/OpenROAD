@@ -1312,7 +1312,6 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 
 bool GlobalRouter::pinPositionsChanged(Net* net)
 {
-  bool is_diferent = false;
   std::map<RoutePt, int> cnt_pos;
   const std::multiset<RoutePt>& last_pos = net->getLastPinPositions();
   for (const Pin& pin : net->getPins()) {
@@ -1324,11 +1323,10 @@ bool GlobalRouter::pinPositionsChanged(Net* net)
   }
   for (const auto& [pos, count] : cnt_pos) {
     if (count != 0) {
-      is_diferent = true;
-      break;
+      return true;
     }
   }
-  return is_diferent;
+  return false;
 }
 
 bool GlobalRouter::newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos)
