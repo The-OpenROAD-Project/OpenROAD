@@ -302,12 +302,12 @@ dbModNet* dbModNet::getModNet(dbBlock* block, uint32_t id)
   return (dbModNet*) ret;
 }
 
-dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
+dbModNet* dbModNet::create(dbModule* parent_module, const char* base_name)
 {
   assert(parentModule->getModNet(base_name) == nullptr);
 
   // give illusion of scoping.
-  _dbModule* parent = (_dbModule*) parentModule;
+  _dbModule* parent = (_dbModule*) parent_module;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModNet* modnet = block->modnet_tbl_->create();
   // defaults
@@ -343,6 +343,16 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* base_name)
   }
 
   return (dbModNet*) modnet;
+}
+
+dbModNet* dbModNet::create(dbModule* parent_module,
+                           const char* base_name,
+                           const dbNameUniquifyType& uniquify)
+{
+  dbBlock* block = parent_module->getOwner();
+  std::string net_name
+      = block->makeNewModNetName(parent_module, base_name, uniquify);
+  return create(parent_module, block->getBaseName(net_name.c_str()));
 }
 
 void dbModNet::destroy(dbModNet* mod_net)

@@ -3915,6 +3915,22 @@ std::string dbBlock::makeNewNetName(dbModInst* parent,
       parent, base_name, uniquify, block->unique_net_index_, exists);
 }
 
+std::string dbBlock::makeNewModNetName(dbModule* parent,
+                                       const char* base_name,
+                                       const dbNameUniquifyType& uniquify)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+  auto exists = [parent](const char* name) {
+    return parent->getModNet(name) != nullptr
+           || parent->findModBTerm(name) != nullptr;
+  };
+  return block->makeNewName(parent->getModInst(),
+                            base_name,
+                            uniquify,
+                            block->unique_net_index_,
+                            exists);
+}
+
 std::string dbBlock::makeNewInstName(dbModInst* parent,
                                      const char* base_name,
                                      const dbNameUniquifyType& uniquify)

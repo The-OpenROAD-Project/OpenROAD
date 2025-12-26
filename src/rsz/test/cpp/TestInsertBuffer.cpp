@@ -889,29 +889,29 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
   dbModInst* mi0 = dbModInst::create(block_->getTopModule(), mod0, "mod0");
   dbInst::create(block_, buf_master, "drvr0", false, mod0);
   dbModBTerm::create(mod0, "Z")->setIoType(dbIoType::OUTPUT);
-  mod0->findModBTerm("Z")->connect(dbModNet::create(mod0, "Z_net"));
-  mod0->findDbInst("drvr0")->findITerm("Z")->connect(mod0->getModNet("Z_net"));
+  mod0->findModBTerm("Z")->connect(dbModNet::create(mod0, "Z"));
+  mod0->findDbInst("drvr0")->findITerm("Z")->connect(mod0->getModNet("Z"));
 
   dbModule* mod1 = dbModule::create(block_, "MOD1");
   dbModInst* mi1 = dbModInst::create(block_->getTopModule(), mod1, "mod1");
   dbInst::create(block_, buf_master, "load0", false, mod1);
   dbModBTerm::create(mod1, "A")->setIoType(dbIoType::INPUT);
-  mod1->findModBTerm("A")->connect(dbModNet::create(mod1, "A_net"));
-  mod1->findDbInst("load0")->findITerm("A")->connect(mod1->getModNet("A_net"));
+  mod1->findModBTerm("A")->connect(dbModNet::create(mod1, "A"));
+  mod1->findDbInst("load0")->findITerm("A")->connect(mod1->getModNet("A"));
 
   dbModule* mod2 = dbModule::create(block_, "MOD2");
   dbModInst* mi2 = dbModInst::create(block_->getTopModule(), mod2, "mod2");
   dbInst::create(block_, buf_master, "load1", false, mod2);
   dbModBTerm::create(mod2, "A")->setIoType(dbIoType::INPUT);
-  mod2->findModBTerm("A")->connect(dbModNet::create(mod2, "A_net"));
-  mod2->findDbInst("load1")->findITerm("A")->connect(mod2->getModNet("A_net"));
+  mod2->findModBTerm("A")->connect(dbModNet::create(mod2, "A"));
+  mod2->findDbInst("load1")->findITerm("A")->connect(mod2->getModNet("A"));
 
   dbModule* mod3 = dbModule::create(block_, "MOD3");
   dbModInst* mi3 = dbModInst::create(block_->getTopModule(), mod3, "mod3");
   dbInst::create(block_, buf_master, "load2", false, mod3);
   dbModBTerm::create(mod3, "A")->setIoType(dbIoType::INPUT);
-  mod3->findModBTerm("A")->connect(dbModNet::create(mod3, "A_net"));
-  mod3->findDbInst("load2")->findITerm("A")->connect(mod3->getModNet("A_net"));
+  mod3->findModBTerm("A")->connect(dbModNet::create(mod3, "A"));
+  mod3->findDbInst("load2")->findITerm("A")->connect(mod3->getModNet("A"));
 
   // Connect them hierarchically
   dbNet* n1 = dbNet::create(block_, "n1");

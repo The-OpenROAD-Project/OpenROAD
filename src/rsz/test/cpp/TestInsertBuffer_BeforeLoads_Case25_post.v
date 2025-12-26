@@ -5,7 +5,7 @@ module top (in,
 
  wire net1;
 
- H0 h0 (.in_i(net1),
+ H0 h0 (.in_0(net1),
     .in(in),
     .out(out));
  BUF_X1 load1 (.A(net1));
@@ -13,15 +13,15 @@ module top (in,
     .Z(net1));
  BUF_X1 nontarget0 (.A(out));
 endmodule
-module H0 (in_i,
+module H0 (in_0,
     in,
     out);
- input in_i;
+ input in_0;
  input in;
  output out;
 
 
  BUF_X1 drvr (.A(in),
     .Z(out));
- BUF_X1 load0 (.A(in_i));
+ BUF_X1 load0 (.A(in_0));
 endmodule

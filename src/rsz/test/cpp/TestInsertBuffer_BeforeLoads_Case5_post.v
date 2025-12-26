@@ -16,29 +16,24 @@ endmodule
 module MOD0 (Z);
  output Z;
 
- wire Z_net;
 
- BUF_X1 drvr0 (.Z(Z_net));
- assign Z = Z_net;
+ BUF_X1 drvr0 (.Z(Z));
 endmodule
 module MOD1 (A);
  input A;
 
- wire A_net;
 
- BUF_X1 load0 (.A(A_net));
+ BUF_X1 load0 (.A(A));
 endmodule
 module MOD2 (A);
  input A;
 
- wire A_net;
 
- BUF_X1 load1 (.A(A_net));
+ BUF_X1 load1 (.A(A));
 endmodule
 module MOD3 (A);
  input A;
 
- wire A_net;
 
- BUF_X1 load2 (.A(A_net));
+ BUF_X1 load2 (.A(A));
 endmodule

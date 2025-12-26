@@ -77,7 +77,7 @@ class dbInsertBuffer
   dbNet* createNewFlatNet(std::set<dbObject*>& connected_terms);
   std::string makeUniqueHierName(dbModule* module,
                                  const std::string& base_name,
-                                 const char* suffix) const;
+                                 const char* suffix = nullptr) const;
   int getModuleDepth(dbModule* mod) const;
   dbModule* findLCA(dbModule* m1, dbModule* m2) const;
   bool stitchLoadToDriver(dbITerm* load_pin,
@@ -106,7 +106,9 @@ class dbInsertBuffer
   void connectSameModule(dbObject* driver,
                          dbObject* load,
                          dbModule* driver_mod);
-  dbModNet* ensureModNet(dbObject* obj, dbModule* mod, const char* suffix);
+  dbModNet* ensureModNet(dbObject* obj,
+                         dbModule* mod,
+                         const char* suffix = nullptr);
   dbObject* traceUp(dbObject* current_obj,
                     dbModule* current_mod,
                     dbModule* target_mod,

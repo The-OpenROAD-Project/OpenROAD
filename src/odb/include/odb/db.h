@@ -1313,6 +1313,11 @@ class dbBlock : public dbObject
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
                              = dbNameUniquifyType::ALWAYS);
+
+  std::string makeNewModNetName(dbModule* parent,
+                                const char* base_name = "net",
+                                const dbNameUniquifyType& uniquify
+                                = dbNameUniquifyType::ALWAYS);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
@@ -8623,7 +8628,10 @@ class dbModNet : public dbObject
   dbModNet* getNextModNetInFanout() const;
 
   static dbModNet* getModNet(dbBlock* block, uint32_t id);
-  static dbModNet* create(dbModule* parentModule, const char* base_name);
+  static dbModNet* create(dbModule* parent_module, const char* base_name);
+  static dbModNet* create(dbModule* parent_module,
+                          const char* base_name,
+                          const dbNameUniquifyType& uniquify);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet

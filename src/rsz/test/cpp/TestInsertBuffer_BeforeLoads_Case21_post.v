@@ -14,7 +14,7 @@ module top (in,
     .h0_out2(n2));
  H1 h1 (.h1_in(net1),
     .h1_in1(n4));
- H3 h3 (.n1_i(net1),
+ H3 h3 (.n1(net1),
     .h3_in(n1),
     .h3_out(n3),
     .h3_out1(n4),
@@ -50,12 +50,12 @@ module H2 (h2_in);
 
  BUF_X1 load0 (.A(h2_in));
 endmodule
-module H3 (n1_i,
+module H3 (n1,
     h3_in,
     h3_out,
     h3_out1,
     h3_out2);
- input n1_i;
+ input n1;
  input h3_in;
  output h3_out;
  output h3_out1;
@@ -68,6 +68,6 @@ module H3 (n1_i,
     .Z(h3_out1));
  BUF_X1 assign2 (.A(h3_in),
     .Z(h3_out2));
- BUF_X1 load1 (.A(n1_i));
- BUF_X1 load2 (.A(n1_i));
+ BUF_X1 load1 (.A(n1));
+ BUF_X1 load2 (.A(n1));
 endmodule
