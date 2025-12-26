@@ -823,12 +823,14 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net)
-        && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
-      dirty_nets.push_back(db_net_map_[db_net]);
-      routes_[db_net].clear();
-      db_net->clearGuides();
-      fastroute_->clearNetRoute(db_net);
+    if (pinPositionsChanged(net) && !net->isMergedNet()
+        && !netIsCovered(db_net, pins_not_covered)) {
+      if (!loadRoutingFromDBGuides(db_net)) {
+        dirty_nets.push_back(db_net_map_[db_net]);
+        routes_[db_net].clear();
+        db_net->clearGuides();
+        fastroute_->clearNetRoute(db_net);
+      }
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
         logger_->error(
@@ -840,6 +842,30 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     net->clearLastPinPositions();
   }
   dirty_nets_.clear();
+}
+
+bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
+{
+  if (db_net->getGuides().empty()) {
+    return false;
+  }
+
+  routes_[db_net].clear();
+  for (odb::dbGuide* guide : db_net->getGuides()) {
+    int layer_idx = guide->getLayer()->getRoutingLevel();
+    int via_layer_idx = guide->getViaLayer()->getRoutingLevel();
+    boxToGlobalRouting(
+        guide->getBox(), layer_idx, via_layer_idx, routes_[db_net]);
+    is_congested_ = is_congested_ || guide->isCongested();
+  }
+
+  std::string pins_not_covered;
+  if (!netIsCovered(db_net, pins_not_covered)) {
+    routes_[db_net].clear();
+    return false;
+  }
+
+  return true;
 }
 
 // This function is not currently enabled
