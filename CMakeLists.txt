@@ -21,12 +21,6 @@ cmake_policy(SET CMP0077 NEW)
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
 
-# Interfers with Qt so off by default.
-option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
-
-if (LINK_TIME_OPTIMIZATION)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 # Allow to use external shared boost libraries
 option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)
@@ -107,6 +101,28 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
 message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
+
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
+if (LINK_TIME_OPTIMIZATION)
+  include(CheckIPOSupported)
+  # 1. Check if the compiler/linker even supports LTO
+  check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
+  if(lto_supported)
+    # LTO is enabled globally for Release builds
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO FALSE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
+
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
+    if(UPPER_BUILD_TYPE STREQUAL "RELEASE")
+      message(STATUS "LTO/IPO is enabled")
+    else()
+      message(STATUS "LTO/IPO is disabled")
+    endif()
+  else()
+    message(STATUS "LTO/IPO is not supported: ${lto_error}")
+  endif()
+endif()
 
 # configure a header file to pass some of the CMake settings
 configure_file(
