@@ -162,7 +162,7 @@ class dbInsertBuffer
                              const Point* loc,
                              bool loads_on_diff_nets) const;
   void dlogTargetLoadPin(dbObject* load_obj) const;
-  void dlogDifferentDbNet(const std::string& net_name) const;
+  void dlogDifferentDbNet(dbNet* net) const;
   void dlogLCAModule(dbModule* target_module) const;
   void dlogDumpNets(const std::set<dbNet*>& other_dbnets) const;
   void dlogCreatingNewHierNet(const char* base_name) const;

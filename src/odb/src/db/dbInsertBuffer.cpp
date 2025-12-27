@@ -1282,8 +1282,10 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
 
     // 2. Common logic: connectivity check
     if (load_net != net_) {
-      other_dbnets.insert(load_net);
-      dlogDifferentDbNet(load_net->getName());
+      if (load_net) {
+        other_dbnets.insert(load_net);
+      }
+      dlogDifferentDbNet(load_net);
 
       if (!loads_on_diff_nets) {
         logger_->error(utl::ODB,
@@ -1487,14 +1489,14 @@ void dbInsertBuffer::dlogTargetLoadPin(dbObject* load_obj) const
              load_obj->getName());
 }
 
-void dbInsertBuffer::dlogDifferentDbNet(const std::string& net_name) const
+void dbInsertBuffer::dlogDifferentDbNet(dbNet* net) const
 {
   debugPrint(logger_,
              utl::ODB,
              "insert_buffer",
              1,
              "BeforeLoads:   * is on different dbNet '{}'",
-             net_name);
+             net ? net->getName() : "<null>");
 }
 
 void dbInsertBuffer::dlogLCAModule(dbModule* target_module) const
