@@ -43,22 +43,6 @@ BEGIN_LEF_PARSER_NAMESPACE
 // lefiViaRuleLayer
 // *****************************************************************************
 
-lefiViaRuleLayer::lefiViaRuleLayer()
-    : widthMin_(0.0),
-      widthMax_(0.0),
-      overhang_(0.0),
-      metalOverhang_(0.0),
-      resistance_(0.0),
-      spacingStepX_(0.0),
-      spacingStepY_(0.0),
-      xl_(0.0),
-      yl_(0.0),
-      xh_(0.0),
-      yh_(0.0)
-{
-  Init();
-}
-
 void lefiViaRuleLayer::Init()
 {
   name_ = nullptr;

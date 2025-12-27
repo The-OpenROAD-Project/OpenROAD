@@ -39,7 +39,6 @@ BEGIN_LEF_PARSER_NAMESPACE
 class lefiViaRuleLayer
 {
  public:
-  lefiViaRuleLayer();
   void Init();
 
   void Destroy();
@@ -89,8 +88,8 @@ class lefiViaRuleLayer
  protected:
   char* name_{nullptr};
   char direction_{0};
-  double overhang1_{0.0};  // 5.5
-  double overhang2_{0.0};  // 5.5
+  double overhang1_{-1};  // 5.5
+  double overhang2_{-1};  // 5.5
   int hasWidth_{0};
   int hasResistance_{0};
   int hasOverhang_{0};
