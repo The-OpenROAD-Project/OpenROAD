@@ -30,8 +30,6 @@
 // This program is the diffDef core program.  It has all the callback
 // routines and write it out to a temporary file.
 
-#include <string.h>
-
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -1523,7 +1521,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiFill* fill;
   defiStyles* styles;
   int xl, yl, xh, yh;
-  char *name;
+  char* name;
   char **inst, **inPin, **outPin;
   int* bits;
   int size;
