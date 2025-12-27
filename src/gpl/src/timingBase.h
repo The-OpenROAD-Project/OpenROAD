@@ -46,6 +46,8 @@ class TimingBase
   bool executeTimingDriven(bool run_journal_restore);
 
  private:
+  void loadEnvOverrides();
+
   rsz::Resizer* rs_ = nullptr;
   utl::Logger* log_ = nullptr;
   std::shared_ptr<NesterovBaseCommon> nbc_;
@@ -53,6 +55,17 @@ class TimingBase
   std::vector<int> timingNetWeightOverflow_;
   std::vector<int> timingOverflowChk_;
   float net_weight_max_ = 5;
+  float net_weight_exponent_ = 1.0;
+  // When enabled, normalize net criticality against 0 slack (violations)
+  // instead of the best slack in the "worst nets" subset. This makes the
+  // weighting less sensitive to slack distribution changes across STA
+  // versions/corners, and avoids adding weight to positive-slack nets.
+  bool use_zero_slack_ref_ = true;
+  // Optional experimental knobs (off by default) to make the timing-driven
+  // weighting less noisy under different STA semantics.
+  float net_weight_coverage_percent_ = 0.0F;
+  bool use_length_factor_ = false;
+  float length_alpha_ = 0.5F;
   void initTimingOverflowChk();
 };
 

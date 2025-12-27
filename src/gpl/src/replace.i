@@ -62,6 +62,9 @@ static gpl::PlaceOptions getOptions(
            "-timing_driven_net_reweight_overflow",
            options.timingNetWeightOverflows);
   checkKey(keys, "-overflow", options.overflow);
+  if (keys.find("-timing_driven_net_weight_max") != keys.end()) {
+    options.timingNetWeightMaxUserSet = true;
+  }
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
