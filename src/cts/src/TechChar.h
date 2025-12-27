@@ -85,6 +85,9 @@ class WireSegment
     bufferMasters_.push_back(name);
   }
 
+  void setWl2FisrtBuffer(int wl) { wl2FisrtBuffer_ = wl; }
+  void setLastWl(int wl) { lastWl_ = wl; }
+
   double getPower() const { return power_; }
   unsigned getDelay() const { return delay_; }
   uint8_t getInputCap() const { return inputCap_; }
@@ -92,6 +95,8 @@ class WireSegment
   uint8_t getLength() const { return length_; }
   uint8_t getLoad() const { return load_; }
   uint8_t getOutputSlew() const { return outputSlew_; }
+  int getWl2FisrtBuffer() const { return wl2FisrtBuffer_; }
+  int getLastWl() const { return lastWl_; }
   bool isBuffered() const { return !bufferLocations_.empty(); }
   unsigned getNumBuffers() const { return bufferLocations_.size(); }
   const std::vector<double>& getBufferLocations() { return bufferLocations_; }
@@ -123,6 +128,8 @@ class WireSegment
 
   std::vector<double> bufferLocations_;
   std::vector<std::string> bufferMasters_;
+  int wl2FisrtBuffer_;
+  int lastWl_;
 };
 
 //-----------------------------------------------------------------------------
