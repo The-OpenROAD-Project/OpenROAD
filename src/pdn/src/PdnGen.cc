@@ -711,8 +711,8 @@ void PdnGen::createSrouteWires(
     int max_rows,
     int max_columns,
     const std::vector<odb::dbTechLayer*>& ongrid,
-    std::vector<int> metalwidths,
-    std::vector<int> metalspaces,
+    const std::vector<int>& metalwidths,
+    const std::vector<int>& metalspaces,
     const std::vector<odb::dbInst*>& insts)
 {
   sroute_->createSrouteWires(net,
@@ -880,7 +880,7 @@ void PdnGen::ripUp(odb::dbNet* net)
         if (layer == nullptr) {
           continue;
         }
-        if (net_shapes.count(layer) == 0) {
+        if (!net_shapes.contains(layer)) {
           continue;
         }
 

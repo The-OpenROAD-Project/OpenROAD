@@ -54,8 +54,8 @@ static frSquaredDistance pt2boxDistSquare(const odb::Point& pt,
                                           const odb::Rect& box)
 
 {
-  frCoord dx = std::max(std::max(box.xMin() - pt.x(), pt.x() - box.xMax()), 0);
-  frCoord dy = std::max(std::max(box.yMin() - pt.y(), pt.y() - box.yMax()), 0);
+  frCoord dx = std::max({box.xMin() - pt.x(), pt.x() - box.xMax(), 0});
+  frCoord dy = std::max({box.yMin() - pt.y(), pt.y() - box.yMax(), 0});
   return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
 }
 
@@ -1199,8 +1199,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 
   if (lef58con != nullptr) {
     lef58conSpc = lef58con->getDefaultSpacing();
-    bloatDist
-        = std::max(bloatDist, std::max(lef58conSpc.first, lef58conSpc.second));
+    bloatDist = std::max({bloatDist, lef58conSpc.first, lef58conSpc.second});
   }
 
   FlexMazeIdx mIdx1;
@@ -1389,8 +1388,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const odb::Rect& box,
   }
   if (lef58con != nullptr) {
     lef58conSpc = lef58con->getDefaultSpacing();
-    bloatDist
-        = std::max(bloatDist, std::max(lef58conSpc.first, lef58conSpc.second));
+    bloatDist = std::max({bloatDist, lef58conSpc.first, lef58conSpc.second});
   }
 
   FlexMazeIdx mIdx1;
@@ -2388,13 +2386,13 @@ drPin* FlexDRWorker::routeNet_getNextDst(
   // Find the next dst pin nearest to the src
   for (auto& [mazeIdx, setS] : mazeIdx2unConnPins) {
     gridGraph_.getPoint(pt, mazeIdx.x(), mazeIdx.y());
-    frCoord dx = std::max(std::max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
-    frCoord dy = std::max(std::max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
-    frCoord dz = std::max(std::max(gridGraph_.getZHeight(ccMazeIdx1.z())
-                                       - gridGraph_.getZHeight(mazeIdx.z()),
-                                   gridGraph_.getZHeight(mazeIdx.z())
-                                       - gridGraph_.getZHeight(ccMazeIdx2.z())),
-                          0);
+    frCoord dx = std::max({ll.x() - pt.x(), pt.x() - ur.x(), 0});
+    frCoord dy = std::max({ll.y() - pt.y(), pt.y() - ur.y(), 0});
+    frCoord dz = std::max({gridGraph_.getZHeight(ccMazeIdx1.z())
+                               - gridGraph_.getZHeight(mazeIdx.z()),
+                           gridGraph_.getZHeight(mazeIdx.z())
+                               - gridGraph_.getZHeight(ccMazeIdx2.z()),
+                           0});
     if (dx + dy + dz < currDist) {
       currDist = dx + dy + dz;
       nextDst = *(setS.begin());

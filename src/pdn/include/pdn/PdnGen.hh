@@ -182,8 +182,8 @@ class PdnGen
                          int max_rows,
                          int max_columns,
                          const std::vector<odb::dbTechLayer*>& ongrid,
-                         std::vector<int> metalWidths,
-                         std::vector<int> metalspaces,
+                         const std::vector<int>& metalWidths,
+                         const std::vector<int>& metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
   PDNRenderer* getDebugRenderer() const { return debug_renderer_.get(); }

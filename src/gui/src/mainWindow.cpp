@@ -924,9 +924,9 @@ std::string MainWindow::addToolbarButton(const std::string& name,
       // default to "buttonX" naming
       key = "button" + std::to_string(key_idx);
       key_idx++;
-    } while (buttons_.count(key) != 0);
+    } while (buttons_.contains(key));
   } else {
-    if (buttons_.count(name) != 0) {
+    if (buttons_.contains(name)) {
       logger_->error(utl::GUI, 22, "Button {} already defined.", name);
     }
     key = name;
@@ -951,7 +951,7 @@ std::string MainWindow::addToolbarButton(const std::string& name,
 
 void MainWindow::removeToolbarButton(const std::string& name)
 {
-  if (buttons_.count(name) == 0) {
+  if (!buttons_.contains(name)) {
     return;
   }
 
@@ -1020,9 +1020,9 @@ std::string MainWindow::addMenuItem(const std::string& name,
       // default to "actionX" naming
       key = "action" + std::to_string(key_idx);
       key_idx++;
-    } while (menu_actions_.count(key) != 0);
+    } while (menu_actions_.contains(key));
   } else {
-    if (menu_actions_.count(name) != 0) {
+    if (menu_actions_.contains(name)) {
       logger_->error(utl::GUI, 25, "Menu action {} already defined.", name);
     }
     key = name;
@@ -1081,7 +1081,7 @@ void MainWindow::removeMenu(QMenu* menu)
 
 void MainWindow::removeMenuItem(const std::string& name)
 {
-  if (menu_actions_.count(name) == 0) {
+  if (!menu_actions_.contains(name)) {
     return;
   }
 

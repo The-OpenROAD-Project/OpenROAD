@@ -135,6 +135,7 @@ class GuiPainter : public Painter
   void drawPolygon(const std::vector<odb::Point>& points) override
   {
     QPolygon poly;
+    poly.reserve(points.size());
     for (const auto& pt : points) {
       poly.append(QPoint(pt.x(), pt.y()));
     }

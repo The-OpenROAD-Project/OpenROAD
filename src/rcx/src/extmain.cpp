@@ -106,14 +106,14 @@ void extMain::setupMapping(uint32_t itermCnt1)
     btermCnt = 512;
     itermCnt = 64000;
   }
-  _btermTable = new Ath__array1D<int>(btermCnt);
-  _itermTable = new Ath__array1D<int>(itermCnt);
-  _nodeTable = new Ath__array1D<int>(16000);
+  _btermTable = new Array1D<int>(btermCnt);
+  _itermTable = new Array1D<int>(itermCnt);
+  _nodeTable = new Array1D<int>(16000);
 }
 
 extMain::extMain()
 {
-  _modelTable = new Ath__array1D<extRCModel*>(8);
+  _modelTable = new Array1D<extRCModel*>(8);
 }
 extMain::~extMain()
 {
@@ -136,7 +136,7 @@ void extMain::initDgContextArray()
 {
   _dgContextDepth = 3;
   _dgContextPlanes = _dgContextDepth * 2 + 1;
-  _dgContextArray = new Ath__array1D<SEQ*>**[_dgContextPlanes];
+  _dgContextArray = new Array1D<SEQ*>**[_dgContextPlanes];
   _dgContextBaseTrack = new uint32_t[_dgContextPlanes];
   _dgContextLowTrack = new int[_dgContextPlanes];
   _dgContextHiTrack = new int[_dgContextPlanes];
@@ -148,9 +148,9 @@ void extMain::initDgContextArray()
   }
   for (uint32_t jj = 0; jj < _dgContextPlanes; jj++) {
     _dgContextTrackBase[jj] = new int[1024];
-    _dgContextArray[jj] = new Ath__array1D<SEQ*>*[_dgContextTracks];
+    _dgContextArray[jj] = new Array1D<SEQ*>*[_dgContextTracks];
     for (uint32_t tt = 0; tt < _dgContextTracks; tt++) {
-      _dgContextArray[jj][tt] = new Ath__array1D<SEQ*>(1024);
+      _dgContextArray[jj][tt] = new Array1D<SEQ*>(1024);
     }
   }
 }
@@ -181,16 +181,16 @@ void extMain::initContextArray()
     return;
   }
   _ccContextPlanes = getExtLayerCnt(_tech);
-  _ccContextArray = new Ath__array1D<int>*[_ccContextPlanes + 1];
+  _ccContextArray = new Array1D<int>*[_ccContextPlanes + 1];
   _ccContextArray[0] = nullptr;
   uint32_t ii;
   for (ii = 1; ii <= _ccContextPlanes; ii++) {
-    _ccContextArray[ii] = new Ath__array1D<int>(1024);
+    _ccContextArray[ii] = new Array1D<int>(1024);
   }
-  _ccMergedContextArray = new Ath__array1D<int>*[_ccContextPlanes + 1];
+  _ccMergedContextArray = new Array1D<int>*[_ccContextPlanes + 1];
   _ccMergedContextArray[0] = nullptr;
   for (ii = 1; ii <= _ccContextPlanes; ii++) {
-    _ccMergedContextArray[ii] = new Ath__array1D<int>(1024);
+    _ccMergedContextArray[ii] = new Array1D<int>(1024);
   }
 }
 

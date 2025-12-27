@@ -48,10 +48,8 @@ using odb::dbSigType;
 using sta::ArcDcalcResult;
 using sta::Arrival;
 using sta::Edge;
-using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
-using sta::fuzzyLessEqual;
 using sta::INF;
 using sta::RiseFallBoth;
 using sta::TimingArc;
@@ -1513,10 +1511,10 @@ void Rebuffer::init()
 void Rebuffer::initOnCorner(Corner* corner)
 {
   corner_ = corner;
-  wire_length_step_ = std::min(
-      resizer_max_wire_length_,
-      std::min(wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
-               wireLengthLimitImpliedByMaxCap(buffer_sizes_.front().cell)));
+  wire_length_step_
+      = std::min({resizer_max_wire_length_,
+                  wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
+                  wireLengthLimitImpliedByMaxCap(buffer_sizes_.front().cell)});
   characterizeBufferLimits();
 }
 
@@ -1770,7 +1768,7 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
         LibertyPort *in, *out;
         port->libertyCell()->bufferPorts(in, out);
 
-        if (port == in && !imported_as_loads.count(pin)) {
+        if (port == in && !imported_as_loads.contains(pin)) {
           Instance* inst = network_->instance(pin);
           insts.push_back(inst);
           const Pin* out_pin = network_->findPin(inst, out);

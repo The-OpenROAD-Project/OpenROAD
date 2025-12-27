@@ -89,7 +89,6 @@ class SelectHighlightWindow : public QDockWidget
   explicit SelectHighlightWindow(const SelectionSet& sel_set,
                                  const HighlightSet& hlt_set,
                                  QWidget* parent = nullptr);
-  ~SelectHighlightWindow() override;
 
  signals:
   void clearAllSelections();

@@ -310,7 +310,7 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
       if (layer_rule->hasEnclosure()) {
         int enc0, enc1;
         layer_rule->getEnclosure(enc0, enc1);
-        rule_max_enclosure = std::max(rule_max_enclosure, std::max(enc0, enc1));
+        rule_max_enclosure = std::max({rule_max_enclosure, enc0, enc1});
       }
     }
 

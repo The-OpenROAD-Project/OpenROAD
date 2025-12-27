@@ -792,7 +792,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
         odb::dbInst* inst = pin->getPinAsITerm()->getInst();
 
         if (inst != nullptr) {
-          if (instances.count(inst) == 0) {
+          if (!instances.contains(inst)) {
             instances[inst] = pin.get();
           } else {
             auto& worst_pin = instances[inst];

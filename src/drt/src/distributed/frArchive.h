@@ -28,7 +28,7 @@ struct frOArchive : OutputArchive
 
   // forward to base class
   template <class T>
-  void save(T t)
+  void save(const T& t)
   {
     OutputArchive::save(t);
   }

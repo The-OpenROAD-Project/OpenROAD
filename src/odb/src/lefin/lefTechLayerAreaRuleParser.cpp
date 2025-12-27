@@ -79,7 +79,7 @@ void lefTechLayerAreaRuleParser::setExceptStep(
 
 // Set trim layer reference, handling incomplete properties
 void lefTechLayerAreaRuleParser::setTrimLayer(
-    std::string val,
+    const std::string& val,
     odb::dbTechLayerAreaRule* rule,
     odb::dbTechLayer* layer,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)

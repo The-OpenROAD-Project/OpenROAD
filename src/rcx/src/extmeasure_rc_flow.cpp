@@ -16,7 +16,6 @@
 #endif
 
 using odb::dbRSeg;
-using utl::RCX;
 
 namespace rcx {
 
@@ -213,7 +212,7 @@ uint32_t extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
   int rsegId = -1;
 
   uint32_t below = 0;
-  Ath__array1D<extSegment*> table(4);
+  Array1D<extSegment*> table(4);
 
   FindSegments(
       true, _dir, 1000 /* TODO */, s->_wire, s->_xy, s->_len, dw, &table);

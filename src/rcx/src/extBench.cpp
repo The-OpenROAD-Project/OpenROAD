@@ -118,10 +118,10 @@ uint32_t extRCModel::benchWithVar_density(extMainOptions* opt,
 uint32_t extRCModel::benchWithVar_lists(extMainOptions* opt,
                                         extMeasure* measure)
 {
-  Ath__array1D<double>* wTable = &opt->_widthTable;
-  Ath__array1D<double>* sTable = &opt->_spaceTable;
-  Ath__array1D<double>* thTable = &opt->_thicknessTable;
-  Ath__array1D<double>* gTable = &opt->_gridTable;
+  Array1D<double>* wTable = &opt->_widthTable;
+  Array1D<double>* sTable = &opt->_spaceTable;
+  Array1D<double>* thTable = &opt->_thicknessTable;
+  Array1D<double>* gTable = &opt->_gridTable;
 
   uint32_t cnt = 0;
   int met = measure->_met;

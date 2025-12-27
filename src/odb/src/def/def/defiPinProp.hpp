@@ -50,11 +50,8 @@ class defiPinProp
   void clear();
 
   void setName(const char* inst, const char* pin);
-  void addProperty(const char* name, const char* value, const char type);
-  void addNumProperty(const char* name,
-                      const double d,
-                      const char* value,
-                      const char type);
+  void addProperty(const char* name, const char* value, char type);
+  void addNumProperty(const char* name, double d, const char* value, char type);
 
   int isPin() const;
   const char* instName() const;

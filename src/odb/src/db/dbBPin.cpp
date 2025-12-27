@@ -154,8 +154,18 @@ dbPlacementStatus dbBPin::getPlacementStatus() const
 void dbBPin::setPlacementStatus(dbPlacementStatus status)
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  bpin->flags_.status = status.getValue();
+
+  if (bpin->flags_.status == status) {
+    return;
+  }
+
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbBPinPlacementStatusBefore(this, status);
+  }
+
+  bpin->flags_.status = status.getValue();
   block->flags_.valid_bbox = 0;
 }
 

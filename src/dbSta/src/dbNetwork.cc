@@ -4301,7 +4301,7 @@ dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
 
 bool dbNetwork::hasHierarchicalElements() const
 {
-  if (block()->getModNets().size() != 0) {
+  if (!block()->getModNets().empty()) {
     return true;
   }
   return false;

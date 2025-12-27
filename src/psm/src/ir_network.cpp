@@ -554,7 +554,7 @@ void IRNetwork::generateCutNodesForSBox(
     odb::dbSBox* box,
     bool single_via,
     std::vector<std::unique_ptr<Node>>& new_nodes,
-    std::vector<std::unique_ptr<Connection>>& new_connections)
+    Connections& new_connections)
 {
   // handle as via
   std::vector<odb::dbShape> via_shapes;
@@ -655,7 +655,7 @@ void IRNetwork::generateCutLayerNodes()
   }
 
   std::vector<std::unique_ptr<Node>> loop_via_nodes;
-  std::vector<std::unique_ptr<Connection>> loop_via_connections;
+  Connections loop_via_connections;
   for (odb::dbSBox* box : boxes) {
     generateCutNodesForSBox(
         box, use_single_via, loop_via_nodes, loop_via_connections);

@@ -162,7 +162,7 @@ uint32_t extMeasure::createNetSingleWire(char* dirName,
                                                ur[1],
                                                _met,
                                                /*skipBTerms=*/false,
-                                               /*skipNetExists=*/false,
+                                               /*skipExistsNet=*/false,
                                                mask_color);
   } else {
     net = _create_net_util.createNetSingleWire(
@@ -476,22 +476,22 @@ uint32_t extMeasure::defineBox(CoupleOptions& options)
   return _len;
 }
 
-void extMeasure::tableCopyP(Ath__array1D<int>* src, Ath__array1D<int>* dst)
+void extMeasure::tableCopyP(Array1D<int>* src, Array1D<int>* dst)
 {
   for (uint32_t ii = 0; ii < src->getCnt(); ii++) {
     dst->add(src->get(ii));
   }
 }
 
-void extMeasure::tableCopyP(Ath__array1D<SEQ*>* src, Ath__array1D<SEQ*>* dst)
+void extMeasure::tableCopyP(Array1D<SEQ*>* src, Array1D<SEQ*>* dst)
 {
   for (uint32_t ii = 0; ii < src->getCnt(); ii++) {
     dst->add(src->get(ii));
   }
 }
 
-void extMeasure::tableCopy(Ath__array1D<SEQ*>* src,
-                           Ath__array1D<SEQ*>* dst,
+void extMeasure::tableCopy(Array1D<SEQ*>* src,
+                           Array1D<SEQ*>* dst,
                            gs* pixelTable)
 {
   for (uint32_t ii = 0; ii < src->getCnt(); ii++) {
@@ -499,7 +499,7 @@ void extMeasure::tableCopy(Ath__array1D<SEQ*>* src,
   }
 }
 
-void extMeasure::release(Ath__array1D<SEQ*>* seqTable, gs* pixelTable)
+void extMeasure::release(Array1D<SEQ*>* seqTable, gs* pixelTable)
 {
   if (pixelTable == nullptr) {
     pixelTable = _pixelTable;
@@ -539,7 +539,7 @@ SEQ* extMeasure::addSeq(const int* ll, const int* ur)
 
 void extMeasure::addSeq(const int* ll,
                         const int* ur,
-                        Ath__array1D<SEQ*>* seqTable,
+                        Array1D<SEQ*>* seqTable,
                         gs* pixelTable)
 {
   if (pixelTable == nullptr) {
@@ -557,7 +557,7 @@ void extMeasure::addSeq(const int* ll,
   }
 }
 
-void extMeasure::addSeq(Ath__array1D<SEQ*>* seqTable, gs* pixelTable)
+void extMeasure::addSeq(Array1D<SEQ*>* seqTable, gs* pixelTable)
 {
   SEQ* s = pixelTable->salloc();
   for (uint32_t ii = 0; ii < 2; ii++) {
@@ -569,7 +569,7 @@ void extMeasure::addSeq(Ath__array1D<SEQ*>* seqTable, gs* pixelTable)
   seqTable->add(s);
 }
 
-void extMeasure::copySeq(SEQ* t, Ath__array1D<SEQ*>* seqTable, gs* pixelTable)
+void extMeasure::copySeq(SEQ* t, Array1D<SEQ*>* seqTable, gs* pixelTable)
 {
   SEQ* s = pixelTable->salloc();
   for (uint32_t ii = 0; ii < 2; ii++) {
@@ -581,7 +581,7 @@ void extMeasure::copySeq(SEQ* t, Ath__array1D<SEQ*>* seqTable, gs* pixelTable)
   seqTable->add(s);
 }
 
-void extMeasure::copySeqUsingPool(SEQ* t, Ath__array1D<SEQ*>* seqTable)
+void extMeasure::copySeqUsingPool(SEQ* t, Array1D<SEQ*>* seqTable)
 {
   SEQ* s = _seqPool->alloc();
   for (uint32_t ii = 0; ii < 2; ii++) {
@@ -664,7 +664,7 @@ uint32_t extMeasure::getLength(SEQ* s, int dir)
   return s->_ur[dir] - s->_ll[dir];
 }
 
-uint32_t extMeasure::blackCount(uint32_t start, Ath__array1D<SEQ*>* resTable)
+uint32_t extMeasure::blackCount(uint32_t start, Array1D<SEQ*>* resTable)
 {
   uint32_t cnt = 0;
   for (uint32_t jj = start; jj < resTable->getCnt(); jj++) {
@@ -742,7 +742,7 @@ void extMeasure::swap_coords(SEQ* s)
 
 uint32_t extMeasure::swap_coords(uint32_t initCnt,
                                  uint32_t endCnt,
-                                 Ath__array1D<SEQ*>* resTable)
+                                 Array1D<SEQ*>* resTable)
 {
   for (uint32_t ii = initCnt; ii < endCnt; ii++) {
     swap_coords(resTable->get(ii));
@@ -753,7 +753,7 @@ uint32_t extMeasure::swap_coords(uint32_t initCnt,
 
 uint32_t extMeasure::getOverlapSeq(uint32_t met,
                                    SEQ* s,
-                                   Ath__array1D<SEQ*>* resTable)
+                                   Array1D<SEQ*>* resTable)
 {
   return getOverlapSeq(met, s->_ll, s->_ur, resTable);
 }
@@ -761,7 +761,7 @@ uint32_t extMeasure::getOverlapSeq(uint32_t met,
 uint32_t extMeasure::getOverlapSeq(uint32_t met,
                                    int* ll,
                                    int* ur,
-                                   Ath__array1D<SEQ*>* resTable)
+                                   Array1D<SEQ*>* resTable)
 {
   uint32_t len1 = 0;
 
@@ -793,9 +793,9 @@ uint32_t extMeasure::getOverlapSeq(uint32_t met,
   return 0;
 }
 
-uint32_t extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
+uint32_t extMeasure::computeOverOrUnderSeq(Array1D<SEQ*>* seqTable,
                                            uint32_t met,
-                                           Ath__array1D<SEQ*>* resTable,
+                                           Array1D<SEQ*>* resTable,
                                            bool over)
 {
   uint32_t len = 0;
@@ -858,9 +858,9 @@ uint32_t extMeasure::computeOverOrUnderSeq(Ath__array1D<SEQ*>* seqTable,
 
 uint32_t extMeasure::computeOUwith2planes(int* ll,
                                           int* ur,
-                                          Ath__array1D<SEQ*>* resTable)
+                                          Array1D<SEQ*>* resTable)
 {
-  Ath__array1D<SEQ*> met1Table(16);
+  Array1D<SEQ*> met1Table(16);
 
   uint32_t met1 = _underMet;
   uint32_t met2 = _overMet;
@@ -889,9 +889,7 @@ void extMeasure::calcOU(uint32_t len)
   computeOverUnderRC(len);
 }
 
-uint32_t extMeasure::computeOverUnder(int* ll,
-                                      int* ur,
-                                      Ath__array1D<SEQ*>* resTable)
+uint32_t extMeasure::computeOverUnder(int* ll, int* ur, Array1D<SEQ*>* resTable)
 {
   uint32_t ouLen = computeOUwith2planes(ll, ur, resTable);
 
@@ -910,9 +908,9 @@ uint32_t extMeasure::computeOverUnder(int* ll,
   return ouLen;
 }
 
-uint32_t extMeasure::computeOverOrUnderSeq(Ath__array1D<int>* seqTable,
+uint32_t extMeasure::computeOverOrUnderSeq(Array1D<int>* seqTable,
                                            uint32_t met,
-                                           Ath__array1D<int>* resTable,
+                                           Array1D<int>* resTable,
                                            bool over)
 {
   if (seqTable->getCnt() <= 0) {
@@ -960,9 +958,7 @@ uint32_t extMeasure::computeOverOrUnderSeq(Ath__array1D<int>* seqTable,
   return len;
 }
 
-uint32_t extMeasure::computeOverUnder(int xy1,
-                                      int xy2,
-                                      Ath__array1D<int>* resTable)
+uint32_t extMeasure::computeOverUnder(int xy1, int xy2, Array1D<int>* resTable)
 {
   uint32_t ouLen
       = intersectContextArray(xy1, xy2, _underMet, _overMet, resTable);
@@ -982,9 +978,9 @@ uint32_t extMeasure::computeOverUnder(int xy1,
   return ouLen;
 }
 
-uint32_t extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
+uint32_t extMeasure::mergeContextArray(Array1D<int>* srcContext,
                                        int minS,
-                                       Ath__array1D<int>* tgtContext)
+                                       Array1D<int>* tgtContext)
 {
   tgtContext->resetCnt(0);
   uint32_t ssize = srcContext->getCnt();
@@ -1017,11 +1013,11 @@ uint32_t extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
   return contextLength;
 }
 
-uint32_t extMeasure::mergeContextArray(Ath__array1D<int>* srcContext,
+uint32_t extMeasure::mergeContextArray(Array1D<int>* srcContext,
                                        int minS,
                                        int pmin,
                                        int pmax,
-                                       Ath__array1D<int>* tgtContext)
+                                       Array1D<int>* tgtContext)
 {
   tgtContext->resetCnt(0);
   uint32_t ssize = srcContext->getCnt();
@@ -1079,14 +1075,14 @@ uint32_t extMeasure::intersectContextArray(int pmin,
                                            int pmax,
                                            uint32_t met1,
                                            uint32_t met2,
-                                           Ath__array1D<int>* tgtContext)
+                                           Array1D<int>* tgtContext)
 {
   int minS1 = _minSpaceTable[met1];
   int minS2 = _minSpaceTable[met2];
 
-  Ath__array1D<int> t1Context(1024);
+  Array1D<int> t1Context(1024);
   mergeContextArray(_ccContextArray[met1], minS1, pmin, pmax, &t1Context);
-  Ath__array1D<int> t2Context(1024);
+  Array1D<int> t2Context(1024);
   mergeContextArray(_ccContextArray[met2], minS2, pmin, pmax, &t2Context);
 
   tgtContext->resetCnt(0);
@@ -1265,7 +1261,7 @@ int extMeasure::getDgPlaneAndTrackIndex(uint32_t tgt_met,
 //   _dgContextLowTrack[planeIndex]; int hiTrack = _dgContextHiTrack[planeIndex]
 //   > 2 ? 2 : _dgContextHiTrack[planeIndex];
 //
-void extMeasure::seq_release(Ath__array1D<SEQ*>* table)
+void extMeasure::seq_release(Array1D<SEQ*>* table)
 {
   for (uint32_t jj = 0; jj < table->getCnt(); jj++) {
     SEQ* s = table->get(jj);
@@ -1279,14 +1275,14 @@ uint32_t extMeasure::computeDiag(SEQ* s,
                                  uint32_t dir,
                                  uint32_t planeIndex,
                                  uint32_t trackn,
-                                 Ath__array1D<SEQ*>* residueSeq)
+                                 Array1D<SEQ*>* residueSeq)
 {
-  Ath__array1D<SEQ*>* dgContext = _dgContextArray[planeIndex][trackn];
+  Array1D<SEQ*>* dgContext = _dgContextArray[planeIndex][trackn];
   if (dgContext->getCnt() <= 1) {
     return 0;
   }
 
-  Ath__array1D<SEQ*> overlapSeq(16);
+  Array1D<SEQ*> overlapSeq(16);
   getDgOverlap(s, _dir, dgContext, &overlapSeq, residueSeq);
 
   uint32_t len = 0;
@@ -1340,7 +1336,7 @@ int extMeasure::computeDiagOU(SEQ* s,
                               uint32_t trackMin,
                               uint32_t trackMax,
                               uint32_t targetMet,
-                              Ath__array1D<SEQ*>* diagTable)
+                              Array1D<SEQ*>* diagTable)
 {
   int trackDist = 2;
   int loTrack;
@@ -1353,10 +1349,10 @@ int extMeasure::computeDiagOU(SEQ* s,
 
   uint32_t len = 0;
 
-  Ath__array1D<SEQ*> tmpTable(16);
+  Array1D<SEQ*> tmpTable(16);
   copySeqUsingPool(s, &tmpTable);
 
-  Ath__array1D<SEQ*> residueTable(16);
+  Array1D<SEQ*> residueTable(16);
 
   int trackTable[200];
   uint32_t cnt = 0;
@@ -1410,8 +1406,8 @@ int extMeasure::computeDiagOU(SEQ* s,
   return len;
 }
 
-int extMeasure::compute_Diag_Over_Under(Ath__array1D<SEQ*>* seqTable,
-                                        Ath__array1D<SEQ*>* resTable)
+int extMeasure::compute_Diag_Over_Under(Array1D<SEQ*>* seqTable,
+                                        Array1D<SEQ*>* resTable)
 {
   bool overUnder = true;
   int met1 = _underMet;
@@ -1465,10 +1461,10 @@ int extMeasure::compute_Diag_Over_Under(Ath__array1D<SEQ*>* seqTable,
   return totCovered;
 }
 
-int extMeasure::compute_Diag_OverOrUnder(Ath__array1D<SEQ*>* seqTable,
+int extMeasure::compute_Diag_OverOrUnder(Array1D<SEQ*>* seqTable,
                                          bool over,
                                          uint32_t met,
-                                         Ath__array1D<SEQ*>* resTable)
+                                         Array1D<SEQ*>* resTable)
 {
   int totCovered = 0;
   int diagTotLen = 0;
@@ -1552,9 +1548,9 @@ uint32_t extMeasure::measureOverOnly(bool diagFlag)
   return totCovered;
 }
 
-uint32_t extMeasure::ouFlowStep(Ath__array1D<SEQ*>* overTable)
+uint32_t extMeasure::ouFlowStep(Array1D<SEQ*>* overTable)
 {
-  Ath__array1D<SEQ*> tmpTable(32);
+  Array1D<SEQ*> tmpTable(32);
   uint32_t len = 0;
   for (uint32_t ii = 0; ii < overTable->getCnt(); ii++) {
     SEQ* s = overTable->get(ii);
@@ -1580,14 +1576,13 @@ uint32_t extMeasure::ouFlowStep(Ath__array1D<SEQ*>* overTable)
   return len;
 }
 
-int extMeasure::underFlowStep(Ath__array1D<SEQ*>* srcTable,
-                              Ath__array1D<SEQ*>* overTable)
+int extMeasure::underFlowStep(Array1D<SEQ*>* srcTable, Array1D<SEQ*>* overTable)
 {
   int totLen = 0;
 
-  Ath__array1D<SEQ*> whiteTable(32);
-  Ath__array1D<SEQ*> table1(32);
-  Ath__array1D<SEQ*> diagTable(32);
+  Array1D<SEQ*> whiteTable(32);
+  Array1D<SEQ*> table1(32);
+  Array1D<SEQ*> diagTable(32);
 
   for (uint32_t ii = 0; ii < srcTable->getCnt(); ii++) {
     SEQ* s1 = srcTable->get(ii);
@@ -2633,9 +2628,9 @@ void extMeasure::measureRC(CoupleOptions& options)
 
 void extMeasure::getDgOverlap(SEQ* sseq,
                               uint32_t dir,
-                              Ath__array1D<SEQ*>* dgContext,
-                              Ath__array1D<SEQ*>* overlapSeq,
-                              Ath__array1D<SEQ*>* residueSeq)
+                              Array1D<SEQ*>* dgContext,
+                              Array1D<SEQ*>* overlapSeq,
+                              Array1D<SEQ*>* residueSeq)
 {
   int idx = dgContext->get(0)->_ll[0];
   uint32_t lp = dir ? 0 : 1;
@@ -2745,9 +2740,9 @@ void extMeasure::getDgOverlap(CoupleOptions& options)
             met,
             dir);
   }
-  Ath__array1D<SEQ*> overlapSeq(16);
-  Ath__array1D<SEQ*> residueSeq(16);
-  Ath__array1D<SEQ*>* dgContext = nullptr;
+  Array1D<SEQ*> overlapSeq(16);
+  Array1D<SEQ*> residueSeq(16);
+  Array1D<SEQ*>* dgContext = nullptr;
   for (int jj = 1; jj <= *_dgContextHiLvl; jj++) {
     int gridn = *_dgContextDepth + jj;
     for (int kk = 0; kk <= _dgContextHiTrack[gridn]; kk++) {
@@ -2795,7 +2790,7 @@ void extMeasure::getDgOverlap(CoupleOptions& options)
 
 void extMeasure::initTargetSeq()
 {
-  Ath__array1D<SEQ*>* dgContext = nullptr;
+  Array1D<SEQ*>* dgContext = nullptr;
   SEQ* seq;
   for (int jj = 1; jj <= *_dgContextHiLvl; jj++) {
     int gridn = *_dgContextDepth + jj;
@@ -2820,7 +2815,7 @@ void extMeasure::printDgContext()
           "diagonalContext %d: baseLevel %d\n",
           _dgContextCnt,
           *_dgContextBaseLvl);
-  Ath__array1D<SEQ*>* dgContext = nullptr;
+  Array1D<SEQ*>* dgContext = nullptr;
   SEQ* seq = nullptr;
   for (int jj = *_dgContextLowLvl; jj <= *_dgContextHiLvl; jj++) {
     int gridn = *_dgContextDepth + jj;

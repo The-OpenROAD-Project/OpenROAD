@@ -102,10 +102,8 @@ extern int Ord_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-using odb::dbBlock;
 using odb::dbChip;
 using odb::dbDatabase;
-using odb::dbLib;
 using odb::dbTech;
 
 using utl::ORD;

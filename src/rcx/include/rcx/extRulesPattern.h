@@ -90,8 +90,8 @@ class extRulesPat
   int _ll_last[2];
   int _ur_last[2];
 
-  int _LL[2000][2];
-  int _UR[2000][2];
+  int _ll_1[2000][2];
+  int _ur_1[2000][2];
   char _patName[2000][2000];
 
   FILE* _def_fp;
@@ -114,13 +114,13 @@ class extRulesPat
               bool diag,
               bool res,
               uint32_t len,
-              int org[2],
-              int LL[2],
-              int UR[2],
+              const int org[2],
+              const int LL[2],
+              const int UR[2],
               odb::dbBlock* block,
               extMain* xt,
               odb::dbTech* tech);
-  void PrintOrigin(FILE* fp, int ll[2], uint32_t met, const char* msg);
+  void PrintOrigin(FILE* fp, const int ll[2], uint32_t met, const char* msg);
   void UpdateOrigin_start(uint32_t met);
   void UpdateOrigin_wires(int ll[2], int ur[2]);
   int GetOrigin_end(int ur[2]);
@@ -182,19 +182,19 @@ class extRulesPat
 
   void Print(FILE* fp, uint32_t jj);
   void Print(FILE* fp);
-  void PrintBbox(FILE* fp, int LL[2], int UR[2]);
+  void PrintBbox(FILE* fp, const int LL[2], const int UR[2]);
   void WriteDB(uint32_t dir, uint32_t met, odb::dbTechLayer* layer);
   void WriteDB(uint32_t jj,
                uint32_t dir,
                uint32_t met,
                odb::dbTechLayer* layer,
                FILE* fp);
-  void WriteWire(FILE* fp, int ll[2], int ur[2], char* name);
+  void WriteWire(FILE* fp, const int ll[2], const int ur[2], char* name);
 
   odb::dbBTerm* createBterm1(bool lo,
                              odb::dbNet* net,
-                             int ll[2],
-                             int ur[2],
+                             const int ll[2],
+                             const int ur[2],
                              const char* postFix,
                              odb::dbTechLayer* layer,
                              uint32_t width,

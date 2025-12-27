@@ -360,8 +360,8 @@ void FlexRP::prep_cutSpcTbl()
                    odb::dbTechLayerCutSpacingTableDefRule::SECOND)});
           con->setDefaultCenterToCenter(
               dbRule->isCenterToCenter(cutClass1, cutClass2));
-          con->setDefaultCenterAndEdge(dbRule->isCenterAndEdge(
-              std::move(cutClass1), std::move(cutClass2)));
+          con->setDefaultCenterAndEdge(
+              dbRule->isCenterAndEdge(cutClass1, cutClass2));
         }
       }
     }

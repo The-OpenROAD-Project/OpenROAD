@@ -778,7 +778,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
 }
 
 // Special Net
-int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
+int snetf(defrCallbackType_e c, const defiNet* net, defiUserData ud)
 {
   // For net and special net.
   int i, j, x, y, z;
@@ -1211,7 +1211,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
   return 0;
 }
 
-int ndr(defrCallbackType_e c, defiNonDefault* nd, defiUserData ud)
+int ndr(defrCallbackType_e c, const defiNonDefault* nd, defiUserData ud)
 {
   // For nondefaultrule
   int i;
@@ -1295,7 +1295,7 @@ char* address(const char* in)
 }
 
 // Assertion or Constraints
-void operand(defrCallbackType_e c, defiAssertion* a, int ind)
+void operand(defrCallbackType_e c, const defiAssertion* a, int ind)
 {
   int i, first = 1;
   char* netName;
@@ -1343,7 +1343,7 @@ void operand(defrCallbackType_e c, defiAssertion* a, int ind)
 }
 
 // Assertion or Constraints
-int constraint(defrCallbackType_e c, defiAssertion* a, defiUserData ud)
+int constraint(defrCallbackType_e c, const defiAssertion* a, defiUserData ud)
 {
   // Handles both constraints and assertions
 
@@ -1382,7 +1382,7 @@ int constraint(defrCallbackType_e c, defiAssertion* a, defiUserData ud)
 }
 
 // Property definitions
-int prop(defrCallbackType_e c, defiProp* p, defiUserData ud)
+int prop(defrCallbackType_e c, const defiProp* p, defiUserData ud)
 {
   checkType(c);
   if (ud != userData) {

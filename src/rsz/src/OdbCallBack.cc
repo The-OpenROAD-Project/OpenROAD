@@ -25,12 +25,10 @@
 namespace rsz {
 
 using sta::dbNetwork;
-using sta::Instance;
 using sta::InstancePinIterator;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Network;
-using sta::Pin;
 
 OdbCallBack::OdbCallBack(Resizer* resizer,
                          Network* network,

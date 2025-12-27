@@ -80,7 +80,7 @@ void Ext::bench_wires(const BenchWiresOptions& bwo)
     opt._underMet = 0;
   }
 
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
 
   std::string w_list(bwo.w_list);
   std::string s_list(bwo.s_list);
@@ -303,7 +303,7 @@ void Ext::read_spef(ReadSpefOpts& opt)
   bool stampWire = opt.stamp_wire;
   uint32_t testParsing = opt.test_parsing;
 
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   char* filename = (char*) opt.file;
   if (!filename || !filename[0]) {
     logger_->error(RCX, 2, "Filename is not defined!");
@@ -358,7 +358,7 @@ void Ext::diff_spef(const DiffOptions& opt)
   }
   logger_->info(RCX, 19, "diffing spef {}", opt.file);
 
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   parser.mkWords(opt.file);
 
   _ext->readSPEF(parser.get(0),
@@ -410,7 +410,7 @@ void Ext::calibrate(const std::string& spef_file,
                    "filename using -spef_file");
   }
   logger_->info(RCX, 21, "calibrate on spef file  {}", spef_file.c_str());
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   parser.mkWords((char*) spef_file.c_str());
   _ext->calibrate(parser.get(0),
                   m_map,
@@ -439,7 +439,7 @@ bool Ext::gen_rcx_model(const std::string& spef_file_list,
         RCX, 145, "\nCorner List option -corner_list  is required\n");
   }
 
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   int n = parser.mkWords(spef_file_list.c_str());
 
   std::list<std::string> file_list;
@@ -474,7 +474,7 @@ bool Ext::define_rcx_corners(const std::string& corner_list)
 
   _ext->setBlockFromChip();
 
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   int n1 = parser.mkWords(corner_list.c_str());
   for (int ii = 0; ii < n1; ii++) {
     const char* name = parser.get(ii);

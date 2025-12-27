@@ -39,7 +39,7 @@ struct InstOptions
   odb::dbSourceType type{odb::dbSourceType::NONE};
   odb::Point location;
   odb::dbPlacementStatus status{odb::dbPlacementStatus::NONE};
-  std::vector<ITermInfo> iterms{};
+  std::vector<ITermInfo> iterms;
 };
 
 struct BTermOptions

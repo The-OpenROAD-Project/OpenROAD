@@ -9,7 +9,7 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-using namespace odb;
+namespace odb {
 
 void MaxSpacingParser::setMaxSpacing(dbTechLayerMaxSpacingRule* rule,
                                      double spc)
@@ -41,3 +41,5 @@ void MaxSpacingParser::parse(const std::string& s)
                     s);
   }
 }
+
+}  // namespace odb

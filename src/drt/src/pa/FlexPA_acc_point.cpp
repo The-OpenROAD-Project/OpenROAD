@@ -887,6 +887,10 @@ void FlexPA::filterViaAccess(
   if (via_defs.empty()) {  // no via map entry
     // hardcode first two single vias
     for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
+      if (inst_term && inst_term->isStubborn()
+          && avoid_via_defs_.contains(via_def)) {
+        continue;
+      }
       via_defs.emplace_back(via_defs.size(), via_def);
       if (via_defs.size() >= max_num_via_trial && !deep_search) {
         break;
@@ -898,7 +902,7 @@ void FlexPA::filterViaAccess(
   for (auto& [idx, via_def] : via_defs) {
     auto via = std::make_unique<frVia>(via_def, begin_point);
     const odb::Rect box = via->getLayer1BBox();
-    if (inst_term) {
+    if (inst_term && !deep_search) {
       odb::Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
       if (!boundary_bbox.contains(box)) {
         continue;

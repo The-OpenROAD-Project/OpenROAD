@@ -336,7 +336,7 @@ int nondefRulef(defrCallbackType_e c, const char* ruleName, defiUserData ud)
   return 0;
 }
 
-int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
+int netf(defrCallbackType_e c, const defiNet* net, defiUserData ud)
 {
   // For net and special net.
   int i, j, k, w, x, y, z, count, newLayer;
@@ -677,7 +677,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
   return 0;
 }
 
-int snetpath(defrCallbackType_e c, defiNet* ppath, defiUserData ud)
+int snetpath(defrCallbackType_e c, const defiNet* ppath, defiUserData ud)
 {
   int i, j, x, y, z, count, newLayer;
   char* layerName;
@@ -1011,7 +1011,7 @@ int snetpath(defrCallbackType_e c, defiNet* ppath, defiUserData ud)
   return 0;
 }
 
-int snetwire(defrCallbackType_e c, defiNet* ppath, defiUserData ud)
+int snetwire(defrCallbackType_e c, const defiNet* ppath, defiUserData ud)
 {
   int i, j, x, y, z, count = 0, newLayer;
   defiPath* p;
@@ -1217,7 +1217,7 @@ int snetwire(defrCallbackType_e c, defiNet* ppath, defiUserData ud)
   return 0;
 }
 
-int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
+int snetf(defrCallbackType_e c, const defiNet* net, defiUserData ud)
 {
   // For net and special net.
   int i, j, x, y, z, count, newLayer;
@@ -1624,7 +1624,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
   return 0;
 }
 
-int ndr(defrCallbackType_e c, defiNonDefault* nd, defiUserData ud)
+int ndr(defrCallbackType_e c, const defiNonDefault* nd, defiUserData ud)
 {
   // For nondefaultrule
   int i;
@@ -1807,7 +1807,7 @@ int constraintst(defrCallbackType_e c, int num, defiUserData ud)
   return 0;
 }
 
-void operand(defrCallbackType_e c, defiAssertion* a, int ind)
+void operand(defrCallbackType_e c, const defiAssertion* a, int ind)
 {
   int i, first = 1;
   char* netName;
@@ -1854,7 +1854,7 @@ void operand(defrCallbackType_e c, defiAssertion* a, int ind)
   }
 }
 
-int constraint(defrCallbackType_e c, defiAssertion* a, defiUserData ud)
+int constraint(defrCallbackType_e c, const defiAssertion* a, defiUserData ud)
 {
   // Handles both constraints and assertions
 
@@ -1910,7 +1910,7 @@ int propstart(defrCallbackType_e c, void*, defiUserData)
   return 0;
 }
 
-int prop(defrCallbackType_e c, defiProp* p, defiUserData ud)
+int prop(defrCallbackType_e c, const defiProp* p, defiUserData ud)
 {
   checkType(c);
   if (ud != userData) {
@@ -3312,7 +3312,6 @@ void* reallocCB(void* name, size_t size)
 void freeCB(void* name)
 {
   free(name);
-  return;
 }
 
 BEGIN_DEF_PARSER_NAMESPACE
