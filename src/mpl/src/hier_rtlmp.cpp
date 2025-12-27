@@ -2780,7 +2780,7 @@ void HierRTLMP::writeNetFile(const std::string& file_name_prefix,
   for (auto& net : nets) {
     file << macros[net.terminals.first].getName() << "   "
          << macros[net.terminals.second].getName() << "   " << net.weight
-         << std::endl;
+         << '\n';
   }
 }
 
@@ -2791,7 +2791,7 @@ void HierRTLMP::writeFloorplanFile(const std::string& file_name_prefix,
   for (auto& macro : macros) {
     file << macro.getName() << "   " << macro.getX() << "   " << macro.getY()
          << "   " << macro.getWidth() << "   " << macro.getHeight()
-         << std::endl;
+         << '\n';
   }
 }
 

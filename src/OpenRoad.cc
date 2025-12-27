@@ -166,7 +166,7 @@ OpenRoad* OpenRoad::openRoad()
 void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 {
   if (!reinit_ok && app_) {
-    std::cerr << "Attempt to reinitialize the application." << std::endl;
+    std::cerr << "Attempt to reinitialize the application.\n";
     exit(1);
   }
   app_ = app;

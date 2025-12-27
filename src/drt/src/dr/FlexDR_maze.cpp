@@ -1937,8 +1937,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           if (router_cfg_->VERBOSE > 0) {
             std::cout
                 << "Warning: no output maze log specified, skipped writing "
-                   "maze log"
-                << std::endl;
+                   "maze log\n";
           }
         } else {
           gridGraph_.print();
@@ -2458,7 +2457,7 @@ void FlexDRWorker::routeNet_postAstarUpdate(
       }
     }
   } else {
-    std::cout << "Error: routeNet_postAstarUpdate path is empty" << std::endl;
+    std::cout << "Error: routeNet_postAstarUpdate path is empty\n";
   }
   // must be before comment line ABC so that the used actual src is set in
   // gridgraph

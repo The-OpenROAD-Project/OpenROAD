@@ -488,7 +488,7 @@ void SRoute::createSrouteWires(
 
       // check to see if center point is too far
       if ((pdn_wire->xMax() - 1000) < avg_iterm_x) {
-        std::cout << "xmax is " << pdn_wire->xMax() << std::endl;
+        std::cout << "xmax is " << pdn_wire->xMax() << '\n';
         odb::dbSBox::create(nwsw,
                             ongrid[ongrid.size() - 1],
                             pdn_wire->xMax() - metalwidths[0],

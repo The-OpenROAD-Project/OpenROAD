@@ -352,7 +352,7 @@ void setCutClass(
 }
 void print(const std::string& str)
 {
-  std::cout << str << std::endl;
+  std::cout << str << '\n';
 }
 
 template <typename Iterator>

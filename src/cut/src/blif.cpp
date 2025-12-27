@@ -301,12 +301,12 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   if (write_arrival_requireds) {
     for (auto& arrival : arrivals_) {
       f << ".input_arrival " << arrival.first << " " << arrival.second.first
-        << " " << arrival.second.second << std::endl;
+        << " " << arrival.second.second << '\n';
     }
 
     for (auto& required : requireds_) {
       f << ".output_required " << required.first << " " << required.second.first
-        << " " << required.second.second << std::endl;
+        << " " << required.second.second << '\n';
     }
   }
 

@@ -83,7 +83,7 @@ void HungarianAlgorithm::assignmentoptimal(int* assignment,
   for (int row = 0; row < n_of_elements; row++) {
     int value = dist_matrix_in[row];
     if (value < 0) {
-      std::cerr << "All matrix elements have to be non-negative." << std::endl;
+      std::cerr << "All matrix elements have to be non-negative.\n";
     }
     dist_matrix[row] = value;
   }

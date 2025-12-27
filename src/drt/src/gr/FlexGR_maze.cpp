@@ -125,7 +125,7 @@ void FlexGRWorker::route_mazeIterInit()
                   cptr->getGrNet()->setRipup(true);
                 } else {
                   std::cout << "Error: route_mazeIterInit hasGrNet() empty"
-                            << std::endl;
+                            << '\n';
                 }
               }
             }
@@ -343,7 +343,7 @@ void FlexGRWorker::modCong_pathSeg(grPathSeg* pathSeg, bool isAdd)
       }
     }
   } else {
-    std::cout << "Error: non-colinear pathSeg in modCong_pathSeg" << std::endl;
+    std::cout << "Error: non-colinear pathSeg in modCong_pathSeg\n";
   }
 }
 
@@ -497,7 +497,7 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
   nodeQ.push_back(root);
 
   std::cout << "start traversing subnet of " << net->getFrNet()->getName()
-            << std::endl;
+            << '\n';
 
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
@@ -515,7 +515,7 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
     odb::Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
     std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-              << std::endl;
+              << '\n';
 
     for (auto child : node->getChildren()) {
       nodeQ.push_back(child);
@@ -531,7 +531,7 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
       odb::Point loc = child->getLoc();
       frLayerNum lNum = child->getLayerNum();
       std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-                << std::endl;
+                << '\n';
     }
   }
 }
@@ -627,7 +627,7 @@ grNode* FlexGRWorker::routeNet_getNextDst(
 
   if (nextDst == nullptr) {
     std::cout << "Error: nextDst node is nullptr\n" << std::flush;
-    std::cout << nextDst->getNet()->getFrNet()->getName() << std::endl;
+    std::cout << nextDst->getNet()->getFrNet()->getName() << '\n';
   }
   return nextDst;
 }
@@ -653,7 +653,7 @@ grNode* FlexGRWorker::routeNet_postAstarUpdate(
     gridGraph_.setSrc(mi);
     localConnComps.insert(mi);
   } else {
-    std::cout << "Error: routeNet_postAstarUpdate path is empty" << std::endl;
+    std::cout << "Error: routeNet_postAstarUpdate path is empty\n";
   }
 
   for (int i = 0; i < (int) path.size() - 1; i++) {

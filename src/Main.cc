@@ -371,7 +371,7 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
 
   if (Tcl_Eval(interp, tcl_script) == TCL_ERROR) {
     std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp)
-              << std::endl;
+              << '\n';
     return "";
   }
 
