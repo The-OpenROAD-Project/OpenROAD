@@ -3402,7 +3402,8 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outFile = *argv;
-      if ((fout = fopen(outFile, "w")) == nullptr) {
+      fout = fopen(outFile, "w");
+      if (fout == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }
@@ -3649,7 +3650,8 @@ int main(int argc, char** argv)
 
   if (test1) {  // for special tests
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
-      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
+      f = fopen(inFile[fileCt], "r");
+      if (f == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3689,7 +3691,8 @@ int main(int argc, char** argv)
         defrEnableAllMsgs();
       }
 
-      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
+      f = fopen(inFile[fileCt], "r");
+      if (f == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3710,7 +3713,7 @@ int main(int argc, char** argv)
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
       if (strcmp(inFile[fileCt], "STDIN") == 0) {
         f = stdin;
-      } else if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
+      } else if (f = fopen(inFile[fileCt], "r"); f == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }

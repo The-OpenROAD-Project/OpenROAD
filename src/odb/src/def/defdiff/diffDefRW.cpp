@@ -1610,7 +1610,8 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       // is set to 1
       if (ignorePE) {
         // check if .extra is in the name, if it is, ignore it
-        if ((extraPinName = strstr(pName, ".extra")) == nullptr) {
+        extraPinName = strstr(pName, ".extra");
+        if (extraPinName == nullptr) {
           tmpPinName = pName;
         } else {
           // make sure name ends with .extraNNN
@@ -2754,13 +2755,14 @@ int diffDefReadFile(char* inFile,
     netSeCmp = 1;
   }
 
-  FILE* f;
-  if ((f = fopen(inFile, "r")) == nullptr) {
+  FILE* f = fopen(inFile, "r");
+  if (f == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == nullptr) {
+  fout = fopen(outFile, "w");
+  if (fout == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);

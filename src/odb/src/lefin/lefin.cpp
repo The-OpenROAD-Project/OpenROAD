@@ -1761,7 +1761,8 @@ void lefinReader::site(LefParser::lefiSite* lefsite)
   }
 
   for (dbLib* lib : db_->getLibs()) {
-    if ((site = lib->findSite(lefsite->name()))) {
+    site = lib->findSite(lefsite->name());
+    if (site) {
       logger_->info(utl::ODB,
                     394,
                     "Duplicate site {} in {} already seen in {}",
