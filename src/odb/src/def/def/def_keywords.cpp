@@ -1134,10 +1134,14 @@ void defrData::defInfo(int msgNum, const char* s)
   } else {
     if (!hasOpenedDefLogFile) {
       if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING(DEFPARS-8500): Unable to open the file defRWarning.log in "
             "%s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1151,10 +1155,14 @@ void defrData::defInfo(int msgNum, const char* s)
       }
     } else {
       if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (DEFPARS-8500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1215,10 +1223,14 @@ void defrData::defWarning(int msgNum, const char* s)
   } else {
     if (!hasOpenedDefLogFile) {
       if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (DEFPARS-7500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1232,10 +1244,14 @@ void defrData::defWarning(int msgNum, const char* s)
       }
     } else {
       if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (DEFAPRS-7501): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
