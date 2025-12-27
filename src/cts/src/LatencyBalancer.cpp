@@ -549,33 +549,23 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
           = db_->findMaster(options_->getRootBuffer().c_str());
 
       odb::dbInst* lastBuffer = nullptr;
-      if (i < numBuffers - 1) {
-        // Use driver pin buffering
-        lastBuffer = drivingNet->insertBufferAfterDriver(
-            drvrPin, bufferMaster, &loc, newBufferName.c_str());
-      } else {
-        // Set the load pins
-        // TODO: Not sure if sinksInput is a set of partial load pins or
-        // has all load pins. If sinksInput contains the all load pins always,
-        // the expensive insertBufferBeforeLoads() is not needed.
-        std::set<odb::dbObject*> load_pins;
-        for (odb::dbITerm* sinkInput : sinksInput) {
-          load_pins.insert(sinkInput);
-        }
 
-        // Use load pins buffering at the end
-
-        // load_pins are not connected yet. So this option is required.
-        bool loads_on_different_nets = true;
-        lastBuffer = drivingNet->insertBufferBeforeLoads(
-            load_pins,
-            bufferMaster,
-            &loc,
-            newBufferName.c_str(),
-            newNetName.c_str(),
-            odb::dbNameUniquifyType::ALWAYS,
-            loads_on_different_nets);
+      // Use load pins buffering at the end
+      std::set<odb::dbObject*> load_pins;
+      for (odb::dbITerm* sinkInput : sinksInput) {
+        load_pins.insert(sinkInput);
       }
+
+      // load_pins are not connected yet. So this option is required.
+      bool loads_on_different_nets = true;
+      lastBuffer = drivingNet->insertBufferBeforeLoads(
+          load_pins,
+          bufferMaster,
+          &loc,
+          newBufferName.c_str(),
+          newNetName.c_str(),
+          odb::dbNameUniquifyType::IF_NEEDED,
+          loads_on_different_nets);
 
       debugPrint(logger_,
                  CTS,

@@ -304,8 +304,8 @@ delta HPWL                44019 %
 [INFO CTS-0033] Balancing latency for clock core
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_0_core is inserted at (1005383 1975061)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_1_core is inserted at (1004321 1975143)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_core is inserted at (1004458 1962433)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_core is inserted at (1003836 1963891)
+[DEBUG CTS-insertion delay] new delay buffer h1/delaybuf_2_core is inserted at (1004458 1962433)
+[DEBUG CTS-insertion delay] new delay buffer h1/delaybuf_3_core is inserted at (1003836 1963891)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_4_core is inserted at (1005080 1978475)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_5_core is inserted at (1005080 1981975)
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_6_core is inserted at (1005080 1985475)
