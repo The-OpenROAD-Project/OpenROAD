@@ -78,7 +78,7 @@ Path Type: max
         2224.08   slack (MET)
 
 
-[INFO RSZ-0026] Removed 1052 buffers.
+[INFO RSZ-0026] Removed 1053 buffers.
 Startpoint: riscv.dp.pcreg.q[31]$_DFF_PP0_
             (rising edge-triggered flip-flop clocked by clk)
 Endpoint: riscv.dp.rf.rf[13][17]$_DFFE_PP_

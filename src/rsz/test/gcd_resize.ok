@@ -42,15 +42,15 @@ Pin                                    Limit     Cap   Slack
 _449_/ZN                               10.47    3.45    7.02 (MET)
 
 Driver    length delay
-_759_/Z manhtn 83.9 steiner 83.9 0.00
-_850_/Z manhtn 80.7 steiner 80.7 0.00
+_759_/Z manhtn 105.4 steiner 105.4 0.00
+_850_/Z manhtn 95.8 steiner 95.8 0.00
 _786_/Z manhtn 80.4 steiner 80.4 0.00
 _813_/Z manhtn 78.4 steiner 78.4 0.00
+_847_/Z manhtn 77.7 steiner 77.7 0.00
 _839_/Z manhtn 76.3 steiner 76.3 0.00
 _551_/Z manhtn 73.6 steiner 73.7 0.00
+_851_/Z manhtn 69.5 steiner 69.5 0.00
 reset manhtn 67.3 steiner 67.3 0.00
-_461_/Z manhtn 63.8 steiner 84.8 0.00
-req_msg[18] manhtn 61.4 steiner 61.4 0.00
-_847_/Z manhtn 60.3 steiner 60.3 0.00
-_851_/Z manhtn 58.3 steiner 58.3 0.00
+_725_/Z manhtn 67.2 steiner 67.2 0.00
+_849_/Z manhtn 64.8 steiner 64.8 0.00
 Design area 751 um^2 12% utilization.

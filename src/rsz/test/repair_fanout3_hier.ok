@@ -32,18 +32,18 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0020] Standard cells area:           321.062 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3620250
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 34162
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 31856
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 31998
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 30972
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 32596
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 31300
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000005 HPWL: 31350
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 30416
 Placement Analysis
 ---------------------------------
-total displacement        792.8 u
+total displacement        792.6 u
 average displacement       11.2 u
-max displacement           18.0 u
-original HPWL               3.7 u
-legalized HPWL            113.3 u
-delta HPWL                 2955 %
+max displacement           18.1 u
+original HPWL               3.6 u
+legalized HPWL            113.6 u
+delta HPWL                 3032 %
 
 max fanout
 

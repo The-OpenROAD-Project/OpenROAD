@@ -28,6 +28,8 @@ or_integration_tests(
     fanin_fanout1
     gain_buffering1
     gcd_resize
+    insert_buffer
+    insert_buffer_hier
     liberty_dont_use
     pin_swap1
     pinswap_flat

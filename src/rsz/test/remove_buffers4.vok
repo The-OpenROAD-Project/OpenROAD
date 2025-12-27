@@ -36,7 +36,6 @@ module top (clk,
  wire n3;
  wire n4;
  wire n5;
- wire n6;
  wire reg1_q;
  wire reg2_q;
  wire sub1_out1;
@@ -52,8 +51,6 @@ module top (clk,
     .B1(n2),
     .B2(sub1_out2),
     .ZN(out5));
- BUF_X1 b1 (.A(n5),
-    .Z(n6));
  NAND2_X1 nand1 (.A1(sub1_out1),
     .A2(n3),
     .ZN(n4));
@@ -86,6 +83,6 @@ module top (clk,
     .Z(n3));
  assign out2 = n4;
  assign out3 = n5;
- assign out4 = n6;
+ assign out4 = n5;
  assign out1 = reg2_q;
 endmodule

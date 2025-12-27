@@ -276,7 +276,7 @@ void dbLib::setLefUnits(int units)
   lib->lef_units_ = units;
 }
 
-char dbLib::getHierarchyDelimiter()
+char dbLib::getHierarchyDelimiter() const
 {
   _dbLib* lib = (_dbLib*) this;
   return lib->hier_delimiter_;

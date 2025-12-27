@@ -81,10 +81,10 @@ TRACKS Y 3340 DO 62 STEP 3200 LAYER metal9 ;
 TRACKS X 3390 DO 62 STEP 3200 LAYER metal10 ;
 TRACKS Y 3340 DO 62 STEP 3200 LAYER metal10 ;
 COMPONENTS 5 ;
-    - input1 BUF_X1 + SOURCE TIMING + PLACED ( 101270 176400 ) N ;
-    - input2 BUF_X1 + SOURCE TIMING + PLACED ( 99750 176400 ) N ;
-    - output3 BUF_X1 + SOURCE TIMING + PLACED ( 100510 176400 ) N ;
-    - output4 BUF_X1 + SOURCE TIMING + PLACED ( 98990 176400 ) N ;
+    - input1 BUF_X1 + SOURCE TIMING + PLACED ( 101270 199930 ) N ;
+    - input2 BUF_X1 + SOURCE TIMING + PLACED ( 99750 199930 ) N ;
+    - output3 BUF_X1 + SOURCE TIMING + PLACED ( 100510 199930 ) N ;
+    - output4 BUF_X1 + SOURCE TIMING + PLACED ( 98990 199930 ) N ;
     - r1 DFF_X1 + PLACED ( 96726 170871 ) N ;
 END COMPONENTS
 PINS 4 ;
@@ -100,7 +100,7 @@ PINS 4 ;
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )
         + PLACED ( 100510 199930 ) N ;
-    - out2 + NET net3 + DIRECTION OUTPUT + USE SIGNAL
+    - out2 + NET net4 + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )
         + PLACED ( 98990 199930 ) N ;
@@ -110,8 +110,8 @@ NETS 7 ;
     - in1 ( PIN in1 ) ( input2 A ) + USE SIGNAL ;
     - net1 ( input1 Z ) ( r1 CK ) + USE SIGNAL ;
     - net2 ( input2 Z ) ( r1 D ) + USE SIGNAL ;
-    - net3 ( PIN out2 ) ( output4 Z ) + USE SIGNAL ;
-    - net4 ( output4 A ) ( output3 A ) ( r1 Q ) + USE SIGNAL ;
+    - net3 ( output4 A ) ( output3 A ) ( r1 Q ) + USE SIGNAL ;
+    - net4 ( PIN out2 ) ( output4 Z ) + USE SIGNAL ;
     - out1 ( PIN out1 ) ( output3 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

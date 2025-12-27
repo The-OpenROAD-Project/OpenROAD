@@ -22,7 +22,10 @@
 #include <string>
 
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -181,6 +184,14 @@ std::string dbModBTerm::getHierarchicalName() const
                      parent->getModInst()->getHierarchicalName(),
                      block->getHierarchyDelimiter(),
                      getName());
+}
+
+dbModInst* dbModBTerm::getModInst() const
+{
+  if (dbModITerm* parent_iterm = getParentModITerm()) {
+    return parent_iterm->getParent();
+  }
+  return nullptr;
 }
 
 void dbModBTerm::setModNet(dbModNet* modNet)

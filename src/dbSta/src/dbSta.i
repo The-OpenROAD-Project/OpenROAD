@@ -225,6 +225,7 @@ void check_axioms_cmd()
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
   sta->getDbNetwork()->checkAxioms();
+  sta->checkSanity();
 }
 
 } // namespace sta

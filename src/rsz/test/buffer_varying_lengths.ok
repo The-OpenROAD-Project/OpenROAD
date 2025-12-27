@@ -73,13 +73,13 @@ i1-79/Z                                60.65   28.24   32.41 (MET)
     675.0 |        3.46 |       0.06 |  BUF_X8
     700.0 |        3.46 |       0.06 |  BUF_X8
     725.0 |        3.46 |       0.07 |  BUF_X8
-    750.0 |        5.32 |       0.08 |  BUF_X4 BUF_X8
-    775.0 |        5.32 |       0.08 |  BUF_X4 BUF_X8
-    800.0 |        5.32 |       0.09 |  BUF_X4 BUF_X8
-    825.0 |        5.32 |       0.09 |  BUF_X4 BUF_X8
-    850.0 |        5.32 |       0.09 |  BUF_X4 BUF_X8
-    875.0 |        5.32 |       0.09 |  BUF_X4 BUF_X8
-    900.0 |        5.32 |       0.10 |  BUF_X4 BUF_X8
+    750.0 |        5.32 |       0.08 |  BUF_X8 BUF_X4
+    775.0 |        5.32 |       0.08 |  BUF_X8 BUF_X4
+    800.0 |        5.32 |       0.09 |  BUF_X8 BUF_X4
+    825.0 |        5.32 |       0.09 |  BUF_X8 BUF_X4
+    850.0 |        5.32 |       0.09 |  BUF_X8 BUF_X4
+    875.0 |        5.32 |       0.09 |  BUF_X8 BUF_X4
+    900.0 |        5.32 |       0.10 |  BUF_X8 BUF_X4
     925.0 |        6.92 |       0.10 |  BUF_X8 BUF_X8
     950.0 |        6.92 |       0.10 |  BUF_X8 BUF_X8
     975.0 |        6.92 |       0.10 |  BUF_X8 BUF_X8
@@ -92,14 +92,14 @@ i1-79/Z                                60.65   28.24   32.41 (MET)
    1150.0 |        3.72 |       0.12 |  BUF_X4 BUF_X4
    1175.0 |        3.72 |       0.12 |  BUF_X4 BUF_X4
    1200.0 |        3.72 |       0.12 |  BUF_X4 BUF_X4
-   1225.0 |        8.78 |       0.14 |  BUF_X4 BUF_X8 BUF_X8
-   1250.0 |        8.78 |       0.14 |  BUF_X4 BUF_X8 BUF_X8
-   1275.0 |        8.78 |       0.15 |  BUF_X4 BUF_X8 BUF_X8
-   1300.0 |        8.78 |       0.15 |  BUF_X4 BUF_X8 BUF_X8
-   1325.0 |        8.78 |       0.15 |  BUF_X4 BUF_X8 BUF_X8
-   1350.0 |        8.78 |       0.15 |  BUF_X4 BUF_X8 BUF_X8
-   1375.0 |        8.78 |       0.16 |  BUF_X4 BUF_X8 BUF_X8
-   1400.0 |        8.78 |       0.16 |  BUF_X4 BUF_X8 BUF_X8
+   1225.0 |        8.78 |       0.14 |  BUF_X8 BUF_X8 BUF_X4
+   1250.0 |        8.78 |       0.14 |  BUF_X8 BUF_X8 BUF_X4
+   1275.0 |        8.78 |       0.15 |  BUF_X8 BUF_X8 BUF_X4
+   1300.0 |        8.78 |       0.15 |  BUF_X8 BUF_X8 BUF_X4
+   1325.0 |        8.78 |       0.15 |  BUF_X8 BUF_X8 BUF_X4
+   1350.0 |        8.78 |       0.15 |  BUF_X8 BUF_X8 BUF_X4
+   1375.0 |        8.78 |       0.16 |  BUF_X8 BUF_X8 BUF_X4
+   1400.0 |        8.78 |       0.16 |  BUF_X8 BUF_X8 BUF_X4
    1425.0 |       10.37 |       0.16 |  BUF_X8 BUF_X8 BUF_X8
    1450.0 |       10.37 |       0.16 |  BUF_X8 BUF_X8 BUF_X8
    1475.0 |       10.37 |       0.16 |  BUF_X8 BUF_X8 BUF_X8
@@ -112,11 +112,11 @@ i1-79/Z                                60.65   28.24   32.41 (MET)
    1650.0 |       10.37 |       0.19 |  BUF_X8 BUF_X8 BUF_X8
    1675.0 |       10.37 |       0.19 |  BUF_X8 BUF_X8 BUF_X8
    1700.0 |        8.78 |       0.19 |  BUF_X8 BUF_X4 BUF_X8
-   1725.0 |       12.24 |       0.20 |  BUF_X4 BUF_X8 BUF_X8 BUF_X8
-   1750.0 |       12.24 |       0.20 |  BUF_X4 BUF_X8 BUF_X8 BUF_X8
-   1775.0 |       12.24 |       0.21 |  BUF_X4 BUF_X8 BUF_X8 BUF_X8
-   1800.0 |       12.24 |       0.21 |  BUF_X4 BUF_X8 BUF_X8 BUF_X8
-   1825.0 |       12.24 |       0.21 |  BUF_X4 BUF_X8 BUF_X8 BUF_X8
+   1725.0 |       12.24 |       0.20 |  BUF_X8 BUF_X8 BUF_X8 BUF_X4
+   1750.0 |       12.24 |       0.20 |  BUF_X8 BUF_X8 BUF_X8 BUF_X4
+   1775.0 |       12.24 |       0.21 |  BUF_X8 BUF_X8 BUF_X8 BUF_X4
+   1800.0 |       12.24 |       0.21 |  BUF_X8 BUF_X8 BUF_X8 BUF_X4
+   1825.0 |       12.24 |       0.21 |  BUF_X8 BUF_X8 BUF_X8 BUF_X4
    1850.0 |        5.59 |       0.19 |  BUF_X4 BUF_X4 BUF_X4
    1875.0 |        5.59 |       0.19 |  BUF_X4 BUF_X4 BUF_X4
    1900.0 |        5.59 |       0.19 |  BUF_X4 BUF_X4 BUF_X4
@@ -171,13 +171,13 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-place337/Z                              0.20    0.06    0.14 (MET)
+place334/Z                              0.20    0.06    0.14 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-place337/Z                             60.65   27.72   32.93 (MET)
+place334/Z                             60.65   27.72   32.93 (MET)
 
 -------------------------------------------------------------
  Distance | Buffer area | Path delay | Sequence
