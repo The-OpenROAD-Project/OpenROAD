@@ -73,11 +73,14 @@ extRulesPat::extRulesPat(const char* pat,
   _diagSpaceCnt = 5;
   _init_origin[0] = org[0];
   _init_origin[1] = org[1];
+  _origin[0] = 0;
+  _origin[1] = 0;
 
   _block = block;
   _tech = tech;
   _extMain = xt;
   _dbunit = _block->getDbUnitsPerMicron();
+  _patternSep = 0;
 
   if (_res) {
     strcpy(_name_prefix, "R");
