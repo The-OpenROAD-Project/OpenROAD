@@ -15,23 +15,29 @@
 
 namespace rmp {
 
-class AnnealingStrategy final : public SlackTuningStrategy
+class GeneticStrategy final : public SlackTuningStrategy
 {
  public:
-  explicit AnnealingStrategy(sta::Corner* corner,
-                             sta::Slack slack_threshold,
-                             std::optional<std::mt19937::result_type> seed,
-                             std::optional<float> temperature,
-                             unsigned iterations,
-                             std::optional<unsigned> revert_after,
-                             unsigned initial_ops)
+  explicit GeneticStrategy(sta::Corner* corner,
+                           sta::Slack slack_threshold,
+                           std::optional<std::mt19937::result_type> seed,
+                           unsigned pop_size,
+                           float mut_prob,
+                           float cross_prob,
+                           unsigned tourn_size,
+                           float tourn_prob,
+                           unsigned iterations,
+                           unsigned initial_ops)
       : SlackTuningStrategy(corner,
                             slack_threshold,
                             seed,
                             iterations,
                             initial_ops),
-        temperature_(temperature),
-        revert_after_(revert_after)
+        pop_size_(pop_size),
+        mut_prob_(mut_prob),
+        cross_prob_(cross_prob),
+        tourn_size_(tourn_size),
+        tourn_prob_(tourn_prob)
   {
   }
 
@@ -45,8 +51,11 @@ class AnnealingStrategy final : public SlackTuningStrategy
       utl::Logger* logger) override;
 
  private:
-  std::optional<float> temperature_;
-  std::optional<unsigned> revert_after_;
+  unsigned pop_size_;
+  float mut_prob_;
+  float cross_prob_;
+  unsigned tourn_size_;
+  float tourn_prob_;
 };
 
 }  // namespace rmp

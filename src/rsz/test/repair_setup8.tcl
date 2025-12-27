@@ -18,4 +18,6 @@ set_load 1.0 l2q
 
 write_verilog_for_eqy repair_setup3 before "None"
 repair_timing -setup -verbose -setup_margin -0.5 {*}$repair_args
-run_equivalence_test repair_setup3 ./sky130hd/work_around_yosys/ "None"
+run_equivalence_test repair_setup3 \
+  -lib_dir ./sky130hd/work_around_yosys/ \
+  -remove_cells "None"
