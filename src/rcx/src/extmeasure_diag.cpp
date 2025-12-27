@@ -662,7 +662,9 @@ int extMeasureRC::ConnectWires(uint32_t dir)
     }
   }
   if (_extMain->_dbgOption > 1) {
-    PrintAllGrids(dir, OpenPrintFile(dir, "wires"), 0);
+    FILE* file = OpenPrintFile(dir, "wires");
+    PrintAllGrids(dir, file, 0);
+    fclose(file);
   }
   return cnt;
 }
