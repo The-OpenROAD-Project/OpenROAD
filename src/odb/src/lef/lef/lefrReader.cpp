@@ -1583,6 +1583,7 @@ void lefrUnsetReadFunction()
 {
   LEF_INIT;
   lefSettings->ReadFunction = nullptr;
+  init_call_func = nullptr;
 }
 
 // Set the maximum number of warnings
