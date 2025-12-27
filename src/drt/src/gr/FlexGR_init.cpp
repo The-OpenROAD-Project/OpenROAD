@@ -797,8 +797,7 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
             }
           }
         } else {
-          std::cout << "Error: non-colinear pathSeg in updateCMap_net"
-                    << '\n';
+          std::cout << "Error: non-colinear pathSeg in updateCMap_net\n";
         }
       }
     }

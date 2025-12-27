@@ -2790,8 +2790,7 @@ void HierRTLMP::writeFloorplanFile(const std::string& file_name_prefix,
   std::ofstream file(file_name_prefix + ".fp.txt");
   for (auto& macro : macros) {
     file << macro.getName() << "   " << macro.getX() << "   " << macro.getY()
-         << "   " << macro.getWidth() << "   " << macro.getHeight()
-         << '\n';
+         << "   " << macro.getWidth() << "   " << macro.getHeight() << '\n';
   }
 }
 

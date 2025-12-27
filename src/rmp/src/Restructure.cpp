@@ -576,7 +576,8 @@ void Restructure::writeOptCommands(std::ofstream& script)
       script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
       script << "choice\n";
       script << "map -D 0.01\n";
-      script << "buffer -p -c\n" << "topo\n";
+      script << "buffer -p -c\n"
+             << "topo\n";
       break;
     }
     case Mode::DELAY_3: {
@@ -584,7 +585,8 @@ void Restructure::writeOptCommands(std::ofstream& script)
       script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
       script << "choice2\n";
       script << "map -D 0.01\n";
-      script << "buffer -p -c\n" << "topo\n";
+      script << "buffer -p -c\n"
+             << "topo\n";
       break;
     }
     case Mode::DELAY_4: {

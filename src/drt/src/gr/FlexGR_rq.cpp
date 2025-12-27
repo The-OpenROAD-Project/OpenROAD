@@ -86,8 +86,7 @@ void FlexGRWorkerRegionQuery::add(
       if (shape->typeId() == frcRect) {
         odb::Rect frb = shape->getBBox();
         xform.apply(frb);
-        allShapes.at(via->getViaDef()->getLayer1Num())
-            .emplace_back(frb, via);
+        allShapes.at(via->getViaDef()->getLayer1Num()).emplace_back(frb, via);
       } else {
         std::cout << "Error: unsupported region query add\n";
       }
@@ -97,8 +96,7 @@ void FlexGRWorkerRegionQuery::add(
       if (shape->typeId() == frcRect) {
         odb::Rect frb = shape->getBBox();
         xform.apply(frb);
-        allShapes.at(via->getViaDef()->getLayer2Num())
-            .emplace_back(frb, via);
+        allShapes.at(via->getViaDef()->getLayer2Num()).emplace_back(frb, via);
       } else {
         std::cout << "Error: unsupported region query add\n";
       }
@@ -108,8 +106,7 @@ void FlexGRWorkerRegionQuery::add(
       if (shape->typeId() == frcRect) {
         odb::Rect frb = shape->getBBox();
         xform.apply(frb);
-        allShapes.at(via->getViaDef()->getCutLayerNum())
-            .emplace_back(frb, via);
+        allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
       } else {
         std::cout << "Error: unsupported region query add\n";
       }

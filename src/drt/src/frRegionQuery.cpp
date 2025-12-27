@@ -331,8 +331,7 @@ void frRegionQuery::Impl::addGRObj(grVia* via,
                                    ObjectsByLayer<grBlockObject>& allShapes)
 {
   odb::Rect frb = via->getBBox();
-  allShapes.at(via->getViaDef()->getCutLayerNum())
-      .emplace_back(frb, via);
+  allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
 }
 
 void frRegionQuery::removeGRObj(grVia* via)
@@ -378,8 +377,7 @@ void frRegionQuery::Impl::add(frVia* via,
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
       xform.apply(frb);
-      allShapes.at(via->getViaDef()->getLayer1Num())
-          .emplace_back(frb, via);
+      allShapes.at(via->getViaDef()->getLayer1Num()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 11, "Unsupported region query add.");
     }
@@ -389,8 +387,7 @@ void frRegionQuery::Impl::add(frVia* via,
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
       xform.apply(frb);
-      allShapes.at(via->getViaDef()->getLayer2Num())
-          .emplace_back(frb, via);
+      allShapes.at(via->getViaDef()->getLayer2Num()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 12, "Unsupported region query add.");
     }
@@ -400,8 +397,7 @@ void frRegionQuery::Impl::add(frVia* via,
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
       xform.apply(frb);
-      allShapes.at(via->getViaDef()->getCutLayerNum())
-          .emplace_back(frb, via);
+      allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 13, "Unsupported region query add.");
     }
@@ -419,8 +415,7 @@ void frRegionQuery::Impl::addDRObj(frVia* via,
                                    ObjectsByLayer<frBlockObject>& allShapes)
 {
   odb::Rect frb = via->getBBox();
-  allShapes.at(via->getViaDef()->getCutLayerNum())
-      .emplace_back(frb, via);
+  allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
 }
 
 void frRegionQuery::removeDRObj(frVia* via)
