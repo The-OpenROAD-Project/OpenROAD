@@ -24,7 +24,9 @@ report_worst_slack -min
 
 write_verilog_for_eqy repair_hold10 before "None"
 repair_timing -hold
-run_equivalence_test repair_hold10 ./sky130hd/work_around_yosys/ "None"
+run_equivalence_test repair_hold10 \
+  -lib_dir ./sky130hd/work_around_yosys/ \
+  -remove_cells "None"
 
 # to compare with updated parasitics below
 report_worst_slack -min
