@@ -2627,6 +2627,18 @@ class dbNet : public dbObject
                                   bool loads_on_diff_nets = false);
 
   ///
+  /// Partial-loads buffering with vector load_pins support.
+  ///
+  dbInst* insertBufferBeforeLoads(std::vector<dbObject*>& load_pins,
+                                  const dbMaster* buffer_master,
+                                  const Point* loc = nullptr,
+                                  const char* new_buf_base_name = nullptr,
+                                  const char* new_net_base_name = nullptr,
+                                  const dbNameUniquifyType& uniquify
+                                  = dbNameUniquifyType::ALWAYS,
+                                  bool loads_on_diff_nets = false);
+
+  ///
   /// Connect a driver iterm to a load iterm, punching ports through hierarchy
   /// as needed.
   ///
