@@ -260,7 +260,7 @@ bool lefinReader::addGeoms(dbObject* object,
         for (j = 0; j < pathItr->numPoints; j++) {
           int x = dbdist(pathItr->x[j]);
           int y = dbdist(pathItr->y[j]);
-          points.push_back(Point(x, y));
+          points.emplace_back(x, y);
         }
 
         int numX = lround(pathItr->xStart);
@@ -475,7 +475,7 @@ void lefinReader::createPolygon(dbObject* object,
   for (int j = 0; j < p->numPoints; ++j) {
     int x = dbdist(p->x[j] + offset_x);
     int y = dbdist(p->y[j] + offset_y);
-    points.push_back(Point(x, y));
+    points.emplace_back(x, y);
   }
 
   dbPolygon* pbox = nullptr;

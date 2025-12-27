@@ -2308,7 +2308,7 @@ void FlexDRWorker::route_queue_init_queue(
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
-      routes.push_back({net, 0, true, nullptr});
+      routes.emplace_back(net, 0, true, nullptr);
       // reserve via because all nets are ripped up
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
@@ -2337,7 +2337,7 @@ void FlexDRWorker::route_queue_init_queue(
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
-      routes.push_back({net, 0, true, nullptr});
+      routes.emplace_back(net, 0, true, nullptr);
       initMazeCost_via_helper(net, true);
     }
   } else if (getRipupMode() == RipUpMode::INCR) {
@@ -2351,7 +2351,7 @@ void FlexDRWorker::route_queue_init_queue(
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
-      routes.push_back({net, 0, true, nullptr});
+      routes.emplace_back(net, 0, true, nullptr);
       // reserve via because all nets are ripped up
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
@@ -2563,7 +2563,7 @@ void FlexDRWorker::route_queue_update_from_marker(
               allowAvoidRipup = true;
               dNet->setNRipupAvoids(0);
             }
-            routes.push_back({dNet, dNet->getNumReroutes(), true, checkingObj});
+            routes.emplace_back(dNet, dNet->getNumReroutes(), true, checkingObj);
           }
         }
       }
@@ -2572,14 +2572,14 @@ void FlexDRWorker::route_queue_update_from_marker(
   for (drNet* dNet : avoidRipupCandidates) {
     if (dNet->getPins().size() <= 1 || allowAvoidRipup) {
       dNet->incNRipupAvoids();
-      checks.push_back({dNet, -1, false, checkingObj});
+      checks.emplace_back(dNet, -1, false, checkingObj);
     } else {
       dNet->setNRipupAvoids(0);
-      routes.push_back({dNet, dNet->getNumReroutes(), true, checkingObj});
+      routes.emplace_back(dNet, dNet->getNumReroutes(), true, checkingObj);
     }
   }
   for (auto& victimOwner : uniqueVictimOwners) {
-    checks.push_back({victimOwner, -1, false, checkingObj});
+    checks.emplace_back(victimOwner, -1, false, checkingObj);
   }
 }
 

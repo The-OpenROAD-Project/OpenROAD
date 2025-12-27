@@ -758,8 +758,7 @@ HGraphPtr Coarsener::Contraction(
       const int hyperedge_c_id = static_cast<int>(hyperedges_c.size());
       hyperedge_cluster_id_vec[e] = hyperedge_c_id;
       hash_map[hash_value] = hyperedge_c_id;
-      hyperedges_c.push_back(
-          std::vector<int>(hyperedge_c.begin(), hyperedge_c.end()));
+      hyperedges_c.emplace_back(hyperedge_c.begin(), hyperedge_c.end());
       hyperedges_weights_c.push_back(hgraph->GetHyperedgeWeights(e));
       if (hgraph->HasTiming()) {
         hyperedge_slack_c.push_back(

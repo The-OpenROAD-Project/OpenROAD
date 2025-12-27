@@ -101,10 +101,10 @@ void SRoute::addSrouteInst(odb::dbNet* net,
   }
 
   if (sroute_itermss_.empty()) {
-    sroute_itermss_.push_back({});
-    sroute_itermss_.push_back({});
-    sroute_itermss_.push_back({});
-    sroute_itermss_.push_back({});
+    sroute_itermss_.emplace_back();
+    sroute_itermss_.emplace_back();
+    sroute_itermss_.emplace_back();
+    sroute_itermss_.emplace_back();
   }
   sroute_itermss_[best_i].push_back(iterm);
 }

@@ -2037,7 +2037,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
             net->setModified(true);
             writeGCPatchesToDRWorker();
           } else {
-            rerouteQueue.push({net, numReroute + 1, false, net});
+            rerouteQueue.emplace(net, numReroute + 1, false, net);
           }
           gcWorker_->clearPWires();
         }

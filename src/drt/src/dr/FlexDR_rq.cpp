@@ -105,7 +105,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
       || connFig->typeId() == drcPatchWire) {
     auto obj = static_cast<drShape*>(connFig);
     odb::Rect frb = obj->getBBox();
-    allShapes.at(obj->getLayerNum()).push_back(std::make_pair(frb, obj));
+    allShapes.at(obj->getLayerNum()).emplace_back(frb, obj);
   } else if (connFig->typeId() == drcVia) {
     auto via = static_cast<drVia*>(connFig);
     odb::dbTransform xform = via->getTransform();
@@ -115,7 +115,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
         odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer1Num())
-            .push_back(std::make_pair(frb, via));
+            .emplace_back(frb, via);
       } else {
         std::cout << "Error: unsupported region query add" << std::endl;
       }
@@ -126,7 +126,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
         odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getLayer2Num())
-            .push_back(std::make_pair(frb, via));
+            .emplace_back(frb, via);
       } else {
         std::cout << "Error: unsupported region query add" << std::endl;
       }
@@ -137,7 +137,7 @@ void FlexDRWorkerRegionQuery::Impl::add(
         odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(via->getViaDef()->getCutLayerNum())
-            .push_back(std::make_pair(frb, via));
+            .emplace_back(frb, via);
       } else {
         std::cout << "Error: unsupported region query add" << std::endl;
       }
