@@ -390,6 +390,7 @@ class GlobalRouter
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
+  void updatePinAccessPoints();
   void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,

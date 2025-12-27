@@ -1,6 +1,7 @@
 #pragma once
 
 #include <csignal>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -8,10 +9,13 @@
 #include <vector>
 
 #include "grt/GRoute.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;
 class dbNet;
+class dbITerm;
+class dbBTerm;
 }  // namespace odb
 
 namespace sta {
@@ -74,6 +78,12 @@ class CUGR
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   void updateDbCongestion();
+  void getITermsAccessPoints(
+      odb::dbNet* net,
+      std::map<odb::dbITerm*, odb::Point3D>& access_points);
+  void getBTermsAccessPoints(
+      odb::dbNet* net,
+      std::map<odb::dbBTerm*, odb::Point3D>& access_points);
 
  private:
   void updateOverflowNets(std::vector<int>& netIndices);
@@ -88,6 +98,7 @@ class CUGR
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
+  std::map<odb::dbNet*, GRNet*> db_net_map_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

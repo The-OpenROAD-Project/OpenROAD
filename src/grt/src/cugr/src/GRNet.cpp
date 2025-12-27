@@ -9,6 +9,7 @@
 #include "GridGraph.h"
 #include "Netlist.h"
 #include "geo.h"
+#include "odb/db.h"
 
 namespace grt {
 
@@ -19,6 +20,8 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
   const int numPins = baseNet.getNumPins();
   pin_access_points_.resize(numPins);
   layer_range_ = baseNet.getLayerRange();
+
+  int pin_index = 0;
   for (CUGRPin& pin : baseNet.getPins()) {
     const std::vector<BoxOnLayer> pinShapes = pin.getPinShapes();
     std::unordered_set<uint64_t> included;
@@ -36,7 +39,15 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
         }
       }
     }
+
+    if (pin.isPort()) {
+      pin_index_to_bterm_[pin_index] = pin.getBTerm();
+    } else {
+      pin_index_to_iterm_[pin_index] = pin.getITerm();
+    }
+    pin_index++;
   }
+
   for (const auto& accessPoints : pin_access_points_) {
     for (const auto& point : accessPoints) {
       bounding_box_.Update(point);
@@ -48,6 +59,19 @@ bool GRNet::isInsideLayerRange(int layer_index) const
 {
   return layer_index >= layer_range_.min_layer
          && layer_index <= layer_range_.max_layer;
+}
+
+void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
+{
+  if (auto it = pin_index_to_iterm_.find(pin_index);
+      it != pin_index_to_iterm_.end()) {
+    odb::dbITerm* iterm = it->second;
+    iterm_to_ap_[iterm] = ap;
+  } else if (auto it = pin_index_to_bterm_.find(pin_index);
+             it != pin_index_to_bterm_.end()) {
+    odb::dbBTerm* bterm = it->second;
+    bterm_to_ap_[bterm] = ap;
+  }
 }
 
 }  // namespace grt

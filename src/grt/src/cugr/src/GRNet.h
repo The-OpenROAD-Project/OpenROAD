@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -28,6 +29,7 @@ class GRNet
   {
     return pin_access_points_;
   }
+
   const BoxT& getBoundingBox() const { return bounding_box_; }
   const std::shared_ptr<GRTreeNode>& getRoutingTree() const
   {
@@ -40,11 +42,24 @@ class GRNet
   }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
+  void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
+  const std::map<odb::dbBTerm*, AccessPoint>& getBTermAccessPoints() const
+  {
+    return bterm_to_ap_;
+  }
+  const std::map<odb::dbITerm*, AccessPoint>& getITermAccessPoints() const
+  {
+    return iterm_to_ap_;
+  }
 
  private:
   int index_;
   odb::dbNet* db_net_;
   std::vector<std::vector<GRPoint>> pin_access_points_;
+  std::map<int, odb::dbITerm*> pin_index_to_iterm_;
+  std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
+  std::map<odb::dbBTerm*, AccessPoint> bterm_to_ap_;
+  std::map<odb::dbITerm*, AccessPoint> iterm_to_ap_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;

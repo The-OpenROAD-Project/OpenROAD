@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -26,6 +27,7 @@
 #include "geo.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -58,6 +60,7 @@ void CUGR::init(const int min_routing_layer,
   gr_nets_.reserve(baseNets.size());
   for (const CUGRNet& baseNet : baseNets) {
     gr_nets_.push_back(std::make_unique<GRNet>(baseNet, grid_graph_.get()));
+    db_net_map_[baseNet.getDbNet()] = gr_nets_.back().get();
   }
 }
 
@@ -495,6 +498,30 @@ void CUGR::updateDbCongestion()
         db_gcell->setUsage(db_layer, x, y, edge.demand);
       }
     }
+  }
+}
+
+void CUGR::getITermsAccessPoints(
+    odb::dbNet* net,
+    std::map<odb::dbITerm*, odb::Point3D>& access_points)
+{
+  GRNet* gr_net = db_net_map_.at(net);
+  for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
+    const int x = grid_graph_->getGridline(0, ap.point.x());
+    const int y = grid_graph_->getGridline(1, ap.point.y());
+    access_points[iterm] = odb::Point3D(x, y, ap.layers.high() + 1);
+  }
+}
+
+void CUGR::getBTermsAccessPoints(
+    odb::dbNet* net,
+    std::map<odb::dbBTerm*, odb::Point3D>& access_points)
+{
+  GRNet* gr_net = db_net_map_.at(net);
+  for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
+    const int x = grid_graph_->getGridline(0, ap.point.x());
+    const int y = grid_graph_->getGridline(1, ap.point.y());
+    access_points[bterm] = odb::Point3D(x, y, ap.layers.high() + 1);
   }
 }
 

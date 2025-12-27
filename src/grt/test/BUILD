@@ -25,6 +25,7 @@ TESTS = [
     "est_rc2",
     "est_rc3",
     "est_rc4",
+    "est_rc_cugr1",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
