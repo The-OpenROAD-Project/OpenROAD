@@ -463,7 +463,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   master_id_ = 0;
   logger_ = nullptr;
   unique_id_ = id;
-  hierarchy_ = false;
   dbu_per_micron_ = 0;
   hierarchy_ = false;
 

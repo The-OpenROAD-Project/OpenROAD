@@ -194,9 +194,15 @@ class dbNetwork : public ConcreteNetwork
   bool isConnected(const Net* net, const Pin* pin) const override;
   bool isConnected(const Net* net1, const Net* net2) const override;
   bool isConnected(const Pin* source_pin, const Pin* dest_pin) const;
+
+  // DEPRECATED.
+  // - Use dbNet::hierarchicalConnect(dbObject* driver, dbObject* load) instead.
+  // - The new API can handle both dbBTerm and dbIterm.
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name = "net");
+
+  // This API is still needed if dbModITerm connection is required.
   void hierarchicalConnect(dbITerm* source_pin,
                            dbModITerm* dest_pin,
                            const char* connection_name = "net");

@@ -27,6 +27,9 @@ dbInsertBuffer::dbInsertBuffer(dbNet* net)
       block_(net ? net->getBlock() : nullptr),
       logger_(net ? net->getImpl()->getLogger() : nullptr)
 {
+  assert(net_ != nullptr);
+  assert(block_ != nullptr);
+  assert(logger_ != nullptr);
 }
 
 void dbInsertBuffer::resetMembers()
@@ -91,7 +94,7 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
                                            const dbNameUniquifyType& uniquify,
                                            bool insertBefore)
 {
-  if (term_obj == nullptr || buffer_master == nullptr || block_ == nullptr) {
+  if (term_obj == nullptr || buffer_master == nullptr) {
     return nullptr;
   }
 
@@ -151,7 +154,7 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
     const dbNameUniquifyType& uniquify,
     bool loads_on_diff_nets)
 {
-  if (load_pins.empty() || buffer_master == nullptr || block_ == nullptr) {
+  if (load_pins.empty() || buffer_master == nullptr) {
     return nullptr;
   }
 

@@ -559,67 +559,6 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
   return getFirstInput(returnBuffer);
 }
 
-// Create a new delay buffer and connect output pin of driver to input pin of
-// new buffer. Output pin of new buffer will be connected later.
-odb::dbInst* LatencyBalancer::createDelayBuffer(odb::dbNet* driverNet,
-                                                const std::string& clockName,
-                                                int locX,
-                                                int locY)
-{
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  // creat a new input net
-  std::string newNetName
-      = "delaynet_" + std::to_string(delayBufIndex_) + "_" + clockName;
-
-  // hierarchy fix, make the net in the right scope
-  sta::Pin* driver = nullptr;
-  odb::dbModule* module = network_->getNetDriverParentModule(
-      network_->dbToSta(driverNet), driver);
-  if (module == nullptr) {
-    // if none put in top level
-    module = block->getTopModule();
-  }
-  sta::Instance* scope
-      = (module == nullptr || (module == block->getTopModule()))
-            ? network_->topInstance()
-            : (sta::Instance*) (module->getModInst());
-  odb::dbNet* newNet = network_->staToDb(network_->makeNet(
-      newNetName.c_str(), scope, odb::dbNameUniquifyType::IF_NEEDED));
-
-  newNet->setSigType(odb::dbSigType::CLOCK);
-
-  // create a new delay buffer
-  std::string newBufName
-      = "delaybuf_" + std::to_string(delayBufIndex_++) + "_" + clockName;
-  odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
-
-  // fix: make buffer in same hierarchical module as driver
-
-  odb::dbInst* newBuf
-      = odb::dbInst::create(block, master, newBufName.c_str(), false, module);
-
-  newBuf->setSourceType(odb::dbSourceType::TIMING);
-  newBuf->setLocation(locX, locY);
-  newBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-
-  // connect driver output with new buffer input
-  odb::dbITerm* newBufOutTerm = newBuf->getFirstOutput();
-  odb::dbITerm* newBufInTerm = getFirstInput(newBuf);
-  newBufInTerm->connect(driverNet);
-  newBufOutTerm->connect(newNet);
-
-  debugPrint(logger_,
-             CTS,
-             "insertion delay",
-             1,
-             "new delay buffer {} is inserted at ({} {})",
-             newBuf->getName(),
-             locX,
-             locY);
-
-  return newBuf;
-}
-
 bool LatencyBalancer::propagateClock(odb::dbITerm* input)
 {
   odb::dbInst* inst = input->getInst();

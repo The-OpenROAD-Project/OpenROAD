@@ -113,20 +113,38 @@ Instance* insertBufferAfterDriver(Net* net,
                                   LibertyCell* buffer_cell,
                                   const Point* loc = nullptr,
                                   const char* new_buf_base_name = nullptr,
-                                  const char* new_net_base_name = nullptr);
+                                  const char* new_net_base_name = nullptr,
+                                  const odb::dbNameUniquifyType& uniquify
+                                  = odb::dbNameUniquifyType::ALWAYS);
 
 Instance* insertBufferBeforeLoad(Pin* load_pin,
                                  LibertyCell* buffer_cell,
                                  const Point* loc = nullptr,
                                  const char* new_buf_base_name = nullptr,
-                                 const char* new_net_base_name = nullptr);
+                                 const char* new_net_base_name = nullptr,
+                                 const odb::dbNameUniquifyType& uniquify
+                                 = odb::dbNameUniquifyType::ALWAYS);
 
+// PinSeq* overload
+Instance* insertBufferBeforeLoads(Net* net,
+                                  PinSeq* loads,
+                                  LibertyCell* buffer_cell,
+                                  const Point* loc = nullptr,
+                                  const char* new_buf_base_name = nullptr,
+                                  const char* new_net_base_name = nullptr,
+                                  const odb::dbNameUniquifyType& uniquify
+                                  = odb::dbNameUniquifyType::ALWAYS,
+                                  bool loads_on_diff_nets = false);
+
+// PinSet* overload
 Instance* insertBufferBeforeLoads(Net* net,
                                   PinSet* loads,
                                   LibertyCell* buffer_cell,
                                   const Point* loc = nullptr,
                                   const char* new_buf_base_name = nullptr,
                                   const char* new_net_base_name = nullptr,
+                                  const odb::dbNameUniquifyType& uniquify
+                                  = odb::dbNameUniquifyType::ALWAYS,
                                   bool loads_on_diff_nets = false);
 
 // ODB-based overloads
@@ -134,13 +152,17 @@ odb::dbInst* insertBufferAfterDriver(odb::dbNet* net,
                                      odb::dbMaster* buffer_cell,
                                      const Point* loc = nullptr,
                                      const char* new_buf_base_name = nullptr,
-                                     const char* new_net_base_name = nullptr);
+                                     const char* new_net_base_name = nullptr,
+                                     const odb::dbNameUniquifyType& uniquify
+                                     = odb::dbNameUniquifyType::ALWAYS);
 
 odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_pin,
                                     odb::dbMaster* buffer_cell,
                                     const Point* loc = nullptr,
                                     const char* new_buf_base_name = nullptr,
-                                    const char* new_net_base_name = nullptr);
+                                    const char* new_net_base_name = nullptr,
+                                    const odb::dbNameUniquifyType& uniquify
+                                    = odb::dbNameUniquifyType::ALWAYS);
 
 odb::dbInst* insertBufferBeforeLoads(odb::dbNet* net,
                                      const std::set<odb::dbObject*>& loads,
@@ -148,6 +170,8 @@ odb::dbInst* insertBufferBeforeLoads(odb::dbNet* net,
                                      const Point* loc = nullptr,
                                      const char* new_buf_base_name = nullptr,
                                      const char* new_net_base_name = nullptr,
+                                     const odb::dbNameUniquifyType& uniquify
+                                     = odb::dbNameUniquifyType::ALWAYS,
                                      bool loads_on_diff_nets = false);
 ```
 
@@ -162,21 +186,35 @@ odb::dbInst* insertBufferAfterDriver(odb::dbObject* drvr_output_term,
                                      const odb::Point* loc = nullptr,
                                      const char* new_buf_base_name = nullptr,
                                      const char* new_net_base_name = nullptr,
-                                     const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS);
+                                     const odb::dbNameUniquifyType& uniquify
+                                     = odb::dbNameUniquifyType::ALWAYS);
 
 odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_input_term,
                                     const odb::dbMaster* buffer_master,
                                     const odb::Point* loc = nullptr,
                                     const char* new_buf_base_name = nullptr,
                                     const char* new_net_base_name = nullptr,
-                                    const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS);
+                                    const odb::dbNameUniquifyType& uniquify
+                                    = odb::dbNameUniquifyType::ALWAYS);
 
+// std::set overload
 odb::dbInst* insertBufferBeforeLoads(std::set<odb::dbObject*>& load_pins,
                                      const odb::dbMaster* buffer_master,
                                      const odb::Point* loc = nullptr,
                                      const char* new_buf_base_name = nullptr,
                                      const char* new_net_base_name = nullptr,
-                                     const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
+                                     const odb::dbNameUniquifyType& uniquify
+                                     = odb::dbNameUniquifyType::ALWAYS,
+                                     bool loads_on_diff_nets = false);
+
+// std::vector overload
+odb::dbInst* insertBufferBeforeLoads(std::vector<odb::dbObject*>& load_pins,
+                                     const odb::dbMaster* buffer_master,
+                                     const odb::Point* loc = nullptr,
+                                     const char* new_buf_base_name = nullptr,
+                                     const char* new_net_base_name = nullptr,
+                                     const odb::dbNameUniquifyType& uniquify
+                                     = odb::dbNameUniquifyType::ALWAYS,
                                      bool loads_on_diff_nets = false);
 ```
 
