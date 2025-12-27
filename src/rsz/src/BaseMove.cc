@@ -18,6 +18,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -27,6 +28,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
+#include "sta/UnorderedMap.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
 

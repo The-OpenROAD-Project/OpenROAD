@@ -5,9 +5,9 @@
 
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -23,6 +23,7 @@
 #include "BufferedNet.hh"
 #include "UnbufferMove.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
@@ -38,6 +39,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/timer.h"
@@ -88,8 +90,9 @@ struct visitor
   visitor(const visitor&) = delete;
   visitor& operator=(const visitor&) = delete;
 };
+
 template <typename F, class... Args>
-decltype(auto) visitTree(F&& f, Args&&... args)
+static decltype(auto) visitTree(F&& f, Args&&... args)
 {
   visitor<std::decay_t<F>> v{std::forward<F>(f)};
   return v(std::forward<Args>(args)...);
@@ -279,15 +282,9 @@ std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
       rf_correction = 0;
     }
 
-    if (rf_delay > delay) {
-      delay = rf_delay;
-    }
-    if (rf_correction < correction) {
-      correction = rf_correction;
-    }
-    if (rf_slew > slew) {
-      slew = rf_slew;
-    }
+    delay = std::max(rf_delay, delay);
+    correction = std::min(rf_correction, correction);
+    slew = std::max(rf_slew, slew);
   }
 
   return {delay, correction, slew};
@@ -334,9 +331,8 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
     return {};
   }
 
-  if (option->cap() > drvr_load_high_water_mark_) {
-    drvr_load_high_water_mark_ = option->cap();
-  }
+  drvr_load_high_water_mark_
+      = std::max(option->cap(), drvr_load_high_water_mark_);
 
   debugPrint(logger_,
              RSZ,
@@ -351,7 +347,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
   return slack;
 }
 
-BnetPtr stripWireOnBnet(BnetPtr ptr)
+static BnetPtr stripWireOnBnet(BnetPtr ptr)
 {
   while (ptr->type() == BnetType::wire || ptr->type() == BnetType::via) {
     ptr = ptr->ref();
@@ -359,7 +355,7 @@ BnetPtr stripWireOnBnet(BnetPtr ptr)
   return ptr;
 }
 
-BnetPtr stripWiresAndBuffersOnBnet(BnetPtr ptr)
+static BnetPtr stripWiresAndBuffersOnBnet(BnetPtr ptr)
 {
   while (ptr->type() == BnetType::wire || ptr->type() == BnetType::buffer
          || ptr->type() == BnetType::via) {
@@ -383,10 +379,10 @@ static const RiseFallBoth* combinedTransition(const RiseFallBoth* a,
   return RiseFallBoth::riseFall();
 }
 
-BufferedNetPtr createBnetJunction(Resizer* resizer,
-                                  const BufferedNetPtr& p,
-                                  const BufferedNetPtr& q,
-                                  Point location)
+static BufferedNetPtr createBnetJunction(Resizer* resizer,
+                                         const BufferedNetPtr& p,
+                                         const BufferedNetPtr& q,
+                                         Point location)
 {
   BufferedNetPtr junc = make_shared<BufferedNet>(
       BufferedNetType::junction, location, p, q, resizer);
@@ -847,49 +843,6 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
   }
 
   return best_option;
-}
-
-static void accumulateBufferTreeFlatLoadPins(
-    bool gone_through_buffer,
-    dbNetwork* nwk,
-    const BufferedNetPtr& choice,
-    std::unordered_set<const sta::Pin*>& buffer_tree_flat_load_pins)
-{
-  switch (choice->type()) {
-    case BufferedNetType::buffer: {
-      accumulateBufferTreeFlatLoadPins(
-          true, nwk, choice->ref(), buffer_tree_flat_load_pins);
-
-      break;
-    }
-    case BufferedNetType::via:
-    case BufferedNetType::wire: {
-      accumulateBufferTreeFlatLoadPins(
-          gone_through_buffer, nwk, choice->ref(), buffer_tree_flat_load_pins);
-      break;
-    }
-    case BufferedNetType::junction: {
-      accumulateBufferTreeFlatLoadPins(
-          gone_through_buffer, nwk, choice->ref(), buffer_tree_flat_load_pins);
-      accumulateBufferTreeFlatLoadPins(
-          gone_through_buffer, nwk, choice->ref2(), buffer_tree_flat_load_pins);
-      break;
-    }
-    case BufferedNetType::load: {
-      const Pin* load_pin = choice->loadPin();
-      odb::dbITerm* load_iterm = nullptr;
-      odb::dbBTerm* load_bterm = nullptr;
-      odb::dbModITerm* load_moditerm = nullptr;
-      nwk->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
-      if (load_iterm || load_bterm) {
-        // accumulate all loads through buffers
-        if (gone_through_buffer) {
-          buffer_tree_flat_load_pins.insert(load_pin);
-        }
-      }
-      break;
-    }
-  }
 }
 
 static void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
@@ -1858,7 +1811,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
         // Collect physical terminal
         if (load_pin != nullptr) {
           assert(db_network_->staToDb(load_pin) != nullptr);
-          current_loads.insert(const_cast<Pin*>(load_pin));
+          current_loads.insert(load_pin);
         }
         break;
       }

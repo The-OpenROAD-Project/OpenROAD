@@ -20,6 +20,7 @@
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -33,6 +34,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
@@ -40,6 +42,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
@@ -596,9 +599,7 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
         return false;
       }
       size_cin /= nports;
-      if (size_cin > cin) {
-        cin = size_cin;
-      }
+      cin = std::max(size_cin, cin);
     }
     return true;
   }
@@ -843,9 +844,7 @@ bool RepairDesign::performGainBuffering(Net* net,
       LibertyPort* sink_port = network_->libertyPort(it->pin);
       Instance* sink_inst = network_->instance(it->pin);
       load -= sink_port->capacitance();
-      if (it->level > max_level) {
-        max_level = it->level;
-      }
+      max_level = std::max(it->level, max_level);
 
       odb::dbModNet* sink_mod_net = db_network_->hierNet(sink_pin);
       // rewire the sink pin, taking care of both the flat net

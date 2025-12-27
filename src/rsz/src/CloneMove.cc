@@ -14,6 +14,7 @@
 #include "SplitLoadMove.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"

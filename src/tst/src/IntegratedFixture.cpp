@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <iostream>
 #include <iterator>
 #include <string>
 
@@ -222,8 +223,9 @@ void IntegratedFixture::writeAndCompareVerilogOutputFile(
   std::string golden_content((std::istreambuf_iterator<char>(if_golden)),
                              std::istreambuf_iterator<char>());
 
-  std::cout << "Compare " << verilog_file << " and " << golden_file
-            << std::endl;
+  std::cout << "--------------------------------------------------------\n";
+  std::cout << "Compare " << verilog_file << " and " << golden_file << "\n";
+  std::cout << "--------------------------------------------------------\n";
   EXPECT_EQ(content, golden_content);
 
   if (remove_file) {

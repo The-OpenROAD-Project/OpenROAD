@@ -12,6 +12,7 @@
 #include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -19,6 +20,7 @@
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
@@ -48,7 +50,6 @@ using sta::Edge;
 using sta::fuzzyLess;
 using sta::INF;
 using sta::PathExpanded;
-using sta::Port;
 using sta::VertexOutEdgeIterator;
 
 RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
@@ -212,7 +213,7 @@ LibertyCell* RepairHold::findHoldBuffer()
 // common   7 nm:  DLY
 //         12 nm:  DLY
 // skywater130hs:  dlygate
-bool isDelayCell(const std::string& cell_name)
+static bool isDelayCell(const std::string& cell_name)
 {
   return (!cell_name.empty()
           && (cell_name.find("DEL") != std::string::npos
@@ -485,9 +486,7 @@ void RepairHold::findHoldViolations(VertexSeq& ends,
                  end->name(sdc_network_),
                  delayAsString(slack, sta_),
                  delayAsString(sta_->vertexSlack(end, max_), sta_));
-      if (slack < worst_slack) {
-        worst_slack = slack;
-      }
+      worst_slack = std::min(slack, worst_slack);
       hold_violations.push_back(end);
     }
   }

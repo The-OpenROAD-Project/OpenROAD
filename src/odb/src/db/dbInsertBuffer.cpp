@@ -8,6 +8,7 @@
 #include <cstring>
 #include <functional>
 #include <set>
+#include <string>
 #include <string_view>
 
 #include "dbInst.h"
@@ -474,7 +475,7 @@ std::string dbInsertBuffer::makeUniqueHierName(dbModule* module,
   // Ensure uniqueness against both ModNets and ModBTerms
   while (module->getModNet(unique_name.c_str())
          || module->findModBTerm(unique_name.c_str())) {
-    unique_name = name + "_" + std::to_string(id++);
+    unique_name = fmt::format("{}_{}", name, id++);
   }
   return unique_name;
 }

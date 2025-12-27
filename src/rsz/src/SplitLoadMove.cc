@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,6 +13,7 @@
 #include "BaseMove.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -30,7 +30,6 @@ using std::pair;
 using std::string;
 using std::vector;
 
-using odb::dbITerm;
 using odb::dbModNet;
 using odb::dbNet;
 using odb::Point;
