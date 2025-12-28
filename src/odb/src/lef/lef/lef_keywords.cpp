@@ -370,7 +370,7 @@ static inline void IncCurPos(char** curPos, char** buffer, int* bufferSize)
     return;
   }
 
-  long offset = *curPos - *buffer;
+  int64_t offset = *curPos - *buffer;
 
   *bufferSize *= 2;
   *buffer = (char*) realloc(*buffer, *bufferSize);

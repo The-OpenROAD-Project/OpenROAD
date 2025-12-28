@@ -13,8 +13,8 @@
 
 namespace rcx {
 
-static constexpr long long PIXFILL = 0xffffffffffffffffLL;
-static constexpr long long PIXMAX = 0x8000000000000000LL;
+static constexpr int64_t PIXFILL = 0xffffffffffffffffLL;
+static constexpr int64_t PIXMAX = 0x8000000000000000LL;
 static constexpr int PIXADJUST = 2;
 
 /* Values for the member variable init_
@@ -457,7 +457,7 @@ bool gs::getSeqRow(const int y,
   int sto = stpix / PIXMAPGRID;
   const int str = stpix - (sto * PIXMAPGRID);
 
-  const long offset = y * plc.pixstride + sto;
+  const int64_t offset = y * plc.pixstride + sto;
   pixmap* pl = pldata_[plane].plane + offset;
 
   seqcol = GS_NONE;
@@ -573,7 +573,7 @@ bool gs::getSeqCol(const int x,
   const int sto = x / PIXMAPGRID;
   const int stc = x - (sto * PIXMAPGRID);
 
-  const long offset = sto + stpix * plc.pixstride;
+  const int64_t offset = sto + stpix * plc.pixstride;
   const pixint bitmask = middle_[stc];
   pixmap* pl = pldata_[plane].plane + offset;
 

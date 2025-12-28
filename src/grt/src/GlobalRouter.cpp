@@ -3672,7 +3672,7 @@ int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
 
 void GlobalRouter::computeWirelength()
 {
-  long total_wirelength = 0;
+  int64_t total_wirelength = 0;
   for (auto& net_route : routes_) {
     total_wirelength += computeNetWirelength(net_route.first);
   }

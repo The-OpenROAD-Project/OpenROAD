@@ -116,7 +116,7 @@ void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
   }
   workers_.swap(new_queue);
 }
-void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
+void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
   if (!workers_.empty()) {
@@ -124,14 +124,14 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
     workers_.pop();
     ip = w.ip;
     port = w.port;
-    if (w.priority != std::numeric_limits<unsigned short>::max()) {
+    if (w.priority != std::numeric_limits<uint16_t>::max()) {
       w.priority++;
     }
     workers_.push(w);
   }
 }
 
-void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
+void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
@@ -147,7 +147,7 @@ void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
 }
 
 void LoadBalancer::removeWorker(const ip::address& ip,
-                                unsigned short port,
+                                uint16_t port,
                                 bool lock)
 {
   if (lock) {
@@ -168,7 +168,7 @@ void LoadBalancer::removeWorker(const ip::address& ip,
   }
 }
 
-void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
+void LoadBalancer::lookUpWorkers(const char* domain, uint16_t port)
 {
   asio::io_context ios;
   std::vector<Worker> workers_set;

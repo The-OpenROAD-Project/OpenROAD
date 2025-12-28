@@ -2497,7 +2497,7 @@ void extMeasure::setTargetParams(double w,
     _w2_nm = _w_nm;
   }
   if (s2 > 0.0 || (s2 == 0.0 && _diag)) {
-    long int n2 = _s2_nm = lround(1000 * s2);
+    int64_t n2 = _s2_nm = lround(1000 * s2);
     n2 = (n2 / 10) * 10;
 
     _s2_m = 0.001 * n2;

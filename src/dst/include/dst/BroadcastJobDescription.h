@@ -12,11 +12,11 @@ namespace dst {
 class BroadcastJobDescription : public JobDescription
 {
  public:
-  void setWorkersCount(unsigned short count) { workers_count_ = count; }
-  unsigned short getWorkersCount() const { return workers_count_; }
+  void setWorkersCount(uint16_t count) { workers_count_ = count; }
+  uint16_t getWorkersCount() const { return workers_count_; }
 
  private:
-  unsigned short workers_count_{0};
+  uint16_t workers_count_{0};
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)

@@ -238,7 +238,7 @@ int defrData::DefGetTokenFromStack(char* s)
   return false; /* if we get here, we ran out of input levels */
 }
 
-void defrData::print_lines(long long lines)
+void defrData::print_lines(int64_t lines)
 {
   if (lines % settings->defiDeltaNumberLines) {
     return;
@@ -256,12 +256,12 @@ void defrData::print_lines(long long lines)
   }
 }
 
-const char* defrData::lines2str(long long lines)
+const char* defrData::lines2str(int64_t lines)
 {
 #ifdef _WIN32
   sprintf(lineBuffer, "%I64d", lines);
 #else
-  sprintf(lineBuffer, "%lld", lines);
+  sprintf(lineBuffer, "%ld", lines);
 #endif
 
   return lineBuffer;
@@ -276,7 +276,7 @@ void defrData::IncCurPos(char** curPos, char** buffer, int* bufferSize)
     return;
   }
 
-  long offset = *curPos - *buffer;
+  int64_t offset = *curPos - *buffer;
 
   *bufferSize *= 2;
   *buffer = (char*) realloc(*buffer, *bufferSize);
