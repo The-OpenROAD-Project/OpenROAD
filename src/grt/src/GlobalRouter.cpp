@@ -334,6 +334,7 @@ void GlobalRouter::globalRoute(bool save_guides,
   } else {
     try {
       if (end_incremental) {
+        fastroute_->setResistanceAware(true);
         updateDirtyRoutes();
         grouter_cbk_->removeOwner();
         delete grouter_cbk_;
@@ -5615,7 +5616,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 
     std::vector<odb::dbNet*> modified_nets;
     modified_nets.reserve(dirty_nets.size());
-    for (const Net* net : dirty_nets) {
+    for (Net* net : dirty_nets) {
       modified_nets.push_back(net->getDbNet());
     }
 

@@ -102,6 +102,15 @@ void FastRouteCore::ConvertToFull3DType2()
   }
 }
 
+float FastRouteCore::getResAwareScore(FrNet* net, float net_length)
+{
+  return net->getResistance() / 10  // entire net resistance considering vias
+         + (!is_incremental_grt_ ? -net->getSlack() / 10e-12
+                                 : 0)  // worst slack in ps
+         + net->getNumPins() * 10      // fanout
+         + net_length;                 // net length in gcells
+}
+
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
   // Sorting by ndr_priority, resistance aware, slack, length_per_pin, minX, and
@@ -109,7 +118,7 @@ static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
   return std::tie(a.ndr_priority,
                   a.clock,
                   a.res_aware,
-                  a.net_length,
+                  // a.net_length,
                   a.slack,
                   a.length_per_pin,
                   a.minX,
@@ -117,7 +126,7 @@ static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
          < std::tie(b.ndr_priority,
                     b.clock,
                     b.res_aware,
-                    b.net_length,
+                    // b.net_length,
                     b.slack,
                     b.length_per_pin,
                     b.minX,
@@ -148,14 +157,16 @@ void FastRouteCore::netpinOrderInc()
     }
 
     // Prioritize nets with worst slack first
-    float slack = (enable_resistance_aware_ && nets_[netID]->getSlack() < 0)
-                      ? nets_[netID]->getSlack()
-                      : 0;
+    const float slack = -getResAwareScore(nets_[netID], totalLength);
+    // (enable_resistance_aware_ && nets_[netID]->getSlack() < 0)
+    //                   ? nets_[netID]->getSlack()
+    //                   : 0;
 
     // After layer assignment, give priority to non-res_aware nets first to
     // release resources on lower resistance layers
-    const int res_aware = (is_3d_step_) ? nets_[netID]->isResAware()
-                                        : !nets_[netID]->isResAware();
+    const int is_res_aware = !nets_[netID]->isResAware();
+    // (is_3d_step_) ? nets_[netID]->isResAware()
+    // : !nets_[netID]->isResAware();
 
     // Prioritize clock nets when using resistance-aware strategy to
     // better balance clock skew
@@ -166,7 +177,7 @@ void FastRouteCore::netpinOrderInc()
                               xmin,
                               length_per_pin,
                               ndr_priority,
-                              res_aware,
+                              is_res_aware,
                               slack,
                               is_clock,
                               -totalLength});
@@ -503,22 +514,16 @@ odb::dbTechLayer* FastRouteCore::getTechLayer(const int layer,
                   : db_layers_[(uint64_t) 2 * layer];
 }
 
-// Get wire resistance cost for a specific metal layer
+// Get wire resistance in ohms for a specific metal layer
 // R = (sheet_resistance) * (length/width)
-int FastRouteCore::getLayerResistance(const int layer,
-                                      const int length,
-                                      FrNet* net)
+float FastRouteCore::getWireResistance(const int layer,
+                                       const int length,
+                                       FrNet* net)
 {
-  if (!resistance_aware_) {
-    return 0;
-  }
-
   odb::dbTechLayer* db_layer = getTechLayer(layer, false);
-  odb::dbTechLayer* default_layer = getTechLayer(0, false);
 
   int width = db_layer->getWidth();
   double resistance = db_layer->getResistance();
-  double default_resistance = default_layer->getResistance();
 
   // If net has NDR, get the correct width value
   odb::dbTechNonDefaultRule* ndr = net->getDbNet()->getNonDefaultRule();
@@ -535,20 +540,29 @@ int FastRouteCore::getLayerResistance(const int layer,
     return BIG_INT;
   }
 
-  return std::ceil(final_resistance / default_resistance);
+  return final_resistance;
 }
 
-// Get via resistance cost going from layer A to layer B
-int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
+// Get wire resistance cost for a specific metal layer
+int FastRouteCore::getWireResistanceCost(const int layer,
+                                         const int length,
+                                         FrNet* net)
 {
   if (!resistance_aware_) {
     return 0;
   }
 
-  if (abs(to_layer - from_layer) == 0) {
-    return 0.0;  // Same layer, no via needed
-  }
+  odb::dbTechLayer* default_layer = getTechLayer(0, false);
 
+  double default_resistance = default_layer->getResistance();
+  float final_resistance = getWireResistance(layer, length, net);
+
+  return std::ceil(final_resistance / default_resistance);
+}
+
+// Get via resistance in ohms going from layer A to layer B
+float FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
+{
   // Calculate total resistance for stacked vias
   float total_via_resistance = 0.0;
   int start = std::min(from_layer, to_layer);
@@ -561,9 +575,62 @@ int FastRouteCore::getViaResistance(const int from_layer, const int to_layer)
     total_via_resistance += resistance;
   }
 
+  return total_via_resistance;
+}
+
+// Get via resistance cost going from layer A to layer B
+int FastRouteCore::getViaResistanceCost(const int from_layer,
+                                        const int to_layer)
+{
+  if (!resistance_aware_) {
+    return 0;
+  }
+
+  if (abs(to_layer - from_layer) == 0) {
+    return 0.0;  // Same layer, no via needed
+  }
+
+  // Calculate total resistance
+  float total_via_resistance = getViaResistance(from_layer, to_layer);
   float default_res = getTechLayer(0, true)->getResistance();
 
   return std::ceil(total_via_resistance / default_res);
+}
+
+// Calculate entire net resistance considering wire and via resistance
+// If assume_layer is true, it will assume the net is routed on the max layer
+float FastRouteCore::getNetResistance(FrNet* net, bool assume_layer)
+{
+  float total_resistance = 0;
+  int netID = db_net_id_map_[net->getDbNet()];
+  const auto& treeedges = sttrees_[netID].edges;
+
+  for (const auto& edge : treeedges) {
+    if (edge.len == 0 && edge.route.routelen == 0) {
+      continue;
+    }
+
+    const std::vector<GPoint3D>& grids = edge.route.grids;
+    int routeLen = edge.route.routelen;
+
+    for (int i = 0; i < routeLen; i++) {
+      if (grids[i].layer == grids[i + 1].layer) {
+        int length = std::abs(grids[i].x - grids[i + 1].x)
+                     + std::abs(grids[i].y - grids[i + 1].y);
+        total_resistance += getWireResistance(
+            assume_layer ? net->getMaxLayer() : grids[i].layer,
+            length * tile_size_,
+            net);
+      } else {
+        if (!assume_layer) {
+          total_resistance
+              += getViaResistanceCost(grids[i].layer, grids[i + 1].layer);
+        }
+      }
+    }
+  }
+
+  return total_resistance;
 }
 
 void FastRouteCore::setIncrementalGrt(bool is_incremental)
@@ -582,6 +649,7 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   std::vector<std::pair<int, float>> res_aware_list;
+  bool ok = false;
 
   if (en_estimate_parasitics_) {
     callback_handler_->triggerOnEstimateParasiticsRequired();
@@ -609,6 +677,8 @@ void FastRouteCore::updateSlacks(float percentage)
     for (const auto& edge : treeedges) {
       net_size += edge.len;
     }
+    net->setNetSize(net_size);
+
     bool is_short_net = net_size <= 3;
     bool is_unconstrained_net = slack == sta::INF;
 
@@ -617,7 +687,22 @@ void FastRouteCore::updateSlacks(float percentage)
       continue;
     }
 
-    res_aware_list.emplace_back(net_id, slack);
+    const float net_resistance
+        = is_3d_step_ ? getNetResistance(net) : getNetResistance(net, true);
+    net->setResistance(net_resistance);
+
+    if (net->getDbNet()->getName() == "net214477") {
+      logger_->report("\n\t{} - slack: {} - resistance: {} - score: {}",
+                      net->getName(),
+                      net->getSlack(),
+                      net->getResistance(),
+                      getResAwareScore(net, net_size));
+      ok = true;
+    }
+
+    net->setIsResAware(true);
+
+    res_aware_list.emplace_back(net_id, -getResAwareScore(net, net_size));
   }
 
   // Sort by worst slack and ID
@@ -630,12 +715,27 @@ void FastRouteCore::updateSlacks(float percentage)
 
   // During incremental grt, enable res-aware for all nets
   // if (is_incremental_grt_) {
-  percentage = 1;
+  // percentage = 1;
   // }
 
-  // Decide the percentage of nets that will use resistance aware
-  for (int i = 0; i < res_aware_list.size() * percentage; i++) {
-    nets_[res_aware_list[i].first]->setIsResAware(true);
+  if (en_estimate_parasitics_ || ok) {
+    // Decide the percentage of nets that will use resistance aware
+    logger_->report("\tNets: {}", net_ids_.size());
+    int j = 10;
+    for (int i = 0; i < res_aware_list.size() && i < j; i++) {
+      // nets_[res_aware_list[i].first]->setIsResAware(true);
+      FrNet* net = nets_[res_aware_list[i].first];
+      if (!net->isClock()) {
+        logger_->report("{} - {} - slack: {} - resistance: {} - score: {}",
+                        i,
+                        net->getName(),
+                        net->getSlack(),
+                        net->getResistance(),
+                        getResAwareScore(net, net->getNetSize()));
+      } else {
+        j++;
+      }
+    }
   }
 }
 
@@ -828,7 +928,7 @@ void FastRouteCore::assignEdge(const int netID,
           // Calculate via cost with resistance
           int via_resistance_cost = 0;
           if (i != l) {
-            via_resistance_cost = getViaResistance(l, i);  // Scale factor
+            via_resistance_cost = getViaResistanceCost(l, i);  // Scale factor
           }
 
           int base_via_cost = abs(i - l) * (k == 0 ? 2 : 3);
@@ -843,7 +943,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k] >= net->getLayerEdgeCost(l)) {
           gridD[l][k + 1]
-              = gridD[l][k] + 1 + getLayerResistance(l, tile_size_, net);
+              = gridD[l][k] + 1 + getWireResistanceCost(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -852,7 +952,7 @@ void FastRouteCore::assignEdge(const int netID,
           gridD[l][k + 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
           // Congested case - still include resistance but with higher base cost
-          int wire_resistance = getLayerResistance(l, tile_size_, net);
+          int wire_resistance = getWireResistanceCost(l, tile_size_, net);
           gridD[l][k + 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }
@@ -862,7 +962,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int i = 0; i < num_layers_; i++) {
         int via_resistance_cost = 0;
         if (i != l) {
-          via_resistance_cost = getViaResistance(l, i);
+          via_resistance_cost = getViaResistanceCost(l, i);
         }
         int total_cost = abs(i - l) + via_resistance_cost;
 
@@ -956,7 +1056,7 @@ void FastRouteCore::assignEdge(const int netID,
           // Calculate via cost with resistance
           int via_resistance_cost = 0;
           if (i != l) {
-            via_resistance_cost = getViaResistance(l, i);  // Scale factor
+            via_resistance_cost = getViaResistanceCost(l, i);  // Scale factor
           }
 
           int base_via_cost = abs(i - l) * (k == routelen ? 2 : 3);
@@ -971,7 +1071,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int l = 0; l < num_layers_; l++) {
         if (layer_grid[l][k - 1] >= net->getLayerEdgeCost(l)) {
           gridD[l][k - 1]
-              = gridD[l][k] + 1 + getLayerResistance(l, tile_size_, net);
+              = gridD[l][k] + 1 + getWireResistanceCost(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
                    || l < net->getMinLayer() || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
@@ -980,7 +1080,7 @@ void FastRouteCore::assignEdge(const int netID,
           gridD[l][k - 1] = gridD[l][k] + 2 * BIG_INT;
         } else {
           // Congested case - still include resistance but with higher base cost
-          int wire_resistance = getLayerResistance(l, tile_size_, net);
+          int wire_resistance = getWireResistanceCost(l, tile_size_, net);
           gridD[l][k - 1] = gridD[l][k] + BIG_INT + wire_resistance;
         }
       }
@@ -990,7 +1090,7 @@ void FastRouteCore::assignEdge(const int netID,
       for (int i = 0; i < num_layers_; i++) {
         int via_resistance_cost = 0;
         if (i != l) {
-          via_resistance_cost = getViaResistance(l, i);
+          via_resistance_cost = getViaResistanceCost(l, i);
         }
         int total_cost = abs(i - l) + via_resistance_cost;
 

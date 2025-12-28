@@ -534,9 +534,6 @@ class FastRouteCore
                          multi_array<int, 2>& layer_grid,
                          int net_cost);
   void assignEdge(int netID, int edgeID, bool processDIR);
-  int getLayerResistance(int layer, int length, FrNet* net);
-  int getViaResistance(int from_layer, int to_layer);
-  bool needResistanceAware(int net_id);
   void recoverEdge(int netID, int edgeID);
   void layerAssignmentV4();
   void netpinOrderInc();
@@ -544,6 +541,15 @@ class FastRouteCore
   void StNetOrder();
   float CalculatePartialSlack();
   float getNetSlack(odb::dbNet* net);
+
+  // Resistance-aware related functions
+  float getWireResistance(int layer, int length, FrNet* net);
+  float getViaResistance(int from_layer, int to_layer);
+  int getWireResistanceCost(int layer, int length, FrNet* net);
+  int getViaResistanceCost(int from_layer, int to_layer);
+  float getNetResistance(FrNet* net, bool assume_layer = false);
+  float getResAwareScore(FrNet* net, float net_length);
+
   /**
    * @brief Validates the routing of edges for a specified net.
    *

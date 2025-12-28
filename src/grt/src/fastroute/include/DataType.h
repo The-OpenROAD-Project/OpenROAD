@@ -114,6 +114,10 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool isSoftNDR() { return is_soft_ndr_; }
   void setIsResAware(bool res_aware) { is_res_aware_ = res_aware; }
   bool isResAware() { return is_res_aware_; }
+  float getResistance() { return resistance_; }
+  void setResistance(float resistance) { resistance_ = resistance; }
+  int getNetSize() { return net_size_; }
+  void setNetSize(int net_size) { net_size_ = net_size; }
 
  private:
   odb::dbNet* db_net_;
@@ -129,6 +133,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   float slack_;
   bool is_soft_ndr_ = false;
   bool is_res_aware_ = false;
+  float resistance_;
+  int net_size_;
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };
