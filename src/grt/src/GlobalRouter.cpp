@@ -334,7 +334,7 @@ void GlobalRouter::globalRoute(bool save_guides,
   } else {
     try {
       if (end_incremental) {
-        fastroute_->setResistanceAware(true);
+        fastroute_->setResistanceAware(resistance_aware_);
         updateDirtyRoutes();
         grouter_cbk_->removeOwner();
         delete grouter_cbk_;
