@@ -244,7 +244,7 @@ extPattern::extPattern(int cnt,
                        const int org[2],
                        dbCreateNetUtil* net_util)
 {
-  nameHash = new AthHash<int>(10000000, 0);  // TODO: check for memory free
+  nameHash = new AthHash<int, false>(10000000);  // TODO: check for memory free
 
   patternLog = fp;
   opt = opt1;
@@ -830,8 +830,11 @@ bool extPattern::SetPatternName()
     return true;
   }
   nameHash->add(pname, 1);
+  // pname is store in nameHash, not leaked
+  //NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
   return false;
 }
+
 extWirePattern* extPattern::MainPattern(float mw,
                                         float msL,
                                         float msR,
@@ -1479,6 +1482,7 @@ std::vector<float> extPattern::getMultipliers(const char* s)
     float v = atof(tmp);
     table.push_back(v);
   }
+  free(tmp);
   return table;
 }
 FILE* extPattern::OpenLog(int met, const char* postfix)

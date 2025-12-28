@@ -432,6 +432,9 @@ void defrData::StoreAlias()
   std::string so_far; /* contains alias contents as we build it */
 
   if (strcmp(line, "=") != 0) {
+    free(aname);
+    free(line);
+    free(uc_line);
     defError(6000, "Expecting '='");
     return;
   }
@@ -443,6 +446,9 @@ void defrData::StoreAlias()
     for (i = 0; i < tokenSize - 1; i++) {
       int ch = GETC();
       if (ch == EOF) {
+        free(aname);
+        free(line);
+        free(uc_line);
         defError(6001, "End of file in &ALIAS");
         return;
       }

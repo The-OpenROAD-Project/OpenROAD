@@ -589,6 +589,7 @@ uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
     char* overUnderToken = strdup(p->get(1));  // M2oM1uM3
     int wCnt = w->mkWords(overUnderToken, "ou");
     if (wCnt < 2) {
+      free(overUnderToken);
       continue;
     }
 
@@ -630,6 +631,7 @@ uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
       m._overUnder = false;
       m._over = false;
     }
+    free(overUnderToken);
     // TODO DIAGUNDER
     m._met = met;
 

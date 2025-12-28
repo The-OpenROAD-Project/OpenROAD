@@ -600,6 +600,9 @@ void lefStoreAlias()
       int ch = lefGetc();
       if (ch == EOF) {
         lefError(1001, "End of file in &ALIAS");
+        free(aname);
+        free(line);
+        free(uc_line);
         return;
       }
 
@@ -622,10 +625,7 @@ void lefStoreAlias()
     so_far += line;
   }
 
-  char* dup = (char*) malloc(strlen(so_far.c_str()) + 1);
-
-  strcpy(dup, so_far.c_str());
-  lefData->alias_set[strip_case(aname)] = dup;
+  lefData->alias_set[strip_case(aname)] = so_far;
 
   free(aname);
   free(line);
