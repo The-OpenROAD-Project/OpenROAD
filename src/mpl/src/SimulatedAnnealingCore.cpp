@@ -833,7 +833,7 @@ void SimulatedAnnealingCore<T>::writeCostFile(
 {
   std::ofstream file(file_name);
   for (auto i = 0; i < cost_list_.size(); i++) {
-    file << T_list_[i] << "  " << cost_list_[i] << std::endl;
+    file << T_list_[i] << "  " << cost_list_[i] << '\n';
   }
 }
 

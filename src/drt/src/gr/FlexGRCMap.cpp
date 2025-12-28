@@ -538,7 +538,7 @@ void FlexGRCMap::printLayers()
     } else if (dir == odb::dbTechLayerDir::VERTICAL) {
       std::cout << "V";
     }
-    std::cout << std::endl;
+    std::cout << '\n';
   }
 }
 

@@ -39,8 +39,7 @@ drPathSeg::drPathSeg(const frPathSeg& in) : layer_(in.getLayerNum())
   setTapered(in.isTapered());
 }
 
-drPatchWire::drPatchWire(const frPatchWire& in)
-    : layer_(in.getLayerNum()), owner_(nullptr)
+drPatchWire::drPatchWire(const frPatchWire& in) : layer_(in.getLayerNum())
 {
   offsetBox_ = in.getOffsetBox();
   origin_ = in.getOrigin();

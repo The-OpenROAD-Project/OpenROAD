@@ -650,7 +650,7 @@ void FlexTAWorker::initCosts()
       }
       if (trackLoc == std::numeric_limits<frCoord>::max()) {
         std::cout << "Error: FlexTAWorker::initCosts does not find trackLoc"
-                  << std::endl;
+                  << '\n';
         exit(1);
       }
       assignIroute_getCost(iroute.get(), trackLoc, drcCost);
@@ -798,7 +798,7 @@ void FlexTAWorker::initFixedObjs()
         bloatDist = initFixedObjs_calcBloatDist(obj, layerNum, bounds);
         initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
       } else {
-        std::cout << "Warning: unsupported type in initFixedObjs" << std::endl;
+        std::cout << "Warning: unsupported type in initFixedObjs\n";
       }
     }
     auto costResults = [this, layerNum, width](

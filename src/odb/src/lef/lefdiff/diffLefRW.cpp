@@ -2831,13 +2831,14 @@ int diffLefReadFile(char* inFile, char* outFile)
   lefrSetViaCbk(viaCB);
   lefrSetViaRuleCbk(viaRuleCB);
 
-  FILE* f;
-  if ((f = fopen(inFile, "r")) == nullptr) {
+  FILE* f = fopen(inFile, "r");
+  if (f == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == nullptr) {
+  fout = fopen(outFile, "w");
+  if (fout == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);

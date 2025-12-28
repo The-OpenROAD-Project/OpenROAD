@@ -1307,6 +1307,7 @@ class Table
   // applicable.
   ROBIN_HOOD(NODISCARD)
   key_type const& getFirstConst(key_type const& k) const noexcept { return k; }
+  key_type&& getFirstConst(key_type&& k) const noexcept { return std::move(k); }
 
   // in case we have non-void mapped_type, we have a standard robin_hood::pair
   template <typename Q = mapped_type>

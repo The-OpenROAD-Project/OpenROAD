@@ -1249,21 +1249,21 @@ void extMasterConductor::writeRaphaelConformalPoly(FILE* fp,
                                                    double X,
                                                    extProcess* p)
 {
-  double height[3];
-  double thickness[3];
-  double bottom_ext[3];
-  double slope[3];
-  double e[3];
+  double height[3] = {0, 0, 0};
+  double thickness[3] = {0, 0, 0};
+  double bottom_ext[3] = {0, 0, 0};
+  double slope[3] = {0, 0, 0};
+  double e[3] = {0, 0, 0};
   bool trench = false;
   uint32_t cnt = 0;
-  uint32_t start = 0;
+  uint32_t start = -1;
   double h = _loLeft[2];
   for (uint32_t i = 0; i < 3; i++) {
     uint32_t j = 2 - i;
     if (!_conformalId[j]) {
       continue;
     }
-    if (!start) {
+    if (start == -1) {
       start = i;
     }
     extDielectric* d = p->getDielectric(_conformalId[j]);
@@ -1342,19 +1342,19 @@ void extMasterConductor::writeRaphaelConformalGround(FILE* fp,
                                                      double width,
                                                      extProcess* p)
 {
-  double height[3];
-  double thickness[3];
-  double e[3];
+  double height[3] = {0, 0, 0};
+  double thickness[3] = {0, 0, 0};
+  double e[3] = {0, 0, 0};
   bool trench = false;
   uint32_t cnt = 0;
-  uint32_t start = 0;
+  uint32_t start = -1;
   double h = _loLeft[2];
   for (uint32_t i = 0; i < 3; i++) {
     uint32_t j = 2 - i;
     if (!_conformalId[j]) {
       continue;
     }
-    if (!start) {
+    if (start == -1) {
       start = i;
     }
     extDielectric* d = p->getDielectric(_conformalId[j]);
@@ -2246,6 +2246,9 @@ extVarTable::extVarTable(uint32_t rowCnt)
 {
   _rowCnt = rowCnt;
   _vTable = new Array1D<double>*[rowCnt];
+  for (int i = 0; i < rowCnt; ++i) {
+    _vTable[i] = nullptr;
+  }
   _density = nullptr;
   _space = nullptr;
   _width = nullptr;

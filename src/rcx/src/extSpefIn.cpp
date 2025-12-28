@@ -2508,15 +2508,25 @@ uint32_t extSpef::readBlock(const uint32_t debug,
     _ccidmap = new Array1D<int>(8000000);
   }
   uint32_t cnt = 0;
-  bool rc;
   _noNameMap = _noPorts = false;
-  if (!(rc = readHeaderInfo(0))) {
-    _parser->syntaxError("Header Section");
-  } else if (!_noNameMap && !(rc = readNameMap(0))) {
-    _parser->syntaxError("NameMap Section");
-  } else if (!_noPorts && !(rc = readPorts())) {
-    _parser->syntaxError("Ports Section");
-  } else {
+  const bool rc = [&]() {
+    if (!readHeaderInfo(0)) {
+      _parser->syntaxError("Header Section");
+      return false;
+    }
+    if (!_noNameMap) {
+      if (!readNameMap(0)) {
+        _parser->syntaxError("NameMap Section");
+        return false;
+      }
+    }
+    if (!_noPorts) {
+      if (!readPorts()) {
+        _parser->syntaxError("Ports Section");
+        return false;
+      }
+    }
+
     _nodeParser->resetSeparator(_delimiter);
 
     if (_rRun == 1) {
@@ -2578,7 +2588,8 @@ uint32_t extSpef::readBlock(const uint32_t debug,
     if (!(_testParsing || _statsOnly)) {
       resetExtIds(0);
     }
-  }
+    return true;
+  }();
   deleteNodeCoordTables();
 
   if (_diff && (_diffLogFP != nullptr)) {
