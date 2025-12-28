@@ -625,7 +625,7 @@ proc cmd_args_completer { part start end line } {
 
 proc setup_tclreadline { } {
   history event
-  eval $::auto_index(::tclreadline::ScriptCompleter)
+  {*}$::auto_index(::tclreadline::ScriptCompleter)
   ::tclreadline::readline builtincompleter false
   catch { ::tclreadline::ScriptCompleter "" 0 0 "" }
   ::tclreadline::readline customcompleter ::ord::cmd_args_completer
