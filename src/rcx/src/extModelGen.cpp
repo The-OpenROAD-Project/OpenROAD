@@ -3,8 +3,6 @@
 
 #include "rcx/extModelGen.h"
 
-#include <string.h>
-
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -515,8 +513,8 @@ uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
   sprintf(buff, "%s.debug.log", logFilePrefix);
   FILE* dbg_logFP = fopen(buff, "w");
 
-  Ath__parser* p = new Ath__parser(logger_);
-  Ath__parser* w = new Ath__parser(logger_);
+  Parser* p = new Parser(logger_);
+  Parser* w = new Parser(logger_);
 
   int prev_sep = 0;
   int prev_width = 0;
@@ -800,7 +798,7 @@ std::list<std::string> extModelGen::GetCornerNames(const char* filename,
 {
   bool dbg = false;
   std::list<std::string> corner_list;
-  Ath__parser parser(logger);
+  Parser parser(logger);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile((char*) filename);

@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <string.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -128,7 +126,7 @@ class AthPool
   AthPool(const int freeAllocSize)
   {
     m_heap_ = new AthArray<T>(4096);
-    free_table_ = new Ath__array1D<T*>(freeAllocSize);
+    free_table_ = new Array1D<T*>(freeAllocSize);
   }
 
   ~AthPool()
@@ -181,7 +179,7 @@ class AthPool
 
  private:
   AthArray<T>* m_heap_;
-  Ath__array1D<T*>* free_table_;
+  Array1D<T*>* free_table_;
 };
 
 // Simple list

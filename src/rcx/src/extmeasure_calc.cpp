@@ -15,12 +15,9 @@
 #define FRINGE_UP_DOWN
 #endif
 
-using utl::RCX;
-
 namespace rcx {
 
-void extMeasureRC::VerticalCap(Ath__array1D<extSegment*>* segTable,
-                               bool look_up)
+void extMeasureRC::VerticalCap(Array1D<extSegment*>* segTable, bool look_up)
 {
   for (uint32_t ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
@@ -56,7 +53,7 @@ bool extMeasureRC::DiagCap(FILE* fp,
                            bool lookUp,
                            uint32_t maxDist,
                            uint32_t trackLimitCnt,
-                           Ath__array1D<extSegment*>* segTable,
+                           Array1D<extSegment*>* segTable,
                            bool PowerOnly)
 {
   bool no_dist_limit = false;

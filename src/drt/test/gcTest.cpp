@@ -1276,8 +1276,7 @@ TEST_P(CutSpcTblFixture, cut_spc_tbl)
     table.push_back({{301, 301}, {301, 300}});
   }
 
-  dbRule->setSpacingTable(
-      std::move(table), std::move(row_map), std::move(col_map));
+  dbRule->setSpacingTable(table, row_map, col_map);
   makeLef58CutSpcTbl(3, dbRule);
   frNet* n1 = makeNet("n1");
 

@@ -523,10 +523,10 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
     odb::dbTechLayer* upper_layer = connect->getUpperLayer();
 
     // check if both layers have shapes
-    if (shapes.count(lower_layer) == 0) {
+    if (!shapes.contains(lower_layer)) {
       continue;
     }
-    if (shapes.count(upper_layer) == 0) {
+    if (!shapes.contains(upper_layer)) {
       continue;
     }
 
@@ -847,7 +847,7 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   auto remove_set_of_vias = [&vias](std::set<ViaPtr>& remove_vias) {
     auto remove
         = std::remove_if(vias.begin(), vias.end(), [&](const ViaPtr& via) {
-            return remove_vias.count(via) != 0;
+            return remove_vias.contains(via);
           });
     vias.erase(remove, vias.end());
     remove_vias.clear();

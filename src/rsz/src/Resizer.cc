@@ -2496,7 +2496,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
       float highest_cin = 0;
       for (LibertyCell* size : equiv_cells) {
         float size_cin;
-        if ((!cell->isBuffer() || buffer_fast_sizes_.count(size))
+        if ((!cell->isBuffer() || buffer_fast_sizes_.contains(size))
             && getCin(size, size_cin)) {
           if (load_cap < size_cin * cap_ratio) {
             if (upsize_only && size == cell) {
@@ -5019,7 +5019,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   std::set<const Instance*> kept_instances;
 
   auto keepInst = [&](const Instance* inst) {
-    if (!kept_instances.count(inst)) {
+    if (!kept_instances.contains(inst)) {
       kept_instances.insert(inst);
       queue.push_back(inst);
     }
@@ -5082,7 +5082,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
 
   int remove_inst_count = 0, remove_net_count = 0;
   for (auto inst : network_->leafInstances()) {
-    if (!kept_instances.count(inst)) {
+    if (!kept_instances.contains(inst)) {
       sta_->deleteInstance((Instance*) inst);
       remove_inst_count++;
     }

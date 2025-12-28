@@ -54,8 +54,6 @@ BEGIN_LEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
 
-extern YYSTYPE lefyylval;
-
 inline std::string strip_case(const char* str)
 {
   std::string result(str);
@@ -164,14 +162,15 @@ void lefReloadBuffer()
   if (lefData->first_buffer) {
     lefData->first_buffer = 0;
     if (lefSettings->ReadFunction) {
-      if ((nb = (*lefSettings->ReadFunction)(
-               lefData->lefrFile, lefData->current_buffer, 4))
-          != 4) {
+      nb = (*lefSettings->ReadFunction)(
+          lefData->lefrFile, lefData->current_buffer, 4);
+      if (nb != 4) {
         lefData->next = nullptr;
         return;
       }
     } else {
-      if ((nb = fread(lefData->current_buffer, 1, 4, lefData->lefrFile)) != 4) {
+      nb = fread(lefData->current_buffer, 1, 4, lefData->lefrFile);
+      if (nb != 4) {
         lefData->next = nullptr;
         return;
       }
@@ -187,7 +186,8 @@ void lefReloadBuffer()
     if (lefSettings->ReadEncrypted) {
       // is encrypted file and user has set the enable flag to read one
       for (i = 0; i < IN_BUF_SIZE; i++) {
-        if ((c = encFgetc(lefData->lefrFile)) == EOF) {
+        c = encFgetc(lefData->lefrFile);
+        if (c == EOF) {
           break;
         }
         lefData->current_buffer[i] = c;
@@ -1256,11 +1256,17 @@ void lefInfo(int msgNum, const char* s)
             lefData->lef_nlines);
   } else {
     if (!lefData->hasOpenedLogFile) {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == nullptr) {
+      lefData->lefrLog = fopen("lefRWarning.log", "w");
+      if (lefData->lefrLog == nullptr) {
+        char buffer[PATH_MAX];
+        const char* ret = getcwd(buffer, sizeof(buffer));
+        if (ret == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Info messages will not be printed.\n");
       } else {
         lefData->hasOpenedLogFile = 1;
@@ -1274,11 +1280,16 @@ void lefInfo(int msgNum, const char* s)
                 lefData->lef_nlines);
       }
     } else {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == nullptr) {
+      lefData->lefrLog = fopen("lefRWarning.log", "a");
+      if (lefData->lefrLog == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (LEFPARS-3500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Info messages will not be printed.\n");
       } else {
         fprintf(lefData->lefrLog,
@@ -1363,11 +1374,16 @@ void lefWarning(int msgNum, const char* s)
             lefData->lef_nlines);
   } else {
     if (!lefData->hasOpenedLogFile) {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "w")) == nullptr) {
+      lefData->lefrLog = fopen("lefRWarning.log", "w");
+      if (lefData->lefrLog == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (LEFPARS-2500): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Warning messages will not be printed.\n");
       } else {
         lefData->hasOpenedLogFile = 1;
@@ -1382,11 +1398,16 @@ void lefWarning(int msgNum, const char* s)
                 lefData->lef_nlines);
       }
     } else {
-      if ((lefData->lefrLog = fopen("lefRWarning.log", "a")) == nullptr) {
+      lefData->lefrLog = fopen("lefRWarning.log", "a");
+      if (lefData->lefrLog == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (LEFPARS-2501): Unable to open the file lefRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Warning messages will not be printed.\n");
       } else {
         fprintf(lefData->lefrLog,

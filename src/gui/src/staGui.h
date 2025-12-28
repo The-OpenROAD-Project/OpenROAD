@@ -277,10 +277,7 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
  public:
-  GuiDBChangeListener(QObject* parent = nullptr)
-      : QObject(parent), is_modified_(false)
-  {
-  }
+  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent) {}
 
   void inDbInstCreate(odb::dbInst* /* inst */) override { callback(); }
   void inDbInstDestroy(odb::dbInst* /* inst */) override { callback(); }
@@ -327,7 +324,7 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
     }
   }
 
-  bool is_modified_;
+  bool is_modified_{false};
 };
 
 class PinSetWidget : public QWidget

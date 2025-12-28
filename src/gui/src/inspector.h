@@ -116,7 +116,7 @@ class SelectedItemModel : public QStandardItemModel
   void makeItemEditor(const std::string& name,
                       QStandardItem* item,
                       const Selected& selected,
-                      const EditorItemDelegate::EditType type,
+                      EditorItemDelegate::EditType type,
                       const Descriptor::Editor& editor);
 
   const QColor selectable_item_;

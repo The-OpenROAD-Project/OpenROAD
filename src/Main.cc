@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <libgen.h>
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
 #include <strings.h>
 
@@ -371,8 +370,7 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
     )";
 
   if (Tcl_Eval(interp, tcl_script) == TCL_ERROR) {
-    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp)
-              << std::endl;
+    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp) << '\n';
     return "";
   }
 

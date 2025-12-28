@@ -394,6 +394,10 @@ int Flute::flute_wl(int d,
   struct point **ptp, *tmpp;
   struct point* pt;
 
+  if (d <= 1) {
+    return 0;
+  }
+
   /* allocate the dynamic pieces on the heap rather than the stack */
   xs.resize(d);
   ys.resize(d);

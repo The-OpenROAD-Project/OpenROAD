@@ -61,7 +61,7 @@ uint32_t extMain::addNetOnTable(uint32_t netId,
                                 uint32_t* nm_step,
                                 int* bb_ll,
                                 int* bb_ur,
-                                Ath__array1D<uint32_t>*** wireTable)
+                                Array1D<uint32_t>*** wireTable)
 {
   uint32_t cnt = 0;
   int ll[2] = {maxRect->xMin(), maxRect->yMin()};
@@ -74,7 +74,7 @@ uint32_t extMain::addNetOnTable(uint32_t netId,
 
   for (uint32_t ii = lo_bound; ii <= hi_bound; ii++) {
     if (wireTable[dir][ii] == nullptr) {
-      wireTable[dir][ii] = new Ath__array1D<uint32_t>(8000);
+      wireTable[dir][ii] = new Array1D<uint32_t>(8000);
     }
 
     wireTable[dir][ii]->add(netId);
@@ -759,7 +759,7 @@ uint32_t extMain::addSignalNets(uint32_t dir,
   return cnt;
 }
 
-void extMain::resetNetSpefFlag(Ath__array1D<uint32_t>* tmpNetIdTable)
+void extMain::resetNetSpefFlag(Array1D<uint32_t>* tmpNetIdTable)
 {
   for (uint32_t ii = 0; ii < tmpNetIdTable->getCnt(); ii++) {
     uint32_t netId = tmpNetIdTable->get(ii);
@@ -774,7 +774,7 @@ uint32_t extMain::addInsts(uint32_t dir,
                            int* bb_ll,
                            int* bb_ur,
                            uint32_t bucketSize,
-                           Ath__array1D<uint32_t>*** wireBinTable,
+                           Array1D<uint32_t>*** wireBinTable,
                            dbCreateNetUtil* createDbNet)
 {
   uint32_t lo_index
@@ -825,7 +825,7 @@ uint32_t extMain::addNets(uint32_t dir,
                           int* bb_ur,
                           uint32_t wtype,
                           uint32_t ptype,
-                          Ath__array1D<uint32_t>* sdbSignalTable)
+                          Array1D<uint32_t>* sdbSignalTable)
 {
   if (sdbSignalTable == nullptr) {
     return 0;
@@ -1032,7 +1032,7 @@ void extMain::fill_gs4(const int dir,
   }
   if (_v2 && _overCell) {
     const int num_insts = _block->getInsts().size();
-    Ath__array1D<uint32_t> instGsTable(num_insts);
+    Array1D<uint32_t> instGsTable(num_insts);
 
     for (dbInst* inst : _block->getInsts()) {
       odb::dbBox* R = inst->getBBox();
@@ -1047,7 +1047,7 @@ void extMain::fill_gs4(const int dir,
       instGsTable.add(inst->getId());
     }
     if (instGsTable.getCnt() > 0) {
-      Ath__array1D<uint32_t> tmpInstIdTable(num_insts);
+      Array1D<uint32_t> tmpInstIdTable(num_insts);
       addInstsGeometries(&instGsTable, &tmpInstIdTable, dir);
     }
   }
@@ -1097,8 +1097,8 @@ uint32_t extMain::couplingFlow(Rect& extRect,
   _search->setExtControl(_block,
                          _useDbSdb,
                          (uint32_t) overlapAdj,
-                         _CCnoPowerSource,
-                         _CCnoPowerTarget,
+                         _ccNoPowerSource,
+                         _ccNoPowerTarget,
                          _ccUp,
                          _allNet,
                          _ccContextDepth,
@@ -1136,8 +1136,8 @@ uint32_t extMain::couplingFlow(Rect& extRect,
     step_nm[0] = ur[0] - ll[0];
   }
   // _use_signal_tables
-  Ath__array1D<uint32_t> sdbPowerTable;
-  Ath__array1D<uint32_t> tmpNetIdTable(64000);
+  Array1D<uint32_t> sdbPowerTable;
+  Array1D<uint32_t> tmpNetIdTable(64000);
 
   uint32_t totalWiresExtracted = 0;
 

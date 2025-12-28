@@ -42,7 +42,7 @@ class KDTree
 
   void radiusSearchHelper(KDTreeNode* node,
                           const Point& target,
-                          const frSquaredDistance radius_square,
+                          frSquaredDistance radius_square,
                           const Orientation2D& orient,
                           std::vector<int>& result) const;
 

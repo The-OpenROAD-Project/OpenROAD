@@ -28,7 +28,7 @@ struct frOArchive : OutputArchive
 
   // forward to base class
   template <class T>
-  void save(T t)
+  void save(const T& t)
   {
     OutputArchive::save(t);
   }
@@ -37,10 +37,7 @@ struct frOArchive : OutputArchive
 
 struct frIArchive : InputArchive
 {
-  frIArchive(std::istream& os, unsigned flags = 0)
-      : InputArchive(os, flags), design_(nullptr)
-  {
-  }
+  frIArchive(std::istream& os, unsigned flags = 0) : InputArchive(os, flags) {}
 
   // forward to base class
   template <class T>
@@ -52,7 +49,7 @@ struct frIArchive : InputArchive
   void setDesign(frDesign* in) { design_ = in; }
 
  private:
-  frDesign* design_;
+  frDesign* design_{nullptr};
 };
 }  // namespace drt
 

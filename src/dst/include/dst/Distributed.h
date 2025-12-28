@@ -50,7 +50,7 @@ class Distributed
   {
     std::string ip;
     unsigned short port;
-    EndPoint(std::string ip_in, unsigned short port_in)
+    EndPoint(const std::string& ip_in, unsigned short port_in)
         : ip(ip_in), port(port_in)
     {
     }

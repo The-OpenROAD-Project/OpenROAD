@@ -218,6 +218,7 @@ class DisplayControls : public QDockWidget,
   bool areNonPrefTracksVisible() override;
 
   bool areIOPinsVisible() const override;
+  bool areIOPinsSelectable() const override;
   bool areIOPinNamesVisible() const override;
   QFont ioPinMarkersFont() const override;
 

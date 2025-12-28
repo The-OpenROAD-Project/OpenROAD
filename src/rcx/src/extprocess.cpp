@@ -102,7 +102,7 @@ void extConductor::printDouble(FILE* fp,
 
   fprintf(fp, "%s%s %g\n", sep, key, v);
 }
-void extConductor::printConductor(FILE* fp, Ath__parser* parse)
+void extConductor::printConductor(FILE* fp, Parser* parse)
 {
   fprintf(fp, "CONDUCTOR {\n");
 
@@ -124,10 +124,7 @@ void extConductor::printConductor(FILE* fp, Ath__parser* parse)
 
   fprintf(fp, "}\n");
 }
-bool extConductor::setIntVal(Ath__parser* parser,
-                             const char* key,
-                             int n,
-                             int& val)
+bool extConductor::setIntVal(Parser* parser, const char* key, int n, int& val)
 {
   if (strcmp(key, parser->get(0)) == 0) {
     val = parser->getInt(n);
@@ -135,10 +132,7 @@ bool extConductor::setIntVal(Ath__parser* parser,
   }
   return false;
 }
-bool extDielectric::setIntVal(Ath__parser* parser,
-                              const char* key,
-                              int n,
-                              int& val)
+bool extDielectric::setIntVal(Parser* parser, const char* key, int n, int& val)
 {
   if (strcmp(key, parser->get(0)) == 0) {
     val = parser->getInt(n);
@@ -146,7 +140,7 @@ bool extDielectric::setIntVal(Ath__parser* parser,
   }
   return false;
 }
-bool extConductor::setDoubleVal(Ath__parser* parser,
+bool extConductor::setDoubleVal(Parser* parser,
                                 const char* key,
                                 int n,
                                 double& val)
@@ -157,7 +151,7 @@ bool extConductor::setDoubleVal(Ath__parser* parser,
   }
   return false;
 }
-bool extDielectric::setDoubleVal(Ath__parser* parser,
+bool extDielectric::setDoubleVal(Parser* parser,
                                  const char* key,
                                  int n,
                                  double& val)
@@ -169,7 +163,7 @@ bool extDielectric::setDoubleVal(Ath__parser* parser,
   return false;
 }
 /*
-bool extConductor::readConductor(Ath__parser* parser) {
+bool extConductor::readConductor(Parser* parser) {
   if (setDoubleVal(parser, "distance", 1, _distance))
     return true;
   else if (setDoubleVal(parser, "height", 1, _height))
@@ -214,7 +208,7 @@ bool extConductor::readConductor(Ath__parser* parser) {
   return false;
 }
 */
-bool extConductor::readConductor(Ath__parser* parser)
+bool extConductor::readConductor(Parser* parser)
 {
   char* keyword = parser->get(0);
   if (strcmp("distance", keyword) == 0) {
@@ -358,7 +352,7 @@ void extDielectric::printDouble(FILE* fp,
   fprintf(fp, "%s%s %g\n", sep, key, v);
 }
 
-void extDielectric::printDielectric(FILE* fp, Ath__parser* parse)
+void extDielectric::printDielectric(FILE* fp, Parser* parse)
 {
   fprintf(fp, "DIELECTRIC {\n");
 
@@ -1005,7 +999,7 @@ double extProcess::writeProcessAndGroundPlanes(FILE* wfp,
   return height_base;
 }
 
-bool extDielectric::readDielectric(Ath__parser* parser)
+bool extDielectric::readDielectric(Parser* parser)
 {
   if (strcmp("non_conformal_metal", parser->get(0)) == 0) {
     strcpy(_non_conformal_metal, parser->get(1));
@@ -1255,21 +1249,21 @@ void extMasterConductor::writeRaphaelConformalPoly(FILE* fp,
                                                    double X,
                                                    extProcess* p)
 {
-  double height[3];
-  double thickness[3];
-  double bottom_ext[3];
-  double slope[3];
-  double e[3];
+  double height[3] = {0, 0, 0};
+  double thickness[3] = {0, 0, 0};
+  double bottom_ext[3] = {0, 0, 0};
+  double slope[3] = {0, 0, 0};
+  double e[3] = {0, 0, 0};
   bool trench = false;
   uint32_t cnt = 0;
-  uint32_t start = 0;
+  uint32_t start = -1;
   double h = _loLeft[2];
   for (uint32_t i = 0; i < 3; i++) {
     uint32_t j = 2 - i;
     if (!_conformalId[j]) {
       continue;
     }
-    if (!start) {
+    if (start == -1) {
       start = i;
     }
     extDielectric* d = p->getDielectric(_conformalId[j]);
@@ -1348,19 +1342,19 @@ void extMasterConductor::writeRaphaelConformalGround(FILE* fp,
                                                      double width,
                                                      extProcess* p)
 {
-  double height[3];
-  double thickness[3];
-  double e[3];
+  double height[3] = {0, 0, 0};
+  double thickness[3] = {0, 0, 0};
+  double e[3] = {0, 0, 0};
   bool trench = false;
   uint32_t cnt = 0;
-  uint32_t start = 0;
+  uint32_t start = -1;
   double h = _loLeft[2];
   for (uint32_t i = 0; i < 3; i++) {
     uint32_t j = 2 - i;
     if (!_conformalId[j]) {
       continue;
     }
-    if (!start) {
+    if (start == -1) {
       start = i;
     }
     extDielectric* d = p->getDielectric(_conformalId[j]);
@@ -1732,7 +1726,7 @@ extDielectric* extProcess::getDielectric(uint32_t ii)
 {
   return _dielTable->get(ii);
 }
-Ath__array1D<double>* extProcess::getWidthTable(uint32_t met)
+Array1D<double>* extProcess::getWidthTable(uint32_t met)
 {
   double min_width = getConductor(met)->_min_width;
 
@@ -1740,8 +1734,8 @@ Ath__array1D<double>* extProcess::getWidthTable(uint32_t met)
   // const double wTable[3]= {1.0, 1.5, 2.0 };
   const double wTable[8] = {1.0, 1.5, 2.0, 2.5, 3, 4, 5, 10};
 
-  //	Ath__array1D<double>* A= new Ath__array1D<double>(8);
-  Ath__array1D<double>* A = new Ath__array1D<double>(11);
+  //	Array1D<double>* A= new Array1D<double>(8);
+  Array1D<double>* A = new Array1D<double>(11);
   //	for (uint32_t ii= 0; ii<7; ii++) {
   // for (uint32_t ii= 0; ii<3; ii++) {
   for (uint32_t ii = 0; ii < 8; ii++) {
@@ -1751,7 +1745,7 @@ Ath__array1D<double>* extProcess::getWidthTable(uint32_t met)
 
   return A;
 }
-Ath__array1D<double>* extProcess::getSpaceTable(uint32_t met)
+Array1D<double>* extProcess::getSpaceTable(uint32_t met)
 {
   double min_spacing = getConductor(met)->_min_spacing;
 
@@ -1762,7 +1756,7 @@ Ath__array1D<double>* extProcess::getSpaceTable(uint32_t met)
   const double sTable[5] = {1.0, 1.5, 2.0, 3, 5};
   // const double sTable[3]= {1.0, 1.5, 2.0};
 
-  Ath__array1D<double>* A = new Ath__array1D<double>(5);
+  Array1D<double>* A = new Array1D<double>(5);
   for (uint32_t ii = 0; ii < 5; ii++) {
     double s = sTable[ii] * min_spacing;
     A->add(s);
@@ -1770,7 +1764,7 @@ Ath__array1D<double>* extProcess::getSpaceTable(uint32_t met)
 
   return A;
 }
-Ath__array1D<double>* extProcess::getDiagSpaceTable(uint32_t met)
+Array1D<double>* extProcess::getDiagSpaceTable(uint32_t met)
 {
   double min_spacing = getConductor(met)->_min_spacing;
   double min_width = getConductor(met)->_min_width;
@@ -1780,7 +1774,7 @@ Ath__array1D<double>* extProcess::getDiagSpaceTable(uint32_t met)
   // const double sTable[5] = {0, 0.5, 1.0, 2.0, 3};
   const double sTable[3] = {0, 1.0, 2.0};
 
-  Ath__array1D<double>* A = new Ath__array1D<double>(8);
+  Array1D<double>* A = new Array1D<double>(8);
   // for (uint32_t ii = 0; ii < 7; ii++) {
   // for (uint32_t ii = 0; ii < 5; ii++) {
   for (uint32_t ii = 0; ii < 3; ii++) {
@@ -1790,16 +1784,16 @@ Ath__array1D<double>* extProcess::getDiagSpaceTable(uint32_t met)
 
   return A;
 }
-Ath__array1D<double>* extProcess::getDataRateTable(uint32_t met)
+Array1D<double>* extProcess::getDataRateTable(uint32_t met)
 {
   if (_dataRateTable) {
     return _dataRateTable;
   }
-  Ath__array1D<double>* A = new Ath__array1D<double>(8);
+  Array1D<double>* A = new Array1D<double>(8);
   A->add(0.0);
   return A;
 }
-void extProcess::readDataRateTable(Ath__parser* parser, const char* keyword)
+void extProcess::readDataRateTable(Parser* parser, const char* keyword)
 {
   if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0)) {
     return;
@@ -1808,7 +1802,7 @@ void extProcess::readDataRateTable(Ath__parser* parser, const char* keyword)
   if (parser->getWordCnt() < 1) {
     return;
   }
-  Ath__array1D<double>* A = new Ath__array1D<double>(parser->getWordCnt() + 1);
+  Array1D<double>* A = new Array1D<double>(parser->getWordCnt() + 1);
   A->add(0.0);
   parser->getDoubleArray(A, 1);
   _dataRateTable = A;
@@ -1851,8 +1845,8 @@ extVariation* extProcess::getVariation(uint32_t met)
   return v;
 }
 double extVariation::interpolate(double w,
-                                 Ath__array1D<double>* X,
-                                 Ath__array1D<double>* Y)
+                                 Array1D<double>* X,
+                                 Array1D<double>* Y)
 {
   if (X->getCnt() < 2) {
     return w;
@@ -1902,19 +1896,19 @@ double extVariation::getTopWidthR(uint32_t ii, uint32_t jj)
 {
   return _hiWidthR->getVal(ii, jj);
 }
-Ath__array1D<double>* extVariation::getWidthTable()
+Array1D<double>* extVariation::getWidthTable()
 {
   return _hiWidthC->_width;
 }
-Ath__array1D<double>* extVariation::getSpaceTable()
+Array1D<double>* extVariation::getSpaceTable()
 {
   return _hiWidthC->_space;
 }
-Ath__array1D<double>* extVariation::getDataRateTable()
+Array1D<double>* extVariation::getDataRateTable()
 {
   return _loWidthC->_density;
 }
-Ath__array1D<double>* extVariation::getPTable()
+Array1D<double>* extVariation::getPTable()
 {
   if (_p == nullptr) {
     return nullptr;
@@ -1931,7 +1925,7 @@ double extVariation::getP(double w)
 void extProcess::writeProcess(const char* filename)
 {
   FILE* fp = openFile(filename, "w");
-  Ath__parser parse(logger_);
+  Parser parse(logger_);
 
   for (uint32_t kk = 1; kk < _varTable->getCnt(); kk++) {
     _varTable->get(kk)->printVariation(fp, kk);
@@ -1947,8 +1941,8 @@ void extProcess::writeProcess(const char* filename)
   }
   fclose(fp);
 }
-Ath__array1D<double>* extVarTable::readDoubleArray(Ath__parser* parser,
-                                                   const char* keyword)
+Array1D<double>* extVarTable::readDoubleArray(Parser* parser,
+                                              const char* keyword)
 {
   if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0)) {
     return nullptr;
@@ -1958,7 +1952,7 @@ Ath__array1D<double>* extVarTable::readDoubleArray(Ath__parser* parser,
     return nullptr;
   }
 
-  Ath__array1D<double>* A = new Ath__array1D<double>(parser->getWordCnt());
+  Array1D<double>* A = new Array1D<double>(parser->getWordCnt());
   uint32_t start = 0;
   if (keyword != nullptr) {
     start = 1;
@@ -1967,7 +1961,7 @@ Ath__array1D<double>* extVarTable::readDoubleArray(Ath__parser* parser,
   return A;
 }
 void extVarTable::printOneLine(FILE* fp,
-                               Ath__array1D<double>* A,
+                               Array1D<double>* A,
                                const char* header,
                                const char* trail)
 {
@@ -1985,7 +1979,7 @@ void extVarTable::printOneLine(FILE* fp,
 
   fprintf(fp, "%s", trail);
 }
-int extVarTable::readWidthSpacing2D(Ath__parser* parser,
+int extVarTable::readWidthSpacing2D(Parser* parser,
                                     const char* keyword1,
                                     const char* keyword2,
                                     const char* keyword3,
@@ -2012,7 +2006,7 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
   if (strcmp("Deff", keyword2) == 0) {
     _density = readDoubleArray(parser, keyword2);
     for (uint32_t jj = 0; jj < _density->getCnt(); jj++) {
-      _vTable[jj] = new Ath__array1D<double>(_width->getCnt());
+      _vTable[jj] = new Array1D<double>(_width->getCnt());
     }
     if (debug > 0) {
       printOneLine(stdout, _space, keyword2, "\n");
@@ -2109,7 +2103,7 @@ void extVariation::printVariation(FILE* fp, uint32_t n)
 
   fprintf(fp, "}\n");
 }
-extVarTable* extVariation::readVarTable(Ath__parser* parser,
+extVarTable* extVariation::readVarTable(Parser* parser,
                                         const char* key1,
                                         const char* key2,
                                         const char* key3,
@@ -2125,7 +2119,7 @@ extVarTable* extVariation::readVarTable(Ath__parser* parser,
 
   return V;
 }
-int extVariation::readVariation(Ath__parser* parser)
+int extVariation::readVariation(Parser* parser)
 {
   _hiWidthC
       = readVarTable(parser, "Width", "Spacing", "hi_cWidth_eff", "Width");
@@ -2151,7 +2145,7 @@ uint32_t extProcess::readProcess(const char* name, char* filename)
   // create process object
 
   // read process numbers
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   parser.addSeparator("\r");
   parser.openFile(filename);
 
@@ -2233,17 +2227,17 @@ uint32_t extProcess::readProcess(const char* name, char* filename)
 extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, Logger* logger)
 {
   logger_ = logger;
-  _condTable = new Ath__array1D<extConductor*>(condCnt);
+  _condTable = new Array1D<extConductor*>(condCnt);
   _condTable->add(nullptr);
   _maxMinFlag = false;
-  _dielTable = new Ath__array1D<extDielectric*>(dielCnt);
+  _dielTable = new Array1D<extDielectric*>(dielCnt);
   _dielTable->add(nullptr);
-  _masterConductorTable = new Ath__array1D<extMasterConductor*>(condCnt);
+  _masterConductorTable = new Array1D<extMasterConductor*>(condCnt);
   _masterConductorTable->add(nullptr);
-  _masterDielectricTable = new Ath__array1D<extMasterConductor*>(dielCnt);
+  _masterDielectricTable = new Array1D<extMasterConductor*>(dielCnt);
   _masterDielectricTable->add(nullptr);
 
-  _varTable = new Ath__array1D<extVariation*>(condCnt);
+  _varTable = new Array1D<extVariation*>(condCnt);
   _varTable->add(nullptr);
   _dataRateTable = nullptr;
   _thickVarFlag = false;
@@ -2251,7 +2245,10 @@ extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, Logger* logger)
 extVarTable::extVarTable(uint32_t rowCnt)
 {
   _rowCnt = rowCnt;
-  _vTable = new Ath__array1D<double>*[rowCnt];
+  _vTable = new Array1D<double>*[rowCnt];
+  for (int i = 0; i < rowCnt; ++i) {
+    _vTable[i] = nullptr;
+  }
   _density = nullptr;
   _space = nullptr;
   _width = nullptr;

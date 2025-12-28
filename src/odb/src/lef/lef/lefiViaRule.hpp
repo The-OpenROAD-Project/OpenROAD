@@ -39,11 +39,9 @@ BEGIN_LEF_PARSER_NAMESPACE
 class lefiViaRuleLayer
 {
  public:
-  lefiViaRuleLayer();
   void Init();
 
   void Destroy();
-  ~lefiViaRuleLayer();
   void clearLayerOverhang();
 
   void setName(const char* name);
@@ -90,8 +88,8 @@ class lefiViaRuleLayer
  protected:
   char* name_{nullptr};
   char direction_{0};
-  double overhang1_{0.0};  // 5.5
-  double overhang2_{0.0};  // 5.5
+  double overhang1_{-1};  // 5.5
+  double overhang2_{-1};  // 5.5
   int hasWidth_{0};
   int hasResistance_{0};
   int hasOverhang_{0};
@@ -143,11 +141,8 @@ class lefiViaRule
   void setVertical();
   void setHorizontal();
   void setEnclosure(double overhang1, double overhang2);
-  void addProp(const char* name, const char* value, const char type);
-  void addNumProp(const char* name,
-                  const double d,
-                  const char* value,
-                  const char type);
+  void addProp(const char* name, const char* value, char type);
+  void addNumProp(const char* name, double d, const char* value, char type);
 
   // This routine sets and creates the active layer.
   void setLayer(const char* name);

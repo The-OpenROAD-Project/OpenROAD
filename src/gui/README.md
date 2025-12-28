@@ -945,6 +945,30 @@ Update the paths in the Timing Report widget:
 gui::update_timing_report
 ```
 
+### Show Worst Path
+
+Update the paths in the Timing Report widget and select the path with the worst slack:
+
+```tcl
+gui::show_worst_path
+    [-setup|-hold]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `-setup` | Select the path with the worst setup slack (default). |
+| `-hold` | Select the path with the worst hold slack. |
+
+### Clear Timing Path
+
+Clear the selected timing path in the Timing Report widget:
+
+```tcl
+gui::clear_timing_path
+```
+
 ## License
 
 BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

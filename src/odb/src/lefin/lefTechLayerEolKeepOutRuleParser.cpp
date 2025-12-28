@@ -32,7 +32,7 @@ void lefTechLayerEolKeepOutRuleParser::parse(const std::string& s,
   });
 }
 void lefTechLayerEolKeepOutRuleParser::setClass(
-    std::string val,
+    const std::string& val,
     odb::dbTechLayerEolKeepOutRule* rule,
     odb::dbTechLayer* layer)
 {

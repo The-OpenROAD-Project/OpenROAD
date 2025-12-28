@@ -1508,7 +1508,7 @@ uint32_t extSpef::sortRSegs()
     _hcnrc->resize(ncsz);
     ncsz = _hcnrc->getSize();
     for (int ii = ocsz; ii < ncsz; ii++) {
-      Ath__array1D<int>* n1d = new Ath__array1D<int>(4);
+      Array1D<int>* n1d = new Array1D<int>(4);
       _hcnrc->set(ii, n1d);
     }
   }
@@ -1539,7 +1539,7 @@ uint32_t extSpef::sortRSegs()
     _d_corner_net->setRCDisconnected(true);
     return 0;
   }
-  Ath__array1D<int>* tcnrc;
+  Array1D<int>* tcnrc;
   int hcnii;
   int cntTcn;
   int scns[2000];
@@ -2122,14 +2122,14 @@ void extSpef::setupMapping(uint32_t itermCnt)
     btermCnt = 512;
     itermCnt = 64000;
   }
-  _btermTable = new Ath__array1D<uint32_t>(btermCnt);
-  _itermTable = new Ath__array1D<uint32_t>(itermCnt);
-  _nodeTable = new Ath__array1D<uint32_t>(16000);
+  _btermTable = new Array1D<uint32_t>(btermCnt);
+  _itermTable = new Array1D<uint32_t>(itermCnt);
+  _nodeTable = new Array1D<uint32_t>(16000);
 }
 
 void extSpef::resetNameTable(const uint32_t n)
 {
-  _nameMapTable = new Ath__array1D<const char*>(128000);
+  _nameMapTable = new Array1D<const char*>(128000);
   _nameMapTable->resize(n);
   _lastNameMapIndex = 0;
 }
@@ -2329,7 +2329,7 @@ uint32_t extSpef::readBlock(const uint32_t debug,
   }
   _readingNodeCoordsInput = _readingNodeCoords;
   if (_readingNodeCoords != C_NONE && _nodeCoordParser == nullptr) {
-    _nodeCoordParser = new Ath__parser(logger_);
+    _nodeCoordParser = new Parser(logger_);
   }
   if (capStatsFile != nullptr) {
     _capStatsFP = fopen(capStatsFile, "w");
@@ -2505,18 +2505,28 @@ uint32_t extSpef::readBlock(const uint32_t debug,
 
   _cc_app_print_limit = app_print_limit;
   if (_cc_app_print_limit) {
-    _ccidmap = new Ath__array1D<int>(8000000);
+    _ccidmap = new Array1D<int>(8000000);
   }
   uint32_t cnt = 0;
-  bool rc;
   _noNameMap = _noPorts = false;
-  if (!(rc = readHeaderInfo(0))) {
-    _parser->syntaxError("Header Section");
-  } else if (!_noNameMap && !(rc = readNameMap(0))) {
-    _parser->syntaxError("NameMap Section");
-  } else if (!_noPorts && !(rc = readPorts())) {
-    _parser->syntaxError("Ports Section");
-  } else {
+  const bool rc = [&]() {
+    if (!readHeaderInfo(0)) {
+      _parser->syntaxError("Header Section");
+      return false;
+    }
+    if (!_noNameMap) {
+      if (!readNameMap(0)) {
+        _parser->syntaxError("NameMap Section");
+        return false;
+      }
+    }
+    if (!_noPorts) {
+      if (!readPorts()) {
+        _parser->syntaxError("Ports Section");
+        return false;
+      }
+    }
+
     _nodeParser->resetSeparator(_delimiter);
 
     if (_rRun == 1) {
@@ -2578,7 +2588,8 @@ uint32_t extSpef::readBlock(const uint32_t debug,
     if (!(_testParsing || _statsOnly)) {
       resetExtIds(0);
     }
-  }
+    return true;
+  }();
   deleteNodeCoordTables();
 
   if (_diff && (_diffLogFP != nullptr)) {

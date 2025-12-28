@@ -373,13 +373,13 @@ int Tapcell::removeCells(const std::string& prefix)
   odb::dbBlock* block = db_->getChip()->getBlock();
   int removed = 0;
 
-  if (prefix.length() == 0) {
+  if (prefix.empty()) {
     // If no prefix is given, return 0 instead of having all cells removed
     return 0;
   }
 
   for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->getName().find(prefix) == 0) {
+    if (inst->getName().starts_with(prefix)) {
       odb::dbInst::destroy(inst);
       removed++;
     }
@@ -409,7 +409,9 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori)
 
 std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+  using boost::polygon::operators::operator&;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
   auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {

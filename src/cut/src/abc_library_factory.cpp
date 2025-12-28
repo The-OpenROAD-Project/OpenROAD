@@ -3,9 +3,8 @@
 
 #include "cut/abc_library_factory.h"
 
-#include <string.h>
-
 #include <cmath>
+#include <cstring>
 #include <optional>
 #include <unordered_set>
 #include <utility>

@@ -14,7 +14,6 @@
 
 namespace rcx {
 
-using utl::Logger;
 using utl::RCX;
 
 // ----------------------------- dkf 092024 --------------------------------

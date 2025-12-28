@@ -64,16 +64,17 @@ class IRSolver
     std::set<ITermNode*, Node::Compare> unconnected_iterms;
   };
 
-  IRSolver(
-      odb::dbNet* net,
-      bool floorplanning,
-      sta::dbSta* sta,
-      est::EstimateParasitics* estimate_parasitics,
-      utl::Logger* logger,
-      const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>&
-          user_voltages,
-      const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers,
-      const PDNSim::GeneratedSourceSettings& generated_source_settings);
+  using UserVoltages = std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>;
+  using UserPowers = std::map<odb::dbInst*, std::map<sta::Corner*, Power>>;
+
+  IRSolver(odb::dbNet* net,
+           bool floorplanning,
+           sta::dbSta* sta,
+           est::EstimateParasitics* estimate_parasitics,
+           utl::Logger* logger,
+           const UserVoltages& user_voltages,
+           const UserPowers& user_powers,
+           const PDNSim::GeneratedSourceSettings& generated_source_settings);
 
   odb::dbNet* getNet() const { return net_; };
 
@@ -144,26 +145,20 @@ class IRSolver
 
   Connection::ConnectionMap<Connection::Conductance> generateConductanceMap(
       sta::Corner* corner,
-      const std::vector<std::unique_ptr<Connection>>& connections) const;
-  Voltage generateSourceNodes(
-      GeneratedSourceType source_type,
-      const std::string& source_file,
-      sta::Corner* corner,
-      std::vector<std::unique_ptr<SourceNode>>& sources) const;
-  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesFromBTerms()
-      const;
-  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesGenericFull()
-      const;
-  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesGenericStraps()
-      const;
-  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesGenericBumps()
-      const;
-  std::vector<std::unique_ptr<SourceNode>> generateSourceNodesFromShapes(
+      const Connections& connections) const;
+  Voltage generateSourceNodes(GeneratedSourceType source_type,
+                              const std::string& source_file,
+                              sta::Corner* corner,
+                              SourceNodes& sources) const;
+  SourceNodes generateSourceNodesFromBTerms() const;
+  SourceNodes generateSourceNodesGenericFull() const;
+  SourceNodes generateSourceNodesGenericStraps() const;
+  SourceNodes generateSourceNodesGenericBumps() const;
+  SourceNodes generateSourceNodesFromShapes(
       const std::set<odb::Rect>& shapes) const;
-  Voltage generateSourceNodesFromSourceFile(
-      const std::string& source_file,
-      sta::Corner* corner,
-      std::vector<std::unique_ptr<SourceNode>>& sources) const;
+  Voltage generateSourceNodesFromSourceFile(const std::string& source_file,
+                                            sta::Corner* corner,
+                                            SourceNodes& sources) const;
 
   void reportUnconnectedNodes() const;
   void reportMissingBTerm() const;
@@ -178,9 +173,8 @@ class IRSolver
                                       ValueNodeMap<Current>& currents) const;
   std::map<Node*, std::size_t> assignNodeIDs(const Node::NodeSet& nodes,
                                              std::size_t start = 0) const;
-  std::map<Node*, std::size_t> assignNodeIDs(
-      const std::vector<std::unique_ptr<SourceNode>>& nodes,
-      std::size_t start = 0) const;
+  std::map<Node*, std::size_t> assignNodeIDs(const SourceNodes& nodes,
+                                             std::size_t start = 0) const;
   void buildCondMatrixAndVoltages(
       bool is_ground,
       const std::map<Node*, Connection::ConnectionSet>& node_connections,
@@ -191,7 +185,7 @@ class IRSolver
       Eigen::VectorXd& j_vector) const;
   void addSourcesToMatrixAndVoltages(
       Voltage src_voltage,
-      const std::vector<std::unique_ptr<psm::SourceNode>>& sources,
+      const SourceNodes& sources,
       const std::map<Node*, std::size_t>& node_index,
       Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
       Eigen::VectorXd& j_vector) const;
@@ -215,8 +209,8 @@ class IRSolver
 
   std::unique_ptr<DebugGui> gui_;
 
-  const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages_;
-  const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers_;
+  const UserVoltages& user_voltages_;
+  const UserPowers& user_powers_;
   std::map<sta::Corner*, Voltage> solution_voltages_;
   std::map<sta::Corner*, Power> solution_power_;
 

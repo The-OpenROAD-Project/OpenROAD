@@ -134,7 +134,7 @@ class extSolverGen : public extProcess
 
   char* _topDir;
   char* _patternName;
-  Ath__parser* _parser;
+  Parser* _parser;
   char* _solverFileName;
 
   FILE* _capLogFP;
