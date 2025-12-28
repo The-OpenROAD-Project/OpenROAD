@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     error1
     get_core_die_areas
+    issue_7816
     place_inst
     timing_api
     timing_api_2

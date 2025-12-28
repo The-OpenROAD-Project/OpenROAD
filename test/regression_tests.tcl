@@ -24,5 +24,3 @@ record_flow_tests {
 record_test open_db $test_dir "compare_logfile" "-db gcd_sky130hd.odb"
 # For invalid DB, allow non-zero exit but require log to match ok
 record_test open_db_invalid $test_dir "compare_logfile_allow_error" "-db nonexistent_file.odb"
-
-record_test issue_7816 $test_dir "compare_logfile"

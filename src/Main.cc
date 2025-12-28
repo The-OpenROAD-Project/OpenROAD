@@ -313,9 +313,8 @@ int main(int argc, char* argv[])
 #ifdef ENABLE_READLINE
 static int tclReadlineInit(Tcl_Interp* interp)
 {
-  std::array<const char*, 2> readline_cmds = {
-    "ord::setup_tclreadline",
-    "::tclreadline::Loop"};
+  std::array<const char*, 2> readline_cmds
+      = {"ord::setup_tclreadline", "::tclreadline::Loop"};
 
   for (auto cmd : readline_cmds) {
     if (TCL_ERROR == Tcl_Eval(interp, cmd)) {

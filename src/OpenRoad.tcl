@@ -587,16 +587,16 @@ proc parse_list_args { cmd arg_var list_var lists_args } {
   }
 }
 
-proc cmd_args_completer {part start end line} {
-  if { $start == 0 || [catch {set cmd [::tclreadline::Lindex $line 0]} err] != 0 } {
-      utl::redirectStringBegin
-      set err [catch {::tclreadline::ScriptCompleter $part $start $end $line} ret]
-      utl::redirectStringEnd
-      if { $err == 0} {
-        return $ret
-      } else {
-        return ""
-      }
+proc cmd_args_completer { part start end line } {
+  if { $start == 0 || [catch { set cmd [::tclreadline::Lindex $line 0] } err] != 0 } {
+    utl::redirectStringBegin
+    set err [catch { ::tclreadline::ScriptCompleter $part $start $end $line } ret]
+    utl::redirectStringEnd
+    if { $err == 0 } {
+      return $ret
+    } else {
+      return ""
+    }
   }
   if { [info exists ::sta::cmd_args($cmd)] } {
     set metadata $::sta::cmd_args($cmd)
@@ -609,7 +609,7 @@ proc cmd_args_completer {part start end line} {
   set raw_files [glob -nocomplain -types {f d} -- "${part}*"]
   set files {}
   foreach f $raw_files {
-    if {[file isdirectory $f]} {
+    if { [file isdirectory $f] } {
       lappend files "${f}/"
     } else {
       lappend files $f
@@ -629,8 +629,8 @@ proc setup_tclreadline { } {
   ::tclreadline::readline builtincompleter false
   catch { ::tclreadline::ScriptCompleter "" 0 0 "" }
   ::tclreadline::readline customcompleter ::ord::cmd_args_completer
-  proc ::tclreadline::prompt1 {} { return "openroad> " }
-  proc ::tclreadline::prompt2 {} { return "...> " }
+  proc ::tclreadline::prompt1 { } { return "openroad> " }
+  proc ::tclreadline::prompt2 { } { return "...> " }
 }
 
 # namespace ord
