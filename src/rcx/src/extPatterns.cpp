@@ -831,7 +831,7 @@ bool extPattern::SetPatternName()
   }
   nameHash->add(pname, 1);
   // pname is store in nameHash, not leaked
-  //NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
+  // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
   return false;
 }
 

@@ -2078,8 +2078,6 @@ void FastRouteCore::computeCongestionInformation()
 
 ////////////////////////////////////////////////////////////////
 
-const char* getNetName(odb::dbNet* db_net);
-
 const char* FrNet::getName() const
 {
   return getNetName(getDbNet());

@@ -40,7 +40,7 @@ static const std::string prefix("_main/src/dbSta/test/");
   Shows the dbNet and dbModNet view of the database.
 */
 
-void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
+static void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
 {
   str_db << fmt::format("Debug: Data base tables for block at {}:\n",
                         block->getName());

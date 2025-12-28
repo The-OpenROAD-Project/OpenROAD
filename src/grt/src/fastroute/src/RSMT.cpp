@@ -24,7 +24,7 @@ struct Pnt
   int o;
 };
 
-int orderx(const Pnt* a, const Pnt* b)
+static int orderx(const Pnt* a, const Pnt* b)
 {
   return a->x < b->x;
 }

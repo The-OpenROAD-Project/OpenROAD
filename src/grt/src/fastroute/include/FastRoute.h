@@ -720,4 +720,6 @@ class FastRouteCore
   multi_array<int, 3> d2_3D_;
 };
 
+extern const char* getNetName(odb::dbNet* db_net);
+
 }  // namespace grt

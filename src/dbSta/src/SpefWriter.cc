@@ -38,7 +38,7 @@ SpefWriter::SpefWriter(Logger* logger,
   writePorts();
 }
 
-std::string escapeSpecial(const std::string& name)
+static std::string escapeSpecial(const std::string& name)
 {
   std::string result = name;
   size_t pos = 0;
@@ -49,7 +49,7 @@ std::string escapeSpecial(const std::string& name)
   return result;
 }
 
-std::string escapeSpecial(const char* name)
+static std::string escapeSpecial(const char* name)
 {
   if (!name) {
     return "";
@@ -60,7 +60,7 @@ std::string escapeSpecial(const char* name)
 // Quick fix for wrong pin delimiter.
 // TODO: save the parasitics data to odb and use the existing write_spef
 // mechanism to produce the spef files from estimate_parasitics.
-std::string fixPinDelimiter(const std::string& name)
+static std::string fixPinDelimiter(const std::string& name)
 {
   const char delimiter = '/';
   std::string result = name;
@@ -104,7 +104,7 @@ void SpefWriter::writeHeader()
   }
 }
 
-char getIoDirectionText(const odb::dbIoType& io_type)
+static char getIoDirectionText(const odb::dbIoType& io_type)
 {
   if (io_type == odb::dbIoType::INPUT) {
     return 'I';

@@ -3906,13 +3906,14 @@ void GlobalRouter::initGrid(int max_layer)
               num_layers);
 }
 
-void getViaDims(std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
-                odb::dbTechLayer* tech_layer,
-                odb::dbTechLayer* bottom_layer,
-                int& width_up,
-                int& prl_up,
-                int& width_down,
-                int& prl_down)
+static void getViaDims(
+    std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
+    odb::dbTechLayer* tech_layer,
+    odb::dbTechLayer* bottom_layer,
+    int& width_up,
+    int& prl_up,
+    int& width_down,
+    int& prl_down)
 {
   width_up = -1;
   prl_up = -1;

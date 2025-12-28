@@ -93,11 +93,6 @@ void HungarianMatching::createMatrix()
   }
 }
 
-inline bool samePos(odb::Point& a, odb::Point& b)
-{
-  return (a.x() == b.x() && a.y() == b.y());
-}
-
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
                                            bool assign_mirrored)
 {
