@@ -852,7 +852,9 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
   routes_[db_net].clear();
   for (odb::dbGuide* guide : db_net->getGuides()) {
     int layer_idx = guide->getLayer()->getRoutingLevel();
-    int via_layer_idx = guide->getViaLayer()->getRoutingLevel();
+    int via_layer_idx = guide->getViaLayer() != nullptr
+                            ? guide->getViaLayer()->getRoutingLevel()
+                            : 0;
     boxToGlobalRouting(
         guide->getBox(), layer_idx, via_layer_idx, routes_[db_net]);
     is_congested_ = is_congested_ || guide->isCongested();
