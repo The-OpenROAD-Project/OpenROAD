@@ -410,7 +410,7 @@ Instance* BaseMove::makeBuffer(LibertyCell* cell,
 // removal if slack doesn't become violating (no new violations)
 //
 //               input_net                             output_net
-//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
+//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>  FO inst pin
 //               |
 //               ------>  (side_input_pin1  side_out_pin1) ----->
 //               |
@@ -475,12 +475,55 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
       return false;
     }
 
-    // Check if output pin of direct fanout instance can absorb delay and slew
+    // Model slew degradation across wire from prev_drv_pin to the FO inst pin
+    // prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>  FO inst pin
+    //                                                          ^
+    //                                                          |
+    //                                                         old_slew
+    //
+    // prev_drv_pin -------------------------------------------->  FO inst pin
+    //                                                          ^
+    //                                                          |
+    //                                                         new_slew
+    // Compute RC scale factor based on existing buffer as driver
+    float estimated_old_slew = resizer_->driveResistance(params.driver_pin)
+                               * dcalc->loadCap(pin, dcalc_ap);
+    Vertex* out_vertex = graph_->pinDrvrVertex(pin);
+    float actual_old_slew = out_vertex ?
+      sta_->vertexSlew(out_vertex, prev_driver_rf, dcalc_ap) : estimated_old_slew;
+    float rc_factor = actual_old_slew / estimated_old_slew;
+    float estimated_new_slew = resizer_->driveResistance(params.prev_driver_pin)
+                               * dcalc->loadCap(pin, dcalc_ap) * rc_factor;
+
+    Slew old_in_slew[RiseFall::index_count];
+    for (auto rf : RiseFall::range()) {
+      old_in_slew[rf->index()] = actual_old_slew;
+    }
+    Slew new_in_slew[RiseFall::index_count];
+    for (auto rf : RiseFall::range()) {
+      new_in_slew[rf->index()] = estimated_new_slew;
+    }
+
+    debugPrint(
+        logger_,
+        RSZ,
+        "remove_buffer",
+        1,
+        "estimated in slew at fanout pin {} is {} = {} x {}, prev drvr out "
+        "slew = {}",
+        db_network_->name(pin),
+        estimated_new_slew,
+        estimated_new_slew / rc_factor,
+        rc_factor,
+        new_slew[prev_driver_rf->index()]);
+
+    // Check if output pin of direct fanout instance can absorb delay and
+    // slew
     // degradation
     if (!estimateInputSlewImpact(network_->instance(pin),
                                  dcalc_ap,
-                                 old_slew,
-                                 new_slew,
+                                 old_in_slew,
+                                 new_in_slew,
                                  delay_degrad - delay_imp,
                                  params,
                                  /* accept if slack improves */ true)) {
@@ -501,7 +544,7 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     }
     float old_slack = sta_->pinSlack(side_input_pin, resizer_->max_);
     float new_slack = old_slack - delay_degrad - params.setup_slack_margin;
-    if (new_slack < 0) {
+    if (new_slack < 0 && new_slack < 1.1 * old_slack) {
       // clang-format off
       debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                  "because side input pin {} will have a violating slack of {}:"
