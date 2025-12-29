@@ -235,6 +235,7 @@ proc repair_tie_fanout { args } {
 # in define_cmd_args
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-recover_power percent_of_paths_with_slack]\
+                                        [-more_recover_power]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
                                         [-slack_margin slack_margin]\
@@ -265,7 +266,7 @@ proc repair_timing { args } {
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
-             -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint -verbose}
+             -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint -more_recover_power -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -354,6 +355,23 @@ proc repair_timing { args } {
 
   sta::check_argc_eq0 "repair_timing" $args
   est::check_parasitics
+
+  set more_recover_power [info exists flags(-more_recover_power)]
+  if { !$more_recover_power && [info exists ::env(MORE_RECOVER_POWER)] } {
+    set env_more_recover_power [string tolower $::env(MORE_RECOVER_POWER)]
+    switch -- $env_more_recover_power {
+      1 - true - yes - on {
+        set more_recover_power 1
+      }
+      0 - false - no - off - "" {
+        set more_recover_power 0
+      }
+      default {
+        set more_recover_power 1
+      }
+    }
+  }
+  rsz::set_more_recover_power $more_recover_power
 
   set recovered_power 0
   set repaired_setup 0
