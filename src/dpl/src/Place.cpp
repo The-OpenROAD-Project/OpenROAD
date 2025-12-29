@@ -792,7 +792,7 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
     for (GridPt offset : neighbors) {
       GridPt neighbor = {nearest.x + offset.x, nearest.y + offset.y};
       // Check if it was already put in the queue
-      if (visited.count(neighbor) > 0) {
+      if (visited.contains(neighbor)) {
         continue;
       }
       // Check limits

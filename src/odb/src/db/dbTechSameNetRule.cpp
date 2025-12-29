@@ -4,6 +4,7 @@
 #include "dbTechSameNetRule.h"
 
 #include <cassert>
+#include <cstdint>
 
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -142,7 +143,7 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechNonDefaultRule* ndrule_,
 }
 
 dbTechSameNetRule* dbTechSameNetRule::getTechSameNetRule(dbTech* tech_,
-                                                         uint dbid_)
+                                                         uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechSameNetRule*) tech->samenet_rule_tbl_->getPtr(dbid_);

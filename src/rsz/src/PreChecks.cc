@@ -4,11 +4,15 @@
 #include "PreChecks.hh"
 
 #include <algorithm>
+#include <memory>
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -59,4 +63,66 @@ void PreChecks::checkSlewLimit(float ref_cap, float max_load_slew)
                    cap_unit->scaleAbbreviation());
   }
 }
+
+void PreChecks::checkCapLimit(const Pin* drvr_pin)
+{
+  if (!min_cap_load_computed_) {
+    min_cap_load_computed_ = true;
+    // Find the smallest buffer/inverter input cap
+    min_cap_load_ = sta::INF;
+    dbNetwork* network = resizer_->getDbNetwork();
+    std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
+        network->libertyLibraryIterator()};
+
+    auto update_min_cap = [&](const auto& cells) {
+      for (sta::LibertyCell* cell : cells) {
+        sta::LibertyPort* input;
+        sta::LibertyPort* output;
+        cell->bufferPorts(input, output);
+        min_cap_load_ = std::min(min_cap_load_, input->capacitance());
+      }
+    };
+
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      update_min_cap(*lib->buffers());
+      update_min_cap(*lib->inverters());
+    }
+  }
+
+  float cap1, max_cap1, cap_slack1;
+  const Corner* corner1;
+  const RiseFall* tr1;
+  sta_->checkCapacitance(drvr_pin,
+                         nullptr,
+                         sta::MinMax::max(),
+                         corner1,
+                         tr1,
+                         cap1,
+                         max_cap1,
+                         cap_slack1);
+  if (max_cap1 > 0 && max_cap1 < min_cap_load_) {
+    dbNetwork* network = resizer_->getDbNetwork();
+    const sta::Unit* cap_unit = sta_->units()->capacitanceUnit();
+    std::string master_name = "-";
+    if (sta::Instance* inst = network->instance(drvr_pin)) {
+      sta::Cell* cell = network->cell(inst);
+      if (cell) {
+        master_name = network->name(cell);
+      }
+    }
+    logger_->error(
+        RSZ,
+        169,
+        "Max cap for driver {} of type {} is unreasonably small {}{}F. "
+        "Min buffer or inverter input cap is {}{}F",
+        network->name(drvr_pin),
+        master_name,
+        cap_unit->asString(max_cap1),
+        cap_unit->scaleAbbreviation(),
+        cap_unit->asString(min_cap_load_),
+        cap_unit->scaleAbbreviation());
+  }
+}
+
 }  // namespace rsz

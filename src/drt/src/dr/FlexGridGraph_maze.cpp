@@ -229,19 +229,13 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   getPoint(srcPoint, gridX, gridY);
   getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
   getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
-  frCoord minCostX = std::max(std::max(dstPoint1.x() - srcPoint.x(),
-                                       srcPoint.x() - dstPoint2.x()),
-                              0)
-                     * 1;
-  frCoord minCostY = std::max(std::max(dstPoint1.y() - srcPoint.y(),
-                                       srcPoint.y() - dstPoint2.y()),
-                              0)
-                     * 1;
-  frCoord minCostZ
-      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(gridZ),
-                          getZHeight(gridZ) - getZHeight(dstMazeIdx2.z())),
-                 0)
-        * 1;
+  frCoord minCostX = std::max(
+      {dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x(), 0});
+  frCoord minCostY = std::max(
+      {dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y(), 0});
+  frCoord minCostZ = std::max({getZHeight(dstMazeIdx1.z()) - getZHeight(gridZ),
+                               getZHeight(gridZ) - getZHeight(dstMazeIdx2.z()),
+                               0});
 
   bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E
               && dir != frDirEnum::W)

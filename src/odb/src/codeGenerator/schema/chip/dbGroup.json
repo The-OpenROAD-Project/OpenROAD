@@ -10,7 +10,7 @@
     },
     {
       "name":"type",
-      "type":"uint",
+      "type":"uint32_t",
       "bits":2,
       "flags":["no-set","no-get"]
     },

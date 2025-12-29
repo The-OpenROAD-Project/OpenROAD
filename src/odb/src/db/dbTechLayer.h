@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -12,7 +13,6 @@
 #include "dbVector.h"
 #include "odb/dbMatrix.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -49,7 +49,7 @@ class dbTrackGrid;
 
 struct dbTechLayerFlags
 {
-  uint num_masks : 2;
+  uint32_t num_masks : 2;
   dbTechLayerType::Value type : 4;
   dbTechLayerDir::Value direction : 4;
   dbTechLayerMinStepType::Value minstep_type : 2;
@@ -64,8 +64,8 @@ struct dbTechLayerFlags
   bool right_way_on_grid_only : 1;
   bool right_way_on_grid_only_check_mask : 1;
   bool rect_only_except_non_core_pins : 1;
-  uint lef58_type : 5;
-  uint spare_bits : 4;
+  uint32_t lef58_type : 5;
+  uint32_t spare_bits : 4;
 };
 
 class _dbTechLayer : public _dbObject
@@ -81,13 +81,13 @@ class _dbTechLayer : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
-  uint getV55RowIdx(const int& rowVal) const;
-  uint getV55ColIdx(const int& colVal) const;
-  uint getTwIdx(int width, int prl) const;
+  uint32_t getV55RowIdx(const int& rowVal) const;
+  uint32_t getV55ColIdx(const int& colVal) const;
+  uint32_t getTwIdx(int width, int prl) const;
   // User Code End Methods
 
   dbTechLayerFlags flags_;
-  uint wrong_way_width_;
+  uint32_t wrong_way_width_;
   float layer_adjustment_;
   std::vector<std::pair<int, int>> orth_spacing_tbl_;
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
@@ -115,21 +115,21 @@ class _dbTechLayer : public _dbObject
 
   // User Code Begin Fields
 
-  uint pitch_x_;
-  uint pitch_y_;
-  uint offset_x_;
-  uint offset_y_;
-  uint width_;
-  uint spacing_;
+  uint32_t pitch_x_;
+  uint32_t pitch_y_;
+  uint32_t offset_x_;
+  uint32_t offset_y_;
+  uint32_t width_;
+  uint32_t spacing_;
   double resistance_;
   double capacitance_;
   double edge_capacitance_;
-  uint wire_extension_;
-  uint number_;
-  uint rlevel_;
+  uint32_t wire_extension_;
+  uint32_t number_;
+  uint32_t rlevel_;
   double area_;
-  uint thickness_;
-  uint max_width_;
+  uint32_t thickness_;
+  uint32_t max_width_;
   int min_width_;
   int min_step_;
   int min_step_max_length_;
@@ -138,9 +138,9 @@ class _dbTechLayer : public _dbObject
 
   struct
   {  // Protrusion
-    uint width;
-    uint length;
-    uint from_width;
+    uint32_t width;
+    uint32_t length;
+    uint32_t from_width;
   } pt_;
   char* name_;
   char* alias_;
@@ -151,13 +151,13 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechMinCutRule, 8>* min_cut_rules_tbl_;
   dbTable<_dbTechMinEncRule, 8>* min_enc_rules_tbl_;
   dbTable<_dbTechV55InfluenceEntry, 8>* v55inf_tbl_;
-  dbVector<uint> v55sp_length_idx_;
-  dbVector<uint> v55sp_width_idx_;
-  dbMatrix<uint> v55sp_spacing_;
+  dbVector<uint32_t> v55sp_length_idx_;
+  dbVector<uint32_t> v55sp_width_idx_;
+  dbMatrix<uint32_t> v55sp_spacing_;
 
-  dbVector<uint> two_widths_sp_idx_;
+  dbVector<uint32_t> two_widths_sp_idx_;
   dbVector<int> two_widths_sp_prl_;
-  dbMatrix<uint> two_widths_sp_spacing_;
+  dbMatrix<uint32_t> two_widths_sp_spacing_;
 
   dbId<_dbTechLayerAntennaRule> oxide1_;
   dbId<_dbTechLayerAntennaRule> oxide2_;

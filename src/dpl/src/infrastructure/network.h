@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -31,48 +32,10 @@ class PlacementDRC;
 class Network
 {
  public:
-  struct comparePinsByNodeId
-  {
-    bool operator()(const Pin* a, const Pin* b)
-    {
-      return a->getNode()->getId() < b->getNode()->getId();
-    }
-  };
-
-  class comparePinsByEdgeId
-  {
-   public:
-    explicit comparePinsByEdgeId(Network* nw) : nw_(nw) {}
-    bool operator()(const Pin* a, const Pin* b)
-    {
-      return a->getEdge()->getId() < b->getEdge()->getId();
-    }
-
-   private:
-    Network* nw_ = nullptr;
-  };
-
-  class comparePinsByOffset
-  {
-   public:
-    explicit comparePinsByOffset(Network* nw) : nw_(nw) {}
-    bool operator()(const Pin* a, const Pin* b)
-    {
-      if (a->getOffsetX() == b->getOffsetX()) {
-        return a->getOffsetY() < b->getOffsetY();
-      }
-      return a->getOffsetX() < b->getOffsetX();
-    }
-
-   private:
-    Network* nw_ = nullptr;
-  };
-
- public:
   std::vector<std::unique_ptr<Node>>& getNodes() { return nodes_; }
   int getNumNodes() const { return (int) nodes_.size(); }
-  uint getNumCells() const { return cells_cnt_; }
-  uint getNumTerminals() const { return terminals_cnt_; }
+  uint32_t getNumCells() const { return cells_cnt_; }
+  uint32_t getNumTerminals() const { return terminals_cnt_; }
   Node* getNode(int i) { return nodes_[i].get(); }
   Node* getNode(odb::dbInst* inst);
   Node* getNode(odb::dbBTerm* term);
@@ -130,8 +93,8 @@ class Network
   std::unordered_map<odb::dbBTerm*, int> term_to_node_idx_;
   std::unordered_map<odb::dbMaster*, int> master_to_idx_;
   std::unordered_map<odb::dbNet*, int> net_to_edge_idx_;
-  uint cells_cnt_{0};
-  uint terminals_cnt_{0};
+  uint32_t cells_cnt_{0};
+  uint32_t terminals_cnt_{0};
 };
 
 }  // namespace dpl

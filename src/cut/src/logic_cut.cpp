@@ -3,10 +3,9 @@
 
 #include "cut/logic_cut.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <unordered_map>

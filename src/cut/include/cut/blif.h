@@ -41,8 +41,8 @@ class Blif
   bool inspectBlif(const char* file_name, int& num_instances);
   float getRequiredTime(sta::Pin* term, bool is_rise);
   float getArrivalTime(sta::Pin* term, bool is_rise);
-  void addArrival(sta::Pin* pin, std::string netName);
-  void addRequired(sta::Pin* pin, std::string netName);
+  void addArrival(sta::Pin* pin, const std::string& netName);
+  void addRequired(sta::Pin* pin, const std::string& netName);
 
  private:
   std::set<odb::dbInst*> instances_to_optimize_;

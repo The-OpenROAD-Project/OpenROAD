@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
+
 #include "odb/db.h"
 #include "rcx/array1.h"
 #include "rcx/dbUtil.h"
@@ -12,11 +14,8 @@
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
 #endif
-// #define CHECK_SAME_NET
-// #define MIN_FOR_LOOPS
 
 using odb::dbRSeg;
-using utl::RCX;
 
 namespace rcx {
 
@@ -30,7 +29,7 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
   if (!skip_res_calc) {
     calcRes(_rsegSrcId, s->_len, s->_dist, s->_dist_down, _met);
-    for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+    for (uint32_t jj = 0; jj < _metRCTable.getCnt(); jj++) {
       double totR1 = _rc[jj]->getRes();
       _extMain->updateRes(rseg1, totR1, jj);
     }
@@ -108,7 +107,7 @@ bool extMeasureRC::measure_init(extSegment* s)
 {
   _currentSeg = s;
   _newDiagFlow = true;
-  for (uint ii = 0; ii < 2; ii++) {
+  for (uint32_t ii = 0; ii < 2; ii++) {
     _ll[ii] = s->_ll[ii];
     _ur[ii] = s->_ur[ii];
   }
@@ -142,7 +141,7 @@ bool extMeasureRC::measure_init(extSegment* s)
 }
 bool extMeasureRC::measure_init_cap(extSegment* s, bool up)
 {
-  for (uint ii = 0; ii < 2; ii++) {
+  for (uint32_t ii = 0; ii < 2; ii++) {
     _ll[ii] = s->_ll[ii];
     _ur[ii] = s->_ur[ii];
   }
@@ -171,7 +170,7 @@ bool extMeasureRC::measure_init_cap(extSegment* s, bool up)
   }
   return true;
 }
-bool extMeasureRC::measureRC_res_init(uint rsegId)
+bool extMeasureRC::measureRC_res_init(uint32_t rsegId)
 {
   if (IsDebugNet())  // TODO: debug
   {
@@ -191,7 +190,7 @@ bool extMeasureRC::measureRC_res_init(uint rsegId)
     return false;
   }
 
-  for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+  for (uint32_t jj = 0; jj < _metRCTable.getCnt(); jj++) {
     double totR1 = rseg1->getResistance(jj);
     if (totR1 > 0) {
       _extMain->updateRes(rseg1, -totR1, jj);
@@ -200,7 +199,7 @@ bool extMeasureRC::measureRC_res_init(uint rsegId)
   return true;
 }
 
-uint extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
+uint32_t extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
 {
   if (dw == nullptr) {
     return 0;
@@ -208,17 +207,17 @@ uint extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
   if (!dw->isPower()) {
     return 0;
   }
-  uint overMet = _met;
+  uint32_t overMet = _met;
   // int rsegId=  dw->getRsegId();
   int rsegId = -1;
 
-  uint below = 0;
-  Ath__array1D<extSegment*> table(4);
+  uint32_t below = 0;
+  Array1D<extSegment*> table(4);
 
   FindSegments(
       true, _dir, 1000 /* TODO */, s->_wire, s->_xy, s->_len, dw, &table);
 
-  for (uint ii = 0; ii < table.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < table.getCnt(); ii++) {
     extSegment* s1 = table.get(ii);
     int diagDist = GetDistance(s->_wire, dw);  // TODO: might more
     _met = dw->getLevel();
@@ -228,12 +227,12 @@ uint extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
   _met = overMet;
   return below;
 }
-uint extMeasureRC::CalcDiag(uint targetMet,
-                            uint diagDist,
-                            uint tgWidth,
-                            uint len1,
-                            extSegment* s,
-                            int rsegId)
+uint32_t extMeasureRC::CalcDiag(uint32_t targetMet,
+                                uint32_t diagDist,
+                                uint32_t tgWidth,
+                                uint32_t len1,
+                                extSegment* s,
+                                int rsegId)
 {
   DebugDiagCoords(_met, targetMet, len1, diagDist, s->_ll, s->_ur);
   if (IsDebugNet()) {

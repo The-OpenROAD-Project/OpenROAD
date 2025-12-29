@@ -97,7 +97,7 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
 
   const double dbu_to_micron = block_->getDbUnitsPerMicron();
 
-  csv << "x0,y0,x1,y1,value (" << getValueUnits() << ")" << '\n';
+  csv << "x0,y0,x1,y1,value (" << getValueUnits() << ")\n";
   for (const auto& map_col : map_) {
     for (const auto& map_value : map_col) {
       if (!map_value->has_value) {
@@ -112,7 +112,7 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
       csv << box_rect.xMax() / dbu_to_micron << ",";
       csv << box_rect.yMax() / dbu_to_micron << ",";
       csv << std::scientific << std::setprecision(6);
-      csv << scaled_value << std::endl;
+      csv << scaled_value << '\n';
     }
   }
 
@@ -842,7 +842,7 @@ void HeatMapRenderer::setSettings(const Settings& settings)
   Renderer::setSettings(settings);
   Renderer::Settings data_settings;
   for (const auto& [name, value] : settings) {
-    if (name.find(kDatasourcePrefix) == 0) {
+    if (name.starts_with(kDatasourcePrefix)) {
       data_settings[name.substr(strlen(kDatasourcePrefix))] = value;
     }
   }

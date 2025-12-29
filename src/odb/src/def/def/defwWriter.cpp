@@ -7381,7 +7381,6 @@ void defwPrintError(int status)
               defwStateStr[defwObsoleteNum]);
       break;
   }
-  return;
 }
 
 void defwAddComment(const char* comment)
@@ -7389,13 +7388,11 @@ void defwAddComment(const char* comment)
   if (comment) {
     fprintf(defwFile, "# %s\n", comment);
   }
-  return;
 }
 
 void defwAddIndent()
 {
   fprintf(defwFile, "   ");
-  return;
 }
 
 //***************************

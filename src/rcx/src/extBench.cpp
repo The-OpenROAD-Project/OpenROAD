@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
@@ -37,7 +38,8 @@ extMainOptions::extMainOptions()
   _varFlag = false;
 }
 
-uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
+uint32_t extRCModel::benchWithVar_density(extMainOptions* opt,
+                                          extMeasure* measure)
 {
   if (opt->_db_only) {
     return benchDB_WS(opt, measure);
@@ -46,7 +48,7 @@ uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
     return benchWithVar_lists(opt, measure);
   }
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   int met = measure->_met;
   extVariation* xvar = _process->getVariation(measure->_met);
 
@@ -55,17 +57,17 @@ uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
   double h = cond->_height;
   double ro = cond->_p;
 
-  for (uint ii = 0; ii < opt->_widthTable.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < opt->_widthTable.getCnt(); ii++) {
     double w = 0.001 * measure->_minWidth * opt->_widthTable.get(ii);  // layout
     measure->_wIndex = measure->_widthTable.findNextBiggestIndex(w);   // layout
 
-    for (uint jj = 0; jj < opt->_spaceTable.getCnt(); jj++) {
+    for (uint32_t jj = 0; jj < opt->_spaceTable.getCnt(); jj++) {
       double s
           = 0.001 * measure->_minSpace * opt->_spaceTable.get(jj);  // layout
       measure->_sIndex
           = measure->_widthTable.findNextBiggestIndex(s);  // layout
 
-      for (uint kk = 0; kk < opt->_densityTable.getCnt(); kk++) {
+      for (uint32_t kk = 0; kk < opt->_densityTable.getCnt(); kk++) {
         double r = opt->_densityTable.get(kk);  // layout
         measure->_rIndex
             = measure->_dataTable.findNextBiggestIndex(r);  // layout
@@ -113,14 +115,15 @@ uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
   return cnt;
 }
 
-uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
+uint32_t extRCModel::benchWithVar_lists(extMainOptions* opt,
+                                        extMeasure* measure)
 {
-  Ath__array1D<double>* wTable = &opt->_widthTable;
-  Ath__array1D<double>* sTable = &opt->_spaceTable;
-  Ath__array1D<double>* thTable = &opt->_thicknessTable;
-  Ath__array1D<double>* gTable = &opt->_gridTable;
+  Array1D<double>* wTable = &opt->_widthTable;
+  Array1D<double>* sTable = &opt->_spaceTable;
+  Array1D<double>* thTable = &opt->_thicknessTable;
+  Array1D<double>* gTable = &opt->_gridTable;
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   int met = measure->_met;
 
   extConductor* cond = _process->getConductor(met);
@@ -140,7 +143,7 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
     sTable->resetCnt();
     wTable->add(minWidth);
 
-    for (uint ii = 0; ii < gTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < gTable->getCnt(); ii++) {
       double s = minWidth + pitch * (gTable->get(ii) - 1);
       sTable->add(s);
     }
@@ -164,16 +167,16 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
     }
   }
 
-  for (uint ii = 0; ii < wTable->getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < wTable->getCnt(); ii++) {
     double w = wTable->get(ii);  // layout
-    for (uint iii = 0; iii < wTable->getCnt(); iii++) {
+    for (uint32_t iii = 0; iii < wTable->getCnt(); iii++) {
       double w2 = wTable->get(iii);
-      for (uint jj = 0; jj < sTable->getCnt(); jj++) {
+      for (uint32_t jj = 0; jj < sTable->getCnt(); jj++) {
         double s = sTable->get(jj);  // layout
-        for (uint jjj = 0; jjj < sTable->getCnt(); jjj++) {
+        for (uint32_t jjj = 0; jjj < sTable->getCnt(); jjj++) {
           double s2 = sTable->get(jjj);
 
-          for (uint kk = 0; kk < thTable->getCnt(); kk++) {
+          for (uint32_t kk = 0; kk < thTable->getCnt(); kk++) {
             double tt = thTable->get(kk);  // layout
             if (!opt->_thListFlag) {       // multiplier
               tt *= t;
@@ -206,7 +209,7 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
   return cnt;
 }
 
-uint extRCModel::linesOverBench(extMainOptions* opt)
+uint32_t extRCModel::linesOverBench(extMainOptions* opt)
 {
   if (opt->_met == 0) {
     return 0;
@@ -221,7 +224,7 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
     sprintf(_patternName, "R%d", opt->_wireCnt + 1);
   }
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   for (int met = 1; met <= (int) _layerCnt; met++) {
     if (met > opt->_met_cnt) {
@@ -237,7 +240,7 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
       computeTables(&measure, opt->_wireCnt + 1, 1000, 1000, 1000);
     }
 
-    uint patternSep = measure.initWS_box(opt, 20);
+    uint32_t patternSep = measure.initWS_box(opt, 20);
 
     for (int underMet = 0; underMet < met; underMet++) {
       if ((opt->_underMet > 0) && (opt->_underMet != underMet)) {
@@ -250,7 +253,7 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
 
       measure.setMets(met, underMet, -1);
 
-      uint cnt1 = benchWithVar_density(opt, &measure);
+      uint32_t cnt1 = benchWithVar_density(opt, &measure);
 
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
@@ -273,7 +276,7 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
   return cnt;
 }
 
-uint extRCModel::linesUnderBench(extMainOptions* opt)
+uint32_t extRCModel::linesUnderBench(extMainOptions* opt)
 {
   if (opt->_overMet == 0) {
     return 0;
@@ -283,10 +286,10 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
   measure.updateForBench(opt, _extMain);
   measure._diag = false;
 
-  uint patternSep = 1000;
+  uint32_t patternSep = 1000;
 
   sprintf(_patternName, "U%d", opt->_wireCnt + 1);
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   for (int met = 1; met < (int) _layerCnt; met++) {
     if (met > opt->_met_cnt) {
@@ -319,7 +322,7 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
 
       measure.setMets(met, 0, overMet);
 
-      uint cnt1 = benchWithVar_density(opt, &measure);
+      uint32_t cnt1 = benchWithVar_density(opt, &measure);
 
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
@@ -333,7 +336,7 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
   return cnt;
 }
 
-uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
+uint32_t extRCModel::linesDiagUnderBench(extMainOptions* opt)
 {
   if (opt->_overMet == 0) {
     return 0;
@@ -343,10 +346,10 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
   measure.updateForBench(opt, _extMain);
   measure._diag = true;
 
-  uint patternSep = 1000;
+  uint32_t patternSep = 1000;
 
   sprintf(_patternName, "DU%d", opt->_wireCnt + 1);
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   for (int met = 1; met < (int) _layerCnt; met++) {
     if (met > opt->_met_cnt) {
@@ -380,7 +383,7 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
 
       measure.setMets(met, 0, overMet);
 
-      uint cnt1 = benchWithVar_density(opt, &measure);
+      uint32_t cnt1 = benchWithVar_density(opt, &measure);
 
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
@@ -397,7 +400,7 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
   return cnt;
 }
 
-uint extRCModel::linesOverUnderBench(extMainOptions* opt)
+uint32_t extRCModel::linesOverUnderBench(extMainOptions* opt)
 {
   if (opt->_overMet == 0) {
     return 0;
@@ -408,7 +411,7 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
   measure._diag = false;
 
   sprintf(_patternName, "OU%d", opt->_wireCnt + 1);
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
     if (met > opt->_met_cnt) {
@@ -434,7 +437,7 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
         continue;
       }
 
-      for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
+      for (uint32_t overMet = met + 1; overMet <= _layerCnt; overMet++) {
         if (overMet > opt->_met_cnt) {
           continue;
         }
@@ -448,7 +451,7 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
         measure.initWS_box(opt, 20);
         measure.setMets(met, underMet, overMet);
 
-        uint cnt1 = benchWithVar_density(opt, &measure);
+        uint32_t cnt1 = benchWithVar_density(opt, &measure);
 
         cnt += cnt1;
 
@@ -464,11 +467,11 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
   return cnt;
 }
 
-uint extMain::benchWires(extMainOptions* opt)
+uint32_t extMain::benchWires(extMainOptions* opt)
 {
   _tech = _db->getTech();
   if (opt->_db_only) {
-    uint layerCnt = _tech->getRoutingLayerCount();
+    uint32_t layerCnt = _tech->getRoutingLayerCount();
     extRCModel* m = new extRCModel(layerCnt, "processName", logger_);
     _modelTable->add(m);
 
@@ -549,7 +552,7 @@ uint extMain::benchWires(extMainOptions* opt)
 
   return 0;
 }
-uint extMeasure::getRSeg(dbNet* net, uint shapeId)
+uint32_t extMeasure::getRSeg(dbNet* net, uint32_t shapeId)
 {
   dbWire* w = net->getWire();
 

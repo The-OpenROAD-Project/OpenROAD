@@ -379,7 +379,7 @@ dbTechLayerMinCutRule* dbTechLayerMinCutRule::create(dbTechLayer* inly)
 
 dbTechLayerMinCutRule* dbTechLayerMinCutRule::getTechLayerMinCutRule(
     dbTechLayer* inly,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return ((dbTechLayerMinCutRule*) layer->min_cuts_rules_tbl_->getPtr(dbid));

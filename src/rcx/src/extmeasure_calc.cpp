@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
@@ -13,32 +14,27 @@
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
 #endif
-// #define CHECK_SAME_NET
-// #define MIN_FOR_LOOPS
-
-using utl::RCX;
 
 namespace rcx {
 
-void extMeasureRC::VerticalCap(Ath__array1D<extSegment*>* segTable,
-                               bool look_up)
+void extMeasureRC::VerticalCap(Array1D<extSegment*>* segTable, bool look_up)
 {
-  for (uint ii = 0; ii < segTable->getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
     Wire* w2 = look_up ? s->_up : s->_down;
 
     if (w2 == nullptr) {
       continue;
     }
-    uint rsegId1 = s->_wire->getRsegId();
-    uint rsegId2 = w2->getRsegId();
+    uint32_t rsegId1 = s->_wire->getRsegId();
+    uint32_t rsegId2 = w2->getRsegId();
 
-    uint met = s->_wire->getLevel();
-    uint tgtMet = w2->getLevel();
-    uint tgtWidth = w2->getWidth();
+    uint32_t met = s->_wire->getLevel();
+    uint32_t tgtMet = w2->getLevel();
+    uint32_t tgtWidth = w2->getWidth();
 
-    uint width = s->_width;
-    uint diagDist = 0;
+    uint32_t width = s->_width;
+    uint32_t diagDist = 0;
 
     if (VerticalCap(met,
                     tgtMet,
@@ -55,9 +51,9 @@ void extMeasureRC::VerticalCap(Ath__array1D<extSegment*>* segTable,
 bool extMeasureRC::DiagCap(FILE* fp,
                            Wire* w,
                            bool lookUp,
-                           uint maxDist,
-                           uint trackLimitCnt,
-                           Ath__array1D<extSegment*>* segTable,
+                           uint32_t maxDist,
+                           uint32_t trackLimitCnt,
+                           Array1D<extSegment*>* segTable,
                            bool PowerOnly)
 {
   bool no_dist_limit = false;
@@ -65,12 +61,12 @@ bool extMeasureRC::DiagCap(FILE* fp,
     no_dist_limit = true;
   }
 
-  uint met = w->getLevel();
+  uint32_t met = w->getLevel();
   _width = w->getWidth();
-  uint rsegId1 = w->getRsegId();
+  uint32_t rsegId1 = w->getRsegId();
 
-  uint pitch = w->getPitch();
-  for (uint ii = 0; ii < segTable->getCnt(); ii++) {
+  uint32_t pitch = w->getPitch();
+  for (uint32_t ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
     Wire* w2 = lookUp ? s->_up : s->_down;
     if (w2 == nullptr) {
@@ -81,7 +77,7 @@ bool extMeasureRC::DiagCap(FILE* fp,
     }
     int dist = lookUp ? s->_dist : s->_dist_down;
 
-    uint tgtMet = w2->getLevel();
+    uint32_t tgtMet = w2->getLevel();
 
     if (!no_dist_limit) {
       if (tgtMet - met < 2) {
@@ -94,8 +90,8 @@ bool extMeasureRC::DiagCap(FILE* fp,
         }
       }
     }
-    uint tgtWidth = w2->getWidth();
-    uint rsegId2 = w2->getRsegId();
+    uint32_t tgtWidth = w2->getWidth();
+    uint32_t rsegId2 = w2->getRsegId();
 
     if (DiagCouplingCap(
             met, tgtMet, rsegId2, rsegId1, s->_len, _width, tgtWidth, dist)) {
@@ -109,14 +105,14 @@ odb::dbRSeg* extMeasureRC::GetRseg(int id)
   odb::dbRSeg* rseg1 = id > 0 ? odb::dbRSeg::getRSeg(_block, id) : nullptr;
   return rseg1;
 }
-bool extMeasureRC::VerticalCap(uint met,
-                               uint tgtMet,
+bool extMeasureRC::VerticalCap(uint32_t met,
+                               uint32_t tgtMet,
                                int rsegId1,
-                               uint rsegId2,
-                               uint len,
-                               uint width,
-                               uint tgtWidth,
-                               uint diagDist)
+                               uint32_t rsegId2,
+                               uint32_t len,
+                               uint32_t width,
+                               uint32_t tgtWidth,
+                               uint32_t diagDist)
 {
   // assumption: signal-2-signal, no power
   // dbRSeg* rseg2 = GetRseg(rsegId2);
@@ -124,8 +120,8 @@ bool extMeasureRC::VerticalCap(uint met,
 
   _width = width;
   double capTable[10];
-  uint modelCnt = _metRCTable.getCnt();
-  for (uint ii = 0; ii < modelCnt; ii++) {
+  uint32_t modelCnt = _metRCTable.getCnt();
+  for (uint32_t ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
     // NOT working extDistRC* rc = getVerticalUnderRC(rcModel, diagDist,
@@ -140,14 +136,14 @@ bool extMeasureRC::VerticalCap(uint met,
   createCap(rsegId1, rsegId2, capTable);
   return true;
 }
-bool extMeasureRC::DiagCouplingCap(uint met,
-                                   uint tgtMet,
+bool extMeasureRC::DiagCouplingCap(uint32_t met,
+                                   uint32_t tgtMet,
                                    int rsegId1,
-                                   uint rsegId2,
-                                   uint len,
-                                   uint width,
-                                   uint tgtWidth,
-                                   uint diagDist)
+                                   uint32_t rsegId2,
+                                   uint32_t len,
+                                   uint32_t width,
+                                   uint32_t tgtWidth,
+                                   uint32_t diagDist)
 {
   // assumption: signal-2-signal, no power
   // dbRSeg* rseg2 = GetRseg(rsegId2);
@@ -155,8 +151,8 @@ bool extMeasureRC::DiagCouplingCap(uint met,
 
   _width = width;
   double capTable[10];
-  uint modelCnt = _metRCTable.getCnt();
-  for (uint ii = 0; ii < modelCnt; ii++) {
+  uint32_t modelCnt = _metRCTable.getCnt();
+  for (uint32_t ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
 
     // NOT working extDistRC* rc = getVerticalUnderRC(rcModel, diagDist,

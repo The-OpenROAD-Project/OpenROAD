@@ -66,9 +66,9 @@ lefiProp::~lefiProp()
 
 void lefiProp::setPropType(const char* typ, const char* string)
 {
-  int len;
   propType_ = (char*) typ;
-  if ((len = strlen(string) + 1) > nameSize_) {
+  const int len = strlen(string) + 1;
+  if (len > nameSize_) {
     bumpName(len);
   }
   strcpy(propName_, CASE(string));
@@ -104,9 +104,9 @@ void lefiProp::setPropString()
 
 void lefiProp::setPropQString(const char* string)
 {
-  int len;
   dataType_ = 'Q';
-  if ((len = strlen(string) + 1) > stringLength_) {
+  const int len = strlen(string) + 1;
+  if (len > stringLength_) {
     bumpSize(len);
   }
   strcpy(stringData_, CASE(string));
@@ -114,10 +114,10 @@ void lefiProp::setPropQString(const char* string)
 
 void lefiProp::setPropNameMapString(const char* string)
 {
-  int len;
   dataType_ = 'N';
   hasNameMapString_ = 1;
-  if ((len = strlen(string) + 1) > stringLength_) {
+  const int len = strlen(string) + 1;
+  if (len > stringLength_) {
     bumpSize(len);
   }
   strcpy(stringData_, CASE(string));

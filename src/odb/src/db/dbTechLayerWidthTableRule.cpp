@@ -126,7 +126,7 @@ dbTechLayerWidthTableRule* dbTechLayerWidthTableRule::create(dbTechLayer* inly)
 
 dbTechLayerWidthTableRule*
 dbTechLayerWidthTableRule::getTechLayerWidthTableRule(dbTechLayer* inly,
-                                                      uint dbid)
+                                                      uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (

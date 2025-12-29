@@ -58,19 +58,16 @@ using std::min;
 using utl::RSZ;
 
 using sta::Clock;
-using sta::delayInf;
 using sta::INF;
 using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
-using sta::Port;
 using sta::PortDirection;
 using sta::RiseFallBoth;
 using sta::TimingArc;
 using sta::TimingArcSet;
 using sta::TimingRole;
-using sta::VertexInEdgeIterator;
 
 RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
 {
@@ -273,7 +270,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 
     for (auto mm : sta::MinMaxAll::all()->range()) {
       for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
-        if (!slew_user_annotated.count(std::make_pair(drvr, rf->index()))) {
+        if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
           const DcalcAnalysisPt* dcalc_ap
               = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
           drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
@@ -945,7 +942,7 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
     LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
-      typedef std::pair<float, LibertyCell*> SizeCandidate;
+      using SizeCandidate = std::pair<float, LibertyCell*>;
       std::vector<SizeCandidate> sizes;
 
       for (LibertyCell* size_cell : equiv_cells) {
@@ -1177,6 +1174,8 @@ void RepairDesign::repairNet(Net* net,
     }
 
     if (check_cap && !resizer_->isTristateDriver(drvr_pin)) {
+      // Check that the max cap limit specified is within the bounds of reason.
+      pre_checks_->checkCapLimit(drvr_pin);
       if (needRepairCap(drvr_pin, cap_violations, max_cap, corner)) {
         repair_cap = true;
       }

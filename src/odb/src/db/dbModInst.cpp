@@ -24,6 +24,8 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbModBTerm.h"
@@ -103,13 +105,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
   if (db_->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.moditerms_;
-  }
-  if (db_->isSchema(kSchemaDbRemoveHash)) {
-    _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
-    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
-    if (obj.name_) {
-      module->modinst_hash_[obj.name_] = obj.getId();
-    }
   }
   // User Code End >>
   return stream;
@@ -273,9 +268,9 @@ void dbModInst::destroy(dbModInst* modinst)
   _master->mod_inst_.clear();
 
   // unlink from parent start
-  uint id = _modinst->getOID();
+  uint32_t id = _modinst->getOID();
   _dbModInst* prev = nullptr;
-  uint cur = _module->modinsts_;
+  uint32_t cur = _module->modinsts_;
   while (cur) {
     _dbModInst* c = _block->modinst_tbl_->getPtr(cur);
     if (cur == id) {
@@ -336,7 +331,7 @@ dbSet<dbModITerm> dbModInst::getModITerms()
   return dbSet<dbModITerm>(_mod_inst, _block->module_modinstmoditerm_itr_);
 }
 
-dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
+dbModInst* dbModInst::getModInst(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbModInst*) block->modinst_tbl_->getPtr(dbid_);

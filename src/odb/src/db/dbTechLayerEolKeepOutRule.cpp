@@ -265,7 +265,7 @@ dbTechLayerEolKeepOutRule* dbTechLayerEolKeepOutRule::create(
 
 dbTechLayerEolKeepOutRule*
 dbTechLayerEolKeepOutRule::getTechLayerEolKeepOutRule(dbTechLayer* inly,
-                                                      uint dbid)
+                                                      uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerEolKeepOutRule*) layer->eol_keep_out_rules_tbl_->getPtr(

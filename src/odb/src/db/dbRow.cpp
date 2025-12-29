@@ -3,6 +3,7 @@
 
 #include "dbRow.h"
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -281,7 +282,7 @@ dbSet<dbRow>::iterator dbRow::destroy(dbSet<dbRow>::iterator& itr)
   return next;
 }
 
-dbRow* dbRow::getRow(dbBlock* block_, uint dbid_)
+dbRow* dbRow::getRow(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRow*) block->row_tbl_->getPtr(dbid_);

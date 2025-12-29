@@ -29,11 +29,11 @@ SRoute::SRoute(PdnGen* pdngen, odb::dbDatabase* db, utl::Logger* logger)
 {
 }
 
-std::vector<odb::dbSBox*> SRoute::findRingShapes(odb::dbNet* net, uint& Hdy)
+std::vector<odb::dbSBox*> SRoute::findRingShapes(odb::dbNet* net, uint32_t& Hdy)
 {
   // find all 4 strips for the ring
-  uint Hdx = 0;
-  uint Vdy = 0;
+  uint32_t Hdx = 0;
+  uint32_t Vdy = 0;
   for (auto* swire : net->getSWires()) {
     for (auto* wire : swire->getWires()) {
       Vdy = std::max(wire->getDY(), Vdy);
@@ -41,7 +41,7 @@ std::vector<odb::dbSBox*> SRoute::findRingShapes(odb::dbNet* net, uint& Hdy)
     }
   }
 
-  uint Vdx = 0;
+  uint32_t Vdx = 0;
   for (auto* swire : net->getSWires()) {
     for (auto* wire : swire->getWires()) {
       if (wire->getDY() == Vdy) {
@@ -101,10 +101,10 @@ void SRoute::addSrouteInst(odb::dbNet* net,
   }
 
   if (sroute_itermss_.empty()) {
-    sroute_itermss_.push_back({});
-    sroute_itermss_.push_back({});
-    sroute_itermss_.push_back({});
-    sroute_itermss_.push_back({});
+    sroute_itermss_.emplace_back();
+    sroute_itermss_.emplace_back();
+    sroute_itermss_.emplace_back();
+    sroute_itermss_.emplace_back();
   }
   sroute_itermss_[best_i].push_back(iterm);
 }
@@ -132,7 +132,7 @@ void SRoute::createSrouteWires(
     logger_->error(PDN, 116, "Can't find net {}", net_name);
   }
 
-  uint Hdy = 0;
+  uint32_t Hdy = 0;
   auto ring = findRingShapes(net, Hdy);
 
   sroute_itermss_.clear();
@@ -315,11 +315,11 @@ void SRoute::createSrouteWires(
           int via_width = box->getDX();
 
           int rows
-              = std::min((odb::uint) max_rows,
+              = std::min((uint32_t) max_rows,
                          (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
                              / (cut_pitch_y + box->getDY()));
           int cols = std::min(
-              (odb::uint) max_columns,
+              (uint32_t) max_columns,
               (ring[index]->xMax() - ring[index]->xMin() - cut_pitch_x)
                   / (cut_pitch_x + box->getDX()));
           int64_t centerX = cols / 2;
@@ -372,11 +372,11 @@ void SRoute::createSrouteWires(
         odb::dbSet<odb::dbBox> boxes = via->getBoxes();
         odb::dbBox* box = *(boxes.begin());
         int via_width = box->getDX();
-        int rows = std::min((odb::uint) max_rows,
+        int rows = std::min((uint32_t) max_rows,
                             (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
                                 / (cut_pitch_y + box->getDY()));
         int cols = std::min(
-            (odb::uint) max_columns,
+            (uint32_t) max_columns,
             (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
         int64_t centerX = cols / 2;
         int64_t centerY = rows / 2;
@@ -443,11 +443,11 @@ void SRoute::createSrouteWires(
           odb::dbBox* box = *boxes.begin();
           int via_width = box->getDX();
 
-          int rows = std::min((odb::uint) max_rows,
+          int rows = std::min((uint32_t) max_rows,
                               (bbox.yMax() - bbox.yMin() - cut_pitch_y)
                                   / (cut_pitch_y + box->getDY()));
           int cols = std::min(
-              (odb::uint) max_columns,
+              (uint32_t) max_columns,
               (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
           int64_t centerX = cols / 2;
           int64_t centerY = rows / 2;
@@ -488,7 +488,7 @@ void SRoute::createSrouteWires(
 
       // check to see if center point is too far
       if ((pdn_wire->xMax() - 1000) < avg_iterm_x) {
-        std::cout << "xmax is " << pdn_wire->xMax() << std::endl;
+        std::cout << "xmax is " << pdn_wire->xMax() << '\n';
         odb::dbSBox::create(nwsw,
                             ongrid[ongrid.size() - 1],
                             pdn_wire->xMax() - metalwidths[0],
@@ -531,11 +531,11 @@ void SRoute::createSrouteWires(
         odb::dbBox* box = *boxes.begin();
         int via_width = box->getDX();
 
-        int rows = std::min((odb::uint) max_rows,
+        int rows = std::min((uint32_t) max_rows,
                             (pdn_wire->yMax() - pdn_wire->yMin() - cut_pitch_y)
                                 / (cut_pitch_y + box->getDY()));
         int cols = std::min(
-            (odb::uint) max_columns,
+            (uint32_t) max_columns,
             (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
         int64_t centerX = cols / 2;
         int64_t centerY = rows / 2;
@@ -603,11 +603,11 @@ void SRoute::createSrouteWires(
           odb::dbBox* box = *boxes.begin();
           int via_width = box->getDX();
 
-          int rows = std::min((odb::uint) max_rows,
+          int rows = std::min((uint32_t) max_rows,
                               (bbox.yMax() - bbox.yMin() - cut_pitch_y)
                                   / (cut_pitch_y + box->getDY()));
           int cols = std::min(
-              (odb::uint) max_columns,
+              (uint32_t) max_columns,
               (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
           int64_t centerX = cols / 2;
           int64_t centerY = rows / 2;

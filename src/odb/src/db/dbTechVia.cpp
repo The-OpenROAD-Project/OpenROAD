@@ -3,6 +3,7 @@
 
 #include "dbTechVia.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -23,7 +24,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbViaParams.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -148,7 +148,7 @@ _dbTechVia::~_dbTechVia()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechVia& via)
 {
-  uint* bit_field = (uint*) &via.flags_;
+  uint32_t* bit_field = (uint32_t*) &via.flags_;
   stream << *bit_field;
   stream << via.resistance_;
   stream << via.name_;
@@ -166,7 +166,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechVia& via)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechVia& via)
 {
-  uint* bit_field = (uint*) &via.flags_;
+  uint32_t* bit_field = (uint32_t*) &via.flags_;
   stream >> *bit_field;
   stream >> via.resistance_;
   stream >> via.name_;
@@ -454,7 +454,7 @@ dbTechVia* dbTechVia::create(dbTechNonDefaultRule* rule_, const char* name_)
   return (dbTechVia*) via;
 }
 
-dbTechVia* dbTechVia::getTechVia(dbTech* tech_, uint dbid_)
+dbTechVia* dbTechVia::getTechVia(dbTech* tech_, uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechVia*) tech->via_tbl_->getPtr(dbid_);

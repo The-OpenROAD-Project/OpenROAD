@@ -146,7 +146,7 @@ class dbStaReport : public sta::ReportTcl
 class dbStaCbk : public dbBlockCallBackObj
 {
  public:
-  dbStaCbk(dbSta* sta, Logger* logger);
+  dbStaCbk(dbSta* sta);
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(dbInst* inst) override;
   void inDbInstDestroy(dbInst* inst) override;
@@ -175,7 +175,6 @@ class dbStaCbk : public dbBlockCallBackObj
 
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
-  Logger* logger_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -229,7 +228,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   }
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
-  db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+  db_cbk_ = std::make_unique<dbStaCbk>(this);
   buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
@@ -930,7 +929,7 @@ const char* dbStaReport::redirectStringEnd()
 //
 ////////////////////////////////////////////////////////////////
 
-dbStaCbk::dbStaCbk(dbSta* sta, Logger* logger) : sta_(sta), logger_(logger)
+dbStaCbk::dbStaCbk(dbSta* sta) : sta_(sta)
 {
 }
 

@@ -4,6 +4,7 @@
 #include "cut/blif.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -74,7 +75,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   }
 
   std::set<odb::dbInst*>& insts = this->instances_to_optimize_;
-  std::map<odb::uint, odb::dbInst*> instMap;
+  std::map<uint32_t, odb::dbInst*> instMap;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
 
@@ -82,7 +83,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   int instIndex = 0;
 
   for (auto&& inst : insts) {
-    instMap.insert(std::pair<odb::uint, odb::dbInst*>(inst->getId(), inst));
+    instMap.insert(std::pair<uint32_t, odb::dbInst*>(inst->getId(), inst));
   }
 
   for (auto&& inst : insts) {
@@ -171,13 +172,13 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
                     && (expr->op() == sta::FuncExpr::op_zero
                         || expr->op() == sta::FuncExpr::op_one)) {
                   if (expr->op() == sta::FuncExpr::op_zero) {
-                    if (!const0.size()) {
+                    if (const0.empty()) {
                       const0_cell_ = port_->libertyCell()->name();
                       const0_cell_port_ = port_->name();
                     }
                     const0.insert(netName);
                   } else {
-                    if (!const1.size()) {
+                    if (const1.empty()) {
                       const1_cell_ = port_->libertyCell()->name();
                       const1_cell_port_ = port_->name();
                     }
@@ -290,7 +291,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   }
   f << "\n";
 
-  if (clocks.size() > 0) {
+  if (!clocks.empty()) {
     f << ".clock";
     for (auto& clock : clocks) {
       f << " " << clock;
@@ -300,12 +301,12 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   if (write_arrival_requireds) {
     for (auto& arrival : arrivals_) {
       f << ".input_arrival " << arrival.first << " " << arrival.second.first
-        << " " << arrival.second.second << std::endl;
+        << " " << arrival.second.second << '\n';
     }
 
     for (auto& required : requireds_) {
       f << ".output_required " << required.first << " " << required.second.first
-        << " " << required.second.second << std::endl;
+        << " " << required.second.second << '\n';
     }
   }
 
@@ -419,7 +420,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     for (auto iterm : iterms) {
       auto net = iterm->getNet();
       iterm->disconnect();
-      if (net && net->getITerms().size() == 0 && net->getBTerms().size() == 0) {
+      if (net && net->getITerms().empty() && net->getBTerms().empty()) {
         odb::dbNet::destroy(net);
       }
     }
@@ -446,7 +447,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
     if (master == nullptr
         && (masterName == "_const0_" || masterName == "_const1_")) {
-      if (connections.size() < 1) {
+      if (connections.empty()) {
         logger_->info(CUT,
                       9,
                       "Const driver {} doesn't have any connected nets.",
@@ -565,7 +566,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
         }
       }
 
-      if (mtermName == "") {
+      if (mtermName.empty()) {
         logger_->info(CUT,
                       13,
                       "Could not connect instance of cell type {} to {} net "
@@ -612,7 +613,7 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
   return arr;
 }
 
-void Blif::addArrival(sta::Pin* pin, std::string netName)
+void Blif::addArrival(sta::Pin* pin, const std::string& netName)
 {
   if (arrivals_.find(netName) == arrivals_.end()) {
     arrivals_[netName] = std::pair<float, float>(
@@ -620,7 +621,7 @@ void Blif::addArrival(sta::Pin* pin, std::string netName)
   }
 }
 
-void Blif::addRequired(sta::Pin* pin, std::string netName)
+void Blif::addRequired(sta::Pin* pin, const std::string& netName)
 {
   if (requireds_.find(netName) == requireds_.end()) {
     requireds_[netName] = std::pair<float, float>(

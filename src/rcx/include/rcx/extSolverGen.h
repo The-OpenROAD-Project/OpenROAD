@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 #include <vector>
 
@@ -17,7 +18,7 @@ class extSolverGen : public extProcess
 {
  public:
   void init();
-  extSolverGen(uint layerCnt, uint dielCnt, Logger* logger)
+  extSolverGen(uint32_t layerCnt, uint32_t dielCnt, Logger* logger)
       : extProcess(layerCnt, dielCnt, logger)
   {
     init();
@@ -31,11 +32,11 @@ class extSolverGen : public extProcess
                         double top_widthR,
                         double bot_widthR,
                         double thicknessR);
-  uint linesOver(uint metLevel = 0);
-  uint linesUnder(uint metLevel = 0);
-  uint linesDiagUnder(uint metLevel = 0);
-  uint linesOverUnder(uint metLevel = 0);
-  uint widthsSpacingsLoop(uint diagMet = 0);
+  uint32_t linesOver(uint32_t metLevel = 0);
+  uint32_t linesUnder(uint32_t metLevel = 0);
+  uint32_t linesDiagUnder(uint32_t metLevel = 0);
+  uint32_t linesOverUnder(uint32_t metLevel = 0);
+  uint32_t widthsSpacingsLoop(uint32_t diagMet = 0);
   void setTargetParams(double w,
                        double s,
                        double r,
@@ -61,24 +62,24 @@ class extSolverGen : public extProcess
   void initLogFiles(const char* process_name);
   void closeFiles();
   /*
-  extModelGen(uint layerCnt, const char *name, Logger *logger) :
-  extRCModel(layerCnt, name, logger) {} uint ReadRCDB(dbBlock *block, uint
-  widthCnt, uint diagOption, char *logFile); void writeRules(FILE *fp, bool
-  binary, uint m, int corner=-1); FILE *InitWriteRules(const char *name,
-  std::list<std::string> corner_list, const char *comment, bool binary, uint
-  modelCnt); static std::list<std::string> GetCornerNames(const char *filename,
-  double &version) ;
+  extModelGen(uint32_t layerCnt, const char *name, Logger *logger) :
+  extRCModel(layerCnt, name, logger) {} uint32_t ReadRCDB(dbBlock *block,
+  uint32_t widthCnt, uint32_t diagOption, char *logFile); void writeRules(FILE
+  *fp, bool binary, uint32_t m, int corner=-1); FILE *InitWriteRules(const char
+  *name, std::list<std::string> corner_list, const char *comment, bool binary,
+  uint32_t modelCnt); static std::list<std::string> GetCornerNames(const char
+  *filename, double &version) ;
 
   // ----------------------------------- DKF 09212024
-  --------------------------------------- uint GenExtModel(const char *out_file,
-  const char *comment, const char *version, int pattern);
+  --------------------------------------- uint32_t GenExtModel(const char
+  *out_file, const char *comment, const char *version, int pattern);
   //
   --------------------------------------------------------------------------------------------
 */
 
   // DKF 9/25/2024 -- 3d pattern generation
 
-  void setDiagModel(uint i) { _diagModel = i; }
+  void setDiagModel(uint32_t i) { _diagModel = i; }
 
   std::vector<double> _widthMultTable;
   std::vector<double> _spaceMultTable;
@@ -119,11 +120,11 @@ class extSolverGen : public extProcess
   double _t;
   double _h;
 
-  uint _layerCnt;
+  uint32_t _layerCnt;
   int _met;
   int _underMet;
   int _overMet;
-  uint _wireCnt;
+  uint32_t _wireCnt;
   bool _over;
   bool _overUnder;
   int _diagModel;
@@ -133,7 +134,7 @@ class extSolverGen : public extProcess
 
   char* _topDir;
   char* _patternName;
-  Ath__parser* _parser;
+  Parser* _parser;
   char* _solverFileName;
 
   FILE* _capLogFP;
@@ -152,29 +153,19 @@ class extSolverGen : public extProcess
                             double top_width,
                             double bot_width,
                             double thickness,
-                            uint wireCnt,
+                            uint32_t wireCnt,
                             char* wiresNameSuffix);
 
   void mkFileNames(char* wiresNameSuffix);
-  uint genSolverPatterns(const char* process_name,
-                         int version,
-                         int wire_cnt,
-                         int len,
-                         int over_dist,
-                         int under_dist,
-                         const char* w_list,
-                         const char* s_list);
+  uint32_t genSolverPatterns(const char* process_name,
+                             int version,
+                             int wire_cnt,
+                             int len,
+                             int over_dist,
+                             int under_dist,
+                             const char* w_list,
+                             const char* s_list);
   static int getLastCharInt(const char* name);
-
-  /*
-    uint measureWithVar(extMeasure* measure);
-    uint measureDiagWithVar(extMeasure* measure);
-    uint linesOver(uint wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint
-    metLevel=0); uint linesOverUnder(uint wireCnt, uint widthCnt, uint spaceCnt,
-    uint dCnt, uint metLevel=0); uint linesDiagUnder(uint wireCnt, uint
-    widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0); uint linesUnder(uint
-    wireCnt, uint widthCnt, uint spaceCnt, uint dCnt, uint metLevel=0);
-  */
 };
 
 }  // namespace rcx

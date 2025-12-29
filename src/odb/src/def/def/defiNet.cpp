@@ -29,8 +29,6 @@
 
 #include "defiNet.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -53,7 +51,7 @@ void defiError6084(int index, int numPins, defrData* defData)
   std::stringstream errMsg;
   errMsg << "ERROR (DEFPARS-6084): The index number " << index
          << " specified for the NET ";
-  errMsg << "PIN is invalid." << std::endl;
+  errMsg << "PIN is invalid.\n";
   errMsg << "Valid index is from 0 to " << numPins << ". Specify a valid ";
   errMsg << "index number and then try again.";
   defiError(0, 6084, errMsg.str().c_str(), defData);
@@ -64,7 +62,7 @@ void defiError6085(int index, int numPolys, defrData* defData)
   std::stringstream errMsg;
   errMsg << "ERROR (DEFPARS-6085): The index number " << index
          << " specified for the NET ";
-  errMsg << "POLYGON is invalid." << std::endl;
+  errMsg << "POLYGON is invalid.\n";
   errMsg << "Valid index is from 0 to " << numPolys << ". Specify a valid ";
   errMsg << "index number and then try again.";
   defiError(0, 6085, errMsg.str().c_str(), defData);
@@ -75,7 +73,7 @@ void defiError6086(int index, int numRects, defrData* defData)
   std::stringstream errMsg;
   errMsg << "ERROR (DEFPARS-6086): The index number " << index
          << " specified for the NET ";
-  errMsg << "RECTANGLE is invalid." << std::endl
+  errMsg << "RECTANGLE is invalid.\n"
          << "Valid index is from 0 to " << numRects << ". Specify a ";
   errMsg << "valid index number and then try again.";
   defiError(0, 6086, errMsg.str().c_str(), defData);
@@ -1337,7 +1335,7 @@ void defiNet::changeInstance(const char* instance, int index)
   if ((index < 0) || (index > numPins_)) {
     std::stringstream errMsg;
     errMsg << "ERROR (DEFPARS-6083): The index number " << index;
-    errMsg << "specified for the NET INSTANCE is invalid." << std::endl;
+    errMsg << "specified for the NET INSTANCE is invalid.\n";
     errMsg << "Valid index is from 0 to " << numPins_ << ".";
     errMsg << "Specify a valid index number and then try again.";
     defiError(0, 6083, errMsg.str().c_str(), defData);
@@ -1349,7 +1347,6 @@ void defiNet::changeInstance(const char* instance, int index)
   }
   instances_[index] = (char*) malloc(len);
   strcpy(instances_[index], defData->DEFCASE(instance));
-  return;
 }
 
 void defiNet::changePin(const char* pin, int index)
@@ -1366,7 +1363,6 @@ void defiNet::changePin(const char* pin, int index)
   }
   pins_[index] = (char*) malloc(len);
   strcpy(pins_[index], defData->DEFCASE(pin));
-  return;
 }
 
 const char* defiNet::name() const

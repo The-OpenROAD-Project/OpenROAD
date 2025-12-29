@@ -53,7 +53,7 @@ class LoadBalancer
     ip::address ip;
     unsigned short port;
     unsigned short priority;
-    Worker(ip::address ip, unsigned short port, unsigned short priority)
+    Worker(const ip::address& ip, unsigned short port, unsigned short priority)
         : ip(ip), port(port), priority(priority)
     {
     }

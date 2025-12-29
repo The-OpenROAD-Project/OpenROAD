@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -21,8 +22,8 @@ class dbOStream;
 struct _dbRegionFlags
 {
   dbRegionType::Value type : 4;
-  uint invalid : 1;
-  uint spare_bits : 27;
+  uint32_t invalid : 1;
+  uint32_t spare_bits : 27;
 };
 
 class _dbRegion : public _dbObject

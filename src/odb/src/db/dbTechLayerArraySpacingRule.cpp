@@ -266,7 +266,7 @@ dbTechLayerArraySpacingRule* dbTechLayerArraySpacingRule::create(
 
 dbTechLayerArraySpacingRule*
 dbTechLayerArraySpacingRule::getTechLayerArraySpacingRule(dbTechLayer* inly,
-                                                          uint dbid)
+                                                          uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return ((dbTechLayerArraySpacingRule*)

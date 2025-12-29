@@ -299,7 +299,7 @@ void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,
     const std::string ALU_TARGET("KOGGE_STONE");
     const std::string MACC_TARGET("BASE");
     size_t pos;
-    if (old_name.compare(0, 4, "ALU_") == 0) {
+    if (old_name.starts_with("ALU_")) {
       // Swap ALU to KOGGE_STONE for best timing
       const vector<std::string> alu_types
           = {"HAN_CARLSON", "BRENT_KUNG", "SKLANSKY"};
@@ -310,7 +310,7 @@ void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,
           return;
         }
       }
-    } else if (old_name.compare(0, 5, "MACC_") == 0) {
+    } else if (old_name.starts_with("MACC_")) {
       // Swap multiplier to Han-Carlson BASE for best timing
       pos = old_name.find("BOOTH");
       if (pos != std::string::npos) {

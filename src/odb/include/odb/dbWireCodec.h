@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -193,7 +192,7 @@ class dbWireEncoder
   ///
   /// Add a path-point. The junction-id of this point is returned.
   ///
-  int addPoint(int x, int y, uint property = 0);
+  int addPoint(int x, int y, uint32_t property = 0);
 
   ///
   /// Add a path-point with an extension. The junction-id of this point is
@@ -275,7 +274,7 @@ class dbWireEncoder
   ///     encoder.newPath(j1,ext);
   ///     ...
   ///
-  int addPoint(int x, int y, int ext, uint property = 0);
+  int addPoint(int x, int y, int ext, uint32_t property = 0);
 
   ///
   /// Add a via at the previous point
@@ -466,7 +465,7 @@ class dbWireEncoder
   int idx_;
   int x_;
   int y_;
-  uint non_default_rule_;
+  uint32_t non_default_rule_;
   int point_cnt_;
   int via_cnt_;
   bool prev_extended_colinear_pnt_;
@@ -546,7 +545,7 @@ class dbWireDecoder
   ///
   /// Get the property of this POINT, POINT_EXT
   ///
-  uint getProperty() const;
+  uint32_t getProperty() const;
 
   ///
   /// Get value of the VIA OpCode.
@@ -608,7 +607,7 @@ class dbWireDecoder
 
  private:
   unsigned char nextOp(int& value);
-  unsigned char nextOp(uint& value);
+  unsigned char nextOp(uint32_t& value);
   unsigned char peekOp();
   void flushRule();
 
@@ -627,7 +626,7 @@ class dbWireDecoder
   int wire_type_;
   int point_cnt_;
   OpCode opcode_;
-  uint property_;
+  uint32_t property_;
   int deltaX1_;
   int deltaY1_;
   int deltaX2_;

@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -30,8 +31,8 @@ class _dbTechMinCutRule : public _dbObject
   struct Flags
   {
     RuleType rule : 3;
-    uint cuts_length : 1;
-    uint spare_bits : 28;
+    uint32_t cuts_length : 1;
+    uint32_t spare_bits : 28;
   };
 
   _dbTechMinCutRule(_dbDatabase* db, const _dbTechMinCutRule& r);
@@ -45,11 +46,11 @@ class _dbTechMinCutRule : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   Flags flags_;
-  uint num_cuts_;
-  uint width_;
+  uint32_t num_cuts_;
+  uint32_t width_;
   int cut_distance_;
-  uint length_;
-  uint distance_;
+  uint32_t length_;
+  uint32_t distance_;
 };
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
@@ -85,13 +86,13 @@ class _dbTechMinEncRule : public _dbObject
 
   struct Flags
   {
-    uint has_width : 1;
-    uint spare_bits : 31;
+    uint32_t has_width : 1;
+    uint32_t spare_bits : 31;
   };
 
   Flags flags_;
-  uint area_;
-  uint width_;
+  uint32_t area_;
+  uint32_t width_;
 
   _dbTechMinEncRule(_dbDatabase* db);
   _dbTechMinEncRule(_dbDatabase* db, const _dbTechMinEncRule& r);

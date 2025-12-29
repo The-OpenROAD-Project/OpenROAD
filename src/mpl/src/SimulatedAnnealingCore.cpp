@@ -418,7 +418,8 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
 
   for (const auto& [id, guide] : guides_) {
-    const odb::Rect overlap = macros_[id].getBBox().intersect(guide);
+    odb::Rect overlap;
+    macros_[id].getBBox().intersection(guide, overlap);
 
     // maximum overlap area
     int64_t penalty
@@ -832,7 +833,7 @@ void SimulatedAnnealingCore<T>::writeCostFile(
 {
   std::ofstream file(file_name);
   for (auto i = 0; i < cost_list_.size(); i++) {
-    file << T_list_[i] << "  " << cost_list_[i] << std::endl;
+    file << T_list_[i] << "  " << cost_list_[i] << '\n';
   }
 }
 

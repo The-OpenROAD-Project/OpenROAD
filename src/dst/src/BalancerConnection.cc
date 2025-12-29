@@ -26,10 +26,10 @@
 #include "dst/Distributed.h"
 #include "utl/Logger.h"
 
-using namespace dst;
-
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
 BOOST_CLASS_EXPORT(dst::BroadcastJobDescription)
+
+namespace dst {
 
 BalancerConnection::BalancerConnection(asio::io_context& service,
                                        LoadBalancer* owner,
@@ -217,6 +217,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
     sock_.close();
   }
 }
+
+}  // namespace dst
 
 #if !SWIG && FMT_VERSION >= 100000
 namespace boost::asio::ip {

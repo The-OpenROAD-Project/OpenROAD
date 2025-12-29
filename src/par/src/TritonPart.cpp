@@ -264,7 +264,7 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
   std::ofstream solution_file_output;
   solution_file_output.open(solution_file);
   for (auto part_id : solution_) {
-    solution_file_output << part_id << std::endl;
+    solution_file_output << part_id << '\n';
   }
   solution_file_output.close();
 }
@@ -426,16 +426,14 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
     for (auto term : block_->getBTerms()) {
       if (auto property = odb::dbIntProperty::find(term, "partition_id")) {
         file_output << term->getName() << "  ";
-        file_output << property->getValue() << "  ";
-        file_output << std::endl;
+        file_output << property->getValue() << "  \n";
       }
     }
 
     for (auto inst : block_->getInsts()) {
       if (auto property = odb::dbIntProperty::find(inst, "partition_id")) {
         file_output << inst->getName() << "  ";
-        file_output << property->getValue() << "  ";
-        file_output << std::endl;
+        file_output << property->getValue() << "  \n";
       }
     }
     file_output.close();

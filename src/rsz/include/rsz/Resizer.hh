@@ -204,7 +204,7 @@ struct LibraryAnalysisData
     sorted_vt_categories.clear();
     sorted_vt_categories.reserve(vt_leakage_by_category.size());
     for (const auto& vt_pair : vt_leakage_by_category) {
-      sorted_vt_categories.push_back(vt_pair);
+      sorted_vt_categories.emplace_back(vt_pair);
     }
 
     // Sort by average leakage (ascending order - least leaky to most leaky)

@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -14,14 +15,14 @@
 
 namespace rcx {
 
-uint extSolverGen::genSolverPatterns(const char* process_name,
-                                     int version,
-                                     int wire_cnt,
-                                     int len,
-                                     int over_dist,
-                                     int under_dist,
-                                     const char* w_list,
-                                     const char* s_list)
+uint32_t extSolverGen::genSolverPatterns(const char* process_name,
+                                         int version,
+                                         int wire_cnt,
+                                         int len,
+                                         int over_dist,
+                                         int under_dist,
+                                         const char* w_list,
+                                         const char* s_list)
 {
   if (!setWidthSpaceMultipliers(w_list, s_list)) {
     logger_->warn(utl::RCX,
@@ -44,7 +45,7 @@ uint extSolverGen::genSolverPatterns(const char* process_name,
 
   setDiagModel(0);  // to initialize _diagModel;
 
-  uint cnt1 = linesOver();
+  uint32_t cnt1 = linesOver();
   cnt1 += linesUnder();
   cnt1 += linesOverUnder();
   setDiagModel(2);
@@ -60,7 +61,7 @@ void extSolverGen::init()
   _wireDirName = new char[2048];
   _topDir = new char[1024];
   _patternName = new char[1024];
-  _parser = new Ath__parser(logger_);
+  _parser = new Parser(logger_);
   _solverFileName = new char[1024];
   _wireFileName = new char[1024];
   _capLogFP = nullptr;
@@ -73,9 +74,9 @@ void extSolverGen::init()
 /// @brief Loops for widths and spacings of target met
 /// @param diagMet:  if >0 there is an added loop of spacings of diagMet
 /// @return number of patterns completed
-uint extSolverGen::widthsSpacingsLoop(uint diagMet)
+uint32_t extSolverGen::widthsSpacingsLoop(uint32_t diagMet)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   extConductor* cond = getConductor(_met);
   double t = cond->_thickness;
@@ -90,7 +91,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
 
   double diag_min_width = 0.0;
   double diag_min_spacing = 0.0;
-  uint diagSpaceCnt = 3;
+  uint32_t diagSpaceCnt = 3;
   float diagSpaceMultipliers[3] = {0, 1.0, 2.0};
   _diag = diagMet > 0;
   if (_diag > 0) {
@@ -101,7 +102,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
   if (top_ext != 0.0 || bot_ext != 0.0) {
     _metExtFlag = true;
   }
-  for (uint ii = 0; ii < _widthMultTable.size(); ii++) {
+  for (uint32_t ii = 0; ii < _widthMultTable.size(); ii++) {
     float mult_w = _widthMultTable[ii];
     float w = mult_w * min_width;
 
@@ -113,7 +114,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
     // double thicknessR = t;
 
     if (diagMet == 0) {
-      for (uint jj = 0; jj < _spaceMultTable.size(); jj++) {
+      for (uint32_t jj = 0; jj < _spaceMultTable.size(); jj++) {
         float mult_s = _spaceMultTable[jj];
         float s = mult_s * min_spacing;
 
@@ -130,12 +131,12 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
         }
       }
     } else {
-      uint scnt = 3;  // First 3 spacings from the spacing table
-      for (uint kk = 0; kk < diagSpaceCnt; kk++) {
+      uint32_t scnt = 3;  // First 3 spacings from the spacing table
+      for (uint32_t kk = 0; kk < diagSpaceCnt; kk++) {
         float mult_s = diagSpaceMultipliers[kk];
         float diag_s = mult_s * (diag_min_spacing + diag_min_width);
 
-        for (uint jj = 0; jj < scnt; jj++) {
+        for (uint32_t jj = 0; jj < scnt; jj++) {
           float mult_s = _spaceMultTable[jj];
           float s = mult_s * min_spacing;
 
@@ -176,24 +177,24 @@ double extSolverGen::calcResistance(double ro,
           _wireDirName);
   return tot_res;
 }
-uint extSolverGen::linesOver(uint metLevel)
+uint32_t extSolverGen::linesOver(uint32_t metLevel)
 {
   sprintf(_patternName, "Over%d", _wireCnt);
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
-  for (uint met = 1; met < _layerCnt; met++) {
+  for (uint32_t met = 1; met < _layerCnt; met++) {
     if (metLevel > 0 && met != metLevel) {
       continue;
     }
 
     _met = met;
-    for (uint underMet = 0; underMet < met; underMet++) {
+    for (uint32_t underMet = 0; underMet < met; underMet++) {
       if (underMet > 0 && met - underMet > _maxUnderDist && underMet > 0) {
         continue;
       }
 
       setMets(met, underMet, -1);
-      uint cnt1 = widthsSpacingsLoop();
+      uint32_t cnt1 = widthsSpacingsLoop();
       cnt += cnt1;
 
       logger_->info(utl::RCX,
@@ -208,23 +209,23 @@ uint extSolverGen::linesOver(uint metLevel)
       utl::RCX, 250, "Finished {} measurements for pattern MET_OVER_MET", cnt);
   return cnt;
 }
-uint extSolverGen::linesUnder(uint metLevel)
+uint32_t extSolverGen::linesUnder(uint32_t metLevel)
 {
   sprintf(_patternName, "Under%d", _wireCnt);
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
-  for (uint met = 1; met < _layerCnt; met++) {
+  for (uint32_t met = 1; met < _layerCnt; met++) {
     if (metLevel > 0 && met != metLevel) {
       continue;
     }
 
-    for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
+    for (uint32_t overMet = met + 1; overMet < _layerCnt; overMet++) {
       if (overMet - met > _maxOverDist) {
         continue;
       }
 
       setMets(met, 0, overMet);
-      uint cnt1 = widthsSpacingsLoop();
+      uint32_t cnt1 = widthsSpacingsLoop();
       cnt += cnt1;
 
       logger_->info(utl::RCX,
@@ -239,24 +240,24 @@ uint extSolverGen::linesUnder(uint metLevel)
       utl::RCX, 241, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
   return cnt;
 }
-uint extSolverGen::linesDiagUnder(uint metLevel)
+uint32_t extSolverGen::linesDiagUnder(uint32_t metLevel)
 {
   _diag = true;
   sprintf(_patternName, "UnderDiag%d", _wireCnt);
 
-  uint cnt = 0;
-  for (uint met = 1; met < _layerCnt; met++) {
+  uint32_t cnt = 0;
+  for (uint32_t met = 1; met < _layerCnt; met++) {
     if (metLevel > 0 && met != metLevel) {
       continue;
     }
 
-    for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
+    for (uint32_t overMet = met + 1; overMet < _layerCnt; overMet++) {
       if (overMet - met > _maxOverDist) {
         continue;
       }
 
       setMets(met, 0, overMet);
-      uint cnt1 = widthsSpacingsLoop(overMet);
+      uint32_t cnt1 = widthsSpacingsLoop(overMet);
       cnt += cnt1;
 
       logger_->info(utl::RCX,
@@ -273,28 +274,28 @@ uint extSolverGen::linesDiagUnder(uint metLevel)
                 cnt);
   return cnt;
 }
-uint extSolverGen::linesOverUnder(uint metLevel)
+uint32_t extSolverGen::linesOverUnder(uint32_t metLevel)
 {
   sprintf(_patternName, "OverUnder%d", _wireCnt);
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
-  for (uint met = 1; met < _layerCnt - 1; met++) {
+  for (uint32_t met = 1; met < _layerCnt - 1; met++) {
     if (metLevel > 0 && met != metLevel) {
       continue;
     }
 
-    for (uint underMet = 1; underMet < met; underMet++) {
+    for (uint32_t underMet = 1; underMet < met; underMet++) {
       if (met - underMet > _maxUnderDist) {
         continue;
       }
-      for (uint overMet = met + 1; overMet < _layerCnt; overMet++) {
+      for (uint32_t overMet = met + 1; overMet < _layerCnt; overMet++) {
         if (overMet - met > _maxOverDist) {
           continue;
         }
 
         setMets(met, underMet, overMet);
 
-        uint cnt1 = widthsSpacingsLoop();
+        uint32_t cnt1 = widthsSpacingsLoop();
         cnt += cnt1;
 
         logger_->info(
@@ -377,7 +378,7 @@ bool extSolverGen::measurePatternVar_3D(int met,
                                         double top_width,
                                         double bot_width,
                                         double thickness,
-                                        uint wireCnt,
+                                        uint32_t wireCnt,
                                         char* wiresNameSuffix)
 {
   setEffParams(top_width, bot_width, thickness);
@@ -509,7 +510,7 @@ double extSolverGen::writeWirePatterns(FILE* fp,
   double orig = 0.0;
   double x = orig;
 
-  uint cnt = 1;
+  uint32_t cnt = 1;
 
   double xd[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   double X0 = x - targetPitch;  // next neighbor spacing
@@ -602,7 +603,7 @@ double extSolverGen::writeWirePatterns_w3(FILE* fp,
   double x = orig;
   double X0 = x - targetPitch;  // prev neighbor
   double X1 = x + targetPitch;  // next neighbor
-  uint cnt = 1;
+  uint32_t cnt = 1;
   if (_wireCnt == 3) {
     m->writeWire3D(fp, cnt++, X0, targetWidth, len, height_offset, 0);
     m->writeWire3D(
@@ -649,7 +650,7 @@ bool extSolverGen::getMultipliers(const char* input, std::vector<double>& table)
     double v = atof(word.c_str());
     table.push_back(v);
   }
-  return table.size() > 0;
+  return !table.empty();
 }
 bool extSolverGen::setWidthSpaceMultipliers(const char* w_list,
                                             const char* s_list)

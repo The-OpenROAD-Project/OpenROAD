@@ -2125,7 +2125,7 @@ void FastRouteCore::setSttInputFilename(const char* file_name)
 }
 bool FastRouteCore::hasSaveSttInput()
 {
-  return (debug_->sttInputFileName != "");
+  return !debug_->sttInputFileName.empty();
 }
 std::string FastRouteCore::getSttInputFileName()
 {
