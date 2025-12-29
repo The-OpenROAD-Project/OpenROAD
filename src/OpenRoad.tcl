@@ -598,11 +598,9 @@ proc cmd_args_completer { part start end line } {
       return ""
     }
   }
+  set unused_flags {}
   if { [info exists ::sta::cmd_args($cmd)] } {
     set metadata $::sta::cmd_args($cmd)
-  }
-  set unused_flags {}
-  if { [info exists metadata] } {
     set all_flags [regexp -all -inline -- {[-+][a-zA-Z0-9_]+} $metadata]
     set unused_flags [::tclreadline::RemoveUsedOptions $line [lsort -unique $all_flags]]
   }
