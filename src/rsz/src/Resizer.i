@@ -175,6 +175,14 @@ set_max_utilization(double max_utilization)
 }
 
 void
+set_more_recover_power(bool enable)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setMoreRecoverPower(enable);
+}
+
+void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {
