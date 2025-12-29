@@ -185,7 +185,6 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   if (buffer_inst == nullptr) {
     logger_->error(
         utl::ODB, 1205, "BeforeLoads: Failed to create buffer instance.");
-    return nullptr;
   }
 
   // 3. Create Buffer Net
@@ -284,8 +283,8 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
                                        uniquify_,
                                        target_module_);
 
-  buf_input_iterm_ = buffer_inst->findITerm(input_mterm->getConstName());
-  buf_output_iterm_ = buffer_inst->findITerm(output_mterm->getConstName());
+  buf_input_iterm_ = buffer_inst->getITerm(input_mterm);
+  buf_output_iterm_ = buffer_inst->getITerm(output_mterm);
 
   return buffer_inst;
 }
@@ -309,15 +308,19 @@ void dbInsertBuffer::placeNewBuffer(dbInst* buffer_inst,
 {
   int x = 0;
   int y = 0;
+  bool placed = false;
   if (loc) {
     x = loc->getX();
     y = loc->getY();
+    placed = true;
   } else {
-    getPinLocation(term, x, y);
+    placed = getPinLocation(term, x, y);
   }
 
-  buffer_inst->setLocation(x, y);
-  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  if (placed) {
+    buffer_inst->setLocation(x, y);
+    buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  }
 }
 
 void dbInsertBuffer::rewireBufferSimple(bool insertBefore,

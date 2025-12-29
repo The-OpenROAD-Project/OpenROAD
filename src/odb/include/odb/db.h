@@ -1844,13 +1844,7 @@ class dbNet : public dbObject
   ///
   /// Set the driving term id assigned of this net.
   ///
-  void setDrivingITerm(int id);
-
-  ///
-  /// Returns driving term id assigned of this net. -1 if not set, 0 if non
-  /// existent
-  ///
-  int getDrivingITermId() const;
+  void setDrivingITerm(const dbITerm* iterm);
 
   ///
   /// Returns the driving dbITerm* of this net.

@@ -534,16 +534,10 @@ void dbNet::setCcAdjustOrder(uint32_t order)
   net->cc_adjust_order_ = order;
 }
 
-void dbNet::setDrivingITerm(int id)
+void dbNet::setDrivingITerm(const dbITerm* iterm)
 {
   _dbNet* net = (_dbNet*) this;
-  net->driving_iterm_ = id;
-}
-
-int dbNet::getDrivingITermId() const
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->driving_iterm_;
+  net->driving_iterm_ = (iterm) ? iterm->getId() : 0;
 }
 
 dbITerm* dbNet::getDrivingITerm() const
@@ -1246,9 +1240,8 @@ dbObject* dbNet::getFirstDriverTerm() const
 
 dbITerm* dbNet::getFirstOutput() const
 {
-  if (getDrivingITermId() > 0) {
-    return dbITerm::getITerm((dbBlock*) getImpl()->getOwner(),
-                             getDrivingITermId());
+  if (dbITerm* drvrIterm = getDrivingITerm()) {
+    return drvrIterm;
   }
 
   for (dbITerm* tr : getITerms()) {

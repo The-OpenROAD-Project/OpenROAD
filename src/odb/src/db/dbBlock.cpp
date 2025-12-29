@@ -3330,11 +3330,11 @@ void dbBlock::setDrivingItermsforNets()
       continue;
     }
 
-    net->setDrivingITerm(0);
+    net->setDrivingITerm(nullptr);
 
     for (dbITerm* tr : net->getITerms()) {
       if (tr->getIoType() == dbIoType::OUTPUT) {
-        net->setDrivingITerm(tr->getId());
+        net->setDrivingITerm(tr);
         break;
       }
     }
