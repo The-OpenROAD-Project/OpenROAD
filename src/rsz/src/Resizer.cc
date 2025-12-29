@@ -31,6 +31,7 @@
 #include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
+#include "RecoverPowerMore.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
@@ -185,6 +186,7 @@ Resizer::Resizer(Logger* logger,
   split_load_move_ = std::make_unique<SplitLoadMove>(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this);
+  recover_power_more_ = std::make_unique<RecoverPowerMore>(this);
   repair_design_ = std::make_unique<RepairDesign>(this);
   repair_setup_ = std::make_unique<RepairSetup>(this);
   repair_hold_ = std::make_unique<RepairHold>(this);
@@ -434,6 +436,11 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   estimate_parasitics_->updateParasitics();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
+}
+
+bool Resizer::removeBuffer(Instance* buffer, const bool honor_dont_touch_fixed)
+{
+  return unbuffer_move_->removeBufferIfPossible(buffer, honor_dont_touch_fixed);
 }
 
 void Resizer::unbufferNet(Net* net)
@@ -4442,7 +4449,14 @@ bool Resizer::recoverPower(float recover_power_percent,
              == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent, verbose);
+  return more_recover_power_
+             ? recover_power_more_->recoverPower(recover_power_percent, verbose)
+             : recover_power_->recoverPower(recover_power_percent, verbose);
+}
+
+void Resizer::setMoreRecoverPower(const bool enable)
+{
+  more_recover_power_ = enable;
 }
 ////////////////////////////////////////////////////////////////
 void Resizer::swapArithModules(int path_count,
