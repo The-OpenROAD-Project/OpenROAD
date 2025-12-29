@@ -866,7 +866,24 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
   }
 
   net->setIsGuideRestored(false);
+  addNetResources(net);
   return true;
+}
+
+void GlobalRouter::addNetResources(Net* net)
+{
+  GRoute& segments = routes_[net->getDbNet()];
+  for (GSegment& segment : segments) {
+    if (!segment.isVia()) {
+      updateResources(segment.init_x,
+                      segment.init_y,
+                      segment.final_x,
+                      segment.final_y,
+                      segment.final_layer,
+                      1,
+                      net->getDbNet());
+    }
+  }
 }
 
 // This function is not currently enabled
