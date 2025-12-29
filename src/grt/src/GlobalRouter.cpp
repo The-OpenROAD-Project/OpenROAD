@@ -823,14 +823,13 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (pinPositionsChanged(net) && !net->isMergedNet()
-        && !netIsCovered(db_net, pins_not_covered)) {
-      if (!loadRoutingFromDBGuides(db_net)) {
-        dirty_nets.push_back(db_net_map_[db_net]);
-        routes_[db_net].clear();
-        db_net->clearGuides();
-        fastroute_->clearNetRoute(db_net);
-      }
+
+    if (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
+        && !net->isMergedNet() && !netIsCovered(db_net, pins_not_covered)) {
+      dirty_nets.push_back(db_net_map_[db_net]);
+      routes_[db_net].clear();
+      db_net->clearGuides();
+      fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
         logger_->error(
@@ -846,7 +845,8 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 
 bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
 {
-  if (db_net->getGuides().empty()) {
+  Net* net = db_net_map_[db_net];
+  if (db_net->getGuides().empty() || !net->isGuideRestored()) {
     return false;
   }
 
@@ -865,6 +865,7 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     return false;
   }
 
+  net->setIsGuideRestored(false);
   return true;
 }
 
