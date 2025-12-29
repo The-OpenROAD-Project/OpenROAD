@@ -502,9 +502,6 @@ proc set_eliminate_dead_logic_enabled { enabled } {
     0 - false - no - off {
       set value 0
     }
-    default {
-      set value 0
-    }
   }
 
   set_eliminate_dead_logic_enabled_cmd $value
