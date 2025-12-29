@@ -51,7 +51,7 @@ PASSFAIL_TESTS = [
 COMPULSORY_TESTS = [
     "error1",
     "get_core_die_areas",
-    "issue_7816",
+    "ord_tclsh_completion",
     "place_inst",
     "upf_test",
     "upf_aes",
