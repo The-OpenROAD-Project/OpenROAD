@@ -228,7 +228,7 @@ void definPin::pinGroundPin(const char* groundPin)
     return;
   }
 
-  _ground_pins.push_back(Pin(_cur_bterm, std::string(groundPin)));
+  _ground_pins.emplace_back(_cur_bterm, std::string(groundPin));
 }
 
 void definPin::pinSupplyPin(const char* supplyPin)
@@ -237,7 +237,7 @@ void definPin::pinSupplyPin(const char* supplyPin)
     return;
   }
 
-  _supply_pins.push_back(Pin(_cur_bterm, std::string(supplyPin)));
+  _supply_pins.emplace_back(_cur_bterm, std::string(supplyPin));
 }
 
 void definPin::portBegin()

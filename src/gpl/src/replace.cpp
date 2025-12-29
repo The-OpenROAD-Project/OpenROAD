@@ -345,7 +345,7 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
     density = nbVec_[0]->getUniformTargetDensity();
   }
 
-  std::string _ = log_->redirectStringEnd();
+  log_->redirectStringEnd();  // discard output
   return density;
 }
 

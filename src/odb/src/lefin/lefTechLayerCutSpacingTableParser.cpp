@@ -19,7 +19,7 @@
 namespace odb::lefTechLayerCutSpacingTable {
 
 void createOrthongonalSubRule(
-    std::vector<boost::fusion::vector<double, double>> params,
+    const std::vector<boost::fusion::vector<double, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -46,7 +46,7 @@ void setDefault(double value,
   parser->curRule->setDefault(lefinReader->dbdist(value));
 }
 void setLayer(
-    std::string value,
+    const std::string& value,
     odb::lefTechLayerCutSpacingTableParser* parser,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
@@ -54,13 +54,13 @@ void setLayer(
   auto secondLayer = tech->findLayer(value.c_str());
   parser->curRule->setLayerValid(true);
   if (secondLayer == nullptr) {
-    incomplete_props.push_back({parser->curRule, value});
+    incomplete_props.emplace_back(parser->curRule, value);
   } else {
     parser->curRule->setSecondLayer(secondLayer);
   }
 }
 void setPrlForAlignedCut(
-    std::vector<boost::fusion::vector<std::string, std::string>> params,
+    const std::vector<boost::fusion::vector<std::string, std::string>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser)
 {
   parser->curRule->setPrlForAlignedCut(true);
@@ -71,7 +71,7 @@ void setPrlForAlignedCut(
   }
 }
 void setCenterToCenter(
-    std::vector<boost::fusion::vector<std::string, std::string>> params,
+    const std::vector<boost::fusion::vector<std::string, std::string>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser)
 {
   parser->curRule->setCenterToCenterValid(true);
@@ -82,7 +82,7 @@ void setCenterToCenter(
   }
 }
 void setCenterAndEdge(
-    std::vector<boost::fusion::vector<std::string, std::string>> params,
+    const std::vector<boost::fusion::vector<std::string, std::string>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser)
 {
   parser->curRule->setCenterAndEdgeValid(true);
@@ -152,7 +152,7 @@ void setExactAlignedSpacing(
 }
 
 void setNonOppositeEnclosureSpacing(
-    std::vector<boost::fusion::vector<std::string, double>> params,
+    const std::vector<boost::fusion::vector<std::string, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -165,8 +165,8 @@ void setNonOppositeEnclosureSpacing(
 }
 
 void setOppositeEnclosureResizeSpacing(
-    std::vector<boost::fusion::vector<std::string, double, double, double>>
-        params,
+    const std::vector<
+        boost::fusion::vector<std::string, double, double, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -199,7 +199,7 @@ void setEndExtension(
   }
 }
 void setSideExtension(
-    std::vector<boost::fusion::vector<std::string, double>> params,
+    const std::vector<boost::fusion::vector<std::string, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -289,7 +289,7 @@ void setCutClass(
       name += "/" + OPTION.value();
     }
     rows[name] = i;
-    table.push_back(std::vector<std::pair<int, int>>(colSz));
+    table.emplace_back(colSz);
     for (uint32_t j = 0; j < items.size(); j++) {
       auto item = items[j];
       auto spacing1 = at_c<0>(item);
@@ -350,9 +350,9 @@ void setCutClass(
   }
   parser->curRule->setSpacingTable(table, rows, cols);
 }
-void print(std::string str)
+void print(const std::string& str)
 {
-  std::cout << str << std::endl;
+  std::cout << str << '\n';
 }
 
 template <typename Iterator>

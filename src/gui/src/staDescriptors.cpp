@@ -60,7 +60,7 @@ template <typename T>
 static void add_limit(Descriptor::Properties& props,
                       sta::LibertyPort* port,
                       const char* label,
-                      LimitFunc<T> func,
+                      const LimitFunc<T>& func,
                       const char* suffix)
 {
   for (const auto* elem : T::range()) {
@@ -703,7 +703,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                                                     100 * power.duty(),
                                                     freq,
                                                     power.originName());
-      port_power_activity.push_back({port_id, activity_info});
+      port_power_activity.emplace_back(port_id, activity_info);
 
       const sta::Unit* timeunit = sta_->units()->timeUnit();
       const auto setup_arrival
@@ -715,7 +715,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                       "{} {}",
                       timeunit->asString(setup_arrival, kFloatPrecision),
                       timeunit->scaledSuffix());
-      port_arrival_setup.push_back({port_id, setup_text});
+      port_arrival_setup.emplace_back(port_id, setup_text);
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
       const std::string hold_text
@@ -724,7 +724,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 : fmt::format("{} {}",
                               timeunit->asString(hold_arrival, kFloatPrecision),
                               timeunit->scaledSuffix());
-      port_arrival_hold.push_back({port_id, hold_text});
+      port_arrival_hold.emplace_back(port_id, hold_text);
     }
   }
   props.push_back({"Max arrival times", port_arrival_setup});
@@ -734,10 +734,10 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   PropertyList power;
   for (auto* corner : *sta_->corners()) {
     const auto power_info = sta_->power(inst, corner);
-    power.push_back(
-        {gui->makeSelected(corner),
-         Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
-             + "W"});
+    power.emplace_back(
+        gui->makeSelected(corner),
+        Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
+            + "W");
   }
   props.push_back({"Total power", power});
 

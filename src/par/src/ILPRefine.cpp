@@ -90,8 +90,7 @@ float IlpRefine::Pass(
       }
     }
     if (hyperedge.size() > 1) {
-      hyperedges_extracted.push_back(
-          std::vector<int>(hyperedge.begin(), hyperedge.end()));
+      hyperedges_extracted.emplace_back(hyperedge.begin(), hyperedge.end());
       hyperedges_weight_extracted.push_back(
           evaluator_->CalculateHyperedgeCost(e, hgraph));
     }

@@ -15,6 +15,10 @@
 
 namespace ant {
 
+using gtl::operators::operator+=;
+using gtl::operators::operator-=;
+using gtl::operators::operator&;
+
 Polygon rectToPolygon(const odb::Rect& rect)
 {
   std::vector<Point> points{{gtl::construct<Point>(rect.xMin(), rect.yMin()),

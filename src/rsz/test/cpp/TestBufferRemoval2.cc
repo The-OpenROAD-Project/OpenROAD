@@ -56,8 +56,8 @@ class BufRemTest2 : public tst::Nangate45Fixture
 
     // Create top level ports
     makeBTerm(block_, "in1");
-    makeBTerm(block_, "out1", {.io_type = odb::dbIoType::OUTPUT});
-    makeBTerm(block_, "out2", {.io_type = odb::dbIoType::OUTPUT});
+    makeBTerm(block_, "out1", {.io_type = odb::dbIoType::OUTPUT, .bpins = {}});
+    makeBTerm(block_, "out2", {.io_type = odb::dbIoType::OUTPUT, .bpins = {}});
 
     // Create top level nets
     odb::dbNet* net1 = odb::dbNet::create(block_, "net1");

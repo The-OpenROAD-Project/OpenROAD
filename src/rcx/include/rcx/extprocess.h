@@ -17,16 +17,16 @@ namespace rcx {
 using utl::Logger;
 
 class extProcess;
-class Ath__parser;
+class Parser;
 
 class extConductor
 {
   extConductor(Logger* logger);
 
-  void printConductor(FILE* fp, Ath__parser* parse);
-  bool readConductor(Ath__parser* parser);
-  bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
-  bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
+  void printConductor(FILE* fp, Parser* parse);
+  bool readConductor(Parser* parser);
+  bool setDoubleVal(Parser* parser, const char* key, int n, double& val);
+  bool setIntVal(Parser* parser, const char* key, int n, int& val);
 
   void printString(FILE* fp,
                    const char* sep,
@@ -78,8 +78,8 @@ class extConductor
 class extDielectric
 {
   extDielectric(Logger* logger);
-  bool readDielectric(Ath__parser* parser);
-  void printDielectric(FILE* fp, Ath__parser* parse);
+  bool readDielectric(Parser* parser);
+  void printDielectric(FILE* fp, Parser* parse);
   void printDielectric(FILE* fp, float planeWidth, float planeThickness);
   void printDielectric3D(FILE* fp,
                          float blockWidth,
@@ -102,8 +102,8 @@ class extDielectric
                    double v,
                    bool pos = false);
 
-  bool setDoubleVal(Ath__parser* parser, const char* key, int n, double& val);
-  bool setIntVal(Ath__parser* parser, const char* key, int n, int& val);
+  bool setDoubleVal(Parser* parser, const char* key, int n, double& val);
+  bool setIntVal(Parser* parser, const char* key, int n, int& val);
   char _name[128];
   char _non_conformal_metal[128];
   bool _conformal;
@@ -252,27 +252,26 @@ class extVarTable
   extVarTable(uint32_t rowCnt);
   ~extVarTable();
 
-  int readWidthSpacing2D(Ath__parser* parser,
+  int readWidthSpacing2D(Parser* parser,
                          const char* keyword1,
                          const char* keyword2,
                          const char* keyword3,
                          const char* key);
-  Ath__array1D<double>* readDoubleArray(Ath__parser* parser,
-                                        const char* keyword);
+  Array1D<double>* readDoubleArray(Parser* parser, const char* keyword);
   void printOneLine(FILE* fp,
-                    Ath__array1D<double>* A,
+                    Array1D<double>* A,
                     const char* header,
                     const char* trail);
   void printTable(FILE* fp, const char* valKey);
   double getVal(uint32_t ii, uint32_t jj) { return _vTable[ii]->get(jj); };
 
  private:
-  Ath__array1D<double>* _width;
-  Ath__array1D<double>* _space;
-  Ath__array1D<double>* _density;
-  Ath__array1D<double>* _p;
+  Array1D<double>* _width;
+  Array1D<double>* _space;
+  Array1D<double>* _density;
+  Array1D<double>* _p;
   uint32_t _rowCnt;
-  Ath__array1D<double>** _vTable;
+  Array1D<double>** _vTable;
 
   friend class extVariation;
 };
@@ -280,17 +279,17 @@ class extVarTable
 class extVariation
 {
  public:
-  int readVariation(Ath__parser* parser);
-  extVarTable* readVarTable(Ath__parser* parser,
+  int readVariation(Parser* parser);
+  extVarTable* readVarTable(Parser* parser,
                             const char* key1,
                             const char* key2,
                             const char* key3,
                             const char* endKey);
   void printVariation(FILE* fp, uint32_t n);
-  Ath__array1D<double>* getWidthTable();
-  Ath__array1D<double>* getSpaceTable();
-  Ath__array1D<double>* getDataRateTable();
-  Ath__array1D<double>* getPTable();
+  Array1D<double>* getWidthTable();
+  Array1D<double>* getSpaceTable();
+  Array1D<double>* getDataRateTable();
+  Array1D<double>* getPTable();
   double getTopWidth(uint32_t ii, uint32_t jj);
   double getTopWidthR(uint32_t ii, uint32_t jj);
   double getBottomWidth(double w, uint32_t dIndex);
@@ -298,9 +297,7 @@ class extVariation
   double getThickness(double w, uint32_t dIndex);
   double getThicknessR(double w, uint32_t dIndex);
   double getP(double w);
-  double interpolate(double w,
-                     Ath__array1D<double>* X,
-                     Ath__array1D<double>* Y);
+  double interpolate(double w, Array1D<double>* X, Array1D<double>* Y);
   void setLogger(Logger* logger) { logger_ = logger; }
 
  private:
@@ -429,11 +426,11 @@ class extProcess
                                bool diag = false);
 
   extVariation* getVariation(uint32_t met);
-  Ath__array1D<double>* getWidthTable(uint32_t met);
-  Ath__array1D<double>* getSpaceTable(uint32_t met);
-  Ath__array1D<double>* getDiagSpaceTable(uint32_t met);
-  Ath__array1D<double>* getDataRateTable(uint32_t met);
-  void readDataRateTable(Ath__parser* parser, const char* keyword);
+  Array1D<double>* getWidthTable(uint32_t met);
+  Array1D<double>* getSpaceTable(uint32_t met);
+  Array1D<double>* getDiagSpaceTable(uint32_t met);
+  Array1D<double>* getDataRateTable(uint32_t met);
+  void readDataRateTable(Parser* parser, const char* keyword);
   double adjustMasterLayersForHeight(uint32_t met, double thickness);
   double adjustMasterDielectricsForHeight(uint32_t met, double dth);
   bool getMaxMinFlag();
@@ -446,12 +443,12 @@ class extProcess
   uint32_t _dielectricCnt;
   bool _maxMinFlag;
   bool _thickVarFlag;
-  Ath__array1D<extConductor*>* _condTable;
-  Ath__array1D<extDielectric*>* _dielTable;
-  Ath__array1D<extMasterConductor*>* _masterConductorTable;
-  Ath__array1D<extMasterConductor*>* _masterDielectricTable;
-  Ath__array1D<extVariation*>* _varTable;
-  Ath__array1D<double>* _dataRateTable;
+  Array1D<extConductor*>* _condTable;
+  Array1D<extDielectric*>* _dielTable;
+  Array1D<extMasterConductor*>* _masterConductorTable;
+  Array1D<extMasterConductor*>* _masterDielectricTable;
+  Array1D<extVariation*>* _varTable;
+  Array1D<double>* _dataRateTable;
 };
 
 }  // namespace rcx

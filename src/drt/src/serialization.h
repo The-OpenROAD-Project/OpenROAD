@@ -552,7 +552,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & id;
         if (!inBounds(id, master->getTerms().size())) {
-          std::cout << "frcMTerm" << std::endl;
+          std::cout << "frcMTerm\n";
           exit(1);
         }
         obj = master->getTerms().at(id).get();
@@ -565,7 +565,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & id;
         if (!inBounds(id, term->getPins().size())) {
-          std::cout << "frcMPin" << std::endl;
+          std::cout << "frcMPin\n";
           exit(1);
         }
         obj = term->getPins().at(id).get();
@@ -578,7 +578,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & id;
         if (!inBounds(id, term->getPins().size())) {
-          std::cout << "frcBPin" << std::endl;
+          std::cout << "frcBPin\n";
           exit(1);
         }
         obj = term->getPins().at(id).get();
@@ -591,7 +591,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & id;
         if (!inBounds(id, pin->getNumPinAccess())) {
-          std::cout << "frcPinAccess" << std::endl;
+          std::cout << "frcPinAccess\n";
           exit(1);
         }
         obj = pin->getPinAccess(id);
@@ -604,7 +604,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & id;
         if (!inBounds(id, pa->getAccessPoints().size())) {
-          std::cout << "frcAccessPoint " << id << std::endl;
+          std::cout << "frcAccessPoint " << id << '\n';
           exit(1);
         }
         obj = pa->getAccessPoints().at(id).get();

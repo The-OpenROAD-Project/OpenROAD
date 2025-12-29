@@ -34,8 +34,8 @@ class dbExtControl : public dbObject
   bool _exttreePreMerg;
   double _exttreeMaxcap;
   bool _useDbSdb;
-  uint32_t _CCnoPowerSource;
-  uint32_t _CCnoPowerTarget;
+  uint32_t _ccNoPowerSource;
+  uint32_t _ccNoPowerTarget;
   bool _usingMetalPlanes;
   std::string _ruleFileName;
   std::string _extractedCornerList;

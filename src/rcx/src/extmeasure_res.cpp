@@ -16,7 +16,7 @@ int extMeasure::computeResDist(SEQ* s,
                                uint32_t trackMin,
                                uint32_t trackMax,
                                uint32_t targetMet,
-                               Ath__array1D<SEQ*>* diagTable)
+                               Array1D<SEQ*>* diagTable)
 {
   int trackDist = 4;
   int loTrack;
@@ -29,10 +29,10 @@ int extMeasure::computeResDist(SEQ* s,
 
   uint32_t len = 0;
 
-  Ath__array1D<SEQ*> tmpTable(16);
+  Array1D<SEQ*> tmpTable(16);
   copySeqUsingPool(s, &tmpTable);
 
-  Ath__array1D<SEQ*> residueTable(16);
+  Array1D<SEQ*> residueTable(16);
 
   int trackTable[200];
   uint32_t cnt = 0;
@@ -52,7 +52,7 @@ int extMeasure::computeResDist(SEQ* s,
     }
     // Check for same track
     bool same_track = false;
-    Ath__array1D<SEQ*>* dTable = _dgContextArray[planeIndex][trackn];
+    Array1D<SEQ*>* dTable = _dgContextArray[planeIndex][trackn];
     int cnt = (int) dTable->getCnt();
     for (uint32_t idx = 1; idx < (int) cnt; idx++) {
       SEQ* tseq = dTable->get(idx);
@@ -96,14 +96,14 @@ uint32_t extMeasure::computeRes(SEQ* s,
                                 uint32_t dir,
                                 uint32_t planeIndex,
                                 uint32_t trackn,
-                                Ath__array1D<SEQ*>* residueSeq)
+                                Array1D<SEQ*>* residueSeq)
 {
-  Ath__array1D<SEQ*>* dgContext = _dgContextArray[planeIndex][trackn];
+  Array1D<SEQ*>* dgContext = _dgContextArray[planeIndex][trackn];
   if (dgContext->getCnt() <= 1) {
     return 0;
   }
 
-  Ath__array1D<SEQ*> overlapSeq(16);
+  Array1D<SEQ*> overlapSeq(16);
   getDgOverlap_res(s, _dir, dgContext, &overlapSeq, residueSeq);
 
   uint32_t len = 0;
@@ -364,9 +364,9 @@ extDistRCTable* extDistWidthRCTable::getRuleTable(uint32_t mou, uint32_t w)
 
 void extMeasure::getDgOverlap_res(SEQ* sseq,
                                   uint32_t dir,
-                                  Ath__array1D<SEQ*>* dgContext,
-                                  Ath__array1D<SEQ*>* overlapSeq,
-                                  Ath__array1D<SEQ*>* residueSeq)
+                                  Array1D<SEQ*>* dgContext,
+                                  Array1D<SEQ*>* overlapSeq,
+                                  Array1D<SEQ*>* residueSeq)
 {
   int idx = 1;
   uint32_t lp = dir ? 0 : 1;

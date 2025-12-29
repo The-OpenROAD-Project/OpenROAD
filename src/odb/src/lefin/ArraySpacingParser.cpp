@@ -11,9 +11,9 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-using namespace odb;
+namespace odb {
 
-void ArraySpacingParser::setCutClass(std::string class_name)
+void ArraySpacingParser::setCutClass(const std::string& class_name)
 {
   auto cut_class = layer_->findTechLayerCutClassRule(class_name.c_str());
   if (cut_class != nullptr) {
@@ -92,3 +92,5 @@ bool ArraySpacingParser::parse(const std::string& s)
   }
   return valid;
 }
+
+}  // namespace odb

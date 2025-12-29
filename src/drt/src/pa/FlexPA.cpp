@@ -107,6 +107,11 @@ void FlexPA::addDirtyInst(frInst* inst)
   dirty_insts_.insert(inst);
 }
 
+void FlexPA::addAvoidViaDef(const frViaDef* via_def)
+{
+  avoid_via_defs_.insert(via_def);
+}
+
 void FlexPA::removeDirtyInst(frInst* inst)
 {
   dirty_insts_.erase(inst);

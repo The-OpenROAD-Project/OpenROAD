@@ -50,7 +50,7 @@ class gs
                   int* ur,
                   uint32_t order,
                   uint32_t plane,
-                  Ath__array1D<SEQ*>* array);
+                  Array1D<SEQ*>* array);
 
   // Allocate a SEQ
   SEQ* salloc();

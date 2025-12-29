@@ -31,6 +31,7 @@ void GotoLocationDialog::updateUnits(int dbu_per_micron, bool use_dbu)
   }
 }
 
+// NOLINTNEXTLINE(readability-non-const-parameter)
 void GotoLocationDialog::updateLocation(QLineEdit* x_edit, QLineEdit* y_edit)
 {
   auto viewer = viewers_->getCurrent();
