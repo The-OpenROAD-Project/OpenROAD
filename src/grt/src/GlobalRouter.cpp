@@ -446,6 +446,8 @@ void GlobalRouter::updateDbCongestion()
 int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  int iterations,
                                  float ratio_margin,
+                                 bool jumper_only,
+                                 bool diode_only,
                                  const int num_threads)
 {
   if (!initialized_ || haveDetailedRoutes()) {
@@ -502,7 +504,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     // if run in GRT and it need run jumper insertion
     std::vector<odb::dbNet*> nets_with_jumpers;
     if (!haveDetailedRoutes(nets_to_repair)
-        && repair_antennas_->hasNewViolations()) {
+        && repair_antennas_->hasNewViolations() && !diode_only) {
       // Run jumper insertion and clean
       repair_antennas_->jumperInsertion(routes_,
                                         grid_->getTileSize(),
@@ -521,7 +523,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                      num_threads);
       updateDbCongestion();
     }
-    if (violations) {
+    if (violations && !jumper_only) {
       IncrementalGRoute incr_groute(this, block_);
       repair_antennas_->repairAntennas(diode_mterm);
       total_diodes_count_ += repair_antennas_->getDiodesCount();
