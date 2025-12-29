@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChipNet.h"
 
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -87,13 +88,13 @@ dbChip* dbChipNet::getChip() const
   return (dbChip*) db->chip_tbl_->getPtr(obj->chip_);
 }
 
-uint dbChipNet::getNumBumpInsts() const
+uint32_t dbChipNet::getNumBumpInsts() const
 {
   _dbChipNet* obj = (_dbChipNet*) this;
   return obj->bump_insts_paths_.size();
 }
 
-dbChipBumpInst* dbChipNet::getBumpInst(uint index,
+dbChipBumpInst* dbChipNet::getBumpInst(uint32_t index,
                                        std::vector<dbChipInst*>& path) const
 {
   _dbChipNet* obj = (_dbChipNet*) this;

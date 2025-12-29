@@ -88,8 +88,8 @@ extern int lefwHasInitCbk;
 
 #define WRITER_CALLBACK(func, type)                                 \
   if (func) {                                                       \
-    if ((lefWRetVal = (*func)(type, lefwUserData)) == 0) {          \
-    } else {                                                        \
+    lefWRetVal = (*func)(type, lefwUserData);                       \
+    if (lefWRetVal != 0) {                                          \
       lefiError(1, 0, "User callback routine returned bad status"); \
       return lefWRetVal;                                            \
     }                                                               \

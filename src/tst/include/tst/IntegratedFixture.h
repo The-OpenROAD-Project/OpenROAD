@@ -35,9 +35,9 @@ class IntegratedFixture : public tst::Fixture
   void removeFile(const std::string& path);
 
  protected:
-  odb::dbLib* lib_;
+  odb::dbLib* lib_{nullptr};
   odb::dbBlock* block_{nullptr};
-  sta::dbNetwork* db_network_;
+  sta::dbNetwork* db_network_{nullptr};
 
   stt::SteinerTreeBuilder stt_;
   utl::CallBackHandler callback_handler_;

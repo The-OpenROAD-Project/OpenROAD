@@ -258,7 +258,7 @@ void TritonCTS::checkCharacterization()
   techChar_->forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
     for (int buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
       const std::string& master = wireSeg.getBufferMaster(buf);
-      if (visitedMasters.count(master) == 0) {
+      if (!visitedMasters.contains(master)) {
         if (masterExists(master)) {
           visitedMasters.insert(master);
         } else {
@@ -669,7 +669,10 @@ void TritonCTS::setBufferList(const char* buffers)
   std::vector<std::string> bufferList(begin, end);
   // If the vector is empty, then the buffers are inferred
   if (bufferList.empty()) {
-    inferBufferList(bufferList);
+    const char* lib_name
+        = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
+    resizer_->inferClockBufferList(lib_name, bufferList);
+    options_->setBufferListInferred(true);
   } else {
     // Iterate the user-defined buffer list
     sta::Vector<sta::LibertyCell*> selected_buffers;
@@ -693,181 +696,12 @@ void TritonCTS::setBufferList(const char* buffers)
   options_->setBufferList(bufferList);
 }
 
-void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
-{
-  sta::Vector<sta::LibertyCell*> selected_buffers;
-
-  // first, look for buffers with "is_clock_cell: true" cell attribute
-  sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
-    if (options_->isCtsLibrarySet()
-        && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-      continue;
-    }
-    for (sta::LibertyCell* buffer : *lib->buffers()) {
-      if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
-        // "is_clock_cell: true"
-        selected_buffers.emplace_back(buffer);
-        debugPrint(logger_,
-                   CTS,
-                   "buffering",
-                   1,
-                   "{} has clock cell attribute",
-                   buffer->name());
-      }
-    }
-  }
-  delete lib_iter;
-
-  // second, look for buffers with an input port that has
-  // LEF USE as "CLOCK"
-  if (selected_buffers.empty()) {
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer : *lib->buffers()) {
-        odb::dbMaster* master = db_->findMaster(buffer->name());
-        for (odb::dbMTerm* mterm : master->getMTerms()) {
-          if (mterm->getIoType() == odb::dbIoType::INPUT
-              && mterm->getSigType() == odb::dbSigType::CLOCK
-              && isClockCellCandidate(buffer)) {
-            // input port with LEF USE as "CLOCK"
-            selected_buffers.emplace_back(buffer);
-            debugPrint(logger_,
-                       CTS,
-                       "buffering",
-                       1,
-                       "{} has input port {} with LEF USE as CLOCK",
-                       buffer->name(),
-                       mterm->getName());
-          }
-        }
-      }
-    }
-    delete lib_iter;
-  }
-
-  // third, look for all buffers with name CLKBUF or clkbuf
-  if (selected_buffers.empty()) {
-    sta::PatternMatch patternClkBuf(".*CLKBUF.*",
-                                    /* is_regexp */ true,
-                                    /* nocase */ true,
-                                    /* Tcl_interp* */ nullptr);
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer :
-           lib->findLibertyCellsMatching(&patternClkBuf)) {
-        if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          debugPrint(logger_,
-                     CTS,
-                     "buffering",
-                     1,
-                     "{} found by 'CLKBUF' pattern match",
-                     buffer->name());
-          selected_buffers.emplace_back(buffer);
-        }
-      }
-    }
-    delete lib_iter;
-  }
-
-  // fourth, look for all buffers with name BUF or buf
-  if (selected_buffers.empty()) {
-    sta::PatternMatch patternBuf(".*BUF.*",
-                                 /* is_regexp */ true,
-                                 /* nocase */ true,
-                                 /* Tcl_interp* */ nullptr);
-    lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer :
-           lib->findLibertyCellsMatching(&patternBuf)) {
-        if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          debugPrint(logger_,
-                     CTS,
-                     "buffering",
-                     1,
-                     "{} found by 'BUF' pattern match",
-                     buffer->name());
-          selected_buffers.emplace_back(buffer);
-        }
-      }
-    }
-    delete lib_iter;
-  }
-
-  // abandon attributes & name patterns, just look for all buffers
-  if (selected_buffers.empty()) {
-    debugPrint(logger_,
-               CTS,
-               "buffering",
-               1,
-               "No buffers with clock atributes or name patterns found, using "
-               "all buffers");
-    lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer : *lib->buffers()) {
-        if (isClockCellCandidate(buffer)) {
-          selected_buffers.emplace_back(buffer);
-        }
-      }
-    }
-    delete lib_iter;
-
-    if (selected_buffers.empty()) {
-      logger_->error(
-          CTS,
-          110,
-          "No clock buffer candidates could be found from any libraries.");
-    }
-  }
-
-  resizer_->setClockBuffersList(selected_buffers);
-
-  for (sta::LibertyCell* buffer : selected_buffers) {
-    buffers.emplace_back(buffer->name());
-    debugPrint(logger_,
-               CTS,
-               "buffering",
-               1,
-               "{} has been inferred as clock buffer",
-               buffer->name());
-  }
-
-  options_->setBufferListInferred(true);
-}
-
 std::string toLowerCase(std::string str)
 {
   std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
     return std::tolower(c);
   });
   return str;
-}
-
-bool TritonCTS::isClockCellCandidate(sta::LibertyCell* cell)
-{
-  return (!cell->dontUse() && !resizer_->dontUse(cell) && !cell->alwaysOn()
-          && !cell->isIsolationCell() && !cell->isLevelShifter());
 }
 
 std::string TritonCTS::getRootBufferToString()
@@ -1802,7 +1636,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   topClockInstInputPin->connect(topClockNet);
   topClockNet->setSigType(odb::dbSigType::CLOCK);
 
-  std::map<int, odb::uint> fanoutcount;
+  std::map<int, int> fanoutcount;
 
   // create subNets
   numClkNets_ = 0;
@@ -2050,8 +1884,8 @@ int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
   } else if (!layer->getV54SpacingRules().empty()) {
     for (auto rule : layer->getV54SpacingRules()) {
       if (rule->hasRange()) {
-        uint rmin;
-        uint rmax;
+        uint32_t rmin;
+        uint32_t rmax;
         rule->getRange(rmin, rmax);
         if (width1 < rmin || width2 > rmax) {
           continue;
@@ -2566,7 +2400,7 @@ void TritonCTS::findCandidateDummyCells(
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
     for (sta::LibertyCell* inv : *lib->inverters()) {
-      if (inv->isClockCell() && isClockCellCandidate(inv)) {
+      if (inv->isClockCell() && resizer_->isClockCellCandidate(inv)) {
         inverters.emplace_back(inv);
         dummyCandidates.emplace_back(inv);
       }
@@ -2585,7 +2419,7 @@ void TritonCTS::findCandidateDummyCells(
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* inv :
            lib->findLibertyCellsMatching(&patternClkInv)) {
-        if (inv->isInverter() && isClockCellCandidate(inv)) {
+        if (inv->isInverter() && resizer_->isClockCellCandidate(inv)) {
           inverters.emplace_back(inv);
           dummyCandidates.emplace_back(inv);
         }
@@ -2604,7 +2438,7 @@ void TritonCTS::findCandidateDummyCells(
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* inv : lib->findLibertyCellsMatching(&patternInv)) {
-        if (inv->isInverter() && isClockCellCandidate(inv)) {
+        if (inv->isInverter() && resizer_->isClockCellCandidate(inv)) {
           inverters.emplace_back(inv);
           dummyCandidates.emplace_back(inv);
         }
@@ -2619,7 +2453,7 @@ void TritonCTS::findCandidateDummyCells(
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* inv : *lib->inverters()) {
-        if (isClockCellCandidate(inv)) {
+        if (resizer_->isClockCellCandidate(inv)) {
           inverters.emplace_back(inv);
           dummyCandidates.emplace_back(inv);
         }

@@ -735,7 +735,7 @@ std::set<odb::Point> RDLRouter::generateTerminalAccessPoints(
 template <class InputIt>
 static odb::Point getValidGridPoint(
     InputIt begin,
-    InputIt end,
+    const InputIt& end,
     const std::function<bool(const odb::Point&)>& valid)
 {
   odb::Point snap;

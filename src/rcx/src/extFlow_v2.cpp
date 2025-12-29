@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include <string.h>
-
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -68,12 +67,12 @@ void extMain::initRunEnv(extMeasureRC& m)
   m._maxModelIndex = 0;
   m._currentModel = _currentModel;
   m._diagModel = _currentModel[0].getDiagModel();
-  for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
-    uint jj = _modelMap.get(ii);
+  for (uint32_t ii = 0; ii < _modelMap.getCnt(); ii++) {
+    uint32_t jj = _modelMap.get(ii);
     m._metRCTable.add(_currentModel->getMetRCTable(jj));
   }
-  const uint techLayerCnt = getExtLayerCnt(_tech) + 1;
-  const uint modelLayerCnt = _currentModel->getLayerCnt();
+  const uint32_t techLayerCnt = getExtLayerCnt(_tech) + 1;
+  const uint32_t modelLayerCnt = _currentModel->getLayerCnt();
   m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
   if (techLayerCnt == 5 && modelLayerCnt == 8) {
     m._layerCnt = modelLayerCnt;
@@ -83,7 +82,7 @@ void extMain::initRunEnv(extMeasureRC& m)
 
   m._debugFP = nullptr;
   m._netId = 0;
-  uint debugNetId = this->_debug_net_id;
+  uint32_t debugNetId = this->_debug_net_id;
 
   if (debugNetId > 0) {
     m._netId = debugNetId;
@@ -95,7 +94,7 @@ void extMain::initRunEnv(extMeasureRC& m)
 
 void extMain::initializeLayerTables(LayerDimensionData& tables)
 {
-  for (uint ii = 0; ii < 32; ii++) {
+  for (uint32_t ii = 0; ii < 32; ii++) {
     tables.pitchTable[ii] = 0;
     tables.widthTable[ii] = 0;
   }
@@ -108,9 +107,9 @@ void extMain::setupBoundaries(BoundaryData& bounds, const Rect& extRect)
   bounds.ur[1] = extRect.yMax();
 }
 void extMain::updateBoundaries(BoundaryData& bounds,
-                               uint dir,
-                               uint ccDist,
-                               uint maxPitch)
+                               uint32_t dir,
+                               uint32_t ccDist,
+                               uint32_t maxPitch)
 {
   bounds.lo_gs[!dir] = bounds.ll[!dir];
   bounds.hi_gs[!dir] = bounds.ur[!dir];
@@ -129,7 +128,7 @@ void extMain::updateBoundaries(BoundaryData& bounds,
 
 int extMain::initSearch(LayerDimensionData& tables,
                         Rect& extRect,
-                        uint& totWireCnt)
+                        uint32_t& totWireCnt)
 {
   int layerCnt = initSearchForNets(tables.baseX,
                                    tables.baseY,
@@ -143,8 +142,8 @@ int extMain::initSearch(LayerDimensionData& tables,
     layerCnt = _currentModel->getLayerCnt();
   }
 
-  uint maxWidth = 0;
-  uint totPowerWireCnt = powerWireCounter(maxWidth);
+  uint32_t maxWidth = 0;
+  uint32_t totPowerWireCnt = powerWireCounter(maxWidth);
   totWireCnt = signalWireCounter(maxWidth);
   totWireCnt += totPowerWireCnt;
 
@@ -154,9 +153,9 @@ int extMain::initSearch(LayerDimensionData& tables,
 
   return layerCnt;
 }
-void extMeasureRC::resetTrackIndices(uint dir)
+void extMeasureRC::resetTrackIndices(uint32_t dir)
 {
-  for (uint ii = 0; ii < _trackLevelCnt; ii++) {
+  for (uint32_t ii = 0; ii < _trackLevelCnt; ii++) {
     _lowTrackToExtract[dir][ii] = 0;
     _hiTrackToExtract[dir][ii] = 0;
     _lowTrackToFree[dir][ii] = 0;
@@ -165,7 +164,9 @@ void extMeasureRC::resetTrackIndices(uint dir)
     _hiTrackSearch[dir][ii] = 0;
   }
 }
-uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
+uint32_t extMain::couplingFlow_v2(Rect& extRect,
+                                  uint32_t ccDist,
+                                  extMeasure* m1)
 {
   getPeakMemory("Start Coupling Flow: ");
 
@@ -186,21 +187,21 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
   LayerDimensionData tables;
   initializeLayerTables(tables);
 
-  uint totWireCnt;
+  uint32_t totWireCnt;
   int layerCnt = initSearch(tables, extRect, totWireCnt);
   _search->setV2(_v2);
 
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
 
-  uint maxPitch = tables.pitchTable[layerCnt - 1];
+  uint32_t maxPitch = tables.pitchTable[layerCnt - 1];
 
   // TODO mrc->_progressTracker =
   // std::make_unique<ExtProgressTracker>(totWireCnt);
 
   mrc->_seqmentPool = new AthPool<extSegment>(1024);
 
-  uint totalWiresExtracted = 0;
+  uint32_t totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
   for (int dir = 1; dir >= 0; dir--) {  // dir==1 Horizontal wires
 
@@ -264,7 +265,9 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
   return 0;
 }
-uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
+uint32_t extMain::couplingFlow_v2_opt(Rect& extRect,
+                                      uint32_t ccDist,
+                                      extMeasure* m1)
 {
   ccDist
       = 10;  // TODO -- test for different  values and adjust regression tests
@@ -284,7 +287,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
   LayerDimensionData tables;
   initializeLayerTables(tables);
 
-  uint totWireCnt;
+  uint32_t totWireCnt;
   int layerCnt = initSearch(tables, extRect, totWireCnt);
   _search->setV2(_v2);
 
@@ -303,7 +306,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
 
   mrc->_seqmentPool = new AthPool<extSegment>(1024);
 
-  uint totalWiresExtracted = 0;
+  uint32_t totalWiresExtracted = 0;
   float previous_percent_extracted = 0.0;
 
   // TODO mrc->_progressTracker =
@@ -390,9 +393,9 @@ void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
   _useDbSdb = true;
   _search->setExtControl_v2(_block,
                             _useDbSdb,
-                            (uint) overlapAdj,
-                            _CCnoPowerSource,
-                            _CCnoPowerTarget,
+                            (uint32_t) overlapAdj,
+                            _ccNoPowerSource,
+                            _ccNoPowerTarget,
                             _ccUp,
                             _allNet,
                             _ccContextDepth,
@@ -412,8 +415,8 @@ void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
                             seqPool);
 }
 
-void extMain::printUpdateCoup(uint netId1,
-                              uint netId2,
+void extMain::printUpdateCoup(uint32_t netId1,
+                              uint32_t netId2,
                               double v,
                               double org,
                               double totCC)
@@ -442,13 +445,13 @@ bool extMeasure::IsDebugNet1()
   return _netSrcId == _extMain->_debug_net_id
          || _netTgtId == _extMain->_debug_net_id;
 }
-void GridTable::initCouplingCapLoops_v2(uint dir,
-                                        uint couplingDist,
+void GridTable::initCouplingCapLoops_v2(uint32_t dir,
+                                        uint32_t couplingDist,
                                         int* startXY)
 {
   setCCFlag(couplingDist);
 
-  for (uint jj = 1; jj < _colCnt; jj++) {
+  for (uint32_t jj = 1; jj < _colCnt; jj++) {
     Grid* netGrid = _gridTable[dir][jj];
     if (netGrid == nullptr) {
       continue;
@@ -461,14 +464,14 @@ void GridTable::initCouplingCapLoops_v2(uint dir,
     }
   }
 }
-int Grid::initCouplingCapLoops_v2(uint couplingDist,
+int Grid::initCouplingCapLoops_v2(uint32_t couplingDist,
                                   bool startSearchTrack,
                                   int startXY)
 {
-  uint TargetHighMarkedNet = _gridtable->targetHighMarkedNet();
+  uint32_t TargetHighMarkedNet = _gridtable->targetHighMarkedNet();
   bool allNet = _gridtable->allNet();
 
-  uint domainAdjust = allNet || !TargetHighMarkedNet ? 0 : couplingDist;
+  uint32_t domainAdjust = allNet || !TargetHighMarkedNet ? 0 : couplingDist;
 
   initContextGrids();
   setSearchDomain(domainAdjust);
@@ -481,29 +484,29 @@ int Grid::initCouplingCapLoops_v2(uint couplingDist,
 
   return _base + _pitch * _searchHiTrack;
 }
-uint Wire::getLevel()
+uint32_t Wire::getLevel()
 {
   return this->_track->getGrid()->getLevel();
 }
-uint Wire::getPitch()
+uint32_t Wire::getPitch()
 {
   return this->_track->getGrid()->getPitch();
 }
-uint Grid::placeWire_v2(SearchBox* bb)
+uint32_t Grid::placeWire_v2(SearchBox* bb)
 {
-  uint d = !_dir;
+  uint32_t d = !_dir;
 
   int xy1 = bb->loXY(d);
 
   int ll[2] = {bb->loXY(0), bb->loXY(1)};
   int ur[2] = {bb->hiXY(0), bb->hiXY(1)};
 
-  uint m1 = getBucketNum(xy1);
+  uint32_t m1 = getBucketNum(xy1);
 
 #ifdef SINGLE_WIRE
-  uint width = bb->hiXY(_dir) - bb->loXY(_dir);
-  uint trackNum1 = getMinMaxTrackNum((bb->loXY(_dir) + bb->loXY(_dir)) / 2);
-  uint trackNum2 = trackNum1;
+  uint32_t width = bb->hiXY(_dir) - bb->loXY(_dir);
+  uint32_t trackNum1 = getMinMaxTrackNum((bb->loXY(_dir) + bb->loXY(_dir)) / 2);
+  uint32_t trackNum2 = trackNum1;
   if (width > _pitch) {
     trackNum2 = getMinMaxTrackNum(bb->hiXY(_dir));
   }
@@ -513,14 +516,14 @@ uint Grid::placeWire_v2(SearchBox* bb)
   // ---------------------------------------------------
   // DELETE --- v2= true  bool NO_SUB_TRACKS= getGridTable()->_no_sub_tracks; //
   // old flow=false
-  uint trackNum1 = getMinMaxTrackNum(bb->loXY(_dir));
-  // uint trackNum2 = trackNum1;
+  uint32_t trackNum1 = getMinMaxTrackNum(bb->loXY(_dir));
+  // uint32_t trackNum2 = trackNum1;
   // DELETE if NO_SUB_TRACKS=true (!NO_SUB_TRACKS)
   //  trackNum2 = getMinMaxTrackNum(bb->hiXY(_dir));
 
 #endif
 
-  uint wireType = bb->getType();
+  uint32_t wireType = bb->getType();
 
   Wire* w
       = makeWire(_dir, ll, ur, bb->getOwnerId(), bb->getOtherId(), wireType);
@@ -535,8 +538,8 @@ uint Grid::placeWire_v2(SearchBox* bb)
   // track->place2(w, m1, m2);
   track->place(w, m1);
   /* DELETE
-  uint wCnt = 1;
-  for (uint ii = trackNum1 + 1; ii <= trackNum2; ii++) {
+  uint32_t wCnt = 1;
+  for (uint32_t ii = trackNum1 + 1; ii <= trackNum2; ii++) {
     Wire* w1 = makeWire(w, wireType);
     w1->_srcId = w->_id;
     w1->_srcWire = w;
@@ -549,14 +552,14 @@ uint Grid::placeWire_v2(SearchBox* bb)
   return trackNum1;
 }
 extDistRC* extMeasureRC::getDiagUnderCC(extMetRCTable* rcModel,
-                                        uint dist,
-                                        uint overMet)
+                                        uint32_t dist,
+                                        uint32_t overMet)
 {
   if (rcModel->_capDiagUnder[_met] == nullptr) {
     return nullptr;
   }
 
-  uint n = getUnderIndex(overMet);
+  uint32_t n = getUnderIndex(overMet);
   extDistRC* rc = rcModel->_capDiagUnder[_met]->getRC(n, _width, dist);
   return rc;
 }
@@ -592,7 +595,7 @@ void extMeasure::OverSubRC(dbRSeg * rseg1,
     }
 
     _underMet = 0;
-    for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
+    for (uint32_t jj = 0; jj < _metRCTable.getCnt(); jj++) {
       extDistRC* rc = _metRCTable.get(jj)->getOverFringeRC(this);
       if (rc == nullptr)
         continue;
@@ -625,7 +628,7 @@ void extMeasure::OverSubRC(dbRSeg * rseg1,
 
 */
 
-void extMain::setBranchCapNodeId(dbNet* net, uint junction)
+void extMain::setBranchCapNodeId(dbNet* net, uint32_t junction)
 {
   int capId = _nodeTable->geti(junction);
   if (capId != 0) {
@@ -642,8 +645,8 @@ void extMain::setBranchCapNodeId(dbNet* net, uint junction)
   capId = cap->getId();
 
   _nodeTable->set(junction, -capId);
-  return;
 }
+
 void extMain::markPathHeadTerm(dbWirePath& path)
 {
   if (path.bterm) {
@@ -705,7 +708,7 @@ bool extRCModel::spotModelsInRules(char* name,
 {
   free(_ruleFileName);
   _ruleFileName = strdup(name);
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile(name);
@@ -750,8 +753,8 @@ bool extRCModel::readRules(char* name,
                            bool under,
                            bool overUnder,
                            bool diag,
-                           uint cornerCnt,
-                           uint* cornerTable,
+                           uint32_t cornerCnt,
+                           const uint32_t* cornerTable,
                            double dbFactor)
 {
   bool res_over = false;
@@ -787,7 +790,7 @@ bool extRCModel::readRules(char* name,
   diag = false;
   free(_ruleFileName);
   _ruleFileName = strdup(name);
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile(name);
@@ -814,7 +817,7 @@ bool extRCModel::readRules(char* name,
       continue;
     }
     if (parser.isKeyword(0, "DensityRate")) {
-      uint rulesFileModelCnt = parser.getInt(1);
+      uint32_t rulesFileModelCnt = parser.getInt(1);
       if (cornerCnt > 0) {
         if ((rulesFileModelCnt > 0) && (rulesFileModelCnt < cornerCnt)) {
           logger_->warn(
@@ -830,10 +833,10 @@ bool extRCModel::readRules(char* name,
         // createModelTable(cornerCnt, _layerCnt);
         createModelTable(rulesFileModelCnt, _layerCnt);
 
-        for (uint jj = 0; jj < cornerCnt; jj++) {
-          uint modelIndex = cornerTable[jj];
+        for (uint32_t jj = 0; jj < cornerCnt; jj++) {
+          uint32_t modelIndex = cornerTable[jj];
 
-          uint kk;
+          uint32_t kk;
           for (kk = 0; kk < rulesFileModelCnt; kk++) {
             if (modelIndex != kk) {
               continue;
@@ -856,12 +859,12 @@ bool extRCModel::readRules(char* name,
     // parser.setDbg(1);
 
     if (parser.isKeyword(0, "DensityModel")) {
-      uint m = parser.getInt(1);
-      uint modelIndex = m;
+      uint32_t m = parser.getInt(1);
+      uint32_t modelIndex = m;
       bool skipModel = false;
       /*
       if (cornerCnt > 0) {
-        uint jj = 0;
+        uint32_t jj = 0;
         for (; jj < cornerCnt; jj++) {
           if (m == cornerTable[jj])
             break;
@@ -881,7 +884,7 @@ bool extRCModel::readRules(char* name,
       // skipModel= true;
       bool res_skipModel = false;
 
-      for (uint ii = 1; ii < _layerCnt; ii++) {
+      for (uint32_t ii = 1; ii < _layerCnt; ii++) {
         if (res_over) {
           readRules_v2(&parser,
                        modelIndex,
@@ -1086,7 +1089,7 @@ bool extRCModel::readRules_v2(char* name,
   diag = false;
   free(_ruleFileName);
   _ruleFileName = strdup(name);
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile(name);
@@ -1113,20 +1116,20 @@ bool extRCModel::readRules_v2(char* name,
       continue;
     }
     if (parser.isKeyword(0, "DensityRate")) {
-      uint rulesFileModelCnt = parser.getInt(1);
+      uint32_t rulesFileModelCnt = parser.getInt(1);
       // _modelTable holds process corners
       createModelTable(rulesFileModelCnt, _layerCnt);
       continue;
     }
     // Density Model is equivalent to Process Corner
     if (parser.isKeyword(0, "DensityModel")) {
-      uint m = parser.getInt(1);
-      uint modelIndex = m;
+      uint32_t m = parser.getInt(1);
+      uint32_t modelIndex = m;
       bool skipModel = false;
       bool res_skipModel = false;
 
       // Loop to read all sections of the Model file per Metal Level
-      for (uint ii = 1; ii < _layerCnt; ii++) {
+      for (uint32_t ii = 1; ii < _layerCnt; ii++) {
         if (res_over) {
           readRules_v2(&parser,
                        modelIndex,
@@ -1290,37 +1293,37 @@ bool extRCModel::readRules_v2(char* name,
   return true;
 }
 
-uint extRCModel::readRules_v2(Ath__parser* parser,
-                              uint m,
-                              uint ii,
-                              const char* ouKey,
-                              const char* wKey,
-                              bool over,
-                              bool under,
-                              bool bin,
-                              bool diag,
-                              bool ignore,
-                              double dbFactor)
+uint32_t extRCModel::readRules_v2(Parser* parser,
+                                  uint32_t m,
+                                  uint32_t ii,
+                                  const char* ouKey,
+                                  const char* wKey,
+                                  bool over,
+                                  bool under,
+                                  bool bin,
+                                  bool diag,
+                                  bool ignore,
+                                  double dbFactor)
 {
-  uint cnt = 0;
-  uint met = 0;
-  Ath__array1D<double>* wTable
+  uint32_t cnt = 0;
+  uint32_t met = 0;
+  Array1D<double>* wTable
       = readHeaderAndWidth(parser, met, ouKey, wKey, bin, false);
 
   if (wTable == nullptr) {
     return 0;
   }
 
-  uint widthCnt = wTable->getCnt();
+  uint32_t widthCnt = wTable->getCnt();
 
   extDistWidthRCTable* dummy = nullptr;
   if (ignore) {
     dummy = new extDistWidthRCTable(
-        true, met, _layerCnt, widthCnt, _OUREVERSEORDER);
+        true, met, _layerCnt, widthCnt, OUReverseOrder_);
   }
 
-  uint diagWidthCnt = 0;
-  uint diagDistCnt = 0;
+  uint32_t diagWidthCnt = 0;
+  uint32_t diagDistCnt = 0;
 
   if (diag && strcmp(ouKey, "DIAGUNDER") == 0 && _diagModel == 2) {
     parser->parseNextLine();
@@ -1411,41 +1414,41 @@ uint extRCModel::readRules_v2(Ath__parser* parser,
 
   return cnt;
 }
-uint extDistWidthRCTable::readRulesUnder(Ath__parser* parser,
-                                         uint widthCnt,
-                                         bool bin,
-                                         bool ignore,
-                                         const char* keyword,
-                                         double dbFactor)
+uint32_t extDistWidthRCTable::readRulesUnder(Parser* parser,
+                                             uint32_t widthCnt,
+                                             bool bin,
+                                             bool ignore,
+                                             const char* keyword,
+                                             double dbFactor)
 {
-  uint cnt = 0;
-  for (uint ii = _met + 1; ii < _layerCnt; ii++) {
-    uint met = 0;
+  uint32_t cnt = 0;
+  for (uint32_t ii = _met + 1; ii < _layerCnt; ii++) {
+    uint32_t met = 0;
     if (readMetalHeader(parser, met, keyword, bin, ignore) <= 0) {
       return 0;
     }
 
-    uint metIndex = getMetIndexUnder(ii);
+    uint32_t metIndex = getMetIndexUnder(ii);
     if (ignore) {
       metIndex = 0;
     }
 
     parser->getInt(3);
 
-    for (uint jj = 0; jj < widthCnt; jj++) {
+    for (uint32_t jj = 0; jj < widthCnt; jj++) {
       cnt += _rcDistTable[metIndex][jj]->readRules(
           parser, _rcPoolPtr, true, bin, ignore, dbFactor);
     }
   }
   return cnt;
 }
-uint extRCModel::calcMinMaxRC(odb::dbTech* tech, const char* out_file)
+uint32_t extRCModel::calcMinMaxRC(odb::dbTech* tech, const char* out_file)
 {
   dbSet<odb::dbTechLayer> layers = tech->getLayers();
   dbSet<odb::dbTechLayer>::iterator itr;
 
   FILE* fp = openFile(out_file, "", "", "w");
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     odb::dbTechLayer* layer = *itr;
 
@@ -1462,7 +1465,7 @@ uint extRCModel::calcMinMaxRC(odb::dbTech* tech, const char* out_file)
       dist = layer->getPitch() - layer->getWidth();
     }
 
-    for (uint jj = 0; jj < _modelCnt; jj++) {
+    for (uint32_t jj = 0; jj < _modelCnt; jj++) {
       extMetRCTable* corner_model = _modelTable[jj];
       extDistWidthRCTable* rcTable = corner_model->_capOver[met];
 
@@ -1481,11 +1484,11 @@ uint extRCModel::calcMinMaxRC(odb::dbTech* tech, const char* out_file)
         overMet = 0;
         rcMax = corner_model->_capOver[met]->getFringeRC(underMet, width);
       } else if (met == 1) {  // over
-        uint n = overMet - met - 1;
+        uint32_t n = overMet - met - 1;
         rcMax = corner_model->_capUnder[met]->getRC(n, width, dist);
       } else {
-        uint maxOverUnderIndex = corner_model->_capOverUnder[met]->_metCnt;
-        uint n = extRCModel::getMetIndexOverUnder(
+        uint32_t maxOverUnderIndex = corner_model->_capOverUnder[met]->_metCnt;
+        uint32_t n = extRCModel::getMetIndexOverUnder(
             met, underMet, overMet, _layerCnt, maxOverUnderIndex);
         rcMax = corner_model->_capOverUnder[met]->getRC(n, width, dist);
       }
@@ -1505,8 +1508,8 @@ uint extRCModel::calcMinMaxRC(odb::dbTech* tech, const char* out_file)
 void extDistRC::printBound(FILE* fp,
                            const char* loHi,
                            const char* layer_name,
-                           uint met,
-                           uint corner,
+                           uint32_t met,
+                           uint32_t corner,
                            double res)
 {
   fprintf(fp,
@@ -1521,9 +1524,9 @@ void extDistRC::printBound(FILE* fp,
           res * 1000);
 }
 
-void extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
-                                 Ath__array1D<uint>* tmpInstIdTable,
-                                 const uint dir)
+void extMain::addInstsGeometries(const Array1D<uint32_t>* instTable,
+                                 Array1D<uint32_t>* tmpInstIdTable,
+                                 const uint32_t dir)
 {
   if (instTable == nullptr) {
     return;
@@ -1531,10 +1534,10 @@ void extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
 
   const bool rotatedGs = getRotatedFlag();
 
-  const uint instCnt = instTable->getCnt();
+  const uint32_t instCnt = instTable->getCnt();
 
-  for (uint ii = 0; ii < instCnt; ii++) {
-    const uint instId = instTable->get(ii);
+  for (uint32_t ii = 0; ii < instCnt; ii++) {
+    const uint32_t instId = instTable->get(ii);
     dbInst* inst = dbInst::getInst(_block, instId);
 
     if (tmpInstIdTable != nullptr) {
@@ -1550,8 +1553,8 @@ void extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
     addObsShapesOnPlanes(inst, rotatedGs, !dir);
   }
   if (tmpInstIdTable != nullptr) {
-    for (uint jj = 0; jj < tmpInstIdTable->getCnt(); jj++) {
-      const uint instId = instTable->get(jj);
+    for (uint32_t jj = 0; jj < tmpInstIdTable->getCnt(); jj++) {
+      const uint32_t instId = instTable->get(jj);
       dbInst::getInst(_block, instId)->clearUserFlag1();
     }
   }
@@ -1569,7 +1572,7 @@ void extMain::addItermShapesOnPlanes(dbInst* inst,
         continue;
       }
 
-      const uint level = s.getTechLayer()->getRoutingLevel();
+      const uint32_t level = s.getTechLayer()->getRoutingLevel();
 
       if (!rotatedFlag) {
         _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
@@ -1604,7 +1607,7 @@ void extMain::addObsShapesOnPlanes(dbInst* inst,
       continue;
     }
 
-    uint level = s.getTechLayer()->getRoutingLevel();
+    uint32_t level = s.getTechLayer()->getRoutingLevel();
 
     if (!rotatedFlag) {
       _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);

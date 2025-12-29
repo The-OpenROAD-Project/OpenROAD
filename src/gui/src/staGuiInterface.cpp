@@ -1348,7 +1348,7 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
 
   for (const auto& [level, pin_list] : map) {
     int next_level = level + 1;
-    if (map.count(next_level) == 0) {
+    if (!map.contains(next_level)) {
       break;
     }
 

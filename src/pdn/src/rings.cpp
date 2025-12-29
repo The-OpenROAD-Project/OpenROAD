@@ -18,14 +18,14 @@
 
 namespace pdn {
 
-Rings::Rings(Grid* grid, const std::array<Layer, 2>& layers)
-    : GridComponent(grid), layers_(layers)
+Rings::Rings(Grid* grid, const Layer& layer0, const Layer& layer1)
+    : GridComponent(grid), layer0_(layer0), layer1_(layer1)
 {
 }
 
 void Rings::checkLayerSpecifications() const
 {
-  for (const auto& layer : layers_) {
+  for (const auto& layer : {layer0_, layer1_}) {
     checkLayerWidth(layer.layer, layer.width, layer.layer->getDirection());
     checkLayerSpacing(
         layer.layer, layer.width, layer.spacing, layer.layer->getDirection());
@@ -172,9 +172,9 @@ void Rings::setPadOffset(const std::array<int, 4>& offset)
 void Rings::getTotalWidth(int& hor, int& ver) const
 {
   const int rings = getNetCount();
-  hor = layers_[0].width * rings + layers_[0].spacing * (rings - 1);
-  ver = layers_[1].width * rings + layers_[1].spacing * (rings - 1);
-  if (layers_[0].layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
+  hor = layer0_.width * rings + layer0_.spacing * (rings - 1);
+  ver = layer1_.width * rings + layer1_.spacing * (rings - 1);
+  if (layer0_.layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
     std::swap(hor, ver);
   }
 }
@@ -203,8 +203,8 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
              "Make",
              1,
              "Ring start of make shapes on layers {} and {}",
-             layers_[0].layer->getName(),
-             layers_[1].layer->getName());
+             layer0_.layer->getName(),
+             layer1_.layer->getName());
   clearShapes();
 
   auto* grid = getGrid();
@@ -219,13 +219,13 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const odb::Rect core = getInnerRingOutline();
 
   bool single_layer_ring = false;
-  if (layers_[0].layer == layers_[1].layer) {
+  if (layer0_.layer == layer1_.layer) {
     single_layer_ring = true;
   }
 
   using LayerPair = std::pair<Layer*, Layer*>;
-  const std::array<LayerPair, 2> build_layers{
-      LayerPair{&layers_[0], &layers_[1]}, LayerPair{&layers_[1], &layers_[0]}};
+  const std::array<LayerPair, 2> build_layers{LayerPair{&layer0_, &layer1_},
+                                              LayerPair{&layer1_, &layer0_}};
 
   bool processed_horizontal = false;
   for (const auto& [layer_def, layer_other] : build_layers) {
@@ -340,8 +340,8 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 std::vector<odb::dbTechLayer*> Rings::getLayers() const
 {
   std::vector<odb::dbTechLayer*> layers;
-  layers.reserve(layers_.size());
-  for (const auto& layer_def : layers_) {
+  layers.reserve(2);
+  for (const auto& layer_def : {layer0_, layer1_}) {
     layers.push_back(layer_def.layer);
   }
   return layers;
@@ -359,7 +359,7 @@ void Rings::report() const
   logger->report("    Right: {:.4f}", offset_[2] / dbu_per_micron);
   logger->report("    Top: {:.4f}", offset_[3] / dbu_per_micron);
 
-  for (const auto& layer : layers_) {
+  for (const auto& layer : {layer0_, layer1_}) {
     logger->report("  Layer: {}", layer.layer->getName());
     logger->report("    Width: {:.4f}", layer.width / dbu_per_micron);
     logger->report("    Spacing: {:.4f}", layer.spacing / dbu_per_micron);

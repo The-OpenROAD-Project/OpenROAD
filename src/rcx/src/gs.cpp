@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -288,11 +289,11 @@ void gs::release(SEQ* s)
   seqPool_->free(s);
 }
 
-uint gs::getSeq(int* ll,
-                int* ur,
-                const uint order,
-                const uint plane,
-                Ath__array1D<SEQ*>* array)
+uint32_t gs::getSeq(int* ll,
+                    int* ur,
+                    const uint32_t order,
+                    const uint32_t plane,
+                    Array1D<SEQ*>* array)
 {
   if (!checkPlane(plane)) {
     return 0;
@@ -611,7 +612,6 @@ bool gs::getSeqCol(const int x,
       epix = row - 1;
       return true;
     }
-    continue;
   }
 
   epix = plc.height;

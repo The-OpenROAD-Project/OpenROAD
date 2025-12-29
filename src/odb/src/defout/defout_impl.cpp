@@ -358,7 +358,7 @@ void DefOut::Impl::writeVias(dbBlock* block)
 {
   dbSet<dbVia> vias = block->getVias();
 
-  if (vias.size() == 0) {
+  if (vias.empty()) {
     return;
   }
 
@@ -694,11 +694,11 @@ void DefOut::Impl::writeBTerms(dbBlock* block)
 {
   dbSet<dbBTerm> bterms = block->getBTerms();
 
-  if (bterms.size() == 0) {
+  if (bterms.empty()) {
     return;
   }
 
-  uint n = 0;
+  uint32_t n = 0;
 
   for (dbBTerm* bterm : bterms) {
     dbNet* net = bterm->getNet();
@@ -727,7 +727,7 @@ void DefOut::Impl::writeRegions(dbBlock* block)
 {
   dbSet<dbRegion> regions = block->getRegions();
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   for (dbRegion* region : regions) {
     dbSet<dbBox> boxes = region->getBoundaries();
@@ -793,7 +793,7 @@ void DefOut::Impl::writeRegions(dbBlock* block)
 void DefOut::Impl::writeGroups(dbBlock* block)
 {
   auto groups = block->getGroups();
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (auto group : groups) {
     if (!group->getInsts().empty()) {
       cnt++;
@@ -914,7 +914,7 @@ void DefOut::Impl::writeBTerm(dbBTerm* bterm)
   if (net) {
     dbSet<dbBPin> bpins = bterm->getBPins();
 
-    if (bpins.size() != 0) {
+    if (!bpins.empty()) {
       int cnt = 0;
 
       for (dbBPin* bpin : bpins) {
@@ -1037,7 +1037,7 @@ void DefOut::Impl::writeBPin(dbBPin* bpin, int cnt)
             << xMax << " " << yMax << " )";
     } else {
       if (_version == DefOut::DEF_5_8) {
-        uint mask = box->getLayerMask();
+        uint32_t mask = box->getLayerMask();
         if (mask != 0) {
           // add mask information to layer name
           lname += " MASK " + std::to_string(mask);
@@ -1254,7 +1254,7 @@ void DefOut::Impl::writeFills(dbBlock* block)
   for (dbFill* fill : fills) {
     *_out << "    - LAYER " << fill->getTechLayer()->getName();
 
-    uint mask = fill->maskNumber();
+    uint32_t mask = fill->maskNumber();
     if (mask != 0) {
       *_out << " + MASK " << mask;
     }
@@ -1741,10 +1741,10 @@ void DefOut::Impl::writeSpecialPath(dbSBox* box)
   int y1 = box->yMin();
   int x2 = box->xMax();
   int y2 = box->yMax();
-  uint dx = x2 - x1;
-  uint dy = y2 - y1;
-  uint w;
-  uint mask = box->getLayerMask();
+  uint32_t dx = x2 - x1;
+  uint32_t dy = y2 - y1;
+  uint32_t w;
+  uint32_t mask = box->getLayerMask();
 
   switch (box->getDirection()) {
     case dbSBox::UNDEFINED: {
@@ -1754,26 +1754,26 @@ void DefOut::Impl::writeSpecialPath(dbSBox* box)
       if (dx_even && dy_even) {
         if (dy < dx) {
           w = dy;
-          uint dw = dy >> 1;
+          uint32_t dw = dy >> 1;
           y1 += dw;
           y2 -= dw;
           assert(y1 == y2);
         } else {
           w = dx;
-          uint dw = dx >> 1;
+          uint32_t dw = dx >> 1;
           x1 += dw;
           x2 -= dw;
           assert(x1 == x2);
         }
       } else if (dx_even) {
         w = dx;
-        uint dw = dx >> 1;
+        uint32_t dw = dx >> 1;
         x1 += dw;
         x2 -= dw;
         assert(x1 == x2);
       } else if (dy_even) {
         w = dy;
-        uint dw = dy >> 1;
+        uint32_t dw = dy >> 1;
         y1 += dw;
         y2 -= dw;
         assert(y1 == y2);
@@ -1786,7 +1786,7 @@ void DefOut::Impl::writeSpecialPath(dbSBox* box)
 
     case dbSBox::HORIZONTAL: {
       w = dy;
-      uint dw = dy >> 1;
+      uint32_t dw = dy >> 1;
       y1 += dw;
       y2 -= dw;
       assert(y1 == y2);
@@ -1795,7 +1795,7 @@ void DefOut::Impl::writeSpecialPath(dbSBox* box)
 
     case dbSBox::VERTICAL: {
       w = dx;
-      uint dw = dx >> 1;
+      uint32_t dw = dx >> 1;
       x1 += dw;
       x2 -= dw;
       assert(x1 == x2);
@@ -2085,7 +2085,7 @@ bool DefOut::Impl::hasProperties(dbObject* object, ObjType type)
 
 void DefOut::Impl::writePinProperties(dbBlock* block)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   dbSet<dbBTerm> bterms = block->getBTerms();
 

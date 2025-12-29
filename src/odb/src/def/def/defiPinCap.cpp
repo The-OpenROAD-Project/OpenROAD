@@ -29,8 +29,6 @@
 
 #include "defiPinCap.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -1610,7 +1608,6 @@ void defiPin::addAntennaModel(int oxide)
   }
   amo->Init();
   amo->setAntennaModel(oxide);
-  return;
 }
 
 // 5.5

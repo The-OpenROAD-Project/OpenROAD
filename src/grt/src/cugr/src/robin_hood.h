@@ -763,35 +763,34 @@ inline void swap(pair<A, B>& a, pair<A, B>& b) noexcept(
 }
 
 template <typename A, typename B>
-inline constexpr bool operator==(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator==(pair<A, B> const& x, pair<A, B> const& y)
 {
   return (x.first == y.first) && (x.second == y.second);
 }
 template <typename A, typename B>
-inline constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x == y);
 }
 template <typename A, typename B>
-inline constexpr bool
-operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
+constexpr bool operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
     noexcept(std::declval<A const&>() < std::declval<A const&>())
     && noexcept(std::declval<B const&>() < std::declval<B const&>()))
 {
   return x.first < y.first || (!(y.first < x.first) && x.second < y.second);
 }
 template <typename A, typename B>
-inline constexpr bool operator>(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator>(pair<A, B> const& x, pair<A, B> const& y)
 {
   return y < x;
 }
 template <typename A, typename B>
-inline constexpr bool operator<=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator<=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x > y);
 }
 template <typename A, typename B>
-inline constexpr bool operator>=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator>=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x < y);
 }
@@ -1308,6 +1307,7 @@ class Table
   // applicable.
   ROBIN_HOOD(NODISCARD)
   key_type const& getFirstConst(key_type const& k) const noexcept { return k; }
+  key_type&& getFirstConst(key_type&& k) const noexcept { return std::move(k); }
 
   // in case we have non-void mapped_type, we have a standard robin_hood::pair
   template <typename Q = mapped_type>
@@ -1774,14 +1774,14 @@ class Table
   {
     ROBIN_HOOD_TRACE(this)
     if (o.mMask) {
-      mHashMultiplier = std::move(o.mHashMultiplier);
+      mHashMultiplier = o.mHashMultiplier;
       mKeyVals = std::move(o.mKeyVals);
-      mInfo = std::move(o.mInfo);
-      mNumElements = std::move(o.mNumElements);
-      mMask = std::move(o.mMask);
-      mMaxNumElementsAllowed = std::move(o.mMaxNumElementsAllowed);
-      mInfoInc = std::move(o.mInfoInc);
-      mInfoHashShift = std::move(o.mInfoHashShift);
+      mInfo = o.mInfo;
+      mNumElements = o.mNumElements;
+      mMask = o.mMask;
+      mMaxNumElementsAllowed = o.mMaxNumElementsAllowed;
+      mInfoInc = o.mInfoInc;
+      mInfoHashShift = o.mInfoHashShift;
       // set other's mask to 0 so its destructor won't do anything
       o.init();
     }
@@ -1794,14 +1794,14 @@ class Table
       if (o.mMask) {
         // only move stuff if the other map actually has some data
         destroy();
-        mHashMultiplier = std::move(o.mHashMultiplier);
+        mHashMultiplier = o.mHashMultiplier;
         mKeyVals = std::move(o.mKeyVals);
-        mInfo = std::move(o.mInfo);
-        mNumElements = std::move(o.mNumElements);
-        mMask = std::move(o.mMask);
-        mMaxNumElementsAllowed = std::move(o.mMaxNumElementsAllowed);
-        mInfoInc = std::move(o.mInfoInc);
-        mInfoHashShift = std::move(o.mInfoHashShift);
+        mInfo = o.mInfo;
+        mNumElements = o.mNumElements;
+        mMask = o.mMask;
+        mMaxNumElementsAllowed = o.mMaxNumElementsAllowed;
+        mInfoInc = o.mInfoInc;
+        mInfoHashShift = o.mInfoHashShift;
         WHash::operator=(std::move(static_cast<WHash&>(o)));
         WKeyEqual::operator=(std::move(static_cast<WKeyEqual&>(o)));
         DataPool::operator=(std::move(static_cast<DataPool&>(o)));

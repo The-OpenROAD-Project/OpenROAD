@@ -4,12 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include <fstream>
 #include <set>
@@ -39,7 +39,7 @@ struct dbMarkerFlags
   bool visited : 1;
   bool visible : 1;
   bool waived : 1;
-  uint spare_bits : 29;
+  uint32_t spare_bits : 29;
 };
 
 class _dbMarker : public _dbObject
@@ -78,7 +78,7 @@ class _dbMarker : public _dbObject
   int line_number_;
 
   // User Code Begin Fields
-  std::set<std::pair<dbObjectType, uint>> sources_;
+  std::set<std::pair<dbObjectType, uint32_t>> sources_;
   std::vector<dbMarker::MarkerShape> shapes_;
   // User Code End Fields
 };

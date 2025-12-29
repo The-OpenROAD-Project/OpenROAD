@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -27,7 +28,7 @@ class _dbMPin : public _dbObject
   bool operator==(const _dbMPin& rhs) const;
   bool operator!=(const _dbMPin& rhs) const { return !operator==(rhs); }
   void collectMemInfo(MemInfo& info);
-  void addAccessPoint(uint idx, _dbAccessPoint* ap);
+  void addAccessPoint(uint32_t idx, _dbAccessPoint* ap);
 
   // PERSISTANT-MEMBERS
   dbId<_dbMTerm> mterm_;

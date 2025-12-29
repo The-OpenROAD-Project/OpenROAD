@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 
@@ -89,10 +90,10 @@ void extMeasureRC::PrintOUSeg(FILE* fp,
 }
 
 void extMeasureRC::PrintCrossOvelaps(Wire* w,
-                                     uint tgt_met,
+                                     uint32_t tgt_met,
                                      int x1,
                                      int len,
-                                     Ath__array1D<extSegment*>* segTable,
+                                     Array1D<extSegment*>* segTable,
                                      int totLen,
                                      const char* prefix,
                                      int metOver,
@@ -101,7 +102,7 @@ void extMeasureRC::PrintCrossOvelaps(Wire* w,
   if (_segFP != nullptr && segTable->getCnt() > 0) {
     fprintf(_segFP, "%s %dL cnt %d \n", prefix, totLen, segTable->getCnt());
     PrintCrossSeg(_segFP, x1, len, w->getLevel(), -1, -1, "\t");
-    for (uint ii = 0; ii < segTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < segTable->getCnt(); ii++) {
       extSegment* s = segTable->get(ii);
       PrintCrossSeg(_segFP,
                     s->_ll[!_dir],
@@ -129,9 +130,9 @@ void extMeasureRC::PrintOverlapSeg(FILE* fp,
 }
 
 void extMeasureRC::PrintOvelaps(extSegment* w,
-                                uint met,
-                                uint tgt_met,
-                                Ath__array1D<extSegment*>* segTable,
+                                uint32_t met,
+                                uint32_t tgt_met,
+                                Array1D<extSegment*>* segTable,
                                 const char* ou)
 {
   if (_segFP != nullptr && segTable->getCnt() > 0) {
@@ -144,24 +145,24 @@ void extMeasureRC::PrintOvelaps(extSegment* w,
             ou,
             tgt_met,
             segTable->getCnt());
-    for (uint ii = 0; ii < segTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < segTable->getCnt(); ii++) {
       extSegment* s = segTable->get(ii);
       PrintOverlapSeg(_segFP, s, tgt_met, "");
     }
   }
 }
 void extMeasureRC::PrintCrossOvelapsOU(Wire* w,
-                                       uint tgt_met,
+                                       uint32_t tgt_met,
                                        int x1,
                                        int len,
-                                       Ath__array1D<extSegment*>* segTable,
+                                       Array1D<extSegment*>* segTable,
                                        int totLen,
                                        const char* prefix,
                                        int metOver,
                                        int metUnder)
 {
   if (_segFP != nullptr && segTable->getCnt() > 0) {
-    for (uint ii = 0; ii < segTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < segTable->getCnt(); ii++) {
       extSegment* s = segTable->get(ii);
       if (s->_metOver == metOver && s->_metUnder == metUnder) {
         PrintCrossSeg(
@@ -233,7 +234,7 @@ void extMeasureRC::PrintCoords(FILE* fp, int ll[2], const char* xy)
 {
   PrintCoords(fp, ll[0], ll[1], xy);
 }
-bool extMeasureRC::PrintCurrentCoords(FILE* fp, const char* msg, uint rseg)
+bool extMeasureRC::PrintCurrentCoords(FILE* fp, const char* msg, uint32_t rseg)
 {
   int dx = _ur[0] - _ll[0];
   int dy = _ur[1] - _ll[1];
@@ -263,7 +264,7 @@ bool extMeasureRC::DebugStart(FILE* fp, bool allNets)
     return false;
   }
 
-  // DELETE uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
+  // DELETE uint32_t debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
   dbNet* net1 = dbNet::getNet(_block, _netId);
   int rsegId;
   const char* src = srcWord(rsegId);
@@ -295,7 +296,7 @@ bool extMeasureRC::DebugEnd(FILE* fp, int OU_covered)
     return false;
   }
 
-  // DELETE uint debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
+  // DELETE uint32_t debugTgtId = _netSrcId == _netId ? _netSrcId : _netTgtId;
   dbNet* net1 = dbNet::getNet(_block, _netId);
   int rsegId;
   const char* src = srcWord(rsegId);
@@ -340,7 +341,7 @@ void extMeasureRC::DebugRes_calc(FILE* fp,
                                  const char* msg,
                                  int rsegId1,
                                  const char* msg_len,
-                                 uint len,
+                                 uint32_t len,
                                  int dist1,
                                  int dist2,
                                  int tgtMet,
@@ -400,8 +401,8 @@ bool extMeasureRC::DebugCoords(FILE* fp,
     return false;
   }
 
-  uint dx = ur[0] - ll[0];
-  uint dy = ur[1] - ll[1];
+  uint32_t dx = ur[0] - ll[0];
+  uint32_t dy = ur[1] - ll[1];
   fprintf(fp, "%s DX %d  DY %d  ", msg, dx, dy);
   PrintCoords(fp, ll[0], ur[0], " x ");
   PrintCoords(fp, ll[1], ur[1], " y ");
@@ -483,13 +484,16 @@ double extMeasureRC::getCC(int rsegId)
   return tot_cc;
 }
 
-void extMeasureRC::segInfo(FILE* fp, const char* msg, uint netId, int rsegId)
+void extMeasureRC::segInfo(FILE* fp,
+                           const char* msg,
+                           uint32_t netId,
+                           int rsegId)
 {
   if (rsegId <= 0) {
     return;
   }
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
-  uint shapeId = rseg->getTargetCapNode()->getShapeId();
+  uint32_t shapeId = rseg->getTargetCapNode()->getShapeId();
   const char* wire
       = rseg != nullptr
                 && extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())
@@ -607,7 +611,7 @@ void extMeasureRC::DebugPrintNetids(FILE* fp,
 
   const char* src = rsegId == _rsegSrcId ? "SRC" : "DST";
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
-  uint shapeId = rseg->getTargetCapNode()->getShapeId();
+  uint32_t shapeId = rseg->getTargetCapNode()->getShapeId();
   // DELETE const char* wire = rseg != nullptr &&
   // extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())> 0 ? "Via " :
   // "Wire";

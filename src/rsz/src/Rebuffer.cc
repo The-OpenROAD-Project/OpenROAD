@@ -48,10 +48,8 @@ using odb::dbSigType;
 using sta::ArcDcalcResult;
 using sta::Arrival;
 using sta::Edge;
-using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
-using sta::fuzzyLessEqual;
 using sta::INF;
 using sta::RiseFallBoth;
 using sta::TimingArc;
@@ -110,6 +108,7 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
   visitTree(
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
         switch (node->type()) {
+          case BnetType::via:
           case BnetType::wire:
           case BnetType::buffer:
             return recurse(node->ref());
@@ -162,6 +161,14 @@ BnetPtr Rebuffer::stripTreeBuffers(const BnetPtr& tree)
   return visitTree(
       [&](auto& recurse, int level, const BnetPtr& node) -> BnetPtr {
         switch (node->type()) {
+          case BnetType::via:
+            return make_shared<BufferedNet>(BnetType::via,
+                                            node->location(),
+                                            node->layer(),
+                                            node->refLayer(),
+                                            recurse(node->ref()),
+                                            corner_,
+                                            resizer_);
           case BnetType::wire:
             return make_shared<BufferedNet>(BnetType::wire,
                                             node->location(),
@@ -196,6 +203,7 @@ BnetPtr Rebuffer::resteiner(const BnetPtr& tree)
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
         switch (node->type()) {
           case BnetType::wire:
+          case BnetType::via:
             return recurse(node->ref());
           case BnetType::junction:
             return recurse(node->ref()) + recurse(node->ref2());
@@ -345,7 +353,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
 
 BnetPtr stripWireOnBnet(BnetPtr ptr)
 {
-  while (ptr->type() == BnetType::wire) {
+  while (ptr->type() == BnetType::wire || ptr->type() == BnetType::via) {
     ptr = ptr->ref();
   }
   return ptr;
@@ -353,7 +361,8 @@ BnetPtr stripWireOnBnet(BnetPtr ptr)
 
 BnetPtr stripWiresAndBuffersOnBnet(BnetPtr ptr)
 {
-  while (ptr->type() == BnetType::wire || ptr->type() == BnetType::buffer) {
+  while (ptr->type() == BnetType::wire || ptr->type() == BnetType::buffer
+         || ptr->type() == BnetType::via) {
     ptr = ptr->ref();
   }
   return ptr;
@@ -584,6 +593,18 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
   return {};
 }
 
+static std::optional<int> findWireLayer(BnetPtr node)
+{
+  while (node->type() != BnetType::wire && node->type() != BnetType::load
+         && node->type() != BnetType::junction) {
+    node = node->ref();
+  }
+  if (node->type() == BnetType::wire) {
+    return {node->layer()};
+  }
+  return {};
+}
+
 // Find initial timing-optimized buffering choice over the provided tree
 BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                                   bool allow_topology_rewrite)
@@ -597,15 +618,13 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
   BnetSeq top_opts = visitTree(
       [&](auto& recurse, int level, const BnetPtr& node) -> BnetSeq {
         switch (node->type()) {
+          case BnetType::via:
           case BnetType::buffer:
           case BnetType::wire: {
             int layer = -1;
-            if (node->type() == BnetType::wire) {
-              layer = node->layer();
-            } else if (node->ref()->type() == BnetType::wire) {
-              layer = node->ref()->layer();
+            if (auto wire_layer = findWireLayer(node)) {
+              layer = wire_layer.value();
             }
-
             BnetSeq opts = recurse(stripWiresAndBuffersOnBnet(node->ref()));
             Point location
                 = stripWiresAndBuffersOnBnet(node->ref())->location();
@@ -843,6 +862,7 @@ static void accumulateBufferTreeFlatLoadPins(
 
       break;
     }
+    case BufferedNetType::via:
     case BufferedNetType::wire: {
       accumulateBufferTreeFlatLoadPins(
           gone_through_buffer, nwk, choice->ref(), buffer_tree_flat_load_pins);
@@ -947,6 +967,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
           -> int {
         node->setArrivalDelay(arrival);
         switch (node->type()) {
+          case BnetType::via:
           case BnetType::wire:
           case BnetType::buffer:
             recurse(node->ref(), arrival + node->delay());
@@ -1490,10 +1511,10 @@ void Rebuffer::init()
 void Rebuffer::initOnCorner(Corner* corner)
 {
   corner_ = corner;
-  wire_length_step_ = std::min(
-      resizer_max_wire_length_,
-      std::min(wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
-               wireLengthLimitImpliedByMaxCap(buffer_sizes_.front().cell)));
+  wire_length_step_
+      = std::min({resizer_max_wire_length_,
+                  wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
+                  wireLengthLimitImpliedByMaxCap(buffer_sizes_.front().cell)});
   characterizeBufferLimits();
 }
 
@@ -1747,7 +1768,7 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
         LibertyPort *in, *out;
         port->libertyCell()->bufferPorts(in, out);
 
-        if (port == in && !imported_as_loads.count(pin)) {
+        if (port == in && !imported_as_loads.contains(pin)) {
           Instance* inst = network_->instance(pin);
           insts.push_back(inst);
           const Pin* out_pin = network_->findPin(inst, out);
@@ -1830,9 +1851,9 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                           instance_base_name);
       return buffer_count + 1;
     }
-
+    case BufferedNetType::via:
     case BufferedNetType::wire:
-      debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire", "", level);
+      debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}wire/via", "", level);
       return exportBufferTree(choice->ref(),
                               net,
                               level + 1,

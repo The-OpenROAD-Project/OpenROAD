@@ -554,7 +554,7 @@ void IRNetwork::generateCutNodesForSBox(
     odb::dbSBox* box,
     bool single_via,
     std::vector<std::unique_ptr<Node>>& new_nodes,
-    std::vector<std::unique_ptr<Connection>>& new_connections)
+    Connections& new_connections)
 {
   // handle as via
   std::vector<odb::dbShape> via_shapes;
@@ -581,7 +581,8 @@ void IRNetwork::generateCutNodesForSBox(
   }
 
   const int min_pitch = std::min(min_node_pitch_[bottom], min_node_pitch_[top]);
-  const bool use_single_via = box->getBox().maxDXDY() < min_pitch;
+  const bool use_single_via
+      = floorplanning_ || box->getBox().maxDXDY() < min_pitch;
 
   if (single_via || use_single_via) {
     const odb::Point via_center = box->getViaXY();
@@ -654,7 +655,7 @@ void IRNetwork::generateCutLayerNodes()
   }
 
   std::vector<std::unique_ptr<Node>> loop_via_nodes;
-  std::vector<std::unique_ptr<Connection>> loop_via_connections;
+  Connections loop_via_connections;
   for (odb::dbSBox* box : boxes) {
     generateCutNodesForSBox(
         box, use_single_via, loop_via_nodes, loop_via_connections);
@@ -682,6 +683,11 @@ void IRNetwork::generateCutLayerNodes()
 
 void IRNetwork::generateTopLayerFillerNodes()
 {
+  if (floorplanning_) {
+    // these are only needed if running for IR drop.
+    return;
+  }
+
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate top layer filler nodes: {}");
   // needed in case of vsrc
@@ -740,7 +746,9 @@ void IRNetwork::mergeNodes(NodePtrMap<Connection>& connection_map)
 
     const auto node_trees = getNodeTree(layer);
     for (const auto& shape : shapes) {
-      const int min_distance = min_node_pitch_[shape->getLayer()];
+      const int min_distance = floorplanning_
+                                   ? (2 * shape->getShape().maxDXDY())
+                                   : min_node_pitch_[shape->getLayer()];
       const auto shape_remove = shape->cleanupNodes(
           min_distance,
           node_trees,
@@ -903,13 +911,6 @@ void IRNetwork::cleanupNodes()
       logger_, utl::PSM, "timer", 1, "Cleanup nodes: {}");
 
   auto node_connection_map = getConnectionMap();
-
-  std::map<Node*, bool> marked_deleted;
-  for (const auto& [layer, nodes] : nodes_) {
-    for (const auto& node : nodes) {
-      marked_deleted[node.get()] = false;
-    }
-  }
 
   cleanupOverlappingNodes(node_connection_map);
 

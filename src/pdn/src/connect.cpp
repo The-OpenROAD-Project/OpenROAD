@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <regex>
@@ -302,14 +303,14 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
   for (auto* rule : generate_via_rules_) {
     bool use = false;
     int rule_max_enclosure = 0;
-    for (uint i = 0; i < rule->getViaLayerRuleCount(); i++) {
+    for (uint32_t i = 0; i < rule->getViaLayerRuleCount(); i++) {
       auto layer_rule = rule->getViaLayerRule(i);
       use |= layer_rule->getLayer() == layer;
 
       if (layer_rule->hasEnclosure()) {
         int enc0, enc1;
         layer_rule->getEnclosure(enc0, enc1);
-        rule_max_enclosure = std::max(rule_max_enclosure, std::max(enc0, enc1));
+        rule_max_enclosure = std::max({rule_max_enclosure, enc0, enc1});
       }
     }
 
@@ -890,12 +891,12 @@ bool Connect::generateRuleContains(odb::dbTechViaGenerateRule* rule,
                                    odb::dbTechLayer* lower,
                                    odb::dbTechLayer* upper) const
 {
-  const uint layer_count = rule->getViaLayerRuleCount();
+  const uint32_t layer_count = rule->getViaLayerRuleCount();
   if (layer_count != 3) {
     return false;
   }
   std::set<odb::dbTechLayer*> rule_layers;
-  for (uint l = 0; l < layer_count; l++) {
+  for (uint32_t l = 0; l < layer_count; l++) {
     rule_layers.insert(rule->getViaLayerRule(l)->getLayer());
   }
   if (rule_layers.find(lower) != rule_layers.end()

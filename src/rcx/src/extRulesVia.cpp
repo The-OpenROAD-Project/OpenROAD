@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
@@ -14,18 +15,18 @@
 
 namespace rcx {
 
-using utl::RCX;
+using odb::dbNet;
+using odb::dbSet;
+using odb::dbTech;
+using odb::dbTechVia;
 
-using namespace odb;
-
-// dkf 12272023
 extViaModel* extMetRCTable::addViaModel(char* name,
                                         double R,
-                                        uint cCnt,
-                                        uint dx,
-                                        uint dy,
-                                        uint top,
-                                        uint bot)
+                                        uint32_t cCnt,
+                                        uint32_t dx,
+                                        uint32_t dy,
+                                        uint32_t top,
+                                        uint32_t bot)
 {
   int n1;
   if (_viaModelHash.get(name, n1)) {
@@ -81,23 +82,20 @@ void extViaModel::writeViaRule(FILE* fp)
 }
 void extMetRCTable::printViaModels()
 {
-  for (uint ii = 0; ii < _viaModel.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _viaModel.getCnt(); ii++) {
     _viaModel.get(ii)->printViaRule(stdout);
   }
 }
 void extMetRCTable::writeViaRes(FILE* fp)
 {
   fprintf(fp, "\nVIARES %d Default LEF Vias:\n", _viaModel.getCnt());
-  for (uint ii = 0; ii < _viaModel.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _viaModel.getCnt(); ii++) {
     _viaModel.get(ii)->writeViaRule(fp);
   }
 
   fprintf(fp, "END VIARES\n\n");
 }
-bool extMetRCTable::GetViaRes(Ath__parser* p,
-                              Ath__parser* w,
-                              dbNet* net,
-                              FILE* logFP)
+bool extMetRCTable::GetViaRes(Parser* p, Parser* w, dbNet* net, FILE* logFP)
 {
   // via pattern: V2.W2.M5.M6.DX520.DY1320.C2.V56_1x2_VH_S
 
@@ -141,7 +139,7 @@ bool extMetRCTable::GetViaRes(Ath__parser* p,
           netName);
   return true;
 }
-bool extMetRCTable::ReadRules(Ath__parser* p)
+bool extMetRCTable::ReadRules(Parser* p)
 {
   // 10.1442 V12_VV cuts 1  TopMetal 2 BotMetal 1 dx 200 dy 320
   while (p->parseNextLine() > 0) {
@@ -161,9 +159,9 @@ bool extMetRCTable::ReadRules(Ath__parser* p)
   }
   return true;
 }
-uint extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
+uint32_t extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   dbSet<dbTechVia> vias = tech->getVias();
   dbSet<dbTechVia>::iterator vitr;
 
@@ -192,7 +190,7 @@ uint extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
   }
   return cnt;
 }
-bool extMetRCTable::SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP)
+bool extMetRCTable::SkipPattern(Parser* p, dbNet* net, FILE* logFP)
 {
   // This will go away completely when new rules become default
   // This is to track compatibility between original Def Patterns and latest
@@ -200,7 +198,7 @@ bool extMetRCTable::SkipPattern(Ath__parser* p, dbNet* net, FILE* logFP)
   //                 O6_ U6_ OU6_ DU6_ R6_
 
   // const char *netName = net->getConstName();
-  uint targetWire = 0;
+  uint32_t targetWire = 0;
 
   if (p->getFirstChar() == 'D') {
     if (p->get(0)[1] == 'O') {

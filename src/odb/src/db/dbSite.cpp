@@ -3,6 +3,7 @@
 
 #include "dbSite.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -282,7 +283,7 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
   return (dbSite*) site;
 }
 
-dbSite* dbSite::getSite(dbLib* lib, uint oid)
+dbSite* dbSite::getSite(dbLib* lib, uint32_t oid)
 {
   _dbLib* lib_impl = (_dbLib*) lib;
   return (dbSite*) lib_impl->site_tbl_->getPtr(oid);
@@ -299,7 +300,7 @@ void _dbSite::collectMemInfo(MemInfo& info)
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 {
-  uint* bit_field = (uint*) &site.flags_;
+  uint32_t* bit_field = (uint32_t*) &site.flags_;
   stream << *bit_field;
   stream << site.name_;
   stream << site.height_;
@@ -311,7 +312,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 
 dbIStream& operator>>(dbIStream& stream, _dbSite& site)
 {
-  uint* bit_field = (uint*) &site.flags_;
+  uint32_t* bit_field = (uint32_t*) &site.flags_;
   stream >> *bit_field;
   stream >> site.name_;
   stream >> site.height_;

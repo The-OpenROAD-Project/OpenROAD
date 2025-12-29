@@ -181,10 +181,10 @@ class HeatMapDataSource
   void addToMap(const odb::Rect& region, double value);
   virtual void combineMapData(bool base_has_value,
                               double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area)
+                              double new_data,
+                              double data_area,
+                              double intersection_area,
+                              double rect_area)
       = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();

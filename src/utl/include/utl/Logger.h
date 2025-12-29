@@ -231,7 +231,7 @@ class Logger
   void unsuppressMessage(ToolId tool, int id);
 
   void addSink(spdlog::sink_ptr sink);
-  void removeSink(spdlog::sink_ptr sink);
+  void removeSink(const spdlog::sink_ptr& sink);
   void addMetricsSink(const char* metrics_filename);
   void removeMetricsSink(const char* metrics_filename);
 

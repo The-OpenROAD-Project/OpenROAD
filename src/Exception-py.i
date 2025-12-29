@@ -4,19 +4,19 @@
 #ifdef BAZEL
 %{
 
-#include <boost/stacktrace.hpp>
 #include <cstdlib>
 #include <sstream>
 
+#include "boost/stacktrace/stacktrace.hpp"
 #include "utl/Logger.h"
 %}
 #else
 %{
-
-#include <boost/stacktrace.hpp>
+  
 #include <cstdlib>
 #include <sstream>
 
+#include "boost/stacktrace/stacktrace.hpp"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 %}

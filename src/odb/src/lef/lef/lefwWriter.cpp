@@ -5394,9 +5394,9 @@ int lefwViaRuleLayer(const char* layerName,
   if (lefwNumViaRuleLayers >= 2) {
     return LEFW_BAD_ORDER;
   }
-  if ((status = lefwViaRulePrtLayer(
-           layerName, direction, minWidth, maxWidth, overhang, metalOverhang))
-      != LEFW_OK) {
+  status = lefwViaRulePrtLayer(
+      layerName, direction, minWidth, maxWidth, overhang, metalOverhang);
+  if (status != LEFW_OK) {
     return status;
   }
   lefwNumViaRuleLayers++;
@@ -5528,9 +5528,9 @@ int lefwViaRuleGenLayer(const char* layerName,
   } else {
     fprintf(lefwFile, "\n");
   }
-  if ((status = lefwViaRulePrtLayer(
-           layerName, direction, minWidth, maxWidth, overhang, metalOverhang))
-      != LEFW_OK) {
+  status = lefwViaRulePrtLayer(
+      layerName, direction, minWidth, maxWidth, overhang, metalOverhang);
+  if (status != LEFW_OK) {
     return status;
   }
   lefwNumViaRuleLayers++;
@@ -11157,7 +11157,6 @@ void lefwPrintError(int status)
                 versionNum);
       }
   }
-  return;
 }
 
 void lefwAddComment(const char* comment)
@@ -11169,7 +11168,6 @@ void lefwAddComment(const char* comment)
       fprintf(lefwFile, "# %s\n", comment);
     }
   }
-  return;
 }
 
 void lefwAddIndent()
@@ -11179,7 +11177,6 @@ void lefwAddIndent()
   } else {
     fprintf(lefwFile, "   ");
   }
-  return;
 }
 
 // ***************************

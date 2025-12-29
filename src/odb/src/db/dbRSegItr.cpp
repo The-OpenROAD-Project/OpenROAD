@@ -3,6 +3,8 @@
 
 #include "dbRSegItr.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
@@ -31,12 +33,12 @@ bool dbRSegItr::orderReversed() const
 void dbRSegItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->r_segs_;
-  uint list = 0;
+  uint32_t id = net->r_segs_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbRSeg* seg = _seg_tbl->getPtr(id);
-    uint n = seg->next_;
+    uint32_t n = seg->next_;
     seg->next_ = list;
     list = id;
     id = n;
@@ -45,15 +47,15 @@ void dbRSegItr::reverse(dbObject* parent)
   net->r_segs_ = list;
 }
 
-uint dbRSegItr::sequential() const
+uint32_t dbRSegItr::sequential() const
 {
   return 0;
 }
 
-uint dbRSegItr::size(dbObject* parent) const
+uint32_t dbRSegItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbRSegItr::begin(parent); id != dbRSegItr::end(parent);
        id = dbRSegItr::next(id)) {
@@ -63,7 +65,7 @@ uint dbRSegItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbRSegItr::begin(dbObject* parent) const
+uint32_t dbRSegItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
   if (net->r_segs_ == 0) {
@@ -73,18 +75,18 @@ uint dbRSegItr::begin(dbObject* parent) const
   return seg->next_;
 }
 
-uint dbRSegItr::end(dbObject* /* unused: parent */) const
+uint32_t dbRSegItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbRSegItr::next(uint id, ...) const
+uint32_t dbRSegItr::next(uint32_t id, ...) const
 {
   _dbRSeg* seg = _seg_tbl->getPtr(id);
   return seg->next_;
 }
 
-dbObject* dbRSegItr::getObject(uint id, ...)
+dbObject* dbRSegItr::getObject(uint32_t id, ...)
 {
   return _seg_tbl->getPtr(id);
 }

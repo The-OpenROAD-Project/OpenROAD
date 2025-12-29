@@ -12,7 +12,6 @@
 namespace ant {
 
 namespace gtl = boost::polygon;
-using namespace gtl::operators;
 
 using Polygon = gtl::polygon_90_data<int>;
 using PolygonSet = std::vector<Polygon>;

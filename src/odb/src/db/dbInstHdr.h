@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -42,7 +43,7 @@ class _dbInstHdr : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   int mterm_cnt_;
-  uint id_;
+  uint32_t id_;
   dbId<_dbInstHdr> next_entry_;
   dbId<_dbLib> lib_;
   dbId<_dbMaster> master_;

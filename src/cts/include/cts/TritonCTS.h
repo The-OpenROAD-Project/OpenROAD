@@ -81,12 +81,10 @@ class TritonCTS
   void setSinkBuffer(const char* buffers);
 
  private:
-  bool isClockCellCandidate(sta::LibertyCell* cell);
   std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
   std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
                                      float totalCap);
-  void inferBufferList(std::vector<std::string>& buffers);
   TreeBuilder* addBuilder(CtsOptions* options,
                           Clock& net,
                           odb::dbNet* topInputNet,

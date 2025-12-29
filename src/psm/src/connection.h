@@ -91,6 +91,8 @@ class Connection
   bool hasNodeOfType() const;
 };
 
+using Connections = std::vector<std::unique_ptr<Connection>>;
+
 class LayerConnection : public Connection
 {
  public:
