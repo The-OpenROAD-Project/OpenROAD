@@ -68,7 +68,7 @@ void addLayerSubRule(
   if (secondLayer != nullptr) {
     parser->curRule->setSecondLayer(secondLayer);
   } else {
-    incomplete_props.push_back({parser->curRule, name});
+    incomplete_props.emplace_back(parser->curRule, name);
   }
 }
 

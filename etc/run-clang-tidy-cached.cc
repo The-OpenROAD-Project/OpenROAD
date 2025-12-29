@@ -152,7 +152,7 @@ inline bool IsOneOf(std::string_view s,
 // Files that look like relevant include files.
 inline bool IsIncludeExtension(std::string_view extension)
 {
-  return IsOneOf(extension, {".h", ".hpp", ".hxx", ".inl"});
+  return IsOneOf(extension, {".h", ".hh", ".hpp", ".hxx", ".inl"});
 }
 
 // Filter for source files to be considered.

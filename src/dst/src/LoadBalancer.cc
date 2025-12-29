@@ -98,7 +98,7 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
     }
   }
   if (valid_worker_state) {
-    workers_.push(Worker(ip::make_address(ip), port, 0));
+    workers_.emplace(ip::make_address(ip), port, 0);
   }
   return valid_worker_state;
 }

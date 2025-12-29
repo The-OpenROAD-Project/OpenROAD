@@ -818,10 +818,10 @@ void GoldenEvaluator::WriteWeightedHypergraph(const HGraphPtr& hgraph,
   file_output.open(file_name);
   if (with_weight_flag == true) {
     file_output << hgraph->GetNumHyperedges() << "  "
-                << hgraph->GetNumVertices() << " 11" << std::endl;
+                << hgraph->GetNumVertices() << " 11\n";
   } else {
     file_output << hgraph->GetNumHyperedges() << "  "
-                << hgraph->GetNumVertices() << std::endl;
+                << hgraph->GetNumVertices() << '\n';
   }
   // write hyperedge weight and hyperedge first
   for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
@@ -831,12 +831,12 @@ void GoldenEvaluator::WriteWeightedHypergraph(const HGraphPtr& hgraph,
     for (const int vertex : hgraph->Vertices(e)) {
       file_output << vertex + 1 << " ";
     }
-    file_output << std::endl;
+    file_output << '\n';
   }
   // write vertex weight
   if (with_weight_flag == true) {
     for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-      file_output << GetVertexWeightNorm(v, hgraph) << std::endl;
+      file_output << GetVertexWeightNorm(v, hgraph) << '\n';
     }
   }
   // close the file
@@ -851,18 +851,18 @@ void GoldenEvaluator::WriteIntWeightHypergraph(
   std::ofstream file_output;
   file_output.open(file_name);
   file_output << hgraph->GetNumHyperedges() << "  " << hgraph->GetNumVertices()
-              << " 11" << std::endl;
+              << " 11\n";
   // write hyperedge weight and hyperedge first
   for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
     file_output << std::round(CalculateHyperedgeCost(e, hgraph)) << "  ";
     for (const int vertex : hgraph->Vertices(e)) {
       file_output << vertex + 1 << " ";
     }
-    file_output << std::endl;
+    file_output << '\n';
   }
   // write vertex weight
   for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-    file_output << std::round(GetVertexWeightNorm(v, hgraph)) << std::endl;
+    file_output << std::round(GetVertexWeightNorm(v, hgraph)) << '\n';
   }
   // close the file
   file_output.close();

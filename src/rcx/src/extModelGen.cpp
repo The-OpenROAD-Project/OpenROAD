@@ -3,8 +3,6 @@
 
 #include "rcx/extModelGen.h"
 
-#include <string.h>
-
 #include <cassert>
 #include <cmath>
 #include <cstdint>

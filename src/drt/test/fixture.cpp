@@ -126,10 +126,10 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   std::vector<frBoundary> bounds;
   frBoundary bound;
   std::vector<odb::Point> points;
-  points.push_back(odb::Point(originX, originY));
-  points.push_back(odb::Point(sizeX, originY));
-  points.push_back(odb::Point(sizeX, sizeY));
-  points.push_back(odb::Point(originX, sizeY));
+  points.emplace_back(originX, originY);
+  points.emplace_back(sizeX, originY);
+  points.emplace_back(sizeX, sizeY);
+  points.emplace_back(originX, sizeY);
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
@@ -428,7 +428,7 @@ frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
   frLayer* layer = tech->getLayer(layer_num);
   frCollection<frSpacingTableTwRowType> rows;
   for (size_t i = 0; i < widthTbl.size(); i++) {
-    rows.push_back(frSpacingTableTwRowType(widthTbl[i], prlTbl[i]));
+    rows.emplace_back(widthTbl[i], prlTbl[i]);
   }
   std::unique_ptr<frConstraint> uCon
       = std::make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);

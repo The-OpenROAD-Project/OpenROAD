@@ -127,7 +127,7 @@ class frViaDef
     if (!layer1Figs_.empty()) {
       return (layer1Figs_.at(0))->getLayerNum();
     }
-    std::cout << "Error: via does not have shape on layer 1" << std::endl;
+    std::cout << "Error: via does not have shape on layer 1\n";
     exit(1);
   }
   frLayerNum getLayer2Num() const
@@ -135,7 +135,7 @@ class frViaDef
     if (!layer2Figs_.empty()) {
       return (layer2Figs_.at(0))->getLayerNum();
     }
-    std::cout << "Error: via does not have shape on layer 2" << std::endl;
+    std::cout << "Error: via does not have shape on layer 2\n";
     exit(1);
   }
   frLayerNum getCutLayerNum() const
@@ -143,7 +143,7 @@ class frViaDef
     if (!cutFigs_.empty()) {
       return (cutFigs_.at(0))->getLayerNum();
     }
-    std::cout << "Error: via does not have shape on layer cut" << std::endl;
+    std::cout << "Error: via does not have shape on layer cut\n";
     exit(1);
   }
   const std::vector<std::unique_ptr<frShape>>& getLayer1Figs() const

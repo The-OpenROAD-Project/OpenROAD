@@ -2088,7 +2088,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiFill* fills;
   defiStyles* styles;
   int xl, yl, xh, yh;
-  char *name, *a1, *b1;
+  char* name;
   char **inst, **inPin, **outPin;
   int* bits;
   int size;
@@ -2761,12 +2761,14 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       sc = (defiScanchain*) cl;
       fprintf(fout, "- %s\n", sc->name());
       if (sc->hasStart()) {
-        sc->start(&a1, &b1);
-        fprintf(fout, "  + START %s %s\n", a1, b1);
+        char *a, *b;
+        sc->start(&a, &b);
+        fprintf(fout, "  + START %s %s\n", a, b);
       }
       if (sc->hasStop()) {
-        sc->stop(&a1, &b1);
-        fprintf(fout, "  + STOP %s %s\n", a1, b1);
+        char *a, *b;
+        sc->stop(&a, &b);
+        fprintf(fout, "  + STOP %s %s\n", a, b);
       }
       if (sc->hasCommonInPin() || sc->hasCommonOutPin()) {
         fprintf(fout, "  + COMMONSCANPINS ");
@@ -3400,7 +3402,8 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outFile = *argv;
-      if ((fout = fopen(outFile, "w")) == nullptr) {
+      fout = fopen(outFile, "w");
+      if (fout == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }
@@ -3647,7 +3650,8 @@ int main(int argc, char** argv)
 
   if (test1) {  // for special tests
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
-      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
+      f = fopen(inFile[fileCt], "r");
+      if (f == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3687,7 +3691,8 @@ int main(int argc, char** argv)
         defrEnableAllMsgs();
       }
 
-      if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
+      f = fopen(inFile[fileCt], "r");
+      if (f == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }
@@ -3708,7 +3713,7 @@ int main(int argc, char** argv)
     for (fileCt = 0; fileCt < numInFile; fileCt++) {
       if (strcmp(inFile[fileCt], "STDIN") == 0) {
         f = stdin;
-      } else if ((f = fopen(inFile[fileCt], "r")) == nullptr) {
+      } else if (f = fopen(inFile[fileCt], "r"); f == nullptr) {
         fprintf(stderr, "Couldn't open input file '%s'\n", inFile[fileCt]);
         return (2);
       }

@@ -246,7 +246,7 @@ std::vector<odb::Point> getPoints(const Polygon90* polygon)
 {
   std::vector<odb::Point> pts;
   for (auto& pt : *polygon) {
-    pts.emplace_back(odb::Point(pt.x(), pt.y()));
+    pts.emplace_back(pt.x(), pt.y());
   }
   return pts;
 }

@@ -1981,7 +1981,7 @@ void extMeasure::calcDiagRC(int rsegId1,
 
     capTable[ii] = len * getDiagUnderCC(rcModel, diagWidth, diagDist, tgtMet);
     _rc[ii]->diag_ += capTable[ii];
-    double ccTable[10];
+    double ccTable[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     if (_dist > 0) {
       extDistRC* rc = getDiagUnderCC2(rcModel, diagWidth, diagDist, tgtMet);
       if (rc) {
@@ -2040,7 +2040,7 @@ void extMeasure::areaCap(int rsegId1,
                          uint32_t len,
                          uint32_t tgtMet)
 {
-  double capTable[10];
+  double capTable[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   uint32_t modelCnt = _metRCTable.getCnt();
   for (uint32_t ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
@@ -2142,7 +2142,7 @@ void extMeasure::calcDiagRC(int rsegId1,
                             uint32_t tgtMet)
 {
   int DOUBLE_DIAG = 1;
-  double capTable[10];
+  double capTable[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   uint32_t modelCnt = _metRCTable.getCnt();
   for (uint32_t ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);

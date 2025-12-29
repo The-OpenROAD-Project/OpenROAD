@@ -521,20 +521,20 @@ bool Restructure::writeAbcScript(const std::string& file_name)
     script << read_lib_str;
   }
 
-  script << "read_blif -n " << input_blif_file_name_ << std::endl;
+  script << "read_blif -n " << input_blif_file_name_ << '\n';
 
   if (logger_->debugCheck(RMP, "remap", 1)) {
     script << "write_verilog " << input_blif_file_name_ + std::string(".v")
-           << std::endl;
+           << '\n';
   }
 
   writeOptCommands(script);
 
-  script << "write_blif " << output_blif_file_name_ << std::endl;
+  script << "write_blif " << output_blif_file_name_ << '\n';
 
   if (logger_->debugCheck(RMP, "remap", 1)) {
     script << "write_verilog " << output_blif_file_name_ + std::string(".v")
-           << std::endl;
+           << '\n';
   }
 
   script.close();
@@ -551,62 +551,64 @@ void Restructure::writeOptCommands(std::ofstream& script)
       = "alias choice2 \"fraig_store; balance; fraig_store; resyn2; "
         "fraig_store; resyn2; fraig_store; resyn2; fraig_store; "
         "fraig_restore\"";
-  script << "bdd; sop" << std::endl;
+  script << "bdd; sop\n";
 
   script << "alias resyn2 \"balance; rewrite; refactor; balance; rewrite; "
             "rewrite -z; balance; refactor -z; rewrite -z; balance\""
-         << std::endl;
-  script << choice << std::endl;
-  script << choice2 << std::endl;
+         << '\n';
+  script << choice << '\n';
+  script << choice2 << '\n';
 
   if (opt_mode_ == Mode::AREA_3) {
-    script << "choice2" << std::endl;  // << "scleanup" << std::endl;
+    script << "choice2\n";  // << "scleanup" << std::endl;
   } else {
-    script << "resyn2" << std::endl;  // << "scleanup" << std::endl;
+    script << "resyn2\n";  // << "scleanup" << std::endl;
   }
 
   switch (opt_mode_) {
     case Mode::DELAY_1: {
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "buffer -p -c" << std::endl;
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "buffer -p -c\n";
       break;
     }
     case Mode::DELAY_2: {
-      script << "choice" << std::endl;
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "choice" << std::endl;
-      script << "map -D 0.01" << std::endl;
-      script << "buffer -p -c" << std::endl << "topo" << std::endl;
+      script << "choice\n";
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "choice\n";
+      script << "map -D 0.01\n";
+      script << "buffer -p -c\n"
+             << "topo\n";
       break;
     }
     case Mode::DELAY_3: {
-      script << "choice2" << std::endl;
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "choice2" << std::endl;
-      script << "map -D 0.01" << std::endl;
-      script << "buffer -p -c" << std::endl << "topo" << std::endl;
+      script << "choice2\n";
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "choice2\n";
+      script << "map -D 0.01\n";
+      script << "buffer -p -c\n"
+             << "topo\n";
       break;
     }
     case Mode::DELAY_4: {
-      script << "choice2" << std::endl;
-      script << "amap -F 20 -A 20 -C 5000 -Q 0.1 -m" << std::endl;
-      script << "choice2" << std::endl;
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "buffer -p -c" << std::endl;
+      script << "choice2\n";
+      script << "amap -F 20 -A 20 -C 5000 -Q 0.1 -m\n";
+      script << "choice2\n";
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "buffer -p -c\n";
       break;
     }
     case Mode::AREA_2:
     case Mode::AREA_3: {
-      script << "choice2" << std::endl;
-      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
-      script << "choice2" << std::endl;
-      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
+      script << "choice2\n";
+      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000\n";
+      script << "choice2\n";
+      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000\n";
       break;
     }
     case Mode::AREA_1:
     default: {
-      script << "choice2" << std::endl;
-      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
+      script << "choice2\n";
+      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000\n";
       break;
     }
   }
