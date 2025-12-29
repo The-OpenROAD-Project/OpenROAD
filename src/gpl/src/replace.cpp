@@ -26,55 +26,13 @@
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
 #include "timingBase.h"
+#include "utl/Environment.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
 
 namespace gpl {
 
 using utl::GPL;
-
-namespace {
-bool envVarTruthy(const char* name)
-{
-  const char* raw = std::getenv(name);
-  if (raw == nullptr || *raw == '\0') {
-    return false;
-  }
-
-  std::string value(raw);
-  const size_t start = value.find_first_not_of(" \t\n\r");
-  if (start == std::string::npos) {
-    return false;
-  }
-  const size_t end = value.find_last_not_of(" \t\n\r");
-  value = value.substr(start, end - start + 1);
-  std::transform(
-      value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-      });
-  return value == "1" || value == "true" || value == "yes" || value == "on";
-}
-
-bool useOrfsNewOpenroad()
-{
-  return envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
-}
-
-std::optional<float> getEnvFloat(const char* name)
-{
-  const char* raw = std::getenv(name);
-  if (raw == nullptr || *raw == '\0') {
-    return std::nullopt;
-  }
-
-  char* end = nullptr;
-  const float value = std::strtof(raw, &end);
-  if (end == raw || (end != nullptr && *end != '\0')) {
-    return std::nullopt;
-  }
-  return value;
-}
-}  // namespace
 
 Replace::Replace(odb::dbDatabase* odb,
                  sta::dbSta* sta,
@@ -304,8 +262,9 @@ bool Replace::initNesterovPlace(const PlaceOptions& options, const int threads)
     tb_ = std::make_shared<TimingBase>(nbc_, rs_, log_);
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
     float timing_net_weight_max = options.timingNetWeightMax;
-    if (useOrfsNewOpenroad() && !options.timingNetWeightMaxUserSet) {
-      if (auto env_max = getEnvFloat("GPL_WEIGHT_MAX")) {
+    if (utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")
+        && !options.timingNetWeightMaxUserSet) {
+      if (auto env_max = utl::getEnvFloat("GPL_WEIGHT_MAX")) {
         if (*env_max > 0.0f) {
           timing_net_weight_max = *env_max;
         } else {

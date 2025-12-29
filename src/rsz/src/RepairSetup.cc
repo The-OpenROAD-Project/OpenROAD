@@ -51,36 +51,9 @@
 #include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
+#include "utl/Environment.h"
 #include "utl/Logger.h"
 #include "utl/mem_stats.h"
-
-namespace {
-bool envVarTruthy(const char* name)
-{
-  const char* raw = std::getenv(name);
-  if (raw == nullptr || *raw == '\0') {
-    return false;
-  }
-
-  std::string value(raw);
-  const size_t start = value.find_first_not_of(" \t\n\r");
-  if (start == std::string::npos) {
-    return false;
-  }
-  const size_t end = value.find_last_not_of(" \t\n\r");
-  value = value.substr(start, end - start + 1);
-  std::transform(
-      value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-      });
-  return value == "1" || value == "true" || value == "yes" || value == "on";
-}
-
-bool useOrfsNewOpenroad()
-{
-  return envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
-}
-}  // namespace
 
 namespace rsz {
 
@@ -107,7 +80,7 @@ using sta::VertexOutEdgeIterator;
 
 RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
-  if (!useOrfsNewOpenroad()) {
+  if (!utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")) {
     return;
   }
 
@@ -165,7 +138,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_vt_swap,
                               const bool skip_crit_vt_swap)
 {
-  const bool use_orfs_new_openroad = useOrfsNewOpenroad();
+  const bool use_orfs_new_openroad
+      = utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
   bool repaired = false;
   init();
   resizer_->rebuffer_->init();

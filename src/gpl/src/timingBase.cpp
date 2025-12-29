@@ -20,44 +20,17 @@
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/NetworkClass.hh"
+#include "utl/Environment.h"
 #include "utl/Logger.h"
 
 namespace gpl {
 
 using utl::GPL;
 
-namespace {
-bool envVarTruthy(const char* name)
-{
-  const char* raw = std::getenv(name);
-  if (raw == nullptr || *raw == '\0') {
-    return false;
-  }
-
-  std::string value(raw);
-  const size_t start = value.find_first_not_of(" \t\n\r");
-  if (start == std::string::npos) {
-    return false;
-  }
-  const size_t end = value.find_last_not_of(" \t\n\r");
-  value = value.substr(start, end - start + 1);
-  std::transform(
-      value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-      });
-  return value == "1" || value == "true" || value == "yes" || value == "on";
-}
-
-bool useOrfsNewOpenroad()
-{
-  return envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
-}
-}  // namespace
-
 // TimingBase
 TimingBase::TimingBase()
 {
-  if (useOrfsNewOpenroad()) {
+  if (utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")) {
     loadEnvOverrides();
   }
 }
@@ -70,7 +43,7 @@ TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
   rs_ = rs;
   nbc_ = std::move(nbc);
   log_ = log;
-  if (useOrfsNewOpenroad()) {
+  if (utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")) {
     loadEnvOverrides();
   }
 }
@@ -81,33 +54,13 @@ void TimingBase::initTimingOverflowChk()
   timingOverflowChk_.resize(timingNetWeightOverflow_.size(), false);
 }
 
-namespace {
-std::optional<float> getEnvFloat(const char* name, utl::Logger* log)
-{
-  const char* raw = std::getenv(name);
-  if (raw == nullptr || *raw == '\0') {
-    return std::nullopt;
-  }
-
-  char* end = nullptr;
-  const float value = std::strtof(raw, &end);
-  if (end == raw || (end != nullptr && *end != '\0')) {
-    if (log != nullptr) {
-      log->warn(GPL, 124, "Ignoring {}='{}' (not a valid float).", name, raw);
-    }
-    return std::nullopt;
-  }
-  return value;
-}
-}  // namespace
-
 void TimingBase::loadEnvOverrides()
 {
-  if (!useOrfsNewOpenroad()) {
+  if (!utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")) {
     return;
   }
 
-  if (auto env_max = getEnvFloat("GPL_WEIGHT_MAX", log_)) {
+  if (auto env_max = utl::getEnvFloat("GPL_WEIGHT_MAX", log_, GPL, 124)) {
     if (*env_max > 0.0F) {
       net_weight_max_ = *env_max;
     } else if (log_ != nullptr) {
@@ -116,7 +69,7 @@ void TimingBase::loadEnvOverrides()
     }
   }
 
-  if (auto env_exp = getEnvFloat("GPL_WEIGHT_EXP", log_)) {
+  if (auto env_exp = utl::getEnvFloat("GPL_WEIGHT_EXP", log_, GPL, 124)) {
     if (*env_exp > 0.0F) {
       net_weight_exponent_ = *env_exp;
     } else if (log_ != nullptr) {
@@ -132,7 +85,7 @@ void TimingBase::loadEnvOverrides()
     use_zero_slack_ref_ = (std::atoi(raw_use_zero_ref) != 0);
   }
 
-  if (auto env_cov = getEnvFloat("GPL_WEIGHT_COVERAGE", log_)) {
+  if (auto env_cov = utl::getEnvFloat("GPL_WEIGHT_COVERAGE", log_, GPL, 124)) {
     // Interpret as percent of the "worst nets" set to use as the cutoff.
     // Zero disables; values outside (0,100] are ignored.
     if (*env_cov > 0.0F && *env_cov <= 100.0F) {
@@ -145,7 +98,8 @@ void TimingBase::loadEnvOverrides()
     use_length_factor_ = (std::atoi(raw_len_factor) != 0);
   }
 
-  if (auto env_len_alpha = getEnvFloat("GPL_WEIGHT_LENGTH_ALPHA", log_)) {
+  if (auto env_len_alpha
+      = utl::getEnvFloat("GPL_WEIGHT_LENGTH_ALPHA", log_, GPL, 124)) {
     // Clamp to [0,1] and stay silent on range violations (experimental knob).
     length_alpha_ = std::clamp(*env_len_alpha, 0.0F, 1.0F);
   }
@@ -266,7 +220,9 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
     return false;
   }
 
-  if (!useOrfsNewOpenroad()) {
+  const bool use_orfs_new_openroad
+      = utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
+  if (!use_orfs_new_openroad) {
     int weighted_net_count = 0;
     for (auto& gNet : nbc_->getGNets()) {
       // default weight
@@ -309,111 +265,112 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
                "Timing-driven: weighted {} nets.",
                weighted_net_count);
     return true;
-  }
-
-  int weighted_net_count = 0;
-  using SlackT = decltype(slack_max);
-  const SlackT slack_zero = 0.0;
-  SlackT slack_ref = slack_max;
-  if (use_zero_slack_ref_) {
-    slack_ref = slack_zero;
-    if (net_weight_coverage_percent_ > 0.0F && !worst_slack_nets.empty()) {
-      const size_t worst_count = worst_slack_nets.size();
-      size_t coverage_count = static_cast<size_t>(
-          std::ceil(worst_count * net_weight_coverage_percent_ / 100.0F));
-      coverage_count = std::clamp<size_t>(coverage_count, 1, worst_count);
-      if (worst_count >= 2) {
-        coverage_count = std::max<size_t>(coverage_count, 2);
-      }
-      auto cutoff_opt
-          = rs_->resizeNetSlack(worst_slack_nets[coverage_count - 1]);
-      if (cutoff_opt) {
-        slack_ref = std::min(cutoff_opt.value(), slack_zero);
-      }
-    }
-  }
-
-  double length_norm = 0.0;
-  size_t length_norm_count = 0;
-  const float length_alpha = std::clamp(length_alpha_, 0.0F, 1.0F);
-  if (use_length_factor_) {
-    for (auto& gNet : nbc_->getGNets()) {
-      if (gNet->getGPins().size() <= 1) {
-        continue;
-      }
-      auto net_slack_opt = rs_->resizeNetSlack(gNet->getPbNet()->getDbNet());
-      if (!net_slack_opt) {
-        continue;
-      }
-      const SlackT net_slack = net_slack_opt.value();
-      if (!(net_slack < slack_ref)) {
-        continue;
-      }
-      const double dx = static_cast<double>(gNet->ux() - gNet->lx());
-      const double dy = static_cast<double>(gNet->uy() - gNet->ly());
-      length_norm += std::hypot(dx, dy);
-      length_norm_count++;
-    }
-    if (length_norm_count > 0) {
-      length_norm /= static_cast<double>(length_norm_count);
-    } else {
-      length_norm = 0.0;
-    }
-  }
-  for (auto& gNet : nbc_->getGNets()) {
-    // default weight
-    gNet->setTimingWeight(1.0);
-    if (gNet->getGPins().size() > 1) {
-      auto net_slack_opt = rs_->resizeNetSlack(gNet->getPbNet()->getDbNet());
-      if (!net_slack_opt) {
-        continue;
-      }
-      auto net_slack = net_slack_opt.value();
-      if (net_slack < slack_ref) {
-        if (slack_ref == slack_min) {
-          gNet->setTimingWeight(1.0);
-        } else {
-          // weight(min_slack) = net_weight_max_
-          // weight(max_slack) = 1
-          const float normalized_slack
-              = std::clamp(static_cast<float>((slack_ref - net_slack)
-                                              / (slack_ref - slack_min)),
-                           0.0F,
-                           1.0F);
-          float scaled_slack = std::pow(normalized_slack, net_weight_exponent_);
-          if (use_length_factor_ && length_norm > 0.0) {
-            const double dx = static_cast<double>(gNet->ux() - gNet->lx());
-            const double dy = static_cast<double>(gNet->uy() - gNet->ly());
-            const double len_metric = std::hypot(dx, dy);
-            const float len_ratio = std::clamp(
-                static_cast<float>(len_metric / length_norm), 0.0F, 1.0F);
-            const float length_factor
-                = (1.0F - length_alpha) + length_alpha * len_ratio;
-            scaled_slack *= length_factor;
-          }
-          const float weight = 1 + (net_weight_max_ - 1) * scaled_slack;
-          gNet->setTimingWeight(weight);
+  } else {
+    int weighted_net_count = 0;
+    using SlackT = decltype(slack_max);
+    const SlackT slack_zero = 0.0;
+    SlackT slack_ref = slack_max;
+    if (use_zero_slack_ref_) {
+      slack_ref = slack_zero;
+      if (net_weight_coverage_percent_ > 0.0F && !worst_slack_nets.empty()) {
+        const size_t worst_count = worst_slack_nets.size();
+        size_t coverage_count = static_cast<size_t>(
+            std::ceil(worst_count * net_weight_coverage_percent_ / 100.0F));
+        coverage_count = std::clamp<size_t>(coverage_count, 1, worst_count);
+        if (worst_count >= 2) {
+          coverage_count = std::max<size_t>(coverage_count, 2);
         }
-        weighted_net_count++;
+        auto cutoff_opt
+            = rs_->resizeNetSlack(worst_slack_nets[coverage_count - 1]);
+        if (cutoff_opt) {
+          slack_ref = std::min(cutoff_opt.value(), slack_zero);
+        }
       }
-      debugPrint(log_,
-                 GPL,
-                 "timing",
-                 1,
-                 "net:{} slack:{} weight:{}",
-                 gNet->getPbNet()->getDbNet()->getConstName(),
-                 net_slack,
-                 gNet->getTotalWeight());
     }
-  }
 
-  debugPrint(log_,
-             GPL,
-             "timing",
-             1,
-             "Timing-driven: weighted {} nets.",
-             weighted_net_count);
-  return true;
+    double length_norm = 0.0;
+    size_t length_norm_count = 0;
+    const float length_alpha = std::clamp(length_alpha_, 0.0F, 1.0F);
+    if (use_length_factor_) {
+      for (auto& gNet : nbc_->getGNets()) {
+        if (gNet->getGPins().size() <= 1) {
+          continue;
+        }
+        auto net_slack_opt = rs_->resizeNetSlack(gNet->getPbNet()->getDbNet());
+        if (!net_slack_opt) {
+          continue;
+        }
+        const SlackT net_slack = net_slack_opt.value();
+        if (!(net_slack < slack_ref)) {
+          continue;
+        }
+        const double dx = static_cast<double>(gNet->ux() - gNet->lx());
+        const double dy = static_cast<double>(gNet->uy() - gNet->ly());
+        length_norm += std::hypot(dx, dy);
+        length_norm_count++;
+      }
+      if (length_norm_count > 0) {
+        length_norm /= static_cast<double>(length_norm_count);
+      } else {
+        length_norm = 0.0;
+      }
+    }
+    for (auto& gNet : nbc_->getGNets()) {
+      // default weight
+      gNet->setTimingWeight(1.0);
+      if (gNet->getGPins().size() > 1) {
+        auto net_slack_opt = rs_->resizeNetSlack(gNet->getPbNet()->getDbNet());
+        if (!net_slack_opt) {
+          continue;
+        }
+        auto net_slack = net_slack_opt.value();
+        if (net_slack < slack_ref) {
+          if (slack_ref == slack_min) {
+            gNet->setTimingWeight(1.0);
+          } else {
+            // weight(min_slack) = net_weight_max_
+            // weight(max_slack) = 1
+            const float normalized_slack
+                = std::clamp(static_cast<float>((slack_ref - net_slack)
+                                                / (slack_ref - slack_min)),
+                             0.0F,
+                             1.0F);
+            float scaled_slack
+                = std::pow(normalized_slack, net_weight_exponent_);
+            if (use_length_factor_ && length_norm > 0.0) {
+              const double dx = static_cast<double>(gNet->ux() - gNet->lx());
+              const double dy = static_cast<double>(gNet->uy() - gNet->ly());
+              const double len_metric = std::hypot(dx, dy);
+              const float len_ratio = std::clamp(
+                  static_cast<float>(len_metric / length_norm), 0.0F, 1.0F);
+              const float length_factor
+                  = (1.0F - length_alpha) + length_alpha * len_ratio;
+              scaled_slack *= length_factor;
+            }
+            const float weight = 1 + (net_weight_max_ - 1) * scaled_slack;
+            gNet->setTimingWeight(weight);
+          }
+          weighted_net_count++;
+        }
+        debugPrint(log_,
+                   GPL,
+                   "timing",
+                   1,
+                   "net:{} slack:{} weight:{}",
+                   gNet->getPbNet()->getDbNet()->getConstName(),
+                   net_slack,
+                   gNet->getTotalWeight());
+      }
+    }
+
+    debugPrint(log_,
+               GPL,
+               "timing",
+               1,
+               "Timing-driven: weighted {} nets.",
+               weighted_net_count);
+    return true;
+  }
 }
 
 }  // namespace gpl
