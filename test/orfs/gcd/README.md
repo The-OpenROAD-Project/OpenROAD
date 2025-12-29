@@ -15,7 +15,7 @@ Re-used code derived from http://opencelerity.org/ project.
 
 LEC tests exist for each of the ORFS stages as well as a self-test for the original source.
 
-In terms of expecations for LEC tests, this is experimental and contributions are highly appreciated. As of writing, even for such a small test case as gcd, the running time is considerable and eqy has false positives reported to the eqy project.
+In terms of expectations for LEC tests, this is experimental and contributions are highly appreciated. As of writing, even for such a small test case as gcd, the running time is considerable and eqy has false positives reported to the eqy project.
 
 ```bash
 $ cd test/orfs/gcd
