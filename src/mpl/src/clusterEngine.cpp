@@ -1710,17 +1710,19 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
     for (auto& small_child : small_children) {
       small_children_ids.push_back(small_child->getId());
     }
+    
     // Firstly we perform Type 1 merge
     for (int i = 0; i < num_small_children; i++) {
       Cluster* close_cluster = findSingleWellFormedConnectedCluster(
           small_children[i], small_children_ids);
-      if (close_cluster && attemptMerge(close_cluster, small_children[i])) {
+      if (close_cluster != nullptr
+          && mergeHonorsMaxThresholds(close_cluster, small_children[i])
+          && attemptMerge(close_cluster, small_children[i])) {
         cluster_class[i] = close_cluster->getId();
       }
     }
 
     // Then we perform Type 2 merge
-    std::vector<Cluster*> new_small_children;
     for (int i = 0; i < num_small_children; i++) {
       if (cluster_class[i] == -1) {  // the cluster has not been merged
         for (int j = i + 1; j < num_small_children; j++) {
@@ -1728,7 +1730,9 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
             continue;
           }
 
-          if (sameConnectionSignature(small_children[i], small_children[j])) {
+          if (mergeHonorsMaxThresholds(small_children[i], small_children[j])
+              && sameConnectionSignature(small_children[i],
+                                         small_children[j])) {
             if (attemptMerge(small_children[i], small_children[j])) {
               cluster_class[j] = i;
             } else {
@@ -1746,6 +1750,7 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
     }
 
     // Then we perform Type 3 merge:  merge all dust cluster
+    std::vector<Cluster*> new_small_children;
     const int dust_cluster_std_cell = 10;
     for (int i = 0; i < num_small_children; i++) {
       if (cluster_class[i] == -1) {  // the cluster has not been merged
@@ -1813,6 +1818,13 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
              "multilevel_autoclustering",
              1,
              "Finished merging clusters");
+}
+
+bool ClusteringEngine::mergeHonorsMaxThresholds(const Cluster* a,
+                                                const Cluster* b) const
+{
+  return a->getNumMacro() + b->getNumMacro() <= max_macro_
+         && a->getNumStdCell() + b->getNumStdCell() <= max_std_cell_;
 }
 
 bool ClusteringEngine::sameConnectionSignature(Cluster* a, Cluster* b) const
