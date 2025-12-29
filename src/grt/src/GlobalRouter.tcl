@@ -243,11 +243,12 @@ sta::define_cmd_args "repair_antennas" { diode_cell \
                                          [-iterations iterations] \
                                          [-ratio_margin ratio_margin] \
 				         [-jumper_only] \
-				         [-diode_only]}
+				         [-diode_only] \
+				         [-allow_congestion]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-    keys {-iterations -ratio_margin} flags {-jumper_only -diode_only}
+    keys {-iterations -ratio_margin} flags {-jumper_only -diode_only -allow_congestion}
   if { [ord::get_db_block] == "NULL" } {
     utl::error GRT 104 "No design block found."
   }
@@ -286,6 +287,9 @@ proc repair_antennas { args } {
       set iterations $keys(-iterations)
       sta::check_positive_integer "-iterations" $iterations
     }
+
+    set allow_congestion [info exists flags(-allow_congestion)]
+    grt::set_allow_congestion $allow_congestion
 
     set jumper_only [info exists flags(-jumper_only)]
     set diode_only [info exists flags(-diode_only)]
