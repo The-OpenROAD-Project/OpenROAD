@@ -1556,14 +1556,13 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
   const auto die_height = die_area.dy();
 
   pin_draw_names_ = viewer_->options_->areIOPinNamesVisible();
+  const double scale_factor
+      = 0.02;  // 4 Percent of bounds is used to draw pin-markers
+  const int die_max_dim
+      = std::min(std::max(die_width, die_height), bounds.maxDXDY());
+  const double abs_min_dim = 8.0;  // prevent markers from falling apart
+  pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
   if (pin_draw_names_) {
-    const double scale_factor
-        = 0.02;  // 4 Percent of bounds is used to draw pin-markers
-    const int die_max_dim
-        = std::min(std::max(die_width, die_height), bounds.maxDXDY());
-    const double abs_min_dim = 8.0;  // prevent markers from falling apart
-    pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
-
     pin_font_ = viewer_->options_->ioPinMarkersFont();
     const QFontMetrics font_metrics(pin_font_);
 
