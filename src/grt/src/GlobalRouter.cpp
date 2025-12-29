@@ -5821,6 +5821,12 @@ void GRouteDbCbk::inDbNetPreMerge(odb::dbNet* preserved_net,
   grouter_->mergeNetsRouting(preserved_net, removed_net);
 }
 
+void GRouteDbCbk::inDbNetPostGuideRestore(odb::dbNet* net)
+{
+  Net* fr_net = grouter_->getNet(net);
+  fr_net->setIsGuideRestored(true);
+}
+
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
   odb::dbNet* db_net = iterm->getNet();
