@@ -169,6 +169,8 @@ class RenderThread : public QThread
   QFont pin_font_;
   bool pin_draw_names_ = false;
   double pin_max_size_ = 0.0;
+
+  static constexpr int64_t kMaxBPinsPerLayer = 100000;
 };
 
 }  // namespace gui
