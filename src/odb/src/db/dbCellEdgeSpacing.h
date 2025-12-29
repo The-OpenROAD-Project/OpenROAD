@@ -4,10 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -21,7 +21,7 @@ struct dbCellEdgeSpacingFlags
   bool optional : 1;
   bool soft : 1;
   bool exact : 1;
-  uint spare_bits : 27;
+  uint32_t spare_bits : 27;
 };
 
 class _dbCellEdgeSpacing : public _dbObject

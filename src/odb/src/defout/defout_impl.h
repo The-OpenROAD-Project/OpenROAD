@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <list>
 #include <map>
 #include <ostream>
@@ -12,7 +13,7 @@
 #include "odb/dbMap.h"
 #include "odb/dbObject.h"
 #include "odb/defout.h"
-#include "odb/odb.h"
+
 namespace utl {
 class Logger;
 }
@@ -56,7 +57,10 @@ class DefOut::Impl
 
   int defdist(int value) { return (int) (((double) value) * _dist_factor); }
 
-  int defdist(uint value) { return (uint) (((double) value) * _dist_factor); }
+  int defdist(uint32_t value)
+  {
+    return (uint32_t) (((double) value) * _dist_factor);
+  }
 
   void writePropertyDefinitions(dbBlock* block);
   void writeRows(dbBlock* block);

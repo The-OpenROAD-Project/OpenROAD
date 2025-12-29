@@ -3,6 +3,8 @@
 
 #include "dbBPinItr.h"
 
+#include <cstdint>
+
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -34,12 +36,12 @@ bool dbBPinItr::orderReversed() const
 void dbBPinItr::reverse(dbObject* parent)
 {
   _dbBTerm* bterm = (_dbBTerm*) parent;
-  uint id = bterm->bpins_;
-  uint list = 0;
+  uint32_t id = bterm->bpins_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbBPin* bpin = bpin_tbl_->getPtr(id);
-    uint n = bpin->next_bpin_;
+    uint32_t n = bpin->next_bpin_;
     bpin->next_bpin_ = list;
     list = id;
     id = n;
@@ -48,15 +50,15 @@ void dbBPinItr::reverse(dbObject* parent)
   bterm->bpins_ = list;
 }
 
-uint dbBPinItr::sequential() const
+uint32_t dbBPinItr::sequential() const
 {
   return 0;
 }
 
-uint dbBPinItr::size(dbObject* parent) const
+uint32_t dbBPinItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbBPinItr::begin(parent); id != dbBPinItr::end(parent);
        id = dbBPinItr::next(id)) {
@@ -66,24 +68,24 @@ uint dbBPinItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbBPinItr::begin(dbObject* parent) const
+uint32_t dbBPinItr::begin(dbObject* parent) const
 {
   _dbBTerm* bterm = (_dbBTerm*) parent;
   return bterm->bpins_;
 }
 
-uint dbBPinItr::end(dbObject* /* unused: parent */) const
+uint32_t dbBPinItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbBPinItr::next(uint id, ...) const
+uint32_t dbBPinItr::next(uint32_t id, ...) const
 {
   _dbBPin* bpin = bpin_tbl_->getPtr(id);
   return bpin->next_bpin_;
 }
 
-dbObject* dbBPinItr::getObject(uint id, ...)
+dbObject* dbBPinItr::getObject(uint32_t id, ...)
 {
   return bpin_tbl_->getPtr(id);
 }

@@ -14,7 +14,6 @@ namespace dst {
 class BalancerJobDescription : public JobDescription
 {
  public:
-  BalancerJobDescription() : worker_port_(0) {}
   void setWorkerIP(const std::string& ip) { worker_ip_ = ip; }
   void setWorkerPort(unsigned short port) { worker_port_ = port; }
   std::string getWorkerIP() const { return worker_ip_; }
@@ -22,7 +21,7 @@ class BalancerJobDescription : public JobDescription
 
  private:
   std::string worker_ip_;
-  unsigned short worker_port_;
+  unsigned short worker_port_{0};
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)

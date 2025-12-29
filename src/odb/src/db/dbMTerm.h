@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -24,8 +25,8 @@ struct _dbMTermFlags
   dbIoType::Value io_type : 4;
   dbSigType::Value sig_type : 4;
   dbMTermShapeType::Value shape_type : 2;
-  uint mark : 1;
-  uint spare_bits : 21;
+  uint32_t mark : 1;
+  uint32_t spare_bits : 21;
 };
 
 class _dbMTerm : public _dbObject
@@ -43,7 +44,7 @@ class _dbMTerm : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbMTermFlags flags_;
-  uint order_id_;
+  uint32_t order_id_;
   char* name_;
   dbId<_dbMTerm> next_entry_;
   dbId<_dbMTerm> next_mterm_;

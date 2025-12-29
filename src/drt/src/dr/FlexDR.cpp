@@ -654,7 +654,7 @@ void FlexDR::reportIterationViolations() const
                   getDesign()->getTopBlock()->getNumMarkers());
     if (getDesign()->getTopBlock()->getNumMarkers() > 0) {
       // report violations
-      std::map<std::string, std::map<frLayerNum, uint>> violations;
+      std::map<std::string, std::map<frLayerNum, uint32_t>> violations;
       std::set<frLayerNum> layers;
       const std::map<std::string, std::string> relabel
           = {{"Lef58SpacingEndOfLine", "EOL"},
@@ -1688,6 +1688,11 @@ void FlexDR::fixMaxSpacing()
         auto result = getLonelyVias(
             layer.get(), rule->getMaxSpacing(), rule->getCutClassIdx());
         lonely_vias.insert(lonely_vias.end(), result.begin(), result.end());
+        for (const auto via_def : layer->getViaDefs()) {
+          if (via_def->getCutClassIdx() == rule->getCutClassIdx()) {
+            router_->addAvoidViaDefPA(via_def);
+          }
+        }
       }
     }
   }
@@ -1722,7 +1727,27 @@ void FlexDR::fixMaxSpacing()
     region.set_xhi(tmp_box.xMax());
     region.set_yhi(tmp_box.yMax());
     lonely_vias_regions.emplace_back(region);
+    if (via->isBottomConnected() || via->isTopConnected()) {
+      // get pins connected to the via
+      frRegionQuery::Objects<frBlockObject> result;
+      getRegionQuery()->query(
+          via->isTopConnected() ? via->getLayer2BBox() : via->getLayer1BBox(),
+          via->isTopConnected() ? via->getViaDef()->getLayer2Num()
+                                : via->getViaDef()->getLayer1Num(),
+          result);
+      for (auto& [bx, obj] : result) {
+        if (obj->typeId() == frcInstTerm) {
+          auto inst_term = static_cast<frInstTerm*>(obj);
+          if (inst_term->getNet() != via->getNet()) {
+            continue;
+          }
+          inst_term->setStubborn(true);
+          router_->addInstancePAData(inst_term->getInst());
+        }
+      }
+    }
   }
+  router_->updateDirtyPAData();
   // merge intersecting regions
   std::sort(lonely_vias_regions.begin(),
             lonely_vias_regions.end(),

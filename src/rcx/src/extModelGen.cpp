@@ -3,10 +3,9 @@
 
 #include "rcx/extModelGen.h"
 
-#include <string.h>
-
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <list>
@@ -20,18 +19,18 @@
 
 namespace rcx {
 
-uint extRCModel::GenExtModel(std::list<std::string>& corner_list,
-                             const char* out_file,
-                             const char* comment,
-                             const char* version,
-                             int pattern)
+uint32_t extRCModel::GenExtModel(std::list<std::string>& corner_list,
+                                 const char* out_file,
+                                 const char* comment,
+                                 const char* version,
+                                 int pattern)
 {
   extModelGen* g = (extModelGen*) this;
   bool binary = false;
-  uint corner_cnt = corner_list.size();
+  uint32_t corner_cnt = corner_list.size();
   FILE* outFP
       = g->InitWriteRules(out_file, corner_list, comment, false, corner_cnt);
-  for (uint ii = 0; ii < corner_cnt; ii++) {
+  for (uint32_t ii = 0; ii < corner_cnt; ii++) {
     extMetRCTable* corner_model = getMetRCTable(ii);
 
     corner_model->mkWidthAndSpaceMappings();
@@ -42,12 +41,12 @@ uint extRCModel::GenExtModel(std::list<std::string>& corner_list,
   return 0;
 }
 
-uint extMain::GenExtModel(std::list<std::string> spef_file_list,
-                          std::list<std::string> corner_list,
-                          const char* out_file,
-                          const char* comment,
-                          const char* version,
-                          int pattern)
+uint32_t extMain::GenExtModel(std::list<std::string> spef_file_list,
+                              std::list<std::string> corner_list,
+                              const char* out_file,
+                              const char* comment,
+                              const char* version,
+                              int pattern)
 {
   std::vector<std::string> corner_name;
 
@@ -56,13 +55,13 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
     std::string str = *it1;
     corner_name.push_back(str);
   }
-  uint widthCnt = 12;
-  uint layerCnt = _tech->getRoutingLayerCount() + 1;
+  uint32_t widthCnt = 12;
+  uint32_t layerCnt = _tech->getRoutingLayerCount() + 1;
   FILE* outFP = nullptr;
 
   bool binary = false;
-  uint fileCnt = spef_file_list.size();
-  uint cnt = 0;
+  uint32_t fileCnt = spef_file_list.size();
+  uint32_t cnt = 0;
   std::list<std::string>::iterator it;
   for (it = spef_file_list.begin(); it != spef_file_list.end(); ++it) {
     std::string str = *it;
@@ -103,7 +102,7 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
     extModelGen* extRulesModel = new extModelGen(layerCnt, "TYPICAL", logger_);
     extRulesModel->setExtMain(this);
 
-    uint diagOption = 1;
+    uint32_t diagOption = 1;
     char* out = (char*) corner_name[cnt].c_str();
     // if (cnt == 1)
     //    out = "2.model";
@@ -119,9 +118,9 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
   fclose(outFP);
   return 0;
 }
-void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
+void extModelGen::writeRules(FILE* fp, bool binary, uint32_t mIndex, int corner)
 {
-  uint m = 0;
+  uint32_t m = 0;
   bool writeRes = true;
 
   extMetRCTable* rcTable0 = getMetRCTable(0);  // orig call
@@ -133,12 +132,12 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
     rcTable = getMetRCTable(m);
   }
 
-  uint layerCnt = getLayerCnt();
-  uint diagModel = getDiagModel();
+  uint32_t layerCnt = getLayerCnt();
+  uint32_t diagModel = getDiagModel();
 
   fprintf(fp, "\nDensityModel %d\n", mIndex);
 
-  for (uint ii = 1; ii < layerCnt; ii++) {
+  for (uint32_t ii = 1; ii < layerCnt; ii++) {
     if (writeRes) {
       writeRulesPattern(0,
                         ii,
@@ -251,16 +250,16 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
   rcTable->writeViaRes(fp);
   fprintf(fp, "END DensityModel %d\n", mIndex);
 }
-uint extRCModel::writeRulesPattern(uint ou,
-                                   uint layer,
-                                   int modelIndex,
-                                   extDistWidthRCTable* table_m,
-                                   extDistWidthRCTable* table_0,
-                                   const char* patternKeyword,
-                                   FILE* fp,
-                                   bool binary)
+uint32_t extRCModel::writeRulesPattern(uint32_t ou,
+                                       uint32_t layer,
+                                       int modelIndex,
+                                       extDistWidthRCTable* table_m,
+                                       extDistWidthRCTable* table_0,
+                                       const char* patternKeyword,
+                                       FILE* fp,
+                                       bool binary)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   extDistWidthRCTable* table = nullptr;
   if (table_m != nullptr) {
     table = table_m;
@@ -287,49 +286,49 @@ uint extRCModel::writeRulesPattern(uint ou,
   return cnt;
 }
 
-uint extDistWidthRCTable::writeRulesUnder(FILE* fp,
-                                          const char* keyword,
-                                          bool bin)
+uint32_t extDistWidthRCTable::writeRulesUnder(FILE* fp,
+                                              const char* keyword,
+                                              bool bin)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   fprintf(fp, "\nMetal %d %s\n", _met, keyword);
 
   writeWidthTable(fp, bin);
-  uint widthCnt = _widthTable->getCnt();
+  uint32_t widthCnt = _widthTable->getCnt();
 
-  for (uint ii = _met + 1; ii < _layerCnt; ii++) {
+  for (uint32_t ii = _met + 1; ii < _layerCnt; ii++) {
     fprintf(fp, "\nMetal %d %s %d\n", _met, keyword, ii);
 
-    uint metIndex = getMetIndexUnder(ii);
+    uint32_t metIndex = getMetIndexUnder(ii);
 
-    for (uint jj = 0; jj < widthCnt; jj++) {
+    for (uint32_t jj = 0; jj < widthCnt; jj++) {
       cnt += _rcDistTable[metIndex][jj]->writeRules(
           fp, 0.001 * _widthTable->get(jj), false, bin);
     }
   }
   return cnt;
 }
-uint extDistWidthRCTable::writeRulesDiagUnder2(FILE* fp, bool bin)
+uint32_t extDistWidthRCTable::writeRulesDiagUnder2(FILE* fp, bool bin)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   fprintf(fp, "\nMetal %d DIAGUNDER\n", _met);
 
   writeWidthTable(fp, bin);
-  uint widthCnt = _widthTable->getCnt();
+  uint32_t widthCnt = _widthTable->getCnt();
   writeDiagTablesCnt(fp, _met + 1, bin);
 
-  for (uint ii = _met + 1; ii < _met + 5 && ii < _layerCnt; ii++) {
+  for (uint32_t ii = _met + 1; ii < _met + 5 && ii < _layerCnt; ii++) {
     fprintf(fp, "\nMetal %d DIAGUNDER %d\n", _met, ii);
     writeDiagWidthTable(fp, ii, bin);
-    uint diagWidthCnt = _diagWidthTable[ii]->getCnt();
+    uint32_t diagWidthCnt = _diagWidthTable[ii]->getCnt();
     writeDiagDistTable(fp, ii, bin);
-    uint diagDistCnt = _diagDistTable[ii]->getCnt();
+    uint32_t diagDistCnt = _diagDistTable[ii]->getCnt();
 
-    uint metIndex = getMetIndexUnder(ii);
+    uint32_t metIndex = getMetIndexUnder(ii);
 
-    for (uint jj = 0; jj < widthCnt; jj++) {
-      for (uint kk = 0; kk < diagWidthCnt; kk++) {
-        for (uint ll = 0; ll < diagDistCnt; ll++) {
+    for (uint32_t jj = 0; jj < widthCnt; jj++) {
+      for (uint32_t kk = 0; kk < diagWidthCnt; kk++) {
+        for (uint32_t ll = 0; ll < diagDistCnt; ll++) {
           cnt += _rcDiagDistTable[metIndex][jj][kk][ll]->writeDiagRules(
               fp,
               0.001 * _widthTable->get(jj),
@@ -343,20 +342,20 @@ uint extDistWidthRCTable::writeRulesDiagUnder2(FILE* fp, bool bin)
   }
   return cnt;
 }
-uint extDistWidthRCTable::writeRulesDiagUnder(FILE* fp, bool bin)
+uint32_t extDistWidthRCTable::writeRulesDiagUnder(FILE* fp, bool bin)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   fprintf(fp, "\nMetal %d DIAGUNDER\n", _met);
 
   writeWidthTable(fp, bin);
-  uint widthCnt = _widthTable->getCnt();
+  uint32_t widthCnt = _widthTable->getCnt();
 
-  for (uint ii = _met + 1; ii < _layerCnt; ii++) {
+  for (uint32_t ii = _met + 1; ii < _layerCnt; ii++) {
     fprintf(fp, "\nMetal %d DIAGUNDER %d\n", _met, ii);
 
-    uint metIndex = getMetIndexUnder(ii);
+    uint32_t metIndex = getMetIndexUnder(ii);
 
-    for (uint jj = 0; jj < widthCnt; jj++) {
+    for (uint32_t jj = 0; jj < widthCnt; jj++) {
       cnt += _rcDistTable[metIndex][jj]->writeRules(
           fp, 0.001 * _widthTable->get(jj), false, bin);
     }
@@ -379,25 +378,25 @@ int extRCModel::getMetIndexOverUnder(int met,
 
   return n;
 }
-uint extDistWidthRCTable::writeRulesOverUnder(FILE* fp,
-                                              const char* keyword,
-                                              bool bin)
+uint32_t extDistWidthRCTable::writeRulesOverUnder(FILE* fp,
+                                                  const char* keyword,
+                                                  bool bin)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   fprintf(fp, "\nMetal %d %s\n", _met, keyword);
 
   writeWidthTable(fp, bin);
-  uint widthCnt = _widthTable->getCnt();
+  uint32_t widthCnt = _widthTable->getCnt();
 
-  for (uint mUnder = 1; mUnder < _met; mUnder++) {
-    for (uint mOver = _met + 1; mOver < _layerCnt; mOver++) {
+  for (uint32_t mUnder = 1; mUnder < _met; mUnder++) {
+    for (uint32_t mOver = _met + 1; mOver < _layerCnt; mOver++) {
       fprintf(fp, "\nMetal %d OVER %d UNDER %d\n", _met, mUnder, mOver);
 
       int metIndex = extRCModel::getMetIndexOverUnder(
           _met, mUnder, mOver, _layerCnt, _metCnt);
       assert(metIndex >= 0);
 
-      for (uint jj = 0; jj < widthCnt; jj++) {
+      for (uint32_t jj = 0; jj < widthCnt; jj++) {
         cnt += _rcDistTable[metIndex][jj]->writeRules(
             fp, 0.001 * _widthTable->get(jj), false, bin);
       }
@@ -405,40 +404,40 @@ uint extDistWidthRCTable::writeRulesOverUnder(FILE* fp,
   }
   return cnt;
 }
-uint extDistWidthRCTable::writeRulesOver(FILE* fp,
-                                         const char* keyword,
-                                         bool bin)
+uint32_t extDistWidthRCTable::writeRulesOver(FILE* fp,
+                                             const char* keyword,
+                                             bool bin)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   // fprintf(fp, "\nMetal %d OVER\n", _met);
   fprintf(fp, "\nMetal %d %s\n", _met, keyword);
 
   writeWidthTable(fp, bin);
-  uint widthCnt = _widthTable->getCnt();
+  uint32_t widthCnt = _widthTable->getCnt();
 
-  for (uint ii = 0; ii < _met; ii++) {
+  for (uint32_t ii = 0; ii < _met; ii++) {
     fprintf(fp, "\nMetal %d %s %d\n", _met, keyword, ii);
     // fprintf(fp, "\nMetal %d OVER %d\n", _met, ii);
 
-    for (uint jj = 0; jj < widthCnt; jj++) {
+    for (uint32_t jj = 0; jj < widthCnt; jj++) {
       cnt += _rcDistTable[ii][jj]->writeRules(
           fp, 0.001 * _widthTable->get(jj), false, bin);
     }
   }
   return cnt;
 }
-uint extDistWidthRCTable::writeRulesOver_res(FILE* fp, bool bin)
+uint32_t extDistWidthRCTable::writeRulesOver_res(FILE* fp, bool bin)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   fprintf(fp, "\nMetal %d RESOVER\n", _met);
 
   writeWidthTable(fp, bin);
-  uint widthCnt = _widthTable->getCnt();
+  uint32_t widthCnt = _widthTable->getCnt();
 
-  for (uint ii = 0; ii < _met; ii++) {
+  for (uint32_t ii = 0; ii < _met; ii++) {
     fprintf(fp, "\nMetal %d RESOVER %d\n", _met, ii);
 
-    for (uint jj = 0; jj < widthCnt; jj++) {
+    for (uint32_t jj = 0; jj < widthCnt; jj++) {
       cnt += _rcDistTable[ii][jj]->writeRules(
           fp, 0.001 * _widthTable->get(jj), false, bin);
     }
@@ -449,9 +448,9 @@ FILE* extModelGen::InitWriteRules(const char* name,
                                   std::list<std::string> corner_list,
                                   const char* comment,
                                   bool binary,
-                                  uint modelCnt)
+                                  uint32_t modelCnt)
 {
-  uint diagModel = getDiagModel();
+  uint32_t diagModel = getDiagModel();
   int layerCnt = getLayerCnt();
   bool diag = getDiagFlag();
 
@@ -470,7 +469,7 @@ FILE* extModelGen::InitWriteRules(const char* name,
   fprintf(fp, "LayerCount %d\n", layerCnt - 1);
 
   fprintf(fp, "\nDensityRate %d ", modelCnt);
-  for (uint kk = 0; kk < modelCnt; kk++) {
+  for (uint32_t kk = 0; kk < modelCnt; kk++) {
     fprintf(fp, " %d", kk);
   }
   fprintf(fp, "\n");
@@ -489,23 +488,23 @@ FILE* extModelGen::InitWriteRules(const char* name,
 
   return fp;
 }
-uint extModelGen::ReadRCDB(odb::dbBlock* block,
-                           uint widthCnt,
-                           uint diagOption,
-                           char* logFilePrefix)
+uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
+                               uint32_t widthCnt,
+                               uint32_t diagOption,
+                               char* logFilePrefix)
 {
   extMain* extMain = get_extMain();
   // ORIG: setDiagModel(1);
   setDiagModel(diagOption);
   //  setOptions("./", "", false, true, false, false);
 
-  uint layerCnt = getLayerCnt();
+  uint32_t layerCnt = getLayerCnt();
   extMetRCTable* rcModel = initCapTables(layerCnt, widthCnt);
 
   AthPool<extDistRC>* rcPool = rcModel->getRCPool();
   extMeasure m(nullptr);
   m._diagModel = 1;
-  uint openWireNumber = 1;
+  uint32_t openWireNumber = 1;
 
   char buff[2000];
   sprintf(buff, "%s.log", logFilePrefix);
@@ -514,8 +513,8 @@ uint extModelGen::ReadRCDB(odb::dbBlock* block,
   sprintf(buff, "%s.debug.log", logFilePrefix);
   FILE* dbg_logFP = fopen(buff, "w");
 
-  Ath__parser* p = new Ath__parser(logger_);
-  Ath__parser* w = new Ath__parser(logger_);
+  Parser* p = new Parser(logger_);
+  Parser* w = new Parser(logger_);
 
   int prev_sep = 0;
   int prev_width = 0;
@@ -525,14 +524,14 @@ uint extModelGen::ReadRCDB(odb::dbBlock* block,
     odb::dbNet* net = *itr;
     const char* netName = net->getConstName();
 
-    uint wireCnt = 0;
-    uint viaCnt = 0;
-    uint len = 0;
-    uint layerCnt = 0;
-    uint layerTable[20];
+    uint32_t wireCnt = 0;
+    uint32_t viaCnt = 0;
+    uint32_t len = 0;
+    uint32_t layerCnt = 0;
+    uint32_t layerTable[20];
 
     net->getNetStats(wireCnt, viaCnt, len, layerCnt, layerTable);
-    uint wcnt = p->mkWords(netName, "_");
+    uint32_t wcnt = p->mkWords(netName, "_");
 
     // Read Via patterns - dkf 12262023
     // via pattern: V2.W2.M5.M6.DX520.DY1320.C2.V56_1x2_VH_S
@@ -568,7 +567,7 @@ uint extModelGen::ReadRCDB(odb::dbBlock* block,
       continue;
     }
 
-    uint wireNum = p->getInt(wcnt - 1);
+    uint32_t wireNum = p->getInt(wcnt - 1);
     // if (wireNum != targetWire / 2)
     //   continue;
 
@@ -576,9 +575,9 @@ uint extModelGen::ReadRCDB(odb::dbBlock* block,
     bool diag = false;
     bool ResModel = false;
 
-    uint met = p->getInt(0, 1);
-    uint overMet = 0;
-    uint underMet = 0;
+    uint32_t met = p->getInt(0, 1);
+    uint32_t overMet = 0;
+    uint32_t underMet = 0;
 
     m._overMet = -1;
     m._underMet = -1;
@@ -721,7 +720,7 @@ uint extModelGen::ReadRCDB(odb::dbBlock* block,
         rc->set(m._s_nm, cc, gnd, 0.0, R);
       }
     }
-    uint wireNum2 = 2;
+    uint32_t wireNum2 = 2;
     m._open = false;
     m._over1 = false;
     if (wireNum == openWireNumber) {  // default openWireNumber=1
@@ -799,7 +798,7 @@ std::list<std::string> extModelGen::GetCornerNames(const char* filename,
 {
   bool dbg = false;
   std::list<std::string> corner_list;
-  Ath__parser parser(logger);
+  Parser parser(logger);
   // parser.setDbg(1);
   parser.addSeparator("\r");
   parser.openFile((char*) filename);
@@ -832,7 +831,8 @@ std::list<std::string> extModelGen::GetCornerNames(const char* filename,
 }
 
 /*
-AFILE extModelGen::InitWriteRules_old(AFILE *fp, bool binary, uint modelIndex)
+AFILE extModelGen::InitWriteRules_old(AFILE *fp, bool binary, uint32_t
+modelIndex)
 {
 //	FILE *fp= openFile("./", name, nullptr, "w");
 #ifndef _WIN32
@@ -842,7 +842,7 @@ AFILE extModelGen::InitWriteRules_old(AFILE *fp, bool binary, uint modelIndex)
         FILE *fp= fopen(name, "w");
 #endif
 
-        uint cnt= 0;
+        uint32_t cnt= 0;
         ATH__fprintf(fp, "Extraction Rules for Athena Design Systems
 Tools\n\n"); if (_diag) { if (_diagModel==1) ATH__fprintf(fp, "DIAGMODEL
 ON\n\n"); else if (_diagModel==2) ATH__fprintf(fp, "DIAGMODEL TRUE\n\n");
@@ -850,7 +850,7 @@ ON\n\n"); else if (_diagModel==2) ATH__fprintf(fp, "DIAGMODEL TRUE\n\n");
 
         ATH__fprintf(fp, "LayerCount %d\n", _layerCnt-1);
         ATH__fprintf(fp, "DensityRate %d ", _modelCnt);
-        for (uint kk= 0; kk<_modelCnt; kk++)
+        for (uint32_t kk= 0; kk<_modelCnt; kk++)
                 ATH__fprintf(fp, " %g", _dataRateTable->get(kk));
         ATH__fprintf(fp, "\n");
     return fp;

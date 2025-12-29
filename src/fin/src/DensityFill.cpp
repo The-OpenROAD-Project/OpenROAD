@@ -26,7 +26,20 @@ using utl::FIN;
 
 namespace pt = boost::property_tree;
 
-using namespace odb;
+using odb::dbBlock;
+using odb::dbChip;
+using odb::dbDatabase;
+using odb::dbFill;
+using odb::dbInstShapeItr;
+using odb::dbShape;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbTechVia;
+using odb::dbVia;
+using odb::dbWire;
+using odb::dbWireShapeItr;
+using odb::Rect;
 
 // The rules for OPC or non-OPC shapes on a layer from the JSON config
 struct DensityFillShapesConfig

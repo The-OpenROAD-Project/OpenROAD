@@ -4,11 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <utility>
 
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -19,8 +19,8 @@ class _dbTechLayer;
 struct dbTechLayerAreaRuleFlags
 {
   bool except_rectangle : 1;
-  uint overlap : 2;
-  uint spare_bits : 29;
+  uint32_t overlap : 2;
+  uint32_t spare_bits : 29;
 };
 
 class _dbTechLayerAreaRule : public _dbObject

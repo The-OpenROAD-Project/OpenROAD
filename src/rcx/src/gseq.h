@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "odb/odb.h"
 #include "rcx/array1.h"
 #include "rcx/util.h"
 
@@ -47,11 +46,11 @@ class gs
   //             order - search by column or by row (GS_COLUMN, GS_ROW)
   //             plane  - which plane to search
   //             array - pool of sequence pointers to get a handle from
-  uint getSeq(int* ll,
-              int* ur,
-              uint order,
-              uint plane,
-              Ath__array1D<SEQ*>* array);
+  uint32_t getSeq(int* ll,
+                  int* ur,
+                  uint32_t order,
+                  uint32_t plane,
+                  Array1D<SEQ*>* array);
 
   // Allocate a SEQ
   SEQ* salloc();

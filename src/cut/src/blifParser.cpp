@@ -28,7 +28,7 @@ namespace blif_parser {
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 
-using namespace boost::placeholders;
+using boost::placeholders::_1;
 
 using boost::spirit::ascii::space_type;
 using boost::spirit::ascii::string;
@@ -38,43 +38,43 @@ using qi::lexeme;
 using ascii::char_;
 using ascii::space;
 
-void setNewInput(std::string input, cut::BlifParser* parser)
+void setNewInput(const std::string& input, cut::BlifParser* parser)
 {
   if (input != "\\") {
     parser->addInput(input);
   }
 }
 
-void setNewOutput(std::string output, cut::BlifParser* parser)
+void setNewOutput(const std::string& output, cut::BlifParser* parser)
 {
   if (output != "\\") {
     parser->addOutput(output);
   }
 }
 
-void setNewClock(std::string clock, cut::BlifParser* parser)
+void setNewClock(const std::string& clock, cut::BlifParser* parser)
 {
   if (clock != "\\") {
     parser->addClock(clock);
   }
 }
 
-void setNewInstanceType(std::string type, cut::BlifParser* parser)
+void setNewInstanceType(const std::string& type, cut::BlifParser* parser)
 {
   parser->addNewInstanceType(type);
 }
 
-void setNewGate(std::string gate, cut::BlifParser* parser)
+void setNewGate(const std::string& gate, cut::BlifParser* parser)
 {
   parser->addNewGate(gate);
 }
 
-void setGateNets(std::string net, cut::BlifParser* parser)
+void setGateNets(const std::string& net, cut::BlifParser* parser)
 {
   parser->addConnection(net);
 }
 
-void endParser(std::string end, cut::BlifParser* parser)
+void endParser(const std::string& end, cut::BlifParser* parser)
 {
   parser->endParser();
 }
@@ -134,8 +134,8 @@ void BlifParser::addClock(const std::string& clock)
 void BlifParser::addNewInstanceType(const std::string& type)
 {
   if (currentInstanceType_ != GateType::None) {
-    gates_.push_back(
-        Gate(currentInstanceType_, currentGate_, currentConnections_));
+    gates_.emplace_back(
+        currentInstanceType_, currentGate_, currentConnections_);
   }
   currentInstanceType_ = GateType::Mlatch;
   if (type != "mlatch") {
@@ -159,8 +159,8 @@ void BlifParser::addConnection(const std::string& connection)
 void BlifParser::endParser()
 {
   if (currentInstanceType_ != GateType::None) {
-    gates_.push_back(
-        Gate(currentInstanceType_, currentGate_, currentConnections_));
+    gates_.emplace_back(
+        currentInstanceType_, currentGate_, currentConnections_);
   }
 }
 

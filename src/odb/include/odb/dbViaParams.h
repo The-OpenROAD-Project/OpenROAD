@@ -4,7 +4,6 @@
 #pragma once
 
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 

@@ -1026,7 +1026,7 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
 LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
 {
   if (base->isBuffer()) {
-    if (resizer_->buffer_fast_sizes_.count(base) == 0) {
+    if (!resizer_->buffer_fast_sizes_.contains(base)) {
       return LibertyCellSeq();
     }
 

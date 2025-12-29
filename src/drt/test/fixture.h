@@ -54,7 +54,6 @@ class Fixture : public ::testing::Test
 {
  protected:
   Fixture();
-  virtual ~Fixture() = default;
 
   void addLayer(frTechObject* tech,
                 const char* name,
@@ -82,7 +81,7 @@ class Fixture : public ::testing::Test
                            frCoord designRuleWidth = -1);
 
   frTerm* makeMacroPin(frMaster* master,
-                       std::string name,
+                       const std::string& name,
                        frCoord xl,
                        frCoord yl,
                        frCoord xh,
@@ -223,21 +222,21 @@ class Fixture : public ::testing::Test
 
   frSpacingTableInfluenceConstraint* makeSpacingTableInfluenceConstraint(
       frLayerNum layer_num,
-      std::vector<frCoord> widthTbl,
-      std::vector<std::pair<frCoord, frCoord>> valTbl);
+      const std::vector<frCoord>& widthTbl,
+      const std::vector<std::pair<frCoord, frCoord>>& valTbl);
 
   frLef58EolExtensionConstraint* makeEolExtensionConstraint(
       frLayerNum layer_num,
       frCoord spacing,
-      std::vector<frCoord> eol,
-      std::vector<frCoord> ext,
+      const std::vector<frCoord>& eol,
+      const std::vector<frCoord>& ext,
       bool parallelOnly = false);
 
   frSpacingTableTwConstraint* makeSpacingTableTwConstraint(
       frLayerNum layer_num,
-      std::vector<frCoord> widthTbl,
-      std::vector<frCoord> prlTbl,
-      std::vector<std::vector<frCoord>> spacingTbl);
+      const std::vector<frCoord>& widthTbl,
+      const std::vector<frCoord>& prlTbl,
+      const std::vector<std::vector<frCoord>>& spacingTbl);
 
   frLef58WidthTableOrthConstraint* makeWidthTblOrthConstraint(
       frLayerNum layer_num,

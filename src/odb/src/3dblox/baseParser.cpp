@@ -88,7 +88,7 @@ void BaseParser::parseDefines(std::string& content)
   std::string processed_content;
 
   while (std::getline(stream, line)) {
-    if (line.find("#!define") == 0) {
+    if (line.starts_with("#!define")) {
       std::string define_statement = line.substr(8);
       define_statement = trim(define_statement);
 

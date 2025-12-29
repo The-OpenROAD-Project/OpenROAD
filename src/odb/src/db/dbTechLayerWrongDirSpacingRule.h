@@ -4,8 +4,9 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -19,7 +20,7 @@ struct dbTechLayerWrongDirSpacingRuleFlags
 {
   bool noneol_valid : 1;
   bool length_valid : 1;
-  uint spare_bits : 30;
+  uint32_t spare_bits : 30;
 };
 
 class _dbTechLayerWrongDirSpacingRule : public _dbObject

@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <string>
+
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
@@ -10,36 +17,39 @@
 #include "rcx/extRulesPattern.h"
 #include "rcx/extSpef.h"
 #include "rcx/extprocess.h"
-
-#ifdef _WIN32
-#include "direct.h"
-#endif
-
-#include <algorithm>
-#include <cassert>
-#include <cstdio>
-#include <cstring>
-#include <string>
-
 #include "utl/Logger.h"
 
 using odb::dbBlock;
 using odb::dbTechLayerDir;
 using utl::RCX;
 
-using namespace odb;  // This must go
-
 namespace rcx {
+
+using odb::dbBox;
+using odb::dbBPin;
+using odb::dbBTerm;
+using odb::dbChip;
+using odb::dbIoType;
+using odb::dbNet;
+using odb::dbPlacementStatus;
+using odb::dbSigType;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbWire;
+using odb::dbWireEncoder;
+using odb::dbWireType;
+using odb::Rect;
 
 extRulesPat::extRulesPat(const char* pat,
                          bool over,
                          bool under,
                          bool diag,
                          bool res,
-                         uint len,
-                         int org[2],
-                         int LL[2],
-                         int UR[2],
+                         uint32_t len,
+                         const int org[2],
+                         const int LL[2],
+                         const int UR[2],
                          dbBlock* block,
                          extMain* xt,
                          dbTech* tech)
@@ -63,11 +73,14 @@ extRulesPat::extRulesPat(const char* pat,
   _diagSpaceCnt = 5;
   _init_origin[0] = org[0];
   _init_origin[1] = org[1];
+  _origin[0] = 0;
+  _origin[1] = 0;
 
   _block = block;
   _tech = tech;
   _extMain = xt;
   _dbunit = _block->getDbUnitsPerMicron();
+  _patternSep = 0;
 
   if (_res) {
     strcpy(_name_prefix, "R");
@@ -93,7 +106,10 @@ extRulesPat::extRulesPat(const char* pat,
 
   // _create_net_util.setBlock(_block, false);
 }
-void extRulesPat::PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg)
+void extRulesPat::PrintOrigin(FILE* fp,
+                              const int ll[2],
+                              uint32_t met,
+                              const char* msg)
 {
   if (!_dbg) {
     return;
@@ -108,7 +124,7 @@ void extRulesPat::PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg)
           ll[1] * units,
           msg);
 }
-void extRulesPat::UpdateOrigin_start(uint met)
+void extRulesPat::UpdateOrigin_start(uint32_t met)
 {
   _patternSep = _sepGridCnt * (_minWidth + _minSpace);
   if (met > 1) {
@@ -139,7 +155,7 @@ int extRulesPat::GetOrigin_end(int ur[2])
   PrintOrigin(stdout, _origin, _met, "Pattern End");
   return _origin[0];
 }
-void extRulesPat::SetInitName1(uint n)
+void extRulesPat::SetInitName1(uint32_t n)
 {
   if (_diag) {
     sprintf(_name, "%s%d_M%duuM%d", _name_prefix, n, _met, _overMet);
@@ -154,11 +170,11 @@ void extRulesPat::SetInitName1(uint n)
     sprintf(_name, "%s%d_M%duM%d", _name_prefix, n, _met, _overMet);
   }
 }
-void extRulesPat::SetInitName(uint n,
-                              uint w1,
-                              uint w2,
-                              uint s1,
-                              uint s2,
+void extRulesPat::SetInitName(uint32_t n,
+                              uint32_t w1,
+                              uint32_t w2,
+                              uint32_t s1,
+                              uint32_t s2,
                               int ds1)
 {
   char name[100];
@@ -202,7 +218,10 @@ void extRulesPat::SetInitName(uint n,
             ds1);
   }
 }
-void extRulesPat::AddName(uint jj, uint wireIndex, const char* wire, int met)
+void extRulesPat::AddName(uint32_t jj,
+                          uint32_t wireIndex,
+                          const char* wire,
+                          int met)
 {
   if (strcmp(wire, "") == 0) {
     sprintf(_patName[jj], "%s_%s%d", _name, wire, wireIndex);
@@ -210,12 +229,12 @@ void extRulesPat::AddName(uint jj, uint wireIndex, const char* wire, int met)
     sprintf(_patName[jj], "%s_%s_M%d_%d", _name, wire, met, wireIndex);
   }
 }
-void extRulesPat::AddName1(uint jj,
-                           uint w1,
-                           uint w2,
-                           uint s1,
-                           uint s2,
-                           uint wireIndex,
+void extRulesPat::AddName1(uint32_t jj,
+                           uint32_t w1,
+                           uint32_t w2,
+                           uint32_t s1,
+                           uint32_t s2,
+                           uint32_t wireIndex,
                            const char* wire,
                            int met)
 {
@@ -242,11 +261,11 @@ void extRulesPat::AddName1(uint jj,
             wireIndex);
   }
 }
-uint extRulesPat::getMinWidthSpacing(dbTechLayer* layer, uint& w)
+uint32_t extRulesPat::getMinWidthSpacing(dbTechLayer* layer, uint32_t& w)
 {
-  uint minWidth = layer->getWidth();
+  uint32_t minWidth = layer->getWidth();
   w = minWidth;
-  uint p = layer->getPitch();
+  uint32_t p = layer->getPitch();
   int minSpace = layer->getSpacing();
   int s = p - minWidth;
   if (s > minSpace) {
@@ -254,7 +273,7 @@ uint extRulesPat::getMinWidthSpacing(dbTechLayer* layer, uint& w)
   }
   return s;
 }
-uint extRulesPat::setLayerInfo(dbTechLayer* layer, uint met)
+uint32_t extRulesPat::setLayerInfo(dbTechLayer* layer, uint32_t met)
 {
   _layer = layer;
   _met = met;
@@ -275,11 +294,11 @@ uint extRulesPat::setLayerInfo(dbTechLayer* layer, uint met)
   _ur[_long_dir]
       = _ll[_long_dir] + _len * _minWidth / 1000;  // _len is in nm per ext.ti
 
-  for (uint ii = 0; ii < _spaceCnt; ii++) {
+  for (uint32_t ii = 0; ii < _spaceCnt; ii++) {
     _target_width[ii] = _minWidth * _sMult[ii] / 1000;
     _target_spacing[ii] = _minSpace * _sMult[ii] / 1000;
   }
-  for (uint ii = 0; ii < _diagSpaceCnt; ii++) {
+  for (uint32_t ii = 0; ii < _diagSpaceCnt; ii++) {
     _target_diag_spacing[ii] = (int) _minSpace * _dMult[ii] / 1000;
   }
   return _patternSep;
@@ -308,23 +327,23 @@ void extRulesPat::UpdateBBox()
 }
 void extRulesPat::Init(int s)
 {
-  for (uint ii = 0; ii < 2; ii++) {
-    _LL[0][ii] = 0;
-    _UR[0][ii] = 0;
+  for (uint32_t ii = 0; ii < 2; ii++) {
+    _ll_1[0][ii] = 0;
+    _ur_1[0][ii] = 0;
   }
   _short_dir = _dir;
   _long_dir = !_dir;
 
-  _UR[0][_short_dir] = -s;
-  _LL[0][_long_dir] = 0;
-  _UR[0][_long_dir] = _len;
+  _ur_1[0][_short_dir] = -s;
+  _ll_1[0][_long_dir] = 0;
+  _ur_1[0][_long_dir] = _len;
 
   _lineCnt = 0;
   PrintOrigin(stdout, _origin, _met, _name);
 }
-uint extRulesPat::CreatePatterns()
+uint32_t extRulesPat::CreatePatterns()
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   cnt += CreatePattern1();
   cnt += CreatePattern2(2);
   cnt += CreatePattern2(3);
@@ -332,41 +351,41 @@ uint extRulesPat::CreatePatterns()
 
   return cnt;
 }
-uint extRulesPat::CreatePatterns_res()
+uint32_t extRulesPat::CreatePatterns_res()
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   cnt += CreatePattern1();
   cnt += CreatePattern2(2);
 
-  for (uint ii = 0; ii < _spaceCnt - 1; ii++) {
-    for (uint jj = ii; jj < _spaceCnt; jj++) {
+  for (uint32_t ii = 0; ii < _spaceCnt - 1; ii++) {
+    for (uint32_t jj = ii; jj < _spaceCnt; jj++) {
       cnt += CreatePattern2s(0, ii, jj, 3);
     }
   }
-  for (uint ii = 0; ii < _spaceCnt - 1; ii++) {
-    for (uint jj = ii; jj < _spaceCnt; jj++) {
+  for (uint32_t ii = 0; ii < _spaceCnt - 1; ii++) {
+    for (uint32_t jj = ii; jj < _spaceCnt; jj++) {
       cnt += CreatePattern2s(0, ii, jj, 5);
     }
   }
   return cnt;
 }
-uint extRulesPat::CreatePatterns_diag()
+uint32_t extRulesPat::CreatePatterns_diag()
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
-  for (uint ii = 0; ii < _diagSpaceCnt; ii++) {
+  for (uint32_t ii = 0; ii < _diagSpaceCnt; ii++) {
     cnt += CreatePattern2s_diag(0, 0, 0, 1, ii, 0, 1);
   }
 
-  uint maxSpaceCnt = 5;
-  for (uint ii = 0; ii < _diagSpaceCnt; ii++) {
-    for (uint jj = 0; jj < maxSpaceCnt; jj++) {
+  uint32_t maxSpaceCnt = 5;
+  for (uint32_t ii = 0; ii < _diagSpaceCnt; ii++) {
+    for (uint32_t jj = 0; jj < maxSpaceCnt; jj++) {
       cnt += CreatePattern2s_diag(0, jj, 0, 2, ii, 0, 1);
     }
   }
-  for (uint ii = 0; ii < _diagSpaceCnt; ii++) {
-    for (uint jj = 0; jj < maxSpaceCnt - 1; jj++) {
-      for (uint kk = jj; kk < maxSpaceCnt; kk++) {
+  for (uint32_t ii = 0; ii < _diagSpaceCnt; ii++) {
+    for (uint32_t jj = 0; jj < maxSpaceCnt - 1; jj++) {
+      for (uint32_t kk = jj; kk < maxSpaceCnt; kk++) {
         cnt += CreatePattern2s_diag(0, jj, kk, 3, ii, 0, 1);
       }
     }
@@ -374,19 +393,21 @@ uint extRulesPat::CreatePatterns_diag()
 
   return cnt;
 }
-uint extRulesPat::CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt)
+uint32_t extRulesPat::CreatePattern(uint32_t widthIndex,
+                                    uint32_t spaceIndex,
+                                    uint32_t wcnt)
 {
   if (wcnt > 5) {
     return 0;
   }
   bool w5 = wcnt == 5;
-  uint w = _target_width[widthIndex];
-  uint s = _target_spacing[spaceIndex];
+  uint32_t w = _target_width[widthIndex];
+  uint32_t s = _target_spacing[spaceIndex];
   if (wcnt == 1) {
     s = 0;
   }
-  uint cntx_s = _target_spacing[0];
-  uint cntx_w = _target_width[0];
+  uint32_t cntx_s = _target_spacing[0];
+  uint32_t cntx_w = _target_width[0];
 
   if (w5) {
     Init(cntx_s);
@@ -396,25 +417,25 @@ uint extRulesPat::CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt)
 
   SetInitName(wcnt, w, w, s, s);
   // multiple widths
-  uint ii = 1;
-  for (uint jj = 0; jj < wcnt; jj++) {
-    _LL[ii][_long_dir] = 0;
-    _UR[ii][_long_dir] = _len;
+  uint32_t ii = 1;
+  for (uint32_t jj = 0; jj < wcnt; jj++) {
+    _ll_1[ii][_long_dir] = 0;
+    _ur_1[ii][_long_dir] = _len;
 
-    uint sp = s;
-    uint ww = w;
+    uint32_t sp = s;
+    uint32_t ww = w;
     if (w5 && (jj <= 1 || jj == 4)) {
       sp = cntx_s;
       ww = cntx_w;
     }
-    _LL[ii][_short_dir] = _UR[ii - 1][_short_dir] + sp;
-    _UR[ii][_short_dir] = _LL[ii][_short_dir] + ww;
+    _ll_1[ii][_short_dir] = _ur_1[ii - 1][_short_dir] + sp;
+    _ur_1[ii][_short_dir] = _ll_1[ii][_short_dir] + ww;
     // AddName(ii, w, w, s, s, ii);
     AddName(ii, ii);
     ii++;
   }
-  int ll[2] = {_LL[1][0], _LL[1][1]};
-  int ur[2] = {_UR[ii - 1][0], _UR[ii - 1][1]};
+  int ll[2] = {_ll_1[1][0], _ll_1[1][1]};
+  int ur[2] = {_ur_1[ii - 1][0], _ur_1[ii - 1][1]};
   _lineCnt = ii;
 
   WriteDB(_dir, _met, _layer);
@@ -447,14 +468,14 @@ uint extRulesPat::CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt)
 
   return ii;  // cnt of main pattern;
 }
-uint extRulesPat::CreateContext(uint met,
-                                int ll[2],
-                                int ur[2],
-                                uint w,
-                                uint s,
-                                uint cntxWidth,
-                                uint cntxSpace,
-                                dbTechLayer* cntx_layer)
+uint32_t extRulesPat::CreateContext(uint32_t met,
+                                    int ll[2],
+                                    int ur[2],
+                                    uint32_t w,
+                                    uint32_t s,
+                                    uint32_t cntxWidth,
+                                    uint32_t cntxSpace,
+                                    dbTechLayer* cntx_layer)
 {
   // s is NOT used
   int long_lo = ll[_short_dir] - w;  // reverse from main layer
@@ -464,13 +485,13 @@ uint extRulesPat::CreateContext(uint met,
 
   int next_xy_low = start_xy;
   int next_xy_hi = next_xy_low + cntxSpace;
-  uint jj = 1;
+  uint32_t jj = 1;
   while (next_xy_hi <= limit_xy) {
-    _LL[jj][_long_dir] = next_xy_low;
-    _UR[jj][_long_dir] = next_xy_hi;
+    _ll_1[jj][_long_dir] = next_xy_low;
+    _ur_1[jj][_long_dir] = next_xy_hi;
 
-    _LL[jj][_short_dir] = long_lo;
-    _UR[jj][_short_dir] = long_hi;
+    _ll_1[jj][_short_dir] = long_lo;
+    _ur_1[jj][_short_dir] = long_hi;
 
     // AddName(jj, w, w, s, s, jj, "cntx", met);
     AddName(jj, jj, "cntx", met);
@@ -481,34 +502,34 @@ uint extRulesPat::CreateContext(uint met,
   }
   _lineCnt = jj;
   Print(stdout);
-  for (uint k = 0; k < 2; k++) {
-    if (ur[k] < _UR[jj - 1][k]) {
-      ur[k] = _UR[jj - 1][k];
+  for (uint32_t k = 0; k < 2; k++) {
+    if (ur[k] < _ur_1[jj - 1][k]) {
+      ur[k] = _ur_1[jj - 1][k];
     }
 
-    if (ll[k] > _LL[jj - 1][k]) {
-      ll[k] = _LL[jj - 1][k];
+    if (ll[k] > _ll_1[jj - 1][k]) {
+      ll[k] = _ll_1[jj - 1][k];
     }
   }
   WriteDB(_long_dir, met, cntx_layer);
 
   return _lineCnt;
 }
-uint extRulesPat::CreatePattern2s(uint widthIndex,
-                                  uint spaceIndex1,
-                                  uint spaceIndex2,
-                                  uint wcnt)
+uint32_t extRulesPat::CreatePattern2s(uint32_t widthIndex,
+                                      uint32_t spaceIndex1,
+                                      uint32_t spaceIndex2,
+                                      uint32_t wcnt)
 {
   if (wcnt > 5 || wcnt < 3) {
     return 0;
   }
   bool wcnt5 = wcnt == 5;
-  uint w = _target_width[widthIndex];
-  uint s1 = _target_spacing[spaceIndex1];
-  uint s2 = _target_spacing[spaceIndex2];
+  uint32_t w = _target_width[widthIndex];
+  uint32_t s1 = _target_spacing[spaceIndex1];
+  uint32_t s2 = _target_spacing[spaceIndex2];
 
-  uint cntx_s = _target_spacing[0];
-  uint cntx_w = _target_width[0];
+  uint32_t cntx_s = _target_spacing[0];
+  uint32_t cntx_w = _target_width[0];
 
   if (wcnt5) {
     Init(cntx_s);
@@ -516,32 +537,32 @@ uint extRulesPat::CreatePattern2s(uint widthIndex,
     Init(s1);
   }
 
-  uint sp5[5] = {cntx_s, cntx_s, s1, s2, cntx_s};
-  uint sp3[3] = {s1, s1, s2};
+  uint32_t sp5[5] = {cntx_s, cntx_s, s1, s2, cntx_s};
+  uint32_t sp3[3] = {s1, s1, s2};
 
-  uint w5[5] = {cntx_w, w, w, w, cntx_w};
-  uint w3[3] = {w, w, w};
+  uint32_t w5[5] = {cntx_w, w, w, w, cntx_w};
+  uint32_t w3[3] = {w, w, w};
 
   // SetInitName(wcnt);
   SetInitName(wcnt, w, w, s1, s2);
 
   // multiple widths
-  uint ii = 1;
-  for (uint jj = 0; jj < wcnt; jj++) {
-    _LL[ii][_long_dir] = 0;
-    _UR[ii][_long_dir] = _len;
+  uint32_t ii = 1;
+  for (uint32_t jj = 0; jj < wcnt; jj++) {
+    _ll_1[ii][_long_dir] = 0;
+    _ur_1[ii][_long_dir] = _len;
 
-    uint sp = wcnt5 ? sp5[jj] : sp3[jj];
-    uint ww = wcnt5 ? w5[jj] : w3[jj];
+    uint32_t sp = wcnt5 ? sp5[jj] : sp3[jj];
+    uint32_t ww = wcnt5 ? w5[jj] : w3[jj];
 
-    _LL[ii][_short_dir] = _UR[ii - 1][_short_dir] + sp;
-    _UR[ii][_short_dir] = _LL[ii][_short_dir] + ww;
+    _ll_1[ii][_short_dir] = _ur_1[ii - 1][_short_dir] + sp;
+    _ur_1[ii][_short_dir] = _ll_1[ii][_short_dir] + ww;
     // AddName(ii, w, w, s1, s2, ii);
     AddName(ii, ii);
     ii++;
   }
-  int ll[2] = {_LL[1][0], _LL[1][1]};
-  int ur[2] = {_UR[ii - 1][0], _UR[ii - 1][1]};
+  int ll[2] = {_ll_1[1][0], _ll_1[1][1]};
+  int ur[2] = {_ur_1[ii - 1][0], _ur_1[ii - 1][1]};
   _lineCnt = ii;
 
   WriteDB(_dir, _met, _layer);
@@ -575,26 +596,26 @@ uint extRulesPat::CreatePattern2s(uint widthIndex,
 
   return ii;  // cnt of main pattern;
 }
-uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
-                                       uint spaceIndex1,
-                                       uint spaceIndex2,
-                                       uint wcnt,
-                                       uint spaceDiagIndex,
-                                       uint spaceDiagIndex1,
-                                       uint dcnt)
+uint32_t extRulesPat::CreatePattern2s_diag(uint32_t widthIndex,
+                                           uint32_t spaceIndex1,
+                                           uint32_t spaceIndex2,
+                                           uint32_t wcnt,
+                                           uint32_t spaceDiagIndex,
+                                           uint32_t spaceDiagIndex1,
+                                           uint32_t dcnt)
 {
   if (wcnt > 3) {
     return 0;
   }
   bool wcnt5 = wcnt == 5;
-  uint w = _target_width[widthIndex];
-  uint s1 = _target_spacing[spaceIndex1];
-  uint s2 = _target_spacing[spaceIndex2];
+  uint32_t w = _target_width[widthIndex];
+  uint32_t s1 = _target_spacing[spaceIndex1];
+  uint32_t s2 = _target_spacing[spaceIndex2];
 
   int ds = _target_diag_spacing[spaceDiagIndex];
 
-  uint cntx_s = _target_spacing[0];
-  uint cntx_w = _target_width[0];
+  uint32_t cntx_s = _target_spacing[0];
+  uint32_t cntx_w = _target_width[0];
 
   if (wcnt5) {
     Init(cntx_s);
@@ -602,32 +623,32 @@ uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
     Init(s1);
   }
 
-  uint sp5[5] = {cntx_s, cntx_s, s1, s2, cntx_s};
-  uint sp3[3] = {s1, s1, s2};
+  uint32_t sp5[5] = {cntx_s, cntx_s, s1, s2, cntx_s};
+  uint32_t sp3[3] = {s1, s1, s2};
 
-  uint w5[5] = {cntx_w, w, w, w, cntx_w};
-  uint w3[3] = {w, w, w};
+  uint32_t w5[5] = {cntx_w, w, w, w, cntx_w};
+  uint32_t w3[3] = {w, w, w};
 
   // SetInitName(wcnt);
   SetInitName(wcnt, w, w, s1, s2, ds);
 
   // multiple widths
-  uint ii = 1;
-  for (uint jj = 0; jj < wcnt; jj++) {
-    _LL[ii][_long_dir] = 0;
-    _UR[ii][_long_dir] = _len;
+  uint32_t ii = 1;
+  for (uint32_t jj = 0; jj < wcnt; jj++) {
+    _ll_1[ii][_long_dir] = 0;
+    _ur_1[ii][_long_dir] = _len;
 
-    uint sp = wcnt5 ? sp5[jj] : sp3[jj];
-    uint ww = wcnt5 ? w5[jj] : w3[jj];
+    uint32_t sp = wcnt5 ? sp5[jj] : sp3[jj];
+    uint32_t ww = wcnt5 ? w5[jj] : w3[jj];
 
-    _LL[ii][_short_dir] = _UR[ii - 1][_short_dir] + sp;
-    _UR[ii][_short_dir] = _LL[ii][_short_dir] + ww;
+    _ll_1[ii][_short_dir] = _ur_1[ii - 1][_short_dir] + sp;
+    _ur_1[ii][_short_dir] = _ll_1[ii][_short_dir] + ww;
     // AddName(ii, w, w, s1, s2, ii);
     AddName(ii, ii);
     ii++;
   }
-  int ll[2] = {_LL[1][0], _LL[1][1]};
-  int ur[2] = {_UR[ii - 1][0], _UR[ii - 1][1]};
+  int ll[2] = {_ll_1[1][0], _ll_1[1][1]};
+  int ur[2] = {_ur_1[ii - 1][0], _ur_1[ii - 1][1]};
   _lineCnt = ii;
 
   WriteDB(_dir, _met, _layer);
@@ -638,18 +659,18 @@ uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
 
   PrintBbox(stdout, ll, ur);
 
-  int fisrt_hi = _UR[1][_short_dir];
+  int fisrt_hi = _ur_1[1][_short_dir];
 
-  uint jj = 1;
-  _LL[jj][_long_dir] = 0;
-  _UR[jj][_long_dir] = _len;
+  uint32_t jj = 1;
+  _ll_1[jj][_long_dir] = 0;
+  _ur_1[jj][_long_dir] = _len;
 
-  _LL[jj][_short_dir] = fisrt_hi + ds;
+  _ll_1[jj][_short_dir] = fisrt_hi + ds;
   if (_under) {
-    _UR[jj][_short_dir] = _LL[jj][_short_dir] + _over_minWidthCntx;
+    _ur_1[jj][_short_dir] = _ll_1[jj][_short_dir] + _over_minWidthCntx;
     AddName(jj, jj, "diag", _overMet);
   } else {
-    _UR[jj][_short_dir] = _LL[jj][_short_dir] + _under_minWidthCntx;
+    _ur_1[jj][_short_dir] = _ll_1[jj][_short_dir] + _under_minWidthCntx;
     AddName(jj, jj, "diag", _underMet);
   }
   jj++;
@@ -665,12 +686,12 @@ uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
   Print(stdout);
 
   /* TODO
-  uint uCnt=0;
+  uint32_t uCnt=0;
   if (_underMet>0)
     uCnt= CreateContext(_underMet, ll, ur, w, s1, _under_minWidthCntx,
   _under_minSpaceCntx);
 
-  uint oCnt=0;
+  uint32_t oCnt=0;
   if (_overMet>0)
     oCnt= CreateContext(_overMet, ll, ur, w, s1, _over_minWidthCntx,
   _over_minSpaceCntx);
@@ -678,18 +699,18 @@ uint extRulesPat::CreatePattern2s_diag(uint widthIndex,
   return ii;  // cnt of main pattern;
 }
 
-uint extRulesPat::CreatePattern1()
+uint32_t extRulesPat::CreatePattern1()
 {
-  uint cnt = 0;
-  for (uint jj = 0; jj < _spaceCnt; jj++) {
+  uint32_t cnt = 0;
+  for (uint32_t jj = 0; jj < _spaceCnt; jj++) {
     cnt += CreatePattern(jj, 0, 1);
   }
   return cnt;
 }
-uint extRulesPat::CreatePattern2(uint wct)
+uint32_t extRulesPat::CreatePattern2(uint32_t wct)
 {
-  uint cnt = 0;
-  for (uint jj = 0; jj < _spaceCnt; jj++) {
+  uint32_t cnt = 0;
+  for (uint32_t jj = 0; jj < _spaceCnt; jj++) {
     cnt += CreatePattern(0, jj, wct);
     /*
     if (!_res)
@@ -700,7 +721,7 @@ uint extRulesPat::CreatePattern2(uint wct)
   }
   return cnt;
 }
-void extRulesPat::Print(FILE* fp, uint jj)
+void extRulesPat::Print(FILE* fp, uint32_t jj)
 {
   if (!_dbg) {
     return;
@@ -708,13 +729,13 @@ void extRulesPat::Print(FILE* fp, uint jj)
   float units = 0.001;
   fprintf(fp,
           "%10.2f %10.2f  %10.2f %10.2f   %s\n",
-          _LL[jj][0] * units,
-          _UR[jj][0] * units,
-          _LL[jj][1] * units,
-          _UR[jj][1] * units,
+          _ll_1[jj][0] * units,
+          _ur_1[jj][0] * units,
+          _ll_1[jj][1] * units,
+          _ur_1[jj][1] * units,
           _patName[jj]);
 }
-void extRulesPat::PrintBbox(FILE* fp, int LL[2], int UR[2])
+void extRulesPat::PrintBbox(FILE* fp, const int LL[2], const int UR[2])
 {
   if (!_dbg) {
     return;
@@ -733,34 +754,37 @@ void extRulesPat::Print(FILE* fp)
     return;
   }
   fprintf(stdout, "\n%s\n", _name);
-  for (uint jj = 1; jj < _lineCnt; jj++) {
+  for (uint32_t jj = 1; jj < _lineCnt; jj++) {
     Print(fp, jj);
   }
 }
-void extRulesPat::WriteDB(uint dir, uint met, dbTechLayer* layer)
+void extRulesPat::WriteDB(uint32_t dir, uint32_t met, dbTechLayer* layer)
 {
   // fprintf(stdout, "DB: %s\n", _name);
-  for (uint jj = 1; jj < _lineCnt; jj++) {
+  for (uint32_t jj = 1; jj < _lineCnt; jj++) {
     WriteDB(jj, dir, met, layer, _def_fp);
   }
 }
-void extRulesPat::WriteDB(uint jj,
-                          uint dir,
-                          uint met,
+void extRulesPat::WriteDB(uint32_t jj,
+                          uint32_t dir,
+                          uint32_t met,
                           dbTechLayer* layer,
                           FILE* fp)
 {
-  WriteWire(_def_fp, _LL[jj], _UR[jj], _patName[jj]);
-  // uint d= dir>0 ? 0 :1;
-  int width = _UR[jj][dir] - _LL[jj][dir];
-  int ll[2] = {_LL[jj][0] + _origin[0], _LL[jj][1] + _origin[1]};
-  int ur[2] = {_UR[jj][0] + _origin[0], _UR[jj][1] + _origin[1]};
+  WriteWire(_def_fp, _ll_1[jj], _ur_1[jj], _patName[jj]);
+  // uint32_t d= dir>0 ? 0 :1;
+  int width = _ur_1[jj][dir] - _ll_1[jj][dir];
+  int ll[2] = {_ll_1[jj][0] + _origin[0], _ll_1[jj][1] + _origin[1]};
+  int ur[2] = {_ur_1[jj][0] + _origin[0], _ur_1[jj][1] + _origin[1]};
 
   WriteWire(_def_fp, ll, ur, _patName[jj]);
 
   createNetSingleWire(_patName[jj], ll, ur, width, dir == 0, met, layer);
 }
-void extRulesPat::WriteWire(FILE* fp, int ll[2], int ur[2], char* name)
+void extRulesPat::WriteWire(FILE* fp,
+                            const int ll[2],
+                            const int ur[2],
+                            char* name)
 {
   if (!_dbg) {
     return;
@@ -774,10 +798,10 @@ void extRulesPat::WriteWire(FILE* fp, int ll[2], int ur[2], char* name)
           ur[1] * units,
           name);
 }
-uint extMain::DefWires(extMainOptions* opt)
+uint32_t extMain::DefWires(extMainOptions* opt)
 {
   _tech = _db->getTech();
-  uint layerCnt = _tech->getRoutingLayerCount();
+  uint32_t layerCnt = _tech->getRoutingLayerCount();
 
   extRCModel* m = new extRCModel(layerCnt, "processName", logger_);
   _modelTable->add(m);
@@ -820,13 +844,13 @@ uint extMain::DefWires(extMainOptions* opt)
   return 0;
 }
 
-uint extRCModel::OverRulePat(extMainOptions* opt,
-                             int len,
-                             int origin[2],
-                             int UR[2],
-                             bool res,
-                             bool diag,
-                             uint overDist)
+uint32_t extRCModel::OverRulePat(extMainOptions* opt,
+                                 int len,
+                                 int origin[2],
+                                 int UR[2],
+                                 bool res,
+                                 bool diag,
+                                 uint32_t overDist)
 {
   if (opt->_met == 0) {
     return 0;
@@ -845,7 +869,7 @@ uint extRCModel::OverRulePat(extMainOptions* opt,
                                    _extMain,
                                    opt->_tech);
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (int met = 1; met <= (int) _layerCnt; met++) {
     if (met > opt->_met_cnt) {
       continue;
@@ -898,12 +922,12 @@ uint extRCModel::OverRulePat(extMainOptions* opt,
   origin[0] = p->GetOrigin_end(p->_ur_last);
   return cnt;
 }
-uint extRCModel::UnderRulePat(extMainOptions* opt,
-                              int len,
-                              int origin[2],
-                              int UR[2],
-                              bool diag,
-                              uint overDist)
+uint32_t extRCModel::UnderRulePat(extMainOptions* opt,
+                                  int len,
+                                  int origin[2],
+                                  int UR[2],
+                                  bool diag,
+                                  uint32_t overDist)
 {
   if (opt->_overMet == 0) {
     return 0;
@@ -922,7 +946,7 @@ uint extRCModel::UnderRulePat(extMainOptions* opt,
                                    _extMain,
                                    opt->_tech);
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
     if (met > opt->_met_cnt) {
       continue;
@@ -938,7 +962,7 @@ uint extRCModel::UnderRulePat(extMainOptions* opt,
 
     p->setLayerInfo(layer, met);
 
-    for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
+    for (uint32_t overMet = met + 1; overMet <= _layerCnt; overMet++) {
       if (overMet > opt->_met_cnt) {
         continue;
       }
@@ -974,10 +998,10 @@ uint extRCModel::UnderRulePat(extMainOptions* opt,
   origin[0] = p->GetOrigin_end(p->_ur_last);
   return cnt;
 }
-uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
-                                  int len,
-                                  int LL[2],
-                                  int UR[2])
+uint32_t extRCModel::DiagUnderRulePat(extMainOptions* opt,
+                                      int len,
+                                      int LL[2],
+                                      int UR[2])
 {
   // NOT USED
   if (opt->_overMet == 0) {
@@ -997,7 +1021,7 @@ uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
                                    _extMain,
                                    opt->_tech);
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
     if (met > opt->_met_cnt) {
       continue;
@@ -1013,7 +1037,7 @@ uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
 
     p->setLayerInfo(layer, met);
 
-    for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
+    for (uint32_t overMet = met + 1; overMet <= _layerCnt; overMet++) {
       if (overMet > opt->_met_cnt) {
         continue;
       }
@@ -1042,10 +1066,10 @@ uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
       RCX, 10, "Finished {} measurements for pattern MET_UNDER_MET", cnt);
   return cnt;
 }
-uint extRCModel::OverUnderRulePat(extMainOptions* opt,
-                                  int len,
-                                  int origin[2],
-                                  int UR[2])
+uint32_t extRCModel::OverUnderRulePat(extMainOptions* opt,
+                                      int len,
+                                      int origin[2],
+                                      int UR[2])
 {
   if (opt->_overMet == 0) {
     return 0;
@@ -1064,7 +1088,7 @@ uint extRCModel::OverUnderRulePat(extMainOptions* opt,
                                    _extMain,
                                    opt->_tech);
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
     if (met > opt->_met_cnt) {
       continue;
@@ -1093,7 +1117,7 @@ uint extRCModel::OverUnderRulePat(extMainOptions* opt,
         continue;
       }
 
-      for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
+      for (uint32_t overMet = met + 1; overMet <= _layerCnt; overMet++) {
         if (overMet > opt->_met_cnt) {
           continue;
         }
@@ -1131,7 +1155,7 @@ dbBTerm* extRulesPat::createBterm(bool lo,
                                   int ur[2],
                                   const char* postFix,
                                   dbTechLayer* layer,
-                                  uint width,
+                                  uint32_t width,
                                   bool vertical,
                                   bool io)
 {
@@ -1189,11 +1213,11 @@ dbBTerm* extRulesPat::createBterm(bool lo,
 
 dbBTerm* extRulesPat::createBterm1(bool lo,
                                    dbNet* net,
-                                   int ll[2],
-                                   int ur[2],
+                                   const int ll[2],
+                                   const int ur[2],
                                    const char* postFix,
                                    dbTechLayer* layer,
-                                   uint width,
+                                   uint32_t width,
                                    bool vertical,
                                    bool io)
 {
@@ -1204,7 +1228,7 @@ dbBTerm* extRulesPat::createBterm1(bool lo,
   dbBPin* bpin = dbBPin::create(bterm);
   bpin->setPlacementStatus(dbPlacementStatus::PLACED);
 
-  uint hwidth = width / 2;
+  uint32_t hwidth = width / 2;
 
   int x1 = ll[0];
   int x2 = ur[0];
@@ -1240,9 +1264,9 @@ dbBTerm* extRulesPat::createBterm1(bool lo,
 dbNet* extRulesPat::createNetSingleWire(const char* netName,
                                         int ll[2],
                                         int ur[2],
-                                        uint width,
+                                        uint32_t width,
                                         bool vertical,
-                                        uint met,
+                                        uint32_t met,
                                         dbTechLayer* layer)
 {
   dbNet* net = dbNet::create(_block, netName);

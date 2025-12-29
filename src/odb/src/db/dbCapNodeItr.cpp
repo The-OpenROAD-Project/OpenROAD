@@ -3,6 +3,8 @@
 
 #include "dbCapNodeItr.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbCapNode.h"
 #include "dbNet.h"
@@ -31,12 +33,12 @@ bool dbCapNodeItr::orderReversed() const
 void dbCapNodeItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->cap_nodes_;
-  uint list = 0;
+  uint32_t id = net->cap_nodes_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbCapNode* seg = seg_tbl_->getPtr(id);
-    uint n = seg->next_;
+    uint32_t n = seg->next_;
     seg->next_ = list;
     list = id;
     id = n;
@@ -45,15 +47,15 @@ void dbCapNodeItr::reverse(dbObject* parent)
   net->cap_nodes_ = list;
 }
 
-uint dbCapNodeItr::sequential() const
+uint32_t dbCapNodeItr::sequential() const
 {
   return 0;
 }
 
-uint dbCapNodeItr::size(dbObject* parent) const
+uint32_t dbCapNodeItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbCapNodeItr::begin(parent); id != dbCapNodeItr::end(parent);
        id = dbCapNodeItr::next(id)) {
@@ -63,24 +65,24 @@ uint dbCapNodeItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbCapNodeItr::begin(dbObject* parent) const
+uint32_t dbCapNodeItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
   return net->cap_nodes_;
 }
 
-uint dbCapNodeItr::end(dbObject* /* unused: parent */) const
+uint32_t dbCapNodeItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbCapNodeItr::next(uint id, ...) const
+uint32_t dbCapNodeItr::next(uint32_t id, ...) const
 {
   _dbCapNode* seg = seg_tbl_->getPtr(id);
   return seg->next_;
 }
 
-dbObject* dbCapNodeItr::getObject(uint id, ...)
+dbObject* dbCapNodeItr::getObject(uint32_t id, ...)
 {
   return seg_tbl_->getPtr(id);
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 
@@ -18,25 +19,24 @@
 // #define MIN_FOR_LOOPS
 
 using odb::dbNet;
-using utl::RCX;
 
 namespace rcx {
 
 // Find immediate coupling neighbor wires in all directions and levels for every
 // Wire
-int extMeasureRC::FindCouplingNeighbors(uint dir,
-                                        uint couplingDist,
-                                        uint diag_met_limit)
+int extMeasureRC::FindCouplingNeighbors(uint32_t dir,
+                                        uint32_t couplingDist,
+                                        uint32_t diag_met_limit)
 {
-  uint limitTrackNum = 10;
-  Ath__array1D<Wire*> firstWireTable;
+  uint32_t limitTrackNum = 10;
+  Array1D<Wire*> firstWireTable;
 
-  uint colCnt = _search->getColCnt();
-  for (uint jj = 1; jj < colCnt; jj++) {
+  uint32_t colCnt = _search->getColCnt();
+  for (uint32_t jj = 1; jj < colCnt; jj++) {
     Grid* netGrid = _search->getGrid(dir, jj);
     firstWireTable.resetCnt();
 
-    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
+    for (uint32_t tr = 0; tr < netGrid->getTrackCnt(); tr++) {
       Track* track = netGrid->getTrackPtr(tr);
       if (track == nullptr) {
         continue;
@@ -47,9 +47,9 @@ int extMeasureRC::FindCouplingNeighbors(uint dir,
       for (Wire* w = track->getNextWire(nullptr); w != nullptr;
            w = w->getNext()) {
         bool found = false;
-        uint start_next_track
+        uint32_t start_next_track
             = tr;  // in case that track holds wires with different base
-        for (uint next_tr = start_next_track;
+        for (uint32_t next_tr = start_next_track;
              !found && next_tr - tr < limitTrackNum
              && next_tr < netGrid->getTrackCnt();
              next_tr++) {
@@ -86,7 +86,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir,
     PrintAllGrids(dir, OpenPrintFile(dir, "couple"), 1);
   }
 
-  uint cnt1 = FindDiagonalNeighbors_vertical_up(
+  uint32_t cnt1 = FindDiagonalNeighbors_vertical_up(
       dir, couplingDist, diag_met_limit, 2, 0, false);
   if (_extMain->_dbgOption > 1) {
     fprintf(stdout,
@@ -95,7 +95,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir,
             cnt1);
     PrintAllGrids(dir, OpenPrintFile(dir, "vertical_up.pass1"), 2);
   }
-  uint cnt2 = FindDiagonalNeighbors_vertical_down(
+  uint32_t cnt2 = FindDiagonalNeighbors_vertical_down(
       dir, couplingDist, diag_met_limit, 2, 0, false);
   if (_extMain->_dbgOption > 1) {
     fprintf(stdout,
@@ -110,7 +110,7 @@ Wire* extMeasureRC::SetUpDown(Wire* w2,
                               int next_tr,
                               bool found,
                               Wire* first_wire,
-                              Ath__array1D<Wire*>* firstWireTable)
+                              Array1D<Wire*>* firstWireTable)
 {
   if (w2 != nullptr && found) {
     firstWireTable->set(next_tr, w2);
@@ -124,20 +124,20 @@ Wire* extMeasureRC::SetUpDown(Wire* w2,
   }
   return nullptr;
 }
-int extMeasureRC::FindCouplingNeighbors_down(uint dir,
-                                             uint couplingDist,
-                                             uint diag_met_limit)
+int extMeasureRC::FindCouplingNeighbors_down(uint32_t dir,
+                                             uint32_t couplingDist,
+                                             uint32_t diag_met_limit)
 {
-  uint limitTrackNum = 10;
-  Ath__array1D<Wire*> firstWireTable;
-  uint colCnt = _search->getColCnt();
-  for (uint jj = 1; jj < colCnt; jj++) {
+  uint32_t limitTrackNum = 10;
+  Array1D<Wire*> firstWireTable;
+  uint32_t colCnt = _search->getColCnt();
+  for (uint32_t jj = 1; jj < colCnt; jj++) {
     Grid* netGrid = _search->getGrid(dir, jj);
     firstWireTable.resetCnt();
 
     int tr = netGrid->getTrackCnt() - 1;
     for (; tr >= 0; tr--) {
-      Track* track = netGrid->getTrackPtr((uint) tr);
+      Track* track = netGrid->getTrackPtr((uint32_t) tr);
       if (track == nullptr) {
         continue;
       }
@@ -174,12 +174,12 @@ int extMeasureRC::FindCouplingNeighbors_down(uint dir,
   return 0;
 }
 void extMeasureRC::ResetFirstWires(Grid* netGrid,
-                                   Ath__array1D<Wire*>* firstWireTable,
+                                   Array1D<Wire*>* firstWireTable,
                                    int tr1,
                                    int trCnt,
-                                   uint limitTrackNum)
+                                   uint32_t limitTrackNum)
 {
-  for (uint ii = tr1; ii - tr1 < limitTrackNum && ii < trCnt; ii++) {
+  for (uint32_t ii = tr1; ii - tr1 < limitTrackNum && ii < trCnt; ii++) {
     Track* track = netGrid->getTrackPtr(ii);
     if (track == nullptr) {
       firstWireTable->set(ii, nullptr);
@@ -189,22 +189,20 @@ void extMeasureRC::ResetFirstWires(Grid* netGrid,
     firstWireTable->set(ii, w1);
   }
 }
-void extMeasureRC::ResetFirstWires(uint m1,
-                                   uint m2,
-                                   uint dir,
-                                   Ath__array1D<Wire*>** firstWireTable)
+void extMeasureRC::ResetFirstWires(uint32_t m1,
+                                   uint32_t m2,
+                                   uint32_t dir,
+                                   Array1D<Wire*>** firstWireTable)
 {
-  for (uint level = m1; level < m2; level++)  // for layers above
+  for (uint32_t level = m1; level < m2; level++)  // for layers above
   {
     Grid* upGrid = _search->getGrid(dir, level);
-    uint n = upGrid->getTrackCnt();
+    uint32_t n = upGrid->getTrackCnt();
     ResetFirstWires(upGrid, firstWireTable[level], 0, n, n);
   }
 }
 
-Wire* extMeasureRC::FindOverlap(Wire* w,
-                                Ath__array1D<Wire*>* firstWireTable,
-                                int tr)
+Wire* extMeasureRC::FindOverlap(Wire* w, Array1D<Wire*>* firstWireTable, int tr)
 {
   Wire* first_wire = firstWireTable->geti(tr);
   if (first_wire == nullptr) {
@@ -426,8 +424,8 @@ void extMeasureRC::PrintWire(FILE* fp,
   if (w == nullptr) {
     return;
   }
-  uint met = w->getLevel();
-  uint dir;
+  uint32_t met = w->getLevel();
+  uint32_t dir;
   int x1, y1, x2, y2;
   w->getCoords(&x1, &y1, &x2, &y2, &dir);
 
@@ -449,7 +447,7 @@ void extMeasureRC::PrintWire(FILE* fp,
           net->getConstName(),
           postfix);
 }
-void extMeasureRC::Print5wires(FILE* fp, Wire* w, uint level)
+void extMeasureRC::Print5wires(FILE* fp, Wire* w, uint32_t level)
 {
   fprintf(fp, "---------------------------------- \n");
   int jj = level;
@@ -470,7 +468,7 @@ void extMeasureRC::Print5wires(FILE* fp, Wire* w, uint level)
   }
   fprintf(fp, "---------------------------------- \n");
 }
-void extMeasureRC::PrintDiagwires(FILE* fp, Wire* w, uint level)
+void extMeasureRC::PrintDiagwires(FILE* fp, Wire* w, uint32_t level)
 {
   if (w->getAboveNext()) {
     fprintf(fp, "Vertical up::\n");
@@ -496,8 +494,8 @@ void extMeasureRC::PrintDiagwires(FILE* fp, Wire* w, uint level)
   fprintf(fp, "\n");
 }
 Wire* extMeasureRC::GetNextWire(Grid* netGrid,
-                                uint tr,
-                                Ath__array1D<Wire*>* firstWireTable)
+                                uint32_t tr,
+                                Array1D<Wire*>* firstWireTable)
 {
   Track* next_track = netGrid->getTrackPtr(tr);
   if (next_track == nullptr) {
@@ -516,8 +514,8 @@ Wire* extMeasureRC::GetNextWire(Grid* netGrid,
 }
 Wire* extMeasureRC::FindOverlap(Wire* w,
                                 Grid* netGrid,
-                                uint tr,
-                                Ath__array1D<Wire*>* firstWireTable)
+                                uint32_t tr,
+                                Array1D<Wire*>* firstWireTable)
 {
   Wire* first_wire = GetNextWire(netGrid, tr, firstWireTable);
   if (first_wire == nullptr) {
@@ -563,17 +561,17 @@ bool extMeasureRC::CheckWithNeighbors_below(Wire* w, Wire* prev)
   }
   return false;
 }
-Ath__array1D<Wire*>** extMeasureRC::allocMarkTable(uint n)
+Array1D<Wire*>** extMeasureRC::allocMarkTable(uint32_t n)
 {
-  Ath__array1D<Wire*>** tbl = new Ath__array1D<Wire*>*[n];
-  for (uint ii = 0; ii < n; ii++) {
-    tbl[ii] = new Ath__array1D<Wire*>(128);
+  Array1D<Wire*>** tbl = new Array1D<Wire*>*[n];
+  for (uint32_t ii = 0; ii < n; ii++) {
+    tbl[ii] = new Array1D<Wire*>(128);
   }
   return tbl;
 }
-void extMeasureRC::DeleteMarkTable(Ath__array1D<Wire*>** tbl, uint n)
+void extMeasureRC::DeleteMarkTable(Array1D<Wire*>** tbl, uint32_t n)
 {
-  for (uint ii = 0; ii < n; ii++) {
+  for (uint32_t ii = 0; ii < n; ii++) {
     delete tbl[ii];
   }
   delete[] tbl;
@@ -587,16 +585,16 @@ FILE* extMeasureRC::OpenFile(const char* name, const char* perms)
   }
   return fp;
 }
-FILE* extMeasureRC::OpenPrintFile(uint dir, const char* name)
+FILE* extMeasureRC::OpenPrintFile(uint32_t dir, const char* name)
 {
   char buf[100];
   sprintf(buf, "%s.%d", name, dir);
   return OpenFile(buf, "w");
 }
-int extMeasureRC::PrintAllGrids(uint dir, FILE* fp, uint mode)
+int extMeasureRC::PrintAllGrids(uint32_t dir, FILE* fp, uint32_t mode)
 {
-  uint colCnt = _search->getColCnt();
-  for (uint jj = 1; jj < colCnt; jj++)  // For all Layers
+  uint32_t colCnt = _search->getColCnt();
+  for (uint32_t jj = 1; jj < colCnt; jj++)  // For all Layers
   {
     const char* vert = dir == 1 ? "H" : "V";
     Grid* netGrid = _search->getGrid(dir, jj);
@@ -607,7 +605,7 @@ int extMeasureRC::PrintAllGrids(uint dir, FILE* fp, uint mode)
             dir,
             vert,
             netGrid->getTrackCnt());
-    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
+    for (uint32_t tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
       if (track == nullptr) {
@@ -630,19 +628,21 @@ int extMeasureRC::PrintAllGrids(uint dir, FILE* fp, uint mode)
   return 0;
 }
 
-int extMeasureRC::ConnectWires(uint dir)
+int extMeasureRC::ConnectWires(uint32_t dir)
 {
   if (_extMain->_dbgOption > 1) {
-    PrintAllGrids(dir, OpenPrintFile(dir, "wires.org"), 0);
+    FILE* file = OpenPrintFile(dir, "wires.org");
+    PrintAllGrids(dir, file, 0);
+    fclose(file);
   }
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
-  uint colCnt = _search->getColCnt();
-  for (uint jj = 1; jj < colCnt; jj++)  // For all Layers
+  uint32_t colCnt = _search->getColCnt();
+  for (uint32_t jj = 1; jj < colCnt; jj++)  // For all Layers
   {
     Grid* netGrid = _search->getGrid(dir, jj);
-    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
+    for (uint32_t tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
       if (track == nullptr) {
@@ -662,14 +662,16 @@ int extMeasureRC::ConnectWires(uint dir)
     }
   }
   if (_extMain->_dbgOption > 1) {
-    PrintAllGrids(dir, OpenPrintFile(dir, "wires"), 0);
+    FILE* file = OpenPrintFile(dir, "wires");
+    PrintAllGrids(dir, file, 0);
+    fclose(file);
   }
   return cnt;
 }
-uint extMeasureRC::ConnectAllWires(Track* track)
+uint32_t extMeasureRC::ConnectAllWires(Track* track)
 {
-  Ath__array1D<Wire*> tbl(128);
-  uint ii = track->getGrid()->searchLowMarker();
+  Array1D<Wire*> tbl(128);
+  uint32_t ii = track->getGrid()->searchLowMarker();
   int first_marker_index = -1;
   for (; ii <= track->getGrid()->searchHiMarker(); ii++) {
     for (Wire* w = track->getMarker(ii); w != nullptr; w = w->getNext()) {
@@ -683,7 +685,7 @@ uint extMeasureRC::ConnectAllWires(Track* track)
     return 0;
   }
 
-  for (uint ii = 0; ii < tbl.getCnt() - 1; ii++) {
+  for (uint32_t ii = 0; ii < tbl.getCnt() - 1; ii++) {
     Wire* w = tbl.get(ii);
     if (w->getNext() == nullptr) {
       Wire* w1 = tbl.get(ii + 1);
@@ -694,7 +696,7 @@ uint extMeasureRC::ConnectAllWires(Track* track)
   if (tbl.getCnt() <= 1) {
     return false;
   }
-  for (uint ii = 0; ii < tbl.getCnt() - 1; ii++) {
+  for (uint32_t ii = 0; ii < tbl.getCnt() - 1; ii++) {
     Wire* prev = nullptr;
     if (ii > 0) {
       prev = tbl.get(ii - 1);
@@ -720,29 +722,29 @@ uint extMeasureRC::ConnectAllWires(Track* track)
   return swap;
 }
 
-int extMeasureRC::FindDiagonalNeighbors(uint dir,
-                                        uint couplingDist,
-                                        uint diag_met_limit,
-                                        uint lookUpLevel,
-                                        uint limitTrackNum)
+int extMeasureRC::FindDiagonalNeighbors(uint32_t dir,
+                                        uint32_t couplingDist,
+                                        uint32_t diag_met_limit,
+                                        uint32_t lookUpLevel,
+                                        uint32_t limitTrackNum)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
-  uint levelCnt = _search->getColCnt();
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
+  uint32_t levelCnt = _search->getColCnt();
+  Array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
-  for (uint jj = 1; jj < levelCnt; jj++)  // For all Layers
+  for (uint32_t jj = 1; jj < levelCnt; jj++)  // For all Layers
   {
     Grid* netGrid = _search->getGrid(dir, jj);
-    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
+    for (uint32_t tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
       if (track == nullptr) {
         continue;
       }
 
-      uint m1 = jj + 1;
-      uint m2 = jj + 1 + lookUpLevel;
+      uint32_t m1 = jj + 1;
+      uint32_t m2 = jj + 1 + lookUpLevel;
       if (m2 > levelCnt) {
         m2 = levelCnt;
       }
@@ -759,7 +761,7 @@ int extMeasureRC::FindDiagonalNeighbors(uint dir,
           continue;
         }
         prev = w;
-        for (uint level = m1; level < m2; level++)  // for layers above
+        for (uint32_t level = m1; level < m2; level++)  // for layers above
         {
           Grid* upGrid = _search->getGrid(dir, level);
           int up_track_num = upGrid->getTrackNum1(w->getBase());
@@ -769,7 +771,7 @@ int extMeasureRC::FindDiagonalNeighbors(uint dir,
           int end_track = up_track_num + limitTrackNum + 1;
 
           bool found = false;
-          for (uint next_tr = start_track;
+          for (uint32_t next_tr = start_track;
                next_tr < end_track && next_tr < netGrid->getTrackCnt();
                next_tr++)  // for tracks overlapping wire
           {
@@ -795,16 +797,17 @@ int extMeasureRC::FindDiagonalNeighbors(uint dir,
   return cnt;
 }
 int extMeasureRC::FindDiagonalNeighbors_vertical_power(
-    uint dir,
+    uint32_t dir,
     Wire* w,
-    uint couplingDist,
-    uint diag_met_limit,
-    uint limitTrackNum,
-    Ath__array1D<Wire*>** upWireTable)
+    uint32_t couplingDist,
+    uint32_t diag_met_limit,
+    uint32_t limitTrackNum,
+    Array1D<Wire*>** upWireTable)
 {
-  uint cnt = 0;
-  uint current_met = w->getLevel();
-  for (uint level = 1; level < _search->getColCnt(); level++)  // For all Layers
+  uint32_t cnt = 0;
+  uint32_t current_met = w->getLevel();
+  for (uint32_t level = 1; level < _search->getColCnt();
+       level++)  // For all Layers
   {
     if (level == current_met) {
       continue;
@@ -817,7 +820,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_power(
         = up_track_num - limitTrackNum >= 0 ? up_track_num - limitTrackNum : 0;
     int end_track = up_track_num + limitTrackNum + 1;
 
-    for (uint next_tr = start_track;
+    for (uint32_t next_tr = start_track;
          next_tr < end_track && next_tr < grid->getTrackCnt();
          next_tr++)  // for tracks overlapping wire
     {
@@ -851,11 +854,11 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_power(
 Wire* extMeasureRC::FindDiagonalNeighbors_vertical_up_down(
     Wire* w,
     bool& found,
-    uint dir,
-    uint level,
-    uint couplingDist,
-    uint limitTrackNum,
-    Ath__array1D<Wire*>** firstWireTable)
+    uint32_t dir,
+    uint32_t level,
+    uint32_t couplingDist,
+    uint32_t limitTrackNum,
+    Array1D<Wire*>** firstWireTable)
 {
   Grid* upGrid = _search->getGrid(dir, level);
   int up_track_num = upGrid->getTrackNum1(w->getBase());
@@ -867,7 +870,7 @@ Wire* extMeasureRC::FindDiagonalNeighbors_vertical_up_down(
   //    PrintWire(stdout, w, level);
 
   found = false;
-  for (uint next_tr = start_track;
+  for (uint32_t next_tr = start_track;
        next_tr < end_track && next_tr < upGrid->getTrackCnt();
        next_tr++)  // for tracks overlapping wire
   {
@@ -889,29 +892,29 @@ Wire* extMeasureRC::FindDiagonalNeighbors_vertical_up_down(
   }
   return nullptr;
 }
-int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint dir,
-                                                    uint couplingDist,
-                                                    uint diag_met_limit,
-                                                    uint lookUpLevel,
-                                                    uint limitTrackNum,
+int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint32_t dir,
+                                                    uint32_t couplingDist,
+                                                    uint32_t diag_met_limit,
+                                                    uint32_t lookUpLevel,
+                                                    uint32_t limitTrackNum,
                                                     bool skipCheckNeighbors)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   int levelCnt = _search->getColCnt();
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
+  Array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
-  for (uint jj = 1; jj < levelCnt - 1; jj++)  // For all Layers
+  for (uint32_t jj = 1; jj < levelCnt - 1; jj++)  // For all Layers
   {
     Grid* netGrid = _search->getGrid(dir, jj);
-    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
+    for (uint32_t tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
       if (track == nullptr) {
         continue;
       }
 
-      uint m1 = jj + 1;
-      uint m2 = jj + 1 + lookUpLevel;
+      uint32_t m1 = jj + 1;
+      uint32_t m2 = jj + 1 + lookUpLevel;
       if (m2 > levelCnt) {
         m2 = levelCnt;
       }
@@ -932,7 +935,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint dir,
           continue;
         }
 
-        for (uint level = m1; level < m2; level++)  // for layers above
+        for (uint32_t level = m1; level < m2; level++)  // for layers above
         {
           bool found = false;
           Wire* w2 = FindDiagonalNeighbors_vertical_up_down(w,
@@ -956,21 +959,21 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint dir,
   DeleteMarkTable(firstWireTable, levelCnt);
   return cnt;
 }
-int extMeasureRC::FindDiagonalNeighbors_vertical_down(uint dir,
-                                                      uint couplingDist,
-                                                      uint diag_met_limit,
-                                                      uint lookUpLevel,
-                                                      uint limitTrackNum,
+int extMeasureRC::FindDiagonalNeighbors_vertical_down(uint32_t dir,
+                                                      uint32_t couplingDist,
+                                                      uint32_t diag_met_limit,
+                                                      uint32_t lookUpLevel,
+                                                      uint32_t limitTrackNum,
                                                       bool skipCheckNeighbors)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   int levelCnt = _search->getColCnt();
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
+  Array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
   for (int jj = levelCnt - 1; jj > 1; jj--)  // For all Layers going down
   {
     Grid* netGrid = _search->getGrid(dir, jj);
-    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
+    for (uint32_t tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
       if (track == nullptr) {
@@ -1023,16 +1026,16 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down(uint dir,
   DeleteMarkTable(firstWireTable, levelCnt);
   return cnt;
 }
-int extMeasureRC::FindDiagonalNeighbors_down(uint dir,
-                                             uint couplingDist,
-                                             uint diag_met_limit,
-                                             uint lookUpLevel,
-                                             uint limitTrackNum)
+int extMeasureRC::FindDiagonalNeighbors_down(uint32_t dir,
+                                             uint32_t couplingDist,
+                                             uint32_t diag_met_limit,
+                                             uint32_t lookUpLevel,
+                                             uint32_t limitTrackNum)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
-  uint levelCnt = _search->getColCnt();
-  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
+  uint32_t levelCnt = _search->getColCnt();
+  Array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
   for (int jj = 1; jj < 4 && jj < levelCnt; jj++)  // For all Layers
   {
@@ -1046,7 +1049,7 @@ int extMeasureRC::FindDiagonalNeighbors_down(uint dir,
     }
 
     Grid* netGrid = _search->getGrid(dir, jj);
-    for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
+    for (uint32_t tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
       if (track == nullptr) {
@@ -1078,7 +1081,7 @@ int extMeasureRC::FindDiagonalNeighbors_down(uint dir,
           int end_track = up_track_num + limitTrackNum + 1;
 
           bool found = false;
-          for (uint next_tr = start_track;
+          for (uint32_t next_tr = start_track;
                next_tr < end_track && next_tr < netGrid->getTrackCnt();
                next_tr++)  // for tracks overlapping wire
           {

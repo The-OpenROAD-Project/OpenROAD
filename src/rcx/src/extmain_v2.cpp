@@ -6,7 +6,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
+#include <limits>
 #include <list>
 #include <vector>
 
@@ -24,12 +26,24 @@
 
 namespace rcx {
 
+using odb::dbBTerm;
+using odb::dbCapNode;
+using odb::dbITerm;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbShape;
+using odb::dbTechLayer;
+using odb::dbTechVia;
+using odb::dbVia;
+using odb::dbWire;
+using odb::dbWirePath;
+using odb::dbWirePathItr;
+using odb::dbWirePathShape;
+using odb::Point;
+using odb::Rect;
 using utl::RCX;
-using namespace odb;
 
-class extModelGen;
-
-uint extMain::getPeakMemory(const char* msg, int n)
+uint32_t extMain::getPeakMemory(const char* msg, int n)
 {
   if (_dbgOption == 0) {
     return 0;
@@ -137,16 +151,16 @@ bool extMain::markNetsToExtract_v2(const char* netNames,
                                    std::vector<dbNet*>& inets)
 {
   _allNet = !findSomeNet(_block, netNames, inets, logger_);
-  for (uint j = 0; j < inets.size(); j++) {
+  for (uint32_t j = 0; j < inets.size(); j++) {
     dbNet* net = inets[j];
     net->setMark(true);
   }
   // DELETE ?
   if (!_allNet) {
-    _ccMinX = MAX_INT;
-    _ccMinY = MAX_INT;
-    _ccMaxX = -MAX_INT;
-    _ccMaxY = -MAX_INT;
+    _ccMinX = std::numeric_limits<int>::max();
+    _ccMinY = std::numeric_limits<int>::max();
+    _ccMaxX = std::numeric_limits<int>::min();
+    _ccMaxY = std::numeric_limits<int>::min();
   }
   return _allNet;
 }
@@ -160,7 +174,7 @@ bool extMain::makeRCNetwork_v2()
 
   setupMapping();  // iterm, bterm, junction CapNode mapping
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (dbNet* net : _block->getNets()) {
     if (net->getSigType().isSupply()) {
       continue;
@@ -298,8 +312,8 @@ bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
     }
   }
   _currentModel = getRCmodel(0);
-  for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
-    uint jj = _modelMap.get(ii);
+  for (uint32_t ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
+    uint32_t jj = _modelMap.get(ii);
     _metRCTable.add(_currentModel->getMetRCTable(jj));
   }
   _extDbCnt = _processCornerTable->getCnt();
@@ -318,8 +332,8 @@ double extMain::getDbFactor_v2()
 // Wrapper function to drive reading of the model file
 bool extMain::ReadModels_v2(const char* rulesFileName,
                             extRCModel* m,
-                            uint extDbCnt,
-                            uint* cornerTable)
+                            uint32_t extDbCnt,
+                            uint32_t* cornerTable)
 {
   logger_->info(
       RCX, 441, "Reading extraction model file {} ...", rulesFileName);
@@ -351,9 +365,9 @@ bool extMain::ReadModels_v2(const char* rulesFileName,
   return true;
 }
 
-uint extMain::resetMapNodes_v2(dbWire* wire)
+uint32_t extMain::resetMapNodes_v2(dbWire* wire)
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   dbWirePath path;
   dbWirePathShape pshape;
 
@@ -368,7 +382,7 @@ uint extMain::resetMapNodes_v2(dbWire* wire)
   }
   return cnt;
 }
-uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
+uint32_t extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
 {
   net->setRCgraph(true);
 
@@ -380,7 +394,7 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
     _netNoWireCnt++;
     return 0;
   }
-  const uint rcCnt1 = resetMapNodes_v2(wire);
+  const uint32_t rcCnt1 = resetMapNodes_v2(wire);
   if (rcCnt1 <= 0) {
     return 0;
   }
@@ -391,13 +405,13 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
   initJunctionIdMaps(net);
 
   dbWirePathItr pitr;
-  uint srcId;
+  uint32_t srcId;
   dbWirePathShape ppshape;
-  uint rcCnt = 0;
+  uint32_t rcCnt = 0;
   bool netHeadMarked = false;
   dbWirePath path;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
-    uint netId = net->getId();
+    uint32_t netId = net->getId();
     if (netId == _debug_net_id) {
       debugPrint(logger_,
                  RCX,
@@ -408,10 +422,10 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
     }
     if (!path.iterm && !path.bterm && !path.is_branch && path.is_short) {
       // if (! (path.iterm || path.bterm || path.is_branch) && path.is_short) {
-      uint junct_id = getShortSrcJid(path.junction_id);
+      uint32_t junct_id = getShortSrcJid(path.junction_id);
       srcId = getCapNodeId_v2(net, junct_id, true);
     } else {
-      uint junct_id = getShortSrcJid(path.junction_id);
+      uint32_t junct_id = getShortSrcJid(path.junction_id);
       srcId = getCapNodeId_v2(net, path, junct_id, path.is_branch);
     }
     if (!netHeadMarked) {
@@ -524,12 +538,12 @@ uint extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
 
   return rcCnt;
 }
-uint extMain::getCapNodeId_v2(dbNet* net,
-                              dbWirePath& path,
-                              const uint junct_id,
-                              bool branch)
+uint32_t extMain::getCapNodeId_v2(dbNet* net,
+                                  dbWirePath& path,
+                                  const uint32_t junct_id,
+                                  bool branch)
 {
-  uint srcId = 0;
+  uint32_t srcId = 0;
   if (path.bterm != nullptr) {
     srcId = getCapNodeId_v2(path.bterm, junct_id);
   } else if (path.iterm != nullptr) {
@@ -539,12 +553,12 @@ uint extMain::getCapNodeId_v2(dbNet* net,
   }
   return srcId;
 }
-uint extMain::getCapNodeId_v2(dbNet* net,
-                              const dbWirePathShape& pshape,
-                              int junct_id,
-                              bool branch)
+uint32_t extMain::getCapNodeId_v2(dbNet* net,
+                                  const dbWirePathShape& pshape,
+                                  int junct_id,
+                                  bool branch)
 {
-  uint srcId = 0;
+  uint32_t srcId = 0;
   if (pshape.bterm != nullptr) {
     srcId = getCapNodeId_v2(pshape.bterm, junct_id);
   } else if (pshape.iterm != nullptr) {
@@ -554,9 +568,9 @@ uint extMain::getCapNodeId_v2(dbNet* net,
   }
   return srcId;
 }
-uint extMain::getCapNodeId_v2(dbITerm* iterm, const uint junction)
+uint32_t extMain::getCapNodeId_v2(dbITerm* iterm, const uint32_t junction)
 {
-  uint capId = _itermTable->geti(iterm->getId());
+  uint32_t capId = _itermTable->geti(iterm->getId());
   if (capId > 0) {  // CapNode exists
     return capId;
   }
@@ -574,10 +588,10 @@ uint extMain::getCapNodeId_v2(dbITerm* iterm, const uint junction)
 
   return capId;
 }
-uint extMain::getCapNodeId_v2(dbBTerm* bterm, const uint junction)
+uint32_t extMain::getCapNodeId_v2(dbBTerm* bterm, const uint32_t junction)
 {
-  uint id = bterm->getId();
-  uint capId = _btermTable->geti(id);
+  uint32_t id = bterm->getId();
+  uint32_t capId = _btermTable->geti(id);
   if (capId > 0) {
     return capId;
   }
@@ -595,7 +609,9 @@ uint extMain::getCapNodeId_v2(dbBTerm* bterm, const uint junction)
 
   return capId;
 }
-uint extMain::getCapNodeId_v2(dbNet* net, const int junction, const bool branch)
+uint32_t extMain::getCapNodeId_v2(dbNet* net,
+                                  const int junction,
+                                  const bool branch)
 {
   int capId = _nodeTable->geti(junction);
 
@@ -625,14 +641,14 @@ uint extMain::getCapNodeId_v2(dbNet* net, const int junction, const bool branch)
     print_debug(branch, junction, capId, "NEW");
   }
 
-  uint ncapId = cap->getId();
+  uint32_t ncapId = cap->getId();
   int tcapId = capId == 0 ? ncapId : -ncapId;
   _nodeTable->set(junction, tcapId);
   return ncapId;
 }
 void extMain::print_debug(const bool branch,
-                          const uint junction,
-                          uint capId,
+                          const uint32_t junction,
+                          uint32_t capId,
                           const char* old_new)
 {
   if (branch) {
@@ -657,7 +673,7 @@ void extMain::print_debug(const bool branch,
 }
 
 dbRSeg* extMain::addRSeg_v2(dbNet* net,
-                            uint& srcId,
+                            uint32_t& srcId,
                             Point& prevPoint,
                             const dbWirePath& path,
                             const dbWirePathShape& pshape,
@@ -674,9 +690,10 @@ dbRSeg* extMain::addRSeg_v2(dbNet* net,
     _rsegJid.clear();
     return nullptr;
   }
-  const uint dstId = getCapNodeId_v2(net, pshape, pshape.junction_id, isBranch);
+  const uint32_t dstId
+      = getCapNodeId_v2(net, pshape, pshape.junction_id, isBranch);
 
-  // const uint dstId= getCapNodeId( net, pshape.bterm, pshape.iterm,
+  // const uint32_t dstId= getCapNodeId( net, pshape.bterm, pshape.iterm,
   // pshape.junction_id, isBranch);
 
   if (dstId == srcId) {
@@ -688,8 +705,8 @@ dbRSeg* extMain::addRSeg_v2(dbNet* net,
     print_shape(pshape.shape, srcId, dstId);
   }
 
-  uint length;
-  const uint pathDir = computePathDir(prevPoint, pshape.point, &length);
+  uint32_t length;
+  const uint32_t pathDir = computePathDir(prevPoint, pshape.point, &length);
 
   Point pt;
   if (pshape.junction_id) {
@@ -697,9 +714,9 @@ dbRSeg* extMain::addRSeg_v2(dbNet* net,
   }
   dbRSeg* rc = dbRSeg::create(net, pt.x(), pt.y(), pathDir, true);
 
-  const uint jidl = _rsegJid.size();
-  const uint rsid = rc->getId();
-  for (uint jj = 0; jj < jidl; jj++) {
+  const uint32_t jidl = _rsegJid.size();
+  const uint32_t rsid = rc->getId();
+  for (uint32_t jj = 0; jj < jidl; jj++) {
     net->getWire()->setProperty(_rsegJid[jj], rsid);
   }
   _rsegJid.clear();
@@ -737,7 +754,7 @@ void extMain::setResAndCap_v2(dbRSeg* rc,
                               const double* restbl,
                               const double* captbl)
 {
-  for (uint ii = 0; ii < _extDbCnt; ii++) {
+  for (uint32_t ii = 0; ii < _extDbCnt; ii++) {
     const int pcdbIdx = getProcessCornerDbIndex(ii);
     double res = _resModify ? restbl[ii] * _resFactor : restbl[ii];
     rc->setResistance(res, pcdbIdx);
@@ -782,12 +799,12 @@ void extMain::initJunctionIdMaps(dbNet* net)
   _shortSrcJid.clear();
   _shortTgtJid.clear();
 
-  uint netId = net->getId();
+  uint32_t netId = net->getId();
   if (netId == _debug_net_id) {
     debugPrint(
         logger_, RCX, "rcseg", 1, "RCSEG:R makeNetRCsegs: BEGIN NET {}", netId);
   }
-  uint srcJid;
+  uint32_t srcJid;
   dbWirePathItr pitr;
   if (!(_mergeResBound != 0.0 || _mergeViaRes)) {
     return;
@@ -803,7 +820,7 @@ void extMain::initJunctionIdMaps(dbNet* net)
     if (path.is_short) {
       _nodeTable->set(path.short_junction, -1);
       srcJid = path.short_junction;
-      for (uint tt = 0; tt < _shortTgtJid.size(); tt++) {
+      for (uint32_t tt = 0; tt < _shortTgtJid.size(); tt++) {
         if (_shortTgtJid[tt] == srcJid) {
           srcJid = _shortSrcJid[tt];  // forward short
           break;
@@ -823,8 +840,8 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
 {
   // OPTIMIZE: map for all technology vias
 
-  const uint width = tvia->getBottomLayer()->getWidth();
-  uint level = tvia->getBottomLayer()->getRoutingLevel();
+  const uint32_t width = tvia->getBottomLayer()->getWidth();
+  uint32_t level = tvia->getBottomLayer()->getRoutingLevel();
 
   double res
       = tvia->getResistance();  // LEF -- via section OR set at previous call
@@ -840,7 +857,7 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
       tvia->setResistance(res);  // set for next call af another net
     }
 
-    for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
       _tmpResTable[ii] = res;
     }
     if (_lefRC) {  // estimate Capacitance
@@ -855,7 +872,7 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
   } else {  // form model file
     bool viaModelFound = false;
     const char* viaName = tvia->getConstName();
-    for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
       extMetRCTable* rcTable = _metRCTable.get(ii);
       extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
       if (viaModel != nullptr) {
@@ -864,7 +881,7 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
       }
     }
     if (!viaModelFound) {
-      for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+      for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
         _tmpResTable[ii] = res;
       }
     }
@@ -876,8 +893,8 @@ double extMain::getDbViaRes_v2(dbNet* net, const dbShape& s)
   dbVia* bvia = s.getVia();
   double res = getViaResistance_b(bvia, net);
 
-  const uint width = bvia->getBottomLayer()->getWidth();
-  uint level = bvia->getBottomLayer()->getRoutingLevel();
+  const uint32_t width = bvia->getBottomLayer()->getWidth();
+  uint32_t level = bvia->getBottomLayer()->getRoutingLevel();
 
   if (res <= 0.0) {
     res = getResistance(level, width, width, 0);
@@ -887,14 +904,14 @@ double extMain::getDbViaRes_v2(dbNet* net, const dbShape& s)
       _tmpResTable[0] = res;
       if (_lef_res) {
         dbVia* bvia = s.getVia();
-        uint width = bvia->getBottomLayer()->getWidth();
+        uint32_t width = bvia->getBottomLayer()->getWidth();
         double areaCap;
         _tmpCapTable[0] = width * 2 * getFringe(level, width, 0, areaCap);
         _tmpCapTable[0] += 2 * areaCap * width * width;
       }
     } else {
       getViaCapacitance(s, net);
-      for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+      for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
         _tmpResTable[ii] = res;
       }
     }
@@ -905,9 +922,9 @@ double extMain::getMetalRes_v2(dbNet* net,
                                const dbShape& s,
                                const dbWirePathShape& pshape)
 {
-  const uint level = s.getTechLayer()->getRoutingLevel();
-  uint width = std::min(pshape.shape.getDX(), pshape.shape.getDY());
-  uint len = std::max(pshape.shape.getDX(), pshape.shape.getDY());
+  const uint32_t level = s.getTechLayer()->getRoutingLevel();
+  uint32_t width = std::min(pshape.shape.getDX(), pshape.shape.getDY());
+  uint32_t len = std::max(pshape.shape.getDX(), pshape.shape.getDY());
 
   double res = getLefResistance(level, width, len, 0);
 
@@ -924,7 +941,7 @@ double extMain::getMetalRes_v2(dbNet* net,
       _tmpCapTable[0] = cap;
     }
   } else {
-    for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
       double r = getResistance(level, width, len, ii);
       _tmpResTable[ii] = r;
       double areaCap;
@@ -967,8 +984,8 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
   extRCModel* m = new extRCModel("MINTYPMAX", logger_);
   _modelTable->add(m);
 
-  // uint cornerTable[10];
-  uint extCornerDbCnt = 0;
+  // uint32_t cornerTable[10];
+  uint32_t extCornerDbCnt = 0;
 
   _minModelIndex = 0;
   _maxModelIndex = 0;
@@ -976,7 +993,7 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
 
   if (_processCornerTable != nullptr) {
     // User define process corners using <ext define_process_corner>
-    for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
       //    cornerTable[extCornerDbCnt++] = s->_model;
       _modelMap.add(s->_model);
@@ -997,18 +1014,18 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
   }
   return m;
 }
-uint extMain::getResCapTable_lefRC_v2()
+uint32_t extMain::getResCapTable_lefRC_v2()
 {
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (dbTechLayer* layer : _tech->getLayers()) {
     if (layer->getRoutingLevel() == 0) {
       continue;
     }
-    const uint n = layer->getRoutingLevel();
-    const uint w = layer->getWidth();  // nm
+    const uint32_t n = layer->getRoutingLevel();
+    const uint32_t w = layer->getWidth();  // nm
     _minWidthTable[n] = w;
 
-    uint sp = layer->getSpacing();  // nm
+    uint32_t sp = layer->getSpacing();  // nm
     _minDistTable[n] = sp;
     if (sp == 0) {
       sp = layer->getPitch() - layer->getWidth();

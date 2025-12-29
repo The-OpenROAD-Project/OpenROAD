@@ -696,8 +696,7 @@ bool DebugGui::isSelected(const Connection* connection) const
   return selected_connections_.find(connection) != selected_connections_.end();
 }
 
-void DebugGui::setSources(
-    const std::vector<std::unique_ptr<SourceNode>>& sources)
+void DebugGui::setSources(const SourceNodes& sources)
 {
   sources_.clear();
 

@@ -54,6 +54,7 @@ struct FlexDRViaData;
 class frMarker;
 struct RouterConfiguration;
 class AbstractGraphicsFactory;
+class frViaDef;
 
 struct ParamStruct
 {
@@ -184,6 +185,7 @@ class TritonRoute
   void fixMaxSpacing(int num_threads);
   void deleteInstancePAData(frInst* inst, bool delete_inst = false);
   void addInstancePAData(frInst* inst);
+  void addAvoidViaDefPA(const frViaDef* via_def);
   void updateDirtyPAData();
 
  private:

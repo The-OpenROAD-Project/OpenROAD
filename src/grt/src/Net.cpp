@@ -4,6 +4,7 @@
 #include "Net.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <set>
 #include <string>
@@ -25,7 +26,8 @@ Net::Net(odb::dbNet* net, bool has_wires)
       merged_net_(nullptr),
       is_merged_net_(false),
       is_dirty_net_(false),
-      is_clk_(false)
+      is_clk_(false),
+      is_guide_restored_(false)
 {
 }
 
@@ -134,7 +136,7 @@ int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
 bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
 {
   int bterms_above_max_layer = getNumBTermsAboveMaxLayer(max_routing_layer);
-  odb::uint wire_cnt = 0, via_cnt = 0;
+  uint32_t wire_cnt = 0, via_cnt = 0;
   net_->getWireCount(wire_cnt, via_cnt);
 
   if (wire_cnt != 0 || via_cnt == 0) {

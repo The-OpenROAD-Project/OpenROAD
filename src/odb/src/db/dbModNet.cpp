@@ -21,6 +21,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <set>
 #include <string>
@@ -105,16 +106,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
   if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.bterms_;
   }
-  // User Code Begin >>
-  if (obj.getDatabase()->isSchema(kSchemaDbRemoveHash)) {
-    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
-    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
-    if (obj.name_) {
-      module->modnet_hash_[obj.name_] = dbId<_dbModNet>(obj.getId());
-    }
-  }
-  // User Code End >>
   return stream;
 }
 
@@ -303,7 +294,7 @@ void dbModNet::dump() const
   logger->report("--------------------------------------------------");
 }
 
-dbModNet* dbModNet::getModNet(dbBlock* block, uint id)
+dbModNet* dbModNet::getModNet(dbBlock* block, uint32_t id)
 {
   _dbBlock* block_ = (_dbBlock*) block;
   _dbModNet* ret = block_->modnet_tbl_->getPtr(id);
@@ -382,8 +373,8 @@ void dbModNet::destroy(dbModNet* mod_net)
     cb->inDbModNetDestroy(mod_net);
   }
 
-  uint prev = _modnet->prev_entry_;
-  uint next = _modnet->next_entry_;
+  uint32_t prev = _modnet->prev_entry_;
+  uint32_t next = _modnet->next_entry_;
   if (prev == 0) {
     module->modnets_ = next;
   } else {

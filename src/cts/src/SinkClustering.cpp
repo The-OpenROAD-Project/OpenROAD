@@ -212,7 +212,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                "Stree",
                1,
                "Clustering with max cap limit of {:.3e}",
-               options_->getSinkBufferInputCap() * max_cap__factor_);
+               options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
   // Iterates over the theta vector.
   for (unsigned i = 0; i < thetaIndexVector_.size(); ++i) {
@@ -416,7 +416,7 @@ bool SinkClustering::isLimitExceeded(const unsigned size,
                                      const unsigned sizeLimit)
 {
   if (useMaxCapLimit_) {
-    return (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
+    return (capCost > options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
 
   return (size >= sizeLimit || cost > maxInternalDiameter_);

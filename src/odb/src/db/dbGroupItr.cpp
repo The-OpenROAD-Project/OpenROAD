@@ -4,10 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbGroupItr.h"
 
+#include <cstdint>
+
 #include "dbGroup.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include "dbModule.h"
 // User Code End Includes
@@ -34,12 +35,12 @@ void dbGroupItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint id = _parent->groups_;
-  uint list = 0;
+  uint32_t id = _parent->groups_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbGroup* _child = group_tbl_->getPtr(id);
-    uint n = _child->group_next_;
+    uint32_t n = _child->group_next_;
     _child->group_next_ = list;
     list = id;
     id = n;
@@ -48,15 +49,15 @@ void dbGroupItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbGroupItr::sequential() const
+uint32_t dbGroupItr::sequential() const
 {
   return 0;
 }
 
-uint dbGroupItr::size(dbObject* parent) const
+uint32_t dbGroupItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbGroupItr::begin(parent); id != dbGroupItr::end(parent);
        id = dbGroupItr::next(id)) {
@@ -66,7 +67,7 @@ uint dbGroupItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbGroupItr::begin(dbObject* parent) const
+uint32_t dbGroupItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbGroup* _parent = (_dbGroup*) parent;
@@ -74,12 +75,12 @@ uint dbGroupItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbGroupItr::end(dbObject* /* unused: parent */) const
+uint32_t dbGroupItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbGroupItr::next(uint id, ...) const
+uint32_t dbGroupItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbGroup* _child = group_tbl_->getPtr(id);
@@ -87,7 +88,7 @@ uint dbGroupItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbGroupItr::getObject(uint id, ...)
+dbObject* dbGroupItr::getObject(uint32_t id, ...)
 {
   return group_tbl_->getPtr(id);
 }

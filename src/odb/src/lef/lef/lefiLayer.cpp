@@ -29,8 +29,6 @@
 
 #include "lefiLayer.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -155,10 +153,6 @@ double lefiAntennaPWL::PWLratio(int index)
 // *****************************************************************************
 // lefiLayerDensity
 // *****************************************************************************
-lefiLayerDensity::lefiLayerDensity()
-{
-}
-
 void lefiLayerDensity::Init(const char* type)
 {
   int len = strlen(type) + 1;
@@ -358,7 +352,8 @@ void lefiParallel::addParallelWidth(double width)
   numWidth_ += 1;
 }
 
-void lefiParallel::addParallelWidthSpacing(int numSpacing, double* spacings)
+void lefiParallel::addParallelWidthSpacing(int numSpacing,
+                                           const double* spacings)
 {
   int i;
   for (i = 0; i < numSpacing; i++) {
@@ -512,7 +507,7 @@ lefiTwoWidths::~lefiTwoWidths()
 void lefiTwoWidths::addTwoWidths(double width,
                                  double prl,
                                  int numSpacing,
-                                 double* spacings,
+                                 const double* spacings,
                                  int hasPRL)
 {
   int i;
@@ -4160,8 +4155,6 @@ void lefiLayer::addAntennaModel(int aOxide)
   amo->setAntennaModel(aOxide);
 
   currentAntennaModel_ = amo;
-
-  return;
 }
 
 // 5.5
@@ -5661,7 +5654,6 @@ void lefiLayer::parseSpacing(int index)
 
   // None of the above statement
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -5880,7 +5872,6 @@ void lefiLayer::parseArraySpacing(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6101,7 +6092,6 @@ void lefiLayer::parseMinstep(int index)
     addMinstepXSameCorners();
   }
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6137,7 +6127,6 @@ void lefiLayer::parseAntennaCumRouting(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6177,7 +6166,6 @@ void lefiLayer::parseAntennaGatePlus(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6217,7 +6205,6 @@ void lefiLayer::parseAntennaAreaMinus(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6295,7 +6282,6 @@ void lefiLayer::parseAntennaAreaDiff(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // PRIVATE 5.7
@@ -6511,7 +6497,6 @@ void lefiLayer::parseLayerEnclosure(int index)
   }
 
   free(wrkingStr);
-  return;
 }
 
 // 5.7

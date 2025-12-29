@@ -5,8 +5,6 @@
 
 #include <list>
 
-#include "odb/odb.h"
-
 namespace odb {
 
 class dbBPin;
@@ -76,6 +74,7 @@ class dbBlockCallBackObj
   virtual void inDbNetCreate(dbNet*) {}
   virtual void inDbNetDestroy(dbNet*) {}
   virtual void inDbNetPreMerge(dbNet*, dbNet*) {}
+  virtual void inDbNetPostGuideRestore(dbNet*) {}
   // dbNet End
 
   // dbModNet Start
@@ -129,6 +128,9 @@ class dbBlockCallBackObj
   virtual void inDbBPinAddBox(dbBox*) {}
   virtual void inDbBPinRemoveBox(dbBox*) {}
   virtual void inDbBPinDestroy(dbBPin*) {}
+  virtual void inDbBPinPlacementStatusBefore(dbBPin*, const dbPlacementStatus&)
+  {
+  }
   // dbBPin End
 
   // dbBlockage Start

@@ -792,7 +792,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
         odb::dbInst* inst = pin->getPinAsITerm()->getInst();
 
         if (inst != nullptr) {
-          if (instances.count(inst) == 0) {
+          if (!instances.contains(inst)) {
             instances[inst] = pin.get();
           } else {
             auto& worst_pin = instances[inst];
@@ -884,7 +884,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
       const int color_index = color_count * scale;
       const double slack = max_timing_ - timing_range * scale;
       const std::string text = units->asString(slack) + text_units;
-      legend.push_back({color_index, text});
+      legend.emplace_back(color_index, text);
     }
     std::reverse(legend.begin(), legend.end());
     color_generator_.drawLegend(painter, legend);
@@ -1311,7 +1311,7 @@ void TimingControlsDialog::setThruPin(
 
   auto new_pins = pins;
   if (pins.empty()) {
-    new_pins.push_back({});  // add one row
+    new_pins.emplace_back();  // add one row
   }
 
   for (const auto& pin_set : new_pins) {

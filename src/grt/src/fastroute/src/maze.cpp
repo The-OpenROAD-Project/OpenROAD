@@ -66,8 +66,8 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   for (auto const& [position, edges] : position_to_edges_map) {
     for (int edgeID : edges) {
       if (areEdgesOverlapping(net_id, edgeID, edges)) {
-        edges_to_blocked_pos_map[edgeID].push_back(
-            {position.first, position.second});
+        edges_to_blocked_pos_map[edgeID].emplace_back(position.first,
+                                                      position.second);
       }
     }
   }

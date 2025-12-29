@@ -13,7 +13,7 @@
   "fields": [
     {
       "name": "bits_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "flags": ["private"]
     },
@@ -39,7 +39,7 @@
     },
     {
       "name": "clock_edge_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "flags": ["private"]
     },

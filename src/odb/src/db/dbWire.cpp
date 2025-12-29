@@ -21,7 +21,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -51,7 +50,7 @@ bool _dbWire::operator==(const _dbWire& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire.flags_;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream << *bit_field;
   stream << wire.data_;
   stream << wire.opcodes_;
@@ -61,7 +60,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 
 dbIStream& operator>>(dbIStream& stream, _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire.flags_;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream >> *bit_field;
   stream >> wire.data_;
   stream >> wire.opcodes_;
@@ -104,7 +103,7 @@ bool dbWire::isGlobalWire()
 
 void dbWire::addOneSeg(unsigned char op,
                        int value,
-                       uint jj,
+                       uint32_t jj,
                        int* did,
                        dbRSeg** new_rsegs)
 {
@@ -126,7 +125,7 @@ void dbWire::addOneSeg(unsigned char op, int value)
   wire->opcodes_.push_back(op);
 }
 
-uint dbWire::getTermJid(const int termid) const
+uint32_t dbWire::getTermJid(const int termid) const
 {
   _dbWire* wire = (_dbWire*) this;
   int topcd = kIterm;
@@ -135,8 +134,8 @@ uint dbWire::getTermJid(const int termid) const
     topcd = kBterm;
     ttid = -termid;
   }
-  const uint wlen = wire->length();
-  uint jj;
+  const uint32_t wlen = wire->length();
+  uint32_t jj;
   for (jj = 0; jj < wlen; jj++) {
     if ((wire->opcodes_[jj] & WOP_OPCODE_MASK) == topcd) {
       if (wire->data_[jj] == ttid) {
@@ -330,17 +329,17 @@ uint64_t dbWire::getLength()
   return rtlen;
 }
 
-uint dbWire::length()
+uint32_t dbWire::length()
 {
   _dbWire* wire = (_dbWire*) this;
   return wire->length();
 }
 
-uint dbWire::count()
+uint32_t dbWire::count()
 {
-  uint jj;
+  uint32_t jj;
   int opcode;
-  uint cnt = 0;
+  uint32_t cnt = 0;
   _dbWire* wire = (_dbWire*) this;
   for (jj = 0; jj < wire->length(); jj++) {
     opcode = wire->opcodes_[jj] & WOP_OPCODE_MASK;
@@ -996,7 +995,7 @@ bool dbWire::getNextVia(int idx, dbShape& shape)
   ++idx;
 
 nextOpCode:
-  if ((uint) idx == wire->length()) {
+  if ((uint32_t) idx == wire->length()) {
     return false;
   }
 
@@ -1070,7 +1069,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
   for (auto callback : ((_dbBlock*) getBlock())->callbacks_) {
     callback->inDbWirePreAppend(src_, this);
   }
-  uint sz = dst->opcodes_.size();
+  uint32_t sz = dst->opcodes_.size();
   dst->opcodes_.insert(
       dst->opcodes_.end(), src->opcodes_.begin(), src->opcodes_.end());
   dst->data_.insert(dst->data_.end(), src->data_.begin(), src->data_.end());
@@ -1084,7 +1083,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
       unsigned char opcode = dst->opcodes_[i] & WOP_OPCODE_MASK;
 
       if (opcode == kVia) {
-        uint vid = dst->data_[i];
+        uint32_t vid = dst->data_[i];
         _dbVia* src_via = src_block->via_tbl_->getPtr(vid);
         dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->name_);
 
@@ -1206,7 +1205,7 @@ dbWire* dbWire::create(dbBlock* block_, bool /* unused: global_wire */)
   return (dbWire*) wire;
 }
 
-dbWire* dbWire::getWire(dbBlock* block_, uint dbid_)
+dbWire* dbWire::getWire(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbWire*) block->wire_tbl_->getPtr(dbid_);

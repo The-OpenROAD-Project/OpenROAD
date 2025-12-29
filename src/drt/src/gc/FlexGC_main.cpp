@@ -450,7 +450,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
       ndrSpc2
           = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
     }
-    reqSpcVal = std::max(reqSpcVal, std::max(ndrSpc1, ndrSpc2));
+    reqSpcVal = std::max({reqSpcVal, ndrSpc1, ndrSpc2});
   }
 
   // no violation if spacing satisfied
@@ -1165,24 +1165,24 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
   frCoord candX = -1, candY = -1;
   // ensure this is a real corner to corner case
   if (con->getCornerType() == frCornerTypeEnum::CONVEX) {
-    if (cornerX >= (candX = gtl::xh(*rect))) {
-      if (cornerY >= (candY = gtl::yh(*rect))) {
+    if (candX = gtl::xh(*rect); cornerX >= candX) {
+      if (candY = gtl::yh(*rect); cornerY >= candY) {
         if (corner->getDir() != frCornerDirEnum::SW) {
           return;
         }
-      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+      } else if (candY = gtl::yl(*rect); cornerY <= candY) {
         if (corner->getDir() != frCornerDirEnum::NW) {
           return;
         }
       } else {
         return;
       }
-    } else if (cornerX <= (candX = gtl::xl(*rect))) {
-      if (cornerY >= (candY = gtl::yh(*rect))) {
+    } else if (candX = gtl::xl(*rect); cornerX <= candX) {
+      if (candY = gtl::yh(*rect); cornerY >= candY) {
         if (corner->getDir() != frCornerDirEnum::SE) {
           return;
         }
-      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+      } else if (candY = gtl::yl(*rect); cornerY <= candY) {
         if (corner->getDir() != frCornerDirEnum::NE) {
           return;
         }
