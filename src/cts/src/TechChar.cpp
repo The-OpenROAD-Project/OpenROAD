@@ -121,11 +121,11 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
         }
       }
       segment.setLastWl(lastWl);
-      segment.setWl2FisrtBuffer(wl2FirstBuffer);
+      segment.setWl2FirstBuffer(wl2FirstBuffer);
     } else {
       int wl = std::round(std::stod(lutLine.topology[0]) * (double) length);
       segment.setLastWl(wl);
-      segment.setWl2FisrtBuffer(wl);
+      segment.setWl2FirstBuffer(wl);
     }
   }
 

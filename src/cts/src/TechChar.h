@@ -85,7 +85,7 @@ class WireSegment
     bufferMasters_.push_back(name);
   }
 
-  void setWl2FisrtBuffer(int wl) { wl2FisrtBuffer_ = wl; }
+  void setWl2FirstBuffer(int wl) { wl2FisrtBuffer_ = wl; }
   void setLastWl(int wl) { lastWl_ = wl; }
 
   double getPower() const { return power_; }

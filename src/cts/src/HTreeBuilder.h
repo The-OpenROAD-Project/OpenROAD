@@ -132,15 +132,15 @@ class HTreeBuilder : public TreeBuilder
     unsigned getOutputCap() const { return outputCap_; }
     void setRemainingLength(unsigned length) { remainingLength_ = length; }
     unsigned getRemainingLength() const { return remainingLength_; }
-    void setCurrWl(unsigned wl) { curr_Wl_ = wl; }
-    unsigned getCurrWl() const { return curr_Wl_; }
+    void setCurrWl(int wl) { curr_Wl_ = wl; }
+    int getCurrWl() const { return curr_Wl_; }
 
    private:
     double length_;
     unsigned outputSlew_ = 0;
     unsigned outputCap_ = 0;
     unsigned remainingLength_ = 0;
-    unsigned curr_Wl_ = 0;
+    int curr_Wl_ = 0;
     std::vector<unsigned> wireSegments_;
     std::vector<Point<double>> branchPointLoc_;
     std::vector<unsigned> parents_;

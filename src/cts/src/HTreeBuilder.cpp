@@ -1421,8 +1421,16 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
 
   const unsigned SLEW_THRESHOLD = options_->getMaxSlew();
   const unsigned INIT_TOLERANCE = 1;
-  const int WIRELENGTH_THRESHOLD
-      = options_->getMaxWl() / techChar_->getLengthUnit();
+
+  int WIRELENGTH_THRESHOLD;
+  // If max wirelength is 0, set it as slew threshold  * maximum topology
+  // wirelength. This will behave as if there was no max wirelength threshold.
+  if (!options_->getMaxWl()) {
+    WIRELENGTH_THRESHOLD = SLEW_THRESHOLD * techChar_->getMaxSegmentLength();
+  } else {
+    WIRELENGTH_THRESHOLD = options_->getMaxWl() / techChar_->getLengthUnit();
+  }
+
   debugPrint(
       logger_, CTS, "tech char", 1, "slew threshold = {}", SLEW_THRESHOLD);
   debugPrint(logger_,
