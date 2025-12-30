@@ -45,6 +45,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
@@ -354,6 +355,7 @@ void GlobalRouter::globalRoute(bool save_guides,
           cugr_->init(min_layer, max_layer, clock_nets);
           cugr_->route();
           routes_ = cugr_->getRoutes();
+          updatePinAccessPoints();
         } else {
           if (verbose_) {
             reportResources();
@@ -1227,6 +1229,33 @@ void GlobalRouter::computePinPositionOnGrid(
 
   pin.setOnGridPosition(odb::Point(pin_position.x(), pin_position.y()));
   pin.setConnectionLayer(pin_position.layer());
+}
+
+void GlobalRouter::updatePinAccessPoints()
+{
+  for (const auto& [db_net, net] : db_net_map_) {
+    std::map<odb::dbITerm*, odb::Point3D> iterm_to_aps;
+    std::map<odb::dbBTerm*, odb::Point3D> bterm_to_aps;
+    cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
+    cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
+
+    auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
+      if (auto it = ap_map.find(term); it != ap_map.end()) {
+        const auto& ap = it->second;
+        pin.setConnectionLayer(ap.z());
+        pin.setOnGridPosition(
+            grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+      }
+    };
+
+    for (Pin& pin : net->getPins()) {
+      if (pin.isPort()) {
+        updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
+      } else {
+        updatePinPos(pin, pin.getITerm(), iterm_to_aps);
+      }
+    }
+  }
 }
 
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
