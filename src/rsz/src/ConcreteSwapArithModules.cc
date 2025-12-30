@@ -271,8 +271,9 @@ bool ConcreteSwapArithModules::doSwapInstances(
                     inst->getName(),
                     old_name,
                     new_name);
-      inst->swapMaster(new_master);
-      swapped_count++;
+      if (inst->swapMaster(new_master) != nullptr) {
+        swapped_count++;
+      }
     }
   }
 
