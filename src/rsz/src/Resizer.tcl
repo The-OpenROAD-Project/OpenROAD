@@ -358,7 +358,7 @@ proc repair_timing { args } {
 
   set more_recover_power [info exists flags(-more_recover_power)]
   if { !$more_recover_power && [info exists ::env(MORE_RECOVER_POWER)] } {
-    set env_more_recover_power [string tolower $::env(MORE_RECOVER_POWER)]
+    set env_more_recover_power [string trim [string tolower $::env(MORE_RECOVER_POWER)]]
     switch -- $env_more_recover_power {
       1 - true - yes - on {
         set more_recover_power 1
@@ -367,7 +367,9 @@ proc repair_timing { args } {
         set more_recover_power 0
       }
       default {
-        set more_recover_power 1
+        utl::warn RSZ 168 \
+          "Unrecognized MORE_RECOVER_POWER: '$::env(MORE_RECOVER_POWER)'. Defaulting to false."
+        set more_recover_power 0
       }
     }
   }

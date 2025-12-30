@@ -51,6 +51,13 @@ namespace {
 
 constexpr int kDigits = 3;
 
+Net* mutableNet(const Net* net)
+{
+  // OpenSTA/Network APIs used by the limit checks are not const-correct.
+  // They take Net* but do not mutate the net, so casting away const is safe.
+  return const_cast<Net*>(net);
+}
+
 }  // namespace
 
 RecoverPowerMore::RecoverPowerMore(Resizer* resizer) : resizer_(resizer)
@@ -287,7 +294,7 @@ std::vector<const Net*> RecoverPowerMore::slewCheckNetCone(
       if (net == nullptr) {
         continue;
       }
-      net = network_->highestConnectedNet(const_cast<Net*>(net));
+      net = network_->highestConnectedNet(mutableNet(net));
       if (net == nullptr || network_->isPower(net) || network_->isGround(net)) {
         continue;
       }
@@ -333,7 +340,7 @@ std::vector<const Net*> RecoverPowerMore::slewCheckNetCone(
           if (out_net == nullptr) {
             continue;
           }
-          out_net = network_->highestConnectedNet(const_cast<Net*>(out_net));
+          out_net = network_->highestConnectedNet(mutableNet(out_net));
           if (out_net == nullptr || network_->isPower(out_net)
               || network_->isGround(out_net)) {
             continue;
@@ -360,8 +367,8 @@ size_t RecoverPowerMore::countSlewViolations(
   size_t count = 0;
   for (const Net* net : nets) {
     if (net != nullptr) {
-      count += sta_->checkSlewLimits(const_cast<Net*>(net), true, nullptr, max_)
-                   .size();
+      count
+          += sta_->checkSlewLimits(mutableNet(net), true, nullptr, max_).size();
     }
   }
   return count;
@@ -373,9 +380,9 @@ size_t RecoverPowerMore::countCapViolations(
   size_t count = 0;
   for (const Net* net : nets) {
     if (net != nullptr) {
-      count += sta_->checkCapacitanceLimits(
-                       const_cast<Net*>(net), true, nullptr, max_)
-                   .size();
+      count
+          += sta_->checkCapacitanceLimits(mutableNet(net), true, nullptr, max_)
+                 .size();
     }
   }
   return count;
@@ -387,8 +394,7 @@ size_t RecoverPowerMore::countFanoutViolations(
   size_t count = 0;
   for (const Net* net : nets) {
     if (net != nullptr) {
-      count
-          += sta_->checkFanoutLimits(const_cast<Net*>(net), true, max_).size();
+      count += sta_->checkFanoutLimits(mutableNet(net), true, max_).size();
     }
   }
   return count;
@@ -488,7 +494,7 @@ Slack RecoverPowerMore::instanceWorstSlack(sta::Instance* inst) const
     found = true;
   }
 
-  return found ? worst_slack : -std::numeric_limits<Slack>::infinity();
+  return found ? worst_slack : std::numeric_limits<Slack>::infinity();
 }
 
 bool RecoverPowerMore::instanceDrivesClock(sta::Instance* inst) const
@@ -635,29 +641,24 @@ std::vector<LibertyCell*> RecoverPowerMore::nextSmallerCells(
 
   // Prefer weaker (higher resistance) and lower leakage candidates first;
   // the full STA check will decide which are actually acceptable.
-  std::stable_sort(candidates.begin(),
-                   candidates.end(),
-                   [this](LibertyCell* a, LibertyCell* b) {
-                     float ra = resizer_->cellDriveResistance(a);
-                     float rb = resizer_->cellDriveResistance(b);
-                     if (ra <= 0.0f) {
-                       ra = 0.0f;
-                     }
-                     if (rb <= 0.0f) {
-                       rb = 0.0f;
-                     }
-                     const float la = resizer_->cellLeakage(a).value_or(
-                         std::numeric_limits<float>::infinity());
-                     const float lb = resizer_->cellLeakage(b).value_or(
-                         std::numeric_limits<float>::infinity());
-                     if (ra != rb) {
-                       return ra > rb;
-                     }
-                     if (la != lb) {
-                       return la < lb;
-                     }
-                     return std::strcmp(a->name(), b->name()) < 0;
-                   });
+  std::stable_sort(
+      candidates.begin(),
+      candidates.end(),
+      [this](LibertyCell* a, LibertyCell* b) {
+        float ra = std::max(0.0f, resizer_->cellDriveResistance(a));
+        float rb = std::max(0.0f, resizer_->cellDriveResistance(b));
+        const float la = resizer_->cellLeakage(a).value_or(
+            std::numeric_limits<float>::infinity());
+        const float lb = resizer_->cellLeakage(b).value_or(
+            std::numeric_limits<float>::infinity());
+        if (ra != rb) {
+          return ra > rb;
+        }
+        if (la != lb) {
+          return la < lb;
+        }
+        return std::strcmp(a->name(), b->name()) < 0;
+      });
 
   return candidates;
 }
@@ -830,10 +831,10 @@ bool RecoverPowerMore::tryRemoveBuffer(sta::Instance* inst,
     const Net* out_net
         = (out_pin != nullptr) ? network_->net(out_pin) : nullptr;
     if (in_net != nullptr) {
-      in_net = network_->highestConnectedNet(const_cast<Net*>(in_net));
+      in_net = network_->highestConnectedNet(mutableNet(in_net));
     }
     if (out_net != nullptr) {
-      out_net = network_->highestConnectedNet(const_cast<Net*>(out_net));
+      out_net = network_->highestConnectedNet(mutableNet(out_net));
     }
     // Mirror UnbufferMove::removeBuffer() survivor selection to avoid
     // dereferencing a net that is destroyed by mergeNet().
