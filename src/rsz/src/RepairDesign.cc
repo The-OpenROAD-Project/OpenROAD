@@ -1513,10 +1513,10 @@ void RepairDesign::repairNetWire(
       // in terms of the wire segment's length (in Elmore approx.).
       //
       // We solve a quadratic eq. to find the maximum conforming length.
-      float a = wire_res * wire_cap / 2;
-      float b = (r_drvr * wire_cap) + (wire_res * ref_cap);
-      float c = (r_drvr * ref_cap)
-                - (max_load_slew_margined / resizer_->slew_shape_factor_);
+      float a = wire_res * wire_cap * resizer_->slew_shape_factor_ / 2;
+      float b = (r_drvr * wire_cap)
+                + (wire_res * ref_cap * resizer_->slew_shape_factor_);
+      float c = (r_drvr * ref_cap) - max_load_slew_margined;
       float l = 0.0;
       if (a > 1e-12) {  // Quadratic case
         const float discriminant = b * b - 4 * a * c;
