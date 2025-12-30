@@ -22,7 +22,8 @@ log_cmd report_power
 
 set fp [open $::env(RESULTS_DIR)/activity.tcl w]
 set pins [lsort -dictionary [get_pins -hierarchical *]]
-set clock_period [expr [get_property [get_clocks] period] * 1e-12]
+set periods [get_property [get_clocks] period]
+set clock_period [expr [lindex [lsort -real $periods] end] * 1e-12]
 foreach pin $pins {
   set activity [get_property $pin activity]
   set activity_origin [lindex $activity 2]
