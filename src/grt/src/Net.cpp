@@ -27,7 +27,8 @@ Net::Net(odb::dbNet* net, bool has_wires)
       is_merged_net_(false),
       is_dirty_net_(false),
       is_clk_(false),
-      is_guide_restored_(false)
+      restore_route_from_guides_(false),
+      are_segments_restored_(false)
 {
 }
 
