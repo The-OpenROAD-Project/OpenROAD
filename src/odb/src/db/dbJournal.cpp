@@ -18,6 +18,7 @@
 #include "dbNet.h"
 #include "dbRSeg.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "utl/Logger.h"
@@ -1967,6 +1968,11 @@ void dbJournal::undo_deleteObject()
                  guide->getId(),
                  layer->getName(),
                  guide->getBox());
+
+      _dbBlock* block = (_dbBlock*) block_;
+      for (auto callback : block->callbacks_) {
+        callback->inDbNetPostGuideRestore(net);
+      }
       break;
     }
 
