@@ -493,7 +493,7 @@ void OpenRoad::read3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
-  parser.check();
+  check3DBlox();
   db_->triggerPostRead3Dbx(db_->getChip());
 }
 
@@ -501,6 +501,15 @@ void OpenRoad::read3DBloxBMap(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_);
   parser.readBMap(filename);
+}
+
+void OpenRoad::check3DBlox()
+{
+  if (db_->getChip() == nullptr) {
+    logger_->error(utl::ORD, 76, "No design loaded.");
+  }
+  odb::ThreeDBlox checker(logger_, db_, sta_);
+  checker.check();
 }
 
 void OpenRoad::write3Dbv(const std::string& filename)

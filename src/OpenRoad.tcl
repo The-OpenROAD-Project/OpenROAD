@@ -228,6 +228,14 @@ proc read_3dblox_bmap { args } {
   ord::read_3dblox_bmap_cmd $filename
 }
 
+sta::define_cmd_args "check_3dblox" {}
+
+proc check_3dblox { args } {
+  sta::parse_key_args "check_3dblox" args keys {} flags {}
+  sta::check_argc_eq0 "check_3dblox" $args
+  ord::check_3dblox_cmd
+}
+
 sta::define_cmd_args "write_db" {filename}
 
 sta::define_cmd_args "read_db" {[-hier] filename}
