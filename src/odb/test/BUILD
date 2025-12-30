@@ -229,8 +229,6 @@ MANUAL_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "dump_netlists",
-    "dump_netlists_withfill",
     "replace_hier_mod1",
 ]
 
