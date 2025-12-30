@@ -49,11 +49,14 @@ class dbInsertBuffer
                                   const dbNameUniquifyType& uniquify
                                   = dbNameUniquifyType::ALWAYS,
                                   bool loads_on_diff_nets = false);
-  // Establish hierarchical connections (dbModNet) between a driver and a load.
-  // - It creates modnet and flat net connections through multiple hierarchies.
-  // - Ensures that the flat net name matches to any of corresponding modnet
-  //   names. If needed, flat net name can be renamed to the modnet name
-  //   connected to the driver pin.
+
+  ///
+  /// Establish hierarchical connections (dbModNet) between a driver and a load.
+  /// - It creates modnet and flat net connections through multiple hierarchies.
+  /// - Ensures that the flat net name matches to any of corresponding modnet
+  ///   names. If needed, flat net name can be renamed to the modnet name
+  ///   connected to the driver pin.
+  ///
   void hierarchicalConnect(dbObject* driver, dbObject* load);
 
  private:
@@ -72,9 +75,10 @@ class dbInsertBuffer
   void rewireBufferSimple(bool insertBefore,
                           dbModNet* orig_mod_net,
                           dbObject* term);
-  bool getPinLocation(dbObject* pin, int& x, int& y) const;
-  Point computeCentroid(dbObject* drvr_pin,
-                        const std::set<dbObject*>& load_pins) const;
+  bool getPinLocation(const dbObject* pin, int& x, int& y) const;
+  bool computeCentroid(const dbObject* drvr_pin,
+                       const std::set<dbObject*>& load_pins,
+                       Point& result) const;
   dbNet* createNewFlatNet(std::set<dbObject*>& connected_terms);
   std::string makeUniqueHierName(dbModule* module,
                                  const std::string& base_name,
@@ -84,14 +88,19 @@ class dbInsertBuffer
   bool stitchLoadToDriver(dbITerm* load_pin,
                           dbITerm* drvr_term,
                           const std::set<dbObject*>& load_pins);
-  dbModNet* getFirstModNetInFaninOfLoads(
-      const std::set<dbObject*>& load_pins,
-      const std::set<dbModNet*>& modnets_in_target_module) const;
   dbModNet* getFirstDriverModNetInTargetModule(
       const std::set<dbModNet*>& modnets_in_target_module) const;
   bool checkAllLoadsAreTargets(dbModNet* net,
                                const std::set<dbObject*>& load_pins);
-  void populateReusableNets(const std::set<dbObject*>& load_pins);
+
+  ///
+  /// This function identifies hierarchical nets (dbModNet) that can be reused
+  /// during buffer insertion. Once a modnet is considered resuable, no new port
+  /// punching and new modnet creation is required.
+  /// A modnet is considered reusable if all of its loads are also target load
+  /// pins for the buffer being inserted.
+  ///
+  void populateReusableModNets(const std::set<dbObject*>& load_pins);
 
   //------------------------------------------------------------------
   // Helper functions for hierarchicalConnect
@@ -144,8 +153,7 @@ class dbInsertBuffer
   //------------------------------------------------------------------
   // Helper functions for insertBufferBeforeLoads
   //------------------------------------------------------------------
-  dbModule* validateLoadPinsAndFindLCA(std::set<dbObject*>& load_pins,
-                                       std::set<dbNet*>& other_dbnets,
+  dbModule* validateLoadPinsAndFindLCA(const std::set<dbObject*>& load_pins,
                                        bool loads_on_diff_nets) const;
   void createNewFlatAndHierNets(std::set<dbObject*>& load_pins);
   void rewireBufferLoadPins(std::set<dbObject*>& load_pins);
@@ -154,14 +162,13 @@ class dbInsertBuffer
                              std::set<dbObject*>& load_pins);
   void setBufferAttributes(dbInst* buffer_inst);
 
- private:
   //------------------------------------------------------------------
   // Debug logging functions
   //------------------------------------------------------------------
   void dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
                              const Point* loc,
                              bool loads_on_diff_nets) const;
-  void dlogTargetLoadPin(dbObject* load_obj) const;
+  void dlogTargetLoadPin(const dbObject* load_obj) const;
   void dlogDifferentDbNet(dbNet* net) const;
   void dlogLCAModule(dbModule* target_module) const;
   void dlogDumpNets(const std::set<dbNet*>& other_dbnets) const;
@@ -177,7 +184,9 @@ class dbInsertBuffer
   void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;
 
- private:
+  //------------------------------------------------------------------
+  // Class attributes
+  //------------------------------------------------------------------
   dbNet* net_{nullptr};  // Target net. The net to which the buffer is inserted
   dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};
@@ -187,8 +196,8 @@ class dbInsertBuffer
   dbITerm* buf_output_iterm_{nullptr};  // Output iterm of the new buffer
   dbNet* new_flat_net_{nullptr};    // New flat net connected to the new buffer
   dbModNet* new_mod_net_{nullptr};  // New modnet connected to the new buffer
-  dbModule* target_module_{nullptr};        // Target module for the new buffer
-  const dbMaster* buffer_master_{nullptr};  // Buffer master
+  dbModule* target_module_{nullptr};  // Target module for the new buffer
+  const dbMaster* buffer_master_{nullptr};
   const char* new_buf_base_name_{nullptr};  // Base name for the new buffer
   const char* new_net_base_name_{nullptr};  // Base name for the new nets
   dbNameUniquifyType uniquify_{dbNameUniquifyType::ALWAYS};
@@ -204,7 +213,7 @@ class dbInsertBuffer
   std::map<dbModule*, std::set<dbModNet*>> module_reusable_nets_;
 
   //------------------------------------------------------------------
-  // Static attribute
+  // Static attributes
   //------------------------------------------------------------------
   inline static std::atomic<int> insert_buffer_call_count_{0};
 };

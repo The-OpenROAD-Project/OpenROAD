@@ -3380,7 +3380,9 @@ Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
     return new_tie_inst;
   }
 
-  assert(false);  // Should not reach here
+  logger_->error(RSZ, 
+                 216, 
+                 "Should not reach here. createNewTieCellForLoadPin() failed.");
   return nullptr;
 }
 

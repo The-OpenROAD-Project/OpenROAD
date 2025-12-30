@@ -547,8 +547,8 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
                loc.getY());
 
     // Update the driving iterm & net to insert a next buffer on it
-    odb::dbObject* drvrPin = lastBuffer->getFirstOutput();
-    drivingNet = static_cast<odb::dbITerm*>(drvrPin)->getNet();
+    odb::dbITerm* drvrPin = lastBuffer->getFirstOutput();
+    drivingNet = drvrPin->getNet();
 
     // Update return buffer (the first buffer inserted)
     if (returnBuffer == nullptr) {

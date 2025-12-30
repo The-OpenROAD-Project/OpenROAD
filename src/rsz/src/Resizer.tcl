@@ -791,7 +791,6 @@ proc insert_buffer { args } {
     keys {-buffer_cell -location -buffer_name -net_name -net -load_pins} \
     flags {-load_pins_on_diff_nets}
 
-  # Validate mutually exclusive arguments
   set has_net [info exists keys(-net)]
   set has_loads [info exists keys(-load_pins)]
 

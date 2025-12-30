@@ -618,30 +618,115 @@ bool dbModNet::isConnected(const dbModNet* other) const
   return (net == other_net);
 }
 
-dbModNet* dbModNet::getNextModNetInFanin() const
+std::vector<dbModNet*> dbModNet::getNextModNetsInFanin() const
 {
+  std::vector<dbModNet*> modnets;
+
+  // 1. Upward: This module's input port -> parent's instance pin -> parent's
+  // net
   for (dbModBTerm* modbterm : getModBTerms()) {
-    if (modbterm->getIoType() == dbIoType::INPUT
-        || modbterm->getIoType() == dbIoType::INOUT) {
-      if (dbModITerm* moditerm = modbterm->getParentModITerm()) {
-        return moditerm->getModNet();
-      }
+    if (modbterm->getIoType() != dbIoType::INPUT
+        && modbterm->getIoType() != dbIoType::INOUT) {
+      continue;
+    }
+
+    dbModITerm* parent_moditerm = modbterm->getParentModITerm();
+    if (parent_moditerm == nullptr) {
+      continue;
+    }
+
+    if (dbModNet* modnet = parent_moditerm->getModNet()) {
+      modnets.push_back(modnet);
     }
   }
 
-  return nullptr;
+  // 2. Downward: Child's instance pin -> child's output port -> child's net
+  for (dbModITerm* moditerm : getModITerms()) {
+    dbModBTerm* child_modbterm = moditerm->getChildModBTerm();
+    if (child_modbterm == nullptr) {
+      continue;
+    }
+
+    if (child_modbterm->getIoType() != dbIoType::OUTPUT
+        && child_modbterm->getIoType() != dbIoType::INOUT) {
+      continue;
+    }
+
+    if (dbModNet* modnet = child_modbterm->getModNet()) {
+      modnets.push_back(modnet);
+    }
+  }
+
+  return modnets;
 }
 
-dbModNet* dbModNet::getNextModNetInFanout() const
+std::vector<dbModNet*> dbModNet::getNextModNetsInFanout() const
 {
-  // Traverse through ModITerms to find child module's modnet
-  // ModITerm connects to child's ModBTerm (INPUT direction from parent's view)
+  std::vector<dbModNet*> next_nets;
+
+  // 1. Downward: This net -> child's instance pin -> child's input port ->
+  // child's net
   for (dbModITerm* moditerm : getModITerms()) {
-    if (dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
-      // Child's INPUT bterm receives signal from this modnet (fanout)
-      if (child_bterm->getIoType() == dbIoType::INPUT
-          || child_bterm->getIoType() == dbIoType::INOUT) {
-        return child_bterm->getModNet();
+    dbModBTerm* child_modbterm = moditerm->getChildModBTerm();
+    if (child_modbterm == nullptr) {
+      continue;
+    }
+
+    // Child's INPUT bterm receives signal from this modnet (fanout)
+    if (child_modbterm->getIoType() != dbIoType::INPUT
+        && child_modbterm->getIoType() != dbIoType::INOUT) {
+      continue;
+    }
+
+    if (dbModNet* modnet = child_modbterm->getModNet()) {
+      next_nets.push_back(modnet);
+    }
+  }
+
+  // 2. Upward: This net -> current module's output port -> parent's instance
+  // pin -> parent's net
+  for (dbModBTerm* modbterm : getModBTerms()) {
+    if (modbterm->getIoType() != dbIoType::OUTPUT
+        && modbterm->getIoType() != dbIoType::INOUT) {
+      continue;
+    }
+
+    dbModITerm* parent_moditerm = modbterm->getParentModITerm();
+    if (parent_moditerm == nullptr) {
+      continue;
+    }
+
+    if (dbModNet* modnet = parent_moditerm->getModNet()) {
+      next_nets.push_back(modnet);
+    }
+  }
+
+  return next_nets;
+}
+
+dbModNet* dbModNet::findInHierarchy(
+    const std::function<bool(dbModNet*)>& condition,
+    dbHierSearchDir dir) const
+{
+  std::vector<dbModNet*> worklist;
+  std::set<dbModNet*> visited;
+  worklist.push_back(const_cast<dbModNet*>(this));
+  visited.insert(const_cast<dbModNet*>(this));
+
+  for (size_t i = 0; i < worklist.size(); ++i) {
+    dbModNet* curr = worklist[i];
+
+    // Return if the condition is met
+    if (condition(curr)) {
+      return curr;
+    }
+
+    std::vector<dbModNet*> next_nets = (dir == dbHierSearchDir::FANOUT)
+                                           ? curr->getNextModNetsInFanout()
+                                           : curr->getNextModNetsInFanin();
+    for (dbModNet* next : next_nets) {
+      if (visited.insert(next).second) {
+        worklist.push_back(next);
       }
     }
   }

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <list>
 #include <map>
@@ -1577,7 +1578,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the bpins of this bterm.
   ///
-  dbSet<dbBPin> getBPins();
+  dbSet<dbBPin> getBPins() const;
 
   ///
   /// This method finds the first "placed" dbPin box.
@@ -1590,7 +1591,7 @@ class dbBTerm : public dbObject
   /// The location is the computed center of the bbox.
   /// returns false if there are no placed bpins. x and y are set to zero.
   //
-  bool getFirstPinLocation(int& x, int& y);
+  bool getFirstPinLocation(int& x, int& y) const;
 
   ///
   /// This method returns the placementstatus of the first dbBPin.
@@ -3423,7 +3424,7 @@ class dbITerm : public dbObject
   /// Get the average of the centers for the iterm shapes
   /// Returns false if iterm has no shapes
   ///
-  bool getAvgXY(int* x, int* y);
+  bool getAvgXY(int* x, int* y) const;
 
   ///
   /// Returns all geometries of all dbMPin associated with
@@ -8597,15 +8598,23 @@ class dbModNet : public dbObject
   bool isConnected(const dbModNet* other) const;
 
   ///
-  /// Returns the next dbModNet in the fanin of this dbModNet.
+  /// Returns the next dbModNets in the fanin of this dbModNet.
+  /// Traverses up to parent inputs or down to child outputs.
   ///
-  dbModNet* getNextModNetInFanin() const;
+  std::vector<dbModNet*> getNextModNetsInFanin() const;
 
   ///
-  /// Returns the next dbModNet in the fanout of this dbModNet.
-  /// Traverses down the hierarchy through OUTPUT ModITerms.
+  /// Returns the next dbModNets in the fanout of this dbModNet.
+  /// Traverses down to child inputs or up to parent outputs.
   ///
-  dbModNet* getNextModNetInFanout() const;
+  std::vector<dbModNet*> getNextModNetsInFanout() const;
+
+  ///
+  /// Traverses the hierarchy in search of the first mod net that satisfies the
+  /// given condition.
+  ///
+  dbModNet* findInHierarchy(const std::function<bool(dbModNet*)>& condition,
+                            dbHierSearchDir dir) const;
 
   static dbModNet* getModNet(dbBlock* block, uint32_t id);
   static dbModNet* create(dbModule* parent_module, const char* base_name);
@@ -8625,6 +8634,11 @@ class dbModule : public dbObject
   void setModInst(dbModInst* mod_inst);
 
   dbModInst* getModInst() const;
+
+  ///
+  /// Returns the parent module, or nullptr if this is the top-level module.
+  ///
+  dbModule* getParentModule() const;
 
   // User Code Begin dbModule
   std::string getHierarchicalName() const;

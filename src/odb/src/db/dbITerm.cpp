@@ -751,7 +751,7 @@ Rect dbITerm::getBBox()
   return bbox;
 }
 
-bool dbITerm::getAvgXY(int* x, int* y)
+bool dbITerm::getAvgXY(int* x, int* y) const
 {
   dbMTerm* mterm = getMTerm();
   int nn = 0;

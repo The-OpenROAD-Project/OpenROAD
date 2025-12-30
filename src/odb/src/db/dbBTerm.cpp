@@ -484,10 +484,10 @@ void dbBTerm::disconnectDbNet()
   }
 }
 
-dbSet<dbBPin> dbBTerm::getBPins()
+dbSet<dbBPin> dbBTerm::getBPins() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
-  return dbSet<dbBPin>(this, block->bpin_itr_);
+  return dbSet<dbBPin>(const_cast<dbBTerm*>(this), block->bpin_itr_);
 }
 
 dbITerm* dbBTerm::getITerm()
@@ -551,7 +551,7 @@ dbPlacementStatus dbBTerm::getFirstPinPlacementStatus()
   return bpins.begin()->getPlacementStatus();
 }
 
-bool dbBTerm::getFirstPinLocation(int& x, int& y)
+bool dbBTerm::getFirstPinLocation(int& x, int& y) const
 {
   for (dbBPin* bpin : getBPins()) {
     for (dbBox* box : bpin->getBoxes()) {

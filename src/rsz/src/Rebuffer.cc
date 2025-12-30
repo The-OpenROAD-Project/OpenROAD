@@ -1737,10 +1737,6 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
   return insts;
 }
 
-// Martin (2024-04-18): This is copied over from original RepairSetup
-// buffering mostly unchanged and is ripe for clean-up/rewrite later.
-// Jaehyun (2025-11-27): Re-implemented using insertBufferBeforeLoads to
-// simplify hierarchy handling and avoid direct use of hierarchicalConnect.
 int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                Net* net,  // Original Driver Net (flat)
                                int level,
@@ -1777,10 +1773,6 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   insertBuffers = [&](const BufferedNetPtr& node,
                       PinSet& current_loads,
                       int& count) {
-    if (!node) {
-      return;
-    }
-
     switch (node->type()) {
       case BufferedNetType::via:
       case BufferedNetType::wire: {
@@ -1857,15 +1849,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
           odb::dbITerm* input_term = buf_inst->findITerm(input->name());
           if (input_term) {
             Pin* sta_input_pin = db_network_->dbToSta(input_term);
-            if (sta_input_pin != nullptr) {
-              current_loads.insert(sta_input_pin);
-            } else {
-              logger_->warn(
-                  RSZ,
-                  2023,
-                  "rebuffer: dbToSta failed for newly created buffer pin '{}'",
-                  input_term->getInst()->getName());
-            }
+            current_loads.insert(sta_input_pin);
           }
 
           debugPrint(logger_,
@@ -1891,6 +1875,9 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
             }
           }
         } else {
+          // No need to issue a WARNING or ERROR because a proper
+          // WARNING or ERROR has been issued already by insertBuffer API.
+
           // If insertion failed, pass the child loads up so connectivity isn't
           // lost
           current_loads.insert(child_loads.begin(), child_loads.end());

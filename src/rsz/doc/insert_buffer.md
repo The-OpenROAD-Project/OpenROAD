@@ -44,7 +44,7 @@ insert_buffer -buffer_cell lib_cell
 ## Buffering Cases
 
 ### 1. Driver-side Buffering (`-net`)
-Inserts a buffer immediately after the driver pin of the specified net. The original net is connected to the buffer input, and a new net is created for the buffer output to drive all original loads.
+Inserts a buffer immediately after the driver pin of the specified net. The original net driving all loads is connected to the buffer output, and a new net is created for the buffer input to drive the new buffer instance.
 
 **Example:**
 ```tcl
