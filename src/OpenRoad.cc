@@ -507,6 +507,7 @@ void OpenRoad::check3DBlox()
 {
   if (db_->getChip() == nullptr) {
     logger_->error(utl::ORD, 76, "No design loaded.");
+    return;
   }
   odb::ThreeDBlox checker(logger_, db_, sta_);
   checker.check();
