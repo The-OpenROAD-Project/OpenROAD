@@ -817,6 +817,18 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
   initRoutingLayers(min_layer, max_layer);
+
+  // Release the resources used by the dirty nets.
+  for (odb::dbNet* db_net : dirty_nets_) {
+    Net* net = db_net_map_[db_net];
+    if (net->areSegmentsRestored()) {
+      updateNetResources(net, true);
+      net->setAreSegmentsRestored(false);
+    } else if (!net->isMergedNet()) {
+      fastroute_->clearNetRoute(db_net);
+    }
+  }
+
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     updateNetPins(net);
@@ -825,11 +837,10 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     // compare new positions with last positions & add on vector
 
     if (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
-        && !net->isMergedNet() && !netIsCovered(db_net, pins_not_covered)) {
+        && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       routes_[db_net].clear();
       db_net->clearGuides();
-      fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
         logger_->error(
@@ -846,7 +857,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
-  if (db_net->getGuides().empty() || !net->isGuideRestored()) {
+  if (db_net->getGuides().empty() || !net->restoreRouteFromGuides()) {
     return false;
   }
 
@@ -867,12 +878,14 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     return false;
   }
 
-  net->setIsGuideRestored(false);
-  addNetResources(net);
+  net->setRestoreRouteFromGuides(false);
+  net->setAreSegmentsRestored(true);
+  updateNetResources(net, false);
+
   return true;
 }
 
-void GlobalRouter::addNetResources(Net* net)
+void GlobalRouter::updateNetResources(Net* net, bool increase)
 {
   GRoute& segments = routes_[net->getDbNet()];
   for (GSegment& segment : segments) {
@@ -882,7 +895,7 @@ void GlobalRouter::addNetResources(Net* net)
                       segment.final_x,
                       segment.final_y,
                       segment.final_layer,
-                      1,
+                      increase ? -1 : 1,
                       net->getDbNet());
     }
   }
@@ -5749,9 +5762,15 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         // Copy the nets from the set to the vector of dirty nets
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
+          Net* fr_net = db_net_map_[db_net];
           dirty_nets.push_back(db_net_map_[db_net]);
           // Release resources on FastRouter
-          fastroute_->clearNetRoute(db_net);
+          if (fr_net->areSegmentsRestored()) {
+            updateNetResources(fr_net, true);
+            fr_net->setAreSegmentsRestored(false);
+          } else {
+            fastroute_->clearNetRoute(db_net);
+          }
           // if the net has wires, release resources used by wires
           Net* net = db_net_map_[db_net];
           destroyNetWire(net);
@@ -5871,7 +5890,7 @@ void GRouteDbCbk::inDbNetPostMerge(odb::dbNet* preserved_net,
 void GRouteDbCbk::inDbNetPostGuideRestore(odb::dbNet* net)
 {
   Net* fr_net = grouter_->getNet(net);
-  fr_net->setIsGuideRestored(true);
+  fr_net->setRestoreRouteFromGuides(true);
 }
 
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
