@@ -21,7 +21,7 @@ log_cmd report_checks
 log_cmd report_power
 
 set fp [open $::env(RESULTS_DIR)/activity.tcl w]
-set pins [get_pins -hierarchical *]
+set pins [lsort -dictionary [get_pins -hierarchical *]]
 set clock_period [expr [get_property [get_clocks] period] * 1e-12]
 foreach pin $pins {
   set activity [get_property $pin activity]
@@ -103,7 +103,7 @@ set total_power_user_activity [total_power]
 puts "Total power from VCD: $total_power_vcd"
 puts "Total power from user activity: $total_power_user_activity"
 
-if { $total_power_vcd == $total_power_user_activity } {
+if { abs($total_power_vcd - $total_power_user_activity) < 1e-9 } {
   puts "Error: setting user power activity had no effect, expected some loss in accuracy"
   exit 1
 }
