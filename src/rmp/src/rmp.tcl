@@ -155,7 +155,6 @@ proc resynth_annealing { args } {
 
 sta::define_cmd_args "resynth_emap" {
                                       [-corner corner]
-                                      [-genlib_file genlib_file]\
                                       [-target area|timing]\
                                       [-map_multioutput]\
                                       [-verbose]\
@@ -164,7 +163,7 @@ sta::define_cmd_args "resynth_emap" {
 
 proc resynth_emap { args } {
   sta::parse_key_args "resynth_emap" args \
-    keys {-corner -genlib_file -target -work_dir} \
+    keys {-corner -target -work_dir} \
     flags {-map_multioutput -verbose}
 
   set corner [sta::parse_corner keys]
@@ -172,12 +171,6 @@ proc resynth_emap { args } {
   set map_multioutput [info exists flags(-map_multioutput)]
   set verbose [info exists flags(-verbose)]
   set workdir_name "."
-
-  if { [info exists keys(-genlib_file)] } {
-    set genlib_file_name $keys(-genlib_file)
-  } else {
-    utl::error RMP 12 "Missing argument -genlib_file"
-  }
 
   if { [info exists keys(-target)] } {
     set target $keys(-target)
@@ -187,5 +180,5 @@ proc resynth_emap { args } {
     set workdir_name $keys(-work_dir)
   }
 
-  rmp::resynth_emap_cmd $corner $genlib_file_name $target $map_multioutput $verbose $workdir_name
+  rmp::resynth_emap_cmd $corner $target $map_multioutput $verbose $workdir_name
 }

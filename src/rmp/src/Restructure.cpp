@@ -709,7 +709,6 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
 }
 
 void Restructure::resynthEmap(sta::Corner* corner,
-                              const char* genlib_file_name,
                               bool map_multioutput,
                               bool verbose,
                               char* workdir_name)
@@ -719,7 +718,6 @@ void Restructure::resynthEmap(sta::Corner* corner,
   extended_technology_mapping(open_sta_,
                               db_,
                               corner,
-                              genlib_file_name,
                               map_multioutput,
                               area_oriented_mapping,
                               verbose,

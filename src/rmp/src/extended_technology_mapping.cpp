@@ -23,10 +23,7 @@
 #include "utl/Logger.h"
 
 namespace abc {
-
-extern void Abc_FrameSetLibGen(void* pLib);
-extern Aig_Man_t* Abc_NtkToDar(Abc_Ntk_t* pNtk, int fExors, int fRegisters);
-
+Vec_Str_t* Abc_SclProduceGenlibStrSimple(SC_Lib* p);
 }  // namespace abc
 
 namespace rmp {
@@ -373,7 +370,6 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 void extended_technology_mapping(sta::dbSta* sta,
                                  odb::dbDatabase* db,
                                  sta::Corner* corner,
-                                 const char* genlib_file_name,
                                  bool map_multioutput,
                                  bool area_oriented_mapping,
                                  bool verbose,
@@ -396,8 +392,56 @@ void extended_technology_mapping(sta::dbSta* sta,
   // Read genlib
   std::vector<mockturtle::gate> gates;
   {
-    auto code = lorina::read_genlib(std::string(genlib_file_name),
-                                    mockturtle::genlib_reader(gates));
+    cut::AbcLibraryFactory factory(logger);
+    factory.AddDbSta(sta);
+    factory.AddResizer(resizer);
+    factory.SetCorner(corner);
+    auto abc_library = factory.BuildScl();
+    auto genlib_vec = abc::Abc_SclProduceGenlibStrSimple(abc_library.get());
+    // ABC ends the file with '.end', but mockturtle doesn't like that
+    for (int i = 0; i < sizeof(".end\n\0"); i++) {
+      Vec_StrPop(genlib_vec);
+    }
+    Vec_StrPush(genlib_vec, '\0');
+    auto genlib_str = Vec_StrArray(genlib_vec);
+    std::istringstream genlib(genlib_str);
+
+    class diagnostic_consumer : public lorina::diagnostic_consumer
+    {
+     public:
+      diagnostic_consumer(utl::Logger* logger) : logger_(logger) {}
+
+      void handle_diagnostic(lorina::diagnostic_level level,
+                             const std::string& message) const override
+      {
+        switch (level) {
+          case lorina::diagnostic_level::ignore:
+            break;
+          case lorina::diagnostic_level::note:
+          case lorina::diagnostic_level::remark:
+            logger_->info(utl::RMP, 424, "{}", message);
+            break;
+          case lorina::diagnostic_level::warning:
+            logger_->warn(utl::RMP, 427, "{}", message);
+            break;
+          case lorina::diagnostic_level::error:
+            logger_->error(utl::RMP, 430, "{}", message);
+            break;
+          case lorina::diagnostic_level::fatal:
+            logger_->critical(utl::RMP, 433, "{}", message);
+            break;
+        }
+      }
+
+     private:
+      utl::Logger* logger_;
+    };
+
+    diagnostic_consumer diag_consumer(logger);
+    lorina::diagnostic_engine diag_engine(&diag_consumer);
+
+    auto code = lorina::read_genlib(
+        genlib, mockturtle::genlib_reader(gates), &diag_engine);
 
     if (code != lorina::return_code::success) {
       logger->report("Error reading genlib file");

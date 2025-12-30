@@ -65,6 +65,7 @@ class AbcLibraryFactory
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
   AbcLibraryFactory& AddResizer(rsz::Resizer* resizer);
   AbcLibraryFactory& SetCorner(sta::Corner* corner);
+  utl::UniquePtrWithDeleter<abc::SC_Lib> BuildScl();
   AbcLibrary Build();
 
  private:

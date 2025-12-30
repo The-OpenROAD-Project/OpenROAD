@@ -112,9 +112,9 @@ int blif_read(cut::Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
 }
 
-void resynth_emap_cmd(Corner* corner, char* genlib_file_name, char* target, bool map_multioutput, bool verbose, char* workdir_name) {
+void resynth_emap_cmd(Corner* corner, char* target, bool map_multioutput, bool verbose, char* workdir_name) {
   getRestructure()->setMode(target);
-  getRestructure()->resynthEmap(corner, genlib_file_name, map_multioutput, verbose, workdir_name);
+  getRestructure()->resynthEmap(corner, map_multioutput, verbose, workdir_name);
 }
 
 %}

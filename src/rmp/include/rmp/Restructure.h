@@ -89,7 +89,6 @@ class Restructure
   void setTieHiPort(sta::LibertyPort* hiport);
 
   void resynthEmap(sta::Corner* corner,
-                   const char* genlib_file_name,
                    bool map_multioutput,
                    bool verbose,
                    char* workdir_name);

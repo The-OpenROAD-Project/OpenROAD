@@ -374,7 +374,7 @@ AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Corner* corner)
   return *this;
 }
 
-AbcLibrary AbcLibraryFactory::Build()
+utl::UniquePtrWithDeleter<abc::SC_Lib> AbcLibraryFactory::BuildScl()
 {
   if (!db_sta_) {
     logger_->error(utl::CUT, 19, "Build called with null sta library");
@@ -406,10 +406,13 @@ AbcLibrary AbcLibraryFactory::Build()
   abc::Abc_SclHashCells(abc_library);
   abc::Abc_SclLinkCells(abc_library);
 
-  return AbcLibrary(
-      utl::UniquePtrWithDeleter<abc::SC_Lib>(
-          abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }),
-      logger_);
+  return utl::UniquePtrWithDeleter<abc::SC_Lib>(
+      abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); });
+}
+
+AbcLibrary AbcLibraryFactory::Build()
+{
+  return AbcLibrary(BuildScl(), logger_);
 }
 
 std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromCorner(

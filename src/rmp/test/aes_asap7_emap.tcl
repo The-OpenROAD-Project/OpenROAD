@@ -63,7 +63,6 @@ write_verilog_for_eqy $test_name before "None"
 puts "-- After --\n"
 
 resynth_emap -corner fast \
-  -genlib_file ../../../third-party/mockturtle/experiments/cell_libraries/asap7.genlib \
   -target timings \
   -map_multioutput \
   -verbose

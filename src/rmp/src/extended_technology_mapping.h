@@ -11,7 +11,6 @@ namespace rmp {
 void extended_technology_mapping(sta::dbSta* sta,
                                  odb::dbDatabase *db,
                                  sta::Corner* corner,
-                                 const char* genlib_file_name,
                                  bool map_multioutput,
                                  bool area_oriented_mapping,
                                  bool verbose,
