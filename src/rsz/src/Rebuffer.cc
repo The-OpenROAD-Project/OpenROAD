@@ -254,14 +254,8 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
 bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
                                     const BnetPtr& bnet)
 {
-  double wire_res, wire_cap;
-  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
   float r_drvr = driver->driveResistance();
-  float load_slew
-      = (r_drvr + resizer_->dbuToMeters(bnet->maxLoadWireLength()) * wire_res)
-        * bnet->cap() * elmore_skew_factor_;
-
-  return load_slew <= maxSlewMargined(bnet->maxLoadSlew());
+  return r_drvr * bnet->cap() <= maxSlewMargined(bnet->maxLoadSlew());
 }
 
 FixedDelay Rebuffer::slackAtDriverPin(const BufferedNetPtr& bnet)
@@ -369,21 +363,17 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
                                       int extra_wire_length)
 {
   double wire_res, wire_cap;
-  sta::LibertyPort *inp, *outp;
   estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
-  size.cell->bufferPorts(inp, outp);
 
-  const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
-                          + outp->capacitance();
+  const float segment_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap;
+  const float segment_res = resizer_->dbuToMeters(extra_wire_length) * wire_res;
 
   const float load_slew
-      = (size.driver_resistance
-         + resizer_->dbuToMeters(bnet->maxLoadWireLength() + extra_wire_length)
-               * wire_res)
-        * (bnet->cap() + extra_cap) * elmore_skew_factor_;
+      = size.driver_resistance * (bnet->cap() + segment_cap)
+        + segment_cap * segment_res * resizer_->slew_shape_factor_ / 2;
 
   bool load_slew_satisfied = load_slew <= maxSlewMargined(bnet->maxLoadSlew());
-  bool max_cap_satisfied = (bnet->cap() + extra_cap) <= size.margined_max_cap;
+  bool max_cap_satisfied = (bnet->cap() + segment_cap) <= size.margined_max_cap;
   return load_slew_satisfied && max_cap_satisfied;
 }
 
@@ -398,9 +388,11 @@ int Rebuffer::wireLengthLimitImpliedByLoadSlew(sta::LibertyCell* cell)
 
   const float max_slew = maxSlewMargined(resizer_->maxInputSlew(in, corner_));
 
-  const double a = wire_res * wire_cap;
-  const double b = wire_res * in->capacitance() + r_drvr * wire_cap;
-  const double c = r_drvr * in->capacitance() - max_slew / elmore_skew_factor_;
+  const double a = wire_res * wire_cap * resizer_->slew_shape_factor_ / 2;
+  const double b
+      = (r_drvr * wire_cap)
+        + (wire_res * in->capacitance() * resizer_->slew_shape_factor_);
+  const double c = (r_drvr * in->capacitance()) - max_slew;
   const double D = b * b - 4 * a * c;
 
   if (D < 0) {
@@ -428,6 +420,13 @@ int Rebuffer::wireLengthLimitImpliedByLoadSlew(sta::LibertyCell* cell)
                    corner_->name());
   }
 
+  debugPrint(logger_,
+             RSZ,
+             "rebuffer",
+             1,
+             "wire length limiy implied by max load slew {:.2e} meters, {} dbu",
+             meters,
+             resizer_->metersToDbu(meters));
   return resizer_->metersToDbu(meters);
 }
 
@@ -1150,6 +1149,7 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
                 combinedTransition(p->slackTransition(), q->slackTransition()));
             bnet->setSlack(std::min(p->slack(), q->slack()));
             bnet->setCapacitance(p->cap() + q->cap());
+            bnet->setMaxLoadSlew(std::min(p->maxLoadSlew(), q->maxLoadSlew()));
             return ret;
           }
           case BnetType::wire: {
@@ -1171,6 +1171,9 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             bnet->setDelay(wire_delay);
             bnet->setSlack(p->slack() - wire_delay);
             bnet->setSlackTransition(p->slackTransition());
+            bnet->setMaxLoadSlew(p->maxLoadSlew()
+                                 - wire_res * (wire_cap / 2 + p->cap())
+                                       * resizer_->slew_shape_factor_);
             return ret;
           }
           case BnetType::via: {
@@ -1252,6 +1255,9 @@ BnetPtr Rebuffer::addWire(const BnetPtr& p,
   z->setDelay(wire_delay);
   z->setSlack(p->slack() - wire_delay);
   z->setSlackTransition(p->slackTransition());
+  z->setMaxLoadSlew(p->maxLoadSlew()
+                    - wire_res * (wire_cap / 2 + p->cap())
+                          * resizer_->slew_shape_factor_);
 
   if (level != -1) {
     debugPrint(logger_,
