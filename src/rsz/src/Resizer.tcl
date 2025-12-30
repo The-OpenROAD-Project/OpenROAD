@@ -837,6 +837,10 @@ proc insert_buffer { args } {
     set loads [sta::get_port_pins_error "insert_buffer" $keys(-load_pins)]
     set load_count [llength $loads]
     if { $load_count == 1 } {
+      if { $has_net } {
+        utl::warn RSZ 69 "-net argument is ignored if there is only one load pin."
+      }
+
       # For a single load pin, use insert_buffer_before_load_cmd
       set pin [lindex $loads 0]
       return [rsz::insert_buffer_before_load_cmd $pin $buffer_cell $x $y $has_loc \

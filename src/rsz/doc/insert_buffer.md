@@ -82,6 +82,8 @@ allow buffering load pins from different `dbNet`s. With `-net` option,
 the target net on which the buffer is inserted can be selected.
 If `-net` is not specified, the net connected to the first load pin will be 
 selected as the target net.
+Note that `-load_pins_on_diff_nets` and `-net` are meaningless 
+when a single load pin is given by `-load_pins`.
 
 **Example:**
 ```tcl

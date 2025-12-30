@@ -169,18 +169,22 @@ class dbInsertBuffer
                              const Point* loc,
                              bool loads_on_diff_nets) const;
   void dlogTargetLoadPin(const dbObject* load_obj) const;
-  void dlogDifferentDbNet(dbNet* net) const;
-  void dlogLCAModule(dbModule* target_module) const;
+  void dlogDifferentDbNet(const dbNet* net) const;
+  void dlogLCAModule(const dbModule* target_module) const;
   void dlogDumpNets(const std::set<dbNet*>& other_dbnets) const;
   void dlogCreatingNewHierNet(const char* base_name) const;
   void dlogConnectedBufferInputFlat() const;
-  void dlogConnectedBufferInputHier(dbModNet* orig_mod_net) const;
-  void dlogConnectedBufferInputViaHierConnect(dbObject* drvr_term) const;
+  void dlogConnectedBufferInputHier(const dbModNet* orig_mod_net) const;
+  void dlogConnectedBufferInputViaHierConnect(const dbObject* drvr_term) const;
   void dlogConnectedBufferOutput() const;
-  void dlogCreatingHierConn(int load_idx, int num_loads, dbITerm* load) const;
-  void dlogMovedBTermLoad(int load_idx, int num_loads, dbBTerm* load) const;
-  void dlogPlacingBuffer(dbInst* buffer_inst, const Point& loc) const;
-  void dlogInsertBufferSuccess(dbInst* buffer_inst) const;
+  void dlogCreatingHierConn(int load_idx,
+                            int num_loads,
+                            const dbITerm* load) const;
+  void dlogMovedBTermLoad(int load_idx,
+                          int num_loads,
+                          const dbBTerm* load) const;
+  void dlogPlacingBuffer(const dbInst* buffer_inst, const Point& loc) const;
+  void dlogInsertBufferSuccess(const dbInst* buffer_inst) const;
   void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;
 

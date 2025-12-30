@@ -1533,7 +1533,7 @@ void dbInsertBuffer::dlogTargetLoadPin(const dbObject* load_obj) const
              load_obj->getName());
 }
 
-void dbInsertBuffer::dlogDifferentDbNet(dbNet* net) const
+void dbInsertBuffer::dlogDifferentDbNet(const dbNet* net) const
 {
   debugPrint(logger_,
              utl::ODB,
@@ -1543,7 +1543,7 @@ void dbInsertBuffer::dlogDifferentDbNet(dbNet* net) const
              net ? net->getName() : "<null>");
 }
 
-void dbInsertBuffer::dlogLCAModule(dbModule* target_module) const
+void dbInsertBuffer::dlogLCAModule(const dbModule* target_module) const
 {
   if (logger_->debugCheck(utl::ODB, "insert_buffer", 1)) {
     dbModInst* target_mod_inst
@@ -1602,7 +1602,8 @@ void dbInsertBuffer::dlogConnectedBufferInputFlat() const
              net_->getName());
 }
 
-void dbInsertBuffer::dlogConnectedBufferInputHier(dbModNet* orig_mod_net) const
+void dbInsertBuffer::dlogConnectedBufferInputHier(
+    const dbModNet* orig_mod_net) const
 {
   debugPrint(logger_,
              utl::ODB,
@@ -1615,7 +1616,7 @@ void dbInsertBuffer::dlogConnectedBufferInputHier(dbModNet* orig_mod_net) const
 }
 
 void dbInsertBuffer::dlogConnectedBufferInputViaHierConnect(
-    dbObject* drvr_term) const
+    const dbObject* drvr_term) const
 {
   debugPrint(logger_,
              utl::ODB,
@@ -1644,7 +1645,7 @@ void dbInsertBuffer::dlogConnectedBufferOutput() const
 
 void dbInsertBuffer::dlogCreatingHierConn(int load_idx,
                                           int num_loads,
-                                          dbITerm* load) const
+                                          const dbITerm* load) const
 {
   debugPrint(logger_,
              utl::ODB,
@@ -1659,7 +1660,7 @@ void dbInsertBuffer::dlogCreatingHierConn(int load_idx,
 
 void dbInsertBuffer::dlogMovedBTermLoad(int load_idx,
                                         int num_loads,
-                                        dbBTerm* load) const
+                                        const dbBTerm* load) const
 {
   debugPrint(logger_,
              utl::ODB,
@@ -1676,7 +1677,7 @@ void dbInsertBuffer::dlogMovedBTermLoad(int load_idx,
                           : "");
 }
 
-void dbInsertBuffer::dlogPlacingBuffer(dbInst* buffer_inst,
+void dbInsertBuffer::dlogPlacingBuffer(const dbInst* buffer_inst,
                                        const Point& loc) const
 {
   debugPrint(logger_,
@@ -1689,7 +1690,7 @@ void dbInsertBuffer::dlogPlacingBuffer(dbInst* buffer_inst,
              loc.getY());
 }
 
-void dbInsertBuffer::dlogInsertBufferSuccess(dbInst* buffer_inst) const
+void dbInsertBuffer::dlogInsertBufferSuccess(const dbInst* buffer_inst) const
 {
   debugPrint(logger_,
              utl::ODB,
