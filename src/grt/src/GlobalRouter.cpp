@@ -1755,20 +1755,16 @@ void GlobalRouter::updateResources(const int& init_x,
                                    odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastrouter
-  int grid_init_x = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_init_y = (int) ((init_y - grid_->getYMin()) / grid_->getTileSize());
-  int grid_final_x
-      = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
-  int grid_final_y
-      = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  int x0 = (int) ((init_x - grid_->getXMin()) / grid_->getTileSize());
+  int y0 = (int) ((init_y - grid_->getYMin()) / grid_->getTileSize());
+  int x1 = (int) ((final_x - grid_->getXMin()) / grid_->getTileSize());
+  int y1 = (int) ((final_y - grid_->getYMin()) / grid_->getTileSize());
 
-  fastroute_->updateEdge2DAnd3DUsage(grid_init_x,
-                                     grid_init_y,
-                                     grid_final_x,
-                                     grid_final_y,
-                                     layer_level,
-                                     used,
-                                     db_net);
+  // The last gcell is oversized and includes space that the above
+  // calculation doesn't represent so correct it:
+  x1 = std::min(x1, grid_->getXGrids() - 1);
+  y1 = std::min(y1, grid_->getYGrids() - 1);
+  fastroute_->updateEdge2DAnd3DUsage(x0, y0, x1, y1, layer_level, used, db_net);
 }
 
 void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
