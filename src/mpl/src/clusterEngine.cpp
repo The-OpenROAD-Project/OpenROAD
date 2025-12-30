@@ -1710,7 +1710,7 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
     for (auto& small_child : small_children) {
       small_children_ids.push_back(small_child->getId());
     }
-    
+
     // Firstly we perform Type 1 merge
     for (int i = 0; i < num_small_children; i++) {
       Cluster* close_cluster = findSingleWellFormedConnectedCluster(
@@ -1823,8 +1823,8 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
 bool ClusteringEngine::mergeHonorsMaxThresholds(const Cluster* a,
                                                 const Cluster* b) const
 {
-  return a->getNumMacro() + b->getNumMacro() <= max_macro_
-         && a->getNumStdCell() + b->getNumStdCell() <= max_std_cell_;
+  return ((a->getNumMacro() + b->getNumMacro()) <= max_macro_)
+         && ((a->getNumStdCell() + b->getNumStdCell()) <= max_std_cell_);
 }
 
 bool ClusteringEngine::sameConnectionSignature(Cluster* a, Cluster* b) const
