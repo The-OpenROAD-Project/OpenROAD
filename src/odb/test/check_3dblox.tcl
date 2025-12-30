@@ -13,15 +13,6 @@ proc get_3dblox_marker_count { sub_category_name } {
   return [$sub_category getMarkerCount]
 }
 
-# Suppress noisy standard loading messages and checker warnings
-suppress_message ODB 227
-suppress_message ODB 128
-suppress_message ODB 131
-suppress_message ODB 133
-suppress_message STA 1171
-suppress_message ODB 156
-suppress_message ODB 151
-
 # 1. Load clean design
 read_3dbx "data/example.3dbx"
 set db [ord::get_db]
