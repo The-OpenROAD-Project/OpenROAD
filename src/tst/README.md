@@ -1,6 +1,6 @@
-#Unit Test Infrastructure
+# Unit Test Infrastructure
 
-This is infrastructure to support C++ unit tests.  It is not linked into
+This is infrastructure to support C++ unit tests. It is not linked into
 the OpenROAD application.
 
 This provides a basic gtest fixture that has commonly needed
