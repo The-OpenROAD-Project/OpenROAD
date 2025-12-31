@@ -168,13 +168,13 @@ dbModInst* dbModule::getModInst() const
   return (dbModInst*) par->modinst_tbl_->getPtr(obj->mod_inst_);
 }
 
+// User Code Begin dbModulePublicMethods
+
 dbModule* dbModule::getParentModule() const
 {
   dbModInst* mod_inst = getModInst();
   return (mod_inst != nullptr) ? mod_inst->getParent() : nullptr;
 }
-
-// User Code Begin dbModulePublicMethods
 
 const dbModBTerm* dbModule::getHeadDbModBTerm() const
 {

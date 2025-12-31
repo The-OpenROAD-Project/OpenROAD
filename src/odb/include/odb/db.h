@@ -8637,12 +8637,13 @@ class dbModule : public dbObject
 
   dbModInst* getModInst() const;
 
+  // User Code Begin dbModule
+
   ///
   /// Returns the parent module, or nullptr if this is the top-level module.
   ///
   dbModule* getParentModule() const;
 
-  // User Code Begin dbModule
   std::string getHierarchicalName() const;
 
   // Get a mod net by name
