@@ -548,7 +548,7 @@ class FastRouteCore
   int getWireResistanceCost(int layer, int length, FrNet* net);
   int getViaResistanceCost(int from_layer, int to_layer);
   float getNetResistance(FrNet* net, bool assume_layer = false);
-  float getResAwareScore(FrNet* net, float net_length);
+  float getResAwareScore(FrNet* net);
 
   /**
    * @brief Validates the routing of edges for a specified net.
