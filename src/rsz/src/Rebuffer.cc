@@ -495,6 +495,21 @@ int Rebuffer::wireLengthLimitImpliedByMaxCap(sta::LibertyCell* cell)
   return std::numeric_limits<int>::max();
 }
 
+int middleValue(int a, int b, int c)
+{
+  if (b < a) {
+    std::swap(a, b);
+  }
+
+  if (c > b) {
+    return b;
+  } else if (c > a) {
+    return c;
+  } else {
+    return a;
+  }
+}
+
 BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
                                          const BnetPtr& left,
                                          const BnetPtr& right,
@@ -547,10 +562,16 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
       aux2 = stripWiresAndBuffersOnBnet(aux2);
       crit2 = stripWiresAndBuffersOnBnet(crit2);
 
-      const BnetPtr in1 = addWire(aux1, node->location(), -1);
-      const BnetPtr in2 = addWire(aux2, node->location(), -1);
+      Point p1 = aux1->location();
+      Point p2 = aux2->location();
+      Point p3 = crit2->location();
+      Point junction_point = {middleValue(p1.x(), p2.x(), p3.x()),
+                              middleValue(p1.y(), p2.y(), p3.y())};
+
+      const BnetPtr in1 = addWire(aux1, junction_point, -1);
+      const BnetPtr in2 = addWire(aux2, junction_point, -1);
       const BnetPtr junc1
-          = addWire(createBnetJunction(resizer_, in1, in2, node->location()),
+          = addWire(createBnetJunction(resizer_, in1, in2, junction_point),
                     node->location(),
                     -1);
       const BnetPtr in3 = addWire(crit2, node->location(), -1);
