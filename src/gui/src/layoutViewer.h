@@ -204,6 +204,12 @@ class LayoutViewer : public QWidget
 
   // zoom to the specified rect
   void zoomTo(const odb::Rect& rect_dbu);
+  
+  // zoom to the specified point
+  void zoomTo(const odb::Point& focus, int diameter);
+
+  // get the size of the 
+  int getVisibleDiameter();
 
   // indicates a chip has been loaded
   void chipLoaded(odb::dbChip* chip);
@@ -291,7 +297,7 @@ class LayoutViewer : public QWidget
 
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
   odb::Rect getBounds() const;
-  odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
+  odb::Rect getPaddedRect(const odb::Rect& rect, double factor = defaultZoomMargin);
 
   bool hasDesign() const;
   int getDbuPerMicron() const;
@@ -435,6 +441,7 @@ class LayoutViewer : public QWidget
   std::string loading_indicator_;
 
   static constexpr qreal kZoomScaleFactor = 1.2;
+  static constexpr double defaultZoomMargin = 0.05;
 
   // parameters used to animate the selection of objects
   static constexpr int kAnimationRepeats = 6;

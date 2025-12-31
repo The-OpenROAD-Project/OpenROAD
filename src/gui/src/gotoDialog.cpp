@@ -35,25 +35,21 @@ void GotoLocationDialog::updateUnits(int dbu_per_micron, bool use_dbu)
 void GotoLocationDialog::updateLocation(QLineEdit* x_edit, QLineEdit* y_edit)
 {
   auto viewer = viewers_->getCurrent();
+  if (!viewer) {
+    return;
+  }
   x_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().x(), false)));
   y_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().y(), false)));
+  int box_size = viewer->getVisibleDiameter();
+  sEdit->setText(QString::fromStdString(
+      Descriptor::Property::convert_dbu(box_size, false)));
 }
 
 void GotoLocationDialog::show_init()
 {
-  auto viewer = viewers_->getCurrent();
   GotoLocationDialog::updateLocation(xEdit, yEdit);
-  int box_size = sqrt(pow((viewer->getVisibleBounds().lr().x()
-                           - viewer->getVisibleBounds().ll().x()),
-                          2)
-                      + pow((viewer->getVisibleBounds().ul().y()
-                             - viewer->getVisibleBounds().ll().y()),
-                            2))
-                 / 2;
-  sEdit->setText(QString::fromStdString(
-      Descriptor::Property::convert_dbu(box_size, false)));
   show();
 }
 
@@ -67,13 +63,10 @@ void GotoLocationDialog::accept()
       xEdit->text().toStdString(), &convert_x_ok);
   int y_coord = Descriptor::Property::convert_string(
       yEdit->text().toStdString(), &convert_y_ok);
-  int box_size = Descriptor::Property::convert_string(
+  int diameter = Descriptor::Property::convert_string(
       sEdit->text().toStdString(), &convert_s_ok);
   if (convert_x_ok && convert_y_ok && convert_s_ok) {
-    gui->zoomTo(odb::Rect(x_coord - box_size,
-                          y_coord - box_size,
-                          x_coord + box_size,
-                          y_coord + box_size));
+    gui->zoomTo(odb::Point(x_coord, y_coord), diameter);
   }
   GotoLocationDialog::updateLocation(xEdit, yEdit);
 }

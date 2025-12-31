@@ -251,7 +251,7 @@ qreal LayoutViewer::computePixelsPerDBU(const QSize& size, const Rect& dbu_rect)
                   size.height() / (double) dbu_rect.dy());
 }
 
-void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
+void LayoutViewer::setPixelsPerDBU(qreal target_pixels_per_dbu)
 {
   if (!hasDesign()) {
     return;
@@ -259,31 +259,27 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 
   bool scroll_bars_visible = scroller_->horizontalScrollBar()->isVisible()
                              || scroller_->verticalScrollBar()->isVisible();
-  bool zoomed_out = pixels_per_dbu_ /*old*/ > pixels_per_dbu /*new*/;
+  bool zoomed_out = pixels_per_dbu_ /*old*/ > target_pixels_per_dbu /*new*/;
 
   if (!scroll_bars_visible && zoomed_out) {
     return;
   }
 
-  const Rect current_viewer(0,
-                            0,
-                            this->size().width() / pixels_per_dbu_,
-                            this->size().height() / pixels_per_dbu_);
+  qreal current_viewer_x = this->size().width() / pixels_per_dbu_;
+  qreal current_viewer_y = this->size().height() / pixels_per_dbu_;
 
   // ensure max size is not exceeded
   qreal maximum_pixels_per_dbu
       = 0.98
         * computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX),
-                              current_viewer);
-  qreal target_pixels_per_dbu
-      = std::min(pixels_per_dbu, maximum_pixels_per_dbu);
+                              Rect(0, 0, current_viewer_x, current_viewer_y));
 
-  if (target_pixels_per_dbu == maximum_pixels_per_dbu) {
+  if (target_pixels_per_dbu >= maximum_pixels_per_dbu) {
     return;
   }
 
-  const QSize new_size(ceil(current_viewer.dx() * target_pixels_per_dbu),
-                       ceil(current_viewer.dy() * target_pixels_per_dbu));
+  const QSize new_size(ceil(current_viewer_x * target_pixels_per_dbu),
+                       ceil(current_viewer_y * target_pixels_per_dbu));
 
   resize(new_size);
 }
@@ -421,15 +417,44 @@ void LayoutViewer::zoom(const odb::Point& focus,
 
 void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
-  const Rect padded_rect = getPaddedRect(rect_dbu);
-
-  // set resolution required to view the whole padded rect
-  setPixelsPerDBU(
-      computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
+  qreal pixels_per_DBU
+      = computePixelsPerDBU(scroller_->maximumViewportSize(), rect_dbu);
+  qreal pixels_per_DBU_with_margins
+      = pixels_per_DBU / (1 + 2 * defaultZoomMargin);
+  setPixelsPerDBU(pixels_per_DBU_with_margins);
 
   // center the layout at the middle of the rect
   centerAt(Point(rect_dbu.xMin() + rect_dbu.dx() / 2,
                  rect_dbu.yMin() + rect_dbu.dy() / 2));
+}
+
+void LayoutViewer::zoomTo(const odb::Point& focus, int diameter)
+{
+  odb::Point ref
+      = odb::Point(focus.x() - diameter / 2, focus.y() - diameter / 2);
+  zoomTo(odb::Rect(ref.x(), ref.y(), ref.x() + diameter, ref.y() + diameter));
+}
+
+int LayoutViewer::getVisibleDiameter()
+{
+  odb::Rect bounds = getVisibleBounds();
+  // undo the margin
+  const int smaller_side = std::min(bounds.dx(), bounds.dy());
+  const int margin = std::ceil(smaller_side * 2 * defaultZoomMargin
+                               / (1 + 2 * defaultZoomMargin));
+
+  // scrollbar
+  int scrollBarWidth
+      = std::ceil((qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent))
+                  / pixels_per_dbu_);
+  if (scroller_->horizontalScrollBar()->isVisible()) {
+    bounds.set_xhi(bounds.xMax() + scrollBarWidth);
+  }
+  if (scroller_->verticalScrollBar()->isVisible()) {
+    bounds.set_yhi(bounds.yMax() + scrollBarWidth);
+  }
+
+  return std::min(bounds.dx(), bounds.dy()) - margin;
 }
 
 int LayoutViewer::edgeToPointDistance(const odb::Point& pt,
