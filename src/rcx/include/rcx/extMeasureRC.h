@@ -20,19 +20,10 @@ namespace rcx {
 struct CouplingState
 {
   // Processing counters
-  uint32_t wire_count;         // Total wires processed
-  uint32_t not_ordered_count;  // Count of non-ordered segments
-  uint32_t empty_table_count;  // Count of empty tables
-  uint32_t one_count_table;    // Count of single-entry tables
-
-  // Constructor initializes all counters to 0
-  CouplingState()
-      : wire_count(0),
-        not_ordered_count(0),
-        empty_table_count(0),
-        one_count_table(0)
-  {
-  }
+  uint32_t wire_count{0};         // Total wires processed
+  uint32_t not_ordered_count{0};  // Count of non-ordered segments
+  uint32_t empty_table_count{0};  // Count of empty tables
+  uint32_t one_count_table{0};    // Count of single-entry tables
 
   // Reset all counters
   void reset()
@@ -57,40 +48,33 @@ struct CouplingState
 struct CouplingConfig
 {
   // Metal layer settings
-  const int metal_level_count;     // Number of metal layers
-  const int metal_flag;            // Metal layer control flag
-  const uint32_t limit_track_num;  // Track limit for neighbor search
+  const int metal_level_count;         // Number of metal layers
+  const int metal_flag;                // Metal layer control flag
+  const uint32_t limit_track_num{10};  // Track limit for neighbor search
 
   // Length settings
   static constexpr int LENGTH_BOUND
-      = 7000;        // Threshold for length-based calculations
-  bool length_flag;  // Whether to use length-based calculations
+      = 7000;               // Threshold for length-based calculations
+  bool length_flag{false};  // Whether to use length-based calculations
 
   // Calculation modes
-  bool new_calc_flow;   // Use new calculation flow
-  bool vertical_cap;    // Enable vertical capacitance calculation
-  bool diag_cap;        // Enable diagonal capacitance calculation
-  bool diag_cap_power;  // Enable power net diagonal capacitance
+  bool new_calc_flow{true};   // Use new calculation flow
+  bool vertical_cap{true};    // Enable vertical capacitance calculation
+  bool diag_cap{true};        // Enable diagonal capacitance calculation
+  bool diag_cap_power{true};  // Enable power net diagonal capacitance
 
   // Debug settings
   const bool debug_enabled;          // Main debug flag
   bool debug_overlaps;               // Enable overlap debugging
-  FILE* debug_fp;                    // Debug file pointer
+  FILE* debug_fp{nullptr};           // Debug file pointer
   const uint32_t progress_interval;  // Progress update interval
 
   // Constructor to initialize all settings
   CouplingConfig(extMain* ext_main, uint32_t levelCnt)
       : metal_level_count(levelCnt),
         metal_flag(ext_main->_metal_flag_22),
-        limit_track_num(10),
-        length_flag(false),
-        new_calc_flow(true),
-        vertical_cap(true),
-        diag_cap(true),
-        diag_cap_power(true),
         debug_enabled(ext_main->_dbgOption > 1),
         debug_overlaps(debug_enabled),
-        debug_fp(nullptr),
         progress_interval(ext_main->_wire_extracted_progress_count)
   {
   }

@@ -88,7 +88,7 @@ void lefTechLayerAreaRuleParser::setTrimLayer(
   if (trim_layer != nullptr) {
     rule->setTrimLayer(trim_layer);
   } else {
-    incomplete_props.push_back({rule, val});
+    incomplete_props.emplace_back(rule, val);
   }
 }
 

@@ -45,6 +45,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "sta/Clock.hh"
@@ -354,6 +355,7 @@ void GlobalRouter::globalRoute(bool save_guides,
           cugr_->init(min_layer, max_layer, clock_nets);
           cugr_->route();
           routes_ = cugr_->getRoutes();
+          updatePinAccessPoints();
         } else {
           if (verbose_) {
             reportResources();
@@ -1065,8 +1067,8 @@ bool GlobalRouter::findPinAccessPointPositions(
     }
 
     const int ap_layer = ap->getLayer()->getRoutingLevel();
-    ap_positions[ap_layer].push_back(
-        {ap_position, grid_->getPositionOnGrid(ap_position)});
+    ap_positions[ap_layer].emplace_back(ap_position,
+                                        grid_->getPositionOnGrid(ap_position));
   }
 
   return true;
@@ -1183,6 +1185,33 @@ void GlobalRouter::computePinPositionOnGrid(
   pin.setConnectionLayer(pin_position.layer());
 }
 
+void GlobalRouter::updatePinAccessPoints()
+{
+  for (const auto& [db_net, net] : db_net_map_) {
+    std::map<odb::dbITerm*, odb::Point3D> iterm_to_aps;
+    std::map<odb::dbBTerm*, odb::Point3D> bterm_to_aps;
+    cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
+    cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
+
+    auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
+      if (auto it = ap_map.find(term); it != ap_map.end()) {
+        const auto& ap = it->second;
+        pin.setConnectionLayer(ap.z());
+        pin.setOnGridPosition(
+            grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+      }
+    };
+
+    for (Pin& pin : net->getPins()) {
+      if (pin.isPort()) {
+        updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
+      } else {
+        updatePinPos(pin, pin.getITerm(), iterm_to_aps);
+      }
+    }
+  }
+}
+
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
 {
   return net->getSignalType() == odb::dbSigType::CLOCK
@@ -1221,7 +1250,7 @@ void GlobalRouter::findFastRoutePins(Net* net,
       }
 
       if (!duplicated) {
-        pins_on_grid.push_back(RoutePt(pinX, pinY, conn_layer));
+        pins_on_grid.emplace_back(pinX, pinY, conn_layer);
         if (pin.isDriver()) {
           root_idx = pins_on_grid.size() - 1;
         }
@@ -2055,8 +2084,8 @@ void GlobalRouter::addRegionAdjustment(int min_x,
                                        int layer,
                                        float reduction_percentage)
 {
-  region_adjustments_.push_back(RegionAdjustment(
-      min_x, min_y, max_x, max_y, layer, reduction_percentage));
+  region_adjustments_.emplace_back(
+      min_x, min_y, max_x, max_y, layer, reduction_percentage);
 }
 
 void GlobalRouter::setVerbose(const bool v)
@@ -2275,7 +2304,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
-      guides[net].push_back(std::make_pair(layer->getRoutingLevel(), rect));
+      guides[net].emplace_back(layer->getRoutingLevel(), rect);
       int layer_idx = layer->getRoutingLevel();
       boxToGlobalRouting(rect, layer_idx, layer_idx, routes_[net]);
     } else {
@@ -3153,16 +3182,16 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
   const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2);
 
   if (x0 == x1 && y0 == y1) {
-    route.push_back(GSegment(x0, y0, layer, x1, y1, via_layer));
+    route.emplace_back(x0, y0, layer, x1, y1, via_layer);
   }
 
   while (y0 == y1 && (x0 + tile_size) <= x1) {
-    route.push_back(GSegment(x0, y0, layer, x0 + tile_size, y0, layer));
+    route.emplace_back(x0, y0, layer, x0 + tile_size, y0, layer);
     x0 += tile_size;
   }
 
   while (x0 == x1 && (y0 + tile_size) <= y1) {
-    route.push_back(GSegment(x0, y0, layer, x0, y0 + tile_size, layer));
+    route.emplace_back(x0, y0, layer, x0, y0 + tile_size, layer);
     y0 += tile_size;
   }
 }
@@ -3936,7 +3965,7 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
     if (level > max_layer && max_layer > -1) {
       break;
     }
-    pitches.push_back({-1, -1});
+    pitches.emplace_back(-1, -1);
 
     int width_up, prl_up, width_down, prl_down;
     odb::dbTechLayer* bottom_layer

@@ -849,7 +849,7 @@ class FlexPA
   bool genPatternsGC(
       const std::set<frBlockObject*>& target_objs,
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
-      const PatternType pattern_type,
+      PatternType pattern_type,
       std::set<frBlockObject*>* owners = nullptr);
 
   /**

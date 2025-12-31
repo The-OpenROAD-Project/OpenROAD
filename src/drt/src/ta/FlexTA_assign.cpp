@@ -177,8 +177,7 @@ void FlexTAWorker::modMinSpacingCostVia(const odb::Rect& box,
   } else {
     std::cout
         << "Warning: via layer connected to non-routing layer, skipped in "
-           "modMinSpacingCostVia"
-        << std::endl;
+           "modMinSpacingCostVia\n";
     return;
   }
 
@@ -336,8 +335,7 @@ void FlexTAWorker::modCutSpacingCost(const odb::Rect& box,
   } else {
     std::cout
         << "Warning: via layer connected to non-routing layer, skipped in "
-           "modMinSpacingCostVia"
-        << std::endl;
+           "modMinSpacingCostVia\n";
     return;
   }
 
@@ -559,7 +557,7 @@ void FlexTAWorker::modCost(taPinFig* fig,
       modCutSpacingCost(box, layerNum, obj, isAddCost, pinS);
     }
   } else {
-    std::cout << "Error: unsupported region query add" << std::endl;
+    std::cout << "Error: unsupported region query add\n";
   }
 }
 
@@ -649,7 +647,7 @@ frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
     std::cout << "Error: nextIrouteDirCost < 0" << ", trackLoc@"
               << trackLoc / dbu << " box (" << endBox.xMin() / dbu << ", "
               << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
-              << endBox.yMax() / dbu << ")" << std::endl;
+              << endBox.yMax() / dbu << ")\n";
     return (frUInt4) 0;
   }
   return (frUInt4) nextIrouteDirCost;
@@ -810,7 +808,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
       }
     } else {
       std::cout << "Warning: assignIroute_getDRCCost_helper unsupported type"
-                << std::endl;
+                << '\n';
     }
   }
   frCoord pitch = 0;
@@ -830,7 +828,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     isCut = true;
   } else {
     std::cout << "Error: assignIroute_getDRCCost_helper unknown layer type"
-              << std::endl;
+              << '\n';
     exit(1);
   }
   // always penalize two pitch per cut, regardless of cnts
@@ -873,7 +871,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
       cost += viaCost;
     } else {
       std::cout << "Error: assignIroute_updateIroute unsupported pinFig"
-                << std::endl;
+                << '\n';
       exit(1);
     }
   }
@@ -1102,7 +1100,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
               << box.yMin() / dbu << ") (" << box.xMax() / dbu << ", "
               << box.yMax() / dbu << " "
               << getDesign()->getTech()->getLayer(lNum)->getName()
-              << " idx1/2=" << idx1 << "/" << idx2 << std::endl;
+              << " idx1/2=" << idx1 << "/" << idx2 << '\n';
     exit(1);
   }
   totCost_ += drcCost;
@@ -1141,7 +1139,7 @@ void FlexTAWorker::assignIroute_updateIroute(taPin* iroute,
       obj->setOrigin(bp);
     } else {
       std::cout << "Error: assignIroute_updateIroute unsupported pinFig"
-                << std::endl;
+                << '\n';
       exit(1);
     }
   }
@@ -1196,7 +1194,7 @@ void FlexTAWorker::assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS)
       std::cout
           << "Error: FlexTAWorker::assignIroute_updateOthers does not find "
              "trackLoc"
-          << std::endl;
+          << '\n';
       exit(1);
     }
     totCost_ -= iroute->getCost();

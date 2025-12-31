@@ -134,8 +134,8 @@ void BlifParser::addClock(const std::string& clock)
 void BlifParser::addNewInstanceType(const std::string& type)
 {
   if (currentInstanceType_ != GateType::None) {
-    gates_.push_back(
-        Gate(currentInstanceType_, currentGate_, currentConnections_));
+    gates_.emplace_back(
+        currentInstanceType_, currentGate_, currentConnections_);
   }
   currentInstanceType_ = GateType::Mlatch;
   if (type != "mlatch") {
@@ -159,8 +159,8 @@ void BlifParser::addConnection(const std::string& connection)
 void BlifParser::endParser()
 {
   if (currentInstanceType_ != GateType::None) {
-    gates_.push_back(
-        Gate(currentInstanceType_, currentGate_, currentConnections_));
+    gates_.emplace_back(
+        currentInstanceType_, currentGate_, currentConnections_);
   }
 }
 

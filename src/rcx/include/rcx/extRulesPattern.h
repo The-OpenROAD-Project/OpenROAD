@@ -49,24 +49,23 @@ class extRulesPat
 
   uint32_t _spaceCnt;
   uint32_t _widthCnt;
-  uint32_t _sMult[20]
+  const uint32_t _sMult[10]
       = {1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 8000, 10000};
-  uint32_t _wMult[20] = {1};
 
-  int _dMult[20] = {-1000,
-                    -500,
-                    0,
-                    500,
-                    1000,
-                    1250,
-                    1500,
-                    2000,
-                    2500,
-                    3000,
-                    4000,
-                    5000,
-                    8000,
-                    10000};
+  const int _dMult[14] = {-1000,
+                          -500,
+                          0,
+                          500,
+                          1000,
+                          1250,
+                          1500,
+                          2000,
+                          2500,
+                          3000,
+                          4000,
+                          5000,
+                          8000,
+                          10000};
   uint32_t _diagSpaceCnt;
   int _target_diag_spacing[20];
 

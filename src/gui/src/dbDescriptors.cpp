@@ -617,7 +617,7 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
     } else {
       net_value = gui->makeSelected(net);
     }
-    iterms.push_back({gui->makeSelected(iterm), net_value});
+    iterms.emplace_back(gui->makeSelected(iterm), net_value);
   }
   props.emplace_back("ITerms", iterms);
 
@@ -650,13 +650,13 @@ Descriptor::Properties DbInstDescriptor::getDBProperties(
   const auto xform = inst->getTransform();
   for (auto* obs : inst->getMaster()->getObstructions()) {
     if (auto* layer = obs->getTechLayer()) {
-      obs_layers.push_back(
-          {gui->makeSelected(layer),
-           gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform})});
+      obs_layers.emplace_back(
+          gui->makeSelected(layer),
+          gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform}));
     } else if (auto* via = obs->getTechVia()) {
-      obs_layers.push_back(
-          {gui->makeSelected(via),
-           gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform})});
+      obs_layers.emplace_back(
+          gui->makeSelected(via),
+          gui->makeSelected(DbBoxDescriptor::BoxWithTransform{obs, xform}));
     }
   }
   if (!obs_layers.empty()) {
@@ -2594,7 +2594,7 @@ Descriptor::Properties DbViaDescriptor::getDBProperties(odb::dbVia* via) const
     for (auto box : via->getBoxes()) {
       auto layer = box->getTechLayer();
       auto rect = box->getBox();
-      shapes.push_back({gui->makeSelected(layer), rect});
+      shapes.emplace_back(gui->makeSelected(layer), rect);
     }
     props.emplace_back("Shapes", shapes);
   } else {
@@ -2602,7 +2602,7 @@ Descriptor::Properties DbViaDescriptor::getDBProperties(odb::dbVia* via) const
     for (auto box : via->getBoxes()) {
       auto layer = box->getTechLayer();
       auto rect = box->getBox();
-      shapes.push_back({gui->makeSelected(layer), rect});
+      shapes.emplace_back(gui->makeSelected(layer), rect);
     }
     props.emplace_back("Shapes", shapes);
   }
@@ -3246,7 +3246,7 @@ Descriptor::Properties DbTermAccessPointDescriptor::getProperties(
       } else {
         name = static_cast<odb::dbVia*>(via)->getName();
       }
-      vias_property.push_back({cnt++, name});
+      vias_property.emplace_back(cnt++, name);
     }
     props.emplace_back(fmt::format("{} cut vias", cuts + 1), vias_property);
   }
@@ -4818,8 +4818,9 @@ Descriptor::Properties DbRowDescriptor::getDBProperties(odb::dbRow* row) const
                     {"Site", gui->makeSelected(row->getSite())}});
   odb::Point origin_pt = row->getOrigin();
   PropertyList origin;
-  origin.push_back({"X", Property::convert_dbu(origin_pt.x(), true)});
-  origin.push_back({"Y", Property::convert_dbu(origin_pt.y(), true)});
+  origin.emplace_back("X", Property::convert_dbu(origin_pt.x(), true));
+  origin.emplace_back("Y", Property::convert_dbu(origin_pt.y(), true));
+
   props.emplace_back("Origin", origin);
 
   props.emplace_back("Orientation", row->getOrient().getString());
@@ -5764,10 +5765,10 @@ Descriptor::Properties DbMasterEdgeTypeDescriptor::getDBProperties(
 
   PropertyList range;
   if (edge->getRangeBegin() != -1) {
-    range.push_back({"Begin", edge->getRangeBegin()});
+    range.emplace_back("Begin", edge->getRangeBegin());
   }
   if (edge->getRangeEnd() != -1) {
-    range.push_back({"End", edge->getRangeEnd()});
+    range.emplace_back("End", edge->getRangeEnd());
   }
   if (!range.empty()) {
     props.emplace_back("Range", range);

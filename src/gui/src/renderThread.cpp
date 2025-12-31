@@ -578,9 +578,11 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
       continue;
     }
 
-    dbBlock* child = nullptr;
-    if (has_child_blocks
-        && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
+    dbBlock* child
+        = has_child_blocks
+              ? inst->getBlock()->findChild(master->getName().c_str())
+              : nullptr;
+    if (child) {
       // setup the instance's transform
       QTransform xfm = initial_xfm;
       const dbTransform inst_xfm = inst->getTransform();

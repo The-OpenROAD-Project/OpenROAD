@@ -20,7 +20,7 @@ void addInfluence(boost::fusion::vector<double, double, double>& params,
   auto width = lefinReader->dbdist(at_c<0>(params));
   auto distance = lefinReader->dbdist(at_c<1>(params));
   auto spacing = lefinReader->dbdist(at_c<2>(params));
-  parser->influence_tbl.push_back(std::make_tuple(width, distance, spacing));
+  parser->influence_tbl.emplace_back(width, distance, spacing);
 }
 void addLength(double val,
                odb::lefTechLayerSpacingTablePrlParser* parser,
@@ -34,7 +34,7 @@ void addWidth(double val,
 {
   parser->width_tbl.push_back(lefinReader->dbdist(val));
   parser->curWidthIdx++;
-  parser->spacing_tbl.push_back(std::vector<int>());
+  parser->spacing_tbl.emplace_back();
 }
 void addExcluded(boost::fusion::vector<double, double>& params,
                  odb::lefTechLayerSpacingTablePrlParser* parser,

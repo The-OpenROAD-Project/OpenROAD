@@ -104,10 +104,10 @@ extern int defwHasInitCbk;
 DEFI_LOG_FUNCTION defwErrorLogFunction;
 DEFI_WARNING_LOG_FUNCTION defwWarningLogFunction;
 
-#define WRITER_CALLBACK(func, type)                      \
-  if ((defWRetVal = (*func)(type, defwUserData)) == 0) { \
-  } else {                                               \
-    return defWRetVal;                                   \
+#define WRITER_CALLBACK(func, type)         \
+  defWRetVal = (*func)(type, defwUserData); \
+  if (defWRetVal != 0) {                    \
+    return defWRetVal;                      \
   }
 
 #define CHECK_DEF_STATUS(status) \

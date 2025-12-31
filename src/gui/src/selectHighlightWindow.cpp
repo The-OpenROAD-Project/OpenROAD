@@ -103,7 +103,7 @@ void HighlightModel::populateModel()
   int highlight_group = 0;
   for (auto& highlight_objs : objs_) {
     for (auto& obj : highlight_objs) {
-      table_data_.push_back(std::make_pair(highlight_group, &obj));
+      table_data_.emplace_back(highlight_group, &obj);
     }
     ++highlight_group;
   }

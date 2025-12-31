@@ -225,17 +225,17 @@ defiComponent::~defiComponent()
 
 void defiComponent::IdAndName(const char* id, const char* name)
 {
-  int len;
-
   clear();
 
-  if ((len = strlen(id) + 1) > idSize_) {
-    bumpId(len);
+  const int len1 = strlen(id) + 1;
+  if (len1 > idSize_) {
+    bumpId(len1);
   }
   strcpy(id_, defData->DEFCASE(id));
 
-  if ((len = strlen(name) + 1) > nameSize_) {
-    bumpName(len);
+  const int len2 = strlen(name) + 1;
+  if (len2 > nameSize_) {
+    bumpName(len2);
   }
   strcpy(name_, defData->DEFCASE(name));
 }
@@ -320,9 +320,8 @@ void defiComponent::setSource(const char* name)
 
 void defiComponent::setRegionName(const char* name)
 {
-  int len;
-
-  if ((len = strlen(name) + 1) > regionNameSize_) {
+  const int len = strlen(name) + 1;
+  if (len > regionNameSize_) {
     bumpRegionName(len);
   }
   strcpy(regionName_, defData->DEFCASE(name));
@@ -331,9 +330,8 @@ void defiComponent::setRegionName(const char* name)
 
 void defiComponent::setEEQ(const char* name)
 {
-  int len;
-
-  if ((len = strlen(name) + 1) > EEQSize_) {
+  const int len = strlen(name) + 1;
+  if (len > EEQSize_) {
     bumpEEQ(len);
   }
   strcpy(EEQ_, defData->DEFCASE(name));
@@ -406,30 +404,30 @@ void defiComponent::setRouteHalo(int haloDist,
                                  const char* minLayer,
                                  const char* maxLayer)
 {
-  int len;
-
   haloDist_ = haloDist;
-  if ((len = strlen(minLayer) + 1) > minLayerSize_) {
-    bumpMinLayer(len);
+  const int lin_min = strlen(minLayer) + 1;
+  if (lin_min > minLayerSize_) {
+    bumpMinLayer(lin_min);
   }
   strcpy(minLayer_, defData->DEFCASE(minLayer));
-  if ((len = strlen(maxLayer) + 1) > maxLayerSize_) {
-    bumpMaxLayer(len);
+  const int lin_max = strlen(maxLayer) + 1;
+  if (lin_max > maxLayerSize_) {
+    bumpMaxLayer(lin_max);
   }
   strcpy(maxLayer_, defData->DEFCASE(maxLayer));
 }
 
 void defiComponent::changeIdAndName(const char* id, const char* name)
 {
-  int len;
-
-  if ((len = strlen(id) + 1) > idSize_) {
-    bumpId(len);
+  const int len1 = strlen(id) + 1;
+  if (len1 > idSize_) {
+    bumpId(len1);
   }
   strcpy(id_, defData->DEFCASE(id));
 
-  if ((len = strlen(name) + 1) > nameSize_) {
-    bumpName(len);
+  const int len2 = strlen(name) + 1;
+  if (len2 > nameSize_) {
+    bumpName(len2);
   }
   strcpy(name_, defData->DEFCASE(name));
 }
@@ -1005,15 +1003,14 @@ void defiComponent::bumpForeignName(int size)
 
 void defiComponent::setForeignName(const char* name)
 {
-  int len;
-
   if (hasForeignName()) {
     defiError(1,
               0,
               "Multiple define of '+ FOREIGN' in COMPONENT is not supported.\n",
               defData);
   }
-  if ((len = strlen(name) + 1) > foreignNameSize_) {
+  const int len = strlen(name) + 1;
+  if (len > foreignNameSize_) {
     bumpForeignName(len);
   }
   strcpy(foreignName_, defData->DEFCASE(name));
