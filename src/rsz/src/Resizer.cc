@@ -76,6 +76,7 @@
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 #include "utl/scope.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
@@ -2968,7 +2969,11 @@ void Resizer::reportDontUse() const
   if (dont_use_.empty()) {
     logger_->report("  none");
   } else {
-    for (auto* cell : dont_use_) {
+    std::vector<LibertyCell*> sorted_cells(dont_use_.begin(), dont_use_.end());
+    std::ranges::sort(sorted_cells, utl::natural_compare, [](auto* cell) {
+      return std::string_view(cell->name());
+    });
+    for (auto* cell : sorted_cells) {
       if (!isLinkCell(cell)) {
         continue;
       }
