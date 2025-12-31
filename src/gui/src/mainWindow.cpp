@@ -1480,7 +1480,7 @@ void MainWindow::showGotoDialog()
     return;
   }
 
-  goto_dialog_->show_init();
+  goto_dialog_->showInit();
 }
 
 void MainWindow::showHelp()

@@ -13,7 +13,7 @@
     <x>0</x>
     <y>0</y>
     <width>150</width>
-    <height>100</height>
+    <height>120</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -69,7 +69,7 @@
     <number>3</number>
    </property>
    <item row="0" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1,1">
+    <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1,1,0">
      <property name="spacing">
       <number>3</number>
      </property>
@@ -240,9 +240,31 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLineEdit" name="sEdit"/>
+          <widget class="QLineEdit" name="sEdit">
+           <property name="inputMethodHints">
+            <set>Qt::ImhDigitsOnly</set>
+           </property>
+          </widget>
          </item>
         </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <item>
+        <widget class="QPushButton" name="updateBtn">
+         <property name="text">
+          <string>Update</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="gotoBtn">
+         <property name="text">
+          <string>Goto</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
