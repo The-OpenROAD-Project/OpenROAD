@@ -129,7 +129,7 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
     box = via.getLayer2BBox();
   } else {
     logger_->warn(DRT,
-                  0,
+                  25,
                   "genViaEnclosedCoords: layer_num {} is not part of via {}",
                   layer_num,
                   via_def->getName());
