@@ -20,6 +20,7 @@
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
 #include "tcl.h"
+#include "tclDecls.h"
 #include "utl/Logger.h"
 
 namespace ord {
