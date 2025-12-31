@@ -431,28 +431,28 @@ void LayoutViewer::zoomTo(const Rect& rect_dbu)
 void LayoutViewer::zoomTo(const odb::Point& focus, int diameter)
 {
   odb::Point ref
-      = odb::Point(focus.x() - diameter / 2, focus.y() - diameter / 2);
+      = odb::Point(focus.x() - (diameter / 2), focus.y() - (diameter / 2));
   zoomTo(odb::Rect(ref.x(), ref.y(), ref.x() + diameter, ref.y() + diameter));
 }
 
 int LayoutViewer::getVisibleDiameter()
 {
   odb::Rect bounds = getVisibleBounds();
-  // undo the margin
-  const int smaller_side = std::min(bounds.dx(), bounds.dy());
-  const int margin = std::ceil(smaller_side * 2 * defaultZoomMargin
-                               / (1 + 2 * defaultZoomMargin));
-
   // scrollbar
   int scrollBarWidth
       = std::ceil((qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent))
                   / pixels_per_dbu_);
-  if (scroller_->horizontalScrollBar()->isVisible()) {
+  if (scroller_->verticalScrollBar()->isVisible()) {
     bounds.set_xhi(bounds.xMax() + scrollBarWidth);
   }
-  if (scroller_->verticalScrollBar()->isVisible()) {
+  if (scroller_->horizontalScrollBar()->isVisible()) {
     bounds.set_yhi(bounds.yMax() + scrollBarWidth);
   }
+
+  // undo the margin
+  const int smaller_side = std::min(bounds.dx(), bounds.dy());
+  const int margin = std::ceil(smaller_side * 2 * defaultZoomMargin
+                               / (1 + 2 * defaultZoomMargin));
 
   return std::min(bounds.dx(), bounds.dy()) - margin;
 }
