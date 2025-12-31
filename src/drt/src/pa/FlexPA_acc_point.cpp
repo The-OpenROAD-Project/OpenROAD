@@ -122,7 +122,12 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
   const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
   const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
   frVia via(via_def);
-  const odb::Rect box = via.getLayer1BBox();
+  odb::Rect box;
+  if (via_def->getLayer1Num() == layer_num) {
+    box = via.getLayer1BBox();
+  } else {
+    box = via.getLayer2BBox();
+  }
   const auto via_width = box.dx();
   const auto via_height = box.dy();
   if (via_width > rect_width || via_height > rect_height) {
@@ -152,16 +157,34 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                                    const frLayerNum layer_num,
                                    const bool is_curr_layer_horz)
 {
-  if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
-    return;
-  }
   // hardcode first two single vias
   const int max_num_via_trial = 2;
   int cnt = 0;
-  for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
-    cnt++;
-    if (cnt >= max_num_via_trial) {
+  if (layer_num + 1 <= getDesign()->getTech()->getTopLayerNum()) {
+    for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
+      genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
+      cnt++;
+      if (cnt >= max_num_via_trial) {
+        break;
+      }
+    }
+  }
+  
+  int down_via_cnt = 0;
+  for (int l = layer_num - 1; 
+       l >= layer_num - 3 && l >= getDesign()->getTech()->getBottomLayerNum(); 
+       l--) {
+    if (layer_num_to_via_defs_.find(l) == layer_num_to_via_defs_.end()) {
+      continue;
+    }
+    for (auto& [tup, via] : layer_num_to_via_defs_[l][1]) {
+      genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
+      down_via_cnt++;
+      if (down_via_cnt >= max_num_via_trial) {
+        break;
+      }
+    }
+    if (down_via_cnt >= max_num_via_trial) {
       break;
     }
   }
