@@ -607,9 +607,7 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
         }
 
         const FixedDelay buffer_delay
-            = bufferDelay(size.cell,
-                          junc1->slackTransition(),
-                          junc1->cap() + out->capacitance());
+            = bufferDelay(size.cell, junc1->slackTransition(), junc1->cap());
         const FixedDelay buffer_slack = junc1->slack() - buffer_delay;
 
         if (buffer_slack >= junc_slack && bufferSizeCanDriveLoad(size, junc1)) {
@@ -1211,12 +1209,8 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
           case BnetType::buffer: {
             int ret = recurse(bnet->ref());
             BnetPtr p = bnet->ref();
-            sta::LibertyPort *in, *out;
-            bnet->bufferCell()->bufferPorts(in, out);
-            FixedDelay buffer_delay
-                = bufferDelay(bnet->bufferCell(),
-                              p->slackTransition(),
-                              p->cap() + out->capacitance());
+            FixedDelay buffer_delay = bufferDelay(
+                bnet->bufferCell(), p->slackTransition(), p->cap());
             bnet->setDelay(buffer_delay);
             bnet->setSlack(p->slack() - buffer_delay);
             bnet->setSlackTransition(p->slackTransition());
@@ -1381,9 +1375,7 @@ void Rebuffer::insertBufferOptions(
           && bufferSizeCanDriveLoad(buffer_size, opt)) {
         // this is a candidate, make the detailed delay calculation
         const FixedDelay buffer_delay
-            = bufferDelay(buffer_cell,
-                          opt->slackTransition(),
-                          opt->cap() + out->capacitance());
+            = bufferDelay(buffer_cell, opt->slackTransition(), opt->cap());
         const FixedDelay slack = opt->slack() - buffer_delay;
 
         if (area_oriented ? slack >= slack_threshold : slack > best_slack) {
@@ -1442,10 +1434,8 @@ void Rebuffer::insertBufferOptions(
           continue;
         }
 
-        const FixedDelay buffer_delay
-            = bufferDelay(buffer_cell,
-                          load_opt->slackTransition(),
-                          load_opt->cap() + out->capacitance());
+        const FixedDelay buffer_delay = bufferDelay(
+            buffer_cell, load_opt->slackTransition(), load_opt->cap());
         if (bufferSizeCanDriveLoad(*buffer_sizes_index_.at(buffer_cell),
                                    load_opt)
             && load_opt->slack() - buffer_delay >= slack_threshold) {
