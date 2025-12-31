@@ -136,6 +136,7 @@ std::string Design::evalTclString(const std::string& cmd)
   ord::OpenRoad::setOpenRoad(openroad, /* reinit_ok */ true);
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   sta::Sta::setSta(openroad->getSta());
+  Tcl_SetAssocData(tcl_interp, "design", nullptr, this);
   Tcl_Eval(tcl_interp, cmd.c_str());
   return std::string(Tcl_GetStringResult(tcl_interp));
 }
