@@ -29,6 +29,9 @@ report_check_types -max_fanout
 
 repair_design
 report_check_types -max_fanout
+
+sta::check_axioms
+
 set verilog_file [make_result_file repair_fanout3_hier_out.v]
 write_verilog $verilog_file
 diff_files $verilog_file repair_fanout3_hier_out.vok

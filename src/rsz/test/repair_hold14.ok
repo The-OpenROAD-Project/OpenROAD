@@ -47,7 +47,7 @@ Path Type: min
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |  -0.374 |  -0.374 | r1/D
-    final |       0 |       1 |            0 |   +10.3% |   0.179 |   0.000 | r1/D
+    final |       0 |       1 |            0 |   +10.3% |   0.181 |   0.000 | r1/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 1 hold buffers.
 Startpoint: in1 (input port clocked by clk)

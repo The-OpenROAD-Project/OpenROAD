@@ -4,6 +4,7 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -14,6 +15,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
 #include "dbBlock.h"
@@ -29,10 +31,13 @@
 #include "dbGuideItr.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
+#include "dbInsertBuffer.h"
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbMaster.h"
 #include "dbModNet.h"
+#include "dbModule.h"
 #include "dbNetTrack.h"
 #include "dbNetTrackItr.h"
 #include "dbRSeg.h"
@@ -529,16 +534,19 @@ void dbNet::setCcAdjustOrder(uint32_t order)
   net->cc_adjust_order_ = order;
 }
 
-void dbNet::setDrivingITerm(int id)
+void dbNet::setDrivingITerm(const dbITerm* iterm)
 {
   _dbNet* net = (_dbNet*) this;
-  net->driving_iterm_ = id;
+  net->driving_iterm_ = (iterm) ? iterm->getId() : 0;
 }
 
-int dbNet::getDrivingITerm() const
+dbITerm* dbNet::getDrivingITerm() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->driving_iterm_;
+  if (net->driving_iterm_ <= 0) {
+    return nullptr;
+  }
+  return dbITerm::getITerm(getBlock(), net->driving_iterm_);
 }
 
 bool dbNet::hasFixedBump()
@@ -1199,11 +1207,41 @@ dbBTerm* dbNet::get1stBTerm()
   return bt;
 }
 
+dbObject* dbNet::getFirstDriverTerm() const
+{
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (iterm->isClocked()) {
+      continue;
+    }
+
+    if (iterm->getIoType() == dbIoType::OUTPUT
+        || iterm->getIoType() == dbIoType::INOUT) {
+      return iterm;
+    }
+  }
+
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      return bterm;
+    }
+  }
+
+  return nullptr;
+}
+
 dbITerm* dbNet::getFirstOutput() const
 {
-  if (getDrivingITerm() > 0) {
-    return dbITerm::getITerm((dbBlock*) getImpl()->getOwner(),
-                             getDrivingITerm());
+  if (dbITerm* drvrIterm = getDrivingITerm()) {
+    return drvrIterm;
   }
 
   for (dbITerm* tr : getITerms()) {
@@ -2164,6 +2202,16 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
   return (dbNet*) net;
 }
 
+dbNet* dbNet::create(dbBlock* block,
+                     const char* name,
+                     const dbNameUniquifyType& uniquify,
+                     dbModule* parent_module)
+{
+  std::string net_name = block->makeNewNetName(
+      parent_module ? parent_module->getModInst() : nullptr, name, uniquify);
+  return create(block, net_name.c_str());
+}
+
 void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
@@ -2459,7 +2507,7 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
   return !modnet_set.empty();
 }
 
-void dbNet::dump() const
+void dbNet::dump(bool show_modnets) const
 {
   utl::Logger* logger = getImpl()->getLogger();
   logger->report("--------------------------------------------------");
@@ -2493,6 +2541,14 @@ void dbNet::dump() const
                    term->getId());
   }
   logger->report("--------------------------------------------------");
+
+  if (show_modnets) {
+    std::set<dbModNet*> modnets;
+    findRelatedModNets(modnets);
+    for (dbModNet* modnet : modnets) {
+      modnet->dump();
+    }
+  }
 }
 
 void _dbNet::collectMemInfo(MemInfo& info)
@@ -2909,6 +2965,80 @@ void _dbNet::dumpModNetConnectivity(const dbModNet* modnet,
   for (auto term : outputs) {
     _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
   }
+}
+
+dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
+                                      const dbMaster* buffer_master,
+                                      const Point* loc,
+                                      const char* new_buf_base_name,
+                                      const char* new_net_base_name,
+                                      const dbNameUniquifyType& uniquify)
+{
+  dbInsertBuffer insert_buffer(this);
+  return insert_buffer.insertBufferBeforeLoad(load_input_term,
+                                              buffer_master,
+                                              loc,
+                                              new_buf_base_name,
+                                              new_net_base_name,
+                                              uniquify);
+}
+
+dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
+                                       const dbNameUniquifyType& uniquify)
+{
+  dbInsertBuffer insert_buffer(this);
+  return insert_buffer.insertBufferAfterDriver(drvr_output_term,
+                                               buffer_master,
+                                               loc,
+                                               new_buf_base_name,
+                                               new_net_base_name,
+                                               uniquify);
+}
+
+dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
+                                       const dbNameUniquifyType& uniquify,
+                                       bool loads_on_diff_nets)
+{
+  dbInsertBuffer insert_buffer(this);
+  return insert_buffer.insertBufferBeforeLoads(load_pins,
+                                               buffer_master,
+                                               loc,
+                                               new_buf_base_name,
+                                               new_net_base_name,
+                                               uniquify,
+                                               loads_on_diff_nets);
+}
+
+dbInst* dbNet::insertBufferBeforeLoads(std::vector<dbObject*>& load_pins,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
+                                       const dbNameUniquifyType& uniquify,
+                                       bool loads_on_diff_nets)
+{
+  std::set<dbObject*> load_pins_set(load_pins.begin(), load_pins.end());
+  return insertBufferBeforeLoads(load_pins_set,
+                                 buffer_master,
+                                 loc,
+                                 new_buf_base_name,
+                                 new_net_base_name,
+                                 uniquify,
+                                 loads_on_diff_nets);
+}
+
+void dbNet::hierarchicalConnect(dbObject* driver, dbObject* load)
+{
+  dbInsertBuffer insert_buffer(this);
+  insert_buffer.hierarchicalConnect(driver, load);
 }
 
 }  // namespace odb

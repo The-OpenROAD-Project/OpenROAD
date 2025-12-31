@@ -38512,8 +38512,6 @@ module riscv_top (clk,
     .CON(_01407_),
     .SN(_01408_));
  TIEHIx1_ASAP7_75t_R _18230_ (.H(_09625_));
- BUFx2_ASAP7_75t_R _18231_ (.A(valid),
-    .Y(ready));
  OR3x2_ASAP7_75t_R \dmem/_156_  (.A(dataadr[31]),
     .B(dataadr[15]),
     .C(dataadr[23]),
@@ -42361,4 +42359,5 @@ module riscv_top (clk,
  DFFHQNx1_ASAP7_75t_R \riscv.dp.rf.rf[9][9]$_DFFE_PP_  (.CLK(clk),
     .D(_02427_),
     .QN(_00929_));
+ assign ready = valid;
 endmodule
