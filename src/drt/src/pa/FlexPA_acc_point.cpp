@@ -173,9 +173,8 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
 
   if (is_bterm) {
     int down_via_cnt = 0;
-    for (int l = layer_num - 1; l >= layer_num - 3
-                                && l >= getDesign()->getTech()->getBottomLayerNum();
-         l--) {
+    const int bottom_layer = getDesign()->getTech()->getBottomLayerNum();
+    for (int l = layer_num - 1; l >= layer_num - 3 && l >= bottom_layer; l--) {
       if (layer_num_to_via_defs_.find(l) == layer_num_to_via_defs_.end()) {
         continue;
       }
