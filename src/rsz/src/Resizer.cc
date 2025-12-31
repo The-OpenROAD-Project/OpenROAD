@@ -28,6 +28,7 @@
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
 #include "ConcreteSwapArithModules.hh"
+#include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
@@ -44,11 +45,15 @@
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
+#include "sta/Clock.hh"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
@@ -63,12 +68,14 @@
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/NetworkCmp.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Units.hh"
@@ -111,7 +118,6 @@ using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
 using sta::NetTermIterator;
-using sta::NetworkEdit;
 using sta::Port;
 using sta::PortDirection;
 using sta::stringLess;
@@ -256,7 +262,7 @@ VertexSeq Resizer::orderedLoadPinVertices()
 ////////////////////////////////////////////////////////////////
 constexpr static double double_equal_tolerance
     = std::numeric_limits<double>::epsilon() * 10;
-bool rszFuzzyEqual(double v1, double v2)
+static bool rszFuzzyEqual(double v1, double v2)
 {
   if (v1 == v2) {
     return true;
@@ -3385,9 +3391,8 @@ Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
     return new_tie_inst;
   }
 
-  logger_->error(RSZ, 
-                 216, 
-                 "Should not reach here. createNewTieCellForLoadPin() failed.");
+  logger_->error(
+      RSZ, 216, "Should not reach here. createNewTieCellForLoadPin() failed.");
   return nullptr;
 }
 

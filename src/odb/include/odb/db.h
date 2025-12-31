@@ -32,6 +32,8 @@
 #include "odb/isotropy.h"
 
 inline constexpr int ADS_MAX_CORNER = 10;
+inline constexpr const char* kDefaultBufBaseName{"buf"};
+inline constexpr const char* kDefaultNetBaseName{"net"};
 
 namespace utl {
 class Logger;
@@ -2578,13 +2580,13 @@ class dbNet : public dbObject
   /// - Returns the newly created buffer instance.
   /// - If loc is null, the buffer is inserted at the load pin.
   ///
-  dbInst* insertBufferBeforeLoad(dbObject* load_input_term,
-                                 const dbMaster* buffer_master,
-                                 const Point* loc = nullptr,
-                                 const char* new_buf_base_name = nullptr,
-                                 const char* new_net_base_name = nullptr,
-                                 const dbNameUniquifyType& uniquify
-                                 = dbNameUniquifyType::ALWAYS);
+  dbInst* insertBufferBeforeLoad(
+      dbObject* load_input_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
 
   ///
   /// Driver-pin buffering.
@@ -2592,13 +2594,13 @@ class dbNet : public dbObject
   /// - Returns the newly created buffer instance.
   /// - If loc is null, the buffer is inserted at the driver pin.
   ///
-  dbInst* insertBufferAfterDriver(dbObject* drvr_output_term,
-                                  const dbMaster* buffer_master,
-                                  const Point* loc = nullptr,
-                                  const char* new_buf_base_name = nullptr,
-                                  const char* new_net_base_name = nullptr,
-                                  const dbNameUniquifyType& uniquify
-                                  = dbNameUniquifyType::ALWAYS);
+  dbInst* insertBufferAfterDriver(
+      dbObject* drvr_output_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
 
   ///
   /// Partial-loads buffering.
@@ -2612,26 +2614,26 @@ class dbNet : public dbObject
   ///   used because it may break the function of the design if the loads
   ///   contain an irrelevant load.
   ///
-  dbInst* insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
-                                  const dbMaster* buffer_master,
-                                  const Point* loc = nullptr,
-                                  const char* new_buf_base_name = nullptr,
-                                  const char* new_net_base_name = nullptr,
-                                  const dbNameUniquifyType& uniquify
-                                  = dbNameUniquifyType::ALWAYS,
-                                  bool loads_on_diff_nets = false);
+  dbInst* insertBufferBeforeLoads(
+      std::set<dbObject*>& load_pins,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
 
   ///
   /// Partial-loads buffering with vector load_pins support.
   ///
-  dbInst* insertBufferBeforeLoads(std::vector<dbObject*>& load_pins,
-                                  const dbMaster* buffer_master,
-                                  const Point* loc = nullptr,
-                                  const char* new_buf_base_name = nullptr,
-                                  const char* new_net_base_name = nullptr,
-                                  const dbNameUniquifyType& uniquify
-                                  = dbNameUniquifyType::ALWAYS,
-                                  bool loads_on_diff_nets = false);
+  dbInst* insertBufferBeforeLoads(
+      std::vector<dbObject*>& load_pins,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
 
   ///
   /// Connect a driver iterm to a load iterm, punching ports through hierarchy

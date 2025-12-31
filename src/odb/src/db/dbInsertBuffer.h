@@ -26,29 +26,36 @@ class dbModule;
 class dbInsertBuffer
 {
  public:
+  dbInsertBuffer() = delete;
   dbInsertBuffer(dbNet* net);
-  dbInst* insertBufferBeforeLoad(dbObject* load_input_term,
-                                 const dbMaster* buffer_master,
-                                 const Point* loc = nullptr,
-                                 const char* new_buf_base_name = nullptr,
-                                 const char* new_net_base_name = nullptr,
-                                 const dbNameUniquifyType& uniquify
-                                 = dbNameUniquifyType::ALWAYS);
-  dbInst* insertBufferAfterDriver(dbObject* drvr_output_term,
-                                  const dbMaster* buffer_master,
-                                  const Point* loc = nullptr,
-                                  const char* new_buf_base_name = nullptr,
-                                  const char* new_net_base_name = nullptr,
-                                  const dbNameUniquifyType& uniquify
-                                  = dbNameUniquifyType::ALWAYS);
-  dbInst* insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
-                                  const dbMaster* buffer_master,
-                                  const Point* loc = nullptr,
-                                  const char* new_buf_base_name = nullptr,
-                                  const char* new_net_base_name = nullptr,
-                                  const dbNameUniquifyType& uniquify
-                                  = dbNameUniquifyType::ALWAYS,
-                                  bool loads_on_diff_nets = false);
+  dbInsertBuffer(const dbInsertBuffer&) = delete;
+  dbInsertBuffer& operator=(const dbInsertBuffer&) = delete;
+  dbInsertBuffer(dbInsertBuffer&&) = delete;
+  dbInsertBuffer& operator=(dbInsertBuffer&&) = delete;
+  ~dbInsertBuffer() = default;
+
+  dbInst* insertBufferBeforeLoad(
+      dbObject* load_input_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
+  dbInst* insertBufferAfterDriver(
+      dbObject* drvr_output_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
+  dbInst* insertBufferBeforeLoads(
+      std::set<dbObject*>& load_pins,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
 
   ///
   /// Establish hierarchical connections (dbModNet) between a driver and a load.
@@ -60,6 +67,10 @@ class dbInsertBuffer
   void hierarchicalConnect(dbObject* driver, dbObject* load);
 
  private:
+  void validateArgumentsSimple(dbObject* term_obj,
+                               const dbMaster* buffer_master) const;
+  void validateArgumentsBeforeLoads(std::set<dbObject*>& load_pins,
+                                    const dbMaster* buffer_master) const;
   void resetMembers();
   dbInst* insertBufferSimple(dbObject* term_obj,
                              const dbMaster* buffer_master,
@@ -161,6 +172,7 @@ class dbInsertBuffer
                              const Point* loc,
                              std::set<dbObject*>& load_pins);
   void setBufferAttributes(dbInst* buffer_inst);
+  void validateBufferMaster() const;
 
   //------------------------------------------------------------------
   // Debug logging functions
@@ -202,8 +214,8 @@ class dbInsertBuffer
   dbModNet* new_mod_net_{nullptr};  // New modnet connected to the new buffer
   dbModule* target_module_{nullptr};  // Target module for the new buffer
   const dbMaster* buffer_master_{nullptr};
-  const char* new_buf_base_name_{nullptr};  // Base name for the new buffer
-  const char* new_net_base_name_{nullptr};  // Base name for the new nets
+  const char* new_buf_base_name_{kDefaultBufBaseName};
+  const char* new_net_base_name_{kDefaultNetBaseName};
   dbNameUniquifyType uniquify_{dbNameUniquifyType::ALWAYS};
   dbObject* orig_drvr_pin_{nullptr};  // Original driver pin of net_
 

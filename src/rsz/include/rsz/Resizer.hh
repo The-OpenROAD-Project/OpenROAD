@@ -14,6 +14,7 @@
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "rsz/OdbCallBack.hh"
@@ -257,15 +258,19 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Instance* insertBufferAfterDriver(Net* net,
                                     LibertyCell* buffer_cell,
                                     const Point* loc = nullptr,
-                                    const char* new_buf_base_name = nullptr,
-                                    const char* new_net_base_name = nullptr,
+                                    const char* new_buf_base_name
+                                    = kDefaultBufBaseName,
+                                    const char* new_net_base_name
+                                    = kDefaultNetBaseName,
                                     const odb::dbNameUniquifyType& uniquify
                                     = odb::dbNameUniquifyType::ALWAYS);
   odb::dbInst* insertBufferAfterDriver(odb::dbNet* net,
                                        odb::dbMaster* buffer_cell,
                                        const Point* loc = nullptr,
-                                       const char* new_buf_base_name = nullptr,
-                                       const char* new_net_base_name = nullptr,
+                                       const char* new_buf_base_name
+                                       = kDefaultBufBaseName,
+                                       const char* new_net_base_name
+                                       = kDefaultNetBaseName,
                                        const odb::dbNameUniquifyType& uniquify
                                        = odb::dbNameUniquifyType::ALWAYS);
 
@@ -276,15 +281,19 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Instance* insertBufferBeforeLoad(Pin* load_pin,
                                    LibertyCell* buffer_cell,
                                    const Point* loc = nullptr,
-                                   const char* new_buf_base_name = nullptr,
-                                   const char* new_net_base_name = nullptr,
+                                   const char* new_buf_base_name
+                                   = kDefaultBufBaseName,
+                                   const char* new_net_base_name
+                                   = kDefaultNetBaseName,
                                    const odb::dbNameUniquifyType& uniquify
                                    = odb::dbNameUniquifyType::ALWAYS);
   odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_pin,
                                       odb::dbMaster* buffer_cell,
                                       const Point* loc = nullptr,
-                                      const char* new_buf_base_name = nullptr,
-                                      const char* new_net_base_name = nullptr,
+                                      const char* new_buf_base_name
+                                      = kDefaultBufBaseName,
+                                      const char* new_net_base_name
+                                      = kDefaultNetBaseName,
                                       const odb::dbNameUniquifyType& uniquify
                                       = odb::dbNameUniquifyType::ALWAYS);
 
@@ -292,33 +301,33 @@ class Resizer : public dbStaState, public dbNetworkObserver
   /// Wrapper for dbNet::insertBufferBeforeLoads().
   /// - This accepts STA objects instead of db objects.
   ///
-  Instance* insertBufferBeforeLoads(Net* net,
-                                    PinSeq* loads,
-                                    LibertyCell* buffer_cell,
-                                    const Point* loc = nullptr,
-                                    const char* new_buf_base_name = nullptr,
-                                    const char* new_net_base_name = nullptr,
-                                    const odb::dbNameUniquifyType& uniquify
-                                    = odb::dbNameUniquifyType::ALWAYS,
-                                    bool loads_on_diff_nets = false);
-  Instance* insertBufferBeforeLoads(Net* net,
-                                    PinSet* loads,
-                                    LibertyCell* buffer_cell,
-                                    const Point* loc = nullptr,
-                                    const char* new_buf_base_name = nullptr,
-                                    const char* new_net_base_name = nullptr,
-                                    const odb::dbNameUniquifyType& uniquify
-                                    = odb::dbNameUniquifyType::ALWAYS,
-                                    bool loads_on_diff_nets = false);
-  odb::dbInst* insertBufferBeforeLoads(odb::dbNet* net,
-                                       const std::set<odb::dbObject*>& loads,
-                                       odb::dbMaster* buffer_cell,
-                                       const Point* loc = nullptr,
-                                       const char* new_buf_base_name = nullptr,
-                                       const char* new_net_base_name = nullptr,
-                                       const odb::dbNameUniquifyType& uniquify
-                                       = odb::dbNameUniquifyType::ALWAYS,
-                                       bool loads_on_diff_nets = false);
+  Instance* insertBufferBeforeLoads(
+      Net* net,
+      PinSeq* loads,
+      LibertyCell* buffer_cell,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
+  Instance* insertBufferBeforeLoads(
+      Net* net,
+      PinSet* loads,
+      LibertyCell* buffer_cell,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
+  odb::dbInst* insertBufferBeforeLoads(
+      odb::dbNet* net,
+      const std::set<odb::dbObject*>& loads,
+      odb::dbMaster* buffer_cell,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
   bool dontTouch(const Pin* pin) const;
   void reportDontTouch();
 

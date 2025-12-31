@@ -40,8 +40,8 @@ void dbInsertBuffer::resetMembers()
   new_mod_net_ = nullptr;
   target_module_ = nullptr;
   buffer_master_ = nullptr;
-  new_buf_base_name_ = nullptr;
-  new_net_base_name_ = nullptr;
+  new_buf_base_name_ = kDefaultBufBaseName;
+  new_net_base_name_ = kDefaultNetBaseName;
   uniquify_ = dbNameUniquifyType::ALWAYS;
   orig_drvr_pin_ = nullptr;
   is_target_only_cache_.clear();
@@ -94,15 +94,7 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
                                            const dbNameUniquifyType& uniquify,
                                            bool insertBefore)
 {
-  if (term_obj == nullptr || buffer_master == nullptr) {
-    logger_->error(utl::RSZ,
-                   3018,
-                   "insertBufferSimple: term_obj ({:p}) or buffer_master "
-                   "({:p}) must not be null.",
-                   static_cast<void*>(term_obj),
-                   static_cast<const void*>(buffer_master));
-  }
-
+  validateArgumentsSimple(term_obj, buffer_master);
   resetMembers();
 
   target_module_ = (term_obj->getObjectType() == dbITermObj)
@@ -154,15 +146,7 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
     const dbNameUniquifyType& uniquify,
     bool loads_on_diff_nets)
 {
-  if (load_pins.empty() || buffer_master == nullptr) {
-    logger_->error(utl::RSZ,
-                   3019,
-                   "insertBufferSimple: load_pins must not be empty (size = "
-                   "{}) and buffer_master ({:p}) must not be null.",
-                   load_pins.size(),
-                   static_cast<const void*>(buffer_master));
-  }
-
+  validateArgumentsBeforeLoads(load_pins, buffer_master);
   dlogInsertBufferStart(++insert_buffer_call_count_, "BeforeLoads");
 
   resetMembers();
@@ -246,8 +230,8 @@ bool dbInsertBuffer::validateTermAndGetModNet(dbObject* term_obj,
     mod_net = bterm->getModNet();
   } else {
     logger_->error(
-        utl::RSZ,
-        3020,
+        utl::ODB,
+        1217,
         "validateTermAndGetModNet: term_obj ({}) must be dbITerm or dbBTerm",
         term_obj->getTypeName());
   }
@@ -289,11 +273,9 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
   }
 
   // Create a new buffer instance
-  const char* inst_base_name
-      = (new_buf_base_name_) ? new_buf_base_name_ : "buf";
   dbInst* buffer_inst = dbInst::create(block_,
                                        const_cast<dbMaster*>(buffer_master_),
-                                       inst_base_name,
+                                       new_buf_base_name_,
                                        uniquify_,
                                        target_module_);
 
@@ -1517,8 +1499,8 @@ void dbInsertBuffer::dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
       buffer_master_->getName(),
       loc ? loc->getX() : -1,
       loc ? loc->getY() : -1,
-      new_buf_base_name_ ? new_buf_base_name_ : "buf",
-      new_net_base_name_ ? new_net_base_name_ : "net",
+      new_buf_base_name_,
+      new_net_base_name_,
       static_cast<int>(uniquify_),
       loads_on_diff_nets);
 }
@@ -1698,6 +1680,38 @@ void dbInsertBuffer::dlogInsertBufferSuccess(const dbInst* buffer_inst) const
              1,
              "BeforeLoads: Successfully inserted a new buffer '{}'",
              buffer_inst->getName());
+}
+
+void dbInsertBuffer::validateArgumentsSimple(
+    dbObject* term_obj,
+    const dbMaster* buffer_master) const
+{
+  if (term_obj == nullptr) {
+    logger_->error(
+        utl::ODB, 1213, "insertBufferSimple: term_obj must not be null.");
+  }
+
+  if (buffer_master == nullptr) {
+    logger_->error(
+        utl::ODB, 1214, "insertBufferSimple: buffer_master must not be null.");
+  }
+}
+
+void dbInsertBuffer::validateArgumentsBeforeLoads(
+    std::set<dbObject*>& load_pins,
+    const dbMaster* buffer_master) const
+{
+  if (load_pins.empty()) {
+    logger_->error(utl::ODB,
+                   1215,
+                   "insertBufferBeforeLoads: load_pins must not be empty.");
+  }
+
+  if (buffer_master == nullptr) {
+    logger_->error(utl::ODB,
+                   1216,
+                   "insertBufferBeforeLoads: buffer_master must not be null.");
+  }
 }
 
 void dbInsertBuffer::dlogSeparator() const
