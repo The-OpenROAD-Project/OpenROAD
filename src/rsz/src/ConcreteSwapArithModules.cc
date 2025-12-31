@@ -235,11 +235,13 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-bool ConcreteSwapArithModules::doSwapInstances(
-    const std::set<dbModInst*>& insts,
-    const std::string& target)
+bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
+                                               const std::string& target)
 {
   int swapped_count = 0;
+
+  // Create a new inst set since old insts are destroyed
+  std::set<dbModInst*> swappedInsts;
 
   for (dbModInst* inst : insts) {
     dbModule* old_master = inst->getMaster();
@@ -271,11 +273,17 @@ bool ConcreteSwapArithModules::doSwapInstances(
                     inst->getName(),
                     old_name,
                     new_name);
-      if (inst->swapMaster(new_master) != nullptr) {
+      dbModInst* new_inst = inst->swapMaster(new_master);
+
+      if (new_inst) {
         swapped_count++;
+        swappedInsts.insert(new_inst);
       }
     }
   }
+
+  insts.clear();
+  insts.insert(swappedInsts.begin(), swappedInsts.end());
 
   logger_->info(RSZ,
                 160,
