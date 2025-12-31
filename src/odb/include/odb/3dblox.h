@@ -24,13 +24,14 @@ class Connection;
 class DesignDef;
 class dbChipRegionInst;
 class dbChipInst;
-class BumpMapEntry;
 class dbChipRegion;
 class dbBlock;
 class dbBTerm;
 class dbInst;
 class dbTech;
 class dbLib;
+
+struct BumpMapEntry;
 
 class ThreeDBlox
 {

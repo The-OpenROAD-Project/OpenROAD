@@ -107,7 +107,7 @@ class GridGraph
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
-  AccessPointSet selectAccessPoints(const GRNet* net) const;
+  AccessPointSet selectAccessPoints(GRNet* net) const;
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
@@ -151,10 +151,11 @@ class GridGraph
   {
     return unit_length_short_costs_[layer_index];
   }
-  void convertODBtoCUGR(AccessPointSet& selected_access_points,
-                        odb::dbAccessPoint* ap,
-                        int x,
-                        int y) const;
+  void translateAccessPointsToGrid(
+      odb::dbAccessPoint* ap,
+      int x,
+      int y,
+      AccessPointSet& selected_access_points) const;
   bool findODBAccessPoints(const GRNet* net,
                            AccessPointSet& selected_access_points) const;
 
