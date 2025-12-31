@@ -125,8 +125,15 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
   odb::Rect box;
   if (via_def->getLayer1Num() == layer_num) {
     box = via.getLayer1BBox();
-  } else {
+  } else if (via_def->getLayer2Num() == layer_num) {
     box = via.getLayer2BBox();
+  } else {
+    logger_->warn(DRT,
+                  0,
+                  "genViaEnclosedCoords: layer_num {} is not part of via {}",
+                  layer_num,
+                  via_def->getName());
+    return;
   }
   const auto via_width = box.dx();
   const auto via_height = box.dy();
@@ -161,30 +168,30 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
   // hardcode first two single vias
   const int max_num_via_trial = 2;
   int cnt = 0;
-  if (layer_num + 1 <= getDesign()->getTech()->getTopLayerNum()) {
-    for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
+
+  auto process_cut_layer = [&](int cut_layer_num, int& counter) {
+    if (layer_num_to_via_defs_.find(cut_layer_num)
+        == layer_num_to_via_defs_.end()) {
+      return;
+    }
+    for (auto& [tup, via] : layer_num_to_via_defs_[cut_layer_num][1]) {
       genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
-      cnt++;
-      if (cnt >= max_num_via_trial) {
+      counter++;
+      if (counter >= max_num_via_trial) {
         break;
       }
     }
+  };
+
+  if (layer_num + 1 <= getDesign()->getTech()->getTopLayerNum()) {
+    process_cut_layer(layer_num + 1, cnt);
   }
 
   if (is_bterm) {
     int down_via_cnt = 0;
     const int bottom_layer = getDesign()->getTech()->getBottomLayerNum();
     for (int l = layer_num - 1; l >= layer_num - 3 && l >= bottom_layer; l--) {
-      if (layer_num_to_via_defs_.find(l) == layer_num_to_via_defs_.end()) {
-        continue;
-      }
-      for (auto& [tup, via] : layer_num_to_via_defs_[l][1]) {
-        genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
-        down_via_cnt++;
-        if (down_via_cnt >= max_num_via_trial) {
-          break;
-        }
-      }
+      process_cut_layer(l, down_via_cnt);
       if (down_via_cnt >= max_num_via_trial) {
         break;
       }
