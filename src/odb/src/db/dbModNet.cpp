@@ -472,8 +472,9 @@ dbNet* dbModNet::findRelatedNet() const
   //
   // Slow path: traverse hierarchy
   //
-  std::vector<const dbModNet*> modnets_to_visit;
   std::set<const dbModNet*> visited_modnets;
+  std::vector<const dbModNet*> modnets_to_visit;
+  modnets_to_visit.reserve(16);
 
   // Helper to add a modnet to the visit queue if it's new.
   auto visitIfNew = [&](const dbModNet* modnet) {
@@ -620,7 +621,7 @@ bool dbModNet::isConnected(const dbModNet* other) const
 
 std::vector<dbModNet*> dbModNet::getNextModNetsInFanin() const
 {
-  std::vector<dbModNet*> modnets;
+  std::vector<dbModNet*> next_modnets;
 
   // 1. Upward: This module's input port -> parent's instance pin -> parent's
   // net
@@ -636,7 +637,7 @@ std::vector<dbModNet*> dbModNet::getNextModNetsInFanin() const
     }
 
     if (dbModNet* modnet = parent_moditerm->getModNet()) {
-      modnets.push_back(modnet);
+      next_modnets.push_back(modnet);
     }
   }
 
@@ -653,16 +654,16 @@ std::vector<dbModNet*> dbModNet::getNextModNetsInFanin() const
     }
 
     if (dbModNet* modnet = child_modbterm->getModNet()) {
-      modnets.push_back(modnet);
+      next_modnets.push_back(modnet);
     }
   }
 
-  return modnets;
+  return next_modnets;
 }
 
 std::vector<dbModNet*> dbModNet::getNextModNetsInFanout() const
 {
-  std::vector<dbModNet*> next_nets;
+  std::vector<dbModNet*> next_modnets;
 
   // 1. Downward: This net -> child's instance pin -> child's input port ->
   // child's net
@@ -679,7 +680,7 @@ std::vector<dbModNet*> dbModNet::getNextModNetsInFanout() const
     }
 
     if (dbModNet* modnet = child_modbterm->getModNet()) {
-      next_nets.push_back(modnet);
+      next_modnets.push_back(modnet);
     }
   }
 
@@ -697,19 +698,20 @@ std::vector<dbModNet*> dbModNet::getNextModNetsInFanout() const
     }
 
     if (dbModNet* modnet = parent_moditerm->getModNet()) {
-      next_nets.push_back(modnet);
+      next_modnets.push_back(modnet);
     }
   }
 
-  return next_nets;
+  return next_modnets;
 }
 
 dbModNet* dbModNet::findInHierarchy(
     const std::function<bool(dbModNet*)>& condition,
     dbHierSearchDir dir) const
 {
-  std::vector<dbModNet*> worklist;
   std::set<dbModNet*> visited;
+  std::vector<dbModNet*> worklist;
+  worklist.reserve(16);
   worklist.push_back(const_cast<dbModNet*>(this));
   visited.insert(const_cast<dbModNet*>(this));
 

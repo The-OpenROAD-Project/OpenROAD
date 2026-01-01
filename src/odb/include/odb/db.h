@@ -2615,7 +2615,7 @@ class dbNet : public dbObject
   ///   contain an irrelevant load.
   ///
   dbInst* insertBufferBeforeLoads(
-      std::set<dbObject*>& load_pins,
+      const std::set<dbObject*>& load_pins,
       const dbMaster* buffer_master,
       const Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -2627,7 +2627,7 @@ class dbNet : public dbObject
   /// Partial-loads buffering with vector load_pins support.
   ///
   dbInst* insertBufferBeforeLoads(
-      std::vector<dbObject*>& load_pins,
+      const std::vector<dbObject*>& load_pins,
       const dbMaster* buffer_master,
       const Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -8653,7 +8653,7 @@ class dbModule : public dbObject
   // module.
   void addInst(dbInst* inst);
 
-  dbBlock* getOwner();
+  dbBlock* getOwner() const;
 
   dbSet<dbModInst> getChildren() const;
   dbSet<dbModInst> getModInsts() const;
@@ -8665,9 +8665,9 @@ class dbModule : public dbObject
   dbModBTerm* getModBTerm(uint32_t id);
   dbSet<dbInst> getInsts() const;
 
-  dbModInst* findModInst(const char* name);
-  dbInst* findDbInst(const char* name);
-  dbModBTerm* findModBTerm(const char* name);
+  dbModInst* findModInst(const char* name) const;
+  dbInst* findDbInst(const char* name) const;
+  dbModBTerm* findModBTerm(const char* name) const;
 
   std::vector<dbInst*> getLeafInsts();
 

@@ -2999,7 +2999,7 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
                                                uniquify);
 }
 
-dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
+dbInst* dbNet::insertBufferBeforeLoads(const std::set<dbObject*>& load_pins,
                                        const dbMaster* buffer_master,
                                        const Point* loc,
                                        const char* new_buf_base_name,
@@ -3017,7 +3017,7 @@ dbInst* dbNet::insertBufferBeforeLoads(std::set<dbObject*>& load_pins,
                                                loads_on_diff_nets);
 }
 
-dbInst* dbNet::insertBufferBeforeLoads(std::vector<dbObject*>& load_pins,
+dbInst* dbNet::insertBufferBeforeLoads(const std::vector<dbObject*>& load_pins,
                                        const dbMaster* buffer_master,
                                        const Point* loc,
                                        const char* new_buf_base_name,
