@@ -2269,7 +2269,7 @@ class dbNet : public dbObject
   ///
   /// Set the 1st R segment of this net.
   ///
-  void set1stRSegId(uint32_t rseg_id);
+  void set1stRSegId(uint32_t rid);
 
   ///
   /// Get the zeroth R segment of this net.
@@ -2314,7 +2314,7 @@ class dbNet : public dbObject
   ///
   /// compact internal capnode number'
   ///
-  void collapseInternalCapNum(FILE* capNodeMap);
+  void collapseInternalCapNum(FILE* mapFile);
   ///
   /// find max number of cap nodes that are internal
   ///

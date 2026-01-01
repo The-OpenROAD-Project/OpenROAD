@@ -1833,7 +1833,7 @@ void dbNet::getCouplingNets(const uint32_t corner,
   }
 }
 
-void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
+void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double MillerMult)
 {
   dbSigType type = getSigType();
   if (type.isSupply()) {
@@ -1853,18 +1853,18 @@ void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
   if (foreign) {
     for (dbCapNode* node : getCapNodes()) {
       if (first) {
-        node->getGndTotalCap(gndcap, totalcap, mcf);
+        node->getGndTotalCap(gndcap, totalcap, MillerMult);
       } else {
-        node->addGndTotalCap(gndcap, totalcap, mcf);
+        node->addGndTotalCap(gndcap, totalcap, MillerMult);
       }
       first = false;
     }
   } else {
     for (dbRSeg* rc : rSet) {
       if (first) {
-        rc->getGndTotalCap(gndcap, totalcap, mcf);
+        rc->getGndTotalCap(gndcap, totalcap, MillerMult);
       } else {
-        rc->addGndTotalCap(gndcap, totalcap, mcf);
+        rc->addGndTotalCap(gndcap, totalcap, MillerMult);
       }
       first = false;
     }
@@ -1893,13 +1893,13 @@ void dbNet::preExttreeMergeRC(double max_cap, uint32_t corner)
   dbRSeg* prc = getZeroRSeg();
   bool firstRC = true;
   uint32_t cnt = 1;
-  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*MillerMult*/);
   for (dbRSeg* rc : rSet) {
     mrsegs.push_back(rc);
     if (firstRC && cnt != 1) {
-      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*MillerMult*/);
     } else {
-      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*MillerMult*/);
     }
     cnt++;
     firstRC = false;
@@ -2301,19 +2301,19 @@ dbSet<dbNet>::iterator dbNet::destroy(dbSet<dbNet>::iterator& itr)
   return next;
 }
 
-dbNet* dbNet::getNet(dbBlock* block_, uint32_t dbid_)
+dbNet* dbNet::getNet(dbBlock* block, uint32_t oid)
 {
-  _dbBlock* block = (_dbBlock*) block_;
-  return (dbNet*) block->net_tbl_->getPtr(dbid_);
+  _dbBlock* block_impl = (_dbBlock*) block;
+  return (dbNet*) block_impl->net_tbl_->getPtr(oid);
 }
 
-dbNet* dbNet::getValidNet(dbBlock* block_, uint32_t dbid_)
+dbNet* dbNet::getValidNet(dbBlock* block, uint32_t oid)
 {
-  _dbBlock* block = (_dbBlock*) block_;
-  if (!block->net_tbl_->validId(dbid_)) {
+  _dbBlock* block_impl = (_dbBlock*) block;
+  if (!block_impl->net_tbl_->validId(oid)) {
     return nullptr;
   }
-  return (dbNet*) block->net_tbl_->getPtr(dbid_);
+  return (dbNet*) block_impl->net_tbl_->getPtr(oid);
 }
 
 bool dbNet::canMergeNet(dbNet* in_net)
