@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <map>
 #include <set>
 #include <string>
 
