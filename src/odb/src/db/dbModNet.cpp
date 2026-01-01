@@ -20,6 +20,7 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <boost/container/small_vector.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -473,8 +474,7 @@ dbNet* dbModNet::findRelatedNet() const
   // Slow path: traverse hierarchy
   //
   std::set<const dbModNet*> visited_modnets;
-  std::vector<const dbModNet*> modnets_to_visit;
-  modnets_to_visit.reserve(16);
+  boost::container::small_vector<const dbModNet*, 16> modnets_to_visit;
 
   // Helper to add a modnet to the visit queue if it's new.
   auto visitIfNew = [&](const dbModNet* modnet) {
@@ -543,27 +543,29 @@ void dbModNet::mergeModNet(dbModNet* in_modnet)
   // 1. Connect all terminals of in_modnet to this modnet.
   // - Create vectors for safe iteration, as connect() can invalidate iterators.
   auto iterms_set = in_modnet->getITerms();
-  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  boost::container::small_vector<dbITerm*, 16> iterms(iterms_set.begin(),
+                                                      iterms_set.end());
   for (dbITerm* iterm : iterms) {
     iterm->connect(this);
   }
 
   auto bterms_set = in_modnet->getBTerms();
-  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  boost::container::small_vector<dbBTerm*, 16> bterms(bterms_set.begin(),
+                                                      bterms_set.end());
   for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
 
   auto moditerms_set = in_modnet->getModITerms();
-  std::vector<dbModITerm*> moditerms(moditerms_set.begin(),
-                                     moditerms_set.end());
+  boost::container::small_vector<dbModITerm*, 16> moditerms(
+      moditerms_set.begin(), moditerms_set.end());
   for (dbModITerm* moditerm : moditerms) {
     moditerm->connect(this);
   }
 
   auto modbterms_set = in_modnet->getModBTerms();
-  std::vector<dbModBTerm*> modbterms(modbterms_set.begin(),
-                                     modbterms_set.end());
+  boost::container::small_vector<dbModBTerm*, 16> modbterms(
+      modbterms_set.begin(), modbterms_set.end());
   for (dbModBTerm* modbterm : modbterms) {
     modbterm->connect(this);
   }
@@ -583,7 +585,8 @@ void dbModNet::connectTermsOf(dbNet* in_net)
 
   // Create vectors for safe iteration, as connect() can invalidate iterators.
   auto iterms_set = in_net->getITerms();
-  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  boost::container::small_vector<dbITerm*, 16> iterms(iterms_set.begin(),
+                                                      iterms_set.end());
   dbModule* modnet_parent = getParent();
   for (dbITerm* iterm : iterms) {
     // Only connect terminals that are in the same module as the modnet
@@ -593,7 +596,8 @@ void dbModNet::connectTermsOf(dbNet* in_net)
   }
 
   auto bterms_set = in_net->getBTerms();
-  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  boost::container::small_vector<dbBTerm*, 16> bterms(bterms_set.begin(),
+                                                      bterms_set.end());
   for (dbBTerm* bterm : bterms) {
     // Only connect terminals that are in the same module as the modnet
     // BTerms are considered to be in the top module of the block.
@@ -709,9 +713,8 @@ dbModNet* dbModNet::findInHierarchy(
     const std::function<bool(dbModNet*)>& condition,
     dbHierSearchDir dir) const
 {
+  boost::container::small_vector<dbModNet*, 16> worklist;
   std::set<dbModNet*> visited;
-  std::vector<dbModNet*> worklist;
-  worklist.reserve(16);
   worklist.push_back(const_cast<dbModNet*>(this));
   visited.insert(const_cast<dbModNet*>(this));
 
