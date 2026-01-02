@@ -14,9 +14,11 @@
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -243,17 +245,6 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     return false;
   }
 
-  // Do not remove buffers connected to input/output ports
-  // because verilog netlists use the net name for the port.
-  if (bufferBetweenPorts(buffer)) {
-    return false;
-  }
-
-  // Don't remove buffers connected to modnets on both input and output
-  // These buffers occupy as special place in hierarchy and cannot
-  // be removed without destroying the hierarchy.
-  // This is the hierarchical equivalent of "bufferBetweenPorts" above
-
   Pin* buffer_ip_pin;
   Pin* buffer_op_pin;
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
@@ -300,9 +291,6 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   odb::dbNet* db_net_survivor = nullptr;
   odb::dbNet* db_net_removed = nullptr;
   if (out_net_ports) {
-    if (db_network_->hasPort(in_net)) {
-      return false;
-    }
     removed = in_net;
     db_net_survivor = out_db_net;
     db_net_removed = in_db_net;

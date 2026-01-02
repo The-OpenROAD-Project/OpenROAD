@@ -14,6 +14,7 @@
 #include <random>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -35,7 +36,6 @@
 // #define ODP_DEBUG
 
 namespace dpl {
-
 using std::max;
 using std::min;
 using std::numeric_limits;
@@ -759,20 +759,20 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
   {
     int manhattan_distance;
     GridPt p;
+    int sequence;
     bool operator>(const PQ_entry& other) const
     {
-      return manhattan_distance > other.manhattan_distance;
-    }
-    bool operator==(const PQ_entry& other) const
-    {
-      return manhattan_distance == other.manhattan_distance;
+      return std::tie(manhattan_distance, sequence)
+             > std::tie(other.manhattan_distance, other.sequence);
     }
   };
   std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
       positionsHeap;
   std::unordered_set<GridPt> visited;
+  int sequence = 0;
   GridPt center{x, y};
-  positionsHeap.push(PQ_entry{0, center});
+  positionsHeap.push(
+      {.manhattan_distance = 0, .p = center, .sequence = sequence++});
   visited.insert(center);
 
   const vector<GridPt> neighbors = {{GridX(-1), GridY(0)},
@@ -802,7 +802,9 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
       }
 
       visited.insert(neighbor);
-      positionsHeap.push(PQ_entry{calcDist(center, neighbor), neighbor});
+      positionsHeap.push({.manhattan_distance = calcDist(center, neighbor),
+                          .p = neighbor,
+                          .sequence = sequence++});
     }
   }
   return PixelPt();
@@ -908,10 +910,10 @@ bool Opendp::checkPixels(const Node* cell,
       }
     }
     if (disallow_one_site_gaps_) {
-      // here we need to check for abutting first, if there is an abutting cell
-      // then we continue as there is nothing wrong with it
-      // if there is no abutting cell, we will then check cells at 1+ distances
-      // we only need to check on the left and right sides
+      // here we need to check for abutting first, if there is an abutting
+      // cell then we continue as there is nothing wrong with it if there is
+      // no abutting cell, we will then check cells at 1+ distances we only
+      // need to check on the left and right sides
       const GridX x_begin = max(GridX{0}, x - 1);
       const GridY y_begin = max(GridY{0}, y - 1);
       // inclusive search, so we don't add 1 to the end
