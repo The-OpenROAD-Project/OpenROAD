@@ -1,0 +1,8 @@
+Test 1: Command name completion 'read_db'
+PASS: Test 1 returned empty (as expected for mock failure)
+
+Test 2: Argument completion 'read_db '
+PASS: Test 2 returned list of length > 0
+
+Test 3: write_lef completion
+PASS: Test 3 returned list of length > 0

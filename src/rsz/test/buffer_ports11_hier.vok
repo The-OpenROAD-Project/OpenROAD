@@ -13,13 +13,6 @@ module top (ce_in,
  input [6:0] w_mask_in;
  input [6:0] wd_in;
 
- wire net24;
- wire net25;
- wire net26;
- wire net27;
- wire net28;
- wire net29;
- wire net30;
  wire net1;
  wire net2;
  wire net3;
@@ -28,6 +21,13 @@ module top (ce_in,
  wire net6;
  wire net7;
  wire net8;
+ wire net24;
+ wire net25;
+ wire net26;
+ wire net27;
+ wire net28;
+ wire net29;
+ wire net30;
  wire net9;
  wire net10;
  wire net11;
