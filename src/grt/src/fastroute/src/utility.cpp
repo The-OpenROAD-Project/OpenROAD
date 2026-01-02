@@ -619,7 +619,7 @@ float FastRouteCore::getNetResistance(FrNet* net, bool assume_layer)
         int length = std::abs(grids[i].x - grids[i + 1].x)
                      + std::abs(grids[i].y - grids[i + 1].y);
         total_resistance += getWireResistance(
-            assume_layer ? net->getMaxLayer() : grids[i].layer,
+            assume_layer ? net->getMinLayer() : grids[i].layer,
             length * tile_size_,
             net);
       } else {
@@ -650,7 +650,6 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   std::vector<std::pair<int, float>> res_aware_list;
-  bool ok = false;
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
     callback_handler_->triggerOnEstimateParasiticsRequired();
@@ -666,9 +665,6 @@ void FastRouteCore::updateSlacks(float percentage)
     // Do not update slack during rsz repair
     slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
-
-    // Enable res-aware for clock nets by default
-    // net->setIsResAware(net->isClock());
 
     // Skip positive slacks above threshold
     // TODO: need to check this positive slack threshold
@@ -704,16 +700,11 @@ void FastRouteCore::updateSlacks(float percentage)
         = is_3d_step_ ? getNetResistance(net) : getNetResistance(net, true);
     net->setResistance(net_resistance);
 
-    if (net->getDbNet()->getName() == "net214477") {
-      logger_->report("\n\t{} - slack: {} - resistance: {} - score: {}",
-                      net->getName(),
-                      net->getSlack(),
-                      net->getResistance(),
-                      getResAwareScore(net));
-      ok = true;
+    // Enable res-aware for NDR nets
+    if (net->getDbNet()->getNonDefaultRule() || net->isClock()) {
+      net->setIsResAware(true);
     }
 
-    // net->setIsResAware(true);
     if (!net->isResAware()) {
       res_aware_list.emplace_back(net_id, -getResAwareScore(net));
     }
@@ -727,7 +718,7 @@ void FastRouteCore::updateSlacks(float percentage)
 
   std::stable_sort(res_aware_list.begin(), res_aware_list.end(), compareSlack);
 
-  // During incremental grt, enable res-aware for all nets
+  // During incremental grt, enable res-aware for all nets in the list
   if (is_incremental_grt_) {
     percentage = 1;
   }
@@ -737,7 +728,7 @@ void FastRouteCore::updateSlacks(float percentage)
     nets_[res_aware_list[i].first]->setIsResAware(true);
   }
 
-  if (en_estimate_parasitics_ || ok) {
+  if (!is_incremental_grt_) {
     // Decide the percentage of nets that will use resistance aware
     logger_->report("\tNets: {} - Unconstrained: {} - Short: {}",
                     net_ids_.size(),
