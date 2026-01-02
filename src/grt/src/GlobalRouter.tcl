@@ -242,9 +242,9 @@ proc global_route { args } {
 sta::define_cmd_args "repair_antennas" { diode_cell \
                                          [-iterations iterations] \
                                          [-ratio_margin ratio_margin] \
-				         [-jumper_only] \
-				         [-diode_only] \
-				         [-allow_congestion]}
+                                         [-jumper_only] \
+                                         [-diode_only] \
+                                         [-allow_congestion]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
