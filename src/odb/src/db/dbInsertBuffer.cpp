@@ -513,7 +513,7 @@ int dbInsertBuffer::getModuleDepth(const dbModule* mod) const
   return depth;
 }
 
-dbModule* dbInsertBuffer::findLCA(const dbModule* m1, const dbModule* m2) const
+dbModule* dbInsertBuffer::findLCA(dbModule* m1, dbModule* m2) const
 {
   dbModule* top_module = block_->getTopModule();
   if (m1 == nullptr || m2 == nullptr) {
@@ -553,7 +553,7 @@ dbModule* dbInsertBuffer::findLCA(const dbModule* m1, const dbModule* m2) const
     m1 = m1->getParentModule();
     m2 = m2->getParentModule();
   }
-  return const_cast<dbModule*>(m1);
+  return m1;
 }
 
 bool dbInsertBuffer::checkAllLoadsAreTargets(

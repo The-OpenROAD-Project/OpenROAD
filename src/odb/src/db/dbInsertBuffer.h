@@ -83,7 +83,7 @@ class dbInsertBuffer
                                  const std::string& base_name,
                                  const char* suffix = nullptr) const;
   int getModuleDepth(const dbModule* mod) const;
-  dbModule* findLCA(const dbModule* m1, const dbModule* m2) const;
+  dbModule* findLCA(dbModule* m1, dbModule* m2) const;
   dbModNet* getFirstDriverModNetInTargetModule(
       const std::set<dbModNet*>& modnets_in_target_module) const;
   bool checkAllLoadsAreTargets(dbModNet* net,

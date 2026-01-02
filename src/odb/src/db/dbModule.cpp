@@ -567,7 +567,7 @@ std::string dbModule::getHierarchicalName() const
 
 dbBlock* dbModule::getOwner() const
 {
-  _dbModule* obj = (_dbModule*) this;
+  const _dbModule* obj = (const _dbModule*) this;
   return (dbBlock*) obj->getOwner();
 }
 
