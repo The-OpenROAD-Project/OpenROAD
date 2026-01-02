@@ -1209,6 +1209,10 @@ dbBTerm* dbNet::get1stBTerm()
 
 dbObject* dbNet::getFirstDriverTerm() const
 {
+  if (getSigType().isSupply()) {
+    return nullptr;
+  }
+
   for (dbITerm* iterm : getITerms()) {
     if (iterm->getSigType().isSupply()) {
       continue;
@@ -2468,6 +2472,10 @@ dbModule* dbNet::findMainParentModule() const
 bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
 {
   modnet_set.clear();
+
+  if (getSigType().isSupply()) {
+    return false;
+  }
 
   std::vector<dbModNet*> nets_to_visit;
 
