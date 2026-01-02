@@ -1834,7 +1834,7 @@ void dbNet::getCouplingNets(const uint32_t corner,
   }
 }
 
-void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double MillerMult)
+void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double miller_mult)
 {
   dbSigType type = getSigType();
   if (type.isSupply()) {
@@ -1854,18 +1854,18 @@ void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double MillerMult)
   if (foreign) {
     for (dbCapNode* node : getCapNodes()) {
       if (first) {
-        node->getGndTotalCap(gndcap, totalcap, MillerMult);
+        node->getGndTotalCap(gndcap, totalcap, miller_mult);
       } else {
-        node->addGndTotalCap(gndcap, totalcap, MillerMult);
+        node->addGndTotalCap(gndcap, totalcap, miller_mult);
       }
       first = false;
     }
   } else {
     for (dbRSeg* rc : rSet) {
       if (first) {
-        rc->getGndTotalCap(gndcap, totalcap, MillerMult);
+        rc->getGndTotalCap(gndcap, totalcap, miller_mult);
       } else {
-        rc->addGndTotalCap(gndcap, totalcap, MillerMult);
+        rc->addGndTotalCap(gndcap, totalcap, miller_mult);
       }
       first = false;
     }
@@ -1894,13 +1894,13 @@ void dbNet::preExttreeMergeRC(double max_cap, uint32_t corner)
   dbRSeg* prc = getZeroRSeg();
   bool firstRC = true;
   uint32_t cnt = 1;
-  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*MillerMult*/);
+  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*miller_mult*/);
   for (dbRSeg* rc : rSet) {
     mrsegs.push_back(rc);
     if (firstRC && cnt != 1) {
-      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*MillerMult*/);
+      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*miller_mult*/);
     } else {
-      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*MillerMult*/);
+      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*miller_mult*/);
     }
     cnt++;
     firstRC = false;
