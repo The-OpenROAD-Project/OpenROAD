@@ -49,7 +49,8 @@
 #include "defrData.hpp"
 #include "defrSettings.hpp"
 
-#define NODEFMSG 4013  // (9012 + 1) - 5000, def msg starts at 5000
+static constexpr int NODEFMSG
+    = 4013;  // (9012 + 1) - 5000, def msg starts at 5000
 
 #define DEF_INIT def_init(__FUNCTION__)
 

@@ -81,7 +81,7 @@ void defiError6086(int index, int numRects, defrData* defData)
 
 }  // namespace
 
-#define maxLimit 65536
+static constexpr int maxLimit = 65536;
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////

@@ -39,8 +39,8 @@
 #include "lefrSettings.hpp"
 #include "lex.h"
 
-#define NOCBK 100
-#define NOLEFMSG 4701  // 4701 = 4700 + 1, message starts on 1
+static constexpr int NOCBK = 100;
+static constexpr int NOLEFMSG = 4701;  // 4701 = 4700 + 1, message starts on 1
 
 #define LEF_INIT lef_init(__FUNCTION__)
 
