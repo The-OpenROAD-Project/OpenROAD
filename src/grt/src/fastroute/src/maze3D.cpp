@@ -696,7 +696,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   }
 
   if (enable_resistance_aware_) {
-    updateSlacks(0.5);
+    updateSlacks(0.1);
     netpinOrderInc();
   }
 

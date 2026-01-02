@@ -1360,7 +1360,7 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   is_3d_step_ = false;
-  updateSlacks(0.25);
+  updateSlacks(0.1);
   is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
