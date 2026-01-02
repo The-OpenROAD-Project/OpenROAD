@@ -8,11 +8,4 @@ set block [$chip getBlock]
 
 write_cdl -masters NangateOpenCellLibrary.cdl "[make_result_file gcd.cdl]"
 
-set isDiff [diff_files "[make_result_file gcd.cdl]" "dump_netlists_cdl.ok"]
-
-if { $isDiff != 0 } {
-  exit 1
-}
-
-puts "pass"
-exit
+diff_files "[make_result_file gcd.cdl]" dump_netlists_cdl.ok

@@ -99,10 +99,6 @@ class LatencyBalancer
       int srcX,
       int srcY,
       const std::vector<odb::dbITerm*>& sinksInput);
-  odb::dbInst* createDelayBuffer(odb::dbNet* driverNet,
-                                 const std::string& clockName,
-                                 int locX,
-                                 int locY);
   bool propagateClock(odb::dbITerm* input);
   bool isSink(odb::dbITerm* iterm);
 

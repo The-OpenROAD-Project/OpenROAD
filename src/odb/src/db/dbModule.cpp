@@ -170,6 +170,12 @@ dbModInst* dbModule::getModInst() const
 
 // User Code Begin dbModulePublicMethods
 
+dbModule* dbModule::getParentModule() const
+{
+  dbModInst* mod_inst = getModInst();
+  return (mod_inst != nullptr) ? mod_inst->getParent() : nullptr;
+}
+
 const dbModBTerm* dbModule::getHeadDbModBTerm() const
 {
   _dbModule* obj = (_dbModule*) this;

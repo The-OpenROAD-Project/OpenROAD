@@ -133,12 +133,12 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1014] Final placement area: 175.05 (+0.00%)
 Placement Analysis
 ---------------------------------
-total displacement         73.4 u
-average displacement        3.3 u
-max displacement            6.0 u
+total displacement         75.8 u
+average displacement        3.4 u
+max displacement            6.8 u
 original HPWL            1027.5 u
-legalized HPWL           1085.4 u
-delta HPWL                    6 %
+legalized HPWL           1101.1 u
+delta HPWL                    7 %
 
 Detailed placement improvement.
 [INFO DPL-0401] Setting random seed to 1.
@@ -155,33 +155,48 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPL-0303] Running algorithm for independent set matching.
 [INFO DPL-0300] Set matching objective is wirelength.
-[INFO DPL-0301] Pass   1 of matching; objective is 1.085974e+06.
-[INFO DPL-0302] End of matching; objective is 1.080864e+06, improvement is 0.47 percent.
+[INFO DPL-0301] Pass   1 of matching; objective is 1.101929e+06.
+[INFO DPL-0302] End of matching; objective is 1.093570e+06, improvement is 0.76 percent.
 [INFO DPL-0303] Running algorithm for global swaps.
-[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.056277e+06.
-[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.056277e+06.
-[INFO DPL-0307] End of global swaps; objective is 1.056277e+06, improvement is 2.27 percent.
+[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.056937e+06.
+[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.056937e+06.
+[INFO DPL-0307] End of global swaps; objective is 1.056937e+06, improvement is 3.35 percent.
 [INFO DPL-0303] Running algorithm for vertical swaps.
-[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.004249e+06.
-[INFO DPL-0308] Pass   2 of vertical swaps; hpwl is 9.990840e+05.
-[INFO DPL-0309] End of vertical swaps; objective is 9.990840e+05, improvement is 5.41 percent.
+[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.021322e+06.
+[INFO DPL-0308] Pass   2 of vertical swaps; hpwl is 1.012356e+06.
+[INFO DPL-0309] End of vertical swaps; objective is 1.012356e+06, improvement is 4.22 percent.
 [INFO DPL-0303] Running algorithm for reordering.
-[INFO DPL-0304] Pass   1 of reordering; objective is 9.990840e+05.
-[INFO DPL-0305] End of reordering; objective is 9.990840e+05, improvement is 0.00 percent.
+[INFO DPL-0304] Pass   1 of reordering; objective is 1.012356e+06.
+[INFO DPL-0305] End of reordering; objective is 1.012356e+06, improvement is 0.00 percent.
 [INFO DPL-0303] Running algorithm for random improvement.
 [INFO DPL-0324] Random improver is using random generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator random called 440 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 440, swaps 26, moves   408 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.990840e+05, Scratch cost 9.984700e+05, Incremental cost 9.984700e+05, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 9.984700e+05.
-[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 0.06 percent.
-[INFO DPL-0328] End of random improver; improvement is 0.061456 percent.
+[INFO DPL-0335] Generator random, Cumulative attempts 440, swaps 36, moves   400 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.012356e+06, Scratch cost 9.973210e+05, Incremental cost 9.973210e+05, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 9.973210e+05.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 1.49 percent.
+[INFO DPL-0332] End of pass, Generator random called 440 times.
+[INFO DPL-0335] Generator random, Cumulative attempts 880, swaps 66, moves   801 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.973210e+05, Scratch cost 9.477810e+05, Incremental cost 9.477810e+05, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 9.477810e+05.
+[INFO DPL-0327] Pass   2 of random improver; improvement in cost is 4.97 percent.
+[INFO DPL-0332] End of pass, Generator random called 440 times.
+[INFO DPL-0335] Generator random, Cumulative attempts 1320, swaps 101, moves  1201 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.477810e+05, Scratch cost 9.265230e+05, Incremental cost 9.265230e+05, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 9.265230e+05.
+[INFO DPL-0327] Pass   3 of random improver; improvement in cost is 2.24 percent.
+[INFO DPL-0332] End of pass, Generator random called 440 times.
+[INFO DPL-0335] Generator random, Cumulative attempts 1760, swaps 139, moves  1597 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 9.265230e+05, Scratch cost 9.246770e+05, Incremental cost 9.246770e+05, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 9.246770e+05.
+[INFO DPL-0327] Pass   4 of random improver; improvement in cost is 0.20 percent.
+[INFO DPL-0328] End of random improver; improvement is 8.660886 percent.
 [INFO DPL-0380] Cell flipping.
 [INFO DPL-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPL-0383] Performed 5 cell flips.
-[INFO DPL-0384] End of flipping; objective is 9.929850e+05, improvement is 0.55 percent.
+[INFO DPL-0383] Performed 7 cell flips.
+[INFO DPL-0384] End of flipping; objective is 9.144300e+05, improvement is 1.11 percent.
 [INFO DPL-0313] Found 0 cells in wrong regions.
 [INFO DPL-0315] Found 0 row alignment problems.
 [INFO DPL-0314] Found 0 site alignment problems.
@@ -189,8 +204,8 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL             1085.4 u (     585.5,      499.9)
-Final HPWL                 991.9 u (     528.3,      463.5)
-Delta HPWL                  -8.6 % (      -9.8,       -7.3)
+Original HPWL             1101.1 u (     585.5,      515.6)
+Final HPWL                 914.2 u (     440.1,      474.0)
+Delta HPWL                 -17.0 % (     -24.8,       -8.1)
 
 No differences found.
