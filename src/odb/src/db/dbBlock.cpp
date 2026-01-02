@@ -1999,17 +1999,18 @@ dbLevelShifter* dbBlock::findLevelShifter(const char* name)
 
 dbModInst* dbBlock::findModInst(const char* path)
 {
+  char hier_delimiter[2] = {getHierarchyDelimiter(), '\0'};
   char* _path = strdup(path);
   dbModule* cur_mod = getTopModule();
   dbModInst* cur_inst = nullptr;
-  char* token = strtok(_path, "/");
+  char* token = strtok(_path, hier_delimiter);
   while (token != nullptr) {
     cur_inst = cur_mod->findModInst(token);
     if (cur_inst == nullptr) {
       break;
     }
     cur_mod = cur_inst->getMaster();
-    token = strtok(nullptr, "/");
+    token = strtok(nullptr, hier_delimiter);
   }
   free((void*) _path);
   return cur_inst;
@@ -3329,11 +3330,11 @@ void dbBlock::setDrivingItermsforNets()
       continue;
     }
 
-    net->setDrivingITerm(0);
+    net->setDrivingITerm(nullptr);
 
     for (dbITerm* tr : net->getITerms()) {
       if (tr->getIoType() == dbIoType::OUTPUT) {
-        net->setDrivingITerm(tr->getId());
+        net->setDrivingITerm(tr);
         break;
       }
     }
@@ -3927,6 +3928,22 @@ std::string dbBlock::makeNewNetName(dbModInst* parent,
   auto exists = [this](const char* name) { return findNet(name) != nullptr; };
   return block->makeNewName(
       parent, base_name, uniquify, block->unique_net_index_, exists);
+}
+
+std::string dbBlock::makeNewModNetName(dbModule* parent,
+                                       const char* base_name,
+                                       const dbNameUniquifyType& uniquify)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+  auto exists = [parent](const char* name) {
+    return parent->getModNet(name) != nullptr
+           || parent->findModBTerm(name) != nullptr;
+  };
+  return block->makeNewName(parent->getModInst(),
+                            base_name,
+                            uniquify,
+                            block->unique_net_index_,
+                            exists);
 }
 
 std::string dbBlock::makeNewInstName(dbModInst* parent,
