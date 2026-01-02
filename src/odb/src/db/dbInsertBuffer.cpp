@@ -287,12 +287,16 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
 
 bool dbInsertBuffer::checkDontTouch(const dbITerm* iterm) const
 {
-  if (iterm && iterm->getInst()->isDoNotTouch()) {
+  if (iterm == nullptr) {
+    return false;
+  }
+
+  if (iterm->getInst()->isDoNotTouch()) {
     return true;
   }
 
   dbNet* net = iterm->getNet();
-  if (net && net->isDoNotTouch()) {
+  if (net != nullptr && net->isDoNotTouch()) {
     return true;
   }
 
