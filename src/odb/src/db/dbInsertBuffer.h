@@ -88,13 +88,15 @@ class dbInsertBuffer
       const std::set<dbModNet*>& modnets_in_target_module) const;
   bool checkAllLoadsAreTargets(dbModNet* net,
                                const std::set<dbObject*>& load_pins) const;
-  void placeBufferAtLocationOrPin(dbInst* buffer_inst,
-                                  const Point* loc,
-                                  const dbObject* term);
   bool getPinLocation(const dbObject* pin, int& x, int& y) const;
   bool computeCentroid(const dbObject* drvr_pin,
                        const std::set<dbObject*>& load_pins,
                        Point& result) const;
+  void placeBufferAtLocation(dbInst* buffer_inst, const Point& loc);
+  void placeBufferAtPin(dbInst* buffer_inst, const dbObject* term);
+  void placeBufferAtCentroid(dbInst* buffer_inst,
+                             const dbObject* drvr_pin,
+                             const std::set<dbObject*>& load_pins);
 
   ///
   /// This function identifies hierarchical nets (dbModNet) that can be reused
@@ -176,9 +178,6 @@ class dbInsertBuffer
                                        bool loads_on_diff_nets) const;
   void createNewFlatAndHierNets(const std::set<dbObject*>& load_pins);
   void rewireBufferLoadPins(const std::set<dbObject*>& load_pins);
-  void placeBufferAtLocationOrCentroid(dbInst* buffer_inst,
-                                       const Point* loc,
-                                       const std::set<dbObject*>& load_pins);
   void setBufferAttributes(dbInst* buffer_inst);
   void validateBufferMaster() const;
 
@@ -203,7 +202,7 @@ class dbInsertBuffer
   void dlogMovedBTermLoad(int load_idx,
                           int num_loads,
                           const dbBTerm* load) const;
-  void dlogPlacingBuffer(const dbInst* buffer_inst, const Point& loc) const;
+  void dlogPlacedBuffer(const dbInst* buffer_inst, const Point& loc) const;
   void dlogInsertBufferSuccess(const dbInst* buffer_inst) const;
   void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;

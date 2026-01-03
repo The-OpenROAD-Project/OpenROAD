@@ -129,7 +129,12 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
   rewireBufferSimple(insertBefore, orig_mod_net, term_obj);
 
   // 5. Place the new buffer
-  placeBufferAtLocationOrPin(buffer_inst, loc, term_obj);
+  // 5. Place the new buffer
+  if (loc) {
+    placeBufferAtLocation(buffer_inst, *loc);
+  } else {
+    placeBufferAtPin(buffer_inst, term_obj);
+  }
 
   // 6. Set buffer attributes
   setBufferAttributes(buffer_inst);
@@ -188,7 +193,12 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   rewireBufferLoadPins(load_pins);
 
   // 5. Place the Buffer
-  placeBufferAtLocationOrCentroid(buffer_inst, loc, load_pins);
+  // 5. Place the Buffer
+  if (loc) {
+    placeBufferAtLocation(buffer_inst, *loc);
+  } else {
+    placeBufferAtCentroid(buffer_inst, orig_drvr_pin_, load_pins);
+  }
 
   // 6. Set buffer attributes
   setBufferAttributes(buffer_inst);
@@ -303,24 +313,19 @@ bool dbInsertBuffer::checkDontTouch(const dbITerm* iterm) const
   return false;
 }
 
-void dbInsertBuffer::placeBufferAtLocationOrPin(dbInst* buffer_inst,
-                                                const Point* loc,
-                                                const dbObject* term)
+void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst, const Point& loc)
+{
+  buffer_inst->setLocation(loc.getX(), loc.getY());
+  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  dlogPlacedBuffer(buffer_inst, loc);
+}
+
+void dbInsertBuffer::placeBufferAtPin(dbInst* buffer_inst, const dbObject* term)
 {
   int x = 0;
   int y = 0;
-  bool placed = false;
-  if (loc) {
-    x = loc->getX();
-    y = loc->getY();
-    placed = true;
-  } else {
-    placed = getPinLocation(term, x, y);
-  }
-
-  if (placed) {
-    buffer_inst->setLocation(x, y);
-    buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  if (getPinLocation(term, x, y)) {
+    placeBufferAtLocation(buffer_inst, Point(x, y));
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
   }
@@ -1458,25 +1463,16 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
   }
 }
 
-void dbInsertBuffer::placeBufferAtLocationOrCentroid(
-    dbInst* buffer_inst,
-    const Point* loc,
-    const std::set<dbObject*>& load_pins)
+void dbInsertBuffer::placeBufferAtCentroid(dbInst* buffer_inst,
+                                           const dbObject* drvr_pin,
+                                           const std::set<dbObject*>& load_pins)
 {
   Point placement_loc;
-
-  if (loc) {
-    placement_loc = *loc;
+  if (computeCentroid(drvr_pin, load_pins, placement_loc)) {
+    placeBufferAtLocation(buffer_inst, placement_loc);
   } else {
-    // Compute centroid; if all pins are unplaced, skip placement
-    if (!computeCentroid(orig_drvr_pin_, load_pins, placement_loc)) {
-      buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
-      return;
-    }
+    buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
   }
-
-  dlogPlacingBuffer(buffer_inst, placement_loc);
-  placeBufferAtLocationOrPin(buffer_inst, &placement_loc, nullptr);
 }
 
 void dbInsertBuffer::setBufferAttributes(dbInst* buffer_inst)
@@ -1666,14 +1662,14 @@ void dbInsertBuffer::dlogMovedBTermLoad(int load_idx,
                           : "");
 }
 
-void dbInsertBuffer::dlogPlacingBuffer(const dbInst* buffer_inst,
+void dbInsertBuffer::dlogPlacedBuffer(const dbInst* buffer_inst,
                                        const Point& loc) const
 {
   debugPrint(logger_,
              utl::ODB,
              "insert_buffer",
              1,
-             "BeforeLoads: Placing buffer '{}' at ({}, {})",
+             "Placed the new buffer '{}' at ({}, {})",
              buffer_inst->getName(),
              loc.getX(),
              loc.getY());
