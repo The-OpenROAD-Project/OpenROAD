@@ -86,8 +86,6 @@ enum Callback
 // NEW CALLBACK - then place it here.
 
 int lefWRetVal;
-extern int lefwHasInit;
-extern int lefwHasInitCbk;
 
 #define WRITER_CALLBACK(func, type)                                 \
   if (func) {                                                       \

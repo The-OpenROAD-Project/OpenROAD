@@ -210,7 +210,7 @@ using LEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 LEFI_LOG_FUNCTION lefwErrorLogFunction;
 LEFI_WARNING_LOG_FUNCTION lefwWarningLogFunction;
 
-static FILE* lefwFile = nullptr;       // File to write to.
+FILE* lefwFile = nullptr;       // File to write to.
 static int lefwSynArray[MAXSYN];       // array of syntax
 static int lefwLines = 0;              // number of lines written
 static State lefwState = LEFW_UNINIT;  // Current state of writer
@@ -246,8 +246,8 @@ static int lefwIsRoutingReqData
 static int lefwNumViaRuleLayers = 0;      // number of via rule in a via rule
 static State lefwOldState = LEFW_UNINIT;  // the previous state
 static int lefwTableLen = 0;    // width or cutarea for the tableEntries
-static int lefwHasInit = 0;     // for lefwInit has called
-static int lefwHasInitCbk = 0;  // for lefwInitCbk has called
+int lefwHasInit = 0;     // for lefwInit has called
+int lefwHasInitCbk = 0;  // for lefwInitCbk has called
 static int lefwWriteEncrypt
     = 0;                      // for writing out encrypted file, default is 0
 static int prtSemiColon = 0;  // sometimes ; is not printed yet
@@ -410,7 +410,7 @@ char lefwStateStr[MAXSYN][80] = {
     "SLOTWIDTH",                                      // 138
     "SLOTLENGTH",                                     // 139
     "SPLITWIREWIDTH",                                 // 140
-    "USEMINSPACING PIN"                               // 141
+    "USEMINSPACING PIN",                              // 141
     "FIXEDMASK"                                       // 142
 };
 
