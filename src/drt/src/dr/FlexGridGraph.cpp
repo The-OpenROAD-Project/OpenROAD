@@ -484,9 +484,7 @@ void FlexGridGraph::initTracks(
         int trackNum = ((tp->isHorizontal() ? bbox.xMin() : bbox.yMin())
                         - tp->getStartCoord())
                        / (int) tp->getTrackSpacing();
-        if (trackNum < 0) {
-          trackNum = 0;
-        }
+        trackNum = std::max(trackNum, 0);
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
             < (tp->isHorizontal() ? bbox.xMin() : bbox.yMin())) {
           ++trackNum;

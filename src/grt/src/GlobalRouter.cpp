@@ -1292,13 +1292,9 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
         = db_->getTech()->findRoutingLayer(max_layer);
     if (pin_count > 1
         && (!net->hasWires() || net->hasStackedVias(max_routing_layer))) {
-      if (pin_count < min_degree) {
-        min_degree = pin_count;
-      }
+      min_degree = std::min(pin_count, min_degree);
 
-      if (pin_count > max_degree) {
-        max_degree = pin_count;
-      }
+      max_degree = std::max(pin_count, max_degree);
       makeFastrouteNet(net);
     }
   }
@@ -3070,9 +3066,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
       }
     }
 
-    if (pins[p].getConnectionLayer() > last_layer) {
-      last_layer = pins[p].getConnectionLayer();
-    }
+    last_layer = std::max(pins[p].getConnectionLayer(), last_layer);
   }
 
   // last_layer can be greater than max routing layer for nets with bumps
@@ -4507,9 +4501,7 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 
       for (auto rule : obstruct_layer->getV54SpacingRules()) {
         int spacing = rule->getSpacing();
-        if (spacing > spacing_extension) {
-          spacing_extension = spacing;
-        }
+        spacing_extension = std::max(spacing, spacing_extension);
       }
 
       // Check for TWOWIDTHS table values and, if the spacing is higher than
@@ -4522,9 +4514,7 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
         if (!spacing_table.empty()) {
           std::vector<uint32_t> last_row = spacing_table.back();
           uint32_t last_value = last_row.back();
-          if (last_value > spacing_extension) {
-            spacing_extension = last_value;
-          }
+          spacing_extension = std::max<uint32_t>(last_value, spacing_extension);
         }
       }
 

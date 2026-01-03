@@ -196,7 +196,6 @@ void ICeWall::assignBump(odb::dbInst* inst,
     if (terminal) {
       auto already_assigned = std::ranges::find_if(
           routing_map_,
-
           [terminal](const auto& other) { return other.second == terminal; });
       if (already_assigned != routing_map_.end()) {
         logger_->error(
@@ -832,7 +831,6 @@ void ICeWall::placeFiller(
   // sort by width
   std::ranges::stable_sort(
       fillers,
-
       [use_height, row_xform](odb::dbMaster* r, odb::dbMaster* l) -> bool {
         odb::Rect r_bbox;
         r->getPlacementBoundary(r_bbox);

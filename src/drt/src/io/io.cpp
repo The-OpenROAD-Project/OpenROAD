@@ -457,9 +457,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
           == odb::dbTechLayerType::CUT) {
         continue;
       }
-      if (via->getViaLayerRule(i)->getLayer()->getNumber() / 2 < z) {
-        z = via->getViaLayerRule(i)->getLayer()->getNumber() / 2;
-      }
+      z = std::min(via->getViaLayerRule(i)->getLayer()->getNumber() / 2, z);
     }
     fnd->addViaRule(getTech()->getViaRule(via->getName()), z);
   }

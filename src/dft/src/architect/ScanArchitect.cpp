@@ -201,16 +201,12 @@ std::vector<std::unique_ptr<ScanChain>> ScanArchitect::getScanChains()
 {
   std::vector<std::unique_ptr<ScanChain>> scan_chains_flat;
   for (auto& [hash_domain, scan_chains] : hash_domain_scan_chains_) {
-    std::ranges::move(scan_chains,
-
-                      std::back_inserter(scan_chains_flat));
+    std::ranges::move(scan_chains, std::back_inserter(scan_chains_flat));
   }
 
-  std::ranges::sort(scan_chains_flat,
-
-                    [](const auto& lhs, const auto& rhs) {
-                      return lhs->getName() < rhs->getName();
-                    });
+  std::ranges::sort(scan_chains_flat, [](const auto& lhs, const auto& rhs) {
+    return lhs->getName() < rhs->getName();
+  });
 
   return scan_chains_flat;
 }

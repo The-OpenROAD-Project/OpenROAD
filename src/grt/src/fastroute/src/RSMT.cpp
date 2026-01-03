@@ -501,18 +501,10 @@ bool FastRouteCore::VTreeSuite(const int netID)
 
   const int deg = nets_[netID]->getNumPins();
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
+    xmin = std::min(xmin, nets_[netID]->getPinX(i));
+    xmax = std::max(xmax, nets_[netID]->getPinX(i));
+    ymin = std::min(ymin, nets_[netID]->getPinY(i));
+    ymax = std::max(ymax, nets_[netID]->getPinY(i));
   }
 
   return (ymax - ymin) > 3 * (xmax - xmin);
@@ -527,18 +519,10 @@ bool FastRouteCore::HTreeSuite(const int netID)
 
   const int deg = nets_[netID]->getNumPins();
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
+    xmin = std::min(xmin, nets_[netID]->getPinX(i));
+    xmax = std::max(xmax, nets_[netID]->getPinX(i));
+    ymin = std::min(ymin, nets_[netID]->getPinY(i));
+    ymax = std::max(ymax, nets_[netID]->getPinY(i));
   }
 
   return 5 * (ymax - ymin) < (xmax - xmin);
@@ -553,18 +537,10 @@ float FastRouteCore::coeffADJ(const int netID)
   int ymin = BIG_INT;
 
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
+    xmin = std::min(xmin, nets_[netID]->getPinX(i));
+    xmax = std::max(xmax, nets_[netID]->getPinX(i));
+    ymin = std::min(ymin, nets_[netID]->getPinY(i));
+    ymax = std::max(ymax, nets_[netID]->getPinY(i));
   }
 
   int Hcap = 0;
@@ -607,9 +583,7 @@ float FastRouteCore::coeffADJ(const int netID)
     }
   }
 
-  if (coef < 1.2) {
-    coef = 1.2;
-  }
+  coef = std::max<double>(coef, 1.2);
 
   return coef;
 }

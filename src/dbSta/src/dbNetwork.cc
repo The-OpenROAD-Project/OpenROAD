@@ -4536,11 +4536,7 @@ static std::vector<std::string> getNameSetDifferences(
     const std::set<std::string>& names2)
 {
   std::vector<std::string> differences;
-  std::ranges::set_difference(names1,
-
-                              names2,
-
-                              std::back_inserter(differences));
+  std::ranges::set_difference(names1, names2, std::back_inserter(differences));
   return differences;
 }
 

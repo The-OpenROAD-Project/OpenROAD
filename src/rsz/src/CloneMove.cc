@@ -167,7 +167,6 @@ bool CloneMove::doMove(const Path* drvr_path,
   }
 
   std::ranges::sort(fanout_slacks,
-
                     [this](const pair<Vertex*, Slack>& pair1,
                            const pair<Vertex*, Slack>& pair2) {
                       return (pair1.second > pair2.second

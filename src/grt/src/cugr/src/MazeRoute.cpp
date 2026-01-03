@@ -173,9 +173,8 @@ void MazeRoute::run()
   // lambda to update solution
   auto updateSolution = [&](const std::shared_ptr<Solution>& solution) {
     queue.push(solution);
-    if (solution->cost < minCosts[solution->vertex]) {
-      minCosts[solution->vertex] = solution->cost;
-    }
+    minCosts[solution->vertex]
+        = std::min(solution->cost, minCosts[solution->vertex]);
   };
 
   solutions_.reserve(net_->getNumPins());

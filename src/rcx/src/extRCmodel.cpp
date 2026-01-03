@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -30,9 +31,7 @@ int extRCModel::getMaxMetIndexOverUnder(int met, int layerCnt)
   for (uint32_t u = met - 1; u > 0; u--) {
     for (uint32_t o = met + 1; o < layerCnt; o++) {
       int metIndex = extRCModel::getMetIndexOverUnder(met, u, o, layerCnt);
-      if (n < metIndex) {
-        n = metIndex;
-      }
+      n = std::max(n, metIndex);
     }
   }
   return n;
@@ -471,9 +470,7 @@ uint32_t extDistRCTable::readRules_res2(Parser* parser,
 {
   parser->parseNextLine();
   uint32_t cnt = parser->getInt(2);
-  if (cnt < 32) {
-    cnt = 32;
-  }
+  cnt = std::max<uint32_t>(cnt, 32);
 
   Array1D<extDistRC*>* table = nullptr;
   if (!ignore) {
@@ -541,9 +538,7 @@ uint32_t extDistRCTable::readRules(Parser* parser,
 {
   parser->parseNextLine();
   uint32_t cnt = parser->getInt(2);
-  if (cnt < 32) {
-    cnt = 32;
-  }
+  cnt = std::max<uint32_t>(cnt, 32);
 
   Array1D<extDistRC*>* table = nullptr;
   if (!ignore) {

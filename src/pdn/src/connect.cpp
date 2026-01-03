@@ -694,7 +694,6 @@ DbVia* Connect::generateDbVia(
   }
 
   std::ranges::stable_sort(vias,
-
                            [](const std::shared_ptr<ViaGenerator>& lhs,
                               const std::shared_ptr<ViaGenerator>& rhs) {
                              return lhs->isPreferredOver(rhs.get());

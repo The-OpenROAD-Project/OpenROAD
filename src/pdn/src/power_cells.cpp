@@ -263,11 +263,9 @@ void GridSwitchedPower::build()
       straps.push_back(shape->getRect());
     }
 
-    std::ranges::sort(straps,
-
-                      [](const odb::Rect& lhs, const odb::Rect& rhs) {
-                        return lhs.xMin() < rhs.xMin();
-                      });
+    std::ranges::sort(straps, [](const odb::Rect& lhs, const odb::Rect& rhs) {
+      return lhs.xMin() < rhs.xMin();
+    });
 
     for (const auto& strap : straps) {
       const std::string new_name = inst_prefix + std::to_string(idx++);
@@ -377,19 +375,17 @@ void GridSwitchedPower::updateControlNetworkDAISY(const bool order_by_x)
   }
 
   for (auto& [pos, insts] : inst_order) {
-    std::ranges::sort(insts,
+    std::ranges::sort(insts, [order_by_x](odb::dbInst* lhs, odb::dbInst* rhs) {
+      int lhs_x, lhs_y;
+      lhs->getLocation(lhs_x, lhs_y);
+      int rhs_x, rhs_y;
+      rhs->getLocation(rhs_x, rhs_y);
 
-                      [order_by_x](odb::dbInst* lhs, odb::dbInst* rhs) {
-                        int lhs_x, lhs_y;
-                        lhs->getLocation(lhs_x, lhs_y);
-                        int rhs_x, rhs_y;
-                        rhs->getLocation(rhs_x, rhs_y);
-
-                        if (order_by_x) {
-                          return lhs_y < rhs_y;
-                        }
-                        return lhs_x < rhs_x;
-                      });
+      if (order_by_x) {
+        return lhs_y < rhs_y;
+      }
+      return lhs_x < rhs_x;
+    });
   }
 
   auto get_next_ack = [this](const std::string& inst_name) {

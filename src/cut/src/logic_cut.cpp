@@ -33,11 +33,9 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
 {
   std::vector<sta::Net*> sorted_primary_inputs(primary_inputs.begin(),
                                                primary_inputs.end());
-  std::ranges::sort(sorted_primary_inputs,
-
-                    [network](sta::Net* a, sta::Net* b) {
-                      return network->id(a) < network->id(b);
-                    });
+  std::ranges::sort(sorted_primary_inputs, [network](sta::Net* a, sta::Net* b) {
+    return network->id(a) < network->id(b);
+  });
 
   std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
   for (sta::Net* input_pin : sorted_primary_inputs) {
@@ -64,7 +62,6 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
                                                 primary_outputs.end());
 
   std::ranges::sort(sorted_primary_outputs,
-
                     [network](sta::Net* a, sta::Net* b) {
                       return network->id(a) < network->id(b);
                     });
@@ -253,7 +250,6 @@ void CreateNets(const std::vector<sta::Net*>& output_nets,
 
   std::vector<sta::Net*> sorted_net(output_nets.begin(), output_nets.end());
   std::ranges::sort(sorted_net,
-
                     [network](const sta::Net* a, const sta::Net* b) {
                       return network->id(a) < network->id(b);
                     });

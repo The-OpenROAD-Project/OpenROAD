@@ -713,9 +713,7 @@ int Flute::flutes_wl_MD(int d,
 
   // Determine breaking directions and positions dp[]
   lb = (d - 2 * acc + 2) / 4;
-  if (lb < 2) {
-    lb = 2;
-  }
+  lb = std::max(lb, 2);
   ub = d - 1 - lb;
 
   // Compute scores
@@ -896,9 +894,7 @@ int Flute::flutes_wl_MD(int d,
       ll = extral + flutes_wl_LMD(p + 1, x1, ys, s1, newacc)
            + flutes_wl_LMD(d - p, x2, tmp_ys, s2, newacc);
     }
-    if (minl > ll) {
-      minl = ll;
-    }
+    minl = std::min(minl, ll);
   }
   return_val = minl;
 
@@ -1343,9 +1339,7 @@ Tree Flute::flutes_MD(int d,
 
   // Determine breaking directions and positions dp[]
   lb = (d - 2 * acc + 2) / 4;
-  if (lb < 2) {
-    lb = 2;
-  }
+  lb = std::max(lb, 2);
   ub = d - 1 - lb;
 
   // Compute scores

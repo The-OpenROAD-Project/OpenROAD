@@ -226,7 +226,6 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
     // Intervals need to be sorted, but they are currently in reverse order. Can
     // either resort or reverse.
     std::ranges::sort(blockages,
-
                       compareBlockages());  // Sort to get them left to right.
   }
 }

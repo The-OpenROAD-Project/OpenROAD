@@ -101,11 +101,9 @@ void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
   auto filler_masters_by_implant = splitByImplant(filtered_masters);
 
   for (auto& [layer, masters] : filler_masters_by_implant) {
-    std::ranges::sort(masters,
-
-                      [](dbMaster* master1, dbMaster* master2) {
-                        return master1->getWidth() > master2->getWidth();
-                      });
+    std::ranges::sort(masters, [](dbMaster* master1, dbMaster* master2) {
+      return master1->getWidth() > master2->getWidth();
+    });
   }
 
   gap_fillers_.clear();

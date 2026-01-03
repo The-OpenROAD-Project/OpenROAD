@@ -79,14 +79,12 @@ class frViaDef
       std::multiset<std::pair<frLayerNum, odb::Rect>> val1set;
       std::multiset<std::pair<frLayerNum, odb::Rect>> val2set;
       std::ranges::transform(val1,
-
                              std::inserter(val1set, val1set.begin()),
                              [](const std::unique_ptr<frShape>& val) {
                                return std::make_pair(val->getLayerNum(),
                                                      val->getBBox());
                              });
       std::ranges::transform(val2,
-
                              std::inserter(val2set, val2set.begin()),
                              [](const std::unique_ptr<frShape>& val) {
                                return std::make_pair(val->getLayerNum(),

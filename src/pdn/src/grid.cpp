@@ -1243,12 +1243,10 @@ std::set<odb::dbInst*> Grid::getInstances() const
 
 void Grid::removeStrap(Straps* strap)
 {
-  straps_.erase(
-      std::ranges::find_if(straps_,
-
-                           [strap](const std::unique_ptr<Straps>& other) {
-                             return strap == other.get();
-                           }));
+  straps_.erase(std::ranges::find_if(
+      straps_, [strap](const std::unique_ptr<Straps>& other) {
+        return strap == other.get();
+      }));
 }
 
 bool Grid::hasShapes() const

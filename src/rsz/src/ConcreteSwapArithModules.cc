@@ -102,7 +102,6 @@ void ConcreteSwapArithModules::findCriticalInstances(
     }
   }
   std::ranges::stable_sort(violating_ends,
-
                            [](const auto& end_slack1, const auto& end_slack2) {
                              return end_slack1.second < end_slack2.second;
                            });

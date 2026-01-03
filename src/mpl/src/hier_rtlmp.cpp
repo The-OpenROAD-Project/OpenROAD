@@ -1876,10 +1876,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
         / static_cast<float>(outline_area - pin_access_area - macro_cluster_area
                              - macro_mixed_cluster_area);
 
-  if (target_util <= min_target_util) {
-    target_util = min_target_util;  // target utilization for standard cells in
-                                    // mixed cluster
-  }
+  target_util = std::max(target_util, min_target_util);
   // calculate the std_cell_util
   const int64_t avail_space
       = outline_area

@@ -257,12 +257,8 @@ class frBlock : public frBlockObject
     auto& ygp = gp[1];
     frCoord idxX = (pt.x() - xgp.getStartCoord()) / (frCoord) xgp.getSpacing();
     frCoord idxY = (pt.y() - ygp.getStartCoord()) / (frCoord) ygp.getSpacing();
-    if (idxX < 0) {
-      idxX = 0;
-    }
-    if (idxY < 0) {
-      idxY = 0;
-    }
+    idxX = std::max(idxX, 0);
+    idxY = std::max(idxY, 0);
     if (idxX >= (int) xgp.getCount()) {
       idxX = (int) xgp.getCount() - 1;
     }

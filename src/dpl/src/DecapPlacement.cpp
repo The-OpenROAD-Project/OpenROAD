@@ -73,7 +73,6 @@ void Opendp::mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
   }
 
   std::ranges::sort(ir_drops,
-
                     [](const IRDrop& ir_drop1, const IRDrop& ir_drop2) {
                       return ir_drop1.value > ir_drop2.value;
                     });
@@ -83,7 +82,6 @@ void Opendp::prepareDecapAndGaps()
 {
   // Sort decaps cells in descending order
   std::ranges::sort(decap_masters_,
-
                     [](const std::unique_ptr<DecapCell>& decap1,
                        const std::unique_ptr<DecapCell>& decap2) {
                       return decap1->capacitance > decap2->capacitance;

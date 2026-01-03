@@ -102,7 +102,6 @@ bool SizeDownMove::doMove(const Path* drvr_path,
 
   // Sort fanouts by slack margin, so we can try the most margin first.
   std::ranges::sort(fanout_slacks,
-
                     [this](const pair<Vertex*, Slack>& pair1,
                            const pair<Vertex*, Slack>& pair2) {
                       return (pair1.second > pair2.second

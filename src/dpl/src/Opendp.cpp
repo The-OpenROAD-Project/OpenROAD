@@ -203,9 +203,7 @@ void Opendp::findDisplacementStats()
     }
     const int displacement = disp(cell.get());
     displacement_sum_ += displacement;
-    if (displacement > displacement_max_) {
-      displacement_max_ = displacement;
-    }
+    displacement_max_ = std::max<int64_t>(displacement, displacement_max_);
   }
   if (network_->getNumCells() != 0) {
     displacement_avg_ = displacement_sum_ / network_->getNumCells();

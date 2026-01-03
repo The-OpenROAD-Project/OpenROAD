@@ -103,9 +103,7 @@ sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
           // and once more
           model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
 
-          if (arc_delay > max_rise_delay) {
-            max_rise_delay = arc_delay;
-          }
+          max_rise_delay = std::max(arc_delay, max_rise_delay);
         }
       }
     }

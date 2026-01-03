@@ -644,11 +644,9 @@ void RepairDesign::findBufferSizes()
   buffer_sizes_.clear();
   buffer_sizes_ = {resizer_->buffer_fast_sizes_.begin(),
                    resizer_->buffer_fast_sizes_.end()};
-  std::ranges::sort(buffer_sizes_,
-
-                    [=](LibertyCell* a, LibertyCell* b) {
-                      return bufferCin(a) < bufferCin(b);
-                    });
+  std::ranges::sort(buffer_sizes_, [=](LibertyCell* a, LibertyCell* b) {
+    return bufferCin(a) < bufferCin(b);
+  });
 }
 
 bool RepairDesign::performGainBuffering(Net* net,

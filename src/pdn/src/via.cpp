@@ -2429,11 +2429,9 @@ GenerateViaGenerator::GenerateViaGenerator(utl::Logger* logger,
     layers.push_back(layer);
   }
 
-  std::ranges::sort(layers,
-
-                    [](odb::dbTechLayer* l, odb::dbTechLayer* r) {
-                      return l->getNumber() < r->getNumber();
-                    });
+  std::ranges::sort(layers, [](odb::dbTechLayer* l, odb::dbTechLayer* r) {
+    return l->getNumber() < r->getNumber();
+  });
 
   for (int i = 0; i < 3; i++) {
     layers_[i] = layer_map[layers[i]];

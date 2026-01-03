@@ -1675,9 +1675,7 @@ void TritonPart::BuildTimingPaths()
   // resize the hyperedge_slacks_
   hyperedge_slacks_.clear();
   hyperedge_slacks_.resize(num_hyperedges_);
-  std::ranges::fill(hyperedge_slacks_,
-
-                    maximum_clock_period_);
+  std::ranges::fill(hyperedge_slacks_, maximum_clock_period_);
   debugPrint(logger_,
              PAR,
              "netlist",

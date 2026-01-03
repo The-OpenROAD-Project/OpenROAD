@@ -211,12 +211,9 @@ struct LibraryAnalysisData
     }
 
     // Sort by average leakage (ascending order - least leaky to most leaky)
-    std::ranges::sort(sorted_vt_categories,
-
-                      [](const auto& a, const auto& b) {
-                        return a.second.get_average_leakage()
-                               < b.second.get_average_leakage();
-                      });
+    std::ranges::sort(sorted_vt_categories, [](const auto& a, const auto& b) {
+      return a.second.get_average_leakage() < b.second.get_average_leakage();
+    });
   }
 };
 

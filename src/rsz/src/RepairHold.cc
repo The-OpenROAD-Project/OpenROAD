@@ -178,7 +178,6 @@ LibertyCell* RepairHold::findHoldBuffer()
   }
 
   std::ranges::sort(buffers,
-
                     [](const MetricBuffer& lhs, const MetricBuffer& rhs) {
                       return lhs.metric < rhs.metric;
                     });

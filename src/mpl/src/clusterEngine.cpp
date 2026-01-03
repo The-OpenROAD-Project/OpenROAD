@@ -339,9 +339,8 @@ void ClusteringEngine::setBaseThresholds()
     tree_->base_min_std_cell
         = std::floor(design_metrics_->getNumStdCell()
                      / std::pow(tree_->cluster_size_ratio, tree_->max_level));
-    if (tree_->base_min_std_cell <= min_num_std_cells_allowed) {
-      tree_->base_min_std_cell = min_num_std_cells_allowed;
-    }
+    tree_->base_min_std_cell
+        = std::max(tree_->base_min_std_cell, min_num_std_cells_allowed);
     tree_->base_max_std_cell
         = tree_->base_min_std_cell * tree_->cluster_size_ratio / 2.0;
 

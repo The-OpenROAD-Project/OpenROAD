@@ -648,9 +648,7 @@ std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() const
       = (getRealRangeMaximumValue() - linear_start) / (count - 1);
   for (int i = 0; i < count; i++) {
     int idx = std::round(i * index_incr);
-    if (idx > color_count) {
-      idx = color_count;
-    }
+    idx = std::min(idx, color_count);
     double value = color_lower_bounds_[idx];
     if (!log_scale_) {
       value = linear_step * i + linear_start;

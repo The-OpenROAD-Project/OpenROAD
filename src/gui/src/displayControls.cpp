@@ -2012,7 +2012,6 @@ void DisplayControls::registerRenderer(Renderer* renderer)
         model_->takeRow(model_->invisibleRootItem()->rowCount() - 1));
   }
   std::ranges::stable_sort(custom_controls,
-
                            [](const QList<QStandardItem*>& list0,
                               const QList<QStandardItem*>& list1) {
                              return list0[kName]->text() < list1[kName]->text();

@@ -534,13 +534,9 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         dbRow* row = *row_itr;
         auto site = row->getSite();
         int site_dy = site->getHeight();
-        if (site_dy < min_site_dy) {
-          min_site_dy = site_dy;
-        }
+        min_site_dy = std::min(site_dy, min_site_dy);
         int site_dx = site->getWidth();
-        if (site_dx < min_site_dx) {
-          min_site_dx = site_dx;
-        }
+        min_site_dx = std::min(site_dx, min_site_dx);
       }
       // Default space is 6 times the minimum site height
       const int power_domain_y_space

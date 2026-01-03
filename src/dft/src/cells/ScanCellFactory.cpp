@@ -210,11 +210,9 @@ std::vector<std::unique_ptr<ScanCell>> CollectScanCells(odb::dbDatabase* db,
   CollectScanCells(chip->getBlock(), sta, logger, scan_cells);
 
   // To keep preview_dft consistent between calls and rollbacks
-  std::ranges::sort(scan_cells,
-
-                    [](const auto& lhs, const auto& rhs) {
-                      return lhs->getName() < rhs->getName();
-                    });
+  std::ranges::sort(scan_cells, [](const auto& lhs, const auto& rhs) {
+    return lhs->getName() < rhs->getName();
+  });
 
   return scan_cells;
 }

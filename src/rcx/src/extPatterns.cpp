@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -312,9 +313,7 @@ float extPattern::init(dbCreateNetUtil* net_util)
   int pitch = layer->getPitch();
   int minSpace = layer->getSpacing();
   int s = pitch - _minWidth;
-  if (s > minSpace) {
-    s = minSpace;
-  }
+  s = std::min(s, minSpace);
 
   _minSpacing = s;
   minSpacing = s * uu;
@@ -1073,18 +1072,14 @@ int extWirePattern::length(uint32_t dir)
 void extPattern::set_max(int ur[2])
 {
   for (uint32_t ii = 0; ii < 2; ii++) {
-    if (ur[ii] < max_ur[ii]) {
-      ur[ii] = max_ur[ii];
-    }
+    ur[ii] = std::max(ur[ii], max_ur[ii]);
   }
 }
 int extPattern::max_last(extWirePattern* wp)
 {
   for (uint32_t ii = 0; ii < 2; ii++) {
     int xy = wp->last(ii);
-    if (max_ur[ii] < xy) {
-      max_ur[ii] = xy;
-    }
+    max_ur[ii] = std::max(max_ur[ii], xy);
   }
   return max_ur[dir];
 }
@@ -1121,9 +1116,7 @@ extWirePattern* extPattern::GetWireParttern(extPattern* main,
   int pitch = layer->getPitch();
   int minSpace = layer->getSpacing();
   int minS = pitch - minW;
-  if (minS > minSpace) {
-    minS = minSpace;
-  }
+  minS = std::min(minS, minSpace);
 
   extWirePattern* wp = new extWirePattern(main, dir, minW, minS, opt);
   s = extPattern::GetRoundedInt(minS, ms, this->units);

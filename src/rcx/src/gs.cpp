@@ -190,9 +190,7 @@ int gs::box(int px0, int py0, int px1, int py1, const int plane)
     return -1;
   }
 
-  if (plane > maxplane_) {
-    maxplane_ = plane;
-  }
+  maxplane_ = std::max(plane, maxplane_);
 
   const plconfig& plc = pldata_[plane];
 
@@ -316,21 +314,13 @@ uint32_t gs::getSeq(int* ll,
     return 0;
   }
 
-  if (ll[0] < plc.x0) {
-    ll[0] = plc.x0;
-  }
+  ll[0] = std::max(ll[0], plc.x0);
 
-  if (ur[0] > plc.x1) {
-    ur[0] = plc.x1;
-  }
+  ur[0] = std::min(ur[0], plc.x1);
 
-  if (ll[1] < plc.y0) {
-    ll[1] = plc.y0;
-  }
+  ll[1] = std::max(ll[1], plc.y0);
 
-  if (ur[1] > plc.y1) {
-    ur[1] = plc.y1;
-  }
+  ur[1] = std::min(ur[1], plc.y1);
   // End Sanity Checks
 
   SEQ* s = salloc();
@@ -397,13 +387,9 @@ uint32_t gs::getSeq(int* ll,
     int cs = ((cx1 + cx0) / 2) * plc.x_resolution + plc.x0;
     int ce = cs;
 
-    if (cs < ll[0]) {
-      cs = ll[0];
-    }
+    cs = std::max(cs, ll[0]);
 
-    if (ce > ur[0]) {
-      ce = ur[0];
-    }
+    ce = std::min(ce, ur[0]);
 
     for (int col = cx0; col <= cx0; col++) {
       int start = cy0;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -519,17 +520,13 @@ double extSolverGen::writeWirePatterns(FILE* fp,
   double min_x = xd[1];
   for (int ii = 2; ii < n; ii++) {
     xd[ii] = xd[ii - 1] - min_pitch;  // next over neighbor spacing
-    if (min_x > xd[ii]) {
-      min_x = xd[ii];
-    }
+    min_x = std::min(min_x, xd[ii]);
   }
   for (int ii = 2; ii > 0; ii--) {
     m->writeWire3D(fp, cnt++, xd[ii], minWidth, len, height_offset, 0.0);
     max_x = xd[ii] + minWidth;
   }
-  if (min_x > x) {
-    min_x = x;
-  }
+  min_x = std::min(min_x, x);
 
   m->writeWire3D(
       fp, cnt++, x, targetWidth, len, height_offset, 1.0);  // Wire on focus

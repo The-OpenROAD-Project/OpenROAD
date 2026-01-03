@@ -1223,9 +1223,7 @@ bool IRNetwork::belongsTo(Node* node) const
 {
   for (const auto& [layer, nodes] : nodes_) {
     if (std::ranges::find_if(
-            nodes,
-
-            [node](const auto& other) { return other.get() == node; })
+            nodes, [node](const auto& other) { return other.get() == node; })
         != nodes.end()) {
       return true;
     }
@@ -1233,7 +1231,6 @@ bool IRNetwork::belongsTo(Node* node) const
 
   if (std::ranges::find_if(
           iterm_nodes_,
-
           [node](const auto& other) { return other.get() == node; })
       != iterm_nodes_.end()) {
     return true;
@@ -1241,7 +1238,6 @@ bool IRNetwork::belongsTo(Node* node) const
 
   if (std::ranges::find_if(
           bpin_nodes_,
-
           [node](const auto& other) { return other.get() == node; })
       != bpin_nodes_.end()) {
     return true;
@@ -1253,7 +1249,6 @@ bool IRNetwork::belongsTo(Node* node) const
 bool IRNetwork::belongsTo(Connection* connection) const
 {
   return std::ranges::find_if(connections_,
-
                               [connection](const auto& other) {
                                 return other.get() == connection;
                               })

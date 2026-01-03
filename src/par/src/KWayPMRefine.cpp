@@ -151,13 +151,10 @@ void KWayPMRefine::CalculateMaximumMatch(
   }
   // sort the scores based on value
   std::ranges::sort(scores,
-
-                    // lambda function
                     [](const std::pair<std::pair<int, int>, float>& a,
                        const std::pair<std::pair<int, int>, float>& b) {
                       return a.second > b.second;
-                    }  // end of lambda expression
-  );
+                    });
   // set the match flag for each block
   std::vector<bool> match_flag(num_parts_, false);
   int num_match_block = 0;

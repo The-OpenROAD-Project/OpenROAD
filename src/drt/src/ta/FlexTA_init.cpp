@@ -92,9 +92,7 @@ void FlexTAWorker::initTracks()
         frCoord highCoord = (isH ? getRouteBox().yMax() : getRouteBox().xMax());
         int trackNum
             = (lowCoord - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-        if (trackNum < 0) {
-          trackNum = 0;
-        }
+        trackNum = std::max(trackNum, 0);
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
             < lowCoord) {
           trackNum++;

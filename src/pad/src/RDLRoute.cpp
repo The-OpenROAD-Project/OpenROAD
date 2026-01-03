@@ -37,9 +37,7 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
 
   const odb::Point iterm_center = iterm_->getBBox().center();
   std::ranges::stable_sort(
-      terminals_,
-
-      [&iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
+      terminals_, [&iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
         const bool lhs_cover = RDLRouter::isCoverTerm(lhs);
         const bool rhs_cover = RDLRouter::isCoverTerm(rhs);
 

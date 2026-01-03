@@ -722,9 +722,7 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
 
   // Sort buffers in ascending order of max cap limit
   std::ranges::sort(
-      buffers,
-
-      [this](const std::string& buf1, const std::string& buf2) {
+      buffers, [this](const std::string& buf1, const std::string& buf2) {
         return (this->getMaxCapLimit(buf1) < this->getMaxCapLimit(buf2));
       });
 
@@ -1227,10 +1225,8 @@ void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
 
   while (!done) {
     // Gets the iterator to the beggining of the masterNames_ set.
-    std::vector<std::string>::iterator masterItr
-        = std::ranges::find(masterNames_,
-
-                            solution.instVector[index]->getMaster()->getName());
+    std::vector<std::string>::iterator masterItr = std::ranges::find(
+        masterNames_, solution.instVector[index]->getMaster()->getName());
     if (masterItr == lastMasterItr) {
       // If the iterator can't increment past the final iterator...
       // change the current buf master to the first lib cell and try to go to

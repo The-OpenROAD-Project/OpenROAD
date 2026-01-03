@@ -214,7 +214,6 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     }
   }
   std::ranges::stable_sort(violating_ends,
-
                            [](const auto& end_slack1, const auto& end_slack2) {
                              return end_slack1.second < end_slack2.second;
                            });
@@ -904,7 +903,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
     }
   }
   std::ranges::stable_sort(violating_ends,
-
                            [](const auto& end_slack1, const auto& end_slack2) {
                              return end_slack1.second < end_slack2.second;
                            });
@@ -1069,7 +1067,6 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
     }
   }
   std::ranges::stable_sort(violating_ends,
-
                            [](const auto& end_slack1, const auto& end_slack2) {
                              return end_slack1.second < end_slack2.second;
                            });

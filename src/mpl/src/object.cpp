@@ -962,16 +962,12 @@ int SoftMacro::findIntervalIndex(const IntervalList& interval_list,
     while ((idx < interval_list.size()) && (interval_list[idx].max < value)) {
       idx++;
     }
-    if (interval_list[idx].min > value) {
-      value = interval_list[idx].min;
-    }
+    value = std::max(interval_list[idx].min, value);
   } else { /* Height Intervals */
     while ((idx < interval_list.size()) && (interval_list[idx].min > value)) {
       idx++;
     }
-    if (interval_list[idx].max < value) {
-      value = interval_list[idx].max;
-    }
+    value = std::min(interval_list[idx].max, value);
   }
   return idx;
 }

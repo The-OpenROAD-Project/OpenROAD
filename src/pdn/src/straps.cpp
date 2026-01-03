@@ -1146,7 +1146,6 @@ PadDirectConnectionStraps::getAssociatedStraps() const
 
   std::ranges::sort(
       straps,
-
       [](PadDirectConnectionStraps* lhs, PadDirectConnectionStraps* rhs) {
         std::set<odb::Rect> lhs_pins;
         std::set<odb::Rect> rhs_pins;

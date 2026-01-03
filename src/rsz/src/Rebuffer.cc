@@ -849,7 +849,6 @@ static void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
 {
   std::ranges::sort(
       options,
-
       [](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
         return std::make_tuple(option1->area(), option1->cap())
                < std::make_tuple(option2->area(), option2->cap());
@@ -1450,11 +1449,9 @@ void Rebuffer::init()
     });
   }
 
-  std::ranges::sort(buffer_sizes_,
-
-                    [=](BufferSize a, BufferSize b) {
-                      return bufferCin(a.cell) < bufferCin(b.cell);
-                    });
+  std::ranges::sort(buffer_sizes_, [=](BufferSize a, BufferSize b) {
+    return bufferCin(a.cell) < bufferCin(b.cell);
+  });
 
   buffer_sizes_index_.clear();
   for (auto& size : buffer_sizes_) {

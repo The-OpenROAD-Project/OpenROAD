@@ -742,21 +742,17 @@ void Resizer::reportFastBufferSizes()
   // Sort fast buffers by capacitance and then by name.
   std::vector<LibertyCell*> buffers{buffer_fast_sizes_.begin(),
                                     buffer_fast_sizes_.end()};
-  std::ranges::sort(buffers,
+  std::ranges::sort(buffers, [=](const LibertyCell* a, const LibertyCell* b) {
+    LibertyPort* scratch;
+    LibertyPort* in_a;
+    LibertyPort* in_b;
 
-                    [=](const LibertyCell* a, const LibertyCell* b) {
-                      LibertyPort* scratch;
-                      LibertyPort* in_a;
-                      LibertyPort* in_b;
+    a->bufferPorts(in_a, scratch);
+    b->bufferPorts(in_b, scratch);
 
-                      a->bufferPorts(in_a, scratch);
-                      b->bufferPorts(in_b, scratch);
-
-                      return std::make_pair(in_a->capacitance(),
-                                            std::string_view(a->name()))
-                             < std::make_pair(in_b->capacitance(),
-                                              std::string_view(b->name()));
-                    });
+    return std::make_pair(in_a->capacitance(), std::string_view(a->name()))
+           < std::make_pair(in_b->capacitance(), std::string_view(b->name()));
+  });
 
   logger_->report("\nFast Buffer Report:");
   logger_->report("There are {} fast buffers", buffers.size());
@@ -843,10 +839,9 @@ void Resizer::findBuffers()
   for (const auto& [site_type, count] : lib_data_->cells_by_site) {
     site_list.emplace_back(site_type, (float) count / buffer_list.size());
   }
-  std::ranges::sort(
-      site_list,
-
-      [](const auto& a, const auto& b) { return a.second > b.second; });
+  std::ranges::sort(site_list, [](const auto& a, const auto& b) {
+    return a.second > b.second;
+  });
   int num_best_sites = std::min(2, (int) lib_data_->cells_by_site.size());
   for (int i = 0; i < num_best_sites; i++) {
     debugRDPrint2("findBuffers: {} is a dominant site",
@@ -908,11 +903,9 @@ void Resizer::findBuffers()
     }
 
     // Sort this bucket by drive_res * input_cap (ascending)
-    std::ranges::sort(bucket_buffers,
-
-                      [](const auto& a, const auto& b) {
-                        return a.second < b.second;  // Compare by R * C
-                      });
+    std::ranges::sort(bucket_buffers, [](const auto& a, const auto& b) {
+      return a.second < b.second;  // Compare by R * C
+    });
 
     // Select up to 2 best buffers from this bucket
     if (num_best_sites == 1) {
@@ -1621,27 +1614,24 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
 
   // Sort equiv cells by ascending area and leakage
   // STA sorts them by drive resistance
-  std::ranges::stable_sort(
-      equiv_cells,
-
-      [this](LibertyCell* a, LibertyCell* b) {
-        dbMaster* master_a = this->getDbNetwork()->staToDb(a);
-        dbMaster* master_b = this->getDbNetwork()->staToDb(b);
-        if (master_a && master_b) {
-          if (master_a->getArea() != master_b->getArea()) {
-            return master_a->getArea() < master_b->getArea();
-          }
-        }
-        std::optional<float> leakage_a = this->cellLeakage(a);
-        std::optional<float> leakage_b = this->cellLeakage(b);
-        // Compare leakages only if they are defined
-        if (leakage_a && leakage_b) {
-          return *leakage_a < *leakage_b;
-        }
-        // Cell 'a' has a priority as it has lower
-        // drive resistance than 'b' after STA sort
-        return leakage_a.has_value() && !leakage_b.has_value();
-      });
+  std::ranges::stable_sort(equiv_cells, [this](LibertyCell* a, LibertyCell* b) {
+    dbMaster* master_a = this->getDbNetwork()->staToDb(a);
+    dbMaster* master_b = this->getDbNetwork()->staToDb(b);
+    if (master_a && master_b) {
+      if (master_a->getArea() != master_b->getArea()) {
+        return master_a->getArea() < master_b->getArea();
+      }
+    }
+    std::optional<float> leakage_a = this->cellLeakage(a);
+    std::optional<float> leakage_b = this->cellLeakage(b);
+    // Compare leakages only if they are defined
+    if (leakage_a && leakage_b) {
+      return *leakage_a < *leakage_b;
+    }
+    // Cell 'a' has a priority as it has lower
+    // drive resistance than 'b' after STA sort
+    return leakage_a.has_value() && !leakage_b.has_value();
+  });
 
   logger_->report(
       "The following {} cells are equivalent to {}{}",
@@ -2098,9 +2088,7 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
 
   // Sort the list in ascending order of leakage
   std::ranges::stable_sort(
-      vt_equiv_cells,
-
-      [this](LibertyCell* cell1, LibertyCell* cell2) {
+      vt_equiv_cells, [this](LibertyCell* cell1, LibertyCell* cell2) {
         std::optional<float> leak1 = this->cellLeakage(cell1);
         std::optional<float> leak2 = this->cellLeakage(cell2);
         // Treat missing leakage as 0

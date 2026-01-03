@@ -468,9 +468,7 @@ void TritonCTS::countSinksPostDbWrite(
         double currSinkWl
             = (dist + currWireLength) / double(options_->getDbUnits());
         sinkWireLength += currSinkWl;
-        if (depth > maxDepth) {
-          maxDepth = depth;
-        }
+        maxDepth = std::max(depth, maxDepth);
         if ((minDepth > 0 && depth < minDepth) || (minDepth == 0)) {
           minDepth = depth;
         }
@@ -1722,12 +1720,8 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       if (inst->isClockBuffer()) {
         std::pair<int, int> resultsForBranch
             = branchBufferCount(inst, 1, clockNet);
-        if (resultsForBranch.first < minPath) {
-          minPath = resultsForBranch.first;
-        }
-        if (resultsForBranch.second > maxPath) {
-          maxPath = resultsForBranch.second;
-        }
+        minPath = std::min(resultsForBranch.first, minPath);
+        maxPath = std::max(resultsForBranch.second, maxPath);
       }
     } else {
       rootSubNet->removeSinks(removedSinks);
@@ -1996,21 +1990,13 @@ std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
           = clockNet.findClockByName(sinkITerms->getInst()->getName());
       if (clockInst == nullptr) {
         int newResult = bufCounter + 1;
-        if (newResult > maxPath) {
-          maxPath = newResult;
-        }
-        if (newResult < minPath) {
-          minPath = newResult;
-        }
+        maxPath = std::max(newResult, maxPath);
+        minPath = std::min(newResult, minPath);
       } else {
         std::pair<int, int> newResults
             = branchBufferCount(clockInst, bufCounter + 1, clockNet);
-        if (newResults.first < minPath) {
-          minPath = newResults.first;
-        }
-        if (newResults.second > maxPath) {
-          maxPath = newResults.second;
-        }
+        minPath = std::min(newResults.first, minPath);
+        maxPath = std::max(newResults.second, maxPath);
       }
     }
   }
@@ -2452,7 +2438,6 @@ void TritonCTS::findCandidateDummyCells(
   // Sort cells in ascending order of input cap
   std::ranges::sort(
       dummyCandidates,
-
       [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
         return (getInputCap(cell1) < getInputCap(cell2));
       });

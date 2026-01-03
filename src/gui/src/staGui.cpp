@@ -369,9 +369,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 
     if (index.row() == kClockSummaryRow) {
       int start_idx = getClockEndIndex();
-      if (start_idx < 0) {
-        start_idx = 0;
-      }
+      start_idx = std::max(start_idx, 0);
       const auto& node = nodes_->at(start_idx);
 
       switch (col_index) {

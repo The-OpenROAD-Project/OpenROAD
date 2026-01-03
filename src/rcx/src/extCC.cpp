@@ -842,9 +842,7 @@ int Grid::getBandWires(int hiXY,
   if (_base + _pitch * endTrack < hiEnd) {
     _currentTrack++;
   }
-  if (_currentTrack > _searchHiTrack) {
-    _currentTrack = _searchHiTrack;
-  }
+  _currentTrack = std::min(_currentTrack, _searchHiTrack);
   int minExtracted = _base + _pitch * _currentTrack;
   int baseXY = minExtracted;
   if (_currentTrack == _searchHiTrack) {
@@ -926,9 +924,7 @@ int GridTable::couplingCaps(int hiXY,
                                              _ttttGetDgOverlap);
     }
 
-    if (minExtracted > lastExtracted1) {
-      minExtracted = lastExtracted1;
-    }
+    minExtracted = std::min(minExtracted, lastExtracted1);
   }
   return minExtracted;
 }
