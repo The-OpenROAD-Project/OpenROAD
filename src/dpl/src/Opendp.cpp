@@ -273,7 +273,7 @@ void Opendp::setFixedGridCells()
     if (cell->getType() == Node::CELL && cell->isFixed()) {
       grid_->visitCellPixels(*cell, true, [&](Pixel* pixel, bool padded) {
         if (padded) {
-          pixel->padding_reserved_by = cell.get();
+          pixel->padding_reserved_by.insert(cell.get());
         } else {
           setGridCell(*cell, pixel);
         }

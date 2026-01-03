@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "detailed_generator.h"
+#include "infrastructure/Objects.h"
 
 namespace odb {
 class Rect;
@@ -37,6 +38,9 @@ class DetailedGlobalSwap : public DetailedGenerator
   bool calculateEdgeBB(Edge* ed, Node* nd, odb::Rect& bbox);
   bool getRange(Node*, odb::Rect&);
   bool generate(Node* ndi);
+  bool generateWirelengthOptimalMove(Node* ndi);  // Original wirelength-based generator
+  bool generateRandomMove(Node* ndi);             // New random exploration generator
+  double calculateAdaptivePowerWeight();  // calculates adaptive power weight
 
   // Standard stuff.
   DetailedMgr* mgr_;
@@ -55,6 +59,15 @@ class DetailedGlobalSwap : public DetailedGenerator
   int attempts_;
   int moves_;
   int swaps_;
+
+  // Power-density-aware placement support
+  std::vector<double> power_contribution_;
+  double power_weight_;
+  
+  // Two-pass budget-constrained optimization support
+  double budget_hpwl_;
+  bool is_profiling_pass_;
+  double tradeoff_;  // 0.0 = pure wirelength opt, 1.0 = full power/wirelength tradeoff
 };
 
 }  // namespace dpl

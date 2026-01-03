@@ -44,7 +44,7 @@ struct Pixel
   bool is_hopeless = false;  // too far from sites for diamond search
   uint8_t blocked_layers = 0;
   // Cell that reserved this pixel for padding
-  Node* padding_reserved_by = nullptr;
+  std::unordered_set<Node*> padding_reserved_by;
 };
 
 // Return value for grid searches.
@@ -155,6 +155,13 @@ class Grid
 
   bool isMultiHeight(odb::dbMaster* master) const;
 
+  // Power-density-aware placement support
+  void computePowerDensityMap(Network* network, float area_weight, float pin_weight);
+  void updatePowerDensity(Node* node, DbuX x, DbuY y, bool add);
+  float getPowerDensity(int pixel_idx) const { 
+    return (pixel_idx >= 0 && pixel_idx < power_density_.size()) ? power_density_[pixel_idx] : 0.0f; 
+  }
+
  private:
   // Maps a site to the right orientation to use in a given row
   using SiteToOrientation = std::map<odb::dbSite*, odb::dbOrientType>;
@@ -189,6 +196,7 @@ class Grid
   void markBlocked(odb::dbBlock* block);
   void visitDbRows(odb::dbBlock* block,
                    const std::function<void(odb::dbRow*)>& func) const;
+  void normalizeAndUpdatePowerDensity();  // Helper for power density normalization
 
   Logger* logger_ = nullptr;
   odb::dbBlock* block_ = nullptr;
@@ -211,6 +219,13 @@ class Grid
 
   GridY row_count_{0};
   GridX row_site_count_{0};
+
+  // Power density map for power-aware placement
+  std::vector<float> power_density_;
+  std::vector<float> total_area_;      // Raw area data for incremental updates
+  std::vector<float> total_pins_;      // Raw pin data for incremental updates
+  float area_weight_;                  // Stored for incremental updates
+  float pin_weight_;                   // Stored for incremental updates
 };
 
 }  // namespace dpl
