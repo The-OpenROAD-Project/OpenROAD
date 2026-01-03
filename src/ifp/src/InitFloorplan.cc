@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <ranges>
 #include <set>
 #include <string>
 #include <vector>
@@ -778,8 +779,8 @@ int InitFloorplan::getOffset(dbSite* base_hybrid_site,
 
   // We may have to flip the row (pattern) to match the parent
   dbSite::RowPattern flipped_search_pattern;
-  for (auto it = search_pattern.rbegin(); it != search_pattern.rend(); ++it) {
-    dbSite::OrientedSite flipped{it->site, it->orientation.flipX()};
+  for (auto [site, orientation] : std::ranges::reverse_view(search_pattern)) {
+    dbSite::OrientedSite flipped{site, orientation.flipX()};
     flipped_search_pattern.emplace_back(flipped);
   }
 

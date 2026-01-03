@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <utility>
 #include <variant>
@@ -2032,9 +2033,9 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
   const auto& rows = custom_controls_[renderer];
 
   const QModelIndex& parent_idx = rows[0].name->index().parent();
-  for (auto itr = rows.rbegin(); itr != rows.rend(); itr++) {
+  for (const auto& row : std::ranges::reverse_view(rows)) {
     // remove from Display controls
-    auto index = model_->indexFromItem(itr->name);
+    auto index = model_->indexFromItem(row.name);
     model_->removeRow(index.row(), index.parent());
   }
   if (!model_->hasChildren(parent_idx)) {

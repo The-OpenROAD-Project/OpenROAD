@@ -184,7 +184,8 @@ struct GPoint3D
 
 struct Route
 {
-  RouteType type = RouteType::NoRoute;  // type of route: LRoute, ZRoute, MazeRoute
+  RouteType type
+      = RouteType::NoRoute;  // type of route: LRoute, ZRoute, MazeRoute
 
   // valid for LRoute:
   // true - the route is horizontal first (x1, y1) - (x2, y1) - (x2, y2),

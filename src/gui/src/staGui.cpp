@@ -542,8 +542,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
                                        bool draw_clock,
                                        bool draw_signal)
 {
-  for (auto node_itr = nodes->rbegin(); node_itr != nodes->rend(); node_itr++) {
-    const auto& node = *node_itr;
+  for (auto& node : std::ranges::reverse_view(*nodes)) {
     if (node->isClock() && !draw_clock) {
       continue;
     }

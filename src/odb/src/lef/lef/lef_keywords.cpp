@@ -62,8 +62,8 @@ inline std::string strip_case(const char* str)
     return result;
   };
 
-  for (std::string::iterator p = result.begin(); result.end() != p; ++p) {
-    *p = toupper(*p);
+  for (char& p : result) {
+    p = toupper(p);
   }
 
   return result;

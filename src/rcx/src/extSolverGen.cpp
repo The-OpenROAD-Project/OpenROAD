@@ -103,8 +103,7 @@ uint32_t extSolverGen::widthsSpacingsLoop(uint32_t diagMet)
   if (top_ext != 0.0 || bot_ext != 0.0) {
     _metExtFlag = true;
   }
-  for (uint32_t ii = 0; ii < _widthMultTable.size(); ii++) {
-    float mult_w = _widthMultTable[ii];
+  for (float mult_w : _widthMultTable) {
     float w = mult_w * min_width;
 
     double top_width = w + 2 * top_ext;

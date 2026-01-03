@@ -1267,8 +1267,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       // while loop to find shortest path
       int ind1 = (src_heap[0] - &d1[0][0]);
-      for (int i = 0; i < dest_heap.size(); i++) {
-        pop_heap2[(dest_heap[i] - &d2[0][0])] = true;
+      for (auto& dest : dest_heap) {
+        pop_heap2[dest - &d2[0][0]] = true;
       }
 
       // stop when the grid position been popped out from both src_heap and
@@ -1312,8 +1312,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       }  // while loop
 
-      for (int i = 0; i < dest_heap.size(); i++) {
-        pop_heap2[(dest_heap[i] - &d2[0][0])] = false;
+      for (auto& dest : dest_heap) {
+        pop_heap2[dest - &d2[0][0]] = false;
       }
 
       const int16_t crossX = ind1 % x_range_;

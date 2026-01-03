@@ -1076,8 +1076,8 @@ void FastRouteCore::layerAssignmentV4()
   netpinOrderInc();
 
   std::queue<int> edgeQueue;
-  for (int i = 0; i < tree_order_pv_.size(); i++) {
-    int netID = tree_order_pv_[i].treeIndex;
+  for (const auto& tree : tree_order_pv_) {
+    int netID = tree.treeIndex;
 
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;

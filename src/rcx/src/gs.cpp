@@ -39,8 +39,8 @@ gs::gs(AthPool<SEQ>* pool)
   init_ = INIT;
 
   pixint sum = PIXFILL;
-  for (int i = 0; i < PIXMAPGRID; i++) {
-    start_[i] = sum;
+  for (pixint& p : start_) {
+    p = sum;
     sum = (sum >> 1);
   }
 
@@ -516,8 +516,8 @@ bool gs::getSeqRow(const int y,
     } else {
       // ends here
       epix = st * PIXMAPGRID - 1;
-      for (int bit = 0; bit < PIXMAPGRID; bit++) {
-        if (((pl->lword) & middle_[bit]) == 0) {
+      for (pixint bit : middle_) {
+        if (((pl->lword) & bit) == 0) {
           if (seqcol == GS_BLACK) {
             break;
           }

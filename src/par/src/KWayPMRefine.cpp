@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -269,10 +270,8 @@ float KWayPMRefine::PerformPairFM(
   }
 
   // traverse the moves_trace in the reversing order
-  for (auto move_iter = moves_trace.rbegin(); move_iter != moves_trace.rend();
-       move_iter++) {
+  for (auto& vertex_move : std::ranges::reverse_view(moves_trace)) {
     // stop when we encounter the best_vertex_id
-    auto& vertex_move = *move_iter;
     if (vertex_move->GetVertex() == best_vertex_id) {
       break;  // stop here
     }
