@@ -642,15 +642,15 @@ int IOPlacer::getMinDistanceForInterval(const Interval& interval)
     const std::vector<int>& min_distances
         = vertical_pin ? core_->getMinDstPinsX().at(interval.getLayer())
                        : core_->getMinDstPinsY().at(interval.getLayer());
-    min_dist = *(std::max_element(min_distances.begin(), min_distances.end()));
+    min_dist = *(std::ranges::max_element(min_distances));
   } else {
     const std::set<int>& layers = vertical_pin ? ver_layers_ : hor_layers_;
     for (int layer_idx : layers) {
       std::vector<int> layer_min_distances
           = vertical_pin ? core_->getMinDstPinsX().at(layer_idx)
                          : core_->getMinDstPinsY().at(layer_idx);
-      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
-                                                    layer_min_distances.end()));
+      const int layer_min_dist
+          = *(std::ranges::max_element(layer_min_distances));
       min_dist = std::max(layer_min_dist, min_dist);
     }
   }
@@ -719,7 +719,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
       if ((line.pt0().y() == line.pt1().y() && line.pt0().x() > line.pt1().x())
           || (line.pt0().x() == line.pt1().x()
               && line.pt0().y() > line.pt1().y())) {
-        std::reverse(slots.begin(), slots.end());
+        std::ranges::reverse(slots);
       }
 
       for (const odb::Point& pos : slots) {
@@ -730,7 +730,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
 
     else {
       if (edge == Edge::top || edge == Edge::left) {
-        std::reverse(slots.begin(), slots.end());
+        std::ranges::reverse(slots);
       }
 
       for (const odb::Point& pos : slots) {
@@ -868,15 +868,15 @@ std::vector<odb::Point> IOPlacer::findLayerSlots(const int layer,
     }
   }
 
-  std::sort(slots.begin(),
-            slots.end(),
-            [&](const odb::Point& p1, const odb::Point& p2) {
-              if (vertical_pin) {
-                return p1.getX() < p2.getX();
-              }
+  std::ranges::sort(slots,
 
-              return p1.getY() < p2.getY();
-            });
+                    [&](const odb::Point& p1, const odb::Point& p2) {
+                      if (vertical_pin) {
+                        return p1.getX() < p2.getX();
+                      }
+
+                      return p1.getY() < p2.getY();
+                    });
 
   return slots;
 }
@@ -946,15 +946,15 @@ void IOPlacer::defineSlots()
     for (int layer_idx : ver_layers_) {
       std::vector<int> layer_min_distances
           = core_->getMinDstPinsX().at(layer_idx);
-      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
-                                                    layer_min_distances.end()));
+      const int layer_min_dist
+          = *(std::ranges::max_element(layer_min_distances));
       min_dist = std::max(layer_min_dist, min_dist);
     }
     for (int layer_idx : hor_layers_) {
       std::vector<int> layer_min_distances
           = core_->getMinDstPinsY().at(layer_idx);
-      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
-                                                    layer_min_distances.end()));
+      const int layer_min_dist
+          = *(std::ranges::max_element(layer_min_distances));
       min_dist = std::max(layer_min_dist, min_dist);
     }
 
@@ -1023,7 +1023,7 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
     bool first_layer = true;
     for (int layer : layers) {
       std::vector<Slot>::iterator it
-          = std::find_if(slots_.begin(), slots_.end(), [&](const Slot& s) {
+          = std::ranges::find_if(slots_, [&](const Slot& s) {
               int slot_xy = (edge == Edge::left || edge == Edge::right)
                                 ? s.pos.y()
                                 : s.pos.x();
@@ -1067,10 +1067,8 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
 void IOPlacer::createSectionsPerEdge(Edge edge, const std::set<int>& layers)
 {
   for (int layer : layers) {
-    std::vector<Slot>::iterator it
-        = std::find_if(slots_.begin(), slots_.end(), [&](Slot s) {
-            return s.edge == edge && s.layer == layer;
-          });
+    std::vector<Slot>::iterator it = std::ranges::find_if(
+        slots_, [&](Slot s) { return s.edge == edge && s.layer == layer; });
     int edge_begin = it - slots_.begin();
 
     it = std::find_if(slots_.begin() + edge_begin, slots_.end(), [&](Slot s) {
@@ -1119,7 +1117,7 @@ void IOPlacer::createSectionsPerEdgePolygon(odb::Line poly_edge,
 {
   for (int layer : layers) {
     std::vector<Slot>::iterator it
-        = std::find_if(slots_.begin(), slots_.end(), [&](Slot s) {
+        = std::ranges::find_if(slots_, [&](Slot s) {
             return s.edge == Edge::polygonEdge && s.layer == layer
                    && isPointOnLine(s.pos, poly_edge);
           });
@@ -1220,8 +1218,7 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
     const PinSet& pin_list = constraint.pin_list;
     IOPin& io_pin = netlist_->getIoPin(io_group.pin_indices[0]);
 
-    if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
-        != pin_list.end()) {
+    if (std::ranges::find(pin_list, io_pin.getBTerm()) != pin_list.end()) {
       if (mirrored_only && !groupHasMirroredPin(io_group.pin_indices)) {
         continue;
       }
@@ -2082,14 +2079,14 @@ void IOPlacer::initConstraints(bool annealing)
 
 void IOPlacer::sortConstraints()
 {
-  std::stable_sort(constraints_.begin(),
-                   constraints_.end(),
-                   [&](const Constraint& c1, const Constraint& c2) {
-                     // treat every non-overlapping constraint as equal, so
-                     // stable_sort keeps the user order
-                     return (c1.pins_per_slots < c2.pins_per_slots)
-                            && overlappingConstraints(c1, c2);
-                   });
+  std::ranges::stable_sort(constraints_,
+
+                           [&](const Constraint& c1, const Constraint& c2) {
+                             // treat every non-overlapping constraint as equal,
+                             // so stable_sort keeps the user order
+                             return (c1.pins_per_slots < c2.pins_per_slots)
+                                    && overlappingConstraints(c1, c2);
+                           });
 }
 
 void IOPlacer::checkPinsInMultipleConstraints()
@@ -2100,8 +2097,7 @@ void IOPlacer::checkPinsInMultipleConstraints()
       int constraint_cnt = 0;
       for (Constraint& constraint : constraints_) {
         const PinSet& pin_list = constraint.pin_list;
-        if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
-            != pin_list.end()) {
+        if (std::ranges::find(pin_list, io_pin.getBTerm()) != pin_list.end()) {
           constraint_cnt++;
         }
 
@@ -2130,8 +2126,7 @@ void IOPlacer::checkPinsInMultipleGroups()
       int group_cnt = 0;
       for (const auto& group : bterm_groups) {
         const std::vector<odb::dbBTerm*>& pin_list = group.bterms;
-        if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
-            != pin_list.end()) {
+        if (std::ranges::find(pin_list, io_pin.getBTerm()) != pin_list.end()) {
           group_cnt++;
         }
 
@@ -3067,10 +3062,10 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
       if (x < lb_x || x > ub_x) {
         continue;
       }
-      std::vector<Slot>::iterator it = std::find_if(
-          top_layer_slots_.begin(), top_layer_slots_.end(), [&](Slot s) {
-            return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
-          });
+      std::vector<Slot>::iterator it
+          = std::ranges::find_if(top_layer_slots_, [&](Slot s) {
+              return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
+            });
       int edge_begin = it - top_layer_slots_.begin();
       int edge_x = top_layer_slots_[edge_begin].pos.x();
 

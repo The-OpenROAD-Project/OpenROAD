@@ -260,11 +260,11 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
   // remove drivers from input list
   std::vector<std::string> common_ports;
-  set_intersection(inputs.begin(),
-                   inputs.end(),
-                   outputs.begin(),
-                   outputs.end(),
-                   std::back_inserter(common_ports));
+  std::ranges::set_intersection(inputs,
+
+                                outputs,
+
+                                std::back_inserter(common_ports));
 
   for (auto&& port : common_ports) {
     inputs.erase(port);

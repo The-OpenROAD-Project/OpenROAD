@@ -752,7 +752,7 @@ int InitFloorplan::getOffset(dbSite* base_hybrid_site,
     const auto& base_pattern = base_hybrid_site->getRowPattern();
 
     // Find the common starting point of the patterns
-    auto it = std::find(base_pattern.begin(), base_pattern.end(), pattern[0]);
+    auto it = std::ranges::find(base_pattern, pattern[0]);
     if (it == base_pattern.end()) {
       return false;
     }
@@ -1234,7 +1234,7 @@ std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(
   }
 
   // Sort intersections by x-coordinate
-  std::sort(intersections.begin(), intersections.end());
+  std::ranges::sort(intersections);
 
   // Create segments from pairs of intersections (polygon uses even-odd rule)
   for (size_t i = 0; i + 1 < intersections.size(); i += 2) {

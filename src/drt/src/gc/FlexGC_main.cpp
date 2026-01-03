@@ -2132,7 +2132,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
 
   // sort constraints to ensure the smallest rect width will have
   // preference above other rect width statements
-  std::sort(constraints.begin(), constraints.end(), sort_cmp);
+  std::ranges::sort(constraints, sort_cmp);
 
   bool check_rect_width = true;
 

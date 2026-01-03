@@ -26,6 +26,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ranges>
 #include <set>
 #include <string>
 #include <utility>
@@ -261,11 +262,10 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   beginResetModel();
 
   if (sort_order == Qt::AscendingOrder) {
-    std::stable_sort(
-        timing_paths_.begin(), timing_paths_.end(), std::move(sort_func));
+    std::ranges::stable_sort(timing_paths_, std::move(sort_func));
   } else {
-    std::stable_sort(
-        timing_paths_.rbegin(), timing_paths_.rend(), std::move(sort_func));
+    std::ranges::stable_sort(std::ranges::reverse_view(timing_paths_),
+                             std::move(sort_func));
   }
 
   endResetModel();
@@ -886,7 +886,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
       const std::string text = units->asString(slack) + text_units;
       legend.emplace_back(color_index, text);
     }
-    std::reverse(legend.begin(), legend.end());
+    std::ranges::reverse(legend);
     color_generator_.drawLegend(painter, legend);
   }
 }
@@ -1010,7 +1010,7 @@ void PinSetWidget::addPin(const sta::Pin* pin)
     return;
   }
 
-  if (std::find(pins_.begin(), pins_.end(), pin) != pins_.end()) {
+  if (std::ranges::find(pins_, pin) != pins_.end()) {
     return;
   }
 
@@ -1019,7 +1019,7 @@ void PinSetWidget::addPin(const sta::Pin* pin)
 
 void PinSetWidget::removePin(const sta::Pin* pin)
 {
-  pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
+  pins_.erase(std::ranges::find(pins_, pin));
 }
 
 void PinSetWidget::removeSelectedPins()
@@ -1342,7 +1342,7 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
   if (row->isAddMode()) {
     addThruRow({});
   } else {
-    auto find_row = std::find(thru_.begin(), thru_.end(), row);
+    auto find_row = std::ranges::find(thru_, row);
     const int row_index = std::distance(thru_.begin(), find_row);
 
     layout_->removeRow(kThruStartRow + row_index);

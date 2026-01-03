@@ -368,18 +368,12 @@ class frBlock : public frBlockObject
 
   void removeDeletedObjects()
   {
-    insts_.erase(std::remove_if(insts_.begin(),
-                                insts_.end(),
-                                [](const std::unique_ptr<frInst>& inst) {
-                                  return inst->isToBeDeleted();
-                                }),
-                 insts_.end());
-    nets_.erase(std::remove_if(nets_.begin(),
-                               nets_.end(),
-                               [](const std::unique_ptr<frNet>& net) {
-                                 return net->toBeDeleted();
-                               }),
-                nets_.end());
+    std::erase_if(insts_, [](const std::unique_ptr<frInst>& inst) {
+      return inst->isToBeDeleted();
+    });
+    std::erase_if(nets_, [](const std::unique_ptr<frNet>& net) {
+      return net->toBeDeleted();
+    });
     int id = 0;
     for (const auto& inst : insts_) {
       inst->setId(id++);

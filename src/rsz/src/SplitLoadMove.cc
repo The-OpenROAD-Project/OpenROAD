@@ -130,15 +130,15 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     }
   }
 
-  sort(fanout_slacks.begin(),
-       fanout_slacks.end(),
-       [=, this](const pair<Vertex*, Slack>& pair1,
-                 const pair<Vertex*, Slack>& pair2) {
-         return (pair1.second > pair2.second
-                 || (pair1.second == pair2.second
-                     && network_->pathNameLess(pair1.first->pin(),
-                                               pair2.first->pin())));
-       });
+  std::ranges::sort(fanout_slacks,
+
+                    [=, this](const pair<Vertex*, Slack>& pair1,
+                              const pair<Vertex*, Slack>& pair2) {
+                      return (pair1.second > pair2.second
+                              || (pair1.second == pair2.second
+                                  && network_->pathNameLess(
+                                      pair1.first->pin(), pair2.first->pin())));
+                    });
 
   // Get both the mod net and db net (if present).
   dbNet* db_drvr_net;

@@ -574,7 +574,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
 
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
-  std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
+  std::ranges::sort(tilings_list, isAreaSmaller);
 
   for (auto& tiling : tilings_list) {
     debugPrint(logger_,
@@ -623,7 +623,7 @@ IntervalList HierRTLMP::computeWidthIntervals(const TilingList& tilings)
     width_intervals.emplace_back(tiling.width(), tiling.width());
   }
 
-  std::sort(width_intervals.begin(), width_intervals.end(), isMinWidthSmaller);
+  std::ranges::sort(width_intervals, isMinWidthSmaller);
 
   return width_intervals;
 }
@@ -807,7 +807,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
-  std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
+  std::ranges::sort(tilings_list, isAreaSmaller);
 
   for (auto& tiling : tilings_list) {
     debugPrint(logger_,
@@ -3136,9 +3136,9 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
   const int lowest_pin_center_pos
       = origin + getPinOffset(lowest_grid_pin, target_direction);
 
-  auto closest_pos = std::lower_bound(lowest_grid_positions.begin(),
-                                      lowest_grid_positions.end(),
-                                      lowest_pin_center_pos);
+  auto closest_pos = std::ranges::lower_bound(lowest_grid_positions,
+
+                                              lowest_pin_center_pos);
 
   int starting_position_index
       = std::distance(lowest_grid_positions.begin(), closest_pos);
@@ -3208,7 +3208,7 @@ Snapper::LayerDataList Snapper::computeLayerDataList(
     } else {
       track_grid->getGridY(positions);
     }
-    std::sort(pins.begin(), pins.end(), compare_pin_center);
+    std::ranges::sort(pins, compare_pin_center);
     layers_data.push_back(LayerData{track_grid, std::move(positions), pins});
   }
 
@@ -3216,7 +3216,7 @@ Snapper::LayerDataList Snapper::computeLayerDataList(
     return (data1.track_grid->getTechLayer()->getNumber()
             < data2.track_grid->getTechLayer()->getNumber());
   };
-  std::sort(layers_data.begin(), layers_data.end(), compare_layer_number);
+  std::ranges::sort(layers_data, compare_layer_number);
 
   return layers_data;
 }

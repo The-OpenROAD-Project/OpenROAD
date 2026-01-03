@@ -188,9 +188,9 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
       continue;  // At least two orthogonal rectangle are required for checking
     }
     if (dir == gtl::HORIZONTAL) {
-      std::sort(rects.begin(), rects.end(), compareHorizontal);
+      std::ranges::sort(rects, compareHorizontal);
     } else {
-      std::sort(rects.begin(), rects.end(), compareVertical);
+      std::ranges::sort(rects, compareVertical);
     }
     // <rects> should be a sorted vector of all the wires found in the region
     // It should be sorted in the orientation we are checking

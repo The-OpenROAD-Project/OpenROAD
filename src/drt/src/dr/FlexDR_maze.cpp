@@ -1597,7 +1597,7 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
   };
   // sort
   if (mazeIter == 0) {
-    sort(rerouteNets.begin(), rerouteNets.end(), rerouteNetsComp);
+    std::ranges::sort(rerouteNets, rerouteNetsComp);
     // to be removed
     if (router_cfg_->OR_SEED != -1 && rerouteNets.size() >= 2) {
       std::uniform_int_distribution<int> distribution(0,
@@ -1629,7 +1629,7 @@ bool FlexDRWorker::mazeIterInit_sortRerouteQueue(
         };
   // sort
   if (mazeIter == 0) {
-    sort(rerouteNets.begin(), rerouteNets.end(), rerouteNetsComp);
+    std::ranges::sort(rerouteNets, rerouteNetsComp);
   }
   return true;
 }

@@ -81,8 +81,7 @@ void Logger::addMetricsSink(const char* metrics_filename)
 
 void Logger::removeMetricsSink(const char* metrics_filename)
 {
-  auto metrics_file = std::find(
-      metrics_sinks_.begin(), metrics_sinks_.end(), metrics_filename);
+  auto metrics_file = std::ranges::find(metrics_sinks_, metrics_filename);
   if (metrics_file == metrics_sinks_.end()) {
     this->error(UTL, 11, "{} is not a metrics file", metrics_filename);
   }
@@ -110,9 +109,10 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
     auto it = groups.find(group);
     if (it != groups.end()) {
       groups.erase(it);
-      debug_on_ = std::any_of(debug_group_level_.begin(),
-                              debug_group_level_.end(),
-                              [](auto& group) { return !group.empty(); });
+      debug_on_
+          = std::ranges::any_of(debug_group_level_,
+
+                                [](auto& group) { return !group.empty(); });
     }
   } else {
     debug_on_ = true;
@@ -130,13 +130,13 @@ void Logger::addSink(spdlog::sink_ptr sink)
 void Logger::removeSink(const spdlog::sink_ptr& sink)
 {
   // remove from local list of sinks_
-  auto sinks_find = std::find(sinks_.begin(), sinks_.end(), sink);
+  auto sinks_find = std::ranges::find(sinks_, sink);
   if (sinks_find != sinks_.end()) {
     sinks_.erase(sinks_find);
   }
   // remove from spdlog list of sinks
   auto& logger_sinks = logger_->sinks();
-  auto logger_find = std::find(logger_sinks.begin(), logger_sinks.end(), sink);
+  auto logger_find = std::ranges::find(logger_sinks, sink);
   if (logger_find != logger_sinks.end()) {
     logger_sinks.erase(logger_find);
   }

@@ -1717,8 +1717,7 @@ void RenderThread::drawIOPins(Painter& painter,
     auto dist_to_bot = std::abs(box->yMin() - die_area.yMin());
     std::vector<int> dists{
         dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
-    int arg_min = std::distance(dists.begin(),
-                                std::min_element(dists.begin(), dists.end()));
+    int arg_min = std::distance(dists.begin(), std::ranges::min_element(dists));
 
     odb::dbTransform xfm(pin_center);
     if (arg_min == 0) {  // left

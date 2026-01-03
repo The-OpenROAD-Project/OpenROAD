@@ -463,7 +463,7 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
   // Make the iteration order stable
   std::vector<odb::dbNet*> cluster_nets_sorted(cluster_nets.begin(),
                                                cluster_nets.end());
-  std::sort(cluster_nets_sorted.begin(), cluster_nets_sorted.end());
+  std::ranges::sort(cluster_nets_sorted);
   /*
   std::sort(
       cluster_nets_sorted.begin(),
@@ -605,9 +605,9 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
   double* y = new double[n];
 
   auto modules = modMgr.getModules();
-  std::sort(
-      modules.begin(),
-      modules.end(),
+  std::ranges::sort(
+      modules,
+
       [](const std::shared_ptr<Module>& m1, const std::shared_ptr<Module>& m2) {
         return std::make_tuple(m1->getAvgInsts(), m1->getId())
                < std::make_tuple(m2->getAvgInsts(), m2->getId());

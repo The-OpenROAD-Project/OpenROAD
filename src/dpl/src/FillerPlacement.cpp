@@ -68,13 +68,9 @@ dbMasterSeq Opendp::filterFillerMasters(const dbMasterSeq& filler_masters) const
   }
 
   // Remove fillers with PAD or BLOCK classes
-  filtered_masters.erase(std::remove_if(filtered_masters.begin(),
-                                        filtered_masters.end(),
-                                        [](dbMaster* master) -> bool {
-                                          return master->isPad()
-                                                 || master->isBlock();
-                                        }),
-                         filtered_masters.end());
+  std::erase_if(filtered_masters, [](dbMaster* master) -> bool {
+    return master->isPad() || master->isBlock();
+  });
 
   if (logger_->debugCheck(DPL, "filler", 2)) {
     debugPrint(logger_,
@@ -105,11 +101,11 @@ void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
   auto filler_masters_by_implant = splitByImplant(filtered_masters);
 
   for (auto& [layer, masters] : filler_masters_by_implant) {
-    std::sort(masters.begin(),
-              masters.end(),
-              [](dbMaster* master1, dbMaster* master2) {
-                return master1->getWidth() > master2->getWidth();
-              });
+    std::ranges::sort(masters,
+
+                      [](dbMaster* master1, dbMaster* master2) {
+                        return master1->getWidth() > master2->getWidth();
+                      });
   }
 
   gap_fillers_.clear();

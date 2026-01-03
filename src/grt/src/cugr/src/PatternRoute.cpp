@@ -420,7 +420,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
       IntervalT trunk;
       std::vector<int> stems;
       getTrunkAndStems(scaffold, trunk, stems, direction, true);
-      std::sort(stems.begin(), stems.end());
+      std::ranges::sort(stems);
       int trunkPos = (*scaffold->children[0]->node)[1 - direction];
       int originalLength = getTotalStemLength(stems, trunkPos);
       IntervalT shiftInterval(trunkPos);

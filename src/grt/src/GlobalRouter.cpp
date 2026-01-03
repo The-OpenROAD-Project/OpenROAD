@@ -4194,8 +4194,8 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
 
   // Sort the nets to ensure stable results, but keep clk nets
   // at the front.
-  std::sort(clk_nets.begin(), clk_nets.end(), nameLess);
-  std::sort(non_clk_nets.begin(), non_clk_nets.end(), nameLess);
+  std::ranges::sort(clk_nets, nameLess);
+  std::ranges::sort(non_clk_nets, nameLess);
 
   std::vector<Net*> nets = std::move(clk_nets);
   nets.insert(nets.end(), non_clk_nets.begin(), non_clk_nets.end());

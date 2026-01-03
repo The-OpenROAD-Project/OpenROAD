@@ -177,17 +177,17 @@ std::unique_ptr<ScanCandidate> SelectBestScanCell(
     const sta::LibertyCell* non_scan_cell,
     std::vector<std::unique_ptr<ScanCandidate>>& scan_candidates)
 {
-  std::sort(scan_candidates.begin(),
-            scan_candidates.end(),
-            [&non_scan_cell](const auto& lhs, const auto& rhs) {
-              // We want to keep the difference as close as possible to the
-              // non_scan_cell
-              const double difference_lhs = DifferencePerformanceCells(
-                  non_scan_cell, lhs->getScanCell());
-              const double difference_rhs = DifferencePerformanceCells(
-                  non_scan_cell, rhs->getScanCell());
-              return difference_lhs < difference_rhs;
-            });
+  std::ranges::sort(scan_candidates,
+
+                    [&non_scan_cell](const auto& lhs, const auto& rhs) {
+                      // We want to keep the difference as close as possible to
+                      // the non_scan_cell
+                      const double difference_lhs = DifferencePerformanceCells(
+                          non_scan_cell, lhs->getScanCell());
+                      const double difference_rhs = DifferencePerformanceCells(
+                          non_scan_cell, rhs->getScanCell());
+                      return difference_lhs < difference_rhs;
+                    });
 
   return std::move(scan_candidates.at(0));
 }

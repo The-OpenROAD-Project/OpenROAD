@@ -57,7 +57,7 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
-  std::fill(edgeMask_.begin(), edgeMask_.end(), traversal_);
+  std::ranges::fill(edgeMask_, traversal_);
 
   bool doFlip = false;
   for (size_t i = 1; i < args.size(); i++) {

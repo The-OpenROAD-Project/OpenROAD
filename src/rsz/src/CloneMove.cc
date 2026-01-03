@@ -166,15 +166,15 @@ bool CloneMove::doMove(const Path* drvr_path,
     fanout_slacks.emplace_back(fanout_vertex, slack_margin);
   }
 
-  sort(fanout_slacks.begin(),
-       fanout_slacks.end(),
-       [this](const pair<Vertex*, Slack>& pair1,
-              const pair<Vertex*, Slack>& pair2) {
-         return (pair1.second > pair2.second
-                 || (pair1.second == pair2.second
-                     && network_->pathNameLess(pair1.first->pin(),
-                                               pair2.first->pin())));
-       });
+  std::ranges::sort(fanout_slacks,
+
+                    [this](const pair<Vertex*, Slack>& pair1,
+                           const pair<Vertex*, Slack>& pair2) {
+                      return (pair1.second > pair2.second
+                              || (pair1.second == pair2.second
+                                  && network_->pathNameLess(
+                                      pair1.first->pin(), pair2.first->pin())));
+                    });
 
   Instance* drvr_inst = db_network_->instance(drvr_pin);
 

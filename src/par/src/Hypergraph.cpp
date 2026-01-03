@@ -208,9 +208,9 @@ void Hypergraph::ResetVertexCAttr()
 
 void Hypergraph::ResetHyperedgeTimingAttr()
 {
-  std::fill(hyperedge_timing_attr_.begin(),
-            hyperedge_timing_attr_.end(),
-            std::numeric_limits<float>::max());
+  std::ranges::fill(hyperedge_timing_attr_,
+
+                    std::numeric_limits<float>::max());
 }
 
 void Hypergraph::ResetPathTimingCost()

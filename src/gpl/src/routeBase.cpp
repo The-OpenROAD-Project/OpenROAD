@@ -10,6 +10,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -928,8 +929,8 @@ float RouteBase::getGrtRC() const
   int horArraySize = horEdgeCongArray.size();
   int verArraySize = verEdgeCongArray.size();
 
-  std::sort(horEdgeCongArray.rbegin(), horEdgeCongArray.rend());
-  std::sort(verEdgeCongArray.rbegin(), verEdgeCongArray.rend());
+  std::ranges::sort(std::ranges::reverse_view(horEdgeCongArray));
+  std::ranges::sort(std::ranges::reverse_view(verEdgeCongArray));
 
   double horAvg005RC = 0;
   double horAvg010RC = 0;

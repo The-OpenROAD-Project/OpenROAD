@@ -211,7 +211,7 @@ void DetailedMis::place()
   populateGrid();
 
   timesUsed_.resize(network_->getNumNodes());
-  std::fill(timesUsed_.begin(), timesUsed_.end(), 0);
+  std::ranges::fill(timesUsed_, 0);
 
   // Select candidates and solve matching problem.  Note that we need to do
   // something to make this more efficient, otherwise we will solve way too
@@ -264,10 +264,10 @@ void DetailedMis::collectMovableCells()
 void DetailedMis::colorCells()
 {
   colors_.resize(network_->getNumNodes());
-  std::fill(colors_.begin(), colors_.end(), -1);
+  std::ranges::fill(colors_, -1);
 
   movable_.resize(network_->getNumNodes());
-  std::fill(movable_.begin(), movable_.end(), false);
+  movable_.assign(movable_.size(), false);
   for (const Node* ndi : candidates_) {
     movable_[ndi->getId()] = true;
   }

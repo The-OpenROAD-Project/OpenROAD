@@ -296,8 +296,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   if (driverNet->isSpecial()) {
     logger_->info(
         CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
-  } else if (std::find(skipNets.begin(), skipNets.end(), driverNet)
-             != skipNets.end()) {
+  } else if (std::ranges::find(skipNets, driverNet) != skipNets.end()) {
     logger_->warn(CTS,
                   44,
                   "Skipping net {}, specified by the user...",
@@ -689,9 +688,8 @@ void TritonCTS::setBufferList(const char* buffers)
 
 std::string toLowerCase(std::string str)
 {
-  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
+  std::ranges::transform(
+      str, str.begin(), [](unsigned char c) { return std::tolower(c); });
   return str;
 }
 
@@ -1792,8 +1790,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   }
 
   // Check if the main clock net (level 0) is in the level list
-  if (std::find(targetLevels.begin(), targetLevels.end(), 0)
-      != targetLevels.end()) {
+  if (std::ranges::find(targetLevels, 0) != targetLevels.end()) {
     odb::dbNet* clk_net = clockNet.getNetObj();
     clk_net->setNonDefaultRule(clockNDR);
     ndrAppliedNets++;
@@ -1806,8 +1803,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   // Check clock sub nets list and apply NDR if level matches
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     int level = subNet.getTreeLevel();
-    if (std::find(targetLevels.begin(), targetLevels.end(), level)
-        != targetLevels.end()) {
+    if (std::ranges::find(targetLevels, level) != targetLevels.end()) {
       odb::dbNet* net = subNet.getNetObj();
       if (!subNet.isLeafLevel()) {
         net->setNonDefaultRule(clockNDR);
@@ -2126,7 +2122,7 @@ void TritonCTS::findClockRoots(sta::Clock* clk,
     odb::dbModITerm* moditerm;
     network_->staToDb(pin, instTerm, port, moditerm);
     odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
-    if (std::find(skipNets.begin(), skipNets.end(), net) != skipNets.end()) {
+    if (std::ranges::find(skipNets, net) != skipNets.end()) {
       logger_->warn(CTS,
                     42,
                     "Skipping root net {}, specified by the user...",
@@ -2454,11 +2450,12 @@ void TritonCTS::findCandidateDummyCells(
   }
 
   // Sort cells in ascending order of input cap
-  std::sort(dummyCandidates.begin(),
-            dummyCandidates.end(),
-            [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-              return (getInputCap(cell1) < getInputCap(cell2));
-            });
+  std::ranges::sort(
+      dummyCandidates,
+
+      [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
+        return (getInputCap(cell1) < getInputCap(cell2));
+      });
 
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
     for (const sta::LibertyCell* libCell : dummyCandidates) {

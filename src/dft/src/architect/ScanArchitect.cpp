@@ -45,7 +45,7 @@ bool CompareScanCells(const std::unique_ptr<ScanCell>& lhs,
 
 void SortScanCells(std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 {
-  std::stable_sort(scan_cells.begin(), scan_cells.end(), CompareScanCells);
+  std::ranges::stable_sort(scan_cells, CompareScanCells);
 }
 
 }  // namespace
@@ -201,16 +201,16 @@ std::vector<std::unique_ptr<ScanChain>> ScanArchitect::getScanChains()
 {
   std::vector<std::unique_ptr<ScanChain>> scan_chains_flat;
   for (auto& [hash_domain, scan_chains] : hash_domain_scan_chains_) {
-    std::move(std::begin(scan_chains),
-              std::end(scan_chains),
-              std::back_inserter(scan_chains_flat));
+    std::ranges::move(scan_chains,
+
+                      std::back_inserter(scan_chains_flat));
   }
 
-  std::sort(scan_chains_flat.begin(),
-            scan_chains_flat.end(),
-            [](const auto& lhs, const auto& rhs) {
-              return lhs->getName() < rhs->getName();
-            });
+  std::ranges::sort(scan_chains_flat,
+
+                    [](const auto& lhs, const auto& rhs) {
+                      return lhs->getName() < rhs->getName();
+                    });
 
   return scan_chains_flat;
 }

@@ -644,11 +644,11 @@ void RepairDesign::findBufferSizes()
   buffer_sizes_.clear();
   buffer_sizes_ = {resizer_->buffer_fast_sizes_.begin(),
                    resizer_->buffer_fast_sizes_.end()};
-  std::sort(buffer_sizes_.begin(),
-            buffer_sizes_.end(),
-            [=](LibertyCell* a, LibertyCell* b) {
-              return bufferCin(a) < bufferCin(b);
-            });
+  std::ranges::sort(buffer_sizes_,
+
+                    [=](LibertyCell* a, LibertyCell* b) {
+                      return bufferCin(a) < bufferCin(b);
+                    });
 }
 
 bool RepairDesign::performGainBuffering(Net* net,
@@ -744,7 +744,7 @@ bool RepairDesign::performGainBuffering(Net* net,
   for (auto& sink : sinks) {
     load += sink.capacitance(network_);
   }
-  std::sort(sinks.begin(), sinks.end(), PinRequiredHigher(network_));
+  std::ranges::sort(sinks, PinRequiredHigher(network_));
 
   // Iterate until we satisfy both the gain condition and max_fanout
   // on drvr_pin
@@ -872,8 +872,7 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     sinks.erase(sinks.begin(), group_end);
     sinks.insert(
-        std::upper_bound(
-            sinks.begin(), sinks.end(), new_pin, PinRequiredHigher(network_)),
+        std::ranges::upper_bound(sinks, new_pin, PinRequiredHigher(network_)),
         new_pin);
 
     load += size_in->capacitance();
@@ -975,14 +974,13 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
             RSZ, 144, "sizes list empty for cell {}\n", cell->name());
       }
 
-      std::sort(
-          sizes.begin(), sizes.end(), [](SizeCandidate a, SizeCandidate b) {
-            if (a.first == 0 && b.first == 0) {
-              // both sizes non-violating: sort by area
-              return a.second->area() < b.second->area();
-            }
-            return a.first < b.first;
-          });
+      std::ranges::sort(sizes, [](SizeCandidate a, SizeCandidate b) {
+        if (a.first == 0 && b.first == 0) {
+          // both sizes non-violating: sort by area
+          return a.second->area() < b.second->area();
+        }
+        return a.first < b.first;
+      });
 
       LibertyCell* selected_size = sizes.front().second;
       if (selected_size != cell) {

@@ -391,7 +391,7 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
     left_inst = getAdjacentInstance(left_inst, left);
   }
 
-  std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
+  std::ranges::reverse(adj_inst_cluster);
   adj_inst_cluster.push_back(inst);
 
   odb::dbInst* right_inst = getAdjacentInstance(inst, right);

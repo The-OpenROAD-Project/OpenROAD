@@ -269,7 +269,7 @@ void CUGR::sortNetIndices(std::vector<int>& netIndices) const
     auto& net = gr_nets_[netIndex];
     halfParameters[netIndex] = net->getBoundingBox().hp();
   }
-  sort(netIndices.begin(), netIndices.end(), [&](int lhs, int rhs) {
+  std::ranges::sort(netIndices, [&](int lhs, int rhs) {
     return halfParameters[lhs] < halfParameters[rhs];
   });
 }

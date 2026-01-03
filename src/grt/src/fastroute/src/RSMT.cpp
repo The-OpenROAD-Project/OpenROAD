@@ -248,7 +248,7 @@ void FastRouteCore::fluteNormal(const int netID,
         std::swap(ptp[i], ptp[minidx]);
       }
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), orderx);
+      std::ranges::stable_sort(ptp, orderx);
     }
 
     for (int i = 0; i < d; i++) {
@@ -274,7 +274,7 @@ void FastRouteCore::fluteNormal(const int netID,
       ys[d - 1] = ptp[d - 1]->y;
       s[d - 1] = ptp[d - 1]->o;
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), ordery);
+      std::ranges::stable_sort(ptp, ordery);
       for (int i = 0; i < d; i++) {
         ys[i] = ptp[i]->y;
         s[i] = ptp[i]->o;

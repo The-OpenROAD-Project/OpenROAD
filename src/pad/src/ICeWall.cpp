@@ -194,9 +194,9 @@ void ICeWall::assignBump(odb::dbInst* inst,
       iterm->connect(net);
     }
     if (terminal) {
-      auto already_assigned = std::find_if(
-          routing_map_.begin(),
-          routing_map_.end(),
+      auto already_assigned = std::ranges::find_if(
+          routing_map_,
+
           [terminal](const auto& other) { return other.second == terminal; });
       if (already_assigned != routing_map_.end()) {
         logger_->error(
@@ -828,12 +828,11 @@ void ICeWall::placeFiller(
 
   std::vector<odb::dbMaster*> fillers = masters;
   // remove nullptrs
-  fillers.erase(std::remove(fillers.begin(), fillers.end(), nullptr),
-                fillers.end());
+  std::erase(fillers, nullptr);
   // sort by width
-  std::stable_sort(
-      fillers.begin(),
-      fillers.end(),
+  std::ranges::stable_sort(
+      fillers,
+
       [use_height, row_xform](odb::dbMaster* r, odb::dbMaster* l) -> bool {
         odb::Rect r_bbox;
         r->getPlacementBoundary(r_bbox);
@@ -924,10 +923,8 @@ void ICeWall::placeFiller(
 
     int site_offset = 0;
     for (auto* filler : fillers) {
-      const bool allow_overlap
-          = std::find(
-                overlapping_masters.begin(), overlapping_masters.end(), filler)
-            != overlapping_masters.end();
+      const bool allow_overlap = std::ranges::find(overlapping_masters, filler)
+                                 != overlapping_masters.end();
       odb::Rect filler_bbox;
       filler->getPlacementBoundary(filler_bbox);
       row_xform.apply(filler_bbox);

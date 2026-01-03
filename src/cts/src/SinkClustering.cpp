@@ -101,7 +101,7 @@ void SinkClustering::computeAllThetas()
 void SinkClustering::sortPoints()
 {
   if (firstRun_) {
-    std::sort(thetaIndexVector_.begin(), thetaIndexVector_.end());
+    std::ranges::sort(thetaIndexVector_);
   }
 }
 

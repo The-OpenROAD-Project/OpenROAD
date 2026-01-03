@@ -565,7 +565,7 @@ void Track::buildDgContext(Array1D<SEQ*>* dgContext,
     return;
   }
   if (tcnt > 1 && ctxsize > 1) {
-    std::sort(ctxwire.begin(), ctxwire.end(), compareAthWire());
+    std::ranges::sort(ctxwire, compareAthWire());
   }
   uint32_t jj;
   Wire* nwire;

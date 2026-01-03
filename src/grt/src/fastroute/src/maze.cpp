@@ -130,8 +130,7 @@ void FastRouteCore::fixOverlappingEdge(
     return a.first < b.first;
   };
 
-  std::stable_sort(
-      blocked_positions.begin(), blocked_positions.end(), sort_by_x);
+  std::ranges::stable_sort(blocked_positions, sort_by_x);
 
   if (treeedge->len > 0) {
     std::vector<GPoint3D> new_route;
@@ -1114,7 +1113,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     } else if (adj_cost > cost) {  // neighbor has been put into src_heap
                                    // but needs update
       double* dtmp = &d1[adj_y][adj_x];
-      const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+      const auto it = std::ranges::find(src_heap, dtmp);
       if (it != src_heap.end()) {
         const int pos = it - src_heap.begin();
         updateHeap(src_heap, pos);

@@ -1134,7 +1134,7 @@ void MainWindow::addSelected(const Selected& selection, bool find_in_cts)
 
 void MainWindow::removeSelected(const Selected& selection)
 {
-  auto itr = std::find(selected_.begin(), selected_.end(), selection);
+  auto itr = std::ranges::find(selected_, selection);
   if (itr != selected_.end()) {
     selected_.erase(itr);
     emit selectionChanged();
@@ -1144,7 +1144,7 @@ void MainWindow::removeSelected(const Selected& selection)
 void MainWindow::removeHighlighted(const Selected& selection)
 {
   for (auto& group : highlighted_) {
-    auto itr = std::find(group.begin(), group.end(), selection);
+    auto itr = std::ranges::find(group, selection);
     if (itr != group.end()) {
       group.erase(itr);
       emit highlightChanged();
@@ -1261,10 +1261,8 @@ std::string MainWindow::addLabel(int x,
 
 void MainWindow::deleteLabel(const std::string& name)
 {
-  auto label_find
-      = std::find_if(labels_.begin(), labels_.end(), [name](const auto& l) {
-          return l->getName() == name;
-        });
+  auto label_find = std::ranges::find_if(
+      labels_, [name](const auto& l) { return l->getName() == name; });
   if (label_find != labels_.end()) {
     // remove from selected set
     auto remove_selected = Gui::get()->makeSelected(label_find->get());
@@ -1306,10 +1304,8 @@ std::string MainWindow::addRuler(int x0,
 
 void MainWindow::deleteRuler(const std::string& name)
 {
-  auto ruler_find
-      = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
-          return l->getName() == name;
-        });
+  auto ruler_find = std::ranges::find_if(
+      rulers_, [name](const auto& l) { return l->getName() == name; });
   if (ruler_find != rulers_.end()) {
     // remove from selected set
     auto remove_selected = Gui::get()->makeSelected(ruler_find->get());

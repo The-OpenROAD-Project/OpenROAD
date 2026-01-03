@@ -72,31 +72,31 @@ void Opendp::mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
     ir_drops.emplace_back(dbu_pt, it.second);
   }
 
-  std::sort(ir_drops.begin(),
-            ir_drops.end(),
-            [](const IRDrop& ir_drop1, const IRDrop& ir_drop2) {
-              return ir_drop1.value > ir_drop2.value;
-            });
+  std::ranges::sort(ir_drops,
+
+                    [](const IRDrop& ir_drop1, const IRDrop& ir_drop2) {
+                      return ir_drop1.value > ir_drop2.value;
+                    });
 }
 
 void Opendp::prepareDecapAndGaps()
 {
   // Sort decaps cells in descending order
-  std::sort(decap_masters_.begin(),
-            decap_masters_.end(),
-            [](const std::unique_ptr<DecapCell>& decap1,
-               const std::unique_ptr<DecapCell>& decap2) {
-              return decap1->capacitance > decap2->capacitance;
-            });
+  std::ranges::sort(decap_masters_,
+
+                    [](const std::unique_ptr<DecapCell>& decap1,
+                       const std::unique_ptr<DecapCell>& decap2) {
+                      return decap1->capacitance > decap2->capacitance;
+                    });
 
   // Find gaps availables
   findGaps();
   int gaps_count = 0;
   // Sort each gap vector for X position
   for (auto& it : gaps_) {
-    std::sort(
-        it.second.begin(),
-        it.second.end(),
+    std::ranges::sort(
+        it.second,
+
         [](const std::unique_ptr<GapInfo>& gap1,
            const std::unique_ptr<GapInfo>& gap2) { return gap1->x < gap2->x; });
     gaps_count += it.second.size();
@@ -176,12 +176,10 @@ void Opendp::insertDecapInRow(const std::vector<std::unique_ptr<GapInfo>>& gaps,
                               const double& target)
 {
   // Find gap in same row and x near the ir drop
-  auto find_gap
-      = std::lower_bound(gaps.begin(),
-                         gaps.end(),
-                         irdrop_x,
-                         [](const std::unique_ptr<GapInfo>& elem,
-                            const DbuX& value) { return elem->x < value; });
+  auto find_gap = std::ranges::lower_bound(
+      gaps, irdrop_x, std::less{}, [](const std::unique_ptr<GapInfo>& elem) {
+        return elem->x;
+      });
   // if this row has free gap with x <= xpoint <= x + width
   if (find_gap != gaps.end()
       && ((*find_gap)->x + (*find_gap)->width) >= irdrop_x

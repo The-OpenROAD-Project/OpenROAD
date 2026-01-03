@@ -177,11 +177,11 @@ LibertyCell* RepairHold::findHoldBuffer()
     }
   }
 
-  std::sort(buffers.begin(),
-            buffers.end(),
-            [](const MetricBuffer& lhs, const MetricBuffer& rhs) {
-              return lhs.metric < rhs.metric;
-            });
+  std::ranges::sort(buffers,
+
+                    [](const MetricBuffer& lhs, const MetricBuffer& rhs) {
+                      return lhs.metric < rhs.metric;
+                    });
 
   if (buffers.empty()) {
     return nullptr;

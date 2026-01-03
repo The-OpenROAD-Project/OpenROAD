@@ -59,8 +59,8 @@ Box<int> Clock::computeSinkRegion()
     allPositionsY.push_back(sink.getY());
   });
 
-  std::sort(allPositionsX.begin(), allPositionsX.end());
-  std::sort(allPositionsY.begin(), allPositionsY.end());
+  std::ranges::sort(allPositionsX);
+  std::ranges::sort(allPositionsY);
 
   const unsigned numSinks = allPositionsX.size();
   const unsigned numOutliers = percentile * numSinks;

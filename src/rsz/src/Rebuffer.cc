@@ -788,7 +788,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 }
               }
             }
-            std::reverse(opts.begin(), opts.end());
+            std::ranges::reverse(opts);
             return opts;
           }
 
@@ -847,12 +847,13 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
 
 static void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
 {
-  sort(options.begin(),
-       options.end(),
-       [](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
-         return std::make_tuple(option1->area(), option1->cap())
-                < std::make_tuple(option2->area(), option2->cap());
-       });
+  std::ranges::sort(
+      options,
+
+      [](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
+        return std::make_tuple(option1->area(), option1->cap())
+               < std::make_tuple(option2->area(), option2->cap());
+      });
 
   if (options.empty()) {
     return;
@@ -871,7 +872,7 @@ static void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
     }
   }
   options.resize(si);
-  std::reverse(options.begin(), options.end());
+  std::ranges::reverse(options);
 }
 
 // Used in area recovery: we need to make sure that there will always be
@@ -884,7 +885,7 @@ void Rebuffer::insertAssuredOption(BnetSeq& opts,
                                    BnetPtr assured_opt,
                                    int level)
 {
-  auto it = std::find_if(opts.begin(), opts.end(), [&](const BnetPtr& opt) {
+  auto it = std::ranges::find_if(opts, [&](const BnetPtr& opt) {
     return opt->cap() >= assured_opt->cap();
   });
   debugPrint(logger_,
@@ -1449,11 +1450,11 @@ void Rebuffer::init()
     });
   }
 
-  std::sort(buffer_sizes_.begin(),
-            buffer_sizes_.end(),
-            [=](BufferSize a, BufferSize b) {
-              return bufferCin(a.cell) < bufferCin(b.cell);
-            });
+  std::ranges::sort(buffer_sizes_,
+
+                    [=](BufferSize a, BufferSize b) {
+                      return bufferCin(a.cell) < bufferCin(b.cell);
+                    });
 
   buffer_sizes_index_.clear();
   for (auto& size : buffer_sizes_) {
@@ -2012,7 +2013,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     }
   }
 
-  std::reverse(filtered_pins.begin(), filtered_pins.end());
+  std::ranges::reverse(filtered_pins);
 
   if (user_pin) {
     filtered_pins = {user_pin};
