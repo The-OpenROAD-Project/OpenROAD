@@ -10,7 +10,7 @@
 
 // This file has many duplicate symbols with extmeasure_res.cpp.  Disabled
 // until this is resolved.
-#if 0
+#ifdef RES_V2
 namespace rcx {
 
 using utl::RCX;
