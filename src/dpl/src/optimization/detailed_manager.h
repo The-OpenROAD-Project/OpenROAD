@@ -88,6 +88,16 @@ class DetailedMgr
     x = maxDispX_;
     y = maxDispY_;
   }
+  void setGlobalSwapParams(const GlobalSwapParams& params)
+  {
+    global_swap_params_ = params;
+  }
+  const GlobalSwapParams& getGlobalSwapParams() const
+  {
+    return global_swap_params_;
+  }
+  void setExtraDplEnabled(bool enabled) { extra_dpl_enabled_ = enabled; }
+  bool isExtraDplEnabled() const { return extra_dpl_enabled_; }
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
   bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
@@ -244,6 +254,7 @@ class DetailedMgr
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   // Journal operations
+  Journal& getJournal() { return journal_; }
   const Journal& getJournal() const { return journal_; }
   void eraseFromGrid(Node* node);
   void paintInGrid(Node* node);
@@ -342,6 +353,8 @@ class DetailedMgr
 
   // Generic place for utilization.
   double targetUt_{1.0};
+  GlobalSwapParams global_swap_params_;
+  bool extra_dpl_enabled_ = false;
 
   // Target displacement limits.
   int maxDispX_;
