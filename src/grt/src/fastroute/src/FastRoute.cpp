@@ -698,9 +698,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0) {
-        edge_cap = 0;
-      }
+      edge_cap = std::max(edge_cap, 0);
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
@@ -721,9 +719,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0) {
-        edge_cap = 0;
-      }
+      edge_cap = std::max(edge_cap, 0);
       addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
     }
   }
@@ -1450,9 +1446,7 @@ NetRouteMap FastRouteCore::run()
 
     enlarge_ += 5;
     newTH -= 5;
-    if (newTH < 1) {
-      newTH = 1;
-    }
+    newTH = std::max(newTH, 1);
   }
 
   graph2d_.InitEstUsage();
@@ -1506,9 +1500,7 @@ NetRouteMap FastRouteCore::run()
     } else {
       THRESH_M = 0;
     }
-    if (THRESH_M <= 0) {
-      THRESH_M = 0;
-    }
+    THRESH_M = std::max(THRESH_M, 0);
 
     if (total_overflow_ > 2000) {
       enlarge_ += ESTEP1;  // ENLARGE+(i-1)*ESTEP;

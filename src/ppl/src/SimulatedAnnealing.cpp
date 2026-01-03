@@ -682,7 +682,7 @@ int SimulatedAnnealing::rearrangeConstrainedGroups(int constraint_idx)
       groups_cnt++;
     }
 
-    std::sort(group_limits_list.begin(), group_limits_list.end());
+    std::ranges::sort(group_limits_list);
     utl::shuffle(aux_indices.begin(), aux_indices.end(), generator_);
 
     int cnt = 0;

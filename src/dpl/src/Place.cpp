@@ -312,7 +312,7 @@ void Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(core_));
+  std::ranges::sort(sorted_cells, CellPlaceOrderLess(core_));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -349,7 +349,7 @@ void Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(core_));
+    std::ranges::sort(group_cells, CellPlaceOrderLess(core_));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
@@ -403,7 +403,7 @@ void Opendp::brickPlace1(const Group* group)
   const odb::Rect& boundary = group->getBBox();
   vector<Node*> sorted_cells(group->getCells());
 
-  sort(sorted_cells.begin(), sorted_cells.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sorted_cells, [&](Node* cell1, Node* cell2) {
     return rectDist(cell1, boundary) < rectDist(cell2, boundary);
   });
 
@@ -457,7 +457,7 @@ void Opendp::brickPlace2(const Group* group)
 {
   vector<Node*> sorted_cells(group->getCells());
 
-  sort(sorted_cells.begin(), sorted_cells.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sorted_cells, [&](Node* cell1, Node* cell2) {
     return rectDist(cell1, *cell1->getRegion())
            < rectDist(cell2, *cell2->getRegion());
   });
@@ -482,7 +482,7 @@ int Opendp::groupRefine(const Group* group)
 {
   vector<Node*> sort_by_disp(group->getCells());
 
-  sort(sort_by_disp.begin(), sort_by_disp.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sort_by_disp, [&](Node* cell1, Node* cell2) {
     return (disp(cell1) > disp(cell2));
   });
 
@@ -533,7 +533,7 @@ int Opendp::refine()
       sorted.push_back(cell.get());
     }
   }
-  sort(sorted.begin(), sorted.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sorted, [&](Node* cell1, Node* cell2) {
     return disp(cell1) > disp(cell2);
   });
 
@@ -1191,7 +1191,7 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
       pixel = grid_->gridPixel(grid_x, grid_y);
     }
 
-    const Node* block = static_cast<Node*>(pixel->cell);
+    const Node* block = pixel->cell;
 
     // If that didn't do the job fall back on the old move to nearest
     // edge strategy.  This doesn't consider site availability at the

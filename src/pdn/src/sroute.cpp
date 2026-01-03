@@ -159,12 +159,8 @@ void SRoute::createSrouteWires(
       sum_iterm_x += x;
       sum_iterm_y += y;
       const odb::Rect bbox = iterm->getBBox();
-      if (bbox.yMin() < low_y) {
-        low_y = bbox.yMin();
-      }
-      if (bbox.yMax() > high_y) {
-        high_y = bbox.yMax();
-      }
+      low_y = std::min(bbox.yMin(), low_y);
+      high_y = std::max(bbox.yMax(), high_y);
     }
 
     int avg_iterm_x = sum_iterm_x / sroute_iterms.size();

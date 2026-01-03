@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ranges>
 #include <vector>
 
 #include "odb/db.h"
@@ -271,16 +272,14 @@ void definPin::portEnd()
   }
 
   if (!_rects.empty()) {
-    for (auto itr = _rects.rbegin(); itr != _rects.rend(); ++itr) {
-      addRect(*itr, pin);
+    for (auto& rect : std::ranges::reverse_view(_rects)) {
+      addRect(rect, pin);
     }
   }
 
   if (!_polygons.empty()) {
-    std::vector<Polygon>::iterator itr;
-
-    for (itr = _polygons.begin(); itr != _polygons.end(); ++itr) {
-      addPolygon(*itr, pin);
+    for (Polygon& polygon : _polygons) {
+      addPolygon(polygon, pin);
     }
   }
 }

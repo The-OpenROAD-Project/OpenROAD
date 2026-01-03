@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <ranges>
 #include <set>
 #include <stack>
 #include <string>
@@ -103,9 +104,7 @@ sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
           // and once more
           model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
 
-          if (arc_delay > max_rise_delay) {
-            max_rise_delay = arc_delay;
-          }
+          max_rise_delay = std::max(arc_delay, max_rise_delay);
         }
       }
     }
@@ -434,11 +433,8 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   }
 
   // If the children need a different amount of buffers insert this difference
-  for (auto it = buffersNeeded2Childern.rbegin();
-       it != buffersNeeded2Childern.rend();
-       ++it) {
-    int bufToInsert = it->first;
-    std::vector<odb::dbITerm*> children = it->second;
+  for (auto& [bufToInsert, children] :
+       std::ranges::reverse_view(buffersNeeded2Childern)) {
     if (bufToInsert == -1) {
       continue;
     }

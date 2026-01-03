@@ -62,8 +62,8 @@ inline std::string strip_case(const char* str)
     return result;
   };
 
-  for (std::string::iterator p = result.begin(); result.end() != p; ++p) {
-    *p = toupper(*p);
+  for (char& p : result) {
+    p = toupper(p);
   }
 
   return result;
@@ -1433,7 +1433,7 @@ void* lefMalloc(size_t lef_size)
     return (*lefSettings->MallocFunction)(lef_size);
   }
 
-  mallocVar = (void*) malloc(lef_size);
+  mallocVar = malloc(lef_size);
   if (!mallocVar) {
     fprintf(stderr, "ERROR (LEFPARS-1009): Not enough memory, stop parsing!\n");
     exit(1);

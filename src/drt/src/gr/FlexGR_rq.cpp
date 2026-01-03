@@ -171,9 +171,8 @@ void FlexGRWorkerRegionQuery::query(const odb::Rect& box,
   box_t boostb
       = box_t(point_t(box.xMin(), box.yMin()), point_t(box.xMax(), box.yMax()));
   shapes_.at(layerNum).query(bgi::intersects(boostb), back_inserter(temp));
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void FlexGRWorkerRegionQuery::query(

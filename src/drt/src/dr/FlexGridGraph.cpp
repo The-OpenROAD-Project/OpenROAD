@@ -37,10 +37,9 @@ void initCoords(const frLayerCoordTrackPatternMap& map,
   for (auto& [l, m] : map) {
     coords.reserve(m.size());
     if (coords.empty()) {
-      std::transform(
-          m.begin(), m.end(), std::back_inserter(coords), [](const auto& kv) {
-            return kv.first;
-          });
+      std::ranges::transform(m, std::back_inserter(coords), [](const auto& kv) {
+        return kv.first;
+      });
     } else {
       auto it = coords.begin();
       for (auto& [k, _] : m) {
@@ -485,9 +484,7 @@ void FlexGridGraph::initTracks(
         int trackNum = ((tp->isHorizontal() ? bbox.xMin() : bbox.yMin())
                         - tp->getStartCoord())
                        / (int) tp->getTrackSpacing();
-        if (trackNum < 0) {
-          trackNum = 0;
-        }
+        trackNum = std::max(trackNum, 0);
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
             < (tp->isHorizontal() ? bbox.xMin() : bbox.yMin())) {
           ++trackNum;

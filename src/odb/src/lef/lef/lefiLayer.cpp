@@ -29,6 +29,7 @@
 
 #include "lefiLayer.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -4147,9 +4148,7 @@ void lefiLayer::addAntennaModel(int aOxide)
     amo->Destroy();
   }
 
-  if (aOxide > numAntennaModel_) {
-    numAntennaModel_ = aOxide;
-  }
+  numAntennaModel_ = std::max(aOxide, numAntennaModel_);
 
   amo->Init();
   amo->setAntennaModel(aOxide);

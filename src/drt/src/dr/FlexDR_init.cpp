@@ -1013,7 +1013,7 @@ void FlexDRWorker::initNets_searchRepair_connComp(
   };
 
   int currNetIdx = 0;
-  auto it = find(adjVisited.begin(), adjVisited.end(), false);
+  auto it = std::ranges::find(adjVisited, false);
   while (it != adjVisited.end()) {
     std::priority_queue<wf> pq;
     int srcIdx = distance(adjVisited.begin(), it);
@@ -1033,7 +1033,7 @@ void FlexDRWorker::initNets_searchRepair_connComp(
         }
       }
     }
-    it = find(adjVisited.begin(), adjVisited.end(), false);
+    it = std::ranges::find(adjVisited, false);
     ++currNetIdx;
   }
 }
@@ -1069,7 +1069,7 @@ void FlexDRWorker::initNets_searchRepair(
 
     std::vector<std::vector<std::unique_ptr<drConnFig>>> vExtObjs;
 
-    const auto it = max_element(compIdx.begin(), compIdx.end());
+    const auto it = std::ranges::max_element(compIdx);
     const int numSubNets = (it == compIdx.end()) ? 1 : ((*it) + 1);
     // put all pure ext objs to the first subnet
     vExtObjs.resize(numSubNets);
@@ -1312,12 +1312,11 @@ void FlexDRWorker::initNet_boundary(
     }
     // initDR
   } else {
-    transform(bounds.begin(),
-              bounds.end(),
-              inserter(extBounds, extBounds.end()),
-              [](const std::pair<odb::Point, frLayerNum>& pr) {
-                return std::make_pair(pr, 0);
-              });
+    std::ranges::transform(bounds,
+                           inserter(extBounds, extBounds.end()),
+                           [](const std::pair<odb::Point, frLayerNum>& pr) {
+                             return std::make_pair(pr, 0);
+                           });
   }
   for (auto& [pr, area] : extBounds) {
     auto& [pt, lNum] = pr;
@@ -2495,11 +2494,9 @@ void FlexDRWorker::route_queue_update_from_marker(
         owners.insert(src);
       }
     }
-    std::set_difference(owners.begin(),
-                        owners.end(),
-                        movableAggressorOwners.begin(),
-                        movableAggressorOwners.end(),
-                        std::inserter(otherOwners, otherOwners.end()));
+    std::ranges::set_difference(owners,
+                                movableAggressorOwners,
+                                std::inserter(otherOwners, otherOwners.end()));
     for (auto& owner : otherOwners) {
       if (owner && owner->typeId() == frcNet) {
         auto fNet = static_cast<frNet*>(owner);

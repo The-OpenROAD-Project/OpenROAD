@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -356,13 +357,9 @@ uint32_t extMain::sBoxCounter(dbNet* net, uint32_t& maxWidth)
       uint32_t x = s->getDX();
       uint32_t y = s->getDY();
       uint32_t w = y;
-      if (w < x) {
-        w = x;
-      }
+      w = std::max(w, x);
 
-      if (maxWidth > w) {
-        maxWidth = w;
-      }
+      maxWidth = std::min(maxWidth, w);
 
       cnt++;
     }
@@ -473,9 +470,7 @@ uint32_t extMain::addNetSBoxes2(dbNet* net,
 
         if (step > 0) {
           uint32_t len = r.dx();
-          if (len < r.dy()) {
-            len = r.dy();
-          }
+          len = std::max<uint32_t>(len, r.dy());
 
           if (len <= step) {
             _search->addBox(r.xMin(),
@@ -490,9 +485,7 @@ uint32_t extMain::addNetSBoxes2(dbNet* net,
             if (r.dx() < r.dy()) {  // vertical
               for (int y1 = r.yMin(); y1 < r.yMax();) {
                 int y2 = y1 + step;
-                if (y2 > r.yMax()) {
-                  y2 = r.yMax();
-                }
+                y2 = std::min(y2, r.yMax());
 
                 _search->addBox(
                     r.xMin(), y1, r.xMax(), y2, level, s->getId(), 0, wtype);
@@ -501,9 +494,7 @@ uint32_t extMain::addNetSBoxes2(dbNet* net,
             } else {  // horizontal
               for (int x1 = r.xMin(); x1 < r.xMax();) {
                 int x2 = x1 + step;
-                if (x2 > r.xMax()) {
-                  x2 = r.xMax();
-                }
+                x2 = std::min(x2, r.xMax());
 
                 _search->addBox(
                     x1, r.yMin(), x2, r.yMax(), level, s->getId(), 0, wtype);
@@ -557,13 +548,9 @@ uint32_t extMain::signalWireCounter(uint32_t& maxWidth)
       uint32_t x = s.getDX();
       uint32_t y = s.getDY();
       uint32_t w = y;
-      if (w > x) {
-        w = x;
-      }
+      w = std::min(w, x);
 
-      if (maxWidth < w) {
-        maxWidth = w;
-      }
+      maxWidth = std::max(maxWidth, w);
     }
 
     uint32_t wireCnt = 0;
@@ -1174,9 +1161,7 @@ uint32_t extMain::couplingFlow(Rect& extRect,
 
     lo_sdb[dir] = ll[dir] - step_nm[dir];
     int hiXY = ll[dir] + step_nm[dir];
-    if (hiXY > ur[dir]) {
-      hiXY = ur[dir];
-    }
+    hiXY = std::min(hiXY, ur[dir]);
 
     uint32_t stepNum = 0;
     for (; hiXY <= ur[dir]; hiXY += step_nm[dir]) {

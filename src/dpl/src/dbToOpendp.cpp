@@ -112,9 +112,8 @@ void Opendp::createNetwork()
   using odb::dbInst;
   auto block_insts = block->getInsts();
   std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
-  std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {
-    return a->getName() < b->getName();
-  });
+  std::ranges::stable_sort(
+      insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
 
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.

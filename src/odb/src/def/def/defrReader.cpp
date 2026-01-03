@@ -49,7 +49,8 @@
 #include "defrData.hpp"
 #include "defrSettings.hpp"
 
-#define NODEFMSG 4013  // (9012 + 1) - 5000, def msg starts at 5000
+static constexpr int NODEFMSG
+    = 4013;  // (9012 + 1) - 5000, def msg starts at 5000
 
 #define DEF_INIT def_init(__FUNCTION__)
 
@@ -1953,7 +1954,7 @@ void defrDisableParserMsgs(int nMsg, const int* msgs)
          i++) {  // copy the existing to the new list
       tmp[i] = defContext.settings->disableDMsgs[i];
     }
-    free((int*) (defContext.settings->disableDMsgs));
+    free(defContext.settings->disableDMsgs);
     defContext.settings->disableDMsgs
         = tmp;                    // set disableDMsgs to the new list
     for (i = 0; i < nMsg; i++) {  // merge the new list with the existing
@@ -2014,7 +2015,7 @@ void defrEnableAllMsgs()
 {
   DEF_INIT;
   defContext.settings->nDDMsgs = 0;
-  free((int*) (defContext.settings->disableDMsgs));
+  free(defContext.settings->disableDMsgs);
 }
 
 void defrSetTotalMsgLimit(int totNumMsgs)
