@@ -313,7 +313,8 @@ bool dbInsertBuffer::checkDontTouch(const dbITerm* iterm) const
   return false;
 }
 
-void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst, const Point& loc)
+void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst,
+                                           const Point& loc)
 {
   buffer_inst->setLocation(loc.getX(), loc.getY());
   buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
@@ -1663,7 +1664,7 @@ void dbInsertBuffer::dlogMovedBTermLoad(int load_idx,
 }
 
 void dbInsertBuffer::dlogPlacedBuffer(const dbInst* buffer_inst,
-                                       const Point& loc) const
+                                      const Point& loc) const
 {
   debugPrint(logger_,
              utl::ODB,
