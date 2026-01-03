@@ -39,26 +39,6 @@ sta::LibertyCell* GetLibertyCell(odb::dbMaster* master,
   return db_network->libertyCell(master_cell);
 }
 
-sta::TestCell* GetTestCell(odb::dbMaster* master,
-                           sta::dbNetwork* db_network,
-                           utl::Logger* logger)
-{
-  sta::LibertyCell* liberty_cell = GetLibertyCell(master, db_network);
-  if (liberty_cell == nullptr) {
-    logger->warn(utl::DFT,
-                 11,
-                 "Cell master '{:s}' has no lib info. Can't find scan cell",
-                 master->getName());
-    return nullptr;
-  }
-  sta::TestCell* test_cell = liberty_cell->testCell();
-  if (test_cell && getLibertyScanIn(test_cell) != nullptr
-      && getLibertyScanEnable(test_cell) != nullptr) {
-    return test_cell;
-  }
-  return nullptr;
-}
-
 TypeOfCell IdentifyCell(odb::dbInst* inst, sta::dbSta* sta)
 {
   sta::dbNetwork* db_network = sta->getDbNetwork();
@@ -129,9 +109,17 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
                                                  utl::Logger* logger)
 {
   sta::dbNetwork* db_network = sta->getDbNetwork();
+  sta::LibertyCell* liberty_cell = GetLibertyCell(inst->getMaster(), db_network);
+  if (liberty_cell == nullptr) {
+    logger->warn(utl::DFT,
+                 11,
+                 "Cell master '{:s}' has no lib info. Can't find scan cell",
+                 inst->getMaster()->getName());
+    return nullptr;
+  }
+
   std::unique_ptr<ClockDomain> clock_domain
       = FindOneBitCellClockDomain(inst, sta, logger);
-  sta::TestCell* test_cell = GetTestCell(inst->getMaster(), db_network, logger);
 
   if (!clock_domain) {
     logger->warn(utl::DFT,
@@ -142,7 +130,10 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
     return nullptr;
   }
 
-  if (!test_cell) {
+  sta::LibertyPort* scan_in_port = getLibertyScanIn(liberty_cell);
+  sta::LibertyPort* scan_enable_port = getLibertyScanEnable(liberty_cell);
+
+  if (scan_in_port == nullptr || scan_enable_port == nullptr) {
     logger->warn(
         utl::DFT,
         7,
@@ -151,10 +142,34 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
     return nullptr;
   }
 
+  sta::LibertyPort* scan_out_port = getLibertyScanOut(liberty_cell);
+  if (scan_out_port == nullptr) {
+    // Many libraries do not explicitly tag scan-out ports; fall back to the
+    // functional output.
+    scan_out_port = liberty_cell->findLibertyPort("Q");
+    if (scan_out_port == nullptr) {
+      const sta::SequentialSeq& sequentials = liberty_cell->sequentials();
+      if (!sequentials.empty()) {
+        scan_out_port = sequentials.front()->output();
+      }
+    }
+  }
+
+  if (scan_out_port == nullptr) {
+    logger->warn(utl::DFT,
+                 50,
+                 "Cell '{:s}' has no identifiable scan-out port. Can't create "
+                 "a scan cell",
+                 inst->getName());
+    return nullptr;
+  }
+
   return std::make_unique<OneBitScanCell>(inst->getName(),
                                           std::move(clock_domain),
                                           inst,
-                                          test_cell,
+                                          scan_in_port,
+                                          scan_enable_port,
+                                          scan_out_port,
                                           db_network,
                                           logger);
 }

@@ -3,11 +3,7 @@
 
 #include "ScanStitch.hh"
 
-#include <algorithm>
 #include <cstddef>
-#include <deque>
-#include <functional>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
@@ -16,7 +12,6 @@
 #include <vector>
 
 #include "ScanCell.hh"
-#include "boost/algorithm/string.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
@@ -68,53 +63,27 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   scan_chain.setScanIn(scan_in_driver);
   scan_chain.setScanEnable(scan_enable_driver);
 
-  // We need fast pop for front and back
-  std::deque<std::reference_wrapper<const std::unique_ptr<ScanCell>>>
-      scan_cells;
-
-  const std::vector<std::unique_ptr<ScanCell>>& original_scan_cells
+  const std::vector<std::unique_ptr<ScanCell>>& scan_cells
       = scan_chain.getScanCells();
-
-  std::ranges::copy(original_scan_cells, std::back_inserter(scan_cells));
+  if (scan_cells.empty()) {
+    return;
+  }
 
   // All the cells in the scan chain are controlled by the same scan enable
   for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
     scan_cell->connectScanEnable(scan_enable_driver);
   }
 
-  // Lets get the first and last cell
-  const std::unique_ptr<ScanCell>& first_scan_cell = *scan_cells.begin();
-  const std::unique_ptr<ScanCell>& last_scan_cell = *(scan_cells.end() - 1);
-
-  if (!scan_cells.empty()) {
-    scan_cells.pop_front();
-  }
-
-  if (!scan_cells.empty()) {
-    scan_cells.pop_back();
-  }
-
-  for (auto it = scan_cells.begin(); it != scan_cells.end(); ++it) {
-    const std::unique_ptr<ScanCell>& current = *it;
-    const std::unique_ptr<ScanCell>& next = *(it + 1);
-    // Connects current cell scan out to next cell scan in
-    next->connectScanIn(current->getScanOut());
-  }
-
   // Let's connect the first cell
-  first_scan_cell->connectScanEnable(scan_enable_driver);
-  first_scan_cell->connectScanIn(scan_in_driver);
+  scan_cells.front()->connectScanIn(scan_in_driver);
 
-  if (!scan_cells.empty()) {
-    scan_cells.begin()->get()->connectScanIn(first_scan_cell->getScanOut());
-  } else {
-    // If last_scan_cell == first_scan_cell, then scan in was already connected
-    if (last_scan_cell != first_scan_cell) {
-      last_scan_cell->connectScanIn(first_scan_cell->getScanOut());
-    }
+  // Connect scan-out to scan-in along the chain.
+  for (size_t idx = 1; idx < scan_cells.size(); idx++) {
+    scan_cells[idx]->connectScanIn(scan_cells[idx - 1]->getScanOut());
   }
 
   // Let's connect the last cell
+  const std::unique_ptr<ScanCell>& last_scan_cell = scan_cells.back();
   auto scan_out_name
       = fmt::format(FMT_RUNTIME(config_.getOutNamePattern()), ordinal);
   ScanLoad scan_out_load
@@ -239,7 +208,7 @@ ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
                      40,
                      "Top-level pin '{}' specified as {} is not an output port",
                      term_info.first,
-                     kScanEnable);
+                     kScanOut);
     }
     return ScanLoad(bterm);
   }

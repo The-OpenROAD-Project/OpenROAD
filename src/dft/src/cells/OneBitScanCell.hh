@@ -18,7 +18,9 @@ class OneBitScanCell : public ScanCell
   OneBitScanCell(const std::string& name,
                  std::unique_ptr<ClockDomain> clock_domain,
                  odb::dbInst* inst,
-                 sta::TestCell* test_cell,
+                 sta::LibertyPort* scan_in_port,
+                 sta::LibertyPort* scan_enable_port,
+                 sta::LibertyPort* scan_out_port,
                  sta::dbNetwork* db_network,
                  utl::Logger* logger);
   // Not copyable or movable
@@ -40,7 +42,9 @@ class OneBitScanCell : public ScanCell
   odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;
 
   odb::dbInst* inst_;
-  sta::TestCell* test_cell_;
+  sta::LibertyPort* scan_in_port_;
+  sta::LibertyPort* scan_enable_port_;
+  sta::LibertyPort* scan_out_port_;
   sta::dbNetwork* db_network_;
 };
 
