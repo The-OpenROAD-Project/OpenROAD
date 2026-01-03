@@ -95,6 +95,7 @@ class LayoutTabs : public QTabWidget
   void zoomIn();
   void zoomOut();
   void zoomTo(const odb::Rect& rect_dbu);
+  void zoomTo(const odb::Point& focus, int diameter);
   void chipLoaded(odb::dbChip* chip);
   void fit();
   void fullRepaint();

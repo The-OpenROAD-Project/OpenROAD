@@ -227,6 +227,9 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
 
+  // zoom to the specified point
+  void zoomTo(const odb::Point& focus, int diameter);
+
   // Zoom In To Items such that its bbox is in visible Area
   void zoomInToItems(const QList<const Selected*>& items);
 

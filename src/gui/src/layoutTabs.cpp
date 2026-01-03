@@ -177,6 +177,13 @@ void LayoutTabs::zoomTo(const odb::Rect& rect_dbu)
   }
 }
 
+void LayoutTabs::zoomTo(const odb::Point& focus, int diameter)
+{
+  if (current_viewer_) {
+    current_viewer_->zoomTo(focus, diameter);
+  }
+}
+
 void LayoutTabs::fit()
 {
   if (current_viewer_) {
