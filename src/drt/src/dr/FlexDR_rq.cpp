@@ -199,9 +199,8 @@ void FlexDRWorkerRegionQuery::query(const odb::Rect& box,
   std::vector<rq_box_value_t<drConnFig*>> temp;
   impl_->shapes.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
   result.reserve(temp.size());
-  std::ranges::transform(temp, back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void FlexDRWorkerRegionQuery::query(
