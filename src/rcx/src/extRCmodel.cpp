@@ -1698,11 +1698,11 @@ extDistRC* extDistWidthRCTable::getFringeRC(uint32_t mou,
                                             int index_dist)
 {
   const int wIndex = getWidthIndex(w);
-  if ((wIndex < 0) || (wIndex >= (int) _widthTable->getCnt())) {
+  if ((wIndex < 0) || (wIndex >= _widthTable->getCnt())) {
     return nullptr;
   }
 
-  if (mou >= _metCnt || wIndex >= (int) _widthTable->getCnt()
+  if (mou >= _metCnt || wIndex >= _widthTable->getCnt()
       || _rcDistTable[mou][wIndex] == nullptr) {
     return nullptr;
   }
@@ -1724,8 +1724,7 @@ extDistRC* extDistWidthRCTable::getLastWidthFringeRC(uint32_t mou)
 
   int wIndex = _widthTable->getCnt() - 1;
 
-  if (wIndex >= (int) _widthTable->getCnt()
-      || _rcDistTable[mou][wIndex] == nullptr) {
+  if (wIndex >= _widthTable->getCnt() || _rcDistTable[mou][wIndex] == nullptr) {
     return nullptr;
   }
 

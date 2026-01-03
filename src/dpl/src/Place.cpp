@@ -1191,7 +1191,7 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
       pixel = grid_->gridPixel(grid_x, grid_y);
     }
 
-    const Node* block = static_cast<Node*>(pixel->cell);
+    const Node* block = pixel->cell;
 
     // If that didn't do the job fall back on the old move to nearest
     // edge strategy.  This doesn't consider site availability at the

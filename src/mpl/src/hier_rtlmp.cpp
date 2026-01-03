@@ -846,7 +846,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 {
   TilingList tight_packing_tilings;
 
-  int num_macro = static_cast<int>(macro_array->getNumMacro());
+  int num_macro = macro_array->getNumMacro();
   float macro_width = macro_array->getHardMacros().front()->getWidth();
   float macro_height = macro_array->getHardMacros().front()->getHeight();
 

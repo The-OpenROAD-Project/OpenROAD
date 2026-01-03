@@ -1200,7 +1200,7 @@ int extPattern::ContextPatternParallel(extWirePattern* main,
   extWirePattern* wp = GetWireParttern(this, dir1, mw, ms, met1, w, s);
 
   float offs = mid_offset * minWidth;
-  int f = (int) 1000 * offs;
+  int f = 1000 * offs;
   int n1 = f / 10;
   int off = n1 * 10;
 

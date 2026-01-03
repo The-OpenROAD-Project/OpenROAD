@@ -1854,7 +1854,7 @@ double extVariation::interpolate(double w,
 
   int jj = X->findNextBiggestIndex(w);
 
-  if (jj >= (int) X->getCnt() - 1) {
+  if (jj >= X->getCnt() - 1) {
     jj = X->getCnt() - 2;
   } else if (jj < 0) {
     jj = 0;

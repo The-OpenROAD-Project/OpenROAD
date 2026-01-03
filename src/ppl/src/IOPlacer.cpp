@@ -830,8 +830,7 @@ std::vector<odb::Point> IOPlacer::findLayerSlots(const int layer,
                         / min_dst_pins))
           + num_tracks_offset;
     end_idx = std::min((num_tracks - 1),
-                       static_cast<int>((max - half_width - init_tracks)
-                                        / min_dst_pins))
+                       ((max - half_width - init_tracks) / min_dst_pins))
               - num_tracks_offset;
 
     if (vertical_pin) {
@@ -2343,7 +2342,7 @@ void IOPlacer::runHungarianMatching()
     updatePinArea(pin);
   }
 
-  if (assignment_.size() != static_cast<int>(netlist_->numIOPins())) {
+  if (assignment_.size() != netlist_->numIOPins()) {
     logger_->error(PPL,
                    39,
                    "Assigned {} pins out of {} IO pins.",
@@ -2577,8 +2576,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 {
   if (width == 0 && height == 0) {
     const int database_unit = getTech()->getDbUnitsPerMicron();
-    const double min_area
-        = static_cast<double>(layer->getArea()) * database_unit * database_unit;
+    const double min_area = layer->getArea() * database_unit * database_unit;
     if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       width = layer->getMinWidth();
       height

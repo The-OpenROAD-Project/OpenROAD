@@ -2175,8 +2175,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       break;
     }
 
-    Instance* parent
-        = db_network_->getOwningInstanceParent(const_cast<Pin*>(drvr_pin));
+    Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
     odb::dbITerm* drvr_op_iterm = nullptr;
     odb::dbBTerm* drvr_op_bterm = nullptr;
     odb::dbModITerm* drvr_op_moditerm = nullptr;

@@ -350,7 +350,7 @@ uint32_t gs::getSeq(int* ll,
       bool flag = false;
       while (getSeqRow(row, plane, start, end, s->type)) {
         s->_ll[0] = (int) (start * (plc.x_resolution) + plc.x0);
-        s->_ur[0] = (int) ((end + 1) * (plc.x_resolution) + (plc.x0) - 1);
+        s->_ur[0] = ((end + 1) * (plc.x_resolution) + (plc.x0) - 1);
         if (s->_ur[0] >= ur[0]) {
           s->_ur[0] = ur[0];
           flag = true;
@@ -397,7 +397,7 @@ uint32_t gs::getSeq(int* ll,
       bool flag = false;
       while (getSeqCol(col, plane, start, end, s->type)) {
         s->_ll[1] = (int) (start * plc.y_resolution + plc.y0);
-        s->_ur[1] = (int) ((end + 1) * plc.y_resolution + plc.y0 - 1);
+        s->_ur[1] = ((end + 1) * plc.y_resolution + plc.y0 - 1);
         if (s->_ur[1] >= ur[1]) {
           flag = true;
           s->_ur[1] = ur[1];

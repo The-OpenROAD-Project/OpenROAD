@@ -850,7 +850,7 @@ int Grid::getBandWires(int hiXY,
   }
 
   int fullEndTrack = getMinMaxTrackNum(hiXY) + coupleTrackNum + 2;
-  if (fullEndTrack >= (int) _trackCnt) {
+  if (fullEndTrack >= _trackCnt) {
     fullEndTrack = _trackCnt - 1;
   }
   int jj;
@@ -877,7 +877,7 @@ int Grid::getBandWires(int hiXY,
   limitArray[4] = fullEndTrack;
   limitArray[5] = _base + fullEndTrack * _pitch;
 
-  for (jj = 0; jj < (int) bandWire->getCnt(); jj++) {
+  for (jj = 0; jj < bandWire->getCnt(); jj++) {
     bandWire->get(jj)->_ext = 0;
   }
   return baseXY;

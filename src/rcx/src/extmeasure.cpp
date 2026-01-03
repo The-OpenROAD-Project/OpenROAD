@@ -2636,7 +2636,7 @@ void extMeasure::getDgOverlap(SEQ* sseq,
     return;
   }
 
-  for (; idx < (int) dgContext->getCnt(); idx++) {
+  for (; idx < dgContext->getCnt(); idx++) {
     tseq = dgContext->get(idx);
     if (tseq->_ur[lp] <= covered) {
       continue;
@@ -2679,7 +2679,7 @@ void extMeasure::getDgOverlap(SEQ* sseq,
     if (tseq->_ur[lp] >= sseq->_ur[lp]) {
       break;
     }
-    if (idx == (int) dgContext->getCnt() - 1 && covered < sseq->_ur[lp]) {
+    if (idx == dgContext->getCnt() - 1 && covered < sseq->_ur[lp]) {
       rseq = _seqPool->alloc();
       rseq->_ll[wp] = sseq->_ll[wp];
       rseq->_ur[wp] = sseq->_ur[wp];

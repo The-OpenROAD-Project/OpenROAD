@@ -303,7 +303,7 @@ void lefwSetUnusedCallbacks(lefwVoidCbkFnType func)
 
   for (i = 0; i < kMaxCBs; i++) {
     if (lefwCallbacksSeq[i] == nullptr) {
-      lefwCallbacksSeq[i] = (lefwVoidCbkFnType) func;
+      lefwCallbacksSeq[i] = func;
     }
   }
 }

@@ -1954,7 +1954,7 @@ void defrDisableParserMsgs(int nMsg, const int* msgs)
          i++) {  // copy the existing to the new list
       tmp[i] = defContext.settings->disableDMsgs[i];
     }
-    free((int*) (defContext.settings->disableDMsgs));
+    free(defContext.settings->disableDMsgs);
     defContext.settings->disableDMsgs
         = tmp;                    // set disableDMsgs to the new list
     for (i = 0; i < nMsg; i++) {  // merge the new list with the existing
@@ -2015,7 +2015,7 @@ void defrEnableAllMsgs()
 {
   DEF_INIT;
   defContext.settings->nDDMsgs = 0;
-  free((int*) (defContext.settings->disableDMsgs));
+  free(defContext.settings->disableDMsgs);
 }
 
 void defrSetTotalMsgLimit(int totNumMsgs)

@@ -576,8 +576,7 @@ void PatternRoute::calculateRoutingCosts(
                            + grid_graph_->getViaCost(layerIndex - 1, *node);
   }
   IntervalT fixedLayers(node->getFixedLayers());
-  fixedLayers.Set(std::min(fixedLayers.low(),
-                           static_cast<int>(grid_graph_->getNumLayers()) - 1),
+  fixedLayers.Set(std::min(fixedLayers.low(), grid_graph_->getNumLayers() - 1),
                   std::max(fixedLayers.high(), constants_.min_routing_layer));
 
   for (int lowLayerIndex = 0; lowLayerIndex <= fixedLayers.low();

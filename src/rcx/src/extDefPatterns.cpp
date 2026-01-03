@@ -1100,7 +1100,7 @@ uint32_t extRCModel::OverUnderRulePat(extMainOptions* opt,
       if (met - underMet > (int) opt->_underDist) {
         continue;
       }
-      if ((opt->_underMet > 0) && ((int) opt->_underMet != underMet)) {
+      if ((opt->_underMet > 0) && (opt->_underMet != underMet)) {
         continue;
       }
 
