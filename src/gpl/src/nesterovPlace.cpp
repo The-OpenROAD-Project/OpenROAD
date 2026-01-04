@@ -545,14 +545,6 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->checkConsistency();
       }
 
-      // Recalculate RUDY after non-virtual TD
-      // TODO not sure to make this default behavior
-      if (npVars_.routability_driven_mode) {
-        rb_->calculateRudyTiles();
-        rb_->updateRudyAverage();
-        rb_->printGCellInflation();
-      }
-
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
       if (average_overflow_unscaled_ <= 0.25) {

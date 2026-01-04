@@ -250,8 +250,6 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   minRcTargetDensity_.resize(nbVec_.size(), 0);
   inflatedAreaDelta_.resize(nbVec_.size(), 0);
   init();
-  log_->report("routability minCongestionForInflation: {:.2f}",
-               rbVars_.minCongestionForInflation);
 }
 
 RouteBase::~RouteBase() = default;
@@ -405,66 +403,68 @@ void RouteBase::calculateRudyTiles()
   }
 
   // Calculate statistics for inflation ratios
-  std::vector<float> inflation_ratios;
-  inflation_ratios.reserve(tg_->tiles().size());
-  for (auto& tile : tg_->tiles()) {
-    inflation_ratios.push_back(tile->inflationRatio());
-  }
-
-  if (!inflation_ratios.empty()) {
-    std::sort(inflation_ratios.begin(), inflation_ratios.end());
-    float sum = 0.0f;
-    for (float val : inflation_ratios) {
-      sum += val;
+  if (log_->debugCheck(GPL, "rudy", 1)) {
+    std::vector<float> inflation_ratios;
+    inflation_ratios.reserve(tg_->tiles().size());
+    for (auto& tile : tg_->tiles()) {
+      inflation_ratios.push_back(tile->inflationRatio());
     }
-    float mean = sum / inflation_ratios.size();
-    float median = inflation_ratios[inflation_ratios.size() / 2];
-    float variance = 0.0f;
-    for (float val : inflation_ratios) {
-      variance += (val - mean) * (val - mean);
-    }
-    float stddev = std::sqrt(variance / inflation_ratios.size());
-    log_->report(
-        "RUDY Inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
-        "Dev: "
-        "{:.4f}",
-        mean,
-        median,
-        stddev);
 
-    // Histogram (10 buckets)
-    float min_val = inflation_ratios.front();
-    float max_val = inflation_ratios.back();
-
-    if (max_val - min_val < 1e-6) {
-      log_->report(
-          "RUDY Inflation ratio statistics - All tiles have inflation ratio: "
-          "{:.4f}",
-          min_val);
-    } else {
-      const int num_buckets = 10;
-      float step = (max_val - min_val) / num_buckets;
-      std::vector<int> bucket_counts(num_buckets, 0);
-
+    if (!inflation_ratios.empty()) {
+      std::sort(inflation_ratios.begin(), inflation_ratios.end());
+      float sum = 0.0f;
       for (float val : inflation_ratios) {
-        int bucket = static_cast<int>((val - min_val) / step);
-        if (bucket >= num_buckets) {
-          bucket = num_buckets - 1;
-        }
-        bucket_counts[bucket]++;
+        sum += val;
       }
+      float mean = sum / inflation_ratios.size();
+      float median = inflation_ratios[inflation_ratios.size() / 2];
+      float variance = 0.0f;
+      for (float val : inflation_ratios) {
+        variance += (val - mean) * (val - mean);
+      }
+      float stddev = std::sqrt(variance / inflation_ratios.size());
+      log_->report(
+          "RUDY Inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
+          "Dev: "
+          "{:.4f}",
+          mean,
+          median,
+          stddev);
 
-      log_->report("RUDY Inflation ratio distribution:");
-      for (int i = 0; i < num_buckets; i++) {
-        float range_start = min_val + i * step;
-        float range_end = min_val + (i + 1) * step;
-        float percentage = static_cast<float>(bucket_counts[i])
-                           / inflation_ratios.size() * 100.0f;
-        log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
-                     range_start,
-                     range_end,
-                     bucket_counts[i],
-                     percentage);
+      // Histogram (10 buckets)
+      float min_val = inflation_ratios.front();
+      float max_val = inflation_ratios.back();
+
+      if (max_val - min_val < 1e-6) {
+        log_->report(
+            "RUDY Inflation ratio statistics - All tiles have inflation ratio: "
+            "{:.4f}",
+            min_val);
+      } else {
+        const int num_buckets = 10;
+        float step = (max_val - min_val) / num_buckets;
+        std::vector<int> bucket_counts(num_buckets, 0);
+
+        for (float val : inflation_ratios) {
+          int bucket = static_cast<int>((val - min_val) / step);
+          if (bucket >= num_buckets) {
+            bucket = num_buckets - 1;
+          }
+          bucket_counts[bucket]++;
+        }
+
+        log_->report("RUDY Inflation ratio distribution:");
+        for (int i = 0; i < num_buckets; i++) {
+          float range_start = min_val + i * step;
+          float range_end = min_val + (i + 1) * step;
+          float percentage = static_cast<float>(bucket_counts[i])
+                             / inflation_ratios.size() * 100.0f;
+          log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
+                       range_start,
+                       range_end,
+                       bucket_counts[i],
+                       percentage);
+        }
       }
     }
   }
@@ -729,7 +729,10 @@ std::pair<bool, bool> RouteBase::routability(
       // both of original and density size will be changed
       inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;
     }
-    printGCellInflation();
+
+    if (log_->debugCheck(GPL, "rudy", 1)) {
+      printGCellInflation();
+    }
 
     float inflated_area_delta_microns
         = block->dbuAreaToMicrons(inflatedAreaDelta_[nb_index]);
