@@ -508,6 +508,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void journalRestoreTest();
   Logger* logger() const { return logger_; }
   void eliminateDeadLogic(bool clean_nets);
+  void setEliminateDeadLogicEnabled(bool enabled)
+  {
+    eliminate_dead_logic_enabled_ = enabled;
+  }
+  bool eliminateDeadLogicEnabled() const
+  {
+    return eliminate_dead_logic_enabled_;
+  }
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell,
@@ -854,6 +862,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
   bool match_cell_footprint_ = false;
+  bool eliminate_dead_logic_enabled_ = true;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
   // insert a buffer in the middle of. Theoretically computed using the smallest

@@ -162,7 +162,7 @@ class RepairSetup : public sta::dbStaState
 
   sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 
-  static constexpr int decreasing_slack_max_passes_ = 50;
+  static int decreasing_slack_max_passes_;
   static constexpr int print_interval_ = 10;
   static constexpr int opto_small_interval_ = 100;
   static constexpr int opto_large_interval_ = 1000;
