@@ -411,7 +411,7 @@ void RouteBase::calculateRudyTiles()
     }
 
     if (!inflation_ratios.empty()) {
-      std::sort(inflation_ratios.begin(), inflation_ratios.end());
+      std::ranges::sort(inflation_ratios.begin(), inflation_ratios.end());
       float sum = 0.0f;
       for (float val : inflation_ratios) {
         sum += val;
@@ -1100,7 +1100,7 @@ void RouteBase::printGCellInflation() const
   }
 
   if (!cell_inflation_ratios.empty()) {
-    std::sort(cell_inflation_ratios.begin(), cell_inflation_ratios.end());
+    std::ranges::sort(cell_inflation_ratios);
     float sum = 0.0f;
     for (float val : cell_inflation_ratios) {
       sum += val;
