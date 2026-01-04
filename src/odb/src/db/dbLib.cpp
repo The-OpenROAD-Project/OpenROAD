@@ -3,6 +3,7 @@
 
 #include "dbLib.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -275,7 +276,7 @@ void dbLib::setLefUnits(int units)
   lib->lef_units_ = units;
 }
 
-char dbLib::getHierarchyDelimiter()
+char dbLib::getHierarchyDelimiter() const
 {
   _dbLib* lib = (_dbLib*) this;
   return lib->hier_delimiter_;
@@ -316,7 +317,7 @@ dbLib* dbLib::create(dbDatabase* db_,
   return (dbLib*) lib;
 }
 
-dbLib* dbLib::getLib(dbDatabase* db_, uint dbid_)
+dbLib* dbLib::getLib(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbLib*) db->lib_tbl_->getPtr(dbid_);

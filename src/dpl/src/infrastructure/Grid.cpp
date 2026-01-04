@@ -608,8 +608,7 @@ GridRect Grid::gridWithin(const DbuRect& rect) const
 
 GridY Grid::gridSnapDownY(DbuY y) const
 {
-  auto it = std::upper_bound(
-      row_index_to_y_dbu_.begin(), row_index_to_y_dbu_.end(), y.v);
+  auto it = std::ranges::upper_bound(row_index_to_y_dbu_, y);
   if (it == row_index_to_y_dbu_.begin()) {
     return GridY{0};
   }
@@ -632,8 +631,7 @@ GridY Grid::gridRoundY(DbuY y) const
 
 GridY Grid::gridEndY(DbuY y) const
 {
-  auto it = std::lower_bound(
-      row_index_to_y_dbu_.begin(), row_index_to_y_dbu_.end(), y.v);
+  auto it = std::ranges::lower_bound(row_index_to_y_dbu_, y);
   if (it == row_index_to_y_dbu_.end()) {
     return GridY{static_cast<int>(row_index_to_y_dbu_.size())};
   }

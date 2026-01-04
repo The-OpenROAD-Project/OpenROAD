@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 #include <list>
 #include <string>
@@ -15,30 +16,30 @@ namespace rcx {
 class extModelGen : public extRCModel
 {
  public:
-  extModelGen(uint layerCnt, const char* name, Logger* logger)
+  extModelGen(uint32_t layerCnt, const char* name, Logger* logger)
       : extRCModel(layerCnt, name, logger)
   {
   }
-  uint ReadRCDB(odb::dbBlock* block,
-                uint widthCnt,
-                uint diagOption,
-                char* logFile);
-  void writeRules(FILE* fp, bool binary, uint m, int corner = -1);
+  uint32_t ReadRCDB(odb::dbBlock* block,
+                    uint32_t widthCnt,
+                    uint32_t diagOption,
+                    char* logFile);
+  void writeRules(FILE* fp, bool binary, uint32_t m, int corner = -1);
   FILE* InitWriteRules(const char* name,
                        std::list<std::string> corner_list,
                        const char* comment,
                        bool binary,
-                       uint modelCnt);
+                       uint32_t modelCnt);
   static std::list<std::string> GetCornerNames(const char* filename,
                                                double& version,
                                                Logger* logger);
 
   // ----------------------------------- DKF 09212024
   // ---------------------------------------
-  uint GenExtModel(const char* out_file,
-                   const char* comment,
-                   const char* version,
-                   int pattern);
+  uint32_t GenExtModel(const char* out_file,
+                       const char* comment,
+                       const char* version,
+                       int pattern);
   // --------------------------------------------------------------------------------------------
 };
 

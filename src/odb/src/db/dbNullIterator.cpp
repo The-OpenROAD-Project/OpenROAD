@@ -3,7 +3,7 @@
 
 #include "dbNullIterator.h"
 
-#include "odb/odb.h"
+#include <cstdint>
 
 namespace odb {
 
@@ -23,32 +23,32 @@ void dbNullIterator::reverse(dbObject*)
 {
 }
 
-uint dbNullIterator::sequential() const
+uint32_t dbNullIterator::sequential() const
 {
   return 0;
 }
 
-uint dbNullIterator::size(dbObject*) const
+uint32_t dbNullIterator::size(dbObject*) const
 {
   return 0;
 }
 
-uint dbNullIterator::begin(dbObject*) const
+uint32_t dbNullIterator::begin(dbObject*) const
 {
   return 0;
 }
 
-uint dbNullIterator::end(dbObject*) const
+uint32_t dbNullIterator::end(dbObject*) const
 {
   return 0;
 }
 
-uint dbNullIterator::next(uint, ...) const
+uint32_t dbNullIterator::next(uint32_t, ...) const
 {
   return 0;
 }
 
-dbObject* dbNullIterator::getObject(uint, ...)
+dbObject* dbNullIterator::getObject(uint32_t, ...)
 {
   return nullptr;
 }

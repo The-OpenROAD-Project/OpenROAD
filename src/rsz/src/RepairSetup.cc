@@ -63,7 +63,6 @@ using sta::fuzzyEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
-using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
 using sta::PathEndSeq;
@@ -214,11 +213,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
   debugPrint(logger_,
              RSZ,
              "repair_setup",
@@ -695,9 +693,9 @@ bool RepairSetup::repairPath(Path* path,
       }
     }
 
-    sort(
-        load_delays.begin(),
-        load_delays.end(),
+    std::ranges::sort(
+        load_delays,
+
         [](pair<int, Delay> pair1, pair<int, Delay> pair2) {
           return pair1.second > pair2.second
                  || (pair1.second == pair2.second && pair1.first > pair2.first);
@@ -904,11 +902,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
   num_viols = violating_ends.size();
 
   float curr_tns = sta_->totalNegativeSlack(max_);
@@ -1069,11 +1066,10 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
 
   // Collect 50 critical instances from worst 100 violating endpoints
   // 50 x 100 = 5000 instances

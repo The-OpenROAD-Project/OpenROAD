@@ -102,10 +102,8 @@ extern int Ord_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-using odb::dbBlock;
 using odb::dbChip;
 using odb::dbDatabase;
-using odb::dbLib;
 using odb::dbTech;
 
 using utl::ORD;
@@ -168,7 +166,7 @@ OpenRoad* OpenRoad::openRoad()
 void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 {
   if (!reinit_ok && app_) {
-    std::cerr << "Attempt to reinitialize the application." << std::endl;
+    std::cerr << "Attempt to reinitialize the application.\n";
     exit(1);
   }
   app_ = app;
@@ -495,7 +493,7 @@ void OpenRoad::read3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
-  parser.check();
+  check3DBlox();
   db_->triggerPostRead3Dbx(db_->getChip());
 }
 
@@ -503,6 +501,16 @@ void OpenRoad::read3DBloxBMap(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_);
   parser.readBMap(filename);
+}
+
+void OpenRoad::check3DBlox()
+{
+  if (db_->getChip() == nullptr) {
+    logger_->error(utl::ORD, 76, "No design loaded.");
+    return;
+  }
+  odb::ThreeDBlox checker(logger_, db_, sta_);
+  checker.check();
 }
 
 void OpenRoad::write3Dbv(const std::string& filename)

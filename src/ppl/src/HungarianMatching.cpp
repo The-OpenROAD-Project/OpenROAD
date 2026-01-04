@@ -199,7 +199,7 @@ void HungarianMatching::createMatrixForGroups()
     group_sizes.push_back(pins.size());
   }
 
-  std::sort(group_sizes.begin(), group_sizes.end(), std::greater<int>());
+  std::ranges::sort(group_sizes, std::greater<int>());
 
   if (!group_sizes.empty()) {
     valid_starting_slots_.clear();

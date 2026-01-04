@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -274,8 +273,7 @@ IntervalT GridGraph::rangeSearchRows(const int dimension,
               : std::max(lineRange.low() - 1, 0),
           gridlines_[dimension][lineRange.high()] == loc_interval.high()
               ? lineRange.high() - 1
-              : std::min(lineRange.high(),
-                         static_cast<int>(getSize(dimension)) - 1)};
+              : std::min(lineRange.high(), getSize(dimension) - 1)};
 }
 
 BoxT GridGraph::getCellBox(PointT point) const
@@ -367,10 +365,11 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
-void GridGraph::convertODBtoCUGR(AccessPointSet& selected_access_points,
-                                 odb::dbAccessPoint* ap,
-                                 int x,
-                                 int y) const
+void GridGraph::translateAccessPointsToGrid(
+    odb::dbAccessPoint* ap,
+    int x,
+    int y,
+    AccessPointSet& selected_access_points) const
 {
   const int amount_per_x = design_->getDieRegion().hx() / x_size_;
   const int amount_per_y = design_->getDieRegion().hy() / y_size_;
@@ -406,7 +405,7 @@ bool GridGraph::findODBAccessPoints(
         access_points.insert(
             access_points.begin(), bpin_pas.begin(), bpin_pas.end());
         for (auto ap : bpin_pas) {
-          convertODBtoCUGR(selected_access_points, ap, 0, 0);
+          translateAccessPointsToGrid(ap, 0, 0, selected_access_points);
         }
       }
     }
@@ -421,7 +420,7 @@ bool GridGraph::findODBAccessPoints(
         for (auto ap : pref_access_points) {
           int x, y;
           iterms->getInst()->getLocation(x, y);
-          convertODBtoCUGR(selected_access_points, ap, x, y);
+          translateAccessPointsToGrid(ap, x, y, selected_access_points);
         }
       }
       // Currently ignoring non preferred APs
@@ -433,7 +432,7 @@ bool GridGraph::findODBAccessPoints(
   return true;
 }
 
-AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
+AccessPointSet GridGraph::selectAccessPoints(GRNet* net) const
 {
   AccessPointHash hasher(y_size_);
   AccessPointSet selected_access_points(0, hasher);
@@ -443,6 +442,7 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
   const PointT netCenter(boundingBox.cx(), boundingBox.cy());
   // Skips calculations if DRT already created APs in ODB
   if (!findODBAccessPoints(net, selected_access_points)) {
+    int pin_idx = 0;
     for (const std::vector<GRPoint>& accessPoints : net->getPinAccessPoints()) {
       std::pair<int, int> bestAccessDist = {0, std::numeric_limits<int>::max()};
       int bestIndex = -1;
@@ -493,6 +493,9 @@ AccessPointSet GridGraph::selectAccessPoints(const GRNet* net) const
           fixedLayerInterval.Update(point.getLayerIdx());
         }
       }
+
+      net->addPreferredAccessPoint(pin_idx, *it);
+      pin_idx++;
     }
   }
   return selected_access_points;

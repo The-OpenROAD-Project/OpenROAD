@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-// DELETE #include <dbRtTree.h>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
@@ -14,17 +14,17 @@
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN
 #endif
-// #define CHECK_SAME_NET
-// #define MIN_FOR_LOOPS
 
 namespace rcx {
 
-using utl::RCX;
-using namespace odb;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbNet;
+using odb::dbRSeg;
 
 void extMeasureRC::ResetRCs()
 {
-  for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
     _rc[ii]->Reset();
   }
 }
@@ -40,7 +40,7 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
 
   dbRSeg* rseg1 = nullptr;
   dbNet* srcNet = nullptr;
-  uint netId1 = 0;
+  uint32_t netId1 = 0;
   if (rsegId1 > 0) {
     rseg1 = dbRSeg::getRSeg(_block, rsegId1);
     srcNet = rseg1->getNet();
@@ -50,7 +50,7 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
 
   dbRSeg* rseg2 = nullptr;
   dbNet* tgtNet = nullptr;
-  uint netId2 = 0;
+  uint32_t netId2 = 0;
   if (rsegId2 > 0) {
     rseg2 = dbRSeg::getRSeg(_block, rsegId2);
     tgtNet = rseg2->getNet();
@@ -125,7 +125,7 @@ bool extMeasureRC::updateCoupCap(dbRSeg* rseg1,
 }
 
 extDistRC* extMeasureRC::getOverOpenRC_Dist(extMetRCTable* rcModel,
-                                            uint width,
+                                            uint32_t width,
                                             int met,
                                             int metUnder,
                                             int dist)
@@ -144,7 +144,7 @@ extDistRC* extMeasureRC::getOverOpenRC_Dist(extMetRCTable* rcModel,
   return rc;
 }
 extDistRC* extMeasureRC::getOverRC_Dist(extMetRCTable* rcModel,
-                                        uint width,
+                                        uint32_t width,
                                         int met,
                                         int metUnder,
                                         int dist,
@@ -166,7 +166,7 @@ extDistRC* extMeasureRC::getOverRC_Dist(extMetRCTable* rcModel,
   return rc;
 }
 float extMeasureRC::getOver_over1(extMetRCTable* rcModel,
-                                  uint width,
+                                  uint32_t width,
                                   int met,
                                   int metUnder,
                                   int dist1,
@@ -219,7 +219,7 @@ float extMeasureRC::getOU_over1(extMetRCTable* rcModel,
 }
 
 float extMeasureRC::getOverR_weightedFringe(extMetRCTable* rcModel,
-                                            uint width,
+                                            uint32_t width,
                                             int met,
                                             int metUnder,
                                             int dist1,
@@ -256,7 +256,7 @@ void extDistRC::Reset()
   sep_ = 0;
 }
 float extMeasureRC::getOverRC_Open(extMetRCTable* rcModel,
-                                   uint width,
+                                   uint32_t width,
                                    int met,
                                    int metUnder,
                                    int dist1,
@@ -285,7 +285,7 @@ float extMeasureRC::getOverRC_Open(extMetRCTable* rcModel,
   return fr1;
 }
 float extMeasureRC::getOURC_Open(extMetRCTable* rcModel,
-                                 uint width,
+                                 uint32_t width,
                                  int met,
                                  int metUnder,
                                  int metOver,
@@ -324,7 +324,7 @@ float extMeasureRC::getOURC_Open(extMetRCTable* rcModel,
   return fr1;
 }
 extDistRC* extMeasureRC::getUnderRC_Dist(extMetRCTable* rcModel,
-                                         uint width,
+                                         uint32_t width,
                                          int met,
                                          int overMet,
                                          int dist,
@@ -334,7 +334,7 @@ extDistRC* extMeasureRC::getUnderRC_Dist(extMetRCTable* rcModel,
     return nullptr;
   }
 
-  uint n = overMet - met - 1;
+  uint32_t n = overMet - met - 1;
 
   extDistRC* rc = nullptr;
   if (dist < 0) {
@@ -348,7 +348,7 @@ extDistRC* extMeasureRC::getUnderRC_Dist(extMetRCTable* rcModel,
   return rc;
 }
 float extMeasureRC::getUnderRC_weightedFringe(extMetRCTable* rcModel,
-                                              uint width,
+                                              uint32_t width,
                                               int met,
                                               int metOver,
                                               int dist1,
@@ -395,7 +395,7 @@ extDistRC* extMeasureRC::getOverUnderRC_Dist(extMetRCTable* rcModel,
                                              int dist,
                                              int open)
 {
-  uint maxCnt = _currentModel->getMaxCnt(met);
+  uint32_t maxCnt = _currentModel->getMaxCnt(met);
   int n = extMeasureRC::getMetIndexOverUnder(
       met, underMet, overMet, _layerCnt, maxCnt);
 
@@ -412,7 +412,7 @@ extDistRC* extMeasureRC::getOverUnderRC_Dist(extMetRCTable* rcModel,
   return rc;
 }
 /* TODO
-extDistRC* extMeasure::computeOverUnderRC(extMetRCTable* rcModel, uint len)
+extDistRC* extMeasure::computeOverUnderRC(extMetRCTable* rcModel, uint32_t len)
 {
   if (_dist<0 || _diagResDist<0) { // Model0 - openended
     float openFr= getOURC_Open(rcModel, _width, _met, _underMet, _overMet,
@@ -445,7 +445,7 @@ ii, frw);
 }
 */
 float extMeasureRC::getOverUnderRC_weightedFringe(extMetRCTable* rcModel,
-                                                  uint width,
+                                                  uint32_t width,
                                                   int met,
                                                   int underMet,
                                                   int metOver,
@@ -511,15 +511,11 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
       // fr= 0.25 * delta;
       return fr;
       // _useWeighted= true;
-    } else {
-      return 0;
     }
-  } else {
-    return 0;
   }
-
-  return fr;
+  return 0;
 }
+
 bool extMeasureRC::useWeightedAvg(int& dist1, int& dist2, int underMet)
 {
   // only used by Over pattern

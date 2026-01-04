@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -36,10 +37,10 @@ class extPattern
   int _minWidth;
   float minSpacing;
   int _minSpacing;
-  uint dir;
+  uint32_t dir;
 
-  uint _cnt;
-  uint _totEnumerationCnt;
+  uint32_t _cnt;
+  uint32_t _totEnumerationCnt;
   dbCreateNetUtil* db_net_util;
 
   std::vector<float> mWidth;
@@ -81,21 +82,23 @@ class extPattern
              int under1,
              const PatternOptions& opt,
              FILE* fp,
-             int org[2],
+             const int org[2],
              dbCreateNetUtil* net_util);
   bool SetPatternName();
   std::vector<float> getMultipliers(const char* s);
   float init(dbCreateNetUtil* net_util);
-  uint CreatePattern(int origin[2], int MAX_UR[2], dbCreateNetUtil* net_util);
-  // uint CreatePattern(dbCreateNetUtil *net_util);
+  uint32_t CreatePattern(int origin[2],
+                         int MAX_UR[2],
+                         dbCreateNetUtil* net_util);
+  // uint32_t CreatePattern(dbCreateNetUtil *net_util);
 
-  uint CreatePattern_over(int org[2], int MAX_UR[2]);
-  uint CreatePattern_under(int origin[2], int MAX_UR[2]);
-  uint CreatePattern_save(float origin[2],
-                          float MAX_UR[2],
-                          dbCreateNetUtil* net_util);
+  uint32_t CreatePattern_over(int org[2], int MAX_UR[2]);
+  uint32_t CreatePattern_under(int origin[2], int MAX_UR[2]);
+  uint32_t CreatePattern_save(float origin[2],
+                              float MAX_UR[2],
+                              dbCreateNetUtil* net_util);
   extWirePattern* GetWireParttern(extPattern* main,
-                                  uint dir,
+                                  uint32_t dir,
                                   float mw,
                                   float ms,
                                   int met1,
@@ -111,18 +114,18 @@ class extPattern
                               float offsetOver,
                               float ow2,
                               float os2);
-  uint contextPatterns_under(extWirePattern* mainp,
-                             float uw,
-                             float us,
-                             float offsetUnder,
-                             float uw2,
-                             float us2);
-  uint contextPatterns_over(extWirePattern* mainp,
-                            float ow,
-                            float os,
-                            float offsetOver,
-                            float ow2,
-                            float os2);
+  uint32_t contextPatterns_under(extWirePattern* mainp,
+                                 float uw,
+                                 float us,
+                                 float offsetUnder,
+                                 float uw2,
+                                 float us2);
+  uint32_t contextPatterns_over(extWirePattern* mainp,
+                                float ow,
+                                float os,
+                                float offsetOver,
+                                float ow2,
+                                float os2);
   extWirePattern* MainPattern(float mw,
                               float msL,
                               float msR,
@@ -133,13 +136,13 @@ class extPattern
                               float cwr,
                               float csr);
   int ContextPattern(extWirePattern* main,
-                     uint dir,
+                     uint32_t dir,
                      int met,
                      float mw,
                      float ms,
                      float offset);
   int ContextPatternParallel(extWirePattern* main,
-                             uint dir,
+                             uint32_t dir,
                              int met,
                              float mw,
                              float ms,
@@ -154,12 +157,14 @@ class extPattern
   int getRoundedInt(float v, int units1);
   static float GetRoundedInt(float v, float mult, int);
   static int GetRoundedInt(int v, float mult, int);
-  uint createNetSingleWire(char* netName, int ll[2], int ur[2], int level);
+  uint32_t createNetSingleWire(char* netName, int ll[2], int ur[2], int level);
   bool RenameBterm1stInput(odb::dbNet* net);
   bool RenameAllBterms(odb::dbNet* net);
 
-  void PatternEnd(extWirePattern* mainp, int max_ur[2], uint spacingMult);
-  static void PrintStats(uint cnt,
+  void PatternEnd(extWirePattern* mainp,
+                  const int max_ur[2],
+                  uint32_t spacingMult);
+  static void PrintStats(uint32_t cnt,
                          int origin[2],
                          int start[2],
                          const char* msg);
@@ -175,7 +180,7 @@ class extWirePattern
   int _minSpacing;
   int _len;
   int _centerWireIndex;
-  uint dir;
+  uint32_t dir;
   float trans_ll[2][1000];
   float trans_ur[2][1000];
   int _trans_ll[2][1000];
@@ -186,34 +191,38 @@ class extWirePattern
   int ur[2][1000];
   int center_ll[2];
   int center_ur[2];
-  uint cnt;
+  uint32_t cnt;
   char name[1000][20];
   char tmp_pattern_name[20000];
-  uint units;
+  uint32_t units;
 
   extWirePattern(extPattern* p,
-                 uint dir,
+                 uint32_t dir,
                  float minWidth,
                  float minSpacing,
                  const PatternOptions& opt);
-  uint addCoords(float mw,
-                 float ms,
-                 const char* buff,
-                 int ii = -1,
-                 int met = -1);
-  uint addCoords(int LL[2], int UR[2], const char* buff, int jj, int met);
-  void addCoords_temp(int jj, int LL[2], int UR[2]);
-  void AddOrigin(float org[2]);
-  void AddOrigin_int(int org[2]);
-  void print(FILE* fp, uint jj, float units = 0.001);
-  void print_trans2(FILE* fp, uint jj, float units = 0.001);
-  void print_trans(FILE* fp, uint jj);
+  uint32_t addCoords(float mw,
+                     float ms,
+                     const char* buff,
+                     int ii = -1,
+                     int met = -1);
+  uint32_t addCoords(const int LL[2],
+                     const int UR[2],
+                     const char* buff,
+                     int jj,
+                     int met);
+  void addCoords_temp(int jj, const int LL[2], const int UR[2]);
+  void AddOrigin(const float org[2]);
+  void AddOrigin_int(const int org[2]);
+  void print(FILE* fp, uint32_t jj, float units = 0.001);
+  void print_trans2(FILE* fp, uint32_t jj, float units = 0.001);
+  void print_trans(FILE* fp, uint32_t jj);
   void printWires(FILE* fp, bool trans = false);
   void setCenterXY(int jj);
-  int length(uint dir);
-  int last(uint dir);
-  int last_trans(uint dir);
-  int first(uint dir);
-  void gen_trans_name(uint jj);
+  int length(uint32_t dir);
+  int last(uint32_t dir);
+  int last_trans(uint32_t dir);
+  int first(uint32_t dir);
+  void gen_trans_name(uint32_t jj);
 };
 }  // namespace rcx

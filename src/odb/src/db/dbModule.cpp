@@ -21,6 +21,7 @@
 // User Code Begin Includes
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <map>
 #include <string>
@@ -169,6 +170,12 @@ dbModInst* dbModule::getModInst() const
 
 // User Code Begin dbModulePublicMethods
 
+dbModule* dbModule::getParentModule() const
+{
+  dbModInst* mod_inst = getModInst();
+  return (mod_inst != nullptr) ? mod_inst->getParent() : nullptr;
+}
+
 const dbModBTerm* dbModule::getHeadDbModBTerm() const
 {
   _dbModule* obj = (_dbModule*) this;
@@ -249,7 +256,7 @@ void _dbModule::removeInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
-  uint id = _inst->getOID();
+  uint32_t id = _inst->getOID();
 
   if (_inst->module_ != getOID()) {
     return;
@@ -308,7 +315,7 @@ dbModNet* dbModule::getModNet(const char* net_name) const
   const _dbBlock* block = (const _dbBlock*) module->getOwner();
   auto it = module->modnet_hash_.find(net_name);
   if (it != module->modnet_hash_.end()) {
-    uint db_id = (*it).second;
+    uint32_t db_id = (*it).second;
     return (dbModNet*) block->modnet_tbl_->getPtr(db_id);
   }
   return nullptr;
@@ -348,7 +355,7 @@ dbSet<dbModBTerm> dbModule::getModBTerms() const
   return dbSet<dbModBTerm>(module, block->module_modbterm_itr_);
 }
 
-dbModBTerm* dbModule::getModBTerm(uint id)
+dbModBTerm* dbModule::getModBTerm(uint32_t id)
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
@@ -483,7 +490,7 @@ void dbModule::destroy(dbModule* module)
   block->module_tbl_->destroy(_module);
 }
 
-dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
+dbModule* dbModule::getModule(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbModule*) block->module_tbl_->getPtr(dbid_);

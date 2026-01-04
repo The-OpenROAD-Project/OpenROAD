@@ -242,7 +242,7 @@ void Gui::registerRenderer(Renderer* renderer)
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
-  if (renderers_.count(renderer) == 0) {
+  if (!renderers_.contains(renderer)) {
     return;
   }
 
@@ -569,7 +569,7 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
       if (auto props_selected_set
           = std::any_cast<SelectionSet>(&property.value)) {
         if (Descriptor::Property::toString(value) == "CONNECTED"
-            && (*props_selected_set).size() != 0) {
+            && !props_selected_set->empty()) {
           return true;
         }
         for (const auto& selected : *props_selected_set) {
@@ -782,6 +782,7 @@ void Gui::saveImage(const std::string& filename,
     const double dbu_per_micron = tech->getDbUnitsPerMicron();
 
     std::string save_cmds;
+
     // build display control commands
     save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
     for (const auto& [control, value] : display_settings) {
@@ -861,6 +862,22 @@ void Gui::saveHistogramImage(const std::string& filename,
       = main_window->getChartsWidget()->modeFromString(mode);
   main_window->getChartsWidget()->saveImage(
       filename, chart_mode, width, height);
+}
+
+void Gui::showWorstTimingPath(bool setup)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->showWorstTimingPath(setup);
+}
+
+void Gui::clearTimingPath()
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->clearSelection();
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name,
@@ -944,7 +961,7 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
 
 void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
 {
-  if (heat_maps_.count(heatmap) == 0) {
+  if (!heat_maps_.contains(heatmap)) {
     return;
   }
 
@@ -994,7 +1011,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   } else {
     auto settings = source->getSettings();
 
-    if (settings.count(option) == 0) {
+    if (!settings.contains(option)) {
       QStringList options;
       options.append(QString::fromStdString(rebuild_map_option));
       for (const auto& [key, kv] : settings) {
@@ -1065,7 +1082,7 @@ Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
 
   auto settings = source->getSettings();
 
-  if (settings.count(option) == 0) {
+  if (!settings.contains(option)) {
     QStringList options;
     for (const auto& [key, kv] : settings) {
       options.append(QString::fromStdString(key));

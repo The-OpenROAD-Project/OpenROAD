@@ -4,6 +4,7 @@
 #include "dbTechLayerRule.h"
 
 #include <cassert>
+#include <cstdint>
 
 #include "dbBlock.h"
 #include "dbCore.h"
@@ -14,7 +15,6 @@
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
 #include "odb/db.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -46,7 +46,7 @@ _dbTechLayerRule::_dbTechLayerRule(_dbDatabase*)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRule& rule)
 {
-  uint* bit_field = (uint*) &rule.flags_;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream << *bit_field;
   stream << rule.width_;
   stream << rule.spacing_;
@@ -61,7 +61,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRule& rule)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerRule& rule)
 {
-  uint* bit_field = (uint*) &rule.flags_;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream >> *bit_field;
   stream >> rule.width_;
   stream >> rule.spacing_;
@@ -199,13 +199,13 @@ void dbTechLayerRule::setEdgeCapacitance(double cap)
   rule->edge_capacitance_ = cap;
 }
 
-uint dbTechLayerRule::getWireExtension()
+uint32_t dbTechLayerRule::getWireExtension()
 {
   _dbTechLayerRule* rule = (_dbTechLayerRule*) this;
   return rule->wire_extension_;
 }
 
-void dbTechLayerRule::setWireExtension(uint ext)
+void dbTechLayerRule::setWireExtension(uint32_t ext)
 {
   _dbTechLayerRule* rule = (_dbTechLayerRule*) this;
   rule->wire_extension_ = ext;
@@ -262,13 +262,15 @@ dbTechLayerRule* dbTechLayerRule::create(dbTechNonDefaultRule* rule_,
   return make_layer(tech->layer_rule_tbl_);
 }
 
-dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbTech* tech_, uint dbid_)
+dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbTech* tech_,
+                                                   uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechLayerRule*) tech->layer_rule_tbl_->getPtr(dbid_);
 }
 
-dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbBlock* block_, uint dbid_)
+dbTechLayerRule* dbTechLayerRule::getTechLayerRule(dbBlock* block_,
+                                                   uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbTechLayerRule*) block->layer_rule_tbl_->getPtr(dbid_);

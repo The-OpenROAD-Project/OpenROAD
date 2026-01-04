@@ -29,8 +29,6 @@
 
 #include "defrReader.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -51,7 +49,8 @@
 #include "defrData.hpp"
 #include "defrSettings.hpp"
 
-#define NODEFMSG 4013  // (9012 + 1) - 5000, def msg starts at 5000
+static constexpr int NODEFMSG
+    = 4013;  // (9012 + 1) - 5000, def msg starts at 5000
 
 #define DEF_INIT def_init(__FUNCTION__)
 
@@ -1936,7 +1935,7 @@ void defrSetViaWarnings(int warn)
   defContext.settings->ViaWarnings = warn;
 }
 
-void defrDisableParserMsgs(int nMsg, int* msgs)
+void defrDisableParserMsgs(int nMsg, const int* msgs)
 {
   DEF_INIT;
   int i, j;
@@ -1955,7 +1954,7 @@ void defrDisableParserMsgs(int nMsg, int* msgs)
          i++) {  // copy the existing to the new list
       tmp[i] = defContext.settings->disableDMsgs[i];
     }
-    free((int*) (defContext.settings->disableDMsgs));
+    free(defContext.settings->disableDMsgs);
     defContext.settings->disableDMsgs
         = tmp;                    // set disableDMsgs to the new list
     for (i = 0; i < nMsg; i++) {  // merge the new list with the existing
@@ -1972,10 +1971,9 @@ void defrDisableParserMsgs(int nMsg, int* msgs)
       }
     }
   }
-  return;
 }
 
-void defrEnableParserMsgs(int nMsg, int* msgs)
+void defrEnableParserMsgs(int nMsg, const int* msgs)
 {
   DEF_INIT;
   int i, j;
@@ -2011,14 +2009,13 @@ void defrEnableParserMsgs(int nMsg, int* msgs)
     defContext.settings->disableDMsgs[j] = 0;  // set to 0
   }
   defContext.settings->nDDMsgs = i;
-  return;
 }
 
 void defrEnableAllMsgs()
 {
   DEF_INIT;
   defContext.settings->nDDMsgs = 0;
-  free((int*) (defContext.settings->disableDMsgs));
+  free(defContext.settings->disableDMsgs);
 }
 
 void defrSetTotalMsgLimit(int totNumMsgs)
@@ -2037,7 +2034,6 @@ void defrSetLimitPerMsg(int msgId, int numMsg)
     return;
   }
   defContext.settings->MsgLimit[msgId - 5000] = numMsg;
-  return;
 }
 
 // *****************************************************************

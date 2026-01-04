@@ -373,13 +373,13 @@ int Tapcell::removeCells(const std::string& prefix)
   odb::dbBlock* block = db_->getChip()->getBlock();
   int removed = 0;
 
-  if (prefix.length() == 0) {
+  if (prefix.empty()) {
     // If no prefix is given, return 0 instead of having all cells removed
     return 0;
   }
 
   for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->getName().find(prefix) == 0) {
+    if (inst->getName().starts_with(prefix)) {
       odb::dbInst::destroy(inst);
       removed++;
     }
@@ -409,7 +409,9 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori)
 
 std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+  using boost::polygon::operators::operator&;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
   auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {
@@ -452,7 +454,7 @@ std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
     std::vector<Polygon90::point_type> outline;
 
     for (const auto& pt : core) {
-      auto check = std::find(outline.begin(), outline.end(), pt);
+      auto check = std::ranges::find(outline, pt);
       if (check == outline.end()) {
         outline.push_back(pt);
       } else {
@@ -880,8 +882,7 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
   }
 
   for (const auto& edge : getBoundaryEdges(area, outer)) {
-    if (std::find(filled_edges_.begin(), filled_edges_.end(), edge)
-        == filled_edges_.end()) {
+    if (std::ranges::find(filled_edges_, edge) == filled_edges_.end()) {
       endcaps += placeEndcapEdge(edge, corners, options);
       filled_edges_.push_back(edge);
     }
@@ -1139,7 +1140,7 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
     return 0;
   }
 
-  std::sort(masters.begin(), masters.end(), [](auto* rhs, auto* lhs) {
+  std::ranges::sort(masters, [](auto* rhs, auto* lhs) {
     return rhs->getWidth() > lhs->getWidth();
   });
 

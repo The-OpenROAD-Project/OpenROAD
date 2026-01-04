@@ -22,8 +22,7 @@ _comparable = [
     "int16_t",
     "std::string",
     "string",
-    "uint",
-    "unint_32t",
+    "uint32_t",
     "uint8_t",
 ]
 std = [
@@ -42,8 +41,7 @@ std = [
     "int16_t",
     "std::string",
     "string",
-    "uint",
-    "unint_32t",
+    "uint32_t",
     "uint8_t",
 ]
 

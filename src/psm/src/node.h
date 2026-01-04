@@ -94,6 +94,8 @@ class SourceNode : public Node
   Node* source_;
 };
 
+using SourceNodes = std::vector<std::unique_ptr<SourceNode>>;
+
 class TerminalNode : public Node
 {
  public:

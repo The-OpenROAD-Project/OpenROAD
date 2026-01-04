@@ -92,12 +92,9 @@ void SpefWriter::writeHeader()
     std::string cap_unit
         = std::string(units->capacitanceUnit()->scaledSuffix());
     std::string res_unit = std::string(units->resistanceUnit()->scaledSuffix());
-    std::transform(
-        time_unit.begin(), time_unit.end(), time_unit.begin(), ::toupper);
-    std::transform(
-        cap_unit.begin(), cap_unit.end(), cap_unit.begin(), ::toupper);
-    std::transform(
-        res_unit.begin(), res_unit.end(), res_unit.begin(), ::toupper);
+    std::ranges::transform(time_unit, time_unit.begin(), ::toupper);
+    std::ranges::transform(cap_unit, cap_unit.begin(), ::toupper);
+    std::ranges::transform(res_unit, res_unit.begin(), ::toupper);
 
     stream << "*T_UNIT 1 " << time_unit << '\n';
     stream << "*C_UNIT 1 " << cap_unit << '\n';

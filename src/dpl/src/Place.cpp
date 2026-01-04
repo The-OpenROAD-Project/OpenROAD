@@ -14,6 +14,7 @@
 #include <random>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -35,7 +36,6 @@
 // #define ODP_DEBUG
 
 namespace dpl {
-
 using std::max;
 using std::min;
 using std::numeric_limits;
@@ -312,7 +312,7 @@ void Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(core_));
+  std::ranges::sort(sorted_cells, CellPlaceOrderLess(core_));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -349,7 +349,7 @@ void Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(core_));
+    std::ranges::sort(group_cells, CellPlaceOrderLess(core_));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
@@ -403,7 +403,7 @@ void Opendp::brickPlace1(const Group* group)
   const odb::Rect& boundary = group->getBBox();
   vector<Node*> sorted_cells(group->getCells());
 
-  sort(sorted_cells.begin(), sorted_cells.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sorted_cells, [&](Node* cell1, Node* cell2) {
     return rectDist(cell1, boundary) < rectDist(cell2, boundary);
   });
 
@@ -457,7 +457,7 @@ void Opendp::brickPlace2(const Group* group)
 {
   vector<Node*> sorted_cells(group->getCells());
 
-  sort(sorted_cells.begin(), sorted_cells.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sorted_cells, [&](Node* cell1, Node* cell2) {
     return rectDist(cell1, *cell1->getRegion())
            < rectDist(cell2, *cell2->getRegion());
   });
@@ -482,7 +482,7 @@ int Opendp::groupRefine(const Group* group)
 {
   vector<Node*> sort_by_disp(group->getCells());
 
-  sort(sort_by_disp.begin(), sort_by_disp.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sort_by_disp, [&](Node* cell1, Node* cell2) {
     return (disp(cell1) > disp(cell2));
   });
 
@@ -533,7 +533,7 @@ int Opendp::refine()
       sorted.push_back(cell.get());
     }
   }
-  sort(sorted.begin(), sorted.end(), [&](Node* cell1, Node* cell2) {
+  std::ranges::sort(sorted, [&](Node* cell1, Node* cell2) {
     return disp(cell1) > disp(cell2);
   });
 
@@ -759,20 +759,20 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
   {
     int manhattan_distance;
     GridPt p;
+    int sequence;
     bool operator>(const PQ_entry& other) const
     {
-      return manhattan_distance > other.manhattan_distance;
-    }
-    bool operator==(const PQ_entry& other) const
-    {
-      return manhattan_distance == other.manhattan_distance;
+      return std::tie(manhattan_distance, sequence)
+             > std::tie(other.manhattan_distance, other.sequence);
     }
   };
   std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
       positionsHeap;
   std::unordered_set<GridPt> visited;
+  int sequence = 0;
   GridPt center{x, y};
-  positionsHeap.push(PQ_entry{0, center});
+  positionsHeap.push(
+      {.manhattan_distance = 0, .p = center, .sequence = sequence++});
   visited.insert(center);
 
   const vector<GridPt> neighbors = {{GridX(-1), GridY(0)},
@@ -792,7 +792,7 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
     for (GridPt offset : neighbors) {
       GridPt neighbor = {nearest.x + offset.x, nearest.y + offset.y};
       // Check if it was already put in the queue
-      if (visited.count(neighbor) > 0) {
+      if (visited.contains(neighbor)) {
         continue;
       }
       // Check limits
@@ -802,7 +802,9 @@ PixelPt Opendp::searchNearestSite(const Node* cell,
       }
 
       visited.insert(neighbor);
-      positionsHeap.push(PQ_entry{calcDist(center, neighbor), neighbor});
+      positionsHeap.push({.manhattan_distance = calcDist(center, neighbor),
+                          .p = neighbor,
+                          .sequence = sequence++});
     }
   }
   return PixelPt();
@@ -908,10 +910,10 @@ bool Opendp::checkPixels(const Node* cell,
       }
     }
     if (disallow_one_site_gaps_) {
-      // here we need to check for abutting first, if there is an abutting cell
-      // then we continue as there is nothing wrong with it
-      // if there is no abutting cell, we will then check cells at 1+ distances
-      // we only need to check on the left and right sides
+      // here we need to check for abutting first, if there is an abutting
+      // cell then we continue as there is nothing wrong with it if there is
+      // no abutting cell, we will then check cells at 1+ distances we only
+      // need to check on the left and right sides
       const GridX x_begin = max(GridX{0}, x - 1);
       const GridY y_begin = max(GridY{0}, y - 1);
       // inclusive search, so we don't add 1 to the end
@@ -1189,7 +1191,7 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
       pixel = grid_->gridPixel(grid_x, grid_y);
     }
 
-    const Node* block = static_cast<Node*>(pixel->cell);
+    const Node* block = pixel->cell;
 
     // If that didn't do the job fall back on the old move to nearest
     // edge strategy.  This doesn't consider site availability at the

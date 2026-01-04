@@ -3,6 +3,7 @@
 
 #include "dbMPin.h"
 
+#include <cstdint>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -77,7 +78,7 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   return true;
 }
 
-void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
+void _dbMPin::addAccessPoint(uint32_t idx, _dbAccessPoint* ap)
 {
   if (aps_.size() <= idx) {
     aps_.resize(idx + 1);
@@ -171,7 +172,7 @@ dbMPin* dbMPin::create(dbMTerm* mterm_)
   return (dbMPin*) mpin;
 }
 
-dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
+dbMPin* dbMPin::getMPin(dbMaster* master_, uint32_t dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMPin*) master->mpin_tbl_->getPtr(dbid_);

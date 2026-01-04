@@ -459,8 +459,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   }
 
   std::vector<int> accumulated_length(pos_seq_.size(), 0);
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    const int macro_id = pos_seq_[i];
+  for (int macro_id : pos_seq_) {
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
     T& macro = macros_[macro_id];
@@ -833,7 +832,7 @@ void SimulatedAnnealingCore<T>::writeCostFile(
 {
   std::ofstream file(file_name);
   for (auto i = 0; i < cost_list_.size(); i++) {
-    file << T_list_[i] << "  " << cost_list_[i] << std::endl;
+    file << T_list_[i] << "  " << cost_list_[i] << '\n';
   }
 }
 

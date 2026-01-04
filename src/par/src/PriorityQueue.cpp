@@ -18,7 +18,7 @@ PriorityQueue::PriorityQueue(const int total_elements,
     : maximum_traverse_level_(maximum_traverse_level)
 {
   vertices_map_.resize(total_elements);
-  std::fill(vertices_map_.begin(), vertices_map_.end(), -1);
+  std::ranges::fill(vertices_map_, -1);
   total_elements_ = 0;
   hypergraph_ = std::move(hypergraph);
   active_ = false;
@@ -29,7 +29,7 @@ void PriorityQueue::Clear()
   active_ = false;
   vertices_.clear();
   total_elements_ = 0;
-  std::fill(vertices_map_.begin(), vertices_map_.end(), -1);
+  std::ranges::fill(vertices_map_, -1);
 }
 
 // insert one element into the priority queue

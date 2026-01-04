@@ -1090,7 +1090,7 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
   const double dbus = getBlock()->getDbUnitsPerMicron();
   const auto& insts = getInsts();
   std::vector<float> weights(insts.size());
-  std::fill(weights.begin(), weights.end(), 1.0);
+  std::ranges::fill(weights, 1.0);
 
   std::vector<float> position(insts.size());
   for (int i = 0; i < insts.size(); i++) {

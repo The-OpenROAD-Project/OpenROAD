@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "odb/dbObject.h"
@@ -28,17 +30,17 @@ class _dbNameCache
   void collectMemInfo(MemInfo& info);
 
   // Find the name, returns 0 if the name does not exists.
-  uint findName(const char* name);
+  uint32_t findName(const char* name);
 
   // Add this name to the table if it does not exists.
   // increment the reference count to this name
-  uint addName(const char* name);
+  uint32_t addName(const char* name);
 
   // Remove this name to the table if the ref-cnt is 0
-  void removeName(uint id);
+  void removeName(uint32_t id);
 
   // Remove the string this id represents
-  const char* getName(uint id);
+  const char* getName(uint32_t id);
 
   dbTable<_dbName>* name_tbl_;
   dbHashTable<_dbName> name_hash_;

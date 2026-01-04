@@ -5,11 +5,13 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
+
 namespace odb {
 
 void create_box(dbSWire* wire,
@@ -24,7 +26,7 @@ void create_box(dbSWire* wire,
                 int cur_ext,
                 bool has_cur_ext,
                 int width,
-                uint mask,
+                uint32_t mask,
                 utl::Logger* logger)
 {
   int x1, x2, y1, y2;
@@ -137,9 +139,9 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int numY,
                               int stepX,
                               int stepY,
-                              uint bottom_mask,
-                              uint cut_mask,
-                              uint top_mask,
+                              uint32_t bottom_mask,
+                              uint32_t cut_mask,
+                              uint32_t top_mask,
                               utl::Logger* logger)
 {
   if (via->getBBox() == nullptr) {
@@ -206,9 +208,9 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int numY,
                               int stepX,
                               int stepY,
-                              uint bottom_mask,
-                              uint cut_mask,
-                              uint top_mask,
+                              uint32_t bottom_mask,
+                              uint32_t cut_mask,
+                              uint32_t top_mask,
                               utl::Logger* logger)
 {
   if (via->getBBox() == nullptr) {

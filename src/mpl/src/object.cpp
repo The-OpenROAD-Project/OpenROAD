@@ -485,10 +485,9 @@ void Cluster::addChild(std::unique_ptr<Cluster> child)
 
 std::unique_ptr<Cluster> Cluster::releaseChild(const Cluster* candidate)
 {
-  auto it = std::find_if(
-      children_.begin(), children_.end(), [candidate](const auto& child) {
-        return child.get() == candidate;
-      });
+  auto it = std::ranges::find_if(children_, [candidate](const auto& child) {
+    return child.get() == candidate;
+  });
 
   if (it != children_.end()) {
     std::unique_ptr<Cluster> released_child = std::move(*it);
@@ -501,7 +500,7 @@ std::unique_ptr<Cluster> Cluster::releaseChild(const Cluster* candidate)
 
 void Cluster::addChildren(UniqueClusterVector children)
 {
-  std::move(children.begin(), children.end(), std::back_inserter(children_));
+  std::ranges::move(children, std::back_inserter(children_));
 }
 
 UniqueClusterVector Cluster::releaseChildren()
@@ -963,16 +962,12 @@ int SoftMacro::findIntervalIndex(const IntervalList& interval_list,
     while ((idx < interval_list.size()) && (interval_list[idx].max < value)) {
       idx++;
     }
-    if (interval_list[idx].min > value) {
-      value = interval_list[idx].min;
-    }
+    value = std::max(interval_list[idx].min, value);
   } else { /* Height Intervals */
     while ((idx < interval_list.size()) && (interval_list[idx].min > value)) {
       idx++;
     }
-    if (interval_list[idx].max < value) {
-      value = interval_list[idx].max;
-    }
+    value = std::min(interval_list[idx].max, value);
   }
   return idx;
 }
@@ -1107,9 +1102,9 @@ void SoftMacro::setShapes(const IntervalList& width_intervals, int64_t area)
 
   // Copy & sort the width intervals list.
   IntervalList old_width_intervals = width_intervals;
-  std::sort(old_width_intervals.begin(),
-            old_width_intervals.end(),
-            isMinWidthSmaller);
+  std::ranges::sort(old_width_intervals,
+
+                    isMinWidthSmaller);
 
   // Merge the overlapping intervals.
   for (auto& old_width_interval : old_width_intervals) {

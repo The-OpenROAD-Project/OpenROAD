@@ -119,7 +119,7 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
       continue;
     }
     const boost::property_tree::ptree& layer = pairs.second;
-    const std::string name = layer.get<std::string>("name", "");
+    std::string name = layer.get<std::string>("name", "");
     const std::string source = layer.get<std::string>("source", "");
     const size_t at_pos = source.find('@');
     const size_t slash_pos = source.find('/');

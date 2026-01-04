@@ -78,7 +78,7 @@ double chkNum(double num)
 }
 
 // Print Via
-void lefVia(lefiVia* via, char* inName)
+void lefVia(const lefiVia* via, char* inName)
 {
   int i, j;
 
@@ -202,7 +202,6 @@ void lefVia(lefiVia* via, char* inName)
       }
     }
   }
-  return;
 }
 
 // Print Spacing
@@ -273,7 +272,7 @@ void lefViaRuleLayer(lefiViaRuleLayer* vLayer, char* viaName)
 }
 
 // Print Geometry
-void prtGeometry(lefiGeometries* geometry, char* inName)
+void prtGeometry(const lefiGeometries* geometry, char* inName)
 {
   int numItems = geometry->numItems();
   int i, j;
@@ -533,7 +532,7 @@ int antennaCB(lefrCallbackType_e c, double value, lefiUserData ud)
 }
 
 // Array
-int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData ud)
+int arrayCB(lefrCallbackType_e c, const lefiArray* a, lefiUserData ud)
 {
   int i, j, defCaps;
   lefiSitePattern* pattern;
@@ -728,7 +727,7 @@ int clearanceCB(lefrCallbackType_e c, const char* name, lefiUserData ud)
 
 // Crosstalk correcttable
 int correctTableCB(lefrCallbackType_e c,
-                   lefiCorrectionTable* table,
+                   const lefiCorrectionTable* table,
                    lefiUserData ud)
 {
   int i, j, k, l;
@@ -868,7 +867,7 @@ int inoutAntCB(lefrCallbackType_e c, double antenna, lefiUserData ud)
 }
 
 // Irdrop
-int irdropCB(lefrCallbackType_e c, lefiIRDrop* irdrop, lefiUserData ud)
+int irdropCB(lefrCallbackType_e c, const lefiIRDrop* irdrop, lefiUserData ud)
 {
   int i;
   checkType(c);
@@ -885,7 +884,7 @@ int irdropCB(lefrCallbackType_e c, lefiIRDrop* irdrop, lefiUserData ud)
 }
 
 // Layer
-int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData ud)
+int layerCB(lefrCallbackType_e c, const lefiLayer* layer, lefiUserData ud)
 {
   int i, j, k;
   double *widths, *current;
@@ -1712,7 +1711,7 @@ int layerCB(lefrCallbackType_e c, lefiLayer* layer, lefiUserData ud)
 }
 
 // Macro
-int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData ud)
+int macroCB(lefrCallbackType_e c, const lefiMacro* macro, lefiUserData ud)
 {
   lefiSitePattern* pattern;
   int propNum, i, hasPrtSym = 0;
@@ -1849,7 +1848,7 @@ int manufacturingCB(lefrCallbackType_e c, double num, lefiUserData ud)
 
 // Maxviastack
 int maxStackViaCB(lefrCallbackType_e c,
-                  lefiMaxStackVia* maxStack,
+                  const lefiMaxStackVia* maxStack,
                   lefiUserData ud)
 {
   checkType(c);
@@ -1895,7 +1894,9 @@ int noiseMarginCB(lefrCallbackType_e c,
 }
 
 // NoiseTable
-int noiseTableCB(lefrCallbackType_e c, lefiNoiseTable* table, lefiUserData ud)
+int noiseTableCB(lefrCallbackType_e c,
+                 const lefiNoiseTable* table,
+                 lefiUserData ud)
 {
   int i, j, k, l;
   lefiNoiseEdge* edge;
@@ -1947,7 +1948,9 @@ int noiseTableCB(lefrCallbackType_e c, lefiNoiseTable* table, lefiUserData ud)
 }
 
 // Nondefault
-int nonDefaultCB(lefrCallbackType_e c, lefiNonDefault* def, lefiUserData ud)
+int nonDefaultCB(lefrCallbackType_e c,
+                 const lefiNonDefault* def,
+                 lefiUserData ud)
 {
   int i;
   lefiVia* via;
@@ -2058,7 +2061,7 @@ int obstructionCB(lefrCallbackType_e c, lefiObstruction* obs, lefiUserData ud)
 }
 
 // Pin
-int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData ud)
+int pinCB(lefrCallbackType_e c, const lefiPin* pin, lefiUserData ud)
 {
   int numPorts, i, j;
   lefiGeometries* geometry;
@@ -2394,7 +2397,7 @@ int pinCB(lefrCallbackType_e c, lefiPin* pin, lefiUserData ud)
   return 0;
 }
 
-int densityCB(lefrCallbackType_e c, lefiDensity* density, lefiUserData ud)
+int densityCB(lefrCallbackType_e c, const lefiDensity* density, lefiUserData ud)
 {
   struct lefiGeomRect rect;
 
@@ -2419,7 +2422,7 @@ int densityCB(lefrCallbackType_e c, lefiDensity* density, lefiUserData ud)
 }
 
 // Property definition
-int propDefCB(lefrCallbackType_e c, lefiProp* prop, lefiUserData ud)
+int propDefCB(lefrCallbackType_e c, const lefiProp* prop, lefiUserData ud)
 {
   checkType(c);
   if (ud != userData) {
@@ -2454,7 +2457,7 @@ int propDefCB(lefrCallbackType_e c, lefiProp* prop, lefiUserData ud)
 }
 
 // Site
-int siteCB(lefrCallbackType_e c, lefiSite* site, lefiUserData ud)
+int siteCB(lefrCallbackType_e c, const lefiSite* site, lefiUserData ud)
 {
   int hasPrtSym = 0;
   int i;
@@ -2517,7 +2520,7 @@ int spacingCB(lefrCallbackType_e c, lefiSpacing* spacing, lefiUserData ud)
 }
 
 // Timing
-int timingCB(lefrCallbackType_e c, lefiTiming* timing, lefiUserData ud)
+int timingCB(lefrCallbackType_e c, const lefiTiming* timing, lefiUserData ud)
 {
   int i;
   checkType(c);
@@ -2633,7 +2636,7 @@ int timingCB(lefrCallbackType_e c, lefiTiming* timing, lefiUserData ud)
 }
 
 // Units
-int unitsCB(lefrCallbackType_e c, lefiUnits* unit, lefiUserData ud)
+int unitsCB(lefrCallbackType_e c, const lefiUnits* unit, lefiUserData ud)
 {
   checkType(c);
   if (ud != userData) {
@@ -2669,7 +2672,7 @@ int unitsCB(lefrCallbackType_e c, lefiUnits* unit, lefiUserData ud)
 
 // UseMinSpacing
 int useMinSpacingCB(lefrCallbackType_e c,
-                    lefiUseMinSpacing* spacing,
+                    const lefiUseMinSpacing* spacing,
                     lefiUserData ud)
 {
   checkType(c);
@@ -2708,7 +2711,7 @@ int viaCB(lefrCallbackType_e c, lefiVia* via, lefiUserData ud)
 }
 
 // Viarule
-int viaRuleCB(lefrCallbackType_e c, lefiViaRule* viaRule, lefiUserData ud)
+int viaRuleCB(lefrCallbackType_e c, const lefiViaRule* viaRule, lefiUserData ud)
 {
   int numLayers, numVias, i;
   lefiViaRuleLayer* vLayer;
@@ -2828,13 +2831,14 @@ int diffLefReadFile(char* inFile, char* outFile)
   lefrSetViaCbk(viaCB);
   lefrSetViaRuleCbk(viaRuleCB);
 
-  FILE* f;
-  if ((f = fopen(inFile, "r")) == nullptr) {
+  FILE* f = fopen(inFile, "r");
+  if (f == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == nullptr) {
+  fout = fopen(outFile, "w");
+  if (fout == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);

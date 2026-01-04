@@ -66,8 +66,8 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   for (auto const& [position, edges] : position_to_edges_map) {
     for (int edgeID : edges) {
       if (areEdgesOverlapping(net_id, edgeID, edges)) {
-        edges_to_blocked_pos_map[edgeID].push_back(
-            {position.first, position.second});
+        edges_to_blocked_pos_map[edgeID].emplace_back(position.first,
+                                                      position.second);
       }
     }
   }
@@ -130,8 +130,7 @@ void FastRouteCore::fixOverlappingEdge(
     return a.first < b.first;
   };
 
-  std::stable_sort(
-      blocked_positions.begin(), blocked_positions.end(), sort_by_x);
+  std::ranges::stable_sort(blocked_positions, sort_by_x);
 
   if (treeedge->len > 0) {
     std::vector<GPoint3D> new_route;
@@ -1114,7 +1113,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     } else if (adj_cost > cost) {  // neighbor has been put into src_heap
                                    // but needs update
       double* dtmp = &d1[adj_y][adj_x];
-      const auto it = std::find(src_heap.begin(), src_heap.end(), dtmp);
+      const auto it = std::ranges::find(src_heap, dtmp);
       if (it != src_heap.end()) {
         const int pos = it - src_heap.begin();
         updateHeap(src_heap, pos);
@@ -1268,8 +1267,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       // while loop to find shortest path
       int ind1 = (src_heap[0] - &d1[0][0]);
-      for (int i = 0; i < dest_heap.size(); i++) {
-        pop_heap2[(dest_heap[i] - &d2[0][0])] = true;
+      for (auto& dest : dest_heap) {
+        pop_heap2[dest - &d2[0][0]] = true;
       }
 
       // stop when the grid position been popped out from both src_heap and
@@ -1313,8 +1312,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       }  // while loop
 
-      for (int i = 0; i < dest_heap.size(); i++) {
-        pop_heap2[(dest_heap[i] - &d2[0][0])] = false;
+      for (auto& dest : dest_heap) {
+        pop_heap2[dest - &d2[0][0]] = false;
       }
 
       const int16_t crossX = ind1 % x_range_;

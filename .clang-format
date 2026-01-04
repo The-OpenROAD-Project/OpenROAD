@@ -1,5 +1,5 @@
 ---
-Language:        Cpp
+Language:      Cpp
 BasedOnStyle:  Google
 
 AllowAllParametersOfDeclarationOnNextLine: false
@@ -30,4 +30,4 @@ InsertBraces: true
 LineEnding: LF
 DerivePointerAlignment: false
 SpaceAfterCStyleCast: true
-Standard: c++17
+Standard: c++20

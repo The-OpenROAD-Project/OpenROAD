@@ -47,7 +47,7 @@ class defiPropType
   void Destroy();
   ~defiPropType();
 
-  void setPropType(const char* name, const char type);
+  void setPropType(const char* name, char type);
   void Clear();
 
   char propType(char* name) const;
