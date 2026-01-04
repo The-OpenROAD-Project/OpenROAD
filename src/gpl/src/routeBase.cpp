@@ -556,7 +556,9 @@ void RouteBase::updateGrtRoute()
       }
       //  update inflation Ratio
       if (ratio >= rbVars_.minCongestionForInflation) {
-        float inflationRatio = std::pow(ratio, rbVars_.inflationRatioCoef);
+        float inflationRatio
+            = std::pow(ratio / rbVars_.minCongestionForInflation,
+                       rbVars_.inflationRatioCoef);
         inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
         tile->setInflationRatio(inflationRatio);
       }

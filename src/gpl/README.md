@@ -134,7 +134,7 @@ global_placement
 | `-routability_max_density` | Set density threshold for routability mode. The default value is `0.99`, and the allowed values are floats `[0, 1]`. |
 | `-routability_inflation_ratio_coef` | Set inflation ratio coefficient for routability mode. The default value is `2`, and the allowed values are floats. |
 | `-routability_max_inflation_ratio` | Set inflation ratio threshold for routability mode to prevent overly aggressive adjustments. The default value is `3`, and the allowed values are floats. |
-| `-routability_min_congestion_for_inflation` | Tiles with a congestion value below this value will not be inflated. The default value is `0.9`, and the allowed values are floats `[0, 1]`. |
+| `-routability_min_congestion_for_inflation` | Tiles with a congestion value below this value will not be inflated. The default value is `0.8`, and the allowed values are floats `[0, 1]`. |
 | `-routability_rc_coefficients` | Set routability RC coefficients for calculating the averate routing congestion. They relate to the 0.5%, 1%, 2%, and 5% most congested tiles. It comes in the form of a Tcl List `{k1, k2, k3, k4}`. The default value for each coefficient is `{1.0, 1.0, 0.0, 0.0}` respectively, and the allowed values are floats. |
 
 #### Timing-Driven Arguments
