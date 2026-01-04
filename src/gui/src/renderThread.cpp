@@ -10,6 +10,7 @@
 #include <QPolygon>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <exception>
 #include <iterator>
 #include <mutex>

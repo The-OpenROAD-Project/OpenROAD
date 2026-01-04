@@ -9,6 +9,7 @@
 #include <QString>
 #include <QThread>
 #include <QWaitCondition>
+#include <cstdint>
 #include <map>
 #include <mutex>
 #include <utility>
