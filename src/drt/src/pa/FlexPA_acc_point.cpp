@@ -122,7 +122,19 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
   const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
   const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
   frVia via(via_def);
-  const odb::Rect box = via.getLayer1BBox();
+  odb::Rect box;
+  if (via_def->getLayer1Num() == layer_num) {
+    box = via.getLayer1BBox();
+  } else if (via_def->getLayer2Num() == layer_num) {
+    box = via.getLayer2BBox();
+  } else {
+    logger_->warn(DRT,
+                  25,
+                  "genViaEnclosedCoords: layer_num {} is not part of via {}",
+                  layer_num,
+                  via_def->getName());
+    return;
+  }
   const auto via_width = box.dx();
   const auto via_height = box.dy();
   if (via_width > rect_width || via_height > rect_height) {
@@ -150,19 +162,39 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
 void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                                    const gtl::rectangle_data<frCoord>& rect,
                                    const frLayerNum layer_num,
-                                   const bool is_curr_layer_horz)
+                                   const bool is_curr_layer_horz,
+                                   const bool is_bterm)
 {
-  if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
-    return;
-  }
   // hardcode first two single vias
   const int max_num_via_trial = 2;
   int cnt = 0;
-  for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
-    cnt++;
-    if (cnt >= max_num_via_trial) {
-      break;
+
+  auto process_cut_layer = [&](int cut_layer_num, int& counter) {
+    if (layer_num_to_via_defs_.find(cut_layer_num)
+        == layer_num_to_via_defs_.end()) {
+      return;
+    }
+    for (auto& [tup, via] : layer_num_to_via_defs_[cut_layer_num][1]) {
+      genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
+      counter++;
+      if (counter >= max_num_via_trial) {
+        break;
+      }
+    }
+  };
+
+  if (layer_num + 1 <= getDesign()->getTech()->getTopLayerNum()) {
+    process_cut_layer(layer_num + 1, cnt);
+  }
+
+  if (is_bterm) {
+    int down_via_cnt = 0;
+    const int bottom_layer = getDesign()->getTech()->getBottomLayerNum();
+    for (int l = layer_num - 1; l >= layer_num - 3 && l >= bottom_layer; l--) {
+      process_cut_layer(l, down_via_cnt);
+      if (down_via_cnt >= max_num_via_trial) {
+        break;
+      }
     }
   }
 }
@@ -174,7 +206,8 @@ void FlexPA::genAPCosted(
     const frLayerNum base_layer_num,
     const frLayerNum layer_num,
     const gtl::rectangle_data<frCoord>& rect,
-    const int offset)
+    const int offset,
+    const bool is_bterm)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
   const bool is_curr_layer_horz = layer->isHorizontal();
@@ -195,7 +228,8 @@ void FlexPA::genAPCosted(
       break;
 
     case (frAccessPointEnum::EncOpt):
-      genAPEnclosedBoundary(coords, rect, base_layer_num, is_curr_layer_horz);
+      genAPEnclosedBoundary(
+          coords, rect, base_layer_num, is_curr_layer_horz, is_bterm);
       break;
 
     case (frAccessPointEnum::NearbyGrid):
@@ -371,7 +405,8 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                             std::map<frCoord, frAccessPointEnum>& y_coords,
                             const frAccessPointEnum lower_type,
                             const frAccessPointEnum upper_type,
-                            const bool is_macro_cell_pin)
+                            const bool is_macro_cell_pin,
+                            const bool is_bterm)
 {
   if (OnlyAllowOnGridAccess(layer_num, is_macro_cell_pin)
       && upper_type != frAccessPointEnum::OnGrid) {
@@ -436,7 +471,8 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                   layer_num,
                   second_layer_num,
                   rect,
-                  offset);
+                  offset,
+                  is_bterm);
     }
   }
   if (!use_center_line) {
@@ -447,7 +483,9 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                     layer1_track_coords,
                     layer_num,
                     layer_num,
-                    rect);
+                    rect,
+                    0,
+                    is_bterm);
       }
     }
   } else {
@@ -484,6 +522,7 @@ void FlexPA::genAPsFromLayerShapes(
 {
   // IO term is treated as the MacroCellPin as the top block
   bool is_macro_cell_pin = isMacroCellTerm(inst_term) || isIOTerm(inst_term);
+  bool is_bterm = (inst_term == nullptr);
 
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
@@ -497,7 +536,8 @@ void FlexPA::genAPsFromLayerShapes(
                    y_coords,
                    lower_type,
                    upper_type,
-                   is_macro_cell_pin);
+                   is_macro_cell_pin,
+                   is_bterm);
 
     layer_rect_to_coords[layer_num].push_back(
         {bbox_rect, {x_coords, y_coords}});
