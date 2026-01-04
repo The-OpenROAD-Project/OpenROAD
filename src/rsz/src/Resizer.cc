@@ -4495,10 +4495,10 @@ void Resizer::journalBegin()
   split_load_move_->undoMoves();
 }
 
-void Resizer::journalEnd()
+void Resizer::journalEnd(bool update_sta)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
-  if (!odb::dbDatabase::ecoEmpty(block_)) {
+  if (update_sta && !odb::dbDatabase::ecoEmpty(block_)) {
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
@@ -4559,6 +4559,61 @@ void Resizer::journalEnd()
              swap_pins_move_->numCommittedMoves(),
              vt_swap_speed_move_->numCommittedMoves(),
              unbuffer_move_->numCommittedMoves());
+}
+
+void Resizer::journalEndSave(bool update_sta)
+{
+  debugPrint(logger_, RSZ, "journal", 1, "journal end (save)");
+  if (update_sta && !odb::dbDatabase::ecoEmpty(block_)) {
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+  }
+  odb::dbDatabase::endEco(block_);
+
+  int move_count_ = 0;
+  move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_up_match_move_->numPendingMoves();
+  move_count_ += size_down_move_->numPendingMoves();
+  move_count_ += buffer_move_->numPendingMoves();
+  move_count_ += clone_move_->numPendingMoves();
+  move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += vt_swap_speed_move_->numPendingMoves();
+  move_count_ += unbuffer_move_->numPendingMoves();
+
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             2,
+             "SAVE {} moves: up {} up_match {} down {} buffer {} clone {} swap "
+             "{} vt_swap {} unbuf {}",
+             move_count_,
+             size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
+
+  accepted_move_count_ += move_count_;
+
+  size_up_move_->commitMoves();
+  size_up_match_move_->commitMoves();
+  size_down_move_->commitMoves();
+  buffer_move_->commitMoves();
+  clone_move_->commitMoves();
+  swap_pins_move_->commitMoves();
+  vt_swap_speed_move_->commitMoves();
+  unbuffer_move_->commitMoves();
+  split_load_move_->commitMoves();
+}
+
+void Resizer::journalCommitSaved()
+{
+  while (!odb::dbDatabase::ecoStackEmpty(block_)) {
+    odb::dbDatabase::commitEco(block_);
+  }
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)

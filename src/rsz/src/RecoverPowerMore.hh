@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
@@ -43,6 +44,20 @@ class RecoverPowerMore : public sta::dbStaState
   bool recoverPower(float recover_power_percent, bool verbose);
 
  private:
+  enum class ActionType
+  {
+    kSwap,
+    kRemoveBuffer,
+  };
+
+  struct ActionRecord
+  {
+    ActionType type = ActionType::kSwap;
+    std::string inst_name;
+    LibertyCell* prev_cell = nullptr;  // swap: original
+    LibertyCell* new_cell = nullptr;   // swap: replacement, remove: buffer cell
+  };
+
   struct CandidateInstance
   {
     sta::Instance* inst = nullptr;
@@ -61,8 +76,7 @@ class RecoverPowerMore : public sta::dbStaState
   bool instanceDrivesClock(sta::Instance* inst) const;
 
   float minClockPeriod() const;
-  Slack computeWnsFloor(Slack worst_setup_before,
-                        float recover_power_percent) const;
+  Slack computeWnsFloor(Slack worst_setup_before, float clock_period) const;
 
   const Corner* selectPowerCorner() const;
   float designTotalPower(const Corner* corner) const;
@@ -95,13 +109,21 @@ class RecoverPowerMore : public sta::dbStaState
                        size_t max_cap_vio,
                        size_t max_fanout_vio,
                        bool verbose);
-  bool optimizeInstance(sta::Instance* inst,
-                        Slack wns_floor,
-                        Slack hold_floor,
-                        size_t max_slew_vio,
-                        size_t max_cap_vio,
-                        size_t max_fanout_vio,
-                        bool verbose);
+  bool optimizeInstanceSwaps(sta::Instance* inst,
+                             Slack wns_floor,
+                             Slack hold_floor,
+                             size_t max_slew_vio,
+                             size_t max_cap_vio,
+                             size_t max_fanout_vio,
+                             bool verbose);
+  bool optimizeInstanceBufferRemoval(sta::Instance* inst,
+                                     Slack wns_floor,
+                                     Slack hold_floor,
+                                     size_t max_slew_vio,
+                                     size_t max_cap_vio,
+                                     size_t max_fanout_vio,
+                                     bool verbose);
+  void backoffToTimingFloor(Slack wns_floor, Slack hold_floor, bool verbose);
 
   bool meetsSizeCriteria(const LibertyCell* cell,
                          const LibertyCell* candidate) const;
@@ -133,10 +155,13 @@ class RecoverPowerMore : public sta::dbStaState
   static constexpr int max_passes_ = 10;
   static constexpr int max_swaps_per_instance_ = 16;
 
-  // When setup timing is already failing (WNS < 0), allow recover_power to
-  // further degrade WNS by a small fraction of the clock period to trade
-  // performance for power.
-  static constexpr float max_wns_degrade_frac_of_period_ = 0.02f;
+  // Limit performance degradation from recover_power by bounding the increase
+  // in effective clock period (target clock period - worst setup slack).
+  static constexpr float max_eff_period_degrade_frac_ = 0.01f;
+  // Keep a small timing guard-band above the computed floor to absorb routing
+  // noise from rejected candidates.
+  static constexpr float timing_floor_guard_frac_ = 0.06f;
+  static constexpr Slack timing_floor_guard_cap_ = 2e-12;
 
   double initial_design_area_ = 0;
   float initial_power_total_ = -1.0f;
@@ -154,6 +179,7 @@ class RecoverPowerMore : public sta::dbStaState
   Slack wns_floor_ = 0.0;
   Slack hold_floor_ = 0.0;
   int buffer_remove_count_ = 0;
+  std::vector<ActionRecord> action_history_;
 };
 
 }  // namespace rsz

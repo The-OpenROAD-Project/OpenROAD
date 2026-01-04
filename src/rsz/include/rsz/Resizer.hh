@@ -785,7 +785,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
   void journalBegin();
-  void journalEnd();
+  void journalEnd(bool update_sta = true);
+  // End the current journal but keep it on the ECO stack so it can be
+  // undone/committed later.
+  void journalEndSave(bool update_sta = true);
+  // Commit all saved journals on the ECO stack.
+  void journalCommitSaved();
   void journalRestore();
   void journalMakeBuffer(Instance* buffer);
 

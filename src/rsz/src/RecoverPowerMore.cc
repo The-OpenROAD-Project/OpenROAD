@@ -5,28 +5,39 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
 #include <cstring>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PortDirection.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
+#include "sta/Search.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Units.hh"
+#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -46,6 +57,65 @@ Net* mutableNet(const Net* net)
   // They take Net* but do not mutate the net, so casting away const is safe.
   return const_cast<Net*>(net);
 }
+
+class AllowCongestionGuard
+{
+ public:
+  explicit AllowCongestionGuard(est::EstimateParasitics* estimate_parasitics)
+  {
+    if (estimate_parasitics == nullptr) {
+      return;
+    }
+    grt::GlobalRouter* grouter = estimate_parasitics->getGlobalRouter();
+    if (grouter == nullptr) {
+      return;
+    }
+    grouter_ = grouter;
+    allow_congestion_prev_ = grouter_->getAllowCongestion();
+    grouter_->setAllowCongestion(true);
+  }
+
+  ~AllowCongestionGuard()
+  {
+    if (grouter_ != nullptr) {
+      grouter_->setAllowCongestion(allow_congestion_prev_);
+    }
+  }
+
+ private:
+  grt::GlobalRouter* grouter_ = nullptr;
+  bool allow_congestion_prev_ = false;
+};
+
+class SkipDirtyOnInstSwapMasterGuard
+{
+ public:
+  explicit SkipDirtyOnInstSwapMasterGuard(
+      est::EstimateParasitics* estimate_parasitics)
+  {
+    if (estimate_parasitics == nullptr) {
+      return;
+    }
+    grt::GlobalRouter* grouter = estimate_parasitics->getGlobalRouter();
+    if (grouter == nullptr) {
+      return;
+    }
+    grouter_ = grouter;
+    prev_ = grouter_->getSkipDirtyOnInstSwapMaster();
+    grouter_->setSkipDirtyOnInstSwapMaster(true);
+  }
+
+  ~SkipDirtyOnInstSwapMasterGuard()
+  {
+    if (grouter_ != nullptr) {
+      grouter_->setSkipDirtyOnInstSwapMaster(prev_);
+    }
+  }
+
+ private:
+  grt::GlobalRouter* grouter_ = nullptr;
+  bool prev_ = false;
+};
 
 }  // namespace
 
@@ -72,10 +142,26 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
 
   resize_count_ = 0;
   buffer_remove_count_ = 0;
+  action_history_.clear();
   resizer_->buffer_moved_into_core_ = false;
 
   // Ensure clock network exists for sta_->isClock().
   sta_->ensureClkNetwork();
+
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
+  AllowCongestionGuard allow_congestion(estimate_parasitics_);
+  SkipDirtyOnInstSwapMasterGuard skip_dirty_swap(estimate_parasitics_);
+
+  // Make sure STA is consistent with any pending incremental routing/parasitic
+  // updates before we measure the timing budget baseline.
+  if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+    gr->discardDirtyNets();
+  }
+  estimate_parasitics_->updateParasitics(false);
+  sta_->delaysInvalid();
+  // Use a full timing update to make the baseline (and derived floor) stable.
+  sta_->updateTiming(true);
+  sta_->findRequireds();
 
   // Baseline timing + DRV limits: do not regress.
   Slack worst_slack_before;
@@ -83,19 +169,25 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
   sta_->worstSlack(max_, worst_slack_before, worst_vertex);
   (void) worst_vertex;
 
+  const float clock_period = minClockPeriod();
+
   Slack worst_hold_before;
   Vertex* worst_hold_vertex;
   sta_->worstSlack(min_, worst_hold_before, worst_hold_vertex);
   (void) worst_hold_vertex;
 
-  // Keep timing closed if it is closed (WNS >= 0), otherwise do not worsen
-  // the current worst slack by default. For already-failing designs, allow a
-  // small WNS degradation budget to trade performance for power.
-  const Slack wns_floor
-      = computeWnsFloor(worst_slack_before, recover_power_percent);
+  // Limit performance degradation from recover_power by bounding the increase
+  // in effective clock period (target clock period - WNS).
+  const Slack wns_floor = computeWnsFloor(worst_slack_before, clock_period);
   wns_floor_ = wns_floor;
   const Slack hold_floor = (worst_hold_before >= 0.0) ? 0.0 : worst_hold_before;
   hold_floor_ = hold_floor;
+
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+  logger_->metric("recover_power__timing__setup__ws_before",
+                  time_unit->staToUser(worst_slack_before));
+  logger_->metric("recover_power__timing__setup__ws_floor",
+                  time_unit->staToUser(wns_floor));
 
   initial_design_area_ = resizer_->computeDesignArea();
   initial_max_slew_violations_
@@ -111,88 +203,134 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
   corner_ = selectPowerCorner();
   initial_power_total_ = designTotalPower(corner_);
 
-  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-  // Multi-pass loop: after each batch, recompute slacks and keep spending
-  // available slack headroom on non-clock cells.
+  logger_->metric("recover_power__power__total_before", initial_power_total_);
+  if (clock_period > 0.0f && std::isfinite(worst_slack_before)) {
+    const float eff_period_before = clock_period - worst_slack_before;
+    if (eff_period_before > 0.0f) {
+      logger_->metric("recover_power__timing__fmax_before",
+                      1.0 / eff_period_before);
+    }
+  }
+
   int iteration = 0;
-  int accepted_in_last_pass = 0;
   printProgress(0, 0, true, false);
 
-  for (int pass = 0; pass < max_passes_; ++pass) {
-    Slack current_wns;
-    Vertex* current_wns_vertex;
-    sta_->worstSlack(max_, current_wns, current_wns_vertex);
-    (void) current_wns_vertex;
+  auto run_passes = [&](auto keep_candidate,
+                        auto optimize_instance,
+                        const int max_passes) {
+    for (int pass = 0; pass < max_passes; ++pass) {
+      Slack current_wns;
+      Vertex* current_wns_vertex;
+      sta_->worstSlack(max_, current_wns, current_wns_vertex);
+      (void) current_wns_vertex;
 
-    const auto candidates = collectCandidates(current_wns);
-    if (candidates.empty()) {
-      break;
-    }
-
-    // Rank by "power × available headroom" so we focus effort on high-power,
-    // non-critical instances. Then break ties by power/headroom/area.
-    std::vector<CandidateInstance> sorted = candidates;
-    std::ranges::sort(
-        sorted, [](const CandidateInstance& a, const CandidateInstance& b) {
-          const float a_score
-              = a.power * static_cast<float>(std::max<Slack>(0.0, a.headroom));
-          const float b_score
-              = b.power * static_cast<float>(std::max<Slack>(0.0, b.headroom));
-          if (a_score != b_score) {
-            return a_score > b_score;
-          }
-          if (a.power != b.power) {
-            return a.power > b.power;
-          }
-          if (a.headroom != b.headroom) {
-            return a.headroom > b.headroom;
-          }
-          return a.area > b.area;
-        });
-
-    int max_inst_count
-        = static_cast<int>(std::ceil(sorted.size() * recover_power_percent));
-    max_inst_count = std::clamp(max_inst_count, 1, (int) sorted.size());
-
-    // Print progress roughly every ~1% (bounded).
-    print_interval_ = std::clamp(
-        max_inst_count / 100, min_print_interval_, max_print_interval_);
-
-    accepted_in_last_pass = 0;
-    int consecutive_rejects = 0;
-    // Stop burning runtime on long tails of rejected candidates. Candidates are
-    // processed in descending score order, so after enough consecutive rejects
-    // further candidates are unlikely to be acceptable.
-    const int max_consecutive_rejects
-        = std::clamp(max_inst_count / 10, 1000, 20000);
-    for (int i = 0; i < max_inst_count; ++i) {
-      ++iteration;
-      const CandidateInstance& cand = sorted[i];
-      if (optimizeInstance(cand.inst,
-                           wns_floor,
-                           hold_floor,
-                           initial_max_slew_violations_,
-                           initial_max_cap_violations_,
-                           initial_max_fanout_violations_,
-                           verbose)) {
-        ++accepted_in_last_pass;
-        consecutive_rejects = 0;
-      } else {
-        consecutive_rejects++;
+      std::vector<CandidateInstance> candidates = collectCandidates(current_wns);
+      candidates.erase(std::remove_if(candidates.begin(),
+                                      candidates.end(),
+                                      [&](const CandidateInstance& cand) {
+                                        return !keep_candidate(cand);
+                                      }),
+                       candidates.end());
+      if (candidates.empty()) {
+        break;
       }
 
-      if (verbose || (iteration % print_interval_ == 0)) {
-        printProgress(iteration, max_inst_count, false, false);
+      // Rank by "power × available headroom" so we focus effort on high-power,
+      // non-critical instances. Then break ties by power/headroom/area.
+      std::sort(
+          candidates.begin(),
+          candidates.end(),
+          [](const CandidateInstance& a, const CandidateInstance& b) {
+            const float a_score
+                = a.power * static_cast<float>(std::max<Slack>(0.0, a.headroom));
+            const float b_score
+                = b.power * static_cast<float>(std::max<Slack>(0.0, b.headroom));
+            if (a_score != b_score) {
+              return a_score > b_score;
+            }
+            if (a.power != b.power) {
+              return a.power > b.power;
+            }
+            if (a.headroom != b.headroom) {
+              return a.headroom > b.headroom;
+            }
+            return a.area > b.area;
+          });
+
+      int max_inst_count = static_cast<int>(
+          std::ceil(candidates.size() * recover_power_percent));
+      max_inst_count = std::clamp(max_inst_count, 1, (int) candidates.size());
+
+      // Print progress roughly every ~1% (bounded).
+      print_interval_ = std::clamp(
+          max_inst_count / 100, min_print_interval_, max_print_interval_);
+
+      int accepted_in_last_pass = 0;
+      int consecutive_rejects = 0;
+      // Stop burning runtime on long tails of rejected candidates. Candidates
+      // are processed in descending score order, so after enough consecutive
+      // rejects further candidates are unlikely to be acceptable.
+      const int max_consecutive_rejects
+          = std::clamp(max_inst_count / 20, 200, 5000);
+      for (int i = 0; i < max_inst_count; ++i) {
+        ++iteration;
+        const CandidateInstance& cand = candidates[i];
+        if (optimize_instance(cand.inst)) {
+          ++accepted_in_last_pass;
+          consecutive_rejects = 0;
+        } else {
+          consecutive_rejects++;
+        }
+
+        if (verbose || (iteration % print_interval_ == 0)) {
+          printProgress(iteration, max_inst_count, false, false);
+        }
+
+        if (consecutive_rejects >= max_consecutive_rejects) {
+          break;
+        }
       }
 
-      if (consecutive_rejects >= max_consecutive_rejects) {
+      if (accepted_in_last_pass == 0) {
         break;
       }
     }
+  };
 
-    if (accepted_in_last_pass == 0) {
-      break;
-    }
+  // Phase 1: cell swaps (downsizing + VT).
+  run_passes(
+      [&](const CandidateInstance& cand) {
+        LibertyCell* cell = network_->libertyCell(cand.inst);
+        return cell != nullptr && !cell->isBuffer();
+      },
+      [&](sta::Instance* inst) {
+        return optimizeInstanceSwaps(inst,
+                                     wns_floor,
+                                     hold_floor,
+                                     initial_max_slew_violations_,
+                                     initial_max_cap_violations_,
+                                     initial_max_fanout_violations_,
+                                     verbose);
+      },
+      max_passes_);
+
+  // Phase 2: buffer removal (done last so timing backoff can prefer undoing
+  // buffer removals while retaining beneficial swaps).
+  // Disabled for now: buffer removals are harder to back off without leaving
+  // the routing/parasitics state inconsistent across platforms.
+
+  Slack final_wns;
+  Vertex* final_wns_vertex;
+  sta_->worstSlack(max_, final_wns, final_wns_vertex);
+  (void) final_wns_vertex;
+
+  Slack final_hold;
+  Vertex* final_hold_vertex;
+  sta_->worstSlack(min_, final_hold, final_hold_vertex);
+  (void) final_hold_vertex;
+
+  if (final_wns < wns_floor || final_hold < hold_floor) {
+    backoffToTimingFloor(wns_floor, hold_floor, verbose);
   }
 
   // Resync DRV violation counts for final reporting/sanity.
@@ -218,6 +356,19 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
   }
 
   printProgress(iteration, iteration, true, true);
+
+  Slack worst_slack_after;
+  sta_->worstSlack(max_, worst_slack_after, worst_vertex);
+  logger_->metric("recover_power__timing__setup__ws_after",
+                  time_unit->staToUser(worst_slack_after));
+  const float power_after = designTotalPower(corner_);
+  logger_->metric("recover_power__power__total_after", power_after);
+  if (clock_period > 0.0f && std::isfinite(worst_slack_after)) {
+    const float eff_period_after = clock_period - worst_slack_after;
+    if (eff_period_after > 0.0f) {
+      logger_->metric("recover_power__timing__fmax_after", 1.0 / eff_period_after);
+    }
+  }
 
   if (resize_count_ > 0 || buffer_remove_count_ > 0) {
     logger_->info(
@@ -475,7 +626,9 @@ Slack RecoverPowerMore::instanceWorstSlack(sta::Instance* inst) const
     }
 
     const Slack slack = sta_->vertexSlack(vertex, max_);
-    worst_slack = std::min(worst_slack, slack);
+    if (slack < worst_slack) {
+      worst_slack = slack;
+    }
     found = true;
   }
 
@@ -500,7 +653,7 @@ bool RecoverPowerMore::instanceDrivesClock(sta::Instance* inst) const
 
 float RecoverPowerMore::minClockPeriod() const
 {
-  auto* clocks = sdc_->clocks();
+  sta::ClockSeq* clocks = sdc_->clocks();
   if (clocks == nullptr || clocks->empty()) {
     return 0.0f;
   }
@@ -513,21 +666,25 @@ float RecoverPowerMore::minClockPeriod() const
 }
 
 Slack RecoverPowerMore::computeWnsFloor(const Slack worst_setup_before,
-                                        const float recover_power_percent) const
+                                        const float clock_period) const
 {
-  if (worst_setup_before >= 0.0) {
-    return 0.0;
+  if (!(clock_period > 0.0f) || !std::isfinite(worst_setup_before)) {
+    return (worst_setup_before >= 0.0) ? 0.0 : worst_setup_before;
   }
 
-  const float min_period = minClockPeriod();
-  if (!(min_period > 0.0f)) {
-    return worst_setup_before;
+  const float eff_period_before = clock_period - worst_setup_before;
+  if (!(eff_period_before > 0.0f) || !std::isfinite(eff_period_before)) {
+    return (worst_setup_before >= 0.0) ? 0.0 : worst_setup_before;
   }
 
-  const float percent = std::clamp(recover_power_percent, 0.0f, 1.0f);
-  const Slack budget = static_cast<Slack>(max_wns_degrade_frac_of_period_
-                                          * percent * min_period);
-  return worst_setup_before - budget;
+  const Slack slack_budget
+      = static_cast<Slack>(max_eff_period_degrade_frac_ * eff_period_before);
+  const Slack slack_guard = std::min<Slack>(
+      timing_floor_guard_cap_,
+      static_cast<Slack>(timing_floor_guard_frac_ * slack_budget));
+
+  Slack floor = worst_setup_before - slack_budget + slack_guard;
+  return std::min(floor, worst_setup_before);
 }
 
 const Corner* RecoverPowerMore::selectPowerCorner() const
@@ -626,21 +783,24 @@ std::vector<LibertyCell*> RecoverPowerMore::nextSmallerCells(
 
   // Prefer weaker (higher resistance) and lower leakage candidates first;
   // the full STA check will decide which are actually acceptable.
-  std::ranges::stable_sort(candidates, [this](LibertyCell* a, LibertyCell* b) {
-    float ra = std::max(0.0f, resizer_->cellDriveResistance(a));
-    float rb = std::max(0.0f, resizer_->cellDriveResistance(b));
-    const float la = resizer_->cellLeakage(a).value_or(
-        std::numeric_limits<float>::infinity());
-    const float lb = resizer_->cellLeakage(b).value_or(
-        std::numeric_limits<float>::infinity());
-    if (ra != rb) {
-      return ra > rb;
-    }
-    if (la != lb) {
-      return la < lb;
-    }
-    return std::strcmp(a->name(), b->name()) < 0;
-  });
+  std::stable_sort(
+      candidates.begin(),
+      candidates.end(),
+      [this](LibertyCell* a, LibertyCell* b) {
+        float ra = std::max(0.0f, resizer_->cellDriveResistance(a));
+        float rb = std::max(0.0f, resizer_->cellDriveResistance(b));
+        const float la = resizer_->cellLeakage(a).value_or(
+            std::numeric_limits<float>::infinity());
+        const float lb = resizer_->cellLeakage(b).value_or(
+            std::numeric_limits<float>::infinity());
+        if (ra != rb) {
+          return ra > rb;
+        }
+        if (la != lb) {
+          return la < lb;
+        }
+        return std::strcmp(a->name(), b->name()) < 0;
+      });
 
   return candidates;
 }
@@ -702,18 +862,46 @@ bool RecoverPowerMore::trySwapCell(sta::Instance* inst,
   const size_t pre_cap = countCapViolations(seed_nets);
   const size_t pre_fanout = countFanoutViolations(seed_nets);
 
-  resizer_->journalBegin();
-
-  if (!resizer_->replaceCell(inst, replacement, /* journal */ true)) {
-    resizer_->journalEnd();
+  if (!resizer_->replaceCell(inst, replacement, /* journal */ false)) {
     return false;
   }
 
-  estimate_parasitics_->updateParasitics(true);
   sta_->findRequireds();
 
-  // Local guard: don't turn a previously positive-slack instance into a
-  // setup-violating one.
+  // Fast rejection without perturbing routing/parasitics. Most candidates fail
+  // timing and can be rejected based on existing parasitics.
+  Slack wns_quick;
+  Vertex* wns_quick_vertex;
+  sta_->worstSlack(max_, wns_quick, wns_quick_vertex);
+  (void) wns_quick_vertex;
+
+  Slack hold_quick;
+  Vertex* hold_quick_vertex;
+  sta_->worstSlack(min_, hold_quick, hold_quick_vertex);
+  (void) hold_quick_vertex;
+
+  if (wns_quick < wns_floor || hold_quick < hold_floor) {
+    resizer_->replaceCell(inst, curr_cell, /* journal */ false);
+    if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+      gr->discardDirtyNets();
+    }
+    estimate_parasitics_->updateParasitics(false);
+    sta_->updateTiming(false);
+    sta_->findRequireds();
+    return false;
+  }
+
+  // Parasitics must be updated after an inst master swap because pin offsets
+  // can change (and incremental groute callbacks can mark additional nets).
+  // Do this before the definitive timing/DRV acceptance checks so the timing
+  // budget is enforced against the same state that will be kept.
+  if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+    gr->discardDirtyNets();
+  }
+  estimate_parasitics_->updateParasitics(false);
+  sta_->updateTiming(false);
+  sta_->findRequireds();
+
   const Slack inst_slack_after = instanceWorstSlack(inst);
 
   Slack wns_after;
@@ -761,8 +949,13 @@ bool RecoverPowerMore::trySwapCell(sta::Instance* inst,
                  delayAsString(wns_after, sta_, kDigits),
                  delayAsString(wns_floor, sta_, kDigits));
     }
-    resizer_->journalRestore();
-    init();  // journalRestore reinitializes the resizer.
+    resizer_->replaceCell(inst, curr_cell, /* journal */ false);
+    if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+      gr->discardDirtyNets();
+    }
+    estimate_parasitics_->updateParasitics(false);
+    sta_->updateTiming(false);
+    sta_->findRequireds();
     return false;
   }
 
@@ -779,7 +972,8 @@ bool RecoverPowerMore::trySwapCell(sta::Instance* inst,
                delayAsString(wns_after, sta_, kDigits));
   }
 
-  resizer_->journalEnd();
+  action_history_.push_back(
+      {ActionType::kSwap, network_->pathName(inst), curr_cell, replacement});
   curr_max_slew_violations_ = static_cast<size_t>(new_slew);
   curr_max_cap_violations_ = static_cast<size_t>(new_cap);
   curr_max_fanout_violations_ = static_cast<size_t>(new_fanout);
@@ -840,7 +1034,8 @@ bool RecoverPowerMore::tryRemoveBuffer(sta::Instance* inst,
     return false;
   }
 
-  estimate_parasitics_->updateParasitics(true);
+  estimate_parasitics_->updateParasitics(false);
+  sta_->updateTiming(false);
   sta_->findRequireds();
 
   Slack wns_after;
@@ -918,7 +1113,9 @@ bool RecoverPowerMore::tryRemoveBuffer(sta::Instance* inst,
                delayAsString(hold_after, sta_, kDigits));
   }
 
-  resizer_->journalEnd();
+  action_history_.push_back(
+      {ActionType::kRemoveBuffer, inst_name, nullptr, curr_cell});
+  resizer_->journalEndSave(false);
   curr_max_slew_violations_ = static_cast<size_t>(new_slew);
   curr_max_cap_violations_ = static_cast<size_t>(new_cap);
   curr_max_fanout_violations_ = static_cast<size_t>(new_fanout);
@@ -926,43 +1123,21 @@ bool RecoverPowerMore::tryRemoveBuffer(sta::Instance* inst,
   return true;
 }
 
-bool RecoverPowerMore::optimizeInstance(sta::Instance* inst,
-                                        Slack wns_floor,
-                                        Slack hold_floor,
-                                        size_t max_slew_vio,
-                                        size_t max_cap_vio,
-                                        size_t max_fanout_vio,
-                                        bool verbose)
+bool RecoverPowerMore::optimizeInstanceSwaps(sta::Instance* inst,
+                                             Slack wns_floor,
+                                             Slack hold_floor,
+                                             size_t max_slew_vio,
+                                             size_t max_cap_vio,
+                                             size_t max_fanout_vio,
+                                             bool verbose)
 {
   if (inst == nullptr || resizer_->dontTouch(inst)) {
     return false;
   }
 
   LibertyCell* curr_cell = network_->libertyCell(inst);
-  if (curr_cell == nullptr) {
+  if (curr_cell == nullptr || curr_cell->isBuffer()) {
     return false;
-  }
-
-  const std::string inst_name = network_->pathName(inst);
-  const bool drives_clock = instanceDrivesClock(inst);
-
-  // Buffer removal can provide a large power reduction when the buffer is
-  // redundant. Avoid clock networks where the buffer structure is deliberate.
-  if (curr_cell->isBuffer() && !drives_clock) {
-    if (tryRemoveBuffer(inst,
-                        wns_floor,
-                        hold_floor,
-                        max_slew_vio,
-                        max_cap_vio,
-                        max_fanout_vio,
-                        verbose)) {
-      return true;
-    }
-    // Journal restore during buffer removal may invalidate instance pointers.
-    inst = network_->findInstance(inst_name.c_str());
-    if (inst == nullptr) {
-      return false;
-    }
   }
 
   bool changed = false;
@@ -1022,6 +1197,145 @@ bool RecoverPowerMore::optimizeInstance(sta::Instance* inst,
   }
 
   return changed;
+}
+
+bool RecoverPowerMore::optimizeInstanceBufferRemoval(sta::Instance* inst,
+                                                     Slack wns_floor,
+                                                     Slack hold_floor,
+                                                     size_t max_slew_vio,
+                                                     size_t max_cap_vio,
+                                                     size_t max_fanout_vio,
+                                                     bool verbose)
+{
+  if (inst == nullptr || resizer_->dontTouch(inst)) {
+    return false;
+  }
+
+  LibertyCell* curr_cell = network_->libertyCell(inst);
+  if (curr_cell == nullptr || !curr_cell->isBuffer()) {
+    return false;
+  }
+
+  const bool drives_clock = instanceDrivesClock(inst);
+  if (drives_clock) {
+    return false;
+  }
+
+  return tryRemoveBuffer(inst,
+                         wns_floor,
+                         hold_floor,
+                         max_slew_vio,
+                         max_cap_vio,
+                         max_fanout_vio,
+                         verbose);
+}
+
+void RecoverPowerMore::backoffToTimingFloor(const Slack wns_floor,
+                                            const Slack hold_floor,
+                                            const bool verbose)
+{
+  Slack wns;
+  Vertex* wns_vertex;
+  sta_->worstSlack(max_, wns, wns_vertex);
+  (void) wns_vertex;
+
+  Slack hold;
+  Vertex* hold_vertex;
+  sta_->worstSlack(min_, hold, hold_vertex);
+  (void) hold_vertex;
+
+  int undone_actions = 0;
+  int undone_swaps = 0;
+  int undone_buffers = 0;
+  while ((wns < wns_floor || hold < hold_floor) && !action_history_.empty()) {
+    const ActionRecord action = action_history_.back();
+    action_history_.pop_back();
+
+    if (action.type != ActionType::kSwap || action.prev_cell == nullptr) {
+      continue;
+    }
+    sta::Instance* inst = network_->findInstance(action.inst_name.c_str());
+    if (inst == nullptr) {
+      continue;
+    }
+    // Undo the swap directly (avoid ECO restore, which can perturb routing).
+    if (!resizer_->replaceCell(inst, action.prev_cell, /* journal */ false)) {
+      continue;
+    }
+    if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+      gr->discardDirtyNets();
+    }
+    estimate_parasitics_->updateParasitics(false);
+    sta_->updateTiming(false);
+    sta_->findRequireds();
+
+    if (action.type == ActionType::kSwap) {
+      if (resize_count_ > 0) {
+        resize_count_--;
+      }
+      undone_swaps++;
+    } else {
+      if (buffer_remove_count_ > 0) {
+        buffer_remove_count_--;
+      }
+      undone_buffers++;
+    }
+    undone_actions++;
+
+    sta::Vertex* wns_after_vertex;
+    sta_->worstSlack(max_, wns, wns_after_vertex);
+    (void) wns_after_vertex;
+
+    sta::Vertex* hold_after_vertex;
+    sta_->worstSlack(min_, hold, hold_after_vertex);
+    (void) hold_after_vertex;
+
+    if (verbose) {
+      const char* kind
+          = (action.type == ActionType::kSwap) ? "swap" : "remove_buffer";
+      const std::string from_name
+          = action.prev_cell != nullptr ? action.prev_cell->name() : "";
+      const std::string to_name
+          = action.new_cell != nullptr ? action.new_cell->name() : "";
+      debugPrint(logger_,
+                 RSZ,
+                 "recover_power_more",
+                 1,
+                 "Backoff undo {} {} {}->{} (wns={} floor={})",
+                 kind,
+                 action.inst_name,
+                 from_name,
+                 to_name,
+                 delayAsString(wns, sta_, kDigits),
+                 delayAsString(wns_floor, sta_, kDigits));
+    }
+  }
+
+  if (undone_actions > 0) {
+    logger_->warn(RSZ,
+                  170,
+                  "Power recovery exceeded timing budget; backed off {} actions "
+                  "({} swaps, {} buffer removals) (wns {} floor {}, hold {} "
+                  "floor {}).",
+                  undone_actions,
+                  undone_swaps,
+                  undone_buffers,
+                  delayAsString(wns, sta_, kDigits),
+                  delayAsString(wns_floor, sta_, kDigits),
+                  delayAsString(hold, sta_, kDigits),
+                  delayAsString(hold_floor, sta_, kDigits));
+  }
+
+  if (wns < wns_floor || hold < hold_floor) {
+    logger_->warn(RSZ,
+                  171,
+                  "Power recovery timing budget still violated after backoff "
+                  "(wns {} floor {}, hold {} floor {}).",
+                  delayAsString(wns, sta_, kDigits),
+                  delayAsString(wns_floor, sta_, kDigits),
+                  delayAsString(hold, sta_, kDigits),
+                  delayAsString(hold_floor, sta_, kDigits));
+  }
 }
 
 bool RecoverPowerMore::meetsSizeCriteria(const LibertyCell* cell,

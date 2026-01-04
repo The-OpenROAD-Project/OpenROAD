@@ -153,6 +153,15 @@ class GlobalRouter
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
+  bool getAllowCongestion() const { return allow_congestion_; }
+  void setSkipDirtyOnInstSwapMaster(bool skip)
+  {
+    skip_dirty_on_inst_swap_master_ = skip;
+  }
+  bool getSkipDirtyOnInstSwapMaster() const
+  {
+    return skip_dirty_on_inst_swap_master_;
+  }
   void setResistanceAware(bool resistance_aware);
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
@@ -222,6 +231,13 @@ class GlobalRouter
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
+  // Drop incremental dirty-net state without routing (used to undo temporary
+  // edits that are immediately reverted).
+  void discardDirtyNets();
+  // Refresh cached pin positions (without routing). This is used by incremental
+  // parasitics estimation when a net's pin offsets change (e.g., inst master
+  // swap) but we do not want to treat the net as dirty for routing.
+  void refreshNetPins(odb::dbNet* db_net);
   // check_antennas
   bool haveRoutes();
   bool designIsPlaced();
@@ -516,6 +532,7 @@ class GlobalRouter
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
   bool allow_congestion_;
+  bool skip_dirty_on_inst_swap_master_{false};
   bool resistance_aware_{false};
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
@@ -604,6 +621,9 @@ class IncrementalGRoute
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
   std::vector<Net*> updateRoutes(bool save_guides = false);
+  // Update global routes for dirty nets and return the db nets that were
+  // rerouted.
+  std::vector<odb::dbNet*> updateRoutesDbNets(bool save_guides = false);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

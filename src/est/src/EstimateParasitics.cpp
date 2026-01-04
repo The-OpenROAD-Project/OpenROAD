@@ -430,7 +430,16 @@ void EstimateParasitics::updateParasitics(bool save_guides)
     case ParasiticsSrc::global_routing:
     case ParasiticsSrc::detailed_routing: {
       // TODO: update detailed route for modified nets
-      incr_groute_->updateRoutes(save_guides);
+      // Incremental routing can reroute additional nets (e.g., congestion
+      // resolution). Update parasitics for every net whose route changes so
+      // subsequent STA is consistent with the router state.
+      const std::vector<odb::dbNet*> routed_db_nets
+          = incr_groute_->updateRoutesDbNets(save_guides);
+      for (odb::dbNet* db_net : routed_db_nets) {
+        if (db_net != nullptr) {
+          parasitics_invalid_.insert(db_network_->dbToSta(db_net));
+        }
+      }
       for (const Net* net : parasitics_invalid_) {
         estimateGlobalRouteRC(db_network_->staToDb(net));
       }
@@ -519,6 +528,9 @@ void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
 
 void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
 {
+  if (global_router_ != nullptr) {
+    global_router_->refreshNetPins(db_net);
+  }
   MakeWireParasitics builder(
       logger_, this, sta_, db_->getTech(), block_, global_router_);
   auto& routes = global_router_->getRoutes();
