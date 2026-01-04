@@ -78,6 +78,13 @@ struct ParamStruct
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
+  bool doomedClips = false;
+  int doomedClipsReportN = 10;
+  int doomedClipsTopN = 0;
+  int doomedClipsMinIter = 1;
+  double doomedClipsWRuntime = 1.0;
+  double doomedClipsWDrvs = 1.0;
+  double doomedClipsWCongestion = 0.25;
   int num_threads;
 };
 

@@ -29,6 +29,13 @@ sta::define_cmd_args "detailed_route" {
     [-save_guide_updates]
     [-repair_pdn_vias layer]
     [-single_step_dr]
+    [-doomed_clips]
+    [-doomed_clips_report_n n]
+    [-doomed_clips_top_n n]
+    [-doomed_clips_min_iter n]
+    [-doomed_clips_w_runtime w]
+    [-doomed_clips_w_drvs w]
+    [-doomed_clips_w_congestion w]
 }
 
 proc detailed_route { args } {
@@ -37,9 +44,11 @@ proc detailed_route { args } {
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -via_access_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
-      -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
+      -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step \
+      -doomed_clips_report_n -doomed_clips_top_n -doomed_clips_min_iter \
+      -doomed_clips_w_runtime -doomed_clips_w_drvs -doomed_clips_w_congestion} \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access \
-           -single_step_dr -save_guide_updates}
+           -single_step_dr -save_guide_updates -doomed_clips}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
@@ -49,6 +58,7 @@ proc detailed_route { args } {
   # development.  It is not listed in the help string intentionally.
   set single_step_dr [expr [info exists flags(-single_step_dr)]]
   set save_guide_updates [expr [info exists flags(-save_guide_updates)]]
+  set doomed_clips [expr [info exists flags(-doomed_clips)]]
 
   if { [info exists keys(-repair_pdn_vias)] } {
     set repair_pdn_vias $keys(-repair_pdn_vias)
@@ -164,12 +174,51 @@ proc detailed_route { args } {
   } else {
     set min_access_points -1
   }
+  if { [info exists keys(-doomed_clips_report_n)] } {
+    sta::check_positive_integer "-doomed_clips_report_n" $keys(-doomed_clips_report_n)
+    set doomed_clips_report_n $keys(-doomed_clips_report_n)
+  } else {
+    set doomed_clips_report_n 10
+  }
+  if { [info exists keys(-doomed_clips_top_n)] } {
+    sta::check_positive_integer "-doomed_clips_top_n" $keys(-doomed_clips_top_n)
+    set doomed_clips_top_n $keys(-doomed_clips_top_n)
+  } else {
+    set doomed_clips_top_n 0
+  }
+  if { [info exists keys(-doomed_clips_min_iter)] } {
+    sta::check_cardinal "-doomed_clips_min_iter" $keys(-doomed_clips_min_iter)
+    set doomed_clips_min_iter $keys(-doomed_clips_min_iter)
+  } else {
+    set doomed_clips_min_iter 1
+  }
+  if { [info exists keys(-doomed_clips_w_runtime)] } {
+    sta::check_positive_float "-doomed_clips_w_runtime" $keys(-doomed_clips_w_runtime)
+    set doomed_clips_w_runtime $keys(-doomed_clips_w_runtime)
+  } else {
+    set doomed_clips_w_runtime 1.0
+  }
+  if { [info exists keys(-doomed_clips_w_drvs)] } {
+    sta::check_positive_float "-doomed_clips_w_drvs" $keys(-doomed_clips_w_drvs)
+    set doomed_clips_w_drvs $keys(-doomed_clips_w_drvs)
+  } else {
+    set doomed_clips_w_drvs 1.0
+  }
+  if { [info exists keys(-doomed_clips_w_congestion)] } {
+    sta::check_positive_float "-doomed_clips_w_congestion" $keys(-doomed_clips_w_congestion)
+    set doomed_clips_w_congestion $keys(-doomed_clips_w_congestion)
+  } else {
+    set doomed_clips_w_congestion 0.25
+  }
   drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
     $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
     $via_access_layer $or_seed $or_k $verbose \
     $clean_patches $no_pin_access $single_step_dr $min_access_points \
-    $save_guide_updates $repair_pdn_vias $drc_report_iter_step
+    $save_guide_updates $repair_pdn_vias $drc_report_iter_step \
+    $doomed_clips $doomed_clips_report_n $doomed_clips_top_n \
+    $doomed_clips_min_iter $doomed_clips_w_runtime $doomed_clips_w_drvs \
+    $doomed_clips_w_congestion
 }
 
 proc detailed_route_num_drvs { args } {

@@ -173,6 +173,16 @@ class FlexDR
   bool increaseClipsize_;
   float clipSizeInc_;
   int iter_;
+  struct ClipStats
+  {
+    double runtime_sec{0.0};
+    int init_drvs{0};
+    int best_drvs{0};
+    bool congested{false};
+  };
+  std::map<uint64_t, ClipStats> clip_stats_;
+  int clip_stats_size_{-1};
+  int clip_stats_offset_{-1};
 
   // others
   void initFromTA();
@@ -195,6 +205,8 @@ class FlexDR
                                              = odb::Rect());
   void reportIterationViolations() const;
   void endWorkersBatch(
+      std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch);
+  void endWorkersBatchSelectBest(
       std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch);
   void processWorkersBatch(
       std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch,
@@ -426,6 +438,7 @@ class FlexDRWorker
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
   frUInt4 getWorkerMarkerCost() const { return workerMarkerCost_; }
   frUInt4 getWorkerDRCCost() const { return workerDRCCost_; }
+  double getRuntimeSec() const { return runtime_sec_; }
   int getWorkerId() const { return worker_id_; }
   // others
   int main(frDesign* design);
@@ -552,6 +565,7 @@ class FlexDRWorker
   bool isCongested_{false};
   bool save_updates_{false};
   int worker_id_{0};
+  double runtime_sec_{0.0};
 
   // hellpers
   bool isRoutePatchWire(const frPatchWire* pwire) const;

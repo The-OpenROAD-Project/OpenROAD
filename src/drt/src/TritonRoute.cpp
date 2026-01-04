@@ -1314,6 +1314,13 @@ void TritonRoute::setParams(const ParamStruct& params)
   if (params.drouteEndIter >= 0) {
     router_cfg_->END_ITERATION = params.drouteEndIter;
   }
+  router_cfg_->DOOMED_CLIPS = params.doomedClips;
+  router_cfg_->DOOMED_CLIPS_REPORT_N = params.doomedClipsReportN;
+  router_cfg_->DOOMED_CLIPS_TOP_N = params.doomedClipsTopN;
+  router_cfg_->DOOMED_CLIPS_MIN_ITER = params.doomedClipsMinIter;
+  router_cfg_->DOOMED_CLIPS_W_RUNTIME = params.doomedClipsWRuntime;
+  router_cfg_->DOOMED_CLIPS_W_DRVS = params.doomedClipsWDrvs;
+  router_cfg_->DOOMED_CLIPS_W_CONGESTION = params.doomedClipsWCongestion;
   router_cfg_->OR_SEED = params.orSeed;
   router_cfg_->OR_K = params.orK;
   if (params.minAccessPoints > 0) {

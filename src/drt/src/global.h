@@ -67,6 +67,16 @@ struct RouterConfiguration
   float CONGESTION_THRESHOLD = 0.4;
   int MAX_CLIPSIZE_INCREASE = 18;
 
+  // Doomed clip handling (tile-level prioritization)
+  bool DOOMED_CLIPS = false;
+  int DOOMED_CLIPS_REPORT_N = 10;
+  // If > 0, run multiple cost strategies for the top N clips.
+  int DOOMED_CLIPS_TOP_N = 0;
+  int DOOMED_CLIPS_MIN_ITER = 1;
+  double DOOMED_CLIPS_W_RUNTIME = 1.0;
+  double DOOMED_CLIPS_W_DRVS = 1.0;
+  double DOOMED_CLIPS_W_CONGESTION = 0.25;
+
   int END_ITERATION = 80;
 
   int NDR_NETS_RIPUP_HARDINESS = 3;  // max ripup avoids

@@ -65,6 +65,13 @@ detailed_route
     [-save_guide_updates]
     [-repair_pdn_vias layer]
     [-single_step_dr]
+    [-doomed_clips]
+    [-doomed_clips_report_n n]
+    [-doomed_clips_top_n n]
+    [-doomed_clips_min_iter n]
+    [-doomed_clips_w_runtime w]
+    [-doomed_clips_w_drvs w]
+    [-doomed_clips_w_congestion w]
 ```
 
 #### Options
@@ -97,6 +104,13 @@ detailed_route
 | `-no_pin_access` | Disables pin access for routing. |
 | `-save_guide_updates` | Flag to save guides updates. |
 | `-repair_pdn_vias` | This option is used for PDKs where M1 and M2 power rails run in parallel. |
+| `-doomed_clips` | Enable tile-level clip scoring and prioritization using previous-iteration runtime and DRVs. |
+| `-doomed_clips_report_n` | Number of top-scored clips to report each iteration. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-doomed_clips_top_n` | Run multiple cost strategies in parallel for the top-N scored clips each iteration. The default value is `0` (disabled), and the allowed values are integers `[0, MAX_INT]`. |
+| `-doomed_clips_min_iter` | Start prioritization after this iteration number. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-doomed_clips_w_runtime` | Weight for the runtime component of the clip score. The default value is `1.0`, and the allowed values are floats `(0, MAX_FLOAT]`. |
+| `-doomed_clips_w_drvs` | Weight for the DRVs component of the clip score. The default value is `1.0`, and the allowed values are floats `(0, MAX_FLOAT]`. |
+| `-doomed_clips_w_congestion` | Weight for the congestion component of the clip score. The default value is `0.25`, and the allowed values are floats `(0, MAX_FLOAT]`. |
 
 #### Developer arguments
 

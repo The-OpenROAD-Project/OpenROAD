@@ -24,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -302,6 +303,7 @@ int FlexDRWorker::main(frDesign* design)
              duration_cast<duration<double>>(t3 - t0).count(),
              getInitNumMarkers(),
              num_markers);
+  runtime_sec_ = duration_cast<duration<double>>(t3 - t0).count();
 
   return 0;
 }
@@ -791,6 +793,7 @@ void FlexDR::endWorkersBatch(
     std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch)
 {
   ProfileTask profile("DR:end_batch");
+  auto* block = getDesign()->getTopBlock();
   // single thread
   for (auto& worker : workers_batch) {
     if (worker->end(getDesign())) {
@@ -798,6 +801,56 @@ void FlexDR::endWorkersBatch(
     }
     if (worker->isCongested()) {
       increaseClipsize_ = true;
+    }
+    if (router_cfg_->DOOMED_CLIPS) {
+      const odb::Point gcell_idx = block->getGCellIdx(worker->getRouteBox().ll());
+      const uint64_t tile_key
+          = (static_cast<uint64_t>(static_cast<uint32_t>(gcell_idx.x())) << 32)
+            | static_cast<uint32_t>(gcell_idx.y());
+      clip_stats_[tile_key] = {worker->getRuntimeSec(),
+                               worker->getInitNumMarkers(),
+                               worker->getBestNumMarkers(),
+                               worker->isCongested()};
+    }
+  }
+  workers_batch.clear();
+}
+
+void FlexDR::endWorkersBatchSelectBest(
+    std::vector<std::unique_ptr<FlexDRWorker>>& workers_batch)
+{
+  ProfileTask profile("DR:end_batch");
+  std::map<int, FlexDRWorker*> worker_best_result;
+  for (auto& worker : workers_batch) {
+    const int worker_id = worker->getWorkerId();
+    if (worker_best_result.find(worker_id) == worker_best_result.end()
+        || worker->getBestNumMarkers()
+               < worker_best_result[worker_id]->getBestNumMarkers()
+        || (worker->getBestNumMarkers()
+                == worker_best_result[worker_id]->getBestNumMarkers()
+            && worker->getRuntimeSec()
+                   < worker_best_result[worker_id]->getRuntimeSec())) {
+      worker_best_result[worker_id] = worker.get();
+    }
+  }
+
+  auto* block = getDesign()->getTopBlock();
+  for (auto [_, worker] : worker_best_result) {
+    if (worker->end(getDesign())) {
+      numWorkUnits_ += 1;
+    }
+    if (worker->isCongested()) {
+      increaseClipsize_ = true;
+    }
+    if (router_cfg_->DOOMED_CLIPS) {
+      const odb::Point gcell_idx = block->getGCellIdx(worker->getRouteBox().ll());
+      const uint64_t tile_key
+          = (static_cast<uint64_t>(static_cast<uint32_t>(gcell_idx.x())) << 32)
+            | static_cast<uint32_t>(gcell_idx.y());
+      clip_stats_[tile_key] = {worker->getRuntimeSec(),
+                               worker->getInitNumMarkers(),
+                               worker->getBestNumMarkers(),
+                               worker->isCongested()};
     }
   }
   workers_batch.clear();
@@ -1273,16 +1326,91 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
   if (graphics_) {
     graphics_->startIter(iter_, router_cfg_);
   }
-  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+  auto* block = getDesign()->getTopBlock();
+  auto gCellPatterns = block->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   const int size = args.size;
   const int offset = args.offset;
-  iter_prog.total_num_workers
-      = (((int) xgp.getCount() - 1 - offset) / size + 1)
-        * (((int) ygp.getCount() - 1 - offset) / size + 1);
+  if (router_cfg_->DOOMED_CLIPS) {
+    if (clip_stats_size_ != size || clip_stats_offset_ != offset) {
+      clip_stats_.clear();
+      clip_stats_size_ = size;
+      clip_stats_offset_ = offset;
+    }
+  }
 
-  std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
+  const bool use_prev_stats = router_cfg_->DOOMED_CLIPS
+                              && iter_ >= router_cfg_->DOOMED_CLIPS_MIN_ITER
+                              && !clip_stats_.empty();
+  double max_runtime = 0.0;
+  int max_drvs = 0;
+  if (use_prev_stats) {
+    for (const auto& entry : clip_stats_) {
+      const auto& stats = entry.second;
+      max_runtime = std::max(max_runtime, stats.runtime_sec);
+      max_drvs = std::max(max_drvs, stats.best_drvs);
+    }
+  }
+  auto clip_score = [&](const ClipStats& stats) {
+    double score = 0.0;
+    if (max_runtime > 0) {
+      score += router_cfg_->DOOMED_CLIPS_W_RUNTIME
+               * (stats.runtime_sec / max_runtime);
+    }
+    if (max_drvs > 0) {
+      score += router_cfg_->DOOMED_CLIPS_W_DRVS
+               * ((double) stats.best_drvs / max_drvs);
+    }
+    if (stats.congested) {
+      score += router_cfg_->DOOMED_CLIPS_W_CONGESTION;
+    }
+    return score;
+  };
+
+  std::vector<std::pair<uint64_t, double>> scored_tiles;
+  if (use_prev_stats) {
+    scored_tiles.reserve(clip_stats_.size());
+    for (const auto& [tile_key, stats] : clip_stats_) {
+      scored_tiles.emplace_back(tile_key, clip_score(stats));
+    }
+    std::sort(scored_tiles.begin(),
+              scored_tiles.end(),
+              [](const auto& lhs, const auto& rhs) {
+                return lhs.second > rhs.second;
+              });
+  }
+
+  const bool use_multi_cost = use_prev_stats && !dist_on_
+                              && router_cfg_->DOOMED_CLIPS_TOP_N > 0;
+  std::unordered_set<uint64_t> doomed_tiles;
+  std::vector<frUInt4> drc_costs;
+  std::vector<frUInt4> marker_costs;
+  if (use_multi_cost) {
+    const int top_n = router_cfg_->DOOMED_CLIPS_TOP_N;
+    doomed_tiles.reserve(top_n * 2);
+    for (const auto& scored : scored_tiles) {
+      const uint64_t tile_key = scored.first;
+      const auto it = clip_stats_.find(tile_key);
+      if (it == clip_stats_.end()) {
+        continue;
+      }
+      const auto& stats = it->second;
+      if (stats.best_drvs == 0 && !stats.congested) {
+        continue;
+      }
+      doomed_tiles.insert(tile_key);
+      if ((int) doomed_tiles.size() >= top_n) {
+        break;
+      }
+    }
+    drc_costs = {args.workerDRCCost,
+                 std::max<frUInt4>(1, args.workerDRCCost / 2),
+                 args.workerDRCCost * 2};
+    marker_costs = {args.workerMarkerCost,
+                    std::max<frUInt4>(1, args.workerMarkerCost / 2),
+                    args.workerMarkerCost * 2};
+  }
   int batchStepX, batchStepY;
 
   getBatchInfo(batchStepX, batchStepY);
@@ -1290,25 +1418,84 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
   std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
       batchStepX * batchStepY);
 
+  const int num_tiles_y = (((int) ygp.getCount() - 1 - offset) / size + 1);
+  iter_prog.total_num_workers = 0;
   int xIdx = 0, yIdx = 0;
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      auto worker = createWorker(i, j, args);
       int batch_idx = (xIdx % batchStepX) * batchStepY + yIdx % batchStepY;
+      const int tile_id = xIdx * num_tiles_y + yIdx;
+      const uint64_t tile_key
+          = (static_cast<uint64_t>(static_cast<uint32_t>(i)) << 32)
+            | static_cast<uint32_t>(j);
+      const bool is_doomed = use_multi_cost && doomed_tiles.count(tile_key) > 0;
+      const int num_variants
+          = is_doomed ? (drc_costs.size() * marker_costs.size()) : 1;
       const bool create_new_batch
           = workers[batch_idx].empty()
             || (!dist_on_
-                && workers[batch_idx].back().size() >= router_cfg_->BATCHSIZE);
+                && workers[batch_idx].back().size() + num_variants
+                       > router_cfg_->BATCHSIZE);
       if (create_new_batch) {
         workers[batch_idx].push_back(
             std::vector<std::unique_ptr<FlexDRWorker>>());
       }
-      workers[batch_idx].back().push_back(std::move(worker));
+      if (is_doomed) {
+        for (auto drc_cost : drc_costs) {
+          for (auto marker_cost : marker_costs) {
+            auto worker_args = args;
+            worker_args.workerDRCCost = drc_cost;
+            worker_args.workerMarkerCost = marker_cost;
+            auto worker = createWorker(i, j, worker_args);
+            worker->setWorkerId(tile_id);
+            workers[batch_idx].back().push_back(std::move(worker));
+            iter_prog.total_num_workers++;
+          }
+        }
+      } else {
+        auto worker = createWorker(i, j, args);
+        worker->setWorkerId(tile_id);
+        workers[batch_idx].back().push_back(std::move(worker));
+        iter_prog.total_num_workers++;
+      }
 
       yIdx++;
     }
     yIdx = 0;
     xIdx++;
+  }
+
+  if (use_prev_stats) {
+    auto worker_score = [&](const FlexDRWorker* worker) {
+      const odb::Point gcell_idx = block->getGCellIdx(worker->getRouteBox().ll());
+      const uint64_t tile_key
+          = (static_cast<uint64_t>(static_cast<uint32_t>(gcell_idx.x())) << 32)
+            | static_cast<uint32_t>(gcell_idx.y());
+      const auto it = clip_stats_.find(tile_key);
+      if (it == clip_stats_.end()) {
+        return 0.0;
+      }
+      return clip_score(it->second);
+    };
+    for (auto& workerBatch : workers) {
+      for (auto& workersInBatch : workerBatch) {
+        std::stable_sort(workersInBatch.begin(),
+                         workersInBatch.end(),
+                         [&](const auto& lhs, const auto& rhs) {
+                           return worker_score(lhs.get())
+                                  > worker_score(rhs.get());
+                         });
+      }
+      std::stable_sort(workerBatch.begin(),
+                       workerBatch.end(),
+                       [&](const auto& lhs, const auto& rhs) {
+                         const double lhs_score
+                             = lhs.empty() ? 0.0 : worker_score(lhs.front().get());
+                         const double rhs_score
+                             = rhs.empty() ? 0.0 : worker_score(rhs.front().get());
+                         return lhs_score > rhs_score;
+                       });
+    }
   }
 
   omp_set_num_threads(router_cfg_->MAX_THREADS);
@@ -1330,12 +1517,74 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
           processWorkersBatch(workersInBatch, iter_prog);
         }
       }
-      endWorkersBatch(workersInBatch);
+      if (use_multi_cost) {
+        endWorkersBatchSelectBest(workersInBatch);
+      } else {
+        endWorkersBatch(workersInBatch);
+      }
     }
   }
 
   if (!iter_) {
     removeGCell2BoundaryPin();
+  }
+
+  if (router_cfg_->DOOMED_CLIPS && router_cfg_->VERBOSE > 0
+      && router_cfg_->DOOMED_CLIPS_REPORT_N > 0 && !clip_stats_.empty()) {
+    double report_max_runtime = 0.0;
+    int report_max_drvs = 0;
+    for (const auto& entry : clip_stats_) {
+      const auto& stats = entry.second;
+      report_max_runtime = std::max(report_max_runtime, stats.runtime_sec);
+      report_max_drvs = std::max(report_max_drvs, stats.best_drvs);
+    }
+    auto report_score = [&](const ClipStats& stats) {
+      double score = 0.0;
+      if (report_max_runtime > 0) {
+        score += router_cfg_->DOOMED_CLIPS_W_RUNTIME
+                 * (stats.runtime_sec / report_max_runtime);
+      }
+      if (report_max_drvs > 0) {
+        score += router_cfg_->DOOMED_CLIPS_W_DRVS
+                 * ((double) stats.best_drvs / report_max_drvs);
+      }
+      if (stats.congested) {
+        score += router_cfg_->DOOMED_CLIPS_W_CONGESTION;
+      }
+      return score;
+    };
+
+    std::vector<uint64_t> report_tiles;
+    report_tiles.reserve(clip_stats_.size());
+    for (const auto& entry : clip_stats_) {
+      report_tiles.push_back(entry.first);
+    }
+    std::sort(report_tiles.begin(),
+              report_tiles.end(),
+              [&](const uint64_t lhs, const uint64_t rhs) {
+                return report_score(clip_stats_.at(lhs))
+                       > report_score(clip_stats_.at(rhs));
+              });
+
+    const int report_n = std::min(router_cfg_->DOOMED_CLIPS_REPORT_N,
+                                  (int) report_tiles.size());
+    logger_->report("    Doomed clips (iter {}) top {}:", iter_, report_n);
+    for (int i = 0; i < report_n; i++) {
+      const uint64_t tile_key = report_tiles[i];
+      const int gx = static_cast<int>(tile_key >> 32);
+      const int gy = static_cast<int>(tile_key & 0xffffffff);
+      const auto& stats = clip_stats_.at(tile_key);
+      logger_->report(
+          "      gcell({:4d} {:4d}) score {:5.2f} time {:6.2f}s init {:4d} "
+          "best {:4d}{}",
+          gx,
+          gy,
+          report_score(stats),
+          stats.runtime_sec,
+          stats.init_drvs,
+          stats.best_drvs,
+          stats.congested ? " congested" : "");
+    }
   }
 }
 
