@@ -107,6 +107,7 @@ using PinPtr = const sta::Pin*;
 using PinVector = std::vector<PinPtr>;
 
 class RecoverPower;
+class RecoverPowerMore;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
@@ -334,6 +335,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts);
+  bool removeBuffer(Instance* buffer, bool honor_dont_touch_fixed = true);
   void unbufferNet(Net* net);
   void bufferInputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
   void bufferOutputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
@@ -399,6 +401,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool recoverPower(float recover_power_percent,
                     bool match_cell_footprint,
                     bool verbose);
+  void setMoreRecoverPower(bool enable);
 
   ////////////////////////////////////////////////////////////////
   void swapArithModules(int path_count,
@@ -797,11 +800,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
+  std::unique_ptr<RecoverPowerMore> recover_power_more_;
   std::unique_ptr<RepairDesign> repair_design_;
   std::unique_ptr<RepairSetup> repair_setup_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
   std::unique_ptr<Rebuffer> rebuffer_;
+
+  bool more_recover_power_ = false;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   LibertyCellSet dont_use_;
@@ -919,6 +925,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class GateCloner;
   friend class PreChecks;
   friend class RecoverPower;
+  friend class RecoverPowerMore;
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
