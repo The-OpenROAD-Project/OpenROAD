@@ -1240,6 +1240,9 @@ sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
   sta::LibertyCellPortIterator iter(lib_cell);
   while (iter.hasNext()) {
     sta::LibertyPort* port = iter.next();
+    if (port->extPort() == nullptr) {
+      continue;
+    }
     sta::ScanSignalType signal_type = port->scanSignalType();
     if (signal_type == sta::ScanSignalType::enable
         || signal_type == sta::ScanSignalType::enable_inverted) {
@@ -1267,6 +1270,9 @@ sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
   sta::LibertyCellPortIterator pin_iter(lib_cell);
   while (pin_iter.hasNext()) {
     sta::LibertyPort* port = pin_iter.next();
+    if (port->extPort() == nullptr) {
+      continue;
+    }
     const char* port_name = port->name();
     for (const char* candidate :
          {"SE", "SCE", "SCAN_EN", "SCAN_ENABLE", "SCANENABLE"}) {
@@ -1286,6 +1292,9 @@ sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
   sta::LibertyCellPortIterator iter(lib_cell);
   while (iter.hasNext()) {
     sta::LibertyPort* port = iter.next();
+    if (port->extPort() == nullptr) {
+      continue;
+    }
     sta::ScanSignalType signal_type = port->scanSignalType();
     if (signal_type == sta::ScanSignalType::input
         || signal_type == sta::ScanSignalType::input_inverted) {
@@ -1313,6 +1322,9 @@ sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
   sta::LibertyCellPortIterator pin_iter(lib_cell);
   while (pin_iter.hasNext()) {
     sta::LibertyPort* port = pin_iter.next();
+    if (port->extPort() == nullptr) {
+      continue;
+    }
     const char* port_name = port->name();
     for (const char* candidate : {"SI", "SCD", "SCAN_IN", "SCANIN"}) {
       if (equals_ignore_case(port_name, candidate)) {
@@ -1331,6 +1343,9 @@ sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
   sta::LibertyCellPortIterator iter(lib_cell);
   while (iter.hasNext()) {
     sta::LibertyPort* port = iter.next();
+    if (port->extPort() == nullptr) {
+      continue;
+    }
     sta::ScanSignalType signal_type = port->scanSignalType();
     if (signal_type == sta::ScanSignalType::output
         || signal_type == sta::ScanSignalType::output_inverted) {
@@ -1358,6 +1373,9 @@ sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
   sta::LibertyCellPortIterator pin_iter(lib_cell);
   while (pin_iter.hasNext()) {
     sta::LibertyPort* port = pin_iter.next();
+    if (port->extPort() == nullptr) {
+      continue;
+    }
     const char* port_name = port->name();
     for (const char* candidate : {"SO", "SCO", "SCAN_OUT", "SCANOUT"}) {
       if (equals_ignore_case(port_name, candidate)) {
