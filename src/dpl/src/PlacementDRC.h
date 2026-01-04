@@ -12,6 +12,10 @@ class dbTech;
 class dbOrientType;
 }  // namespace odb
 
+namespace sta {
+class dbSta;
+}  // namespace sta
+
 namespace dpl {
 class Grid;
 class Node;
@@ -38,7 +42,8 @@ class PlacementDRC
   PlacementDRC(Grid* grid,
                odb::dbTech* tech,
                Padding* padding,
-               bool disallow_one_site_gap);
+               bool disallow_one_site_gap,
+               sta::dbSta* sta = nullptr);
   bool checkEdgeSpacing(const Node* cell) const;
   // Check edge spacing for a cell at a given location and orientation
   bool checkEdgeSpacing(const Node* cell,
@@ -55,6 +60,12 @@ class PlacementDRC
   bool checkOneSiteGap(const Node* cell) const;
   bool checkOneSiteGap(const Node* cell, GridX x, GridY y) const;
 
+  // Check soft blockage - regular cells cannot be placed in soft blockage
+  bool checkSoftBlockage(const Node* cell) const;
+  bool checkSoftBlockage(const Node* cell, GridX x, GridY y) const;
+  // Returns true if cell type is allowed in soft blockage regions
+  bool isAllowedInSoftBlockage(const Node* cell) const;
+
   // aggregate function to check against all DRC types
   bool checkDRC(const Node* cell) const;
   bool checkDRC(const Node* cell,
@@ -70,6 +81,7 @@ class PlacementDRC
   // Member variables
   Grid* grid_{nullptr};        // Pointer to the grid for placement
   Padding* padding_{nullptr};  // Pointer to the padding
+  sta::dbSta* sta_{nullptr};   // Pointer to STA for buffer/inverter detection
   std::unordered_map<std::string, int> edge_types_indices_;
   std::vector<std::vector<EdgeSpacingEntry>>
       edge_spacing_table_;  // LEF58_CELLEDGESPACINGTABLE between edge type
