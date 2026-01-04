@@ -79,13 +79,42 @@ ScanLoad OneBitScanCell::getScanIn() const
 
 odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
 {
+  if (liberty_port == nullptr) {
+    logger_->error(
+        utl::DFT, 52, "Null Liberty port for scan cell '{}'", inst_->getName());
+  }
+
+  // Prefer name-based lookup on the instance. This is more robust than relying
+  // on LibertyPort::extPort() -> dbMTerm mapping, and avoids crashes when that
+  // mapping is missing or stale after cell replacement.
+  const char* port_name = liberty_port->name();
+  if (port_name != nullptr) {
+    if (odb::dbITerm* iterm = inst_->findITerm(port_name)) {
+      return iterm;
+    }
+  }
+
   odb::dbMTerm* mterm = db_network_->staToDb(liberty_port);
-  return inst_->getITerm(mterm);
+  if (mterm != nullptr) {
+    if (odb::dbITerm* iterm = inst_->getITerm(mterm)) {
+      return iterm;
+    }
+  }
+
+  logger_->error(utl::DFT,
+                 53,
+                 "Failed to resolve scan ITerm '{}' on instance '{}'",
+                 port_name ? port_name : "<null>",
+                 inst_->getName());
+  return nullptr;
 }
 
 odb::Point OneBitScanCell::getOrigin() const
 {
-  return inst_->getOrigin();
+  // Use the instance placement location (DEF "PLACED" coordinates). Using
+  // dbInst::getOrigin() makes the coordinate depend on orientation (e.g. MX/MY)
+  // which breaks scan-chain cost comparisons and can mislead the optimizer.
+  return inst_->getLocation();
 }
 
 bool OneBitScanCell::isPlaced() const

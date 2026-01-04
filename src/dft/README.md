@@ -92,11 +92,9 @@ execute_dft_plan
 
 ### Scan Optimization
 
-**Note: This is currently not implement and this command currently operates as a
-nop**
-
-Performs scan optimizations on the design reordering the flops of the scan
-chains using the latest placement information.
+Reorders scan chains using the latest placement information (without re-running
+`scan_replace`). This re-stitches scan connections using the current DFT config
+(`set_dft_config`), including scan signal name patterns.
 
 
 ```tcl
@@ -130,7 +128,7 @@ Simply run the following script:
 
 ## Limitations
 
-* There are no optimizations for the scan chains. This is a WIP.
+* Scan-chain optimization is heuristic and still evolving.
 * There is no way to specify existing scan ports to be used by scan insertion.
 * There is currently no way to define a user defined scan path.
 * We can only work with one bit cells.

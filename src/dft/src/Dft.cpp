@@ -187,7 +187,25 @@ std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect()
 
 void Dft::scanOpt()
 {
-  logger_->warn(utl::DFT, 14, "Scan Opt is not currently implemented");
+  if (need_to_run_pre_dft_) {
+    pre_dft();
+  }
+
+  // Re-run scan planning using the latest placement, then re-stitch scan
+  // connections. This updates scan ordering without re-running scan_replace.
+  std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
+  if (scan_chains.empty()) {
+    logger_->warn(utl::DFT,
+                  14,
+                  "Scan Opt found no scan chains (run `scan_replace` first)");
+    return;
+  }
+
+  ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());
+  stitch.Stitch(scan_chains);
+
+  logger_->info(
+      utl::DFT, 15, "Scan Opt re-stitched {:d} scan chain(s)", scan_chains.size());
 }
 
 }  // namespace dft

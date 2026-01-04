@@ -148,6 +148,9 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
     // functional output.
     scan_out_port = liberty_cell->findLibertyPort("Q");
     if (scan_out_port == nullptr) {
+      scan_out_port = liberty_cell->findLibertyPort("QN");
+    }
+    if (scan_out_port == nullptr) {
       const sta::SequentialSeq& sequentials = liberty_cell->sequentials();
       if (!sequentials.empty()) {
         scan_out_port = sequentials.front()->output();
