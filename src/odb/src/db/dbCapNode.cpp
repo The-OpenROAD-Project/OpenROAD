@@ -261,30 +261,30 @@ void dbCapNode::addGndCap(double* gndcap, double* totalcap)
   }
 }
 
-void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
+void dbCapNode::accAllCcCap(double* totalcap, double miller_mult)
 {
-  if (totalcap == nullptr || MillerMult == 0) {
+  if (totalcap == nullptr || miller_mult == 0) {
     return;
   }
   for (dbCCSeg* cc : getCCSegs()) {
-    cc->accAllCcCap(totalcap, MillerMult);
+    cc->accAllCcCap(totalcap, miller_mult);
   }
 }
 
 void dbCapNode::getGndTotalCap(double* gndcap,
                                double* totalcap,
-                               double MillerMult)
+                               double miller_mult)
 {
   getGndCap(gndcap, totalcap);
-  accAllCcCap(totalcap, MillerMult);
+  accAllCcCap(totalcap, miller_mult);
 }
 
 void dbCapNode::addGndTotalCap(double* gndcap,
                                double* totalcap,
-                               double MillerMult)
+                               double miller_mult)
 {
   addGndCap(gndcap, totalcap);
-  accAllCcCap(totalcap, MillerMult);
+  accAllCcCap(totalcap, miller_mult);
 }
 
 void dbCapNode::getCapTable(double* cap)

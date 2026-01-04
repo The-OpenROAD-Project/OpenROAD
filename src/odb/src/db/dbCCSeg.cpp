@@ -113,7 +113,7 @@ double dbCCSeg::getCapacitance(int corner)
   return (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
 }
 
-void dbCCSeg::accAllCcCap(double* ttcap, double MillerMult)
+void dbCCSeg::accAllCcCap(double* ttcap, double miller_mult)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
@@ -121,7 +121,7 @@ void dbCCSeg::accAllCcCap(double* ttcap, double MillerMult)
   for (uint32_t ii = 0; ii < cornerCnt; ii++) {
     ttcap[ii]
         += ((*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii])
-           * MillerMult;
+           * miller_mult;
   }
 }
 
