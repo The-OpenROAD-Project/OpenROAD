@@ -72,6 +72,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace sta {
 
@@ -1828,7 +1829,7 @@ const char* dbNetwork::pathName(const Net* net) const
     fmt::memory_buffer full_path_buf;
     std::vector<dbModule*> parent_hierarchy;
     hierarchy_editor_->getParentHierarchy(parent_module, parent_hierarchy);
-    std::reverse(parent_hierarchy.begin(), parent_hierarchy.end());
+    std::ranges::reverse(parent_hierarchy);
     auto back_inserter = std::back_inserter(full_path_buf);
     for (dbModule* db_mod : parent_hierarchy) {
       fmt::format_to(back_inserter,
@@ -4535,11 +4536,7 @@ static std::vector<std::string> getNameSetDifferences(
     const std::set<std::string>& names2)
 {
   std::vector<std::string> differences;
-  std::set_difference(names1.begin(),
-                      names1.end(),
-                      names2.begin(),
-                      names2.end(),
-                      std::back_inserter(differences));
+  std::ranges::set_difference(names1, names2, std::back_inserter(differences));
   return differences;
 }
 
@@ -4577,13 +4574,9 @@ void dbNetwork::checkSanityModInstTerms() const
 
       // Remove bus port sentinels from bterms_only as they are expected to not
       // be in iterms.
-      bterms_only.erase(
-          std::remove_if(bterms_only.begin(),
-                         bterms_only.end(),
-                         [&](const std::string& name) {
-                           return bterm_sentinel_names.count(name);
-                         }),
-          bterms_only.end());
+      std::erase_if(bterms_only, [&](const std::string& name) {
+        return bterm_sentinel_names.count(name);
+      });
 
       if (!iterms_only.empty() || !bterms_only.empty()) {
         logger_->warn(
@@ -4971,8 +4964,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
       }
 
       // Remove duplicates
-      std::sort(drivers.begin(), drivers.end());
-      drivers.erase(std::unique(drivers.begin(), drivers.end()), drivers.end());
+      utl::sort_and_unique(drivers);
     }
 
     // Convert to PinSet

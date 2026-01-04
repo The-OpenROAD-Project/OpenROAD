@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -139,18 +140,14 @@ uint32_t extRCModel::measureWithVar(extMeasure* measure)
           top_width = w - 2 * cond->_min_cw_del;
           thickness = t - cond->_min_ct_del;
           bot_width = top_width - 2 * thickness * cond->_min_ca;
-          if (bot_width > w) {
-            bot_width = w;
-          }
+          bot_width = std::min(bot_width, w);
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
         } else if (_maxMinFlag && r == 2.0) {
           top_width = w + 2 * cond->_max_cw_del;
           thickness = t + cond->_max_ct_del;
           bot_width = top_width - 2 * thickness * cond->_max_ca;
-          if (bot_width < w) {
-            bot_width = w;
-          }
+          bot_width = std::max(bot_width, w);
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
         } else if (measure->_thickVarFlag) {
@@ -418,18 +415,14 @@ uint32_t extRCModel::measureDiagWithVar(extMeasure* measure)
               top_width = w - 2 * cond->_min_cw_del;
               thickness = t - cond->_min_ct_del;
               bot_width = top_width - 2 * thickness * cond->_min_ca;
-              if (bot_width > w) {
-                bot_width = w;
-              }
+              bot_width = std::min(bot_width, w);
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
             } else if (_maxMinFlag && r == 2.0) {
               top_width = w + 2 * cond->_max_cw_del;
               thickness = t + cond->_max_ct_del;
               bot_width = top_width - 2 * thickness * cond->_max_ca;
-              if (bot_width < w) {
-                bot_width = w;
-              }
+              bot_width = std::max(bot_width, w);
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
             } else if (measure->_thickVarFlag) {
@@ -798,9 +791,7 @@ double extRCModel::writeWirePatterns(FILE* fp,
   double min_x = xd[1];
   for (int ii = 2; ii < n; ii++) {
     xd[ii] = xd[ii - 1] - min_pitch;  // next over neighbor spacing
-    if (min_x > xd[ii]) {
-      min_x = xd[ii];
-    }
+    min_x = std::min(min_x, xd[ii]);
   }
   for (int ii = n - 1; ii > 0; ii--) {
     m->writeWire3D(fp, cnt++, xd[ii], minWidth, len, height_offset, 0.0);
@@ -810,9 +801,7 @@ double extRCModel::writeWirePatterns(FILE* fp,
     m->writeWire3D(fp, cnt++, X0, targetWidth, len, height_offset, 0.0);
   }
 
-  if (min_x > x) {
-    min_x = x;
-  }
+  min_x = std::min(min_x, x);
 
   m->writeWire3D(
       fp, cnt++, x, targetWidth, len, height_offset, 1.0);  // Wire on focues

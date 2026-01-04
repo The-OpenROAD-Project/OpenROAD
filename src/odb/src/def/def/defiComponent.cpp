@@ -211,7 +211,7 @@ void defiComponent::Destroy()
   free((char*) (names_));
   free((char*) (values_));
   free((char*) (dvalues_));
-  free((char*) (types_));
+  free(types_);
   free((char*) (rectXl_));
   free((char*) (rectYl_));
   free((char*) (rectXh_));
@@ -594,7 +594,7 @@ void defiComponent::clear()
   hasWeight_ = 0;
   hasGenerate_ = 0;
   if (maskShiftSize_) {
-    free((int*) (maskShift_));
+    free(maskShift_);
   }
   maskShift_ = nullptr;
   maskShiftSize_ = 0;
@@ -901,7 +901,7 @@ void defiComponent::addProperty(const char* name,
     free((char*) (names_));
     free((char*) (values_));
     free((char*) (dvalues_));
-    free((char*) (types_));
+    free(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;
@@ -944,7 +944,7 @@ void defiComponent::addNumProperty(const char* name,
     free((char*) (names_));
     free((char*) (values_));
     free((char*) (dvalues_));
-    free((char*) (types_));
+    free(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;

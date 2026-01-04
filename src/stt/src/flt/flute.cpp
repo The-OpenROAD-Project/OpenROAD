@@ -382,32 +382,22 @@ static void checkLUT(LUT_TYPE LUT1,
 
 ////////////////////////////////////////////////////////////////
 
-int Flute::flute_wl(int d,
+int Flute::flute_wl(const int d,
                     const std::vector<int>& x,
                     const std::vector<int>& y,
-                    int acc)
+                    const int acc)
 {
-  int minval, l, xu, xl, yu, yl;
-  std::vector<int> xs, ys;
-  int i, j, minidx;
-  std::vector<int> s;
-  struct point **ptp, *tmpp;
-  struct point* pt;
-
   if (d <= 1) {
     return 0;
   }
 
-  /* allocate the dynamic pieces on the heap rather than the stack */
-  xs.resize(d);
-  ys.resize(d);
-  s.resize(d);
-  pt = (struct point*) malloc(sizeof(struct point) * (d + 1));
-  ptp = (struct point**) malloc(sizeof(struct point*) * (d + 1));
+  std::vector<int> s(d);
 
+  int l;
   if (d == 2) {
     l = ADIFF(x[0], x[1]) + ADIFF(y[0], y[1]);
   } else if (d == 3) {
+    int xl, xu;
     if (x[0] > x[1]) {
       xu = std::max(x[0], x[2]);
       xl = std::min(x[1], x[2]);
@@ -415,6 +405,7 @@ int Flute::flute_wl(int d,
       xu = std::max(x[1], x[2]);
       xl = std::min(x[0], x[2]);
     }
+    int yl, yu;
     if (y[0] > y[1]) {
       yu = std::max(y[0], y[2]);
       yl = std::min(y[1], y[2]);
@@ -426,23 +417,27 @@ int Flute::flute_wl(int d,
   } else {
     ensureLUT(d);
 
-    for (i = 0; i < d; i++) {
+    /* allocate the dynamic pieces on the heap rather than the stack */
+    std::vector<struct point> pt(d + 1);
+    std::vector<struct point*> ptp(d + 1);
+
+    for (int i = 0; i < d; i++) {
       pt[i].x = x[i];
       pt[i].y = y[i];
       ptp[i] = &pt[i];
     }
 
     // sort x
-    for (i = 0; i < d - 1; i++) {
-      minval = ptp[i]->x;
-      minidx = i;
-      for (j = i + 1; j < d; j++) {
+    for (int i = 0; i < d - 1; i++) {
+      int minval = ptp[i]->x;
+      int minidx = i;
+      for (int j = i + 1; j < d; j++) {
         if (minval > ptp[j]->x) {
           minval = ptp[j]->x;
           minidx = j;
         }
       }
-      tmpp = ptp[i];
+      struct point* tmpp = ptp[i];
       ptp[i] = ptp[minidx];
       ptp[minidx] = tmpp;
     }
@@ -451,7 +446,7 @@ int Flute::flute_wl(int d,
     ptp[d] = &pt[d];
     ptp[d]->x = ptp[d]->y = -999999;
     j = 0;
-    for (i = 0; i < d; i++) {
+    for (int i = 0; i < d; i++) {
       for (k = i + 1; ptp[k]->x == ptp[i]->x; k++) {
         if (ptp[k]->y == ptp[i]->y) {  // pins k and i are the same
           break;
@@ -464,16 +459,18 @@ int Flute::flute_wl(int d,
     d = j;
 #endif
 
-    for (i = 0; i < d; i++) {
+    std::vector<int> xs(d);
+    for (int i = 0; i < d; i++) {
       xs[i] = ptp[i]->x;
       ptp[i]->o = i;
     }
 
     // sort y to find s[]
-    for (i = 0; i < d - 1; i++) {
-      minval = ptp[i]->y;
-      minidx = i;
-      for (j = i + 1; j < d; j++) {
+    std::vector<int> ys(d);
+    for (int i = 0; i < d - 1; i++) {
+      int minval = ptp[i]->y;
+      int minidx = i;
+      for (int j = i + 1; j < d; j++) {
         if (minval > ptp[j]->y) {
           minval = ptp[j]->y;
           minidx = j;
@@ -488,8 +485,6 @@ int Flute::flute_wl(int d,
 
     l = flutes_wl(d, xs, ys, s, acc);
   }
-  free(pt);
-  free(ptp);
 
   return l;
 }
@@ -713,9 +708,7 @@ int Flute::flutes_wl_MD(int d,
 
   // Determine breaking directions and positions dp[]
   lb = (d - 2 * acc + 2) / 4;
-  if (lb < 2) {
-    lb = 2;
-  }
+  lb = std::max(lb, 2);
   ub = d - 1 - lb;
 
   // Compute scores
@@ -896,9 +889,7 @@ int Flute::flutes_wl_MD(int d,
       ll = extral + flutes_wl_LMD(p + 1, x1, ys, s1, newacc)
            + flutes_wl_LMD(d - p, x2, tmp_ys, s2, newacc);
     }
-    if (minl > ll) {
-      minl = ll;
-    }
+    minl = std::min(minl, ll);
   }
   return_val = minl;
 
@@ -1343,9 +1334,7 @@ Tree Flute::flutes_MD(int d,
 
   // Determine breaking directions and positions dp[]
   lb = (d - 2 * acc + 2) / 4;
-  if (lb < 2) {
-    lb = 2;
-  }
+  lb = std::max(lb, 2);
   ub = d - 1 - lb;
 
   // Compute scores

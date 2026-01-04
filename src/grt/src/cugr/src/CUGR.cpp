@@ -269,7 +269,7 @@ void CUGR::sortNetIndices(std::vector<int>& netIndices) const
     auto& net = gr_nets_[netIndex];
     halfParameters[netIndex] = net->getBoundingBox().hp();
   }
-  sort(netIndices.begin(), netIndices.end(), [&](int lhs, int rhs) {
+  std::ranges::sort(netIndices, [&](int lhs, int rhs) {
     return halfParameters[lhs] < halfParameters[rhs];
   });
 }
@@ -341,10 +341,8 @@ void CUGR::getGuides(const GRNet* net,
               layerIdx,
               BoxT(std::max(gpt.x() - padding, 0),
                    std::max(gpt.y() - padding, 0),
-                   std::min(gpt.x() + padding,
-                            (int) grid_graph_->getSize(0) - 1),
-                   std::min(gpt.y() + padding,
-                            (int) grid_graph_->getSize(1) - 1)));
+                   std::min(gpt.x() + padding, grid_graph_->getSize(0) - 1),
+                   std::min(gpt.y() + padding, grid_graph_->getSize(1) - 1)));
           area_of_pin_patches_ += (guides.back().second.x().range() + 1)
                                   * (guides.back().second.y().range() + 1);
         }

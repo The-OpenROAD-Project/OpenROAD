@@ -172,7 +172,7 @@ int compf(defrCallbackType_e c, defiComponent* co, defiUserData ud)
   }
   if (co->hasHalo()) {
     int left, bottom, right, top;
-    (void) co->haloEdges(&left, &bottom, &right, &top);
+    co->haloEdges(&left, &bottom, &right, &top);
     fprintf(fout, "COMP %s HALO", co->id());
     if (co->hasHaloSoft()) {
       fprintf(fout, " SOFT");
@@ -342,7 +342,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
         p->initTraverse();
         fprintf(fout, "\nNET %s %s", net->name(), wire->wireType());
         nline = 0;
-        while ((path = (int) p->next()) != DEFIPATH_DONE) {
+        while ((path = p->next()) != DEFIPATH_DONE) {
           switch (path) {
             case DEFIPATH_LAYER:
               if (!netSeCmp) {

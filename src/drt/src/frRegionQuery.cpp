@@ -592,9 +592,8 @@ void frRegionQuery::queryGuide(const odb::Rect& box,
 {
   Objects<frGuide> temp;
   queryGuide(box, layerNum, temp);
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryGuide(const odb::Rect& box,
@@ -604,9 +603,8 @@ void frRegionQuery::queryGuide(const odb::Rect& box,
   for (auto& m : impl_->guides) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryOrigGuide(const odb::Rect& box,
@@ -622,9 +620,8 @@ void frRegionQuery::queryGRPin(const odb::Rect& box,
 {
   Objects<frBlockObject> temp;
   impl_->grPins.query(bgi::intersects(box), back_inserter(temp));
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryDRObj(const box_t& boostb,
@@ -648,9 +645,8 @@ void frRegionQuery::queryDRObj(const odb::Rect& box,
 {
   Objects<frBlockObject> temp;
   impl_->drObjs.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryDRObj(const odb::Rect& box,
@@ -660,9 +656,8 @@ void frRegionQuery::queryDRObj(const odb::Rect& box,
   for (auto& m : impl_->drObjs) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryGRObj(const odb::Rect& box,
@@ -672,9 +667,8 @@ void frRegionQuery::queryGRObj(const odb::Rect& box,
   for (auto& m : impl_->grObjs) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryMarker(const odb::Rect& box,
@@ -683,9 +677,8 @@ void frRegionQuery::queryMarker(const odb::Rect& box,
 {
   Objects<frMarker> temp;
   impl_->markers.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryMarker(const odb::Rect& box,
@@ -695,9 +688,8 @@ void frRegionQuery::queryMarker(const odb::Rect& box,
   for (auto& m : impl_->markers) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::init()

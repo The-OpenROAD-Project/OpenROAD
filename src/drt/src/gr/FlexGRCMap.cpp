@@ -440,9 +440,7 @@ void FlexGRCMap::getTrackLocs(
     }
 
     int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-    if (trackNum < 0) {
-      trackNum = 0;
-    }
+    trackNum = std::max(trackNum, 0);
     if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord() < low) {
       ++trackNum;
     }
@@ -480,9 +478,7 @@ unsigned FlexGRCMap::getNumTracks(
       }
 
       int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-      if (trackNum < 0) {
-        trackNum = 0;
-      }
+      trackNum = std::max(trackNum, 0);
       if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord() < low) {
         ++trackNum;
       }
@@ -513,9 +509,7 @@ unsigned FlexGRCMap::getNumTracks(
       }
       offset += low;
 
-      if (offset < startCoord) {
-        startCoord = offset;
-      }
+      startCoord = std::min(offset, startCoord);
     }
     if (startCoord != INT_MAX) {
       numTrack += (high - startCoord) / line2ViaPitch;

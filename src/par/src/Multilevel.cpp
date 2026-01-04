@@ -407,7 +407,7 @@ void MultilevelPartitioner::InitialPartition(
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
     return initial_solutions_cost[x] < initial_solutions_cost[y];
   };
-  std::sort(solution_ids.begin(), solution_ids.end(), lambda_sort_criteria);
+  std::ranges::sort(solution_ids, lambda_sort_criteria);
   // pick the top num_best_initial_solutions_ solutions
   // while satisfying the balance constraint
   int num_chosen_best_init_solution = 0;

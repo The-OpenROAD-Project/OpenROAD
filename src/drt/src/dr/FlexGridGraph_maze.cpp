@@ -577,13 +577,13 @@ bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
 frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks,
                                          frCoord v) const
 {
-  return std::lower_bound(tracks.begin(), tracks.end(), v) - tracks.begin();
+  return std::ranges::lower_bound(tracks, v) - tracks.begin();
 }
 
 frMIdx FlexGridGraph::getUpperBoundIndex(const frVector<frCoord>& tracks,
                                          frCoord v) const
 {
-  auto it = std::upper_bound(tracks.begin(), tracks.end(), v);
+  auto it = std::ranges::upper_bound(tracks, v);
   if (it == tracks.end()) {
     it = std::prev(it);
   }

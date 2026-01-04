@@ -834,9 +834,7 @@ uint32_t Track::setExtrusionMarker(int markerCnt, int start, uint32_t markerLen)
       if (tailMark == ii) {
         continue;
       }
-      if (tailMark > markerCnt - 1) {
-        tailMark = markerCnt - 1;
-      }
+      tailMark = std::min(tailMark, markerCnt - 1);
       for (jj = ii + 1; jj <= tailMark; jj++) {
         _eMarker[jj] = e;
         if (_marker[jj]) {
@@ -1136,9 +1134,7 @@ void Track::adjustOverlapMakerEnd(uint32_t markerCnt,
     if (tailMark == ii) {
       continue;
     }
-    if (tailMark > markerCnt - 1) {
-      tailMark = markerCnt - 1;
-    }
+    tailMark = std::min(tailMark, markerCnt - 1);
     for (jj = ii + 1; jj <= tailMark; jj++) {
       _eMarker[jj] = e;
       if (_marker[jj]) {

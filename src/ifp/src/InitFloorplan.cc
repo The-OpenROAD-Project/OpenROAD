@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <ranges>
 #include <set>
 #include <string>
 #include <vector>
@@ -534,13 +535,9 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         dbRow* row = *row_itr;
         auto site = row->getSite();
         int site_dy = site->getHeight();
-        if (site_dy < min_site_dy) {
-          min_site_dy = site_dy;
-        }
+        min_site_dy = std::min(site_dy, min_site_dy);
         int site_dx = site->getWidth();
-        if (site_dx < min_site_dx) {
-          min_site_dx = site_dx;
-        }
+        min_site_dx = std::min(site_dx, min_site_dx);
       }
       // Default space is 6 times the minimum site height
       const int power_domain_y_space
@@ -752,7 +749,7 @@ int InitFloorplan::getOffset(dbSite* base_hybrid_site,
     const auto& base_pattern = base_hybrid_site->getRowPattern();
 
     // Find the common starting point of the patterns
-    auto it = std::find(base_pattern.begin(), base_pattern.end(), pattern[0]);
+    auto it = std::ranges::find(base_pattern, pattern[0]);
     if (it == base_pattern.end()) {
       return false;
     }
@@ -782,8 +779,8 @@ int InitFloorplan::getOffset(dbSite* base_hybrid_site,
 
   // We may have to flip the row (pattern) to match the parent
   dbSite::RowPattern flipped_search_pattern;
-  for (auto it = search_pattern.rbegin(); it != search_pattern.rend(); ++it) {
-    dbSite::OrientedSite flipped{it->site, it->orientation.flipX()};
+  for (auto [site, orientation] : std::ranges::reverse_view(search_pattern)) {
+    dbSite::OrientedSite flipped{site, orientation.flipX()};
     flipped_search_pattern.emplace_back(flipped);
   }
 
@@ -1234,7 +1231,7 @@ std::vector<odb::Rect> InitFloorplan::intersectRowWithPolygon(
   }
 
   // Sort intersections by x-coordinate
-  std::sort(intersections.begin(), intersections.end());
+  std::ranges::sort(intersections);
 
   // Create segments from pairs of intersections (polygon uses even-odd rule)
   for (size_t i = 0; i + 1 < intersections.size(); i += 2) {

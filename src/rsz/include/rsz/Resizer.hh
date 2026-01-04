@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <optional>
 #include <string>
@@ -210,12 +211,9 @@ struct LibraryAnalysisData
     }
 
     // Sort by average leakage (ascending order - least leaky to most leaky)
-    std::sort(sorted_vt_categories.begin(),
-              sorted_vt_categories.end(),
-              [](const auto& a, const auto& b) {
-                return a.second.get_average_leakage()
-                       < b.second.get_average_leakage();
-              });
+    std::ranges::sort(sorted_vt_categories, [](const auto& a, const auto& b) {
+      return a.second.get_average_leakage() < b.second.get_average_leakage();
+    });
   }
 };
 

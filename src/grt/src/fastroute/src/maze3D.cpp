@@ -848,8 +848,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::West;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -895,8 +894,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::East;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -942,8 +940,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::North;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -987,8 +984,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::South;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -1032,8 +1028,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Down;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            const auto it
-                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            const auto it = std::ranges::find(src_heap_3D_, dtmp);
             if (it != src_heap_3D_.end()) {
               const int pos = it - src_heap_3D_.begin();
               updateHeap3D(src_heap_3D_, pos);
@@ -1075,8 +1070,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Up;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            const auto it
-                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            const auto it = std::ranges::find(src_heap_3D_, dtmp);
             if (it != src_heap_3D_.end()) {
               const int pos = it - src_heap_3D_.begin();
               updateHeap3D(src_heap_3D_, pos);

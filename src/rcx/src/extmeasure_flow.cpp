@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 
@@ -1006,16 +1007,12 @@ int extMeasureRC::computeAndStoreRC_new(dbRSeg* rseg1,
     lenOverSub -= _diagLen;
   }
 
-  if (lenOverSub < 0) {
-    lenOverSub = 0;
-  }
+  lenOverSub = std::max(lenOverSub, 0);
 
   // Case where the geometric search returns no neighbor found
   // _dist is infinit
   if (_dist < 0) {
-    if (totLenCovered < 0) {
-      totLenCovered = 0;
-    }
+    totLenCovered = std::max(totLenCovered, 0);
 
     _underMet = 0;
 

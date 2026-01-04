@@ -142,9 +142,7 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
   // get the snaking factor of the path (maximum repetition of block_id - 1)
   int snaking_factor = 0;
   for (auto& [block_id, count] : block_counter) {
-    if (count > snaking_factor) {
-      snaking_factor = count;
-    }
+    snaking_factor = std::max(count, snaking_factor);
   }
   cost += path_snaking_factor_ * static_cast<float>(snaking_factor - 1);
   return cost;

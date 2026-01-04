@@ -336,6 +336,7 @@ macro definitions
         .
 */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #define fft2d_alloc_error_check(p)                        \
@@ -465,9 +466,7 @@ void cdft2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
   int n, itnull, nthread, nt, i;
 
   n = n1 << 1;
-  if (n < n2) {
-    n = n2;
-  }
+  n = std::max(n, n2);
   if (n > (ip[0] << 2)) {
     makewt(n >> 2, ip, w);
   }
@@ -509,9 +508,7 @@ void rdft2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
   int n, nw, nc, itnull, nthread, nt, i;
 
   n = n1 << 1;
-  if (n < n2) {
-    n = n2;
-  }
+  n = std::max(n, n2);
   nw = ip[0];
   if (n > (nw << 2)) {
     nw = n >> 2;
@@ -607,9 +604,7 @@ void ddcst2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
   int n, nw, nc, itnull, nthread, nt, i;
 
   n = n1;
-  if (n < n2) {
-    n = n2;
-  }
+  n = std::max(n, n2);
   nw = ip[0];
   if (n > (nw << 2)) {
     nw = n >> 2;
@@ -658,9 +653,7 @@ void ddsct2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
   int n, nw, nc, itnull, nthread, nt, i;
 
   n = n1;
-  if (n < n2) {
-    n = n2;
-  }
+  n = std::max(n, n2);
   nw = ip[0];
   if (n > (nw << 2)) {
     nw = n >> 2;
@@ -709,9 +702,7 @@ void ddct2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
   int n, nw, nc, itnull, nthread, nt, i;
 
   n = n1;
-  if (n < n2) {
-    n = n2;
-  }
+  n = std::max(n, n2);
   nw = ip[0];
   if (n > (nw << 2)) {
     nw = n >> 2;
@@ -760,9 +751,7 @@ void ddst2d(int n1, int n2, int isgn, float** a, float* t, int* ip, float* w)
   int n, nw, nc, itnull, nthread, nt, i;
 
   n = n1;
-  if (n < n2) {
-    n = n2;
-  }
+  n = std::max(n, n2);
   nw = ip[0];
   if (n > (nw << 2)) {
     nw = n >> 2;

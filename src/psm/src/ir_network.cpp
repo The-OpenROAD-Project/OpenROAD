@@ -559,13 +559,9 @@ void IRNetwork::generateCutNodesForSBox(
   // handle as via
   std::vector<odb::dbShape> via_shapes;
   box->getViaBoxes(via_shapes);
-  via_shapes.erase(
-      std::remove_if(via_shapes.begin(),
-                     via_shapes.end(),
-                     [](const auto& shape) {
-                       return shape.getTechLayer()->getRoutingLevel() != 0;
-                     }),
-      via_shapes.end());
+  std::erase_if(via_shapes, [](const auto& shape) {
+    return shape.getTechLayer()->getRoutingLevel() != 0;
+  });
 
   odb::dbTechLayer* bottom = nullptr;
   odb::dbTechLayer* top = nullptr;
@@ -795,10 +791,9 @@ void IRNetwork::sortShapes()
   for (auto& [layer, shapes] : shapes_) {
     shapes.shrink_to_fit();
 
-    std::stable_sort(
-        shapes.begin(), shapes.end(), [](const auto& lhs, const auto& rhs) {
-          return lhs->getShape() < rhs->getShape();
-        });
+    std::ranges::stable_sort(shapes, [](const auto& lhs, const auto& rhs) {
+      return lhs->getShape() < rhs->getShape();
+    });
   }
 }
 
@@ -808,10 +803,9 @@ void IRNetwork::sortNodes()
       logger_, utl::PSM, "timer", 1, "Sorting nodes: {}");
 
   for (auto& [layer, nodes] : nodes_) {
-    std::stable_sort(
-        nodes.begin(), nodes.end(), [](const auto& lhs, const auto& rhs) {
-          return lhs->compare(rhs);
-        });
+    std::ranges::stable_sort(nodes, [](const auto& lhs, const auto& rhs) {
+      return lhs->compare(rhs);
+    });
   }
 }
 
@@ -819,9 +813,9 @@ void IRNetwork::sortConnections()
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Sorting connections: {}");
-  std::stable_sort(
-      connections_.begin(),
-      connections_.end(),
+  std::ranges::stable_sort(
+      connections_,
+
       [](const auto& lhs, const auto& rhs) { return lhs->compare(rhs); });
 }
 
@@ -956,13 +950,9 @@ void IRNetwork::removeNodes(std::set<Node*>& removes,
   }
   nodes.clear();
 
-  cleanup.erase(std::remove_if(cleanup.begin(),
-                               cleanup.end(),
-                               [&](const auto& other) {
-                                 return removes.find(other.get())
-                                        != removes.end();
-                               }),
-                cleanup.end());
+  std::erase_if(cleanup, [&](const auto& other) {
+    return removes.find(other.get()) != removes.end();
+  });
 
   for (auto& node : cleanup) {
     nodes.emplace_back(std::move(node));
@@ -1001,13 +991,9 @@ void IRNetwork::removeConnections(std::set<Connection*>& removes)
   }
   connections_.clear();
 
-  cleanup.erase(std::remove_if(cleanup.begin(),
-                               cleanup.end(),
-                               [&](const auto& other) {
-                                 return removes.find(other.get())
-                                        != removes.end();
-                               }),
-                cleanup.end());
+  std::erase_if(cleanup, [&](const auto& other) {
+    return removes.find(other.get()) != removes.end();
+  });
 
   for (auto& conn : cleanup) {
     conn->ensureNodeOrder();
@@ -1236,24 +1222,23 @@ void IRNetwork::dumpNodes(const std::string& name) const
 bool IRNetwork::belongsTo(Node* node) const
 {
   for (const auto& [layer, nodes] : nodes_) {
-    if (std::find_if(nodes.begin(),
-                     nodes.end(),
-                     [node](const auto& other) { return other.get() == node; })
+    if (std::ranges::find_if(
+            nodes, [node](const auto& other) { return other.get() == node; })
         != nodes.end()) {
       return true;
     }
   }
 
-  if (std::find_if(iterm_nodes_.begin(),
-                   iterm_nodes_.end(),
-                   [node](const auto& other) { return other.get() == node; })
+  if (std::ranges::find_if(
+          iterm_nodes_,
+          [node](const auto& other) { return other.get() == node; })
       != iterm_nodes_.end()) {
     return true;
   }
 
-  if (std::find_if(bpin_nodes_.begin(),
-                   bpin_nodes_.end(),
-                   [node](const auto& other) { return other.get() == node; })
+  if (std::ranges::find_if(
+          bpin_nodes_,
+          [node](const auto& other) { return other.get() == node; })
       != bpin_nodes_.end()) {
     return true;
   }
@@ -1263,11 +1248,10 @@ bool IRNetwork::belongsTo(Node* node) const
 
 bool IRNetwork::belongsTo(Connection* connection) const
 {
-  return std::find_if(connections_.begin(),
-                      connections_.end(),
-                      [connection](const auto& other) {
-                        return other.get() == connection;
-                      })
+  return std::ranges::find_if(connections_,
+                              [connection](const auto& other) {
+                                return other.get() == connection;
+                              })
          != connections_.end();
 }
 

@@ -2448,13 +2448,8 @@ void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
   float targetLx = gCell->dLx();
   float targetLy = gCell->dLy();
 
-  if (targetLx < bg_.lx()) {
-    targetLx = bg_.lx();
-  }
-
-  if (targetLy < bg_.ly()) {
-    targetLy = bg_.ly();
-  }
+  targetLx = std::max<float>(targetLx, bg_.lx());
+  targetLy = std::max<float>(targetLy, bg_.ly());
 
   if (targetLx + gCell->dDx() > bg_.ux()) {
     targetLx = bg_.ux() - gCell->dDx();
