@@ -201,6 +201,8 @@ class GlobalRouter
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
                      float ratio_margin,
+                     bool jumper_only,
+                     bool diode_only,
                      int num_threads = 1);
   void updateResources(const int& init_x,
                        const int& init_y,
