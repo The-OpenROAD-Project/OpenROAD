@@ -16,6 +16,7 @@ add_library(est_lib
     MakeWireParasitics.cpp
     OdbCallBack.cpp
     SteinerTree.cpp
+    CorrelationUtils.cpp
 )
 
 target_sources(est
