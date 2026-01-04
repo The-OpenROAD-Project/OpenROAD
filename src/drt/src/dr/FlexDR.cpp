@@ -1058,23 +1058,15 @@ std::vector<std::vector<int>> getWorkerBatchesBoxes(
     return {};
   }
   std::vector<odb::Rect> boxes_max;
+  boxes_max.resize(expanded_boxes.size());
   int id = 0;
   for (auto& boxes : expanded_boxes) {
-    bool first = true;
-    for (auto& box : boxes) {
-      auto min_idx = box.ll();
-      auto max_idx = box.ur();
-      odb::Rect rect(design->getTopBlock()->getGCellBox(min_idx).ll(),
-                     design->getTopBlock()->getGCellBox(max_idx).ur());
+    boxes_max[id].mergeInit();
+    for (auto rect : boxes) {
       rect.bloat(bloating_dist, rect);
-      if (first) {
-        boxes_max.emplace_back(rect);
-        first = false;
-        continue;
-      }
       boxes_max[id].merge(rect);
     }
-    id++;
+    ++id;
   }
   std::vector<std::vector<int>> batches;
   batches.push_back({0});
@@ -1118,8 +1110,28 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   }
   auto merged_boxes = stub_tiles::mergeBoxes(drv_boxes);
   auto expanded_boxes = stub_tiles::expandBoxes(merged_boxes);
+
+  // Convert gcell indices to actual coordinates
+  std::vector<std::set<odb::Rect>> expanded_boxes_coords;
+  expanded_boxes_coords.reserve(expanded_boxes.size());
+  std::ranges::transform(
+      expanded_boxes,
+      std::back_inserter(expanded_boxes_coords),
+      [this](const auto& box_set) {
+        std::set<odb::Rect> coord_set;
+        std::ranges::transform(
+            box_set,
+            std::inserter(coord_set, coord_set.end()),
+            [this](const auto& gcell_box) {
+              return odb::Rect(
+                  getDesign()->getTopBlock()->getGCellBox(gcell_box.ll()).ll(),
+                  getDesign()->getTopBlock()->getGCellBox(gcell_box.ur()).ur());
+            });
+        return coord_set;
+      });
+
   auto route_boxes_batches = stub_tiles::getWorkerBatchesBoxes(
-      getDesign(), expanded_boxes, router_cfg_->MTSAFEDIST);
+      getDesign(), expanded_boxes_coords, router_cfg_->MTSAFEDIST);
   std::vector<frUInt4> drc_costs
       = {args.workerDRCCost, args.workerDRCCost / 2, args.workerDRCCost * 2};
   std::vector<frUInt4> marker_costs = {args.workerMarkerCost,
@@ -1131,12 +1143,7 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   for (int batch_id = 0; batch_id < route_boxes_batches.size(); batch_id++) {
     auto& batch = route_boxes_batches[batch_id];
     for (const auto worker_id : batch) {
-      for (auto gcell_box : expanded_boxes[worker_id]) {
-        auto min_idx = gcell_box.ll();
-        auto max_idx = gcell_box.ur();
-        odb::Rect route_box(
-            getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
-            getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
+      for (const auto& route_box : expanded_boxes_coords[worker_id]) {
         for (auto drc_cost : drc_costs) {
           for (auto marker_cost : marker_costs) {
             auto worker_args = args;
@@ -1230,12 +1237,7 @@ void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
   for (int batch_id = 0; batch_id < route_boxes_batches.size(); batch_id++) {
     auto& batch = route_boxes_batches[batch_id];
     for (const auto worker_id : batch) {
-      for (auto gcell_box : boxes_set[worker_id]) {
-        auto min_idx = gcell_box.ll();
-        auto max_idx = gcell_box.ur();
-        odb::Rect route_box(
-            getDesign()->getTopBlock()->getGCellBox(min_idx).ll(),
-            getDesign()->getTopBlock()->getGCellBox(max_idx).ur());
+      for (auto route_box : boxes_set[worker_id]) {
         workers_batches[batch_id].emplace_back(
             createWorker(0, 0, args, route_box));
         workers_batches[batch_id].back()->setWorkerId(worker_id);
