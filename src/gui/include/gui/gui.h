@@ -615,6 +615,7 @@ class Renderer
     if (settings.count(key) == 1) {
       try {
         value = std::get<T>(settings.at(key));
+        // NOLINTNEXTLINE(bugprone-empty-catch)
       } catch (const std::bad_variant_access&) {
         // Stay with current value
       }

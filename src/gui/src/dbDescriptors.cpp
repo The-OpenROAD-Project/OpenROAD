@@ -2726,9 +2726,9 @@ Descriptor::Editors DbBlockageDescriptor::getEditors(
                blockage->setMaxDensity(density);
                return true;
              }
-           } catch (std::out_of_range&) {
+           } catch (std::out_of_range&) {  // NOLINT(bugprone-empty-catch)
              // catch poorly formatted string
-           } catch (std::logic_error&) {
+           } catch (std::logic_error&) {  // NOLINT(bugprone-empty-catch)
              // catch poorly formatted string
            }
          }
