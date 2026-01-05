@@ -374,7 +374,7 @@ bool PartitionMgr::partitionCluster(
     cv.push_back(resultCV[1]);
 
     for (int j = 0; j < 2; ++j) {
-      auto newC = resultCV[j];
+      const auto& newC = resultCV[j];
       int newGateNum = newC->getNumInsts();
       if (newGateNum < MIN_GATE_NUM_PER_CLUSTER) {
         flag = false;
@@ -615,7 +615,7 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
 
   const double b = log(modules[n - 1]->getAvgK());
   for (int i = 0; i < n; i++) {
-    auto m = modules[i];
+    const auto& m = modules[i];
     x[i] = log(m->getAvgInsts());
     y[i] = log(m->getAvgT()) - b;
   }

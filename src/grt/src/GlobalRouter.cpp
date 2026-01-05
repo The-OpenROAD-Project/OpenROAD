@@ -4505,7 +4505,7 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
         std::vector<std::vector<uint32_t>> spacing_table;
         obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
         if (!spacing_table.empty()) {
-          std::vector<uint32_t> last_row = spacing_table.back();
+          const std::vector<uint32_t>& last_row = spacing_table.back();
           uint32_t last_value = last_row.back();
           spacing_extension = std::max<uint32_t>(last_value, spacing_extension);
         }
