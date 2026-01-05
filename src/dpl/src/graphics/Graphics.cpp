@@ -86,11 +86,11 @@ void Graphics::drawObjects(gui::Painter& painter)
     DbuX lx{core.xMin() + cell->getLeft()};
     DbuY ly{core.yMin() + cell->getBottom()};
 
-    auto color = cell->getDbInst() ? gui::Painter::kGray : gui::Painter::kRed;
-    painter.setPen(color);
-    painter.setBrush(color);
-    painter.drawRect(odb::Rect(
-        lx.v, ly.v, lx.v + cell->getWidth().v, ly.v + cell->getHeight().v));
+    // auto color = cell->getDbInst() ? gui::Painter::kGray : gui::Painter::kRed;
+    // painter.setPen(color);
+    // painter.setBrush(color);
+    // painter.drawRect(odb::Rect(
+    //     lx.v, ly.v, lx.v + cell->getWidth().v, ly.v + cell->getHeight().v));
 
     if (!cell->getDbInst()) {
       continue;
@@ -104,12 +104,25 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
+    int dx = final_location.x() - initial_location.x();
+    int dy = final_location.y() - initial_location.y();
+    gui::Painter::Color line_color;
+    if (dx == 0 && dy == 0) {
+      line_color = gui::Painter::kWhite;
+    } else if (std::abs(dx) > std::abs(dy)) {
+      line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kPink;
+    } else {
+      line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+    }
+    painter.setPen(line_color, /* cosmetic */ true);
+    painter.setBrush(line_color);
     painter.drawLine(initial_location.x(),
-                     initial_location.y(),
-                     final_location.x(),
-                     final_location.y());
+             initial_location.y(),
+             final_location.x(),
+             final_location.y());
     painter.drawCircle(final_location.x(), final_location.y(), 100);
+    // painter.setPen(gui::Painter::kWhite);
+    // painter.draw(initial_location.x(), initial_location.y(), 100);
   }
 
   auto color = gui::Painter::kCyan;
