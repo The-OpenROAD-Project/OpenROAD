@@ -235,19 +235,12 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
         break;
       }
 
-      // Rank by "power × available headroom" so we focus effort on high-power,
-      // non-critical instances. Then break ties by power/headroom/area.
+      // Rank by power-first so we spend the limited ECP budget on the highest
+      // impact cells. Then break ties by headroom/area.
       std::sort(
           candidates.begin(),
           candidates.end(),
           [](const CandidateInstance& a, const CandidateInstance& b) {
-            const float a_score
-                = a.power * static_cast<float>(std::max<Slack>(0.0, a.headroom));
-            const float b_score
-                = b.power * static_cast<float>(std::max<Slack>(0.0, b.headroom));
-            if (a_score != b_score) {
-              return a_score > b_score;
-            }
             if (a.power != b.power) {
               return a.power > b.power;
             }
@@ -297,7 +290,60 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
     }
   };
 
-  // Phase 1: cell swaps (downsizing + VT).
+  // Reserve part of the ECP budget for buffer removals, which can deliver large
+  // power wins per change on some designs. Do an initial swap pass with a
+  // tighter floor, then buffer removals using the full floor, then a final swap
+  // pass to spend any remaining budget.
+  Slack swap_floor = wns_floor;
+  if (clock_period > 0.0f && std::isfinite(worst_slack_before)) {
+    const float eff_period_before = clock_period - worst_slack_before;
+    if (eff_period_before > 0.0f && std::isfinite(eff_period_before)) {
+      const Slack slack_budget_total
+          = static_cast<Slack>(max_eff_period_degrade_frac_ * eff_period_before);
+      const Slack swap_budget = static_cast<Slack>(0.5f * slack_budget_total);
+      const Slack swap_guard = std::min<Slack>(
+          timing_floor_guard_cap_,
+          static_cast<Slack>(timing_floor_guard_frac_ * swap_budget));
+      swap_floor = worst_slack_before - swap_budget + swap_guard;
+      swap_floor = std::min(swap_floor, worst_slack_before);
+    }
+  }
+
+  wns_floor_ = swap_floor;
+  run_passes(
+      [&](const CandidateInstance& cand) {
+        LibertyCell* cell = network_->libertyCell(cand.inst);
+        return cell != nullptr && !cell->isBuffer();
+      },
+      [&](sta::Instance* inst) {
+        return optimizeInstanceSwaps(inst,
+                                     swap_floor,
+                                     hold_floor,
+                                     initial_max_slew_violations_,
+                                     initial_max_cap_violations_,
+                                     initial_max_fanout_violations_,
+                                     verbose);
+      },
+      /*max_passes=*/3);
+
+  wns_floor_ = wns_floor;
+  run_passes(
+      [&](const CandidateInstance& cand) {
+        LibertyCell* cell = network_->libertyCell(cand.inst);
+        return cell != nullptr && cell->isBuffer() && !cand.drives_clock;
+      },
+      [&](sta::Instance* inst) {
+        return optimizeInstanceBufferRemoval(inst,
+                                             wns_floor,
+                                             hold_floor,
+                                             initial_max_slew_violations_,
+                                             initial_max_cap_violations_,
+                                             initial_max_fanout_violations_,
+                                             verbose);
+      },
+      max_passes_);
+
+  // Final swap phase with the full floor (uses any remaining budget).
   run_passes(
       [&](const CandidateInstance& cand) {
         LibertyCell* cell = network_->libertyCell(cand.inst);
@@ -314,11 +360,6 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
       },
       max_passes_);
 
-  // Phase 2: buffer removal (done last so timing backoff can prefer undoing
-  // buffer removals while retaining beneficial swaps).
-  // Disabled for now: buffer removals are harder to back off without leaving
-  // the routing/parasitics state inconsistent across platforms.
-
   Slack final_wns;
   Vertex* final_wns_vertex;
   sta_->worstSlack(max_, final_wns, final_wns_vertex);
@@ -332,6 +373,11 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
   if (final_wns < wns_floor || final_hold < hold_floor) {
     backoffToTimingFloor(wns_floor, hold_floor, verbose);
   }
+
+  // RecoverPowerMore uses journal checkpoints for buffer removals so backoff can
+  // undo them safely. Commit any remaining saved ECOs now that we're within the
+  // timing/DRV budget.
+  resizer_->journalCommitSaved();
 
   // Resync DRV violation counts for final reporting/sanity.
   curr_max_slew_violations_
@@ -1034,6 +1080,9 @@ bool RecoverPowerMore::tryRemoveBuffer(sta::Instance* inst,
     return false;
   }
 
+  if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+    gr->discardDirtyNets();
+  }
   estimate_parasitics_->updateParasitics(false);
   sta_->updateTiming(false);
   sta_->findRequireds();
@@ -1251,23 +1300,41 @@ void RecoverPowerMore::backoffToTimingFloor(const Slack wns_floor,
     const ActionRecord action = action_history_.back();
     action_history_.pop_back();
 
-    if (action.type != ActionType::kSwap || action.prev_cell == nullptr) {
+    bool did_undo = false;
+    if (action.type == ActionType::kSwap && action.prev_cell != nullptr) {
+      sta::Instance* inst = network_->findInstance(action.inst_name.c_str());
+      if (inst == nullptr) {
+        continue;
+      }
+      // Undo the swap directly (avoid ECO restore, which can perturb routing).
+      if (!resizer_->replaceCell(inst, action.prev_cell, /* journal */ false)) {
+        continue;
+      }
+      if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+        gr->discardDirtyNets();
+      }
+      estimate_parasitics_->updateParasitics(false);
+      sta_->updateTiming(false);
+      sta_->findRequireds();
+      did_undo = true;
+    } else if (action.type == ActionType::kRemoveBuffer) {
+      // Buffer removals are applied via ECO journal checkpoints. Undo the last
+      // saved ECO so we can back off without leaving the routing/parasitics
+      // state inconsistent.
+      resizer_->journalRestore();
+      init();  // journalRestore reinitializes the resizer.
+      if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
+        gr->discardDirtyNets();
+      }
+      estimate_parasitics_->updateParasitics(false);
+      sta_->updateTiming(false);
+      sta_->findRequireds();
+      did_undo = true;
+    }
+
+    if (!did_undo) {
       continue;
     }
-    sta::Instance* inst = network_->findInstance(action.inst_name.c_str());
-    if (inst == nullptr) {
-      continue;
-    }
-    // Undo the swap directly (avoid ECO restore, which can perturb routing).
-    if (!resizer_->replaceCell(inst, action.prev_cell, /* journal */ false)) {
-      continue;
-    }
-    if (auto* gr = estimate_parasitics_->getGlobalRouter()) {
-      gr->discardDirtyNets();
-    }
-    estimate_parasitics_->updateParasitics(false);
-    sta_->updateTiming(false);
-    sta_->findRequireds();
 
     if (action.type == ActionType::kSwap) {
       if (resize_count_ > 0) {
