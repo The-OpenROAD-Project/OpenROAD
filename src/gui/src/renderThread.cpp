@@ -10,6 +10,7 @@
 #include <QPolygon>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <exception>
 #include <iterator>
 #include <mutex>
@@ -1552,18 +1553,14 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
   }
 
   const auto die_area = block->getDieArea();
-  const auto die_width = die_area.dx();
-  const auto die_height = die_area.dy();
 
   pin_draw_names_ = viewer_->options_->areIOPinNamesVisible();
+  const double scale_factor
+      = 0.02;  // 4 Percent of bounds is used to draw pin-markers
+  const int die_max_dim = std::min(die_area.maxDXDY(), bounds.maxDXDY());
+  const double abs_min_dim = 8.0;  // prevent markers from falling apart
+  pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
   if (pin_draw_names_) {
-    const double scale_factor
-        = 0.02;  // 4 Percent of bounds is used to draw pin-markers
-    const int die_max_dim
-        = std::min(std::max(die_width, die_height), bounds.maxDXDY());
-    const double abs_min_dim = 8.0;  // prevent markers from falling apart
-    pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
-
     pin_font_ = viewer_->options_->ioPinMarkersFont();
     const QFontMetrics font_metrics(pin_font_);
 
@@ -1690,16 +1687,33 @@ void RenderThread::drawIOPins(Painter& painter,
   };
   std::vector<PinText> pin_text_spec;
 
+  const int min_bpin_size = viewer_->options_->isDetailedVisibility()
+                                ? viewer_->fineViewableResolution()
+                                : viewer_->nominalViewableResolution();
+  const int64_t max_lin_bpins = bounds.minDXDY() / min_bpin_size;
+  const int64_t max_bpins
+      = std::min(kMaxBPinsPerLayer, max_lin_bpins * max_lin_bpins);
+
   painter.setPen(layer);
   painter.setBrush(layer);
 
+  auto bpins = viewer_->search_.searchBPins(
+      block, layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax());
+  debugPrint(logger_,
+             GUI,
+             "draw",
+             2,
+             "found {} bpins on layer {}, drawing limit {} ({}) bpins",
+             bpins.size(),
+             layer->getName(),
+             max_bpins,
+             max_lin_bpins);
+  if (bpins.size() > max_bpins) {
+    return;
+  }
+
   std::vector<odb::Rect> pin_text_spec_shape_rects;
-  for (const auto& [box, pin] : viewer_->search_.searchBPins(block,
-                                                             layer,
-                                                             bounds.xMin(),
-                                                             bounds.yMin(),
-                                                             bounds.xMax(),
-                                                             bounds.yMax())) {
+  for (const auto& [box, pin] : bpins) {
     if (restart_) {
       break;
     }
