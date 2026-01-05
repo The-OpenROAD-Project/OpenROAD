@@ -19,7 +19,6 @@ namespace dpl {
 
 using utl::DPL;
 
-using std::sort;
 using std::unordered_set;
 
 using odb::dbITerm;

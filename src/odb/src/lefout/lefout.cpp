@@ -24,8 +24,6 @@
 
 namespace odb {
 
-using boost::polygon::operators::operator+=;
-
 int lefout::determineBloat(dbTechLayer* layer) const
 {
   int bloat = 0;
@@ -56,6 +54,7 @@ void lefout::insertObstruction(dbTechLayer* layer,
   boost::polygon::polygon_90_set_data<int> poly;
   poly = boost::polygon::rectangle_data<int>{
       rect.xMax(), rect.yMax(), rect.xMin(), rect.yMin()};
+  using boost::polygon::operators::operator+=;
   obstructions[layer] += poly.bloat(bloat, bloat, bloat, bloat);
 }
 
