@@ -171,9 +171,8 @@ class Rebuffer : public sta::dbStaState
   const sta::MinMax* min_ = sta::MinMax::min();
   const sta::MinMax* max_ = sta::MinMax::max();
 
-  // Elmore factor for 20-80% slew thresholds.
-  static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr float relaxation_factor_ = 0.01;
+  static constexpr float delay_shape_factor_ = 0.69;
 
   double long_wire_stepping_runtime_ = 0;
 

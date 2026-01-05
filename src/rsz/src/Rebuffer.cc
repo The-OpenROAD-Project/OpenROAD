@@ -1171,8 +1171,9 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             double wire_length = resizer_->dbuToMeters(bnet->length());
             double wire_res = wire_length * layer_res;
             double wire_cap = wire_length * layer_cap;
-            FixedDelay wire_delay
-                = FixedDelay(wire_res * (wire_cap / 2 + p->cap()), resizer_);
+            FixedDelay wire_delay = FixedDelay(
+                delay_shape_factor_ * wire_res * (wire_cap / 2 + p->cap()),
+                resizer_);
             if (bnet->length() == 0) {
               wire_res = 0;
               wire_cap = 0;
@@ -1244,8 +1245,8 @@ BnetPtr Rebuffer::addWire(const BnetPtr& p,
   double wire_length = resizer_->dbuToMeters(z->length());
   double wire_res = wire_length * layer_res;
   double wire_cap = wire_length * layer_cap;
-  FixedDelay wire_delay
-      = FixedDelay(wire_res * (wire_cap / 2 + p->cap()), resizer_);
+  FixedDelay wire_delay = FixedDelay(
+      delay_shape_factor_ * wire_res * (wire_cap / 2 + p->cap()), resizer_);
 
   // account for wire delay
   z->setDelay(wire_delay);
@@ -1617,7 +1618,8 @@ void Rebuffer::findLongWireOptimum(Rebuffer::BufferSize& size)
           / (buffer_load * eps) * wire_cap;
     const float intrinsic_delay
         = std::max(buffer_delay - buffer_delay_slope * length, 0.0f);
-    const float new_length = sqrt(2 * intrinsic_delay / (wire_res * wire_cap));
+    const float new_length = sqrt(
+        2 * intrinsic_delay / (delay_shape_factor_ * wire_res * wire_cap));
     length = new_length;
 
     debugPrint(logger_,
@@ -1635,7 +1637,8 @@ void Rebuffer::findLongWireOptimum(Rebuffer::BufferSize& size)
                new_length);
   }
 
-  const float wire_delay = wire_res * wire_cap / 2 * length * length;
+  const float wire_delay
+      = delay_shape_factor_ * wire_res * wire_cap / 2 * length * length;
   debugPrint(logger_,
              RSZ,
              "bufchar",
