@@ -851,15 +851,9 @@ TilingList HierRTLMP::getTightPackingTilings(Cluster* cluster)
 {
   TilingList tight_packing_tilings;
 
-<<<<<<< HEAD
-  int num_macro = macro_array->getNumMacro();
-  float macro_width = macro_array->getHardMacros().front()->getWidth();
-  float macro_height = macro_array->getHardMacros().front()->getHeight();
-=======
   int num_macro = static_cast<int>(cluster->getNumMacro());
   float macro_width = cluster->getHardMacros().front()->getWidth();
   float macro_height = cluster->getHardMacros().front()->getHeight();
->>>>>>> 0ab84211bf (mpl: include tight packing tilings for all macro clsuters)
 
   const odb::Rect outline = tree_->root->getBBox();
 

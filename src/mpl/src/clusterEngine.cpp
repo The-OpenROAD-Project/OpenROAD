@@ -1227,8 +1227,8 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   if (level_ == 0) {
     const int leaf_max_std_cell
         = tree_->base_max_std_cell
-          / std::pow(tree_->cluster_size_ratio, tree_->max_level - 1)
-          * (1 + size_tolerance_);
+          / std::pow(tree_->cluster_size_ratio, tree_->max_level - 1);
+          // * (1 + size_tolerance_);
     if (parent->getNumStdCell() < leaf_max_std_cell) {
       force_split_root = true;
       debugPrint(logger_,
@@ -1295,10 +1295,10 @@ void ClusteringEngine::updateSizeThresholds()
 
   // We define the tolerance to improve the robustness of our hierarchical
   // clustering
-  max_macro_ *= (1 + size_tolerance_);
-  min_macro_ *= (1 - size_tolerance_);
-  max_std_cell_ *= (1 + size_tolerance_);
-  min_std_cell_ *= (1 - size_tolerance_);
+  // max_macro_ *= (1 + size_tolerance_);
+  // min_macro_ *= (1 - size_tolerance_);
+  // max_std_cell_ *= (1 + size_tolerance_);
+  // min_std_cell_ *= (1 - size_tolerance_);
 
   if (min_macro_ <= 0) {
     min_macro_ = 1;
