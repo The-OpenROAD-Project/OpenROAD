@@ -1538,7 +1538,7 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
       }
     }
 
-    std::sort(guide_pts.begin(), guide_pts.end());
+    std::ranges::sort(guide_pts);
     for (int i = 1; i < guide_pts.size(); i++) {
       lines.emplace(guide_pts[i - 1], guide_pts[i]);
     }
@@ -1548,9 +1548,9 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
           = [&guide_pts, &lines, &io_map, &sources, &sinks](
                 odb::dbObject* dbterm, const odb::Point& term) {
               // draw shortest flywire
-              std::stable_sort(
-                  guide_pts.begin(),
-                  guide_pts.end(),
+              std::ranges::stable_sort(
+                  guide_pts,
+
                   [&term](const odb::Point& pt0, const odb::Point& pt1) {
                     return odb::Point::manhattanDistance(term, pt0)
                            < odb::Point::manhattanDistance(term, pt1);
@@ -2726,9 +2726,9 @@ Descriptor::Editors DbBlockageDescriptor::getEditors(
                blockage->setMaxDensity(density);
                return true;
              }
-           } catch (std::out_of_range&) {
+           } catch (std::out_of_range&) {  // NOLINT(bugprone-empty-catch)
              // catch poorly formatted string
-           } catch (std::logic_error&) {
+           } catch (std::logic_error&) {  // NOLINT(bugprone-empty-catch)
              // catch poorly formatted string
            }
          }

@@ -878,7 +878,7 @@ void HistogramView::emitEndPointsInBucket(const int bar_index)
   auto compare_slack = [this](const sta::Pin* a, const sta::Pin* b) {
     return sta_->getPinSlack(a) < sta_->getPinSlack(b);
   };
-  std::sort(end_points.begin(), end_points.end(), compare_slack);
+  std::ranges::sort(end_points, compare_slack);
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.

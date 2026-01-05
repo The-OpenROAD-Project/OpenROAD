@@ -273,8 +273,7 @@ IntervalT GridGraph::rangeSearchRows(const int dimension,
               : std::max(lineRange.low() - 1, 0),
           gridlines_[dimension][lineRange.high()] == loc_interval.high()
               ? lineRange.high() - 1
-              : std::min(lineRange.high(),
-                         static_cast<int>(getSize(dimension)) - 1)};
+              : std::min(lineRange.high(), getSize(dimension) - 1)};
 }
 
 BoxT GridGraph::getCellBox(PointT point) const

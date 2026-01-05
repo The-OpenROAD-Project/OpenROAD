@@ -742,9 +742,7 @@ inline void getTrackLocs(bool isHorzTracks,
   for (auto& tp : block->getTrackPatterns(layer->getLayerNum())) {
     if (tp->isHorizontal() != isHorzTracks) {
       int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-      if (trackNum < 0) {
-        trackNum = 0;
-      }
+      trackNum = std::max(trackNum, 0);
       if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord() < low) {
         ++trackNum;
       }

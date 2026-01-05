@@ -38,8 +38,8 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
     pxs.emplace_back(pin.point.x());
     pys.emplace_back(pin.point.y());
   }
-  std::sort(pxs.begin(), pxs.end());
-  std::sort(pys.begin(), pys.end());
+  std::ranges::sort(pxs);
+  std::ranges::sort(pys);
 
   const int xSize = grid_graph_->getSize(0);
   const int ySize = grid_graph_->getSize(1);
@@ -173,9 +173,8 @@ void MazeRoute::run()
   // lambda to update solution
   auto updateSolution = [&](const std::shared_ptr<Solution>& solution) {
     queue.push(solution);
-    if (solution->cost < minCosts[solution->vertex]) {
-      minCosts[solution->vertex] = solution->cost;
-    }
+    minCosts[solution->vertex]
+        = std::min(solution->cost, minCosts[solution->vertex]);
   };
 
   solutions_.reserve(net_->getNumPins());

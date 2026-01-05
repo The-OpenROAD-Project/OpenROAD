@@ -116,14 +116,14 @@ void addAdjacentCutsSubRule(
     parser->curRule->setExceptSamePgnet(true);
   }
   if (className.is_initialized()) {
-    auto cutClassName = className.value();
+    const auto& cutClassName = className.value();
     auto cutClass = layer->findTechLayerCutClassRule(cutClassName.c_str());
     if (cutClass != nullptr) {
       parser->curRule->setCutClass(cutClass);
     }
   }
   if (sideParallelNoPrl.is_initialized()) {
-    auto option = sideParallelNoPrl.value();
+    const auto& option = sideParallelNoPrl.value();
     if (option == "NOPRL") {
       parser->curRule->setNoPrl(true);
     } else {
@@ -140,7 +140,7 @@ void addParallelOverlapSubRule(boost::optional<std::string> except,
   parser->curRule->setType(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP);
   if (except.is_initialized()) {
-    auto exceptWhat = except.value();
+    const auto& exceptWhat = except.value();
     if (exceptWhat == "EXCEPTSAMENET") {
       parser->curRule->setExceptSameNet(true);
     } else if (exceptWhat == "EXCEPTSAMEMETAL") {
@@ -187,7 +187,7 @@ void addSameMetalSharedEdgeSubRule(
     parser->curRule->setAbove(true);
   }
   if (CUTCLASS.is_initialized()) {
-    auto cutClassName = CUTCLASS.value();
+    const auto& cutClassName = CUTCLASS.value();
     auto cutClass = layer->findTechLayerCutClassRule(cutClassName.c_str());
     if (cutClass != nullptr) {
       parser->curRule->setCutClass(cutClass);

@@ -339,9 +339,8 @@ void ClusteringEngine::setBaseThresholds()
     tree_->base_min_std_cell
         = std::floor(design_metrics_->getNumStdCell()
                      / std::pow(tree_->cluster_size_ratio, tree_->max_level));
-    if (tree_->base_min_std_cell <= min_num_std_cells_allowed) {
-      tree_->base_min_std_cell = min_num_std_cells_allowed;
-    }
+    tree_->base_min_std_cell
+        = std::max(tree_->base_min_std_cell, min_num_std_cells_allowed);
     tree_->base_max_std_cell
         = tree_->base_min_std_cell * tree_->cluster_size_ratio / 2.0;
 
@@ -1480,8 +1479,7 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
   // When breaking large flat clusters, the children will
   // be modified, so, we need to iterate them using indexes.
   const UniqueClusterVector& new_children = parent->getChildren();
-  for (int i = 0; i < new_children.size(); ++i) {
-    auto& child = new_children[i];
+  for (const auto& child : new_children) {
     child->setParent(parent);
     if (isLargeFlatCluster(child.get())) {
       breakLargeFlatCluster(child.get());

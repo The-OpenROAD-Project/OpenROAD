@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -139,9 +140,7 @@ uint32_t extMeasureRC::FindCoupleWiresOnTracks_down(
   Grid* upGrid = _search->getGrid(opt.direction, level);
   // int up_track_num = upGrid->getTrackNum1(w->getBase());
   int end_track = start_track - opt.track_limit - 1;
-  if (end_track < 0) {
-    end_track = 0;
-  }
+  end_track = std::max(end_track, 0);
 
   for (int next_tr = start_track; next_tr > end_track;
        next_tr--)  // for tracks overlapping wire
@@ -1069,9 +1068,7 @@ uint32_t extMeasureRC::FindAllNeigbors_down(Wire* w,
   Grid* upGrid = _search->getGrid(dir, level);
   // int up_track_num = upGrid->getTrackNum1(w->getBase());
   int end_track = start_track - limitTrackNum - 1;
-  if (end_track < 0) {
-    end_track = 0;
-  }
+  end_track = std::max(end_track, 0);
 
   for (int next_tr = start_track; next_tr > end_track;
        next_tr--)  // for tracks overlapping wire
@@ -1615,9 +1612,7 @@ void extMeasureRC::Model1(extSegment* cc,
   dbRSeg* rseg_up = GetRSeg(cc->_up->getRsegId());
 
   int dist = cc->_dist;
-  if (dist < cc->_dist_down) {
-    dist = cc->_dist_down;
-  }
+  dist = std::max(dist, cc->_dist_down);
 
   dbCCSeg* ccCap_up = nullptr;
   dbCCSeg* ccCap_down = nullptr;

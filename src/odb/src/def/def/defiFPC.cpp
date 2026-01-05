@@ -79,7 +79,7 @@ void defiFPC::Destroy()
   nameLength_ = 0;
 
   free((char*) (names_));
-  free((char*) (rowOrComp_));
+  free(rowOrComp_);
   namesAllocated_ = 0;
 }
 

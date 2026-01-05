@@ -29,6 +29,7 @@
 
 #include "lefiMacro.hpp"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -1955,9 +1956,7 @@ void lefiPin::addAntennaModel(int oxide)
   amo = pinAntennaModel_[oxide - 1];
   curAntennaModelIndex_ = oxide - 1;
 
-  if (oxide > numAntennaModel_) {
-    numAntennaModel_ = oxide;
-  }
+  numAntennaModel_ = std::max(oxide, numAntennaModel_);
 
   amo->Init();
   amo->setAntennaModel(oxide);
