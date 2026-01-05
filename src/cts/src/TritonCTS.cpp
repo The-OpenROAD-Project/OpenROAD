@@ -685,13 +685,6 @@ void TritonCTS::setBufferList(const char* buffers)
   options_->setBufferList(bufferList);
 }
 
-std::string toLowerCase(std::string str)
-{
-  std::ranges::transform(
-      str, str.begin(), [](unsigned char c) { return std::tolower(c); });
-  return str;
-}
-
 std::string TritonCTS::getRootBufferToString()
 {
   std::ostringstream buffer_names;
@@ -2235,7 +2228,7 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   return insDelayPerMicron;
 }
 
-float getInputCap(const sta::LibertyCell* cell)
+static float getInputCap(const sta::LibertyCell* cell)
 {
   sta::LibertyPort *in, *out;
   cell->bufferPorts(in, out);
@@ -2245,7 +2238,7 @@ float getInputCap(const sta::LibertyCell* cell)
   return 0.0;
 }
 
-sta::LibertyCell* findBestDummyCell(
+static sta::LibertyCell* findBestDummyCell(
     const std::vector<sta::LibertyCell*>& dummyCandidates,
     float deltaCap)
 {

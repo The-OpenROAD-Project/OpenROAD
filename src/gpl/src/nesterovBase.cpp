@@ -1101,15 +1101,14 @@ NesterovBaseCommon::NesterovBaseCommon(
 
   // gCell ptr init
   nbc_gcells_.reserve(gCellStor_.size());
-  for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    GCell& gCell = gCellStor_[i];
+  for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
       continue;
     }
     nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
-      db_inst_to_nbc_index_map_[inst->dbInst()] = i;
+      db_inst_to_nbc_index_map_[inst->dbInst()] = &gCell - &gCellStor_[0];
     }
   }
 
@@ -1557,15 +1556,14 @@ void NesterovBaseCommon::fixPointers()
   gCellMap_.clear();
   db_inst_to_nbc_index_map_.clear();
   nbc_gcells_.reserve(gCellStor_.size());
-  for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    GCell& gCell = gCellStor_[i];
+  for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
       continue;
     }
     nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
-      db_inst_to_nbc_index_map_[inst->dbInst()] = i;
+      db_inst_to_nbc_index_map_[inst->dbInst()] = &gCell - &gCellStor_[0];
     }
   }
 

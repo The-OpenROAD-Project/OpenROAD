@@ -6342,6 +6342,9 @@ void lefiLayer::parseLayerEnclosure(int index)
     if (strcmp(value, "CUTCLASS") == 0) {
       // This is 58 syntax but is not in OA data model.  Skip the parsing
       free(wrkingStr);
+      if (enclRule) {
+        free(enclRule);
+      }
       return;
     }
     if ((strcmp(value, "ABOVE") == 0) || (strcmp(value, "BELOW") == 0)) {
@@ -6369,6 +6372,9 @@ void lefiLayer::parseLayerEnclosure(int index)
           free(enclRule);
         }
         return;
+      }
+      if (enclRule) {
+        free(enclRule);
       }
       enclRule = strdup(value);
       value = strtok(nullptr, " ");

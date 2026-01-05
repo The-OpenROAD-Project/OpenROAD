@@ -40,7 +40,7 @@ std::string GetVectorString(const std::vector<float>& vec)
 // Convert Tcl list to vector
 
 // char_match:  determine if the char is part of deliminators
-bool CharMatch(char c, const std::string& delim)
+static bool CharMatch(char c, const std::string& delim)
 {
   auto it = delim.begin();
   while (it != delim.end()) {
@@ -53,9 +53,9 @@ bool CharMatch(char c, const std::string& delim)
 }
 
 // find the next position for deliminator char
-std::string::const_iterator FindDelim(std::string::const_iterator start,
-                                      std::string::const_iterator end,
-                                      const std::string& delim)
+static std::string::const_iterator FindDelim(std::string::const_iterator start,
+                                             std::string::const_iterator end,
+                                             const std::string& delim)
 {
   while (start != end && !CharMatch(*start, delim)) {
     start++;
@@ -64,9 +64,10 @@ std::string::const_iterator FindDelim(std::string::const_iterator start,
 }
 
 // find the next position for non deliminator char
-std::string::const_iterator FindNotDelim(std::string::const_iterator start,
-                                         std::string::const_iterator end,
-                                         const std::string& delim)
+static std::string::const_iterator FindNotDelim(
+    std::string::const_iterator start,
+    std::string::const_iterator end,
+    const std::string& delim)
 {
   while (start != end && CharMatch(*start, delim)) {
     start++;

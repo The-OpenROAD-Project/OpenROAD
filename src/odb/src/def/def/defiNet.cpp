@@ -29,6 +29,7 @@
 
 #include "defiNet.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -343,7 +344,7 @@ int defiSubnet::isCover() const
   return (int) (isCover_);
 }
 
-void defiSubnet::bumpName(long long size)
+void defiSubnet::bumpName(int64_t size)
 {
   if (name_) {
     free(name_);
@@ -353,13 +354,13 @@ void defiSubnet::bumpName(long long size)
   name_[0] = '\0';
 }
 
-void defiSubnet::bumpPins(long long size)
+void defiSubnet::bumpPins(int64_t size)
 {
   char** newInstances = (char**) malloc(sizeof(char*) * size);
   char** newPins = (char**) malloc(sizeof(char*) * size);
   char* newMusts = (char*) malloc(size);
   char* newSyn = (char*) malloc(size);
-  long long i;
+  int64_t i;
 
   if (instances_) {
     for (i = 0; i < pinsAllocated_; i++) {
@@ -512,9 +513,9 @@ int defiSubnet::numPaths() const
 }
 
 // WMD -- this will be removed after the next release
-void defiSubnet::bumpPaths(long long size)
+void defiSubnet::bumpPaths(int64_t size)
 {
-  long long i;
+  int64_t i;
   defiPath** newPaths = new defiPath*[size];
 
   for (i = 0; i < numPaths_; i++) {
@@ -741,9 +742,9 @@ void defiShield::clear()
   }
 }
 
-void defiShield::bumpPaths(long long size)
+void defiShield::bumpPaths(int64_t size)
 {
-  long long i;
+  int64_t i;
 
   defiPath** newPaths = new defiPath*[size];
 
@@ -889,9 +890,9 @@ void defiWire::clear()
   }
 }
 
-void defiWire::bumpPaths(long long size)
+void defiWire::bumpPaths(int64_t size)
 {
-  long long i;
+  int64_t i;
   defiPath** newPaths = new defiPath*[size];
 
   for (i = 0; i < numPaths_; i++) {
@@ -1702,7 +1703,7 @@ void defiNet::print(FILE* f) const
   }
 }
 
-void defiNet::bumpName(long long size)
+void defiNet::bumpName(int64_t size)
 {
   if (name_) {
     free(name_);
@@ -1712,13 +1713,13 @@ void defiNet::bumpName(long long size)
   name_[0] = '\0';
 }
 
-void defiNet::bumpPins(long long size)
+void defiNet::bumpPins(int64_t size)
 {
   char** newInstances = (char**) malloc(sizeof(char*) * size);
   char** newPins = (char**) malloc(sizeof(char*) * size);
   char* newMusts = (char*) malloc(size);
   char* newSyn = (char*) malloc(size);
-  long long i;
+  int64_t i;
 
   if (instances_) {
     for (i = 0; i < pinsAllocated_; i++) {
@@ -1740,13 +1741,13 @@ void defiNet::bumpPins(long long size)
   pinsAllocated_ = size;
 }
 
-void defiNet::bumpProps(long long size)
+void defiNet::bumpProps(int64_t size)
 {
   char** newNames = (char**) malloc(sizeof(char*) * size);
   char** newValues = (char**) malloc(sizeof(char*) * size);
   double* newDValues = (double*) malloc(sizeof(double) * size);
   char* newTypes = (char*) malloc(sizeof(char) * size);
-  long long i;
+  int64_t i;
 
   if (propNames_) {
     for (i = 0; i < numProps_; i++) {
@@ -1768,7 +1769,7 @@ void defiNet::bumpProps(long long size)
   propsAllocated_ = size;
 }
 
-void defiNet::bumpSubnets(long long size)
+void defiNet::bumpSubnets(int64_t size)
 {
   defiSubnet** newSubnets = (defiSubnet**) malloc(sizeof(defiSubnet*) * size);
   int i;
@@ -2307,9 +2308,9 @@ const char* defiNet::nonDefaultRule() const
 }
 
 // WMD -- this will be removed by the next release
-void defiNet::bumpPaths(long long size)
+void defiNet::bumpPaths(int64_t size)
 {
-  long long i;
+  int64_t i;
 
   defiPath** newPaths = new defiPath*[size];
 
@@ -2366,10 +2367,10 @@ const defiWire* defiNet::wire(int index) const
   return nullptr;
 }
 
-void defiNet::bumpShieldNets(long long size)
+void defiNet::bumpShieldNets(int64_t size)
 {
   char** newShieldNets = (char**) malloc(sizeof(char*) * size);
-  long long i;
+  int64_t i;
 
   if (shieldNet_) {
     for (i = 0; i < shieldNetsAllocated_; i++) {

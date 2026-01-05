@@ -730,9 +730,9 @@ int RepairAntennas::getSegmentsPerLayer(
   return added_seg_count;
 }
 
-void getSegmentsWithOverlap(SegmentNode& seg_info,
-                            const std::vector<SegmentNode>& segs,
-                            odb::dbTechLayer* layer)
+static void getSegmentsWithOverlap(SegmentNode& seg_info,
+                                   const std::vector<SegmentNode>& segs,
+                                   odb::dbTechLayer* layer)
 {
   int index = 0;
   // Iterate all segment vector to find overlap
@@ -871,10 +871,10 @@ void RepairAntennas::findJumperCandidatePositions(
   }
 }
 
-void getViaPosition(LayerToSegmentNodeVector& segment_graph,
-                    const GRoute& route,
-                    const SegmentNode& seg_node,
-                    std::unordered_set<int>& via_pos)
+static void getViaPosition(LayerToSegmentNodeVector& segment_graph,
+                           const GRoute& route,
+                           const SegmentNode& seg_node,
+                           std::unordered_set<int>& via_pos)
 {
   const GSegment& seg = route[seg_node.seg_id];
   const int layer_level = seg.init_layer;
@@ -990,7 +990,7 @@ bool RepairAntennas::findPosToJumper(const GRoute& route,
   return (jumper_position != -1);
 }
 
-odb::Point findSegmentPos(const GSegment& seg)
+static odb::Point findSegmentPos(const GSegment& seg)
 {
   // Get the middle position of the segment
   int x = (seg.init_x + seg.final_x) / 2;

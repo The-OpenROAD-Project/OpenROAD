@@ -34,6 +34,8 @@
 /*                              and other keywords                     */
 
 #include <cctype>
+#include <cinttypes>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -238,7 +240,7 @@ int defrData::DefGetTokenFromStack(char* s)
   return false; /* if we get here, we ran out of input levels */
 }
 
-void defrData::print_lines(long long lines)
+void defrData::print_lines(int64_t lines)
 {
   if (lines % settings->defiDeltaNumberLines) {
     return;
@@ -256,12 +258,12 @@ void defrData::print_lines(long long lines)
   }
 }
 
-const char* defrData::lines2str(long long lines)
+const char* defrData::lines2str(int64_t lines)
 {
 #ifdef _WIN32
   sprintf(lineBuffer, "%I64d", lines);
 #else
-  sprintf(lineBuffer, "%lld", lines);
+  sprintf(lineBuffer, "%" PRId64, lines);
 #endif
 
   return lineBuffer;
@@ -276,7 +278,7 @@ void defrData::IncCurPos(char** curPos, char** buffer, int* bufferSize)
     return;
   }
 
-  long offset = *curPos - *buffer;
+  int64_t offset = *curPos - *buffer;
 
   *bufferSize *= 2;
   *buffer = (char*) realloc(*buffer, *bufferSize);
@@ -432,6 +434,9 @@ void defrData::StoreAlias()
   std::string so_far; /* contains alias contents as we build it */
 
   if (strcmp(line, "=") != 0) {
+    free(aname);
+    free(line);
+    free(uc_line);
     defError(6000, "Expecting '='");
     return;
   }
@@ -443,6 +448,9 @@ void defrData::StoreAlias()
     for (i = 0; i < tokenSize - 1; i++) {
       int ch = GETC();
       if (ch == EOF) {
+        free(aname);
+        free(line);
+        free(uc_line);
         defError(6001, "End of file in &ALIAS");
         return;
       }
