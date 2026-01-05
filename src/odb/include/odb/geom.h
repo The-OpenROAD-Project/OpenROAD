@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <iosfwd>
+#include <numbers>
 #include <tuple>
 #include <vector>
 
@@ -1001,7 +1002,7 @@ inline int Oct::yMax() const
 inline std::vector<Point> Oct::getPoints() const
 {
   OCT_DIR dir = getDir();
-  int B = ceil((A_ * 2) / (sqrt(2))) - A_;
+  int B = ceil((A_ * 2) / std::numbers::sqrt2) - A_;
   std::vector<Point> points(9);
   points[0] = points[8] = Point(center_low_.getX() - B,
                                 center_low_.getY() - A_);  // low oct (-B,-A)

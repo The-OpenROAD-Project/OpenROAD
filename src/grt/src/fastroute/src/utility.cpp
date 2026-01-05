@@ -641,7 +641,7 @@ void FastRouteCore::assignEdge(const int netID,
   const int n1a = treeedge->n1a;
   const int n2a = treeedge->n2a;
 
-  std::vector<std::vector<long>> gridD;
+  std::vector<std::vector<int64_t>> gridD;
   gridD.resize(num_layers_);
   for (int i = 0; i < num_layers_; i++) {
     gridD[i].resize(treeedge->route.routelen + 1);

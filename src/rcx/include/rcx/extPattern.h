@@ -72,7 +72,7 @@ class extPattern
   int _pattern_separation;
   int units;
 
-  AthHash<int>* nameHash;
+  AthHash<int, false>* nameHash;
 
   extPattern(int wireCnt,
              int over1,

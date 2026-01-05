@@ -27,6 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -2465,9 +2466,9 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       }
       break;
     case defrDefaultCapCbkType:
-      i = (long long) cl;
+      i = (int64_t) cl;
       fprintf(fout, "DEFAULTCAP %d\n", i);
-      numObjs = (long) i;
+      numObjs = (int64_t) i;
       break;
     case defrRowCbkType:
       row = (defiRow*) cl;
@@ -3317,11 +3318,11 @@ void freeCB(void* name)
 }
 
 BEGIN_DEF_PARSER_NAMESPACE
-extern long long nlines;
+extern int64_t nlines;
 END_DEF_PARSER_NAMESPACE
 static int ccr1131444 = 0;
 
-void lineNumberCB(long long lineNo)
+void lineNumberCB(int64_t lineNo)
 {
   // The CCR 1131444 tests ability of the DEF parser to count
   // input line numbers out of 32-bit int range. On the first callback
@@ -3359,7 +3360,7 @@ int main(int argc, char** argv)
   FILE* f;
   int res = 0;
   int noCalls = 0;
-  //  long start_mem;
+  //  int64_t start_mem;
   int retStr = 0;
   int numInFile = 0;
   int fileCt = 0;
@@ -3374,7 +3375,7 @@ int main(int argc, char** argv)
   _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
-  //  start_mem = (long)sbrk(0);
+  //  start_mem = (int64_t)sbrk(0);
 
   strcpy(defaultName, "def.in");
   strcpy(defaultOut, "list");

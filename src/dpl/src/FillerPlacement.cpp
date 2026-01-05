@@ -22,7 +22,7 @@ using utl::DPL;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
-using utl::format_as;
+using utl::format_as;  // NOLINT(misc-unused-using-decls)
 
 static odb::dbTechLayer* getImplant(dbMaster* master)
 {

@@ -40,13 +40,13 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   const int num_edges = sttrees_[net_id].num_edges();
 
   // group all edges that crosses the same position
-  std::unordered_map<std::pair<short, short>,
+  std::unordered_map<std::pair<int16_t, int16_t>,
                      std::vector<int>,
                      boost::hash<std::pair<int, int>>>
       position_to_edges_map;
 
   auto cmp = [&](int a, int b) { return treeedges[a].len > treeedges[b].len; };
-  std::map<int, std::vector<std::pair<short, short>>, decltype(cmp)>
+  std::map<int, std::vector<std::pair<int16_t, int16_t>>, decltype(cmp)>
       edges_to_blocked_pos_map(cmp);
   for (int edgeID = 0; edgeID < num_edges; edgeID++) {
     const TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -75,7 +75,7 @@ void FastRouteCore::checkAndFixEmbeddedTree(const int net_id)
   // fix the longest edge and break the loop
   if (!edges_to_blocked_pos_map.empty()) {
     int edge = edges_to_blocked_pos_map.begin()->first;
-    std::vector<std::pair<short, short>>& blocked_positions
+    std::vector<std::pair<int16_t, int16_t>>& blocked_positions
         = edges_to_blocked_pos_map.begin()->second;
     fixOverlappingEdge(net_id, edge, blocked_positions);
   }
@@ -126,9 +126,10 @@ void FastRouteCore::fixOverlappingEdge(
   TreeEdge* treeedge = &(sttrees_[net_id].edges[edge]);
   auto& treenodes = sttrees_[net_id].nodes;
 
-  auto sort_by_x = [](std::pair<short, short> a, std::pair<short, short> b) {
-    return a.first < b.first;
-  };
+  auto sort_by_x
+      = [](std::pair<int16_t, int16_t> a, std::pair<int16_t, int16_t> b) {
+          return a.first < b.first;
+        };
 
   std::ranges::stable_sort(blocked_positions, sort_by_x);
 
@@ -180,15 +181,15 @@ void FastRouteCore::fixOverlappingEdge(
 void FastRouteCore::routeLShape(
     const TreeNode& startpoint,
     const TreeNode& endpoint,
-    std::vector<std::pair<short, short>>& blocked_positions,
+    std::vector<std::pair<int16_t, int16_t>>& blocked_positions,
     std::vector<GPoint3D>& new_route)
 {
   new_route.push_back({startpoint.x, startpoint.y, -1});
-  short first_x;
-  short first_y;
+  int16_t first_x;
+  int16_t first_y;
   if (blocked_positions.front().second == blocked_positions.back().second) {
     // blocked positions are horizontally aligned
-    short y;
+    int16_t y;
     // using first_x variable to avoid duplicated points
     if (startpoint.y != blocked_positions[0].second) {
       y = startpoint.y;
@@ -204,7 +205,7 @@ void FastRouteCore::routeLShape(
         first_x++;
       }
     }
-    for (short x = first_x; x <= endpoint.x; x++) {
+    for (int16_t x = first_x; x <= endpoint.x; x++) {
       new_route.push_back({x, y, -1});
     }
     if (y < endpoint.y) {
@@ -222,7 +223,7 @@ void FastRouteCore::routeLShape(
     }
   } else {
     // blocked positions are vertically aligned
-    short x;
+    int16_t x;
     if (startpoint.x != blocked_positions[0].first) {
       x = startpoint.x;
       // point (startpoint.x, startpoint.y) already
@@ -240,11 +241,11 @@ void FastRouteCore::routeLShape(
       }
     }
     if (startpoint.y < endpoint.y) {
-      for (short y = first_y; y <= endpoint.y; y++) {
+      for (int16_t y = first_y; y <= endpoint.y; y++) {
         new_route.push_back({x, y, -1});
       }
     } else {
-      for (short y = first_y; y >= endpoint.y; y--) {
+      for (int16_t y = first_y; y >= endpoint.y; y--) {
         new_route.push_back({x, y, -1});
       }
     }

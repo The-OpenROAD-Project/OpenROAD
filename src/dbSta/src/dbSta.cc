@@ -571,7 +571,7 @@ void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
   }
 }
 
-std::string toLowerCase(std::string str)
+static std::string toLowerCase(std::string str)
 {
   std::ranges::transform(
       str, str.begin(), [](unsigned char c) { return std::tolower(c); });

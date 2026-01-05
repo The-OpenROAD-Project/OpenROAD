@@ -31,7 +31,7 @@ class NameTable
   uint32_t addName(const char* name, uint32_t dataId);
   uint32_t getDataId(int poolId);
 
-  AthHash<int>* _hashTable;
+  AthHash<int, false>* _hashTable;
   AthPool<NameBucket>* _bucketPool;
 };
 

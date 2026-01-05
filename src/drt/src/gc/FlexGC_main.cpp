@@ -2227,7 +2227,7 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
     gtl::get_max_rectangles(rects, polySet);
     if (rects.size() == 1) {
       int min_width = db_rule->getRectWidth();
-      auto rect = rects.back();
+      const auto& rect = rects.back();
       auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
       auto yLen = gtl::delta(rect, gtl::VERTICAL);
       bool apply_rect_width_area = false;
