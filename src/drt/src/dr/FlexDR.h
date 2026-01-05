@@ -440,6 +440,15 @@ class FlexDRWorker
   frUInt4 getWorkerDRCCost() const { return workerDRCCost_; }
   double getRuntimeSec() const { return runtime_sec_; }
   int getWorkerId() const { return worker_id_; }
+  int getBoundaryNetCount() const { return static_cast<int>(boundaryPin_.size()); }
+  int getBoundaryPinCount() const
+  {
+    int count = 0;
+    for (const auto& [net, pins] : boundaryPin_) {
+      count += static_cast<int>(pins.size());
+    }
+    return count;
+  }
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);
