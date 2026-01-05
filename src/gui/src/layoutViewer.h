@@ -167,6 +167,9 @@ class LayoutViewer : public QWidget
   bool isCursorInsideViewport();
   void updateCursorCoordinates();
 
+  // gets the size of the diameter of the biggest circle that fits the view
+  int getVisibleDiameter();
+
  signals:
   // indicates the current location of the mouse
   void location(int x, int y);
@@ -182,6 +185,8 @@ class LayoutViewer : public QWidget
   void addRuler(int x0, int y0, int x1, int y1);
 
   void focusNetsChanged();
+
+  void viewUpdated();
 
  public slots:
   // zoom in the layout, keeping the current center_
@@ -207,9 +212,6 @@ class LayoutViewer : public QWidget
 
   // zoom to the specified point
   void zoomTo(const odb::Point& focus, int diameter);
-
-  // get the size of the
-  int getVisibleDiameter();
 
   // indicates a chip has been loaded
   void chipLoaded(odb::dbChip* chip);

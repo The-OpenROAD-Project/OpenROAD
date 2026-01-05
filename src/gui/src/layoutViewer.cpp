@@ -2011,6 +2011,8 @@ void LayoutViewer::fullRepaint()
     setLoadingState();
     viewer_thread_.render(rect, selected_, highlighted_, rulers_, labels_);
   }
+
+  emit(viewUpdated());
 }
 
 void LayoutViewer::fit()

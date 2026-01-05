@@ -85,6 +85,7 @@ class LayoutTabs : public QTabWidget
   void focusNetsChanged();
   void routeGuidesChanged();
   void netTracksChanged();
+  void viewUpdated();
 
  public slots:
   void tabChange(int index);

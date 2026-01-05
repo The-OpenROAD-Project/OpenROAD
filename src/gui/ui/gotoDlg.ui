@@ -251,22 +251,11 @@
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
-        <widget class="QPushButton" name="gotoBtn">
-         <property name="text">
-          <string>Go to</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="updateBtn">
-         <property name="text">
-          <string>Update</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QPushButton" name="gotoBtn">
+       <property name="text">
+        <string>Go to</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

@@ -399,6 +399,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::displayUnitsChanged,
           goto_dialog_,
           &GotoLocationDialog::updateUnits);
+  connect(viewers_,
+          &LayoutTabs::viewUpdated,
+          goto_dialog_,
+          &GotoLocationDialog::updateLocation);
   connect(selection_timer_.get(), &QTimer::timeout, [this]() {
     emit selectionChanged();
   });

@@ -16,10 +16,6 @@ GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutTabs* viewers)
     : QDialog(parent), viewers_(viewers)
 {
   setupUi(this);
-  connect(updateBtn,
-          &QPushButton::clicked,
-          this,
-          &GotoLocationDialog::updateLocation);
   connect(gotoBtn, &QPushButton::clicked, this, &GotoLocationDialog::goTo);
 }
 
