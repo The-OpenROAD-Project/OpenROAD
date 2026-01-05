@@ -33,6 +33,7 @@
 
 #define EXTERN extern "C"
 
+#include <cstdint>
 #include <cstdio>
 
 #include "defrReader.h"

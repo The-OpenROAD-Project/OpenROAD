@@ -29,6 +29,7 @@
 
 #include "defiNet.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

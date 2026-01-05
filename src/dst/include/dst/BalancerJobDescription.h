@@ -2,13 +2,17 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
+
+#include <cstdint>
 #include <string>
 
 #include "boost/serialization/base_object.hpp"
 #include "dst/JobMessage.h"
+
 namespace boost::serialization {
 class access;
 }
+
 namespace dst {
 
 class BalancerJobDescription : public JobDescription
@@ -32,4 +36,5 @@ class BalancerJobDescription : public JobDescription
   }
   friend class boost::serialization::access;
 };
+
 }  // namespace dst

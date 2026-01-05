@@ -13,6 +13,7 @@
 
 #include "BalancerConnection.h"
 #include "boost/asio.hpp"
+#include "boost/asio/ip/address.hpp"
 #include "boost/asio/thread_pool.hpp"
 #include "boost/thread/thread.hpp"
 

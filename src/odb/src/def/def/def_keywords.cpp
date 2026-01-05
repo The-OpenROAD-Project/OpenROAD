@@ -34,6 +34,8 @@
 /*                              and other keywords                     */
 
 #include <cctype>
+#include <cinttypes>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -261,7 +263,7 @@ const char* defrData::lines2str(int64_t lines)
 #ifdef _WIN32
   sprintf(lineBuffer, "%I64d", lines);
 #else
-  sprintf(lineBuffer, "%ld", lines);
+  sprintf(lineBuffer, "%" PRId64, lines);
 #endif
 
   return lineBuffer;

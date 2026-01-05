@@ -4,6 +4,7 @@
 #include "LoadBalancer.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <limits>

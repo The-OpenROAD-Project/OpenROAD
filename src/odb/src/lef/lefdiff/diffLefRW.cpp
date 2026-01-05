@@ -30,6 +30,7 @@
 // This program is the diffLef core program.  It has all the callback
 // routines and write it out to a temporary file
 
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #ifndef WIN32

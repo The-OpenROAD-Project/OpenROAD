@@ -32,6 +32,7 @@
 
 #include <cstdarg>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <string_view>
 

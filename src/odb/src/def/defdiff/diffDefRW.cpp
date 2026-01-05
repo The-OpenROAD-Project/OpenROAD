@@ -31,6 +31,7 @@
 // routines and write it out to a temporary file.
 
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
