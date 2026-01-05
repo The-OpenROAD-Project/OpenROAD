@@ -30,7 +30,7 @@ Pin::Pin(
   for (auto layer : layers) {
     layers_.push_back(layer->getRoutingLevel());
   }
-  std::sort(layers_.begin(), layers_.end());
+  std::ranges::sort(layers_);
 
   for (auto& [layer, boxes] : boxes_per_layer) {
     boxes_per_layer_[layer->getRoutingLevel()] = boxes;
@@ -58,7 +58,7 @@ Pin::Pin(
   for (auto layer : layers) {
     layers_.push_back(layer->getRoutingLevel());
   }
-  std::sort(layers_.begin(), layers_.end());
+  std::ranges::sort(layers_);
 
   for (auto& [layer, boxes] : boxes_per_layer) {
     boxes_per_layer_[layer->getRoutingLevel()] = boxes;

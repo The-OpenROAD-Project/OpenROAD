@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <list>
 #include <map>
@@ -31,6 +32,8 @@
 #include "odb/isotropy.h"
 
 inline constexpr int ADS_MAX_CORNER = 10;
+inline constexpr const char* kDefaultBufBaseName{"buf"};
+inline constexpr const char* kDefaultNetBaseName{"net"};
 
 namespace utl {
 class Logger;
@@ -1313,6 +1316,11 @@ class dbBlock : public dbObject
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
                              = dbNameUniquifyType::ALWAYS);
+
+  std::string makeNewModNetName(dbModule* parent,
+                                const char* base_name = "net",
+                                const dbNameUniquifyType& uniquify
+                                = dbNameUniquifyType::ALWAYS);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
@@ -1527,6 +1535,7 @@ class dbBTerm : public dbObject
 
   /// Connect the block-terminal to net.
   ///
+  void connect(dbNet* db_net, dbModNet* modnet);
   void connect(dbNet* net);
   void connect(dbModNet* mod_net);
 
@@ -1571,7 +1580,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the bpins of this bterm.
   ///
-  dbSet<dbBPin> getBPins();
+  dbSet<dbBPin> getBPins() const;
 
   ///
   /// This method finds the first "placed" dbPin box.
@@ -1584,7 +1593,7 @@ class dbBTerm : public dbObject
   /// The location is the computed center of the bbox.
   /// returns false if there are no placed bpins. x and y are set to zero.
   //
-  bool getFirstPinLocation(int& x, int& y);
+  bool getFirstPinLocation(int& x, int& y) const;
 
   ///
   /// This method returns the placementstatus of the first dbBPin.
@@ -1838,13 +1847,12 @@ class dbNet : public dbObject
   ///
   /// Set the driving term id assigned of this net.
   ///
-  void setDrivingITerm(int id);
+  void setDrivingITerm(const dbITerm* iterm);
 
   ///
-  /// Returns driving term id assigned of this net. -1 if not set, 0 if non
-  /// existent
+  /// Returns the driving dbITerm* of this net.
   ///
-  int getDrivingITerm() const;
+  dbITerm* getDrivingITerm() const;
 
   ///
   /// Returns true if a fixed-bump flag has been set.
@@ -1999,6 +2007,11 @@ class dbNet : public dbObject
   /// Get the 1st inputSignal Iterm; can be
   ///
   dbITerm* get1stSignalInput(bool io);
+
+  ///
+  /// Get the 1st driver terminal (dbITerm or dbBTerm)
+  ///
+  dbObject* getFirstDriverTerm() const;
 
   ///
   /// Get the 1st output Iterm; can be
@@ -2437,6 +2450,11 @@ class dbNet : public dbObject
                        const char* name,
                        bool skipExistingCheck = false);
 
+  static dbNet* create(dbBlock* block,
+                       const char* base_name,
+                       const dbNameUniquifyType& uniquify,
+                       dbModule* parent_module = nullptr);
+
   ///
   /// Delete this net from this block.
   ///
@@ -2541,7 +2559,7 @@ class dbNet : public dbObject
   ///
   /// Dump dbNet info for debugging
   ///
-  void dump() const;
+  void dump(bool show_modnets = false) const;
 
   ///
   /// Check consistency between the terminals connected to this dbNet and
@@ -2555,6 +2573,73 @@ class dbNet : public dbObject
   /// Dump dbNet connectivity for debugging
   ///
   void dumpConnectivity(int level = 1) const;
+
+  ///
+  /// Load-pin buffering.
+  /// - Inserts a buffer on the driving net of the load pin (iterm/bterm).
+  /// - Returns the newly created buffer instance.
+  /// - If loc is null, the buffer is inserted at the load pin.
+  ///
+  dbInst* insertBufferBeforeLoad(
+      dbObject* load_input_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
+
+  ///
+  /// Driver-pin buffering.
+  /// - Inserts a buffer on the net driven by the driver pin (iterm/bterm).
+  /// - Returns the newly created buffer instance.
+  /// - If loc is null, the buffer is inserted at the driver pin.
+  ///
+  dbInst* insertBufferAfterDriver(
+      dbObject* drvr_output_term,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
+
+  ///
+  /// Partial-loads buffering.
+  /// - Inserts a buffer on the net driving the specified load pins.
+  /// - Returns the newly created buffer instance.
+  /// - If loc is null, the buffer is inserted at the center of the load pins.
+  /// - Note that the new buffer drives the specified load pins only.
+  ///   It does not drive other unspecified loads driven by the same net.
+  /// - loads_on_diff_nets: Flag indicating if loads can be on different dbNets.
+  ///   If true, the loads can be on different dbNets. This should be carefully
+  ///   used because it may break the function of the design if the loads
+  ///   contain an irrelevant load.
+  ///
+  dbInst* insertBufferBeforeLoads(
+      std::set<dbObject*>& load_pins,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
+
+  ///
+  /// Partial-loads buffering with vector load_pins support.
+  ///
+  dbInst* insertBufferBeforeLoads(
+      std::vector<dbObject*>& load_pins,
+      const dbMaster* buffer_master,
+      const Point* loc = nullptr,
+      const char* new_buf_base_name = kDefaultBufBaseName,
+      const char* new_net_base_name = kDefaultNetBaseName,
+      const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS,
+      bool loads_on_diff_nets = false);
+
+  ///
+  /// Connect a driver iterm to a load iterm, punching ports through hierarchy
+  /// as needed.
+  ///
+  void hierarchicalConnect(dbObject* driver, dbObject* load);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2881,9 +2966,14 @@ class dbInst : public dbObject
   dbSet<dbITerm> getITerms() const;
 
   ///
+  /// Get the first input terminal of this instance.
+  ///
+  dbITerm* getFirstInput() const;
+
+  ///
   /// Get the first output terminal of this instance.
   ///
-  dbITerm* getFirstOutput();
+  dbITerm* getFirstOutput() const;
 
   ///
   /// Get the region this instance belongs to. Returns nullptr if instance has
@@ -3071,11 +3161,20 @@ class dbInst : public dbObject
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
   /// If dbmodule is non null the dbInst is added to that module.
-
+  ///
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
                         const char* name,
                         bool physical_only = false,
+                        dbModule* parent_module = nullptr);
+
+  ///
+  /// Create a new instance with a unique name.
+  ///
+  static dbInst* create(dbBlock* block,
+                        dbMaster* master,
+                        const char* base_name,
+                        const dbNameUniquifyType& uniquify,
                         dbModule* parent_module = nullptr);
 
   static dbInst* create(dbBlock* block,
@@ -3327,7 +3426,7 @@ class dbITerm : public dbObject
   /// Get the average of the centers for the iterm shapes
   /// Returns false if iterm has no shapes
   ///
-  bool getAvgXY(int* x, int* y);
+  bool getAvgXY(int* x, int* y) const;
 
   ///
   /// Returns all geometries of all dbMPin associated with
@@ -5100,7 +5199,7 @@ class dbLib : public dbObject
   /// A hierarchy delimiter can only be set at the time
   /// a library is created.
   ///
-  char getHierarchyDelimiter();
+  char getHierarchyDelimiter() const;
 
   ///
   /// Set the Bus name delimiters
@@ -5274,7 +5373,7 @@ class dbMaster : public dbObject
   ///
   /// Get the master cell name.
   ///
-  const char* getConstName();
+  const char* getConstName() const;
 
   ///
   /// Get the x,y origin of this master
@@ -8367,6 +8466,15 @@ class dbModBTerm : public dbObject
   void setBusPort(dbBusPort*);
   dbBusPort* getBusPort() const;
 
+  ///
+  /// Returns the module instance that contains this module boundary terminal.
+  /// - It can be connected to a dbModITerm of a dbModInst that instantiates
+  ///   this module. This function returns that dbModInst.
+  /// - Returns nullptr if there is no instantiated module or dbModBTerm is not
+  ///   connected to a dbModITerm.
+  ///
+  dbModInst* getModInst() const;
+
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
   static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
@@ -8491,8 +8599,30 @@ class dbModNet : public dbObject
   ///
   bool isConnected(const dbModNet* other) const;
 
+  ///
+  /// Returns the next dbModNets in the fanin of this dbModNet.
+  /// Traverses up to parent inputs or down to child outputs.
+  ///
+  std::vector<dbModNet*> getNextModNetsInFanin() const;
+
+  ///
+  /// Returns the next dbModNets in the fanout of this dbModNet.
+  /// Traverses down to child inputs or up to parent outputs.
+  ///
+  std::vector<dbModNet*> getNextModNetsInFanout() const;
+
+  ///
+  /// Traverses the hierarchy in search of the first mod net that satisfies the
+  /// given condition.
+  ///
+  dbModNet* findInHierarchy(const std::function<bool(dbModNet*)>& condition,
+                            dbHierSearchDir dir) const;
+
   static dbModNet* getModNet(dbBlock* block, uint32_t id);
-  static dbModNet* create(dbModule* parentModule, const char* base_name);
+  static dbModNet* create(dbModule* parent_module, const char* base_name);
+  static dbModNet* create(dbModule* parent_module,
+                          const char* base_name,
+                          const dbNameUniquifyType& uniquify);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet
@@ -8508,6 +8638,12 @@ class dbModule : public dbObject
   dbModInst* getModInst() const;
 
   // User Code Begin dbModule
+
+  ///
+  /// Returns the parent module, or nullptr if this is the top-level module.
+  ///
+  dbModule* getParentModule() const;
+
   std::string getHierarchicalName() const;
 
   // Get a mod net by name

@@ -1439,4 +1439,30 @@ class dbNameUniquifyType
   Value _value = Value::ALWAYS;
 };
 
+//
+//  Class to denote hierarchical search direction
+//
+class dbHierSearchDir
+{
+ public:
+  enum Value
+  {
+    FANIN,
+    FANOUT
+  };
+
+  ///
+  /// Construction may take a type value, or default ("FANOUT")
+  ///
+  dbHierSearchDir(Value inval) : _value(inval) {}
+  dbHierSearchDir(const dbHierSearchDir& value) = default;
+  dbHierSearchDir() = default;
+  Value getValue() const { return _value; }
+  const char* getString() const;
+  operator Value() const { return _value; }
+
+ private:
+  Value _value = Value::FANOUT;
+};
+
 }  // namespace odb

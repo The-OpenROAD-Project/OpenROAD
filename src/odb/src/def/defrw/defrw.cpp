@@ -238,7 +238,7 @@ int compf(defrCallbackType_e c, defiComponent* co, defiUserData ud)
     }
     if (co->hasHalo()) {
       int left, bottom, right, top;
-      (void) co->haloEdges(&left, &bottom, &right, &top);
+      co->haloEdges(&left, &bottom, &right, &top);
       fprintf(fout, "+ HALO ");
       if (co->hasHaloSoft()) {
         fprintf(fout, "SOFT ");

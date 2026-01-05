@@ -33,6 +33,8 @@ TESTS = [
     "gain_buffering1",
     "gain_buffering1_hier",
     "gcd_resize",
+    "insert_buffer",
+    "insert_buffer_hier",
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
@@ -232,7 +234,6 @@ BIG_TESTS = [
 MANUAL_FOR_BAZEL_TESTS = [
     "repair_tie11_hier",
     "repair_tie12_hier",
-    "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
     "repair_fanout1_hier",
@@ -240,8 +241,6 @@ MANUAL_FOR_BAZEL_TESTS = [
     "repair_fanout3_hier",
     "repair_setup4_flat",
     "repair_setup4_hier",
-    "report_dont_use",
-    "report_dont_use_corners",
     "split_load_hier",
 ]
 
@@ -315,22 +314,29 @@ cc_test(
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
-        "cpp/TestBufferRemoval3_0.v",
-        "cpp/TestBufferRemoval3_1.v",
-        "cpp/TestBufferRemoval3_2.v",
-        "cpp/TestBufferRemoval3_3.v",
-        "cpp/TestBufferRemoval3_4.v",
-        "cpp/TestBufferRemoval3_5.v",
-        "cpp/TestBufferRemoval3_6.v",
-        "cpp/TestBufferRemoval3_7.v",
-        "cpp/TestBufferRemoval3_8.v",
-        "cpp/TestBufferRemoval3_9.v",
-    ],
+    ] + glob(["cpp/TestBufferRemoval3*.v"]),
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_insert_buffer",
+    srcs = ["cpp/TestInsertBuffer.cpp"],
+    data = glob(["cpp/TestInsertBuffer*.v"]),
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",

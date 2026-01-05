@@ -755,14 +755,10 @@ void BrowserWidget::toggleParent(QStandardItem* item)
     }
   }
 
-  const bool all_on = std::all_of(
-      childstates.begin(), childstates.end(), [](Qt::CheckState state) {
-        return state == Qt::Checked;
-      });
-  const bool all_off = std::all_of(
-      childstates.begin(), childstates.end(), [](Qt::CheckState state) {
-        return state == Qt::Unchecked;
-      });
+  const bool all_on = std::ranges::all_of(
+      childstates, [](Qt::CheckState state) { return state == Qt::Checked; });
+  const bool all_off = std::ranges::all_of(
+      childstates, [](Qt::CheckState state) { return state == Qt::Unchecked; });
 
   if (all_on) {
     parent->setCheckState(Qt::Checked);

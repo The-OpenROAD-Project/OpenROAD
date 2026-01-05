@@ -81,7 +81,7 @@ void defiError6086(int index, int numRects, defrData* defData)
 
 }  // namespace
 
-#define maxLimit 65536
+static constexpr int maxLimit = 65536;
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
@@ -1036,7 +1036,7 @@ void defiNet::Destroy()
   free((char*) (propNames_));
   free((char*) (propValues_));
   free((char*) (propDValues_));
-  free((char*) (propTypes_));
+  free(propTypes_);
   free((char*) (subnets_));
   if (source_) {
     free(source_);
@@ -1343,7 +1343,7 @@ void defiNet::changeInstance(const char* instance, int index)
 
   len = strlen(instance) + 1;
   if (instances_[index]) {
-    free((char*) (instances_[index]));
+    free(instances_[index]);
   }
   instances_[index] = (char*) malloc(len);
   strcpy(instances_[index], defData->DEFCASE(instance));
@@ -1359,7 +1359,7 @@ void defiNet::changePin(const char* pin, int index)
 
   len = strlen(pin) + 1;
   if (pins_[index]) {
-    free((char*) (pins_[index]));
+    free(pins_[index]);
   }
   pins_[index] = (char*) malloc(len);
   strcpy(pins_[index], defData->DEFCASE(pin));
@@ -1658,7 +1658,7 @@ void defiNet::print(FILE* f) const
     for (j = 0; j < w->numPaths(); j++) {
       p = w->path(j);
       p->initTraverse();
-      while ((path = (int) (p->next())) != DEFIPATH_DONE) {
+      while ((path = p->next()) != DEFIPATH_DONE) {
         switch (path) {
           case DEFIPATH_LAYER:
             if (newLayer == 0) {
@@ -1758,7 +1758,7 @@ void defiNet::bumpProps(long long size)
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
   }
 
   propNames_ = newNames;
@@ -1933,16 +1933,16 @@ void defiNet::clear()
     struct defiPoints* p;
     for (i = 0; i < numPolys_; i++) {
       if (polygonNames_[i]) {
-        free((char*) (polygonNames_[i]));
+        free(polygonNames_[i]);
       }
       if (polyRouteStatus_[i]) {
-        free((char*) (polyRouteStatus_[i]));
+        free(polyRouteStatus_[i]);
       }
       if (polyShapeTypes_[i]) {
-        free((char*) (polyShapeTypes_[i]));
+        free(polyShapeTypes_[i]);
       }
       if (polyRouteStatusShieldNames_[i]) {
-        free((char*) (polyRouteStatusShieldNames_[i]));
+        free(polyRouteStatusShieldNames_[i]);
       }
       p = polygons_[i];
       free((char*) (p->x));
@@ -1968,16 +1968,16 @@ void defiNet::clear()
   if (rectNames_) {
     for (i = 0; i < numRects_; i++) {
       if (rectNames_[i]) {
-        free((char*) (rectNames_[i]));
+        free(rectNames_[i]);
       }
       if (rectRouteStatus_[i]) {
-        free((char*) (rectRouteStatus_[i]));
+        free(rectRouteStatus_[i]);
       }
       if (rectRouteStatusShieldNames_[i]) {
-        free((char*) (rectRouteStatusShieldNames_[i]));
+        free(rectRouteStatusShieldNames_[i]);
       }
       if (rectShapeTypes_[i]) {
-        free((char*) (rectShapeTypes_[i]));
+        free(rectShapeTypes_[i]);
       }
     }
     free((char*) (rectNames_));
@@ -2011,16 +2011,16 @@ void defiNet::clear()
       free((char*) (p->y));
       free((char*) (viaPts_[i]));
       if (viaNames_[i]) {
-        free((char*) (viaNames_[i]));
+        free(viaNames_[i]);
       }
       if (viaRouteStatus_[i]) {
-        free((char*) (viaRouteStatus_[i]));
+        free(viaRouteStatus_[i]);
       }
       if (viaShapeTypes_[i]) {
-        free((char*) (viaShapeTypes_[i]));
+        free(viaShapeTypes_[i]);
       }
       if (viaRouteStatusShieldNames_[i]) {
-        free((char*) (viaRouteStatusShieldNames_[i]));
+        free(viaRouteStatusShieldNames_[i]);
       }
     }
     free((char*) (viaNames_));
@@ -2064,16 +2064,16 @@ void defiNet::clearRectPoly()
     struct defiPoints* p;
     for (i = 0; i < numPolys_; i++) {
       if (polygonNames_[i]) {
-        free((char*) (polygonNames_[i]));
+        free(polygonNames_[i]);
       }
       if (polyRouteStatus_[i]) {
-        free((char*) (polyRouteStatus_[i]));
+        free(polyRouteStatus_[i]);
       }
       if (polyShapeTypes_[i]) {
-        free((char*) (polyShapeTypes_[i]));
+        free(polyShapeTypes_[i]);
       }
       if (polyRouteStatusShieldNames_[i]) {
-        free((char*) (polyRouteStatusShieldNames_[i]));
+        free(polyRouteStatusShieldNames_[i]);
       }
       p = polygons_[i];
       free((char*) (p->x));
@@ -2099,16 +2099,16 @@ void defiNet::clearRectPoly()
   if (rectNames_) {
     for (i = 0; i < numRects_; i++) {
       if (rectNames_[i]) {
-        free((char*) (rectNames_[i]));
+        free(rectNames_[i]);
       }
       if (rectRouteStatus_[i]) {
-        free((char*) (rectRouteStatus_[i]));
+        free(rectRouteStatus_[i]);
       }
       if (rectShapeTypes_[i]) {
-        free((char*) (rectShapeTypes_[i]));
+        free(rectShapeTypes_[i]);
       }
       if (rectRouteStatusShieldNames_[i]) {
-        free((char*) (rectRouteStatusShieldNames_[i]));
+        free(rectRouteStatusShieldNames_[i]);
       }
     }
     free((char*) (rectMasks_));
@@ -3156,16 +3156,16 @@ void defiNet::clearVia()
     struct defiPoints* p;
     for (int i = 0; i < numPts_; i++) {
       if (viaNames_[i]) {
-        free((char*) (viaNames_[i]));
+        free(viaNames_[i]);
       }
       if (viaRouteStatus_[i]) {
-        free((char*) (viaRouteStatus_[i]));
+        free(viaRouteStatus_[i]);
       }
       if (viaShapeTypes_[i]) {
-        free((char*) (viaShapeTypes_[i]));
+        free(viaShapeTypes_[i]);
       }
       if (viaRouteStatusShieldNames_[i]) {
-        free((char*) (viaRouteStatusShieldNames_[i]));
+        free(viaRouteStatusShieldNames_[i]);
       }
       p = viaPts_[i];
       free((char*) (p->x));

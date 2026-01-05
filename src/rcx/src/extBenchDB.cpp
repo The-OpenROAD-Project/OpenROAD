@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <cstdint>
@@ -941,9 +942,7 @@ uint32_t extMeasure::getPatternExtend()
       sp = layer->getPitch() - ww;
     }
 
-    if (extend_blockage < sp) {
-      extend_blockage = sp;
-    }
+    extend_blockage = std::max<uint32_t>(extend_blockage, sp);
   }
   return extend_blockage;
 }

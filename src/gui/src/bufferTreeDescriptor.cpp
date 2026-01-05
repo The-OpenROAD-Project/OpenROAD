@@ -27,10 +27,9 @@ BufferTree::BufferTree(odb::dbNet* net)
   populate(net);
 
   // Sort nets to ensure stable color order
-  std::sort(
-      nets_.begin(), nets_.end(), [](odb::dbNet* r, odb::dbNet* l) -> bool {
-        return r->getName() < l->getName();
-      });
+  std::ranges::sort(nets_, [](odb::dbNet* r, odb::dbNet* l) -> bool {
+    return r->getName() < l->getName();
+  });
 
   name_ = nets_[0]->getName();
 }
@@ -41,7 +40,7 @@ void BufferTree::populate(odb::dbNet* net)
     return;
   }
 
-  if (std::find(nets_.begin(), nets_.end(), net) != nets_.end()) {
+  if (std::ranges::find(nets_, net) != nets_.end()) {
     return;
   }
 

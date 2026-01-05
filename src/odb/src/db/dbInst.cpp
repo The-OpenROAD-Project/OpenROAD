@@ -1391,6 +1391,19 @@ dbInst* dbInst::create(dbBlock* top_block,
   return inst;
 }
 
+dbInst* dbInst::create(dbBlock* block,
+                       dbMaster* master,
+                       const char* base_name,
+                       const dbNameUniquifyType& uniquify,
+                       dbModule* parent_module)
+{
+  std::string inst_name = block->makeNewInstName(
+      parent_module ? parent_module->getModInst() : nullptr,
+      base_name,
+      uniquify);
+  return create(block, master, inst_name.c_str(), false, parent_module);
+}
+
 dbInst* dbInst::makeUniqueDbInst(dbBlock* block,
                                  dbMaster* master,
                                  const char* name,
@@ -1568,7 +1581,26 @@ dbInst* dbInst::getValidInst(dbBlock* block_, uint32_t dbid_)
   }
   return (dbInst*) block->inst_tbl_->getPtr(dbid_);
 }
-dbITerm* dbInst::getFirstOutput()
+
+dbITerm* dbInst::getFirstInput() const
+{
+  for (dbITerm* tr : getITerms()) {
+    if (tr->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (tr->getIoType() != dbIoType::INPUT) {
+      continue;
+    }
+
+    return tr;
+  }
+  getImpl()->getLogger()->warn(
+      utl::ODB, 172, "instance {} has no input pin", getConstName());
+  return nullptr;
+}
+
+dbITerm* dbInst::getFirstOutput() const
 {
   for (dbITerm* tr : getITerms()) {
     if (tr->getSigType().isSupply()) {

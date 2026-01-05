@@ -29,7 +29,7 @@ Path Type: max
           -0.11   slack (VIOLATED)
 
 
-[INFO RSZ-0026] Removed 3 buffers.
+[INFO RSZ-0026] Removed 4 buffers.
 Startpoint: in1 (input port clocked by clk)
 Endpoint: out2 (output port clocked by clk)
 Path Group: clk

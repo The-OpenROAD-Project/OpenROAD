@@ -9,6 +9,7 @@
 #include <QString>
 #include <QTextStream>
 #include <QWidget>
+#include <algorithm>
 
 namespace gui {
 
@@ -120,16 +121,12 @@ bool CmdInputWidget::handleEnterKeyPress(QKeyEvent* event)
 void CmdInputWidget::updateSize()
 {
   int height = document()->size().toSize().height();
-  if (height < 1) {
-    height = 1;  // ensure minimum is 1 line
-  }
+  height = std::max(height, 1);
 
   // in px
   int desired_height = height * line_height_ + document_margins_;
 
-  if (desired_height > max_height_) {
-    desired_height = max_height_;  // ensure maximum from Qt suggestion
-  }
+  desired_height = std::min(desired_height, max_height_);
 
   setFixedHeight(desired_height);
 
@@ -175,9 +172,7 @@ void CmdInputWidget::setText(const QString& text)
 void CmdInputWidget::setMaxHeight(int height)
 {
   const int min_height = line_height_ + document_margins_;  // atleast one line
-  if (height < min_height) {
-    height = min_height;
-  }
+  height = std::max(height, min_height);
 
   // save max height, since it's overwritten by setFixedHeight
   max_height_ = height;

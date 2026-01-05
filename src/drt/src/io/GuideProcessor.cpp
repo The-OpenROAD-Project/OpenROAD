@@ -871,33 +871,30 @@ void GuideProcessor::buildGCellPatterns()
     xgp.setHorizontal(false);
     // find first coord >= dieBox.xMin()
     frCoord startCoordX
-        = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
-          + GCELLOFFSETX;
+        = dieBox.xMin() / GCELLGRIDX * GCELLGRIDX + GCELLOFFSETX;
     if (startCoordX > dieBox.xMin()) {
-      startCoordX -= (frCoord) GCELLGRIDX;
+      startCoordX -= GCELLGRIDX;
     }
     xgp.setStartCoord(startCoordX);
     xgp.setSpacing(GCELLGRIDX);
-    if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
+    if ((dieBox.xMax() - GCELLOFFSETX) / GCELLGRIDX < 1) {
       logger_->error(DRT, 174, "GCell cnt x < 1.");
     }
-    xgp.setCount((dieBox.xMax() - (frCoord) startCoordX)
-                 / (frCoord) GCELLGRIDX);
+    xgp.setCount((dieBox.xMax() - startCoordX) / GCELLGRIDX);
 
     ygp.setHorizontal(true);
     // find first coord >= dieBox.yMin()
     frCoord startCoordY
-        = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
-          + GCELLOFFSETY;
+        = dieBox.yMin() / GCELLGRIDY * GCELLGRIDY + GCELLOFFSETY;
     if (startCoordY > dieBox.yMin()) {
-      startCoordY -= (frCoord) GCELLGRIDY;
+      startCoordY -= GCELLGRIDY;
     }
     ygp.setStartCoord(startCoordY);
     ygp.setSpacing(GCELLGRIDY);
-    if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
+    if ((dieBox.yMax() - GCELLOFFSETY) / GCELLGRIDY < 1) {
       logger_->error(DRT, 175, "GCell cnt y < 1.");
     }
-    ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
+    ygp.setCount((dieBox.yMax() - startCoordY) / GCELLGRIDY);
     getDesign()->getTopBlock()->setGCellPatterns(
         {std::move(xgp), std::move(ygp)});
   }

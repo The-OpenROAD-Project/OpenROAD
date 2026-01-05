@@ -347,8 +347,7 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
 
 bool Connect::containsIntermediateLayer(odb::dbTechLayer* layer) const
 {
-  return std::find(
-             intermediate_layers_.begin(), intermediate_layers_.end(), layer)
+  return std::ranges::find(intermediate_layers_, layer)
          != intermediate_layers_.end();
 }
 
@@ -694,12 +693,11 @@ DbVia* Connect::generateDbVia(
     return nullptr;
   }
 
-  std::stable_sort(vias.begin(),
-                   vias.end(),
-                   [](const std::shared_ptr<ViaGenerator>& lhs,
-                      const std::shared_ptr<ViaGenerator>& rhs) {
-                     return lhs->isPreferredOver(rhs.get());
-                   });
+  std::ranges::stable_sort(vias,
+                           [](const std::shared_ptr<ViaGenerator>& lhs,
+                              const std::shared_ptr<ViaGenerator>& rhs) {
+                             return lhs->isPreferredOver(rhs.get());
+                           });
 
   std::shared_ptr<ViaGenerator> best_rule = *vias.begin();
   DbVia* built_via = best_rule->generate(block);
@@ -934,19 +932,13 @@ void Connect::filterVias(const std::string& filter)
 
   std::regex filt(filter);
 
-  generate_via_rules_.erase(
-      std::remove_if(
-          generate_via_rules_.begin(),
-          generate_via_rules_.end(),
-          [&](auto* rule) { return std::regex_search(rule->getName(), filt); }),
-      generate_via_rules_.end());
+  std::erase_if(generate_via_rules_, [&](auto* rule) {
+    return std::regex_search(rule->getName(), filt);
+  });
 
-  tech_vias_.erase(
-      std::remove_if(
-          tech_vias_.begin(),
-          tech_vias_.end(),
-          [&](auto* rule) { return std::regex_search(rule->getName(), filt); }),
-      tech_vias_.end());
+  std::erase_if(tech_vias_, [&](auto* rule) {
+    return std::regex_search(rule->getName(), filt);
+  });
 }
 
 void Connect::printViaReport() const
