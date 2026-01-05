@@ -373,8 +373,8 @@ void DetailedMis::populateGrid()
   // Inserts movable cells into the grid.
 
   for (auto& row : grid_) {
-    for (size_t j = 0; j < row.size(); j++) {
-      row[j]->clear();
+    for (auto & bucket : row) {
+      bucket->clear();
     }
   }
 
