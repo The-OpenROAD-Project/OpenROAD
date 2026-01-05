@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <iosfwd>
+#include <numbers>
 #include <tuple>
 #include <vector>
 

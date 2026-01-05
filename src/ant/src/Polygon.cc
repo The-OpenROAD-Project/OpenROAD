@@ -53,7 +53,7 @@ void wiresToPolygonSetMap(odb::dbWire* wires,
                           std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
 {
   using gtl::operators::operator+=;
-  
+
   odb::dbShape shape;
   odb::dbWireShapeItr shapes_it;
   std::vector<odb::dbShape> via_boxes;
@@ -87,7 +87,7 @@ void avoidPinIntersection(odb::dbNet* db_net,
                           std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
 {
   using gtl::operators::operator-=;
-  
+
   // iterate all instance pin
   for (odb::dbITerm* iterm : db_net->getITerms()) {
     odb::dbMTerm* mterm = iterm->getMTerm();

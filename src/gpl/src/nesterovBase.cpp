@@ -1101,7 +1101,7 @@ NesterovBaseCommon::NesterovBaseCommon(
 
   // gCell ptr init
   nbc_gcells_.reserve(gCellStor_.size());
-  for (auto & gCell : gCellStor_) {
+  for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
       continue;
     }
@@ -1556,7 +1556,7 @@ void NesterovBaseCommon::fixPointers()
   gCellMap_.clear();
   db_inst_to_nbc_index_map_.clear();
   nbc_gcells_.reserve(gCellStor_.size());
-  for (auto & gCell : gCellStor_) {
+  for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
       continue;
     }
