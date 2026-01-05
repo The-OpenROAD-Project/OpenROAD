@@ -50,10 +50,11 @@ class TclCmdInputWidget : public CmdInputWidget
   void readSettings(QSettings* settings);
   void writeSettings(QSettings* settings);
 
+  // Bring the overloads into scope.
+  using CmdInputWidget::executeCommand;
+
  public slots:
-  void executeCommand(const QString& cmd,
-                      bool echo = true,
-                      bool silent = false) override;
+  void executeCommand(const QString& cmd, bool echo, bool silent) override;
 
  private slots:
   void updateHighlighting();

@@ -155,7 +155,7 @@ bool extMetRCTable::ReadRules(Parser* p)
     int dy = p->getInt(11);
     int cutCnt = p->getInt(3);
 
-    addViaModel((char*) viaName, via_res, cutCnt, dx, dy, top_met, bot_met);
+    addViaModel(viaName, via_res, cutCnt, dx, dy, top_met, bot_met);
   }
   return true;
 }

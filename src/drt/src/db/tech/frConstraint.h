@@ -71,10 +71,9 @@ class frLef58CutClassConstraint : public frConstraint
   frCollection<std::shared_ptr<frLef58CutClass>> getCutClasses() const
   {
     frCollection<std::shared_ptr<frLef58CutClass>> sol;
-    std::transform(cutClasses_.begin(),
-                   cutClasses_.end(),
-                   std::back_inserter(sol),
-                   [](auto& kv) { return kv.second; });
+    std::ranges::transform(cutClasses_, std::back_inserter(sol), [](auto& kv) {
+      return kv.second;
+    });
     return sol;
   }
   // setters

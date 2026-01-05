@@ -955,7 +955,7 @@ void extSpef::writeCouplingCaps(dbSet<dbCCSeg>& capSet, const uint32_t netId)
   }
 
   std::vector<dbCCSeg*> vec_cc(capSet.begin(), capSet.end());
-  std::sort(vec_cc.begin(), vec_cc.end(), compareCC());
+  std::ranges::sort(vec_cc, compareCC());
   for (dbCCSeg* cc : vec_cc) {
     writeCNodeNumber();
 
@@ -980,7 +980,7 @@ void extSpef::writeTgtCouplingCaps(dbNet* net, const uint32_t netId)
   net->getTgtCCSegs(vec_cc);
 
   if (!_preserveCapValues) {
-    std::sort(vec_cc.begin(), vec_cc.end(), compareCC());
+    std::ranges::sort(vec_cc, compareCC());
   }
 
   writeCouplingCaps(vec_cc, netId);
@@ -992,7 +992,7 @@ void extSpef::writeSrcCouplingCaps(dbNet* net, const uint32_t netId)
   net->getSrcCCSegs(vec_cc);
 
   if (!_preserveCapValues) {
-    std::sort(vec_cc.begin(), vec_cc.end(), compareCC());
+    std::ranges::sort(vec_cc, compareCC());
   }
 
   writeCouplingCaps(vec_cc, netId);

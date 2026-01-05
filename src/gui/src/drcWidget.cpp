@@ -155,10 +155,8 @@ void DRCWidget::toggleParent(QStandardItem* child)
     states.push_back(pchild->checkState() == Qt::Checked);
   }
 
-  const bool all_on
-      = std::all_of(states.begin(), states.end(), [](bool v) { return v; });
-  const bool any_on
-      = std::any_of(states.begin(), states.end(), [](bool v) { return v; });
+  const bool all_on = std::ranges::all_of(states, [](bool v) { return v; });
+  const bool any_on = std::ranges::any_of(states, [](bool v) { return v; });
 
   if (all_on) {
     parent->setCheckState(Qt::Checked);
@@ -372,7 +370,8 @@ void DRCWidget::loadReport(const QString& filename)
                      "Unable to determine type of {}",
                      filename.toStdString());
     }
-  } catch (std::runtime_error&) {
+  } catch (std::runtime_error& e) {
+    logger_->warn(utl::GUI, 110, "Failed to load: {}", e.what());
   }  // catch errors
 
   if (category != nullptr) {

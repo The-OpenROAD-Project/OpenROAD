@@ -53,8 +53,8 @@ int extMeasure::computeResDist(SEQ* s,
     // Check for same track
     bool same_track = false;
     Array1D<SEQ*>* dTable = _dgContextArray[planeIndex][trackn];
-    int cnt = (int) dTable->getCnt();
-    for (uint32_t idx = 1; idx < (int) cnt; idx++) {
+    int cnt = dTable->getCnt();
+    for (uint32_t idx = 1; idx < cnt; idx++) {
       SEQ* tseq = dTable->get(idx);
       if (tseq->type == _rsegSrcId) {
         same_track = true;
@@ -386,7 +386,7 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
     return;
   }
 
-  for (; idx < (int) dgContext->getCnt(); idx++) {
+  for (; idx < dgContext->getCnt(); idx++) {
     tseq = dgContext->get(idx);
     if (tseq->_ur[lp] <= covered) {
       continue;
@@ -429,7 +429,7 @@ void extMeasure::getDgOverlap_res(SEQ* sseq,
     if (tseq->_ur[lp] >= sseq->_ur[lp]) {
       break;
     }
-    if (idx == (int) dgContext->getCnt() - 1 && covered < sseq->_ur[lp]) {
+    if (idx == dgContext->getCnt() - 1 && covered < sseq->_ur[lp]) {
       rseq = _seqPool->alloc();
       rseq->_ll[wp] = sseq->_ll[wp];
       rseq->_ur[wp] = sseq->_ur[wp];

@@ -120,7 +120,7 @@ class frAccessPoint : public frBlockObject
     };
 
     for (auto& viaDefsLayer : viaDefs_) {
-      std::sort(viaDefsLayer.begin(), viaDefsLayer.end(), cmp);
+      std::ranges::sort(viaDefsLayer, cmp);
     }
   }
   // e.g., getViaDef()     --> get best one-cut viadef

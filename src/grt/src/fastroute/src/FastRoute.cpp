@@ -205,13 +205,13 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
 }
 
-void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
+void FastRouteCore::addVCapacity(int16_t verticalCapacity, int layer)
 {
   v_capacity_3D_[layer - 1] = verticalCapacity;
   v_capacity_ += v_capacity_3D_[layer - 1];
 }
 
-void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
+void FastRouteCore::addHCapacity(int16_t horizontalCapacity, int layer)
 {
   h_capacity_3D_[layer - 1] = horizontalCapacity;
   h_capacity_ += h_capacity_3D_[layer - 1];
@@ -698,9 +698,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0) {
-        edge_cap = 0;
-      }
+      edge_cap = std::max(edge_cap, 0);
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
@@ -721,9 +719,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0) {
-        edge_cap = 0;
-      }
+      edge_cap = std::max(edge_cap, 0);
       addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
     }
   }
@@ -1450,9 +1446,7 @@ NetRouteMap FastRouteCore::run()
 
     enlarge_ += 5;
     newTH -= 5;
-    if (newTH < 1) {
-      newTH = 1;
-    }
+    newTH = std::max(newTH, 1);
   }
 
   graph2d_.InitEstUsage();
@@ -1506,9 +1500,7 @@ NetRouteMap FastRouteCore::run()
     } else {
       THRESH_M = 0;
     }
-    if (THRESH_M <= 0) {
-      THRESH_M = 0;
-    }
+    THRESH_M = std::max(THRESH_M, 0);
 
     if (total_overflow_ > 2000) {
       enlarge_ += ESTEP1;  // ENLARGE+(i-1)*ESTEP;
@@ -1599,9 +1591,6 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
-        if (verbose_) {
-          logger_->info(GRT, 103, "Extra Run for hard benchmark.");
-        }
         L = 0;
         upType = 3;
         stopDEC = true;
@@ -2085,8 +2074,6 @@ void FastRouteCore::computeCongestionInformation()
 }
 
 ////////////////////////////////////////////////////////////////
-
-const char* getNetName(odb::dbNet* db_net);
 
 const char* FrNet::getName() const
 {

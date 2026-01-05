@@ -1227,7 +1227,7 @@ void FlexTAWorker::assign()
   int currBufferIdx = 0;
   auto iroute = popFromReassignIroutes();
   while (iroute != nullptr) {
-    auto it = find(buffers.begin(), buffers.end(), iroute);
+    auto it = std::ranges::find(buffers, iroute);
     // in the buffer, skip
     if (it != buffers.end() || iroute->getNumAssigned() >= maxRetry_) {
       ;

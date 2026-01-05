@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <utility>
 #include <variant>
@@ -185,10 +186,8 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
 
           auto add_prop
               = [&props](const std::string& prop, QString& info) -> bool {
-            auto prop_find = std::find_if(
-                props.begin(), props.end(), [prop](const auto& p) {
-                  return p.name == prop;
-                });
+            auto prop_find = std::ranges::find_if(
+                props, [prop](const auto& p) { return p.name == prop; });
             if (prop_find == props.end()) {
               return false;
             }
@@ -2013,12 +2012,11 @@ void DisplayControls::registerRenderer(Renderer* renderer)
     custom_controls.push_back(
         model_->takeRow(model_->invisibleRootItem()->rowCount() - 1));
   }
-  std::stable_sort(custom_controls.begin(),
-                   custom_controls.end(),
-                   [](const QList<QStandardItem*>& list0,
-                      const QList<QStandardItem*>& list1) {
-                     return list0[kName]->text() < list1[kName]->text();
-                   });
+  std::ranges::stable_sort(custom_controls,
+                           [](const QList<QStandardItem*>& list0,
+                              const QList<QStandardItem*>& list1) {
+                             return list0[kName]->text() < list1[kName]->text();
+                           });
   for (const auto& row : custom_controls) {
     model_->appendRow(row);
   }
@@ -2035,9 +2033,9 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
   const auto& rows = custom_controls_[renderer];
 
   const QModelIndex& parent_idx = rows[0].name->index().parent();
-  for (auto itr = rows.rbegin(); itr != rows.rend(); itr++) {
+  for (const auto& row : std::ranges::reverse_view(rows)) {
     // remove from Display controls
-    auto index = model_->indexFromItem(itr->name);
+    auto index = model_->indexFromItem(row.name);
     model_->removeRow(index.row(), index.parent());
   }
   if (!model_->hasChildren(parent_idx)) {

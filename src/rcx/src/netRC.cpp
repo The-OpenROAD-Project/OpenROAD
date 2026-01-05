@@ -1842,8 +1842,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   std::vector<dbNet*> inets;
   _allNet = !findSomeNet(_block, netNames, inets, logger_);
-  for (uint32_t j = 0; j < inets.size(); j++) {
-    dbNet* net = inets[j];
+  for (auto net : inets) {
     net->setMark(true);
   }
 
