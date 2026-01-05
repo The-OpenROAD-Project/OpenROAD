@@ -1591,9 +1591,6 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
-        if (verbose_) {
-          logger_->info(GRT, 103, "Extra Run for hard benchmark.");
-        }
         L = 0;
         upType = 3;
         stopDEC = true;
