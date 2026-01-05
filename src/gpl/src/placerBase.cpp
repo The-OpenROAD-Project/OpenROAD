@@ -1178,7 +1178,7 @@ void PlacerBase::initInstsForUnusableSites()
   // actual rows Create dummy instances for unusable sites (test simple02.tcl
   // has an example on bottom right)
   if (group_ == nullptr) {
-    std::fill(siteGrid.begin(), siteGrid.end(), SiteInfo::Blocked);
+    std::ranges::fill(siteGrid, SiteInfo::Blocked);
 
     // Mark only sites covered by actual rows as Row
     for (dbRow* row : rows) {

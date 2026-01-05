@@ -359,10 +359,9 @@ void UniqueInsts::deleteInst(frInst* inst)
 void UniqueInsts::deleteUniqueClass(UniqueClass* unique_class)
 {
   unique_class_by_key_.erase(unique_class->key());
-  unique_classes_.erase(std::find_if(
-      unique_classes_.begin(),
-      unique_classes_.end(),
-      [unique_class](const auto& u) { return u.get() == unique_class; }));
+  std::erase_if(unique_classes_, [unique_class](const auto& u) {
+    return u.get() == unique_class;
+  });
 }
 
 const std::vector<std::unique_ptr<UniqueClass>>& UniqueInsts::getUniqueClasses()

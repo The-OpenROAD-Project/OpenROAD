@@ -127,16 +127,16 @@ void defiNonDefault::Destroy()
     free((char*) (names_));
     free((char*) (values_));
     free((char*) (dvalues_));
-    free((char*) (types_));
+    free(types_);
   }
   if (layersAllocated_) {
     free((char*) (layerName_));
     free((char*) (width_));
-    free((char*) (hasDiagWidth_));
+    free(hasDiagWidth_);
     free((char*) (diagWidth_));
-    free((char*) (hasSpacing_));
+    free(hasSpacing_);
     free((char*) (spacing_));
-    free((char*) (hasWireExt_));
+    free(hasWireExt_);
     free((char*) (wireExt_));
   }
   if (viasAllocated_) {
@@ -170,15 +170,15 @@ void defiNonDefault::clear()
   }
   numLayers_ = 0;
   for (i = 0; i < numVias_; i++) {
-    free((char*) (viaNames_[i]));
+    free(viaNames_[i]);
   }
   numVias_ = 0;
   for (i = 0; i < numViaRules_; i++) {
-    free((char*) (viaRuleNames_[i]));
+    free(viaRuleNames_[i]);
   }
   numViaRules_ = 0;
   for (i = 0; i < numMinCuts_; i++) {
-    free((char*) (cutLayerName_[i]));
+    free(cutLayerName_[i]);
   }
   numMinCuts_ = 0;
 }
@@ -237,9 +237,9 @@ void defiNonDefault::addLayer(const char* name)
       free((char*) (diagWidth_));
       free((char*) (spacing_));
       free((char*) (wireExt_));
-      free((char*) (hasWireExt_));
-      free((char*) (hasDiagWidth_));
-      free((char*) (hasSpacing_));
+      free(hasWireExt_);
+      free(hasDiagWidth_);
+      free(hasSpacing_);
     }
     layerName_ = newl;
     width_ = neww;
@@ -614,7 +614,7 @@ void defiNonDefault::addProperty(const char* name,
     free((char*) (names_));
     free((char*) (values_));
     free((char*) (dvalues_));
-    free((char*) (types_));
+    free(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;
@@ -663,7 +663,7 @@ void defiNonDefault::addNumProperty(const char* name,
     free((char*) (names_));
     free((char*) (values_));
     free((char*) (dvalues_));
-    free((char*) (types_));
+    free(types_);
     names_ = nn;
     values_ = nv;
     dvalues_ = nd;

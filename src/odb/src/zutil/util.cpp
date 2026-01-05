@@ -89,7 +89,7 @@ static void cutRow(dbBlock* block,
     }
   }
 
-  std::sort(row_blockage_xs.begin(), row_blockage_xs.end());
+  std::ranges::sort(row_blockage_xs);
 
   int start_origin_x = row_bb.xMin();
   int start_origin_y = row_bb.yMin();

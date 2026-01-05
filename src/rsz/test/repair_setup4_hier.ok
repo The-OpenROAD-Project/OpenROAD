@@ -38,15 +38,15 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 60484
 Placement Analysis
 ---------------------------------
-total displacement         71.5 u
+total displacement         71.4 u
 average displacement        4.2 u
-max displacement            7.3 u
+max displacement            6.9 u
 original HPWL               5.5 u
-legalized HPWL             69.7 u
-delta HPWL                 1157 %
+legalized HPWL             69.2 u
+delta HPWL                 1149 %
 
 worst slack max -0.56
-tns max -2.583
+tns max -2.588
 [INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 11 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 11 out of 11 (100.00%) violating endpoints...
@@ -54,9 +54,9 @@ tns max -2.583
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.563 |       -2.6 |     11 | u1/r2/D
-    final |       0 |      15 |        4 |      0 |     0 |   +19.2% |   -0.466 |       -3.8 |     11 | u1/r2/D
+    final |       0 |       9 |        1 |      0 |     0 |    +9.1% |   -0.466 |       -3.3 |     11 | u1/r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 4 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 15 instances: 15 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 9 instances: 9 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

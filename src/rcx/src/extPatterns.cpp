@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -312,9 +313,7 @@ float extPattern::init(dbCreateNetUtil* net_util)
   int pitch = layer->getPitch();
   int minSpace = layer->getSpacing();
   int s = pitch - _minWidth;
-  if (s > minSpace) {
-    s = minSpace;
-  }
+  s = std::min(s, minSpace);
 
   _minSpacing = s;
   minSpacing = s * uu;
@@ -340,34 +339,16 @@ uint32_t extPattern::CreatePattern(int org[2],
                                    int MAX_UR[2],
                                    dbCreateNetUtil* net_util)
 {
-  for (uint32_t i = 0; i < mWidth.size(); i++)  // main wire
-  {
-    float mw = mWidth[i];                              // width multiplier;
-    for (uint32_t jj = 0; jj < mSpacing.size(); jj++)  // left wire
-    {
-      float msL = mSpacing[jj];
-      for (uint32_t k = 0; k < mSpacing.size(); k++)  // right wire
-      {
-        float msR = mSpacing[k];
-        for (uint32_t ll = 0; ll < lWidth.size(); ll++)  // left wire
-        {
-          float mwL = lWidth[ll];
-          for (uint32_t rr = 0; rr < rWidth.size(); rr++)  // right wire
-          {
-            float mwR = rWidth[rr];
-            for (uint32_t cl = 0; cl < csWidth.size(); cl++)  // left wire
-            {
-              float cwl = csWidth[cl];
-              for (uint32_t cr = 0; cr < csWidth.size(); cr++)  // right wire
-              {
-                float cwr = csWidth[cr];
-                for (uint32_t sl = 0; sl < csSpacing.size(); sl++)  // left wire
-                {
-                  float csl = csSpacing[sl];
-                  for (uint32_t sr = 0; sr < csSpacing.size();
-                       sr++)  // right wire
-                  {
-                    float csr = csSpacing[sr];
+  for (float mw : mWidth) {  // main wire
+    // width multiplier;
+    for (float msL : mSpacing) {                 // left wire
+      for (float msR : mSpacing) {               // right wire
+        for (float mwL : lWidth) {               // left wire
+          for (float mwR : rWidth) {             // right wire
+            for (float cwl : csWidth) {          // left wire
+              for (float cwr : csWidth) {        // right wire
+                for (float csl : csSpacing) {    // left wire
+                  for (float csr : csSpacing) {  // right wire
                     sprintf(
                         targetMetName,
                         "__M%d_w%g_sl%g_sr%g_L_w%g_R_w%g_LL_w%g_s%g_RR_w%g_s%g",
@@ -382,37 +363,16 @@ uint32_t extPattern::CreatePattern(int org[2],
                         cwr,
                         csr);
 
-                    for (uint32_t i1 = 0; i1 < overWidth.size(); i1++) {
-                      float ow = overWidth[i1];
-                      for (uint32_t i2 = 0; i2 < overSpacing.size(); i2++) {
-                        float os = overSpacing[i2];
-                        for (uint32_t i3 = 0; i3 < over2Width.size(); i3++) {
-                          float ow2 = over2Width[i3];
-                          for (uint32_t i4 = 0; i4 < over2Spacing.size();
-                               i4++) {
-                            float os2 = over2Spacing[i4];
-                            for (uint32_t j5 = 0; j5 < overOffset.size();
-                                 j5++) {
-                              float offsetOver = overOffset[j5];
-                              for (uint32_t j1 = 0; j1 < underWidth.size();
-                                   j1++) {
-                                float uw = underWidth[j1];
-                                for (uint32_t j2 = 0; j2 < underSpacing.size();
-                                     j2++) {
-                                  float us = underSpacing[j2];
-                                  for (uint32_t j3 = 0; j3 < under2Width.size();
-                                       j3++) {
-                                    float uw2 = under2Width[j3];
-                                    for (uint32_t j4 = 0;
-                                         j4 < under2Spacing.size();
-                                         j4++) {
-                                      float us2 = under2Spacing[j4];
-
-                                      for (uint32_t j6 = 0;
-                                           j6 < underOffset.size();
-                                           j6++) {
-                                        float offsetUnder = underOffset[j6];
-
+                    for (float ow : overWidth) {
+                      for (float os : overSpacing) {
+                        for (float ow2 : over2Width) {
+                          for (float os2 : over2Spacing) {
+                            for (float offsetOver : overOffset) {
+                              for (float uw : underWidth) {
+                                for (float us : underSpacing) {
+                                  for (float uw2 : under2Width) {
+                                    for (float us2 : under2Spacing) {
+                                      for (float offsetUnder : underOffset) {
                                         sprintf(contextName, "%s", "");
                                         createContextName_under(
                                             uw, us, offsetUnder, uw2, us2);
@@ -481,34 +441,16 @@ uint32_t extPattern::CreatePattern(int org[2],
 }
 uint32_t extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
 {
-  for (uint32_t i = 0; i < mWidth.size(); i++)  // main wire
-  {
-    float mw = mWidth[i];                              // width multiplier;
-    for (uint32_t jj = 0; jj < mSpacing.size(); jj++)  // left wire
-    {
-      float msL = mSpacing[jj];
-      for (uint32_t k = 0; k < mSpacing.size(); k++)  // right wire
-      {
-        float msR = mSpacing[k];
-        for (uint32_t ll = 0; ll < lWidth.size(); ll++)  // left wire
-        {
-          float mwL = lWidth[ll];
-          for (uint32_t rr = 0; rr < rWidth.size(); rr++)  // right wire
-          {
-            float mwR = rWidth[rr];
-            for (uint32_t cl = 0; cl < csWidth.size(); cl++)  // left wire
-            {
-              float cwl = csWidth[cl];
-              for (uint32_t cr = 0; cr < csWidth.size(); cr++)  // right wire
-              {
-                float cwr = csWidth[cr];
-                for (uint32_t sl = 0; sl < csSpacing.size(); sl++)  // left wire
-                {
-                  float csl = csSpacing[sl];
-                  for (uint32_t sr = 0; sr < csSpacing.size();
-                       sr++)  // right wire
-                  {
-                    float csr = csSpacing[sr];
+  for (float mw : mWidth) {  // main wire
+    // width multiplier;
+    for (float msL : mSpacing) {                 // left wire
+      for (float msR : mSpacing) {               // right wire
+        for (float mwL : lWidth) {               // left wire
+          for (float mwR : rWidth) {             // right wire
+            for (float cwl : csWidth) {          // left wire
+              for (float cwr : csWidth) {        // right wire
+                for (float csl : csSpacing) {    // left wire
+                  for (float csr : csSpacing) {  // right wire
                     sprintf(
                         targetMetName,
                         "__M%d_w%g_sl%g_sr%g_L_w%g_R_w%g_LL_w%g_s%g_RR_w%g_s%g",
@@ -523,10 +465,8 @@ uint32_t extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
                         cwr,
                         csr);
 
-                    for (uint32_t i1 = 0; i1 < overWidth.size(); i1++) {
-                      float ow = overWidth[i1];
-                      for (uint32_t i2 = 0; i2 < overSpacing.size(); i2++) {
-                        float os = overSpacing[i2];
+                    for (float ow : overWidth) {
+                      for (float os : overSpacing) {
                         if (over_met2 <= 0) {
                           sprintf(contextName, "%s", "");
                           createContextName_over(ow, os, 0, 0, 0);
@@ -542,15 +482,9 @@ uint32_t extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
                           PatternEnd(mainp, max_ur, 10);
                         }
                         if (over_met2 > 0) {
-                          for (uint32_t i3 = 0; i3 < over2Width.size(); i3++) {
-                            float ow2 = over2Width[i3];
-                            for (uint32_t i4 = 0; i4 < over2Spacing.size();
-                                 i4++) {
-                              float os2 = over2Spacing[i4];
-                              for (uint32_t j5 = 0; j5 < overOffset.size();
-                                   j5++) {
-                                float offsetOver = overOffset[j5];
-
+                          for (float ow2 : over2Width) {
+                            for (float os2 : over2Spacing) {
+                              for (float offsetOver : overOffset) {
                                 sprintf(contextName, "%s", "");
                                 createContextName_over(
                                     ow, os, offsetOver, ow2, os2);
@@ -591,34 +525,16 @@ uint32_t extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
 }
 uint32_t extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
 {
-  for (uint32_t i = 0; i < mWidth.size(); i++)  // main wire
-  {
-    float mw = mWidth[i];                              // width multiplier;
-    for (uint32_t jj = 0; jj < mSpacing.size(); jj++)  // left wire
-    {
-      float msL = mSpacing[jj];
-      for (uint32_t k = 0; k < mSpacing.size(); k++)  // right wire
-      {
-        float msR = mSpacing[k];
-        for (uint32_t ll = 0; ll < lWidth.size(); ll++)  // left wire
-        {
-          float mwL = lWidth[ll];
-          for (uint32_t rr = 0; rr < rWidth.size(); rr++)  // right wire
-          {
-            float mwR = rWidth[rr];
-            for (uint32_t cl = 0; cl < csWidth.size(); cl++)  // left wire
-            {
-              float cwl = csWidth[cl];
-              for (uint32_t cr = 0; cr < csWidth.size(); cr++)  // right wire
-              {
-                float cwr = csWidth[cr];
-                for (uint32_t sl = 0; sl < csSpacing.size(); sl++)  // left wire
-                {
-                  float csl = csSpacing[sl];
-                  for (uint32_t sr = 0; sr < csSpacing.size();
-                       sr++)  // right wire
-                  {
-                    float csr = csSpacing[sr];
+  for (float mw : mWidth) {  // main wire
+    // width multiplier;
+    for (float msL : mSpacing) {                 // left wire
+      for (float msR : mSpacing) {               // right wire
+        for (float mwL : lWidth) {               // left wire
+          for (float mwR : rWidth) {             // right wire
+            for (float cwl : csWidth) {          // left wire
+              for (float cwr : csWidth) {        // right wire
+                for (float csl : csSpacing) {    // left wire
+                  for (float csr : csSpacing) {  // right wire
                     sprintf(
                         targetMetName,
                         "__M%d_w%g_sl%g_sr%g_L_w%g_R_w%g_LL_w%g_s%g_RR_w%g_s%g",
@@ -633,10 +549,8 @@ uint32_t extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
                         cwr,
                         csr);
 
-                    for (uint32_t j1 = 0; j1 < underWidth.size(); j1++) {
-                      float uw = underWidth[j1];
-                      for (uint32_t j2 = 0; j2 < underSpacing.size(); j2++) {
-                        float us = underSpacing[j2];
+                    for (float uw : underWidth) {
+                      for (float us : underSpacing) {
                         if (under_met2 <= 0) {
                           sprintf(contextName, "%s", "");
                           createContextName_under(uw, us, 0, 0, 0);
@@ -652,15 +566,9 @@ uint32_t extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
                           PatternEnd(mainp, max_ur, 10);
                         }
                         if (under_met2 > 0) {
-                          for (uint32_t j3 = 0; j3 < under2Width.size(); j3++) {
-                            float uw2 = under2Width[j3];
-                            for (uint32_t j4 = 0; j4 < under2Spacing.size();
-                                 j4++) {
-                              float us2 = under2Spacing[j4];
-                              for (uint32_t j6 = 0; j6 < underOffset.size();
-                                   j6++) {
-                                float offsetUnder = underOffset[j6];
-
+                          for (float uw2 : under2Width) {
+                            for (float us2 : under2Spacing) {
+                              for (float offsetUnder : underOffset) {
                                 sprintf(contextName, "%s", "");
                                 createContextName_under(
                                     uw, us, offsetUnder, uw2, us2);
@@ -1073,18 +981,14 @@ int extWirePattern::length(uint32_t dir)
 void extPattern::set_max(int ur[2])
 {
   for (uint32_t ii = 0; ii < 2; ii++) {
-    if (ur[ii] < max_ur[ii]) {
-      ur[ii] = max_ur[ii];
-    }
+    ur[ii] = std::max(ur[ii], max_ur[ii]);
   }
 }
 int extPattern::max_last(extWirePattern* wp)
 {
   for (uint32_t ii = 0; ii < 2; ii++) {
     int xy = wp->last(ii);
-    if (max_ur[ii] < xy) {
-      max_ur[ii] = xy;
-    }
+    max_ur[ii] = std::max(max_ur[ii], xy);
   }
   return max_ur[dir];
 }
@@ -1121,9 +1025,7 @@ extWirePattern* extPattern::GetWireParttern(extPattern* main,
   int pitch = layer->getPitch();
   int minSpace = layer->getSpacing();
   int minS = pitch - minW;
-  if (minS > minSpace) {
-    minS = minSpace;
-  }
+  minS = std::min(minS, minSpace);
 
   extWirePattern* wp = new extWirePattern(main, dir, minW, minS, opt);
   s = extPattern::GetRoundedInt(minS, ms, this->units);
@@ -1207,7 +1109,7 @@ int extPattern::ContextPatternParallel(extWirePattern* main,
   extWirePattern* wp = GetWireParttern(this, dir1, mw, ms, met1, w, s);
 
   float offs = mid_offset * minWidth;
-  int f = (int) 1000 * offs;
+  int f = 1000 * offs;
   int n1 = f / 10;
   int off = n1 * 10;
 

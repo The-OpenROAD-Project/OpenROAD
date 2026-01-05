@@ -3,6 +3,7 @@
 
 #include "ScanArchitectHeuristic.hh"
 
+#include <algorithm>
 #include <cstdint>
 #include <iterator>
 #include <memory>
@@ -48,9 +49,8 @@ void ScanArchitectHeuristic::architect()
             OptimizeScanWirelength(falling, logger_);
             OptimizeScanWirelength(rising, logger_);
             // Falling edge first
-            std::move(
-                falling.begin(), falling.end(), std::back_inserter(sorted));
-            std::move(rising.begin(), rising.end(), std::back_inserter(sorted));
+            std::ranges::move(falling, std::back_inserter(sorted));
+            std::ranges::move(rising, std::back_inserter(sorted));
           });
     }
   }

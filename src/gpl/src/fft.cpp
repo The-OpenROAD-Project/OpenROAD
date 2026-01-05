@@ -53,8 +53,7 @@ FFT::FFT(int binCntX, int binCntY, float binSizeX, float binSizeY)
 
   for (int i = 0; i < binCntY_; i++) {
     wy_[i] = REPLACE_FFT_PI * static_cast<float>(i)
-             / static_cast<float>(binCntY_) * static_cast<float>(binSizeY_)
-             / static_cast<float>(binSizeX_);
+             / static_cast<float>(binCntY_) * binSizeY_ / binSizeX_;
     wySquare_[i] = wy_[i] * wy_[i];
   }
 }

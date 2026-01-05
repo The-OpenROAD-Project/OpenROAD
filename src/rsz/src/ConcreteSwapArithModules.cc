@@ -101,11 +101,10 @@ void ConcreteSwapArithModules::findCriticalInstances(
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
 
   logger_->info(
       RSZ, 153, "Identified {} violating endpoints", violating_ends.size());

@@ -189,7 +189,7 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
     int new_workers_count = 0;
     for (const auto& entry : results) {
       auto discovered_worker = Worker(entry.endpoint().address(), port, 0);
-      if (std::find(workers_set.begin(), workers_set.end(), discovered_worker)
+      if (std::ranges::find(workers_set, discovered_worker)
           == workers_set.end()) {
         workers_set.push_back(discovered_worker);
         new_workers.push_back(discovered_worker);

@@ -778,6 +778,88 @@ proc report_buffers { args } {
   rsz::report_buffers_cmd $filtered
 }
 
+sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \
+                                       [-net net] \
+                                       [-load_pins list_of_pins] \
+                                       [-location {x y}] \
+                                       [-buffer_name name] \
+                                       [-net_name name] \
+                                       [-load_pins_on_diff_nets] }
+
+proc insert_buffer { args } {
+  sta::parse_key_args "insert_buffer" args \
+    keys {-buffer_cell -location -buffer_name -net_name -net -load_pins} \
+    flags {-load_pins_on_diff_nets}
+
+  set has_net [info exists keys(-net)]
+  set has_loads [info exists keys(-load_pins)]
+
+  # Validate arguments
+  if { !$has_net && !$has_loads } {
+    utl::error RSZ 3011 "One of -net or -load_pins must be specified."
+  }
+
+  set buffer_cell [rsz::parse_buffer_cell keys]
+  if { $buffer_cell eq "NULL" } {
+    utl::error RSZ 3012 "Specify a buffer cell with -buffer_cell."
+  }
+
+  set new_buf_base_name "NULL"
+  if { [info exists keys(-buffer_name)] } {
+    set new_buf_base_name $keys(-buffer_name)
+  }
+
+  set new_net_base_name "NULL"
+  if { [info exists keys(-net_name)] } {
+    set new_net_base_name $keys(-net_name)
+  }
+
+  set has_loc 0
+  set x 0.0
+  set y 0.0
+  if { [info exists keys(-location)] } {
+    set location $keys(-location)
+    if { [llength $location] != 2 } {
+      utl::error RSZ 3013 "-location requires a list of two coordinates {x y}."
+    }
+    set x [lindex $location 0]
+    set y [lindex $location 1]
+    set x [sta::distance_ui_sta $x]
+    set y [sta::distance_ui_sta $y]
+    set has_loc 1
+  }
+
+  if { $has_loads } {
+    set net "NULL"
+    if { $has_net } {
+      set net [sta::get_net_arg "-net" $keys(-net)]
+    }
+    set loads [sta::get_port_pins_error "insert_buffer" $keys(-load_pins)]
+    set load_count [llength $loads]
+    if { $load_count == 1 } {
+      if { $has_net } {
+        utl::warn RSZ 69 "-net argument is ignored if there is only one load pin."
+      }
+
+      # For a single load pin, use insert_buffer_before_load_cmd
+      set pin [lindex $loads 0]
+      return [rsz::insert_buffer_before_load_cmd $pin $buffer_cell $x $y $has_loc \
+        $new_buf_base_name $new_net_base_name]
+    } else {
+      set loads_on_diff_nets [info exists flags(-load_pins_on_diff_nets)]
+      return [rsz::insert_buffer_before_loads_cmd $net $loads $buffer_cell $x $y $has_loc \
+        $new_buf_base_name $new_net_base_name \
+        $loads_on_diff_nets]
+    }
+  }
+
+  if { $has_net } {
+    set net [sta::get_net_arg "-net" $keys(-net)]
+    return [rsz::insert_buffer_after_driver_cmd $net $buffer_cell $x $y $has_loc \
+      $new_buf_base_name $new_net_base_name]
+  }
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {

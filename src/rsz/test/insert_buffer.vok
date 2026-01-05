@@ -1,0 +1,132 @@
+module top (clk,
+    in1,
+    in2,
+    in3,
+    in4,
+    out1,
+    out2);
+ input clk;
+ input in1;
+ input in2;
+ input in3;
+ input in4;
+ output out1;
+ output out2;
+
+ wire m1_out1;
+ wire m1_out2;
+ wire m2_out1;
+ wire n1;
+ wire n2;
+ wire \u_mid1/l1_out ;
+ wire \u_mid1/l2_out1 ;
+ wire \u_mid1/l2_out2 ;
+ wire \u_mid1/u_leaf1/n1 ;
+ wire \u_mid1/u_leaf1/n2 ;
+ wire \u_mid1/u_leaf1/n3 ;
+ wire \u_mid1/u_leaf2/n1 ;
+ wire \u_mid1/u_leaf2/n2 ;
+ wire \u_mid1/u_leaf2/n3 ;
+ wire \u_mid2/l3_out ;
+ wire \u_mid2/l4_out ;
+ wire \u_mid2/n1 ;
+ wire \u_mid2/u_leaf3/n1 ;
+ wire \u_mid2/u_leaf3/n2 ;
+ wire \u_mid2/u_leaf3/n3 ;
+ wire \u_mid2/u_leaf3/n4 ;
+ wire \u_mid2/u_leaf3/n5 ;
+ wire \u_mid1/u_leaf1/n_after_drvr1 ;
+ wire \u_mid1/u_leaf1/n_before_load2 ;
+ wire \u_mid1/n_before_loads3 ;
+ wire \u_mid1/n_inferred4 ;
+
+ BUF_X1 buf1 (.A(m1_out1),
+    .Z(n1));
+ BUF_X1 buf2 (.A(m2_out1),
+    .Z(n2));
+ DFF_X1 dff_out1 (.D(n1),
+    .CK(clk),
+    .Q(out1));
+ DFF_X1 dff_out2 (.D(n2),
+    .CK(clk),
+    .Q(out2));
+ DFF_X1 \u_mid1/dff_load1  (.D(\u_mid1/n_before_loads3 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load10  (.D(\u_mid1/l2_out1 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load2  (.D(\u_mid1/n_before_loads3 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load3  (.D(\u_mid1/n_inferred4 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load4  (.D(\u_mid1/n_inferred4 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load5  (.D(\u_mid1/l2_out1 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load6  (.D(\u_mid1/l2_out1 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load7  (.D(\u_mid1/l2_out1 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load8  (.D(\u_mid1/l2_out1 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_load9  (.D(\u_mid1/l2_out1 ),
+    .CK(clk));
+ DFF_X1 \u_mid1/dff_out1  (.D(\u_mid1/l1_out ),
+    .CK(clk),
+    .Q(m1_out1));
+ DFF_X1 \u_mid1/dff_out2  (.D(\u_mid1/l2_out1 ),
+    .CK(clk),
+    .Q(m1_out2));
+ BUF_X1 \u_mid1/u_leaf1/buf1  (.A(\u_mid1/u_leaf1/n1 ),
+    .Z(\u_mid1/u_leaf1/n2 ));
+ BUF_X1 \u_mid1/u_leaf1/buf2  (.A(\u_mid1/u_leaf1/n_before_load2 ),
+    .Z(\u_mid1/u_leaf1/n3 ));
+ DFF_X1 \u_mid1/u_leaf1/dff1  (.D(in1),
+    .CK(clk),
+    .Q(\u_mid1/u_leaf1/n_after_drvr1 ));
+ DFF_X1 \u_mid1/u_leaf1/dff2  (.D(\u_mid1/u_leaf1/n3 ),
+    .CK(clk),
+    .Q(\u_mid1/l1_out ));
+ BUF_X1 \u_mid1/u_leaf2/buf1  (.A(\u_mid1/u_leaf2/n1 ),
+    .Z(\u_mid1/u_leaf2/n2 ));
+ BUF_X1 \u_mid1/u_leaf2/buf2  (.A(\u_mid1/u_leaf2/n1 ),
+    .Z(\u_mid1/u_leaf2/n3 ));
+ DFF_X1 \u_mid1/u_leaf2/dff1  (.D(in2),
+    .CK(clk),
+    .Q(\u_mid1/u_leaf2/n1 ));
+ DFF_X1 \u_mid1/u_leaf2/dff2  (.D(\u_mid1/u_leaf2/n2 ),
+    .CK(clk),
+    .Q(\u_mid1/l2_out1 ));
+ DFF_X1 \u_mid1/u_leaf2/dff3  (.D(\u_mid1/u_leaf2/n3 ),
+    .CK(clk),
+    .Q(\u_mid1/l2_out2 ));
+ BUF_X1 \u_mid2/buf1  (.A(\u_mid2/l3_out ),
+    .Z(\u_mid2/n1 ));
+ DFF_X1 \u_mid2/dff_out1  (.D(\u_mid2/n1 ),
+    .CK(clk),
+    .Q(m2_out1));
+ BUF_X1 \u_mid2/u_leaf3/buf1  (.A(\u_mid2/u_leaf3/n1 ),
+    .Z(\u_mid2/u_leaf3/n2 ));
+ BUF_X1 \u_mid2/u_leaf3/buf2  (.A(\u_mid2/u_leaf3/n2 ),
+    .Z(\u_mid2/u_leaf3/n3 ));
+ BUF_X1 \u_mid2/u_leaf3/buf3  (.A(\u_mid2/u_leaf3/n3 ),
+    .Z(\u_mid2/u_leaf3/n4 ));
+ BUF_X1 \u_mid2/u_leaf3/buf4  (.A(\u_mid2/u_leaf3/n4 ),
+    .Z(\u_mid2/u_leaf3/n5 ));
+ DFF_X1 \u_mid2/u_leaf3/dff1  (.D(in3),
+    .CK(clk),
+    .Q(\u_mid2/u_leaf3/n1 ));
+ DFF_X1 \u_mid2/u_leaf3/dff2  (.D(\u_mid2/u_leaf3/n5 ),
+    .CK(clk),
+    .Q(\u_mid2/l3_out ));
+ DFF_X1 \u_mid2/u_leaf4/dff1  (.D(in4),
+    .CK(clk),
+    .Q(\u_mid2/l4_out ));
+ BUF_X1 \u_mid1/u_leaf1/b_after_drvr1  (.A(\u_mid1/u_leaf1/n_after_drvr1 ),
+    .Z(\u_mid1/u_leaf1/n1 ));
+ BUF_X1 \u_mid1/u_leaf1/b_before_load2  (.A(\u_mid1/u_leaf1/n2 ),
+    .Z(\u_mid1/u_leaf1/n_before_load2 ));
+ BUF_X1 \u_mid1/b_before_loads3  (.A(\u_mid1/l2_out1 ),
+    .Z(\u_mid1/n_before_loads3 ));
+ BUF_X1 \u_mid1/b_inferred4  (.A(\u_mid1/l2_out1 ),
+    .Z(\u_mid1/n_inferred4 ));
+endmodule
