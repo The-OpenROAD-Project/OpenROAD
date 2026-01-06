@@ -356,10 +356,12 @@ proc repair_timing { args } {
     if { $orfs_new_openroad } {
       set use_detailed_parasitics 1
       if { [info exists ::env(NG45_USE_DETAILED_PARA)] } {
-        set use_detailed_parasitics [expr {$::env(NG45_USE_DETAILED_PARA) ? 1 : 0}]
+        set use_detailed_parasitics [expr { $::env(NG45_USE_DETAILED_PARA) ? 1 : 0 }]
       }
-      set para_src [expr {$use_detailed_parasitics ? "detailed_routing"
-                                               : "global_routing"}]
+      set para_src [expr {
+        $use_detailed_parasitics ? "detailed_routing"
+        : "global_routing"
+      }]
       est::set_parasitics_src $para_src
     } else {
       est::set_parasitics_src "detailed_routing"
@@ -487,7 +489,6 @@ proc eliminate_dead_logic { } {
 }
 
 namespace eval rsz {
-
 proc set_eliminate_dead_logic_enabled { enabled } {
   if { ![string is boolean -strict $enabled] } {
     utl::error "RSZ" 209 \
