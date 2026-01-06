@@ -1828,7 +1828,6 @@ NetRouteMap FastRouteCore::run()
 
     mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
     mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
-    updateSlacks();
   }
 
   // Disable estimate parasitics for grt incremental steps with resistance-aware

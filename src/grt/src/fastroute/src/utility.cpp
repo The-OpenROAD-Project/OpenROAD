@@ -104,31 +104,27 @@ void FastRouteCore::ConvertToFull3DType2()
 
 float FastRouteCore::getResAwareScore(FrNet* net)
 {
-  return net->getResistance() / 10  // entire net resistance considering vias
+  return net->getResistance() / 10  // net resistance considering vias
          + (!is_incremental_grt_
                 ? -5 * (net->getSlack() < 0 ? net->getSlack() : 0) / 1e-12
-                : 0)               // worst slack in ps
-         + net->getNumPins() * 5   // fanout
-         + net->getNetSize() * 5;  // net length in gcells
+                : 0)                   // worst slack in ps
+         + net->getNumPins() * 5       // fanout
+         + net->getRouteLength() * 5;  // net route length in gcells
 }
 
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 {
-  // Sorting by ndr_priority, resistance aware, slack, length_per_pin, minX, and
-  // treeIndex
+  // Sorting by ndr_priority, clock, resistance aware score, length_per_pin,
+  // minX, and treeIndex
   return std::tie(a.ndr_priority,
                   a.clock,
-                  a.res_aware,
-                  // a.net_length,
-                  a.slack,
+                  a.res_aware_score,
                   a.length_per_pin,
                   a.minX,
                   a.treeIndex)
          < std::tie(b.ndr_priority,
                     b.clock,
-                    b.res_aware,
-                    // b.net_length,
-                    b.slack,
+                    b.res_aware_score,
                     b.length_per_pin,
                     b.minX,
                     b.treeIndex);
@@ -158,16 +154,8 @@ void FastRouteCore::netpinOrderInc()
     }
 
     // Prioritize nets with worst slack first
-    const float slack = -getResAwareScore(nets_[netID]);
-    // (enable_resistance_aware_ && nets_[netID]->getSlack() < 0)
-    //                   ? nets_[netID]->getSlack()
-    //                   : 0;
-
-    // After layer assignment, give priority to non-res_aware nets first to
-    // release resources on lower resistance layers
-    const int is_res_aware = !nets_[netID]->isResAware();
-    // (is_3d_step_) ? nets_[netID]->isResAware()
-    // : !nets_[netID]->isResAware();
+    const float res_aware_score
+        = nets_[netID]->isResAware() ? -getResAwareScore(nets_[netID]) : 0;
 
     // Prioritize clock nets when using resistance-aware strategy to
     // better balance clock skew
@@ -178,8 +166,7 @@ void FastRouteCore::netpinOrderInc()
                               xmin,
                               length_per_pin,
                               ndr_priority,
-                              is_res_aware,
-                              slack,
+                              res_aware_score,
                               is_clock,
                               -totalLength});
   }
@@ -655,21 +642,14 @@ void FastRouteCore::updateSlacks(float percentage)
     callback_handler_->triggerOnEstimateParasiticsRequired();
   }
 
-  int unconstrained_nets = 0;
-  int short_nets = 0;
-
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
     float slack = 0;
 
-    // Do not update slack during rsz repair
     slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
 
-    // Skip positive slacks above threshold
-    // TODO: need to check this positive slack threshold
-    // const float pos_threshold = 200e-12;
-
+    // Calculate net size (steiner size) and route length
     auto& treeedges = sttrees_[net_id].edges;
     int net_size = 0;
     int route_size = 0;
@@ -677,19 +657,11 @@ void FastRouteCore::updateSlacks(float percentage)
       net_size += edge.len;
       route_size += edge.route.routelen;
     }
-    net->setNetSize(net_size);
+    net->setStNetLength(net_size);
     net->setRouteLength(route_size);
 
-    bool is_short_net = net_size <= 3;
+    bool is_short_net = route_size <= 3;
     bool is_unconstrained_net = slack == sta::INF;
-
-    if (is_unconstrained_net) {
-      unconstrained_nets++;
-    }
-
-    if (is_short_net) {
-      short_nets++;
-    }
 
     // Dont apply res-aware to unconstrained and short nets
     if (is_unconstrained_net || is_short_net) {
@@ -705,6 +677,7 @@ void FastRouteCore::updateSlacks(float percentage)
       net->setIsResAware(true);
     }
 
+    // Ignore nets that already are res-aware
     if (!net->isResAware()) {
       res_aware_list.emplace_back(net_id, -getResAwareScore(net));
     }
@@ -724,58 +697,8 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   // Decide the percentage of nets that will use resistance aware
-  for (int i = 0; i < std::round(res_aware_list.size() * percentage); i++) {
+  for (int i = 0; i < std::ceil(res_aware_list.size() * percentage); i++) {
     nets_[res_aware_list[i].first]->setIsResAware(true);
-  }
-
-  if (!is_incremental_grt_) {
-    // Decide the percentage of nets that will use resistance aware
-    logger_->report("\tNets: {} - Unconstrained: {} - Short: {}",
-                    net_ids_.size(),
-                    unconstrained_nets,
-                    short_nets);
-    int j = 10;
-    for (int i = 0; i < res_aware_list.size() && i < j; i++) {
-      FrNet* net = nets_[res_aware_list[i].first];
-      if (!net->isClock()) {
-        logger_->report(
-            "{} - {} - slack: {} - resistance: {} - score: {} - detour: {}",
-            i,
-            net->getName(),
-            net->getSlack(),
-            net->getResistance(),
-            getResAwareScore(net),
-            (float) net->getRouteLength() / net->getNetSize());
-      } else {
-        j++;
-      }
-    }
-
-    auto compareSlack
-        = [&](const std::pair<int, float> a, const std::pair<int, float> b) {
-            return std::make_tuple(nets_[a.first]->getSlack(), a.first)
-                   < std::make_tuple(nets_[b.first]->getSlack(), b.first);
-          };
-
-    std::stable_sort(
-        res_aware_list.begin(), res_aware_list.end(), compareSlack);
-
-    j = 10;
-    for (int i = 0; i < res_aware_list.size() && i < j; i++) {
-      FrNet* net = nets_[res_aware_list[i].first];
-      if (!net->isClock()) {
-        logger_->report(
-            "{} - {} - slack: {} - resistance: {} - score: {} - detour: {}",
-            i,
-            net->getName(),
-            net->getSlack(),
-            net->getResistance(),
-            getResAwareScore(net),
-            (float) net->getRouteLength() / net->getNetSize());
-      } else {
-        j++;
-      }
-    }
   }
 }
 

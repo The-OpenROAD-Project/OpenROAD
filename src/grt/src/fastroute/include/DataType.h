@@ -108,8 +108,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool isResAware() { return is_res_aware_; }
   float getResistance() { return resistance_; }
   void setResistance(float resistance) { resistance_ = resistance; }
-  int getNetSize() { return net_size_; }
-  void setNetSize(int net_size) { net_size_ = net_size; }
+  int getStNetLength() { return net_length_; }
+  void setStNetLength(int net_length) { net_length_ = net_length; }
   int getRouteLength() { return route_length_; }
   void setRouteLength(int route_length) { route_length_ = route_length; }
 
@@ -128,8 +128,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool is_soft_ndr_ = false;
   bool is_res_aware_ = false;
   float resistance_;
-  int net_size_;
-  int route_length_;
+  int net_length_;    // Steiner net length
+  int route_length_;  // Route length
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };
@@ -246,8 +246,7 @@ struct OrderNetPin
   int minX;
   float length_per_pin;  // net length over pin count
   int ndr_priority;      // NDR nets are assigned first
-  int res_aware;
-  float slack;
+  float res_aware_score;
   int clock;
   int net_length;
 };
