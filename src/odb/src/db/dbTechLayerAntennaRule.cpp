@@ -4,6 +4,7 @@
 #include "dbTechLayerAntennaRule.h"
 
 #include <cassert>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -618,7 +619,7 @@ void dbTechLayerAntennaRule::setDiffCSR(const vector<double>& diff_idx,
 }
 
 dbTechLayerAntennaRule* dbTechLayerAntennaRule::getAntennaRule(dbTech* _tech,
-                                                               uint dbid)
+                                                               uint32_t dbid)
 {
   _dbTech* tech = (_dbTech*) _tech;
   return (dbTechLayerAntennaRule*) tech->antenna_rule_tbl_->getPtr(dbid);
@@ -915,7 +916,7 @@ void dbTechAntennaPinModel::writeLef(dbTech* tech, lefout& writer) const
 
 dbTechAntennaPinModel* dbTechAntennaPinModel::getAntennaPinModel(
     dbMaster* _master,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbMaster* master = (_dbMaster*) _master;
   return (dbTechAntennaPinModel*) master->antenna_pin_model_tbl_->getPtr(dbid);

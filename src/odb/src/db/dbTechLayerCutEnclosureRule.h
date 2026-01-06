@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -16,7 +17,7 @@ class _dbTechLayerCutClassRule;
 
 struct dbTechLayerCutEnclosureRuleFlags
 {
-  uint type : 2;
+  uint32_t type : 2;
   bool cut_class_valid : 1;
   bool above : 1;
   bool below : 1;
@@ -40,7 +41,7 @@ struct dbTechLayerCutEnclosureRuleFlags
   bool second_par_within_valid : 1;
   bool below_enclosure_valid : 1;
   bool concave_corners_valid : 1;
-  uint spare_bits : 7;
+  uint32_t spare_bits : 7;
 };
 
 class _dbTechLayerCutEnclosureRule : public _dbObject
@@ -74,7 +75,7 @@ class _dbTechLayerCutEnclosureRule : public _dbObject
   int par_within_;
   int second_par_within_;
   int below_enclosure_;
-  uint num_corners_;
+  uint32_t num_corners_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj);
 dbOStream& operator<<(dbOStream& stream,

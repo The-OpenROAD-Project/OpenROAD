@@ -166,16 +166,19 @@ class Painter
   virtual Color getPenColor() = 0;
 
   // Set the pen to whatever the user has chosen for this layer
-  virtual void setPen(odb::dbTechLayer* layer, bool cosmetic = false) = 0;
+  virtual void setPen(odb::dbTechLayer* layer, bool cosmetic) = 0;
+  void setPen(odb::dbTechLayer* layer) { setPen(layer, false); }
 
   // Set the pen to an RGBA value
-  virtual void setPen(const Color& color, bool cosmetic = false, int width = 1)
-      = 0;
+  virtual void setPen(const Color& color, bool cosmetic, int width) = 0;
+  void setPen(const Color& color, bool cosmetic) { setPen(color, cosmetic, 1); }
+  void setPen(const Color& color) { setPen(color, false); }
 
   virtual void setPenWidth(int width) = 0;
   // Set the brush to whatever the user has chosen for this layer
   // The alpha value may be overridden
-  virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
+  virtual void setBrush(odb::dbTechLayer* layer, int alpha) = 0;
+  void setBrush(odb::dbTechLayer* layer) { setBrush(layer, -1); }
 
   // Set the brush to whatever the user has chosen for this layer
   enum Brush
@@ -186,7 +189,8 @@ class Painter
     kCross,
     kDots
   };
-  virtual void setBrush(const Color& color, const Brush& style = kSolid) = 0;
+  virtual void setBrush(const Color& color, const Brush& style) = 0;
+  void setBrush(const Color& color) { setBrush(color, Brush::kSolid); }
 
   virtual void setFont(const Font& font) = 0;
 
@@ -253,8 +257,12 @@ class Painter
                           int y,
                           Anchor anchor,
                           const std::string& s,
-                          bool rotate_90 = false)
+                          bool rotate_90)
       = 0;
+  void drawString(int x, int y, Anchor anchor, const std::string& s)
+  {
+    drawString(x, y, anchor, s, false);
+  }
   virtual odb::Rect stringBoundaries(int x,
                                      int y,
                                      Anchor anchor,
@@ -265,9 +273,17 @@ class Painter
                          int y0,
                          int x1,
                          int y1,
-                         bool euclidian = true,
-                         const std::string& label = "")
+                         bool euclidian,
+                         const std::string& label)
       = 0;
+  void drawRuler(int x0, int y0, int x1, int y1, bool euclidian)
+  {
+    drawRuler(x0, y0, x1, y1, euclidian, "");
+  }
+  void drawRuler(int x0, int y0, int x1, int y1)
+  {
+    drawRuler(x0, y0, x1, y1, true);
+  }
 
   // Draw a line with coordinates in DBU with the current pen
   void drawLine(int xl, int yl, int xh, int yh)
@@ -599,6 +615,7 @@ class Renderer
     if (settings.count(key) == 1) {
       try {
         value = std::get<T>(settings.at(key));
+        // NOLINTNEXTLINE(bugprone-empty-catch)
       } catch (const std::bad_variant_access&) {
         // Stay with current value
       }
@@ -772,6 +789,9 @@ class Gui
                           const std::string& mode,
                           int width_px = 0,
                           int height_px = 0);
+
+  void showWorstTimingPath(bool setup);
+  void clearTimingPath();
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);

@@ -12,6 +12,9 @@ orfs_flow(
         "DIE_AREA": "0 0 16.2 16.2",
         "PLACE_DENSITY": "0.35",
         "OPENROAD_HIERARCHICAL": "1",
+        # Demonstrate clock period specified in arguments, useful
+        # for Optuna scripts.
+        "ABC_CLOCK_PERIOD_IN_PS": "310.001",
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],

@@ -480,8 +480,7 @@ void ClockGating::Impl::run()
       auto related_nets = upstreamNets(sta_, gate_cond_cover);
       for (auto net : related_nets) {
         for (auto idx : net_to_accepted[net]) {
-          auto it = std::lower_bound(
-              accepted_idxs.begin(), accepted_idxs.end(), idx);
+          auto it = std::ranges::lower_bound(accepted_idxs, idx);
           if (it == accepted_idxs.end() || *it != idx) {
             accepted_idxs.insert(it, idx);
           }
@@ -573,10 +572,9 @@ void ClockGating::Impl::run()
         for (auto idx : net_to_accepted[net]) {
           auto& [conds, insts, en] = accepted_gates[idx];
           if (clk_enable == en
-              && std::includes(correct_conds.begin(),
-                               correct_conds.end(),
-                               conds.begin(),
-                               conds.end())) {
+              && std::ranges::includes(correct_conds,
+
+                                       conds)) {
             logger_->info(CGT,
                           5,
                           "Extending previously accepted clock {} '{}' to '{}'",
@@ -590,7 +588,7 @@ void ClockGating::Impl::run()
             conds = correct_conds;
             for (auto net : correct_conds) {
               auto& gates = net_to_accepted[net];
-              auto it = std::lower_bound(gates.begin(), gates.end(), idx);
+              auto it = std::ranges::lower_bound(gates, idx);
               if (it == gates.end() || *it != idx) {
                 gates.insert(it, idx);
               }

@@ -23,6 +23,7 @@ or_integration_tests(
     est_rc2
     est_rc3
     est_rc4
+    est_rc_cugr1
     estimate_path_resistance
     gcd
     gcd_cugr
@@ -69,6 +70,9 @@ or_integration_tests(
     repair_antennas4
     repair_antennas_error1
     repair_antennas_error2
+    repair_antennas_only_diodes
+    repair_antennas_only_jumpers
+    repair_antennas_allow_congestion
     report_wire_length1
     report_wire_length2
     report_wire_length3

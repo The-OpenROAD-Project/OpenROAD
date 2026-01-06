@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
+
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "rcx/array1.h"
@@ -29,7 +31,7 @@ void extMain::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-void extMain::addDummyCorners(dbBlock* block, uint cnt, Logger* logger)
+void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, Logger* logger)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == nullptr) {
@@ -81,19 +83,19 @@ void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor)
   _block->adjustRC(res_factor, cc_factor, gndc_factor);
 }
 
-uint extMain::getMultiples(uint cnt, uint base)
+uint32_t extMain::getMultiples(uint32_t cnt, uint32_t base)
 {
   return ((cnt / base) + 1) * base;
 }
 
-void extMain::setupMapping(uint itermCnt1)
+void extMain::setupMapping(uint32_t itermCnt1)
 {
-  uint itermCnt = 3 * _block->getNets().size();
+  uint32_t itermCnt = 3 * _block->getNets().size();
 
   if (_btermTable) {
     return;
   }
-  uint btermCnt = 0;
+  uint32_t btermCnt = 0;
   if ((itermCnt == 0) && (_block != nullptr)) {
     btermCnt = _block->getBTerms().size();
     btermCnt = getMultiples(btermCnt, 1024);
@@ -104,14 +106,14 @@ void extMain::setupMapping(uint itermCnt1)
     btermCnt = 512;
     itermCnt = 64000;
   }
-  _btermTable = new Ath__array1D<int>(btermCnt);
-  _itermTable = new Ath__array1D<int>(itermCnt);
-  _nodeTable = new Ath__array1D<int>(16000);
+  _btermTable = new Array1D<int>(btermCnt);
+  _itermTable = new Array1D<int>(itermCnt);
+  _nodeTable = new Array1D<int>(16000);
 }
 
 extMain::extMain()
 {
-  _modelTable = new Ath__array1D<extRCModel*>(8);
+  _modelTable = new Array1D<extRCModel*>(8);
 }
 extMain::~extMain()
 {
@@ -134,8 +136,8 @@ void extMain::initDgContextArray()
 {
   _dgContextDepth = 3;
   _dgContextPlanes = _dgContextDepth * 2 + 1;
-  _dgContextArray = new Ath__array1D<SEQ*>**[_dgContextPlanes];
-  _dgContextBaseTrack = new uint[_dgContextPlanes];
+  _dgContextArray = new Array1D<SEQ*>**[_dgContextPlanes];
+  _dgContextBaseTrack = new uint32_t[_dgContextPlanes];
   _dgContextLowTrack = new int[_dgContextPlanes];
   _dgContextHiTrack = new int[_dgContextPlanes];
   _dgContextTrackBase = new int*[_dgContextPlanes];
@@ -144,11 +146,11 @@ void extMain::initDgContextArray()
   } else {
     _dgContextTracks = _couplingFlag * 2 + 1;
   }
-  for (uint jj = 0; jj < _dgContextPlanes; jj++) {
+  for (uint32_t jj = 0; jj < _dgContextPlanes; jj++) {
     _dgContextTrackBase[jj] = new int[1024];
-    _dgContextArray[jj] = new Ath__array1D<SEQ*>*[_dgContextTracks];
-    for (uint tt = 0; tt < _dgContextTracks; tt++) {
-      _dgContextArray[jj][tt] = new Ath__array1D<SEQ*>(1024);
+    _dgContextArray[jj] = new Array1D<SEQ*>*[_dgContextTracks];
+    for (uint32_t tt = 0; tt < _dgContextTracks; tt++) {
+      _dgContextArray[jj][tt] = new Array1D<SEQ*>(1024);
     }
   }
 }
@@ -161,9 +163,9 @@ void extMain::removeDgContextArray()
   delete[] _dgContextBaseTrack;
   delete[] _dgContextLowTrack;
   delete[] _dgContextHiTrack;
-  for (uint jj = 0; jj < _dgContextPlanes; jj++) {
+  for (uint32_t jj = 0; jj < _dgContextPlanes; jj++) {
     delete[] _dgContextTrackBase[jj];
-    for (uint tt = 0; tt < _dgContextTracks; tt++) {
+    for (uint32_t tt = 0; tt < _dgContextTracks; tt++) {
       delete _dgContextArray[jj][tt];
     }
     delete[] _dgContextArray[jj];
@@ -179,16 +181,16 @@ void extMain::initContextArray()
     return;
   }
   _ccContextPlanes = getExtLayerCnt(_tech);
-  _ccContextArray = new Ath__array1D<int>*[_ccContextPlanes + 1];
+  _ccContextArray = new Array1D<int>*[_ccContextPlanes + 1];
   _ccContextArray[0] = nullptr;
-  uint ii;
+  uint32_t ii;
   for (ii = 1; ii <= _ccContextPlanes; ii++) {
-    _ccContextArray[ii] = new Ath__array1D<int>(1024);
+    _ccContextArray[ii] = new Array1D<int>(1024);
   }
-  _ccMergedContextArray = new Ath__array1D<int>*[_ccContextPlanes + 1];
+  _ccMergedContextArray = new Array1D<int>*[_ccContextPlanes + 1];
   _ccMergedContextArray[0] = nullptr;
   for (ii = 1; ii <= _ccContextPlanes; ii++) {
-    _ccMergedContextArray[ii] = new Ath__array1D<int>(1024);
+    _ccMergedContextArray[ii] = new Array1D<int>(1024);
   }
 }
 
@@ -198,7 +200,7 @@ void extMain::removeContextArray()
     return;
   }
 
-  for (uint i = 0; i <= _ccContextPlanes; i++) {
+  for (uint32_t i = 0; i <= _ccContextPlanes; i++) {
     delete _ccContextArray[i];
     delete _ccMergedContextArray[i];
   }
@@ -209,12 +211,12 @@ void extMain::removeContextArray()
   _ccContextArray = nullptr;
 }
 
-uint extMain::getExtLayerCnt(dbTech* tech)
+uint32_t extMain::getExtLayerCnt(dbTech* tech)
 {
   dbSet<dbTechLayer> layers = tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
-  uint n = 0;
+  uint32_t n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
 
@@ -227,7 +229,7 @@ uint extMain::getExtLayerCnt(dbTech* tech)
   return n;
 }
 
-extRCModel* extMain::getRCmodel(uint n)
+extRCModel* extMain::getRCmodel(uint32_t n)
 {
   if (_modelTable->getCnt() <= 0) {
     return nullptr;
@@ -236,7 +238,7 @@ extRCModel* extMain::getRCmodel(uint n)
   return _modelTable->get(n);
 }
 
-uint extMain::getResCapTable()
+uint32_t extMain::getResCapTable()
 {
   _currentModel = getRCmodel(0);
 
@@ -244,32 +246,32 @@ uint extMain::getResCapTable()
   m._underMet = 0;
   m._overMet = 0;
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (dbTechLayer* layer : _tech->getLayers()) {
     if (layer->getRoutingLevel() == 0) {
       continue;
     }
-    const uint n = layer->getRoutingLevel();
+    const uint32_t n = layer->getRoutingLevel();
 
-    const uint w = layer->getWidth();  // nm
+    const uint32_t w = layer->getWidth();  // nm
     _minWidthTable[n] = w;
 
     m._width = w;
     m._met = n;
 
-    uint sp = layer->getSpacing();  // nm
+    uint32_t sp = layer->getSpacing();  // nm
     _minDistTable[n] = sp;
     if (sp == 0) {
       sp = layer->getPitch() - layer->getWidth();
       _minDistTable[n] = sp;
     }
     double resTable[20];
-    for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
+    for (uint32_t jj = 0; jj < _modelMap.getCnt(); jj++) {
       resTable[jj] = 0.0;
     }
     calcRes0(resTable, n, w, 1);
-    for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
-      const uint modelIndex = _modelMap.get(jj);
+    for (uint32_t jj = 0; jj < _modelMap.getCnt(); jj++) {
+      const uint32_t modelIndex = _modelMap.get(jj);
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
 
       const double res = layer->getResistance();  // OHMS per square
@@ -323,7 +325,7 @@ bool extMain::checkLayerResistance()
   dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
     dbTechLayer* layer = *itr;
 
@@ -352,10 +354,10 @@ bool extMain::checkLayerResistance()
   return true;
 }
 
-double extMain::getLefResistance(const uint level,
-                                 const uint width,
-                                 const uint len,
-                                 const uint model)
+double extMain::getLefResistance(const uint32_t level,
+                                 const uint32_t width,
+                                 const uint32_t len,
+                                 const uint32_t model)
 {
   double n = len;
 
@@ -366,10 +368,10 @@ double extMain::getLefResistance(const uint level,
   return n * _resistanceTable[model][level];
 }
 
-double extMain::getResistance(const uint level,
-                              const uint width,
-                              const uint len,
-                              const uint model)
+double extMain::getResistance(const uint32_t level,
+                              const uint32_t width,
+                              const uint32_t len,
+                              const uint32_t model)
 {
   return getLefResistance(level, width, len, model);
 }
@@ -415,9 +417,9 @@ double extMain::getLoCoupling()
   return _coupleThreshold;
 }
 
-double extMain::getFringe(const uint met,
-                          const uint width,
-                          const uint modelIndex,
+double extMain::getFringe(const uint32_t met,
+                          const uint32_t width,
+                          const uint32_t modelIndex,
                           double& areaCap)
 {
   areaCap = 0.0;
@@ -440,7 +442,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
                              double frCap,
                              double ccCap,
                              double deltaFr,
-                             uint modelIndex)
+                             uint32_t modelIndex)
 {
   double cap = frCap + ccCap - deltaFr;
 
@@ -454,9 +456,9 @@ void extMain::updateTotalRes(dbRSeg* rseg1,
                              dbRSeg* rseg2,
                              extMeasure* m,
                              const double* delta,
-                             uint modelCnt)
+                             uint32_t modelCnt)
 {
-  for (uint modelIndex = 0; modelIndex < modelCnt; modelIndex++) {
+  for (uint32_t modelIndex = 0; modelIndex < modelCnt; modelIndex++) {
     extDistRC* rc = m->_rc[modelIndex];
 
     double res = rc->res_ - delta[modelIndex];
@@ -482,13 +484,13 @@ void extMain::updateTotalRes(dbRSeg* rseg1,
 void extMain::updateTotalCap(dbRSeg* rseg,
                              extMeasure* m,
                              const double* deltaFr,
-                             uint modelCnt,
+                             uint32_t modelCnt,
                              bool includeCoupling,
                              bool includeDiag)
 {
   double tot, cap;
   int extDbIndex, sci, scDbIdx;
-  for (uint modelIndex = 0; modelIndex < modelCnt; modelIndex++) {
+  for (uint32_t modelIndex = 0; modelIndex < modelCnt; modelIndex++) {
     extDistRC* rc = m->_rc[modelIndex];
 
     double frCap = rc->fringe_;
@@ -532,8 +534,8 @@ void extMain::updateCCCap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
                         true);
   bool mergeParallel = true;
 
-  uint lcnt = 1;
-  for (uint ii = 0; ii < lcnt; ii++) {
+  uint32_t lcnt = 1;
+  for (uint32_t ii = 0; ii < lcnt; ii++) {
     if (mergeParallel) {
       ccap->addCapacitance(ccCap, ii);
     } else {
@@ -544,7 +546,7 @@ void extMain::updateCCCap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
 
 void extMain::ccReportProgress()
 {
-  uint repChunk = 1000000;
+  uint32_t repChunk = 1000000;
   if ((_totSegCnt > 0) && (_totSegCnt % repChunk == 0)) {
     logger_->info(RCX,
                   140,
@@ -557,7 +559,7 @@ void extMain::ccReportProgress()
   }
 }
 
-void extMain::printNet(dbNet* net, uint netId)
+void extMain::printNet(dbNet* net, uint32_t netId)
 {
   if (netId == net->getId()) {
     net->printNetName(stdout);
@@ -601,7 +603,7 @@ void extMain::measureRC(CoupleOptions& options)
 
   _currentModel = getRCmodel(0);
   m._currentModel = _currentModel;
-  for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
     m._metRCTable.add(_metRCTable.get(ii));
   }
   if (m._met >= _currentModel->getLayerCnt()) {  // TO_TEST
@@ -611,7 +613,7 @@ void extMain::measureRC(CoupleOptions& options)
   m._layerCnt = _currentModel->getLayerCnt();
 
   double deltaFr[20];
-  for (uint jj = 0; jj < m._metRCTable.getCnt(); jj++) {
+  for (uint32_t jj = 0; jj < m._metRCTable.getCnt(); jj++) {
     deltaFr[jj] = 0.0;
     m._rc[jj]->coupling_ = 0.0;
     m._rc[jj]->fringe_ = 0.0;
@@ -620,7 +622,7 @@ void extMain::measureRC(CoupleOptions& options)
     m._rc[jj]->sep_ = 0;
   }
 
-  uint totLenCovered = 0;
+  uint32_t totLenCovered = 0;
   if (_usingMetalPlanes) {
     if (_ccContextArray && (!srcNet || !tgtNet)) {
       int pxy = m._dir ? m._ll[0] : m._ll[1];
@@ -633,7 +635,7 @@ void extMain::measureRC(CoupleOptions& options)
                     m._len,
                     pbase,
                     m._s_nm);
-      uint ii, jj;
+      uint32_t ii, jj;
       for (ii = 1; ii <= _ccContextDepth
                    && (int) ii + m._met < _currentModel->getLayerCnt();
            ii++) {
@@ -665,7 +667,7 @@ void extMain::measureRC(CoupleOptions& options)
 
     if (totLenCovered > 0) {
       m._underMet = 0;
-      for (uint jj = 0; jj < m._metRCTable.getCnt(); jj++) {
+      for (uint32_t jj = 0; jj < m._metRCTable.getCnt(); jj++) {
         extDistRC* rc = m._metRCTable.get(jj)->getOverFringeRC(&m);
         deltaFr[jj] = rc->getFringe() * totLenCovered;
       }
@@ -698,7 +700,7 @@ void extMain::measureRC(CoupleOptions& options)
           true);
 
       int extDbIndex, sci, scDbIdx;
-      for (uint jj = 0; jj < m._metRCTable.getCnt(); jj++) {
+      for (uint32_t jj = 0; jj < m._metRCTable.getCnt(); jj++) {
         extDbIndex = getProcessCornerDbIndex(jj);
         ccap->addCapacitance(m._rc[jj]->coupling_, extDbIndex);
         getScaledCornerDbIndex(jj, sci, scDbIdx);

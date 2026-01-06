@@ -12,7 +12,7 @@
 #include "boost/serialization/unique_ptr.hpp"
 #include "dst/BalancerJobDescription.h"
 
-using namespace dst;
+namespace dst {
 
 template <class Archive>
 inline bool is_loading(const Archive& ar)
@@ -56,3 +56,5 @@ bool JobMessage::serializeMsg(SerializeType type,
   }
   return true;
 }
+
+}  // namespace dst

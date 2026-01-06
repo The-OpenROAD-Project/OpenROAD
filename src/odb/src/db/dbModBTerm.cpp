@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbModBTerm.h"
 
+#include <cstdint>
 #include <cstdlib>
 
 #include "dbBlock.h"
@@ -21,8 +22,10 @@
 #include <string>
 
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "odb/odb.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -107,16 +110,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
   if (obj.getDatabase()->isSchema(kSchemaHierPortRemoval)) {
     stream >> obj.prev_entry_;
   }
-  // User Code Begin >>
-  if (obj.getDatabase()->isSchema(kSchemaDbRemoveHash)) {
-    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
-    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
-    if (obj.name_) {
-      module->modbterm_hash_[obj.name_] = obj.getId();
-    }
-  }
-  // User Code End >>
   return stream;
 }
 
@@ -193,6 +186,14 @@ std::string dbModBTerm::getHierarchicalName() const
                      getName());
 }
 
+dbModInst* dbModBTerm::getModInst() const
+{
+  if (dbModITerm* parent_iterm = getParentModITerm()) {
+    return parent_iterm->getParent();
+  }
+  return nullptr;
+}
+
 void dbModBTerm::setModNet(dbModNet* modNet)
 {
   _dbModBTerm* obj = (_dbModBTerm*) this;
@@ -230,13 +231,13 @@ struct dbModBTermFlags_str
 {
   dbIoType::Value iotype : 4;
   dbSigType::Value sigtype : 4;
-  uint spare_bits : 24;
+  uint32_t spare_bits : 24;
 };
 
 union dbModBTermFlags
 {
   struct dbModBTermFlags_str flags;
-  uint uint_val;
+  uint32_t uint_val;
 };
 
 void dbModBTerm::setSigType(const dbSigType& type)
@@ -459,7 +460,7 @@ void dbModBTerm::setBusPort(dbBusPort* bus_port)
   _modbterm->busPort_ = bus_port->getId();
 }
 
-dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint dbid)
+dbModBTerm* dbModBTerm::getModBTerm(dbBlock* block, uint32_t dbid)
 {
   _dbBlock* owner = (_dbBlock*) block;
   return (dbModBTerm*) (owner->modbterm_tbl_->getPtr(dbid));
@@ -492,8 +493,8 @@ void dbModBTerm::destroy(dbModBTerm* val)
     callback->inDbModBTermDestroy(val);
   }
 
-  uint prev = _modbterm->prev_entry_;
-  uint next = _modbterm->next_entry_;
+  uint32_t prev = _modbterm->prev_entry_;
+  uint32_t next = _modbterm->next_entry_;
   if (prev == 0) {
     // head of list
     module->modbterms_ = next;

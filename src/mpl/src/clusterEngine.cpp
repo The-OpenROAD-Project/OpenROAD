@@ -339,9 +339,8 @@ void ClusteringEngine::setBaseThresholds()
     tree_->base_min_std_cell
         = std::floor(design_metrics_->getNumStdCell()
                      / std::pow(tree_->cluster_size_ratio, tree_->max_level));
-    if (tree_->base_min_std_cell <= min_num_std_cells_allowed) {
-      tree_->base_min_std_cell = min_num_std_cells_allowed;
-    }
+    tree_->base_min_std_cell
+        = std::max(tree_->base_min_std_cell, min_num_std_cells_allowed);
     tree_->base_max_std_cell
         = tree_->base_min_std_cell * tree_->cluster_size_ratio / 2.0;
 
@@ -1336,7 +1335,7 @@ void ClusteringEngine::breakCluster(Cluster* parent)
     odb::dbModule* module = parent->getDbModules().front();
     // Flat module that will be partitioned with TritonPart when updating
     // the subtree later on.
-    if (module->getChildren().size() == 0) {
+    if (module->getChildren().empty()) {
       if (parent == tree_->root.get()) {
         createFlatCluster(module, parent);
       } else {
@@ -1480,8 +1479,7 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
   // When breaking large flat clusters, the children will
   // be modified, so, we need to iterate them using indexes.
   const UniqueClusterVector& new_children = parent->getChildren();
-  for (int i = 0; i < new_children.size(); ++i) {
-    auto& child = new_children[i];
+  for (const auto& child : new_children) {
     child->setParent(parent);
     if (isLargeFlatCluster(child.get())) {
       breakLargeFlatCluster(child.get());
@@ -1712,17 +1710,19 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
     for (auto& small_child : small_children) {
       small_children_ids.push_back(small_child->getId());
     }
+
     // Firstly we perform Type 1 merge
     for (int i = 0; i < num_small_children; i++) {
       Cluster* close_cluster = findSingleWellFormedConnectedCluster(
           small_children[i], small_children_ids);
-      if (close_cluster && attemptMerge(close_cluster, small_children[i])) {
+      if (close_cluster != nullptr
+          && mergeHonorsMaxThresholds(close_cluster, small_children[i])
+          && attemptMerge(close_cluster, small_children[i])) {
         cluster_class[i] = close_cluster->getId();
       }
     }
 
     // Then we perform Type 2 merge
-    std::vector<Cluster*> new_small_children;
     for (int i = 0; i < num_small_children; i++) {
       if (cluster_class[i] == -1) {  // the cluster has not been merged
         for (int j = i + 1; j < num_small_children; j++) {
@@ -1730,7 +1730,9 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
             continue;
           }
 
-          if (sameConnectionSignature(small_children[i], small_children[j])) {
+          if (mergeHonorsMaxThresholds(small_children[i], small_children[j])
+              && sameConnectionSignature(small_children[i],
+                                         small_children[j])) {
             if (attemptMerge(small_children[i], small_children[j])) {
               cluster_class[j] = i;
             } else {
@@ -1748,6 +1750,7 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
     }
 
     // Then we perform Type 3 merge:  merge all dust cluster
+    std::vector<Cluster*> new_small_children;
     const int dust_cluster_std_cell = 10;
     for (int i = 0; i < num_small_children; i++) {
       if (cluster_class[i] == -1) {  // the cluster has not been merged
@@ -1815,6 +1818,13 @@ void ClusteringEngine::mergeChildrenBelowThresholds(
              "multilevel_autoclustering",
              1,
              "Finished merging clusters");
+}
+
+bool ClusteringEngine::mergeHonorsMaxThresholds(const Cluster* a,
+                                                const Cluster* b) const
+{
+  return ((a->getNumMacro() + b->getNumMacro()) <= max_macro_)
+         && ((a->getNumStdCell() + b->getNumStdCell()) <= max_std_cell_);
 }
 
 bool ClusteringEngine::sameConnectionSignature(Cluster* a, Cluster* b) const

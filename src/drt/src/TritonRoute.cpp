@@ -26,6 +26,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
 #include "distributed/drUpdate.h"
@@ -59,7 +60,6 @@
 using odb::dbTechLayerType;
 
 namespace drt {
-
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
                          utl::CallBackHandler* callback_handler,
@@ -1128,6 +1128,12 @@ void TritonRoute::addInstancePAData(frInst* inst)
   }
 }
 
+void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
+{
+  if (pa_) {
+    pa_->addAvoidViaDef(via_def);
+  }
+}
 void TritonRoute::updateDirtyPAData()
 {
   if (pa_) {

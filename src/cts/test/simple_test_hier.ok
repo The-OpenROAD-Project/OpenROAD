@@ -38,11 +38,11 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 9260
 Placement Analysis
 ---------------------------------
-total displacement         91.9 u
-average displacement        5.7 u
-max displacement            8.3 u
+total displacement         92.5 u
+average displacement        5.8 u
+max displacement            8.9 u
 original HPWL               0.0 u
-legalized HPWL             20.8 u
+legalized HPWL             20.5 u
 delta HPWL                    0 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
@@ -59,14 +59,14 @@ delta HPWL                    0 %
 [INFO CTS-0028]  Total number of sinks: 16.
 [INFO CTS-0030]  Number of static layers: 0.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0023]  Original sink region: [(3230, 1188430), (16150, 1213970)].
-[INFO CTS-0024]  Normalized sink region: [(0.230714, 84.8879), (1.15357, 86.7121)].
+[INFO CTS-0023]  Original sink region: [(3230, 1185970), (16150, 1210830)].
+[INFO CTS-0024]  Normalized sink region: [(0.230714, 84.7121), (1.15357, 86.4879)].
 [INFO CTS-0025]     Width:  0.9229.
-[INFO CTS-0026]     Height: 1.8243.
+[INFO CTS-0026]     Height: 1.7757.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 8
-    Sub-region size: 0.9229 X 0.9121
+    Sub-region size: 0.9229 X 0.8879
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 16.
@@ -79,7 +79,7 @@ delta HPWL                    0 %
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 17
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 17.16 um
+[INFO CTS-0101]  Average sink wire length 16.58 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 1
 No differences found.

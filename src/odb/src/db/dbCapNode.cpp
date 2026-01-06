@@ -4,6 +4,7 @@
 #include "dbCapNode.h"
 
 #include <cassert>
+#include <cstdint>
 #include <vector>
 
 #include "dbBlock.h"
@@ -87,10 +88,11 @@ bool _dbCapNode::operator==(const _dbCapNode& rhs) const
 
 bool dbCapNode::needAdjustCC(double ccThreshHold)
 {
-  const uint cornerCnt = ((dbBlock*) getImpl()->getOwner())->getCornerCount();
+  const uint32_t cornerCnt
+      = ((dbBlock*) getImpl()->getOwner())->getCornerCount();
   for (dbCCSeg* cc : getCCSegs()) {
-    for (uint corner = 0; corner < cornerCnt; corner++) {
-      uint cid;
+    for (uint32_t corner = 0; corner < cornerCnt; corner++) {
+      uint32_t cid;
       if (cc->getTheOtherCapn(this, cid)->getNet()->getCcAdjustFactor() > 0) {
         continue;
       }
@@ -105,13 +107,13 @@ bool dbCapNode::needAdjustCC(double ccThreshHold)
 bool dbCapNode::groundCC(float gndFactor)
 {
   bool grounded = false;
-  const uint vicNetId = getNet()->getId();
+  const uint32_t vicNetId = getNet()->getId();
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
-  const uint cornerCnt = block->corners_per_block_;
+  const uint32_t cornerCnt = block->corners_per_block_;
   for (dbCCSeg* cc : getCCSegs()) {
-    uint cid;
+    uint32_t cid;
     dbCapNode* agrNode = cc->getTheOtherCapn(this, cid);
-    uint agrNetId = agrNode->getNet()->getId();
+    uint32_t agrNetId = agrNode->getNet()->getId();
     if (agrNetId < vicNetId) {
       continue;  //  avoid duplicate grounding
     }
@@ -128,7 +130,7 @@ bool dbCapNode::groundCC(float gndFactor)
       continue;
     }
     grounded = true;
-    for (uint ii = 0; ii < cornerCnt; ii++) {
+    for (uint32_t ii = 0; ii < cornerCnt; ii++) {
       const double deltaC = cc->getCapacitance(ii) * gndFactor;
       addCapacitance(deltaC, ii);
       agrNode->addCapacitance(deltaC, ii);
@@ -137,7 +139,7 @@ bool dbCapNode::groundCC(float gndFactor)
   return grounded;
 }
 
-void dbCapNode::adjustCC(uint adjOrder,
+void dbCapNode::adjustCC(uint32_t adjOrder,
                          float adjFactor,
                          std::vector<dbCCSeg*>& adjustedCC,
                          std::vector<dbNet*>& halonets)
@@ -146,7 +148,7 @@ void dbCapNode::adjustCC(uint adjOrder,
     if (cc->isMarked()) {
       continue;
     }
-    uint cid;
+    uint32_t cid;
     dbNet* agrNet = cc->getTheOtherCapn(this, cid)->getNet();
     if (agrNet->getCcAdjustFactor() > 0
         && agrNet->getCcAdjustOrder() < adjOrder) {
@@ -162,11 +164,11 @@ void dbCapNode::adjustCC(uint adjOrder,
   }
 }
 
-void dbCapNode::adjustCapacitance(float factor, uint corner)
+void dbCapNode::adjustCapacitance(float factor, uint32_t corner)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
+  uint32_t cornerCnt = block->corners_per_block_;
 
   assert(seg->flags_.foreign > 0);
   assert(corner < cornerCnt);
@@ -199,18 +201,18 @@ void dbCapNode::adjustCapacitance(float factor, uint corner)
 void dbCapNode::adjustCapacitance(float factor)
 {
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
-  uint cornerCnt = block->corners_per_block_;
-  uint corner;
+  uint32_t cornerCnt = block->corners_per_block_;
+  uint32_t corner;
   for (corner = 0; corner < cornerCnt; corner++) {
     adjustCapacitance(factor, corner);
   }
 }
 
-double dbCapNode::getCapacitance(uint corner)
+double dbCapNode::getCapacitance(uint32_t corner)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
+  uint32_t cornerCnt = block->corners_per_block_;
 
   if (seg->flags_.foreign > 0) {
     assert(corner < cornerCnt);
@@ -226,9 +228,9 @@ void dbCapNode::getGndCap(double* gndcap, double* totalcap)
     return;
   }
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
+  uint32_t cornerCnt = block->corners_per_block_;
   double gcap;
-  for (uint ii = 0; ii < cornerCnt; ii++) {
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
     gcap = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
     if (gndcap) {
       gndcap[ii] = gcap;
@@ -246,9 +248,9 @@ void dbCapNode::addGndCap(double* gndcap, double* totalcap)
     return;
   }
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
+  uint32_t cornerCnt = block->corners_per_block_;
   double gcap;
-  for (uint ii = 0; ii < cornerCnt; ii++) {
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
     gcap = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
     if (gndcap) {
       gndcap[ii] += gcap;
@@ -259,39 +261,39 @@ void dbCapNode::addGndCap(double* gndcap, double* totalcap)
   }
 }
 
-void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
+void dbCapNode::accAllCcCap(double* totalcap, double miller_mult)
 {
-  if (totalcap == nullptr || MillerMult == 0) {
+  if (totalcap == nullptr || miller_mult == 0) {
     return;
   }
   for (dbCCSeg* cc : getCCSegs()) {
-    cc->accAllCcCap(totalcap, MillerMult);
+    cc->accAllCcCap(totalcap, miller_mult);
   }
 }
 
 void dbCapNode::getGndTotalCap(double* gndcap,
                                double* totalcap,
-                               double MillerMult)
+                               double miller_mult)
 {
   getGndCap(gndcap, totalcap);
-  accAllCcCap(totalcap, MillerMult);
+  accAllCcCap(totalcap, miller_mult);
 }
 
 void dbCapNode::addGndTotalCap(double* gndcap,
                                double* totalcap,
-                               double MillerMult)
+                               double miller_mult)
 {
   addGndCap(gndcap, totalcap);
-  accAllCcCap(totalcap, MillerMult);
+  accAllCcCap(totalcap, miller_mult);
 }
 
 void dbCapNode::getCapTable(double* cap)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
+  uint32_t cornerCnt = block->corners_per_block_;
 
-  for (uint ii = 0; ii < cornerCnt; ii++) {
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
     cap[ii] = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
   }
 }
@@ -301,8 +303,8 @@ void dbCapNode::addCapnCapacitance(dbCapNode* other)
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbCapNode* oseg = (_dbCapNode*) other;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
-  for (uint corner = 0; corner < cornerCnt; corner++) {
+  uint32_t cornerCnt = block->corners_per_block_;
+  for (uint32_t corner = 0; corner < cornerCnt; corner++) {
     float& value
         = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
     float& ovalue
@@ -332,8 +334,8 @@ void dbCapNode::setCapacitance(double cap, int corner)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
-  assert((corner >= 0) && ((uint) corner < cornerCnt));
+  uint32_t cornerCnt = block->corners_per_block_;
+  assert((corner >= 0) && ((uint32_t) corner < cornerCnt));
   float& value
       = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
@@ -365,8 +367,8 @@ void dbCapNode::addCapacitance(double cap, int corner)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->corners_per_block_;
-  assert((corner >= 0) && ((uint) corner < cornerCnt));
+  uint32_t cornerCnt = block->corners_per_block_;
+  assert((corner >= 0) && ((uint32_t) corner < cornerCnt));
   float& value
       = (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
@@ -412,7 +414,7 @@ bool dbCapNode::isInternal()
 bool dbCapNode::isTreeNode()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  uint flags = seg->flags_.branch + seg->flags_.iterm + seg->flags_.bterm;
+  uint32_t flags = seg->flags_.branch + seg->flags_.iterm + seg->flags_.bterm;
   return flags > 0 ? true : false;
 }
 bool dbCapNode::isBranch()
@@ -506,7 +508,7 @@ void dbCapNode::resetBTermFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.bterm = 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -525,7 +527,7 @@ void dbCapNode::resetITermFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.iterm = 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -544,7 +546,7 @@ void dbCapNode::resetNameFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.name = 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -563,7 +565,7 @@ void dbCapNode::resetInternalFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.internal = 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -582,7 +584,7 @@ void dbCapNode::resetBranchFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.branch = 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -601,7 +603,7 @@ void dbCapNode::resetForeignFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.foreign = 0;
 
   debugPrint(getImpl()->getLogger(),
@@ -620,7 +622,7 @@ void dbCapNode::setBTermFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.bterm = 1;
 
   debugPrint(getImpl()->getLogger(),
@@ -639,7 +641,7 @@ void dbCapNode::setITermFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.iterm = 1;
 
   debugPrint(getImpl()->getLogger(),
@@ -654,11 +656,11 @@ void dbCapNode::setITermFlag()
         this, _dbCapNode::kFlags, prev_flags, flagsToUInt(seg));
   }
 }
-uint dbCapNode::incrChildrenCnt()
+uint32_t dbCapNode::incrChildrenCnt()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.childrenCnt++;
 
   debugPrint(getImpl()->getLogger(),
@@ -674,12 +676,12 @@ uint dbCapNode::incrChildrenCnt()
   }
   return seg->flags_.childrenCnt;
 }
-uint dbCapNode::getChildrenCnt()
+uint32_t dbCapNode::getChildrenCnt()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   return seg->flags_.childrenCnt;
 }
-void dbCapNode::setChildrenCnt(uint cnt)
+void dbCapNode::setChildrenCnt(uint32_t cnt)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   seg->flags_.childrenCnt = cnt;
@@ -688,7 +690,7 @@ void dbCapNode::setBranchFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.branch = 1;
 
   debugPrint(getImpl()->getLogger(),
@@ -707,7 +709,7 @@ void dbCapNode::setNameFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.name = 1;
 
   debugPrint(getImpl()->getLogger(),
@@ -726,7 +728,7 @@ void dbCapNode::setInternalFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.internal = 1;
 
   debugPrint(getImpl()->getLogger(),
@@ -745,7 +747,7 @@ void dbCapNode::setForeignFlag()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_flags = flagsToUInt(seg);
+  uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.foreign = 1;
 
   debugPrint(getImpl()->getLogger(),
@@ -764,14 +766,14 @@ void dbCapNode::setSelect(bool val)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
-  // uint prev_flags = flagsToUInt(seg);
+  // uint32_t prev_flags = flagsToUInt(seg);
   seg->flags_.select = val ? 1 : 0;
 }
-void dbCapNode::setNode(uint node)
+void dbCapNode::setNode(uint32_t node)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_node = seg->node_num_;
+  uint32_t prev_node = seg->node_num_;
   seg->node_num_ = node;
 
   debugPrint(getImpl()->getLogger(),
@@ -787,13 +789,13 @@ void dbCapNode::setNode(uint node)
     block->journal_->updateField(this, _dbCapNode::kNodeNum, prev_node, node);
   }
 }
-uint dbCapNode::getNode()
+uint32_t dbCapNode::getNode()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   return seg->node_num_;
 }
 
-uint dbCapNode::getShapeId()
+uint32_t dbCapNode::getShapeId()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = (dbBlock*) seg->getOwner();
@@ -814,14 +816,14 @@ uint dbCapNode::getShapeId()
   return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
 }
 
-void dbCapNode::setSortIndex(uint idx)
+void dbCapNode::setSortIndex(uint32_t idx)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
   seg->flags_.sort_index = idx;
 }
 
-uint dbCapNode::getSortIndex()
+uint32_t dbCapNode::getSortIndex()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   //_dbBlock * block = (_dbBlock *) getOwner();
@@ -864,11 +866,11 @@ dbSet<dbCCSeg> dbCapNode::getCCSegs()
   return dbSet<dbCCSeg>(seg, block->cc_seg_itr_);
 }
 
-void dbCapNode::setNext(uint nextid)
+void dbCapNode::setNext(uint32_t nextid)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_next = seg->next_;
+  uint32_t prev_next = seg->next_;
   seg->next_ = nextid;
 
   debugPrint(getImpl()->getLogger(),
@@ -884,11 +886,11 @@ void dbCapNode::setNext(uint nextid)
     block->journal_->updateField(this, _dbCapNode::kSetNext, prev_next, nextid);
   }
 }
-void dbCapNode::setNet(uint netid)
+void dbCapNode::setNet(uint32_t netid)
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint prev_net = seg->net_;
+  uint32_t prev_net = seg->net_;
   seg->net_ = netid;
 
   debugPrint(getImpl()->getLogger(),
@@ -919,11 +921,11 @@ dbCapNode::getNext(dbBlock *block_)
 }
 */
 
-dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
+dbCapNode* dbCapNode::create(dbNet* net_, uint32_t node, bool foreign)
 {
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint cornerCnt = block->corners_per_block_;
+  uint32_t cornerCnt = block->corners_per_block_;
   _dbCapNode* seg = block->cap_node_tbl_->create();
 
   debugPrint(block->getImpl()->getLogger(),
@@ -952,12 +954,12 @@ dbCapNode* dbCapNode::create(dbNet* net_, uint node, bool foreign)
   if (foreign) {
     seg->flags_.foreign = 1;
     if (block->max_cap_node_id_ >= seg->getOID()) {
-      for (uint ii = 0; ii < cornerCnt; ii++) {
+      for (uint32_t ii = 0; ii < cornerCnt; ii++) {
         (*block->c_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii] = 0.0;
       }
     } else {
       block->max_cap_node_id_ = seg->getOID();
-      [[maybe_unused]] uint capIdx
+      [[maybe_unused]] uint32_t capIdx
           = block->c_val_tbl_->getIdx(cornerCnt, (float) 0.0);
       assert((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
@@ -984,7 +986,7 @@ void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   _dbNet* net = (_dbNet*) seg_->getNet();
 
-  for (uint sid = seg->cc_segs_; destroyCC && sid; sid = seg->cc_segs_) {
+  for (uint32_t sid = seg->cc_segs_; destroyCC && sid; sid = seg->cc_segs_) {
     _dbCCSeg* s = block->cc_seg_tbl_->getPtr(sid);
     dbCCSeg::destroy((dbCCSeg*) s);
   }
@@ -1045,7 +1047,7 @@ void dbCapNode::printCC()
 {
   _dbCapNode* node = (_dbCapNode*) this;
   dbBlock* block = (dbBlock*) node->getOwner();
-  uint ccn = node->cc_segs_;
+  uint32_t ccn = node->cc_segs_;
   if (ccn == 0) {
     return;
   }
@@ -1058,16 +1060,16 @@ bool dbCapNode::checkCC()
 {
   _dbCapNode* node = (_dbCapNode*) this;
   dbBlock* block = (dbBlock*) node->getOwner();
-  uint ccn = node->cc_segs_;
+  uint32_t ccn = node->cc_segs_;
   if (ccn == 0) {
     return true;
   }
   dbCCSeg* ccs = dbCCSeg::getCCSeg(block, ccn);
-  uint rc = ccs->checkCapnCC(getId());
+  uint32_t rc = ccs->checkCapnCC(getId());
   return rc;
 }
 
-dbCapNode* dbCapNode::getCapNode(dbBlock* block_, uint dbid_)
+dbCapNode* dbCapNode::getCapNode(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbCapNode*) block->cap_node_tbl_->getPtr(dbid_);

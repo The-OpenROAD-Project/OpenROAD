@@ -1856,4 +1856,15 @@ const char* dbNameUniquifyType::getString() const
   return "";
 }
 
+const char* dbHierSearchDir::getString() const
+{
+  switch (_value) {
+    case FANIN:
+      return "FANIN";
+    case FANOUT:
+      return "FANOUT";
+  }
+  return "";
+}
+
 }  // namespace odb

@@ -71,6 +71,8 @@ class TimingWidget : public QDockWidget
   void updatePaths();
   void reportSlackHistogramPaths(const std::set<const sta::Pin*>& report_pins,
                                  const std::string& path_group_name);
+  void showWorstTimingPath(bool setup);
+  void clearSelection();
 
  signals:
   void highlightTimingPath(TimingPath* timing_path);

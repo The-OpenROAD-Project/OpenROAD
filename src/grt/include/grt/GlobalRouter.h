@@ -165,6 +165,7 @@ class GlobalRouter
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void ensurePinsPositions(odb::dbNet* db_net);
+  bool findCoveredAccessPoint(const Net* net, Pin& pin);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -200,6 +201,8 @@ class GlobalRouter
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
                      float ratio_margin,
+                     bool jumper_only,
+                     bool diode_only,
                      int num_threads = 1);
   void updateResources(const int& init_x,
                        const int& init_y,
@@ -302,7 +305,8 @@ class GlobalRouter
 
   bool findPinAccessPointPositions(
       const Pin& pin,
-      std::map<int, std::vector<PointPair>>& ap_positions);
+      std::map<int, std::vector<PointPair>>& ap_positions,
+      bool all_access_points = false);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -388,6 +392,7 @@ class GlobalRouter
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
+  void updatePinAccessPoints();
   void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,

@@ -87,9 +87,7 @@ using odb::dbRowDir;
 using odb::dbSite;
 using odb::dbTech;
 using odb::dbTechLayer;
-using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
-using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Point;
 using odb::Rect;
@@ -984,6 +982,24 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
         }
       }
     }
+
+    // Look for BPins
+    if (options_->areIOPinsVisible() && options_->areIOPinsSelectable()) {
+      for (auto* layer : block->getTech()->getLayers()) {
+        if (!options_->isVisible(layer)) {
+          continue;
+        }
+        for (const auto& [box, bpin] : search_.searchBPins(block,
+                                                           layer,
+                                                           region.xMin(),
+                                                           region.yMin(),
+                                                           region.xMax(),
+                                                           region.yMax(),
+                                                           shape_limit)) {
+          selections.push_back(gui_->makeSelected(bpin));
+        }
+      }
+    }
   }
 
   if (options_->areRulersVisible() && options_->areRulersSelectable()) {
@@ -1082,10 +1098,9 @@ Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
     std::vector<bool> is_selected;
     is_selected.reserve(selections.size());
     for (auto& sel : selections) {
-      is_selected.push_back(selected_.count(sel) != 0);
+      is_selected.push_back(selected_.contains(sel));
     }
-    if (std::all_of(
-            is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
+    if (std::ranges::all_of(is_selected, [](bool b) { return b; })) {
       // everything is selected, so just return first item
       return selections[0];
     }
@@ -1478,7 +1493,7 @@ LayoutViewer::getRowRects(odb::dbBlock* block, const odb::Rect& bounds)
     bool w_visible = w >= min_resolution_site;
     bool h_visible = h >= min_resolution_row;
 
-    switch (row->getOrient()) {
+    switch (row->getOrient().getValue()) {
       case dbOrientType::R0:
       case dbOrientType::R180:
       case dbOrientType::MY:
