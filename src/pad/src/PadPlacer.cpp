@@ -1134,9 +1134,9 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
       updated = true;
       // Calculate new value
       const float total_weight = weights[i] + weights[i - 1];
-      const int pooled_value
-          = (weights[i] * current_pos + weights[i - 1] * previous_pos)
-            / total_weight;
+      const int pooled_value = std::round(
+          (weights[i] * current_pos + weights[i - 1] * previous_pos)
+          / total_weight);
 
       // Update positions
       position[i] = pooled_value;
