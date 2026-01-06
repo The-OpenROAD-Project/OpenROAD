@@ -1,5 +1,7 @@
 #pragma once
+#include <cstddef>
 #include <vector>
+
 namespace utl {
 class UnionFind
 {

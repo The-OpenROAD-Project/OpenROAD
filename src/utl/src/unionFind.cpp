@@ -1,7 +1,7 @@
 #include "utl/unionFind.h"
 
+#include <cstddef>
 #include <numeric>
-#include <vector>
 
 namespace utl {
 UnionFind::UnionFind(size_t n) : parent(n), rank(n, 0)
