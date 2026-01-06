@@ -323,7 +323,9 @@ void HTreeBuilder::initSinkRegion()
   logger_->info(CTS, 26, "    Height: {:.4f}.", sinkRegion_.getHeight());
 }
 
-void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
+static void plotBlockage(std::ofstream& file,
+                         odb::dbDatabase* db_,
+                         int scalingFactor)
 {
   unsigned i = 0;
   for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
@@ -351,7 +353,8 @@ double HTreeBuilder::weightedDistance(const Point<double>& newLoc,
   return dist;
 }
 
-void plotSinks(std::ofstream& file, const std::vector<Point<double>>& sinks)
+static void plotSinks(std::ofstream& file,
+                      const std::vector<Point<double>>& sinks)
 {
   unsigned cnt = 0;
   for (const Point<double>& pt : sinks) {
@@ -407,9 +410,9 @@ void HTreeBuilder::scalePosition(Point<double>& loc,
   loc.setY(y);
 }
 
-void setSiblingPosition(const Point<double>& a,
-                        Point<double>& b,
-                        const Point<double>& parLoc)
+static void setSiblingPosition(const Point<double>& a,
+                               Point<double>& b,
+                               const Point<double>& parLoc)
 {
   double px = parLoc.getX();
   double py = parLoc.getY();

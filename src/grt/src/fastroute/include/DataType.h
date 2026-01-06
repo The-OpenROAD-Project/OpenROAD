@@ -193,7 +193,8 @@ struct GPoint3D
 
 struct Route
 {
-  RouteType type;  // type of route: LRoute, ZRoute, MazeRoute
+  RouteType type
+      = RouteType::NoRoute;  // type of route: LRoute, ZRoute, MazeRoute
 
   // valid for LRoute:
   // true - the route is horizontal first (x1, y1) - (x2, y1) - (x2, y2),
@@ -212,18 +213,20 @@ struct Route
   std::vector<GPoint3D> grids;
 
   // valid for MazeRoute: the number of edges in the route
-  int routelen;
+  int routelen = 0;
 
   int last_routelen = 0;  // the last routelen before overflow itter
 };
 
 struct TreeEdge
 {
-  bool assigned;
+  bool assigned{false};
 
   int len = 0;  // the Manhanttan Distance for two end nodes
-  int n1, n1a;
-  int n2, n2a;
+  int n1{0};
+  int n1a{0};
+  int n2{0};
+  int n2a{0};
   Route route;
   void convertToMazerouteNet(const TreeNode& p1, const TreeNode& p2);
 };

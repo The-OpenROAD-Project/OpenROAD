@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <string>
 
 #include "HelperCallBack.h"
@@ -18,11 +19,11 @@ TEST(test_suite, test_balancer)
   utl::Logger* logger = new utl::Logger();
   Distributed* dist = new Distributed(logger);
   std::string local_ip = "127.0.0.1";
-  unsigned short balancer_port = 5555;
-  unsigned short worker_port_1 = 5556;
-  unsigned short worker_port_2 = 5557;
-  unsigned short worker_port_3 = 5558;
-  unsigned short worker_port_4 = 5559;
+  uint16_t balancer_port = 5555;
+  uint16_t worker_port_1 = 5556;
+  uint16_t worker_port_2 = 5557;
+  uint16_t worker_port_3 = 5558;
+  uint16_t worker_port_4 = 5559;
   asio::io_context service;
   LoadBalancer* balancer = new LoadBalancer(
       dist, service, logger, local_ip.c_str(), "", balancer_port);
@@ -31,7 +32,7 @@ TEST(test_suite, test_balancer)
   balancer->addWorker(local_ip, worker_port_1);
   balancer->addWorker(local_ip, worker_port_2);
   asio::ip::address address;
-  unsigned short port;
+  uint16_t port;
 
   balancer->getNextWorker(address, port);
   EXPECT_EQ(address.to_string(), local_ip);

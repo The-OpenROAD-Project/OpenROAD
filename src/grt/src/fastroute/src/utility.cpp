@@ -171,8 +171,7 @@ void FastRouteCore::netpinOrderInc()
                               -totalLength});
   }
 
-  std::stable_sort(
-      tree_order_pv_.begin(), tree_order_pv_.end(), compareNetPins);
+  std::ranges::stable_sort(tree_order_pv_, compareNetPins);
 }
 
 void FastRouteCore::fillVIA()
@@ -689,7 +688,7 @@ void FastRouteCore::updateSlacks(float percentage)
           return std::tie(a.second, a.first) < std::tie(b.second, b.first);
         };
 
-  std::stable_sort(res_aware_list.begin(), res_aware_list.end(), compareSlack);
+  std::ranges::stable_sort(res_aware_list, compareSlack);
 
   // During incremental grt, enable res-aware for all nets in the list
   if (is_incremental_grt_) {
@@ -721,7 +720,7 @@ void FastRouteCore::assignEdge(const int netID,
   const int n1a = treeedge->n1a;
   const int n2a = treeedge->n2a;
 
-  std::vector<std::vector<long>> gridD;
+  std::vector<std::vector<int64_t>> gridD;
   gridD.resize(num_layers_);
   for (int i = 0; i < num_layers_; i++) {
     gridD[i].resize(treeedge->route.routelen + 1);
@@ -1156,8 +1155,8 @@ void FastRouteCore::layerAssignmentV4()
   netpinOrderInc();
 
   std::queue<int> edgeQueue;
-  for (int i = 0; i < tree_order_pv_.size(); i++) {
-    int netID = tree_order_pv_[i].treeIndex;
+  for (const auto& tree : tree_order_pv_) {
+    int netID = tree.treeIndex;
 
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
@@ -1543,8 +1542,7 @@ void FastRouteCore::StNetOrder()
     }
   }
 
-  std::stable_sort(
-      tree_order_cong_.begin(), tree_order_cong_.end(), compareTEL);
+  std::ranges::stable_sort(tree_order_cong_, compareTEL);
 
   // Set the 70% (or less) of non critical nets that doesn't have overflow
   // with the lowest priority
@@ -1566,8 +1564,7 @@ void FastRouteCore::StNetOrder()
     return net_a->getSlack() < net_b->getSlack();
   };
   // sort by slack after congestion sort
-  std::stable_sort(
-      tree_order_cong_.begin(), tree_order_cong_.end(), compareSlack);
+  std::ranges::stable_sort(tree_order_cong_, compareSlack);
 }
 
 float FastRouteCore::CalculatePartialSlack()
@@ -1583,7 +1580,7 @@ float FastRouteCore::CalculatePartialSlack()
     fr_net->setSlack(slack);
   }
 
-  std::stable_sort(slacks.begin(), slacks.end());
+  std::ranges::stable_sort(slacks);
 
   // Find the slack threshold based on the percentage of critical nets
   // defined by the user
@@ -1962,7 +1959,7 @@ void FastRouteCore::netedgeOrderDec(const int netID,
     net_eo.push_back(orderNet);
   }
 
-  std::stable_sort(net_eo.begin(), net_eo.end(), compareEdgeLen);
+  std::ranges::stable_sort(net_eo, compareEdgeLen);
 }
 
 void FastRouteCore::printEdge2D(const int netID, const int edgeID)

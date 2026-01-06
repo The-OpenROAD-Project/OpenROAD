@@ -281,9 +281,9 @@ Vertex* RecoverPower::recoverPower(const Path* path, const Slack path_slack)
     // Sort the delays for any specific path. This way we can pick the fastest
     // delay and downsize that cell to achieve our goal instead of messing with
     // too many cells.
-    sort(
-        load_delays.begin(),
-        load_delays.end(),
+    std::ranges::sort(
+        load_delays,
+
         [](const pair<int, Delay>& pair1, const pair<int, Delay>& pair2) {
           return pair1.second > pair2.second
                  || (pair1.second == pair2.second && pair1.first < pair2.first);

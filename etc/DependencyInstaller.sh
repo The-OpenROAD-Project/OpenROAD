@@ -141,7 +141,7 @@ _install_yosys() {
     local yosys_prefix=${PREFIX:-"/usr/local"}
     local yosys_installed_version="none"
     if _command_exists "yosys"; then
-        yosys_installed_version=$(yosys --version | awk '{print $2}')
+        yosys_installed_version=$(yosys -V | awk '{print $2}')
     fi
 
     local required_version="${YOSYS_VERSION#v}"

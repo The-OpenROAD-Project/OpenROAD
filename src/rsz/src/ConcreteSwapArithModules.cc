@@ -101,11 +101,10 @@ void ConcreteSwapArithModules::findCriticalInstances(
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
 
   logger_->info(
       RSZ, 153, "Identified {} violating endpoints", violating_ends.size());
@@ -235,11 +234,13 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-bool ConcreteSwapArithModules::doSwapInstances(
-    const std::set<dbModInst*>& insts,
-    const std::string& target)
+bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
+                                               const std::string& target)
 {
   int swapped_count = 0;
+
+  // Create a new inst set since old insts are destroyed
+  std::set<dbModInst*> swappedInsts;
 
   for (dbModInst* inst : insts) {
     dbModule* old_master = inst->getMaster();
@@ -271,10 +272,17 @@ bool ConcreteSwapArithModules::doSwapInstances(
                     inst->getName(),
                     old_name,
                     new_name);
-      inst->swapMaster(new_master);
-      swapped_count++;
+      dbModInst* new_inst = inst->swapMaster(new_master);
+
+      if (new_inst) {
+        swapped_count++;
+        swappedInsts.insert(new_inst);
+      }
     }
   }
+
+  insts.clear();
+  insts.insert(swappedInsts.begin(), swappedInsts.end());
 
   logger_->info(RSZ,
                 160,

@@ -1116,22 +1116,20 @@ void DefOut::Impl::writeBlockages(dbBlock* block)
 
   std::vector<dbObstruction*> sorted_obs(obstructions.begin(),
                                          obstructions.end());
-  std::sort(sorted_obs.begin(),
-            sorted_obs.end(),
-            [](dbObstruction* a, dbObstruction* b) {
-              dbBox* bbox_a = a->getBBox();
-              dbTechLayer* layer_a = bbox_a->getTechLayer();
+  std::ranges::sort(sorted_obs, [](dbObstruction* a, dbObstruction* b) {
+    dbBox* bbox_a = a->getBBox();
+    dbTechLayer* layer_a = bbox_a->getTechLayer();
 
-              dbBox* bbox_b = b->getBBox();
-              dbTechLayer* layer_b = bbox_a->getTechLayer();
-              if (layer_a != layer_b) {
-                return layer_a->getNumber() < layer_b->getNumber();
-              }
+    dbBox* bbox_b = b->getBBox();
+    dbTechLayer* layer_b = bbox_a->getTechLayer();
+    if (layer_a != layer_b) {
+      return layer_a->getNumber() < layer_b->getNumber();
+    }
 
-              Rect rect_a = bbox_a->getBox();
-              Rect rect_b = bbox_b->getBox();
-              return rect_a < rect_b;
-            });
+    Rect rect_a = bbox_a->getBox();
+    Rect rect_b = bbox_b->getBox();
+    return rect_a < rect_b;
+  });
   for (dbObstruction* obs : sorted_obs) {
     dbInst* inst = obs->getInstance();
     if (inst && _select_inst_map && !(*_select_inst_map)[inst]) {
@@ -1185,15 +1183,13 @@ void DefOut::Impl::writeBlockages(dbBlock* block)
   }
 
   std::vector<dbBlockage*> sorted_blockages(blockages.begin(), blockages.end());
-  std::sort(sorted_blockages.begin(),
-            sorted_blockages.end(),
-            [](dbBlockage* a, dbBlockage* b) {
-              dbBox* bbox_a = a->getBBox();
-              dbBox* bbox_b = b->getBBox();
-              Rect rect_a = bbox_a->getBox();
-              Rect rect_b = bbox_b->getBox();
-              return rect_a < rect_b;
-            });
+  std::ranges::sort(sorted_blockages, [](dbBlockage* a, dbBlockage* b) {
+    dbBox* bbox_a = a->getBBox();
+    dbBox* bbox_b = b->getBBox();
+    Rect rect_a = bbox_a->getBox();
+    Rect rect_b = bbox_b->getBox();
+    return rect_a < rect_b;
+  });
 
   for (dbBlockage* blk : sorted_blockages) {
     dbInst* inst = blk->getInstance();

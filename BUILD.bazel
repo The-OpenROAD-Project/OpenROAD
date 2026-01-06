@@ -125,6 +125,7 @@ OPENROAD_COPTS = [
     "-Wformat-security",
     "-Wno-sign-compare",
     "-Wno-unused-parameter",
+    "-Wmismatched-tags",
     "-fopenmp",
 ]
 

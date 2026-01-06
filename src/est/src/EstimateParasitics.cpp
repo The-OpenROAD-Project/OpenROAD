@@ -149,8 +149,8 @@ void EstimateParasitics::sortClkAndSignalLayers()
     return a->getNumber() < b->getNumber();
   };
 
-  std::sort(clk_layers_.begin(), clk_layers_.end(), sortLayers);
-  std::sort(signal_layers_.begin(), signal_layers_.end(), sortLayers);
+  std::ranges::sort(clk_layers_, sortLayers);
+  std::ranges::sort(signal_layers_, sortLayers);
 }
 
 void EstimateParasitics::setHWireSignalRC(const Corner* corner,

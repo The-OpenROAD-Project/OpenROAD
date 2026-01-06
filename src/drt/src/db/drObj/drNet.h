@@ -178,10 +178,9 @@ class drNet : public drBlockObject
   {
     std::vector<Point3D> locs;
     locs.reserve(ext_figs_updates_.size());
-    std::transform(ext_figs_updates_.begin(),
-                   ext_figs_updates_.end(),
-                   std::back_inserter(locs),
-                   [](const auto& pair) { return pair.first; });
+    std::ranges::transform(ext_figs_updates_,
+                           std::back_inserter(locs),
+                           [](const auto& pair) { return pair.first; });
     return locs;
   }
   bool isExtFigUpdateVia(const Point3D& loc) const
