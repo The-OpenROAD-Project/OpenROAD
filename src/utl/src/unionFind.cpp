@@ -1,16 +1,15 @@
 #include "utl/unionFind.h"
 
+#include <numeric>
 #include <vector>
 
 namespace utl {
-UnionFind::UnionFind(int n) : parent(n), rank(n, 0)
+UnionFind::UnionFind(size_t n) : parent(n), rank(n, 0)
 {
-  for (int i = 0; i < n; i++) {
-    parent[i] = i;
-  }
+  std::iota(parent.begin(), parent.end(), 0);
 }
 
-int UnionFind::find(int x)
+size_t UnionFind::find(size_t x)
 {
   if (parent[x] != x) {
     parent[x] = find(parent[x]);
@@ -18,10 +17,10 @@ int UnionFind::find(int x)
   return parent[x];
 }
 
-void UnionFind::unite(int x, int y)
+void UnionFind::unite(size_t x, size_t y)
 {
-  int px = find(x);
-  int py = find(y);
+  size_t px = find(x);
+  size_t py = find(y);
   if (px == py) {
     return;
   }

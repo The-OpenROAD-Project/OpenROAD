@@ -4,12 +4,12 @@ namespace utl {
 class UnionFind
 {
  public:
-  explicit UnionFind(int n);
-  int find(int x);
-  void unite(int x, int y);
+  explicit UnionFind(size_t n);
+  size_t find(size_t x);
+  void unite(size_t x, size_t y);
 
  private:
-  std::vector<int> parent;
-  std::vector<int> rank;
+  std::vector<size_t> parent;
+  std::vector<size_t> rank;
 };
 }  // namespace utl
