@@ -2000,111 +2000,109 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
     swappable_cells_cache_[source_cell] = swappable_cells;
     return swappable_cells;
-  } else {
-    LibertyCellSeq filtered_cells;
-    LibertyCellSeq candidate_cells;
-    LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
-    const bool user_function_filter = source_cell->userFunctionClass();
-    const bool filters_requested
-        = match_cell_footprint_ || user_function_filter;
-
-    if (equiv_cells) {
-      int64_t source_cell_area = master->getArea();
-      std::optional<float> source_cell_leakage;
-      if (sizing_leakage_limit_) {
-        source_cell_leakage = cellLeakage(source_cell);
-      }
-      for (LibertyCell* equiv_cell : *equiv_cells) {
-        if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
-          continue;
-        }
-
-        dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
-        if (!equiv_cell_master) {
-          continue;
-        }
-
-        if (sizing_area_limit_.has_value() && (source_cell_area != 0)
-            && (equiv_cell_master->getArea()
-                    / static_cast<double>(source_cell_area)
-                > sizing_area_limit_.value())) {
-          continue;
-        }
-
-        if (sizing_leakage_limit_ && source_cell_leakage) {
-          std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
-          if (equiv_cell_leakage
-              && (*equiv_cell_leakage / *source_cell_leakage
-                  > sizing_leakage_limit_.value())) {
-            continue;
-          }
-        }
-
-        if (sizing_keep_site_) {
-          if (master->getSite() != equiv_cell_master->getSite()) {
-            continue;
-          }
-        }
-
-        if (sizing_keep_vt_) {
-          if (cellVTType(master).vt_index
-              != cellVTType(equiv_cell_master).vt_index) {
-            continue;
-          }
-        }
-
-        candidate_cells.push_back(equiv_cell);
-
-        bool passes_optional_filters = true;
-        if (match_cell_footprint_) {
-          const bool footprints_match = sta::stringEqIf(
-              source_cell->footprint(), equiv_cell->footprint());
-          if (!footprints_match) {
-            passes_optional_filters = false;
-          }
-        }
-
-        if (user_function_filter) {
-          const bool user_function_classes_match
-              = sta::stringEqIf(source_cell->userFunctionClass(),
-                                equiv_cell->userFunctionClass());
-          if (!user_function_classes_match) {
-            passes_optional_filters = false;
-          }
-        }
-
-        if (passes_optional_filters) {
-          filtered_cells.push_back(equiv_cell);
-        }
-      }
-    } else {
-      candidate_cells.push_back(source_cell);
-      filtered_cells.push_back(source_cell);
-    }
-
-    bool fell_back_to_equiv = false;
-    LibertyCellSeq result;
-    if (!filtered_cells.empty()) {
-      result = std::move(filtered_cells);
-    } else if (filters_requested && !candidate_cells.empty()) {
-      fell_back_to_equiv = true;
-      result = std::move(candidate_cells);
-    } else {
-      result = std::move(candidate_cells);
-    }
-
-    if (fell_back_to_equiv) {
-      logger_->warn(
-          RSZ,
-          170,
-          "No swappable cells for {} with requested filters; falling back to "
-          "unfiltered equivalents.",
-          source_cell->name());
-    }
-
-    swappable_cells_cache_[source_cell] = std::move(result);
-    return swappable_cells_cache_[source_cell];
   }
+
+  LibertyCellSeq filtered_cells;
+  LibertyCellSeq candidate_cells;
+  LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  const bool user_function_filter = source_cell->userFunctionClass();
+  const bool filters_requested = match_cell_footprint_ || user_function_filter;
+
+  if (equiv_cells) {
+    int64_t source_cell_area = master->getArea();
+    std::optional<float> source_cell_leakage;
+    if (sizing_leakage_limit_) {
+      source_cell_leakage = cellLeakage(source_cell);
+    }
+    for (LibertyCell* equiv_cell : *equiv_cells) {
+      if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
+        continue;
+      }
+
+      dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
+      if (!equiv_cell_master) {
+        continue;
+      }
+
+      if (sizing_area_limit_.has_value() && (source_cell_area != 0)
+          && (equiv_cell_master->getArea()
+                  / static_cast<double>(source_cell_area)
+              > sizing_area_limit_.value())) {
+        continue;
+      }
+
+      if (sizing_leakage_limit_ && source_cell_leakage) {
+        std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
+        if (equiv_cell_leakage
+            && (*equiv_cell_leakage / *source_cell_leakage
+                > sizing_leakage_limit_.value())) {
+          continue;
+        }
+      }
+
+      if (sizing_keep_site_) {
+        if (master->getSite() != equiv_cell_master->getSite()) {
+          continue;
+        }
+      }
+
+      if (sizing_keep_vt_) {
+        if (cellVTType(master).vt_index
+            != cellVTType(equiv_cell_master).vt_index) {
+          continue;
+        }
+      }
+
+      candidate_cells.push_back(equiv_cell);
+
+      bool passes_optional_filters = true;
+      if (match_cell_footprint_) {
+        const bool footprints_match = sta::stringEqIf(source_cell->footprint(),
+                                                      equiv_cell->footprint());
+        if (!footprints_match) {
+          passes_optional_filters = false;
+        }
+      }
+
+      if (user_function_filter) {
+        const bool user_function_classes_match = sta::stringEqIf(
+            source_cell->userFunctionClass(), equiv_cell->userFunctionClass());
+        if (!user_function_classes_match) {
+          passes_optional_filters = false;
+        }
+      }
+
+      if (passes_optional_filters) {
+        filtered_cells.push_back(equiv_cell);
+      }
+    }
+  } else {
+    candidate_cells.push_back(source_cell);
+    filtered_cells.push_back(source_cell);
+  }
+
+  bool fell_back_to_equiv = false;
+  LibertyCellSeq result;
+  if (!filtered_cells.empty()) {
+    result = std::move(filtered_cells);
+  } else if (filters_requested && !candidate_cells.empty()) {
+    fell_back_to_equiv = true;
+    result = std::move(candidate_cells);
+  } else {
+    result = std::move(candidate_cells);
+  }
+
+  if (fell_back_to_equiv) {
+    logger_->warn(
+        RSZ,
+        170,
+        "No swappable cells for {} with requested filters; falling back to "
+        "unfiltered equivalents.",
+        source_cell->name());
+  }
+
+  swappable_cells_cache_[source_cell] = std::move(result);
+  return swappable_cells_cache_[source_cell];
 }
 
 size_t getCommonLength(const std::string& string1, const std::string& string2)

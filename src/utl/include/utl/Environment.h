@@ -24,10 +24,9 @@ inline bool envVarTruthy(const char* name)
   }
   const size_t end = value.find_last_not_of(" \t\n\r");
   value = value.substr(start, end - start + 1);
-  std::transform(
-      value.begin(), value.end(), value.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-      });
+  std::ranges::transform(value, value.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
   return value == "1" || value == "true" || value == "yes" || value == "on";
 }
 
