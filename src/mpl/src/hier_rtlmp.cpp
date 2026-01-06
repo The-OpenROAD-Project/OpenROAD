@@ -977,7 +977,7 @@ void HierRTLMP::createBlockagesForIOBundles()
   for (Cluster* io_bundle : io_bundles) {
     const float number_of_ios
         = static_cast<float>(clustering_engine_->getNumberOfIOs(io_bundle));
-    const float io_density_factor = number_of_ios / total_fixed_ios;
+    const float io_density_factor = 1.0 + (number_of_ios / total_fixed_ios);
     const int depth = base_depth * io_density_factor;
     const odb::Rect rect = io_bundle->getBBox();
     const odb::Line line = rectToLine(block_, rect, logger_);
@@ -1078,7 +1078,7 @@ void HierRTLMP::createBlockagesForConstraintRegions()
         = clustering_engine_->getNumberOfIOs(cluster_of_unplaced_ios);
 
     const float io_density_factor
-        = cluster_number_of_ios / static_cast<float>(total_ios);
+        = 1.0 + (cluster_number_of_ios / static_cast<float>(total_ios));
     const int depth = base_depth * io_density_factor;
 
     const odb::Rect region_rect = cluster_of_unplaced_ios->getBBox();
@@ -1473,37 +1473,20 @@ void HierRTLMP::placeChildren(Cluster* parent)
   const int num_perturb_per_step
       = std::max(static_cast<int>(macros.size()), num_perturb_per_step_);
 
-  const float utilization_step = 0.002;  // 0.2% Increase per attempt.
-  const int total_number_of_runs
-      = (1.0 - target_utilization_) / utilization_step;
-
-  std::vector<float> utilizations(total_number_of_runs);
-  for (int i = 0; i < total_number_of_runs; i++) {
-    utilizations[i] = target_utilization_ + (i * utilization_step);
-  }
-
+  const int total_number_of_runs = 10;
+  std::vector<float> utilization_list
+      = computeUtilizationList(total_number_of_runs);
   int remaining_runs = total_number_of_runs;
   int run_id = 0;
 
   std::unique_ptr<SACoreSoftMacro> best_sa;
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
-    const bool first_batch = remaining_runs == total_number_of_runs;
     const int number_of_attempts
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
 
-    if (!first_batch) {
-      logger_->warn(MPL,
-                    64,
-                    "Failed to find a valid solution. Attempting annealing "
-                    "with new utilization range: [{}, {}] -- ({} step)",
-                    utilizations[run_id],
-                    utilizations[run_id + number_of_attempts],
-                    utilization_step);
-    }
-
     for (int i = 0; i < number_of_attempts; i++) {
-      const float utilization = utilizations[run_id++];
+      const float utilization = utilization_list[run_id++];
       if (!validUtilization(utilization, outline, macros)) {
         continue;
       }
@@ -1553,6 +1536,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
       }
     }
 
+    const bool first_batch = remaining_runs == total_number_of_runs;
     remaining_runs -= number_of_attempts;
 
     for (int sa_index = 0; sa_index < sa_batch.size(); ++sa_index) {
@@ -1567,7 +1551,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
                         55,
                         "Couldn't find a solution for the specified "
                         "utilization. The utilization was adjusted to {}.",
-                        utilizations[utilization_index]);
+                        utilization_list[utilization_index]);
         }
 
         best_sa = std::move(sa);
@@ -1608,6 +1592,30 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   clustering_engine_->updateInstancesAssociation(parent);
+}
+
+std::vector<float> HierRTLMP::computeUtilizationList(
+    const float total_number_of_runs) const
+{
+  std::vector<float> utilization_list(total_number_of_runs);
+  const float maximum_utilization = 1.0;
+  const float exponential_ratio
+      = std::pow(maximum_utilization / target_utilization_,
+                 (1.0 / (total_number_of_runs - 1.0)));
+
+  for (int i = 0; i < total_number_of_runs; i++) {
+    utilization_list[i] = target_utilization_ * std::pow(exponential_ratio, i);
+
+    debugPrint(logger_,
+               MPL,
+               "fine_shaping",
+               1,
+               "Utilization List[{}] = {}",
+               i,
+               utilization_list[i]);
+  }
+
+  return utilization_list;
 }
 
 // Find the area of blockages that are inside the outline.

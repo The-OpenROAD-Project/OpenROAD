@@ -165,6 +165,7 @@ class HierRTLMP
 
   // Fine Shaping
   void setMacroClustersShapes(std::vector<SoftMacro>& soft_macros) const;
+  std::vector<float> computeUtilizationList(float total_number_of_runs) const;
   bool validUtilization(float utilization,
                         const odb::Rect& outline,
                         const std::vector<SoftMacro>& soft_macros) const;
