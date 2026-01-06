@@ -452,6 +452,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Library analysis data
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
+  // Compute slew RC factor based on library slew thresholds
+  float getSlewRCFactor() const;
+
  protected:
   void init();
   double computeDesignArea();

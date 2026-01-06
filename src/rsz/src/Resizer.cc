@@ -5426,4 +5426,10 @@ void Resizer::inferClockBufferList(const char* lib_name,
   }
 }
 
+float Resizer::getSlewRCFactor() const
+{
+  return repair_design_->getSlewRCFactor();
+}
+
+
 }  // namespace rsz

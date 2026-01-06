@@ -148,7 +148,6 @@ class BaseMove : public sta::dbStaState
   dbNetwork* db_network_;
   dbSta* sta_;
   dbDatabase* db_ = nullptr;
-  int dbu_ = 0;
   dpl::Opendp* opendp_ = nullptr;
   const Corner* corner_ = nullptr;
 
