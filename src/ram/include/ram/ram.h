@@ -26,6 +26,10 @@ namespace utl {
 class Logger;
 }
 
+namespace pdn{
+class PdnGen;
+}
+
 namespace ram {
 
 using utl::Logger;
@@ -38,7 +42,7 @@ class Grid;
 class RamGen
 {
  public:
-  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger);
+  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen);
   ~RamGen() = default;
 
   void generate(int bytes_per_word,
@@ -101,6 +105,7 @@ class RamGen
   odb::dbDatabase* db_;
   odb::dbBlock* block_{nullptr};
   Logger* logger_;
+  pdn::PdnGen* pdngen_{nullptr};
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};

@@ -181,25 +181,25 @@ proc generate_ram { args } {
     utl::error RAM 18 "The -filler_cells argument must be specified."
   }
 
-#  add_global_connection -net VDD -pin_pattern $power_net -power
-#  add_global_connection -net VSS -pin_pattern $ground_net -ground
+# add_global_connection -net VDD -pin_pattern $power_net -power
+# add_global_connection -net VSS -pin_pattern $ground_net -ground
+
+# global_connect
+
+# set_voltage_domain -power VDD -ground VSS
+# define_pdn_grid -name ram_grid -voltage_domains {CORE}
+
+# add_pdn_stripe -grid ram_grid -layer $route_name \
+#  -width $route_width -followpins -extend_to_boundary
+# add_pdn_stripe -grid ram_grid -layer $ver_name \
+#  -width $ver_width -pitch $ver_pitch -extend_to_boundary
+# add_pdn_stripe -grid ram_grid -layer $hor_name \
+#  -width $hor_width -pitch $hor_pitch -extend_to_boundary
 #
-#  global_connect
+# add_pdn_connect -layers [list $route_name $ver_name]
+# add_pdn_connect -layers [list $ver_name $hor_name]
 
-#  set_voltage_domain -power VDD -ground VSS
-  define_pdn_grid -name ram_grid -voltage_domains {CORE}
-
-  add_pdn_stripe -grid ram_grid -layer $route_name \
-    -width $route_width -followpins -extend_to_boundary
-  add_pdn_stripe -grid ram_grid -layer $ver_name \
-    -width $ver_width -pitch $ver_pitch -extend_to_boundary
-  add_pdn_stripe -grid ram_grid -layer $hor_name \
-    -width $hor_width -pitch $hor_pitch -extend_to_boundary
-
-  add_pdn_connect -layers [list $route_name $ver_name]
-  add_pdn_connect -layers [list $ver_name $hor_name]
-
-  pdngen
+# pdngen
 
   make_tracks -x_offset 0 -y_offset 0
   set_io_pin_constraint -direction output -region top:*
