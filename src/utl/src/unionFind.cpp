@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2026, The OpenROAD Authors
+
 #include "utl/unionFind.h"
 
 #include <cstddef>
@@ -19,8 +22,8 @@ size_t UnionFind::find(size_t x)
 
 void UnionFind::unite(size_t x, size_t y)
 {
-  size_t px = find(x);
-  size_t py = find(y);
+  const size_t px = find(x);
+  const size_t py = find(y);
   if (px == py) {
     return;
   }
