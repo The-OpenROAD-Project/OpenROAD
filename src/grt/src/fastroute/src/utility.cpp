@@ -162,13 +162,8 @@ void FastRouteCore::netpinOrderInc()
     const int is_clock
         = (enable_resistance_aware_) ? !nets_[netID]->isClock() : 0;
 
-    tree_order_pv_.push_back({netID,
-                              xmin,
-                              length_per_pin,
-                              ndr_priority,
-                              res_aware_score,
-                              is_clock,
-                              -totalLength});
+    tree_order_pv_.push_back(
+        {netID, xmin, length_per_pin, ndr_priority, res_aware_score, is_clock});
   }
 
   std::ranges::stable_sort(tree_order_pv_, compareNetPins);
