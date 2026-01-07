@@ -41,6 +41,7 @@ std::string FlexDRFlow::getFlowName() const
     case State::SKIP:
       return "skip";
   }
+  return "";
 }
 
 void FlexDRFlow::setLastIterationEffective(bool value)
