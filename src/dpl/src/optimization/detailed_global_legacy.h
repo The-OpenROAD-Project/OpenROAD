@@ -18,9 +18,9 @@ class DetailedMgr;
 class Network;
 
 namespace legacy {
-using ::dpl::Edge;
 using ::dpl::Architecture;
 using ::dpl::DetailedMgr;
+using ::dpl::Edge;
 using ::dpl::Network;
 
 class DetailedGlobalSwap : public DetailedGenerator
@@ -62,7 +62,6 @@ class DetailedGlobalSwap : public DetailedGenerator
   int moves_;
   int swaps_;
 };
-
 
 }  // namespace legacy
 
