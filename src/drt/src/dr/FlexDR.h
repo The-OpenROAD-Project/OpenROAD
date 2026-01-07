@@ -28,7 +28,6 @@
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
-#include "dr/FlexDRFlowStateMachine.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
@@ -71,6 +70,7 @@ struct FlexDRViaData
   friend class boost::serialization::access;
 };
 
+class FlexDRFlow;
 class FlexDR
 {
  public:
@@ -94,15 +94,6 @@ class FlexDR
     int last_reported_perc{0};
     frTime time;
   };
-  struct IterationsControl
-  {
-    SearchRepairArgs last_args;
-    bool fixing_max_spacing{false};
-
-    // State machine for flow decision logic
-    FlexDRFlowStateMachine flow_state_machine;
-  };
-
   // constructors
   FlexDR(TritonRoute* router,
          frDesign* designIn,
@@ -117,8 +108,7 @@ class FlexDR
   // others
   void init();
   int main();
-  void searchRepair(const SearchRepairArgs& args,
-                    FlexDRFlowStateMachine::FlowState flow_state);
+  void searchRepair(const SearchRepairArgs& args);
   void end(bool done = false);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
@@ -148,10 +138,9 @@ class FlexDR
   void incIter() { ++iter_; }
   // maxSpacing fix
   void fixMaxSpacing();
-  FlexDRFlowStateMachine::FlowState getFlowState(const SearchRepairArgs& args);
 
  private:
-  IterationsControl control_;
+  std::unique_ptr<FlexDRFlow> flow_state_machine_;
   TritonRoute* router_;
   frDesign* design_;
   utl::Logger* logger_;
@@ -215,6 +204,46 @@ class FlexDR
                       IterationProgress& iter_prog);
   void optimizationFlow(const SearchRepairArgs& args,
                         IterationProgress& iter_prog);
+};
+
+class FlexDRFlow
+{
+ public:
+  enum class State
+  {
+    OPTIMIZATION,
+    STUBBORN,
+    GUIDES,
+    SKIP
+  };
+
+  struct FlowContext
+  {
+    int num_violations{0};
+    FlexDR::SearchRepairArgs args;
+  };
+
+  FlexDRFlow() = default;
+
+  State determineNextFlow(const FlowContext& context);
+
+  State getCurrentState() const;
+
+  std::string getFlowName() const;
+
+  void setLastIterationEffective(bool value);
+
+  void setFixingMaxSpacing(bool value);
+
+ private:
+  bool isArgsChanged(const FlowContext& context) const;
+
+  State current_state_{State::OPTIMIZATION};
+  bool last_iteration_effective_{true};
+  bool fixing_max_spacing_{false};
+  FlexDR::SearchRepairArgs last_args_;
+
+  static constexpr int STUBBORN_FLOW_VIOLATION_THRESHOLD = 11;
 };
 
 class FlexDRWorker;

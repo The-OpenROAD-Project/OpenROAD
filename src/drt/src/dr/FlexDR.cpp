@@ -107,7 +107,8 @@ FlexDR::FlexDR(TritonRoute* router,
                utl::Logger* loggerIn,
                odb::dbDatabase* dbIn,
                RouterConfiguration* router_cfg)
-    : router_(router),
+    : flow_state_machine_(std::make_unique<FlexDRFlow>()),
+      router_(router),
       design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
@@ -1101,7 +1102,6 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   if (graphics_) {
     graphics_->startIter(iter_, router_cfg_);
   }
-  control_.flow_state_machine.reset();
   std::vector<odb::Rect> drv_boxes;
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
     auto box = marker->getBBox();
@@ -1178,10 +1178,7 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
     }
     batch.clear();
   }
-  if (!changed) {
-    control_.flow_state_machine.setWaitingForChange(true);
-    control_.last_args = args;
-  }
+  flow_state_machine_->setLastIterationEffective(changed);
 }
 
 void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
@@ -1264,7 +1261,7 @@ void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
     }
     batch.clear();
   }
-  control_.flow_state_machine.setTriedGuideFlow(true);
+  flow_state_machine_->setLastIterationEffective(changed);
 }
 void FlexDR::optimizationFlow(const SearchRepairArgs& args,
                               IterationProgress& iter_prog)
@@ -1338,21 +1335,12 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
   }
 }
 
-FlexDRFlowStateMachine::FlowState FlexDR::getFlowState(
-    const SearchRepairArgs& args)
+void FlexDR::searchRepair(const SearchRepairArgs& args)
 {
-  FlexDRFlowStateMachine::FlowContext flow_context;
-  flow_context.num_violations = getDesign()->getTopBlock()->getNumMarkers();
-  flow_context.ripup_mode = args.ripupMode;
-  flow_context.fixing_max_spacing = control_.fixing_max_spacing;
-  flow_context.args_changed
-      = !args.isEqualIgnoringSizeAndOffset(control_.last_args);
-  return control_.flow_state_machine.determineNextFlow(flow_context);
-}
+  // Calculate flow state
+  const auto flow_state = flow_state_machine_->determineNextFlow(
+      {getDesign()->getTopBlock()->getNumMarkers(), args});
 
-void FlexDR::searchRepair(const SearchRepairArgs& args,
-                          FlexDRFlowStateMachine::FlowState flow_state)
-{
   const RipUpMode ripupMode = args.ripupMode;
   if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
       && getDesign()->getTopBlock()->getMarkers().empty()) {
@@ -1366,28 +1354,32 @@ void FlexDR::searchRepair(const SearchRepairArgs& args,
       router_->writeGlobals(router_cfg_path_);
     }
   }
+
+  if (router_cfg_->VERBOSE > 0) {
+    if (flow_state != FlexDRFlow::State::SKIP) {
+      printIteration(logger_, iter_, flow_state_machine_->getFlowName());
+    } else {
+      logger_->info(DRT, 200, "Skipping iteration {}", iter_);
+    }
+  }
   // start timer for the current iteration
   IterationProgress iter_prog;
-  if (router_cfg_->VERBOSE > 0) {
-    printIteration(
-        logger_, iter_, FlexDRFlowStateMachine::getFlowName(flow_state));
-  }
 
   switch (flow_state) {
-    case FlexDRFlowStateMachine::FlowState::GUIDES:
+    case FlexDRFlow::State::GUIDES:
       guideTilesFlow(args, iter_prog);
       break;
 
-    case FlexDRFlowStateMachine::FlowState::STUBBORN:
+    case FlexDRFlow::State::STUBBORN:
       stubbornTilesFlow(args, iter_prog);
       break;
 
-    case FlexDRFlowStateMachine::FlowState::OPTIMIZATION:
+    case FlexDRFlow::State::OPTIMIZATION:
       optimizationFlow(args, iter_prog);
       break;
 
-    case FlexDRFlowStateMachine::FlowState::SKIP:
-      break;
+    case FlexDRFlow::State::SKIP:
+      return;
   }
 
   if (router_cfg_->VERBOSE > 0) {
@@ -1399,7 +1391,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args,
   FlexDRConnectivityChecker checker(
       router_, logger_, router_cfg_, graphics_.get(), dist_on_);
   checker.check(iter_);
-  control_.fixing_max_spacing = false;
+  flow_state_machine_->setFixingMaxSpacing(false);
   if (getDesign()->getTopBlock()->getNumMarkers() == 0
       && getTech()->hasMaxSpacingConstraints()) {
     fixMaxSpacing();
@@ -1894,7 +1886,7 @@ void FlexDR::fixMaxSpacing()
       worker->end(getDesign());
     }
   }
-  control_.fixing_max_spacing = true;
+  flow_state_machine_->setFixingMaxSpacing(true);
 }
 
 std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
@@ -1995,16 +1987,7 @@ int FlexDR::main()
         args.ripupMode = RipUpMode::INCR;
       }
     }
-    // Calculate flow state
-    auto flow_state = getFlowState(args);
-    if (flow_state == FlexDRFlowStateMachine::FlowState::SKIP) {
-      if (router_cfg_->VERBOSE > 0) {
-        logger_->info(DRT, 200, "Skipping iteration {}", iter_);
-      }
-      ++iter_;
-      continue;
-    }
-    searchRepair(args, flow_state);
+    searchRepair(args);
     if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
       break;
     }

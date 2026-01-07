@@ -705,8 +705,7 @@ void TritonRoute::stepDR(int size,
                                    workerMarkerDecay,
                                    getMode(ripupMode),
                                    followGuide};
-  FlexDRFlowStateMachine::FlowState flow_state = dr_->getFlowState(args);
-  dr_->searchRepair(args, flow_state);
+  dr_->searchRepair(args);
   dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
