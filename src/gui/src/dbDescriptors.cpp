@@ -1634,6 +1634,9 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
 {
   odb::dbObject* sink_object = getSink(object);
   auto net = getObject(object);
+  if (net == nullptr) {
+    return;
+  }
 
   auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
