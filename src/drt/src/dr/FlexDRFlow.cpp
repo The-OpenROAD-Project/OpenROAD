@@ -13,9 +13,9 @@ FlexDRFlow::State FlexDRFlow::determineNextFlow(const FlowContext& context)
     current_state_ = State::OPTIMIZATION;
   } else {
     if (last_iteration_effective_ || isArgsChanged(context)) {
-      current_state_ = State::STUBBORN;
-    } else if (current_state_ == State::STUBBORN) {
       current_state_ = State::GUIDES;
+    } else if (current_state_ == State::GUIDES) {
+      current_state_ = State::STUBBORN;
     } else {
       current_state_ = State::SKIP;
     }
