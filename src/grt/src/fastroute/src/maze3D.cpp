@@ -696,7 +696,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   }
 
   if (enable_resistance_aware_) {
-    updateSlacks(0.15);
+    updateSlacks();
     netpinOrderInc();
   }
 
@@ -707,6 +707,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     FrNet* net = nets_[netID];
     int8_t edge_cost = 0;
+
+    // Debug mode Tree 3D after layer assignament
+    if (debug_->isOn() && debug_->tree3D) {
+      if (net->getDbNet() == debug_->net) {
+        StTreeVisualization(sttrees_[netID], net, true);
+      }
+    }
 
     // Enable resistance aware routing only if the net needs it
     if (enable_resistance_aware_) {

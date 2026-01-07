@@ -108,10 +108,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool isResAware() { return is_res_aware_; }
   float getResistance() { return resistance_; }
   void setResistance(float resistance) { resistance_ = resistance; }
-  int getStNetLength() { return net_length_; }
-  void setStNetLength(int net_length) { net_length_ = net_length; }
-  int getRouteLength() { return route_length_; }
-  void setRouteLength(int route_length) { route_length_ = route_length; }
+  int getNetLength() { return net_length_; }
+  void setNetLength(int net_length) { net_length_ = net_length; }
 
  private:
   odb::dbNet* db_net_;
@@ -128,8 +126,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool is_soft_ndr_ = false;
   bool is_res_aware_ = false;
   float resistance_;
-  int net_length_;    // Steiner net length
-  int route_length_;  // Route length
+  int net_length_;
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };

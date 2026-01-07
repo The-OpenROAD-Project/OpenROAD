@@ -102,14 +102,20 @@ void FastRouteCore::ConvertToFull3DType2()
   }
 }
 
+// Resistance-aware score calculation to order critical nets
 float FastRouteCore::getResAwareScore(FrNet* net)
 {
-  return net->getResistance() / 10  // net resistance considering vias
-         + (!is_incremental_grt_
-                ? -5 * (net->getSlack() < 0 ? net->getSlack() : 0) / 1e-12
-                : 0)                   // worst slack in ps
-         + net->getNumPins() * 5       // fanout
-         + net->getRouteLength() * 5;  // net route length in gcells
+  const float RESISTANCE_WEIGHT = 0.1f;
+  const float SLACK_WEIGHT = 5.0f;
+  const float FANOUT_WEIGHT = 5.0f;
+  const float ROUTE_LENGTH_WEIGHT = 5.0f;
+
+  return net->getResistance() * RESISTANCE_WEIGHT
+         + (!is_incremental_grt_ && net->getSlack() < 0
+                ? -SLACK_WEIGHT * net->getSlack() / 1e-12
+                : 0)
+         + net->getNumPins() * FANOUT_WEIGHT
+         + net->getNetLength() * ROUTE_LENGTH_WEIGHT;
 }
 
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
@@ -569,7 +575,7 @@ int FastRouteCore::getViaResistanceCost(const int from_layer,
   }
 
   if (abs(to_layer - from_layer) == 0) {
-    return 0.0;  // Same layer, no via needed
+    return 0;  // Same layer, no via needed
   }
 
   // Calculate total resistance
@@ -606,7 +612,7 @@ float FastRouteCore::getNetResistance(FrNet* net, bool assume_layer)
       } else {
         if (!assume_layer) {
           total_resistance
-              += getViaResistanceCost(grids[i].layer, grids[i + 1].layer);
+              += getViaResistance(grids[i].layer, grids[i + 1].layer);
         }
       }
     }
@@ -620,7 +626,7 @@ void FastRouteCore::setIncrementalGrt(bool is_incremental)
   is_incremental_grt_ = is_incremental;
 }
 
-// Update and sort the nets by the worst slack. Finally pick a percentage of the
+// Update and sort the critical nets. Finally pick a percentage of the
 // nets to use the resistance-aware strategy
 void FastRouteCore::updateSlacks(float percentage)
 {
@@ -636,6 +642,8 @@ void FastRouteCore::updateSlacks(float percentage)
     callback_handler_->triggerOnEstimateParasiticsRequired();
   }
 
+  const int SHORT_NET_THRESHOLD = 3;
+
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
     float slack = 0;
@@ -646,15 +654,12 @@ void FastRouteCore::updateSlacks(float percentage)
     // Calculate net size (steiner size) and route length
     auto& treeedges = sttrees_[net_id].edges;
     int net_size = 0;
-    int route_size = 0;
     for (const auto& edge : treeedges) {
       net_size += edge.len;
-      route_size += edge.route.routelen;
     }
-    net->setStNetLength(net_size);
-    net->setRouteLength(route_size);
+    net->setNetLength(net_size);
 
-    bool is_short_net = route_size <= 3;
+    bool is_short_net = net_size <= SHORT_NET_THRESHOLD;
     bool is_unconstrained_net = slack == sta::INF;
 
     // Dont apply res-aware to unconstrained and short nets
