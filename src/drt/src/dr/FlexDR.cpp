@@ -1207,6 +1207,7 @@ void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
   if (workers.empty()) {
     iter_prog.total_num_workers = 1;
     iter_prog.cnt_done_workers = 1;
+    flow_state_machine_->setLastIterationEffective(false);
     return;
   }
 
