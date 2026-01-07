@@ -801,86 +801,113 @@ bool RepairDesign::performGainBuffering(Net* net,
       break;
     }
 
-    // Get scope of driver, put any new buffers in that scope
-    sta::Pin* driver_pin = nullptr;
-    odb::dbModule* driver_parent = db_network_->getNetDriverParentModule(
-        net, driver_pin, db_network_->hasHierarchy());
-    odb::dbModInst* parent_mod_inst = driver_parent->getModInst();
-    Instance* parent;
-    if (parent_mod_inst) {
-      parent = db_network_->dbToSta(parent_mod_inst);
-    } else {
-      parent = db_network_->topInstance();
-    }
-
-    // note any hierarchical nets.
-    // and move them to the output of the buffer.
-    odb::dbModNet* driver_mod_net = db_network_->hierNet(driver_pin);
-    if (driver_mod_net) {
-      // only disconnect the modnet, we hook it to the output of the buffer.
-      db_network_->disconnectPin(driver_pin,
-                                 db_network_->dbToSta(driver_mod_net));
-    }
-
-    Net* new_net = db_network_->makeNet(parent);
-    dbNet* net_db = db_network_->staToDb(net);
-    dbNet* new_net_db = db_network_->staToDb(new_net);
-    new_net_db->setSigType(net_db->getSigType());
-    // TODO: Propagate NDR settings
-    if (net_db->getNonDefaultRule()) {
-      new_net_db->setNonDefaultRule(net_db->getNonDefaultRule());
-    }
-
-    const Point drvr_loc = db_network_->location(drvr_pin);
-
-    // create instance in driver parent
-    Instance* inst = resizer_->makeBuffer(*size, "gain", parent, drvr_loc);
-
     LibertyPort *size_in, *size_out;
     (*size)->bufferPorts(size_in, size_out);
-    Pin* buffer_ip_pin = nullptr;
-    Pin* buffer_op_pin = nullptr;
-    resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
-    db_network_->connectPin(buffer_ip_pin, net);
-
-    // connect the buffer output to the new flat net and any modnet
-    // Keep the original input net driving the buffer.
-    // Update the hierarchical net/flat net correspondence because
-    // the hierarhical net is moved to the output of the buffer.
-
-    db_network_->connectPin(
-        buffer_op_pin, new_net, db_network_->dbToSta(driver_mod_net));
-
-    repaired_net = true;
-    inserted_buffer_count_++;
-    if (graphics_) {
-      dbInst* db_inst = db_network_->staToDb(inst);
-      graphics_->makeBuffer(db_inst);
-    }
-
     int max_level = 0;
-    for (auto it = sinks.begin(); it != group_end; it++) {
-      Pin* sink_pin = it->pin;
-      LibertyPort* sink_port = network_->libertyPort(it->pin);
-      Instance* sink_inst = network_->instance(it->pin);
-      load -= sink_port->capacitance();
-      max_level = std::max(it->level, max_level);
+    Pin* new_input_pin = nullptr;
 
-      odb::dbModNet* sink_mod_net = db_network_->hierNet(sink_pin);
-      // rewire the sink pin, taking care of both the flat net
-      // and the hierarchical net. Update the hierarchical net
-      // flat net correspondence
-      db_network_->disconnectPin(sink_pin);
-      db_network_->connectPin(sink_pin,
-                              db_network_->dbToSta(new_net_db),
-                              db_network_->dbToSta(sink_mod_net));
-      if (it->level == 0) {
-        Pin* new_pin = network_->findPin(sink_inst, sink_port);
-        tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
+    if (logger_->debugCheck(RSZ, "gain_buffering_old", 1)) {
+      // Get scope of driver, put any new buffers in that scope
+      sta::Pin* driver_pin = nullptr;
+      odb::dbModule* driver_parent = db_network_->getNetDriverParentModule(
+          net, driver_pin, db_network_->hasHierarchy());
+      odb::dbModInst* parent_mod_inst = driver_parent->getModInst();
+      Instance* parent;
+      if (parent_mod_inst) {
+        parent = db_network_->dbToSta(parent_mod_inst);
+      } else {
+        parent = db_network_->topInstance();
+      }
+
+      // note any hierarchical nets.
+      // and move them to the output of the buffer.
+      odb::dbModNet* driver_mod_net = db_network_->hierNet(driver_pin);
+      if (driver_mod_net) {
+        // only disconnect the modnet, we hook it to the output of the buffer.
+        db_network_->disconnectPin(driver_pin,
+                                   db_network_->dbToSta(driver_mod_net));
+      }
+
+      Net* new_net = db_network_->makeNet(parent);
+      dbNet* net_db = db_network_->staToDb(net);
+      dbNet* new_net_db = db_network_->staToDb(new_net);
+      new_net_db->setSigType(net_db->getSigType());
+      // TODO: Propagate NDR settings
+      if (net_db->getNonDefaultRule()) {
+        new_net_db->setNonDefaultRule(net_db->getNonDefaultRule());
+      }
+
+      const Point drvr_loc = db_network_->location(drvr_pin);
+
+      // create instance in driver parent
+      Instance* inst = resizer_->makeBuffer(*size, "gain", parent, drvr_loc);
+
+      Pin* buffer_ip_pin = nullptr;
+      Pin* buffer_op_pin = nullptr;
+      resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
+      db_network_->connectPin(buffer_ip_pin, net);
+
+      // connect the buffer output to the new flat net and any modnet
+      // Keep the original input net driving the buffer.
+      // Update the hierarchical net/flat net correspondence because
+      // the hierarhical net is moved to the output of the buffer.
+
+      db_network_->connectPin(
+          buffer_op_pin, new_net, db_network_->dbToSta(driver_mod_net));
+
+      repaired_net = true;
+      inserted_buffer_count_++;
+      if (graphics_) {
+        dbInst* db_inst = db_network_->staToDb(inst);
+        graphics_->makeBuffer(db_inst);
+      }
+
+      for (auto it = sinks.begin(); it != group_end; it++) {
+        Pin* sink_pin = it->pin;
+        LibertyPort* sink_port = network_->libertyPort(it->pin);
+        Instance* sink_inst = network_->instance(it->pin);
+        load -= sink_port->capacitance();
+        max_level = std::max(it->level, max_level);
+
+        odb::dbModNet* sink_mod_net = db_network_->hierNet(sink_pin);
+        // rewire the sink pin, taking care of both the flat net
+        // and the hierarchical net. Update the hierarchical net
+        // flat net correspondence
+        db_network_->disconnectPin(sink_pin);
+        db_network_->connectPin(sink_pin,
+                                db_network_->dbToSta(new_net_db),
+                                db_network_->dbToSta(sink_mod_net));
+        if (it->level == 0) {
+          Pin* new_pin = network_->findPin(sink_inst, sink_port);
+          tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
+        }
+      }
+
+      new_input_pin = buffer_ip_pin;
+    } else {
+      const Point drvr_loc = db_network_->location(drvr_pin);
+      PinSet group_set(db_network_);
+      for (auto it = sinks.begin(); it != group_end; it++) {
+        group_set.insert(it->pin);
+        max_level = std::max(it->level, max_level);
+        load -= network_->libertyPort(it->pin)->capacitance();
+        if (it->level == 0) {
+          tree_boundary.push_back(graph_->pinLoadVertex(it->pin));
+        }
+      }
+      Instance* inst = resizer_->insertBufferBeforeLoads(
+          net, &group_set, *size, &drvr_loc, "gain");
+      if (inst) {
+        repaired_net = true;
+        inserted_buffer_count_++;
+        if (graphics_) {
+          graphics_->makeBuffer(db_network_->staToDb(inst));
+        }
+        Pin *buffer_ip_pin = nullptr, *buffer_op_pin = nullptr;
+        resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
+        new_input_pin = buffer_ip_pin;
       }
     }
-
-    Pin* new_input_pin = buffer_ip_pin;
 
     Delay buffer_delay
         = resizer_->bufferDelay(*size, load_acc, resizer_->tgt_slew_dcalc_ap_);
