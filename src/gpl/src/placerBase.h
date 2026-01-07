@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map.hpp"
 #include "odb/geom.h"
 
 namespace odb {
@@ -334,10 +335,10 @@ class PlacerBaseCommon
 
   std::vector<Instance*> placeInsts_;
 
-  std::unordered_map<odb::dbInst*, Instance*> instMap_;
+  boost::unordered::unordered_flat_map<odb::dbInst*, Instance*> instMap_;
   // The key is a dbITerm or a dbBTerm
-  std::unordered_map<odb::dbObject*, Pin*> pinMap_;
-  std::unordered_map<odb::dbNet*, Net*> netMap_;
+  boost::unordered::unordered_flat_map<odb::dbObject*, Pin*> pinMap_;
+  boost::unordered::unordered_flat_map<odb::dbNet*, Net*> netMap_;
 
   int siteSizeX_ = 0;
   int siteSizeY_ = 0;
