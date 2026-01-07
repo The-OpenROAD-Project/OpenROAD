@@ -649,6 +649,28 @@ void RepairDesign::findBufferSizes()
   });
 }
 
+// Gain buffering: Make a buffer tree to satisfy fanout and cap constraints
+//
+// Purpose: Reduce fanout count and total loading capacitance.
+//
+// Algorithm:
+//   1. Sinks are collected and sorted by timing criticality (required time).
+//   2. Sinks are grouped based on driving cell's max fanout and max buffer 
+//      load capacity (e.g., 9 * input cap of the largest buffer).
+//   3. The smallest buffer satisfying the following criteria is selected.
+//      "buffer_input_cap > accumulated_load_cap / gain ratio"
+//   4. The netlist is modified by creating a new net, instantiating the
+//      buffer, and reconnecting sinks to the new buffer's output,
+//      maintaining hierarchy.
+//   5. The new buffer's input is treated as a new sink and re-added to the
+//      queue to recursively build the tree.
+//   6. Finally, timing is incrementally updated for the modified logic.
+//
+// Why use required time instead of slack?
+// - Arrival times change as the buffer tree is built, while required time 
+//   does not change. So required times is a more stable metric for bottom-up
+//   construction and critical path isolation.
+//
 bool RepairDesign::performGainBuffering(Net* net,
                                         const Pin* drvr_pin,
                                         int max_fanout)
