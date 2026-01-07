@@ -243,7 +243,7 @@ class FlexDRFlow
   bool fixing_max_spacing_{false};
   FlexDR::SearchRepairArgs last_args_;
 
-  static constexpr int STUBBORN_FLOW_VIOLATION_THRESHOLD = 11;
+  static constexpr int STUBBORN_FLOW_VIOLATION_THRESHOLD = 100;
 };
 
 class FlexDRWorker;
