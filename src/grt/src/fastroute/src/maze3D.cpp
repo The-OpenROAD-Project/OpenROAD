@@ -711,6 +711,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     // Debug mode Tree 3D after layer assignament
     if (debug_->isOn() && debug_->tree3D) {
       if (net->getDbNet() == debug_->net) {
+        logger_->report("Tree 3D during maze route 3D");
         StTreeVisualization(sttrees_[netID], net, true);
       }
     }

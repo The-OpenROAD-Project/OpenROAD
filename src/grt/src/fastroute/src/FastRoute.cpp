@@ -1471,6 +1471,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("RST Tree before overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1759,9 +1760,9 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
-    logger_->report("Tree 2D after overflow iterations");
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 2D after overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1844,6 +1845,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->tree3D) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 3D after maze route 3D");
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
