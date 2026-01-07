@@ -884,7 +884,7 @@ void Grid::normalizeUtilization()
   // Find maximum values for normalization
   float max_area = 0.0f;
   float max_pins = 0.0f;
-  
+
   // We iterate manually to find max to avoid multiple passes or copies
   for (float value : total_area_) {
     max_area = std::max(value, max_area);
@@ -914,8 +914,8 @@ void Grid::normalizeUtilization()
   for (int i = 0; i < grid_size; i++) {
     const float normalized_area = total_area_[i] / max_area;
     const float normalized_pins = total_pins_[i] / max_pins;
-    const float val = (area_weight_ * normalized_area)
-                      + (pin_weight_ * normalized_pins);
+    const float val
+        = (area_weight_ * normalized_area) + (pin_weight_ * normalized_pins);
     utilization_density_[i] = val;
     max_util_density = std::max(val, max_util_density);
   }
@@ -926,8 +926,7 @@ void Grid::normalizeUtilization()
       density /= max_util_density;
     }
   }
-  last_max_utilization_
-      = max_util_density > 0.0f ? max_util_density : 1.0f;
+  last_max_utilization_ = max_util_density > 0.0f ? max_util_density : 1.0f;
   utilization_dirty_ = false;
 }
 
@@ -971,8 +970,8 @@ float Grid::getUtilizationDensity(int pixel_idx) const
 
   const float normalized_area = total_area_[pixel_idx] / last_max_area_;
   const float normalized_pins = total_pins_[pixel_idx] / last_max_pins_;
-  const float val = (area_weight_ * normalized_area)
-                    + (pin_weight_ * normalized_pins);
+  const float val
+      = (area_weight_ * normalized_area) + (pin_weight_ * normalized_pins);
   return std::min(val / last_max_utilization_, 1.0f);
 }
 

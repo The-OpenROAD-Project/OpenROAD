@@ -6,12 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "util/utility.h"
-#include "utl/Logger.h"
-
-// Detailed management of segments.
-#include "infrastructure/detailed_segment.h"
 #include "optimization/detailed_manager.h"
+#include "utl/Logger.h"
 // Detailed placement algorithms.
 #include "boost/token_functions.hpp"
 #include "boost/tokenizer.hpp"
