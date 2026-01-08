@@ -58,6 +58,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                         const char* viaInPinBottomLayer,
                         const char* viaInPinTopLayer,
                         const char* viaAccessLayer,
+                        int viaMaxCut,
+                        int viaCandidatePerCut,
                         int orSeed,
                         double orK,
                         int verbose,
@@ -86,6 +88,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                     viaInPinBottomLayer,
                     viaInPinTopLayer,
                     viaAccessLayer,
+                    viaMaxCut,
+                    viaCandidatePerCut,
                     orSeed,
                     orK,
                     verbose,
@@ -105,7 +109,9 @@ void pin_access_cmd(const char* dbProcessNode,
                     int verbose,
                     int minAccessPoints,
                     const char* viaInPinBottomLayer,
-                    const char* viaInPinTopLayer)
+                    const char* viaInPinTopLayer,
+                    int viaMaxCut,
+                    int viaCandidatePerCut)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   drt::ParamStruct params;
@@ -115,6 +121,8 @@ void pin_access_cmd(const char* dbProcessNode,
   params.minAccessPoints = minAccessPoints;
   params.viaInPinBottomLayer = viaInPinBottomLayer;
   params.viaInPinTopLayer = viaInPinTopLayer;
+  params.viaMaxCut = viaMaxCut;
+  params.viaCandidatePerCut = viaCandidatePerCut;
   params.num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->setParams(params);
   router->pinAccess();

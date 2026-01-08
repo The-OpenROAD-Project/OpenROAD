@@ -13,6 +13,8 @@ sta::define_cmd_args "detailed_route" {
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
     [-via_access_layer layer]
+    [-via_max_cut count]
+    [-via_candidate_per_cut count]
     [-or_seed seed]
     [-or_k k]
     [-bottom_routing_layer layer]
@@ -35,7 +37,8 @@ proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
     keys {-output_maze -output_drc -output_cmap -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
-      -via_in_pin_top_layer -via_access_layer -or_seed -or_k -bottom_routing_layer \
+      -via_in_pin_top_layer -via_access_layer -via_max_cut -via_candidate_per_cut \
+      -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
       -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access \
@@ -111,6 +114,16 @@ proc detailed_route { args } {
   } else {
     set via_access_layer ""
   }
+  if { [info exists keys(-via_max_cut)] } {
+    set via_max_cut $keys(-via_max_cut)
+  } else {
+    set via_max_cut 1
+  }
+  if { [info exists keys(-via_candidate_per_cut)] } {
+    set via_candidate_per_cut $keys(-via_candidate_per_cut)
+  } else {
+    set via_candidate_per_cut 2
+  }
   if { [info exists keys(-or_seed)] } {
     set or_seed $keys(-or_seed)
   } else {
@@ -167,7 +180,7 @@ proc detailed_route { args } {
   drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
     $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
-    $via_access_layer $or_seed $or_k $verbose \
+    $via_access_layer $via_max_cut $via_candidate_per_cut $or_seed $or_k $verbose \
     $clean_patches $no_pin_access $single_step_dr $min_access_points \
     $save_guide_updates $repair_pdn_vias $drc_report_iter_step
 }
@@ -273,6 +286,8 @@ sta::define_cmd_args "pin_access" {
     [-via_access_layer layer]
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
+	[-via_max_cut count]
+	[-via_candidate_per_cut count]
     [-min_access_points count]
     [-verbose level]
     [-distributed]
@@ -285,7 +300,8 @@ proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
     keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
           -min_access_points -remote_host -remote_port -shared_volume -cloud_size \
-          -via_access_layer -via_in_pin_bottom_layer -via_in_pin_top_layer} \
+          -via_access_layer -via_in_pin_bottom_layer -via_in_pin_top_layer \
+		  -via_max_cut -via_candidate_per_cut} \
     flags {-distributed}
   sta::check_argc_eq0 "pin_access" $args
   if { [info exists keys(-db_process_node)] } {
@@ -328,6 +344,17 @@ proc pin_access { args } {
   } else {
     set via_in_pin_top_layer ""
   }
+  if { [info exists keys(-via_max_cut)] } {
+    set via_max_cut $keys(-via_max_cut)
+  } else {
+    set via_max_cut 1
+  }
+  if { [info exists keys(-via_candidate_per_cut)] } {
+    set via_candidate_per_cut $keys(-via_candidate_per_cut)
+  } else {
+    set via_candidate_per_cut 2
+  }
+
   if { [info exists flags(-distributed)] } {
     if { [info exists keys(-remote_host)] } {
       set rhost $keys(-remote_host)
@@ -353,7 +380,8 @@ proc pin_access { args } {
   }
   drt::pin_access_cmd $db_process_node \
     $via_access_layer $verbose $min_access_points \
-    $via_in_pin_bottom_layer $via_in_pin_top_layer
+    $via_in_pin_bottom_layer $via_in_pin_top_layer \
+    $via_max_cut $via_candidate_per_cut
 }
 
 sta::define_cmd_args "detailed_route_run_worker" {

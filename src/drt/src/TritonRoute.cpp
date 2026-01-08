@@ -1311,6 +1311,8 @@ void TritonRoute::setParams(const ParamStruct& params)
   if (!params.viaAccessLayer.empty()) {
     router_cfg_->VIA_ACCESS_LAYER_NAME = params.viaAccessLayer;
   }
+  router_cfg_->VIA_MAX_CUT = params.viaMaxCut;
+  router_cfg_->VIA_CANDIDATE_PER_CUT = params.viaCandidatePerCut;
   if (params.drouteEndIter >= 0) {
     router_cfg_->END_ITERATION = params.drouteEndIter;
   }
