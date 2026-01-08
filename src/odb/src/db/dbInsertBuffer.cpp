@@ -193,7 +193,6 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   rewireBufferLoadPins(load_pins);
 
   // 5. Place the Buffer
-  // 5. Place the Buffer
   if (loc) {
     placeBufferAtLocation(buffer_inst, *loc);
   } else {
