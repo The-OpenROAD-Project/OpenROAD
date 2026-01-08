@@ -89,6 +89,7 @@ QT_GUI_PLATFORMS = {
             "@spdlog",
             "@tk_tcl//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),
+        features = ["-thin_lto", "-full_lto"],  # Disable LTO for Qt
     )
     for platform, suffix in QT_GUI_PLATFORMS.items()
 ]
