@@ -3,8 +3,9 @@
 
 #include "unfoldedModel.h"
 
-#include <algorithm>
 #include <ranges>
+#include <string>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -41,12 +42,11 @@ std::vector<UnfoldedBump*> UnfoldedNet::getDisconnectedBumps(
 std::string UnfoldedChip::getName() const
 {
   std::string name;
-  int index = 0;
-  for (auto chip_inst : chip_inst_path) {
-    name += chip_inst->getName();
-    if (index++ < (int) chip_inst_path.size() - 1) {
+  for (auto* chip_inst : chip_inst_path) {
+    if (!name.empty()) {
       name += "/";
     }
+    name += chip_inst->getName();
   }
   return name;
 }

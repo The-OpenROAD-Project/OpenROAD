@@ -4,10 +4,13 @@
 #include "threeDBloxValidator.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <map>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
+#include "unfoldedModel.h"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
 

@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include "odb/geom.h"
 #include "unfoldedModel.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbChip;
