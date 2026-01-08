@@ -1243,6 +1243,15 @@ dbObject* dbNet::getFirstDriverTerm() const
   return nullptr;
 }
 
+dbInst* dbNet::getFirstDriverInst() const
+{
+  dbObject* drvr = getFirstDriverTerm();
+  if (drvr != nullptr && drvr->getObjectType() == dbITermObj) {
+    return static_cast<dbITerm*>(drvr)->getInst();
+  }
+  return nullptr;
+}
+
 dbITerm* dbNet::getFirstOutput() const
 {
   if (dbITerm* drvrIterm = getDrivingITerm()) {
