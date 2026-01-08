@@ -203,6 +203,7 @@ class dbInsertBuffer
                           int num_loads,
                           const dbBTerm* load) const;
   void dlogPlacedBuffer(const dbInst* buffer_inst, const Point& loc) const;
+  void dlogUnplacedBuffer(const dbInst* buffer_inst, const char* reason) const;
   void dlogInsertBufferSuccess(const dbInst* buffer_inst) const;
   void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;

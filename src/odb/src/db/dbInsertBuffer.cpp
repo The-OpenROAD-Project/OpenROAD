@@ -328,6 +328,7 @@ void dbInsertBuffer::placeBufferAtPin(dbInst* buffer_inst, const dbObject* term)
     placeBufferAtLocation(buffer_inst, Point(x, y));
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
+    dlogUnplacedBuffer(buffer_inst, "pin location not available");
   }
 }
 
@@ -1472,6 +1473,8 @@ void dbInsertBuffer::placeBufferAtCentroid(dbInst* buffer_inst,
     placeBufferAtLocation(buffer_inst, placement_loc);
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
+    dlogUnplacedBuffer(buffer_inst,
+                       "centroid computation failed (no placed pins)");
   }
 }
 
@@ -1540,7 +1543,7 @@ void dbInsertBuffer::dlogLCAModule(const dbModule* target_module) const
                "BeforeLoads: LCA module: {} '{}'",
                target_module ? target_module->getName() : "null_module",
                target_mod_inst ? target_mod_inst->getHierarchicalName()
-                               : "<null_modinst_or_top>");
+                               : "<top_or_null_mod_inst>");
   }
 }
 
@@ -1673,6 +1676,18 @@ void dbInsertBuffer::dlogPlacedBuffer(const dbInst* buffer_inst,
              buffer_inst->getName(),
              loc.getX(),
              loc.getY());
+}
+
+void dbInsertBuffer::dlogUnplacedBuffer(const dbInst* buffer_inst,
+                                        const char* reason) const
+{
+  debugPrint(logger_,
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "Buffer '{}' set to UNPLACED: {}",
+             buffer_inst->getName(),
+             reason);
 }
 
 void dbInsertBuffer::dlogInsertBufferSuccess(const dbInst* buffer_inst) const
