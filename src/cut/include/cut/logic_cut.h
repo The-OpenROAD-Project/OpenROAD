@@ -170,14 +170,9 @@ LogicCut::BuildMappedMockturtleNetwork(
       return it->second;
     }
 
-    // Find drivers
     sta::PinSet* drivers = network->drivers(net);
-    if (drivers == nullptr || drivers->empty()) {
-      // Net is driven from outside the CUT. Model it as a new primary input.
-      const signal pi = ntk.create_pi(network->name(net));
-      net_to_signal[net] = pi;
-      return pi;
-    }
+    // Net driven from outside the cut handled by logic_extractor
+    assert(drivers && !drivers->empty());
 
     if (drivers->size() != 1) {
       logger->error(utl::CUT,
@@ -191,17 +186,11 @@ LogicCut::BuildMappedMockturtleNetwork(
     sta::Instance* driver_inst = network->instance(driver_pin);
     sta::LibertyCell* driver_cell = network->libertyCell(driver_inst);
 
-    // If driver is sequential or outside the CUT, treat as CUT input.
-    if (driver_cell == nullptr || driver_cell->hasSequentials()
-        || !cut_instances_set.contains(driver_inst)) {
-      const signal pi = ntk.create_pi(network->name(net));
-      net_to_signal[net] = pi;
-      return pi;
-    }
+    // Driver should not be sequential or outside the cut (handled by logic extractor)
+    assert(driver_cell && !driver_cell->hasSequentials()
+           && cut_instances_set.contains(driver_inst));
 
-    // Driver is a combinational instance inside the CUT: realize its gate
     const std::string cell_name = driver_cell->name();
-
     auto gate_it = gate_by_name.find(cell_name);
     if (gate_it == gate_by_name.end()) {
       logger->error(utl::CUT,
