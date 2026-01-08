@@ -503,13 +503,26 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const char* suffix) const
 {
   std::string name = (suffix == nullptr) ? base_name : base_name + suffix;
+  const char hier_delim = block_->getHierarchyDelimiter();
+  const std::string hier_prefix
+      = module->isTop() ? "" : (module->getHierarchicalName() + hier_delim);
+
+  // Helper to check if a dbNet is an internal net of the 'module'.
+  // Note that the new name must not conflict with any internal flat nets.
+  auto hasInternalDbNet = [&](const std::string& net_base_name) {
+    dbNet* net = block_->findNet((hier_prefix + net_base_name).c_str());
+    return net != nullptr && net->isInternalTo(const_cast<dbModule*>(module));
+  };
+
+  // Ensure uniqueness against ModNets, ModBTerms, and internal dbNets
   int id = 0;
   std::string unique_name = name;
-  // Ensure uniqueness against both ModNets and ModBTerms
   while (module->getModNet(unique_name.c_str())
-         || module->findModBTerm(unique_name.c_str())) {
+         || module->findModBTerm(unique_name.c_str())
+         || hasInternalDbNet(unique_name)) {
     unique_name = fmt::format("{}_{}", name, id++);
   }
+
   return unique_name;
 }
 
