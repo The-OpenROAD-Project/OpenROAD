@@ -1576,12 +1576,12 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
             }
 
             if (seg.isBuffered()
-                && (currWl + seg.getWl2FisrtBuffer() > wirelengthThreshold)) {
+                && (currWl + seg.getWl2FirstBuffer() > wirelengthThreshold)) {
               return;
             }
 
             if (!seg.isBuffered()
-                && (currWl + seg.getWl2FisrtBuffer()
+                && (currWl + seg.getWl2FirstBuffer()
                     > wirelengthThreshold - techChar_->getMinSegmentLength())) {
               return;
             }

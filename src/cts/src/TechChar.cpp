@@ -323,7 +323,7 @@ void TechChar::printCharacterization() const
   logger_->report("wireSegmentUnit = {}", options_->getWireSegmentUnit());
 
   logger_->report(
-      "\n   idx length load outSlew power delay inCap inSlew pureWire Wl2Fisrt "
+      "\n   idx length load outSlew power delay inCap inSlew pureWire Wl2First "
       "LastWl bufLoc");
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string buffer_locations;
@@ -341,7 +341,7 @@ void TechChar::printCharacterization() const
                     (unsigned) segment.getInputCap(),
                     (unsigned) segment.getInputSlew(),
                     !segment.isBuffered(),
-                    segment.getWl2FisrtBuffer(),
+                    segment.getWl2FirstBuffer(),
                     segment.getLastWl(),
                     buffer_locations);
   });
@@ -424,7 +424,7 @@ void TechChar::reportSegment(unsigned key) const
              seg.getOutputSlew(),
              seg.getLoad(),
              seg.getLength(),
-             seg.getWl2FisrtBuffer(),
+             seg.getWl2FirstBuffer(),
              seg.getLastWl(),
              seg.getDelay());
 
