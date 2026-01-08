@@ -745,6 +745,69 @@ BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
 
 ////////////////////////////////////////////////////////////////
 
+BufferedNetPtr Resizer::stitchTrees(BufferedNetPtr outer_tree,
+                                    Pin* stitching_load,
+                                    BufferedNetPtr inner_tree)
+{
+  using BnetType = BufferedNetType;
+  using BnetPtr = BufferedNetPtr;
+  return visitTree(
+      [&](auto& recurse, int level, const BnetPtr& node) -> BufferedNetPtr {
+        switch (node->type()) {
+          case BnetType::via: {
+            BnetPtr new_ref = recurse(node->ref());
+            if (new_ref == node->ref()) {
+              // Optimization: do not create a new node if it would be
+              // equivalent to the existing one; analogously below for wire and
+              // junction
+              return node;
+            }
+            return std::make_shared<BufferedNet>(BnetType::via,
+                                                 node->location(),
+                                                 node->layer(),
+                                                 node->refLayer(),
+                                                 new_ref,
+                                                 node->corner(),
+                                                 this);
+          }
+          case BnetType::wire: {
+            BnetPtr new_ref = recurse(node->ref());
+            if (new_ref == node->ref()) {
+              return node;
+            }
+            return std::make_shared<BufferedNet>(BnetType::wire,
+                                                 node->location(),
+                                                 node->layer(),
+                                                 recurse(node->ref()),
+                                                 node->corner(),
+                                                 this,
+                                                 estimate_parasitics_);
+          }
+          case BnetType::junction: {
+            BnetPtr new_ref = recurse(node->ref());
+            BnetPtr new_ref2 = recurse(node->ref2());
+            if (new_ref == node->ref() && new_ref2 == node->ref2()) {
+              return node;
+            }
+            return std::make_shared<BufferedNet>(
+                BnetType::junction, node->location(), new_ref, new_ref2, this);
+          }
+          case BnetType::load: {
+            if (node->loadPin() == stitching_load) {
+              return inner_tree;
+            } else {
+              return node;
+            }
+          }
+          default:
+            logger_->critical(RSZ, 130, "unhandled BufferedNet type");
+        }
+      },
+      outer_tree);
+}
+
+////////////////////////////////////////////////////////////////
+
 using grt::RoutePt;
 
 class RoutePtHash

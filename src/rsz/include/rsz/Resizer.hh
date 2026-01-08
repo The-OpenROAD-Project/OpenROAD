@@ -778,6 +778,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
                                std::unordered_set<Instance*>& notSwappable,
                                LibertyCell*& best_lib_cell);
 
+  BufferedNetPtr stitchTrees(BufferedNetPtr outer_tree,
+                             Pin* stitching_load,
+                             BufferedNetPtr inner_tree);
+
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
