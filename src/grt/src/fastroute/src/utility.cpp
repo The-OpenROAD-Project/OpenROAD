@@ -105,17 +105,17 @@ void FastRouteCore::ConvertToFull3DType2()
 // Resistance-aware score calculation to order critical nets
 float FastRouteCore::getResAwareScore(FrNet* net)
 {
-  const float RESISTANCE_WEIGHT = 0.1f;
-  const float SLACK_WEIGHT = 5.0f;
-  const float FANOUT_WEIGHT = 5.0f;
-  const float ROUTE_LENGTH_WEIGHT = 5.0f;
+  const float kResistanceWeight = 0.1f;
+  const float kSlackWeight = 5.0f;
+  const float kFanoutWeight = 5.0f;
+  const float kNetLengthWeight = 5.0f;
 
-  return net->getResistance() * RESISTANCE_WEIGHT
+  return net->getResistance() * kResistanceWeight
          + (!is_incremental_grt_ && net->getSlack() < 0
-                ? -SLACK_WEIGHT * net->getSlack() / 1e-12
+                ? -kSlackWeight * net->getSlack() / 1e-12
                 : 0)
-         + net->getNumPins() * FANOUT_WEIGHT
-         + net->getNetLength() * ROUTE_LENGTH_WEIGHT;
+         + net->getNumPins() * kFanoutWeight
+         + net->getNetLength() * kNetLengthWeight;
 }
 
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
@@ -586,7 +586,7 @@ int FastRouteCore::getViaResistanceCost(const int from_layer,
 }
 
 // Calculate entire net resistance considering wire and via resistance
-// If assume_layer is true, it will assume the net is routed on the max layer
+// If assume_layer is true, it will assume the net is routed on the min layer
 float FastRouteCore::getNetResistance(FrNet* net, bool assume_layer)
 {
   float total_resistance = 0;
@@ -642,7 +642,7 @@ void FastRouteCore::updateSlacks(float percentage)
     callback_handler_->triggerOnEstimateParasiticsRequired();
   }
 
-  const int SHORT_NET_THRESHOLD = 3;
+  const int kShortNetThreshold = 3;
 
   for (const int net_id : net_ids_) {
     FrNet* net = nets_[net_id];
@@ -659,7 +659,7 @@ void FastRouteCore::updateSlacks(float percentage)
     }
     net->setNetLength(net_size);
 
-    bool is_short_net = net_size <= SHORT_NET_THRESHOLD;
+    bool is_short_net = net_size <= kShortNetThreshold;
     bool is_unconstrained_net = slack == sta::INF;
 
     // Dont apply res-aware to unconstrained and short nets
@@ -1272,8 +1272,9 @@ void FastRouteCore::layerAssignmentV4()
 
 void FastRouteCore::layerAssignment()
 {
+  const float kResAwarePercentage = 0.1;
   is_3d_step_ = false;
-  updateSlacks(0.1);
+  updateSlacks(kResAwarePercentage);
   is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
