@@ -155,15 +155,24 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
   if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
     return;
   }
-  // hardcode first two single vias
-  const int max_num_via_trial = 2;
-  int cnt = 0;
-  for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
-    cnt++;
-    if (cnt >= max_num_via_trial) {
-      break;
-    }
+
+  const auto& via_map = layer_num_to_via_defs_[layer_num + 1];
+  int cnt;
+  int groups_used = 0;
+
+  for (const auto& [cut_count, via_set] : via_map) {
+	  
+	if (groups_used >= router_cfg_->VIA_MAX_CUT)
+	  break;
+
+    cnt = 0;
+    for (const auto& [tup, via] : via_set) {
+      genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
+	  cnt++;
+      if (cnt >= router_cfg_->VIA_CANDIDATE_PER_CUT) break;
+	}
+
+    groups_used++;
   }
 }
 
@@ -879,22 +888,26 @@ void FlexPA::filterViaAccess(
     via_in_pin = true;
   }
 
-  const int max_num_via_trial = 2;
   // use std:pair to ensure deterministic behavior
   std::vector<std::pair<int, const frViaDef*>> via_defs;
   getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
   if (via_defs.empty()) {  // no via map entry
-    // hardcode first two single vias
-    for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
-      if (inst_term && inst_term->isStubborn()
-          && avoid_via_defs_.contains(via_def)) {
-        continue;
-      }
-      via_defs.emplace_back(via_defs.size(), via_def);
-      if (via_defs.size() >= max_num_via_trial && !deep_search) {
-        break;
-      }
+    const auto& via_map = layer_num_to_via_defs_[layer_num + 1];
+	int groups_used = 0;
+  
+    for (const auto& [cut_count, via_set] : via_map) {
+	  
+	  if (groups_used >= router_cfg_->VIA_MAX_CUT)
+	    break;
+
+      for (const auto& [tup, via_def] : via_set) {
+        via_defs.emplace_back(via_defs.size(), via_def);
+	    if (via_defs.size() >= router_cfg_->VIA_CANDIDATE_PER_CUT*(groups_used+1) && !deep_search)
+	      break;
+	  }
+
+      groups_used++;
     }
   }
 
@@ -922,7 +935,7 @@ void FlexPA::filterViaAccess(
       ap->addViaDef(via_def);
       ap->setAccess(frDirEnum::U);
       valid_via_count++;
-      if (valid_via_count >= max_num_via_trial) {
+      if (valid_via_count >= (router_cfg_->VIA_MAX_CUT)*(router_cfg_->VIA_CANDIDATE_PER_CUT)) {
         break;
       }
     }
