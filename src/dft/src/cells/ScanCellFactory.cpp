@@ -109,7 +109,8 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
                                                  utl::Logger* logger)
 {
   sta::dbNetwork* db_network = sta->getDbNetwork();
-  sta::LibertyCell* liberty_cell = GetLibertyCell(inst->getMaster(), db_network);
+  sta::LibertyCell* liberty_cell
+      = GetLibertyCell(inst->getMaster(), db_network);
   if (liberty_cell == nullptr) {
     logger->warn(utl::DFT,
                  11,

@@ -204,8 +204,10 @@ void Dft::scanOpt()
   ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());
   stitch.Stitch(scan_chains);
 
-  logger_->info(
-      utl::DFT, 15, "Scan Opt re-stitched {:d} scan chain(s)", scan_chains.size());
+  logger_->info(utl::DFT,
+                15,
+                "Scan Opt re-stitched {:d} scan chain(s)",
+                scan_chains.size());
 }
 
 }  // namespace dft

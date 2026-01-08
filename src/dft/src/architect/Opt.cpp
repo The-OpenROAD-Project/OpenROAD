@@ -57,7 +57,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     }
   }
 
-  const auto manhattan = [](const odb::Point& a, const odb::Point& b) -> int64_t {
+  const auto manhattan
+      = [](const odb::Point& a, const odb::Point& b) -> int64_t {
     const int64_t dx
         = static_cast<int64_t>(a.x()) - static_cast<int64_t>(b.x());
     const int64_t dy
@@ -106,7 +107,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     }
   }
 
-  const auto greedy_nn_order = [&](std::size_t start) -> std::vector<std::size_t> {
+  const auto greedy_nn_order
+      = [&](std::size_t start) -> std::vector<std::size_t> {
     std::vector<std::size_t> order;
     order.reserve(n);
     std::vector<bool> used(n, false);
@@ -141,8 +143,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     return order;
   };
 
-  const auto farthest_insertion_order =
-      [&](std::size_t start) -> std::vector<std::size_t> {
+  const auto farthest_insertion_order
+      = [&](std::size_t start) -> std::vector<std::size_t> {
     std::vector<std::size_t> order;
     order.reserve(n);
     std::vector<bool> in_path(n, false);
@@ -214,8 +216,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
         const int64_t delta = manhattan(origins[a], origins[next])
                               + manhattan(origins[next], origins[b])
                               - manhattan(origins[a], origins[b]);
-        if (delta < best_delta
-            || (delta == best_delta && pos + 1 < best_pos)) {
+        if (delta < best_delta || (delta == best_delta && pos + 1 < best_pos)) {
           best_delta = delta;
           best_pos = pos + 1;
         }
@@ -247,8 +248,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     return order;
   };
 
-  const auto two_opt_improve = [&](std::vector<std::size_t>& order,
-                                  int max_passes) -> void {
+  const auto two_opt_improve
+      = [&](std::vector<std::size_t>& order, int max_passes) -> void {
     if (max_passes <= 0 || order.size() < 4) {
       return;
     }
@@ -265,9 +266,9 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
           const auto c = order[j];
           const auto d = order[j + 1];
           const int64_t old_cost = manhattan(origins[a], origins[b])
-                                  + manhattan(origins[c], origins[d]);
+                                   + manhattan(origins[c], origins[d]);
           const int64_t new_cost = manhattan(origins[a], origins[c])
-                                  + manhattan(origins[b], origins[d]);
+                                   + manhattan(origins[b], origins[d]);
           if (new_cost < old_cost) {
             std::reverse(order.begin() + static_cast<std::ptrdiff_t>(i + 1),
                          order.begin() + static_cast<std::ptrdiff_t>(j + 1));
@@ -287,7 +288,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
                  utl::DFT,
                  "scan_chain_opt",
                  1,
-                 "OptimizeScanWirelength: 2-opt improved path length {} -> {} ({} cells)",
+                 "OptimizeScanWirelength: 2-opt improved path length {} -> {} "
+                 "({} cells)",
                  before,
                  after,
                  order.size());
@@ -358,7 +360,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     int64_t best_dist = std::numeric_limits<int64_t>::max();
     odb::Point cursor_pt(bg::get<0>(cursor.first), bg::get<1>(cursor.first));
 
-    for (auto it = rtree.qbegin(bgi::nearest(cursor.first, kNearestCandidateCount));
+    for (auto it
+         = rtree.qbegin(bgi::nearest(cursor.first, kNearestCandidateCount));
          it != rtree.qend();
          ++it) {
       const auto cand = *it;
@@ -372,7 +375,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
       }
     }
 
-      if (!found) {
+    if (!found) {
       no_next_scan_cell();
     }
 
