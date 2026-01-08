@@ -819,10 +819,8 @@ bool RepairDesign::performGainBuffering(Net* net,
       }
     }
 
-    const Point drvr_loc = db_network_->location(drvr_pin);
-
     Instance* inst = resizer_->insertBufferBeforeLoads(
-        net, &group_set, *buf_cell, &drvr_loc, "gain");
+        net, &group_set, *buf_cell, nullptr, "gain");
     if (inst) {
       repaired_net = true;
       inserted_buffer_count_++;
