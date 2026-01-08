@@ -100,6 +100,8 @@ filegroup(
         "testcases/fixed_macros2.def",
         "testcases/guides1.def",
         "testcases/io_constraints1.def",
+        "testcases/io_constraints3.def",
+        "testcases/io_constraints4.def",
         "testcases/io_pads1.def",
         "testcases/macro_only.def",
         "testcases/macro_only.lef",
