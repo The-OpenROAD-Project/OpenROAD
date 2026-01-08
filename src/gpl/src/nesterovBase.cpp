@@ -1394,8 +1394,8 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
                                                           float wlCoeffX,
                                                           float wlCoeffY) const
 {
-  float gradientMinX = 0.0f, gradientMinY = 0.0f;
-  float gradientMaxX = 0.0f, gradientMaxY = 0.0f;
+  float gradientMinX = 0, gradientMinY = 0;
+  float gradientMaxX = 0, gradientMaxY = 0;
 
   // min x
   if (gPin->hasMinExpSumX()) {
@@ -1404,7 +1404,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
     float waXExpMinSumX = gPin->getGNet()->waXExpMinSumX();
 
     gradientMinX
-        = (waExpMinSumX * (gPin->minExpSumX() * (1.0f - wlCoeffX * gPin->cx()))
+        = (waExpMinSumX * (gPin->minExpSumX() * (1.0 - wlCoeffX * gPin->cx()))
            + wlCoeffX * gPin->minExpSumX() * waXExpMinSumX)
           / (waExpMinSumX * waExpMinSumX);
   }
@@ -1415,7 +1415,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
     float waXExpMaxSumX = gPin->getGNet()->waXExpMaxSumX();
 
     gradientMaxX
-        = (waExpMaxSumX * (gPin->maxExpSumX() * (1.0f + wlCoeffX * gPin->cx()))
+        = (waExpMaxSumX * (gPin->maxExpSumX() * (1.0 + wlCoeffX * gPin->cx()))
            - wlCoeffX * gPin->maxExpSumX() * waXExpMaxSumX)
           / (waExpMaxSumX * waExpMaxSumX);
   }
@@ -1426,7 +1426,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
     float waYExpMinSumY = gPin->getGNet()->waYExpMinSumY();
 
     gradientMinY
-        = (waExpMinSumY * (gPin->minExpSumY() * (1.0f - wlCoeffY * gPin->cy()))
+        = (waExpMinSumY * (gPin->minExpSumY() * (1.0 - wlCoeffY * gPin->cy()))
            + wlCoeffY * gPin->minExpSumY() * waYExpMinSumY)
           / (waExpMinSumY * waExpMinSumY);
   }
@@ -1437,7 +1437,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
     float waYExpMaxSumY = gPin->getGNet()->waYExpMaxSumY();
 
     gradientMaxY
-        = (waExpMaxSumY * (gPin->maxExpSumY() * (1.0f + wlCoeffY * gPin->cy()))
+        = (waExpMaxSumY * (gPin->maxExpSumY() * (1.0 + wlCoeffY * gPin->cy()))
            - wlCoeffY * gPin->maxExpSumY() * waYExpMaxSumY)
           / (waExpMaxSumY * waExpMaxSumY);
   }
