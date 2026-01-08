@@ -790,26 +790,26 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     // Find the smallest buffer satisfying the gain condition on
     // its output pin
-    auto size = buffer_sizes_.begin();
-    for (; size != buffer_sizes_.end() - 1; size++) {
-      if (bufferCin(*size) > load_acc / resizer_->buffer_sizing_cap_ratio_) {
+    auto buf_cell = buffer_sizes_.begin();
+    for (; buf_cell != buffer_sizes_.end() - 1; buf_cell++) {
+      if (bufferCin(*buf_cell)
+          > load_acc / resizer_->buffer_sizing_cap_ratio_) {
         break;
       }
     }
 
-    if (bufferCin(*size) >= 0.9f * load_acc) {
+    if (bufferCin(*buf_cell) >= 0.9f * load_acc) {
       // We are getting dimishing returns on inserting a buffer, stop
       // the algorithm here (we might have been called with a low gain value)
       break;
     }
 
     LibertyPort *size_in, *size_out;
-    (*size)->bufferPorts(size_in, size_out);
+    (*buf_cell)->bufferPorts(size_in, size_out);
     int max_level = 0;
     Pin* new_input_pin = nullptr;
 
-    // Decide new buffer location
-    const Point drvr_loc = db_network_->location(drvr_pin);
+    // 3. Insert a new buffer
     PinSet group_set(db_network_);
     for (auto it = sinks.begin(); it != group_end; it++) {
       group_set.insert(it->pin);
@@ -818,11 +818,11 @@ bool RepairDesign::performGainBuffering(Net* net,
         tree_boundary.push_back(graph_->pinLoadVertex(it->pin));
       }
     }
-    load -= load_acc;
 
-    // 3. Insert a new buffer
+    const Point drvr_loc = db_network_->location(drvr_pin);
+
     Instance* inst = resizer_->insertBufferBeforeLoads(
-        net, &group_set, *size, &drvr_loc, "gain");
+        net, &group_set, *buf_cell, &drvr_loc, "gain");
     if (inst) {
       repaired_net = true;
       inserted_buffer_count_++;
@@ -831,8 +831,8 @@ bool RepairDesign::performGainBuffering(Net* net,
     }
 
     // 4. New buffer input pin is enqueued as a new sink
-    Delay buffer_delay
-        = resizer_->bufferDelay(*size, load_acc, resizer_->tgt_slew_dcalc_ap_);
+    Delay buffer_delay = resizer_->bufferDelay(
+        *buf_cell, load_acc, resizer_->tgt_slew_dcalc_ap_);
 
     auto new_pin = EnqueuedPin{new_input_pin,
                                (group_end - 1)->required_path,
@@ -844,6 +844,7 @@ bool RepairDesign::performGainBuffering(Net* net,
         std::ranges::upper_bound(sinks, new_pin, PinRequiredHigher(network_)),
         new_pin);
 
+    load -= load_acc;
     load += size_in->capacitance();
   }
 
