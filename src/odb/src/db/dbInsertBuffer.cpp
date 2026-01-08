@@ -129,7 +129,6 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
   rewireBufferSimple(insertBefore, orig_mod_net, term_obj);
 
   // 5. Place the new buffer
-  // 5. Place the new buffer
   if (loc) {
     placeBufferAtLocation(buffer_inst, *loc);
   } else {
@@ -313,11 +312,12 @@ bool dbInsertBuffer::checkDontTouch(const dbITerm* iterm) const
 }
 
 void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst,
-                                           const Point& loc)
+                                           const Point& loc,
+                                           const char* reason)
 {
   buffer_inst->setLocation(loc.getX(), loc.getY());
   buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dlogPlacedBuffer(buffer_inst, loc);
+  dlogPlacedBuffer(buffer_inst, loc, reason);
 }
 
 void dbInsertBuffer::placeBufferAtPin(dbInst* buffer_inst, const dbObject* term)
@@ -325,7 +325,7 @@ void dbInsertBuffer::placeBufferAtPin(dbInst* buffer_inst, const dbObject* term)
   int x = 0;
   int y = 0;
   if (getPinLocation(term, x, y)) {
-    placeBufferAtLocation(buffer_inst, Point(x, y));
+    placeBufferAtLocation(buffer_inst, Point(x, y), "pin location");
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
     dlogUnplacedBuffer(buffer_inst, "pin location not available");
@@ -1470,7 +1470,7 @@ void dbInsertBuffer::placeBufferAtCentroid(dbInst* buffer_inst,
 {
   Point placement_loc;
   if (computeCentroid(drvr_pin, load_pins, placement_loc)) {
-    placeBufferAtLocation(buffer_inst, placement_loc);
+    placeBufferAtLocation(buffer_inst, placement_loc, "centroid");
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
     dlogUnplacedBuffer(buffer_inst,
@@ -1666,16 +1666,18 @@ void dbInsertBuffer::dlogMovedBTermLoad(int load_idx,
 }
 
 void dbInsertBuffer::dlogPlacedBuffer(const dbInst* buffer_inst,
-                                      const Point& loc) const
+                                      const Point& loc,
+                                      const char* reason) const
 {
   debugPrint(logger_,
              utl::ODB,
              "insert_buffer",
              1,
-             "Placed the new buffer '{}' at ({}, {})",
+             "Placed the new buffer '{}' at ({}, {}) using {}",
              buffer_inst->getName(),
              loc.getX(),
-             loc.getY());
+             loc.getY(),
+             reason);
 }
 
 void dbInsertBuffer::dlogUnplacedBuffer(const dbInst* buffer_inst,
