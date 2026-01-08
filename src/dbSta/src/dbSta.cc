@@ -24,11 +24,14 @@
 #include <string>
 #include <vector>
 
-#include "boost/json.hpp"
-#include "boost/json/src.hpp"
+#include "boost/json/conversion.hpp"
+#include "boost/json/src.hpp"  // NOLINT(misc-include-cleaner)
+#include "boost/json/value.hpp"
+#include "boost/json/value_from.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -37,12 +40,14 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/ObjectId.hh"
 #include "sta/Path.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
+#include "sta/StringUtil.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/histogram.h"

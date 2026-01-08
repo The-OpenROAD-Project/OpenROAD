@@ -13,11 +13,15 @@
 #include <utility>
 #include <vector>
 
-#include "ClockDomain.hh"
 #include "ScanCell.hh"
-#include "boost/geometry/geometries/register/point.hpp"
-#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/core/access.hpp"
+#include "boost/geometry/core/cs.hpp"
+#include "boost/geometry/geometries/point.hpp"
+#include "boost/geometry/geometry.hpp"  // NOLINT(misc-include-cleaner)
+#include "boost/geometry/index/parameters.hpp"
+#include "boost/geometry/index/predicates.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace bg = boost::geometry;
@@ -231,17 +235,15 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
           continue;
         }
         const int64_t dist = manhattan(origins[i], origins[next]);
-        if (dist < nearest_dist[i]) {
-          nearest_dist[i] = dist;
-        }
+        nearest_dist[i] = std::min(nearest_dist[i], dist);
       }
     }
 
     // Keep the start fixed as the first element.
     if (!order.empty() && order.front() != start) {
-      const auto it = std::find(order.begin(), order.end(), start);
+      const auto it = std::ranges::find(order, start);
       if (it != order.end()) {
-        std::rotate(order.begin(), it, order.end());
+        std::ranges::rotate(order, it);
       }
     }
 
@@ -308,16 +310,14 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   // Quadratic heuristics for small/medium chains.
   if (n <= kQuadraticHeuristicMaxCells) {
     std::vector<std::size_t> best_order = greedy_nn_order(start_index);
-    int64_t best_cost = path_len(best_order, origins);
     two_opt_improve(best_order, two_opt_passes);
-    best_cost = path_len(best_order, origins);
+    int64_t best_cost = path_len(best_order, origins);
 
     if (n <= kFarthestInsertionMaxCells) {
       std::vector<std::size_t> fi_order = farthest_insertion_order(start_index);
       two_opt_improve(fi_order, two_opt_passes);
       const int64_t fi_cost = path_len(fi_order, origins);
       if (fi_cost < best_cost) {
-        best_cost = fi_cost;
         best_order = std::move(fi_order);
       }
     }

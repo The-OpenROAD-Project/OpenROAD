@@ -74,13 +74,15 @@ odb::dbInst* ReplaceCell(
   odb::dbGroup* group = old_instance->getGroup();
   odb::dbModule* module = old_instance->getModule();
 
+  const odb::dbTransform old_transform = old_instance->getTransform();
+
   odb::dbInst* new_instance = odb::dbInst::create(top_block,
                                                   new_master,
                                                   /*name=*/"tmp_scan_flop",
                                                   /*physical_only=*/false,
                                                   module);
 
-  new_instance->setTransform(old_instance->getTransform());
+  new_instance->setTransform(old_transform);
   new_instance->setPlacementStatus(placement_status);
   new_instance->setSourceType(source_type);
   if (region) {

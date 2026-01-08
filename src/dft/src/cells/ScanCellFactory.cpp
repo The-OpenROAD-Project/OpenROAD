@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "OneBitScanCell.hh"
 #include "ScanCell.hh"
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
@@ -18,6 +19,7 @@
 #include "sta/Clock.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Sequential.hh"
 #include "utl/Logger.h"
@@ -178,8 +180,6 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
                                           logger);
 }
 
-}  // namespace
-
 std::unique_ptr<ScanCell> ScanCellFactory(odb::dbInst* inst,
                                           sta::dbSta* sta,
                                           utl::Logger* logger)
@@ -191,7 +191,6 @@ std::unique_ptr<ScanCell> ScanCellFactory(odb::dbInst* inst,
       return CreateOneBitCell(inst, sta, logger);
     default:
       return nullptr;
-      break;
   }
 }
 
@@ -218,6 +217,8 @@ void CollectScanCells(odb::dbBlock* block,
     CollectScanCells(next_block, sta, logger, scan_cells);
   }
 }
+
+}  // namespace
 
 std::vector<std::unique_ptr<ScanCell>> CollectScanCells(odb::dbDatabase* db,
                                                         sta::dbSta* sta,

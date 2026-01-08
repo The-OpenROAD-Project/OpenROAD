@@ -4,16 +4,18 @@
 #include "ScanArchitectHeuristic.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "ClockDomain.hh"
 #include "Opt.hh"
 #include "ScanArchitect.hh"
+#include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace dft {
@@ -43,30 +45,28 @@ void ScanArchitectHeuristic::architect()
 
     const bool do_spatial_partition
         = (scan_chains.size() > 1 && !domain_cells.empty()
-           && std::all_of(domain_cells.begin(),
-                          domain_cells.end(),
-                          [](const std::unique_ptr<ScanCell>& c) {
-                            return c->isPlaced();
-                          }));
+           && std::ranges::all_of(domain_cells,
+                                  [](const std::unique_ptr<ScanCell>& c) {
+                                    return c->isPlaced();
+                                  }));
 
     if (do_spatial_partition) {
       // Sort by placement location to cluster scan cells into spatially-local
       // chains before running the intra-chain TSP heuristic. This reduces long
       // scan hops when multiple chains are enabled.
-      std::stable_sort(domain_cells.begin(),
-                       domain_cells.end(),
-                       [](const std::unique_ptr<ScanCell>& a,
-                          const std::unique_ptr<ScanCell>& b) {
-                         const odb::Point oa = a->getOrigin();
-                         const odb::Point ob = b->getOrigin();
-                         if (oa.x() != ob.x()) {
-                           return oa.x() < ob.x();
-                         }
-                         if (oa.y() != ob.y()) {
-                           return oa.y() < ob.y();
-                         }
-                         return a->getName() < b->getName();
-                       });
+      std::ranges::stable_sort(domain_cells,
+                               [](const std::unique_ptr<ScanCell>& a,
+                                  const std::unique_ptr<ScanCell>& b) {
+                                 const odb::Point oa = a->getOrigin();
+                                 const odb::Point ob = b->getOrigin();
+                                 if (oa.x() != ob.x()) {
+                                   return oa.x() < ob.x();
+                                 }
+                                 if (oa.y() != ob.y()) {
+                                   return oa.y() < ob.y();
+                                 }
+                                 return a->getName() < b->getName();
+                               });
     }
 
     std::size_t cursor = 0;

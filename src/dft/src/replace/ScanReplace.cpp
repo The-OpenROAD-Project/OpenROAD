@@ -19,11 +19,9 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Sequential.hh"
 #include "utl/Logger.h"
 
 namespace dft {

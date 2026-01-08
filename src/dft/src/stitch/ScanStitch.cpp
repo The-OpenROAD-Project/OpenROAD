@@ -12,6 +12,9 @@
 #include <vector>
 
 #include "ScanCell.hh"
+#include "ScanChain.hh"
+#include "ScanPin.hh"
+#include "ScanStitchConfig.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"

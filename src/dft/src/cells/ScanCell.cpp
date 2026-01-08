@@ -22,6 +22,8 @@ ScanCell::ScanCell(const std::string& name,
 {
 }
 
+ScanCell::~ScanCell() = default;
+
 std::string_view ScanCell::getName() const
 {
   return name_;
