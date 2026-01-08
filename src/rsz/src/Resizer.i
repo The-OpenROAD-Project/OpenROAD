@@ -741,6 +741,13 @@ insert_buffer_before_loads_cmd(Net *net,
   return inst;
 }
 
+void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, Corner *corner)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->checkSlewAfterBufferRemoval(drvr_pin, buffer_instance, corner);
+}
+
 } // namespace
 
 %} // inline

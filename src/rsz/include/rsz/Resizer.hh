@@ -533,6 +533,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Library analysis data
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
+  Slew findDriverSlewForLoad(Pin* drvr_pin, float load, Corner* corner);
+  void checkSlewAfterBufferRemoval(Pin* drvr_pin,
+                                   Instance* buffer_instance,
+                                   Corner* corner);
+
  protected:
   void init();
   double computeDesignArea();

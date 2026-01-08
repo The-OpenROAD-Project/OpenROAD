@@ -277,6 +277,8 @@ class RepairDesign : dbStaState
 
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
+
+  friend class Resizer;
 };
 
 }  // namespace rsz

@@ -142,6 +142,7 @@ using sta::LoadPinIndexMap;
 using sta::PinConnectedPinIterator;
 using sta::Sdc;
 using sta::SearchPredNonReg2;
+using sta::VertexInEdgeIterator;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
 
@@ -5650,6 +5651,174 @@ void Resizer::inferClockBufferList(const char* lib_name,
                  "{} has been inferred as clock buffer",
                  buffer->name());
     }
+  }
+}
+
+Slew Resizer::findDriverSlewForLoad(Pin* drvr_pin, float load, Corner* corner)
+{
+  const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  Slew max_slew = 0;
+
+  VertexInEdgeIterator edge_iter(graph_->pinDrvrVertex(drvr_pin), graph_);
+  while (edge_iter.hasNext()) {
+    Edge* edge = edge_iter.next();
+    TimingArcSet* arc_set = edge->timingArcSet();
+    const TimingRole* role = arc_set->role();
+    if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
+        && role != TimingRole::tristateEnable()
+        && role != TimingRole::clockTreePathMin()
+        && role != TimingRole::clockTreePathMax()) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        Slew in_slew = graph_delay_calc_->edgeFromSlew(
+            edge->from(graph_), in_rf, role, dcalc_ap);
+        GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
+        if (model) {
+          ArcDelay arc_delay;
+          Slew arc_slew;
+          const Pvt* pvt = dcalc_ap->operatingConditions();
+          model->gateDelay(pvt, in_slew, load, false, arc_delay, arc_slew);
+          max_slew = std::max(max_slew, arc_slew);
+        }
+      }
+    }
+  }
+
+  return max_slew;
+}
+
+void Resizer::checkSlewAfterBufferRemoval(Pin* drvr_pin,
+                                          Instance* buffer_instance,
+                                          Corner* corner)
+{
+  resizePreamble();
+  ensureLevelDrvrVertices();
+  repair_design_->init();
+
+  using BnetType = BufferedNetType;
+  using BnetSeq = BufferedNetSeq;
+  using BnetPtr = BufferedNetPtr;
+
+  LibertyCell* cell = network_->libertyCell(buffer_instance);
+  if (!cell->isBuffer()) {
+    logger_->report("The given instance is not a buffer\n");
+    return;
+  }
+  LibertyPort *in_port, *out_port;
+  cell->bufferPorts(in_port, out_port);
+
+  Pin* buffer_load_pin = network_->findPin(buffer_instance, in_port);
+  Pin* buffer_drvr_pin = network_->findPin(buffer_instance, out_port);
+  if (!buffer_load_pin || !buffer_drvr_pin) {
+    logger_->report("Failed to find buffer pins\n");
+    return;
+  }
+
+  BnetPtr tree1 = makeBufferedNet(drvr_pin, corner);
+  BnetPtr tree2 = makeBufferedNet(buffer_drvr_pin, corner);
+  BnetPtr stitched_tree = stitchTrees(tree1, buffer_load_pin, tree2);
+
+  if (stitched_tree == tree1) {
+    // If the stitched_tree is unchanged from tree1, that means we failed to
+    // find `buffer_load_pin` as a load on the tree
+    logger_->report(
+        "The given buffer instance is not a fanout of the given pin\n");
+    return;
+  }
+
+  float worst_slew_slack = std::numeric_limits<float>::infinity();
+  float worst_pin_slew;
+  const Pin* worst_pin = nullptr;
+
+  // Find slew on the driver pin if it were driving the stitched tree
+  Slew drvr_slew
+      = findDriverSlewForLoad(drvr_pin, stitched_tree->cap(), corner);
+  debugPrint(logger_,
+             RSZ,
+             "slew_check",
+             3,
+             "drvr pin slew {}",
+             delayAsString(drvr_slew, this));
+
+  // Now propagate `drvr_slew` through the routing network and apply estimated
+  // slew degradation. Once we reach load pins we compare the predicted slew
+  // with the prescribed limits.
+  visitTree(
+      [&](auto& recurse, int level, const BnetPtr& node, double upstream_slew)
+          -> int {
+        switch (node->type()) {
+          case BnetType::via: {
+            double r_via
+                = node->viaResistance(corner, this, estimate_parasitics_);
+            double t_via
+                = r_via * node->ref()->cap() * repair_design_->slew_rc_factor_;
+            debugPrint(logger_,
+                       RSZ,
+                       "slew_check",
+                       3,
+                       "{:{}s}via degradation {}",
+                       "",
+                       level,
+                       delayAsString(t_via, this));
+            recurse(node->ref(), upstream_slew + t_via);
+            return 0;
+          }
+          case BnetType::wire: {
+            Point from_loc = node->location();
+            Point to_loc = node->ref()->location();
+            double length
+                = dbuToMeters(Point::manhattanDistance(from_loc, to_loc));
+            double unit_res, unit_cap;
+            node->wireRC(
+                corner, this, estimate_parasitics_, unit_res, unit_cap);
+            double t_wire = length * unit_res
+                            * (node->ref()->cap() + length * unit_cap / 2)
+                            * repair_design_->slew_rc_factor_;
+            debugPrint(logger_,
+                       RSZ,
+                       "slew_check",
+                       3,
+                       "{:{}s}wire degradation {}",
+                       "",
+                       level,
+                       delayAsString(t_wire, this));
+            recurse(node->ref(), upstream_slew + t_wire);
+            return 0;
+          }
+          case BnetType::junction:
+            recurse(node->ref(), upstream_slew);
+            recurse(node->ref2(), upstream_slew);
+            return 0;
+          case BnetType::load: {
+            debugPrint(logger_,
+                       RSZ,
+                       "slew_check",
+                       3,
+                       "{:{}s}load {} slew {}",
+                       "",
+                       level,
+                       network_->name(node->loadPin()),
+                       delayAsString(upstream_slew, this));
+            double load_slew_slack = node->maxLoadSlew() - upstream_slew;
+            if (load_slew_slack < worst_slew_slack) {
+              worst_slew_slack = load_slew_slack;
+              worst_pin_slew = upstream_slew;
+              worst_pin = node->loadPin();
+            }
+            return 0;
+          }
+          case BnetType::buffer: {
+            abort();
+          }
+        }
+      },
+      stitched_tree,
+      drvr_slew);
+
+  if (worst_pin) {
+    logger_->report("worst pin {} slew {}",
+                    network_->name(worst_pin),
+                    delayAsString(worst_pin_slew, sta_));
   }
 }
 
