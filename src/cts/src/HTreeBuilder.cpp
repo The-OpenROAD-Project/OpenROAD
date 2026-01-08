@@ -1419,26 +1419,26 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
     currWl = previousLevel.getCurrWl();
   }
 
-  const unsigned SLEW_THRESHOLD = options_->getMaxSlew();
-  const unsigned INIT_TOLERANCE = 1;
+  const unsigned kSlewThreshold = options_->getMaxSlew();
+  const unsigned kInitTolerance = 1;
 
-  int WIRELENGTH_THRESHOLD;
+  int wirelengthThreshold;
   // If max wirelength is 0, set it as slew threshold  * maximum topology
   // wirelength. This will behave as if there was no max wirelength threshold.
   if (!options_->getMaxWl()) {
-    WIRELENGTH_THRESHOLD = SLEW_THRESHOLD * techChar_->getMaxSegmentLength();
+    wirelengthThreshold = kSlewThreshold * techChar_->getMaxSegmentLength();
   } else {
-    WIRELENGTH_THRESHOLD = options_->getMaxWl() / techChar_->getLengthUnit();
+    wirelengthThreshold = options_->getMaxWl() / techChar_->getLengthUnit();
   }
 
   debugPrint(
-      logger_, CTS, "tech char", 1, "slew threshold = {}", SLEW_THRESHOLD);
+      logger_, CTS, "tech char", 1, "slew threshold = {}", kSlewThreshold);
   debugPrint(logger_,
              CTS,
              "tech char",
              1,
              "wirelength threshold = {}",
-             WIRELENGTH_THRESHOLD);
+             wirelengthThreshold);
   unsigned length = 0;
   for (int charSegLength = techChar_->getMaxSegmentLength(); charSegLength >= 1;
        --charSegLength) {
@@ -1458,8 +1458,8 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
             key = computeMinDelaySegment(charSegLength,
                                          inputSlew,
                                          inputCap,
-                                         SLEW_THRESHOLD,
-                                         INIT_TOLERANCE,
+                                         kSlewThreshold,
+                                         kInitTolerance,
                                          outSlew,
                                          outCap,
                                          true,
@@ -1471,8 +1471,8 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
               key = computeMinDelaySegment(charSegLength,
                                            inputSlew,
                                            inputCap,
-                                           SLEW_THRESHOLD,
-                                           INIT_TOLERANCE,
+                                           kSlewThreshold,
+                                           kInitTolerance,
                                            outSlew,
                                            outCap,
                                            true,
@@ -1483,8 +1483,8 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
               key = computeMinDelaySegment(charSegLength,
                                            inputSlew,
                                            inputCap,
-                                           SLEW_THRESHOLD,
-                                           INIT_TOLERANCE,
+                                           kSlewThreshold,
+                                           kInitTolerance,
                                            outSlew,
                                            outCap,
                                            false,
@@ -1495,9 +1495,9 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
           key = computeMinDelaySegment(charSegLength,
                                        inputSlew,
                                        inputCap,
-                                       SLEW_THRESHOLD,
-                                       WIRELENGTH_THRESHOLD,
-                                       INIT_TOLERANCE,
+                                       kSlewThreshold,
+                                       wirelengthThreshold,
+                                       kInitTolerance,
                                        outSlew,
                                        outCap,
                                        currWl);
