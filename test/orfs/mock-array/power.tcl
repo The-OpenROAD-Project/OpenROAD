@@ -23,6 +23,7 @@ log_cmd report_power
 set fp [open $::env(RESULTS_DIR)/activity.tcl w]
 set pins [get_pins -hierarchical *]
 set clock_period [expr [get_property [get_clocks] period] * 1e-12]
+set vcd_pin_count 0
 foreach pin $pins {
   set activity [get_property $pin activity]
   set activity_origin [lindex $activity 2]
@@ -33,10 +34,19 @@ foreach pin $pins {
   if { $duty > 1.0 } { # this generates an sta error
     set duty 1.0
   }
+
+  # Fixed duty to 0.55 for the first three pins to give a slight distortion
+  # to see the slightly different power numbers b/w VCD and user activity flows.
+  if { $vcd_pin_count <= 3 } {
+    set duty 0.55
+  }
+
   puts $fp "set_power_activity \
   -pin \[get_pins \{[get_property $pin full_name]\}\] \
   -activity [expr [lindex $activity 0] * $clock_period] \
   -duty $duty"
+
+  incr vcd_pin_count
 }
 close $fp
 
