@@ -1690,7 +1690,9 @@ void RenderThread::drawIOPins(Painter& painter,
   const int min_bpin_size = viewer_->options_->isDetailedVisibility()
                                 ? viewer_->fineViewableResolution()
                                 : viewer_->nominalViewableResolution();
-  const int64_t max_lin_bpins = bounds.minDXDY() / min_bpin_size;
+  const int64_t max_lin_bpins = min_bpin_size > 0
+                                    ? bounds.minDXDY() / min_bpin_size
+                                    : bounds.minDXDY();
   const int64_t max_bpins
       = std::min(kMaxBPinsPerLayer, max_lin_bpins * max_lin_bpins);
 
