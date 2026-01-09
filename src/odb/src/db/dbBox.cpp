@@ -1010,7 +1010,6 @@ void dbBox::destroy(dbBox* box)
         // Only remove if this box is the halo box
         inst->halo_ = 0;
         _dbBlock* block = (_dbBlock*) inst->getOwner();
-        block->remove_rect(db_box->shape_.rect);
         block->box_tbl_->destroy(db_box);
       }
       return;
