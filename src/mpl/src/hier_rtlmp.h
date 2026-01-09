@@ -145,7 +145,9 @@ class HierRTLMP
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   IntervalList computeWidthIntervals(const TilingList& tilings);
-  TilingList getTightPackingTilings(Cluster* cluster);
+  TilingList getTightPackingTilings(int width,
+                                    int height,
+                                    int number_of_macros);
   void searchAvailableRegionsForUnconstrainedPins();
   BoundaryToRegionsMap getBoundaryToBlockedRegionsMap(
       const std::vector<odb::Rect>& blocked_regions_for_pins) const;

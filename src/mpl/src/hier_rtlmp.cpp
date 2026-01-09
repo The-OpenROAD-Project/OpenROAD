@@ -635,240 +635,47 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  TilingSet tilings_set;
+  int number_of_macros = hard_macros.size();
+  int width = hard_macros.front()->getWidth();
+  int height = hard_macros.front()->getHeight();
 
-  if (hard_macros.size() == 1) {
-    int width = hard_macros[0]->getWidth();
-    int height = hard_macros[0]->getHeight();
+  TilingList tilings = getTightPackingTilings(width, height, number_of_macros);
 
-    TilingList tilings;
-    tilings.emplace_back(width, height);
-    cluster->setTilings(tilings);
-
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "{} has only one macro, set tiling according to macro with halo",
-               cluster->getName());
-    return;
+  if (tilings.size() == 0) {
+    TilingList extra_tilings
+        = getTightPackingTilings(width, height, number_of_macros + 1);
+    tilings.insert(tilings.end(), extra_tilings.begin(), extra_tilings.end());
   }
 
-  TilingList tilings = getTightPackingTilings(cluster);
-
-  if (!cluster->isArrayOfInterconnectedMacros()) {
-    if (graphics_) {
-      graphics_->setCurrentCluster(cluster);
-    }
-
-    const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
-                             + exchange_swap_prob_;
-
-    const odb::Rect outline(
-        0, 0, tree_->root->getWidth(), tree_->root->getHeight());
-
-    // update macros
-    std::vector<HardMacro> macros;
-    macros.reserve(hard_macros.size());
-    for (auto& macro : hard_macros) {
-      macros.push_back(*macro);
-    }
-    int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
-                                   ? macros.size()
-                                   : num_perturb_per_step_ / 10;
-    if (cluster->getParent() == nullptr) {
-      num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 5)
-                                 ? macros.size()
-                                 : num_perturb_per_step_ / 5;
-    }
-
-    // To generate different macro tilings, we vary the outline constraints
-    // we first vary the outline width while keeping outline_height fixed
-    // Then we vary the outline height while keeping outline_width fixed
-    // We vary the outline of cluster to generate different tilings
-    std::vector<float> vary_factor_list{1.0};
-    float vary_step = 1.0 / num_runs_;  // change the outline by at most halfly
-    for (int i = 1; i < num_runs_; i++) {
-      vary_factor_list.push_back(1.0 - i * vary_step);
-    }
-    int remaining_runs = num_runs_;
-    int run_id = 0;
-    while (remaining_runs > 0) {
-      HardSAVector sa_batch;
-      const int run_thread
-          = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
-      for (int i = 0; i < run_thread; i++) {
-        const odb::Rect new_outline(
-            0, 0, outline.dx() * vary_factor_list[run_id++], outline.dy());
-        if (graphics_) {
-          graphics_->setOutline(new_outline);
-        }
-        std::unique_ptr<SACoreHardMacro> sa = std::make_unique<SACoreHardMacro>(
-            tree_.get(),
-            new_outline,
-            macros,
-            shaping_core_weights_,
-            pos_swap_prob_ / action_sum,
-            neg_swap_prob_ / action_sum,
-            double_swap_prob_ / action_sum,
-            exchange_swap_prob_ / action_sum,
-            init_prob_,
-            max_num_step_,
-            num_perturb_per_step,
-            random_seed_ + run_id,
-            graphics_.get(),
-            logger_,
-            block_);
-        sa_batch.push_back(std::move(sa));
-      }
-      if (sa_batch.size() == 1) {
-        runSA<SACoreHardMacro>(sa_batch[0].get());
-      } else {
-        // multi threads
-        std::vector<std::thread> threads;
-        threads.reserve(sa_batch.size());
-        for (auto& sa : sa_batch) {
-          threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
-        }
-        for (auto& th : threads) {
-          th.join();
-        }
-      }
-      // add macro tilings
-      for (auto& sa : sa_batch) {
-        if (sa->fitsIn(outline)) {
-          tilings_set.insert({sa->getWidth(), sa->getHeight()});
-        }
-      }
-      remaining_runs -= run_thread;
-    }
-    // change the outline height while keeping outline width fixed
-    remaining_runs = num_runs_;
-    run_id = 0;
-    while (remaining_runs > 0) {
-      HardSAVector sa_batch;
-      const int run_thread
-          = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
-      for (int i = 0; i < run_thread; i++) {
-        const odb::Rect new_outline(
-            0, 0, outline.dx(), outline.dy() * vary_factor_list[run_id++]);
-        if (graphics_) {
-          graphics_->setOutline(new_outline);
-        }
-        std::unique_ptr<SACoreHardMacro> sa = std::make_unique<SACoreHardMacro>(
-            tree_.get(),
-            new_outline,
-            macros,
-            shaping_core_weights_,
-            pos_swap_prob_ / action_sum,
-            neg_swap_prob_ / action_sum,
-            double_swap_prob_ / action_sum,
-            exchange_swap_prob_ / action_sum,
-            init_prob_,
-            max_num_step_,
-            num_perturb_per_step,
-            random_seed_ + run_id,
-            graphics_.get(),
-            logger_,
-            block_);
-        sa_batch.push_back(std::move(sa));
-      }
-      if (sa_batch.size() == 1) {
-        runSA<SACoreHardMacro>(sa_batch[0].get());
-      } else {
-        // multi threads
-        std::vector<std::thread> threads;
-        threads.reserve(sa_batch.size());
-        for (auto& sa : sa_batch) {
-          threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
-        }
-        for (auto& th : threads) {
-          th.join();
-        }
-      }
-      // add macro tilings
-      for (auto& sa : sa_batch) {
-        if (sa->fitsIn(outline)) {
-          tilings_set.insert({sa->getWidth(), sa->getHeight()});
-        }
-      }
-      remaining_runs -= run_thread;
-    }
-
-    if (tilings_set.empty()) {
-      logger_->error(MPL,
-                     4,
-                     "No valid tilings for hard macro cluster: {}",
-                     cluster->getName());
-    }
-
-    TilingList valid_tilings(tilings_set.begin(), tilings_set.end());
-    std::ranges::sort(valid_tilings, isAreaSmaller);
-
-    for (auto& tiling : valid_tilings) {
-      debugPrint(logger_,
-                 MPL,
-                 "coarse_shaping",
-                 2,
-                 "width: {}, height: {}, area: {}, aspect_ratio: {}",
-                 tiling.width(),
-                 tiling.height(),
-                 tiling.area(),
-                 tiling.aspectRatio());
-    }
-
-    // we only keep the minimum area tiling since all the macros has the same
-    // size later this can be relaxed.  But this may cause problems because the
-    // minimizing the wirelength may leave holes near the boundary
-    int64_t min_tiling_area = valid_tilings.front().area();
-    for (auto& tiling : valid_tilings) {
-      if (tiling.area() <= min_tiling_area
-          && std::ranges::find(tilings, tiling) == tilings.end()) {
-        tilings.push_back(tiling);
-      }
-    }
-  }
-
-  std::ranges::sort(tilings, isAreaSmaller);
   cluster->setTilings(tilings);
 
-  std::string line = "Tiling for hard cluster " + cluster->getName() + "\n";
-  for (auto& tiling : tilings) {
-    line += " < " + std::to_string(tiling.width()) + " , ";
-    line += std::to_string(tiling.height()) + " >  ";
+  if (logger_->debugCheck(MPL, "coarse_shaping", 2)) {
+    std::string line = "Tiling for hard cluster " + cluster->getName()
+                       + " with " + std::to_string(number_of_macros)
+                       + " macros.\n";
+    for (auto& tiling : tilings) {
+      line += " < " + std::to_string(tiling.width()) + " , ";
+      line += std::to_string(tiling.height()) + " >  ";
+    }
+    line += "\n";
+    debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
   }
-  line += "\n";
-  debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
 }
 
-// Used only for arrays of interconnected macros.
-TilingList HierRTLMP::getTightPackingTilings(Cluster* cluster)
+TilingList HierRTLMP::getTightPackingTilings(int width,
+                                             int height,
+                                             int number_of_macros)
 {
   TilingList tight_packing_tilings;
-
-  int num_macro = static_cast<int>(cluster->getNumMacro());
-  float macro_width = cluster->getHardMacros().front()->getWidth();
-  float macro_height = cluster->getHardMacros().front()->getHeight();
-
   const odb::Rect outline = tree_->root->getBBox();
 
-  int columns = 0;
-  for (int rows = 1; rows < std::sqrt(num_macro) + 1; rows++) {
-    if (num_macro % rows == 0) {
-      columns = num_macro / rows;
+  int rows = 0;
+  for (int cols = 1; cols <= number_of_macros; cols++) {
+    if (number_of_macros % cols == 0) {
+      rows = number_of_macros / cols;
 
-      // We don't consider tilings for right angle rotation orientations,
-      // because they're not allowed in our macro placer.
-      // Tiling needs to fit inside outline.
-      if (columns * macro_width <= outline.dx()
-          && rows * macro_height <= outline.dy()) {
-        tight_packing_tilings.emplace_back(columns * macro_width,
-                                           rows * macro_height);
-      }
-      if (rows * macro_width <= outline.dx()
-          && columns * macro_height <= outline.dy()) {
-        tight_packing_tilings.emplace_back(rows * macro_width,
-                                           columns * macro_height);
+      if (cols * width <= outline.dx() && rows * height <= outline.dy()) {
+        tight_packing_tilings.emplace_back(cols * width, rows * height);
       }
     }
   }
