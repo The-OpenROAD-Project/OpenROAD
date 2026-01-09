@@ -4016,7 +4016,7 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect, const std::vector<st
 				gtl::xl(*prect), gtl::yl(*prect), gtl::xh(*prect), gtl::yh(*prect));
 
 		// Via is part of the pin, end search:
-		if (pinRect.contains(viaBox)) {
+		if (pinRect.intersects(viaBox)) {
 		  anyVia = via;
 		  valid_vias++;
 		  break;
