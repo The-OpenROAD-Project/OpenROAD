@@ -182,6 +182,7 @@ class Fixture : public ::testing::Test
       frCoord firstOverhang,
       frCoord secondOverhang);
   void makeMinimumCut(frLayerNum layerNum,
+  					  int numCut,
                       frCoord width,
                       frCoord length,
                       frCoord distance,
