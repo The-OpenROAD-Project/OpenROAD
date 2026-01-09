@@ -33,6 +33,7 @@ set(OPENROAD_SOURCE
   Timing.cc
   Tech.cc
   OpenRoad.cc
+  Surrogate.cc
   Main.cc
   )
 

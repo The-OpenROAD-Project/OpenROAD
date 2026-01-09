@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 
+#include "ord/Surrogate.hh"
 #include "ord/Version.hh"
 #include "tcl.h"
 #ifdef ENABLE_PYTHON3
@@ -288,6 +289,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   stt::initSteinerTreeBuilder(tcl_interp);
   dft::initDft(tcl_interp);
   est::initTcl(tcl_interp);
+  ord::initSurrogate(tcl_interp, this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
