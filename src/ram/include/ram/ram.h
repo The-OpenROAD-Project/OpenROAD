@@ -26,7 +26,7 @@ namespace utl {
 class Logger;
 }
 
-namespace pdn{
+namespace pdn {
 class PdnGen;
 }
 
@@ -53,6 +53,8 @@ class RamGen
                 odb::dbMaster* inv_cell,
                 odb::dbMaster* tapcell,
                 int max_tap_dist);
+
+  void ramPdngen();
 
  private:
   void findMasters();

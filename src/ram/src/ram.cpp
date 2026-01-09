@@ -384,6 +384,52 @@ void RamGen::findMasters()
   }
 }
 
+void RamGen::ramPdngen()
+{
+  // need parameters for power and ground nets 
+  auto power_net = dbNet::create(block_, "VDD");
+  auto ground_net = dbNet::create(block_, "VSS");
+ 
+  power_net->setSpecial();
+  power_net->setSigType(odb::dbSigType::POWER);
+  ground_net->setSpecial();
+  ground_net->setSigType(odb::dbSigType::GROUND);
+  
+  // find a way to get the power and ground net names associated with cells used 
+  block_->addGlobalConnect(nullptr, ".*", "VPWR", power_net, true);
+  block_->addGlobalConnect(nullptr, ".*", "VGND", ground_net, true);
+ 
+  block_->globalConnect();
+ 
+//  auto openroad = ord::OpenRoad::openRoad(); 
+//  auto pdngen = openroad->ord::OpenRoad::getPdnGen();
+
+  pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
+  pdngen_->makeCoreGrid(pdngen_->findDomain("Core"), "ram_grid", pdn::StartsWith::GROUND, {}, {}, nullptr, nullptr, "STAR", {});
+
+  // variables for convenience
+  auto pdn_tech = block_->getDb()->getTech();
+  auto grid = pdngen_->findGrid("ram_grid")[0];
+  
+  // parameters are the same in the tcl script 
+  // add_followpin
+  pdngen_->makeFollowpin(grid, pdn_tech->findLayer("met1"), 480, pdn::ExtensionMode::BOUNDARY); 
+  
+  //add_pdn_stripe
+  pdngen_->makeStrap(grid, pdn_tech->findLayer("met2"), 480, 0, 40000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
+  pdngen_->makeStrap(grid, pdn_tech->findLayer("met3"), 480, 0, 20000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
+
+  //add_pdn_connect
+  pdngen_->makeConnect(grid, pdn_tech->findLayer("met1"), pdn_tech->findLayer("met2"), 0,0, {}, {}, 0, 0, {}, {}, "");
+  pdngen_->makeConnect(grid, pdn_tech->findLayer("met2"), pdn_tech->findLayer("met3"), 0,0, {}, {}, 0, 0, {}, {}, "");
+ 
+  //pdngen 
+  pdngen_->checkSetup();
+  pdngen_->buildGrids(true);
+  pdngen_->writeToDb(true, "");
+  pdngen_->resetShapes();
+}
+
 void RamGen::generate(const int bytes_per_word,
                       const int word_count,
                       const int read_ports,
@@ -630,40 +676,54 @@ void RamGen::generate(const int bytes_per_word,
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
 
-  auto power_net = dbNet::create(block_, "VDD");
-  auto ground_net = dbNet::create(block_, "VSS");
- 
-  power_net->setSpecial();
-  power_net->setSigType(odb::dbSigType::POWER);
-  ground_net->setSpecial();
-  ground_net->setSigType(odb::dbSigType::GROUND);
- 
-  block_->addGlobalConnect(nullptr, ".*", "VPWR", power_net, true);
-  block_->addGlobalConnect(nullptr, ".*", "VGND", ground_net, true);
- 
-  block_->globalConnect();
- 
-//  auto openroad = ord::OpenRoad::openRoad(); 
-//  auto pdngen = openroad->ord::OpenRoad::getPdnGen();
+//  ramPdngen();
 
-  pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
-  pdngen_->makeCoreGrid(pdngen_->findDomain("Core"), "ram_grid", pdn::StartsWith::GROUND, {}, {}, nullptr, nullptr, "STAR", {});
+//  auto power_net = dbNet::create(block_, "VDD");
+//  auto ground_net = dbNet::create(block_, "VSS");
+// 
+//  power_net->setSpecial();
+//  power_net->setSigType(odb::dbSigType::POWER);
+//  ground_net->setSpecial();
+//  ground_net->setSigType(odb::dbSigType::GROUND);
+// 
+//  block_->addGlobalConnect(nullptr, ".*", "VPWR", power_net, true);
+//  block_->addGlobalConnect(nullptr, ".*", "VGND", ground_net, true);
+// 
+//  block_->globalConnect();
+// 
+////  auto openroad = ord::OpenRoad::openRoad(); 
+////  auto pdngen = openroad->ord::OpenRoad::getPdnGen();
+//
+//  pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
+//  pdngen_->makeCoreGrid(pdngen_->findDomain("Core"), "ram_grid", pdn::StartsWith::GROUND, {}, {}, nullptr, nullptr, "STAR", {});
+//
+//  // variables for convenience
+//  auto pdn_tech = block_->getDb()->getTech();
+//  auto grid = pdngen_->findGrid("ram_grid")[0];
+//  
+//  //add_followpin
+//  pdngen_->makeFollowpin(grid, pdn_tech->findLayer("met1"), 480, pdn::ExtensionMode::BOUNDARY); 
+//  
+//  //add_pdn_stripe
+//  pdngen_->makeStrap(grid, pdn_tech->findLayer("met2"), 480, 0, 40000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
+//  pdngen_->makeStrap(grid, pdn_tech->findLayer("met3"), 480, 0, 20000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
+//
+//  //add_pdn_connect
+//  pdngen_->makeConnect(grid, pdn_tech->findLayer("met1"), pdn_tech->findLayer("met2"), 0,0, {}, {}, 0, 0, {}, {}, "");
+//  pdngen_->makeConnect(grid, pdn_tech->findLayer("met2"), pdn_tech->findLayer("met3"), 0,0, {}, {}, 0, 0, {}, {}, "");
+// 
+//  //pdngen 
+//  pdngen_->checkSetup();
+//  pdngen_->buildGrids(true);
+//  pdngen_->writeToDb(true, "");
+//  pdngen_->resetShapes();
+
+//  auto ifp_ = ifp::InitFloorplan::InitFloorplan(block_, logger_, network_);
+
+//  ifp_.makeTracks(pdn_tech,  
 
 
-  auto pdn_tech = block_->getDb()->getTech();
-  auto grid = pdngen_->findGrid("ram_grid")[0];
-  pdngen_->makeFollowpin(grid, pdn_tech->findLayer("met1"), 480, pdn::ExtensionMode::BOUNDARY); 
   
-  pdngen_->makeStrap(grid, pdn_tech->findLayer("met2"), 480, 0, 40000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
-  pdngen_->makeStrap(grid, pdn_tech->findLayer("met3"), 480, 0, 20000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
-
-  pdngen_->makeConnect(grid, pdn_tech->findLayer("met1"), pdn_tech->findLayer("met2"), 0,0, {}, {}, 0, 0, {}, {}, "");
-  pdngen_->makeConnect(grid, pdn_tech->findLayer("met2"), pdn_tech->findLayer("met3"), 0,0, {}, {}, 0, 0, {}, {}, "");
-  
-  pdngen_->checkSetup();
-  pdngen_->buildGrids(true);
-  pdngen_->writeToDb(true, "");
-  pdngen_->resetShapes();
 //  pdngen->make_core_grid(
 //  pdngen->check_setup();
 //  pdngen->build_grids(true);

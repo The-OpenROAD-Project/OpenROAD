@@ -6,6 +6,13 @@
 #include "ram/ram.h"
 #include "utl/Logger.h"
 
+namespace ord {
+// Defined in OpenRoad.i
+odb::dbDatabase* getDb();
+ram::RamGen* getRamGen();
+utl::Logger* getLogger();
+} // namespace ord
+
 %}
 
 %include "../../Exception.i"
@@ -24,18 +31,18 @@ generate_ram_netlist_cmd(int bytes_per_word,
                          const char* tapcell_name,
                          const int max_tap_dist)
 {
-  auto* app = ord::OpenRoad::openRoad();
-  auto* ram_gen = app->getRamGen();
-  auto* db = app->getDb();
+  RamGen* ram_gen = ord::getRamGen();
+  odb::dbDatabase* db = ord::getDb();
+  utl::Logger* logger = ord::getLogger();
 
   odb::dbMaster* storage_cell = nullptr;
   if (storage_cell_name[0] != '\0') {
     storage_cell = db->findMaster(storage_cell_name);
     if (!storage_cell) {
-      app->getLogger()->error(utl::RAM,
-                              4,
-                              "Storage cell {} can't be found",
-                              storage_cell_name);
+      logger->error(utl::RAM,
+                    4,
+                    "Storage cell {} can't be found",
+                    storage_cell_name);
     }
   }
 
@@ -43,10 +50,10 @@ generate_ram_netlist_cmd(int bytes_per_word,
   if (tristate_cell_name[0] != '\0') {
     tristate_cell = db->findMaster(tristate_cell_name);
     if (!tristate_cell) {
-      app->getLogger()->error(utl::RAM,
-                              7,
-                              "Tristate cell {} can't be found",
-                              tristate_cell_name);
+      logger->error(utl::RAM,
+                    7,
+                    "Tristate cell {} can't be found",
+                    tristate_cell_name);
     }
   }
 
@@ -54,10 +61,10 @@ generate_ram_netlist_cmd(int bytes_per_word,
   if (inv_cell_name[0] != '\0') {
     inv_cell = db->findMaster(inv_cell_name);
     if (!inv_cell) {
-      app->getLogger()->error(utl::RAM,
-                              8,
-                              "Inv cell {} can't be found",
-                              inv_cell_name);
+      logger->error(utl::RAM,
+                    8,
+                    "Inv cell {} can't be found",
+                    inv_cell_name);
     }
   }
 
@@ -65,16 +72,23 @@ generate_ram_netlist_cmd(int bytes_per_word,
   if (tapcell_name[0] != '\0') {
     tapcell = db->findMaster(tapcell_name);
     if (!tapcell) {
-      app->getLogger()->error(utl::RAM,
-                              19,
-                              "Tapcell {} can't be found",
-                              tapcell_name);
+      logger->error(utl::RAM,
+                    19,
+                    "Tapcell {} can't be found",
+                    tapcell_name);
     }
   }
 
   ram_gen->generate(bytes_per_word, word_count, read_ports,
                     storage_cell, tristate_cell, inv_cell, tapcell,
                     max_tap_dist);
+}
+
+void ram_pdngen() 
+{
+  auto* ram_gen = ord::getRamGen();
+  ram_gen->ramPdngen();
+
 }
 
 } //namespace_ram

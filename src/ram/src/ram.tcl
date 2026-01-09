@@ -200,6 +200,7 @@ proc generate_ram { args } {
 # add_pdn_connect -layers [list $ver_name $hor_name]
 
 # pdngen
+  ram::ram_pdngen
 
   make_tracks -x_offset 0 -y_offset 0
   set_io_pin_constraint -direction output -region top:*

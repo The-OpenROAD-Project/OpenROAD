@@ -224,7 +224,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                               opendp_,
                               estimate_parasitics_);
   finale_ = new fin::Finale(db_, logger_);
-//  ram_gen_ = new ram::RamGen(getDbNetwork(), db_, logger_, pdngen_);
   restructure_ = new rmp::Restructure(
       logger_, sta_, db_, resizer_, estimate_parasitics_);
   clock_gating_ = new cgt::ClockGating(logger_, sta_);
