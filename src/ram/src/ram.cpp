@@ -23,6 +23,7 @@
 #include "utl/Logger.h"
 #include "pdn/PdnGen.hh"
 #include "ord/OpenRoad.hh"
+#include "ppl/IOPlacer.h"
 
 namespace ram {
 
@@ -40,8 +41,9 @@ using std::vector;
 
 ////////////////////////////////////////////////////////////////
 
-RamGen::RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen)
-    : network_(network), db_(db), logger_(logger), pdngen_(pdngen)
+RamGen::RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen, 
+       ppl::IOPlacer* ioPlacer)
+    : network_(network), db_(db), logger_(logger), pdngen_(pdngen), ioPlacer_(ioPlacer)
 {
 }
 
@@ -430,6 +432,19 @@ void RamGen::ramPdngen()
   pdngen_->resetShapes();
 }
 
+void RamGen::ramPinplacer() {
+
+  const odb::Rect& die_bounds = block_->getDieArea(); 
+  odb::Rect top_constraint = block_->findConstraintRegion(odb::Direction2D::North, die_bounds.xMin(), die_bounds.xMax()); 
+  block_->addBTermConstraintByDirection(dbIoType::OUTPUT, top_constraint);
+
+  block_->addBTermsToConstraint(D_bTerms, top_constraint); 
+  auto pin_tech = block_->getDb()->getTech();
+  ioPlacer_->addHorLayer(pin_tech->findLayer("met3"));
+  ioPlacer_->addVerLayer(pin_tech->findLayer("met2"));
+  ioPlacer_->runHungarianMatching();
+}
+
 void RamGen::generate(const int bytes_per_word,
                       const int word_count,
                       const int read_ports,
@@ -481,9 +496,9 @@ void RamGen::generate(const int bytes_per_word,
 
   // input bterms
   int num_inputs = std::ceil(std::log2(word_count));
-  vector<dbBTerm*> addr(num_inputs, nullptr);
+ // vector<dbBTerm*> addr(num_inputs, nullptr); //class variable
   for (int i = 0; i < num_inputs; ++i) {
-    addr[i] = makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT);
+    addr.push_back(makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT));
   }
 
   // vector of nets storing inverter nets
@@ -512,15 +527,12 @@ void RamGen::generate(const int bytes_per_word,
   vector<dbNet*> decoder_output_nets;
 
   for (int col = 0; col < bytes_per_word; ++col) {
-    array<dbBTerm*, 8> D_bTerms;  // array for b-term for external inputs
     array<dbNet*, 8> D_nets;      // net for buffers
     for (int bit = 0; bit < 8; ++bit) {
-      D_bTerms[bit]
-          = makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT);
+      D_bTerms.push_back(makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT));
       D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit + col * 8), "net");
     }
 
-    vector<array<dbBTerm*, 8>> Q;
     // if readports == 1, only have Q outputs
     if (read_ports == 1) {
       array<dbBTerm*, 8> q_bTerms;

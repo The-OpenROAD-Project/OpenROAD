@@ -30,6 +30,10 @@ namespace pdn {
 class PdnGen;
 }
 
+namespace ppl {
+class IOPlacer;
+}
+
 namespace ram {
 
 using utl::Logger;
@@ -42,7 +46,7 @@ class Grid;
 class RamGen
 {
  public:
-  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen);
+  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen, ppl::IOPlacer* ioPlacer);
   ~RamGen() = default;
 
   void generate(int bytes_per_word,
@@ -55,6 +59,7 @@ class RamGen
                 int max_tap_dist);
 
   void ramPdngen();
+  void ramPinplacer();
 
  private:
   void findMasters();
@@ -108,6 +113,7 @@ class RamGen
   odb::dbBlock* block_{nullptr};
   Logger* logger_;
   pdn::PdnGen* pdngen_{nullptr};
+  ppl::IOPlacer* ioPlacer_{nullptr};
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};
@@ -116,6 +122,10 @@ class RamGen
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
+
+  std::vector<odb::dbBTerm*> addr;
+  std::vector<std::array<odb::dbBTerm*, 8>> Q;
+  std::vector<odb::dbBTerm*> D_bTerms;
 };
 
 }  // namespace ram

@@ -86,9 +86,15 @@ generate_ram_netlist_cmd(int bytes_per_word,
 
 void ram_pdngen() 
 {
-  auto* ram_gen = ord::getRamGen();
+  RamGen* ram_gen = ord::getRamGen();
   ram_gen->ramPdngen();
 
+}
+
+void ram_pinplacer()
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->ramPinplacer();
 }
 
 } //namespace_ram

@@ -203,13 +203,14 @@ proc generate_ram { args } {
   ram::ram_pdngen
 
   make_tracks -x_offset 0 -y_offset 0
-  set_io_pin_constraint -direction output -region top:*
-  set_io_pin_constraint -pin_names {D[*]} -region top:*
-
-  place_pins -hor_layers $hor_name -ver_layers $ver_name
+  ram::ram_pinplacer
+#  set_io_pin_constraint -direction output -region top:*
+#  set_io_pin_constraint -pin_names {D[*]} -region top:*
+#
+#  place_pins -hor_layers $hor_name -ver_layers $ver_name
 
   filler_placement $filler_cells
 
   global_route
-  detailed_route -verbose 0
+#  detailed_route -verbose 0
 }

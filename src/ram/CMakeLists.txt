@@ -28,6 +28,7 @@ target_link_libraries(ram
     dbSta
     OpenSTA
     pdn
+    ppl
 )
 
 messages(
