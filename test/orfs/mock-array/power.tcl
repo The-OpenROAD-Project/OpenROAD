@@ -37,7 +37,7 @@ foreach pin $pins {
 
   # Fixed duty to 0.55 for the first three pins to give a slight distortion
   # to see the slightly different power numbers b/w VCD and user activity flows.
-  if { $vcd_pin_count <= 3 } {
+  if { $vcd_pin_count < 3 } {
     set duty 0.55
   }
 
