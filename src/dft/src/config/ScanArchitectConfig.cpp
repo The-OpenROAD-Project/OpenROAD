@@ -17,6 +17,11 @@ ScanArchitectConfig::ClockMixing ScanArchitectConfig::getClockMixing() const
   return clock_mixing_;
 }
 
+const std::optional<uint64_t>& ScanArchitectConfig::getChainCount() const
+{
+  return chain_count_;
+}
+
 const std::optional<uint64_t>& ScanArchitectConfig::getMaxLength() const
 {
   return max_length_;
@@ -32,6 +37,11 @@ void ScanArchitectConfig::setClockMixing(ClockMixing clock_mixing)
   clock_mixing_ = clock_mixing;
 }
 
+void ScanArchitectConfig::setChainCount(uint64_t chain_count)
+{
+  chain_count_ = chain_count;
+}
+
 void ScanArchitectConfig::setMaxChains(uint64_t max_chains)
 {
   max_chains_ = max_chains;
@@ -45,6 +55,7 @@ void ScanArchitectConfig::setMaxLength(uint64_t max_length)
 void ScanArchitectConfig::report(utl::Logger* logger) const
 {
   logger->report("Scan Architect Config:");
+  logger->report("- Chain Count: {}", utils::FormatForReport(chain_count_));
   logger->report("- Max Length: {}", utils::FormatForReport(max_length_));
   logger->report("- Max Chains: {}", utils::FormatForReport(max_chains_));
   logger->report("- Clock Mixing: {}", ClockMixingName(clock_mixing_));

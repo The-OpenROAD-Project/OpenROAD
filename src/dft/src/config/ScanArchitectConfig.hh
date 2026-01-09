@@ -22,6 +22,12 @@ class ScanArchitectConfig
 
   void setClockMixing(ClockMixing clock_mixing);
 
+  // The exact number of scan chains to generate (per clock-edge pair in NoMix,
+  // total in ClockMix). When set, this takes priority over max_length/max_chains
+  // inference.
+  void setChainCount(uint64_t chain_count);
+  const std::optional<uint64_t>& getChainCount() const;
+
   // The max length in bits that a scan chain can have
   void setMaxLength(uint64_t max_length);
   const std::optional<uint64_t>& getMaxLength() const;
@@ -38,6 +44,9 @@ class ScanArchitectConfig
   static std::string ClockMixingName(ClockMixing clock_mixing);
 
  private:
+  // Exact number of chains to generate.
+  std::optional<uint64_t> chain_count_;
+
   // The max length in bits of the scan chain
   std::optional<uint64_t> max_length_;
   // The max number of chains to generate
