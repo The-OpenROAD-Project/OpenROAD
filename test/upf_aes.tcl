@@ -6,6 +6,7 @@ read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 read_verilog upf/mpd_aes.v
 link_design mpd_top
 
+source "sky130hd/sky130hd.rc"
 read_upf -file upf/mpd_aes.upf
 
 
@@ -19,6 +20,7 @@ initialize_floorplan \
   -site unithd \
   -additional_site unithddbl
 
+set_debug_level GPL callbacks 2
 make_tracks
 
 set_routing_layers -signal li1-met5
@@ -26,7 +28,7 @@ set_routing_layers -signal li1-met5
 place_pins \
   -hor_layers met3 \
   -ver_layers met2
-global_placement -skip_initial_place -density uniform -routability_driven
+global_placement -skip_initial_place -density uniform -routability_driven -timing_driven
 
 detailed_placement
 improve_placement

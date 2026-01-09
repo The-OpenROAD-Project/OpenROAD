@@ -3472,7 +3472,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 
 size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
-  debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell");
+  debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell {}", db_inst->getName());
   Instance pb_inst(db_inst, pbc_.get(), log_);
 
   pb_insts_stor_.push_back(pb_inst);
@@ -3523,12 +3523,23 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
              GPL,
              "callbacks",
              2,
-             "NesterovBase: destroyCbkGCell {}",
+             "NesterovBase {}: destroyCbkGCell {}",
+             getGroup() != nullptr? getGroup()->getName() : "",
              db_inst->getName());
   auto db_it = db_inst_to_nb_index_.find(db_inst);
   if (db_it != db_inst_to_nb_index_.end()) {
     size_t last_index = nb_gcells_.size() - 1;
     size_t gcell_index = db_it->second;
+    debugPrint(
+        log_,
+        GPL,
+        "callbacks",
+        2,
+        "NesterovBase {}: destroyCbkGCell {}, last_index {}, gcell_index {}",
+        getGroup() != nullptr? getGroup()->getName() : "",
+        db_inst->getName(),
+        last_index,
+        gcell_index);
 
     GCellHandle& handle = nb_gcells_[gcell_index];
 
