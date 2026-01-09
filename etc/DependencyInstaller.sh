@@ -819,7 +819,7 @@ _install_ubuntu_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev \
-        libgomp1 libomp-dev libpcre2-dev libpcre3-dev libreadline-dev pandoc \
+        libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
         pkg-config python3-dev python3-click qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -858,7 +858,7 @@ _install_rhel_packages() {
     _execute "Installing EPEL release..." yum -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_version}.noarch.rpm"
     _execute "Installing base packages..." yum -y install \
         autoconf automake clang clang-devel gcc gcc-c++ gdb git glibc-devel \
-        libffi-devel libtool llvm llvm-devel llvm-libs make pcre-devel \
+        libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip python3-click qt5-qtbase-devel qt5-qtcharts-devel \
         qt5-qtimageformats readline tcl-devel tcl-tclreadline \
@@ -898,7 +898,7 @@ _install_opensuse_packages() {
     _execute "Installing base packages..." zypper -n install \
         binutils clang gcc gcc11-c++ git groff gzip lcov libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
-        libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc pcre-devel \
+        libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
         pcre2-devel pkg-config python3-devel python3-pip python3-click qimgv readline-devel tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
@@ -946,7 +946,7 @@ _install_debian_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev libpcre3-dev libreadline-dev "libtcl${tcl_ver}" \
+        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
         pandoc pkg-config python3-dev python3-click qt5-image-formats-plugins tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
