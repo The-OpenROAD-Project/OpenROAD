@@ -14,4 +14,3 @@ class OpenRoad;
 void initSurrogate(Tcl_Interp* interp, OpenRoad* openroad);
 
 }  // namespace ord
-

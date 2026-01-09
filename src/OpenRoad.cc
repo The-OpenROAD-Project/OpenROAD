@@ -13,12 +13,16 @@
 #include <thread>
 #include <vector>
 
-#include "ord/Surrogate.hh"
 #include "ord/Version.hh"
 #include "tcl.h"
+#include "tclDecls.h"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#endif
+
+#ifdef ENABLE_SURROGATE
+#include "ord/Surrogate.hh"
 #endif
 
 #include "ant/AntennaChecker.hh"
@@ -80,7 +84,6 @@
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
-#include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
@@ -289,7 +292,13 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   stt::initSteinerTreeBuilder(tcl_interp);
   dft::initDft(tcl_interp);
   est::initTcl(tcl_interp);
-  ord::initSurrogate(tcl_interp, this);
+
+#ifdef ENABLE_SURROGATE
+  const char* enable_surrogate = std::getenv("OPENROAD_ENABLE_SURROGATE");
+  if (enable_surrogate != nullptr && std::strcmp(enable_surrogate, "0") != 0) {
+    ord::initSurrogate(tcl_interp, this);
+  }
+#endif
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
@@ -661,7 +670,7 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)
 {
-  int max_threads = threads_;  // default, make no changes
+  int max_threads;
 
   if (strcmp(threads, "max") == 0) {
     max_threads = -1;  // -1 is max cores
@@ -671,6 +680,7 @@ void OpenRoad::setThreadCount(const char* threads, bool print_info)
     } catch (const std::invalid_argument&) {
       logger_->warn(
           ORD, 32, "Invalid thread number specification: {}.", threads);
+      max_threads = threads_;  // default, make no changes
     }
   }
 

@@ -3,39 +3,46 @@
 
 #include "ord/Surrogate.hh"
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <atomic>
-#include <chrono>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/serialize.hpp>
+#include <boost/json/value.hpp>
 #include <cctype>
+#include <charconv>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <exception>
 #include <fstream>
-#include <initializer_list>
 #include <limits>
 #include <optional>
 #include <random>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <string_view>
+#include <system_error>
 #include <thread>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "boost/json.hpp"
-#include "boost/system/error_code.hpp"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
+#include "sta/MinMax.hh"
 #include "sta/Sdc.hh"
 #include "sta/Units.hh"
 #include "tcl.h"
+#include "tclDecls.h"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -76,12 +83,13 @@ std::string readTextFile(const std::string& path)
 
 boost::json::value loadJsonFile(const std::string& path)
 {
-  boost::system::error_code ec;
-  boost::json::value v = boost::json::parse(readTextFile(path), ec);
-  if (ec) {
-    throw std::runtime_error("Failed to parse JSON: " + path + " (" + ec.message() + ")");
+  const std::string text = readTextFile(path);
+  try {
+    return boost::json::parse(text);
+  } catch (const std::exception& e) {
+    throw std::runtime_error("Failed to parse JSON: " + path + " (" + e.what()
+                             + ")");
   }
-  return v;
 }
 
 std::optional<double> jsonToDouble(const boost::json::value& v)
@@ -101,7 +109,8 @@ std::optional<double> jsonToDouble(const boost::json::value& v)
   return std::nullopt;
 }
 
-std::optional<double> getObjDouble(const boost::json::object& obj, const std::string& key)
+std::optional<double> getObjDouble(const boost::json::object& obj,
+                                   const std::string& key)
 {
   const auto it = obj.find(key);
   if (it == obj.end()) {
@@ -141,7 +150,8 @@ DesignStats computeDesignStats(odb::dbBlock* block)
     return s;
   }
   s.dbu_per_micron = block->getDbUnitsPerMicron();
-  const double scale = (s.dbu_per_micron > 0) ? static_cast<double>(s.dbu_per_micron) : 1.0;
+  const double scale
+      = (s.dbu_per_micron > 0) ? static_cast<double>(s.dbu_per_micron) : 1.0;
 
   s.num_pins = static_cast<std::int64_t>(block->getBTerms().size());
   for (odb::dbInst* inst : block->getInsts()) {
@@ -230,7 +240,9 @@ DesignStats computeDesignStats(odb::dbBlock* block)
     if (w_um > 0.0 && h_um > 0.0) {
       s.core_bbox_area_um2 = w_um * h_um;
       s.core_bbox_aspect = clamp(w_um / h_um, 0.2, 5.0);
-      s.inst_utilization = (s.core_bbox_area_um2 > 0.0) ? (s.total_core_area_um2 / s.core_bbox_area_um2) : 0.0;
+      s.inst_utilization = (s.core_bbox_area_um2 > 0.0)
+                               ? (s.total_core_area_um2 / s.core_bbox_area_um2)
+                               : 0.0;
     }
   }
 
@@ -258,7 +270,9 @@ std::optional<std::array<double, 4>> parseFourDoubles(const std::string& s)
   int idx = 0;
   const char* p = s.c_str();
   while (*p != '\0' && idx < 4) {
-    while (*p != '\0' && (std::isspace(static_cast<unsigned char>(*p)) || *p == '{' || *p == '}' || *p == ',')) {
+    while (*p != '\0'
+           && (std::isspace(static_cast<unsigned char>(*p)) || *p == '{'
+               || *p == '}' || *p == ',')) {
       p++;
     }
     if (*p == '\0') {
@@ -303,7 +317,8 @@ WireRC estimateWireRC(odb::dbTech* tech, const int dbu_per_micron)
       continue;
     }
 
-    const double w_um = static_cast<double>(layer->getMinWidth()) / dbu_per_micron;
+    const double w_um
+        = static_cast<double>(layer->getMinWidth()) / dbu_per_micron;
     if (w_um <= 0.0) {
       continue;
     }
@@ -330,7 +345,8 @@ WireRC estimateWireRC(odb::dbTech* tech, const int dbu_per_micron)
   return rc;
 }
 
-std::optional<int> findRoutingLevelByName(odb::dbTech* tech, const std::string& name)
+std::optional<int> findRoutingLevelByName(odb::dbTech* tech,
+                                          const std::string& name)
 {
   if (!tech) {
     return std::nullopt;
@@ -347,7 +363,8 @@ std::optional<int> findRoutingLevelByName(odb::dbTech* tech, const std::string& 
   return std::nullopt;
 }
 
-std::int64_t estimateUsedRoutingLayers(odb::dbTech* tech, const std::int64_t fallback_layers)
+std::int64_t estimateUsedRoutingLayers(odb::dbTech* tech,
+                                       const std::int64_t fallback_layers)
 {
   const char* min_name = std::getenv("MIN_ROUTING_LAYER");
   const char* max_name = std::getenv("MAX_ROUTING_LAYER");
@@ -356,16 +373,20 @@ std::int64_t estimateUsedRoutingLayers(odb::dbTech* tech, const std::int64_t fal
   }
   const auto min_level = findRoutingLevelByName(tech, min_name);
   const auto max_level = findRoutingLevelByName(tech, max_name);
-  if (!min_level || !max_level || *min_level <= 0 || *max_level <= 0 || *max_level < *min_level) {
+  if (!min_level || !max_level || *min_level <= 0 || *max_level <= 0
+      || *max_level < *min_level) {
     return std::max<std::int64_t>(1, fallback_layers);
   }
-  const std::int64_t used = static_cast<std::int64_t>(*max_level - *min_level + 1);
-  return std::max<std::int64_t>(1, std::min(used, std::max<std::int64_t>(1, fallback_layers)));
+  const std::int64_t used
+      = static_cast<std::int64_t>(*max_level) - *min_level + 1;
+  return std::max<std::int64_t>(
+      1, std::min(used, std::max<std::int64_t>(1, fallback_layers)));
 }
 
 double computeAvgCellWidthSites(OpenRoad* openroad, const DesignStats& stats)
 {
-  if (!openroad || stats.dbu_per_micron <= 0 || stats.num_core_insts <= 0 || !(stats.total_core_area_um2 > 0.0)) {
+  if (!openroad || stats.dbu_per_micron <= 0 || stats.num_core_insts <= 0
+      || !(stats.total_core_area_um2 > 0.0)) {
     return 4.0;
   }
 
@@ -393,13 +414,16 @@ double computeAvgCellWidthSites(OpenRoad* openroad, const DesignStats& stats)
     return 4.0;
   }
 
-  const double site_w_um = static_cast<double>(site->getWidth()) / stats.dbu_per_micron;
-  const double site_h_um = static_cast<double>(site->getHeight()) / stats.dbu_per_micron;
+  const double site_w_um
+      = static_cast<double>(site->getWidth()) / stats.dbu_per_micron;
+  const double site_h_um
+      = static_cast<double>(site->getHeight()) / stats.dbu_per_micron;
   if (!(site_w_um > 0.0) || !(site_h_um > 0.0)) {
     return 4.0;
   }
 
-  const double avg_cell_area_um2 = stats.total_core_area_um2 / static_cast<double>(stats.num_core_insts);
+  const double avg_cell_area_um2
+      = stats.total_core_area_um2 / static_cast<double>(stats.num_core_insts);
   if (!(avg_cell_area_um2 > 0.0)) {
     return 4.0;
   }
@@ -508,8 +532,8 @@ struct BaselineMetrics
 };
 
 BaselineMetrics readBaselineMetrics(OpenRoad* openroad,
-                                   const std::string& ws_json_path,
-                                   const std::string& wl_json_path)
+                                    const std::string& ws_json_path,
+                                    const std::string& wl_json_path)
 {
   BaselineMetrics m;
   if (!openroad) {
@@ -531,11 +555,16 @@ BaselineMetrics readBaselineMetrics(OpenRoad* openroad,
         }
       }
       m.baseline_power_total_user = getObjDouble(obj, "finish__power__total");
-      m.baseline_power_leak_user = getObjDouble(obj, "finish__power__leakage__total");
-      m.baseline_power_internal_user = getObjDouble(obj, "finish__power__internal__total");
-      m.baseline_power_switching_user = getObjDouble(obj, "finish__power__switching__total");
-      m.baseline_inst_area_um2 = getObjDouble(obj, "finish__design__instance__area");
-      m.baseline_core_area_um2 = getObjDouble(obj, "finish__design__core__area");
+      m.baseline_power_leak_user
+          = getObjDouble(obj, "finish__power__leakage__total");
+      m.baseline_power_internal_user
+          = getObjDouble(obj, "finish__power__internal__total");
+      m.baseline_power_switching_user
+          = getObjDouble(obj, "finish__power__switching__total");
+      m.baseline_inst_area_um2
+          = getObjDouble(obj, "finish__design__instance__area");
+      m.baseline_core_area_um2
+          = getObjDouble(obj, "finish__design__core__area");
     }
   }
 
@@ -543,10 +572,12 @@ BaselineMetrics readBaselineMetrics(OpenRoad* openroad,
     const auto v = loadJsonFile(wl_json_path);
     if (v.is_object()) {
       const auto& obj = v.as_object();
-      if (const auto wl = getObjDouble(obj, "detailedroute__route__wirelength")) {
-        m.baseline_routed_wl_um = *wl;
-      } else if (const auto wl_iter = getObjDouble(obj, "detailedroute__route__wirelength__iter:4")) {
-        m.baseline_routed_wl_um = *wl_iter;
+      if (const auto wl
+          = getObjDouble(obj, "detailedroute__route__wirelength")) {
+        m.baseline_routed_wl_um = wl;
+      } else if (const auto wl_iter = getObjDouble(
+                     obj, "detailedroute__route__wirelength__iter:4")) {
+        m.baseline_routed_wl_um = wl_iter;
       }
     }
   }
@@ -773,7 +804,8 @@ Knobs defaultKnobsFromEnv(odb::dbBlock* block, const DesignStats& stats)
 
   const char* util_env = std::getenv("CORE_UTILIZATION");
   if (!util_env || util_env[0] == '\0') {
-    const double inst_area = std::max(1e-9, stats.total_core_area_um2 + stats.total_macro_area_um2);
+    const double inst_area = std::max(
+        1e-9, stats.total_core_area_um2 + stats.total_macro_area_um2);
     const char* core_area_env = std::getenv("CORE_AREA");
     if (core_area_env && core_area_env[0] != '\0') {
       if (const auto rect = parseFourDoubles(core_area_env)) {
@@ -781,11 +813,13 @@ Knobs defaultKnobsFromEnv(odb::dbBlock* block, const DesignStats& stats)
         const double h = std::abs((*rect)[3] - (*rect)[1]);
         const double core_area = w * h;
         if (core_area > 0.0) {
-          k.core_utilization_pct = clamp(100.0 * inst_area / core_area, 20.0, 99.0);
+          k.core_utilization_pct
+              = clamp(100.0 * inst_area / core_area, 20.0, 99.0);
         }
       }
     } else if (block && stats.core_bbox_area_um2 > 0.0) {
-      k.core_utilization_pct = clamp(100.0 * inst_area / stats.core_bbox_area_um2, 20.0, 99.0);
+      k.core_utilization_pct
+          = clamp(100.0 * inst_area / stats.core_bbox_area_um2, 20.0, 99.0);
     }
   }
 
@@ -899,7 +933,8 @@ struct ModelContext
     if (stats.num_nets <= 0) {
       return 0.0;
     }
-    return static_cast<double>(stats.sum_net_degree) / static_cast<double>(stats.num_nets);
+    return static_cast<double>(stats.sum_net_degree)
+           / static_cast<double>(stats.num_nets);
   }
 };
 
@@ -938,7 +973,8 @@ double calibrateScaleLogSearch(double initial_scale,
 
   constexpr int kSweepPoints = 41;
   for (int i = 0; i < kSweepPoints; i++) {
-    const double t = static_cast<double>(i) / static_cast<double>(kSweepPoints - 1);
+    const double t
+        = static_cast<double>(i) / static_cast<double>(kSweepPoints - 1);
     const double scale = min_scale * std::pow(max_scale / min_scale, t);
     const double e = abs_error(scale);
     if (e < best_err) {
@@ -983,7 +1019,12 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   SimOut o;
 
   const int fid = clamp(fidelity, 1, 3);
-  const int coupling_iters = (fid == 1) ? 2 : (fid == 2) ? 3 : 5;
+  int coupling_iters = 5;
+  if (fid == 1) {
+    coupling_iters = 2;
+  } else if (fid == 2) {
+    coupling_iters = 3;
+  }
 
   const double speedup_base = (fid == 1) ? 0.06 : 0.05;
   const double speedup_repair = (fid == 1) ? 0.22 : 0.18;
@@ -998,7 +1039,8 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   const double wire_weight = (fid == 1) ? 1.5 : 2.0;
 
   const double clock_period_user
-      = (k.clock_period_user > 0.0) ? k.clock_period_user : std::max(1e-9, ctx.sta.clock_period_user);
+      = (k.clock_period_user > 0.0) ? k.clock_period_user
+                                    : std::max(1e-9, ctx.sta.clock_period_user);
   const double clock_period_s = clock_period_user * ctx.sta.time_scale;
 
   const double util_target = clamp(k.core_utilization_pct / 100.0, 0.20, 0.99);
@@ -1009,13 +1051,17 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   const double pad_sum = global_pad + detail_pad;
 
   const double avg_cell_sites = std::max(1.0, ctx.avg_cell_width_sites);
-  const double global_pad_factor = (avg_cell_sites + 2.0 * global_pad) / avg_cell_sites;
-  const double detail_pad_factor = (avg_cell_sites + 2.0 * detail_pad) / avg_cell_sites;
-  const double padded_utilization = util_target * std::max(global_pad_factor, detail_pad_factor);
+  const double global_pad_factor
+      = (avg_cell_sites + 2.0 * global_pad) / avg_cell_sites;
+  const double detail_pad_factor
+      = (avg_cell_sites + 2.0 * detail_pad) / avg_cell_sites;
+  const double padded_utilization
+      = util_target * std::max(global_pad_factor, detail_pad_factor);
 
   const double inst_core_area = ctx.stats.total_core_area_um2;
   const double inst_macro_area = ctx.stats.total_macro_area_um2;
-  const double inst_active_area = std::max(1e-9, inst_core_area + inst_macro_area);
+  const double inst_active_area
+      = std::max(1e-9, inst_core_area + inst_macro_area);
   const double macro_frac = inst_macro_area / inst_active_area;
 
   double core_area_est = inst_active_area / util_target;
@@ -1029,44 +1075,64 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   k_place *= 1.0 + 0.04 * pad_sum;
 
   const double density_lb_est = clamp(util_target + 0.03 * pad_sum, 0.20, 0.95);
-  const double density_addon = (k.density_margin_addon >= 0.0) ? clamp(k.density_margin_addon, 0.0, 0.99) : -1.0;
+  const double density_addon = (k.density_margin_addon >= 0.0)
+                                   ? clamp(k.density_margin_addon, 0.0, 0.99)
+                                   : -1.0;
   const double place_density_est
-      = (density_addon >= 0.0) ? clamp(density_lb_est + (1.0 - density_lb_est) * density_addon + 0.01, 0.0, 1.0)
-                               : clamp(std::max(k.place_density, density_lb_est), 0.0, 1.0);
-  const double density_knob = (density_addon >= 0.0)
-                                  ? density_addon
-                                  : clamp((place_density_est - density_lb_est) / std::max(1e-9, 1.0 - density_lb_est), 0.0, 0.99);
+      = (density_addon >= 0.0)
+            ? clamp(density_lb_est + (1.0 - density_lb_est) * density_addon
+                        + 0.01,
+                    0.0,
+                    1.0)
+            : clamp(std::max(k.place_density, density_lb_est), 0.0, 1.0);
+  const double density_knob
+      = (density_addon >= 0.0)
+            ? density_addon
+            : clamp((place_density_est - density_lb_est)
+                        / std::max(1e-9, 1.0 - density_lb_est),
+                    0.0,
+                    0.99);
   k_place *= 1.0 - 0.10 * density_knob;
   k_place *= 1.0 + 0.25 * macro_frac;
   k_place *= 1.0 - 0.02 * (k.enable_dpo > 0.5);
   k_place = clamp(k_place, 0.12, 0.95);
 
   constexpr double kUtilSpanExp = 0.30;
-  const double core_span = (core_w + core_h) * std::pow(util_target, kUtilSpanExp);
+  const double core_span
+      = (core_w + core_h) * std::pow(util_target, kUtilSpanExp);
 
   double hpwl_factor_sum = ctx.stats.hpwl_factor_sum;
   if (!(hpwl_factor_sum > 0.0) || !std::isfinite(hpwl_factor_sum)) {
     const double avg_degree = clamp(ctx.net_degree_mean(), 1.0, 10.0);
-    const double net_term = std::sqrt(std::max<std::int64_t>(1, ctx.stats.num_nets));
+    const double net_term
+        = std::sqrt(std::max<std::int64_t>(1, ctx.stats.num_nets));
     hpwl_factor_sum = net_term * (1.0 + 0.40 * avg_degree);
   }
 
-  const double length_scale = clamp(ctx.calib.builtin_length_scale, 0.01, 100.0);
+  const double length_scale
+      = clamp(ctx.calib.builtin_length_scale, 0.01, 100.0);
   const double hpwl_est = core_span * hpwl_factor_sum * k_place * length_scale;
   o.hpwl_est = hpwl_est;
 
-  const std::int64_t tech_layers = std::max<std::int64_t>(1, ctx.stats.num_routing_layers);
-  const std::int64_t routing_layers = std::max<std::int64_t>(1, ctx.stats.used_routing_layers > 0 ? ctx.stats.used_routing_layers
-                                                                                                  : tech_layers);
+  const std::int64_t tech_layers
+      = std::max<std::int64_t>(1, ctx.stats.num_routing_layers);
+  const std::int64_t routing_layers = std::max<std::int64_t>(
+      1,
+      ctx.stats.used_routing_layers > 0 ? ctx.stats.used_routing_layers
+                                        : tech_layers);
   constexpr double kCapacityExp = 0.55;
-  const double pin_capacity = std::pow(clamp(1.0 - k.pin_layer_adjust, 0.05, 1.0), kCapacityExp);
-  const double above_capacity = std::pow(clamp(1.0 - k.above_layer_adjust, 0.05, 1.0), kCapacityExp);
+  const double pin_capacity
+      = std::pow(clamp(1.0 - k.pin_layer_adjust, 0.05, 1.0), kCapacityExp);
+  const double above_capacity
+      = std::pow(clamp(1.0 - k.above_layer_adjust, 0.05, 1.0), kCapacityExp);
   const std::int64_t pin_layers = std::min<std::int64_t>(2, routing_layers);
-  const std::int64_t above_layers = std::max<std::int64_t>(0, routing_layers - pin_layers);
+  const std::int64_t above_layers
+      = std::max<std::int64_t>(0, routing_layers - pin_layers);
   const double pin_weight = 3.0;
   const double denom = pin_weight * pin_layers + above_layers;
   const double avg_capacity = clamp(
-      (pin_capacity * pin_weight * pin_layers + above_capacity * above_layers) / std::max(1.0, denom),
+      (pin_capacity * pin_weight * pin_layers + above_capacity * above_layers)
+          / std::max(1.0, denom),
       0.05,
       1.0);
 
@@ -1076,7 +1142,8 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   util_cong *= clamp(1.0 + 25.0 * util_over, 1.0, 25.0);
   util_cong *= 1.0 + 0.12 * density_knob;
   const double density_pressure = std::max(0.0, place_density_est - 0.80);
-  const double density_penalty = clamp(1.0 + 4.0 * std::pow(density_pressure / 0.10, 3.0), 1.0, 10.0);
+  const double density_penalty
+      = clamp(1.0 + 4.0 * std::pow(density_pressure / 0.10, 3.0), 1.0, 10.0);
   util_cong *= density_penalty;
   util_cong *= 1.0 + 0.60 * macro_frac;
   util_cong *= 1.0 - 0.03 * (k.enable_dpo > 0.5);
@@ -1084,13 +1151,15 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   const double util_cong_base = util_cong;
 
   const double routability = clamp(util_cong / avg_capacity, 0.0, 10.0);
-  const double detour = 1.0 + 0.55 * std::pow(std::max(0.0, routability - 1.0), 2.0);
+  const double detour
+      = 1.0 + 0.55 * std::pow(std::max(0.0, routability - 1.0), 2.0);
   o.detour = detour;
 
   const double signal_routed_wl0 = hpwl_est * detour;
   double routed_wl_est0 = signal_routed_wl0;
 
-  const double seqs = std::max(1.0, std::round(ctx.stats.num_core_insts * 0.10));
+  const double seqs
+      = std::max(1.0, std::round(ctx.stats.num_core_insts * 0.10));
   const double cluster_sz = std::max(1.0, k.cts_cluster_size);
   const double clusters = std::ceil(seqs / cluster_sz);
   const double clk_levels = std::max(1.0, std::log2(clusters + 1.0));
@@ -1100,14 +1169,22 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   routed_wl_est0 += clk_wl_est;
 
   // -------- Timing proxy (wire RC + congestion/repair coupling) --------
-  const double timing_scale = clamp(ctx.calib.builtin_timing_scale, 0.01, 100.0);
-  const double base_path_delay_user = ctx.sta.worst_path_valid ? ctx.sta.worst_path_delay_user : clock_period_user;
+  const double timing_scale
+      = clamp(ctx.calib.builtin_timing_scale, 0.01, 100.0);
+  const double base_path_delay_user = ctx.sta.worst_path_valid
+                                          ? ctx.sta.worst_path_delay_user
+                                          : clock_period_user;
   const double base_path_delay_s = base_path_delay_user * ctx.sta.time_scale;
 
-  const int logic_depth = static_cast<int>(std::round(std::log2(ctx.stats.num_insts + 1.0) * 8.0 + 10.0));
-  const double depth_for_wires = std::max(1.0, static_cast<double>(logic_depth));
+  const int logic_depth = static_cast<int>(
+      std::round(std::log2(ctx.stats.num_insts + 1.0) * 8.0 + 10.0));
+  const double depth_for_wires
+      = std::max(1.0, static_cast<double>(logic_depth));
 
-  const double hpwl_factor_mean = (ctx.stats.nets_degree_ge2 > 0) ? (ctx.stats.hpwl_factor_sum / ctx.stats.nets_degree_ge2) : 0.0;
+  const double hpwl_factor_mean
+      = (ctx.stats.nets_degree_ge2 > 0)
+            ? (ctx.stats.hpwl_factor_sum / ctx.stats.nets_degree_ge2)
+            : 0.0;
   double hpwl_factor_crit = hpwl_factor_mean;
   if (fid >= 3 && ctx.stats.hpwl_factor_p99 > 0.0) {
     hpwl_factor_crit = ctx.stats.hpwl_factor_p99;
@@ -1117,17 +1194,24 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
     hpwl_factor_crit = ctx.stats.hpwl_factor_p90;
   }
   const double crit_len_factor = 1.25 + 0.40 * std::max(0.0, routability - 1.0);
-  const double crit_net_len0 = (core_span * hpwl_factor_crit * k_place * length_scale * detour) * crit_len_factor;
+  const double crit_net_len0
+      = (core_span * hpwl_factor_crit * k_place * length_scale * detour)
+        * crit_len_factor;
 
-  const double wire_delay0_s = 0.5 * ctx.wire_rc.r_per_um * ctx.wire_rc.c_per_um * crit_net_len0 * crit_net_len0;
+  const double wire_delay0_s = 0.5 * ctx.wire_rc.r_per_um * ctx.wire_rc.c_per_um
+                               * crit_net_len0 * crit_net_len0;
   const double wire_delay0_s_scaled = wire_delay0_s * timing_scale;
   const double out_res = 2500.0;
   const double wire_cap = ctx.wire_rc.c_per_um * crit_net_len0 * 1.2;
   const double wire_load_delay0_s_scaled = (out_res * wire_cap) * timing_scale;
 
   const double clk_level_factor = 1.0 + 0.10 * std::min(8.0, clk_levels);
-  const double clk_path_len = 0.5 * std::max(0.0, k.cts_cluster_diameter) + 0.35 * std::sqrt(core_area_est) * clk_level_factor;
-  const double clk_wire_delay_s = 0.5 * ctx.wire_rc.r_per_um * ctx.wire_rc.c_per_um * clk_path_len * clk_path_len;
+  const double clk_path_len
+      = 0.5 * std::max(0.0, k.cts_cluster_diameter)
+        + 0.35 * std::sqrt(core_area_est) * clk_level_factor;
+  const double clk_wire_delay_s = 0.5 * ctx.wire_rc.r_per_um
+                                  * ctx.wire_rc.c_per_um * clk_path_len
+                                  * clk_path_len;
   const double clk_delay_s_scaled = 0.25 * clk_wire_delay_s * timing_scale;
 
   const double repair_frac = clamp(k.tns_end_percent / 100.0, 0.0, 1.0);
@@ -1144,13 +1228,21 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
 
   for (int iter = 0; iter < coupling_iters; iter++) {
     const double base_gate_delay_s = base_path_delay_s * timing_scale;
-    const double base_delay_s = base_gate_delay_s + wire_weight * depth_for_wires * (wire_load_delay_s + wire_delay_s);
+    const double base_delay_s
+        = base_gate_delay_s
+          + wire_weight * depth_for_wires * (wire_load_delay_s + wire_delay_s);
     const double total_delay_s = base_delay_s + clk_delay_s_scaled;
-    pressure = (clock_period_s > 0.0) ? std::max(0.0, total_delay_s / clock_period_s - 1.0) : 0.0;
+    pressure = (clock_period_s > 0.0)
+                   ? std::max(0.0, total_delay_s / clock_period_s - 1.0)
+                   : 0.0;
 
-    const double rout_penalty_iter = 1.0 / (1.0 + 1.3 * std::pow(std::max(0.0, routability_eff - 1.0), 2.0));
+    const double rout_penalty_iter
+        = 1.0
+          / (1.0 + 1.3 * std::pow(std::max(0.0, routability_eff - 1.0), 2.0));
     const double max_speedup
-        = clamp((speedup_base + speedup_repair * repair_frac + speedup_dpo * (k.enable_dpo > 0.5)) * rout_penalty_iter,
+        = clamp((speedup_base + speedup_repair * repair_frac
+                 + speedup_dpo * (k.enable_dpo > 0.5))
+                    * rout_penalty_iter,
                 0.0,
                 speedup_cap);
     speedup = max_speedup * (1.0 - std::exp(-speedup_k * pressure));
@@ -1158,63 +1250,94 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
     const double base_area_overhead = 0.025 * repair_frac;
     const double base_wl_overhead = 0.015 * repair_frac;
     const double pressure_sat = 1.0 - std::exp(-pressure);
-    area_scale = clamp(1.0 + base_area_overhead + 0.70 * speedup + area_pressure_coeff * pressure_sat * repair_frac, 1.0, 2.5);
+    area_scale = clamp(1.0 + base_area_overhead + 0.70 * speedup
+                           + area_pressure_coeff * pressure_sat * repair_frac,
+                       1.0,
+                       2.5);
 
     const double rout_over_wl = std::max(0.0, routability_eff - 1.0);
     const double dens_over_wl = std::max(0.0, place_density_eff - 0.80);
     const double util_over_wl = std::max(0.0, padded_util_eff - 0.90);
-    const double cong_gate = clamp(rout_over_wl / 0.50 + dens_over_wl / 0.10 + util_over_wl / 0.10, 0.0, 1.0);
+    const double cong_gate
+        = clamp(rout_over_wl / 0.50 + dens_over_wl / 0.10 + util_over_wl / 0.10,
+                0.0,
+                1.0);
 
     const double pressure_ratio = pressure / (pressure + 1.0);
-    const double thrash
-        = 1.0 + thrash_coeff * (pressure_ratio * pressure_ratio) * cong_gate * (1.0 + thrash_density_coeff * dens_over_wl);
-    wl_scale = clamp((1.0 + base_wl_overhead + 0.35 * speedup + wl_pressure_coeff * pressure_sat * repair_frac * cong_gate
-                      + 0.15 * std::pow(rout_over_wl, 2.0))
-                         * thrash,
-                     1.0,
-                     4.0);
+    const double thrash = 1.0
+                          + thrash_coeff * (pressure_ratio * pressure_ratio)
+                                * cong_gate
+                                * (1.0 + thrash_density_coeff * dens_over_wl);
+    wl_scale
+        = clamp((1.0 + base_wl_overhead + 0.35 * speedup
+                 + wl_pressure_coeff * pressure_sat * repair_frac * cong_gate
+                 + 0.15 * std::pow(rout_over_wl, 2.0))
+                    * thrash,
+                1.0,
+                4.0);
 
-    const double inst_area_scale_total = clamp(macro_frac + (1.0 - macro_frac) * area_scale, 1.0, 10.0);
+    const double inst_area_scale_total
+        = clamp(macro_frac + (1.0 - macro_frac) * area_scale, 1.0, 10.0);
     const double padded_util_new = padded_utilization * inst_area_scale_total;
-    const double place_density_new = clamp(std::max(place_density_est, density_lb_est * inst_area_scale_total), 0.0, 1.0);
+    const double place_density_new = clamp(
+        std::max(place_density_est, density_lb_est * inst_area_scale_total),
+        0.0,
+        1.0);
 
     const double relax = clamp(0.65 - 0.25 * pressure_ratio, 0.25, 0.65);
-    const auto mix = [&](const double prev, const double next) { return prev + relax * (next - prev); };
+    const auto mix = [&](const double prev, const double next) {
+      return prev + relax * (next - prev);
+    };
     padded_util_eff = mix(padded_util_eff, padded_util_new);
-    place_density_eff = clamp(mix(place_density_eff, place_density_new), 0.0, 1.0);
+    place_density_eff
+        = clamp(mix(place_density_eff, place_density_new), 0.0, 1.0);
 
     const double density_pressure_eff = std::max(0.0, place_density_eff - 0.80);
-    const double density_penalty_eff = clamp(1.0 + 4.0 * std::pow(density_pressure_eff / 0.10, 3.0), 1.0, 10.0);
-    const double density_ratio = density_penalty_eff / std::max(1.0, density_penalty);
+    const double density_penalty_eff = clamp(
+        1.0 + 4.0 * std::pow(density_pressure_eff / 0.10, 3.0), 1.0, 10.0);
+    const double density_ratio
+        = density_penalty_eff / std::max(1.0, density_penalty);
 
     const double util_over_eff = std::max(0.0, padded_util_eff - 1.0);
-    const double util_over_penalty_eff = clamp(1.0 + 25.0 * util_over_eff, 1.0, 25.0);
+    const double util_over_penalty_eff
+        = clamp(1.0 + 25.0 * util_over_eff, 1.0, 25.0);
     double util_cong_eff = util_cong_base * inst_area_scale_total;
     util_cong_eff *= density_ratio;
     util_cong_eff *= util_over_penalty_eff;
     util_cong_eff *= std::pow(clamp(wl_scale, 1.0, 3.0), 0.35);
     util_cong_eff = clamp(util_cong_eff, 0.05, 25.0);
-    const double routability_new = clamp(util_cong_eff / avg_capacity, 0.0, 10.0);
+    const double routability_new
+        = clamp(util_cong_eff / avg_capacity, 0.0, 10.0);
     routability_eff = mix(routability_eff, routability_new);
 
     const double cong_delta = std::max(0.0, routability_eff - routability);
     const double cong_delay = 1.0 + 0.80 * std::pow(cong_delta, 1.5);
-    const double len_scale = std::max(1.0, wl_scale) * std::sqrt(std::max(1.0, cong_delay));
+    const double len_scale
+        = std::max(1.0, wl_scale) * std::sqrt(std::max(1.0, cong_delay));
     const double wire_load_new = wire_load_delay0_s_scaled * len_scale;
-    const double wire_delay_new = wire_delay0_s_scaled * (wl_scale * wl_scale) * cong_delay;
+    const double wire_delay_new
+        = wire_delay0_s_scaled * (wl_scale * wl_scale) * cong_delay;
     wire_load_delay_s = mix(wire_load_delay_s, wire_load_new);
     wire_delay_s = mix(wire_delay_s, wire_delay_new);
   }
 
   {
     const double base_gate_delay_s = base_path_delay_s * timing_scale;
-    const double base_delay_s = base_gate_delay_s + wire_weight * depth_for_wires * (wire_load_delay_s + wire_delay_s);
+    const double base_delay_s
+        = base_gate_delay_s
+          + wire_weight * depth_for_wires * (wire_load_delay_s + wire_delay_s);
     const double total_delay_s = base_delay_s + clk_delay_s_scaled;
-    pressure = (clock_period_s > 0.0) ? std::max(0.0, total_delay_s / clock_period_s - 1.0) : 0.0;
+    pressure = (clock_period_s > 0.0)
+                   ? std::max(0.0, total_delay_s / clock_period_s - 1.0)
+                   : 0.0;
 
-    const double rout_penalty_iter = 1.0 / (1.0 + 1.3 * std::pow(std::max(0.0, routability_eff - 1.0), 2.0));
+    const double rout_penalty_iter
+        = 1.0
+          / (1.0 + 1.3 * std::pow(std::max(0.0, routability_eff - 1.0), 2.0));
     const double max_speedup
-        = clamp((speedup_base + speedup_repair * repair_frac + speedup_dpo * (k.enable_dpo > 0.5)) * rout_penalty_iter,
+        = clamp((speedup_base + speedup_repair * repair_frac
+                 + speedup_dpo * (k.enable_dpo > 0.5))
+                    * rout_penalty_iter,
                 0.0,
                 speedup_cap);
     speedup = max_speedup * (1.0 - std::exp(-speedup_k * pressure));
@@ -1223,23 +1346,28 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   const double base_gate_delay_s = base_path_delay_s * timing_scale;
   const double wire_speedup = 0.25 * speedup;
   double delay_s = base_gate_delay_s * (1.0 - speedup)
-                   + wire_weight * depth_for_wires * (wire_load_delay_s + wire_delay_s) * (1.0 - wire_speedup);
+                   + wire_weight * depth_for_wires
+                         * (wire_load_delay_s + wire_delay_s)
+                         * (1.0 - wire_speedup);
   delay_s += clk_delay_s_scaled;
 
   if (ctx.calib.builtin_ref_clock_user > 0.0 && clock_period_user > 0.0) {
-    const double tight_ratio = ctx.calib.builtin_ref_clock_user / clock_period_user;
+    const double tight_ratio
+        = ctx.calib.builtin_ref_clock_user / clock_period_user;
     const double wall_start = 1.20;
     const double wall = std::max(0.0, tight_ratio - wall_start);
     delay_s *= (1.0 + 15.0 * wall * wall);
   }
 
-  o.delay_user = (ctx.sta.time_scale > 0.0) ? (delay_s / ctx.sta.time_scale) : delay_s;
+  o.delay_user
+      = (ctx.sta.time_scale > 0.0) ? (delay_s / ctx.sta.time_scale) : delay_s;
   o.pressure = pressure;
   o.speedup = speedup;
   o.routed_wl = routed_wl_est0 * wl_scale;
   o.routability = routability_eff;
 
-  const double instance_area_est = inst_macro_area + inst_core_area * area_scale;
+  const double instance_area_est
+      = inst_macro_area + inst_core_area * area_scale;
   o.inst_area_um2 = instance_area_est;
   o.core_area_um2 = core_area_est;
 
@@ -1250,23 +1378,33 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   fail_risk += dpl_risk * dpl_risk;
   fail_risk += dens_risk * dens_risk;
   fail_risk += cong_risk * cong_risk;
-  if (padded_util_eff >= 1.0 || place_density_eff >= 0.99 || routability_eff >= 8.0) {
+  if (padded_util_eff >= 1.0 || place_density_eff >= 0.99
+      || routability_eff >= 8.0) {
     fail_risk += 50.0;
   }
   o.fail_risk = clamp(fail_risk, 0.0, 100.0);
 
   o.power_user = 0.0;
-  if (ctx.baseline_metrics.baseline_power_total_user && ctx.baseline_metrics.baseline_inst_area_um2
-      && ctx.baseline_metrics.baseline_routed_wl_um && ctx.calib.builtin_ref_clock_user > 0.0) {
+  if (ctx.baseline_metrics.baseline_power_total_user
+      && ctx.baseline_metrics.baseline_inst_area_um2
+      && ctx.baseline_metrics.baseline_routed_wl_um
+      && ctx.calib.builtin_ref_clock_user > 0.0) {
     const double ref_clock = ctx.calib.builtin_ref_clock_user;
     const double freq_scale = clamp(ref_clock / clock_period_user, 0.2, 5.0);
-    const double area_scale_rel = clamp(instance_area_est / std::max(1e-9, *ctx.baseline_metrics.baseline_inst_area_um2),
-                                        0.25,
-                                        4.0);
-    const double wl_scale_rel = clamp(o.routed_wl / std::max(1e-9, *ctx.baseline_metrics.baseline_routed_wl_um), 0.25, 4.0);
+    const double area_scale_rel = clamp(
+        instance_area_est
+            / std::max(1e-9, *ctx.baseline_metrics.baseline_inst_area_um2),
+        0.25,
+        4.0);
+    const double wl_scale_rel = clamp(
+        o.routed_wl
+            / std::max(1e-9, *ctx.baseline_metrics.baseline_routed_wl_um),
+        0.25,
+        4.0);
 
     const double base_total = *ctx.baseline_metrics.baseline_power_total_user;
-    double base_leak = ctx.baseline_metrics.baseline_power_leak_user.value_or(0.25 * base_total);
+    double base_leak = ctx.baseline_metrics.baseline_power_leak_user.value_or(
+        0.25 * base_total);
     double base_dyn = 0.0;
     if (ctx.baseline_metrics.baseline_power_internal_user) {
       base_dyn += *ctx.baseline_metrics.baseline_power_internal_user;
@@ -1281,7 +1419,8 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
       base_leak = std::max(0.0, base_total - base_dyn);
     }
 
-    const double cap_scale = clamp(0.5 * area_scale_rel + 0.5 * wl_scale_rel, 0.25, 4.0);
+    const double cap_scale
+        = clamp(0.5 * area_scale_rel + 0.5 * wl_scale_rel, 0.25, 4.0);
     const double leak = base_leak * area_scale_rel;
     const double dyn = base_dyn * freq_scale * cap_scale;
     o.power_user = leak + dyn;
@@ -1289,7 +1428,8 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
   return o;
 }
 
-boost::json::object knobsToJson(const Knobs& k, const std::unordered_set<std::string>& include)
+boost::json::object knobsToJson(const Knobs& k,
+                                const std::unordered_set<std::string>& include)
 {
   boost::json::object obj;
   auto add_f = [&](const std::string& name, double v) {
@@ -1379,7 +1519,8 @@ Knobs applySampleToKnobs(const Knobs& base,
   return k;
 }
 
-boost::json::object outputsToJson(const SimOut& o, const std::string& objective_name)
+boost::json::object outputsToJson(const SimOut& o,
+                                  const std::string& objective_name)
 {
   boost::json::object out;
   out["power"] = o.power_user;
@@ -1471,17 +1612,22 @@ struct OptArgs
 std::uint64_t parseSeed(const std::string& s)
 {
   if (s == "auto") {
-    const auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    const auto now
+        = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     std::random_device rd;
-    const std::uint64_t mix = (static_cast<std::uint64_t>(now) << 1) ^ static_cast<std::uint64_t>(rd());
+    const std::uint64_t mix = (static_cast<std::uint64_t>(now) << 1)
+                              ^ static_cast<std::uint64_t>(rd());
     return mix ? mix : 1ULL;
   }
-  char* end = nullptr;
-  const unsigned long long v = std::strtoull(s.c_str(), &end, 10);
-  if (end == s.c_str()) {
+
+  std::uint64_t value = 0;
+  const char* begin = s.data();
+  const char* end = begin + s.size();
+  const auto [ptr, ec] = std::from_chars(begin, end, value, 10);
+  if (ec != std::errc{} || ptr == begin) {
     return 1ULL;
   }
-  return static_cast<std::uint64_t>(v);
+  return value ? value : 1ULL;
 }
 
 void writeJsonToFile(const std::string& path, const boost::json::value& v)
@@ -1506,7 +1652,8 @@ OptArgs parseOptimizeArgs(utl::Logger* logger, int objc, Tcl_Obj* const objv[])
     };
     if (arg == "-builtin") {
       continue;
-    } else if (arg == "-space_file") {
+    }
+    if (arg == "-space_file") {
       a.space_file = need("-space_file");
     } else if (arg == "-space") {
       a.space_json = need("-space");
@@ -1556,13 +1703,15 @@ OptArgs parseOptimizeArgs(utl::Logger* logger, int objc, Tcl_Obj* const objv[])
       a.include_features = true;
     } else {
       if (logger) {
-        logger->warn(kTool, 4200, "surrogate_optimize ignoring unknown arg {}", arg);
+        logger->warn(
+            kTool, 4200, "surrogate_optimize ignoring unknown arg {}", arg);
       }
     }
   }
 
   if (a.space_file.empty() && a.space_json.empty()) {
-    throw std::runtime_error("surrogate_optimize requires -space_file or -space");
+    throw std::runtime_error(
+        "surrogate_optimize requires -space_file or -space");
   }
   if (a.samples <= 0) {
     throw std::runtime_error("surrogate_optimize requires -samples > 0");
@@ -1575,30 +1724,36 @@ OptArgs parseOptimizeArgs(utl::Logger* logger, int objc, Tcl_Obj* const objv[])
   return a;
 }
 
-int surrogateSupportedFeaturesCmd(ClientData, Tcl_Interp* interp, int, Tcl_Obj* const[])
+int surrogateSupportedFeaturesCmd(ClientData,
+                                  Tcl_Interp* interp,
+                                  int,
+                                  Tcl_Obj* const[])
 {
   boost::json::array feats;
-  for (const char* name :
-       {"effective_clock_period",
-        "routed_wirelength",
-        "area",
-        "instance_area",
-        "power",
-        "surrogate_hpwl_est",
-        "surrogate_detour",
-        "surrogate_routability",
-        "surrogate_pressure",
-        "surrogate_speedup",
-        "surrogate_fail_risk",
-        "surrogate_power"}) {
+  for (const char* name : {"effective_clock_period",
+                           "routed_wirelength",
+                           "area",
+                           "instance_area",
+                           "power",
+                           "surrogate_hpwl_est",
+                           "surrogate_detour",
+                           "surrogate_routability",
+                           "surrogate_pressure",
+                           "surrogate_speedup",
+                           "surrogate_fail_risk",
+                           "surrogate_power"}) {
     feats.emplace_back(name);
   }
   const std::string out = boost::json::serialize(feats);
-  Tcl_SetObjResult(interp, Tcl_NewStringObj(out.c_str(), static_cast<int>(out.size())));
+  Tcl_SetObjResult(interp,
+                   Tcl_NewStringObj(out.c_str(), static_cast<int>(out.size())));
   return TCL_OK;
 }
 
-int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Obj* const objv[])
+int surrogateOptimizeCmd(ClientData clientData,
+                         Tcl_Interp* interp,
+                         int objc,
+                         Tcl_Obj* const objv[])
 {
   OpenRoad* openroad = static_cast<OpenRoad*>(clientData);
   utl::Logger* logger = openroad ? openroad->getLogger() : nullptr;
@@ -1612,8 +1767,9 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
       throw std::runtime_error("No design loaded (dbBlock is null)");
     }
 
-    boost::json::value space_v = args.space_json.empty() ? loadJsonFile(args.space_file)
-                                                         : boost::json::parse(args.space_json);
+    boost::json::value space_v = args.space_json.empty()
+                                     ? loadJsonFile(args.space_file)
+                                     : boost::json::parse(args.space_json);
     std::vector<KnobSpec> space = parseSpace(space_v);
 
     std::unordered_set<std::string> frozen;
@@ -1622,7 +1778,8 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
     }
 
     DesignStats stats = computeDesignStats(block);
-    stats.used_routing_layers = estimateUsedRoutingLayers(block->getTech(), stats.num_routing_layers);
+    stats.used_routing_layers
+        = estimateUsedRoutingLayers(block->getTech(), stats.num_routing_layers);
     Knobs baseline = defaultKnobsFromEnv(block, stats);
     std::unordered_set<std::string> base_param_keys;
     if (!args.base_params_file.empty()) {
@@ -1642,7 +1799,8 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
     ctx.stats = stats;
     ctx.sta = getStaSnapshot(openroad);
     if (!(baseline.clock_period_user > 0.0)) {
-      baseline.clock_period_user = (ctx.sta.clock_period_user > 0.0) ? ctx.sta.clock_period_user : 1.0;
+      baseline.clock_period_user
+          = (ctx.sta.clock_period_user > 0.0) ? ctx.sta.clock_period_user : 1.0;
     }
     ctx.wire_rc = estimateWireRC(block->getTech(), stats.dbu_per_micron);
     ctx.avg_cell_width_sites = computeAvgCellWidthSites(openroad, stats);
@@ -1656,7 +1814,8 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
     }
 
     if (!args.calibrate_ws_file.empty() || !args.calibrate_wl_file.empty()) {
-      ctx.baseline_metrics = readBaselineMetrics(openroad, args.calibrate_ws_file, args.calibrate_wl_file);
+      ctx.baseline_metrics = readBaselineMetrics(
+          openroad, args.calibrate_ws_file, args.calibrate_wl_file);
       if (ctx.calib.builtin_ref_clock_user <= 0.0) {
         ctx.calib.builtin_ref_clock_user = baseline.clock_period_user;
       }
@@ -1669,12 +1828,12 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
             ctx.calib.builtin_length_scale = scale;
             return simulateOnce(ctx, baseline, 2).routed_wl;
           };
-          ctx.calib.builtin_length_scale
-              = calibrateScaleLogSearch(ctx.calib.builtin_length_scale,
-                                        *ctx.baseline_metrics.baseline_routed_wl_um,
-                                        0.01,
-                                        100.0,
-                                        predict_wl);
+          ctx.calib.builtin_length_scale = calibrateScaleLogSearch(
+              ctx.calib.builtin_length_scale,
+              *ctx.baseline_metrics.baseline_routed_wl_um,
+              0.01,
+              100.0,
+              predict_wl);
         }
         if (ctx.baseline_metrics.baseline_ecp_user) {
           auto predict_ecp = [&](const double scale) -> double {
@@ -1689,8 +1848,10 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
                                         predict_ecp);
         }
       }
-      ctx.calib.builtin_length_scale = clamp(ctx.calib.builtin_length_scale, 0.01, 100.0);
-      ctx.calib.builtin_timing_scale = clamp(ctx.calib.builtin_timing_scale, 0.01, 100.0);
+      ctx.calib.builtin_length_scale
+          = clamp(ctx.calib.builtin_length_scale, 0.01, 100.0);
+      ctx.calib.builtin_timing_scale
+          = clamp(ctx.calib.builtin_timing_scale, 0.01, 100.0);
     }
 
     if (ctx.calib.builtin_ref_clock_user <= 0.0) {
@@ -1698,8 +1859,10 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
     }
 
     applyCalibrationOverridesFromEnv(ctx.calib);
-    ctx.calib.builtin_length_scale = clamp(ctx.calib.builtin_length_scale, 0.01, 100.0);
-    ctx.calib.builtin_timing_scale = clamp(ctx.calib.builtin_timing_scale, 0.01, 100.0);
+    ctx.calib.builtin_length_scale
+        = clamp(ctx.calib.builtin_length_scale, 0.01, 100.0);
+    ctx.calib.builtin_timing_scale
+        = clamp(ctx.calib.builtin_timing_scale, 0.01, 100.0);
     if (ctx.calib.builtin_ref_clock_user <= 0.0) {
       ctx.calib.builtin_ref_clock_user = baseline.clock_period_user;
     }
@@ -1714,7 +1877,9 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
 
     const auto t0 = std::chrono::steady_clock::now();
     const double total_budget_s = args.time_budget_s;
-    const double coarse_budget_s = (args.multi_fidelity && total_budget_s > 0.0) ? (0.70 * total_budget_s) : total_budget_s;
+    const double coarse_budget_s = (args.multi_fidelity && total_budget_s > 0.0)
+                                       ? (0.70 * total_budget_s)
+                                       : total_budget_s;
     auto timed_out = [&]() -> bool {
       if (!(total_budget_s > 0.0)) {
         return false;
@@ -1738,9 +1903,8 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
       Knobs knobs;
       SimOut sim;
     };
-    auto better = [&](double a, double b) {
-      return args.minimize ? (a < b) : (a > b);
-    };
+    auto better
+        = [&](double a, double b) { return args.minimize ? (a < b) : (a > b); };
 
     const std::unordered_set<std::string> include_knobs = [&]() {
       std::unordered_set<std::string> out;
@@ -1777,26 +1941,30 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
       if (args.noise > 0.0) {
         obj += noise_dist(rng) * args.noise;
       }
-      return Scored{obj, k, sim};
+      return Scored{.obj = obj, .knobs = k, .sim = sim};
     };
 
     const std::int64_t n0 = args.samples;
-    const std::int64_t coarse_n = args.multi_fidelity ? static_cast<std::int64_t>(std::round(n0 * 0.80)) : n0;
+    const std::int64_t coarse_n
+        = args.multi_fidelity ? static_cast<std::int64_t>(std::round(n0 * 0.80))
+                              : n0;
     const std::int64_t refine_n = args.multi_fidelity ? (n0 - coarse_n) : 0;
 
     std::int64_t samples_evaluated = 0;
     std::int64_t refinements_evaluated = 0;
 
-    auto insert_best = [&](std::vector<Scored>& vec, Scored&& s) {
+    auto insert_best = [&](std::vector<Scored>& vec, const Scored& s) {
       if (static_cast<int>(vec.size()) < args.top_n) {
-        vec.push_back(std::move(s));
+        vec.push_back(s);
         if (static_cast<int>(vec.size()) == args.top_n) {
-          std::sort(vec.begin(), vec.end(), [&](const Scored& x, const Scored& y) { return better(x.obj, y.obj); });
+          std::ranges::sort(vec, [&](const Scored& x, const Scored& y) {
+            return better(x.obj, y.obj);
+          });
         }
         return;
       }
       if (!vec.empty() && better(s.obj, vec.back().obj)) {
-        vec.back() = std::move(s);
+        vec.back() = s;
         for (std::size_t j = vec.size() - 1; j > 0; j--) {
           if (better(vec[j].obj, vec[j - 1].obj)) {
             std::swap(vec[j], vec[j - 1]);
@@ -1810,12 +1978,14 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
     std::atomic<std::int64_t> coarse_idx{0};
     std::atomic<std::int64_t> coarse_evaluated{0};
     std::atomic<bool> stop{false};
-    std::vector<std::vector<Scored>> local_best(static_cast<std::size_t>(threads));
+    std::vector<std::vector<Scored>> local_best(
+        static_cast<std::size_t>(threads));
     std::vector<std::thread> workers;
     workers.reserve(static_cast<std::size_t>(threads));
 
     const double portfolio_shrink = clamp(args.portfolio_shrink, 0.0, 1.0);
-    const auto portfolio_space_for_mode = [&](const int mode) -> std::vector<KnobSpec> {
+    const auto portfolio_space_for_mode
+        = [&](const int mode) -> std::vector<KnobSpec> {
       if (!args.portfolio) {
         return space;
       }
@@ -1831,13 +2001,17 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
         } else if (mode == 1) {
           shrink = portfolio_shrink;
         } else if (mode == 2) {
-          // Route-focused exploration: keep routing knobs global, keep most others local.
-          const bool is_route = (spec.id == KnobId::kPinLayerAdjust || spec.id == KnobId::kAboveLayerAdjust
+          // Route-focused exploration: keep routing knobs global, keep most
+          // others local.
+          const bool is_route = (spec.id == KnobId::kPinLayerAdjust
+                                 || spec.id == KnobId::kAboveLayerAdjust
                                  || spec.id == KnobId::kDensityMarginAddon);
           shrink = is_route ? 1.0 : portfolio_shrink;
         } else {
-          // Floorplan-focused exploration: keep floorplan knobs global, keep most others local.
-          const bool is_floorplan = (spec.id == KnobId::kCoreUtilization || spec.id == KnobId::kCoreAspectRatio);
+          // Floorplan-focused exploration: keep floorplan knobs global, keep
+          // most others local.
+          const bool is_floorplan = (spec.id == KnobId::kCoreUtilization
+                                     || spec.id == KnobId::kCoreAspectRatio);
           shrink = is_floorplan ? 1.0 : portfolio_shrink;
         }
 
@@ -1914,7 +2088,9 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
     for (int tid = 0; tid < threads; tid++) {
       workers.emplace_back([&, tid]() {
         const std::uint64_t tid_seed
-            = seed ^ (0x9E3779B97F4A7C15ULL + static_cast<std::uint64_t>(tid) * 0xBF58476D1CE4E5B9ULL);
+            = seed
+              ^ (0x9E3779B97F4A7C15ULL
+                 + static_cast<std::uint64_t>(tid) * 0xBF58476D1CE4E5B9ULL);
         std::mt19937_64 rng(tid_seed ? tid_seed : 1ULL);
         std::normal_distribution<double> noise_dist(0.0, 1.0);
 
@@ -1925,7 +2101,8 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
           if (stop.load(std::memory_order_relaxed)) {
             break;
           }
-          const std::int64_t i = coarse_idx.fetch_add(1, std::memory_order_relaxed);
+          const std::int64_t i
+              = coarse_idx.fetch_add(1, std::memory_order_relaxed);
           if (i >= coarse_n) {
             break;
           }
@@ -1934,11 +2111,15 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
             break;
           }
 
-          const std::vector<KnobSpec>& thread_space = portfolio_spaces[static_cast<std::size_t>(tid % num_portfolio_modes)];
-          const Knobs k = applySampleToKnobs(baseline, thread_space, frozen, rng);
-          Scored s = eval_one(rng, noise_dist, k, args.multi_fidelity ? 1 : args.fidelity);
+          const std::vector<KnobSpec>& thread_space
+              = portfolio_spaces[static_cast<std::size_t>(
+                  tid % num_portfolio_modes)];
+          const Knobs k
+              = applySampleToKnobs(baseline, thread_space, frozen, rng);
+          Scored s = eval_one(
+              rng, noise_dist, k, args.multi_fidelity ? 1 : args.fidelity);
           coarse_evaluated.fetch_add(1, std::memory_order_relaxed);
-          insert_best(vec, std::move(s));
+          insert_best(vec, s);
         }
       });
     }
@@ -1951,11 +2132,13 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
     samples_evaluated = coarse_evaluated.load(std::memory_order_relaxed);
     for (auto& vec : local_best) {
       for (auto& s : vec) {
-        insert_best(best, std::move(s));
+        insert_best(best, s);
       }
       vec.clear();
     }
-    std::sort(best.begin(), best.end(), [&](const Scored& x, const Scored& y) { return better(x.obj, y.obj); });
+    std::ranges::sort(best, [&](const Scored& x, const Scored& y) {
+      return better(x.obj, y.obj);
+    });
 
     if (args.multi_fidelity) {
       std::mt19937_64 promote_rng(seed ^ 0xA5A5A5A5A5A5A5A5ULL);
@@ -1963,17 +2146,21 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
       for (auto& s : best) {
         s = eval_one(promote_rng, promote_noise_dist, s.knobs, args.fidelity);
       }
-      std::sort(best.begin(), best.end(), [&](const Scored& x, const Scored& y) { return better(x.obj, y.obj); });
+      std::ranges::sort(best, [&](const Scored& x, const Scored& y) {
+        return better(x.obj, y.obj);
+      });
     }
 
     if (best.empty()) {
-      throw std::runtime_error("surrogate_optimize could not evaluate any samples");
+      throw std::runtime_error(
+          "surrogate_optimize could not evaluate any samples");
     }
 
     if (args.multi_fidelity && refine_n > 0) {
       const double shrink = clamp(args.shrink, 0.0, 1.0);
 
-      const auto local_space_for_center = [&](const Knobs& base_k) -> std::vector<KnobSpec> {
+      const auto local_space_for_center
+          = [&](const Knobs& base_k) -> std::vector<KnobSpec> {
         std::vector<KnobSpec> local = space;
         for (auto& spec : local) {
           if (frozen.find(spec.name) != frozen.end()) {
@@ -2054,7 +2241,9 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
       for (int tid = 0; tid < threads; tid++) {
         workers.emplace_back([&, tid]() {
           const std::uint64_t tid_seed
-              = seed ^ (0xD1B54A32D192ED03ULL + static_cast<std::uint64_t>(tid) * 0x94D049BB133111EBULL);
+              = seed
+                ^ (0xD1B54A32D192ED03ULL
+                   + static_cast<std::uint64_t>(tid) * 0x94D049BB133111EBULL);
           std::mt19937_64 rng(tid_seed ? tid_seed : 1ULL);
           std::normal_distribution<double> noise_dist(0.0, 1.0);
 
@@ -2065,7 +2254,8 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
             if (stop.load(std::memory_order_relaxed)) {
               break;
             }
-            const std::int64_t i = refine_idx.fetch_add(1, std::memory_order_relaxed);
+            const std::int64_t i
+                = refine_idx.fetch_add(1, std::memory_order_relaxed);
             if (i >= refine_n) {
               break;
             }
@@ -2073,12 +2263,14 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
               stop.store(true, std::memory_order_relaxed);
               break;
             }
-            const std::size_t cidx = static_cast<std::size_t>(i % static_cast<std::int64_t>(best.size()));
+            const std::size_t cidx = static_cast<std::size_t>(
+                i % static_cast<std::int64_t>(best.size()));
             const Scored& center = best[cidx];
-            const Knobs k = applySampleToKnobs(center.knobs, local_spaces[cidx], frozen, rng);
+            const Knobs k = applySampleToKnobs(
+                center.knobs, local_spaces[cidx], frozen, rng);
             Scored s = eval_one(rng, noise_dist, k, args.fidelity);
             refine_evaluated.fetch_add(1, std::memory_order_relaxed);
-            insert_best(vec, std::move(s));
+            insert_best(vec, s);
           }
         });
       }
@@ -2091,11 +2283,13 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
       refinements_evaluated = refine_evaluated.load(std::memory_order_relaxed);
       for (auto& vec : local_best) {
         for (auto& s : vec) {
-          insert_best(best, std::move(s));
+          insert_best(best, s);
         }
         vec.clear();
       }
-      std::sort(best.begin(), best.end(), [&](const Scored& x, const Scored& y) { return better(x.obj, y.obj); });
+      std::ranges::sort(best, [&](const Scored& x, const Scored& y) {
+        return better(x.obj, y.obj);
+      });
     }
 
     boost::json::array top_arr;
@@ -2163,7 +2357,8 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
       result << boost::json::serialize(out_obj);
     }
     const std::string res = result.str();
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(res.c_str(), static_cast<int>(res.size())));
+    Tcl_SetObjResult(
+        interp, Tcl_NewStringObj(res.c_str(), static_cast<int>(res.size())));
     return TCL_OK;
   } catch (const std::exception& e) {
     if (logger) {
@@ -2174,7 +2369,10 @@ int surrogateOptimizeCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tc
   }
 }
 
-int surrogateEvalCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Obj* const objv[])
+int surrogateEvalCmd(ClientData clientData,
+                     Tcl_Interp* interp,
+                     int objc,
+                     Tcl_Obj* const objv[])
 {
   OpenRoad* openroad = static_cast<OpenRoad*>(clientData);
   utl::Logger* logger = openroad ? openroad->getLogger() : nullptr;
@@ -2195,7 +2393,8 @@ int surrogateEvalCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Ob
       };
       if (arg == "-builtin") {
         continue;
-      } else if (arg == "-params_file") {
+      }
+      if (arg == "-params_file") {
         params_file = need("-params_file");
       } else if (arg == "-params") {
         params_json = need("-params");
@@ -2207,7 +2406,8 @@ int surrogateEvalCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Ob
     }
 
     if (params_file.empty() && params_json.empty()) {
-      throw std::runtime_error("surrogate_eval requires -params_file or -params");
+      throw std::runtime_error(
+          "surrogate_eval requires -params_file or -params");
     }
 
     odb::dbDatabase* db = openroad ? openroad->getDb() : nullptr;
@@ -2218,10 +2418,12 @@ int surrogateEvalCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Ob
     }
 
     DesignStats stats = computeDesignStats(block);
-    stats.used_routing_layers = estimateUsedRoutingLayers(block->getTech(), stats.num_routing_layers);
+    stats.used_routing_layers
+        = estimateUsedRoutingLayers(block->getTech(), stats.num_routing_layers);
     Knobs baseline = defaultKnobsFromEnv(block, stats);
-    boost::json::value params_v = params_json.empty() ? loadJsonFile(params_file)
-                                                      : boost::json::parse(params_json);
+    boost::json::value params_v = params_json.empty()
+                                      ? loadJsonFile(params_file)
+                                      : boost::json::parse(params_json);
     applyBaseParamsJson(baseline, params_v);
 
     ModelContext ctx;
@@ -2231,7 +2433,8 @@ int surrogateEvalCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Ob
     ctx.stats = stats;
     ctx.sta = getStaSnapshot(openroad);
     if (!(baseline.clock_period_user > 0.0)) {
-      baseline.clock_period_user = (ctx.sta.clock_period_user > 0.0) ? ctx.sta.clock_period_user : 1.0;
+      baseline.clock_period_user
+          = (ctx.sta.clock_period_user > 0.0) ? ctx.sta.clock_period_user : 1.0;
     }
     ctx.wire_rc = estimateWireRC(block->getTech(), stats.dbu_per_micron);
     ctx.avg_cell_width_sites = computeAvgCellWidthSites(openroad, stats);
@@ -2258,7 +2461,8 @@ int surrogateEvalCmd(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Ob
       writeJsonToFile(output, out);
     }
     const std::string res = boost::json::serialize(out);
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(res.c_str(), static_cast<int>(res.size())));
+    Tcl_SetObjResult(
+        interp, Tcl_NewStringObj(res.c_str(), static_cast<int>(res.size())));
     return TCL_OK;
   } catch (const std::exception& e) {
     if (logger) {
@@ -2276,9 +2480,15 @@ void initSurrogate(Tcl_Interp* interp, OpenRoad* openroad)
   if (!interp) {
     return;
   }
-  Tcl_CreateObjCommand(interp, "surrogate_supported_features", surrogateSupportedFeaturesCmd, nullptr, nullptr);
-  Tcl_CreateObjCommand(interp, "surrogate_optimize", surrogateOptimizeCmd, openroad, nullptr);
-  Tcl_CreateObjCommand(interp, "surrogate_eval", surrogateEvalCmd, openroad, nullptr);
+  Tcl_CreateObjCommand(interp,
+                       "surrogate_supported_features",
+                       surrogateSupportedFeaturesCmd,
+                       nullptr,
+                       nullptr);
+  Tcl_CreateObjCommand(
+      interp, "surrogate_optimize", surrogateOptimizeCmd, openroad, nullptr);
+  Tcl_CreateObjCommand(
+      interp, "surrogate_eval", surrogateEvalCmd, openroad, nullptr);
 }
 
 }  // namespace ord
