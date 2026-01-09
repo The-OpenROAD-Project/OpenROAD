@@ -287,7 +287,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.15);
+  void updateSlacks(float percentage = 0.2);
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -552,6 +552,8 @@ class FastRouteCore
   int getViaResistanceCost(int from_layer, int to_layer);
   float getNetResistance(FrNet* net, bool assume_layer = false);
   float getResAwareScore(FrNet* net);
+  void updateWorstMetrics(FrNet* net);
+  void resetWorstMetrics();
 
   /**
    * @brief Validates the routing of edges for a specified net.
@@ -628,6 +630,10 @@ class FastRouteCore
   bool enable_resistance_aware_ = false;
   bool is_3d_step_ = false;
   bool is_incremental_grt_ = false;
+  float worst_slack_;
+  float worst_net_resistance_;
+  int worst_net_length_;
+  int worst_fanout_;
   int num_adjust_;
   int v_capacity_;
   int h_capacity_;
