@@ -59,7 +59,7 @@ namespace odb {
     // User Code End Methods
 
     {% for field in klass.fields %}
-      {% if "comment" in field %}
+      {% if field.comment %}
         {{field.comment}}
       {% endif %}
       {{field.type}} {{field.name}};
