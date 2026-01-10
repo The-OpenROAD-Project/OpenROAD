@@ -804,7 +804,8 @@ void FlexDR::endWorkersBatch(
       increaseClipsize_ = true;
     }
     if (router_cfg_->DOOMED_CLIPS) {
-      const odb::Point gcell_idx = block->getGCellIdx(worker->getRouteBox().ll());
+      const odb::Point gcell_idx
+          = block->getGCellIdx(worker->getRouteBox().ll());
       const uint64_t tile_key
           = (static_cast<uint64_t>(static_cast<uint32_t>(gcell_idx.x())) << 32)
             | static_cast<uint32_t>(gcell_idx.y());
@@ -844,7 +845,8 @@ void FlexDR::endWorkersBatchSelectBest(
       increaseClipsize_ = true;
     }
     if (router_cfg_->DOOMED_CLIPS) {
-      const odb::Point gcell_idx = block->getGCellIdx(worker->getRouteBox().ll());
+      const odb::Point gcell_idx
+          = block->getGCellIdx(worker->getRouteBox().ll());
       const uint64_t tile_key
           = (static_cast<uint64_t>(static_cast<uint32_t>(gcell_idx.x())) << 32)
             | static_cast<uint32_t>(gcell_idx.y());
@@ -1382,8 +1384,8 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
               });
   }
 
-  const bool use_multi_cost = use_prev_stats && !dist_on_
-                              && router_cfg_->DOOMED_CLIPS_TOP_N > 0;
+  const bool use_multi_cost
+      = use_prev_stats && !dist_on_ && router_cfg_->DOOMED_CLIPS_TOP_N > 0;
   std::unordered_set<uint64_t> doomed_tiles;
   std::vector<frUInt4> drc_costs;
   std::vector<frUInt4> marker_costs;
@@ -1419,16 +1421,16 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
   std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
       batchStepX * batchStepY);
 
-  const bool use_predicted_stats = router_cfg_->DOOMED_CLIPS && !use_prev_stats
-                                   && !iter_;
+  const bool use_predicted_stats
+      = router_cfg_->DOOMED_CLIPS && !use_prev_stats && !iter_;
   std::unordered_map<uint64_t, int> predicted_bpin_count;
   int max_predicted_bpin_count = 0;
 
   const int num_tiles_y = (((int) ygp.getCount() - 1 - offset) / size + 1);
   if (use_predicted_stats) {
     const int num_tiles_x = (((int) xgp.getCount() - 1 - offset) / size + 1);
-    predicted_bpin_count.reserve(
-        static_cast<size_t>(num_tiles_x) * static_cast<size_t>(num_tiles_y) * 2);
+    predicted_bpin_count.reserve(static_cast<size_t>(num_tiles_x)
+                                 * static_cast<size_t>(num_tiles_y) * 2);
   }
 
   iter_prog.total_num_workers = 0;
@@ -1469,7 +1471,8 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
         if (use_predicted_stats) {
           const int bpin_count = worker->getBoundaryPinCount();
           predicted_bpin_count.emplace(tile_key, bpin_count);
-          max_predicted_bpin_count = std::max(max_predicted_bpin_count, bpin_count);
+          max_predicted_bpin_count
+              = std::max(max_predicted_bpin_count, bpin_count);
         }
         worker->setWorkerId(tile_id);
         workers[batch_idx].back().push_back(std::move(worker));
@@ -1484,7 +1487,8 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
 
   if (use_prev_stats || use_predicted_stats) {
     auto worker_score = [&](const FlexDRWorker* worker) {
-      const odb::Point gcell_idx = block->getGCellIdx(worker->getRouteBox().ll());
+      const odb::Point gcell_idx
+          = block->getGCellIdx(worker->getRouteBox().ll());
       const uint64_t tile_key
           = (static_cast<uint64_t>(static_cast<uint32_t>(gcell_idx.x())) << 32)
             | static_cast<uint32_t>(gcell_idx.y());
@@ -1510,15 +1514,16 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
                                   > worker_score(rhs.get());
                          });
       }
-      std::stable_sort(workerBatch.begin(),
-                       workerBatch.end(),
-                       [&](const auto& lhs, const auto& rhs) {
-                         const double lhs_score
-                             = lhs.empty() ? 0.0 : worker_score(lhs.front().get());
-                         const double rhs_score
-                             = rhs.empty() ? 0.0 : worker_score(rhs.front().get());
-                         return lhs_score > rhs_score;
-                       });
+      std::stable_sort(
+          workerBatch.begin(),
+          workerBatch.end(),
+          [&](const auto& lhs, const auto& rhs) {
+            const double lhs_score
+                = lhs.empty() ? 0.0 : worker_score(lhs.front().get());
+            const double rhs_score
+                = rhs.empty() ? 0.0 : worker_score(rhs.front().get());
+            return lhs_score > rhs_score;
+          });
     }
   }
 
