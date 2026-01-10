@@ -102,8 +102,40 @@ message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
 message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 
+# Detect OS distribution and version from /etc/os-release
+# LTO is known to cause build errors on Debian 11 and Rocky Linux 8
+set(LTO_UNSUPPORTED_OS FALSE)
+if(EXISTS "/etc/os-release")
+  file(STRINGS "/etc/os-release" OS_RELEASE_CONTENTS)
+  
+  message(STATUS "OS: ${OS_RELEASE_CONTENTS}")
+
+  set(OS_ID "")
+  set(OS_VERSION_ID "")
+  foreach(line ${OS_RELEASE_CONTENTS})
+    if(line MATCHES "^ID=(.*)$")
+      string(REGEX REPLACE "^ID=\"?([^\"]*)\"?$" "\\1" OS_ID "${line}")
+    endif()
+    if(line MATCHES "^VERSION_ID=(.*)$")
+      string(REGEX REPLACE "^VERSION_ID=\"?([^\"]*)\"?$" "\\1" OS_VERSION_ID "${line}")
+    endif()
+  endforeach()
+
+  # Check for Debian 11 (bullseye)
+  if(OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11")
+    set(LTO_UNSUPPORTED_OS TRUE)
+    message(STATUS "Detected Debian 11: LTO will be disabled due to known build issues")
+  endif()
+
+  # Check for Rocky Linux 8
+  if(OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8")
+    set(LTO_UNSUPPORTED_OS TRUE)
+    message(STATUS "Detected Rocky Linux 8: LTO will be disabled due to known build issues")
+  endif()
+endif()
+
 option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
-if (LINK_TIME_OPTIMIZATION)
+if (LINK_TIME_OPTIMIZATION AND NOT LTO_UNSUPPORTED_OS)
   include(CheckIPOSupported)
   # 1. Check if the compiler/linker even supports LTO
   check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
