@@ -107,9 +107,6 @@ message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 set(LTO_UNSUPPORTED_OS FALSE)
 if(EXISTS "/etc/os-release")
   file(STRINGS "/etc/os-release" OS_RELEASE_CONTENTS)
-  
-  message(STATUS "OS: ${OS_RELEASE_CONTENTS}")
-
   set(OS_ID "")
   set(OS_VERSION_ID "")
   foreach(line ${OS_RELEASE_CONTENTS})
@@ -121,7 +118,7 @@ if(EXISTS "/etc/os-release")
     endif()
   endforeach()
 
-  # Check for Debian 11 (bullseye)
+  # Check for Debian 11 (Bullseye)
   if(OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11")
     set(LTO_UNSUPPORTED_OS TRUE)
     message(STATUS "Detected Debian 11: LTO will be disabled due to known build issues")
