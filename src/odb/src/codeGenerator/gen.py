@@ -249,7 +249,6 @@ def add_bitfield_flags(klass: Class, flag_num_bits: int, flags_struct: Struct) -
         flags_struct.fields.append(spare_bits_field)
 
     if flags_struct.fields:
-        flags_struct.in_class = True
         flags_struct.in_class_name = "flags_"
         klass.structs.insert(0, flags_struct)
         klass.fields.insert(

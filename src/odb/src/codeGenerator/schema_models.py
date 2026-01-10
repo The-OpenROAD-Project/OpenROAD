@@ -62,7 +62,6 @@ class Struct:
     fields: List[Field] = dataclass_field(default_factory=list)
     public: bool = False
     flags: List[str] = dataclass_field(default_factory=list)
-    in_class: bool = False
     in_class_name: Optional[str] = None
 
     @classmethod

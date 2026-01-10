@@ -38,7 +38,7 @@ class {{klass.name}} : public {{klass.type}}
   {% endfor %}
 
   {% for _struct in klass.structs %}
-    {% if  _struct.in_class %}
+    {% if  _struct.in_class_name %}
       {% for field in _struct.fields %}
         {% if 'no-set' not in field.flags %}
         void {{field.setterFunctionName}} ({{field.setterArgumentType}} {{field.argument}} );
