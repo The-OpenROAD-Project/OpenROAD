@@ -808,8 +808,8 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
 
   sta::Unit* unit = sta_->getSTA()->units()->timeUnit();
   unit_scale_ = unit->scale();
-  unit_suffix_ = unit->scaleAbbreviation();
-  unit_suffix_ += unit->suffix();
+  unit_suffix_ = QString::fromStdString(unit->scaleAbbreviation());
+  unit_suffix_ += QString::fromStdString(unit->suffix());
 
   build();
 
