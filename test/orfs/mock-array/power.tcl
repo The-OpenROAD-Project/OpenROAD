@@ -35,8 +35,9 @@ foreach pin $pins {
     set duty 1.0
   }
 
-  # Fixed duty to 0.55 for the first three pins to give a slight distortion
-  # to see the slightly different power numbers b/w VCD and user activity flows.
+  # Intentionally fixed duty to 0.55 for the first three pins to give a slight
+  # variation to check the slightly different power numbers b/w VCD and
+  # user activity flows later.
   if { $vcd_pin_count < 3 } {
     set duty 0.55
   }
@@ -113,6 +114,7 @@ set total_power_user_activity [total_power]
 puts "Total power from VCD: $total_power_vcd"
 puts "Total power from user activity: $total_power_user_activity"
 
+# The two power numbers must not be the same because of the activity difference
 if { $total_power_vcd == $total_power_user_activity } {
   puts "Error: setting user power activity had no effect, expected some loss in accuracy"
   exit 1
