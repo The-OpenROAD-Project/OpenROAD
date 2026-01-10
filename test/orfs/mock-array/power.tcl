@@ -63,7 +63,8 @@ foreach pin $pins {
   -activity $activity_val \
   -duty $duty_val"
 
-  lappend check_cmds "read_back_and_compare \{[get_property $pin full_name]\} $activity_val $duty_val \$clock_period"
+  lappend check_cmds \
+    "read_back_and_compare \{[get_property $pin full_name]\} $activity_val $duty_val \$clock_period"
 }
 
 foreach cmd $activity_cmds {
