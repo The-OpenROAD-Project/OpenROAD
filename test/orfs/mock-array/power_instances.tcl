@@ -1,4 +1,4 @@
-source $::env(LOAD_POWER_TCL)
+source $::env(LOAD_MOCK_ARRAY_TCL)
 
 set vcd_file $::env(VCD_STIMULI)
 log_cmd read_vcd -scope TOP/MockArray $vcd_file

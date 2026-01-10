@@ -92,7 +92,7 @@ proc write_user_activity_tcl { filename pins clock_period } {
 # --- Main Flow ---
 
 read_lefs
-source $::env(LOAD_POWER_TCL)
+source $::env(LOAD_MOCK_ARRAY_TCL)
 
 #------------------------------------------------
 # Stage 1: Estimated Power (Before reading VCD)
