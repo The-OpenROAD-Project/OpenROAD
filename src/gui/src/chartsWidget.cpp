@@ -610,7 +610,7 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
     const QString number_of_pins
         = QString("Number of Endpoints: %1\n").arg(num);
 
-    QString scaled_suffix = sta_->getSTA()->units()->timeUnit()->scaledSuffix();
+    QString scaled_suffix = sta_->getSTA()->units()->timeUnit()->scaleAbbrevSuffix().c_str();
 
     const auto& [lower, upper] = histogram_->getBinRange(bar_index);
 
@@ -904,7 +904,7 @@ void HistogramView::setXAxisTitle()
 
   sta::Unit* time_units = sta_->getSTA()->units()->timeUnit();
 
-  const QString scaled_suffix = time_units->scaledSuffix();
+  const QString scaled_suffix = time_units->scaleAbbrevSuffix().c_str();
   const QString end_title = "], Clocks: ";
 
   QString axis_x_title = start_title + scaled_suffix + end_title;
