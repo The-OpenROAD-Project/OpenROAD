@@ -23,7 +23,25 @@ log_cmd report_power
 set fp [open $::env(RESULTS_DIR)/activity.tcl w]
 set pins [get_pins -hierarchical *]
 set clock_period [expr [get_property [get_clocks] period] * 1e-12]
-set vcd_pin_count 0
+
+puts $fp "set clock_period $clock_period"
+puts $fp {proc read_back_and_compare { pin_name expected_activity expected_duty clock_period } {
+  set pin [get_pins $pin_name]
+  set activity [get_property $pin activity]
+  set rb_activity [expr [lindex $activity 0] * $clock_period]
+  set rb_duty [lindex $activity 1]
+  if { abs($rb_activity - $expected_activity) > 1e-3 } {
+    puts "Error: activity mismatch on $pin_name: expected $expected_activity, got $rb_activity"
+    exit 1
+  }
+  if { abs($rb_duty - $expected_duty) > 1e-3 } {
+    puts "Error: duty mismatch on $pin_name: expected $expected_duty, got $rb_duty"
+    exit 1
+  }
+}}
+
+set activity_cmds {}
+set check_cmds {}
 foreach pin $pins {
   set activity [get_property $pin activity]
   set activity_origin [lindex $activity 2]
@@ -35,19 +53,24 @@ foreach pin $pins {
     set duty 1.0
   }
 
-  # Intentionally fixed duty to 0.55 for the first three pins to give a slight
-  # variation to check the slightly different power numbers b/w VCD and
-  # user activity flows later.
-  if { $vcd_pin_count < 3 } {
-    set duty 0.55
-  }
+  # Intentionally reduced activity and duty by a factor of 10 to have smaller
+  # power in user activity flow.
+  set activity_val [expr [lindex $activity 0] * $clock_period / 10.0]
+  set duty_val [expr $duty / 10.0]
 
-  puts $fp "set_power_activity \
+  lappend activity_cmds "set_power_activity \
   -pin \[get_pins \{[get_property $pin full_name]\}\] \
-  -activity [expr [lindex $activity 0] * $clock_period] \
-  -duty $duty"
+  -activity $activity_val \
+  -duty $duty_val"
 
-  incr vcd_pin_count
+  lappend check_cmds "read_back_and_compare \{[get_property $pin full_name]\} $activity_val $duty_val \$clock_period"
+}
+
+foreach cmd $activity_cmds {
+  puts $fp $cmd
+}
+foreach cmd $check_cmds {
+  puts $fp $cmd
 }
 close $fp
 
@@ -120,8 +143,9 @@ if { $total_power_vcd == $total_power_user_activity } {
   exit 1
 }
 
-if { abs($total_power_vcd - $total_power_user_activity) > 1e-3 } {
-  puts "Error: Total power mismatch between VCD and user activity:\
+# Expecting smaller power due to the reduced activity
+if { $total_power_user_activity >= $total_power_vcd } {
+  puts "Error: Total power did not decrease after activity reduction:\
           $total_power_vcd vs $total_power_user_activity"
   exit 1
 }
