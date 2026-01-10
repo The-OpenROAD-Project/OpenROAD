@@ -1,5 +1,8 @@
 source $::env(LOAD_POWER_TCL)
 
+set vcd_file $::env(VCD_STIMULI)
+log_cmd read_vcd -scope TOP/MockArray $vcd_file
+
 set instances [get_cells ces*/io_outs_*_mult]
 
 set num [expr $::env(ARRAY_COLS) * $::env(ARRAY_ROWS) * 4]
