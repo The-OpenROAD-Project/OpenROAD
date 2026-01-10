@@ -86,12 +86,6 @@ void Graphics::drawObjects(gui::Painter& painter)
     DbuX lx{core.xMin() + cell->getLeft()};
     DbuY ly{core.yMin() + cell->getBottom()};
 
-    // auto color = cell->getDbInst() ? gui::Painter::kGray : gui::Painter::kRed;
-    // painter.setPen(color);
-    // painter.setBrush(color);
-    // painter.drawRect(odb::Rect(
-    //     lx.v, ly.v, lx.v + cell->getWidth().v, ly.v + cell->getHeight().v));
-
     if (!cell->getDbInst()) {
       continue;
     }
@@ -121,8 +115,6 @@ void Graphics::drawObjects(gui::Painter& painter)
              final_location.x(),
              final_location.y());
     painter.drawCircle(final_location.x(), final_location.y(), 100);
-    // painter.setPen(gui::Painter::kWhite);
-    // painter.draw(initial_location.x(), initial_location.y(), 100);
   }
 
   auto color = gui::Painter::kCyan;
