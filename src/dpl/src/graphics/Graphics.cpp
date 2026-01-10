@@ -61,7 +61,7 @@ void Graphics::binSearch(const Node* cell,
   searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
 }
 
-void Graphics::endPlacement()
+void Graphics::redrawAndPause()
 {
   auto gui = gui::Gui::get();
   gui->redraw();
@@ -80,9 +80,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     if (!cell->isPlaced()) {
       continue;
     }
-    // Compare the squared distances to save calling sqrt
-    float min_length = min_displacement_ * dp_->grid_->gridHeight(cell.get()).v;
-    min_length *= min_length;
+
     DbuX lx{core.xMin() + cell->getLeft()};
     DbuY ly{core.yMin() + cell->getBottom()};
 
@@ -94,7 +92,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     odb::Point initial_location(bbox->xMin(), bbox->yMin());
     odb::Point final_location(lx.v, ly.v);
     float len = odb::Point::squaredDistance(initial_location, final_location);
-    if (len < min_length) {
+    if (len <= 0) {
       continue;
     }
 
@@ -104,7 +102,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     if (dx == 0 && dy == 0) {
       line_color = gui::Painter::kWhite;
     } else if (std::abs(dx) > std::abs(dy)) {
-      line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kPink;
+      line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
     } else {
       line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
     }
