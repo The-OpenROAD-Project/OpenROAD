@@ -195,7 +195,7 @@ report_logic_depth_histogram_cmd(int num_bins, bool exclude_buffers,
 // that is in the same file.
 void
 write_verilog_cmd(const char *filename,
-		  bool sort,
+		  bool /* sort */,
 		  bool include_pwr_gnd,
 		  CellSeq *remove_cells)
 {
@@ -204,7 +204,7 @@ write_verilog_cmd(const char *filename,
   ord::OpenRoad *openroad = ord::getOpenRoad();  
   sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
-  sta::writeVerilog(filename, sort, include_pwr_gnd, remove_cells, network);
+  sta::writeVerilog(filename, include_pwr_gnd, remove_cells, network);
   delete remove_cells;
 }
 
