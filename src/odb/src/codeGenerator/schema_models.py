@@ -48,7 +48,6 @@ class Enum:
     values: List[str]
     public: bool = False
     cls: bool = dataclass_field(default=False)
-    type: Optional[str] = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Enum":
