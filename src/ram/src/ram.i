@@ -97,6 +97,18 @@ void ram_pinplacer()
   ram_gen->ramPinplacer();
 }
 
+void ram_filler()
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->ramFiller();
+}
+
+void ram_routing()
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->ramRouting();
+}
+
 } //namespace_ram
 
 %} // inline

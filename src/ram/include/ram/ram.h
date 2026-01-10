@@ -34,6 +34,18 @@ namespace ppl {
 class IOPlacer;
 }
 
+namespace dpl {
+class Opendp;
+}
+
+namespace grt {
+class GlobalRouter;
+}
+
+namespace drt{
+class TritonRoute;
+}
+
 namespace ram {
 
 using utl::Logger;
@@ -46,7 +58,8 @@ class Grid;
 class RamGen
 {
  public:
-  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen, ppl::IOPlacer* ioPlacer);
+  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen, ppl::IOPlacer* ioPlacer,
+          dpl::Opendp* opendp_, grt::GlobalRouter* global_router_, drt::TritonRoute* detailed_router_);
   ~RamGen() = default;
 
   void generate(int bytes_per_word,
@@ -60,6 +73,8 @@ class RamGen
 
   void ramPdngen();
   void ramPinplacer();
+  void ramFiller();
+  void ramRouting();
 
  private:
   void findMasters();
@@ -114,6 +129,9 @@ class RamGen
   Logger* logger_;
   pdn::PdnGen* pdngen_{nullptr};
   ppl::IOPlacer* ioPlacer_{nullptr};
+  dpl::Opendp* opendp_{nullptr};
+  grt::GlobalRouter* global_router_{nullptr};
+  drt::TritonRoute* detailed_router_{nullptr};
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};

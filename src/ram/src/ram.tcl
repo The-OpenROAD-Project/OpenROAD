@@ -209,8 +209,9 @@ proc generate_ram { args } {
 #
 #  place_pins -hor_layers $hor_name -ver_layers $ver_name
 
-  filler_placement $filler_cells
-
-  global_route
+  ram::ram_filler
+#  filler_placement $filler_cells
+  ram::ram_routing
+#  global_route
 #  detailed_route -verbose 0
 }

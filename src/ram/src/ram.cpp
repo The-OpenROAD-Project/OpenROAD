@@ -24,6 +24,9 @@
 #include "pdn/PdnGen.hh"
 #include "ord/OpenRoad.hh"
 #include "ppl/IOPlacer.h"
+#include "dpl/Opendp.h"
+#include "grt/GlobalRouter.h"
+#include "drt/TritonRoute.h"
 
 namespace ram {
 
@@ -42,8 +45,11 @@ using std::vector;
 ////////////////////////////////////////////////////////////////
 
 RamGen::RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen, 
-       ppl::IOPlacer* ioPlacer)
-    : network_(network), db_(db), logger_(logger), pdngen_(pdngen), ioPlacer_(ioPlacer)
+       ppl::IOPlacer* ioPlacer, dpl::Opendp* opendp, grt::GlobalRouter* global_router, 
+       drt::TritonRoute* detailed_router)
+
+    : network_(network), db_(db), logger_(logger), pdngen_(pdngen), ioPlacer_(ioPlacer), opendp_(opendp), 
+        global_router_(global_router), detailed_router_(detailed_router)
 {
 }
 
@@ -445,6 +451,25 @@ void RamGen::ramPinplacer() {
   ioPlacer_->runHungarianMatching();
 }
 
+void RamGen::ramFiller() {
+  vector<odb::dbMaster*> filler_masters;
+  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_1")); 
+  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_2"));
+  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_4"));
+  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_8"));
+  opendp_->fillerPlacement(filler_masters, "FILLER_", false); 
+}
+
+void RamGen::ramRouting() {
+  global_router_->globalRoute(true, false, false);
+  drt::ParamStruct params;
+  params.verbose = 0;
+  detailed_router_->setParams(params);
+  detailed_router_->main();
+  detailed_router_->setDistributed(false);
+
+}
+
 void RamGen::generate(const int bytes_per_word,
                       const int word_count,
                       const int read_ports,
@@ -687,85 +712,6 @@ void RamGen::generate(const int bytes_per_word,
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
-
-//  ramPdngen();
-
-//  auto power_net = dbNet::create(block_, "VDD");
-//  auto ground_net = dbNet::create(block_, "VSS");
-// 
-//  power_net->setSpecial();
-//  power_net->setSigType(odb::dbSigType::POWER);
-//  ground_net->setSpecial();
-//  ground_net->setSigType(odb::dbSigType::GROUND);
-// 
-//  block_->addGlobalConnect(nullptr, ".*", "VPWR", power_net, true);
-//  block_->addGlobalConnect(nullptr, ".*", "VGND", ground_net, true);
-// 
-//  block_->globalConnect();
-// 
-////  auto openroad = ord::OpenRoad::openRoad(); 
-////  auto pdngen = openroad->ord::OpenRoad::getPdnGen();
-//
-//  pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
-//  pdngen_->makeCoreGrid(pdngen_->findDomain("Core"), "ram_grid", pdn::StartsWith::GROUND, {}, {}, nullptr, nullptr, "STAR", {});
-//
-//  // variables for convenience
-//  auto pdn_tech = block_->getDb()->getTech();
-//  auto grid = pdngen_->findGrid("ram_grid")[0];
-//  
-//  //add_followpin
-//  pdngen_->makeFollowpin(grid, pdn_tech->findLayer("met1"), 480, pdn::ExtensionMode::BOUNDARY); 
-//  
-//  //add_pdn_stripe
-//  pdngen_->makeStrap(grid, pdn_tech->findLayer("met2"), 480, 0, 40000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
-//  pdngen_->makeStrap(grid, pdn_tech->findLayer("met3"), 480, 0, 20000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
-//
-//  //add_pdn_connect
-//  pdngen_->makeConnect(grid, pdn_tech->findLayer("met1"), pdn_tech->findLayer("met2"), 0,0, {}, {}, 0, 0, {}, {}, "");
-//  pdngen_->makeConnect(grid, pdn_tech->findLayer("met2"), pdn_tech->findLayer("met3"), 0,0, {}, {}, 0, 0, {}, {}, "");
-// 
-//  //pdngen 
-//  pdngen_->checkSetup();
-//  pdngen_->buildGrids(true);
-//  pdngen_->writeToDb(true, "");
-//  pdngen_->resetShapes();
-
-//  auto ifp_ = ifp::InitFloorplan::InitFloorplan(block_, logger_, network_);
-
-//  ifp_.makeTracks(pdn_tech,  
-
-
-  
-//  pdngen->make_core_grid(
-//  pdngen->check_setup();
-//  pdngen->build_grids(true);
-//  pdngen->write_to_db(true, "");
-//  pdngen->reset_shapes();
-
-
-//
-//  auto pdn_ = pdn::PdnGen(db_, logger_);
-//  pdn_.setCoreDomain(power_net, nullptr, ground_net, {});
-//  pdn_.makeCoreGrid(pdn_.findDomain("Core"), "ram_grid", pdn::StartsWith::GROUND, {}, {}, nullptr, nullptr, "STAR", {});
-//  
-//  auto tech = block_->getDb()->getTech();
-//
-//  for (auto* grid : pdn_.findGrid("ram_grid")) {
-//    pdn_.makeFollowpin(grid, tech->findLayer("met1"), 480,  pdn::ExtensionMode::BOUNDARY);
-//    pdn_.makeStrap(grid, tech->findLayer("met2"), 480, 0, 40000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
-//    pdn_.makeStrap(grid, tech->findLayer("met3"), 480, 0, 20000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
-//   // std::map<odb::dbTechlayer*, std::pair<int, bool>> split_cuts; 
-//    pdn_.makeConnect(grid, tech->findLayer("met1"), tech->findLayer("met2"), 0,0, {}, {}, 0, 0, {}, {}, "");
-//    pdn_.makeConnect(grid, tech->findLayer("met2"), tech->findLayer("met3"), 0,0, {}, {}, 0, 0, {}, {}, "");
-//  }
-//
-//  pdn_.checkSetup();
-//  pdn_.buildGrids(false);
-//  pdn_.writeToDb(false, "");
-//  pdn_.resetShapes();
-    
-//  pdn_.makeStrap(pdn_.findGrid("ram_grid")[0], 
-
    
 }
 

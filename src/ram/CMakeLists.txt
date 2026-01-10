@@ -29,6 +29,9 @@ target_link_libraries(ram
     OpenSTA
     pdn
     ppl
+    dpl
+    grt
+    drt
 )
 
 messages(
