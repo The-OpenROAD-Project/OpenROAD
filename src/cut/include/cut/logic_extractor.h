@@ -44,59 +44,24 @@ concept Library = std::same_as<std::remove_cvref_t<T>, AbcLibrary>
 // particular class will not allow the iterator to walk through DFFs, latches
 // or any cell that is not supported by ABC. This allows our logic extractor
 // to only extract cells that we could reasonably put in ABC.
-template <Library T>
 class SearchPredNonReg2LibrarySupport : public sta::SearchPredNonReg2
 {
  public:
   // supported_liberty_cells is a set of cells that are supported by library.
   SearchPredNonReg2LibrarySupport(sta::dbSta* open_sta,
-                                  T& library,
+                                  const std::set<std::string>& supported_cells,
                                   sta::Graph* graph)
-      : sta::SearchPredNonReg2(open_sta), library_(library), graph_(graph)
+      : sta::SearchPredNonReg2(open_sta),
+        graph_(graph),
+        supported_(supported_cells)
   {
-    // Cache supported cell names for mockturtle tech libraries
-    if constexpr (is_mockturtle_library_v<T>) {
-      supported_.reserve(library_.get_gates().size());
-      for (auto const& g : library_.get_gates()) {
-        supported_.insert(g.name);
-      }
-    }
   }
 
-  bool searchThru(sta::Edge* edge) override
-  {
-    sta::Vertex* v = edge->from(graph_);
-    sta::Network* network = sta_->network();
-
-    sta::Instance* inst = network->instance(v->pin());
-    if (!inst) {
-      return false;
-    }
-
-    sta::LibertyCell* cell = network->libertyCell(inst);
-    if (!cell) {
-      return false;
-    }
-
-    if constexpr (std::same_as<std::remove_cvref_t<T>, AbcLibrary>) {
-      if (!library_.IsSupportedCell(cell->name())) {
-        return false;
-      }
-    } else if constexpr (is_mockturtle_library_v<T>) {
-      if (!supported_.contains(cell->name())) {
-        return false;
-      }
-    } else {
-      static_assert([] { return false; }(), "Unsupported library type");
-    }
-
-    return sta::SearchPredNonReg2::searchThru(edge);
-  }
+  bool searchThru(sta::Edge* edge) override;
 
  private:
-  T& library_;
   sta::Graph* graph_;
-  std::unordered_set<std::string> supported_;
+  const std::set<std::string>& supported_;
 };
 
 class LogicExtractorFactory
@@ -116,9 +81,11 @@ class LogicExtractorFactory
       std::vector<sta::Vertex*>& cut_vertices);
   std::vector<sta::Pin*> GetPrimaryOutputs(
       std::vector<sta::Vertex*>& cut_vertices);
-  template <Library T>
-  std::vector<sta::Vertex*> GetCutVertices(T& library);
-  sta::InstanceSet GetCutInstances(std::vector<sta::Vertex*>& cut_vertices);
+  std::vector<sta::Vertex*> GetCutVertices(
+      const std::set<std::string>& supported_cells);
+  sta::InstanceSet GetCutInstances(
+      std::vector<sta::Vertex*>& cut_vertices,
+      const std::set<std::string>& supported_cells);
   std::vector<sta::Pin*> FilterUndrivenOutputs(
       std::vector<sta::Pin*>& primary_outputs,
       sta::InstanceSet& cut_instances);
@@ -231,13 +198,25 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   open_sta_->ensureGraph();
   open_sta_->ensureLevelized();
 
-  std::vector<sta::Vertex*> cut_vertices = GetCutVertices(library);
+  std::set<std::string> supported_cells;
+  if constexpr (is_mockturtle_library_v<T>) {
+    // supported.reserve(library.get_gates().size());
+    for (auto const& g : library.get_gates()) {
+      supported_cells.insert(g.name);
+    }
+  } else {
+    supported_cells = library.SupportedCells();
+  }
+
+  std::vector<sta::Vertex*> cut_vertices = GetCutVertices(supported_cells);
   // Dealing with constant cells 1/0 and disabled timing paths.
   cut_vertices = AddMissingVertices(cut_vertices, library);
 
   std::vector<sta::Pin*> primary_inputs = GetPrimaryInputs(cut_vertices);
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);
-  sta::InstanceSet cut_instances = GetCutInstances(cut_vertices);
+  sta::InstanceSet cut_instances
+      = GetCutInstances(cut_vertices, supported_cells);
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
 
   // Remove primary outputs who are undriven. This can happen when a flop
   // feeds into another flop where the logic cone is essentially just a wire.
@@ -253,25 +232,6 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   return LogicCut(std::move(primary_input_nets),
                   std::move(primary_output_nets),
                   std::move(cut_instances));
-}
-
-template <Library T>
-std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(T& library)
-{
-  cut::SearchPredNonReg2LibrarySupport pred(
-      open_sta_, library, open_sta_->graph());
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, open_sta_);
-  for (const auto& end_point : endpoints_) {
-    iter.enqueue(end_point);
-  }
-
-  std::vector<sta::Vertex*> cut_vertices;
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    iter.enqueueAdjacentVertices(vertex);
-    cut_vertices.push_back(vertex);
-  }
-  return cut_vertices;
 }
 
 // Annoyingly STA does not include input pins that are filtered out in the

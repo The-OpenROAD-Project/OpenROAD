@@ -24,11 +24,52 @@
 
 namespace cut {
 
+bool SearchPredNonReg2LibrarySupport::searchThru(sta::Edge* edge)
+{
+  sta::Vertex* v = edge->from(graph_);
+  sta::Network* network = sta_->network();
+
+  sta::Instance* inst = network->instance(v->pin());
+  if (!inst) {
+    return false;
+  }
+
+  sta::LibertyCell* cell = network->libertyCell(inst);
+  if (!cell) {
+    return false;
+  }
+
+  if (!supported_.contains(cell->name())) {
+    return false;
+  }
+
+  return sta::SearchPredNonReg2::searchThru(edge);
+}
+
 LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
     sta::Vertex* vertex)
 {
   endpoints_.push_back(vertex);
   return *this;
+}
+
+std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
+    const std::set<std::string>& supported_cells)
+{
+  cut::SearchPredNonReg2LibrarySupport pred(
+      open_sta_, supported_cells, open_sta_->graph());
+  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, open_sta_);
+  for (const auto& end_point : endpoints_) {
+    iter.enqueue(end_point);
+  }
+
+  std::vector<sta::Vertex*> cut_vertices;
+  while (iter.hasNext()) {
+    sta::Vertex* vertex = iter.next();
+    iter.enqueueAdjacentVertices(vertex);
+    cut_vertices.push_back(vertex);
+  }
+  return cut_vertices;
 }
 
 std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
@@ -116,7 +157,8 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
 }
 
 sta::InstanceSet LogicExtractorFactory::GetCutInstances(
-    std::vector<sta::Vertex*>& cut_vertices)
+    std::vector<sta::Vertex*>& cut_vertices,
+    const std::set<std::string>& supported_cells)
 {
   // Loop through all the verticies in the cut set, and then turn their pins
   // into instances. Verticies are pretty much pins which means for any given
@@ -140,7 +182,10 @@ sta::InstanceSet LogicExtractorFactory::GetCutInstances(
   // want to put those cells in ABC. Remove them.
   for (sta::Vertex* vertex : endpoints_) {
     sta::Instance* endpoint_instance = network->instance(vertex->pin());
-    cut_instances.erase(endpoint_instance);
+    sta::LibertyCell* cell = network->libertyCell(endpoint_instance);
+    if (!cell || !supported_cells.contains(cell->name())) {
+      cut_instances.erase(endpoint_instance);
+    }
   }
 
   return cut_instances;

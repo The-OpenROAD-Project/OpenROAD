@@ -600,6 +600,21 @@ bool AbcLibrary::IsSupportedCell(const std::string& cell_name)
   return supported_cells_.find(cell_name) != supported_cells_.end();
 }
 
+const std::set<std::string>& AbcLibrary::SupportedCells()
+{
+  if (supported_cells_.empty()) {
+    int num_gates = abc::SC_LibCellNum(abc_library_.get());
+    for (int i = 0; i < num_gates; i++) {
+      abc::SC_Cell* cell = abc::SC_LibCell(abc_library_.get(), i);
+      if (cell->n_outputs != 1) {
+        continue;
+      }
+      supported_cells_.insert(cell->pName);
+    }
+  }
+  return supported_cells_;
+}
+
 void AbcLibrary::InitializeConstGates()
 {
   const_gates_initalized_ = true;
