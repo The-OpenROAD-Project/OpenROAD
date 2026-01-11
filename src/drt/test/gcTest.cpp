@@ -204,7 +204,7 @@ TEST_P(MinCutFixture, min_cut)
   // Setup
   addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
   addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
-  makeMinimumCut(2, 200, 200, spacing);
+  makeMinimumCut(2, 2, 200, 200, spacing);
   frNet* n1 = makeNet("n1");
   frViaDef* vd1 = makeViaDef("v1", 3, {0, 0}, {200, 200});
   makeVia(vd1, n1, {0, 0});

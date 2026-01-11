@@ -69,6 +69,8 @@ struct ParamStruct
   std::string viaInPinBottomLayer;
   std::string viaInPinTopLayer;
   std::string viaAccessLayer;
+  int viaMaxCut = 2;
+  int viaCandidatePerCut = 2;
   int orSeed = 0;
   double orK = 0;
   int verbose = 1;
