@@ -1371,7 +1371,7 @@ NetRouteMap FastRouteCore::run()
   int slope;
   int max_adj;
   int long_edge_len = 40;
-  const int short_edge_len = 12;
+  int short_edge_len = 12;
   const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
@@ -1471,6 +1471,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("RST Tree before overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1759,9 +1760,9 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
-    logger_->report("Tree 2D after overflow iterations");
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 2D after overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1812,6 +1813,7 @@ NetRouteMap FastRouteCore::run()
     // Increase ripup threshold if res-aware is enabled
     if (enable_resistance_aware_) {
       long_edge_len = BIG_INT;
+      short_edge_len = BIG_INT;
     }
 
     mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
@@ -1843,6 +1845,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->tree3D) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 3D after maze route 3D");
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }

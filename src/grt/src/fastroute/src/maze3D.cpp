@@ -672,7 +672,7 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
   if (is_via) {
     // Via transition cost
     base_cost = via_cost_;
-    const int via_resistance = getViaResistance(from_layer, to_layer);
+    const int via_resistance = getViaResistanceCost(from_layer, to_layer);
 
     return base_cost + via_resistance;
   }
@@ -680,7 +680,7 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
   // Wire segment cost
   const float length = abs(to_x - from_x) + abs(to_y - from_y);
   const float wire_resistance
-      = getLayerResistance(from_layer, length * tile_size_, net);
+      = getWireResistanceCost(from_layer, length * tile_size_, net);
 
   return base_cost + wire_resistance;
 }
@@ -696,7 +696,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   }
 
   if (enable_resistance_aware_) {
-    updateSlacks(.8);
+    updateSlacks();
     netpinOrderInc();
   }
 
@@ -707,6 +707,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     FrNet* net = nets_[netID];
     int8_t edge_cost = 0;
+
+    // Debug mode Tree 3D after layer assignament
+    if (debug_->isOn() && debug_->tree3D) {
+      if (net->getDbNet() == debug_->net) {
+        logger_->report("Tree 3D during maze route 3D");
+        StTreeVisualization(sttrees_[netID], net, true);
+      }
+    }
 
     // Enable resistance aware routing only if the net needs it
     if (enable_resistance_aware_) {
@@ -724,15 +732,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
       if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
         continue;
-      }
-
-      // Force resistance-aware if edge length > 100
-      if (enable_resistance_aware_) {
-        if (treeedge->len > 100) {
-          resistance_aware_ = true;
-        } else {
-          resistance_aware_ = net->isResAware();
-        }
       }
 
       int n1 = treeedge->n1;
