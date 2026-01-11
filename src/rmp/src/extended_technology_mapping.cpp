@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include "extended_technology_mapping.h"
+
 #include "aig/aig/aig.h"
 #include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
-#include "extended_technology_mapping.h"
 #include "map/mio/mio.h"
 #include "mockturtle/algorithms/emap.hpp"
 #include "mockturtle/io/genlib_reader.hpp"
