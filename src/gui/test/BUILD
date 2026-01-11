@@ -8,9 +8,11 @@ package(features = ["layering_check"])
 ALWAYS_TESTS = [
     "supported",
 ]
+
 CONDITIONAL_TESTS = [
     "screenshot",
 ]
+
 ALL_TESTS = ALWAYS_TESTS + CONDITIONAL_TESTS
 
 filegroup(
@@ -19,9 +21,9 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
-        "helpers.tcl",
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
+        "helpers.tcl",
         "nangate_gcd/floorplan.def",
     ],
 )
@@ -51,13 +53,13 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        visibility = ["//visibility:public"],
         target_compatible_with = select(
             {
                 "//:platform_gui": [],
                 "//conditions:default": ["@platforms//:incompatible"],
             },
         ),
+        visibility = ["//visibility:public"],
     )
     for test_name in CONDITIONAL_TESTS
 ]
