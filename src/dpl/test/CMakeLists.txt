@@ -77,6 +77,7 @@ or_integration_tests(
     blockage1-opt
     gcd-opt
     gcd_no_one_site_gaps-opt
+    gcd_no_one_site_sanity
     ibex-opt
     multi_height1-opt
     edge_spacing-opt
