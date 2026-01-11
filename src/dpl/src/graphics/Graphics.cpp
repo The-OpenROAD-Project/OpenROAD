@@ -115,7 +115,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     } else {
       line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
     }
-    
+
     painter.setPen(line_color, /* cosmetic */ true);
     painter.setBrush(line_color);
     painter.drawLine(initial_location.x(),
