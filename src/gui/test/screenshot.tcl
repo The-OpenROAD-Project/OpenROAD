@@ -8,9 +8,9 @@ read_def nangate_gcd/floorplan.def
 set img [make_result_file screenshot.png]
 
 save_image $img
-if {![file exists $img]} {
-    puts "Error: screenshot.png was not created"
-    exit 1
+if { ![file exists $img] } {
+  puts "Error: screenshot.png was not created"
+  exit 1
 } else {
-    puts "screenshot.png created successfully"
+  puts "screenshot.png created successfully"
 }
