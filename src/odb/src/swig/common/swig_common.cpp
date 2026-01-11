@@ -24,12 +24,6 @@
 #include "odb/lefout.h"
 #include "utl/Logger.h"
 
-using boost::polygon::operators::operator+;
-using boost::polygon::operators::operator-;
-using boost::polygon::operators::operator&;
-using boost::polygon::operators::operator|;
-using boost::polygon::operators::operator|=;
-
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {
   utl::Logger logger(nullptr);
@@ -165,6 +159,7 @@ Polygon90Set* newSetFromRect(int xLo, int yLo, int xHi, int yHi)
 
 Polygon90Set* bloatSet(const Polygon90Set* set, int bloating)
 {
+  using boost::polygon::operators::operator+;
   return new Polygon90Set(*set + bloating);
 }
 
@@ -177,6 +172,7 @@ Polygon90Set* bloatSet(const Polygon90Set* set, int bloatX, int bloatY)
 
 Polygon90Set* shrinkSet(const Polygon90Set* set, int shrinking)
 {
+  using boost::polygon::operators::operator-;
   return new Polygon90Set(*set - shrinking);
 }
 
@@ -189,16 +185,19 @@ Polygon90Set* shrinkSet(const Polygon90Set* set, int shrinkX, int shrinkY)
 
 Polygon90Set* andSet(const Polygon90Set* set1, const Polygon90Set* set2)
 {
+  using boost::polygon::operators::operator&;
   return new Polygon90Set(*set1 & *set2);
 }
 
 Polygon90Set* orSet(const Polygon90Set* set1, const Polygon90Set* set2)
 {
+  using boost::polygon::operators::operator|;
   return new Polygon90Set(*set1 | *set2);
 }
 
 Polygon90Set* orSets(const std::vector<Polygon90Set>& sets)
 {
+  using boost::polygon::operators::operator|=;
   Polygon90Set* result = new Polygon90Set;
   for (const Polygon90Set& poly_set : sets) {
     *result |= poly_set;
@@ -208,6 +207,7 @@ Polygon90Set* orSets(const std::vector<Polygon90Set>& sets)
 
 Polygon90Set* subtractSet(const Polygon90Set* set1, const Polygon90Set* set2)
 {
+  using boost::polygon::operators::operator-;
   return new Polygon90Set(*set1 - *set2);
 }
 

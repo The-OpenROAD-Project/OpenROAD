@@ -28,6 +28,7 @@
 // *****************************************************************************
 
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -370,7 +371,7 @@ static inline void IncCurPos(char** curPos, char** buffer, int* bufferSize)
     return;
   }
 
-  long offset = *curPos - *buffer;
+  int64_t offset = *curPos - *buffer;
 
   *bufferSize *= 2;
   *buffer = (char*) realloc(*buffer, *bufferSize);
@@ -600,6 +601,9 @@ void lefStoreAlias()
       int ch = lefGetc();
       if (ch == EOF) {
         lefError(1001, "End of file in &ALIAS");
+        free(aname);
+        free(line);
+        free(uc_line);
         return;
       }
 
@@ -622,10 +626,7 @@ void lefStoreAlias()
     so_far += line;
   }
 
-  char* dup = (char*) malloc(strlen(so_far.c_str()) + 1);
-
-  strcpy(dup, so_far.c_str());
-  lefData->alias_set[strip_case(aname)] = dup;
+  lefData->alias_set[strip_case(aname)] = so_far;
 
   free(aname);
   free(line);

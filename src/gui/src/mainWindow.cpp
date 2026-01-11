@@ -1937,7 +1937,9 @@ void MainWindow::saveDesign()
 
   try {
     ord::OpenRoad::openRoad()->writeDb(file.toStdString().c_str());
-  } catch (const std::exception&) {
+  } catch (const std::exception& e) {
+    QMessageBox::warning(
+        this, "Save Error", QString("Db save failed: %1").arg(e.what()));
   }
 }
 

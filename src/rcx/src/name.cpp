@@ -56,14 +56,19 @@ NameTable::~NameTable()
 
 NameTable::NameTable(uint32_t n, char* zero)
 {
+  bool free_zero = false;
   if (zero == nullptr) {
     zero = strdup("zeroName");
+    free_zero = true;
   }
 
-  _hashTable = new AthHash<int>(n, 0);
+  _hashTable = new AthHash<int, false>(n);
   _bucketPool = new AthPool<NameBucket>(0);
 
   addNewName(zero, 0);
+  if (free_zero) {
+    free(zero);
+  }
 }
 
 uint32_t NameTable::addName(const char* name, uint32_t dataId)

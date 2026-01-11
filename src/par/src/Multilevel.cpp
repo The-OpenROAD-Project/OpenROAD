@@ -149,7 +149,7 @@ std::vector<int> MultilevelPartitioner::SingleLevelPartition(
   CoarseGraphPtrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
 
   // Step 2: run initial partitioning
-  HGraphPtr coarsest_hgraph = hierarchy.back();
+  const HGraphPtr& coarsest_hgraph = hierarchy.back();
 
   // pick top num_best_initial_solutions_ solutions from
   // num_initial_random_solutions_ solutions
@@ -235,7 +235,7 @@ std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
   CoarseGraphPtrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
 
   // Step 2: run initial refinement
-  HGraphPtr coarsest_hgraph = hierarchy.back();
+  const HGraphPtr& coarsest_hgraph = hierarchy.back();
   Matrix<int> top_solutions(1);
   coarsest_hgraph->CopyCommunity(top_solutions[0]);
   int best_solution_id = 0;  // only one solution

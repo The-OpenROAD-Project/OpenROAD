@@ -26,7 +26,7 @@ class ConcreteSwapArithModules : public SwapArithModules
                              const std::string& target,
                              float slack_threshold,
                              std::set<dbModInst*>& insts) override;
-  bool doSwapInstances(const std::set<dbModInst*>& insts,
+  bool doSwapInstances(std::set<dbModInst*>& insts,
                        const std::string& target) override;
 
  protected:

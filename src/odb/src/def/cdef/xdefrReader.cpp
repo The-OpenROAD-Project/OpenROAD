@@ -33,6 +33,7 @@
 
 #define EXTERN extern "C"
 
+#include <cstdint>
 #include <cstdio>
 
 #include "defrReader.h"
@@ -1176,7 +1177,7 @@ int defrLineNumber()
   return DefParser::defrLineNumber();
 }
 
-long long defrLongLineNumber()
+int64_t defrLongLineNumber()
 {
   return DefParser::defrLongLineNumber();
 }
@@ -1256,7 +1257,7 @@ void defrDisablePropStrProcess()
   DefParser::defrDisablePropStrProcess();
 }
 
-void defrSetNLines(long long n)
+void defrSetNLines(int64_t n)
 {
   DefParser::defrSetNLines(n);
 }

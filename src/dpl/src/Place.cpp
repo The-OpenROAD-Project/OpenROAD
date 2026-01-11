@@ -39,13 +39,12 @@ namespace dpl {
 using std::max;
 using std::min;
 using std::numeric_limits;
-using std::sort;
 using std::string;
 using std::vector;
 
 using utl::DPL;
 
-using utl::format_as;
+using utl::format_as;  // NOLINT(misc-unused-using-decls)
 
 std::string Opendp::printBgBox(
     const boost::geometry::model::box<bgPoint>& queryBox)

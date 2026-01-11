@@ -2839,4 +2839,95 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case27)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+// Test case for hierarchical name collision with internal signal during port
+// punching. When buffer is placed at top module (LCA of load1 in H1 and load4
+// in top), the buffer output needs to punch a port into H1. The port name
+// "_019_" should be avoided because H1 has an internal net with that name.
+TEST_F(TestInsertBuffer, BeforeLoads_Case28)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Target net is "_019_" in top module (driven by drvr)
+  dbNet* target_net = block_->findNet("_019_");
+  ASSERT_NE(target_net, nullptr);
+
+  // Top module
+  dbModule* top_mod = block_->getTopModule();
+  ASSERT_NE(top_mod, nullptr);
+
+  // H1 module and its loads
+  dbModule* mod_h1 = block_->findModule("H1");
+  ASSERT_NE(mod_h1, nullptr);
+  dbInst* load1 = block_->findInst("h1/load1");
+  ASSERT_NE(load1, nullptr);
+  dbITerm* load1_a = load1->findITerm("A");
+  ASSERT_NE(load1_a, nullptr);
+
+  // load4 in top module
+  dbInst* load4 = block_->findInst("load4");
+  ASSERT_NE(load4, nullptr);
+  dbITerm* load4_a = load4->findITerm("A");
+  ASSERT_NE(load4_a, nullptr);
+
+  // Verify that "h1/_019_" internal net exists within H1 module
+  // This is the XOR gate output, NOT connected to the port
+  dbNet* internal_net = block_->findNet("h1/_019_");
+  ASSERT_NE(internal_net, nullptr);
+  EXPECT_TRUE(internal_net->isInternalTo(mod_h1));
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Insert buffer before load1/A (in H1) AND load4/A (in top)
+  // LCA is top module, so buffer will be placed in top.
+  // Buffer output will need to punch a port into H1 to reach load1.
+  // Since H1 already has internal net "h1/_019_", the punched port name
+  // should be renamed to avoid collision (e.g., "_019__0")
+  std::set<dbObject*> targets;
+  targets.insert(load1_a);
+  targets.insert(load4_a);
+
+  dbInst* new_buf = target_net->insertBufferBeforeLoads(
+      targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+  // Buffer should be placed in TOP module (LCA of load1 and load4)
+  EXPECT_EQ(new_buf->getModule(), top_mod);
+
+  // Verify that "h1/_019_" internal net still exists and is unchanged
+  dbNet* internal_net_after = block_->findNet("h1/_019_");
+  ASSERT_NE(internal_net_after, nullptr);
+  EXPECT_EQ(internal_net, internal_net_after);
+
+  // Verify that a new port "_019__0" is created in H1 to avoid collision
+  dbModBTerm* punched_port = mod_h1->findModBTerm("_019__0");
+  ASSERT_NE(punched_port, nullptr);
+  EXPECT_EQ(punched_port->getIoType(), dbIoType::INPUT);
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
 }  // namespace odb
