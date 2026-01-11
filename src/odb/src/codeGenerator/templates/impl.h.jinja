@@ -35,7 +35,7 @@ namespace odb {
   // User Code Begin Structs
   // User Code End Structs
 
-  class _{{klass.name}} : public _{{klass.type if klass.type else "dbObject"}}
+  class _{{klass.name}} : public _{{klass.base_class if klass.base_class else "dbObject"}}
   {
     public:
     {{ macros.make_enums(klass, is_public=False) }}

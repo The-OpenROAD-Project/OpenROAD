@@ -77,7 +77,7 @@ class Struct:
 @dataclass
 class Class:
     name: str
-    type: str = "dbObject"
+    base_class: str = "dbObject"
     fields: List[Field] = dataclass_field(default_factory=list)
     enums: List[Enum] = dataclass_field(default_factory=list)
     structs: List[Struct] = dataclass_field(default_factory=list)
@@ -105,6 +105,8 @@ class Class:
             data["do_not_generate_compare"] = (
                 data["do_not_generate_compare"].lower() == "true"
             )
+        if "type" in data:
+            data["base_class"] = data.pop("type")
         data["fields"] = [
             Field.from_dict(f) if isinstance(f, dict) else f
             for f in data.get("fields", [])
