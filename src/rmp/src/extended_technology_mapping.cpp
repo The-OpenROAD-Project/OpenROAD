@@ -468,15 +468,12 @@ void extended_technology_mapping(sta::dbSta* sta,
   // Print statitstics
   logger->report(
       "Extended technology mapping stats:\n\tarea: {}\n\tdelay: {}\n\tpower: "
-      "{}\n\tinverters: {}\n\tmultioutput gates: {}\n\ttime multioutput: "
-      "{}\n\ttime total: {}",
+      "{}\n\tinverters: {}\n\tmultioutput gates: {}\n",
       st.area,
       st.delay,
       st.power,
       st.inverters,
-      st.multioutput_gates,
-      st.time_multioutput,
-      st.time_total);
+      st.multioutput_gates);
 
   mapped_ntk.report_cells_usage();
   mapped_ntk.report_stats();

@@ -11,11 +11,11 @@ or_integration_tests(
     blif_writer_input_output
     blif_writer_sequential
     const_cell_removal
+    emap_aes_asap7
+    emap_gcd_asap7
     gcd_restructure
     aes_asap7
     gcd_asap7
-    aes_asap7_emap
-    gcd_asap7_emap
     memory_nangate45
     aes_dontuse_nangate45
     aes_donttouch_nangate45
