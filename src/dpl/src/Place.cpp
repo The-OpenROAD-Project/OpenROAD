@@ -73,10 +73,17 @@ void Opendp::detailedPlacement()
   if (!arch_->getRegions().empty()) {
     placeGroups();
   }
+
+  if (debug_observer_) {
+    logger_->report("Pause before detail placement.");
+    debug_observer_->redrawAndPause();
+  }
+
   place();
 
   if (debug_observer_) {
-    debug_observer_->endPlacement();
+    logger_->report("Pause after detail placement.");
+    debug_observer_->redrawAndPause();
   }
 }
 
