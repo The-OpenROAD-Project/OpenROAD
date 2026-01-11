@@ -76,17 +76,22 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   odb::Rect core = block_->getCoreArea();
 
+  // Create a set of selected instances for fast lookup
+  std::set<odb::dbInst*> selected_insts;
+  auto selection = gui::Gui::get()->selection();
+  for (const auto& selected : selection) {
+    if (selected.isInst()) {
+      selected_insts.insert(std::any_cast<odb::dbInst*>(selected.getObject()));
+    }
+  }
+
   for (const auto& cell : dp_->network_->getNodes()) {
-    if (!cell->isPlaced()) {
+    if (!cell->isPlaced() || !cell->getDbInst()) {
       continue;
     }
 
     DbuX lx{core.xMin() + cell->getLeft()};
     DbuY ly{core.yMin() + cell->getBottom()};
-
-    if (!cell->getDbInst()) {
-      continue;
-    }
 
     dbBox* bbox = cell->getDbInst()->getBBox();
     odb::Point initial_location(bbox->xMin(), bbox->yMin());
@@ -99,19 +104,24 @@ void Graphics::drawObjects(gui::Painter& painter)
     int dx = final_location.x() - initial_location.x();
     int dy = final_location.y() - initial_location.y();
     gui::Painter::Color line_color;
-    if (dx == 0 && dy == 0) {
+
+    // Check if the instance is selected
+    if (selected_insts.find(cell->getDbInst()) != selected_insts.end()) {
+      line_color = gui::Painter::kYellow;
+    } else if (dx == 0 && dy == 0) {
       line_color = gui::Painter::kWhite;
     } else if (std::abs(dx) > std::abs(dy)) {
       line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
     } else {
       line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
     }
+    
     painter.setPen(line_color, /* cosmetic */ true);
     painter.setBrush(line_color);
     painter.drawLine(initial_location.x(),
-             initial_location.y(),
-             final_location.x(),
-             final_location.y());
+                     initial_location.y(),
+                     final_location.x(),
+                     final_location.y());
     painter.drawCircle(final_location.x(), final_location.y(), 100);
   }
 
