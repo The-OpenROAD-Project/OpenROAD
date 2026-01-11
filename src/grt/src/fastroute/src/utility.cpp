@@ -138,6 +138,7 @@ static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
 void FastRouteCore::netpinOrderInc()
 {
   tree_order_pv_.clear();
+  int res_aware_nets = 0;
 
   for (const int& netID : net_ids_) {
     int16_t xmin = std::numeric_limits<int16_t>::max();
@@ -169,8 +170,18 @@ void FastRouteCore::netpinOrderInc()
 
     tree_order_pv_.push_back(
         {netID, xmin, length_per_pin, ndr_priority, res_aware_score, is_clock});
+
+    if (nets_[netID]->isResAware()) {
+      res_aware_nets++;
+    }
   }
 
+  if (!is_incremental_grt_ && enable_resistance_aware_) {
+    logger_->report(
+        "Number of nets with resistance-aware strategy: {} ({:.2f}%)",
+        res_aware_nets,
+        (float) res_aware_nets / net_ids_.size() * 100);
+  }
   std::ranges::stable_sort(tree_order_pv_, compareNetPins);
 }
 
@@ -724,7 +735,8 @@ void FastRouteCore::updateSlacks(float percentage)
 
   // Decide the percentage of nets that will use resistance aware
   for (int i = 0; i < std::ceil(res_aware_list.size() * percentage); i++) {
-    if (i < 10 && !is_incremental_grt_) {
+    if (logger_->debugCheck(GRT, "resAwareTop10", 1) && i < 10
+        && !is_incremental_grt_) {
       logger_->report(
           "{} Net {} - Fanout: {} - Length: {} - Resistance: {} - Slack: {} - "
           "Score: {}",

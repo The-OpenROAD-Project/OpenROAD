@@ -128,6 +128,8 @@ void FastRouteCore::clear()
 
   vertical_blocked_intervals_.clear();
   horizontal_blocked_intervals_.clear();
+
+  detour_penalty_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -203,6 +205,7 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
   d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
+  path_len_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
 }
 
 void FastRouteCore::addVCapacity(int16_t verticalCapacity, int layer)
@@ -2006,6 +2009,11 @@ void FastRouteCore::setGridMax(int x_max, int y_max)
 {
   x_grid_max_ = x_max;
   y_grid_max_ = y_max;
+}
+
+void FastRouteCore::setDetourPenalty(int penalty)
+{
+  detour_penalty_ = penalty;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()

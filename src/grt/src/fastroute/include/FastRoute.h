@@ -229,6 +229,7 @@ class FastRouteCore
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
   void setGridMax(int x_max, int y_max);
+  void setDetourPenalty(int penalty);
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -287,7 +288,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.2);
+  void updateSlacks(float percentage = 0.15);
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -383,7 +384,8 @@ class FastRouteCore
                          std::vector<int*>& points_heap_3D,
                          multi_array<int, 3>& dist_3D,
                          multi_array<Direction, 3>& directions_3D,
-                         multi_array<int, 3>& corr_edge_3D);
+                         multi_array<int, 3>& corr_edge_3D,
+                         multi_array<int, 3>& path_len_3D);
   void setupHeap3D(int netID,
                    int edgeID,
                    std::vector<int*>& src_heap_3D,
@@ -392,6 +394,7 @@ class FastRouteCore
                    multi_array<int, 3>& corr_edge_3D,
                    multi_array<int, 3>& d1_3D,
                    multi_array<int, 3>& d2_3D,
+                   multi_array<int, 3>& path_len_3D,
                    int regionX1,
                    int regionX2,
                    int regionY1,
@@ -730,6 +733,8 @@ class FastRouteCore
   std::vector<int*> dest_heap_3D_;
   multi_array<int, 3> d1_3D_;
   multi_array<int, 3> d2_3D_;
+  multi_array<int, 3> path_len_3D_;
+  int detour_penalty_;
 };
 
 extern const char* getNetName(odb::dbNet* db_net);
