@@ -25,7 +25,7 @@
 %}
 
 %exception {
-  try { $function }
+  try { $action }
   catch (std::bad_alloc &) {
     fprintf(stderr, "Error: out of memory.");
     abort();

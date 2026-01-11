@@ -65,6 +65,10 @@ QT_GUI_PLATFORMS = {
         defines = [
             "STATIC_QPA_PLUGIN_XCB=1",
         ],
+        features = [
+            "-thin_lto",
+            "-full_lto",
+        ],  # Disable LTO for Qt
         includes = [
             "include",
             "src",
