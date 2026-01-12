@@ -884,6 +884,8 @@ void PlacerBaseCommon::init()
     }
   }
 
+  instMap_.reserve(instStor_.size());
+  insts_.reserve(instStor_.size());
   for (auto& pb_inst : instStor_) {
     instMap_[pb_inst.dbInst()] = &pb_inst;
     insts_.push_back(&pb_inst);
@@ -927,6 +929,7 @@ void PlacerBaseCommon::init()
 
   // pinMap_ and pins_ update
   pins_.reserve(pinStor_.size());
+  pinMap_.reserve(pinStor_.size());
   for (auto& pb_pin : pinStor_) {
     if (pb_pin.isITerm()) {
       pinMap_[pb_pin.getDbITerm()] = &pb_pin;
