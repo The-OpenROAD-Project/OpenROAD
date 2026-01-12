@@ -93,6 +93,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned getNumMaxLeafSinks() const { return numMaxLeafSinks_; }
   void setMaxSlew(unsigned slew) { maxSlew_ = slew; }
   unsigned getMaxSlew() const { return maxSlew_; }
+  void setMaxWl(int wl) { maxWl_ = wl; }
+  int getMaxWl() const { return maxWl_; }
   void setMaxCharSlew(double slew) { maxCharSlew_ = slew; }
   double getMaxCharSlew() const { return maxCharSlew_; }
   void setMaxCharCap(double cap) { maxCharCap_ = cap; }
@@ -374,12 +376,13 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned numMaxLeafSinks_ = 15;
   unsigned maxFanout_ = 0;
   unsigned maxSlew_ = 4;
+  int maxWl_ = 0;
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
-  double sinkBufferInputCap_ = 0;
   int capSteps_ = 20;
   int slewSteps_ = 7;
   unsigned charWirelengthIterations_ = 4;
+  double sinkBufferInputCap_ = 0;
   unsigned clockTreeMaxDepth_ = 100;
   bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;
