@@ -2221,9 +2221,11 @@ void LayoutViewer::saveImage(const QString& filepath,
 
   QImage img = createImage(region, width_px, dbu_per_pixel);
 
-  if (!img.save(save_filepath)) {
-    logger_->warn(
-        utl::GUI, 78, "Failed to write image: {}", save_filepath.toStdString());
+  QImageWriter writer(save_filepath);
+  if (!writer.write(img)) {
+    logger_->warn(utl::GUI, 78, "Failed to write image: {} ({})",
+                  save_filepath.toStdString(),
+                  writer.errorString().toStdString());
   }
 }
 
