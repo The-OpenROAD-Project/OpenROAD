@@ -12,10 +12,7 @@ class AbstractGrouteRenderer
  public:
   virtual ~AbstractGrouteRenderer() = default;
 
-  virtual void highlightRoute(odb::dbNet* net,
-                              bool show_segments,
-                              bool show_pin_locations)
-      = 0;
+  virtual void highlightRoute(odb::dbNet* net, bool show_pin_locations) = 0;
 
   virtual void clearRoute() = 0;
 };
