@@ -15,11 +15,11 @@
         std::memcpy(&obj.{{field.name}}, &{{field.name}}bit_field, sizeof({{field.name}}bit_field));
       {% else %}
         {% if 'no-serial' not in field.flags %}
-          {% if 'schema' in field %}
+          {% if field.schema %}
           if (obj.getDatabase()->isSchema({{field.schema}})) {
           {% endif %}
           stream >> {% if field.table %}*{% endif %}obj.{{field.name}};
-          {% if 'schema' in field %}
+          {% if field.schema %}
           }
           {% endif %}
         {% endif %}

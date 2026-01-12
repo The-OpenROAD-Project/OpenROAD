@@ -63,6 +63,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
+    src/insertBufferDialog.cpp
     src/clockWidget.cpp
     src/gui_utils.cpp
     src/colorGenerator.cpp
