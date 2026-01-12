@@ -10,6 +10,7 @@ sta::define_cmd_args "global_placement" {\
     [-disable_routability_driven]\
     [-incremental]\
     [-skip_io]\
+    [-random_seed random_seed]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -40,7 +41,7 @@ sta::define_cmd_args "global_placement" {\
 
 proc global_placement { args } {
   sta::parse_key_args "global_placement" args \
-    keys {-bin_grid_count -density \
+    keys {-random_seed -bin_grid_count -density \
       -init_density_penalty -init_wirelength_coef \
       -min_phi_coef -max_phi_coef -overflow \
       -reference_hpwl \
@@ -200,6 +201,171 @@ proc placement_cluster { args } {
   utl::info GPL 96 "Created placement cluster of [llength $insts] instances."
 
   gpl::placement_cluster_cmd $insts
+}
+
+sta::define_cmd_args "read_soft_placement_clusters" {\
+    -file file\
+    [-min_weight min_weight]\
+    [-min_cluster_size min_cluster_size]\
+    [-max_cluster_size max_cluster_size]\
+    [-split_large_clusters]\
+    [-best_effort]\
+}
+
+proc read_soft_placement_clusters { args } {
+  sta::parse_key_args "read_soft_placement_clusters" args \
+    keys {-file -min_weight -min_cluster_size -max_cluster_size} \
+    flags {-split_large_clusters -best_effort}
+
+  if { ![info exists keys(-file)] } {
+    utl::error GPL 1620 "read_soft_placement_clusters requires -file."
+  }
+  set file $keys(-file)
+
+  set min_weight 0.0
+  if { [info exists keys(-min_weight)] } {
+    set min_weight_str $keys(-min_weight)
+    if { [catch { expr {double($min_weight_str)} } min_weight] } {
+      utl::error GPL 1627 "-min_weight must be a number."
+    }
+    if { $min_weight < 0.0 } {
+      utl::error GPL 1628 "-min_weight must be >= 0.0."
+    }
+  }
+
+  set min_cluster_size 2
+  if { [info exists keys(-min_cluster_size)] } {
+    set min_cluster_size $keys(-min_cluster_size)
+    sta::check_positive_integer "-min_cluster_size" $min_cluster_size
+  }
+
+  set max_cluster_size 50
+  if { [info exists keys(-max_cluster_size)] } {
+    set max_cluster_size $keys(-max_cluster_size)
+    sta::check_positive_integer "-max_cluster_size" $max_cluster_size
+  }
+  if { $max_cluster_size < $min_cluster_size } {
+    utl::error GPL 1621 "-max_cluster_size must be >= -min_cluster_size."
+  }
+
+  set split_large_clusters [info exists flags(-split_large_clusters)]
+  set best_effort [info exists flags(-best_effort)]
+
+  set inst_best_cluster [dict create]
+  set inst_best_weight [dict create]
+
+  set fh [open $file r]
+  set line_no 0
+  while { [gets $fh line] >= 0 } {
+    incr line_no
+    set line [string trim $line]
+    if { $line == "" } {
+      continue
+    }
+    if { [string match "#*" $line] } {
+      continue
+    }
+
+    set fields [split $line ","]
+    if { [llength $fields] < 2 } {
+      utl::warn GPL 1622 "$file:$line_no: expected at least 2 CSV fields (inst_name,cluster_id[,weight]); skipping."
+      continue
+    }
+
+    set inst_name [string trim [lindex $fields 0]]
+    set cluster_id [string trim [lindex $fields 1]]
+    if { $inst_name == "" || $cluster_id == "" } {
+      utl::warn GPL 1623 "$file:$line_no: empty inst_name/cluster_id; skipping."
+      continue
+    }
+
+    if { $line_no == 1 && ($inst_name == "inst_name" || $inst_name == "instance" || $inst_name == "inst") } {
+      continue
+    }
+
+    set weight 1.0
+    if { [llength $fields] >= 3 } {
+      set weight_str [string trim [lindex $fields 2]]
+      if { $weight_str != "" } {
+        if { [catch { expr {double($weight_str)} } weight] } {
+          utl::warn GPL 1624 "$file:$line_no: invalid weight '$weight_str'; skipping."
+          continue
+        }
+      }
+    }
+
+    if { [dict exists $inst_best_weight $inst_name] } {
+      if { $weight <= [dict get $inst_best_weight $inst_name] } {
+        continue
+      }
+    }
+
+    dict set inst_best_cluster $inst_name $cluster_id
+    dict set inst_best_weight $inst_name $weight
+  }
+  close $fh
+
+  set clusters [dict create]
+  foreach inst_name [dict keys $inst_best_cluster] {
+    set cluster_id [dict get $inst_best_cluster $inst_name]
+    set weight [dict get $inst_best_weight $inst_name]
+    if { $weight < $min_weight } {
+      continue
+    }
+    dict lappend clusters $cluster_id $inst_name
+  }
+
+  set num_clusters_created 0
+  foreach cluster_id [lsort [dict keys $clusters]] {
+    set inst_names [dict get $clusters $cluster_id]
+    set inst_names [lsort $inst_names]
+    if { [llength $inst_names] < $min_cluster_size } {
+      continue
+    }
+
+    if { [llength $inst_names] > $max_cluster_size } {
+      if { !$split_large_clusters } {
+        utl::warn GPL 1625 "Cluster '$cluster_id' has [llength $inst_names] instances; splitting into chunks of $max_cluster_size."
+      }
+
+      for { set i 0 } { $i < [llength $inst_names] } { incr i $max_cluster_size } {
+        set chunk [lrange $inst_names $i [expr {$i + $max_cluster_size - 1}]]
+        set insts []
+        foreach name $chunk {
+          if { [catch { set parsed [gpl::parse_inst_names read_soft_placement_clusters $name] } err] } {
+            if { $best_effort } {
+              continue
+            }
+            error $err
+          }
+          lappend insts {*}$parsed
+        }
+        if { [llength $insts] < $min_cluster_size } {
+          continue
+        }
+        gpl::placement_cluster_cmd $insts
+        incr num_clusters_created
+      }
+    } else {
+      set insts []
+      foreach name $inst_names {
+        if { [catch { set parsed [gpl::parse_inst_names read_soft_placement_clusters $name] } err] } {
+          if { $best_effort } {
+            continue
+          }
+          error $err
+        }
+        lappend insts {*}$parsed
+      }
+      if { [llength $insts] < $min_cluster_size } {
+        continue
+      }
+      gpl::placement_cluster_cmd $insts
+      incr num_clusters_created
+    }
+  }
+
+  utl::info GPL 1626 "Created $num_clusters_created placement clusters from $file."
 }
 
 namespace eval gpl {

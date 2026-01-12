@@ -747,6 +747,7 @@ struct NesterovBaseVars
 
   const bool isSetBinCnt;
   const bool useUniformTargetDensity;
+  const int randomSeed;
   bool isMaxPhiCoefChanged = false;  // not user config
   const float targetDensity;
   const int binCntX;

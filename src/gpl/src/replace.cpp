@@ -74,7 +74,7 @@ void Replace::checkHasCoreRows()
 {
   if (!dbHasCoreRows(db_)) {
     log_->error(
-        GPL,
+      GPL,
         130,
         "No rows defined in design. Use initialize_floorplan to add rows.");
   }
@@ -380,6 +380,7 @@ void PlaceOptions::validate(utl::Logger* logger)
   val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
   val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
   val.check_range("Target density", density, 0.0f, 1.0f, 328);
+  val.check_non_negative("randomSeed", randomSeed, 329);
 }
 
 void PlaceOptions::skipIo()

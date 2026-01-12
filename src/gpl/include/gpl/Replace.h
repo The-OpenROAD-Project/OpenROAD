@@ -60,6 +60,7 @@ struct PlaceOptions
   float timingNetWeightMax = 5;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
+  int randomSeed = 42;
   // timing driven check overflow to keep resizer changes (non-virtual resizer)
   float keepResizeBelowOverflow = 1.0;
   bool routabilityUseRudy = true;
@@ -165,7 +166,6 @@ class Replace
   int total_placeable_insts_ = 0;
 
   Clusters clusters_;
-
   bool gui_debug_ = false;
   int gui_debug_pause_iterations_ = 10;
   int gui_debug_update_iterations_ = 10;
