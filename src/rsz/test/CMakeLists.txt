@@ -27,6 +27,7 @@ or_integration_tests(
     eqy_repair_setup5
     fanin_fanout1
     gain_buffering1
+    gain_buffering2
     gcd_resize
     insert_buffer
     insert_buffer_hier

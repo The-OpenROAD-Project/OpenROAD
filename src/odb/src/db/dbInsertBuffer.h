@@ -92,7 +92,9 @@ class dbInsertBuffer
   bool computeCentroid(const dbObject* drvr_pin,
                        const std::set<dbObject*>& load_pins,
                        Point& result) const;
-  void placeBufferAtLocation(dbInst* buffer_inst, const Point& loc);
+  void placeBufferAtLocation(dbInst* buffer_inst,
+                             const Point& loc,
+                             const char* reason = "argument");
   void placeBufferAtPin(dbInst* buffer_inst, const dbObject* term);
   void placeBufferAtCentroid(dbInst* buffer_inst,
                              const dbObject* drvr_pin,
@@ -202,7 +204,10 @@ class dbInsertBuffer
   void dlogMovedBTermLoad(int load_idx,
                           int num_loads,
                           const dbBTerm* load) const;
-  void dlogPlacedBuffer(const dbInst* buffer_inst, const Point& loc) const;
+  void dlogPlacedBuffer(const dbInst* buffer_inst,
+                        const Point& loc,
+                        const char* reason) const;
+  void dlogUnplacedBuffer(const dbInst* buffer_inst, const char* reason) const;
   void dlogInsertBufferSuccess(const dbInst* buffer_inst) const;
   void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;

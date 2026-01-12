@@ -5,12 +5,12 @@ module top (clk,
  input load;
  output [7:0] y;
 
- wire _13_;
- wire _12_;
- wire _11_;
- wire _10_;
  wire _08_;
  wire _09_;
+ wire _10_;
+ wire _11_;
+ wire _12_;
+ wire _13_;
  wire _14_;
  wire _15_;
  wire _17_;
@@ -28,19 +28,14 @@ module top (clk,
  wire net1;
  wire net2;
  wire net3;
+ wire [0:0] _37_;
 
- sky130_fd_sc_hd__buf_2 gain3 (.A(y[0]),
-    .X(net3));
- sky130_fd_sc_hd__buf_2 gain2 (.A(y[1]),
-    .X(net2));
- sky130_fd_sc_hd__buf_2 gain1 (.A(y[6]),
-    .X(net1));
- sky130_fd_sc_hd__and3_1 _47_ (.A(net3),
-    .B(net2),
+ sky130_fd_sc_hd__and3_1 _47_ (.A(net2),
+    .B(net1),
     .C(y[2]),
     .X(_17_));
- sky130_fd_sc_hd__and4_4 _48_ (.A(net3),
-    .B(net2),
+ sky130_fd_sc_hd__and4_4 _48_ (.A(net2),
+    .B(net1),
     .C(y[2]),
     .D(y[3]),
     .X(_18_));
@@ -51,11 +46,11 @@ module top (clk,
     .B(y[5]),
     .C(_18_),
     .X(_20_));
- sky130_fd_sc_hd__o21bai_1 _51_ (.A1(net1),
+ sky130_fd_sc_hd__o21bai_1 _51_ (.A1(net3),
     .A2(_20_),
     .B1_N(load),
     .Y(_21_));
- sky130_fd_sc_hd__a21oi_1 _52_ (.A1(net1),
+ sky130_fd_sc_hd__a21oi_1 _52_ (.A1(net3),
     .A2(_20_),
     .B1(_21_),
     .Y(_08_));
@@ -63,7 +58,7 @@ module top (clk,
     .B(y[7]),
     .C(_20_),
     .X(_22_));
- sky130_fd_sc_hd__a21oi_1 _54_ (.A1(net1),
+ sky130_fd_sc_hd__a21oi_1 _54_ (.A1(net3),
     .A2(_20_),
     .B1(y[7]),
     .Y(_23_));
@@ -71,19 +66,19 @@ module top (clk,
     .B(_22_),
     .C(_23_),
     .Y(_09_));
- sky130_fd_sc_hd__nor2_1 _56_ (.A(net3),
+ sky130_fd_sc_hd__nor2_1 _56_ (.A(net2),
     .B(load),
     .Y(_10_));
- sky130_fd_sc_hd__a21oi_1 _57_ (.A1(net3),
-    .A2(net2),
+ sky130_fd_sc_hd__a21oi_1 _57_ (.A1(net2),
+    .A2(net1),
     .B1(load),
     .Y(_24_));
- sky130_fd_sc_hd__o21a_1 _58_ (.A1(net3),
-    .A2(net2),
+ sky130_fd_sc_hd__o21a_1 _58_ (.A1(net2),
+    .A2(net1),
     .B1(_24_),
     .X(_11_));
- sky130_fd_sc_hd__a21oi_1 _59_ (.A1(net3),
-    .A2(net2),
+ sky130_fd_sc_hd__a21oi_1 _59_ (.A1(net2),
+    .A2(net1),
     .B1(y[2]),
     .Y(_25_));
  sky130_fd_sc_hd__nor3_1 _60_ (.A(load),
@@ -117,70 +112,28 @@ module top (clk,
  sky130_fd_sc_hd__dfxtp_1 _68_ (.D(_09_),
     .Q(y[7]),
     .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 _69_ (.D(_10_),
+    .Q(y[0]),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 _70_ (.D(_11_),
+    .Q(y[1]),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 _71_ (.D(_12_),
+    .Q(y[2]),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 _72_ (.D(_13_),
+    .Q(y[3]),
+    .CLK(clk));
  sky130_fd_sc_hd__dfxtp_1 _73_ (.D(_14_),
     .Q(y[4]),
     .CLK(clk));
  sky130_fd_sc_hd__dfxtp_1 _74_ (.D(_15_),
     .Q(y[5]),
     .CLK(clk));
- hier_flop U1 (.CLK(clk),
-    .D(_10_),
-    .Q(y[0]));
- hier_flop_U2 U2 (.CLK(clk),
-    .D(_11_),
-    .Q(y[1]));
- hier_flop_U3 U3 (.CLK(clk),
-    .D(_12_),
-    .Q(y[2]));
- hier_flop_U4 U4 (.CLK(clk),
-    .D(_13_),
-    .Q(y[3]));
-endmodule
-module hier_flop (CLK,
-    D,
-    Q);
- input CLK;
- input D;
- output Q;
-
-
- sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
-    .Q(Q),
-    .CLK(CLK));
-endmodule
-module hier_flop_U2 (CLK,
-    D,
-    Q);
- input CLK;
- input D;
- output Q;
-
-
- sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
-    .Q(Q),
-    .CLK(CLK));
-endmodule
-module hier_flop_U3 (CLK,
-    D,
-    Q);
- input CLK;
- input D;
- output Q;
-
-
- sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
-    .Q(Q),
-    .CLK(CLK));
-endmodule
-module hier_flop_U4 (CLK,
-    D,
-    Q);
- input CLK;
- input D;
- output Q;
-
-
- sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
-    .Q(Q),
-    .CLK(CLK));
+ sky130_fd_sc_hd__buf_2 gain1 (.A(y[1]),
+    .X(net1));
+ sky130_fd_sc_hd__buf_2 gain2 (.A(y[0]),
+    .X(net2));
+ sky130_fd_sc_hd__buf_2 gain3 (.A(y[6]),
+    .X(net3));
 endmodule
