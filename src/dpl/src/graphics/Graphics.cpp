@@ -3,6 +3,9 @@
 
 #include "Graphics.h"
 
+#include <cstdlib>
+#include <set>
+
 #include "dpl/Opendp.h"
 #include "gui/gui.h"
 #include "infrastructure/Grid.h"
@@ -106,10 +109,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     gui::Painter::Color line_color;
 
     // Check if the instance is selected
-    if (selected_insts.find(cell->getDbInst()) != selected_insts.end()) {
+    if (selected_insts.contains(cell->getDbInst())) {
       line_color = gui::Painter::kYellow;
-    } else if (dx == 0 && dy == 0) {
-      line_color = gui::Painter::kWhite;
     } else if (std::abs(dx) > std::abs(dy)) {
       line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
     } else {
