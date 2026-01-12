@@ -40,6 +40,9 @@ option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 # Allow disabling tests
 option(ENABLE_TESTS "Enable OpenROAD tests" ON)
 
+# Optional Surrogate support (disabled by default)
+option(ENABLE_SURROGATE "Enable surrogate eval/tune support" OFF)
+
 # Allow enabling address sanitizer
 option(ASAN "Enable Address Sanitizer" OFF)
 
