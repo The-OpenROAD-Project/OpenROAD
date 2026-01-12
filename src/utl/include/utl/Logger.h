@@ -222,6 +222,8 @@ class Logger
     return (it != groups.end() && level <= it->second);
   }
 
+  int getWarningCount() const { return warning_count_; }
+
   void startPrometheusEndpoint(uint16_t port);
   std::shared_ptr<PrometheusRegistry> getRegistry();
   bool isPrometheusServerReadyToServe();

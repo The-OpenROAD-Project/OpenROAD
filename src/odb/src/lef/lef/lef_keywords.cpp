@@ -28,6 +28,7 @@
 // *****************************************************************************
 
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -62,8 +63,8 @@ inline std::string strip_case(const char* str)
     return result;
   };
 
-  for (std::string::iterator p = result.begin(); result.end() != p; ++p) {
-    *p = toupper(*p);
+  for (char& p : result) {
+    p = toupper(p);
   }
 
   return result;
@@ -370,7 +371,7 @@ static inline void IncCurPos(char** curPos, char** buffer, int* bufferSize)
     return;
   }
 
-  long offset = *curPos - *buffer;
+  int64_t offset = *curPos - *buffer;
 
   *bufferSize *= 2;
   *buffer = (char*) realloc(*buffer, *bufferSize);
@@ -600,6 +601,9 @@ void lefStoreAlias()
       int ch = lefGetc();
       if (ch == EOF) {
         lefError(1001, "End of file in &ALIAS");
+        free(aname);
+        free(line);
+        free(uc_line);
         return;
       }
 
@@ -622,10 +626,7 @@ void lefStoreAlias()
     so_far += line;
   }
 
-  char* dup = (char*) malloc(strlen(so_far.c_str()) + 1);
-
-  strcpy(dup, so_far.c_str());
-  lefData->alias_set[strip_case(aname)] = dup;
+  lefData->alias_set[strip_case(aname)] = so_far;
 
   free(aname);
   free(line);
@@ -1433,7 +1434,7 @@ void* lefMalloc(size_t lef_size)
     return (*lefSettings->MallocFunction)(lef_size);
   }
 
-  mallocVar = (void*) malloc(lef_size);
+  mallocVar = malloc(lef_size);
   if (!mallocVar) {
     fprintf(stderr, "ERROR (LEFPARS-1009): Not enough memory, stop parsing!\n");
     exit(1);

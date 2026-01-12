@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <atomic>
+#include <iterator>
 #include <map>
 #include <mutex>
 #include <tuple>
@@ -125,6 +126,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
     Iterator begin() { return begin_; }
     Iterator end() { return end_; }
+
+    int size() const { return std::distance(begin_, end_); }
 
    private:
     Iterator begin_;

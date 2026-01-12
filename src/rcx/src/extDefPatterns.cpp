@@ -141,9 +141,7 @@ void extRulesPat::UpdateOrigin_wires(int ll[2], int ur[2])
 {
   // called at  the end of each individual wire pattern
   _origin[1] += ur[1] + _patternSep;
-  if (_ur_last[0] < ur[0]) {
-    _ur_last[0] = ur[0];  // next big pattern will start
-  }
+  _ur_last[0] = std::max(_ur_last[0], ur[0]);
 
   PrintBbox(stdout, ll, ur);
 }
@@ -268,9 +266,7 @@ uint32_t extRulesPat::getMinWidthSpacing(dbTechLayer* layer, uint32_t& w)
   uint32_t p = layer->getPitch();
   int minSpace = layer->getSpacing();
   int s = p - minWidth;
-  if (s > minSpace) {
-    s = minSpace;
-  }
+  s = std::min(s, minSpace);
   return s;
 }
 uint32_t extRulesPat::setLayerInfo(dbTechLayer* layer, uint32_t met)
@@ -503,13 +499,9 @@ uint32_t extRulesPat::CreateContext(uint32_t met,
   _lineCnt = jj;
   Print(stdout);
   for (uint32_t k = 0; k < 2; k++) {
-    if (ur[k] < _ur_1[jj - 1][k]) {
-      ur[k] = _ur_1[jj - 1][k];
-    }
+    ur[k] = std::max(ur[k], _ur_1[jj - 1][k]);
 
-    if (ll[k] > _ll_1[jj - 1][k]) {
-      ll[k] = _ll_1[jj - 1][k];
-    }
+    ll[k] = std::min(ll[k], _ll_1[jj - 1][k]);
   }
   WriteDB(_long_dir, met, cntx_layer);
 
@@ -1108,7 +1100,7 @@ uint32_t extRCModel::OverUnderRulePat(extMainOptions* opt,
       if (met - underMet > (int) opt->_underDist) {
         continue;
       }
-      if ((opt->_underMet > 0) && ((int) opt->_underMet != underMet)) {
+      if ((opt->_underMet > 0) && (opt->_underMet != underMet)) {
         continue;
       }
 

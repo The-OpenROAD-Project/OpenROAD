@@ -126,14 +126,13 @@ void DensityFill::readAndExpandLayers(dbTech* tech, pt::ptree& tree)
       auto widths = non_opc.get_child("width");
       auto heights = non_opc.get_child("height");
 
-      std::transform(widths.begin(),
-                     widths.end(),
-                     heights.begin(),
-                     std::back_inserter(scfg.shapes),
-                     [dbu](auto& w, auto& h) {
-                       return std::make_pair(getValue(w.second) * dbu,
-                                             getValue(h.second) * dbu);
-                     });
+      std::ranges::transform(widths,
+                             heights,
+                             std::back_inserter(scfg.shapes),
+                             [dbu](auto& w, auto& h) {
+                               return std::make_pair(getValue(w.second) * dbu,
+                                                     getValue(h.second) * dbu);
+                             });
     }
 
     // OPC data, if any
@@ -154,14 +153,13 @@ void DensityFill::readAndExpandLayers(dbTech* tech, pt::ptree& tree)
       auto widths = opc.get_child("width");
       auto heights = opc.get_child("height");
 
-      std::transform(widths.begin(),
-                     widths.end(),
-                     heights.begin(),
-                     std::back_inserter(scfg.shapes),
-                     [dbu](auto& w, auto& h) {
-                       return std::make_pair(getValue(w.second) * dbu,
-                                             getValue(h.second) * dbu);
-                     });
+      std::ranges::transform(widths,
+                             heights,
+                             std::back_inserter(scfg.shapes),
+                             [dbu](auto& w, auto& h) {
+                               return std::make_pair(getValue(w.second) * dbu,
+                                                     getValue(h.second) * dbu);
+                             });
     }
 
     auto it = layer.find("names");

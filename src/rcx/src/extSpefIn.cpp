@@ -1502,7 +1502,7 @@ uint32_t extSpef::sortRSegs()
   _d_corner_net->getZeroRSeg()->setCoords(ndx, ndy);
   _d_corner_net->getZeroRSeg()->setTargetNode(drvCapNode->getId());
   const int cnn = _nrseg->getCnt() + 1;
-  if (cnn > (int) _hcnrc->getSize()) {
+  if (cnn > _hcnrc->getSize()) {
     const int ocsz = _hcnrc->getSize();
     int ncsz = (cnn / 1024 + 1) * 1024;
     _hcnrc->resize(ncsz);

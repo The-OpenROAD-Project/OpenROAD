@@ -31,6 +31,7 @@
 // routines and write it out to a temporary file.
 
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -81,9 +82,9 @@ void checkType(defrCallbackType_e c)
 // This function will make sure it round up for all the machine
 double checkDouble(double num)
 {
-  long tempNum;
+  int64_t tempNum;
   if ((num > 1000004) || (num < -1000004)) {
-    tempNum = (long) num;
+    tempNum = (int64_t) num;
     if ((tempNum % 5) == 0) {
       return num + 3;
     }
@@ -172,7 +173,7 @@ int compf(defrCallbackType_e c, defiComponent* co, defiUserData ud)
   }
   if (co->hasHalo()) {
     int left, bottom, right, top;
-    (void) co->haloEdges(&left, &bottom, &right, &top);
+    co->haloEdges(&left, &bottom, &right, &top);
     fprintf(fout, "COMP %s HALO", co->id());
     if (co->hasHaloSoft()) {
       fprintf(fout, " SOFT");
@@ -342,7 +343,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
         p->initTraverse();
         fprintf(fout, "\nNET %s %s", net->name(), wire->wireType());
         nline = 0;
-        while ((path = (int) p->next()) != DEFIPATH_DONE) {
+        while ((path = p->next()) != DEFIPATH_DONE) {
           switch (path) {
             case DEFIPATH_LAYER:
               if (!netSeCmp) {
@@ -1921,7 +1922,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       --numObjs;
       break;
     case defrDefaultCapCbkType:
-      i = (unsigned long long) cl;
+      i = (uint64_t) cl;
       fprintf(fout, "DEFAULTCAP %d\n", i);
       numObjs = i;
       break;

@@ -151,8 +151,7 @@ bool extMain::markNetsToExtract_v2(const char* netNames,
                                    std::vector<dbNet*>& inets)
 {
   _allNet = !findSomeNet(_block, netNames, inets, logger_);
-  for (uint32_t j = 0; j < inets.size(); j++) {
-    dbNet* net = inets[j];
+  for (auto net : inets) {
     net->setMark(true);
   }
   // DELETE ?
@@ -1006,7 +1005,7 @@ extRCModel* extMain::createCornerMap(const char* rulesFileName)
         = extModelGen::GetCornerNames(rulesFileName, version, logger_);
     std::list<std::string>::iterator it;
     for (it = corner_list.begin(); it != corner_list.end(); ++it) {
-      std::string str = *it;
+      const std::string& str = *it;
       addRCCorner(str.c_str(), extCornerDbCnt, 0);
       _modelMap.add(extCornerDbCnt);
       extCornerDbCnt++;

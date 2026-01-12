@@ -571,11 +571,10 @@ void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
   }
 }
 
-std::string toLowerCase(std::string str)
+static std::string toLowerCase(std::string str)
 {
-  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
+  std::ranges::transform(
+      str, str.begin(), [](unsigned char c) { return std::tolower(c); });
   return str;
 }
 
@@ -732,6 +731,141 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
 
   histogram.generateBins(num_bins);
   histogram.report();
+}
+
+int dbSta::checkSanity()
+{
+  ensureGraph();
+  ensureLevelized();
+
+  int pre_warn_cnt = logger_->getWarningCount();
+
+  checkSanityDrvrVertexEdges();
+
+  int post_warn_cnt = logger_->getWarningCount();
+  return post_warn_cnt - pre_warn_cnt;
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const odb::dbObject* term) const
+{
+  if (term == nullptr) {
+    logger_->error(
+        utl::STA, 2056, "checkSanityDrvrVertexEdges: input term is null");
+    return;
+  }
+
+  sta::Pin* pin = db_network_->dbToSta(const_cast<odb::dbObject*>(term));
+  if (pin == nullptr) {
+    logger_->error(utl::STA,
+                   2057,
+                   "checkSanityDrvrVertexEdges: failed to convert dbObject to "
+                   "sta::Pin for {}",
+                   term->getName());
+    return;
+  }
+
+  checkSanityDrvrVertexEdges(pin);
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
+{
+  if (db_network_->isDriver(pin) == false) {
+    return;
+  }
+
+  sta::Graph* graph = this->graph();
+  sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
+
+  if (drvr_vertex == nullptr) {
+    logger_->warn(utl::STA,
+                  2058,
+                  "checkSanityDrvrVertexEdges: could not find driver vertex "
+                  "for pin {}",
+                  db_network_->pathName(pin));
+    return;
+  }
+
+  // Store edges and load vertices to check for consistency
+  std::set<std::string> edge_str_set;
+  std::set<sta::Vertex*> visited_to_vertices;
+  sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph);
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    sta::Vertex* to_vertex = edge->to(graph);
+
+    // Check duplicate edges
+    if (edge_str_set.find(edge->to_string(this)) != edge_str_set.end()) {
+      logger_->error(utl::STA,
+                     2059,
+                     "Duplicate edge found: {}",
+                     edge->to_string(this).c_str());
+    }
+
+    edge_str_set.insert(edge->to_string(this));
+    visited_to_vertices.insert(to_vertex);
+  }
+
+  // Compare with ODB connectivity
+  bool has_inconsistency = false;
+  odb::dbObject* drvr_obj = db_network_->staToDb(pin);
+  odb::dbNet* net = nullptr;
+  if (drvr_obj) {
+    if (drvr_obj->getObjectType() == odb::dbITermObj) {
+      net = static_cast<odb::dbITerm*>(drvr_obj)->getNet();
+    } else if (drvr_obj->getObjectType() == odb::dbBTermObj) {
+      net = static_cast<odb::dbBTerm*>(drvr_obj)->getNet();
+    }
+  }
+
+  if (net) {
+    std::set<sta::Pin*> odb_loads;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (iterm != drvr_obj) {
+        odb_loads.insert(db_network_->dbToSta(iterm));
+      }
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm != drvr_obj) {
+        odb_loads.insert(db_network_->dbToSta(bterm));
+      }
+    }
+
+    std::set<sta::Pin*> sta_loads;
+    for (sta::Vertex* to_vertex : visited_to_vertices) {
+      sta_loads.insert(to_vertex->pin());
+    }
+
+    // Loads in ODB must appear in STA edges.
+    // - STA can have more edges than loads in ODB
+    for (sta::Pin* odb_load : odb_loads) {
+      if (sta_loads.find(odb_load) == sta_loads.end()) {
+        logger_->warn(utl::STA,
+                      2063,
+                      "Inconsistent load: ODB has load '{}', but STA does not.",
+                      db_network_->pathName(odb_load));
+        has_inconsistency = true;
+      }
+    }
+  }
+
+  if (has_inconsistency) {
+    logger_->error(utl::STA,
+                   2064,
+                   "Inconsistencies found in driver vertex edges for pin {}.",
+                   db_network_->pathName(pin));
+  }
+}
+
+void dbSta::checkSanityDrvrVertexEdges() const
+{
+  // Iterate over all driver vertices in the graph.
+  sta::VertexIterator vertex_iter(this->graph());
+  while (vertex_iter.hasNext()) {
+    sta::Vertex* vertex = vertex_iter.next();
+    if (vertex->isDriver(this->network())) {
+      checkSanityDrvrVertexEdges(db_network_->staToDb(vertex->pin()));
+    }
+  }
 }
 
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
@@ -1022,13 +1156,11 @@ void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
 {
   Pin* pin = network_->dbToSta(moditerm);
   network_->connectPinAfter(pin);
-  sta_->connectPinAfter(pin);
 }
 
 void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
 {
   Pin* pin = network_->dbToSta(moditerm);
-  sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 

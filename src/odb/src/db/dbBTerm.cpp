@@ -385,8 +385,18 @@ dbModNet* dbBTerm::getModNet() const
   return nullptr;
 }
 
+void dbBTerm::connect(dbNet* db_net, dbModNet* modnet)
+{
+  connect(db_net);
+  connect(modnet);
+}
+
 void dbBTerm::connect(dbModNet* mod_net)
 {
+  if (mod_net == nullptr) {
+    return;
+  }
+
   dbModule* parent_module = mod_net->getParent();
   _dbBlock* block = (_dbBlock*) (parent_module->getOwner());
   _dbModNet* _mod_net = (_dbModNet*) mod_net;
@@ -402,6 +412,10 @@ void dbBTerm::connect(dbModNet* mod_net)
 
 void dbBTerm::connect(dbNet* net_)
 {
+  if (net_ == nullptr) {
+    return;
+  }
+
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -470,10 +484,10 @@ void dbBTerm::disconnectDbNet()
   }
 }
 
-dbSet<dbBPin> dbBTerm::getBPins()
+dbSet<dbBPin> dbBTerm::getBPins() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
-  return dbSet<dbBPin>(this, block->bpin_itr_);
+  return dbSet<dbBPin>(const_cast<dbBTerm*>(this), block->bpin_itr_);
 }
 
 dbITerm* dbBTerm::getITerm()
@@ -537,7 +551,7 @@ dbPlacementStatus dbBTerm::getFirstPinPlacementStatus()
   return bpins.begin()->getPlacementStatus();
 }
 
-bool dbBTerm::getFirstPinLocation(int& x, int& y)
+bool dbBTerm::getFirstPinLocation(int& x, int& y) const
 {
   for (dbBPin* bpin : getBPins()) {
     for (dbBox* box : bpin->getBoxes()) {

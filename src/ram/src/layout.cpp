@@ -3,6 +3,7 @@
 
 #include "layout.h"
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 
@@ -101,12 +102,8 @@ void Layout::layoutInit()
         cells_[i]->setOrient(odb::dbOrientType::MX);
       }
       cells_[i]->cellInit();
-      if (cell_height_ < cells_[i]->getHeight()) {
-        cell_height_ = cells_[i]->getHeight();
-      }
-      if (cell_width_ < cells_[i]->getWidth()) {
-        cell_width_ = cells_[i]->getWidth();
-      }
+      cell_height_ = std::max(cell_height_, cells_[i]->getHeight());
+      cell_width_ = std::max(cell_width_, cells_[i]->getWidth());
     }
   }
 }

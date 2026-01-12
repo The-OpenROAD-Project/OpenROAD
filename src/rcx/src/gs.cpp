@@ -13,8 +13,8 @@
 
 namespace rcx {
 
-static constexpr long long PIXFILL = 0xffffffffffffffffLL;
-static constexpr long long PIXMAX = 0x8000000000000000LL;
+static constexpr int64_t PIXFILL = 0xffffffffffffffffLL;
+static constexpr int64_t PIXMAX = 0x8000000000000000LL;
 static constexpr int PIXADJUST = 2;
 
 /* Values for the member variable init_
@@ -39,8 +39,8 @@ gs::gs(AthPool<SEQ>* pool)
   init_ = INIT;
 
   pixint sum = PIXFILL;
-  for (int i = 0; i < PIXMAPGRID; i++) {
-    start_[i] = sum;
+  for (pixint& p : start_) {
+    p = sum;
     sum = (sum >> 1);
   }
 
@@ -190,9 +190,7 @@ int gs::box(int px0, int py0, int px1, int py1, const int plane)
     return -1;
   }
 
-  if (plane > maxplane_) {
-    maxplane_ = plane;
-  }
+  maxplane_ = std::max(plane, maxplane_);
 
   const plconfig& plc = pldata_[plane];
 
@@ -316,21 +314,13 @@ uint32_t gs::getSeq(int* ll,
     return 0;
   }
 
-  if (ll[0] < plc.x0) {
-    ll[0] = plc.x0;
-  }
+  ll[0] = std::max(ll[0], plc.x0);
 
-  if (ur[0] > plc.x1) {
-    ur[0] = plc.x1;
-  }
+  ur[0] = std::min(ur[0], plc.x1);
 
-  if (ll[1] < plc.y0) {
-    ll[1] = plc.y0;
-  }
+  ll[1] = std::max(ll[1], plc.y0);
 
-  if (ur[1] > plc.y1) {
-    ur[1] = plc.y1;
-  }
+  ur[1] = std::min(ur[1], plc.y1);
   // End Sanity Checks
 
   SEQ* s = salloc();
@@ -360,7 +350,7 @@ uint32_t gs::getSeq(int* ll,
       bool flag = false;
       while (getSeqRow(row, plane, start, end, s->type)) {
         s->_ll[0] = (int) (start * (plc.x_resolution) + plc.x0);
-        s->_ur[0] = (int) ((end + 1) * (plc.x_resolution) + (plc.x0) - 1);
+        s->_ur[0] = ((end + 1) * (plc.x_resolution) + (plc.x0) - 1);
         if (s->_ur[0] >= ur[0]) {
           s->_ur[0] = ur[0];
           flag = true;
@@ -397,13 +387,9 @@ uint32_t gs::getSeq(int* ll,
     int cs = ((cx1 + cx0) / 2) * plc.x_resolution + plc.x0;
     int ce = cs;
 
-    if (cs < ll[0]) {
-      cs = ll[0];
-    }
+    cs = std::max(cs, ll[0]);
 
-    if (ce > ur[0]) {
-      ce = ur[0];
-    }
+    ce = std::min(ce, ur[0]);
 
     for (int col = cx0; col <= cx0; col++) {
       int start = cy0;
@@ -411,7 +397,7 @@ uint32_t gs::getSeq(int* ll,
       bool flag = false;
       while (getSeqCol(col, plane, start, end, s->type)) {
         s->_ll[1] = (int) (start * plc.y_resolution + plc.y0);
-        s->_ur[1] = (int) ((end + 1) * plc.y_resolution + plc.y0 - 1);
+        s->_ur[1] = ((end + 1) * plc.y_resolution + plc.y0 - 1);
         if (s->_ur[1] >= ur[1]) {
           flag = true;
           s->_ur[1] = ur[1];
@@ -471,7 +457,7 @@ bool gs::getSeqRow(const int y,
   int sto = stpix / PIXMAPGRID;
   const int str = stpix - (sto * PIXMAPGRID);
 
-  const long offset = y * plc.pixstride + sto;
+  const int64_t offset = y * plc.pixstride + sto;
   pixmap* pl = pldata_[plane].plane + offset;
 
   seqcol = GS_NONE;
@@ -530,8 +516,8 @@ bool gs::getSeqRow(const int y,
     } else {
       // ends here
       epix = st * PIXMAPGRID - 1;
-      for (int bit = 0; bit < PIXMAPGRID; bit++) {
-        if (((pl->lword) & middle_[bit]) == 0) {
+      for (pixint bit : middle_) {
+        if (((pl->lword) & bit) == 0) {
           if (seqcol == GS_BLACK) {
             break;
           }
@@ -587,7 +573,7 @@ bool gs::getSeqCol(const int x,
   const int sto = x / PIXMAPGRID;
   const int stc = x - (sto * PIXMAPGRID);
 
-  const long offset = sto + stpix * plc.pixstride;
+  const int64_t offset = sto + stpix * plc.pixstride;
   const pixint bitmask = middle_[stc];
   pixmap* pl = pldata_[plane].plane + offset;
 

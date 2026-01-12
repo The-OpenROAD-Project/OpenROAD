@@ -884,6 +884,8 @@ void PlacerBaseCommon::init()
     }
   }
 
+  instMap_.reserve(instStor_.size());
+  insts_.reserve(instStor_.size());
   for (auto& pb_inst : instStor_) {
     instMap_[pb_inst.dbInst()] = &pb_inst;
     insts_.push_back(&pb_inst);
@@ -927,6 +929,7 @@ void PlacerBaseCommon::init()
 
   // pinMap_ and pins_ update
   pins_.reserve(pinStor_.size());
+  pinMap_.reserve(pinStor_.size());
   for (auto& pb_pin : pinStor_) {
     if (pb_pin.isITerm()) {
       pinMap_[pb_pin.getDbITerm()] = &pb_pin;
@@ -1178,7 +1181,7 @@ void PlacerBase::initInstsForUnusableSites()
   // actual rows Create dummy instances for unusable sites (test simple02.tcl
   // has an example on bottom right)
   if (group_ == nullptr) {
-    std::fill(siteGrid.begin(), siteGrid.end(), SiteInfo::Blocked);
+    std::ranges::fill(siteGrid, SiteInfo::Blocked);
 
     // Mark only sites covered by actual rows as Row
     for (dbRow* row : rows) {

@@ -13,6 +13,7 @@
 
 #include "BalancerConnection.h"
 #include "boost/asio.hpp"
+#include "boost/asio/ip/address.hpp"
 #include "boost/asio/thread_pool.hpp"
 #include "boost/thread/thread.hpp"
 
@@ -37,23 +38,21 @@ class LoadBalancer
                utl::Logger* logger,
                const char* ip,
                const char* workers_domain,
-               unsigned short port = 1234);
+               uint16_t port = 1234);
   ~LoadBalancer();
-  bool addWorker(const std::string& ip, unsigned short port);
-  void updateWorker(const ip::address& ip, unsigned short port);
-  void getNextWorker(ip::address& ip, unsigned short& port);
-  void removeWorker(const ip::address& ip,
-                    unsigned short port,
-                    bool lock = true);
-  void punishWorker(const ip::address& ip, unsigned short port);
+  bool addWorker(const std::string& ip, uint16_t port);
+  void updateWorker(const ip::address& ip, uint16_t port);
+  void getNextWorker(ip::address& ip, uint16_t& port);
+  void removeWorker(const ip::address& ip, uint16_t port, bool lock = true);
+  void punishWorker(const ip::address& ip, uint16_t port);
 
  private:
   struct Worker
   {
     ip::address ip;
-    unsigned short port;
-    unsigned short priority;
-    Worker(const ip::address& ip, unsigned short port, unsigned short priority)
+    uint16_t port;
+    uint16_t priority;
+    Worker(const ip::address& ip, uint16_t port, uint16_t priority)
         : ip(ip), port(port), priority(priority)
     {
     }
@@ -86,7 +85,7 @@ class LoadBalancer
   void start_accept();
   void handle_accept(const BalancerConnection::Pointer& connection,
                      const boost::system::error_code& err);
-  void lookUpWorkers(const char* domain, unsigned short port);
+  void lookUpWorkers(const char* domain, uint16_t port);
   friend class dst::BalancerConnection;
 };
 }  // namespace dst
