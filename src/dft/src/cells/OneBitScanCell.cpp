@@ -10,22 +10,28 @@
 
 #include "ClockDomain.hh"
 #include "ScanCell.hh"
+#include "ScanPin.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
 OneBitScanCell::OneBitScanCell(const std::string& name,
                                std::unique_ptr<ClockDomain> clock_domain,
                                odb::dbInst* inst,
-                               sta::TestCell* test_cell,
+                               sta::LibertyPort* scan_in_port,
+                               sta::LibertyPort* scan_enable_port,
+                               sta::LibertyPort* scan_out_port,
                                sta::dbNetwork* db_network,
                                utl::Logger* logger)
     : ScanCell(name, std::move(clock_domain), logger),
       inst_(inst),
-      test_cell_(test_cell),
+      scan_in_port_(scan_in_port),
+      scan_enable_port_(scan_enable_port),
+      scan_out_port_(scan_out_port),
       db_network_(db_network)
 {
 }
@@ -37,14 +43,14 @@ uint64_t OneBitScanCell::getBits() const
 
 void OneBitScanCell::connectScanEnable(const ScanDriver& driver) const
 {
-  Connect(ScanLoad(findITerm(getLibertyScanEnable(test_cell_))),
+  Connect(ScanLoad(findITerm(scan_enable_port_)),
           driver,
           /*preserve=*/false);
 }
 
 void OneBitScanCell::connectScanIn(const ScanDriver& driver) const
 {
-  Connect(ScanLoad(findITerm(getLibertyScanIn(test_cell_))),
+  Connect(ScanLoad(findITerm(scan_in_port_)),
           driver,
           /*preserve=*/false);
 }
@@ -54,34 +60,63 @@ void OneBitScanCell::connectScanOut(const ScanLoad& load) const
   // The scan out usually will be connected to functional data paths already, we
   // need to preserve the connections
   Connect(load,
-          ScanDriver(findITerm(getLibertyScanOut(test_cell_))),
+          ScanDriver(findITerm(scan_out_port_)),
           /*preserve=*/true);
 }
 
 ScanLoad OneBitScanCell::getScanEnable() const
 {
-  return ScanLoad(findITerm(getLibertyScanEnable(test_cell_)));
+  return ScanLoad(findITerm(scan_enable_port_));
 }
 
 ScanDriver OneBitScanCell::getScanOut() const
 {
-  return ScanDriver(findITerm(getLibertyScanOut(test_cell_)));
+  return ScanDriver(findITerm(scan_out_port_));
 }
 
 ScanLoad OneBitScanCell::getScanIn() const
 {
-  return ScanLoad(findITerm(getLibertyScanIn(test_cell_)));
+  return ScanLoad(findITerm(scan_in_port_));
 }
 
 odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
 {
+  if (liberty_port == nullptr) {
+    logger_->error(
+        utl::DFT, 52, "Null Liberty port for scan cell '{}'", inst_->getName());
+  }
+
+  // Prefer name-based lookup on the instance. This is more robust than relying
+  // on LibertyPort::extPort() -> dbMTerm mapping, and avoids crashes when that
+  // mapping is missing or stale after cell replacement.
+  const char* port_name = liberty_port->name();
+  if (port_name != nullptr) {
+    if (odb::dbITerm* iterm = inst_->findITerm(port_name)) {
+      return iterm;
+    }
+  }
+
   odb::dbMTerm* mterm = db_network_->staToDb(liberty_port);
-  return inst_->getITerm(mterm);
+  if (mterm != nullptr) {
+    if (odb::dbITerm* iterm = inst_->getITerm(mterm)) {
+      return iterm;
+    }
+  }
+
+  logger_->error(utl::DFT,
+                 53,
+                 "Failed to resolve scan ITerm '{}' on instance '{}'",
+                 port_name ? port_name : "<null>",
+                 inst_->getName());
+  return nullptr;
 }
 
 odb::Point OneBitScanCell::getOrigin() const
 {
-  return inst_->getOrigin();
+  // Use the instance placement location (DEF "PLACED" coordinates). Using
+  // dbInst::getOrigin() makes the coordinate depend on orientation (e.g. MX/MY)
+  // which breaks scan-chain cost comparisons and can mislead the optimizer.
+  return inst_->getLocation();
 }
 
 bool OneBitScanCell::isPlaced() const

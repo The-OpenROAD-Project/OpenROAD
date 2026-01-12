@@ -43,6 +43,7 @@ proc execute_dft_plan { args } {
 }
 
 sta::define_cmd_args "set_dft_config" { [-max_length max_length]
+                                        [-chain_count chain_count]
                                         [-max_chains max_chains]
                                         [-clock_mixing clock_mixing]
                                         [-scan_enable_name_pattern scan_enable_name_pattern]
@@ -53,6 +54,7 @@ proc set_dft_config { args } {
   sta::parse_key_args "set_dft_config" args \
     keys {
       -max_length
+      -chain_count
       -max_chains
       -clock_mixing
       -scan_enable_name_pattern
@@ -67,6 +69,12 @@ proc set_dft_config { args } {
     set max_length $keys(-max_length)
     sta::check_positive_integer "-max_length" $max_length
     dft::set_dft_config_max_length $max_length
+  }
+
+  if { [info exists keys(-chain_count)] } {
+    set chain_count $keys(-chain_count)
+    sta::check_positive_integer "-chain_count" $chain_count
+    dft::set_dft_config_chain_count $chain_count
   }
 
   if { [info exists keys(-max_chains)] } {

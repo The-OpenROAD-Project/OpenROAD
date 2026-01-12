@@ -74,13 +74,15 @@ odb::dbInst* ReplaceCell(
   odb::dbGroup* group = old_instance->getGroup();
   odb::dbModule* module = old_instance->getModule();
 
+  const odb::dbTransform old_transform = old_instance->getTransform();
+
   odb::dbInst* new_instance = odb::dbInst::create(top_block,
                                                   new_master,
                                                   /*name=*/"tmp_scan_flop",
                                                   /*physical_only=*/false,
                                                   module);
 
-  new_instance->setTransform(old_instance->getTransform());
+  new_instance->setTransform(old_transform);
   new_instance->setPlacementStatus(placement_status);
   new_instance->setSourceType(source_type);
   if (region) {
@@ -130,12 +132,8 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
 
 bool IsScanCell(const sta::LibertyCell* liberty_cell)
 {
-  const sta::TestCell* test_cell = liberty_cell->testCell();
-  if (test_cell) {
-    return getLibertyScanIn(test_cell) != nullptr
-           && getLibertyScanEnable(test_cell) != nullptr;
-  }
-  return false;
+  return getLibertyScanIn(liberty_cell) != nullptr
+         && getLibertyScanEnable(liberty_cell) != nullptr;
 }
 
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,

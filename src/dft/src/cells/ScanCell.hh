@@ -27,7 +27,7 @@ class ScanCell
   ScanCell(const std::string& name,
            std::unique_ptr<ClockDomain> clock_domain,
            utl::Logger* logger);
-  virtual ~ScanCell() = default;
+  virtual ~ScanCell();
   // Not copyable or movable
   ScanCell(const ScanCell&) = delete;
   ScanCell& operator=(const ScanCell&) = delete;

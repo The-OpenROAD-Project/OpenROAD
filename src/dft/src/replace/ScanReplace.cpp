@@ -19,11 +19,9 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Sequential.hh"
 #include "utl/Logger.h"
 
 namespace dft {
@@ -128,7 +126,6 @@ bool IsScanEquivalent(
 
   // Check there are no extra signals on the scan flop not present
   // on the non-scan flop (e.g. preset, clear, or enable)
-  sta::TestCell* test_cell = scan_cell->testCell();
   sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
   while (scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
@@ -138,17 +135,9 @@ bool IsScanEquivalent(
     if (seen_on_scan_cell.find(scan_cell_port) != seen_on_scan_cell.end()) {
       continue;
     }
-    // Extra scan related pins are ok
-    if (test_cell) {
-      sta::LibertyPort* test_port
-          = test_cell->findLibertyPort(scan_cell_port->name());
-      if (!test_port) {
-        return false;
-      }
-
-      if (test_port->scanSignalType() != sta::ScanSignalType::none) {
-        continue;
-      }
+    // Extra scan-related pins are ok.
+    if (scan_cell_port->scanSignalType() != sta::ScanSignalType::none) {
+      continue;
     }
     return false;
   }

@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+***************************
+Report DFT Plan
+Number of chains: 1
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 3 cells (3 bits)
+
+  ff3 (clk, rising)
+  ff2
+  ff1
+
+
+No differences found.

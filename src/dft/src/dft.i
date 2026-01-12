@@ -90,6 +90,11 @@ void set_dft_config_max_length(int max_length)
   getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
 }
 
+void set_dft_config_chain_count(int chain_count)
+{
+  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setChainCount(chain_count);
+}
+
 void set_dft_config_max_chains(int max_chains)
 {
   getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxChains(max_chains);

@@ -1,0 +1,36 @@
+module scan_architect_no_mix_nangate45 (clk,
+    in1,
+    out,
+    scan_enable_0,
+    scan_in_0,
+    scan_out_0);
+ input clk;
+ input in1;
+ output out;
+ input scan_enable_0;
+ input scan_in_0;
+ output scan_out_0;
+
+ wire n1;
+ wire n2;
+ wire n3;
+
+ BUF_X1 buf1 (.A(n3),
+    .Z(out));
+ SDFF_X1 ff1 (.D(in1),
+    .SE(scan_enable_0),
+    .SI(n2),
+    .CK(clk),
+    .Q(n1));
+ SDFF_X1 ff2 (.D(n1),
+    .SE(scan_enable_0),
+    .SI(n3),
+    .CK(clk),
+    .Q(n2));
+ SDFF_X1 ff3 (.D(n2),
+    .SE(scan_enable_0),
+    .SI(scan_in_0),
+    .CK(clk),
+    .Q(n3));
+ assign scan_out_0 = n1;
+endmodule

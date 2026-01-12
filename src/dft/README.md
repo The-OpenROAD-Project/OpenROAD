@@ -26,6 +26,7 @@ The command `set_dft_config` sets the DFT configuration variables.
 ```tcl
 set_dft_config 
     [-max_length <int>]
+    [-chain_count <int>]
     [-max_chains <int>]
     [-clock_mixing <string>]
     [-scan_enable_name_pattern <string>]
@@ -38,6 +39,7 @@ set_dft_config
 | Switch Name | Description |
 | ---- | ---- |
 | `-max_length` | The maximum number of bits that can be in each scan chain. |
+| `-chain_count` | The exact number of scan chains that will be generated. In `no_mix` clock mode it specifies an exact number of chains per clock-edge pair. This takes priority over `max_chains`/`max_length` chain-count inference. |
 | `-max_chains` | The maximum number of scan chains that will be generated. This takes priority over `max_length`,
 in `no_mix` clock mode it specifies a maximum number of chains per clock-edge pair. |
 | `-clock_mixing` | How architect will mix the scan flops based on the clock driver. `no_mix`: Creates scan chains with only one type of clock and edge. This may create unbalanced chains. `clock_mix`: Creates scan chains mixing clocks and edges. Falling edge flops are going to be stitched before rising edge. |
@@ -92,11 +94,9 @@ execute_dft_plan
 
 ### Scan Optimization
 
-**Note: This is currently not implement and this command currently operates as a
-nop**
-
-Performs scan optimizations on the design reordering the flops of the scan
-chains using the latest placement information.
+Reorders scan chains using the latest placement information (without re-running
+`scan_replace`). This re-stitches scan connections using the current DFT config
+(`set_dft_config`), including scan signal name patterns.
 
 
 ```tcl
@@ -130,7 +130,7 @@ Simply run the following script:
 
 ## Limitations
 
-* There are no optimizations for the scan chains. This is a WIP.
+* Scan-chain optimization is heuristic and still evolving.
 * There is no way to specify existing scan ports to be used by scan insertion.
 * There is currently no way to define a user defined scan path.
 * We can only work with one bit cells.
