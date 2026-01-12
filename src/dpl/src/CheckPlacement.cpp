@@ -39,6 +39,7 @@ void Opendp::checkPlacement(const bool verbose,
   std::vector<Node*> region_placement_failures;
   std::vector<Node*> edge_spacing_failures;
   std::vector<Node*> blocked_layers_failures;
+  std::vector<Node*> soft_blockage_failures;
 
   initGrid();
   groupAssignCellRegions();
@@ -82,6 +83,10 @@ void Opendp::checkPlacement(const bool verbose,
     if (!drc_engine_->checkBlockedLayers(cell.get())) {
       blocked_layers_failures.emplace_back(cell.get());
     }
+    // Soft blockage check
+    if (!drc_engine_->checkSoftBlockage(cell.get())) {
+      soft_blockage_failures.emplace_back(cell.get());
+    }
   }
   // This loop is separate because it needs to be done after the overlap check
   // The overlap check assigns the overlap cell to its pixel
@@ -105,7 +110,8 @@ void Opendp::checkPlacement(const bool verbose,
                region_placement_failures,
                {},
                edge_spacing_failures,
-               blocked_layers_failures);
+               blocked_layers_failures,
+               soft_blockage_failures);
   if (!report_file_name.empty()) {
     writeJsonReport(report_file_name);
   }
@@ -122,16 +128,18 @@ void Opendp::checkPlacement(const bool verbose,
   reportFailures(
       edge_spacing_failures, 9, "LEF58_CELLEDGESPACINGTABLE", verbose);
   reportFailures(blocked_layers_failures, 10, "Blocked layers", verbose);
+  reportFailures(soft_blockage_failures, 12, "Soft blockage", verbose);
   logger_->metric("design__violations",
                   placed_failures.size() + in_rows_failures.size()
                       + overlap_failures.size() + padding_failures.size()
-                      + site_align_failures.size());
+                      + site_align_failures.size()
+                      + soft_blockage_failures.size());
 
   if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
           + padding_failures.size() + site_align_failures.size()
           + (disallow_one_site_gaps_ ? one_site_gap_failures.size() : 0)
           + region_placement_failures.size() + edge_spacing_failures.size()
-          + blocked_layers_failures.size()
+          + blocked_layers_failures.size() + soft_blockage_failures.size()
       > 0) {
     logger_->error(DPL, 33, "detailed placement checks failed.");
   }
@@ -192,13 +200,15 @@ void Opendp::saveFailures(const vector<Node*>& placed_failures,
                           const vector<Node*>& region_placement_failures,
                           const vector<Node*>& placement_failures,
                           const vector<Node*>& edge_spacing_failures,
-                          const vector<Node*>& blocked_layers_failures)
+                          const vector<Node*>& blocked_layers_failures,
+                          const vector<Node*>& soft_blockage_failures)
 {
   if (placed_failures.empty() && in_rows_failures.empty()
       && overlap_failures.empty() && padding_failures.empty()
       && one_site_gap_failures.empty() && site_align_failures.empty()
       && region_placement_failures.empty() && placement_failures.empty()
-      && edge_spacing_failures.empty() && blocked_layers_failures.empty()) {
+      && edge_spacing_failures.empty() && blocked_layers_failures.empty()
+      && soft_blockage_failures.empty()) {
     return;
   }
 
@@ -267,6 +277,13 @@ void Opendp::saveFailures(const vector<Node*>& placed_failures,
         tool_category, "Blocked_layers_failures");
     category->setDescription("Cells that violate the blocked layers.");
     saveViolations(blocked_layers_failures, category);
+  }
+  if (!soft_blockage_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "Soft_blockage_failures");
+    category->setDescription(
+        "Regular cells placed in soft blockage regions.");
+    saveViolations(soft_blockage_failures, category);
   }
 }
 

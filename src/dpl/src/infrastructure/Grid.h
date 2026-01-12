@@ -45,6 +45,8 @@ struct Pixel
   uint8_t blocked_layers = 0;
   // Cell that reserved this pixel for padding
   Node* padding_reserved_by = nullptr;
+  // Soft blockage - blocks regular cells but allows buffers/inverters/physical
+  bool is_soft_blocked = false;
 };
 
 // Return value for grid searches.
