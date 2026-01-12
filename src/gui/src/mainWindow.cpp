@@ -399,6 +399,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::displayUnitsChanged,
           goto_dialog_,
           &GotoLocationDialog::updateUnits);
+  connect(viewers_,
+          &LayoutTabs::viewUpdated,
+          goto_dialog_,
+          &GotoLocationDialog::updateLocation);
   connect(selection_timer_.get(), &QTimer::timeout, [this]() {
     emit selectionChanged();
   });
@@ -1431,6 +1435,11 @@ void MainWindow::zoomTo(const odb::Rect& rect_dbu)
   viewers_->zoomTo(rect_dbu);
 }
 
+void MainWindow::zoomTo(const odb::Point& focus, int diameter)
+{
+  viewers_->zoomTo(focus, diameter);
+}
+
 void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
   if (items.empty()) {
@@ -1471,7 +1480,7 @@ void MainWindow::showGotoDialog()
     return;
   }
 
-  goto_dialog_->show_init();
+  goto_dialog_->showInit();
 }
 
 void MainWindow::showHelp()
