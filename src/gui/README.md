@@ -951,14 +951,15 @@ Update the paths in the Timing Report widget and select the path with the worst 
 
 ```tcl
 gui::show_worst_path
-    [setup]
+    [-setup|-hold]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ---- | ---- |
-| `setup` | Boolean (default true) to select worst setup slack path. If false, selects worst hold slack path. |
+| `-setup` | Select the path with the worst setup slack (default). |
+| `-hold` | Select the path with the worst hold slack. |
 
 ### Clear Timing Path
 
