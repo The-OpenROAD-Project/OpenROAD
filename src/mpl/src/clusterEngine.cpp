@@ -952,19 +952,25 @@ void ClusteringEngine::dataFlowDFSMacroPin(
     if (vertices_maps.stoppers[parent]) {
       if (parent < vertices_maps.id_to_bterm.size()) {
         // IO and macro pin connections already handled
-      } else if (parent < vertices_maps.id_to_bterm.size() + vertices_maps.id_to_std_cell.size()) {
+      } else if (parent < vertices_maps.id_to_bterm.size()
+                              + vertices_maps.id_to_std_cell.size()) {
         std_cells[current_idx].insert(vertices_maps.id_to_std_cell.at(parent));
       } else {
-        macros[current_idx].insert(vertices_maps.id_to_macro_pin.at(parent)->getInst());
+        macros[current_idx].insert(
+            vertices_maps.id_to_macro_pin.at(parent)->getInst());
       }
       if (++current_idx >= max_num_of_hops_) {
         continue;
       }
     }
 
-    const auto& edges = backward_search ? hypergraph.backward_vertices[parent] : hypergraph.vertices[parent];
+    const auto& edges = backward_search ? hypergraph.backward_vertices[parent]
+                                        : hypergraph.vertices[parent];
     for (const auto& hyperedge : edges) {
-      const auto& vertices = backward_search ? std::vector<int>{hypergraph.hyperedges[hyperedge].front()} : hypergraph.hyperedges[hyperedge];
+      const auto& vertices
+          = backward_search
+                ? std::vector<int>{hypergraph.hyperedges[hyperedge].front()}
+                : hypergraph.hyperedges[hyperedge];
       for (const auto& vertex : vertices) {
         if (!visited[vertex] && vertex >= vertices_maps.id_to_bterm.size()) {
           stack.emplace(vertex, current_idx);
