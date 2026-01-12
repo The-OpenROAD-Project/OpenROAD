@@ -20,7 +20,9 @@ set_dont_use [get_lib_cells CLKBUF*]
 
 #set_debug_level RSZ opt_moves 1
 repair_timing -setup -sequence "vt_swap"
-run_equivalence_test repair_setup_sizeup ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_setup_sizeup \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 report_checks -fields input -digits 3
 
 repair_timing -setup -skip_vt_swap
