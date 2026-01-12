@@ -597,18 +597,10 @@ int FastRouteCore::getViaResistanceCost(const int from_layer,
 
 void FastRouteCore::updateWorstMetrics(FrNet* net)
 {
-  if (net->getResistance() > worst_net_resistance_) {
-    worst_net_resistance_ = net->getResistance();
-  }
-  if (net->getSlack() < worst_slack_) {
-    worst_slack_ = net->getSlack();
-  }
-  if (net->getNetLength() > worst_net_length_) {
-    worst_net_length_ = net->getNetLength();
-  }
-  if (net->getNumPins() > worst_fanout_) {
-    worst_fanout_ = net->getNumPins();
-  }
+  worst_net_resistance_ = std::max(worst_net_resistance_, net->getResistance());
+  worst_slack_ = std::min(worst_slack_, net->getSlack());
+  worst_net_length_ = std::max(worst_net_length_, net->getNetLength());
+  worst_fanout_ = std::max(worst_fanout_, net->getNumPins());
 }
 
 void FastRouteCore::resetWorstMetrics()
