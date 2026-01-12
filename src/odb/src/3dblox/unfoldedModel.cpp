@@ -42,9 +42,19 @@ std::vector<UnfoldedBump*> UnfoldedNet::getDisconnectedBumps(
 std::string UnfoldedChip::getName() const
 {
   std::string name;
+  char delimiter = '/';
+  if (!chip_inst_path.empty()) {
+    dbBlock* block = chip_inst_path[0]->getParentChip()->getBlock();
+    if (block) {
+      char d = block->getHierarchyDelimiter();
+      if (d != 0) {
+        delimiter = d;
+      }
+    }
+  }
   for (auto* chip_inst : chip_inst_path) {
     if (!name.empty()) {
-      name += "/";
+      name += delimiter;
     }
     name += chip_inst->getName();
   }
@@ -62,7 +72,7 @@ UnfoldedModel::UnfoldedModel(utl::Logger* logger) : logger_(logger)
 
 void UnfoldedModel::build(dbChip* chip)
 {
-  for (auto chip_inst : chip->getChipInsts()) {
+  for (dbChipInst* chip_inst : chip->getChipInsts()) {
     UnfoldedChip unfolded_chip;
     unfoldChip(chip_inst, unfolded_chip);
   }

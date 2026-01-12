@@ -42,7 +42,7 @@ struct UnfoldedBump
 
 struct UnfoldedRegionFull : public UnfoldedRegion
 {
-  std::vector<UnfoldedBump> bumps;
+  std::deque<UnfoldedBump> bumps;
 
   int getSurfaceZ() const;
   bool isFacingUp() const;
@@ -77,7 +77,7 @@ struct UnfoldedChip
   Cuboid cuboid;
 
   bool z_flipped = false;
-  std::vector<UnfoldedRegionFull> regions;
+  std::deque<UnfoldedRegionFull> regions;
   std::vector<UnfoldedConnection*> connected_conns;
 };
 
@@ -88,11 +88,11 @@ class UnfoldedModel
   void build(dbChip* chip);
 
   const std::deque<UnfoldedChip>& getChips() const { return unfolded_chips_; }
-  const std::vector<UnfoldedConnection>& getConnections() const
+  const std::deque<UnfoldedConnection>& getConnections() const
   {
     return unfolded_connections_;
   }
-  const std::vector<UnfoldedNet>& getNets() const { return unfolded_nets_; }
+  const std::deque<UnfoldedNet>& getNets() const { return unfolded_nets_; }
 
  private:
   void unfoldChip(dbChipInst* chip_inst, UnfoldedChip& unfolded_chip);
@@ -109,8 +109,8 @@ class UnfoldedModel
 
   utl::Logger* logger_;
   std::deque<UnfoldedChip> unfolded_chips_;
-  std::vector<UnfoldedConnection> unfolded_connections_;
-  std::vector<UnfoldedNet> unfolded_nets_;
+  std::deque<UnfoldedConnection> unfolded_connections_;
+  std::deque<UnfoldedNet> unfolded_nets_;
   std::map<std::string, UnfoldedChip*> chip_path_map_;
 };
 
