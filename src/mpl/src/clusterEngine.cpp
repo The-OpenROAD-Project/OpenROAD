@@ -938,52 +938,22 @@ void ClusteringEngine::dataFlowDFSMacroPin(
   visited[parent] = true;
   if (vertices_maps.stoppers[parent]) {
     if (parent < vertices_maps.id_to_bterm.size()) {
-      ;  // the connection between IO and macro pins have been considers
-    } else if (parent < vertices_maps.id_to_bterm.size()
-                            + vertices_maps.id_to_std_cell.size()) {
+      // IO and macro pin connections already handled
+    } else if (parent < vertices_maps.id_to_bterm.size() + vertices_maps.id_to_std_cell.size()) {
       std_cells[idx].insert(vertices_maps.id_to_std_cell.at(parent));
     } else {
       macros[idx].insert(vertices_maps.id_to_macro_pin.at(parent)->getInst());
     }
-    idx++;
+    if (++idx >= max_num_of_hops_) return;
   }
 
-  if (idx >= max_num_of_hops_) {
-    return;
-  }
-
-  if (!backward_search) {
-    for (auto& hyperedge : hypergraph.vertices[parent]) {
-      for (auto& vertex : hypergraph.hyperedges[hyperedge]) {
-        // we do not consider pin to pin
-        if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
-          continue;
-        }
-        dataFlowDFSMacroPin(vertex,
-                            idx,
-                            vertices_maps,
-                            hypergraph,
-                            std_cells,
-                            macros,
-                            visited,
-                            backward_search);
+  const auto& edges = backward_search ? hypergraph.backward_vertices[parent] : hypergraph.vertices[parent];
+  for (const auto& hyperedge : edges) {
+    const auto& vertices = backward_search ? std::vector<int>{hypergraph.hyperedges[hyperedge].front()} : hypergraph.hyperedges[hyperedge];
+    for (const auto& vertex : vertices) {
+      if (!visited[vertex] && vertex >= vertices_maps.id_to_bterm.size()) {
+        dataFlowDFSMacroPin(vertex, idx, vertices_maps, hypergraph, std_cells, macros, visited, backward_search);
       }
-    }
-  } else {
-    for (auto& hyperedge : hypergraph.backward_vertices[parent]) {
-      const int vertex = hypergraph.hyperedges[hyperedge].front();
-      // we do not consider pin to pin
-      if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
-        continue;
-      }
-      dataFlowDFSMacroPin(vertex,
-                          idx,
-                          vertices_maps,
-                          hypergraph,
-                          std_cells,
-                          macros,
-                          visited,
-                          backward_search);
     }
   }
 }
