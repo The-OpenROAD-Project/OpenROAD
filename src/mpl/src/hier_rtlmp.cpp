@@ -636,14 +636,15 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
   int number_of_macros = hard_macros.size();
-  int width = hard_macros.front()->getWidth();
-  int height = hard_macros.front()->getHeight();
+  int macro_width = hard_macros.front()->getWidth();
+  int macro_height = hard_macros.front()->getHeight();
 
-  TilingList tilings = getTightPackingTilings(width, height, number_of_macros);
+  TilingList tilings = generateTilingsForMacroCluster(
+      macro_width, macro_height, number_of_macros);
 
   if (tilings.size() == 0) {
-    TilingList extra_tilings
-        = getTightPackingTilings(width, height, number_of_macros + 1);
+    TilingList extra_tilings = generateTilingsForMacroCluster(
+        macro_width, macro_height, number_of_macros + 1);
     tilings.insert(tilings.end(), extra_tilings.begin(), extra_tilings.end());
   }
 
@@ -653,8 +654,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                    "Unable to fit cluster {} within outline. Macro height: {}, "
                    "width: {}, number of macros: {}.",
                    cluster->getName(),
-                   width,
-                   height,
+                   macro_width,
+                   macro_height,
                    number_of_macros);
   }
 
@@ -673,9 +674,9 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 }
 
-TilingList HierRTLMP::getTightPackingTilings(int width,
-                                             int height,
-                                             int number_of_macros)
+TilingList HierRTLMP::generateTilingsForMacroCluster(int macro_width,
+                                                     int macro_height,
+                                                     int number_of_macros)
 {
   TilingList tight_packing_tilings;
   const odb::Rect outline = tree_->root->getBBox();
@@ -685,8 +686,10 @@ TilingList HierRTLMP::getTightPackingTilings(int width,
     if (number_of_macros % cols == 0) {
       rows = number_of_macros / cols;
 
-      if (cols * width <= outline.dx() && rows * height <= outline.dy()) {
-        tight_packing_tilings.emplace_back(cols * width, rows * height);
+      if (cols * macro_width <= outline.dx()
+          && rows * macro_height <= outline.dy()) {
+        tight_packing_tilings.emplace_back(cols * macro_width,
+                                           rows * macro_height);
       }
     }
   }
