@@ -471,8 +471,6 @@ proc add_label { args } {
 }
 
 namespace eval gui {
-sta::define_cmd_args "show_worst_path" {[-setup|-hold]}
-
 proc show_worst_path { args } {
   sta::parse_key_args "show_worst_path" args \
     keys {} flags {-setup -hold}
