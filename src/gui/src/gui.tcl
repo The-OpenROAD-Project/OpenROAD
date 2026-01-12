@@ -471,7 +471,6 @@ proc add_label { args } {
 }
 
 namespace eval gui {
-
 sta::define_cmd_args "show_worst_path" {[-setup|-hold]}
 
 proc show_worst_path { args } {
@@ -498,5 +497,4 @@ proc clear_timing_path { args } {
 
   gui::clear_timing_path_internal
 }
-
 } ;# namespace gui
