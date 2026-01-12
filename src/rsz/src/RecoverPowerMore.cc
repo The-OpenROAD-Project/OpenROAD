@@ -5,39 +5,30 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
+#include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Parasitics.hh"
-#include "sta/PortDirection.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/TimingArc.hh"
 #include "sta/Units.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -224,7 +215,8 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
       sta_->worstSlack(max_, current_wns, current_wns_vertex);
       (void) current_wns_vertex;
 
-      std::vector<CandidateInstance> candidates = collectCandidates(current_wns);
+      std::vector<CandidateInstance> candidates
+          = collectCandidates(current_wns);
       candidates.erase(std::remove_if(candidates.begin(),
                                       candidates.end(),
                                       [&](const CandidateInstance& cand) {
@@ -237,18 +229,17 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
 
       // Rank by power-first so we spend the limited ECP budget on the highest
       // impact cells. Then break ties by headroom/area.
-      std::sort(
-          candidates.begin(),
-          candidates.end(),
-          [](const CandidateInstance& a, const CandidateInstance& b) {
-            if (a.power != b.power) {
-              return a.power > b.power;
-            }
-            if (a.headroom != b.headroom) {
-              return a.headroom > b.headroom;
-            }
-            return a.area > b.area;
-          });
+      std::sort(candidates.begin(),
+                candidates.end(),
+                [](const CandidateInstance& a, const CandidateInstance& b) {
+                  if (a.power != b.power) {
+                    return a.power > b.power;
+                  }
+                  if (a.headroom != b.headroom) {
+                    return a.headroom > b.headroom;
+                  }
+                  return a.area > b.area;
+                });
 
       int max_inst_count = static_cast<int>(
           std::ceil(candidates.size() * recover_power_percent));
@@ -298,8 +289,8 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
   if (clock_period > 0.0f && std::isfinite(worst_slack_before)) {
     const float eff_period_before = clock_period - worst_slack_before;
     if (eff_period_before > 0.0f && std::isfinite(eff_period_before)) {
-      const Slack slack_budget_total
-          = static_cast<Slack>(max_eff_period_degrade_frac_ * eff_period_before);
+      const Slack slack_budget_total = static_cast<Slack>(
+          max_eff_period_degrade_frac_ * eff_period_before);
       const Slack swap_budget = static_cast<Slack>(0.5f * slack_budget_total);
       const Slack swap_guard = std::min<Slack>(
           timing_floor_guard_cap_,
@@ -374,9 +365,9 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
     backoffToTimingFloor(wns_floor, hold_floor, verbose);
   }
 
-  // RecoverPowerMore uses journal checkpoints for buffer removals so backoff can
-  // undo them safely. Commit any remaining saved ECOs now that we're within the
-  // timing/DRV budget.
+  // RecoverPowerMore uses journal checkpoints for buffer removals so backoff
+  // can undo them safely. Commit any remaining saved ECOs now that we're within
+  // the timing/DRV budget.
   resizer_->journalCommitSaved();
 
   // Resync DRV violation counts for final reporting/sanity.
@@ -412,7 +403,8 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
   if (clock_period > 0.0f && std::isfinite(worst_slack_after)) {
     const float eff_period_after = clock_period - worst_slack_after;
     if (eff_period_after > 0.0f) {
-      logger_->metric("recover_power__timing__fmax_after", 1.0 / eff_period_after);
+      logger_->metric("recover_power__timing__fmax_after",
+                      1.0 / eff_period_after);
     }
   }
 
@@ -672,9 +664,7 @@ Slack RecoverPowerMore::instanceWorstSlack(sta::Instance* inst) const
     }
 
     const Slack slack = sta_->vertexSlack(vertex, max_);
-    if (slack < worst_slack) {
-      worst_slack = slack;
-    }
+    worst_slack = std::min(worst_slack, slack);
     found = true;
   }
 
@@ -699,7 +689,7 @@ bool RecoverPowerMore::instanceDrivesClock(sta::Instance* inst) const
 
 float RecoverPowerMore::minClockPeriod() const
 {
-  sta::ClockSeq* clocks = sdc_->clocks();
+  auto* clocks = sdc_->clocks();
   if (clocks == nullptr || clocks->empty()) {
     return 0.0f;
   }
@@ -829,24 +819,21 @@ std::vector<LibertyCell*> RecoverPowerMore::nextSmallerCells(
 
   // Prefer weaker (higher resistance) and lower leakage candidates first;
   // the full STA check will decide which are actually acceptable.
-  std::stable_sort(
-      candidates.begin(),
-      candidates.end(),
-      [this](LibertyCell* a, LibertyCell* b) {
-        float ra = std::max(0.0f, resizer_->cellDriveResistance(a));
-        float rb = std::max(0.0f, resizer_->cellDriveResistance(b));
-        const float la = resizer_->cellLeakage(a).value_or(
-            std::numeric_limits<float>::infinity());
-        const float lb = resizer_->cellLeakage(b).value_or(
-            std::numeric_limits<float>::infinity());
-        if (ra != rb) {
-          return ra > rb;
-        }
-        if (la != lb) {
-          return la < lb;
-        }
-        return std::strcmp(a->name(), b->name()) < 0;
-      });
+  std::ranges::stable_sort(candidates, [this](LibertyCell* a, LibertyCell* b) {
+    float ra = std::max(0.0f, resizer_->cellDriveResistance(a));
+    float rb = std::max(0.0f, resizer_->cellDriveResistance(b));
+    const float la = resizer_->cellLeakage(a).value_or(
+        std::numeric_limits<float>::infinity());
+    const float lb = resizer_->cellLeakage(b).value_or(
+        std::numeric_limits<float>::infinity());
+    if (ra != rb) {
+      return ra > rb;
+    }
+    if (la != lb) {
+      return la < lb;
+    }
+    return std::strcmp(a->name(), b->name()) < 0;
+  });
 
   return candidates;
 }
@@ -1379,18 +1366,19 @@ void RecoverPowerMore::backoffToTimingFloor(const Slack wns_floor,
   }
 
   if (undone_actions > 0) {
-    logger_->warn(RSZ,
-                  170,
-                  "Power recovery exceeded timing budget; backed off {} actions "
-                  "({} swaps, {} buffer removals) (wns {} floor {}, hold {} "
-                  "floor {}).",
-                  undone_actions,
-                  undone_swaps,
-                  undone_buffers,
-                  delayAsString(wns, sta_, kDigits),
-                  delayAsString(wns_floor, sta_, kDigits),
-                  delayAsString(hold, sta_, kDigits),
-                  delayAsString(hold_floor, sta_, kDigits));
+    logger_->warn(
+        RSZ,
+        170,
+        "Power recovery exceeded timing budget; backed off {} actions "
+        "({} swaps, {} buffer removals) (wns {} floor {}, hold {} "
+        "floor {}).",
+        undone_actions,
+        undone_swaps,
+        undone_buffers,
+        delayAsString(wns, sta_, kDigits),
+        delayAsString(wns_floor, sta_, kDigits),
+        delayAsString(hold, sta_, kDigits),
+        delayAsString(hold_floor, sta_, kDigits));
   }
 
   if (wns < wns_floor || hold < hold_floor) {

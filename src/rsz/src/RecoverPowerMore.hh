@@ -158,8 +158,8 @@ class RecoverPowerMore : public sta::dbStaState
   // Limit performance degradation from recover_power by bounding the increase
   // in effective clock period (target clock period - worst setup slack).
   // Tuned for ORFS benchmarking: allow RecoverPowerMore to spend a limited
-  // effective-period (ECP) budget inside recover_power while keeping the end-to-end
-  // regression (vs a baseline OpenROAD) within ~1–3%.
+  // effective-period (ECP) budget inside recover_power while keeping the
+  // end-to-end regression (vs a baseline OpenROAD) within ~1–3%.
   static constexpr float max_eff_period_degrade_frac_ = 0.017f;
   // Keep a small timing guard-band above the computed floor to absorb routing
   // noise from rejected candidates.
