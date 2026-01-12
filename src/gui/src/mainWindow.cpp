@@ -395,10 +395,6 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       drc_viewer_->updateSelection(*selected_.begin());
     }
   });
-  connect(this,
-          &MainWindow::displayUnitsChanged,
-          goto_dialog_,
-          &GotoLocationDialog::updateUnits);
   connect(viewers_,
           &LayoutTabs::viewUpdated,
           goto_dialog_,

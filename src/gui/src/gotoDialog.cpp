@@ -19,19 +19,6 @@ GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutTabs* viewers)
   connect(gotoBtn, &QPushButton::clicked, this, &GotoLocationDialog::goTo);
 }
 
-void GotoLocationDialog::updateUnits(int dbu_per_micron, bool use_dbu)
-{
-  if (use_dbu) {
-    xEdit->setText(QString::number(xEdit->text().toDouble() * dbu_per_micron));
-    yEdit->setText(QString::number(yEdit->text().toDouble() * dbu_per_micron));
-    sEdit->setText(QString::number(sEdit->text().toDouble() * dbu_per_micron));
-  } else {
-    xEdit->setText(QString::number(xEdit->text().toDouble() / dbu_per_micron));
-    yEdit->setText(QString::number(yEdit->text().toDouble() / dbu_per_micron));
-    sEdit->setText(QString::number(sEdit->text().toDouble() / dbu_per_micron));
-  }
-}
-
 // NOLINTNEXTLINE(readability-non-const-parameter)
 void GotoLocationDialog::updateLocation()
 {
@@ -39,12 +26,12 @@ void GotoLocationDialog::updateLocation()
   if (!viewer) {
     return;
   }
-  xEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+  x_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().x(), false)));
-  yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+  y_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().y(), false)));
   int box_size = viewer->getVisibleDiameter();
-  sEdit->setText(QString::fromStdString(
+  s_edit->setText(QString::fromStdString(
       Descriptor::Property::convert_dbu(box_size, false)));
 }
 
@@ -61,11 +48,11 @@ void GotoLocationDialog::goTo()
   bool convert_y_ok;
   bool convert_s_ok;
   int x_coord = Descriptor::Property::convert_string(
-      xEdit->text().toStdString(), &convert_x_ok);
+      x_edit->text().toStdString(), &convert_x_ok);
   int y_coord = Descriptor::Property::convert_string(
-      yEdit->text().toStdString(), &convert_y_ok);
+      y_edit->text().toStdString(), &convert_y_ok);
   int diameter = Descriptor::Property::convert_string(
-      sEdit->text().toStdString(), &convert_s_ok);
+      s_edit->text().toStdString(), &convert_s_ok);
   if (convert_x_ok && convert_y_ok && convert_s_ok) {
     gui->zoomTo(odb::Point(x_coord, y_coord), diameter);
   }

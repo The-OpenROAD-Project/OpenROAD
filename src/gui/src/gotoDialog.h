@@ -20,7 +20,6 @@ class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
   GotoLocationDialog(QWidget* parent = nullptr, LayoutTabs* viewers = nullptr);
  public slots:
   void updateLocation();
-  void updateUnits(int dbu_per_micron, bool use_dbu);
   void showInit();
   void goTo();
   void accept() override;
