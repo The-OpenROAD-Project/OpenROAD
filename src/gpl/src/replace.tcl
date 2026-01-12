@@ -268,7 +268,8 @@ proc read_soft_placement_clusters { args } {
 
     set fields [split $line ","]
     if { [llength $fields] < 2 } {
-      utl::warn GPL 1622 "$file:$line_no: expected at least 2 CSV fields (inst_name,cluster_id[,weight]); skipping."
+      set msg "$file:$line_no: expected at least 2 CSV fields (inst_name,cluster_id[,weight]);"
+      utl::warn GPL 1622 "$msg skipping."
       continue
     }
 
@@ -279,7 +280,8 @@ proc read_soft_placement_clusters { args } {
       continue
     }
 
-    if { $line_no == 1 && ($inst_name == "inst_name" || $inst_name == "instance" || $inst_name == "inst") } {
+    if { $line_no == 1 && ($inst_name == "inst_name" \
+        || $inst_name == "instance" || $inst_name == "inst") } {
       continue
     }
 
@@ -325,14 +327,17 @@ proc read_soft_placement_clusters { args } {
 
     if { [llength $inst_names] > $max_cluster_size } {
       if { !$split_large_clusters } {
-        utl::warn GPL 1625 "Cluster '$cluster_id' has [llength $inst_names] instances; splitting into chunks of $max_cluster_size."
+        set msg "Cluster '$cluster_id' has [llength $inst_names] instances;"
+        utl::warn GPL 1625 "$msg splitting into chunks of $max_cluster_size."
       }
 
       for { set i 0 } { $i < [llength $inst_names] } { incr i $max_cluster_size } {
         set chunk [lrange $inst_names $i [expr {$i + $max_cluster_size - 1}]]
         set insts []
         foreach name $chunk {
-          if { [catch { set parsed [gpl::parse_inst_names read_soft_placement_clusters $name] } err] } {
+          if { [catch {
+            set parsed [gpl::parse_inst_names read_soft_placement_clusters $name]
+          } err] } {
             if { $best_effort } {
               continue
             }
@@ -349,7 +354,9 @@ proc read_soft_placement_clusters { args } {
     } else {
       set insts []
       foreach name $inst_names {
-        if { [catch { set parsed [gpl::parse_inst_names read_soft_placement_clusters $name] } err] } {
+        if { [catch {
+          set parsed [gpl::parse_inst_names read_soft_placement_clusters $name]
+        } err] } {
           if { $best_effort } {
             continue
           }

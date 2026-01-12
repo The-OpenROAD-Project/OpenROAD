@@ -22,7 +22,6 @@
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
-#include "sta/StaMain.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
@@ -74,7 +73,7 @@ void Replace::checkHasCoreRows()
 {
   if (!dbHasCoreRows(db_)) {
     log_->error(
-      GPL,
+        GPL,
         130,
         "No rows defined in design. Use initialize_floorplan to add rows.");
   }
