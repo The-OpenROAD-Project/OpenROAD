@@ -23,7 +23,6 @@ tmg_conn_graph::tmg_conn_graph()
   shortNmax_ = 1024;
   eNmax_ = 1024;
   ptV_ = (tcg_pt*) safe_malloc(ptNmax_ * sizeof(tcg_pt));
-  path_vis_ = (int*) safe_malloc(ptNmax_ * sizeof(int));
   eV_ = (tcg_edge*) safe_malloc(2UL * ptNmax_ * sizeof(tcg_edge));
   stackV_ = (tcg_edge**) safe_malloc(shortNmax_ * sizeof(tcg_edge*));
 }
@@ -31,7 +30,6 @@ tmg_conn_graph::tmg_conn_graph()
 tmg_conn_graph::~tmg_conn_graph()
 {
   free(ptV_);
-  free(path_vis_);
   free(eV_);
   free(static_cast<void*>(stackV_));
 }
@@ -42,8 +40,6 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
     ptNmax_ = 2 * ptN;
     free(ptV_);
     ptV_ = (tcg_pt*) safe_malloc(ptNmax_ * sizeof(tcg_pt));
-    free(path_vis_);
-    path_vis_ = (int*) safe_malloc(ptNmax_ * sizeof(int));
   }
   if (shortN > shortNmax_) {
     shortNmax_ = 2 * shortN;
@@ -442,11 +438,7 @@ void tmg_conn::removeShortLoops()
   }
 
   // remove all short loops
-  int* path_vis = graph_->path_vis_;
   graph_->clearVisited();
-  for (int j = 0; j < npath; j++) {
-    path_vis[j] = 0;
-  }
 
   for (int jstart = 0; jstart < ptV_.size(); jstart++) {
     tcg_edge* e = graph_->getFirstEdge(jstart);

@@ -51,7 +51,6 @@ class tmg_conn_graph
  public:
   tcg_pt* ptV_;
   int ptN_;
-  int* path_vis_;
   tcg_edge** stackV_;
   int stackN_;
 
