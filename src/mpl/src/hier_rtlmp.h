@@ -164,6 +164,9 @@ class HierRTLMP
   void setPlacementBlockages();
 
   // Fine Shaping
+  int computeTinyClusterMaxNumberOfStdCells() const;
+  bool singleArraySingleStdCellCluster(
+      const std::vector<SoftMacro>& soft_macros) const;
   void setMacroClustersShapes(std::vector<SoftMacro>& soft_macros) const;
   std::vector<float> computeUtilizationList(float total_number_of_runs) const;
   bool validUtilization(float utilization,
@@ -294,6 +297,7 @@ class HierRTLMP
   std::vector<odb::Rect> io_blockages_;
 
   PinAccessDepthLimits pin_access_depth_limits_;
+  float tiny_cluster_max_number_of_std_cells_{0};
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;

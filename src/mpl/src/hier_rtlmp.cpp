@@ -280,7 +280,26 @@ void HierRTLMP::runHierarchicalMacroPlacement()
   }
 
   adjustMacroBlockageWeight();
+  tiny_cluster_max_number_of_std_cells_
+      = computeTinyClusterMaxNumberOfStdCells();
   placeChildren(tree_->root.get());
+}
+
+int HierRTLMP::computeTinyClusterMaxNumberOfStdCells() const
+{
+  const float tiny_cluster_ratio = 0.001;
+  const int max_number_of_std_cells
+      = tiny_cluster_ratio * block_->getInsts().size();
+
+  debugPrint(
+      logger_,
+      MPL,
+      "fine_shaping",
+      1,
+      "Std cell clusters with less than {} cells will be considered tiny.",
+      max_number_of_std_cells);
+
+  return max_number_of_std_cells;
 }
 
 void HierRTLMP::resetSAParameters()
@@ -1810,6 +1829,8 @@ std::vector<SoftMacro> HierRTLMP::applyUtilization(
     const std::vector<SoftMacro>& original_soft_macros) const
 {
   std::vector<SoftMacro> new_soft_macros = original_soft_macros;
+  const bool single_array_single_std_cell_cluster
+      = singleArraySingleStdCellCluster(original_soft_macros);
 
   for (SoftMacro& new_soft_macro : new_soft_macros) {
     Cluster* cluster = new_soft_macro.getCluster();
@@ -1823,19 +1844,8 @@ std::vector<SoftMacro> HierRTLMP::applyUtilization(
       int width = std::sqrt(area);
       int height = width;
 
-      const float tiny_cluster_ratio = 0.001;
-      const int max_number_of_std_cells
-          = tiny_cluster_ratio * block_->getInsts().size();
-
-      debugPrint(
-          logger_,
-          MPL,
-          "fine_shaping",
-          1,
-          "Std cell clusters with less than {} cells will be considered tiny.",
-          max_number_of_std_cells);
-
-      if (cluster->getNumStdCell() <= max_number_of_std_cells) {
+      if (cluster->getNumStdCell() <= tiny_cluster_max_number_of_std_cells_
+          || single_array_single_std_cell_cluster) {
         const int negligible_width = 1;
         width = negligible_width;
         height = width;
@@ -1874,6 +1884,45 @@ std::vector<SoftMacro> HierRTLMP::applyUtilization(
   }
 
   return new_soft_macros;
+}
+
+bool HierRTLMP::singleArraySingleStdCellCluster(
+    const std::vector<SoftMacro>& soft_macros) const
+{
+  int number_of_macro_arrays = 0;
+  int number_of_std_clusters = 0;
+
+  for (const SoftMacro& soft_macro : soft_macros) {
+    if (soft_macro.isMixedCluster()) {
+      return false;
+    }
+
+    Cluster* cluster = soft_macro.getCluster();
+
+    if (!cluster || cluster->isIOCluster()) {
+      continue;
+    }
+
+    if (soft_macro.isMacroCluster()) {
+      if (!cluster->isArrayOfInterconnectedMacros()) {
+        return false;
+      }
+
+      ++number_of_macro_arrays;
+    } else if (soft_macro.isStdCellCluster()) {
+      ++number_of_std_clusters;
+    }
+
+    if (number_of_macro_arrays > 1 || number_of_std_clusters > 1) {
+      return false;
+    }
+  }
+
+  if (number_of_macro_arrays == 0 || number_of_std_clusters == 0) {
+    return false;
+  }
+
+  return true;
 }
 
 void HierRTLMP::placeMacros(Cluster* cluster)
