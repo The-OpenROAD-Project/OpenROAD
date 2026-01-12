@@ -17,6 +17,7 @@ add_library(rsz_lib
     CloneMove.cc
     PreChecks.cc      
     RecoverPower.cc    
+    RecoverPowerMore.cc
     RepairDesign.cc
     RepairHold.cc
     RepairSetup.cc
