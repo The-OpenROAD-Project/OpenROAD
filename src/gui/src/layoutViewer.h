@@ -280,7 +280,8 @@ class LayoutViewer : public QWidget
   void setPixelsPerDBU(qreal pixels_per_dbu);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
   SelectionSet selectAt(odb::Rect region_dbu);
-  void selectViaShapesAt(odb::dbTechLayer* cut_layer,
+  void selectViaShapesAt(odb::dbBlock* block,
+                         odb::dbTechLayer* cut_layer,
                          odb::dbTechLayer* select_layer,
                          const odb::Rect& region,
                          int shape_limit,
@@ -317,6 +318,7 @@ class LayoutViewer : public QWidget
                                           bool horizontal,
                                           bool vertical);
   void searchNearestViaEdge(
+      odb::dbBlock* block,
       odb::dbTechLayer* cut_layer,
       odb::dbTechLayer* search_layer,
       const odb::Rect& search_line,

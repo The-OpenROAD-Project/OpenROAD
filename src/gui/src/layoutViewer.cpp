@@ -228,11 +228,15 @@ odb::Point LayoutViewer::findNextRulerPoint(const odb::Point& mouse)
 Rect LayoutViewer::getBounds() const
 {
   Rect bbox{0, 0, chip_->getWidth(), chip_->getHeight()};
-  if (dbBlock* block = getBlock()) {
+
+  for (auto chip : getChip()->getDb()->getChips()) {
+    dbBlock* block = chip->getBlock();
+    if (!block) {
+      continue;
+    }
     bbox.merge(block->getBBox()->getBox());
     bbox.merge(block->getDieArea());
   }
-
   return bbox;
 }
 
@@ -462,13 +466,14 @@ bool LayoutViewer::compareEdges(const Edge& lhs, const Edge& rhs) const
 }
 
 void LayoutViewer::searchNearestViaEdge(
+    dbBlock* block,
     dbTechLayer* cut_layer,
     dbTechLayer* search_layer,
     const Rect& search_line,
     const int shape_limit,
     const std::function<void(const Rect& rect)>& check_rect)
 {
-  auto via_shapes = search_.searchSNetViaShapes(getBlock(),
+  auto via_shapes = search_.searchSNetViaShapes(block,
                                                 cut_layer,
                                                 search_line.xMin(),
                                                 search_line.yMin(),
@@ -553,21 +558,6 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
           }
         };
 
-  // get die bounding box
-  Rect bbox = getBlock()->getDieArea();
-  check_rect(bbox);
-
-  if (options_->areRegionsVisible()) {
-    for (auto* region : getBlock()->getRegions()) {
-      for (auto* box : region->getBoundaries()) {
-        odb::Rect region_box = box->getBox();
-        if (region_box.area() > 0) {
-          check_rect(region_box);
-        }
-      }
-    }
-  }
-
   odb::Rect search_line;
   if (horizontal) {
     search_line = odb::Rect(
@@ -582,59 +572,72 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                             pt.y() + search_radius);
   }
 
-  auto inst_range = search_.searchInsts(getBlock(),
-                                        search_line.xMin(),
-                                        search_line.yMin(),
-                                        search_line.xMax(),
-                                        search_line.yMax(),
-                                        instanceSizeLimit());
-
-  const bool inst_pins_visible = options_->areInstancePinsVisible();
-  const bool inst_osb_visible = options_->areInstanceBlockagesVisible();
-  const bool inst_internals_visible = inst_pins_visible || inst_osb_visible;
-  // Cache the search results as we will iterate over the instances
-  // for each layer.
-  std::vector<dbInst*> insts;
-  for (auto* inst : inst_range) {
-    if (options_->isInstanceVisible(inst)) {
-      if (inst_internals_visible) {
-        // only add inst if it can be used for pin or obs search
-        insts.push_back(inst);
-      }
-      check_rect(inst->getBBox()->getBox());
-    }
-  }
-
-  const int shape_limit = shapeSizeLimit();
-
-  // look for edges in metal shapes
-  dbTech* tech = getBlock()->getTech();
-  for (auto layer : tech->getLayers()) {
-    if (!options_->isVisible(layer)) {
+  for (auto chip : getChip()->getDb()->getChips()) {
+    dbBlock* block = chip->getBlock();
+    if (!block) {
       continue;
     }
 
-    for (auto inst : insts) {
-      dbMaster* master = inst->getMaster();
+    auto a = chip->getBBox();//block->getDieArea();
+    std::cout << "(" << a.xMin() << ", " << a.xMax() << ") (" << a.yMin() << ", " << a.yMax() << ")" << std::endl;
 
-      const Boxes* inst_boxes = boxesByLayer(master, layer);
-      if (inst_boxes == nullptr) {
-        continue;
-      }
-      const dbTransform inst_xfm = inst->getTransform();
+    // get die bounding box
+    check_rect(block->getDieArea());
 
-      if (inst_osb_visible) {
-        for (auto& box : inst_boxes->obs) {
-          const QRect rect = box.boundingRect();
-          odb::Rect trans_box(
-              rect.left(), rect.bottom(), rect.right(), rect.top());
-          inst_xfm.apply(trans_box);
-          check_rect(trans_box);
+    if (options_->areRegionsVisible()) {
+      for (auto* region : block->getRegions()) {
+        for (auto* box : region->getBoundaries()) {
+          odb::Rect region_box = box->getBox();
+          if (region_box.area() > 0) {
+            check_rect(region_box);
+          }
         }
       }
-      if (inst_pins_visible) {
-        for (const auto& [mterm, boxes] : inst_boxes->mterms) {
-          for (const auto& box : boxes) {
+    }
+
+    auto inst_range = search_.searchInsts(block,
+                                          search_line.xMin(),
+                                          search_line.yMin(),
+                                          search_line.xMax(),
+                                          search_line.yMax(),
+                                          instanceSizeLimit());
+
+    const bool inst_pins_visible = options_->areInstancePinsVisible();
+    const bool inst_osb_visible = options_->areInstanceBlockagesVisible();
+    const bool inst_internals_visible = inst_pins_visible || inst_osb_visible;
+    // Cache the search results as we will iterate over the instances
+    // for each layer.
+    std::vector<dbInst*> insts;
+    for (auto* inst : inst_range) {
+      if (options_->isInstanceVisible(inst)) {
+        if (inst_internals_visible) {
+          // only add inst if it can be used for pin or obs search
+          insts.push_back(inst);
+        }
+        check_rect(inst->getBBox()->getBox());
+      }
+    }
+
+    const int shape_limit = shapeSizeLimit();
+
+    // look for edges in metal shapes
+    dbTech* tech = block->getTech();
+    for (auto layer : tech->getLayers()) {
+      if (!options_->isVisible(layer)) {
+        continue;
+      }
+
+      for (auto inst : insts) {
+        dbMaster* master = inst->getMaster();
+
+        const Boxes* inst_boxes = boxesByLayer(master, layer);
+        if (inst_boxes == nullptr) {
+          continue;
+        }
+        const dbTransform inst_xfm = inst->getTransform();
+
+        if (inst_osb_visible) {
+          for (auto& box : inst_boxes->obs) {
             const QRect rect = box.boundingRect();
             odb::Rect trans_box(
                 rect.left(), rect.bottom(), rect.right(), rect.top());
@@ -642,119 +645,130 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
             check_rect(trans_box);
           }
         }
-      }
-    }
-
-    const bool routing_visible = options_->areRoutingSegmentsVisible();
-    const bool vias_visible = options_->areRoutingViasVisible();
-    const bool io_pins_visible = options_->areIOPinsVisible();
-    if (routing_visible || vias_visible || io_pins_visible) {
-      auto box_shapes = search_.searchBoxShapes(getBlock(),
-                                                layer,
-                                                search_line.xMin(),
-                                                search_line.yMin(),
-                                                search_line.xMax(),
-                                                search_line.yMax(),
-                                                shape_limit);
-      for (const auto& [box, type, net] : box_shapes) {
-        if (!routing_visible && type == Search::WIRE) {
-          continue;
-        }
-        if (!vias_visible && type == Search::VIA) {
-          continue;
-        }
-        if (!io_pins_visible && type == Search::BTERM) {
-          continue;
-        }
-        if (isNetVisible(net)) {
-          check_rect(box);
+        if (inst_pins_visible) {
+          for (const auto& [mterm, boxes] : inst_boxes->mterms) {
+            for (const auto& box : boxes) {
+              const QRect rect = box.boundingRect();
+              odb::Rect trans_box(
+                  rect.left(), rect.bottom(), rect.right(), rect.top());
+              inst_xfm.apply(trans_box);
+              check_rect(trans_box);
+            }
+          }
         }
       }
-    }
 
-    if (options_->areSpecialRoutingViasVisible()) {
-      if (layer->getType() == dbTechLayerType::CUT) {
-        searchNearestViaEdge(
-            layer, layer, search_line, shape_limit, check_rect);
-      } else {
-        if (auto upper = layer->getUpperLayer()) {
+      const bool routing_visible = options_->areRoutingSegmentsVisible();
+      const bool vias_visible = options_->areRoutingViasVisible();
+      const bool io_pins_visible = options_->areIOPinsVisible();
+      if (routing_visible || vias_visible || io_pins_visible) {
+        auto box_shapes = search_.searchBoxShapes(block,
+                                                  layer,
+                                                  search_line.xMin(),
+                                                  search_line.yMin(),
+                                                  search_line.xMax(),
+                                                  search_line.yMax(),
+                                                  shape_limit);
+        for (const auto& [box, type, net] : box_shapes) {
+          if (!routing_visible && type == Search::WIRE) {
+            continue;
+          }
+          if (!vias_visible && type == Search::VIA) {
+            continue;
+          }
+          if (!io_pins_visible && type == Search::BTERM) {
+            continue;
+          }
+          if (isNetVisible(net)) {
+            check_rect(box);
+          }
+        }
+      }
+
+      if (options_->areSpecialRoutingViasVisible()) {
+        if (layer->getType() == dbTechLayerType::CUT) {
           searchNearestViaEdge(
-              upper, layer, search_line, shape_limit, check_rect);
-        }
-        if (auto lower = layer->getLowerLayer()) {
-          searchNearestViaEdge(
-              lower, layer, search_line, shape_limit, check_rect);
-        }
-      }
-    }
-
-    if (options_->areSpecialRoutingSegmentsVisible()) {
-      auto polygon_shapes = search_.searchSNetShapes(getBlock(),
-                                                     layer,
-                                                     search_line.xMin(),
-                                                     search_line.yMin(),
-                                                     search_line.xMax(),
-                                                     search_line.yMax(),
-                                                     shape_limit);
-      for (const auto& [box, poly, net] : polygon_shapes) {
-        if (isNetVisible(net)) {
-          check_rect(box->getBox());
+              block, layer, layer, search_line, shape_limit, check_rect);
+        } else {
+          if (auto upper = layer->getUpperLayer()) {
+            searchNearestViaEdge(
+                block, upper, layer, search_line, shape_limit, check_rect);
+          }
+          if (auto lower = layer->getLowerLayer()) {
+            searchNearestViaEdge(
+                block, lower, layer, search_line, shape_limit, check_rect);
+          }
         }
       }
-    }
 
-    if (options_->areFillsVisible()) {
-      auto fills = search_.searchFills(getBlock(),
-                                       layer,
-                                       search_line.xMin(),
-                                       search_line.yMin(),
-                                       search_line.xMax(),
-                                       search_line.yMax(),
-                                       shape_limit);
-      for (auto* fill : fills) {
-        odb::Rect box;
-        fill->getRect(box);
-        check_rect(box);
+      if (options_->areSpecialRoutingSegmentsVisible()) {
+        auto polygon_shapes = search_.searchSNetShapes(block,
+                                                       layer,
+                                                       search_line.xMin(),
+                                                       search_line.yMin(),
+                                                       search_line.xMax(),
+                                                       search_line.yMax(),
+                                                       shape_limit);
+        for (const auto& [box, poly, net] : polygon_shapes) {
+          if (isNetVisible(net)) {
+            check_rect(box->getBox());
+          }
+        }
       }
-    }
 
-    if (options_->areObstructionsVisible()) {
-      auto obs = search_.searchObstructions(getBlock(),
-                                            layer,
-                                            search_line.xMin(),
-                                            search_line.yMin(),
-                                            search_line.xMax(),
-                                            search_line.yMax(),
-                                            shape_limit);
-      for (auto* ob : obs) {
-        check_rect(ob->getBBox()->getBox());
-      }
-    }
-  }
-
-  if (options_->areBlockagesVisible()) {
-    auto blcks = search_.searchBlockages(getBlock(),
+      if (options_->areFillsVisible()) {
+        auto fills = search_.searchFills(block,
+                                         layer,
                                          search_line.xMin(),
                                          search_line.yMin(),
                                          search_line.xMax(),
                                          search_line.yMax(),
                                          shape_limit);
-    for (auto* blck : blcks) {
-      check_rect(blck->getBBox()->getBox());
-    }
-  }
-
-  if (options_->areSitesVisible()) {
-    for (const auto& [row, row_site, index] :
-         getRowRects(getBlock(), search_line)) {
-      odb::dbSite* site = nullptr;
-      if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
-        site = static_cast<odb::dbSite*>(row);
-      } else {
-        site = static_cast<odb::dbRow*>(row)->getSite();
+        for (auto* fill : fills) {
+          odb::Rect box;
+          fill->getRect(box);
+          check_rect(box);
+        }
       }
-      if (options_->isSiteVisible(site) && options_->isSiteSelectable(site)) {
-        check_rect(row_site);
+
+      if (options_->areObstructionsVisible()) {
+        auto obs = search_.searchObstructions(block,
+                                              layer,
+                                              search_line.xMin(),
+                                              search_line.yMin(),
+                                              search_line.xMax(),
+                                              search_line.yMax(),
+                                              shape_limit);
+        for (auto* ob : obs) {
+          check_rect(ob->getBBox()->getBox());
+        }
+      }
+    }
+
+    if (options_->areBlockagesVisible()) {
+      auto blcks = search_.searchBlockages(block,
+                                           search_line.xMin(),
+                                           search_line.yMin(),
+                                           search_line.xMax(),
+                                           search_line.yMax(),
+                                           shape_limit);
+      for (auto* blck : blcks) {
+        check_rect(blck->getBBox()->getBox());
+      }
+    }
+
+    if (options_->areSitesVisible()) {
+      for (const auto& [row, row_site, index] :
+           getRowRects(block, search_line)) {
+        odb::dbSite* site = nullptr;
+        if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
+          site = static_cast<odb::dbSite*>(row);
+        } else {
+          site = static_cast<odb::dbRow*>(row)->getSite();
+        }
+        if (options_->isSiteVisible(site) && options_->isSiteSelectable(site)) {
+          check_rect(row_site);
+        }
       }
     }
   }
@@ -787,13 +801,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   return {closest_edge, true};
 }
 
-void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
+void LayoutViewer::selectViaShapesAt(dbBlock* block,
+                                     dbTechLayer* cut_layer,
                                      dbTechLayer* select_layer,
                                      const Rect& region,
                                      const int shape_limit,
                                      std::vector<Selected>& selections)
 {
-  auto via_shapes = search_.searchSNetViaShapes(getBlock(),
+  auto via_shapes = search_.searchSNetViaShapes(block,
                                                 cut_layer,
                                                 region.xMin(),
                                                 region.yMin(),
@@ -909,13 +924,15 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
     if (options_->areSpecialRoutingViasVisible()) {
       if (layer->getType() == dbTechLayerType::CUT) {
-        selectViaShapesAt(layer, layer, region, shape_limit, selections);
+        selectViaShapesAt(block, layer, layer, region, shape_limit, selections);
       } else {
         if (auto upper = layer->getUpperLayer()) {
-          selectViaShapesAt(upper, layer, region, shape_limit, selections);
+          selectViaShapesAt(
+              block, upper, layer, region, shape_limit, selections);
         }
         if (auto lower = layer->getLowerLayer()) {
-          selectViaShapesAt(lower, layer, region, shape_limit, selections);
+          selectViaShapesAt(
+              block, lower, layer, region, shape_limit, selections);
         }
       }
     }
