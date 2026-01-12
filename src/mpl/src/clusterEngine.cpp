@@ -9,7 +9,9 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stack>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -926,7 +928,7 @@ void ClusteringEngine::dataFlowDFSIOPin(
 // Forward or Backward DFS search to find sequential paths between Macros based
 // on hop count
 void ClusteringEngine::dataFlowDFSMacroPin(
-    const int parent,
+    const int start,
     int idx,
     const VerticesMaps& vertices_maps,
     const DataFlowHypergraph& hypergraph,
@@ -935,24 +937,38 @@ void ClusteringEngine::dataFlowDFSMacroPin(
     std::vector<bool>& visited,
     bool backward_search)
 {
-  visited[parent] = true;
-  if (vertices_maps.stoppers[parent]) {
-    if (parent < vertices_maps.id_to_bterm.size()) {
-      // IO and macro pin connections already handled
-    } else if (parent < vertices_maps.id_to_bterm.size() + vertices_maps.id_to_std_cell.size()) {
-      std_cells[idx].insert(vertices_maps.id_to_std_cell.at(parent));
-    } else {
-      macros[idx].insert(vertices_maps.id_to_macro_pin.at(parent)->getInst());
-    }
-    if (++idx >= max_num_of_hops_) return;
-  }
+  std::stack<std::tuple<int, int>> stack;
+  stack.emplace(start, idx);
 
-  const auto& edges = backward_search ? hypergraph.backward_vertices[parent] : hypergraph.vertices[parent];
-  for (const auto& hyperedge : edges) {
-    const auto& vertices = backward_search ? std::vector<int>{hypergraph.hyperedges[hyperedge].front()} : hypergraph.hyperedges[hyperedge];
-    for (const auto& vertex : vertices) {
-      if (!visited[vertex] && vertex >= vertices_maps.id_to_bterm.size()) {
-        dataFlowDFSMacroPin(vertex, idx, vertices_maps, hypergraph, std_cells, macros, visited, backward_search);
+  while (!stack.empty()) {
+    auto [parent, current_idx] = stack.top();
+    stack.pop();
+
+    if (visited[parent]) {
+      continue;
+    }
+
+    visited[parent] = true;
+    if (vertices_maps.stoppers[parent]) {
+      if (parent < vertices_maps.id_to_bterm.size()) {
+        // IO and macro pin connections already handled
+      } else if (parent < vertices_maps.id_to_bterm.size() + vertices_maps.id_to_std_cell.size()) {
+        std_cells[current_idx].insert(vertices_maps.id_to_std_cell.at(parent));
+      } else {
+        macros[current_idx].insert(vertices_maps.id_to_macro_pin.at(parent)->getInst());
+      }
+      if (++current_idx >= max_num_of_hops_) {
+        continue;
+      }
+    }
+
+    const auto& edges = backward_search ? hypergraph.backward_vertices[parent] : hypergraph.vertices[parent];
+    for (const auto& hyperedge : edges) {
+      const auto& vertices = backward_search ? std::vector<int>{hypergraph.hyperedges[hyperedge].front()} : hypergraph.hyperedges[hyperedge];
+      for (const auto& vertex : vertices) {
+        if (!visited[vertex] && vertex >= vertices_maps.id_to_bterm.size()) {
+          stack.emplace(vertex, current_idx);
+        }
       }
     }
   }
