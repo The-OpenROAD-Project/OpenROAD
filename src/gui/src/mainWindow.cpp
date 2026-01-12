@@ -45,6 +45,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
+#include "gotoDialog.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "helpWidget.h"
