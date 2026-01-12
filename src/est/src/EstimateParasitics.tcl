@@ -141,8 +141,10 @@ proc report_layer_rc { args } {
   set tech [est::get_db_tech_checked]
   set no_routing_layers [$tech getRoutingLayerCount]
   ord::ensure_units_initialized
-  set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
-  set cap_unit "[sta::unit_scaled_suffix "capacitance"]/[sta::unit_scaled_suffix "distance"]"
+  set res_unit \
+    "[sta::unit_scale_abbrev_suffix "resistance"]/[sta::unit_scale_abbrev_suffix "distance"]"
+  set cap_unit \
+    "[sta::unit_scale_abbrev_suffix "capacitance"]/[sta::unit_scale_abbrev_suffix "distance"]"
   set res_convert [expr [sta::resistance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
   set cap_convert [expr [sta::capacitance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
 
@@ -163,7 +165,7 @@ proc report_layer_rc { args } {
   }
   puts "------------------------------------------------"
 
-  set res_unit "[sta::unit_scaled_suffix "resistance"]"
+  set res_unit "[sta::unit_scale_abbrev_suffix "resistance"]"
   set res_convert [sta::resistance_sta_ui 1.0]
   puts ""
   puts "   Layer   | Via Resistance "

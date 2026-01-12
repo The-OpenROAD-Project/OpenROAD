@@ -27,8 +27,18 @@ module top (clk,
  wire _28_;
  wire net1;
 
- sky130_fd_sc_hd__buf_2 gain1 (.A(y[6]),
-    .X(net1));
+ hier_flop U1 (.CLK(clk),
+    .D(_10_),
+    .Q(y[0]));
+ hier_flop_U2 U2 (.CLK(clk),
+    .D(_11_),
+    .Q(y[1]));
+ hier_flop_U3 U3 (.CLK(clk),
+    .D(_12_),
+    .Q(y[2]));
+ hier_flop_U4 U4 (.CLK(clk),
+    .D(_13_),
+    .Q(y[3]));
  sky130_fd_sc_hd__and3_1 _47_ (.A(y[0]),
     .B(y[1]),
     .C(y[2]),
@@ -117,18 +127,8 @@ module top (clk,
  sky130_fd_sc_hd__dfxtp_1 _74_ (.D(_15_),
     .Q(y[5]),
     .CLK(clk));
- hier_flop U1 (.CLK(clk),
-    .D(_10_),
-    .Q(y[0]));
- hier_flop_U2 U2 (.CLK(clk),
-    .D(_11_),
-    .Q(y[1]));
- hier_flop_U3 U3 (.CLK(clk),
-    .D(_12_),
-    .Q(y[2]));
- hier_flop_U4 U4 (.CLK(clk),
-    .D(_13_),
-    .Q(y[3]));
+ sky130_fd_sc_hd__buf_2 gain1 (.A(y[6]),
+    .X(net1));
 endmodule
 module hier_flop (CLK,
     D,
@@ -139,11 +139,11 @@ module hier_flop (CLK,
 
  wire [0:0] y;
 
- sky130_fd_sc_hd__buf_2 gain3 (.A(y[0]),
-    .X(Q));
  sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
     .Q(y[0]),
     .CLK(CLK));
+ sky130_fd_sc_hd__buf_2 gain3 (.A(y[0]),
+    .X(Q));
 endmodule
 module hier_flop_U2 (CLK,
     D,
@@ -154,11 +154,11 @@ module hier_flop_U2 (CLK,
 
  wire [1:0] y;
 
- sky130_fd_sc_hd__buf_2 gain2 (.A(y[1]),
-    .X(Q));
  sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
     .Q(y[1]),
     .CLK(CLK));
+ sky130_fd_sc_hd__buf_2 gain2 (.A(y[1]),
+    .X(Q));
 endmodule
 module hier_flop_U3 (CLK,
     D,

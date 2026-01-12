@@ -151,7 +151,8 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
   props.push_back({"Delay model", delay_model});
 
   auto format_unit = [](float value, const sta::Unit* unit) -> std::string {
-    return fmt::format("{} {}", unit->asString(value), unit->scaledSuffix());
+    return fmt::format(
+        "{} {}", unit->asString(value), unit->scaleAbbrevSuffix());
   };
 
   props.push_back(
@@ -714,7 +715,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 : fmt::format(
                       "{} {}",
                       timeunit->asString(setup_arrival, kFloatPrecision),
-                      timeunit->scaledSuffix());
+                      timeunit->scaleAbbrevSuffix());
       port_arrival_setup.emplace_back(port_id, setup_text);
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
@@ -723,7 +724,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 ? "None"
                 : fmt::format("{} {}",
                               timeunit->asString(hold_arrival, kFloatPrecision),
-                              timeunit->scaledSuffix());
+                              timeunit->scaleAbbrevSuffix());
       port_arrival_hold.emplace_back(port_id, hold_text);
     }
   }
@@ -863,7 +864,7 @@ Descriptor::Properties ClockDescriptor::getProperties(
   props.push_back({"Period",
                    fmt::format("{} {}",
                                timeunit->asString(clock->period()),
-                               timeunit->scaledSuffix())});
+                               timeunit->scaleAbbrevSuffix())});
 
   props.push_back({"Is virtual", clock->isVirtual()});
   props.push_back({"Is generated", clock->isGenerated()});

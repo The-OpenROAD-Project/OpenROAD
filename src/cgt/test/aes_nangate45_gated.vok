@@ -62548,6 +62548,225 @@ module aes_cipher_top (clk,
  AND2_X1 _26522_ (.A1(rst),
     .A2(_04719_),
     .ZN(_00500_));
+ CLKGATETST_X1 clk_gate_0 (.CK(clk),
+    .E(clk_gate_cond_net_7),
+    .GCK(gated_clk_8));
+ CLKGATETST_X1 clk_gate_1 (.CK(clk),
+    .E(clk_gate_cond_net_13),
+    .GCK(gated_clk_14));
+ CLKGATETST_X1 clk_gate_2 (.CK(clk),
+    .E(clk_gate_cond_net_21),
+    .GCK(gated_clk_22));
+ CLKGATETST_X1 clk_gate_3 (.CK(clk),
+    .E(clk_gate_cond_net_32),
+    .GCK(gated_clk_33));
+ CLKGATETST_X1 clk_gate_4 (.CK(clk),
+    .E(clk_gate_cond_net_40),
+    .GCK(gated_clk_41));
+ CLKGATETST_X1 clk_gate_5 (.CK(clk),
+    .E(clk_gate_cond_net_49),
+    .GCK(gated_clk_50));
+ CLKGATETST_X1 clk_gate_6 (.CK(clk),
+    .E(clk_gate_cond_net_55),
+    .GCK(gated_clk_56));
+ CLKGATETST_X1 clk_gate_7 (.CK(clk),
+    .E(clk_gate_cond_net_65),
+    .GCK(gated_clk_66));
+ CLKGATETST_X1 clk_gate_8 (.CK(clk),
+    .E(clk_gate_cond_net_72),
+    .GCK(gated_clk_73));
+ OR2_X4 clk_gate_cond_0 (.A1(_13151_),
+    .A2(_11055_),
+    .ZN(clk_gate_cond_net_1));
+ OR2_X4 clk_gate_cond_1 (.A1(clk_gate_cond_net_1),
+    .A2(_07150_),
+    .ZN(clk_gate_cond_net_2));
+ OR2_X4 clk_gate_cond_10 (.A1(clk_gate_cond_net_11),
+    .A2(_07158_),
+    .ZN(clk_gate_cond_net_12));
+ OR2_X4 clk_gate_cond_11 (.A1(clk_gate_cond_net_12),
+    .A2(_07177_),
+    .ZN(clk_gate_cond_net_13));
+ OR2_X4 clk_gate_cond_12 (.A1(_13167_),
+    .A2(_03152_),
+    .ZN(clk_gate_cond_net_15));
+ OR2_X4 clk_gate_cond_13 (.A1(clk_gate_cond_net_15),
+    .A2(_02955_),
+    .ZN(clk_gate_cond_net_16));
+ OR2_X4 clk_gate_cond_14 (.A1(clk_gate_cond_net_16),
+    .A2(_12895_),
+    .ZN(clk_gate_cond_net_17));
+ OR2_X4 clk_gate_cond_15 (.A1(clk_gate_cond_net_17),
+    .A2(_02938_),
+    .ZN(clk_gate_cond_net_18));
+ OR2_X4 clk_gate_cond_16 (.A1(clk_gate_cond_net_18),
+    .A2(_07849_),
+    .ZN(clk_gate_cond_net_19));
+ OR2_X4 clk_gate_cond_17 (.A1(clk_gate_cond_net_19),
+    .A2(_02885_),
+    .ZN(clk_gate_cond_net_20));
+ OR2_X4 clk_gate_cond_18 (.A1(clk_gate_cond_net_20),
+    .A2(_07223_),
+    .ZN(clk_gate_cond_net_21));
+ OR2_X4 clk_gate_cond_19 (.A1(_00487_),
+    .A2(_01917_),
+    .ZN(clk_gate_cond_net_23));
+ OR2_X4 clk_gate_cond_2 (.A1(clk_gate_cond_net_2),
+    .A2(_09231_),
+    .ZN(clk_gate_cond_net_3));
+ OR2_X4 clk_gate_cond_20 (.A1(clk_gate_cond_net_23),
+    .A2(_01868_),
+    .ZN(clk_gate_cond_net_24));
+ OR2_X4 clk_gate_cond_21 (.A1(clk_gate_cond_net_24),
+    .A2(_01929_),
+    .ZN(clk_gate_cond_net_25));
+ OR2_X4 clk_gate_cond_22 (.A1(clk_gate_cond_net_25),
+    .A2(_01959_),
+    .ZN(clk_gate_cond_net_26));
+ OR2_X4 clk_gate_cond_23 (.A1(clk_gate_cond_net_26),
+    .A2(_01793_),
+    .ZN(clk_gate_cond_net_27));
+ OR2_X4 clk_gate_cond_24 (.A1(clk_gate_cond_net_27),
+    .A2(_01878_),
+    .ZN(clk_gate_cond_net_28));
+ OR2_X4 clk_gate_cond_25 (.A1(clk_gate_cond_net_28),
+    .A2(_07282_),
+    .ZN(clk_gate_cond_net_29));
+ OR2_X4 clk_gate_cond_26 (.A1(clk_gate_cond_net_29),
+    .A2(_01732_),
+    .ZN(clk_gate_cond_net_30));
+ OR2_X4 clk_gate_cond_27 (.A1(clk_gate_cond_net_30),
+    .A2(_01720_),
+    .ZN(clk_gate_cond_net_31));
+ OR2_X4 clk_gate_cond_28 (.A1(clk_gate_cond_net_31),
+    .A2(_07400_),
+    .ZN(clk_gate_cond_net_32));
+ OR2_X4 clk_gate_cond_29 (.A1(_00474_),
+    .A2(_11747_),
+    .ZN(clk_gate_cond_net_34));
+ OR2_X4 clk_gate_cond_3 (.A1(clk_gate_cond_net_3),
+    .A2(_11144_),
+    .ZN(clk_gate_cond_net_4));
+ OR2_X4 clk_gate_cond_30 (.A1(clk_gate_cond_net_34),
+    .A2(_11696_),
+    .ZN(clk_gate_cond_net_35));
+ OR2_X4 clk_gate_cond_31 (.A1(clk_gate_cond_net_35),
+    .A2(_11833_),
+    .ZN(clk_gate_cond_net_36));
+ OR2_X4 clk_gate_cond_32 (.A1(clk_gate_cond_net_36),
+    .A2(_07400_),
+    .ZN(clk_gate_cond_net_37));
+ OR2_X4 clk_gate_cond_33 (.A1(clk_gate_cond_net_37),
+    .A2(_11753_),
+    .ZN(clk_gate_cond_net_38));
+ OR2_X4 clk_gate_cond_34 (.A1(clk_gate_cond_net_38),
+    .A2(_11685_),
+    .ZN(clk_gate_cond_net_39));
+ OR2_X4 clk_gate_cond_35 (.A1(clk_gate_cond_net_39),
+    .A2(_07158_),
+    .ZN(clk_gate_cond_net_40));
+ OR2_X4 clk_gate_cond_36 (.A1(_00462_),
+    .A2(_09182_),
+    .ZN(clk_gate_cond_net_42));
+ OR2_X4 clk_gate_cond_37 (.A1(clk_gate_cond_net_42),
+    .A2(_09315_),
+    .ZN(clk_gate_cond_net_43));
+ OR2_X4 clk_gate_cond_38 (.A1(clk_gate_cond_net_43),
+    .A2(_09285_),
+    .ZN(clk_gate_cond_net_44));
+ OR2_X4 clk_gate_cond_39 (.A1(clk_gate_cond_net_44),
+    .A2(_09290_),
+    .ZN(clk_gate_cond_net_45));
+ OR2_X4 clk_gate_cond_4 (.A1(clk_gate_cond_net_4),
+    .A2(_05152_),
+    .ZN(clk_gate_cond_net_5));
+ OR2_X4 clk_gate_cond_40 (.A1(clk_gate_cond_net_45),
+    .A2(_09166_),
+    .ZN(clk_gate_cond_net_46));
+ OR2_X4 clk_gate_cond_41 (.A1(clk_gate_cond_net_46),
+    .A2(_07399_),
+    .ZN(clk_gate_cond_net_47));
+ OR2_X4 clk_gate_cond_42 (.A1(clk_gate_cond_net_47),
+    .A2(_09289_),
+    .ZN(clk_gate_cond_net_48));
+ OR2_X4 clk_gate_cond_43 (.A1(clk_gate_cond_net_48),
+    .A2(_07157_),
+    .ZN(clk_gate_cond_net_49));
+ OR2_X4 clk_gate_cond_44 (.A1(_00495_),
+    .A2(_03475_),
+    .ZN(clk_gate_cond_net_51));
+ OR2_X4 clk_gate_cond_45 (.A1(clk_gate_cond_net_51),
+    .A2(_07282_),
+    .ZN(clk_gate_cond_net_52));
+ OR2_X4 clk_gate_cond_46 (.A1(clk_gate_cond_net_52),
+    .A2(_03757_),
+    .ZN(clk_gate_cond_net_53));
+ OR2_X4 clk_gate_cond_47 (.A1(clk_gate_cond_net_53),
+    .A2(_03436_),
+    .ZN(clk_gate_cond_net_54));
+ OR2_X4 clk_gate_cond_48 (.A1(clk_gate_cond_net_54),
+    .A2(_07267_),
+    .ZN(clk_gate_cond_net_55));
+ OR2_X4 clk_gate_cond_49 (.A1(_00492_),
+    .A2(_02863_),
+    .ZN(clk_gate_cond_net_57));
+ OR2_X4 clk_gate_cond_5 (.A1(clk_gate_cond_net_5),
+    .A2(_07152_),
+    .ZN(clk_gate_cond_net_6));
+ OR2_X4 clk_gate_cond_50 (.A1(clk_gate_cond_net_57),
+    .A2(_03152_),
+    .ZN(clk_gate_cond_net_58));
+ OR2_X4 clk_gate_cond_51 (.A1(clk_gate_cond_net_58),
+    .A2(_03035_),
+    .ZN(clk_gate_cond_net_59));
+ OR2_X4 clk_gate_cond_52 (.A1(clk_gate_cond_net_59),
+    .A2(_02947_),
+    .ZN(clk_gate_cond_net_60));
+ OR2_X4 clk_gate_cond_53 (.A1(clk_gate_cond_net_60),
+    .A2(_07267_),
+    .ZN(clk_gate_cond_net_61));
+ OR2_X4 clk_gate_cond_54 (.A1(clk_gate_cond_net_61),
+    .A2(_02841_),
+    .ZN(clk_gate_cond_net_62));
+ OR2_X4 clk_gate_cond_55 (.A1(clk_gate_cond_net_62),
+    .A2(_02886_),
+    .ZN(clk_gate_cond_net_63));
+ OR2_X4 clk_gate_cond_56 (.A1(clk_gate_cond_net_63),
+    .A2(_02859_),
+    .ZN(clk_gate_cond_net_64));
+ OR2_X4 clk_gate_cond_57 (.A1(clk_gate_cond_net_64),
+    .A2(_07281_),
+    .ZN(clk_gate_cond_net_65));
+ OR2_X4 clk_gate_cond_58 (.A1(_00444_),
+    .A2(_06777_),
+    .ZN(clk_gate_cond_net_67));
+ OR2_X4 clk_gate_cond_59 (.A1(clk_gate_cond_net_67),
+    .A2(_05017_),
+    .ZN(clk_gate_cond_net_68));
+ OR2_X4 clk_gate_cond_6 (.A1(clk_gate_cond_net_6),
+    .A2(_04670_),
+    .ZN(clk_gate_cond_net_7));
+ OR2_X4 clk_gate_cond_60 (.A1(clk_gate_cond_net_68),
+    .A2(_06673_),
+    .ZN(clk_gate_cond_net_69));
+ OR2_X4 clk_gate_cond_61 (.A1(clk_gate_cond_net_69),
+    .A2(_05078_),
+    .ZN(clk_gate_cond_net_70));
+ OR2_X4 clk_gate_cond_62 (.A1(clk_gate_cond_net_70),
+    .A2(_05256_),
+    .ZN(clk_gate_cond_net_71));
+ OR2_X4 clk_gate_cond_63 (.A1(clk_gate_cond_net_71),
+    .A2(_05205_),
+    .ZN(clk_gate_cond_net_72));
+ OR2_X4 clk_gate_cond_7 (.A1(_13152_),
+    .A2(_02522_),
+    .ZN(clk_gate_cond_net_9));
+ OR2_X4 clk_gate_cond_8 (.A1(clk_gate_cond_net_9),
+    .A2(_09935_),
+    .ZN(clk_gate_cond_net_10));
+ OR2_X4 clk_gate_cond_9 (.A1(clk_gate_cond_net_10),
+    .A2(_02343_),
+    .ZN(clk_gate_cond_net_11));
  DFF_X1 \dcnt[0]$_SDFFE_PN0P_  (.D(_00497_),
     .CK(clk),
     .Q(\dcnt[0] ),
@@ -64796,223 +65015,4 @@ module aes_cipher_top (clk,
     .CK(gated_clk_33),
     .Q(\u0.tmp_w[9] ),
     .QN(_13061_));
- OR2_X4 clk_gate_cond_0 (.A1(_13151_),
-    .A2(_11055_),
-    .ZN(clk_gate_cond_net_1));
- OR2_X4 clk_gate_cond_1 (.A1(clk_gate_cond_net_1),
-    .A2(_07150_),
-    .ZN(clk_gate_cond_net_2));
- OR2_X4 clk_gate_cond_2 (.A1(clk_gate_cond_net_2),
-    .A2(_09231_),
-    .ZN(clk_gate_cond_net_3));
- OR2_X4 clk_gate_cond_3 (.A1(clk_gate_cond_net_3),
-    .A2(_11144_),
-    .ZN(clk_gate_cond_net_4));
- OR2_X4 clk_gate_cond_4 (.A1(clk_gate_cond_net_4),
-    .A2(_05152_),
-    .ZN(clk_gate_cond_net_5));
- OR2_X4 clk_gate_cond_5 (.A1(clk_gate_cond_net_5),
-    .A2(_07152_),
-    .ZN(clk_gate_cond_net_6));
- OR2_X4 clk_gate_cond_6 (.A1(clk_gate_cond_net_6),
-    .A2(_04670_),
-    .ZN(clk_gate_cond_net_7));
- CLKGATETST_X1 clk_gate_0 (.CK(clk),
-    .E(clk_gate_cond_net_7),
-    .GCK(gated_clk_8));
- OR2_X4 clk_gate_cond_7 (.A1(_13152_),
-    .A2(_02522_),
-    .ZN(clk_gate_cond_net_9));
- OR2_X4 clk_gate_cond_8 (.A1(clk_gate_cond_net_9),
-    .A2(_09935_),
-    .ZN(clk_gate_cond_net_10));
- OR2_X4 clk_gate_cond_9 (.A1(clk_gate_cond_net_10),
-    .A2(_02343_),
-    .ZN(clk_gate_cond_net_11));
- OR2_X4 clk_gate_cond_10 (.A1(clk_gate_cond_net_11),
-    .A2(_07158_),
-    .ZN(clk_gate_cond_net_12));
- OR2_X4 clk_gate_cond_11 (.A1(clk_gate_cond_net_12),
-    .A2(_07177_),
-    .ZN(clk_gate_cond_net_13));
- CLKGATETST_X1 clk_gate_1 (.CK(clk),
-    .E(clk_gate_cond_net_13),
-    .GCK(gated_clk_14));
- OR2_X4 clk_gate_cond_12 (.A1(_13167_),
-    .A2(_03152_),
-    .ZN(clk_gate_cond_net_15));
- OR2_X4 clk_gate_cond_13 (.A1(clk_gate_cond_net_15),
-    .A2(_02955_),
-    .ZN(clk_gate_cond_net_16));
- OR2_X4 clk_gate_cond_14 (.A1(clk_gate_cond_net_16),
-    .A2(_12895_),
-    .ZN(clk_gate_cond_net_17));
- OR2_X4 clk_gate_cond_15 (.A1(clk_gate_cond_net_17),
-    .A2(_02938_),
-    .ZN(clk_gate_cond_net_18));
- OR2_X4 clk_gate_cond_16 (.A1(clk_gate_cond_net_18),
-    .A2(_07849_),
-    .ZN(clk_gate_cond_net_19));
- OR2_X4 clk_gate_cond_17 (.A1(clk_gate_cond_net_19),
-    .A2(_02885_),
-    .ZN(clk_gate_cond_net_20));
- OR2_X4 clk_gate_cond_18 (.A1(clk_gate_cond_net_20),
-    .A2(_07223_),
-    .ZN(clk_gate_cond_net_21));
- CLKGATETST_X1 clk_gate_2 (.CK(clk),
-    .E(clk_gate_cond_net_21),
-    .GCK(gated_clk_22));
- OR2_X4 clk_gate_cond_19 (.A1(_00487_),
-    .A2(_01917_),
-    .ZN(clk_gate_cond_net_23));
- OR2_X4 clk_gate_cond_20 (.A1(clk_gate_cond_net_23),
-    .A2(_01868_),
-    .ZN(clk_gate_cond_net_24));
- OR2_X4 clk_gate_cond_21 (.A1(clk_gate_cond_net_24),
-    .A2(_01929_),
-    .ZN(clk_gate_cond_net_25));
- OR2_X4 clk_gate_cond_22 (.A1(clk_gate_cond_net_25),
-    .A2(_01959_),
-    .ZN(clk_gate_cond_net_26));
- OR2_X4 clk_gate_cond_23 (.A1(clk_gate_cond_net_26),
-    .A2(_01793_),
-    .ZN(clk_gate_cond_net_27));
- OR2_X4 clk_gate_cond_24 (.A1(clk_gate_cond_net_27),
-    .A2(_01878_),
-    .ZN(clk_gate_cond_net_28));
- OR2_X4 clk_gate_cond_25 (.A1(clk_gate_cond_net_28),
-    .A2(_07282_),
-    .ZN(clk_gate_cond_net_29));
- OR2_X4 clk_gate_cond_26 (.A1(clk_gate_cond_net_29),
-    .A2(_01732_),
-    .ZN(clk_gate_cond_net_30));
- OR2_X4 clk_gate_cond_27 (.A1(clk_gate_cond_net_30),
-    .A2(_01720_),
-    .ZN(clk_gate_cond_net_31));
- OR2_X4 clk_gate_cond_28 (.A1(clk_gate_cond_net_31),
-    .A2(_07400_),
-    .ZN(clk_gate_cond_net_32));
- CLKGATETST_X1 clk_gate_3 (.CK(clk),
-    .E(clk_gate_cond_net_32),
-    .GCK(gated_clk_33));
- OR2_X4 clk_gate_cond_29 (.A1(_00474_),
-    .A2(_11747_),
-    .ZN(clk_gate_cond_net_34));
- OR2_X4 clk_gate_cond_30 (.A1(clk_gate_cond_net_34),
-    .A2(_11696_),
-    .ZN(clk_gate_cond_net_35));
- OR2_X4 clk_gate_cond_31 (.A1(clk_gate_cond_net_35),
-    .A2(_11833_),
-    .ZN(clk_gate_cond_net_36));
- OR2_X4 clk_gate_cond_32 (.A1(clk_gate_cond_net_36),
-    .A2(_07400_),
-    .ZN(clk_gate_cond_net_37));
- OR2_X4 clk_gate_cond_33 (.A1(clk_gate_cond_net_37),
-    .A2(_11753_),
-    .ZN(clk_gate_cond_net_38));
- OR2_X4 clk_gate_cond_34 (.A1(clk_gate_cond_net_38),
-    .A2(_11685_),
-    .ZN(clk_gate_cond_net_39));
- OR2_X4 clk_gate_cond_35 (.A1(clk_gate_cond_net_39),
-    .A2(_07158_),
-    .ZN(clk_gate_cond_net_40));
- CLKGATETST_X1 clk_gate_4 (.CK(clk),
-    .E(clk_gate_cond_net_40),
-    .GCK(gated_clk_41));
- OR2_X4 clk_gate_cond_36 (.A1(_00462_),
-    .A2(_09182_),
-    .ZN(clk_gate_cond_net_42));
- OR2_X4 clk_gate_cond_37 (.A1(clk_gate_cond_net_42),
-    .A2(_09315_),
-    .ZN(clk_gate_cond_net_43));
- OR2_X4 clk_gate_cond_38 (.A1(clk_gate_cond_net_43),
-    .A2(_09285_),
-    .ZN(clk_gate_cond_net_44));
- OR2_X4 clk_gate_cond_39 (.A1(clk_gate_cond_net_44),
-    .A2(_09290_),
-    .ZN(clk_gate_cond_net_45));
- OR2_X4 clk_gate_cond_40 (.A1(clk_gate_cond_net_45),
-    .A2(_09166_),
-    .ZN(clk_gate_cond_net_46));
- OR2_X4 clk_gate_cond_41 (.A1(clk_gate_cond_net_46),
-    .A2(_07399_),
-    .ZN(clk_gate_cond_net_47));
- OR2_X4 clk_gate_cond_42 (.A1(clk_gate_cond_net_47),
-    .A2(_09289_),
-    .ZN(clk_gate_cond_net_48));
- OR2_X4 clk_gate_cond_43 (.A1(clk_gate_cond_net_48),
-    .A2(_07157_),
-    .ZN(clk_gate_cond_net_49));
- CLKGATETST_X1 clk_gate_5 (.CK(clk),
-    .E(clk_gate_cond_net_49),
-    .GCK(gated_clk_50));
- OR2_X4 clk_gate_cond_44 (.A1(_00495_),
-    .A2(_03475_),
-    .ZN(clk_gate_cond_net_51));
- OR2_X4 clk_gate_cond_45 (.A1(clk_gate_cond_net_51),
-    .A2(_07282_),
-    .ZN(clk_gate_cond_net_52));
- OR2_X4 clk_gate_cond_46 (.A1(clk_gate_cond_net_52),
-    .A2(_03757_),
-    .ZN(clk_gate_cond_net_53));
- OR2_X4 clk_gate_cond_47 (.A1(clk_gate_cond_net_53),
-    .A2(_03436_),
-    .ZN(clk_gate_cond_net_54));
- OR2_X4 clk_gate_cond_48 (.A1(clk_gate_cond_net_54),
-    .A2(_07267_),
-    .ZN(clk_gate_cond_net_55));
- CLKGATETST_X1 clk_gate_6 (.CK(clk),
-    .E(clk_gate_cond_net_55),
-    .GCK(gated_clk_56));
- OR2_X4 clk_gate_cond_49 (.A1(_00492_),
-    .A2(_02863_),
-    .ZN(clk_gate_cond_net_57));
- OR2_X4 clk_gate_cond_50 (.A1(clk_gate_cond_net_57),
-    .A2(_03152_),
-    .ZN(clk_gate_cond_net_58));
- OR2_X4 clk_gate_cond_51 (.A1(clk_gate_cond_net_58),
-    .A2(_03035_),
-    .ZN(clk_gate_cond_net_59));
- OR2_X4 clk_gate_cond_52 (.A1(clk_gate_cond_net_59),
-    .A2(_02947_),
-    .ZN(clk_gate_cond_net_60));
- OR2_X4 clk_gate_cond_53 (.A1(clk_gate_cond_net_60),
-    .A2(_07267_),
-    .ZN(clk_gate_cond_net_61));
- OR2_X4 clk_gate_cond_54 (.A1(clk_gate_cond_net_61),
-    .A2(_02841_),
-    .ZN(clk_gate_cond_net_62));
- OR2_X4 clk_gate_cond_55 (.A1(clk_gate_cond_net_62),
-    .A2(_02886_),
-    .ZN(clk_gate_cond_net_63));
- OR2_X4 clk_gate_cond_56 (.A1(clk_gate_cond_net_63),
-    .A2(_02859_),
-    .ZN(clk_gate_cond_net_64));
- OR2_X4 clk_gate_cond_57 (.A1(clk_gate_cond_net_64),
-    .A2(_07281_),
-    .ZN(clk_gate_cond_net_65));
- CLKGATETST_X1 clk_gate_7 (.CK(clk),
-    .E(clk_gate_cond_net_65),
-    .GCK(gated_clk_66));
- OR2_X4 clk_gate_cond_58 (.A1(_00444_),
-    .A2(_06777_),
-    .ZN(clk_gate_cond_net_67));
- OR2_X4 clk_gate_cond_59 (.A1(clk_gate_cond_net_67),
-    .A2(_05017_),
-    .ZN(clk_gate_cond_net_68));
- OR2_X4 clk_gate_cond_60 (.A1(clk_gate_cond_net_68),
-    .A2(_06673_),
-    .ZN(clk_gate_cond_net_69));
- OR2_X4 clk_gate_cond_61 (.A1(clk_gate_cond_net_69),
-    .A2(_05078_),
-    .ZN(clk_gate_cond_net_70));
- OR2_X4 clk_gate_cond_62 (.A1(clk_gate_cond_net_70),
-    .A2(_05256_),
-    .ZN(clk_gate_cond_net_71));
- OR2_X4 clk_gate_cond_63 (.A1(clk_gate_cond_net_71),
-    .A2(_05205_),
-    .ZN(clk_gate_cond_net_72));
- CLKGATETST_X1 clk_gate_8 (.CK(clk),
-    .E(clk_gate_cond_net_72),
-    .GCK(gated_clk_73));
 endmodule

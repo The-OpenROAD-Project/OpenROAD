@@ -310,6 +310,12 @@ module hi_fanout (clk1,
  wire clk_to_nand1;
  wire clk_to_nand0;
 
+ submodule cloneU1 (.net_o_2(net_o_2),
+    .net_o_1(net_o_1),
+    .net_o(net_o),
+    .ip0(clk_to_nand0),
+    .ip1(clk_to_nand1),
+    .op0(net0));
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand0));
@@ -766,12 +772,6 @@ module hi_fanout (clk1,
  DFF_X1 load99 (.D(net0),
     .CK(clk1),
     .Q(output99));
- submodule cloneU1 (.net_o_2(net_o_2),
-    .net_o_1(net_o_1),
-    .net_o(net_o),
-    .ip0(clk_to_nand0),
-    .ip1(clk_to_nand1),
-    .op0(net0));
 endmodule
 module submodule (net_o_2,
     net_o_1,
@@ -787,15 +787,15 @@ module submodule (net_o_2,
  output op0;
 
 
- NAND2_X4 clone3 (.A1(ip1),
-    .A2(ip0),
-    .ZN(net_o_2));
- NAND2_X4 clone2 (.A1(ip0),
-    .A2(ip1),
-    .ZN(net_o_1));
  NAND2_X4 clone1 (.A1(ip0),
     .A2(ip1),
     .ZN(net_o));
+ NAND2_X4 clone2 (.A1(ip0),
+    .A2(ip1),
+    .ZN(net_o_1));
+ NAND2_X4 clone3 (.A1(ip1),
+    .A2(ip0),
+    .ZN(net_o_2));
  NAND2_X4 nand_inst_0 (.A1(ip1),
     .A2(ip0),
     .ZN(op0));

@@ -50,6 +50,10 @@ module top (clk,
  DFF_X1 dff_out2 (.D(n2),
     .CK(clk),
     .Q(out2));
+ BUF_X1 \u_mid1/b_before_loads3  (.A(\u_mid1/l2_out1 ),
+    .Z(\u_mid1/n_before_loads3 ));
+ BUF_X1 \u_mid1/b_inferred4  (.A(\u_mid1/l2_out1 ),
+    .Z(\u_mid1/n_inferred4 ));
  DFF_X1 \u_mid1/dff_load1  (.D(\u_mid1/n_before_loads3 ),
     .CK(clk));
  DFF_X1 \u_mid1/dff_load10  (.D(\u_mid1/l2_out1 ),
@@ -76,6 +80,10 @@ module top (clk,
  DFF_X1 \u_mid1/dff_out2  (.D(\u_mid1/l2_out1 ),
     .CK(clk),
     .Q(m1_out2));
+ BUF_X1 \u_mid1/u_leaf1/b_after_drvr1  (.A(\u_mid1/u_leaf1/n_after_drvr1 ),
+    .Z(\u_mid1/u_leaf1/n1 ));
+ BUF_X1 \u_mid1/u_leaf1/b_before_load2  (.A(\u_mid1/u_leaf1/n2 ),
+    .Z(\u_mid1/u_leaf1/n_before_load2 ));
  BUF_X1 \u_mid1/u_leaf1/buf1  (.A(\u_mid1/u_leaf1/n1 ),
     .Z(\u_mid1/u_leaf1/n2 ));
  BUF_X1 \u_mid1/u_leaf1/buf2  (.A(\u_mid1/u_leaf1/n_before_load2 ),
@@ -121,12 +129,4 @@ module top (clk,
  DFF_X1 \u_mid2/u_leaf4/dff1  (.D(in4),
     .CK(clk),
     .Q(\u_mid2/l4_out ));
- BUF_X1 \u_mid1/u_leaf1/b_after_drvr1  (.A(\u_mid1/u_leaf1/n_after_drvr1 ),
-    .Z(\u_mid1/u_leaf1/n1 ));
- BUF_X1 \u_mid1/u_leaf1/b_before_load2  (.A(\u_mid1/u_leaf1/n2 ),
-    .Z(\u_mid1/u_leaf1/n_before_load2 ));
- BUF_X1 \u_mid1/b_before_loads3  (.A(\u_mid1/l2_out1 ),
-    .Z(\u_mid1/n_before_loads3 ));
- BUF_X1 \u_mid1/b_inferred4  (.A(\u_mid1/l2_out1 ),
-    .Z(\u_mid1/n_inferred4 ));
 endmodule
