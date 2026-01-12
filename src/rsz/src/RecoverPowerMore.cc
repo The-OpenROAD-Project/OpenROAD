@@ -5,39 +5,28 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Parasitics.hh"
-#include "sta/PortDirection.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Units.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -143,10 +132,8 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
     // Rank by "power × available headroom" so we focus effort on high-power,
     // non-critical instances. Then break ties by power/headroom/area.
     std::vector<CandidateInstance> sorted = candidates;
-    std::sort(
-        sorted.begin(),
-        sorted.end(),
-        [](const CandidateInstance& a, const CandidateInstance& b) {
+    std::ranges::sort(
+        sorted, [](const CandidateInstance& a, const CandidateInstance& b) {
           const float a_score
               = a.power * static_cast<float>(std::max<Slack>(0.0, a.headroom));
           const float b_score
@@ -235,7 +222,7 @@ bool RecoverPowerMore::recoverPower(const float recover_power_percent,
   if (resize_count_ > 0 || buffer_remove_count_ > 0) {
     logger_->info(
         RSZ,
-        142,
+        147,
         "Applied {} cell swaps and removed {} buffers for power recovery.",
         resize_count_,
         buffer_remove_count_);
@@ -488,9 +475,7 @@ Slack RecoverPowerMore::instanceWorstSlack(sta::Instance* inst) const
     }
 
     const Slack slack = sta_->vertexSlack(vertex, max_);
-    if (slack < worst_slack) {
-      worst_slack = slack;
-    }
+    worst_slack = std::min(worst_slack, slack);
     found = true;
   }
 
@@ -515,7 +500,7 @@ bool RecoverPowerMore::instanceDrivesClock(sta::Instance* inst) const
 
 float RecoverPowerMore::minClockPeriod() const
 {
-  sta::ClockSeq* clocks = sdc_->clocks();
+  auto* clocks = sdc_->clocks();
   if (clocks == nullptr || clocks->empty()) {
     return 0.0f;
   }
@@ -641,24 +626,21 @@ std::vector<LibertyCell*> RecoverPowerMore::nextSmallerCells(
 
   // Prefer weaker (higher resistance) and lower leakage candidates first;
   // the full STA check will decide which are actually acceptable.
-  std::stable_sort(
-      candidates.begin(),
-      candidates.end(),
-      [this](LibertyCell* a, LibertyCell* b) {
-        float ra = std::max(0.0f, resizer_->cellDriveResistance(a));
-        float rb = std::max(0.0f, resizer_->cellDriveResistance(b));
-        const float la = resizer_->cellLeakage(a).value_or(
-            std::numeric_limits<float>::infinity());
-        const float lb = resizer_->cellLeakage(b).value_or(
-            std::numeric_limits<float>::infinity());
-        if (ra != rb) {
-          return ra > rb;
-        }
-        if (la != lb) {
-          return la < lb;
-        }
-        return std::strcmp(a->name(), b->name()) < 0;
-      });
+  std::ranges::stable_sort(candidates, [this](LibertyCell* a, LibertyCell* b) {
+    float ra = std::max(0.0f, resizer_->cellDriveResistance(a));
+    float rb = std::max(0.0f, resizer_->cellDriveResistance(b));
+    const float la = resizer_->cellLeakage(a).value_or(
+        std::numeric_limits<float>::infinity());
+    const float lb = resizer_->cellLeakage(b).value_or(
+        std::numeric_limits<float>::infinity());
+    if (ra != rb) {
+      return ra > rb;
+    }
+    if (la != lb) {
+      return la < lb;
+    }
+    return std::strcmp(a->name(), b->name()) < 0;
+  });
 
   return candidates;
 }
