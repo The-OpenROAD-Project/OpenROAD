@@ -499,4 +499,4 @@ proc clear_timing_path { args } {
   gui::clear_timing_path_internal
 }
 
-} ; # namespace gui
+} ;# namespace gui
