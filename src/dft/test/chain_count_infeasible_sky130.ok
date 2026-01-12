@@ -1,7 +1,8 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [WARNING ORD-2011] LEF master sky130_fd_sc_hd__tapvpwrvgnd_1 has no liberty cell.
-[WARNING DFT-0074] Scan architect constraints infeasible: max_length=4 requires at least 3 chains for total_bits=10, but max_chains=1 -> using 1 chains with implied max_length=10.
+[WARNING DFT-0073] Scan architect constraints infeasible: total_bits=10 exceeds chain_count*max_length=1*4 (capacity 4); requires per-chain length at least 10.
+[WARNING DFT-0068] Scan architect could not pack all scan cells into the requested chain budget (6 remaining).
 ***************************
 Report DFT Plan
 Number of chains: 1
@@ -22,5 +23,3 @@ Scan chain 'chain_0' has 10 cells (10 bits)
   ff10_clk1_rising
 
 
-[WARNING DFT-0074] Scan architect constraints infeasible: max_length=4 requires at least 3 chains for total_bits=10, but max_chains=1 -> using 1 chains with implied max_length=10.
-No differences found.

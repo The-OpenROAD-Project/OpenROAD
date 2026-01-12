@@ -25,6 +25,8 @@ class ScanCellsBucket
   ScanCellsBucket(const ScanCellsBucket&) = delete;
   ScanCellsBucket& operator=(const ScanCellsBucket&) = delete;
 
+  utl::Logger* getLogger() const { return logger_; }
+
   // Gets the next scan cell of the given hash domain
   std::unique_ptr<ScanCell> pop(size_t hash_domain);
 

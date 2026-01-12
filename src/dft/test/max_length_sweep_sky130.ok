@@ -1,0 +1,132 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[WARNING ORD-2011] LEF master sky130_fd_sc_hd__tapvpwrvgnd_1 has no liberty cell.
+==== sweep max_length=10 max_chains=3 ====
+***************************
+Report DFT Plan
+Number of chains: 1
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 10 cells (10 bits)
+
+
+==== sweep max_length=9 max_chains=3 ====
+***************************
+Report DFT Plan
+Number of chains: 2
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 5 cells (5 bits)
+
+Scan chain 'chain_1' has 5 cells (5 bits)
+
+
+==== sweep max_length=8 max_chains=3 ====
+***************************
+Report DFT Plan
+Number of chains: 2
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 5 cells (5 bits)
+
+Scan chain 'chain_1' has 5 cells (5 bits)
+
+
+==== sweep max_length=7 max_chains=3 ====
+***************************
+Report DFT Plan
+Number of chains: 2
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 5 cells (5 bits)
+
+Scan chain 'chain_1' has 5 cells (5 bits)
+
+
+==== sweep max_length=6 max_chains=3 ====
+***************************
+Report DFT Plan
+Number of chains: 2
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 5 cells (5 bits)
+
+Scan chain 'chain_1' has 5 cells (5 bits)
+
+
+==== sweep max_length=5 max_chains=3 ====
+***************************
+Report DFT Plan
+Number of chains: 2
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 5 cells (5 bits)
+
+Scan chain 'chain_1' has 5 cells (5 bits)
+
+
+==== sweep max_length=4 max_chains=3 ====
+***************************
+Report DFT Plan
+Number of chains: 3
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 4 cells (4 bits)
+
+Scan chain 'chain_1' has 4 cells (4 bits)
+
+Scan chain 'chain_2' has 2 cells (2 bits)
+
+
+==== sweep max_length=3 max_chains=3 ====
+[WARNING DFT-0074] Scan architect constraints infeasible: max_length=3 requires at least 4 chains for total_bits=10, but max_chains=3 -> using 3 chains with implied max_length=4.
+***************************
+Report DFT Plan
+Number of chains: 3
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 4 cells (4 bits)
+
+Scan chain 'chain_1' has 4 cells (4 bits)
+
+Scan chain 'chain_2' has 2 cells (2 bits)
+
+
+==== sweep max_length=2 max_chains=3 ====
+[WARNING DFT-0074] Scan architect constraints infeasible: max_length=2 requires at least 5 chains for total_bits=10, but max_chains=3 -> using 3 chains with implied max_length=4.
+***************************
+Report DFT Plan
+Number of chains: 3
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 4 cells (4 bits)
+
+Scan chain 'chain_1' has 4 cells (4 bits)
+
+Scan chain 'chain_2' has 2 cells (2 bits)
+
+
+==== sweep max_length=1 max_chains=3 ====
+[WARNING DFT-0074] Scan architect constraints infeasible: max_length=1 requires at least 10 chains for total_bits=10, but max_chains=3 -> using 3 chains with implied max_length=4.
+***************************
+Report DFT Plan
+Number of chains: 3
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 4 cells (4 bits)
+
+Scan chain 'chain_1' has 4 cells (4 bits)
+
+Scan chain 'chain_2' has 2 cells (2 bits)
+
+
