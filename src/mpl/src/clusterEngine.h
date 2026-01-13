@@ -309,7 +309,6 @@ class ClusteringEngine
   int min_macro_{0};
   int max_std_cell_{0};
   int min_std_cell_{0};
-  const float size_tolerance_ = 0.1;
 
   // Variables for data flow
   DataFlow data_connections_;
