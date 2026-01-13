@@ -67,6 +67,9 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
 OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
     : filename_(filename)
 {
+  if (filename_.empty()) {
+    throw std::runtime_error("filename is empty");
+  }
   tmp_filename_ = generate_unused_filename(filename_);
 
   os_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
