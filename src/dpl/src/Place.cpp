@@ -921,7 +921,7 @@ bool Opendp::checkPixels(const Node* cell,
       // no abutting cell, we will then check cells at 1+ distances we only
       // need to check on the left and right sides
       const GridX x_begin = max(GridX{0}, x - 1);
-      const GridY y_begin = max(GridY{0}, y - 1);
+      const GridY y_begin = max(GridY{0}, y);
       // inclusive search, so we don't add 1 to the end
       const GridX x_finish = min(x_end, grid_->getRowSiteCount() - 1);
       const GridY y_finish = min(y_end, grid_->getRowCount() - 1);
@@ -935,13 +935,29 @@ bool Opendp::checkPixels(const Node* cell,
         const Pixel* pixel = grid_->gridPixel(x, y);
         return (pixel != nullptr && pixel->cell);
       };
-      for (GridY y = y_begin; y <= y_finish; ++y) {
+      for (GridY y = y_begin; y < y_finish; ++y) {
         // left side
         if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
+          debugPrint(logger_,
+                     DPL,
+                     "one_site_gap",
+                     1,
+                     "One site gap left of {}  at ({}, {})",
+                     cell->name(),
+                     x,
+                     y);
           return false;
         }
         // right side
         if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
+          debugPrint(logger_,
+                     DPL,
+                     "one_site_gap",
+                     1,
+                     "One site gap right of {} at ({}, {})",
+                     cell->name(),
+                     x,
+                     y);
           return false;
         }
       }
