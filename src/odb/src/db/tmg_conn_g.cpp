@@ -23,7 +23,6 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
   stackV_.reserve(2ul * shortN);
 
   eV_.clear();
-  eV_.reserve(4ul * ptN + 2ul * shortN);
 }
 
 tcg_edge* tmg_conn_graph::newEdge(const tmg_conn* conn,
@@ -311,7 +310,7 @@ tcg_edge* tmg_conn_graph::getNextEdge(const bool ok_to_descend)
     e = e->next;
   }
   if (e) {
-    stackV_.emplace_back(e);
+    stackV_.back() = e;
     return e;
   }
   // ascend

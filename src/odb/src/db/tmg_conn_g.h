@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <deque>
 #include <vector>
 
 namespace odb {
@@ -55,7 +56,7 @@ class tmg_conn_graph
   bool isBadShort(tcg_edge* pe, const tmg_conn* conn);
 
   tcg_edge* e_;
-  std::vector<tcg_edge> eV_;
+  std::deque<tcg_edge> eV_;
 };
 
 }  // namespace odb
