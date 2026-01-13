@@ -52,6 +52,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float target_dead_space,
                           const float min_ar,
                           const char* report_directory,
+                          const bool timing_driven,
                           const bool keep_clustering_data) {
 
   auto macro_placer = getMacroPlacer();
@@ -85,6 +86,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              target_dead_space,
                              min_ar,
                              report_directory,
+                             timing_driven,
                              keep_clustering_data);
 }
 

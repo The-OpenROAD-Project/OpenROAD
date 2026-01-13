@@ -27,6 +27,10 @@ namespace par {
 class PartitionMgr;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace mpl {
 
 class HierRTLMP;
@@ -39,7 +43,8 @@ class MacroPlacer
               odb::dbDatabase* db,
               sta::dbSta* sta,
               utl::Logger* logger,
-              par::PartitionMgr* tritonpart);
+              par::PartitionMgr* tritonpart,
+              rsz::Resizer* resizer);
   ~MacroPlacer();
 
   bool place(int num_threads,
@@ -66,6 +71,7 @@ class MacroPlacer
              float target_dead_space,
              float min_ar,
              const char* report_directory,
+             bool timing_driven,
              bool keep_clustering_data);
 
   void placeMacro(odb::dbInst* inst,

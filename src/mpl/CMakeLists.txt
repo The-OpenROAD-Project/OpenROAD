@@ -31,6 +31,7 @@ target_link_libraries(mpl_lib
     ortools::ortools
     dl
     par_lib
+    rsz_lib
 )
 
 swig_lib(NAME      mpl

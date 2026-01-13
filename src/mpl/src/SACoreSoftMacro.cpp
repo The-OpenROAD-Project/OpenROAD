@@ -160,6 +160,10 @@ float SACoreSoftMacro::calNormCost() const
   if (norm_wirelength_ > 0.0) {
     cost += core_weights_.wirelength * wirelength_ / norm_wirelength_;
   }
+  if (norm_critical_wirelength_ > 0.0) {
+    cost += core_weights_.critical_wirelength * critical_wirelength_
+            / norm_critical_wirelength_;
+  }
   if (norm_guidance_penalty_ > 0.0) {
     cost += core_weights_.guidance * guidance_penalty_ / norm_guidance_penalty_;
   }
@@ -188,6 +192,7 @@ void SACoreSoftMacro::calPenalty()
 {
   calOutlinePenalty();
   calWirelength();
+  calCriticalWireLength();
   calGuidancePenalty();
   calFencePenalty();
   calBoundaryPenalty();
@@ -299,6 +304,7 @@ void SACoreSoftMacro::initialize()
 
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
+  std::vector<float> critical_wirelength_list;
   std::vector<float> guidance_penalty_list;
   std::vector<float> fence_penalty_list;
   std::vector<float> boundary_penalty_list;
@@ -326,6 +332,7 @@ void SACoreSoftMacro::initialize()
     area_penalty_list.push_back(getAreaPenalty());
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
+    critical_wirelength_list.push_back(critical_wirelength_);
     guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
     boundary_penalty_list.push_back(boundary_penalty_);
@@ -338,6 +345,7 @@ void SACoreSoftMacro::initialize()
   norm_area_penalty_ = calAverage(area_penalty_list);
   norm_outline_penalty_ = calAverage(outline_penalty_list);
   norm_wirelength_ = calAverage(wirelength_list);
+  norm_critical_wirelength_ = calAverage(critical_wirelength_list);
   norm_guidance_penalty_ = calAverage(guidance_penalty_list);
   norm_fence_penalty_ = calAverage(fence_penalty_list);
   norm_boundary_penalty_ = calAverage(boundary_penalty_list);
@@ -357,6 +365,10 @@ void SACoreSoftMacro::initialize()
 
   if (norm_wirelength_ <= 1e-4) {
     norm_wirelength_ = 1.0;
+  }
+
+  if (norm_critical_wirelength_ <= 1e-4) {
+    norm_critical_wirelength_ = 1.0;
   }
 
   if (norm_guidance_penalty_ <= 1e-4) {
@@ -390,6 +402,7 @@ void SACoreSoftMacro::initialize()
     height_ = height_list[i];
     outline_penalty_ = outline_penalty_list[i];
     wirelength_ = wirelength_list[i];
+    critical_wirelength_ = critical_wirelength_list[i];
     guidance_penalty_ = guidance_penalty_list[i];
     fence_penalty_ = fence_penalty_list[i];
     boundary_penalty_ = boundary_penalty_list[i];

@@ -124,6 +124,13 @@ void SimulatedAnnealingCore<T>::setNets(const BundledNetList& nets)
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::setCriticalNets(
+    const BundledNetList& critical_nets)
+{
+  critical_nets_ = critical_nets;
+}
+
+template <class T>
 void SimulatedAnnealingCore<T>::setFences(
     const std::map<int, odb::Rect>& fences)
 {
@@ -281,6 +288,24 @@ void SimulatedAnnealingCore<T>::calWirelength()
                                      .weight = core_weights_.wirelength,
                                      .value = wirelength_,
                                      .normalization_factor = norm_wirelength_});
+  }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::calCriticalWireLength()
+{
+  if (core_weights_.critical_wirelength <= 0.0) {
+    return;
+  }
+
+  critical_wirelength_ = computeNetsWireLength(critical_nets_);
+
+  if (graphics_) {
+    graphics_->setCriticalWireLengthPenalty(
+        {.name = "Critical Wire Length",
+         .weight = core_weights_.critical_wirelength,
+         .value = critical_wirelength_,
+         .normalization_factor = norm_critical_wirelength_});
   }
 }
 
@@ -645,6 +670,10 @@ void SimulatedAnnealingCore<T>::reportCoreWeights() const
 
   report(
       {"Wire Length", core_weights_.wirelength, wirelength_, norm_wirelength_});
+  report({"Critical Wire Length",
+          core_weights_.critical_wirelength,
+          critical_wirelength_,
+          norm_critical_wirelength_});
   report({"Guidance",
           core_weights_.guidance,
           guidance_penalty_,

@@ -65,6 +65,7 @@ class SimulatedAnnealingCore
     number_of_sequence_pair_macros_ = number_of_sequence_pair_macros;
   };
   void setNets(const BundledNetList& nets);
+  void setCriticalNets(const BundledNetList& critical_nets);
   void setFences(const std::map<int, odb::Rect>& fences);
   void setGuides(const std::map<int, odb::Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
@@ -118,6 +119,7 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
+  void calCriticalWireLength();
   float computeNetsWireLength(const BundledNetList& nets) const;
   int64_t computeWLForClusterOfUnplacedIOPins(const T& macro,
                                               const T& unplaced_ios,
@@ -155,6 +157,7 @@ class SimulatedAnnealingCore
   int number_of_sequence_pair_macros_ = 0;
 
   BundledNetList nets_;
+  BundledNetList critical_nets_;
   std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 
@@ -189,6 +192,7 @@ class SimulatedAnnealingCore
   int pre_height_ = 0;
 
   float wirelength_ = 0.0;
+  float critical_wirelength_ = 0.0;
   float outline_penalty_ = 0.0;
   float guidance_penalty_ = 0.0;
   float fence_penalty_ = 0.0;
@@ -199,6 +203,7 @@ class SimulatedAnnealingCore
   float pre_fence_penalty_ = 0.0;
 
   float norm_wirelength_ = 0;
+  float norm_critical_wirelength_ = 0.0;
   float norm_outline_penalty_ = 0.0;
   float norm_guidance_penalty_ = 0.0;
   float norm_fence_penalty_ = 0.0;
