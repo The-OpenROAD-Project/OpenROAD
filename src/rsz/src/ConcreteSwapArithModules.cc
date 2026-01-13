@@ -4,30 +4,38 @@
 #include "ConcreteSwapArithModules.hh"
 
 #include <algorithm>
-#include <cstddef>
-#include <cstring>
-#include <set>
-#include <string>
-#include <utility>
+#include <fstream>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Corner.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Report.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
 
+using odb::dbBlock;
+using odb::dbInst;
 using odb::dbModInst;
+using odb::dbModITerm;
 using odb::dbModule;
+using odb::dbStringProperty;
+using sta::Graph;
+using sta::Instance;
+using sta::Path;
 using sta::PathExpanded;
+using sta::Pin;
+using sta::PortDirection;
+using sta::Slack;
+using sta::Vertex;
+using sta::VertexSet;
 using std::pair;
 using std::vector;
 using utl::RSZ;
@@ -213,7 +221,7 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
     return false;
   }
 
-  odb::dbStringProperty* prop = odb::dbStringProperty::find(
+  dbStringProperty* prop = dbStringProperty::find(
       const_cast<dbModInst*>(mod_inst), "implements_operator");
   if (prop) {
     debugRAPrint2(
@@ -238,40 +246,48 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
                                                const std::string& target)
 {
   int swapped_count = 0;
-
-  // Create a new inst set since old insts are destroyed
   std::set<dbModInst*> swappedInsts;
 
+  // We DO NOT suppress callbacks. Instead, we manage graph levelization
+  // to prevent STA-2300 (Level Regression) during incremental updates.
+
   for (dbModInst* inst : insts) {
-    dbModule* old_master = inst->getMaster();
-    if (!old_master) {
-      logger_->warn(
-          RSZ, 157, "Instance {} has no master module", inst->getName());
+    // Skip if instance is no longer in its parent
+    if (!inst->getParent()) {
       continue;
     }
+
+    dbModule* old_master = inst->getMaster();
+    if (!old_master) {
+      continue;
+    }
+
     std::string old_name(old_master->getName());
     std::string new_name;
     produceNewModuleName(old_name, new_name, target);
-    debugRAPrint1("Inst {} is being swapped from {} to {}",
-                  inst->getName(),
-                  old_name,
-                  new_name);
+
     if (new_name != old_name) {
       dbBlock* block = old_master->getOwner();
-      if (!block) {
-        logger_->warn(RSZ, 158, "Module {} has no owner block", old_name);
-        continue;
-      }
       dbModule* new_master = block->findModule(new_name.c_str());
       if (!new_master) {
-        logger_->warn(
-            RSZ, 159, "Replacement module {} does not exist", new_name);
         continue;
       }
-      debugRAPrint1("Swapping mod inst {} from {} to {}",
-                    inst->getName(),
-                    old_name,
-                    new_name);
+
+      // Pre-emptive clear of levels to avoid STA-2300 when callbacks trigger
+      // timing update
+      sta_->search()->levelsChangedBefore();
+
+      // DEBUG: Check graph connections BEFORE swap (only for the first
+      // instance)
+      static bool debug_printed = false;
+      if (!debug_printed) {
+        sta_->dumpGraphConnections(inst->getName(),
+                                   "sta_graph_before.log");
+        debug_printed = true;
+      }
+
+      // swapMaster triggers callbacks (inDbModITermPostConnect etc)
+      // which will update the STA graph automatically.
       dbModInst* new_inst = inst->swapMaster(new_master);
 
       if (new_inst) {
@@ -279,6 +295,18 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
         swappedInsts.insert(new_inst);
       }
     }
+  }
+
+  if (!swappedInsts.empty()) {
+    // Ensure graph is consistent and levelized after all changes
+    debugRAPrint1("Forcing full re-levelization");
+    sta_->graphDelayCalc()->delaysInvalid();
+    sta_->search()->levelsChangedBefore();
+    sta_->ensureLevelized();
+
+    // DEBUG: Check graph connections AFTER swap and levelization
+    sta_->dumpGraphConnections((*swappedInsts.begin())->getName(),
+                               "sta_graph_after.log");
   }
 
   insts.clear();
@@ -309,7 +337,7 @@ void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,
     size_t pos;
     if (old_name.starts_with("ALU_")) {
       // Swap ALU to KOGGE_STONE for best timing
-      const vector<std::string> alu_types
+      const std::vector<std::string> alu_types
           = {"HAN_CARLSON", "BRENT_KUNG", "SKLANSKY"};
       for (const std::string& alu_type : alu_types) {
         pos = old_name.find(alu_type);
@@ -328,6 +356,34 @@ void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,
     }
   } else {
     logger_->error(RSZ, 155, "Target {} is not supported now", target);
+  }
+}
+
+void ConcreteSwapArithModules::rebuildInternalGraph(dbModInst* mod_inst)
+{
+  Graph* graph = sta_->graph();
+
+  // 1. ModInst itself (Boundary Pins)
+  // Manually iterate because pinIterator might rely on stale dbNetwork state
+  // or callbacks
+  for (dbModITerm* iterm : mod_inst->getModITerms()) {
+    Pin* pin = db_network_->dbToSta(iterm);
+    // Force dbNetwork to recognize the new pin connections
+    db_network_->connectPinAfter(pin);
+    graph->makePinVertices(pin);
+  }
+
+  dbModule* master = mod_inst->getMaster();
+
+  // 2. Leaf instances
+  for (dbInst* inst : master->getInsts()) {
+    Instance* sta_inst = db_network_->dbToSta(inst);
+    sta_->makeInstanceAfter(sta_inst);
+  }
+
+  // 3. Sub-modules (Recursion)
+  for (dbModInst* child : master->getModInsts()) {
+    rebuildInternalGraph(child);
   }
 }
 

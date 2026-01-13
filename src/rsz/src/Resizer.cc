@@ -4,6 +4,7 @@
 #include "rsz/Resizer.hh"
 
 #include <algorithm>
+#include <fstream>
 #include <cassert>
 #include <cctype>
 #include <cmath>
@@ -4159,6 +4160,7 @@ void Resizer::repairDesign(double max_wire_length,
   }
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
+  sta_->checkSanity();
 }
 
 int Resizer::repairDesignBufferCount() const
@@ -4459,8 +4461,18 @@ void Resizer::swapArithModules(int path_count,
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (swap_arith_modules_->replaceArithModules(
           path_count, target, slack_margin)) {
+    
+    // Dump Incremental
+    sta_->findRequireds(); // Ensure slacks are up to date
+    sta_->dumpPinSlacks("_202_", "slack_incr.log");
+
+    // Force Full Update
+    sta_->networkChanged();
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
+
+    // Dump Full
+    sta_->dumpPinSlacks("_202_", "slack_full.log");
   }
 }
 ////////////////////////////////////////////////////////////////

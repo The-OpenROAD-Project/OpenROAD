@@ -1623,11 +1623,23 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
   }
   if (moditerm) {
     // get the direction of the modbterm
-    std::string pin_name = moditerm->getName();
+    const char* pin_name_raw = moditerm->getName();
+    if (pin_name_raw == nullptr) {
+      return PortDirection::input();
+    }
+    std::string pin_name = pin_name_raw;
     dbModInst* mod_inst = moditerm->getParent();
+    if (mod_inst == nullptr) {
+      return PortDirection::input();
+    }
     dbModule* module = mod_inst->getMaster();
+    if (module == nullptr) {
+      return PortDirection::input();
+    }
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
-    assert(modbterm_local != nullptr);
+    if (modbterm_local == nullptr) {
+      return PortDirection::input();
+    }
     PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
@@ -1993,23 +2005,33 @@ void dbNetwork::visitConnectedPins(const Net* net,
       visitor(pin);
     }
 
-    // visit below nets
     for (dbModITerm* moditerm : mod_net->getModITerms()) {
       dbModInst* mod_inst = moditerm->getParent();
       // note we are dealing with a uniquified hierarchy
       // so one master per instance..
+      if (mod_inst == nullptr) {
+        continue;
+      }
       dbModule* module = mod_inst->getMaster();
-      std::string pin_name = moditerm->getName();
+      if (module == nullptr) {
+        continue;
+      }
+      const char* name_raw = moditerm->getName();
+      if (name_raw == nullptr) {
+        continue;
+      }
+      std::string pin_name = name_raw;
       dbModBTerm* mod_bterm = module->findModBTerm(pin_name.c_str());
+      if (mod_bterm == nullptr) {
+        continue;
+      }
       Term* below_term = dbToStaTerm(mod_bterm);
-      // traverse along rest of net
       Net* below_net = this->net(below_term);
-      if (below_net) {
+      if (below_net && below_net != net) {
         visitConnectedPins(below_net, visitor, visited_nets);
       }
     }
 
-    // visit above nets
     for (dbModBTerm* modbterm : mod_net->getModBTerms()) {
       dbModule* db_module = modbterm->getParent();
       if (db_module == nullptr) {
@@ -2019,14 +2041,18 @@ void dbNetwork::visitConnectedPins(const Net* net,
       if (mod_inst == nullptr) {
         continue;
       }
-      std::string pin_name = modbterm->getName();
+      const char* name_raw = modbterm->getName();
+      if (name_raw == nullptr) {
+        continue;
+      }
+      std::string pin_name = name_raw;
       dbModITerm* mod_iterm = mod_inst->findModITerm(pin_name.c_str());
       if (mod_iterm) {
         Pin* above_pin = dbToSta(mod_iterm);
         visitor(above_pin);
         // traverse along rest of net
         Net* above_net = this->net(above_pin);
-        if (above_net) {
+        if (above_net && above_net != net) {
           visitConnectedPins(above_net, visitor, visited_nets);
         }
       }
@@ -2078,10 +2104,13 @@ Pin* dbNetwork::pin(const Term* term) const
     // get the moditerm
     dbModule* cur_module = modbterm->getParent();
     dbModInst* cur_mod_inst = cur_module->getModInst();
-    std::string pin_name = modbterm->getName();
-    dbModITerm* parent_moditerm = cur_mod_inst->findModITerm(pin_name.c_str());
-    if (parent_moditerm) {
-      return dbToSta(parent_moditerm);
+    if (cur_mod_inst != nullptr) {
+      std::string pin_name = modbterm->getName();
+      dbModITerm* parent_moditerm
+          = cur_mod_inst->findModITerm(pin_name.c_str());
+      if (parent_moditerm) {
+        return dbToSta(parent_moditerm);
+      }
     }
   }
   return nullptr;
@@ -4202,22 +4231,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
                 ->getOwningInstanceParent(const_cast<Pin*>(pin));
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
-        /*
-          //How to debug in orfs:
-          //uncomment this code
-          //then use gdb -p pid on the openroad process
-          //to see stack trace.
-        printf("Axiom check fail\n");
-        printf("Flat nets are %s %s for modnet %s\n",
-               db_network_->name(db_network_->dbToSta(dbnet_)),
-               db_network_->name(db_network_->dbToSta(candidate_flat_net)),
-               db_network_->name(search_net_));
-        printf("Suspending, access from gdb to debug\n");
-        fflush(stdout);
-        int forever_loop=1;
-        while(forever_loop);
-        */
-
         logger_->error(
             ORD,
             2030,

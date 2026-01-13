@@ -10,6 +10,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
+#include "sta/MinMax.hh"
 #include "sta/Sta.hh"
 
 namespace ord {
@@ -227,12 +228,22 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   // Sanity checkers
   int checkSanity();
+  void checkSanityNetlistConsistency() const;
   void checkSanityDrvrVertexEdges(const Pin* pin) const;
   void checkSanityDrvrVertexEdges(const odb::dbObject* term) const;
   void checkSanityDrvrVertexEdges() const;
 
+  // Debugging utilities
+  void dumpPinSlacks(const char* inst_name,
+                     const char* filename,
+                     const MinMax* min_max = MinMax::max());
+  void dumpGraphConnections(const char* inst_name, const char* filename);
+
   using Sta::netSlack;
   using Sta::replaceCell;
+
+  void setIgnoreDbCallbacks(bool ignore);
+  bool ignoreDbCallbacks() const;
 
  private:
   void makeReport() override;
@@ -249,6 +260,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
+  bool ignore_db_callbacks_ = false;
   std::set<dbStaState*> sta_states_;
 
   std::unique_ptr<BufferUseAnalyser> buffer_use_analyser_;

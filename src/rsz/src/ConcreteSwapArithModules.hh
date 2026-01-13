@@ -5,6 +5,10 @@
 
 #include "SwapArithModules.hh"
 
+namespace sta {
+class Graph;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -34,6 +38,7 @@ class ConcreteSwapArithModules : public SwapArithModules
   void produceNewModuleName(const std::string& old_name,
                             std::string& new_name,
                             const std::string& target) override;
+  void rebuildInternalGraph(dbModInst* mod_inst);
 
   bool init_ = false;
 };
