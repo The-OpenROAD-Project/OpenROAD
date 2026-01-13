@@ -461,9 +461,18 @@ void RamGen::ramFiller() {
 }
 
 void RamGen::ramRouting() {
+  global_router_->setGridOrigin(0, 0);
+  global_router_->setCongestionIterations(50);
+  global_router_->setCongestionReportIterStep(0);
+  global_router_->setAllowCongestion(false);
+  global_router_->setResistanceAware(false);
   global_router_->globalRoute(true, false, false);
   drt::ParamStruct params;
   params.verbose = 0;
+  params.num_threads = 1;
+  params.enableViaGen = true;
+  params.orSeed = -1;
+  params.doPa = true;
   detailed_router_->setParams(params);
   detailed_router_->main();
   detailed_router_->setDistributed(false);
