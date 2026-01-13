@@ -30,7 +30,9 @@ estimate_parasitics -global_routing
 report_worst_slack -max
 write_verilog_for_eqy repair_setup6 before "None"
 repair_timing -setup {*}$repair_args
-run_equivalence_test repair_setup6 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_setup6 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 report_worst_slack -max
 
 # check slacks with fresh parasitics

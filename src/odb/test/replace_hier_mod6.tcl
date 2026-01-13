@@ -43,7 +43,9 @@ proc do_swap { from_alu to_alu } {
     estimate_parasitics -placement
     report_checks -fields input_pins -through _001_
     report_cell_usage _120_
-    run_equivalence_test $test_name ./sky130hd/work_around_yosys/ "None"
+    run_equivalence_test $test_name \
+      -lib_dir ./sky130hd/work_around_yosys/ \
+      -remove_cells "None"
   } else {
     puts "Failed to replace hier module"
   }
