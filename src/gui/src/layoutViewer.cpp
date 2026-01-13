@@ -229,13 +229,16 @@ Rect LayoutViewer::getBounds() const
 {
   Rect bbox{0, 0, chip_->getWidth(), chip_->getHeight()};
 
-  for (auto chip : getChip()->getDb()->getChips()) {
-    dbBlock* block = chip->getBlock();
+  for (auto chip_inst : getChip()->getDb()->getChipInsts()) {
+    bbox.merge(chip_inst->getBBox());
+
+    dbBlock* block = chip_inst->getMasterChip()->getBlock();
     if (!block) {
       continue;
     }
-    bbox.merge(block->getBBox()->getBox());
-    bbox.merge(block->getDieArea());
+    Rect die_area = block->getDieArea();
+    chip_inst->getTransform().apply(die_area);
+    bbox.merge(die_area);
   }
   return bbox;
 }
@@ -491,10 +494,8 @@ void LayoutViewer::searchNearestViaEdge(
   }
 }
 
-std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
-    const odb::Point& pt,
-    bool horizontal,
-    bool vertical)
+std::pair<LayoutViewer::Edge, bool>
+LayoutViewer::searchNearestEdge(odb::Point pt, bool horizontal, bool vertical)
 {
   if (!hasDesign()) {
     return {Edge(), false};
@@ -572,14 +573,20 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                             pt.y() + search_radius);
   }
 
-  for (auto chip : getChip()->getDb()->getChips()) {
-    dbBlock* block = chip->getBlock();
+  for (auto chip_inst : getChip()->getDb()->getChipInsts()) {
+    dbBlock* block = chip_inst->getMasterChip()->getBlock();
     if (!block) {
       continue;
     }
 
-    auto a = chip->getBBox();//block->getDieArea();
-    std::cout << "(" << a.xMin() << ", " << a.xMax() << ") (" << a.yMin() << ", " << a.yMax() << ")" << std::endl;
+    // Convert to the chip_inst coordinates
+    dbTransform inverse_transform = chip_inst->getTransform();
+    inverse_transform.invert();
+    inverse_transform.apply(search_line);
+    inverse_transform.apply(pt);
+    auto& [p1, p2] = closest_edge;
+    inverse_transform.apply(p1);
+    inverse_transform.apply(p2);
 
     // get die bounding box
     check_rect(block->getDieArea());
@@ -771,6 +778,13 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
         }
       }
     }
+
+    // Convert back to the global coordinates
+    dbTransform transform = chip_inst->getTransform();
+    transform.apply(search_line);
+    transform.apply(pt);
+    transform.apply(p1);
+    transform.apply(p2);
   }
 
   const bool ok = edge_distance != std::numeric_limits<int>::max();

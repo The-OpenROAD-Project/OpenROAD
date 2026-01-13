@@ -314,7 +314,7 @@ class LayoutViewer : public QWidget
 
   using Edge = std::pair<odb::Point, odb::Point>;
   // search for nearest edge to point
-  std::pair<Edge, bool> searchNearestEdge(const odb::Point& pt,
+  std::pair<Edge, bool> searchNearestEdge(odb::Point pt,
                                           bool horizontal,
                                           bool vertical);
   void searchNearestViaEdge(
