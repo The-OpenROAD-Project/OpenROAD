@@ -643,9 +643,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
       macro_width, macro_height, number_of_macros);
 
   if (tilings.empty()) {
-    TilingList extra_tilings = generateTilingsForMacroCluster(
+    tilings = generateTilingsForMacroCluster(
         macro_width, macro_height, number_of_macros + 1);
-    tilings.insert(tilings.end(), extra_tilings.begin(), extra_tilings.end());
   }
 
   if (tilings.empty()) {
