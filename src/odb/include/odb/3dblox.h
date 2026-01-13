@@ -16,21 +16,22 @@ class Sta;
 }
 namespace odb {
 class dbDatabase;
-class ChipletDef;
-class ChipletRegion;
 class dbChip;
-class ChipletInst;
-class Connection;
-class DesignDef;
 class dbChipRegionInst;
 class dbChipInst;
-class BumpMapEntry;
 class dbChipRegion;
 class dbBlock;
 class dbBTerm;
 class dbInst;
 class dbTech;
 class dbLib;
+
+struct ChipletDef;
+struct ChipletRegion;
+struct ChipletInst;
+struct Connection;
+struct DesignDef;
+struct BumpMapEntry;
 
 class ThreeDBlox
 {

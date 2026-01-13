@@ -565,7 +565,7 @@ void Track::buildDgContext(Array1D<SEQ*>* dgContext,
     return;
   }
   if (tcnt > 1 && ctxsize > 1) {
-    std::sort(ctxwire.begin(), ctxwire.end(), compareAthWire());
+    std::ranges::sort(ctxwire, compareAthWire());
   }
   uint32_t jj;
   Wire* nwire;
@@ -842,9 +842,7 @@ int Grid::getBandWires(int hiXY,
   if (_base + _pitch * endTrack < hiEnd) {
     _currentTrack++;
   }
-  if (_currentTrack > _searchHiTrack) {
-    _currentTrack = _searchHiTrack;
-  }
+  _currentTrack = std::min(_currentTrack, _searchHiTrack);
   int minExtracted = _base + _pitch * _currentTrack;
   int baseXY = minExtracted;
   if (_currentTrack == _searchHiTrack) {
@@ -852,7 +850,7 @@ int Grid::getBandWires(int hiXY,
   }
 
   int fullEndTrack = getMinMaxTrackNum(hiXY) + coupleTrackNum + 2;
-  if (fullEndTrack >= (int) _trackCnt) {
+  if (fullEndTrack >= _trackCnt) {
     fullEndTrack = _trackCnt - 1;
   }
   int jj;
@@ -879,7 +877,7 @@ int Grid::getBandWires(int hiXY,
   limitArray[4] = fullEndTrack;
   limitArray[5] = _base + fullEndTrack * _pitch;
 
-  for (jj = 0; jj < (int) bandWire->getCnt(); jj++) {
+  for (jj = 0; jj < bandWire->getCnt(); jj++) {
     bandWire->get(jj)->_ext = 0;
   }
   return baseXY;
@@ -926,9 +924,7 @@ int GridTable::couplingCaps(int hiXY,
                                              _ttttGetDgOverlap);
     }
 
-    if (minExtracted > lastExtracted1) {
-      minExtracted = lastExtracted1;
-    }
+    minExtracted = std::min(minExtracted, lastExtracted1);
   }
   return minExtracted;
 }

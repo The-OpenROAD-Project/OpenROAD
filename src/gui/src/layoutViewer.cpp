@@ -1100,8 +1100,7 @@ Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
     for (auto& sel : selections) {
       is_selected.push_back(selected_.contains(sel));
     }
-    if (std::all_of(
-            is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
+    if (std::ranges::all_of(is_selected, [](bool b) { return b; })) {
       // everything is selected, so just return first item
       return selections[0];
     }

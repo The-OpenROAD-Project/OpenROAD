@@ -32,6 +32,7 @@
 
 #include <cstdarg>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <string_view>
 
@@ -628,7 +629,7 @@ extern void defrSetUnusedCallbacks(defrVoidCbkFnType func);
 
 // Return the current line number in the input file.
 extern int defrLineNumber();
-extern long long defrLongLineNumber();
+extern int64_t defrLongLineNumber();
 
 // Routine to set the message logging routine for errors
 #ifndef DEFI_LOG_FUNCTION
@@ -675,8 +676,8 @@ using DEFI_LINE_NUMBER_FUNCTION = void (*)(int);
 extern void defrSetLineNumberFunction(DEFI_LINE_NUMBER_FUNCTION);
 
 // Routine to set the line number of the file that is parsing routine (takes
-// long long)
-using DEFI_LONG_LINE_NUMBER_FUNCTION = void (*)(long long);
+// int64_t)
+using DEFI_LONG_LINE_NUMBER_FUNCTION = void (*)(int64_t);
 extern void defrSetLongLineNumberFunction(DEFI_LONG_LINE_NUMBER_FUNCTION);
 
 // Routine to set the line number of the file that is parsing routine (takes
@@ -685,9 +686,9 @@ using DEFI_CONTEXT_LINE_NUMBER_FUNCTION = void (*)(defiUserData userData, int);
 extern void defrSetContextLineNumberFunction(DEFI_CONTEXT_LINE_NUMBER_FUNCTION);
 
 // Routine to set the line number of the file that is parsing routine (takes
-// long long Used in re-enterable environment.
+// int64_t Used in re-enterable environment.
 using DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION
-    = void (*)(defiUserData userData, long long);
+    = void (*)(defiUserData userData, int64_t);
 extern void defrSetContextLongLineNumberFunction(
     DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION);
 
@@ -717,7 +718,7 @@ extern void defrSetMagicCommentString(char*);
 extern void defrDisablePropStrProcess();
 
 // Testing purposes only
-extern void defrSetNLines(long long n);
+extern void defrSetNLines(int64_t n);
 
 // Routine to set the max number of warnings for a perticular section
 

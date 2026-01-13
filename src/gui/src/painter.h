@@ -40,20 +40,21 @@ class GuiPainter : public Painter
     return Color(color.red(), color.green(), color.blue(), color.alpha());
   }
 
-  void setPen(odb::dbTechLayer* layer, bool cosmetic = false) override
+  void setPen(odb::dbTechLayer* layer, bool cosmetic) override
   {
     QPen pen(getOptions()->color(layer));
     pen.setCosmetic(cosmetic);
     painter_->setPen(pen);
   }
 
-  void setPen(const Color& color, bool cosmetic = false, int width = 1) override
+  void setPen(const Color& color, bool cosmetic, int width) override
   {
     QPen pen(QColor(color.r, color.g, color.b, color.a));
     pen.setCosmetic(cosmetic);
     pen.setWidth(width);
     painter_->setPen(pen);
   }
+  using Painter::setPen;
 
   void setPenWidth(int width) override
   {
@@ -63,7 +64,7 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  void setBrush(odb::dbTechLayer* layer, int alpha = -1) override
+  void setBrush(odb::dbTechLayer* layer, int alpha) override
   {
     QColor color = getOptions()->color(layer);
     Qt::BrushStyle brush_pattern = getOptions()->pattern(layer);
@@ -73,7 +74,7 @@ class GuiPainter : public Painter
     painter_->setBrush(QBrush(color, brush_pattern));
   }
 
-  void setBrush(const Color& color, const Brush& style = Brush::kSolid) override
+  void setBrush(const Color& color, const Brush& style) override
   {
     const QColor qcolor(color.r, color.g, color.b, color.a);
 
@@ -104,6 +105,7 @@ class GuiPainter : public Painter
 
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
+  using Painter::setBrush;
 
   void setFont(const Font& font) override;
 
@@ -173,7 +175,8 @@ class GuiPainter : public Painter
                   int y,
                   Anchor anchor,
                   const std::string& s,
-                  bool rotate_90 = false) override;
+                  bool rotate_90) override;
+  using Painter::drawString;
 
   odb::Rect stringBoundaries(int x,
                              int y,
@@ -196,8 +199,8 @@ class GuiPainter : public Painter
                  int y0,
                  int x1,
                  int y1,
-                 bool euclidian = true,
-                 const std::string& label = "") override
+                 bool euclidian,
+                 const std::string& label) override
   {
     if (euclidian) {
       drawRuler(x0, y0, x1, y1, label);
@@ -214,6 +217,7 @@ class GuiPainter : public Painter
       drawRuler(mid_pt.x(), mid_pt.y(), x1, y1, y_label);
     }
   }
+  using Painter::drawRuler;
 
   QPainter* getPainter() { return painter_; }
 

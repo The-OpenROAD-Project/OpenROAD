@@ -60,7 +60,7 @@ class SwapArithModules : public sta::dbStaState
                                      float slack_threshold,
                                      std::set<dbModInst*>& insts)
       = 0;
-  virtual bool doSwapInstances(const std::set<dbModInst*>& insts,
+  virtual bool doSwapInstances(std::set<dbModInst*>& insts,
                                const std::string& target)
       = 0;
 

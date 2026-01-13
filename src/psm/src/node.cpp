@@ -72,7 +72,7 @@ std::string Node::getName() const
 {
   std::string type = getTypeName();
 
-  type.erase(remove(type.begin(), type.end(), ' '), type.end());
+  std::erase(type, ' ');
 
   return fmt::format(
       "{}_{}_{}_{}", type, layer_->getName(), pt_.getX(), pt_.getY());

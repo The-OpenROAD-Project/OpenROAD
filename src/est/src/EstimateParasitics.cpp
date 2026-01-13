@@ -21,6 +21,7 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/SteinerTree.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
@@ -148,8 +149,8 @@ void EstimateParasitics::sortClkAndSignalLayers()
     return a->getNumber() < b->getNumber();
   };
 
-  std::sort(clk_layers_.begin(), clk_layers_.end(), sortLayers);
-  std::sort(signal_layers_.begin(), signal_layers_.end(), sortLayers);
+  std::ranges::sort(clk_layers_, sortLayers);
+  std::ranges::sort(signal_layers_, sortLayers);
 }
 
 void EstimateParasitics::setHWireSignalRC(const Corner* corner,
@@ -1041,8 +1042,8 @@ bool EstimateParasitics::isPad(const Instance* inst) const
 
 void EstimateParasitics::parasiticsInvalid(const Net* net)
 {
-  odb::dbNet* db_net = db_network_->flatNet(net);
-  if (haveEstimatedParasitics()) {
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
+  if (haveEstimatedParasitics() && db_net) {
     debugPrint(logger_,
                EST,
                "estimate_parasitics",

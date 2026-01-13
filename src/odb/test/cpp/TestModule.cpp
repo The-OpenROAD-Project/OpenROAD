@@ -79,7 +79,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
     sprintf(tmp_str,
             "\tModule %s %s\n",
             (cur_obj == block->getTopModule()) ? "(Top Module)" : "",
-            ((dbModule*) cur_obj)->getName());
+            (cur_obj)->getName());
     str_db << tmp_str;
     // in case of top level, care as the bterms double up as pins
     if (cur_obj == block->getTopModule()) {
@@ -99,10 +99,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
     str_db << tmp_str;
 
     dbSet<dbModBTerm> module_ports = cur_obj->getModBTerms();
-    for (dbSet<dbModBTerm>::iterator mod_bterm_iter = module_ports.begin();
-         mod_bterm_iter != module_ports.end();
-         mod_bterm_iter++) {
-      dbModBTerm* module_port = *mod_bterm_iter;
+    for (auto module_port : module_ports) {
       sprintf(
           tmp_str,
           "\t\tPort %s Net %s (%d)\n",
@@ -123,10 +120,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
     sprintf(tmp_str, "\t\tModule instances +++\n");
     str_db << tmp_str;
     dbSet<dbModInst> module_instances = mi->getModInsts();
-    for (dbSet<dbModInst>::iterator mod_inst_iter = module_instances.begin();
-         mod_inst_iter != module_instances.end();
-         mod_inst_iter++) {
-      dbModInst* module_inst = *mod_inst_iter;
+    for (auto module_inst : module_instances) {
       sprintf(tmp_str, "\t\tMod inst %s ", module_inst->getName());
       str_db << tmp_str;
       dbModule* master = module_inst->getMaster();
@@ -189,10 +183,7 @@ void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
 
     str_db << tmp_str;
     dbSet<dbModNet> mod_nets = cur_obj->getModNets();
-    for (dbSet<dbModNet>::iterator mod_net_iter = mod_nets.begin();
-         mod_net_iter != mod_nets.end();
-         mod_net_iter++) {
-      dbModNet* mod_net = *mod_net_iter;
+    for (auto mod_net : mod_nets) {
       sprintf(tmp_str,
               "\t\tNet: %s (%u)\n",
               mod_net->getName().c_str(),

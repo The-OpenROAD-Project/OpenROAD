@@ -30,6 +30,7 @@
 // This program is the diffLef core program.  It has all the callback
 // routines and write it out to a temporary file
 
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #ifndef WIN32
@@ -67,9 +68,9 @@ void checkType(lefrCallbackType_e c)
 // This function will make sure it round up for all the machine
 double chkNum(double num)
 {
-  long tempNum;
+  int64_t tempNum;
   if ((num > 1000004) || (num < -1000004)) {
-    tempNum = (long) num;
+    tempNum = (int64_t) num;
     if ((tempNum % 5) == 0) {
       return num + 3;
     }

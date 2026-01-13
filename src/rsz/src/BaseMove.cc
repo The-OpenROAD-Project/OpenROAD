@@ -18,6 +18,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -27,6 +28,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
+#include "sta/UnorderedMap.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
 
@@ -422,42 +424,40 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     return false;
   }
 
-  // Prep for delay calc
-  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
   const DcalcAnalysisPt* dcalc_ap
       = params.corner->findDcalcAnalysisPt(resizer_->max_);
-  LibertyPort* prev_drvr_port = network_->libertyPort(params.prev_driver_pin);
-  if (prev_drvr_port == nullptr) {
-    return false;
-  }
-  LibertyPort *buffer_input_port, *buffer_output_port;
-  params.driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
+  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
 
-  // Compute delay degradation at prev driver due to increased load cap
-  resizer_->annotateInputSlews(network_->instance(params.prev_driver_pin),
-                               dcalc_ap);
   ArcDelay old_delay[RiseFall::index_count];
   ArcDelay new_delay[RiseFall::index_count];
   Slew old_drvr_slew[RiseFall::index_count];
   Slew new_drvr_slew[RiseFall::index_count];
-  float old_cap = dcalc->loadCap(params.prev_driver_pin, dcalc_ap);
-  resizer_->gateDelays(
-      prev_drvr_port, old_cap, dcalc_ap, old_delay, old_drvr_slew);
-  float new_cap = old_cap + dcalc->loadCap(params.driver_pin, dcalc_ap)
-                  - resizer_->portCapacitance(buffer_input_port, params.corner);
-
-  if (!checkMaxCapOK(params.prev_driver_pin, new_cap - old_cap)) {
-    // clang-format off
-    debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-               "because of max cap violation",
-               db_network_->name(params.driver));
-    // clang-format on
+  float old_cap, new_cap;
+  if (!resizer_->computeNewDelaysSlews(params.prev_driver_pin,
+                                       params.driver,
+                                       params.corner,
+                                       old_delay,
+                                       new_delay,
+                                       old_drvr_slew,
+                                       new_drvr_slew,
+                                       old_cap,
+                                       new_cap)) {
     return false;
   }
 
-  resizer_->gateDelays(
-      prev_drvr_port, new_cap, dcalc_ap, new_delay, new_drvr_slew);
+  // Check for max cap violation
+  if (!checkMaxCapOK(params.prev_driver_pin, new_cap - old_cap)) {
+    debugPrint(logger_,
+               RSZ,
+               "remove_buffer",
+               1,
+               "buffer {} is not removed "
+               "because of max cap violation",
+               db_network_->name(params.driver));
+    return false;
+  }
+
+  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
   float delay_degrad
       = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
   float delay_imp
@@ -465,143 +465,56 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
                               params.driver_path->transition(sta_),
                               dcalc->loadCap(params.driver_pin, dcalc_ap),
                               dcalc_ap);
-  resizer_->resetInputSlews();
 
   // Check if degraded delay & slew can be absorbed by driver pin fanouts
-  Net* output_net = network_->net(params.driver_pin);
-  auto pin_iter = std::unique_ptr<NetConnectedPinIterator>(
-      network_->connectedPinIterator(output_net));
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (pin == params.driver_pin) {
-      continue;
-    }
-    if (!network_->isLeaf(pin)) {
-      // skip hierarchical pins
-      continue;
-    }
-    float old_slack = sta_->pinSlack(pin, resizer_->max_);
-    float new_slack = old_slack - delay_degrad + delay_imp;
-    if (fuzzyGreater(old_slack, new_slack)) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-                 "because new output pin slack {} is worse than old slack {}",
-                 db_network_->name(params.driver), db_network_->name(pin),
-                 new_slack, old_slack);
-      // clang-format on
-      return false;
-    }
-
-    // Model slew degradation across wire from prev_drv_pin to the FO inst pin
-    // prev_driver_pin --->  (driver_input_pin   driver_pin) --->  pin
-    //                 ^                                        ^
-    //                 |                                        |
-    //              old_driver_slew                         old_load_slew
-    //
-    // prev_driver_pin ----------------------------------------->  pin
-    //                 ^                                        ^
-    //                 |                                        |
-    //              new_driver_slew                         new_load_slew
-    //
-    // load_slew = (driver_slew + slew_rc_factor * elmore_delay) * rc_calib
-    // Compute rc_calib based on existing buffer as driver
-
-    Vertex* buffer_out_vertex = graph_->pinDrvrVertex(params.driver_pin);
-    assert(buffer_out_vertex != nullptr);
-    Slew buffer_out_slew;
-    buffer_out_slew
-        = sta_->vertexSlew(buffer_out_vertex, prev_driver_rf, dcalc_ap);
-    float load_cap_at_pin = dcalc->loadCap(pin, dcalc_ap);
-
-    // Estimate wire resistance
-    //             loc1                loc2  loc3                      loc4
-    // prev_driver_pin ---------------> (buffer) ---------------------> pin
-    //                 wl_to_buffer  wl_inside_buffer  wl_from_buffer
-    double wire_res, wire_cap;
-    estimate_parasitics_->wireSignalRC(params.corner, wire_res, wire_cap);
-    Point loc1 = db_network_->location(params.prev_driver_pin);
-    Point loc2 = db_network_->location(params.driver_input_pin);
-    Point loc3 = db_network_->location(params.driver_pin);
-    Point loc4 = db_network_->location(pin);
-    double wl_to_buffer = dbuToMeters(Point::manhattanDistance(loc1, loc2));
-    double wl_in_buffer = dbuToMeters(Point::manhattanDistance(loc2, loc3));
-    double wl_from_buffer = dbuToMeters(Point::manhattanDistance(loc3, loc4));
-    double total_wl = wl_to_buffer + wl_in_buffer + wl_from_buffer;
-
-    // Old scenario: buffer is driving the load
-    double old_wire_res = wl_from_buffer * wire_res;
-    double old_wire_cap = wl_from_buffer * wire_cap;
-    float old_pin_cap = load_cap_at_pin - old_wire_cap;
-    float estimated_old_load_slew
-        = buffer_out_slew
-          + (resizer_->driveResistance(params.driver_pin) * load_cap_at_pin
-             + old_wire_res * (old_wire_cap / 2 + old_pin_cap));
-    Vertex* load_vertex = graph_->pinLoadVertex(pin);
+  // Model slew degradation across wire from prev_drv_pin to the FO inst pin
+  // based on Elmore delay that considers layers and vias for accurate
+  // wire cap/res computation.
+  // prev_driver_pin --->  (driver_input_pin   driver_pin) --->  pin
+  //                 ^                                        ^
+  //                 |                                        |
+  //              old_driver_slew                         old_load_slew
+  //
+  // prev_driver_pin ----------------------------------------->  pin
+  //                 ^                                        ^
+  //                 |                                        |
+  //              new_driver_slew                         new_load_slew
+  //
+  std::map<const Pin*, float> load_pin_slew;
+  if (!resizer_->estimateSlewsAfterBufferRemoval(
+          params.prev_driver_pin,
+          params.driver,
+          new_drvr_slew[prev_driver_rf->index()],
+          params.corner,
+          load_pin_slew)) {
+    return false;
+  }
+  for (const auto& [load_pin, estimated_new_load_slew] : load_pin_slew) {
+    Vertex* load_vertex = graph_->pinLoadVertex(load_pin);
     assert(load_vertex != nullptr);
-    float actual_old_load_slew
-        = sta_->vertexSlew(load_vertex, prev_driver_rf, dcalc_ap);
-    float rc_calib_out = (estimated_old_load_slew > 1e-12)
-                             ? actual_old_load_slew / estimated_old_load_slew
-                             : 1.0;
-
-    // New scenario: prev_driver_pin is driving the load after buffer removal
-    double new_wire_res = total_wl * wire_res;
-    double new_wire_cap = total_wl * wire_cap;
-    float estimated_new_load_slew
-        = new_drvr_slew[prev_driver_rf->index()]
-          + (resizer_->driveResistance(params.prev_driver_pin)
-                 * (new_wire_cap + old_pin_cap)
-             + new_wire_res * (new_wire_cap / 2 + old_pin_cap));
-
-    // Perform one more calibration based on buffer input slew
-    double buf_wire_res = wl_to_buffer * wire_res;
-    double buf_wire_cap = wl_to_buffer * wire_cap;
-    float buf_pin_cap
-        = resizer_->portCapacitance(buffer_input_port, params.corner);
-    float estimated_buf_in_slew
-        = old_drvr_slew[prev_driver_rf->index()]
-          + (resizer_->driveResistance(params.prev_driver_pin)
-                 * (buf_wire_cap + buf_pin_cap)
-             + buf_wire_res * (buf_wire_cap / 2 + buf_pin_cap));
-    Vertex* buf_in_vertex = graph_->pinLoadVertex(params.driver_input_pin);
-    assert(buf_in_vertex != nullptr);
-    float actual_buf_in_slew
-        = sta_->vertexSlew(buf_in_vertex, prev_driver_rf, dcalc_ap);
-    float rc_calib_in = (estimated_buf_in_slew > 1e-12)
-                            ? actual_buf_in_slew / estimated_buf_in_slew
-                            : 1.0;
-
-    // Calibrate based on the worst of three:
-    // rc_calib_in, rc_calib_out and slewRC factor
-    estimated_new_load_slew *= std::max(resizer_->getSlewRCFactor(),
-                                        std::max(rc_calib_in, rc_calib_out));
-
     Slew old_load_slew[RiseFall::index_count];
     for (auto rf : RiseFall::range()) {
-      old_load_slew[rf->index()] = actual_old_load_slew;
+      old_load_slew[rf->index()] = sta_->vertexSlew(load_vertex, rf, dcalc_ap);
     }
     Slew new_load_slew[RiseFall::index_count];
     for (auto rf : RiseFall::range()) {
       new_load_slew[rf->index()] = estimated_new_load_slew;
     }
 
-    debugPrint(logger_,
-               RSZ,
-               "remove_buffer",
-               1,
-               "estimated in slew at fanout pin {} is {}, rc_calib_in={} "
-               "rc_calib_out={} slew_rc_factor={} prev drvr out slew={}",
-               db_network_->name(pin),
-               estimated_new_load_slew,
-               rc_calib_in,
-               rc_calib_out,
-               resizer_->getSlewRCFactor(),
-               new_drvr_slew[prev_driver_rf->index()]);
+    debugPrint(
+        logger_,
+        RSZ,
+        "remove_buffer",
+        1,
+        "estimated in slew at fanout pin {} is {}, prev drvr out slew={}",
+        db_network_->name(load_pin),
+        estimated_new_load_slew,
+        new_drvr_slew[prev_driver_rf->index()]);
 
     // Check if output pin of direct fanout instance can absorb delay and
     // slew
     // degradation
-    if (!estimateInputSlewImpact(network_->instance(pin),
+    if (!estimateInputSlewImpact(network_->instance(load_pin),
                                  dcalc_ap,
                                  old_load_slew,
                                  new_load_slew,
@@ -615,7 +528,7 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   // Check side fanout paths.  Side fanout paths get no delay benefit from
   // buffer removal.
   Net* input_net = network_->net(params.prev_driver_pin);
-  pin_iter = std::unique_ptr<NetConnectedPinIterator>(
+  auto pin_iter = std::unique_ptr<NetConnectedPinIterator>(
       network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const Pin* side_input_pin = pin_iter->next();

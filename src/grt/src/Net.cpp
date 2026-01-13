@@ -97,22 +97,15 @@ void Net::destroyPins()
 
 void Net::destroyITermPin(odb::dbITerm* iterm)
 {
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == getITermName(iterm);
-                             }),
-              pins_.end());
+  std::erase_if(pins_, [&](const Pin& pin) {
+    return pin.getName() == getITermName(iterm);
+  });
 }
 
 void Net::destroyBTermPin(odb::dbBTerm* bterm)
 {
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == bterm->getName();
-                             }),
-              pins_.end());
+  std::erase_if(
+      pins_, [&](const Pin& pin) { return pin.getName() == bterm->getName(); });
 }
 
 int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)

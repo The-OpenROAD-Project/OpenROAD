@@ -29,6 +29,7 @@
 
 #include "defrReader.hpp"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -49,7 +50,8 @@
 #include "defrData.hpp"
 #include "defrSettings.hpp"
 
-#define NODEFMSG 4013  // (9012 + 1) - 5000, def msg starts at 5000
+static constexpr int NODEFMSG
+    = 4013;  // (9012 + 1) - 5000, def msg starts at 5000
 
 #define DEF_INIT def_init(__FUNCTION__)
 
@@ -1953,7 +1955,7 @@ void defrDisableParserMsgs(int nMsg, const int* msgs)
          i++) {  // copy the existing to the new list
       tmp[i] = defContext.settings->disableDMsgs[i];
     }
-    free((int*) (defContext.settings->disableDMsgs));
+    free(defContext.settings->disableDMsgs);
     defContext.settings->disableDMsgs
         = tmp;                    // set disableDMsgs to the new list
     for (i = 0; i < nMsg; i++) {  // merge the new list with the existing
@@ -2014,7 +2016,7 @@ void defrEnableAllMsgs()
 {
   DEF_INIT;
   defContext.settings->nDDMsgs = 0;
-  free((int*) (defContext.settings->disableDMsgs));
+  free(defContext.settings->disableDMsgs);
 }
 
 void defrSetTotalMsgLimit(int totNumMsgs)
@@ -2190,7 +2192,7 @@ void defrDisablePropStrProcess()
   defContext.settings->DisPropStrProcess = 1;
 }
 
-void defrSetNLines(long long n)
+void defrSetNLines(int64_t n)
 {
   defrData* defData = defContext.data;
 
@@ -2208,7 +2210,7 @@ int defrLineNumber()
   return 0;
 }
 
-long long defrLongLineNumber()
+int64_t defrLongLineNumber()
 {
   // Compatibility feature: in old versions the translators,
   // the function can be called before defData initialization.
@@ -2217,7 +2219,7 @@ long long defrLongLineNumber()
     return defContext.data->nlines;
   }
 
-  return (long long) 0;
+  return (int64_t) 0;
 }
 
 END_DEF_PARSER_NAMESPACE

@@ -203,9 +203,7 @@ void Opendp::findDisplacementStats()
     }
     const int displacement = disp(cell.get());
     displacement_sum_ += displacement;
-    if (displacement > displacement_max_) {
-      displacement_max_ = displacement;
-    }
+    displacement_max_ = std::max<int64_t>(displacement, displacement_max_);
   }
   if (network_->getNumCells() != 0) {
     displacement_avg_ = displacement_sum_ / network_->getNumCells();
@@ -391,7 +389,7 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
     left_inst = getAdjacentInstance(left_inst, left);
   }
 
-  std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
+  std::ranges::reverse(adj_inst_cluster);
   adj_inst_cluster.push_back(inst);
 
   odb::dbInst* right_inst = getAdjacentInstance(inst, right);

@@ -63,14 +63,10 @@ void Rings::checkDieArea() const
 
       int xbounds = std::max(die_area.xMin() - ring_outline.xMin(),
                              ring_outline.xMax() - die_area.xMax());
-      if (xbounds < 0) {
-        xbounds = 0;
-      }
+      xbounds = std::max(xbounds, 0);
       int ybounds = std::max(die_area.yMin() - ring_outline.yMin(),
                              ring_outline.yMax() - die_area.yMax());
-      if (ybounds < 0) {
-        ybounds = 0;
-      }
+      ybounds = std::max(ybounds, 0);
       getLogger()->error(
           utl::PDN,
           351,

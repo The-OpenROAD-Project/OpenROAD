@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
@@ -30,9 +31,7 @@ int extRCModel::getMaxMetIndexOverUnder(int met, int layerCnt)
   for (uint32_t u = met - 1; u > 0; u--) {
     for (uint32_t o = met + 1; o < layerCnt; o++) {
       int metIndex = extRCModel::getMetIndexOverUnder(met, u, o, layerCnt);
-      if (n < metIndex) {
-        n = metIndex;
-      }
+      n = std::max(n, metIndex);
     }
   }
   return n;
@@ -471,9 +470,7 @@ uint32_t extDistRCTable::readRules_res2(Parser* parser,
 {
   parser->parseNextLine();
   uint32_t cnt = parser->getInt(2);
-  if (cnt < 32) {
-    cnt = 32;
-  }
+  cnt = std::max<uint32_t>(cnt, 32);
 
   Array1D<extDistRC*>* table = nullptr;
   if (!ignore) {
@@ -541,9 +538,7 @@ uint32_t extDistRCTable::readRules(Parser* parser,
 {
   parser->parseNextLine();
   uint32_t cnt = parser->getInt(2);
-  if (cnt < 32) {
-    cnt = 32;
-  }
+  cnt = std::max<uint32_t>(cnt, 32);
 
   Array1D<extDistRC*>* table = nullptr;
   if (!ignore) {
@@ -1703,11 +1698,11 @@ extDistRC* extDistWidthRCTable::getFringeRC(uint32_t mou,
                                             int index_dist)
 {
   const int wIndex = getWidthIndex(w);
-  if ((wIndex < 0) || (wIndex >= (int) _widthTable->getCnt())) {
+  if ((wIndex < 0) || (wIndex >= _widthTable->getCnt())) {
     return nullptr;
   }
 
-  if (mou >= _metCnt || wIndex >= (int) _widthTable->getCnt()
+  if (mou >= _metCnt || wIndex >= _widthTable->getCnt()
       || _rcDistTable[mou][wIndex] == nullptr) {
     return nullptr;
   }
@@ -1729,8 +1724,7 @@ extDistRC* extDistWidthRCTable::getLastWidthFringeRC(uint32_t mou)
 
   int wIndex = _widthTable->getCnt() - 1;
 
-  if (wIndex >= (int) _widthTable->getCnt()
-      || _rcDistTable[mou][wIndex] == nullptr) {
+  if (wIndex >= _widthTable->getCnt() || _rcDistTable[mou][wIndex] == nullptr) {
     return nullptr;
   }
 
@@ -2503,7 +2497,7 @@ void extMeasure::setTargetParams(double w,
     _w2_nm = _w_nm;
   }
   if (s2 > 0.0 || (s2 == 0.0 && _diag)) {
-    long int n2 = _s2_nm = lround(1000 * s2);
+    int64_t n2 = _s2_nm = lround(1000 * s2);
     n2 = (n2 / 10) * 10;
 
     _s2_m = 0.001 * n2;

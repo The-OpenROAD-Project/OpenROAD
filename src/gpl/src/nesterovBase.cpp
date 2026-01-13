@@ -1101,15 +1101,14 @@ NesterovBaseCommon::NesterovBaseCommon(
 
   // gCell ptr init
   nbc_gcells_.reserve(gCellStor_.size());
-  for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    GCell& gCell = gCellStor_[i];
+  for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
       continue;
     }
     nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
-      db_inst_to_nbc_index_map_[inst->dbInst()] = i;
+      db_inst_to_nbc_index_map_[inst->dbInst()] = &gCell - &gCellStor_[0];
     }
   }
 
@@ -1557,15 +1556,14 @@ void NesterovBaseCommon::fixPointers()
   gCellMap_.clear();
   db_inst_to_nbc_index_map_.clear();
   nbc_gcells_.reserve(gCellStor_.size());
-  for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    GCell& gCell = gCellStor_[i];
+  for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
       continue;
     }
     nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
-      db_inst_to_nbc_index_map_[inst->dbInst()] = i;
+      db_inst_to_nbc_index_map_[inst->dbInst()] = &gCell - &gCellStor_[0];
     }
   }
 
@@ -2448,13 +2446,8 @@ void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
   float targetLx = gCell->dLx();
   float targetLy = gCell->dLy();
 
-  if (targetLx < bg_.lx()) {
-    targetLx = bg_.lx();
-  }
-
-  if (targetLy < bg_.ly()) {
-    targetLy = bg_.ly();
-  }
+  targetLx = std::max<float>(targetLx, bg_.lx());
+  targetLy = std::max<float>(targetLy, bg_.ly());
 
   if (targetLx + gCell->dDx() > bg_.ux()) {
     targetLx = bg_.ux() - gCell->dDx();

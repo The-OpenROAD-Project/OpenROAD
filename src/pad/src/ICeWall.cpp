@@ -194,9 +194,8 @@ void ICeWall::assignBump(odb::dbInst* inst,
       iterm->connect(net);
     }
     if (terminal) {
-      auto already_assigned = std::find_if(
-          routing_map_.begin(),
-          routing_map_.end(),
+      auto already_assigned = std::ranges::find_if(
+          routing_map_,
           [terminal](const auto& other) { return other.second == terminal; });
       if (already_assigned != routing_map_.end()) {
         logger_->error(
@@ -450,8 +449,7 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
   create_row(kRowNorth,
              vertical_site,
              x_sites,
-             {nw->getBBox().xMax(),
-              outer_io.yMax() - static_cast<int>(vertical_box.maxDXDY())},
+             {nw->getBBox().xMax(), outer_io.yMax() - vertical_box.maxDXDY()},
              north_rotation_ver,
              rotation_ver,
              odb::dbRowDir::HORIZONTAL,
@@ -459,8 +457,7 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
   create_row(kRowEast,
              horizontal_site,
              y_sites,
-             {outer_io.xMax() - static_cast<int>(horizontal_box.maxDXDY()),
-              se->getBBox().yMax()},
+             {outer_io.xMax() - horizontal_box.maxDXDY(), se->getBBox().yMax()},
              east_rotation_hor,
              rotation_hor,
              odb::dbRowDir::VERTICAL,
@@ -763,6 +760,15 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
       break;
   }
 
+  if (logger_->debugCheck(utl::PAD, "Place", 2)) {
+    int idx = 0;
+    logger_->debug(
+        utl::PAD, "Place", "Pad placement order ({}):", insts.size());
+    for (auto* inst : insts) {
+      logger_->debug(utl::PAD, "Place", "  {:>5}: {}", ++idx, inst->getName());
+    }
+  }
+
   placer->place();
 
   logger_->info(
@@ -828,12 +834,10 @@ void ICeWall::placeFiller(
 
   std::vector<odb::dbMaster*> fillers = masters;
   // remove nullptrs
-  fillers.erase(std::remove(fillers.begin(), fillers.end(), nullptr),
-                fillers.end());
+  std::erase(fillers, nullptr);
   // sort by width
-  std::stable_sort(
-      fillers.begin(),
-      fillers.end(),
+  std::ranges::stable_sort(
+      fillers,
       [use_height, row_xform](odb::dbMaster* r, odb::dbMaster* l) -> bool {
         odb::Rect r_bbox;
         r->getPlacementBoundary(r_bbox);
@@ -924,10 +928,8 @@ void ICeWall::placeFiller(
 
     int site_offset = 0;
     for (auto* filler : fillers) {
-      const bool allow_overlap
-          = std::find(
-                overlapping_masters.begin(), overlapping_masters.end(), filler)
-            != overlapping_masters.end();
+      const bool allow_overlap = std::ranges::find(overlapping_masters, filler)
+                                 != overlapping_masters.end();
       odb::Rect filler_bbox;
       filler->getPlacementBoundary(filler_bbox);
       row_xform.apply(filler_bbox);

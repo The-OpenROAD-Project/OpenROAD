@@ -170,6 +170,12 @@ dbModInst* dbModule::getModInst() const
 
 // User Code Begin dbModulePublicMethods
 
+dbModule* dbModule::getParentModule() const
+{
+  dbModInst* mod_inst = getModInst();
+  return (mod_inst != nullptr) ? mod_inst->getParent() : nullptr;
+}
+
 const dbModBTerm* dbModule::getHeadDbModBTerm() const
 {
   _dbModule* obj = (_dbModule*) this;
@@ -490,10 +496,10 @@ dbModule* dbModule::getModule(dbBlock* block_, uint32_t dbid_)
   return (dbModule*) block->module_tbl_->getPtr(dbid_);
 }
 
-dbModInst* dbModule::findModInst(const char* name)
+dbModInst* dbModule::findModInst(const char* name) const
 {
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  const _dbModule* obj = (const _dbModule*) this;
+  const _dbBlock* par = (const _dbBlock*) obj->getOwner();
   auto it = obj->modinst_hash_.find(name);
   if (it != obj->modinst_hash_.end()) {
     auto db_id = (*it).second;
@@ -502,10 +508,10 @@ dbModInst* dbModule::findModInst(const char* name)
   return nullptr;
 }
 
-dbInst* dbModule::findDbInst(const char* name)
+dbInst* dbModule::findDbInst(const char* name) const
 {
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  const _dbModule* obj = (const _dbModule*) this;
+  const _dbBlock* par = (const _dbBlock*) obj->getOwner();
   auto it = obj->dbinst_hash_.find(name);
   if (it != obj->dbinst_hash_.end()) {
     auto db_id = (*it).second;
@@ -532,7 +538,7 @@ std::vector<dbInst*> dbModule::getLeafInsts()
   return insts;
 }
 
-dbModBTerm* dbModule::findModBTerm(const char* name)
+dbModBTerm* dbModule::findModBTerm(const char* name) const
 {
   std::string modbterm_name(name);
   const char hier_delimiter = getOwner()->getHierarchyDelimiter();
@@ -540,8 +546,8 @@ dbModBTerm* dbModule::findModBTerm(const char* name)
   if (last_idx != std::string::npos) {
     modbterm_name = modbterm_name.substr(last_idx + 1);
   }
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  const _dbModule* obj = (const _dbModule*) this;
+  const _dbBlock* par = (const _dbBlock*) obj->getOwner();
   auto it = obj->modbterm_hash_.find(modbterm_name);
   if (it != obj->modbterm_hash_.end()) {
     auto db_id = (*it).second;
@@ -559,9 +565,9 @@ std::string dbModule::getHierarchicalName() const
   return "<top>";
 }
 
-dbBlock* dbModule::getOwner()
+dbBlock* dbModule::getOwner() const
 {
-  _dbModule* obj = (_dbModule*) this;
+  const _dbModule* obj = (const _dbModule*) this;
   return (dbBlock*) obj->getOwner();
 }
 
