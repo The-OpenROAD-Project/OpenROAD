@@ -400,7 +400,7 @@ bool EstimateParasitics::haveEstimatedParasitics() const
   return parasitics_src_ != ParasiticsSrc::none;
 }
 
-void EstimateParasitics::updateParasitics(bool save_guides)
+void EstimateParasitics::updateParasitics()
 {
   if (!incremental_parasitics_enabled_) {
     logger_->error(
@@ -430,7 +430,7 @@ void EstimateParasitics::updateParasitics(bool save_guides)
     case ParasiticsSrc::global_routing:
     case ParasiticsSrc::detailed_routing: {
       // TODO: update detailed route for modified nets
-      incr_groute_->updateRoutes(save_guides);
+      incr_groute_->updateRoutes(update_routes_cnt);
       for (const Net* net : parasitics_invalid_) {
         estimateGlobalRouteRC(db_network_->staToDb(net));
       }
