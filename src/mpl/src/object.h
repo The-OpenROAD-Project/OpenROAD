@@ -38,7 +38,7 @@ class HardMacro;
 class SoftMacro;
 class Cluster;
 
-using ConnectionsMap = std::map<int, float>;
+using ConnectionsMap = std::map<int, float>;  // cluster id -> connection weight
 using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
@@ -211,8 +211,10 @@ class Cluster
   // Connection signature support
   void initConnection();
   void addConnection(Cluster* cluster, float connection_weight);
+  void addCriticalConnection(Cluster* cluster, float connection_weight);
   void removeConnection(int cluster_id);
   const ConnectionsMap& getConnectionsMap() const;
+  const ConnectionsMap& getCriticalConnectionsMap() const;
   float allConnectionsWeight() const;
 
   // virtual connections
@@ -254,7 +256,8 @@ class Cluster
   Cluster* parent_{nullptr};
   UniqueClusterVector children_;
 
-  ConnectionsMap connections_map_;  // cluster id -> connection weight
+  ConnectionsMap connections_map_;
+  ConnectionsMap critical_connections_map_;
   std::vector<std::pair<int, int>> virtual_connections_;  // id -> id
 
   utl::Logger* logger_;

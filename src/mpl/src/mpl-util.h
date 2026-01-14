@@ -68,6 +68,7 @@ struct SACoreWeights
   float area{0.0f};
   float outline{0.0f};
   float wirelength{0.0f};
+  float critical_wirelength{0.0f};
   float guidance{0.0f};
   float fence{0.0f};
 };

@@ -35,6 +35,7 @@
 #include "odb/geom_boost.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
+#include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -49,11 +50,13 @@ HierRTLMP::~HierRTLMP() = default;
 HierRTLMP::HierRTLMP(sta::dbNetwork* network,
                      odb::dbDatabase* db,
                      utl::Logger* logger,
-                     par::PartitionMgr* tritonpart)
+                     par::PartitionMgr* tritonpart,
+                     rsz::Resizer* resizer)
     : network_(network),
       db_(db),
       logger_(logger),
       tritonpart_(tritonpart),
+      resizer_(resizer),
       tree_(std::make_unique<PhysicalHierarchy>())
 {
 }
@@ -180,6 +183,15 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
   report_directory_ = report_directory;
 }
 
+void HierRTLMP::setTimingDriven()
+{
+  resizer_->findWireLoadSlacks();
+  clustering_engine_->setResizer(resizer_);
+
+  const float critical_wirelength_weight = 75.0f;
+  placement_core_weights_.critical_wirelength = critical_wirelength_weight;
+}
+
 void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
 {
   keep_clustering_data_ = keep_clustering_data;
@@ -252,6 +264,11 @@ void HierRTLMP::run()
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
+  clustering_engine_ = std::make_unique<ClusteringEngine>(
+      block_, network_, logger_, tritonpart_, graphics_.get());
+
+  // Set target structure
+  clustering_engine_->setTree(tree_.get());
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -261,11 +278,6 @@ void HierRTLMP::init()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
-  clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_, graphics_.get());
-
-  // Set target structure
-  clustering_engine_->setTree(tree_.get());
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -1266,10 +1278,14 @@ void HierRTLMP::placeChildren(Cluster* parent)
   clustering_engine_->rebuildConnections();
 
   BundledNetList nets = buildBundledNets(parent, soft_macro_id_map);
+  BundledNetList critical_nets
+      = buildBundledNets(parent, soft_macro_id_map, true);
   mergeNets(nets);
+  mergeNets(critical_nets);
 
   if (graphics_) {
     graphics_->setNets(nets);
+    graphics_->setCriticalNets(critical_nets);
   }
 
   std::string file_name_prefix
@@ -1408,6 +1424,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
+      sa->setCriticalNets(critical_nets);
       sa_batch.push_back(std::move(sa));
     }
 
@@ -1858,9 +1875,12 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
   createFixedTerminals(outline, macro_clusters, cluster_to_macro, sa_macros);
   BundledNetList nets = buildBundledNets(macro_clusters, cluster_to_macro);
+  BundledNetList critical_nets
+      = buildBundledNets(macro_clusters, cluster_to_macro, true);
 
   if (graphics_) {
     graphics_->setNets(nets);
+    graphics_->setCriticalNets(critical_nets);
   }
 
   // Use exchange more often when there are more instances of a common
@@ -1931,6 +1951,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       SACoreWeights new_weights = placement_core_weights_;
       new_weights.outline *= (run_id + 1) * 10;
       new_weights.wirelength /= (run_id + 1);
+      new_weights.critical_wirelength /= (run_id + 1);
 
       std::unique_ptr<SACoreHardMacro> sa
           = std::make_unique<SACoreHardMacro>(tree_.get(),
@@ -1950,6 +1971,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                               block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
       sa->setNets(nets);
+      sa->setCriticalNets(critical_nets);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setInitialSequencePair(initial_seq_pair);
@@ -2117,23 +2139,28 @@ void HierRTLMP::createFixedTerminals(const odb::Rect& outline,
 
 BundledNetList HierRTLMP::buildBundledNets(
     Cluster* parent,
-    const SoftMacroNameToIdMap& soft_macro_id_map) const
+    const SoftMacroNameToIdMap& soft_macro_id_map,
+    bool use_critical_connections) const
 {
   BundledNetList nets;
   const float virtual_connections_weight = 10.0f;
 
-  for (const auto& [a_id, b_id] : parent->getVirtualConnections()) {
-    Cluster* a = tree_->maps.id_to_cluster.at(a_id);
-    Cluster* b = tree_->maps.id_to_cluster.at(b_id);
-    const int macro_a_id = soft_macro_id_map.at(a->getName());
-    const int macro_b_id = soft_macro_id_map.at(b->getName());
+  if (!use_critical_connections) {
+    for (const auto& [a_id, b_id] : parent->getVirtualConnections()) {
+      Cluster* a = tree_->maps.id_to_cluster.at(a_id);
+      Cluster* b = tree_->maps.id_to_cluster.at(b_id);
+      const int macro_a_id = soft_macro_id_map.at(a->getName());
+      const int macro_b_id = soft_macro_id_map.at(b->getName());
 
-    nets.emplace_back(macro_a_id, macro_b_id, virtual_connections_weight);
+      nets.emplace_back(macro_a_id, macro_b_id, virtual_connections_weight);
+    }
   }
 
   for (const auto& child : parent->getChildren()) {
     const int source_macro_id = soft_macro_id_map.at(child->getName());
-    const ConnectionsMap& connections_map = child->getConnectionsMap();
+    const ConnectionsMap& connections_map
+        = use_critical_connections ? child->getCriticalConnectionsMap()
+                                   : child->getConnectionsMap();
 
     for (const auto& [cluster_id, connection_weight] : connections_map) {
       Cluster* target_cluster = tree_->maps.id_to_cluster.at(cluster_id);
@@ -2153,13 +2180,16 @@ BundledNetList HierRTLMP::buildBundledNets(
 
 BundledNetList HierRTLMP::buildBundledNets(
     const UniqueClusterVector& clusters,
-    const ClusterToMacroMap& cluster_to_macro) const
+    const ClusterToMacroMap& cluster_to_macro,
+    bool use_critical_connections) const
 {
   BundledNetList nets;
 
   for (const auto& cluster : clusters) {
     const int source_macro_id = cluster_to_macro.at(cluster->getId());
-    const ConnectionsMap& connections_map = cluster->getConnectionsMap();
+    const ConnectionsMap& connections_map
+        = use_critical_connections ? cluster->getCriticalConnectionsMap()
+                                   : cluster->getConnectionsMap();
 
     for (const auto& [cluster_id, connection_weight] : connections_map) {
       const int target_macro_id = cluster_to_macro.at(cluster_id);

@@ -564,11 +564,17 @@ bool Cluster::attemptMerge(Cluster* incomer, bool& incomer_deleted)
 void Cluster::initConnection()
 {
   connections_map_.clear();
+  critical_connections_map_.clear();
 }
 
 void Cluster::addConnection(Cluster* cluster, const float connection_weight)
 {
   connections_map_[cluster->getId()] += connection_weight;
+}
+
+void Cluster::addCriticalConnection(Cluster* cluster, float connection_weight)
+{
+  critical_connections_map_[cluster->getId()] += connection_weight;
 }
 
 void Cluster::removeConnection(int cluster_id)
@@ -579,6 +585,11 @@ void Cluster::removeConnection(int cluster_id)
 const ConnectionsMap& Cluster::getConnectionsMap() const
 {
   return connections_map_;
+}
+
+const ConnectionsMap& Cluster::getCriticalConnectionsMap() const
+{
+  return critical_connections_map_;
 }
 
 // Macro Placement Support

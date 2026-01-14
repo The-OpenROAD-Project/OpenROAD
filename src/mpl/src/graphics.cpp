@@ -306,6 +306,11 @@ void Graphics::setWirelengthPenalty(const PenaltyData& penalty)
   wirelength_penalty_ = penalty;
 }
 
+void Graphics::setCriticalWireLengthPenalty(const PenaltyData& penalty)
+{
+  critical_wirelength_penalty_ = penalty;
+}
+
 void Graphics::setMaxLevel(const int max_level)
 {
   max_level_ = max_level;
@@ -583,6 +588,12 @@ void Graphics::drawBundledNets(gui::Painter& painter,
   for (const auto& net : nets_) {
     drawBundledNet(painter, macros, net);
   }
+
+  painter.setPen(gui::Painter::kDarkRed, true);
+
+  for (const auto& critical_net : critical_nets_) {
+    drawBundledNet(painter, macros, critical_net);
+  }
 }
 
 template <typename T>
@@ -712,6 +723,10 @@ void Graphics::setNets(const BundledNetList& nets)
 {
   nets_ = nets;
 }
+void Graphics::setCriticalNets(const BundledNetList& critical_nets)
+{
+  critical_nets_ = critical_nets;
+}
 
 void Graphics::setTargetClusterId(const int target_cluster_id)
 {
@@ -766,6 +781,7 @@ void Graphics::eraseDrawing()
   macro_blockages_.clear();
   placement_blockages_.clear();
   nets_.clear();
+  critical_nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
   blocked_regions_for_pins_.clear();

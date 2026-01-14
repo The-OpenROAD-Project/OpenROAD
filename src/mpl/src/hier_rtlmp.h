@@ -31,6 +31,10 @@ namespace par {
 class PartitionMgr;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace mpl {
 struct BundledNet;
 class Cluster;
@@ -68,7 +72,8 @@ class HierRTLMP
   HierRTLMP(sta::dbNetwork* network,
             odb::dbDatabase* db,
             utl::Logger* logger,
-            par::PartitionMgr* tritonpart);
+            par::PartitionMgr* tritonpart,
+            rsz::Resizer* resizer);
   ~HierRTLMP();
 
   void init();
@@ -103,6 +108,7 @@ class HierRTLMP
   void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
+  void setTimingDriven();
   void setKeepClusteringData(bool keep_clustering_data);
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -209,13 +215,13 @@ class HierRTLMP
                             std::map<int, int>& cluster_to_macro,
                             std::vector<HardMacro>& sa_macros);
   // For cluster placement.
-  BundledNetList buildBundledNets(
-      Cluster* parent,
-      const SoftMacroNameToIdMap& soft_macro_id_map) const;
+  BundledNetList buildBundledNets(Cluster* parent,
+                                  const SoftMacroNameToIdMap& soft_macro_id_map,
+                                  bool use_critical_connections = false) const;
   // For macro placement.
-  BundledNetList buildBundledNets(
-      const UniqueClusterVector& clusters,
-      const ClusterToMacroMap& cluster_to_macro) const;
+  BundledNetList buildBundledNets(const UniqueClusterVector& clusters,
+                                  const ClusterToMacroMap& cluster_to_macro,
+                                  bool use_critical_connections = false) const;
   SequencePair computeArraySequencePair(Cluster* cluster,
                                         bool& array_has_empty_space);
 
@@ -257,6 +263,7 @@ class HierRTLMP
   odb::dbBlock* block_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
+  rsz::Resizer* resizer_;
   std::unique_ptr<PhysicalHierarchy> tree_;
 
   std::unique_ptr<ClusteringEngine> clustering_engine_;

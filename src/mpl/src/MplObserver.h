@@ -45,6 +45,7 @@ class MplObserver
   {
   }
   virtual void setNets(const BundledNetList& nets) {}
+  virtual void setCriticalNets(const BundledNetList& critical_nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
   virtual void setShowClustersIds(bool show_clusters_ids) {}
   virtual void setSkipSteps(bool skip_steps) {}
@@ -78,6 +79,7 @@ class MplObserver
   virtual void setNotchPenalty(const PenaltyData& penalty) {}
   virtual void setOutlinePenalty(const PenaltyData& penalty) {}
   virtual void setWirelengthPenalty(const PenaltyData& penalty) {}
+  virtual void setCriticalWireLengthPenalty(const PenaltyData& penalty) {}
   virtual void penaltyCalculated(float norm_cost) {}
 
   virtual void eraseDrawing() {}

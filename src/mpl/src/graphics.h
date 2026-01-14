@@ -49,6 +49,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void setNotchPenalty(const PenaltyData& penalty) override;
   void setOutlinePenalty(const PenaltyData& penalty) override;
   void setWirelengthPenalty(const PenaltyData& penalty) override;
+  void setCriticalWireLengthPenalty(const PenaltyData& penalty) override;
   void penaltyCalculated(float norm_cost) override;
 
   void drawObjects(gui::Painter& painter) override;
@@ -58,6 +59,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void setPlacementBlockages(
       const std::vector<odb::Rect>& placement_blockages) override;
   void setNets(const BundledNetList& nets) override;
+  void setCriticalNets(const BundledNetList& critical_nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
   void setSkipSteps(bool skip_steps) override;
@@ -118,6 +120,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::vector<odb::Rect> macro_blockages_;
   std::vector<odb::Rect> placement_blockages_;
   BundledNetList nets_;
+  BundledNetList critical_nets_;
   odb::Rect outline_;
   int target_cluster_id_{-1};
   std::vector<std::vector<odb::Rect>> outlines_;
@@ -149,6 +152,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::optional<PenaltyData> outline_penalty_;
   std::optional<PenaltyData> fence_penalty_;
   std::optional<PenaltyData> wirelength_penalty_;
+  std::optional<PenaltyData> critical_wirelength_penalty_;
   std::optional<PenaltyData> guidance_penalty_;
   std::optional<PenaltyData> boundary_penalty_;
   std::optional<PenaltyData> macro_blockage_penalty_;
