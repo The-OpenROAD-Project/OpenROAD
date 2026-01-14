@@ -1790,10 +1790,14 @@ void GlobalRouter::updateResources(const int& init_x,
                                    odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastrouter
-  int x0 = ((init_x - grid_->getXMin()) / grid_->getTileSize());
-  int y0 = ((init_y - grid_->getYMin()) / grid_->getTileSize());
-  int x1 = ((final_x - grid_->getXMin()) / grid_->getTileSize());
-  int y1 = ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  int x0
+      = ((std::min(init_x, final_x) - grid_->getXMin()) / grid_->getTileSize());
+  int y0
+      = ((std::min(init_y, final_y) - grid_->getYMin()) / grid_->getTileSize());
+  int x1
+      = ((std::max(final_x, init_x) - grid_->getXMin()) / grid_->getTileSize());
+  int y1
+      = ((std::max(final_y, init_y) - grid_->getYMin()) / grid_->getTileSize());
 
   // The last gcell is oversized and includes space that the above
   // calculation doesn't represent so correct it:
