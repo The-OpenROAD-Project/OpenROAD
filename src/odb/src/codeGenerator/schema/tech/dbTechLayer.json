@@ -4,7 +4,7 @@
   "fields": [
     {
       "name": "num_masks",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": [
         "no-set",
         "no-get"
@@ -115,7 +115,7 @@
       "flags": []
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "lef58_type",
       "bits": 5,
       "flags": [
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "name": "wrong_way_width_",
       "flags":[
@@ -142,7 +142,7 @@
     {
       "name" : "orth_spacing_tbl_",
       "type":"std::vector<std::pair<int, int>>",
-      "schema" : "db_schema_orth_spc_tbl",
+      "schema" : "kSchemaOrthSpcTbl",
       "flags":[
         "no-template",
         "no-set"

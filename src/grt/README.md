@@ -359,6 +359,24 @@ read_global_route_segments file_name
 | ----- | ----- |
 | `file_name` | Path to global routing segments file. | 
 
+### Estimate Path Resistance Between Two Pins
+
+This command calculates the path resistance between two pins considering the 
+vias and wires connecting them. The two pins need to be connected by the same
+wire.
+
+```tcl
+estimate_path_resistance pin_name_1 pin_name_2 [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `pin_name_1` | Pin name 1 (e.g., `_437_/Y`). | 
+| `pin_name_2` | Pin name 1 (e.g., `_438_/A`). |
+| `-verbose` | Print path details. |
+
 ## Example scripts
 
 Examples scripts demonstrating how to run FastRoute on a sample design of `gcd` as follows:

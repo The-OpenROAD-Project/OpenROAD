@@ -4,8 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
-#include "odb/odb.h"
+// User Code Begin Includes
+#include "odb/dbId.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -58,7 +62,7 @@ struct dbTechLayerSpacingEolRuleFlags
   bool min_adjacent_length_valid : 1;
   bool two_min_adj_length_valid : 1;
   bool to_notch_length_valid : 1;
-  uint spare_bits : 23;
+  uint32_t spare_bits : 23;
 };
 
 class _dbTechLayerSpacingEolRule : public _dbObject
@@ -110,7 +114,7 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   int notch_length_;
 
   // User Code Begin Fields
-  dbId<_dbTechLayer> _layer;
+  dbId<_dbTechLayer> layer_;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj);

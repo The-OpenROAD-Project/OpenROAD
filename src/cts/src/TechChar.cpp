@@ -36,6 +36,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace cts {
 
@@ -107,8 +108,7 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
         const std::string topologyS = lutLine.topology[topologyIndex];
         // Each buffered topology always has a wire segment followed by a
         // buffer.
-        if (std::find(masterNames_.begin(), masterNames_.end(), topologyS)
-            == masterNames_.end()) {
+        if (std::ranges::find(masterNames_, topologyS) == masterNames_.end()) {
           // Is a number (i.e. a wire segment).
           segment.addBuffer(std::stod(topologyS));
         } else {
@@ -721,11 +721,10 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
   }
 
   // Sort buffers in ascending order of max cap limit
-  std::sort(buffers.begin(),
-            buffers.end(),
-            [this](const std::string& buf1, const std::string& buf2) {
-              return (this->getMaxCapLimit(buf1) < this->getMaxCapLimit(buf2));
-            });
+  std::ranges::sort(
+      buffers, [this](const std::string& buf1, const std::string& buf2) {
+        return (this->getMaxCapLimit(buf1) < this->getMaxCapLimit(buf2));
+      });
 
   // remove close max cap values within 10% of prev neighbor
   if (options_->isBufferListInferred()) {
@@ -835,12 +834,7 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
 void TechChar::sortAndUniquify(std::vector<float>& values,
                                const std::string& name)
 {
-  // sort
-  std::sort(values.begin(), values.end());
-
-  // uniquify
-  auto last = std::unique(values.begin(), values.end());
-  values.erase(last, values.end());
+  utl::sort_and_unique(values);
 
   // remove close values within 1% of prev neighbor
   std::vector<float>::iterator iter = values.begin();
@@ -950,7 +944,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
   odb::dbNet* net = nullptr;
   // clang-format off
   debugPrint(logger_, CTS, "tech char", 1, "*createPatterns for #nodes = {}"
-             " #topologies = {}", setupWirelength, numberOfNodes, numberOfTopologies);
+             " #topologies = {}", numberOfNodes, numberOfTopologies);
   // clang-format on
   // For each possible topology...
   for (unsigned solutionCounterInt = 0; solutionCounterInt < numberOfTopologies;
@@ -1051,9 +1045,6 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
     tmp << "OUT";
     debugPrint(logger_, CTS, "tech char", 1, tmp.str());
     topology.outPort = outPortPin;
-    if (isPureWire) {
-      topology.instVector.push_back(nullptr);
-    }
     topology.isPureWire = isPureWire;
     topology.netVector.push_back(net);
     topology.nodesWithoutBufVector.push_back(nodesWithoutBuf);
@@ -1234,10 +1225,8 @@ void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
 
   while (!done) {
     // Gets the iterator to the beggining of the masterNames_ set.
-    std::vector<std::string>::iterator masterItr
-        = std::find(masterNames_.begin(),
-                    masterNames_.end(),
-                    solution.instVector[index]->getMaster()->getName());
+    std::vector<std::string>::iterator masterItr = std::ranges::find(
+        masterNames_, solution.instVector[index]->getMaster()->getName());
     if (masterItr == lastMasterItr) {
       // If the iterator can't increment past the final iterator...
       // change the current buf master to the first lib cell and try to go to
@@ -1260,7 +1249,7 @@ void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
         debugPrint(logger_, CTS, "tech char", 1, "  topo:{} topoIdx:{}",
                    topologyS, topologyIndex);
         // clang-format on
-        if (!(std::find(masterNames_.begin(), masterNames_.end(), topologyS)
+        if (!(std::ranges::find(masterNames_, topologyS)
               == masterNames_.end())) {
           if (topologyCounter == index) {
             solution.topologyDescriptor[topologyIndex] = *firstMasterItr;
@@ -1298,7 +1287,7 @@ void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
         debugPrint(logger_, CTS, "tech char", 1, "  topo:{} topoIdx:{}",
                    topologyS, topologyIndex);
         // clang-format on
-        if (!(std::find(masterNames_.begin(), masterNames_.end(), topologyS)
+        if (!(std::ranges::find(masterNames_, topologyS)
               == masterNames_.end())) {
           if (topologyCounter == index) {
             solution.topologyDescriptor[topologyIndex] = masterString;
@@ -1377,7 +1366,7 @@ std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 size_t TechChar::cellNameToID(const std::string& masterName)
 {
   std::vector<std::string>::iterator masterIter
-      = std::find(masterNames_.begin(), masterNames_.end(), masterName);
+      = std::ranges::find(masterNames_, masterName);
   return std::distance(masterNames_.begin(), masterIter);
 }
 
@@ -1442,8 +1431,7 @@ void TechChar::swapTopologyBuffer(SolutionData& solution,
     debugPrint(logger_, CTS, "tech char", 1, "***topo:{} topoIdx:{}",
                topologyS, topologyIndex);
     // clang-format on
-    if (!(std::find(masterNames_.begin(), masterNames_.end(), topologyS)
-          == masterNames_.end())) {
+    if (!(std::ranges::find(masterNames_, topologyS) == masterNames_.end())) {
       if (topologyCounter == nodeIndex) {
         solution.topologyDescriptor[topologyIndex] = newMasterName;
         // clang-format off
@@ -1478,6 +1466,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
   unsigned maxResultCapacitance = 0;
   unsigned minResultSlew = std::numeric_limits<unsigned>::max();
   unsigned maxResultSlew = 0;
+
   std::vector<ResultData> convertedSolutions;
   for (ResultData solution : selectedSolutions) {
     if (solution.pinSlew <= options_->getMaxCharSlew()) {
@@ -1515,8 +1504,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
            topologyIndex++) {
         std::string topologyS = solution.topology[topologyIndex];
         // Normalizes the strings that represents the topology too.
-        if (std::find(masterNames_.begin(), masterNames_.end(), topologyS)
-            == masterNames_.end()) {
+        if (std::ranges::find(masterNames_, topologyS) == masterNames_.end()) {
           // Is a number (i.e. a wire segment).
           topologyResult.push_back(
               std::to_string(std::stod(topologyS) / solution.wirelength));
@@ -1530,6 +1518,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
       convertedSolutions.push_back(convertedResult);
     }
   }
+
   // Sets the min and max values and returns the result vector.
   minSlew_ = minResultSlew;
   maxSlew_ = maxResultSlew;
@@ -1631,10 +1620,10 @@ void TechChar::create()
                  masterNames_.size(), solution.instVector.size());
       // clang-format on
       // For each possible buffer combination (different sizes).
-      unsigned buffersUpdate
+      unsigned buffersCombinations
           = getBufferingCombo(masterNames_.size(), solution.instVector.size());
 
-      if (buffersUpdate == 0) {
+      if (buffersCombinations == 0) {
         continue;
       }
 
@@ -1697,12 +1686,13 @@ void TechChar::create()
           }
         }
         // If the solution is not a pure-wire, update the buffer topologies.
-        if (!solution.isPureWire) {
+        if (!solution.isPureWire && buffersCombinations > 1) {
           updateBufferTopologies(solution);
         }
-        // For pure-wire solution buffersUpdate == 1, so it only runs once.
-        buffersUpdate--;
-      } while (buffersUpdate != 0);
+        // For pure-wire solution buffersCombinations == 1, so it only runs
+        // once.
+        buffersCombinations--;
+      } while (buffersCombinations != 0);
     }
     openStaChar_.reset(nullptr);
   }

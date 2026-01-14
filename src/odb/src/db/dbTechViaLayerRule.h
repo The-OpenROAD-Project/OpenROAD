@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -22,15 +23,15 @@ class dbOStream;
 //
 struct _dbTechViaLayerRuleFlags
 {
-  uint direction : 2;
-  uint has_enclosure : 1;
-  uint has_width : 1;
-  uint has_overhang : 1;
-  uint has_metal_overhang : 1;
-  uint has_resistance : 1;
-  uint has_spacing : 1;
-  uint has_rect : 1;
-  uint spare_bits : 23;
+  uint32_t direction : 2;
+  uint32_t has_enclosure : 1;
+  uint32_t has_width : 1;
+  uint32_t has_overhang : 1;
+  uint32_t has_metal_overhang : 1;
+  uint32_t has_resistance : 1;
+  uint32_t has_spacing : 1;
+  uint32_t has_rect : 1;
+  uint32_t spare_bits : 23;
 };
 
 class _dbTechViaLayerRule : public _dbObject
@@ -38,7 +39,6 @@ class _dbTechViaLayerRule : public _dbObject
  public:
   _dbTechViaLayerRule(_dbDatabase*, const _dbTechViaLayerRule& v);
   _dbTechViaLayerRule(_dbDatabase*);
-  ~_dbTechViaLayerRule();
 
   bool operator==(const _dbTechViaLayerRule& rhs) const;
   bool operator!=(const _dbTechViaLayerRule& rhs) const
@@ -57,7 +57,7 @@ class _dbTechViaLayerRule : public _dbObject
   int metal_overhang_;
   int spacing_x_;
   int spacing_y_;
-  double _resistance;
+  double resistance_;
   Rect rect_;
   dbId<_dbTechLayer> layer_;
 };

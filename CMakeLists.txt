@@ -21,6 +21,12 @@ cmake_policy(SET CMP0077 NEW)
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
 
+# Interfers with Qt so off by default.
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
+
+if (LINK_TIME_OPTIMIZATION)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 # Allow to use external shared boost libraries
 option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)

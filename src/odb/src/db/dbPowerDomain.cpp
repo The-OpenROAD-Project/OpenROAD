@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbPowerDomain.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
@@ -16,7 +18,6 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cmath>
-#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -81,11 +82,11 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj.parent_;
   stream >> obj.area_;
   // User Code Begin >>
-  if (stream.getDatabase()->isSchema(db_schema_level_shifter)) {
+  if (stream.getDatabase()->isSchema(kSchemaLevelShifter)) {
     stream >> obj.levelshifters_;
   }
 
-  if (stream.getDatabase()->isSchema(db_schema_power_domain_voltage)) {
+  if (stream.getDatabase()->isSchema(kSchemaPowerDomainVoltage)) {
     stream >> obj.voltage_;
   }
   // User Code End >>
@@ -116,12 +117,19 @@ void _dbPowerDomain::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["elements"].add(elements_);
-  info.children_["power_switch"].add(power_switch_);
-  info.children_["isolation"].add(isolation_);
-  info.children_["levelshifters"].add(levelshifters_);
+  info.children["name"].add(name_);
+  info.children["elements"].add(elements_);
+  info.children["power_switch"].add(power_switch_);
+  info.children["isolation"].add(isolation_);
+  info.children["levelshifters"].add(levelshifters_);
   // User Code End collectMemInfo
+}
+
+_dbPowerDomain::~_dbPowerDomain()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

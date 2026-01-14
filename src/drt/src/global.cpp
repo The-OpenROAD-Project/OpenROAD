@@ -49,11 +49,11 @@ std::ostream& operator<<(std::ostream& os, const frMPin& pinIn)
   os << "PIN (NAME) " << pinIn.getTerm()->getName();
   for (auto& m : pinIn.getFigs()) {
     if (m->typeId() == frcRect) {
-      os << std::endl << *(static_cast<frRect*>(m.get()));
+      os << '\n' << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << std::endl << *(static_cast<frPolygon*>(m.get()));
+      os << '\n' << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << std::endl << "Unsupported pinFig object!";
+      os << '\n' << "Unsupported pinFig object!";
     }
   }
   return os;
@@ -69,7 +69,7 @@ std::ostream& operator<<(std::ostream& os, const frBTerm& termIn)
   }
   os << "TERM (NAME/NET) " << name << " " << netName;
   for (auto& m : termIn.getPins()) {
-    os << std::endl << *m;
+    os << '\n' << *m;
   }
   return os;
 }
@@ -87,7 +87,7 @@ std::ostream& operator<<(std::ostream& os, const frInstTerm& instTermIn)
     netName = instTermIn.getNet()->getName();
   }
   os << "INSTTERM: (INST/CELL/TERM/NET) " << name << " " << cellName << " "
-     << termName << " " << netName << std::endl;
+     << termName << " " << netName << '\n';
   return os;
 }
 
@@ -101,29 +101,29 @@ std::ostream& operator<<(std::ostream& os, const frViaDef& viaDefIn)
   }
   for (auto& m : viaDefIn.getLayer1Figs()) {
     if (m->typeId() == frcRect) {
-      os << std::endl << *(static_cast<frRect*>(m.get()));
+      os << '\n' << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << std::endl << *(static_cast<frPolygon*>(m.get()));
+      os << '\n' << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << std::endl << "Unsupported pinFig object!";
+      os << "\nUnsupported pinFig object!";
     }
   }
   for (auto& m : viaDefIn.getCutFigs()) {
     if (m->typeId() == frcRect) {
-      os << std::endl << *(static_cast<frRect*>(m.get()));
+      os << '\n' << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << std::endl << *(static_cast<frPolygon*>(m.get()));
+      os << '\n' << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << std::endl << "Unsupported pinFig object!";
+      os << "\nUnsupported pinFig object!";
     }
   }
   for (auto& m : viaDefIn.getLayer2Figs()) {
     if (m->typeId() == frcRect) {
-      os << std::endl << *(static_cast<frRect*>(m.get()));
+      os << '\n' << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << std::endl << *(static_cast<frPolygon*>(m.get()));
+      os << '\n' << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << std::endl << "Unsupported pinFig object!";
+      os << "\nUnsupported pinFig object!";
     }
   }
   return os;
@@ -132,11 +132,11 @@ std::ostream& operator<<(std::ostream& os, const frViaDef& viaDefIn)
 std::ostream& operator<<(std::ostream& os, const frBlock& blockIn)
 {
   odb::Rect box = blockIn.getBBox();
-  os << "MACRO " << blockIn.getName() << std::endl
-     << "  ORIGIN " << box.xMin() << " " << box.yMin() << std::endl
+  os << "MACRO " << blockIn.getName() << '\n'
+     << "  ORIGIN " << box.xMin() << " " << box.yMin() << '\n'
      << "  SIZE " << box.xMax() << " " << box.yMax();
   for (auto& m : blockIn.getTerms()) {
-    os << std::endl << *m;
+    os << '\n' << *m;
   }
   return os;
 }
@@ -148,9 +148,9 @@ std::ostream& operator<<(std::ostream& os, const frInst& instIn)
   const frString& tmpName = instIn.getName();
   frString tmpString = instIn.getMaster()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
-     << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << std::endl;
+     << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << '\n';
   for (auto& m : instIn.getInstTerms()) {
-    os << std::endl << *m;
+    os << '\n' << *m;
   }
   return os;
 }

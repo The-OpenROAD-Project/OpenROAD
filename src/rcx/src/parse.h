@@ -12,11 +12,11 @@
 
 namespace rcx {
 
-class Ath__parser
+class Parser
 {
  public:
-  Ath__parser(utl::Logger* logger);
-  ~Ath__parser();
+  Parser(utl::Logger* logger);
+  ~Parser();
   void openFile(const char* name = nullptr);
   void setInputFP(FILE* fp);
   int mkWords(const char* word, const char* sep = nullptr);
@@ -26,15 +26,15 @@ class Ath__parser
   int getInt(int ii);
   int getInt(int n, int start);
   double getDouble(int ii);
-  void getDoubleArray(Ath__array1D<double>* A, int start, double mult = 1.0);
-  Ath__array1D<double>* readDoubleArray(const char* keyword, int start);
+  void getDoubleArray(Array1D<double>* A, int start, double mult = 1.0);
+  Array1D<double>* readDoubleArray(const char* keyword, int start);
   void printWords(FILE* fp);
 
   int getWordCnt();
   char getFirstChar();
 
   void syntaxError(const char* msg);
-  bool mkDir(char* word);
+  bool mkDir(const char* word);
   int mkDirTree(const char* word, const char* sep);
 
   void resetSeparator(const char* s);

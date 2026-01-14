@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -21,7 +22,7 @@ class _dbSite;
 class _dbDatabase;
 class _dbTechAntennaPinModel;
 class _dbMasterEdgeType;
-template <uint page_size>
+template <uint32_t page_size>
 class dbBoxItr;
 class dbPolygonItr;
 class dbMPinItr;
@@ -30,15 +31,15 @@ class dbOStream;
 
 struct dbMasterFlags
 {
-  uint frozen : 1;
-  uint x_symmetry : 1;
-  uint y_symmetry : 1;
-  uint R90_symmetry : 1;
+  uint32_t frozen : 1;
+  uint32_t x_symmetry : 1;
+  uint32_t y_symmetry : 1;
+  uint32_t R90_symmetry : 1;
   dbMasterType::Value type : 6;
-  uint mark : 1;
-  uint sequential : 1;
-  uint special_power : 1;
-  uint spare_bits_19 : 19;
+  uint32_t mark : 1;
+  uint32_t sequential : 1;
+  uint32_t special_power : 1;
+  uint32_t spare_bits_19 : 19;
 };
 
 class _dbMaster : public _dbObject
@@ -55,10 +56,10 @@ class _dbMaster : public _dbObject
   dbMasterFlags flags_;
   int x_;
   int y_;
-  uint height_;
-  uint width_;
-  uint mterm_cnt_;
-  uint id_;
+  uint32_t height_;
+  uint32_t width_;
+  uint32_t mterm_cnt_;
+  uint32_t id_;
   char* name_;
   dbId<_dbMaster> next_entry_;
   dbId<_dbMaster> leq_;

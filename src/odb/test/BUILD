@@ -145,6 +145,7 @@ COMPULSORY_TESTS = [
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
+    "check_3dblox",
     "check_routing_tracks",
     "create_blockage",
     "create_obstruction",
@@ -229,8 +230,6 @@ MANUAL_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "dump_netlists",
-    "dump_netlists_withfill",
     "replace_hier_mod1",
 ]
 
@@ -283,6 +282,8 @@ filegroup(
         "data/example.3dbx",
         "data/example.bmap",
         "data/example1.bmap",
+        "data/example2.bmap",
+        "data/example3.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",

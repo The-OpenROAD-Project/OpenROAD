@@ -13,6 +13,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frMarker.h"
 #include "db/tech/frLayer.h"
@@ -84,12 +85,11 @@ class FlexGCWorker::Impl
        FlexGCWorker* gcWorkerIn);
   frLayerNum getMinLayerNum()  // inclusive
   {
-    return std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                    minLayerNum_);
+    return std::max(getTech()->getBottomLayerNum(), minLayerNum_);
   }
   frLayerNum getMaxLayerNum()  // inclusive
   {
-    return std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    return std::min(getTech()->getTopLayerNum(), maxLayerNum_);
   }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {

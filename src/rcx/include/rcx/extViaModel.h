@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <string.h>
-
+#include <cstdint>
 #include <cstdio>
+#include <cstring>
 
 #include "odb/util.h"
 #include "rcx/util.h"
@@ -23,20 +23,20 @@ class extViaModel
  public:
   const char* _viaName;
   double _res;
-  uint _cutCnt;
-  uint _dx;
-  uint _dy;
-  uint _topMet;
-  uint _botMet;
+  uint32_t _cutCnt;
+  uint32_t _dx;
+  uint32_t _dy;
+  uint32_t _topMet;
+  uint32_t _botMet;
 
  public:
   extViaModel(const char* name,
               double R,
-              uint cCnt,
-              uint dx,
-              uint dy,
-              uint top,
-              uint bot)
+              uint32_t cCnt,
+              uint32_t dx,
+              uint32_t dy,
+              uint32_t top,
+              uint32_t bot)
   {
     _viaName = strdup(name);
     _res = R;
@@ -59,6 +59,6 @@ class extViaModel
   void printViaRule(FILE* fp);
   void writeViaRule(FILE* fp);
   // dkf 09182024
-  void printVia(FILE* fp, uint corner);
+  void printVia(FILE* fp, uint32_t corner);
 };
 }  // namespace rcx

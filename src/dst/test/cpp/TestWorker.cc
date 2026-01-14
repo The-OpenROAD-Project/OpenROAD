@@ -12,7 +12,7 @@
 #include "gtest/gtest.h"
 #include "utl/Logger.h"
 
-using namespace dst;
+namespace dst {
 
 TEST(test_suite, test_worker)
 {
@@ -31,3 +31,5 @@ TEST(test_suite, test_worker)
   EXPECT_TRUE(dist->sendJob(msg, local_ip.c_str(), port, result));
   EXPECT_EQ(result.getJobType(), JobMessage::JobType::kSuccess);
 }
+
+}  // namespace dst

@@ -4,6 +4,7 @@
 #include "dbTechLayerAntennaRule.h"
 
 #include <cassert>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -505,28 +506,28 @@ dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffPAR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->par_area_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffCAR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->cum_area_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffPSR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->par_sidearea_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getDiffCSR() const
 {
   auto ant_rule = (const _dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->cum_sidearea_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 void dbTechLayerAntennaRule::setPAR(double ratio)
@@ -618,7 +619,7 @@ void dbTechLayerAntennaRule::setDiffCSR(const vector<double>& diff_idx,
 }
 
 dbTechLayerAntennaRule* dbTechLayerAntennaRule::getAntennaRule(dbTech* _tech,
-                                                               uint dbid)
+                                                               uint32_t dbid)
 {
   _dbTech* tech = (_dbTech*) _tech;
   return (dbTechLayerAntennaRule*) tech->antenna_rule_tbl_->getPtr(dbid);
@@ -665,7 +666,7 @@ dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getAreaDiffReduce()
 {
   _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
   auto& rule = ant_rule->area_diff_reduce_val_;
-  return pwl_pair{rule.diff_idx_, rule.diff_ratio_};
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
 }
 
 void dbTechLayerAntennaRule::setAreaDiffReduce(
@@ -681,12 +682,6 @@ void dbTechLayerAntennaRule::setAreaDiffReduce(
 // _dbTechAntennaAreaElement - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-_dbTechAntennaAreaElement::_dbTechAntennaAreaElement(
-    const _dbTechAntennaAreaElement& e)
-    : area_(e.area_), lyidx_(e.lyidx_)
-{
-}
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechAntennaAreaElement* aae)
 {
@@ -921,7 +916,7 @@ void dbTechAntennaPinModel::writeLef(dbTech* tech, lefout& writer) const
 
 dbTechAntennaPinModel* dbTechAntennaPinModel::getAntennaPinModel(
     dbMaster* _master,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbMaster* master = (_dbMaster*) _master;
   return (dbTechAntennaPinModel*) master->antenna_pin_model_tbl_->getPtr(dbid);
@@ -938,17 +933,17 @@ void _dbTechAntennaPinModel::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["_gate_area"].add(gate_area_);
-  info.children_["_gate_area"].size
+  info.children["_gate_area"].add(gate_area_);
+  info.children["_gate_area"].size
       += gate_area_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_max_area_car"].add(max_area_car_);
-  info.children_["_max_area_car"].size
+  info.children["_max_area_car"].add(max_area_car_);
+  info.children["_max_area_car"].size
       += max_area_car_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_max_sidearea_car"].add(max_sidearea_car_);
-  info.children_["_max_sidearea_car"].size
+  info.children["_max_sidearea_car"].add(max_sidearea_car_);
+  info.children["_max_sidearea_car"].size
       += max_sidearea_car_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_max_cut_car"].add(max_cut_car_);
-  info.children_["_max_cut_car"].size
+  info.children["_max_cut_car"].add(max_cut_car_);
+  info.children["_max_cut_car"].size
       += max_cut_car_.size() * sizeof(_dbTechAntennaAreaElement);
 }
 

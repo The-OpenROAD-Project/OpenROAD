@@ -644,17 +644,17 @@ class FlexGRGridGraph
   }
   frMIdx getMazeXIdx(frCoord in) const
   {
-    auto it = std::lower_bound(xCoords_.begin(), xCoords_.end(), in);
+    auto it = std::ranges::lower_bound(xCoords_, in);
     return it - xCoords_.begin();
   }
   frMIdx getMazeYIdx(frCoord in) const
   {
-    auto it = std::lower_bound(yCoords_.begin(), yCoords_.end(), in);
+    auto it = std::ranges::lower_bound(yCoords_, in);
     return it - yCoords_.begin();
   }
   frMIdx getMazeZIdx(frLayerNum in) const
   {
-    auto it = std::lower_bound(zCoords_.begin(), zCoords_.end(), in);
+    auto it = std::ranges::lower_bound(zCoords_, in);
     return it - zCoords_.begin();
   }
   FlexMazeIdx& getMazeIdx(const odb::Point& p,

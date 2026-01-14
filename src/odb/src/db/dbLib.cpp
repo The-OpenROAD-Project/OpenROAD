@@ -3,6 +3,7 @@
 
 #include "dbLib.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -176,7 +177,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
   stream >> lib.site_hash_;
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
-  if (lib.getDatabase()->isSchema(db_schema_block_tech)) {
+  if (lib.getDatabase()->isSchema(kSchemaBlockTech)) {
     stream >> lib.tech_;
   }
   stream >> *lib.master_tbl_;
@@ -275,7 +276,7 @@ void dbLib::setLefUnits(int units)
   lib->lef_units_ = units;
 }
 
-char dbLib::getHierarchyDelimiter()
+char dbLib::getHierarchyDelimiter() const
 {
   _dbLib* lib = (_dbLib*) this;
   return lib->hier_delimiter_;
@@ -316,7 +317,7 @@ dbLib* dbLib::create(dbDatabase* db_,
   return (dbLib*) lib;
 }
 
-dbLib* dbLib::getLib(dbDatabase* db_, uint dbid_)
+dbLib* dbLib::getLib(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbLib*) db->lib_tbl_->getPtr(dbid_);
@@ -335,13 +336,13 @@ void _dbLib::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["master_hash"].add(master_hash_);
-  info.children_["site_hash"].add(site_hash_);
-  master_tbl_->collectMemInfo(info.children_["master"]);
-  site_tbl_->collectMemInfo(info.children_["site"]);
-  prop_tbl_->collectMemInfo(info.children_["prop"]);
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  info.children["name"].add(name_);
+  info.children["master_hash"].add(master_hash_);
+  info.children["site_hash"].add(site_hash_);
+  master_tbl_->collectMemInfo(info.children["master"]);
+  site_tbl_->collectMemInfo(info.children["site"]);
+  prop_tbl_->collectMemInfo(info.children["prop"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
 }
 
 }  // namespace odb

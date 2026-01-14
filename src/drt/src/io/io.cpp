@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <list>
@@ -456,9 +457,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
           == odb::dbTechLayerType::CUT) {
         continue;
       }
-      if (via->getViaLayerRule(i)->getLayer()->getNumber() / 2 < z) {
-        z = via->getViaLayerRule(i)->getLayer()->getNumber() / 2;
-      }
+      z = std::min(via->getViaLayerRule(i)->getLayer()->getNumber() / 2, z);
     }
     fnd->addViaRule(getTech()->getViaRule(via->getName()), z);
   }
@@ -493,9 +492,9 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
   int y1 = box->yMin();
   int x2 = box->xMax();
   int y2 = box->yMax();
-  uint dx = box->getDX();
-  uint dy = box->getDY();
-  uint w;
+  uint32_t dx = box->getDX();
+  uint32_t dy = box->getDY();
+  uint32_t w;
   switch (box->getDirection()) {
     case odb::dbSBox::UNDEFINED: {
       bool dx_even = ((dx & 1) == 0);
@@ -503,26 +502,26 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
       if (dx_even && dy_even) {
         if (dy < dx) {
           w = dy;
-          uint dw = dy >> 1;
+          uint32_t dw = dy >> 1;
           y1 += dw;
           y2 -= dw;
           assert(y1 == y2);
         } else {
           w = dx;
-          uint dw = dx >> 1;
+          uint32_t dw = dx >> 1;
           x1 += dw;
           x2 -= dw;
           assert(x1 == x2);
         }
       } else if (dx_even) {
         w = dx;
-        uint dw = dx >> 1;
+        uint32_t dw = dx >> 1;
         x1 += dw;
         x2 -= dw;
         assert(x1 == x2);
       } else if (dy_even) {
         w = dy;
-        uint dw = dy >> 1;
+        uint32_t dw = dy >> 1;
         y1 += dw;
         y2 -= dw;
         assert(y1 == y2);
@@ -533,7 +532,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
     }
     case odb::dbSBox::HORIZONTAL: {
       w = dy;
-      uint dw = dy >> 1;
+      uint32_t dw = dy >> 1;
       y1 += dw;
       y2 -= dw;
       assert(y1 == y2);
@@ -541,7 +540,7 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
     }
     case odb::dbSBox::VERTICAL: {
       w = dx;
-      uint dw = dx >> 1;
+      uint32_t dw = dx >> 1;
       x1 += dw;
       x2 -= dw;
       assert(x1 == x2);
@@ -1574,7 +1573,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58SpacingWrongDirConstraint(rptr);
   }
-  if (getTech()->hasUnidirectionalLayer(layer)) {
+  if (router_cfg_->unidirectional_layers_.contains(layer)) {
     tmpLayer->setUnidirectional(true);
   }
   if (layer->isRectOnly()) {
@@ -1919,8 +1918,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     auto spc = table[0][0];
     con->setDefaultSpacing(spc);
     con->setDefaultCenterToCenter(rule->isCenterToCenter(cutClass1, cutClass2));
-    con->setDefaultCenterAndEdge(
-        rule->isCenterAndEdge(std::move(cutClass1), std::move(cutClass2)));
+    con->setDefaultCenterAndEdge(rule->isCenterAndEdge(cutClass1, cutClass2));
     if (rule->isLayerValid()) {
       if (rule->isSameMetal()) {
         tmpLayer->setLef58SameMetalInterCutSpcTblConstraint(con.get());
@@ -2323,7 +2321,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       frUInt4 width, within, spacing;
       rule->getV55InfluenceEntry(width, within, spacing);
       widthTbl.push_back(width);
-      valTbl.push_back({within, spacing});
+      valTbl.emplace_back(within, spacing);
     }
     fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl(
         "WIDTH", widthTbl, valTbl);
@@ -2380,10 +2378,10 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     }
 
     frCollection<frSpacingTableTwRowType> rowVals;
-    for (uint j = 0; j < layer->getTwoWidthsSpacingTableNumWidths(); ++j) {
+    for (uint32_t j = 0; j < layer->getTwoWidthsSpacingTableNumWidths(); ++j) {
       frCoord width = layer->getTwoWidthsSpacingTableWidth(j);
       frCoord prl = layer->getTwoWidthsSpacingTablePRL(j);
-      rowVals.push_back(frSpacingTableTwRowType(width, prl));
+      rowVals.emplace_back(width, prl);
     }
 
     std::unique_ptr<frConstraint> uCon
@@ -3282,9 +3280,9 @@ void io::Writer::mergeSplitConnFigs(
       frCoord beginCoord = isH ? begin.x() : begin.y();
       frCoord endCoord = isH ? end.x() : end.y();
       pathSegMergeMap[std::make_tuple(layerNum, isH, trackLoc)][beginCoord]
-          .push_back(std::make_tuple(pathSeg, true));
+          .emplace_back(pathSeg, true);
       pathSegMergeMap[std::make_tuple(layerNum, isH, trackLoc)][endCoord]
-          .push_back(std::make_tuple(pathSeg, false));
+          .emplace_back(pathSeg, false);
 
     } else if (connFig->typeId() == frcVia) {
       auto via = std::dynamic_pointer_cast<frVia>(connFig);
@@ -3996,7 +3994,7 @@ int io::TopLayerBTermHandler::countNetBTermsAboveMaxLayer(odb::dbNet* net)
 bool io::TopLayerBTermHandler::netHasStackedVias(odb::dbNet* net)
 {
   int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
-  uint wire_cnt = 0, via_cnt = 0;
+  uint32_t wire_cnt = 0, via_cnt = 0;
   net->getWireCount(wire_cnt, via_cnt);
 
   if (wire_cnt != 0 || via_cnt == 0) {

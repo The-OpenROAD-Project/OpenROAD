@@ -114,20 +114,20 @@
 [INFO CTS-0037] Total number of delay buffers: 4
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 42 long wires.
-[INFO RSZ-0048] Inserted 166 buffers in 42 nets.
+[INFO RSZ-0048] Inserted 93 buffers in 42 nets.
 Placement Analysis
 ---------------------------------
-total displacement       4302.0 u
-average displacement        1.3 u
-max displacement          142.4 u
-original HPWL          193675.5 u
-legalized HPWL         194702.8 u
+total displacement       3848.2 u
+average displacement        1.2 u
+max displacement          141.1 u
+original HPWL          193578.0 u
+legalized HPWL         194590.6 u
 delta HPWL                    1 %
 
 Clock clk
-   1.03 source latency inst_5_4/clk ^
-  -1.18 target latency inst_6_4/clk ^
+   1.24 source latency inst_3_13/clk ^
+  -1.12 target latency inst_5_13/clk ^
    0.00 CRPR
 --------------
-  -0.15 setup skew
+   0.12 setup skew
 

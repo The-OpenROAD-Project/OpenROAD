@@ -4,11 +4,12 @@
 // Generator Code Begin Cpp
 #include "dbChipInstItr.h"
 
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -32,12 +33,12 @@ void dbChipInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbChip* chip = (_dbChip*) parent;
-  uint id = chip->chipinsts_;
-  uint list = 0;
+  uint32_t id = chip->chipinsts_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbChipInst* chipinst = chip_inst_tbl_->getPtr(id);
-    uint n = chipinst->chipinst_next_;
+    uint32_t n = chipinst->chipinst_next_;
     chipinst->chipinst_next_ = list;
     list = id;
     id = n;
@@ -46,15 +47,15 @@ void dbChipInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipInstItr::sequential() const
+uint32_t dbChipInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipInstItr::size(dbObject* parent) const
+uint32_t dbChipInstItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbChipInstItr::begin(parent); id != dbChipInstItr::end(parent);
        id = dbChipInstItr::next(id)) {
@@ -64,7 +65,7 @@ uint dbChipInstItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbChipInstItr::begin(dbObject* parent) const
+uint32_t dbChipInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChip* chip = (_dbChip*) parent;
@@ -72,12 +73,12 @@ uint dbChipInstItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbChipInstItr::end(dbObject* /* unused: parent */) const
+uint32_t dbChipInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipInstItr::next(uint id, ...) const
+uint32_t dbChipInstItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbChipInst* chipinst = chip_inst_tbl_->getPtr(id);
@@ -85,7 +86,7 @@ uint dbChipInstItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbChipInstItr::getObject(uint id, ...)
+dbObject* dbChipInstItr::getObject(uint32_t id, ...)
 {
   return chip_inst_tbl_->getPtr(id);
 }

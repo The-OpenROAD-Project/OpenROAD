@@ -24,7 +24,7 @@ class DplObserver
                          GridX xh,
                          GridY yh)
       = 0;
-  virtual void endPlacement() = 0;
+  virtual void redrawAndPause() = 0;
 };
 
 }  // namespace dpl

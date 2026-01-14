@@ -21,7 +21,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -51,7 +50,7 @@ bool _dbWire::operator==(const _dbWire& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire.flags_;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream << *bit_field;
   stream << wire.data_;
   stream << wire.opcodes_;
@@ -61,7 +60,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
 
 dbIStream& operator>>(dbIStream& stream, _dbWire& wire)
 {
-  uint* bit_field = (uint*) &wire.flags_;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream >> *bit_field;
   stream >> wire.data_;
   stream >> wire.opcodes_;
@@ -104,7 +103,7 @@ bool dbWire::isGlobalWire()
 
 void dbWire::addOneSeg(unsigned char op,
                        int value,
-                       uint jj,
+                       uint32_t jj,
                        int* did,
                        dbRSeg** new_rsegs)
 {
@@ -126,17 +125,17 @@ void dbWire::addOneSeg(unsigned char op, int value)
   wire->opcodes_.push_back(op);
 }
 
-uint dbWire::getTermJid(const int termid) const
+uint32_t dbWire::getTermJid(const int termid) const
 {
   _dbWire* wire = (_dbWire*) this;
-  int topcd = WOP_ITERM;
+  int topcd = kIterm;
   int ttid = termid;
   if (termid < 0) {
-    topcd = WOP_BTERM;
+    topcd = kBterm;
     ttid = -termid;
   }
-  const uint wlen = wire->length();
-  uint jj;
+  const uint32_t wlen = wire->length();
+  uint32_t jj;
   for (jj = 0; jj < wlen; jj++) {
     if ((wire->opcodes_[jj] & WOP_OPCODE_MASK) == topcd) {
       if (wire->data_[jj] == ttid) {
@@ -148,7 +147,7 @@ uint dbWire::getTermJid(const int termid) const
     return 0;
   }
   jj--;
-  if ((wire->opcodes_[jj] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
+  if ((wire->opcodes_[jj] & WOP_OPCODE_MASK) == kProperty) {
     jj--;
   }
   return jj;
@@ -180,14 +179,14 @@ void dbWire::getShape(int shape_id, dbShape& shape)
   unsigned char opcode = wire->opcodes_[shape_id];
 
   switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_X:
-    case WOP_Y:
-    case WOP_COLINEAR: {
+    case kX:
+    case kY:
+    case kColinear: {
       getSegment(shape_id, shape);
       return;
     }
 
-    case WOP_VIA: {
+    case kVia: {
       dbBlock* block = (dbBlock*) wire->getOwner();
       dbTech* tech = getDb()->getTech();
       int operand = wire->data_[shape_id];
@@ -211,7 +210,7 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       return;
     }
 
-    case WOP_TECH_VIA: {
+    case kTechVia: {
       dbBlock* block = (dbBlock*) wire->getOwner();
       dbTech* tech = getDb()->getTech();
       int operand = wire->data_[shape_id];
@@ -261,18 +260,18 @@ bool dbWire::getProperty(int jid, int& prpty)
   [[maybe_unused]] const int wlen = (int) wire->length();
   assert(0 <= jid && jid < wlen);
   unsigned char op = wire->opcodes_[jid] & WOP_OPCODE_MASK;
-  if (op == WOP_COLINEAR || op == WOP_RECT) {
+  if (op == kColinear || op == kRect) {
     prpty = 0;
     return true;
   }
-  assert(op == WOP_X || op == WOP_Y);
+  assert(op == kX || op == kY);
   assert(jid + 1 < wlen);
-  if ((wire->opcodes_[jid + 1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
+  if ((wire->opcodes_[jid + 1] & WOP_OPCODE_MASK) == kProperty) {
     prpty = wire->data_[jid + 1];
     return true;
   }
   assert(jid + 2 < wlen);
-  if ((wire->opcodes_[jid + 2] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
+  if ((wire->opcodes_[jid + 2] & WOP_OPCODE_MASK) == kProperty) {
     prpty = wire->data_[jid + 2];
     return true;
   }
@@ -284,18 +283,18 @@ bool dbWire::setProperty(int jid, int prpty)
   _dbWire* wire = (_dbWire*) this;
   [[maybe_unused]] const int wlen = (int) wire->length();
   assert(0 <= jid && jid < wlen);
-  if ((wire->opcodes_[jid] & WOP_OPCODE_MASK) == WOP_COLINEAR) {
+  if ((wire->opcodes_[jid] & WOP_OPCODE_MASK) == kColinear) {
     return true;
   }
-  assert((wire->opcodes_[jid] & WOP_OPCODE_MASK) == WOP_X
-         || (wire->opcodes_[jid] & WOP_OPCODE_MASK) == WOP_Y);
+  assert((wire->opcodes_[jid] & WOP_OPCODE_MASK) == kX
+         || (wire->opcodes_[jid] & WOP_OPCODE_MASK) == kY);
   assert(jid + 1 < wlen);
-  if ((wire->opcodes_[jid + 1] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
+  if ((wire->opcodes_[jid + 1] & WOP_OPCODE_MASK) == kProperty) {
     wire->data_[jid + 1] = prpty;
     return true;
   }
   assert(jid + 2 < wlen);
-  if ((wire->opcodes_[jid + 2] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
+  if ((wire->opcodes_[jid + 2] & WOP_OPCODE_MASK) == kProperty) {
     wire->data_[jid + 2] = prpty;
     return true;
   }
@@ -330,21 +329,21 @@ uint64_t dbWire::getLength()
   return rtlen;
 }
 
-uint dbWire::length()
+uint32_t dbWire::length()
 {
   _dbWire* wire = (_dbWire*) this;
   return wire->length();
 }
 
-uint dbWire::count()
+uint32_t dbWire::count()
 {
-  uint jj;
+  uint32_t jj;
   int opcode;
-  uint cnt = 0;
+  uint32_t cnt = 0;
   _dbWire* wire = (_dbWire*) this;
   for (jj = 0; jj < wire->length(); jj++) {
     opcode = wire->opcodes_[jj] & WOP_OPCODE_MASK;
-    if (opcode == WOP_X || opcode == WOP_Y) {
+    if (opcode == kX || opcode == kY) {
       cnt++;
     }
   }
@@ -443,13 +442,14 @@ decode_loop: {
   assert(idx >= 0);
   opcode = wire->opcodes_[idx];
 
-  switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_JUNCTION:
+  const WireOp wire_op = static_cast<WireOp>(opcode & WOP_OPCODE_MASK);
+  switch (wire_op) {
+    case kJunction:
       idx = wire->data_[idx];
       ignore_ext = true;
       goto decode_loop;
 
-    case WOP_RULE:
+    case kRule:
       if (found_width == false) {
         found_width = true;
 
@@ -468,19 +468,19 @@ decode_loop: {
 
       break;
 
-    case WOP_X:
+    case kX:
       input = XInput;
       goto state_machine_update;
 
-    case WOP_Y:
+    case kY:
       input = YInput;
       goto state_machine_update;
 
-    case WOP_COLINEAR:
+    case kColinear:
       input = CInput;
       goto state_machine_update;
 
-    case WOP_VIA:
+    case kVia:
       if (layer == nullptr) {
         dbBlock* block = (dbBlock*) wire->getOwner();
         dbVia* via = dbVia::getVia(block, wire->data_[idx]);
@@ -494,7 +494,7 @@ decode_loop: {
       ignore_ext = true;
       break;
 
-    case WOP_TECH_VIA:
+    case kTechVia:
       if (layer == nullptr) {
         dbTech* tech = getDb()->getTech();
         dbTechVia* via = dbTechVia::getTechVia(tech, wire->data_[idx]);
@@ -507,6 +507,22 @@ decode_loop: {
       }
       ignore_ext = true;
       break;
+    case kPath:
+    case kShort:
+    case kIterm:
+    case kBterm:
+    case kOperand:
+    case kProperty:
+    case kVwire:
+    case kRect:
+    case kNop:
+    case kColor:
+    case kViaColor: {
+      utl::Logger* logger = getImpl()->getLogger();
+      logger->error(
+          utl::ODB, 1115, "Unexpected {} in dbWire::getSegment", wire_op);
+      break;
+    }
   }
 
   --idx;
@@ -547,9 +563,9 @@ state_machine_update: {
     opcode = wire->opcodes_[idx];
 
     switch (opcode & WOP_OPCODE_MASK) {
-      case WOP_PATH:
-      case WOP_SHORT:
-      case WOP_VWIRE: {
+      case kPath:
+      case kShort:
+      case kVwire: {
         if (layer == nullptr) {
           dbTech* tech = getDb()->getTech();
           layer = dbTechLayer::getTechLayer(tech, wire->data_[idx]);
@@ -559,12 +575,12 @@ state_machine_update: {
         break;
       }
 
-      case WOP_JUNCTION: {
+      case kJunction: {
         idx = wire->data_[idx];
         break;
       }
 
-      case WOP_RULE: {
+      case kRule: {
         found_width = true;
         if (opcode & WOP_BLOCK_RULE) {
           dbBlock* block = (dbBlock*) wire->getOwner();
@@ -581,7 +597,7 @@ state_machine_update: {
         break;
       }
 
-      case WOP_VIA: {
+      case kVia: {
         if (layer == nullptr) {
           dbBlock* block = (dbBlock*) wire->getOwner();
           dbVia* via = dbVia::getVia(block, wire->data_[idx]);
@@ -596,7 +612,7 @@ state_machine_update: {
         break;
       }
 
-      case WOP_TECH_VIA: {
+      case kTechVia: {
         if (layer == nullptr) {
           dbTech* tech = getDb()->getTech();
           dbTechVia* via = dbTechVia::getTechVia(tech, wire->data_[idx]);
@@ -681,13 +697,14 @@ decode_loop: {
   assert(idx >= 0);
   opcode = wire->opcodes_[idx];
 
-  switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_JUNCTION:
+  const WireOp wire_op = static_cast<WireOp>(opcode & WOP_OPCODE_MASK);
+  switch (wire_op) {
+    case kJunction:
       idx = wire->data_[idx];
       ignore_ext = true;
       goto decode_loop;
 
-    case WOP_RULE:
+    case kRule:
       if (found_width == false) {
         found_width = true;
 
@@ -706,17 +723,36 @@ decode_loop: {
 
       break;
 
-    case WOP_X:
+    case kX:
       input = XInput;
       goto state_machine_update;
 
-    case WOP_Y:
+    case kY:
       input = YInput;
       goto state_machine_update;
 
-    case WOP_COLINEAR:
+    case kColinear:
       input = CInput;
       goto state_machine_update;
+
+    case kPath:
+    case kShort:
+    case kVia:
+    case kTechVia:
+    case kIterm:
+    case kBterm:
+    case kOperand:
+    case kProperty:
+    case kVwire:
+    case kRect:
+    case kNop:
+    case kColor:
+    case kViaColor: {
+      utl::Logger* logger = getImpl()->getLogger();
+      logger->error(
+          utl::ODB, 1114, "Unexpected {} in dbWire::getSegment", wire_op);
+      break;
+    }
   }
 
   --idx;
@@ -757,12 +793,12 @@ state_machine_update: {
     opcode = wire->opcodes_[idx];
 
     switch (opcode & WOP_OPCODE_MASK) {
-      case WOP_JUNCTION: {
+      case kJunction: {
         idx = wire->data_[idx];
         break;
       }
 
-      case WOP_RULE: {
+      case kRule: {
         found_width = true;
         if (opcode & WOP_BLOCK_RULE) {
           dbBlock* block = (dbBlock*) wire->getOwner();
@@ -817,7 +853,7 @@ state_machine_update: {
                    layer);
 }
 
-inline unsigned char getPrevOpcode(_dbWire* wire, int& idx)
+static unsigned char getPrevOpcode(_dbWire* wire, int& idx)
 {
   --idx;
 
@@ -826,21 +862,21 @@ prevOpCode:
   unsigned char opcode = wire->opcodes_[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_PATH:
-    case WOP_SHORT:
-    case WOP_VWIRE:
-    case WOP_JUNCTION:
+    case kPath:
+    case kShort:
+    case kVwire:
+    case kJunction:
       return opcode;
 
-    case WOP_RULE:
+    case kRule:
       --idx;
       goto prevOpCode;
 
-    case WOP_X:
-    case WOP_Y:
-    case WOP_COLINEAR:
-    case WOP_VIA:
-    case WOP_TECH_VIA:
+    case kX:
+    case kY:
+    case kColinear:
+    case kVia:
+    case kTechVia:
       return opcode;
 
     default:
@@ -849,7 +885,7 @@ prevOpCode:
   }
 }
 
-inline bool createVia(_dbWire* wire, int idx, dbShape& shape)
+static bool createVia(_dbWire* wire, int idx, dbShape& shape)
 {
   dbBlock* block = (dbBlock*) wire->getOwner();
   dbTech* tech = wire->getDb()->getTech();
@@ -876,7 +912,7 @@ inline bool createVia(_dbWire* wire, int idx, dbShape& shape)
   return true;
 }
 
-inline bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
+static bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
 {
   dbBlock* block = (dbBlock*) wire->getOwner();
   dbTech* tech = wire->getDb()->getTech();
@@ -914,7 +950,7 @@ bool dbWire::getPrevVia(int idx, dbShape& shape)
   opcode = getPrevOpcode(wire, idx);
 
   switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_COLINEAR: {
+    case kColinear: {
       // special case: colinear point with ext starts a new segment
       //   idx-3   idx-2   idx-1      idx
       // ( X1 Y1 ) ( V ) ( X1 Y1 E) ( X1 Y2 )
@@ -922,10 +958,10 @@ bool dbWire::getPrevVia(int idx, dbShape& shape)
         opcode = getPrevOpcode(wire, idx);
 
         switch (opcode & WOP_OPCODE_MASK) {
-          case WOP_TECH_VIA:
+          case kTechVia:
             return createTechVia(wire, idx, shape);
 
-          case WOP_VIA:
+          case kVia:
             return createVia(wire, idx, shape);
 
           default:
@@ -936,10 +972,10 @@ bool dbWire::getPrevVia(int idx, dbShape& shape)
       break;
     }
 
-    case WOP_TECH_VIA:
+    case kTechVia:
       return createTechVia(wire, idx, shape);
 
-    case WOP_VIA:
+    case kVia:
       return createVia(wire, idx, shape);
 
     default:
@@ -959,32 +995,32 @@ bool dbWire::getNextVia(int idx, dbShape& shape)
   ++idx;
 
 nextOpCode:
-  if ((uint) idx == wire->length()) {
+  if ((uint32_t) idx == wire->length()) {
     return false;
   }
 
   unsigned char opcode = wire->opcodes_[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_PATH:
-    case WOP_SHORT:
-    case WOP_VWIRE:
-    case WOP_JUNCTION:
+    case kPath:
+    case kShort:
+    case kVwire:
+    case kJunction:
       return false;
 
-    case WOP_RULE:
+    case kRule:
       ++idx;
       goto nextOpCode;
 
-    case WOP_X:
-    case WOP_Y:
-    case WOP_COLINEAR:
+    case kX:
+    case kY:
+    case kColinear:
       return false;
 
-    case WOP_TECH_VIA:
+    case kTechVia:
       return createTechVia(wire, idx, shape);
 
-    case WOP_VIA:
+    case kVia:
       return createVia(wire, idx, shape);
 
     default:
@@ -1025,7 +1061,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
     for (i = 0; i < n; ++i) {
       unsigned char opcode = src->opcodes_[i] & WOP_OPCODE_MASK;
 
-      if (opcode == WOP_ITERM || opcode == WOP_BTERM) {
+      if (opcode == kIterm || opcode == kBterm) {
         return;
       }
     }
@@ -1033,7 +1069,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
   for (auto callback : ((_dbBlock*) getBlock())->callbacks_) {
     callback->inDbWirePreAppend(src_, this);
   }
-  uint sz = dst->opcodes_.size();
+  uint32_t sz = dst->opcodes_.size();
   dst->opcodes_.insert(
       dst->opcodes_.end(), src->opcodes_.begin(), src->opcodes_.end());
   dst->data_.insert(dst->data_.end(), src->data_.begin(), src->data_.end());
@@ -1046,8 +1082,8 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
     for (i = sz; i < n; ++i) {
       unsigned char opcode = dst->opcodes_[i] & WOP_OPCODE_MASK;
 
-      if (opcode == WOP_VIA) {
-        uint vid = dst->data_[i];
+      if (opcode == kVia) {
+        uint32_t vid = dst->data_[i];
         _dbVia* src_via = src_block->via_tbl_->getPtr(vid);
         dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->name_);
 
@@ -1067,8 +1103,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
 
   for (i = sz; i < n; ++i) {
     unsigned char opcode = dst->opcodes_[i] & WOP_OPCODE_MASK;
-    if ((opcode == WOP_SHORT) || (opcode == WOP_JUNCTION)
-        || (opcode == WOP_VWIRE)) {
+    if ((opcode == kShort) || (opcode == kJunction) || (opcode == kVwire)) {
       dst->data_[i] += sz;
     }
   }
@@ -1170,7 +1205,7 @@ dbWire* dbWire::create(dbBlock* block_, bool /* unused: global_wire */)
   return (dbWire*) wire;
 }
 
-dbWire* dbWire::getWire(dbBlock* block_, uint dbid_)
+dbWire* dbWire::getWire(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbWire*) block->wire_tbl_->getPtr(dbid_);
@@ -1210,8 +1245,8 @@ void _dbWire::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["data"].add(data_);
-  info.children_["opcodes"].add(opcodes_);
+  info.children["data"].add(data_);
+  info.children["opcodes"].add(opcodes_);
 }
 
 }  // namespace odb

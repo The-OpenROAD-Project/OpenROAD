@@ -4,11 +4,12 @@
 // Generator Code Begin Cpp
 #include "dbModuleModInstItr.h"
 
+#include <cstdint>
+
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -32,12 +33,12 @@ void dbModuleModInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbModule* module = (_dbModule*) parent;
-  uint id = module->modinsts_;
-  uint list = 0;
+  uint32_t id = module->modinsts_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbModInst* modinst = modinst_tbl_->getPtr(id);
-    uint n = modinst->module_next_;
+    uint32_t n = modinst->module_next_;
     modinst->module_next_ = list;
     list = id;
     id = n;
@@ -46,15 +47,15 @@ void dbModuleModInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbModuleModInstItr::sequential() const
+uint32_t dbModuleModInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbModuleModInstItr::size(dbObject* parent) const
+uint32_t dbModuleModInstItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbModuleModInstItr::begin(parent);
        id != dbModuleModInstItr::end(parent);
@@ -65,7 +66,7 @@ uint dbModuleModInstItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbModuleModInstItr::begin(dbObject* parent) const
+uint32_t dbModuleModInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* module = (_dbModule*) parent;
@@ -73,12 +74,12 @@ uint dbModuleModInstItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbModuleModInstItr::end(dbObject* /* unused: parent */) const
+uint32_t dbModuleModInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModuleModInstItr::next(uint id, ...) const
+uint32_t dbModuleModInstItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbModInst* modinst = modinst_tbl_->getPtr(id);
@@ -86,7 +87,7 @@ uint dbModuleModInstItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbModuleModInstItr::getObject(uint id, ...)
+dbObject* dbModuleModInstItr::getObject(uint32_t id, ...)
 {
   return modinst_tbl_->getPtr(id);
 }

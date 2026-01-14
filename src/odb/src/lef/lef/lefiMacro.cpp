@@ -29,8 +29,7 @@
 
 #include "lefiMacro.hpp"
 
-#include <string.h>
-
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -566,7 +565,6 @@ void lefiPinAntennaModel::addAntennaMaxCutCar(double val, const char* layer)
 void lefiPinAntennaModel::setAntennaReturnFlag(int flag)
 {
   hasReturn_ = flag;
-  return;
 }
 
 int lefiPinAntennaModel::hasAntennaGateArea() const
@@ -1958,14 +1956,10 @@ void lefiPin::addAntennaModel(int oxide)
   amo = pinAntennaModel_[oxide - 1];
   curAntennaModelIndex_ = oxide - 1;
 
-  if (oxide > numAntennaModel_) {
-    numAntennaModel_ = oxide;
-  }
+  numAntennaModel_ = std::max(oxide, numAntennaModel_);
 
   amo->Init();
   amo->setAntennaModel(oxide);
-
-  return;
 }
 
 // 5.5

@@ -4,12 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -21,6 +21,8 @@ class _dbLevelShifter : public _dbObject
 {
  public:
   _dbLevelShifter(_dbDatabase*);
+
+  ~_dbLevelShifter();
 
   bool operator==(const _dbLevelShifter& rhs) const;
   bool operator!=(const _dbLevelShifter& rhs) const { return !operator==(rhs); }

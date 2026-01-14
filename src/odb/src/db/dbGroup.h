@@ -4,13 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
-// User Code Begin Includes
-#include "dbVector.h"
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -23,14 +21,16 @@ class _dbRegion;
 
 struct dbGroupFlags
 {
-  uint type : 2;
-  uint spare_bits : 30;
+  uint32_t type : 2;
+  uint32_t spare_bits : 30;
 };
 
 class _dbGroup : public _dbObject
 {
  public:
   _dbGroup(_dbDatabase*);
+
+  ~_dbGroup();
 
   bool operator==(const _dbGroup& rhs) const;
   bool operator!=(const _dbGroup& rhs) const { return !operator==(rhs); }

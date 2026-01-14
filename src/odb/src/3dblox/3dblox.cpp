@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "bmapParser.h"
@@ -87,8 +88,7 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
-  calculateSize(db_->getChip());
-  db_->triggerPostRead3Dbx(chip);
+  calculateSize(chip);
 }
 
 void ThreeDBlox::check()
@@ -265,6 +265,9 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   for (const auto& lef_file : chiplet.external.lef_files) {
     auto lib_name = getFileName(lef_file);
+    if (db_->findLib(lib_name.c_str()) != nullptr) {
+      continue;
+    }
     odb::lefin lef_reader(db_, logger_, false);
     lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
@@ -581,7 +584,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
 
   BmapParser parser(logger_);
   BumpMapData data = parser.parseFile(bmap_file);
-  std::vector<odb::dbInst*> bumps;
+  std::vector<std::pair<odb::dbInst*, odb::dbBTerm*>> bumps;
   bumps.reserve(data.entries.size());
   for (const auto& entry : data.entries) {
     bumps.push_back(createBump(entry, block));
@@ -595,7 +598,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
 
   // Populate where the bpins should be made
   std::map<odb::dbMaster*, BPinInfo> bpininfo;
-  for (dbInst* inst : bumps) {
+  for (const auto& [inst, bterm] : bumps) {
     dbMaster* master = inst->getMaster();
     if (bpininfo.find(master) != bpininfo.end()) {
       continue;
@@ -645,7 +648,11 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
   }
 
   // create bpins
-  for (dbInst* inst : bumps) {
+  for (const auto& [inst, bterm] : bumps) {
+    if (bterm == nullptr) {
+      continue;
+    }
+
     auto masterbpin = bpininfo.find(inst->getMaster());
     if (masterbpin == bpininfo.end()) {
       continue;
@@ -654,28 +661,22 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
     const BPinInfo& pin_info = masterbpin->second;
 
     const dbTransform xform = inst->getTransform();
-    for (dbITerm* iterm : inst->getITerms()) {
-      dbNet* net = iterm->getNet();
-      if (net == nullptr) {
-        continue;
-      }
-      dbBTerm* bterm = net->get1stBTerm();
-      dbBPin* pin = dbBPin::create(bterm);
-      Rect shape = pin_info.rect;
-      xform.apply(shape);
-      dbBox::create(pin,
-                    pin_info.layer,
-                    shape.xMin(),
-                    shape.yMin(),
-                    shape.xMax(),
-                    shape.yMax());
-      pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-      break;
-    }
+    dbBPin* pin = dbBPin::create(bterm);
+    Rect shape = pin_info.rect;
+    xform.apply(shape);
+    dbBox::create(pin,
+                  pin_info.layer,
+                  shape.xMin(),
+                  shape.yMin(),
+                  shape.xMax(),
+                  shape.yMax());
+    pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   }
 }
 
-dbInst* ThreeDBlox::createBump(const BumpMapEntry& entry, dbBlock* block)
+std::pair<dbInst*, odb::dbBTerm*> ThreeDBlox::createBump(
+    const BumpMapEntry& entry,
+    dbBlock* block)
 {
   const int dbus = db_->getDbuPerMicron();
   dbInst* inst = block->findInst(entry.bump_inst_name.c_str());
@@ -685,30 +686,66 @@ dbInst* ThreeDBlox::createBump(const BumpMapEntry& entry, dbBlock* block)
     if (master == nullptr) {
       logger_->error(utl::ODB,
                      538,
-                     "3DBV Parser Error: Bump cell type {} not found",
-                     entry.bump_cell_type);
+                     "3DBV Parser Error: Bump cell type {} not found for {}",
+                     entry.bump_cell_type,
+                     entry.bump_inst_name);
     }
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
   inst->setOrigin(entry.x * dbus, entry.y * dbus);
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
 
-  // Net entry doesn't make sense
-  if (entry.net_name != "-") {
-    dbNet* net = block->findNet(entry.net_name.c_str());
-    if (net == nullptr) {
+  dbNet* net = nullptr;
+  dbBTerm* term = nullptr;
+
+  // Find bterm
+  if (entry.port_name != "-") {
+    term = block->findBTerm(entry.port_name.c_str());
+    if (term == nullptr) {
       logger_->error(utl::ODB,
                      539,
-                     "3DBV Parser Error: Bump net {} not found",
-                     entry.net_name);
+                     "3DBV Parser Error: Bump port {} not found for {}",
+                     entry.port_name,
+                     entry.bump_inst_name);
     }
+    net = term->getNet();
+  }
+
+  // Find term via net
+  if (term == nullptr && entry.net_name != "-") {
+    net = block->findNet(entry.net_name.c_str());
+    if (net == nullptr) {
+      logger_->error(utl::ODB,
+                     543,
+                     "3DBV Parser Error: Bump net {} not found for {}",
+                     entry.net_name,
+                     entry.bump_inst_name);
+    }
+    if (net->getBTerms().empty()) {
+      logger_->error(utl::ODB,
+                     544,
+                     "3DBV Parser Error: Bump net {} has no bterms for {}",
+                     entry.net_name,
+                     entry.bump_inst_name);
+    }
+    if (net->getBTerms().size() > 1) {
+      logger_->error(
+          utl::ODB,
+          542,
+          "3DBV Parser Error: Bump net {} has multiple bterms for {}",
+          entry.net_name,
+          entry.bump_inst_name);
+    }
+    term = net->get1stBTerm();
+  }
+
+  if (net != nullptr) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
       iterm->connect(net);
     }
   }
-  // Port already on the net, so skip
 
-  return inst;
+  return {inst, term};
 }
 
 }  // namespace odb

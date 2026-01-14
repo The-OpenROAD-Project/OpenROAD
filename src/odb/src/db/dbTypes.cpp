@@ -68,43 +68,33 @@ dbOrientType::dbOrientType(const char* orient)
 
 const char* dbOrientType::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case R0:
-      value = "R0";
-      break;
+      return "R0";
 
     case R90:
-      value = "R90";
-      break;
+      return "R90";
 
     case R180:
-      value = "R180";
-      break;
+      return "R180";
 
     case R270:
-      value = "R270";
-      break;
+      return "R270";
 
     case MY:
-      value = "MY";
-      break;
+      return "MY";
 
     case MYR90:
-      value = "MYR90";
-      break;
+      return "MYR90";
 
     case MX:
-      value = "MX";
-      break;
+      return "MX";
 
     case MXR90:
-      value = "MXR90";
-      break;
+      return "MXR90";
   }
 
-  return value;
+  return "";
 }
 
 dbOrientType dbOrientType::flipX() const
@@ -351,27 +341,21 @@ dbGroupType::dbGroupType(const char* type)
 
 const char* dbGroupType::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case PHYSICAL_CLUSTER:
-      value = "PHYSICAL_CLUSTER";
-      break;
+      return "PHYSICAL_CLUSTER";
 
     case VOLTAGE_DOMAIN:
-      value = "VOLTAGE_DOMAIN";
-      break;
+      return "VOLTAGE_DOMAIN";
 
     case POWER_DOMAIN:
-      value = "POWER_DOMAIN";
-      break;
+      return "POWER_DOMAIN";
 
     case VISUAL_DEBUG:
-      value = "VISUAL_DEBUG";
-      break;
+      return "VISUAL_DEBUG";
   }
 
-  return value;
+  return "";
 }
 
 dbSigType::dbSigType(const char* value)
@@ -425,43 +409,33 @@ bool dbSigType::isSupply() const
 
 const char* dbSigType::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case SIGNAL:
-      value = "SIGNAL";
-      break;
+      return "SIGNAL";
 
     case POWER:
-      value = "POWER";
-      break;
+      return "POWER";
 
     case GROUND:
-      value = "GROUND";
-      break;
+      return "GROUND";
 
     case CLOCK:
-      value = "CLOCK";
-      break;
+      return "CLOCK";
 
     case ANALOG:
-      value = "ANALOG";
-      break;
+      return "ANALOG";
 
     case RESET:
-      value = "RESET";
-      break;
+      return "RESET";
 
     case SCAN:
-      value = "SCAN";
-      break;
+      return "SCAN";
 
     case TIEOFF:
-      value = "TIEOFF";
-      break;
+      return "TIEOFF";
   }
 
-  return value;
+  return "";
 }
 
 dbIoType::dbIoType(const char* value)
@@ -485,27 +459,21 @@ dbIoType::dbIoType(const char* value)
 
 const char* dbIoType::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case INPUT:
-      value = "INPUT";
-      break;
+      return "INPUT";
 
     case OUTPUT:
-      value = "OUTPUT";
-      break;
+      return "OUTPUT";
 
     case INOUT:
-      value = "INOUT";
-      break;
+      return "INOUT";
 
     case FEEDTHRU:
-      value = "FEEDTHRU";
-      break;
+      return "FEEDTHRU";
   }
 
-  return value;
+  return "";
 }
 
 dbPlacementStatus::dbPlacementStatus(const char* value)
@@ -538,39 +506,30 @@ dbPlacementStatus::dbPlacementStatus(const char* value)
 
 const char* dbPlacementStatus::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case UNPLACED:
-      value = "UNPLACED";
-      break;
+      return "UNPLACED";
 
     case SUGGESTED:
-      value = "SUGGESTED";
-      break;
+      return "SUGGESTED";
 
     case PLACED:
-      value = "PLACED";
-      break;
+      return "PLACED";
 
     case LOCKED:
-      value = "LOCKED";
-      break;
+      return "LOCKED";
 
     case FIRM:
-      value = "FIRM";
-      break;
+      return "FIRM";
 
     case COVER:
-      value = "COVER";
-      break;
+      return "COVER";
   }
 
-  return value;
+  return "";
 }
 
 bool dbPlacementStatus::isPlaced() const
@@ -732,167 +691,126 @@ dbMasterType::dbMasterType(const char* value)
 
 const char* dbMasterType::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case COVER:
-      value = "COVER";
-      break;
+      return "COVER";
 
     case COVER_BUMP:
-      value = "COVER BUMP";
-      break;
+      return "COVER BUMP";
 
     case RING:
-      value = "RING";
-      break;
+      return "RING";
 
     case BLOCK:
-      value = "BLOCK";
-      break;
+      return "BLOCK";
 
     case BLOCK_BLACKBOX:
-      value = "BLOCK BLACKBOX";
-      break;
+      return "BLOCK BLACKBOX";
 
     case BLOCK_SOFT:
-      value = "BLOCK SOFT";
-      break;
+      return "BLOCK SOFT";
 
     case PAD:
-      value = "PAD";
-      break;
+      return "PAD";
 
     case PAD_INPUT:
-      value = "PAD INPUT";
-      break;
+      return "PAD INPUT";
 
     case PAD_OUTPUT:
-      value = "PAD OUTPUT";
-      break;
+      return "PAD OUTPUT";
 
     case PAD_INOUT:
-      value = "PAD INOUT";
-      break;
+      return "PAD INOUT";
 
     case PAD_POWER:
-      value = "PAD POWER";
-      break;
+      return "PAD POWER";
 
     case PAD_SPACER:
-      value = "PAD SPACER";
-      break;
+      return "PAD SPACER";
 
     case PAD_AREAIO:
-      value = "PAD AREAIO";
-      break;
+      return "PAD AREAIO";
 
     case CORE:
-      value = "CORE";
-      break;
+      return "CORE";
 
     case CORE_FEEDTHRU:
-      value = "CORE FEEDTHRU";
-      break;
+      return "CORE FEEDTHRU";
 
     case CORE_TIEHIGH:
-      value = "CORE TIEHIGH";
-      break;
+      return "CORE TIEHIGH";
 
     case CORE_TIELOW:
-      value = "CORE TIELOW";
-      break;
+      return "CORE TIELOW";
 
     case CORE_SPACER:
-      value = "CORE SPACER";
-      break;
+      return "CORE SPACER";
 
     case CORE_ANTENNACELL:
-      value = "CORE ANTENNACELL";
-      break;
+      return "CORE ANTENNACELL";
 
     case CORE_WELLTAP:
-      value = "CORE WELLTAP";
-      break;
+      return "CORE WELLTAP";
 
     case ENDCAP:
-      value = "ENDCAP";
-      break;
+      return "ENDCAP";
 
     case ENDCAP_PRE:
-      value = "ENDCAP PRE";
-      break;
+      return "ENDCAP PRE";
 
     case ENDCAP_POST:
-      value = "ENDCAP POST";
-      break;
+      return "ENDCAP POST";
 
     case ENDCAP_TOPLEFT:
-      value = "ENDCAP TOPLEFT";
-      break;
+      return "ENDCAP TOPLEFT";
 
     case ENDCAP_TOPRIGHT:
-      value = "ENDCAP TOPRIGHT";
-      break;
+      return "ENDCAP TOPRIGHT";
 
     case ENDCAP_BOTTOMLEFT:
-      value = "ENDCAP BOTTOMLEFT";
-      break;
+      return "ENDCAP BOTTOMLEFT";
 
     case ENDCAP_BOTTOMRIGHT:
-      value = "ENDCAP BOTTOMRIGHT";
-      break;
+      return "ENDCAP BOTTOMRIGHT";
 
     case ENDCAP_LEF58_BOTTOMEDGE:
-      value = "ENDCAP BOTTOMEDGE";
-      break;
+      return "ENDCAP BOTTOMEDGE";
 
     case ENDCAP_LEF58_TOPEDGE:
-      value = "ENDCAP TOPEDGE";
-      break;
+      return "ENDCAP TOPEDGE";
 
     case ENDCAP_LEF58_RIGHTEDGE:
-      value = "ENDCAP RIGHTEDGE";
-      break;
+      return "ENDCAP RIGHTEDGE";
 
     case ENDCAP_LEF58_LEFTEDGE:
-      value = "ENDCAP LEFTEDGE";
-      break;
+      return "ENDCAP LEFTEDGE";
 
     case ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-      value = "ENDCAP RIGHTBOTTOMEDGE";
-      break;
+      return "ENDCAP RIGHTBOTTOMEDGE";
 
     case ENDCAP_LEF58_LEFTBOTTOMEDGE:
-      value = "ENDCAP LEFTBOTTOMEDGE";
-      break;
+      return "ENDCAP LEFTBOTTOMEDGE";
 
     case ENDCAP_LEF58_RIGHTTOPEDGE:
-      value = "ENDCAP RIGHTTOPEDGE";
-      break;
+      return "ENDCAP RIGHTTOPEDGE";
 
     case ENDCAP_LEF58_LEFTTOPEDGE:
-      value = "ENDCAP LEFTTOPEDGE";
-      break;
+      return "ENDCAP LEFTTOPEDGE";
 
     case ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-      value = "ENDCAP RIGHTBOTTOMCORNER";
-      break;
+      return "ENDCAP RIGHTBOTTOMCORNER";
 
     case ENDCAP_LEF58_LEFTBOTTOMCORNER:
-      value = "ENDCAP LEFTBOTTOMCORNER";
-      break;
+      return "ENDCAP LEFTBOTTOMCORNER";
 
     case ENDCAP_LEF58_RIGHTTOPCORNER:
-      value = "ENDCAP RIGHTTOPCORNER";
-      break;
+      return "ENDCAP RIGHTTOPCORNER";
 
     case ENDCAP_LEF58_LEFTTOPCORNER:
-      value = "ENDCAP LEFTTOPCORNER";
-      break;
+      return "ENDCAP LEFTTOPCORNER";
   }
 
-  return value;
+  return "";
 }
 
 bool dbMasterType::isBlock() const
@@ -1174,35 +1092,27 @@ dbTechLayerType::dbTechLayerType(const char* value)
 
 const char* dbTechLayerType::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case ROUTING:
-      value = "ROUTING";
-      break;
+      return "ROUTING";
 
     case CUT:
-      value = "CUT";
-      break;
+      return "CUT";
 
     case MASTERSLICE:
-      value = "MASTERSLICE";
-      break;
+      return "MASTERSLICE";
 
     case OVERLAP:
-      value = "OVERLAP";
-      break;
+      return "OVERLAP";
 
     case IMPLANT:
-      value = "IMPLANT";
-      break;
+      return "IMPLANT";
   }
 
-  return value;
+  return "";
 }
 
 dbTechLayerDir::dbTechLayerDir(const char* value)
@@ -1223,23 +1133,18 @@ dbTechLayerDir::dbTechLayerDir(const char* value)
 
 const char* dbTechLayerDir::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case HORIZONTAL:
-      value = "HORIZONTAL";
-      break;
+      return "HORIZONTAL";
 
     case VERTICAL:
-      value = "VERTICAL";
-      break;
+      return "VERTICAL";
   }
 
-  return value;
+  return "";
 }
 
 dbTechLayerMinStepType::dbTechLayerMinStepType(const char* value)
@@ -1260,23 +1165,18 @@ dbTechLayerMinStepType::dbTechLayerMinStepType(const char* value)
 
 const char* dbTechLayerMinStepType::getString() const
 {
-  const char* value = "";
-
   switch (value_) {
     case INSIDE_CORNER:
-      value = "INSIDECORNER";
-      break;
+      return "INSIDECORNER";
 
     case OUTSIDE_CORNER:
-      value = "OUTSIDECORNER";
-      break;
+      return "OUTSIDECORNER";
 
     case STEP:
-      value = "STEP";
-      break;
+      return "STEP";
   }
 
-  return value;
+  return "";
 }
 
 dbBoxOwner::dbBoxOwner(const char* value)
@@ -1331,67 +1231,51 @@ dbBoxOwner::dbBoxOwner(const char* value)
 
 const char* dbBoxOwner::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case UNKNOWN:
-      value = "UNKNOWN";
-      break;
+      return "UNKNOWN";
 
     case BLOCK:
-      value = "BLOCK";
-      break;
+      return "BLOCK";
 
     case INST:
-      value = "INST";
-      break;
+      return "INST";
 
     case BTERM:
-      value = "BTERM";
-      break;
+      return "BTERM";
 
     case BPIN:
-      value = "BPIN";
-      break;
+      return "BPIN";
 
     case VIA:
-      value = "VIA";
-      break;
+      return "VIA";
 
     case OBSTRUCTION:
-      value = "OBSTRUCTION";
-      break;
+      return "OBSTRUCTION";
 
     case BLOCKAGE:
-      value = "BLOCKAGE";
-      break;
+      return "BLOCKAGE";
 
     case MASTER:
-      value = "MASTER";
-      break;
+      return "MASTER";
 
     case MPIN:
-      value = "MPIN";
-      break;
+      return "MPIN";
 
     case TECH_VIA:
-      value = "TECH VIA";
-      break;
+      return "TECH VIA";
 
     case SWIRE:
-      value = "SWIRE";
-      break;
+      return "SWIRE";
 
     case REGION:
-      value = "REGION";
-      break;
+      return "REGION";
 
     case PBOX:
-      value = "PBOX";
-      break;
+      return "PBOX";
   }
 
-  return value;
+  return "";
 }
 
 dbPolygonOwner::dbPolygonOwner(const char* value)
@@ -1415,27 +1299,21 @@ dbPolygonOwner::dbPolygonOwner(const char* value)
 
 const char* dbPolygonOwner::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case UNKNOWN:
-      value = "UNKNOWN";
-      break;
+      return "UNKNOWN";
 
     case BPIN:
-      value = "BPIN";
-      break;
+      return "BPIN";
 
     case OBSTRUCTION:
-      value = "OBSTRUCTION";
-      break;
+      return "OBSTRUCTION";
 
     case SWIRE:
-      value = "SWIRE";
-      break;
+      return "SWIRE";
   }
 
-  return value;
+  return "";
 }
 
 dbWireType::dbWireType(const char* value)
@@ -1463,35 +1341,27 @@ dbWireType::dbWireType(const char* value)
 
 const char* dbWireType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case COVER:
-      value = "COVER";
-      break;
+      return "COVER";
 
     case FIXED:
-      value = "FIXED";
-      break;
+      return "FIXED";
 
     case ROUTED:
-      value = "ROUTED";
-      break;
+      return "ROUTED";
 
     case SHIELD:
-      value = "SHIELD";
-      break;
+      return "SHIELD";
 
     case NOSHIELD:
-      value = "NOSHIELD";
-      break;
+      return "NOSHIELD";
   }
 
-  return value;
+  return "";
 }
 
 dbWireShapeType::dbWireShapeType(const char* value)
@@ -1537,59 +1407,45 @@ dbWireShapeType::dbWireShapeType(const char* value)
 
 const char* dbWireShapeType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case RING:
-      value = "RING";
-      break;
+      return "RING";
 
     case PADRING:
-      value = "PADRING";
-      break;
+      return "PADRING";
 
     case BLOCKRING:
-      value = "BLOCKRING";
-      break;
+      return "BLOCKRING";
 
     case STRIPE:
-      value = "STRIPE";
-      break;
+      return "STRIPE";
 
     case FOLLOWPIN:
-      value = "FOLLOWPIN";
-      break;
+      return "FOLLOWPIN";
 
     case IOWIRE:
-      value = "IOWIRE";
-      break;
+      return "IOWIRE";
 
     case COREWIRE:
-      value = "COREWIRE";
-      break;
+      return "COREWIRE";
 
     case BLOCKWIRE:
-      value = "BLOCKWIRE";
-      break;
+      return "BLOCKWIRE";
 
     case BLOCKAGEWIRE:
-      value = "BLOCKAGEWIRE";
-      break;
+      return "BLOCKAGEWIRE";
 
     case FILLWIRE:
-      value = "FILLWIRE";
-      break;
+      return "FILLWIRE";
 
     case DRCFILL:
-      value = "DRCFILL";
-      break;
+      return "DRCFILL";
   }
 
-  return value;
+  return "";
 }
 
 dbSiteClass::dbSiteClass(const char* value)
@@ -1610,23 +1466,18 @@ dbSiteClass::dbSiteClass(const char* value)
 
 const char* dbSiteClass::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case PAD:
-      value = "PAD";
-      break;
+      return "PAD";
 
     case CORE:
-      value = "CORE";
-      break;
+      return "CORE";
   }
 
-  return value;
+  return "";
 }
 
 ///
@@ -1645,19 +1496,15 @@ dbOnOffType::dbOnOffType(const char* instr)
 
 const char* dbOnOffType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case OFF:
-      value = "OFF";
-      break;
+      return "OFF";
 
     case ON:
-      value = "ON";
-      break;
+      return "ON";
   }
 
-  return value;
+  return "";
 }
 
 int dbOnOffType::getAsInt() const
@@ -1686,19 +1533,15 @@ dbClMeasureType::dbClMeasureType(const char* instr)
 
 const char* dbClMeasureType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case EUCLIDEAN:
-      value = "EUCLIDEAN";
-      break;
+      return "EUCLIDEAN";
 
     case MAXXY:
-      value = "MAXXY";
-      break;
+      return "MAXXY";
   }
 
-  return value;
+  return "";
 }
 
 //
@@ -1720,19 +1563,15 @@ dbRowDir::dbRowDir(const char* value)
 
 const char* dbRowDir::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case HORIZONTAL:
-      value = "HORIZONTAL";
-      break;
+      return "HORIZONTAL";
 
     case VERTICAL:
-      value = "VERTICAL";
-      break;
+      return "VERTICAL";
   }
 
-  return value;
+  return "";
 }
 
 dbRegionType::dbRegionType(const char* instr)
@@ -1753,23 +1592,18 @@ dbRegionType::dbRegionType(const char* instr)
 
 const char* dbRegionType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case INCLUSIVE:
-      value = "INCLUSIVE";
-      break;
+      return "INCLUSIVE";
 
     case EXCLUSIVE:
-      value = "EXCLUSIVE";
-      break;
+      return "EXCLUSIVE";
 
     case SUGGESTED:
-      value = "SUGGESTED";
-      break;
+      return "SUGGESTED";
   }
 
-  return value;
+  return "";
 }
 
 dbSourceType::dbSourceType(const char* value)
@@ -1800,35 +1634,27 @@ dbSourceType::dbSourceType(const char* value)
 
 const char* dbSourceType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case NETLIST:
-      value = "NETLIST";
-      break;
+      return "NETLIST";
 
     case DIST:
-      value = "DIST";
-      break;
+      return "DIST";
 
     case USER:
-      value = "USER";
-      break;
+      return "USER";
 
     case TIMING:
-      value = "TIMING";
-      break;
+      return "TIMING";
 
     case TEST:
-      value = "TEST";
-      break;
+      return "TEST";
   }
 
-  return value;
+  return "";
 }
 
 //
@@ -1855,27 +1681,21 @@ dbJournalEntryType::dbJournalEntryType(const char* instr)
 
 const char* dbJournalEntryType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case OWNER:
-      value = "OWNER";
-      break;
+      return "OWNER";
 
     case ADD:
-      value = "ADD";
-      break;
+      return "ADD";
 
     case DESTROY:
-      value = "DESTROY";
-      break;
+      return "DESTROY";
   }
 
-  return value;
+  return "";
 }
 
 //
@@ -1911,37 +1731,28 @@ dbDirection::dbDirection(const char* instr)
 
 const char* dbDirection::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case NORTH:
-      value = "NORTH";
-      break;
+      return "NORTH";
 
     case EAST:
-      value = "EAST";
-      break;
+      return "EAST";
 
     case SOUTH:
-      value = "SOUTH";
-      break;
+      return "SOUTH";
 
     case WEST:
-      value = "WEST";
-      break;
+      return "WEST";
     case UP:
-      value = "UP";
-      break;
+      return "UP";
     case DOWN:
-      value = "DOWN";
-      break;
+      return "DOWN";
   }
 
-  return value;
+  return "";
 }
 
 dbMTermShapeType::dbMTermShapeType(const char* value)
@@ -1965,27 +1776,21 @@ dbMTermShapeType::dbMTermShapeType(const char* value)
 
 const char* dbMTermShapeType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case NONE:
-      value = "NONE";
-      break;
+      return "NONE";
 
     case RING:
-      value = "RING";
-      break;
+      return "RING";
 
     case FEEDTHRU:
-      value = "FEEDTHRU";
-      break;
+      return "FEEDTHRU";
 
     case ABUTMENT:
-      value = "ABUTMENT";
-      break;
+      return "ABUTMENT";
   }
 
-  return value;
+  return "";
 }
 
 dbAccessType::dbAccessType(const char* type)
@@ -2012,56 +1817,54 @@ dbAccessType::dbAccessType(const char* type)
 
 const char* dbAccessType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case OnGrid:
-      value = "OnGrid";
-      break;
+      return "OnGrid";
 
     case HalfGrid:
-      value = "HalfGrid";
-      break;
+      return "HalfGrid";
 
     case Center:
-      value = "Center";
-      break;
+      return "Center";
 
     case EncOpt:
-      value = "EncOpt";
-      break;
+      return "EncOpt";
 
     case NearbyGrid:
-      value = "NearbyGrid";
-      break;
+      return "NearbyGrid";
   }
 
-  return value;
+  return "";
 }
 
 const char* dbNameUniquifyType::getString() const
 {
-  const char* value = "";
-
   switch (_value) {
     case ALWAYS:
-      value = "ALWAYS";
-      break;
+      return "ALWAYS";
 
     case ALWAYS_WITH_UNDERSCORE:
-      value = "ALWAYS_WITH_UNDERSCORE";
-      break;
+      return "ALWAYS_WITH_UNDERSCORE";
 
     case IF_NEEDED:
-      value = "IF_NEEDED";
-      break;
+      return "IF_NEEDED";
 
     case IF_NEEDED_WITH_UNDERSCORE:
-      value = "IF_NEEDED_WITH_UNDERSCORE";
-      break;
+      return "IF_NEEDED_WITH_UNDERSCORE";
   }
 
-  return value;
+  return "";
+}
+
+const char* dbHierSearchDir::getString() const
+{
+  switch (_value) {
+    case FANIN:
+      return "FANIN";
+    case FANOUT:
+      return "FANOUT";
+  }
+  return "";
 }
 
 }  // namespace odb

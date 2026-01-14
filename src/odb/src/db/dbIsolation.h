@@ -4,12 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -21,6 +21,8 @@ class _dbIsolation : public _dbObject
 {
  public:
   _dbIsolation(_dbDatabase*);
+
+  ~_dbIsolation();
 
   bool operator==(const _dbIsolation& rhs) const;
   bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }

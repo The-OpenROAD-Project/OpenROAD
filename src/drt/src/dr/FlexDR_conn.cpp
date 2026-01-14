@@ -4,6 +4,7 @@
 #include "dr/FlexDR_conn.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstdlib>
 #include <iostream>
 #include <iterator>

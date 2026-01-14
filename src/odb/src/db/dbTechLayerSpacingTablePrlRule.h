@@ -4,14 +4,13 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <tuple>
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include <map>
-#include <tuple>
 #include <utility>
 // User Code End Includes
 
@@ -25,7 +24,7 @@ struct dbTechLayerSpacingTablePrlRuleFlags
   bool wrong_direction : 1;
   bool same_mask : 1;
   bool exceept_eol : 1;
-  uint spare_bits : 29;
+  uint32_t spare_bits : 29;
 };
 
 class _dbTechLayerSpacingTablePrlRule : public _dbObject
@@ -42,9 +41,9 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
 
-  uint getWidthIdx(int width) const;
+  uint32_t getWidthIdx(int width) const;
 
-  uint getLengthIdx(int length) const;
+  uint32_t getLengthIdx(int length) const;
 
   // User Code End Methods
 
@@ -56,7 +55,7 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   dbVector<std::tuple<int, int, int>> influence_tbl_;
 
   // User Code Begin Fields
-  std::map<uint, std::pair<int, int>> _within_tbl_;
+  std::map<uint32_t, std::pair<int, int>> _within_tbl_;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);

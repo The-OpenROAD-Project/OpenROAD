@@ -14,6 +14,7 @@
 #include "CtsObserver.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
+#include "Util.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
 
@@ -31,7 +32,7 @@ class SegmentBuilder
                  Clock& clock,
                  ClockSubNet& drivingSubNet,
                  const TechChar& techChar,
-                 const unsigned techCharDistUnit,
+                 unsigned techCharDistUnit,
                  TreeBuilder* tree);
 
   void build(const std::string& forceBuffer = "");

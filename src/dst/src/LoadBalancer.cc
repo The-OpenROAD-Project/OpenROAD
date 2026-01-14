@@ -4,6 +4,7 @@
 #include "LoadBalancer.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <limits>
@@ -98,7 +99,7 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
     }
   }
   if (valid_worker_state) {
-    workers_.push(Worker(ip::make_address(ip), port, 0));
+    workers_.emplace(ip::make_address(ip), port, 0);
   }
   return valid_worker_state;
 }
@@ -116,7 +117,7 @@ void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
   }
   workers_.swap(new_queue);
 }
-void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
+void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
   if (!workers_.empty()) {
@@ -124,14 +125,14 @@ void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
     workers_.pop();
     ip = w.ip;
     port = w.port;
-    if (w.priority != std::numeric_limits<unsigned short>::max()) {
+    if (w.priority != std::numeric_limits<uint16_t>::max()) {
       w.priority++;
     }
     workers_.push(w);
   }
 }
 
-void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
+void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
 {
   std::lock_guard<std::mutex> lock(workers_mutex_);
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
@@ -146,9 +147,7 @@ void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
   workers_.swap(new_queue);
 }
 
-void LoadBalancer::removeWorker(const ip::address& ip,
-                                unsigned short port,
-                                bool lock)
+void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port, bool lock)
 {
   if (lock) {
     workers_mutex_.lock();
@@ -168,7 +167,7 @@ void LoadBalancer::removeWorker(const ip::address& ip,
   }
 }
 
-void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
+void LoadBalancer::lookUpWorkers(const char* domain, uint16_t port)
 {
   asio::io_context ios;
   std::vector<Worker> workers_set;
@@ -189,7 +188,7 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
     int new_workers_count = 0;
     for (const auto& entry : results) {
       auto discovered_worker = Worker(entry.endpoint().address(), port, 0);
-      if (std::find(workers_set.begin(), workers_set.end(), discovered_worker)
+      if (std::ranges::find(workers_set, discovered_worker)
           == workers_set.end()) {
         workers_set.push_back(discovered_worker);
         new_workers.push_back(discovered_worker);

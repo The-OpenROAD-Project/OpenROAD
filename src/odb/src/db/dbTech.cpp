@@ -4,6 +4,7 @@
 #include "dbTech.h"
 
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <vector>
 
@@ -33,7 +34,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -78,7 +78,7 @@ bool _dbTech::operator==(const _dbTech& rhs) const
     return false;
   }
 
-  if (_version != rhs._version) {
+  if (version_ != rhs.version_) {
     return false;
   }
 
@@ -212,7 +212,7 @@ _dbTech::_dbTech(_dbDatabase* db)
   flags_.has_use_min_spacing_pin = dbOnOffType::OFF;
   flags_.use_min_spacing_pin = dbOnOffType::OFF;
   flags_.spare_bits = 0;
-  _version = 5.4;
+  version_ = 5.4;
 
   layer_tbl_ = new dbTable<_dbTechLayer>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerObj);
@@ -305,7 +305,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << tech.lef_units_;
   stream << tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech.flags_;
+  uint32_t* bit_field = (uint32_t*) &tech.flags_;
   stream << *bit_field;
 
   stream << tech.getLefVersion();
@@ -336,7 +336,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 {
   _dbDatabase* db = tech.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_block_tech)) {
+  if (db->isSchema(kSchemaBlockTech)) {
     stream >> tech.name_;
   } else {
     tech.name_ = "";
@@ -345,14 +345,14 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> tech.layer_cnt_;
   stream >> tech.rlayer_cnt_;
   stream >> tech.lef_units_;
-  if (db->isLessThanSchema(db_schema_remove_dbu_per_micron)) {
+  if (db->isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
     int dbu_per_micron;
     stream >> dbu_per_micron;
     db->dbu_per_micron_ = dbu_per_micron;
   }
   stream >> tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech.flags_;
+  uint32_t* bit_field = (uint32_t*) &tech.flags_;
   stream >> *bit_field;
 
   double lef_version;
@@ -376,7 +376,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> *tech.via_generate_rule_tbl_;
   stream >> *tech.prop_tbl_;
   stream >> *tech.metal_width_via_map_tbl_;
-  if (tech.getDatabase()->isSchema(db_schema_cell_edge_spc_tbl)) {
+  if (tech.getDatabase()->isSchema(kSchemaCellEdgeSpcTbl)) {
     stream >> *tech.cell_edge_spacing_tbl_;
   }
   stream >> *tech.name_cache_;
@@ -393,14 +393,14 @@ std::string dbTech::getName()
 
 double _dbTech::getLefVersion() const
 {
-  return _version;
+  return version_;
 }
 
 std::string _dbTech::getLefVersionStr() const
 {
-  int major_version = (int) floor(_version);
-  int minor_version = ((int) floor(_version * 10.0)) - (major_version * 10);
-  int opt_minor_version = ((int) floor(_version * 1000.0))
+  int major_version = (int) floor(version_);
+  int minor_version = ((int) floor(version_ * 10.0)) - (major_version * 10);
+  int opt_minor_version = ((int) floor(version_ * 1000.0))
                           - (major_version * 1000) - (minor_version * 100);
 
   if (opt_minor_version > 0) {
@@ -416,7 +416,7 @@ std::string _dbTech::getLefVersionStr() const
 //
 void _dbTech::setLefVersion(double inver)
 {
-  _version = inver;
+  version_ = inver;
 }
 
 dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
@@ -833,7 +833,7 @@ dbTech* dbTech::create(dbDatabase* db_, const char* name)
   return (dbTech*) tech;
 }
 
-dbTech* dbTech::getTech(dbDatabase* db_, uint dbid_)
+dbTech* dbTech::getTech(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbTech*) db->tech_tbl_->getPtr(dbid_);
@@ -852,27 +852,27 @@ void _dbTech::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["samenet_rules"].add(samenet_rules_);
-  info.children_["samenet_matrix"].add(samenet_matrix_);
-  info.children_["via_hash"].add(via_hash_);
+  info.children["name"].add(name_);
+  info.children["samenet_rules"].add(samenet_rules_);
+  info.children["samenet_matrix"].add(samenet_matrix_);
+  info.children["via_hash"].add(via_hash_);
 
-  layer_tbl_->collectMemInfo(info.children_["layer"]);
-  via_tbl_->collectMemInfo(info.children_["via"]);
-  non_default_rule_tbl_->collectMemInfo(info.children_["non_default_rule"]);
-  layer_rule_tbl_->collectMemInfo(info.children_["layer_rule"]);
-  box_tbl_->collectMemInfo(info.children_["box"]);
-  samenet_rule_tbl_->collectMemInfo(info.children_["samenet_rule"]);
-  antenna_rule_tbl_->collectMemInfo(info.children_["antenna_rule"]);
-  via_rule_tbl_->collectMemInfo(info.children_["via_rule"]);
-  via_layer_rule_tbl_->collectMemInfo(info.children_["via_layer_rule"]);
-  via_generate_rule_tbl_->collectMemInfo(info.children_["via_generate_rule"]);
-  prop_tbl_->collectMemInfo(info.children_["prop"]);
+  layer_tbl_->collectMemInfo(info.children["layer"]);
+  via_tbl_->collectMemInfo(info.children["via"]);
+  non_default_rule_tbl_->collectMemInfo(info.children["non_default_rule"]);
+  layer_rule_tbl_->collectMemInfo(info.children["layer_rule"]);
+  box_tbl_->collectMemInfo(info.children["box"]);
+  samenet_rule_tbl_->collectMemInfo(info.children["samenet_rule"]);
+  antenna_rule_tbl_->collectMemInfo(info.children["antenna_rule"]);
+  via_rule_tbl_->collectMemInfo(info.children["via_rule"]);
+  via_layer_rule_tbl_->collectMemInfo(info.children["via_layer_rule"]);
+  via_generate_rule_tbl_->collectMemInfo(info.children["via_generate_rule"]);
+  prop_tbl_->collectMemInfo(info.children["prop"]);
   metal_width_via_map_tbl_->collectMemInfo(
-      info.children_["metal_width_via_map"]);
-  cell_edge_spacing_tbl_->collectMemInfo(info.children_["cell_edge_spacing"]);
+      info.children["metal_width_via_map"]);
+  cell_edge_spacing_tbl_->collectMemInfo(info.children["cell_edge_spacing"]);
 
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
 }
 
 }  // namespace odb

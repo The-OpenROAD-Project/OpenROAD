@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -30,13 +31,12 @@ class _dbTechMinCutRule : public _dbObject
   struct Flags
   {
     RuleType rule : 3;
-    uint cuts_length : 1;
-    uint spare_bits : 28;
+    uint32_t cuts_length : 1;
+    uint32_t spare_bits : 28;
   };
 
   _dbTechMinCutRule(_dbDatabase* db, const _dbTechMinCutRule& r);
   _dbTechMinCutRule(_dbDatabase* db);
-  ~_dbTechMinCutRule();
 
   bool operator==(const _dbTechMinCutRule& rhs) const;
   bool operator!=(const _dbTechMinCutRule& rhs) const
@@ -46,11 +46,11 @@ class _dbTechMinCutRule : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   Flags flags_;
-  uint num_cuts_;
-  uint width_;
+  uint32_t num_cuts_;
+  uint32_t width_;
   int cut_distance_;
-  uint length_;
-  uint distance_;
+  uint32_t length_;
+  uint32_t distance_;
 };
 
 inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */,
@@ -76,10 +76,6 @@ inline _dbTechMinCutRule::_dbTechMinCutRule(_dbDatabase* /* unused: db */)
   distance_ = 0;
 }
 
-inline _dbTechMinCutRule::~_dbTechMinCutRule()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbTechMinCutRule& rule);
 dbIStream& operator>>(dbIStream& stream, _dbTechMinCutRule& rule);
 
@@ -90,17 +86,17 @@ class _dbTechMinEncRule : public _dbObject
 
   struct Flags
   {
-    uint _has_width : 1;
-    uint _spare_bits : 31;
+    uint32_t has_width : 1;
+    uint32_t spare_bits : 31;
   };
 
   Flags flags_;
-  uint _area;
-  uint _width;
+  uint32_t area_;
+  uint32_t width_;
 
   _dbTechMinEncRule(_dbDatabase* db);
   _dbTechMinEncRule(_dbDatabase* db, const _dbTechMinEncRule& r);
-  ~_dbTechMinEncRule();
+
   bool operator==(const _dbTechMinEncRule& rhs) const;
   bool operator!=(const _dbTechMinEncRule& rhs) const
   {
@@ -111,20 +107,16 @@ class _dbTechMinEncRule : public _dbObject
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */,
                                             const _dbTechMinEncRule& r)
-    : flags_(r.flags_), _area(r._area), _width(r._width)
+    : flags_(r.flags_), area_(r.area_), width_(r.width_)
 {
 }
 
 inline _dbTechMinEncRule::_dbTechMinEncRule(_dbDatabase* /* unused: db */)
 {
-  flags_._has_width = 0;
-  flags_._spare_bits = 0;
-  _area = 0;
-  _width = 0;
-}
-
-inline _dbTechMinEncRule::~_dbTechMinEncRule()
-{
+  flags_.has_width = 0;
+  flags_.spare_bits = 0;
+  area_ = 0;
+  width_ = 0;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechMinEncRule& rule);

@@ -4,6 +4,7 @@
 #include "ILPRefine.h"
 
 #include <map>
+#include <ranges>
 #include <set>
 #include <vector>
 
@@ -90,8 +91,7 @@ float IlpRefine::Pass(
       }
     }
     if (hyperedge.size() > 1) {
-      hyperedges_extracted.push_back(
-          std::vector<int>(hyperedge.begin(), hyperedge.end()));
+      hyperedges_extracted.emplace_back(hyperedge.begin(), hyperedge.end());
       hyperedges_weight_extracted.push_back(
           evaluator_->CalculateHyperedgeCost(e, hgraph));
     }
@@ -153,10 +153,8 @@ float IlpRefine::Pass(
 
   // update the solution to the status with best_gain
   // traverse the moves_trace in the reversing order
-  for (auto move_iter = moves_trace.rbegin(); move_iter != moves_trace.rend();
-       move_iter++) {
+  for (auto& vertex_move : std::ranges::reverse_view(moves_trace)) {
     // stop when we encounter the best_vertex_id
-    auto& vertex_move = *move_iter;
     if (vertex_move->GetVertex() == best_vertex_id) {
       break;  // stop here
     }
