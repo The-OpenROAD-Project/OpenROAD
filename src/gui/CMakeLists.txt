@@ -86,6 +86,14 @@ if (Qt5_FOUND AND BUILD_GUI)
       OpenSTA
   )
 
+  # Disable LTO for gui. LTO causes a crash with Qt plugin loading
+  set_target_properties(gui PROPERTIES 
+    INTERPROCEDURAL_OPTIMIZATION OFF
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF
+  )
+  target_compile_options(gui PRIVATE "-fno-lto")
+  target_link_options(gui PRIVATE "-fno-lto")
+
 messages(
   TARGET gui
 )

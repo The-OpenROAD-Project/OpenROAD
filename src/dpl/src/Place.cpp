@@ -915,38 +915,56 @@ bool Opendp::checkPixels(const Node* cell,
         return false;
       }
     }
-    if (disallow_one_site_gaps_) {
-      // here we need to check for abutting first, if there is an abutting
-      // cell then we continue as there is nothing wrong with it if there is
-      // no abutting cell, we will then check cells at 1+ distances we only
-      // need to check on the left and right sides
-      const GridX x_begin = max(GridX{0}, x - 1);
-      const GridY y_begin = max(GridY{0}, y - 1);
-      // inclusive search, so we don't add 1 to the end
-      const GridX x_finish = min(x_end, grid_->getRowSiteCount() - 1);
-      const GridY y_finish = min(y_end, grid_->getRowCount() - 1);
+  }
 
-      auto isAbutted = [this](const GridX x, const GridY y) {
-        const Pixel* pixel = grid_->gridPixel(x, y);
-        return (pixel == nullptr || pixel->cell);
-      };
+  if (disallow_one_site_gaps_) {
+    // here we need to check for abutting first, if there is an abutting
+    // cell then we continue as there is nothing wrong with it if there is
+    // no abutting cell, we will then check cells at 1+ distances we only
+    // need to check on the left and right sides
+    const GridX x_begin = max(GridX{0}, x - 1);
+    const GridY y_begin = max(GridY{0}, y);
+    // inclusive search, so we don't add 1 to the end
+    const GridX x_finish = min(x_end, grid_->getRowSiteCount() - 1);
+    const GridY y_finish = min(y_end, grid_->getRowCount() - 1);
 
-      auto cellAtSite = [this](const GridX x, const GridY y) {
-        const Pixel* pixel = grid_->gridPixel(x, y);
-        return (pixel != nullptr && pixel->cell);
-      };
-      for (GridY y = y_begin; y <= y_finish; ++y) {
-        // left side
-        if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
-          return false;
-        }
-        // right side
-        if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
-          return false;
-        }
+    auto isAbutted = [this](const GridX x, const GridY y) {
+      const Pixel* pixel = grid_->gridPixel(x, y);
+      return (pixel == nullptr || pixel->cell);
+    };
+
+    auto cellAtSite = [this](const GridX x, const GridY y) {
+      const Pixel* pixel = grid_->gridPixel(x, y);
+      return (pixel != nullptr && pixel->cell);
+    };
+    for (GridY y = y_begin; y < y_finish; ++y) {
+      // left side
+      if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
+        debugPrint(logger_,
+                   DPL,
+                   "one_site_gap",
+                   1,
+                   "One site gap left of {}  at ({}, {})",
+                   cell->name(),
+                   x,
+                   y);
+        return false;
+      }
+      // right side
+      if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
+        debugPrint(logger_,
+                   DPL,
+                   "one_site_gap",
+                   1,
+                   "One site gap right of {} at ({}, {})",
+                   cell->name(),
+                   x,
+                   y);
+        return false;
       }
     }
   }
+
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
   return drc_engine_->checkDRC(cell, x, y, orient);
 }
