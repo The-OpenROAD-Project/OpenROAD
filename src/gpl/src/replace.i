@@ -30,6 +30,7 @@ static gpl::PlaceOptions getOptions(
       flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
   checkFlag(
       flags, "-enable_routing_congestion", options.enable_routing_congestion);
+  checkFlag(flags, "-force_center_initial_place", options.forceCenterInitialPlace);
   checkFlag(flags, "-skip_initial_place", [&](bool) {
     options.initialPlaceMaxIter = 0;
   });
