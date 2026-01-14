@@ -10,17 +10,18 @@ jobs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
       - name: ClangTidy Gen
         uses: The-OpenROAD-Project/clang-tidy-review@master
         id: review
         with:
+          clang_tidy_version: 19
           build_dir: "./build"
           cmake_command: cmake . -B build
           config_file: ".clang-tidy"
-          exclude: "*/codeGenerator/templates/*,*/third-party/*"
+          exclude: "*/codeGenerator/templates/*,third-party/*,test/orfs/*"
           split_workflow: true
           apt_packages: libomp-15-dev,libfl-dev,libyaml-cpp-dev
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master

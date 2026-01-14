@@ -43,52 +43,54 @@
 #include <cstring>
 
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 
-#define MAXCBS 30
+static constexpr int kMaxCBs = 30;
 
-#define lefwVersionCbk 0
-#define lefwCaseSensitiveCbk 1
-#define lefwNoWireExtensionCbk 2
-#define lefwBusBitCharsCbk 3
-#define lefwDividerCharCbk 4
-#define lefwManufacturingGridCbk 5
-#define lefwUseMinSpacingCbk 6
-#define lefwClearanceMeasureCbk 7
-#define lefwUnitsCbk 8
-#define lefwAntennaInputGateAreaCbk 9
-#define lefwAntennaInOutDiffAreaCbk 10
-#define lefwAntennaOutputDiffAreaCbk 11
-#define lefwPropDefCbk 12
-#define lefwLayerCbk 13
-#define lefwViaCbk 14
-#define lefwViaRuleCbk 15
-#define lefwNonDefaultCbk 16
-#define lefwCrossTalkCbk 17
-#define lefwNoiseTableCbk 18
-#define lefwCorrectionTableCbk 19
-#define lefwSpacingCbk 20
-#define lefwMinFeatureCbk 21
-#define lefwDielectricCbk 22
-#define lefwIRDropCbk 23
-#define lefwSiteCbk 24
-#define lefwArrayCbk 25
-#define lefwMacroCbk 26
-#define lefwAntennaCbk 27
-#define lefwExtCbk 28
-#define lefwEndLibCbk 29
+enum Callback
+{
+  kVersionCbk = 0,
+  kCaseSensitiveCbk = 1,
+  kNoWireExtensionCbk = 2,
+  kBusBitCharsCbk = 3,
+  kDividerCharCbk = 4,
+  kManufacturingGridCbk = 5,
+  kUseMinSpacingCbk = 6,
+  kClearanceMeasureCbk = 7,
+  kUnitsCbk = 8,
+  kAntennaInputGateAreaCbk = 9,
+  kAntennaInOutDiffAreaCbk = 10,
+  kAntennaOutputDiffAreaCbk = 11,
+  kPropDefCbk = 12,
+  kLayerCbk = 13,
+  kViaCbk = 14,
+  kViaRuleCbk = 15,
+  kNonDefaultCbk = 16,
+  kCrossTalkCbk = 17,
+  kNoiseTableCbk = 18,
+  kCorrectionTableCbk = 19,
+  kSpacingCbk = 20,
+  kMinFeatureCbk = 21,
+  kDielectricCbk = 22,
+  kIRDropCbk = 23,
+  kSiteCbk = 24,
+  kArrayCbk = 25,
+  kMacroCbk = 26,
+  kAntennaCbk = 27,
+  kExtCbk = 28,
+  kEndLibCbk = 29,
+};
 
 // NEW CALLBACK - then place it here.
 
 int lefWRetVal;
-extern int lefwHasInit;
-extern int lefwHasInitCbk;
 
 #define WRITER_CALLBACK(func, type)                                 \
   if (func) {                                                       \
-    if ((lefWRetVal = (*func)(type, lefwUserData)) == 0) {          \
-    } else {                                                        \
+    lefWRetVal = (*func)(type, lefwUserData);                       \
+    if (lefWRetVal != 0) {                                          \
       lefiError(1, 0, "User callback routine returned bad status"); \
       return lefWRetVal;                                            \
     }                                                               \
@@ -110,7 +112,7 @@ extern FILE* lefwFile;
 //   "set" routines at the end of the file
 // *****************************************************************************
 // The callback routines
-lefwVoidCbkFnType lefwCallbacksSeq[MAXCBS] = {
+lefwVoidCbkFnType lefwCallbacksSeq[kMaxCBs] = {
     nullptr,  // lefwVersionCbk
     nullptr,  // lefwCaseSensitiveCbk
     nullptr,  // lefwNoWireExtensionCbk
@@ -145,7 +147,7 @@ lefwVoidCbkFnType lefwCallbacksSeq[MAXCBS] = {
 };
 
 // the optional and required callbacks
-int lefwCallbacksReq[MAXCBS] = {
+int lefwCallbacksReq[kMaxCBs] = {
     0,  // Version
     0,  // CaseSensitive
     0,  // NoWireExtension
@@ -180,7 +182,7 @@ int lefwCallbacksReq[MAXCBS] = {
 };
 
 // The section names
-char lefwSectionNames[MAXCBS][80] = {
+char lefwSectionNames[kMaxCBs][80] = {
     "Version",
     "CaseSensitive",
     "NoWireExtension",
@@ -215,7 +217,7 @@ char lefwSectionNames[MAXCBS][80] = {
 };
 
 // the call back types from the lefwCallbackType_e
-lefwCallbackType_e lefwCallbacksType[MAXCBS] = {
+lefwCallbackType_e lefwCallbacksType[kMaxCBs] = {
     lefwVersionCbkType,
     lefwCaseSensitiveCbkType,
     lefwNoWireExtensionCbkType,
@@ -274,7 +276,7 @@ int lefwWrite(FILE* f, const char* fName, lefiUserData uData)
   // Loop through the list of callbacks and call the user define
   // callback routines if any are set
 
-  for (i = 0; i < MAXCBS; i++) {
+  for (i = 0; i < kMaxCBs; i++) {
     if (lefwCallbacksSeq[i] != nullptr) {  // user has set a callback function
       WRITER_CALLBACK(lefwCallbacksSeq[i], lefwCallbacksType[i]);
     } else if (lefwCallbacksReq[i]) {  // it is required but user hasn't set up
@@ -297,9 +299,9 @@ void lefwSetUnusedCallbacks(lefwVoidCbkFnType func)
   // the given function.
   int i;
 
-  for (i = 0; i < MAXCBS; i++) {
+  for (i = 0; i < kMaxCBs; i++) {
     if (lefwCallbacksSeq[i] == nullptr) {
-      lefwCallbacksSeq[i] = (lefwVoidCbkFnType) func;
+      lefwCallbacksSeq[i] = func;
     }
   }
 }
@@ -463,137 +465,137 @@ lefiUserData lefwGetUserData()
 
 void lefwSetUnitsCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwUnitsCbk] = f;
+  lefwCallbacksSeq[kUnitsCbk] = f;
 }
 
 void lefwSetDividerCharCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwDividerCharCbk] = f;
+  lefwCallbacksSeq[kDividerCharCbk] = f;
 }
 
 void lefwSetManufacturingGridCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwManufacturingGridCbk] = f;
+  lefwCallbacksSeq[kManufacturingGridCbk] = f;
 }
 
 void lefwSetUseMinSpacingCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwUseMinSpacingCbk] = f;
+  lefwCallbacksSeq[kUseMinSpacingCbk] = f;
 }
 
 void lefwSetClearanceMeasureCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwClearanceMeasureCbk] = f;
+  lefwCallbacksSeq[kClearanceMeasureCbk] = f;
 }
 
 void lefwSetNoWireExtensionCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwNoWireExtensionCbk] = f;
+  lefwCallbacksSeq[kNoWireExtensionCbk] = f;
 }
 
 void lefwSetBusBitCharsCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwBusBitCharsCbk] = f;
+  lefwCallbacksSeq[kBusBitCharsCbk] = f;
 }
 
 void lefwSetCaseSensitiveCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwCaseSensitiveCbk] = f;
+  lefwCallbacksSeq[kCaseSensitiveCbk] = f;
 }
 
 void lefwSetVersionCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwVersionCbk] = f;
+  lefwCallbacksSeq[kVersionCbk] = f;
 }
 
 void lefwSetLayerCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwLayerCbk] = f;
+  lefwCallbacksSeq[kLayerCbk] = f;
 }
 
 void lefwSetViaCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwViaCbk] = f;
+  lefwCallbacksSeq[kViaCbk] = f;
 }
 
 void lefwSetViaRuleCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwViaRuleCbk] = f;
+  lefwCallbacksSeq[kViaRuleCbk] = f;
 }
 
 void lefwSetSpacingCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwSpacingCbk] = f;
+  lefwCallbacksSeq[kSpacingCbk] = f;
 }
 
 void lefwSetIRDropCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwIRDropCbk] = f;
+  lefwCallbacksSeq[kIRDropCbk] = f;
 }
 
 void lefwSetDielectricCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwDielectricCbk] = f;
+  lefwCallbacksSeq[kDielectricCbk] = f;
 }
 
 void lefwSetMinFeatureCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwMinFeatureCbk] = f;
+  lefwCallbacksSeq[kMinFeatureCbk] = f;
 }
 
 void lefwSetNonDefaultCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwNonDefaultCbk] = f;
+  lefwCallbacksSeq[kNonDefaultCbk] = f;
 }
 
 void lefwSetSiteCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwSiteCbk] = f;
+  lefwCallbacksSeq[kSiteCbk] = f;
 }
 
 void lefwSetMacroCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwMacroCbk] = f;
+  lefwCallbacksSeq[kMacroCbk] = f;
 }
 
 void lefwSetArrayCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwArrayCbk] = f;
+  lefwCallbacksSeq[kArrayCbk] = f;
 }
 
 void lefwSetPropDefCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwPropDefCbk] = f;
+  lefwCallbacksSeq[kPropDefCbk] = f;
 }
 
 void lefwSetCrossTalkCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwCrossTalkCbk] = f;
+  lefwCallbacksSeq[kCrossTalkCbk] = f;
 }
 
 void lefwSetNoiseTableCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwNoiseTableCbk] = f;
+  lefwCallbacksSeq[kNoiseTableCbk] = f;
 }
 
 void lefwSetCorrectionTableCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwCorrectionTableCbk] = f;
+  lefwCallbacksSeq[kCorrectionTableCbk] = f;
 }
 
 void lefwSetAntennaCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwAntennaCbk] = f;
+  lefwCallbacksSeq[kAntennaCbk] = f;
 }
 
 void lefwSetExtCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwExtCbk] = f;
+  lefwCallbacksSeq[kExtCbk] = f;
 }
 
 void lefwSetEndLibCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwEndLibCbk] = f;
+  lefwCallbacksSeq[kEndLibCbk] = f;
 }
 
 /* NEW CALLBACK - Each callback routine must have a routine that allows
@@ -601,17 +603,17 @@ void lefwSetEndLibCbk(lefwVoidCbkFnType f)
 
 void lefwSetAntennaInputGateAreaCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwAntennaInputGateAreaCbk] = f;
+  lefwCallbacksSeq[kAntennaInputGateAreaCbk] = f;
 }
 
 void lefwSetAntennaInOutDiffAreaCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwAntennaInOutDiffAreaCbk] = f;
+  lefwCallbacksSeq[kAntennaInOutDiffAreaCbk] = f;
 }
 
 void lefwSetAntennaOutputDiffAreaCbk(lefwVoidCbkFnType f)
 {
-  lefwCallbacksSeq[lefwAntennaOutputDiffAreaCbk] = f;
+  lefwCallbacksSeq[kAntennaOutputDiffAreaCbk] = f;
 }
 
 extern LEFI_LOG_FUNCTION lefwErrorLogFunction;

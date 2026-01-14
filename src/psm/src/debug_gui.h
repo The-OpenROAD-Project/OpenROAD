@@ -142,7 +142,7 @@ class DebugGui : public gui::Renderer
     return control_group_.c_str();
   }
 
-  void setSources(const std::vector<std::unique_ptr<SourceNode>>& sources);
+  void setSources(const SourceNodes& sources);
   void setSourceShapes(odb::dbTechLayer* layer,
                        const std::set<odb::Rect>& shapes);
 

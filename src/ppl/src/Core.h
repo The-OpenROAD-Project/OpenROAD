@@ -10,8 +10,6 @@
 
 namespace ppl {
 
-using odb::Point;
-
 using LayerToVector = std::map<int, std::vector<int>>;
 
 class Core

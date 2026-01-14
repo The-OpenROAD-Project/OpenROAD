@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <map>
@@ -17,6 +18,7 @@
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "global.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -57,10 +59,6 @@ class frTechObject
       const
   {
     return viaRuleGenerates_;
-  }
-  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
-  {
-    return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
   }
   bool hasMaxSpacingConstraints() const
   {
@@ -124,10 +122,6 @@ class frTechObject
       return uConstraints_[idx].get();
     }
     return nullptr;
-  }
-  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
-  {
-    unidirectional_layers_.insert(dbLayer);
   }
 
   // forbidden length table related
@@ -217,9 +211,7 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getSpacing(z) > spc) {
-        spc = nd->getSpacing(z);
-      }
+      spc = std::max(nd->getSpacing(z), spc);
     }
     return spc;
   }
@@ -228,9 +220,7 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getWidth(z) > spc) {
-        spc = nd->getWidth(z);
-      }
+      spc = std::max(nd->getWidth(z), spc);
     }
     return spc;
   }
@@ -243,9 +233,9 @@ class frTechObject
     logger->report("Reporting layer properties.");
     for (auto& layer : layers_) {
       auto type = layer->getType();
-      if (type == dbTechLayerType::CUT) {
+      if (type == odb::dbTechLayerType::CUT) {
         logger->report("Cut layer {}.", layer->getName());
-      } else if (type == dbTechLayerType::ROUTING) {
+      } else if (type == odb::dbTechLayerType::ROUTING) {
         logger->report("Routing layer {}.", layer->getName());
       }
       layer->printAllConstraints(logger);
@@ -256,7 +246,7 @@ class frTechObject
   {
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers_) {
-      if (layer->getType() == dbTechLayerType::CUT
+      if (layer->getType() == odb::dbTechLayerType::CUT
           && layer->getLayerNum() >= router_cfg->BOTTOM_ROUTING_LAYER) {
         logger->report("  Layer {}", layer->getName());
         if (layer->getDefaultViaDef() != nullptr) {
@@ -279,12 +269,12 @@ class frTechObject
 
   bool isHorizontalLayer(frLayerNum l)
   {
-    return getLayer(l)->getDir() == dbTechLayerDir::HORIZONTAL;
+    return getLayer(l)->getDir() == odb::dbTechLayerDir::HORIZONTAL;
   }
 
   bool isVerticalLayer(frLayerNum l)
   {
-    return getLayer(l)->getDir() == dbTechLayerDir::VERTICAL;
+    return getLayer(l)->getDir() == odb::dbTechLayerDir::VERTICAL;
   }
 
  private:
@@ -405,8 +395,6 @@ class frTechObject
   ByLayer<std::array<bool, 4>> viaForbiddenThrough_;
   bool hasVia2viaMinStep_ = false;
   bool hasCornerSpacingConstraint_ = false;
-  // unidirectional layers
-  std::set<odb::dbTechLayer*> unidirectional_layers_;
 
   friend class FlexRP;
 };

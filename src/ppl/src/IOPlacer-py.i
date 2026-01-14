@@ -4,7 +4,6 @@
 %{
 #include "ppl/IOPlacer.h"
 #include "ord/OpenRoad.hh"
-#include "odb/odb.h"
 #include "odb/db.h"
 
 using std::set;

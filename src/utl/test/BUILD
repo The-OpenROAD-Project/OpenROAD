@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "logger_max_messages",
@@ -12,6 +14,7 @@ COMPULSORY_TESTS = [
     "tee",
     "tee_fails",
     "test_error",
+    "test_error_exception",
     "test_info",
     "test_metrics",
     "test_suppress_message",
@@ -19,7 +22,6 @@ COMPULSORY_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
-    "test_error_exception",
     "utl_man_tcl_check",
     "utl_readme_msgs_check",
 ]
@@ -76,7 +78,42 @@ filegroup(
 cc_test(
     name = "utl_cfile_unittest",
     srcs = ["cpp/TestCFileUtils.cpp"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/utl",
+        "@boost.asio",
+        "@boost.beast",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestMetrics",
+    srcs = [
+        "cpp/TestMetrics.cpp",
+    ],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestAlgorithms",
+    srcs = [
+        "cpp/TestAlgorithms.cpp",
+    ],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSuppressStdout",
+    srcs = ["cpp/TestSuppressStdout.cpp"],
     deps = [
         "//src/utl",
         "@googletest//:gtest",

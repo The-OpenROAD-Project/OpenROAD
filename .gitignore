@@ -29,7 +29,6 @@ build
 build_linux
 build_mac
 test/results
-flow
 
 docs/main
 README2.md
@@ -57,11 +56,10 @@ obj-x86_64-linux-gnu/
 
 user.bazelrc
 
-bazel-bin
-bazel-out
-bazel-testlogs
-bazel-OpenROAD
+# Limit ignore to these files, so we see and clean out other cruft that pollutes grep
+/bazel-*
 
 projectview.bazelproject
 .bsp/
 .bazelbsp/
+/buildifier

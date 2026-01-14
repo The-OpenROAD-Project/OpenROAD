@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstddef>
 
+#include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "optimization/detailed_manager.h"
 #include "optimization/detailed_orient.h"
 
@@ -35,7 +37,7 @@ void DetailedDisplacement::init()
 {
   nSets_ = 0;
   count_.resize(mgrPtr_->getNumMultiHeights());
-  std::fill(count_.begin(), count_.end(), 0);
+  std::ranges::fill(count_, 0);
   count_[1] = (int) mgrPtr_->getSingleHeightCells().size();
   if (count_[1] != 0) {
     ++nSets_;
@@ -63,7 +65,7 @@ void DetailedDisplacement::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedDisplacement::curr()
 {
-  std::fill(tot_.begin(), tot_.end(), 0);
+  std::ranges::fill(tot_, 0);
   for (auto ndi : mgrPtr_->getSingleHeightCells()) {
     const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
     const DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
@@ -98,7 +100,7 @@ double DetailedDisplacement::delta(const Journal& journal)
   // Given a list of nodes with their old positions and new positions, compute
   // the change in displacement.  Note that cell orientation is not relevant.
 
-  std::fill(del_.begin(), del_.end(), 0);
+  std::ranges::fill(del_, 0);
 
   // Put cells into their "old positions and orientations".
   journal.undo(true);

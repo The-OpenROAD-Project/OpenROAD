@@ -38,6 +38,7 @@
   stdenv,
   overrideSDK,
   git,
+  yaml-cpp,
 }: let
   or-tools' =
     (or-tools.override {
@@ -61,6 +62,15 @@
     url = "https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip";
     sha256 = "sha256-t0RchAHTJbuI5YW4uyBPykTvcjy90JW9AOPNjIhwh6U=";
   };
+  lemon-graph' =
+    lemon-graph.overrideAttrs (finalAttrs: previousAttrs: {
+      src = fetchFromGitHub {
+        owner = "The-OpenROAD-Project";
+        repo = "lemon-graph";
+        rev = "f871b10396270cfd09ffddc4b6ead07722e9c232";
+        sha256 = "snqjc82vtgKC5uGu7V6Hhcf7YzRk0xHJDEOCN91iywI=";
+      };
+  });
   self = clangStdenv.mkDerivation (finalAttrs: {
     name = "openroad";
 
@@ -103,7 +113,7 @@
       libffi
       llvmPackages.openmp
 
-      lemon-graph
+      lemon-graph'
       or-tools'
       glpk
       zlib
@@ -111,6 +121,7 @@
       cbc
       re2
       gtest
+      yaml-cpp
     ];
 
     nativeBuildInputs = [

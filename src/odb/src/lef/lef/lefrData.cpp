@@ -35,6 +35,7 @@
 #include <filesystem>
 #include <system_error>
 
+#include "lefiKRDefs.hpp"
 #include "lefrSettings.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
@@ -119,8 +120,8 @@ lefrData::~lefrData()
   }
 
   // destroyRingBuffer();
-  for (int i = 0; i < RING_SIZE; i++) {
-    free(ring[i]);
+  for (auto& buffer : ring) {
+    free(buffer);
   }
 
   free(current_token);

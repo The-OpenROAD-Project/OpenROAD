@@ -18,6 +18,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace fin {
 
@@ -25,7 +26,20 @@ using utl::FIN;
 
 namespace pt = boost::property_tree;
 
-using namespace odb;
+using odb::dbBlock;
+using odb::dbChip;
+using odb::dbDatabase;
+using odb::dbFill;
+using odb::dbInstShapeItr;
+using odb::dbShape;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbTechVia;
+using odb::dbVia;
+using odb::dbWire;
+using odb::dbWireShapeItr;
+using odb::Rect;
 
 // The rules for OPC or non-OPC shapes on a layer from the JSON config
 struct DensityFillShapesConfig
@@ -112,14 +126,13 @@ void DensityFill::readAndExpandLayers(dbTech* tech, pt::ptree& tree)
       auto widths = non_opc.get_child("width");
       auto heights = non_opc.get_child("height");
 
-      std::transform(widths.begin(),
-                     widths.end(),
-                     heights.begin(),
-                     std::back_inserter(scfg.shapes),
-                     [dbu](auto& w, auto& h) {
-                       return std::make_pair(getValue(w.second) * dbu,
-                                             getValue(h.second) * dbu);
-                     });
+      std::ranges::transform(widths,
+                             heights,
+                             std::back_inserter(scfg.shapes),
+                             [dbu](auto& w, auto& h) {
+                               return std::make_pair(getValue(w.second) * dbu,
+                                                     getValue(h.second) * dbu);
+                             });
     }
 
     // OPC data, if any
@@ -140,14 +153,13 @@ void DensityFill::readAndExpandLayers(dbTech* tech, pt::ptree& tree)
       auto widths = opc.get_child("width");
       auto heights = opc.get_child("height");
 
-      std::transform(widths.begin(),
-                     widths.end(),
-                     heights.begin(),
-                     std::back_inserter(scfg.shapes),
-                     [dbu](auto& w, auto& h) {
-                       return std::make_pair(getValue(w.second) * dbu,
-                                             getValue(h.second) * dbu);
-                     });
+      std::ranges::transform(widths,
+                             heights,
+                             std::back_inserter(scfg.shapes),
+                             [dbu](auto& w, auto& h) {
+                               return std::make_pair(getValue(w.second) * dbu,
+                                                     getValue(h.second) * dbu);
+                             });
     }
 
     auto it = layer.find("names");

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <cstdint>
+
+#include "rcx/array1.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
@@ -8,9 +11,6 @@
 #include "utl/Logger.h"
 
 namespace rcx {
-
-using utl::RCX;
-using namespace odb;
 
 int extMeasureRC::GetDx1Dx2(Wire* w1, Wire* w2, int& dx2)
 {
@@ -65,14 +65,14 @@ bool extMeasureRC::Enclosed(int x1, int x2, int y1, int y2)
 
   return false;
 }
-uint extMeasureRC::FindSegments(bool lookUp,
-                                uint dir,
-                                int maxDist,
-                                Wire* w1,
-                                int xy1,
-                                int len1,
-                                Wire* w2_next,
-                                Ath__array1D<extSegment*>* segTable)
+uint32_t extMeasureRC::FindSegments(bool lookUp,
+                                    uint32_t dir,
+                                    int maxDist,
+                                    Wire* w1,
+                                    int xy1,
+                                    int len1,
+                                    Wire* w2_next,
+                                    Array1D<extSegment*>* segTable)
 {
   if (w2_next == nullptr) {
     return 0;
@@ -112,7 +112,7 @@ uint extMeasureRC::FindSegments(bool lookUp,
     FindSegments(lookUp, dir, maxDist, w1, xy1, len1, next_up_down, segTable);
     return 0;
   }
-  uint cnt = 0;
+  uint32_t cnt = 0;
   int xy2 = w2->getXY() + w2->getLen();
   int dx2;
   int dx1 = GetDx1Dx2(xy1, len1, w2, dx2);

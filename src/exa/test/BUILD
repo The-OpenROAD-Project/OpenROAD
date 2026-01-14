@@ -2,6 +2,8 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 TESTS = [
     "basic",
 ]

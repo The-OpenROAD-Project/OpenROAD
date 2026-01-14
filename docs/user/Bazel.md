@@ -359,3 +359,42 @@ This will:
 - launch the GUI opening gui_final gcd
 
 `bazelisk run test/orfs/gcd:gcd_final` run alone would create the `/tmp/gcd` folder and the arguments. The arguments after `--` are forwarded to the `/tmp/gcd/make` script that invokes make with the gcd ORFS project set up in `/tmp/gcd/_main/config.mk`.
+
+## Hacking ORFS with `//test/orfs/gcd:gcd_test` test case
+
+First create a local work folder with all dependencies for the step that you want to work on:
+
+    bazelisk run //test/orfs/gcd:gcd_floorplan_deps /tmp/floorplan
+
+Now run make directly with the `/tmp/floorplan/_main` work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
+
+    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir /tmp/floorplan/_main DESIGN_CONFIG=config.mk do-floorplan
+
+## Whittling down .odb files with deltaDebug.py
+
+Global place can take hours to run and to debug an error, the test case has to be whittled down to minutes, or it is probably intractable.
+
+Consider an error such as:
+
+    [ERROR GPL-0305] RePlAce diverged during gradient descent calculation, resulting in an invalid step length (Inf or NaN). This is often caused by numerical instability or high placement density. Consider reducing placement density to potentially resolve the issue.
+
+First create a folder with all the dependencies to run global placement:
+
+    bazelisk run //test/orfs/gcd:gcd_deps /tmp/bug
+
+Drop into a shell that has the build environment set up:
+
+    $ /tmp/bug/make bash
+    Makefile Environment  /tmp/bug/_main
+
+Run up to the failing stage and stop with ctrl-c on the step that you want to run the whittling down on:
+
+    make --file=$FLOW_HOME/Makefile do-place
+
+Now run deltaDebug.py:
+
+    $OPENROAD_EXE -python ~/OpenROAD-flow-scripts/tools/OpenROAD/etc/deltaDebug.py --error_string GPL-0305 --base_db_path test/orfs/gcd/results/asap7/gcd/base/3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"
+
+This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
+
+    /tmp/bug/make global_place_issue

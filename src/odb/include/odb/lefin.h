@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace LefParser {
@@ -52,55 +51,9 @@ class dbSite;
 
 class lefinReader
 {
-  dbDatabase* _db;
-  dbTech* _tech;
-  dbLib* _lib;
-  dbMaster* _master;
-  utl::Logger* _logger;
-  bool _create_tech;
-  bool _create_lib;
-  bool _skip_obstructions;
-  char _left_bus_delimiter;
-  char _right_bus_delimiter;
-  char _hier_delimiter;
-  int _layer_cnt;
-  int _master_cnt;
-  int _via_cnt;
-  int _errors;
-  int _lef_units;
-  const char* _lib_name;
-  double _dist_factor;
-  double _area_factor;
-  int _dbu_per_micron;
-  bool _override_lef_dbu;
-  bool _master_modified;
-  bool _ignore_non_routing_layers;
-  std::vector<std::pair<odb::dbObject*, std::string>> _incomplete_props;
-
-  void init();
-  void setDBUPerMicron(int dbu);
-
-  // convert area value to squared db-units
-  int dbarea(const double value) { return lround(value * _area_factor); }
-
-  bool readLefInner(const char* lef_file);
-  bool readLef(const char* lef_file);
-  bool addGeoms(dbObject* object,
-                bool is_pin,
-                LefParser::lefiGeometries* geometry);
-  void createLibrary();
-  void createPolygon(dbObject* object,
-                     bool is_pin,
-                     dbTechLayer* layer,
-                     LefParser::lefiGeomPolygon* p,
-                     int design_rule_width,
-                     double offset_x = 0.0,
-                     double offset_y = 0.0);
-  dbSite* findSite(const char* name);
-
  public:
   // convert distance value to db-units
-  int dbdist(double value) { return lround(value * _dist_factor); }
+  int dbdist(double value) { return lround(value * dist_factor_); }
 
   enum AntennaType
   {
@@ -159,13 +112,13 @@ class lefinReader
   template <typename... Args>
   void warning(int id, std::string msg, const Args&... args)
   {
-    _logger->warn(utl::ODB, id, msg, args...);
+    logger_->warn(utl::ODB, id, msg, args...);
   }
   template <typename... Args>
   void errorTolerant(int id, std::string msg, const Args&... args)
   {
-    _logger->warn(utl::ODB, id, msg, args...);
-    ++_errors;
+    logger_->warn(utl::ODB, id, msg, args...);
+    ++errors_;
   }
   void lineNumber(int lineNo);
 
@@ -175,7 +128,7 @@ class lefinReader
   ~lefinReader() = default;
 
   // Skip macro-obstructions in the lef file.
-  void skipObstructions() { _skip_obstructions = true; }
+  void skipObstructions() { skip_obstructions_ = true; }
 
   //
   // Override the LEF DBU-PER-MICRON unit.
@@ -191,7 +144,7 @@ class lefinReader
   //
   void dbu_per_micron(int dbu)
   {
-    _override_lef_dbu = true;
+    override_lef_dbu_ = true;
     setDBUPerMicron(dbu);
   }
 
@@ -214,6 +167,53 @@ class lefinReader
 
   // Add macros to this library and the technology of this library
   bool updateTechAndLib(dbLib* lib, const char* lef_file);
+
+ private:
+  void init();
+  void setDBUPerMicron(int dbu);
+
+  // convert area value to squared db-units
+  int dbarea(const double value) { return lround(value * area_factor_); }
+
+  bool readLefInner(const char* lef_file);
+  bool readLef(const char* lef_file);
+  bool addGeoms(dbObject* object,
+                bool is_pin,
+                LefParser::lefiGeometries* geometry);
+  void createLibrary();
+  void createPolygon(dbObject* object,
+                     bool is_pin,
+                     dbTechLayer* layer,
+                     LefParser::lefiGeomPolygon* p,
+                     int design_rule_width,
+                     double offset_x = 0.0,
+                     double offset_y = 0.0);
+  dbSite* findSite(const char* name);
+
+  dbDatabase* db_;
+  dbTech* tech_;
+  dbLib* lib_;
+  dbMaster* master_;
+  utl::Logger* logger_;
+  bool create_tech_;
+  bool create_lib_;
+  bool skip_obstructions_;
+  char left_bus_delimiter_;
+  char right_bus_delimiter_;
+  char hier_delimiter_;
+  int layer_cnt_;
+  int master_cnt_;
+  int via_cnt_;
+  int errors_;
+  int lef_units_;
+  const char* lib_name_;
+  double dist_factor_;
+  double area_factor_;
+  int dbu_per_micron_;
+  bool override_lef_dbu_;
+  bool master_modified_;
+  bool ignore_non_routing_layers_;
+  std::vector<std::pair<odb::dbObject*, std::string>> incomplete_props_;
 };
 
 class lefin
@@ -246,10 +246,10 @@ class lefin
   bool updateTechAndLib(dbLib* lib, const char* lef_file);
 
  private:
-  lefinReader* _reader;
+  lefinReader* reader_;
 
   // Protects the LefParser namespace that has static variables
-  static std::mutex _lef_mutex;
+  static std::mutex lef_mutex_;
 };
 
 }  // namespace odb

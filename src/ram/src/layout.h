@@ -4,8 +4,12 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace ram {
 
@@ -78,6 +82,8 @@ class Grid
 
   void addLayout(std::unique_ptr<Layout> layout);
 
+  bool insertLayout(std::unique_ptr<Layout> layout, int index);
+
   void addCell(std::unique_ptr<Cell> cell, int track);
 
   void gridInit();
@@ -91,6 +97,10 @@ class Grid
   int getWidth() const;
 
   int numLayouts() const;
+
+  int getLayoutWidth(int index) const;
+
+  int getLayoutHeight(int index) const;
 
   int getRowWidth() const;
 

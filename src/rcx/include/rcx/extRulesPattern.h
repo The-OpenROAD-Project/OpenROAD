@@ -3,10 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 
-#include "odb/array1.h"
-#include "odb/odb.h"
+#include "odb/db.h"
+#include "rcx/dbUtil.h"
+#include "rcx/extRCap.h"
 
 namespace utl {
 class Logger;
@@ -21,7 +23,7 @@ class extRulesPat
  public:
   bool _dbg;
 
-  uint _met;
+  uint32_t _met;
   int _underMet;
   int _overMet;
 
@@ -29,78 +31,77 @@ class extRulesPat
   bool _under;
   bool _diag;
   bool _res;
-  uint _dir;
-  uint _short_dir;
-  uint _long_dir;
-  uint _option_len;
-  uint _len;
+  uint32_t _dir;
+  uint32_t _short_dir;
+  uint32_t _long_dir;
+  uint32_t _option_len;
+  uint32_t _len;
 
-  uint _lineCnt;
+  uint32_t _lineCnt;
 
-  uint _sepGridCnt;
+  uint32_t _sepGridCnt;
 
   char _name_prefix[20];
   char _name[500];
-  uint _minWidth;
-  uint _minSpace;
-  uint _pitch;
+  uint32_t _minWidth;
+  uint32_t _minSpace;
+  uint32_t _pitch;
 
-  uint _spaceCnt;
-  uint _widthCnt;
-  uint _sMult[20]
+  uint32_t _spaceCnt;
+  uint32_t _widthCnt;
+  const uint32_t _sMult[10]
       = {1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 8000, 10000};
-  uint _wMult[20] = {1};
 
-  int _dMult[20] = {-1000,
-                    -500,
-                    0,
-                    500,
-                    1000,
-                    1250,
-                    1500,
-                    2000,
-                    2500,
-                    3000,
-                    4000,
-                    5000,
-                    8000,
-                    10000};
-  uint _diagSpaceCnt;
+  const int _dMult[14] = {-1000,
+                          -500,
+                          0,
+                          500,
+                          1000,
+                          1250,
+                          1500,
+                          2000,
+                          2500,
+                          3000,
+                          4000,
+                          5000,
+                          8000,
+                          10000};
+  uint32_t _diagSpaceCnt;
   int _target_diag_spacing[20];
 
-  uint _targetSpaceCount;
-  uint _targetWidthCount;
+  uint32_t _targetSpaceCount;
+  uint32_t _targetWidthCount;
 
-  uint _target_width[20];
-  uint _target_spacing[20];
+  uint32_t _target_width[20];
+  uint32_t _target_spacing[20];
 
-  uint _under_minWidthCntx;
-  uint _over_minWidthCntx;
-  uint _under_minSpaceCntx;
-  uint _over_minSpaceCntx;
+  uint32_t _under_minWidthCntx;
+  uint32_t _over_minWidthCntx;
+  uint32_t _under_minSpaceCntx;
+  uint32_t _over_minSpaceCntx;
 
   int _init_origin[2];
   int _origin[2];
 
-  uint _patternSep;
+  uint32_t _patternSep;
   int _ll[2];
   int _ur[2];
   int _ll_last[2];
   int _ur_last[2];
 
-  int _LL[2000][2];
-  int _UR[2000][2];
+  int _ll_1[2000][2];
+  int _ur_1[2000][2];
   char _patName[2000][2000];
 
   FILE* _def_fp;
-  dbBlock* _block;
-  dbTech* _tech;
+  odb::dbBlock* _block;
+  odb::dbTech* _tech;
   extMain* _extMain;
 
-  dbTechLayer* _under_layer;
-  dbTechLayer* _over_layer;
-  dbTechLayer* _layer;
-  dbTechLayer* _diag_layer;
+  odb::dbTechLayer* _under_layer;
+  odb::dbTechLayer* _over_layer;
+  odb::dbTechLayer* _layer;
+  odb::dbTechLayer* _diag_layer;
   dbCreateNetUtil* _create_net_util;
 
   int _dbunit;
@@ -111,111 +112,127 @@ class extRulesPat
               bool under,
               bool diag,
               bool res,
-              uint len,
-              int org[2],
-              int LL[2],
-              int UR[2],
-              dbBlock* block,
+              uint32_t len,
+              const int org[2],
+              const int LL[2],
+              const int UR[2],
+              odb::dbBlock* block,
               extMain* xt,
-              dbTech* tech);
-  void PrintOrigin(FILE* fp, int ll[2], uint met, const char* msg);
-  void UpdateOrigin_start(uint met);
+              odb::dbTech* tech);
+  void PrintOrigin(FILE* fp, const int ll[2], uint32_t met, const char* msg);
+  void UpdateOrigin_start(uint32_t met);
   void UpdateOrigin_wires(int ll[2], int ur[2]);
   int GetOrigin_end(int ur[2]);
-  uint setLayerInfo(dbTechLayer* layer, uint met);
-  uint getMinWidthSpacing(dbTechLayer* layer, uint& w);
+  uint32_t setLayerInfo(odb::dbTechLayer* layer, uint32_t met);
+  uint32_t getMinWidthSpacing(odb::dbTechLayer* layer, uint32_t& w);
   void setMets(int underMet,
-               dbTechLayer* under_layer,
+               odb::dbTechLayer* under_layer,
                int overMet,
-               dbTechLayer* over_layer);
+               odb::dbTechLayer* over_layer);
   void UpdateBBox();
   void Init(int s);
-  void SetInitName1(uint n);
-  void SetInitName(uint n, uint w1, uint w2, uint s1, uint s2, int ds = 0);
-  void AddName(uint jj, uint wireIndex, const char* wire = "", int met = -1);
-  void AddName1(uint jj,
-                uint w1,
-                uint w2,
-                uint s1,
-                uint s2,
-                uint wireIndex,
+  void SetInitName1(uint32_t n);
+  void SetInitName(uint32_t n,
+                   uint32_t w1,
+                   uint32_t w2,
+                   uint32_t s1,
+                   uint32_t s2,
+                   int ds = 0);
+  void AddName(uint32_t jj,
+               uint32_t wireIndex,
+               const char* wire = "",
+               int met = -1);
+  void AddName1(uint32_t jj,
+                uint32_t w1,
+                uint32_t w2,
+                uint32_t s1,
+                uint32_t s2,
+                uint32_t wireIndex,
                 const char* wire = "",
                 int met = -1);
-  uint CreatePatterns();
-  uint CreatePatterns_res();
-  uint CreatePatterns_diag();
-  uint CreatePattern2s_diag(uint widthIndex,
-                            uint spaceIndex1,
-                            uint spaceIndex2,
-                            uint wcnt,
-                            uint spaceDiagIndex,
-                            uint spaceDiagIndex2,
-                            uint dcnt);
-  uint CreatePattern1();
-  uint CreatePattern2(uint wcnt);
-  uint CreatePattern(uint widthIndex, uint spaceIndex, uint wcnt);
-  uint CreatePattern2s(uint widthIndex,
-                       uint spaceIndex1,
-                       uint spaceIndex2,
-                       uint wcnt);
+  uint32_t CreatePatterns();
+  uint32_t CreatePatterns_res();
+  uint32_t CreatePatterns_diag();
+  uint32_t CreatePattern2s_diag(uint32_t widthIndex,
+                                uint32_t spaceIndex1,
+                                uint32_t spaceIndex2,
+                                uint32_t wcnt,
+                                uint32_t spaceDiagIndex,
+                                uint32_t spaceDiagIndex2,
+                                uint32_t dcnt);
+  uint32_t CreatePattern1();
+  uint32_t CreatePattern2(uint32_t wcnt);
+  uint32_t CreatePattern(uint32_t widthIndex,
+                         uint32_t spaceIndex,
+                         uint32_t wcnt);
+  uint32_t CreatePattern2s(uint32_t widthIndex,
+                           uint32_t spaceIndex1,
+                           uint32_t spaceIndex2,
+                           uint32_t wcnt);
 
-  uint CreateContext(uint met,
-                     int ll[2],
-                     int ur[2],
-                     uint w,
-                     uint s,
-                     uint cntxWidth,
-                     uint cntxSpace,
-                     dbTechLayer* layer);
+  uint32_t CreateContext(uint32_t met,
+                         int ll[2],
+                         int ur[2],
+                         uint32_t w,
+                         uint32_t s,
+                         uint32_t cntxWidth,
+                         uint32_t cntxSpace,
+                         odb::dbTechLayer* layer);
 
-  void Print(FILE* fp, uint jj);
+  void Print(FILE* fp, uint32_t jj);
   void Print(FILE* fp);
-  void PrintBbox(FILE* fp, int LL[2], int UR[2]);
-  void WriteDB(uint dir, uint met, dbTechLayer* layer);
-  void WriteDB(uint jj, uint dir, uint met, dbTechLayer* layer, FILE* fp);
-  void WriteWire(FILE* fp, int ll[2], int ur[2], char* name);
+  void PrintBbox(FILE* fp, const int LL[2], const int UR[2]);
+  void WriteDB(uint32_t dir, uint32_t met, odb::dbTechLayer* layer);
+  void WriteDB(uint32_t jj,
+               uint32_t dir,
+               uint32_t met,
+               odb::dbTechLayer* layer,
+               FILE* fp);
+  void WriteWire(FILE* fp, const int ll[2], const int ur[2], char* name);
 
-  dbBTerm* createBterm1(bool lo,
-                        dbNet* net,
-                        int ll[2],
-                        int ur[2],
-                        const char* postFix,
-                        dbTechLayer* layer,
-                        uint width,
-                        bool horizontal,
-                        bool io);
-  dbNet* createNetSingleWire(const char* netName,
-                             int ll[2],
-                             int ur[2],
-                             uint width,
-                             bool vertical,
-                             uint met,
-                             dbTechLayer* layer);
+  odb::dbBTerm* createBterm1(bool lo,
+                             odb::dbNet* net,
+                             const int ll[2],
+                             const int ur[2],
+                             const char* postFix,
+                             odb::dbTechLayer* layer,
+                             uint32_t width,
+                             bool horizontal,
+                             bool io);
+  odb::dbNet* createNetSingleWire(const char* netName,
+                                  int ll[2],
+                                  int ur[2],
+                                  uint32_t width,
+                                  bool vertical,
+                                  uint32_t met,
+                                  odb::dbTechLayer* layer);
   // dkf 12/19/2023
-  uint setLayerInfoVia(dbTechLayer* layer, uint met, bool start = false);
-  uint CreatePatternVia(dbTechVia* via,
-                        uint widthIndex,
-                        uint spaceIndex,
-                        uint wcnt);
-  dbNet* createNetSingleWireAndVia(const char* netName,
-                                   int ll[2],
-                                   int ur[2],
-                                   uint width,
-                                   bool vertical,
-                                   dbTechVia* via);
-  void WriteDBWireVia(uint jj, uint dir, dbTechVia* via);
+  uint32_t setLayerInfoVia(odb::dbTechLayer* layer,
+                           uint32_t met,
+                           bool start = false);
+  uint32_t CreatePatternVia(odb::dbTechVia* via,
+                            uint32_t widthIndex,
+                            uint32_t spaceIndex,
+                            uint32_t wcnt);
+  odb::dbNet* createNetSingleWireAndVia(const char* netName,
+                                        int ll[2],
+                                        int ur[2],
+                                        uint32_t width,
+                                        bool vertical,
+                                        odb::dbTechVia* via);
+  void WriteDBWireVia(uint32_t jj, uint32_t dir, odb::dbTechVia* via);
   // dkf 12/20/2023
-  dbBTerm* createBterm(bool lo,
-                       dbNet* net,
-                       int ll[2],
-                       int ur[2],
-                       const char* postFix,
-                       dbTechLayer* layer,
-                       uint width,
-                       bool horizontal,
-                       bool io);
+  odb::dbBTerm* createBterm(bool lo,
+                            odb::dbNet* net,
+                            int ll[2],
+                            int ur[2],
+                            const char* postFix,
+                            odb::dbTechLayer* layer,
+                            uint32_t width,
+                            bool horizontal,
+                            bool io);
   // dkf 12/26/2023
-  uint GetViaCutCount(dbTechVia* tvia);
-  double GetViaArea(dbTechVia* tvia);
+  uint32_t GetViaCutCount(odb::dbTechVia* tvia);
+  double GetViaArea(odb::dbTechVia* tvia);
 };
 }  // namespace rcx

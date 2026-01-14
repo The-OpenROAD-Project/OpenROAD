@@ -3,6 +3,14 @@
 
 #include "layout.h"
 
+#include <algorithm>
+#include <memory>
+#include <utility>
+
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "ram/ram.h"
 #include "utl/Logger.h"
 
@@ -27,6 +35,8 @@ void Cell::addInst(dbInst* inst)
 
 void Cell::cellInit()
 {
+  width_ = 0;
+  height_ = 0;
   for (auto& inst : insts_) {
     Rect inst_box = inst->getBBox()->getBox();
     width_ += inst_box.dx();
@@ -92,12 +102,8 @@ void Layout::layoutInit()
         cells_[i]->setOrient(odb::dbOrientType::MX);
       }
       cells_[i]->cellInit();
-      if (cell_height_ < cells_[i]->getHeight()) {
-        cell_height_ = cells_[i]->getHeight();
-      }
-      if (cell_width_ < cells_[i]->getWidth()) {
-        cell_width_ = cells_[i]->getWidth();
-      }
+      cell_height_ = std::max(cell_height_, cells_[i]->getHeight());
+      cell_width_ = std::max(cell_width_, cells_[i]->getWidth());
     }
   }
 }
@@ -150,11 +156,25 @@ Grid::Grid(odb::Orientation2D orientation, int tracks)
 }
 
 Grid::Grid(odb::Orientation2D orientation, Point origin)
-    : orientation_(orientation), origin_(origin){};
+    : orientation_(orientation), origin_(origin)
+{
+}
 
 void Grid::addLayout(std::unique_ptr<Layout> layout)
 {
   layouts_.push_back(std::move(layout));
+}
+
+bool Grid::insertLayout(std::unique_ptr<Layout> layout, int index)
+{
+  if (index == layouts_.size()) {
+    layouts_.push_back(std::move(layout));
+  } else if (index < layouts_.size()) {
+    layouts_.insert(layouts_.begin() + index, std::move(layout));
+  } else if (index > layouts_.size()) {
+    return false;
+  }
+  return true;
 }
 
 void Grid::addCell(std::unique_ptr<Cell> cell, int track)
@@ -215,6 +235,16 @@ int Grid::getWidth() const
 int Grid::numLayouts() const
 {
   return layouts_.size();
+}
+
+int Grid::getLayoutWidth(int index) const
+{
+  return layouts_[index]->getWidth();
+}
+
+int Grid::getLayoutHeight(int index) const
+{
+  return layouts_[index]->getHeight();
 }
 
 int Grid::getRowWidth() const

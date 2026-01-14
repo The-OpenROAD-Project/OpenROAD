@@ -29,3 +29,9 @@ if { $found_prop != 0 } {
 } else {
   error "Didn't find filename prop on block"
 }
+foreach module [$block getModules] {
+  set prop [odb::dbStringProperty_find $module "original_name"]
+  if { $prop != "NULL" } {
+    puts "[$module getName] [$prop getValue]"
+  }
+}

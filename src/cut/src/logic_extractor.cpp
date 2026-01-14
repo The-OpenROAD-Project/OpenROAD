@@ -20,6 +20,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/SearchPred.hh"
+#include "utl/Logger.h"
 
 namespace cut {
 

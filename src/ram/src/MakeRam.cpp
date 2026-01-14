@@ -3,8 +3,7 @@
 
 #include "ram/MakeRam.h"
 
-#include <tcl.h>
-
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbModule.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
@@ -17,8 +19,9 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
 #include <cstddef>
-#include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <map>
 #include <string>
@@ -39,25 +42,25 @@ template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_insts != rhs._insts) {
+  if (insts_ != rhs.insts_) {
     return false;
   }
-  if (_mod_inst != rhs._mod_inst) {
+  if (mod_inst_ != rhs.mod_inst_) {
     return false;
   }
-  if (_modinsts != rhs._modinsts) {
+  if (modinsts_ != rhs.modinsts_) {
     return false;
   }
-  if (_modnets != rhs._modnets) {
+  if (modnets_ != rhs.modnets_) {
     return false;
   }
-  if (_modbterms != rhs._modbterms) {
+  if (modbterms_ != rhs.modbterms_) {
     return false;
   }
 
@@ -67,7 +70,7 @@ bool _dbModule::operator==(const _dbModule& rhs) const
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0) {
+  if (strcmp(name_, rhs.name_) >= 0) {
     return false;
   }
   // User Code End <
@@ -77,38 +80,38 @@ bool _dbModule::operator<(const _dbModule& rhs) const
 _dbModule::_dbModule(_dbDatabase* db)
 {
   // User Code Begin Constructor
-  _name = nullptr;
-  _insts = 0;
-  _modinsts = 0;
-  _mod_inst = 0;
+  name_ = nullptr;
+  insts_ = 0;
+  modinsts_ = 0;
+  mod_inst_ = 0;
   // User Code End Constructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
-  stream >> obj._insts;
-  stream >> obj._mod_inst;
-  stream >> obj._modinsts;
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._modnets;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
+  stream >> obj.insts_;
+  stream >> obj.mod_inst_;
+  stream >> obj.modinsts_;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.modnets_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._modbterms;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.modbterms_;
   }
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
-  stream << obj._insts;
-  stream << obj._mod_inst;
-  stream << obj._modinsts;
-  stream << obj._modnets;
-  stream << obj._modbterms;
+  stream << obj.name_;
+  stream << obj.next_entry_;
+  stream << obj.insts_;
+  stream << obj.mod_inst_;
+  stream << obj.modinsts_;
+  stream << obj.modnets_;
+  stream << obj.modbterms_;
   return stream;
 }
 
@@ -118,18 +121,18 @@ void _dbModule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
-  info.children_["_dbinst_hash"].add(_dbinst_hash);
-  info.children_["_modinst_hash"].add(_modinst_hash);
-  info.children_["_modbterm_hash"].add(_modbterm_hash);
-  info.children_["_modnet_hash"].add(_modnet_hash);
+  info.children["name"].add(name_);
+  info.children["_dbinst_hash"].add(dbinst_hash_);
+  info.children["_modinst_hash"].add(modinst_hash_);
+  info.children["_modbterm_hash"].add(modbterm_hash_);
+  info.children["_modnet_hash"].add(modnet_hash_);
   // User Code End collectMemInfo
 }
 
 _dbModule::~_dbModule()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
   // User Code Begin Destructor
   delete _port_iter;
@@ -145,33 +148,39 @@ _dbModule::~_dbModule()
 const char* dbModule::getName() const
 {
   _dbModule* obj = (_dbModule*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 void dbModule::setModInst(dbModInst* mod_inst)
 {
   _dbModule* obj = (_dbModule*) this;
 
-  obj->_mod_inst = mod_inst->getImpl()->getOID();
+  obj->mod_inst_ = mod_inst->getImpl()->getOID();
 }
 
 dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
-  if (obj->_mod_inst == 0) {
+  if (obj->mod_inst_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModInst*) par->_modinst_tbl->getPtr(obj->_mod_inst);
+  return (dbModInst*) par->modinst_tbl_->getPtr(obj->mod_inst_);
 }
 
 // User Code Begin dbModulePublicMethods
+
+dbModule* dbModule::getParentModule() const
+{
+  dbModInst* mod_inst = getModInst();
+  return (mod_inst != nullptr) ? mod_inst->getParent() : nullptr;
+}
 
 const dbModBTerm* dbModule::getHeadDbModBTerm() const
 {
   _dbModule* obj = (_dbModule*) this;
   _dbBlock* block_ = (_dbBlock*) obj->getOwner();
-  if (obj->_modbterms == 0) {
+  if (obj->modbterms_ == 0) {
     return nullptr;
   }
   // note that the odb objects are "pre-pended"
@@ -179,21 +188,21 @@ const dbModBTerm* dbModule::getHeadDbModBTerm() const
   // last object added. The application calling this routine
   // needs to be aware of this (and possibly skip to the end
   // of the list and then use prev to reconstruct creation order).
-  return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->_modbterms));
+  return (dbModBTerm*) (block_->modbterm_tbl_->getPtr(obj->modbterms_));
 }
 
 int dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (int) ((dbSet<dbModInst>(module, block->_module_modinst_itr)).size());
+  return (int) ((dbSet<dbModInst>(module, block->module_modinst_itr_)).size());
 }
 
 int dbModule::getDbInstCount()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (int) (dbSet<dbInst>(module, block->_module_inst_itr).size());
+  return (int) (dbSet<dbInst>(module, block->module_inst_itr_).size());
 }
 
 void dbModule::addInst(dbInst* inst)
@@ -202,7 +211,7 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (isTop() == false && _inst->_flags._physical_only) {
+  if (isTop() == false && _inst->flags_.physical_only) {
     _inst->getLogger()->error(
         utl::ODB,
         297,
@@ -211,35 +220,35 @@ void dbModule::addInst(dbInst* inst)
         getName());
   }
 
-  if (_inst->_module == module->getOID()) {
+  if (_inst->module_ == module->getOID()) {
     return;  // already in this module
   }
 
-  if (_inst->_flags._dont_touch) {
+  if (_inst->flags_.dont_touch) {
     _inst->getLogger()->error(
         utl::ODB,
         367,
         "Attempt to change the module of dont_touch instance {}",
-        _inst->_name);
+        _inst->name_);
   }
 
-  if (_inst->_module != 0) {
-    dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->_module);
+  if (_inst->module_ != 0) {
+    dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
     ((_dbModule*) mod)->removeInst(inst);
   }
 
-  _inst->_module = module->getOID();
-  module->_dbinst_hash[inst->getName()] = dbId<_dbInst>(_inst->getOID());
+  _inst->module_ = module->getOID();
+  module->dbinst_hash_[inst->getName()] = dbId<_dbInst>(_inst->getOID());
 
-  if (module->_insts == 0) {
-    _inst->_module_next = 0;
-    _inst->_module_prev = 0;
-    module->_insts = _inst->getOID();
+  if (module->insts_ == 0) {
+    _inst->module_next_ = 0;
+    _inst->module_prev_ = 0;
+    module->insts_ = _inst->getOID();
   } else {
-    _dbInst* cur_head = block->_inst_tbl->getPtr(module->_insts);
-    _inst->_module_next = module->_insts;
-    module->_insts = _inst->getOID();
-    cur_head->_module_prev = _inst->getOID();
+    _dbInst* cur_head = block->inst_tbl_->getPtr(module->insts_);
+    _inst->module_next_ = module->insts_;
+    module->insts_ = _inst->getOID();
+    cur_head->module_prev_ = _inst->getOID();
   }
 }
 
@@ -247,76 +256,76 @@ void _dbModule::removeInst(dbInst* inst)
 {
   _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
-  uint id = _inst->getOID();
+  uint32_t id = _inst->getOID();
 
-  if (_inst->_module != getOID()) {
+  if (_inst->module_ != getOID()) {
     return;
   }
 
-  if (_inst->_flags._dont_touch) {
+  if (_inst->flags_.dont_touch) {
     _inst->getLogger()->error(
         utl::ODB,
         371,
         "Attempt to remove dont_touch instance {} from parent module",
-        _inst->_name);
+        _inst->name_);
   }
 
   _dbBlock* block = (_dbBlock*) getOwner();
 
-  if (module->_insts == id) {
-    module->_insts = _inst->_module_next;
+  if (module->insts_ == id) {
+    module->insts_ = _inst->module_next_;
 
-    if (module->_insts != 0) {
-      _dbInst* t = block->_inst_tbl->getPtr(module->_insts);
-      t->_module_prev = 0;
+    if (module->insts_ != 0) {
+      _dbInst* t = block->inst_tbl_->getPtr(module->insts_);
+      t->module_prev_ = 0;
     }
   } else {
-    if (_inst->_module_next != 0) {
-      _dbInst* next = block->_inst_tbl->getPtr(_inst->_module_next);
-      next->_module_prev = _inst->_module_prev;
+    if (_inst->module_next_ != 0) {
+      _dbInst* next = block->inst_tbl_->getPtr(_inst->module_next_);
+      next->module_prev_ = _inst->module_prev_;
     }
 
-    if (_inst->_module_prev != 0) {
-      _dbInst* prev = block->_inst_tbl->getPtr(_inst->_module_prev);
-      prev->_module_next = _inst->_module_next;
+    if (_inst->module_prev_ != 0) {
+      _dbInst* prev = block->inst_tbl_->getPtr(_inst->module_prev_);
+      prev->module_next_ = _inst->module_next_;
     }
   }
-  _inst->_module = 0;
-  _inst->_module_next = 0;
-  _inst->_module_prev = 0;
+  _inst->module_ = 0;
+  _inst->module_next_ = 0;
+  _inst->module_prev_ = 0;
 }
 
-dbSet<dbModInst> dbModule::getChildren()
+dbSet<dbModInst> dbModule::getChildren() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModInst>(module, block->_module_modinst_itr);
+  return dbSet<dbModInst>(module, block->module_modinst_itr_);
 }
 
 dbSet<dbModNet> dbModule::getModNets()
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModNet>(module, block->_module_modnet_itr);
+  return dbSet<dbModNet>(module, block->module_modnet_itr_);
 }
 
-dbModNet* dbModule::getModNet(const char* net_name)
+dbModNet* dbModule::getModNet(const char* net_name) const
 {
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  auto it = module->_modnet_hash.find(net_name);
-  if (it != module->_modnet_hash.end()) {
-    uint db_id = (*it).second;
-    return (dbModNet*) block->_modnet_tbl->getPtr(db_id);
+  const _dbModule* module = (const _dbModule*) this;
+  const _dbBlock* block = (const _dbBlock*) module->getOwner();
+  auto it = module->modnet_hash_.find(net_name);
+  if (it != module->modnet_hash_.end()) {
+    uint32_t db_id = (*it).second;
+    return (dbModNet*) block->modnet_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
 
-dbSet<dbModInst> dbModule::getModInsts()
+dbSet<dbModInst> dbModule::getModInsts() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModInst>(module, block->_module_modinst_itr);
+  return dbSet<dbModInst>(module, block->module_modinst_itr_);
 }
 
 //
@@ -330,7 +339,7 @@ dbSet<dbModBTerm> dbModule::getPorts()
   _dbModule* obj = (_dbModule*) this;
   if (obj->_port_iter == nullptr) {
     _dbBlock* block = (_dbBlock*) obj->getOwner();
-    obj->_port_iter = new dbModulePortItr(block->_modbterm_tbl);
+    obj->_port_iter = new dbModulePortItr(block->modbterm_tbl_);
   }
   return dbSet<dbModBTerm>(this, obj->_port_iter);
 }
@@ -343,42 +352,49 @@ dbSet<dbModBTerm> dbModule::getModBTerms() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModBTerm>(module, block->_module_modbterm_itr);
+  return dbSet<dbModBTerm>(module, block->module_modbterm_itr_);
 }
 
-dbModBTerm* dbModule::getModBTerm(uint id)
+dbModBTerm* dbModule::getModBTerm(uint32_t id)
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (dbModBTerm*) (block->_modbterm_tbl->getObject(id));
+  return (dbModBTerm*) (block->modbterm_tbl_->getObject(id));
 }
 
-dbSet<dbInst> dbModule::getInsts()
+dbSet<dbInst> dbModule::getInsts() const
 {
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbInst>(module, block->_module_inst_itr);
+  return dbSet<dbInst>(module, block->module_inst_itr_);
 }
 
 dbModule* dbModule::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_module_hash.hasMember(name)) {
+  if (_block->module_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbModule* module = _block->_module_tbl->create();
-  module->_name = safe_strdup(name);
-  _block->_module_hash.insert(module);
+  _dbModule* module = _block->module_tbl_->create();
+  module->name_ = safe_strdup(name);
+  _block->module_hash_.insert(module);
 
-  if (_block->_journal) {
-    _block->_journal->beginAction(dbJournal::CREATE_OBJECT);
-    _block->_journal->pushParam(dbModuleObj);
-    _block->_journal->pushParam(module->_name);
-    _block->_journal->pushParam(module->getId());
-    _block->_journal->endAction();
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: create {}",
+             module->getDebugName());
+
+  if (_block->journal_) {
+    _block->journal_->beginAction(dbJournal::kCreateObject);
+    _block->journal_->pushParam(dbModuleObj);
+    _block->journal_->pushParam(module->name_);
+    _block->journal_->pushParam(module->getId());
+    _block->journal_->endAction();
   }
 
-  for (dbBlockCallBackObj* cb : _block->_callbacks) {
+  for (dbBlockCallBackObj* cb : _block->callbacks_) {
     cb->inDbModuleCreate((dbModule*) module);
   }
 
@@ -390,7 +406,7 @@ void dbModule::destroy(dbModule* module)
   _dbModule* _module = (_dbModule*) module;
   _dbBlock* block = (_dbBlock*) _module->getOwner();
 
-  if (block->_top_module == module->getId()) {
+  if (block->top_module_ == module->getId()) {
     _module->getLogger()->error(
         utl::ODB, 298, "The top module can't be destroyed.");
   }
@@ -405,7 +421,7 @@ void dbModule::destroy(dbModule* module)
   // have not been cleaned up.
   //
 
-  if (_module->_mod_inst != 0) {
+  if (_module->mod_inst_ != 0) {
     _module->getLogger()->error(
         utl::ODB,
         389,
@@ -446,53 +462,60 @@ void dbModule::destroy(dbModule* module)
     modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
-  for (auto cb : block->_callbacks) {
+  for (auto cb : block->callbacks_) {
     cb->inDbModuleDestroy(module);
   }
 
   dbProperty::destroyProperties(_module);
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: delete {}",
+             module->getDebugName());
+
   // Journal the deletion of the dbModule after its ports
   // and properties deleted, so that on restore we have
   // dbModule to hang objects on.
-  if (block->_journal) {
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    block->_journal->pushParam(dbModuleObj);
-    block->_journal->pushParam(module->getName());
-    block->_journal->pushParam(module->getId());
-    block->_journal->endAction();
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kDeleteObject);
+    block->journal_->pushParam(dbModuleObj);
+    block->journal_->pushParam(module->getName());
+    block->journal_->pushParam(module->getId());
+    block->journal_->endAction();
   }
 
-  block->_module_hash.remove(_module);
-  block->_module_tbl->destroy(_module);
+  block->module_hash_.remove(_module);
+  block->module_tbl_->destroy(_module);
 }
 
-dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
+dbModule* dbModule::getModule(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbModule*) block->_module_tbl->getPtr(dbid_);
+  return (dbModule*) block->module_tbl_->getPtr(dbid_);
 }
 
-dbModInst* dbModule::findModInst(const char* name)
+dbModInst* dbModule::findModInst(const char* name) const
 {
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_modinst_hash.find(name);
-  if (it != obj->_modinst_hash.end()) {
+  const _dbModule* obj = (const _dbModule*) this;
+  const _dbBlock* par = (const _dbBlock*) obj->getOwner();
+  auto it = obj->modinst_hash_.find(name);
+  if (it != obj->modinst_hash_.end()) {
     auto db_id = (*it).second;
-    return (dbModInst*) par->_modinst_tbl->getPtr(db_id);
+    return (dbModInst*) par->modinst_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
 
-dbInst* dbModule::findDbInst(const char* name)
+dbInst* dbModule::findDbInst(const char* name) const
 {
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_dbinst_hash.find(name);
-  if (it != obj->_dbinst_hash.end()) {
+  const _dbModule* obj = (const _dbModule*) this;
+  const _dbBlock* par = (const _dbBlock*) obj->getOwner();
+  auto it = obj->dbinst_hash_.find(name);
+  if (it != obj->dbinst_hash_.end()) {
     auto db_id = (*it).second;
-    return (dbInst*) par->_inst_tbl->getPtr(db_id);
+    return (dbInst*) par->inst_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
@@ -515,20 +538,20 @@ std::vector<dbInst*> dbModule::getLeafInsts()
   return insts;
 }
 
-dbModBTerm* dbModule::findModBTerm(const char* name)
+dbModBTerm* dbModule::findModBTerm(const char* name) const
 {
   std::string modbterm_name(name);
-  char hier_delimiter = getOwner()->getHierarchyDelimiter();
+  const char hier_delimiter = getOwner()->getHierarchyDelimiter();
   size_t last_idx = modbterm_name.find_last_of(hier_delimiter);
   if (last_idx != std::string::npos) {
     modbterm_name = modbterm_name.substr(last_idx + 1);
   }
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  auto it = obj->_modbterm_hash.find(modbterm_name);
-  if (it != obj->_modbterm_hash.end()) {
+  const _dbModule* obj = (const _dbModule*) this;
+  const _dbBlock* par = (const _dbBlock*) obj->getOwner();
+  auto it = obj->modbterm_hash_.find(modbterm_name);
+  if (it != obj->modbterm_hash_.end()) {
     auto db_id = (*it).second;
-    return (dbModBTerm*) par->_modbterm_tbl->getPtr(db_id);
+    return (dbModBTerm*) par->modbterm_tbl_->getPtr(db_id);
   }
   return nullptr;
 }
@@ -542,9 +565,9 @@ std::string dbModule::getHierarchicalName() const
   return "<top>";
 }
 
-dbBlock* dbModule::getOwner()
+dbBlock* dbModule::getOwner() const
 {
-  _dbModule* obj = (_dbModule*) this;
+  const _dbModule* obj = (const _dbModule*) this;
   return (dbBlock*) obj->getOwner();
 }
 
@@ -560,7 +583,7 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
   }
 
   std::unordered_map<std::string, int>& name_id_map
-      = ((_dbBlock*) block)->_module_name_id_map;
+      = ((_dbBlock*) block)->module_name_id_map_;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
   do {
@@ -640,18 +663,17 @@ bool dbModule::isTop() const
 }
 
 // Do a "deep" copy of old_module based on its instance context into new_module.
-// All ports, instances, mod nets and parent/child IO will be copied.
-// Connections that span multiple modules needs to be done outside this API.
-// new_mod_inst is needed to create module instances for instance name
-// uniquification.
+// - NOTE: _dbModule::copyModulePorts needs to be called before this function
+//   to populate mod_bt_map.
+// - All instances, mod nets and parent/child IO will be copied.
+// - Connections that span multiple modules needs to be done outside this API.
+// - new_mod_inst is needed to create module instances for instance name
+//   uniquification.
 void _dbModule::copy(dbModule* old_module,
                      dbModule* new_module,
-                     dbModInst* new_mod_inst)
+                     dbModInst* new_mod_inst,
+                     modBTMap& mod_bt_map)
 {
-  // Copy module ports including bus members
-  modBTMap mod_bt_map;  // map old mbterm to new mbterm
-  copyModulePorts(old_module, new_module, mod_bt_map);
-
   // Copy module instances and create iterm map
   ITMap it_map;  // map old iterm to new iterm
   copyModuleInsts(old_module, new_module, new_mod_inst, it_map);
@@ -675,7 +697,7 @@ void _dbModule::copyModulePorts(dbModule* old_module,
   utl::Logger* logger = old_module->getImpl()->getLogger();
   for (dbModBTerm* old_port : old_module->getModBTerms()) {
     dbModBTerm* new_port = nullptr;
-    if (mod_bt_map.count(old_port) > 0) {
+    if (mod_bt_map.contains(old_port)) {
       new_port = mod_bt_map[old_port];
       debugPrint(logger,
                  utl::ODB,
@@ -788,22 +810,27 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                                 dbModInst* new_mod_inst,
                                 ITMap& it_map)
 {
+  dbBlock* block = new_module->getOwner();
+  const char hier_delimiter = block->getHierarchyDelimiter();
   utl::Logger* logger = old_module->getImpl()->getLogger();
+
+  // Create a net name map (key: new net name, value: new dbNet*).
+  std::map<std::string, dbNet*> new_net_name_map;
+
   // Add insts to new module
   for (dbInst* old_inst : old_module->getInsts()) {
-    // Change unique instance name from old_inst/leaf to new_inst/leaf
+    // Decide an instance name.
+    // - Note that new_mod_inst can be null when the corresponding dbModule is
+    //   not instantiated.
     std::string new_inst_name;
     if (new_mod_inst) {
-      new_inst_name = new_mod_inst->getName();
-      new_inst_name += '/';
+      new_inst_name = new_mod_inst->getHierarchicalName();
+      new_inst_name += hier_delimiter;
     }
-    std::string old_inst_name = old_inst->getName();
-    // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
-    size_t first_idx = old_inst_name.find_first_of('/');
-    new_inst_name += (first_idx != std::string::npos)
-                         ? std::move(old_inst_name).substr(first_idx + 1)
-                         : std::move(old_inst_name);
 
+    new_inst_name += block->getBaseName(old_inst->getConstName());
+
+    // Create an instance of the same master
     dbInst* new_inst = dbInst::makeUniqueDbInst(new_module->getOwner(),
                                                 old_inst->getMaster(),
                                                 new_inst_name.c_str(),
@@ -814,11 +841,15 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                  utl::ODB,
                  "replace_design",
                  1,
-                 "Created module instance {}",
-                 new_inst->getName());
+                 "Created module instance '{}' with master '{}'",
+                 new_inst->getName(),
+                 old_inst->getMaster()->getName());
     } else {
-      logger->error(
-          utl::ODB, 459, "Module instance {} cannot be created", new_inst_name);
+      logger->error(utl::ODB,
+                    13,
+                    "Module instance '{}' with master '{}' cannot be created",
+                    new_inst_name,
+                    old_inst->getMaster()->getName());
     }
 
     // Map old iterms to new iterms and connect iterms that are local to this
@@ -842,41 +873,74 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                  old_iterm->getName(),
                  new_iterm->getName());
       dbNet* old_net = old_iterm->getNet();
-      if (old_net) {
-        // Create a local net only if it connects to iterms inside this module
-        std::string new_net_name;
-        if (new_mod_inst) {
-          new_net_name = new_mod_inst->getName();
-          new_net_name += '/';
-        }
-        std::string old_net_name = old_net->getName();
-        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
-        size_t first_idx = old_net_name.find_first_of('/');
-        new_net_name += (first_idx != std::string::npos)
-                            ? std::move(old_net_name).substr(first_idx + 1)
-                            : std::move(old_net_name);
+      if (old_net == nullptr) {
+        continue;
+      }
 
-        dbNet* new_net = new_module->getOwner()->findNet(new_net_name.c_str());
-        if (new_net) {
-          new_iterm->connect(new_net);
-          debugPrint(logger,
-                     utl::ODB,
-                     "replace_design",
-                     1,
-                     "  connected iterm {} to existing local net {}",
-                     new_iterm->getName(),
-                     new_net->getName());
-        } else {
-          new_net = dbNet::create(new_module->getOwner(), new_net_name.c_str());
-          new_iterm->connect(new_net);
-          debugPrint(logger,
-                     utl::ODB,
-                     "replace_design",
-                     1,
-                     "  Connected iterm {} to new local net {}",
-                     new_iterm->getName(),
-                     new_net->getName());
-        }
+      //
+      // Create a local net only if it connects to iterms inside this module
+      //
+      std::string new_net_name;
+      if (new_mod_inst) {
+        new_net_name = new_mod_inst->getHierarchicalName();
+        new_net_name += hier_delimiter;
+      }
+
+      // Check if the flat net is an internal net within old_module
+      // - If old_module is uninstantiated module, every net in the module is
+      //   an internal net.
+      //   e.g., No module instance.
+      //         net_name = "_001_"     <-- Internal net.
+      //
+      // - Otherwise, an internal net should have the hierarchy prefix
+      //   (= module instance hierarchical name).
+      //   e.g., modinst_name = "u0/alu0"
+      //         net_name = u0/alu0/_001_   <-- Internal net.
+      //         net_name = u0/_001_        <-- External net crossing module
+      //                                        boundary.
+      std::string old_net_name = old_net->getName();
+      if (old_net->isInternalTo(old_module) == false) {
+        // Skip external net crossing module boundary.
+        // It will be connected later.
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   3,
+                   "    Skip: non-internal dbNet '{}' of old_module '{}'.\n",
+                   old_net_name,
+                   old_module->getHierarchicalName());
+        continue;
+      }
+
+      new_net_name += block->getBaseName(old_net_name.c_str());
+      auto it = new_net_name_map.find(new_net_name);
+      if (it != new_net_name_map.end()) {
+        // Connect to an existing local net
+        dbNet* new_net = (*it).second;
+        new_iterm->connect(new_net);
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  connected iterm '{}' to existing local net '{}'",
+                   new_iterm->getName(),
+                   new_net->getName());
+      } else {
+        // Create and connect to a new local net
+        assert(block->findNet(new_net_name.c_str()) == nullptr);
+        dbNet* new_net
+            = dbNet::create(new_module->getOwner(), new_net_name.c_str());
+        new_iterm->connect(new_net);
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  Connected iterm '{}' to new local net '{}'",
+                   new_iterm->getName(),
+                   new_net->getName());
+
+        // Insert it to the map
+        new_net_name_map[new_net_name] = new_net;
       }
     }
   }
@@ -920,7 +984,7 @@ void _dbModule::copyModuleModNets(dbModule* old_module,
     // Connect dbModBTerms to new mod net
     for (dbModBTerm* old_mbterm : old_net->getModBTerms()) {
       dbModBTerm* new_mbterm = nullptr;
-      if (mod_bt_map.count(old_mbterm) > 0) {
+      if (mod_bt_map.contains(old_mbterm)) {
         new_mbterm = mod_bt_map[old_mbterm];
       }
       if (new_mbterm) {
@@ -954,7 +1018,7 @@ void _dbModule::copyModuleModNets(dbModule* old_module,
                old_net->getITerms().size());
     for (dbITerm* old_iterm : old_net->getITerms()) {
       dbITerm* new_iterm = nullptr;
-      if (it_map.count(old_iterm) > 0) {
+      if (it_map.contains(old_iterm)) {
         new_iterm = it_map[old_iterm];
       }
       if (new_iterm) {
@@ -1060,6 +1124,37 @@ bool _dbModule::copyToChildBlock(dbModule* module)
     copyModuleModNets(module, new_module, mod_bt_map, it_map);
   }
   return true;
+}
+
+bool dbModule::containsDbInst(dbInst* inst) const
+{
+  // Check direct child dbInsts
+  for (dbInst* child_inst : getInsts()) {
+    if (child_inst == inst) {
+      return true;
+    }
+  }
+
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : getChildren()) {
+    if (child_mod_inst->containsDbInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool dbModule::containsDbModInst(dbModInst* inst) const
+{
+  // Recursively check child dbModInsts
+  for (dbModInst* child_mod_inst : getModInsts()) {
+    if (child_mod_inst == inst || child_mod_inst->containsDbModInst(inst)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // User Code End dbModulePublicMethods

@@ -23,6 +23,7 @@
 #include "frDesign.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -80,6 +81,7 @@ class Parser
   }
   void updateDesign();
   frInst* setInst(odb::dbInst*);
+  frNet* addNet(odb::dbNet* db_net);
 
  private:
   frDesign* getDesign() const;
@@ -101,7 +103,6 @@ class Parser
   void setVias(odb::dbBlock*);
   void updateNetRouting(frNet*, odb::dbNet*);
   void setNets(odb::dbBlock*);
-  frNet* addNet(odb::dbNet* db_net);
   void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,
                      frCoord&,
@@ -153,7 +154,7 @@ class Parser
   odb::dbTechLayer* masterSliceLayer_;
   frOrderedIdMap<
       frMaster*,
-      std::map<dbOrientType,
+      std::map<odb::dbOrientType,
                std::map<std::vector<frCoord>, frOrderedIdSet<frInst*>>>>
       trackOffsetMap_;
   std::vector<frTrackPattern*> prefTrackPatterns_;

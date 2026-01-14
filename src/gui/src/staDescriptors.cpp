@@ -60,7 +60,7 @@ template <typename T>
 static void add_limit(Descriptor::Properties& props,
                       sta::LibertyPort* port,
                       const char* label,
-                      LimitFunc<T> func,
+                      const LimitFunc<T>& func,
                       const char* suffix)
 {
   for (const auto* elem : T::range()) {
@@ -187,7 +187,7 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
     for (const sta::MinMax* min_max :
          {sta::MinMax::min(), sta::MinMax::max()}) {
       const auto& libs = corner->libertyLibraries(min_max);
-      if (std::find(libs.begin(), libs.end(), library) != libs.end()) {
+      if (std::ranges::find(libs, library) != libs.end()) {
         corners.insert(gui->makeSelected(corner));
       }
     }
@@ -301,9 +301,14 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
 
   std::array<SelectionSet, 8> ports;
   sta::LibertyCellPortIterator port_iter(cell);
+  SelectionSet pg_ports;
   while (port_iter.hasNext()) {
     auto port = port_iter.next();
-    ports[port->direction()->index()].insert(gui->makeSelected(port));
+    if (port->isPwrGnd()) {
+      pg_ports.insert(gui->makeSelected(port));
+    } else {
+      ports[port->direction()->index()].insert(gui->makeSelected(port));
+    }
   }
   for (auto dir : {sta::PortDirection::input(),
                    sta::PortDirection::output(),
@@ -321,11 +326,6 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
     }
   }
 
-  SelectionSet pg_ports;
-  sta::LibertyCellPgPortIterator pg_port_iter(cell);
-  while (pg_port_iter.hasNext()) {
-    pg_ports.insert(gui->makeSelected(pg_port_iter.next()));
-  }
   props.push_back({"PG Ports", pg_ports});
 
   SelectionSet insts;
@@ -476,9 +476,12 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
   std::any ground_pin;
   const char* power_pin_name = port->relatedPowerPin();
   const char* ground_pin_name = port->relatedGroundPin();
-  sta::LibertyCellPgPortIterator pg_port_iter(port->libertyCell());
+  sta::LibertyCellPortIterator pg_port_iter(port->libertyCell());
   while (pg_port_iter.hasNext()) {
     auto* pg_port = pg_port_iter.next();
+    if (!pg_port->isPwrGnd()) {
+      continue;
+    }
     if (power_pin_name != nullptr
         && strcmp(pg_port->name(), power_pin_name) == 0) {
       power_pin = gui->makeSelected(pg_port);
@@ -540,132 +543,6 @@ void LibertyPortDescriptor::visitAllObjects(
 }
 
 //////////////////////////////////////////////////
-
-static const char* typeNameStr(sta::LibertyPgPort::PgType type)
-{
-  switch (type) {
-    case sta::LibertyPgPort::unknown:
-      return "unknown";
-    case sta::LibertyPgPort::primary_power:
-      return "primary_power";
-    case sta::LibertyPgPort::primary_ground:
-      return "primary_ground";
-    case sta::LibertyPgPort::backup_power:
-      return "backup_power";
-    case sta::LibertyPgPort::backup_ground:
-      return "backup_ground";
-    case sta::LibertyPgPort::internal_power:
-      return "internal_power";
-    case sta::LibertyPgPort::internal_ground:
-      return "internal_ground";
-    case sta::LibertyPgPort::nwell:
-      return "nwell";
-    case sta::LibertyPgPort::pwell:
-      return "pwell";
-    case sta::LibertyPgPort::deepnwell:
-      return "deepnwell";
-    case sta::LibertyPgPort::deeppwell:
-      return "deeppwell";
-  }
-  return "<unexpected>";
-}
-
-LibertyPgPortDescriptor::LibertyPgPortDescriptor(sta::dbSta* sta) : sta_(sta)
-{
-}
-
-std::string LibertyPgPortDescriptor::getName(const std::any& object) const
-{
-  return std::any_cast<sta::LibertyPgPort*>(object)->name();
-}
-
-std::string LibertyPgPortDescriptor::getTypeName() const
-{
-  return "Liberty PG port";
-}
-
-bool LibertyPgPortDescriptor::getBBox(const std::any& object,
-                                      odb::Rect& bbox) const
-{
-  return false;
-}
-
-void LibertyPgPortDescriptor::highlight(const std::any& object,
-                                        Painter& painter) const
-{
-  odb::dbMTerm* mterm = getMTerm(object);
-
-  if (mterm != nullptr) {
-    auto* mterm_desc = Gui::get()->getDescriptor<odb::dbMTerm*>();
-    mterm_desc->highlight(mterm, painter);
-  }
-}
-
-Descriptor::Properties LibertyPgPortDescriptor::getProperties(
-    const std::any& object) const
-{
-  auto port = std::any_cast<sta::LibertyPgPort*>(object);
-
-  auto gui = Gui::get();
-
-  Properties props;
-  props.push_back({"Cell", gui->makeSelected(port->cell())});
-  props.push_back({"Type", typeNameStr(port->pgType())});
-  props.push_back({"Voltage name", port->voltageName()});
-
-  odb::dbMTerm* mterm = getMTerm(object);
-  if (mterm != nullptr) {
-    props.push_back({"Terminal", gui->makeSelected(mterm)});
-  }
-
-  return props;
-}
-
-Selected LibertyPgPortDescriptor::makeSelected(const std::any& object) const
-{
-  if (auto port = std::any_cast<sta::LibertyPgPort*>(&object)) {
-    return Selected(*port, this);
-  }
-  return Selected();
-}
-
-bool LibertyPgPortDescriptor::lessThan(const std::any& l,
-                                       const std::any& r) const
-{
-  auto l_port = std::any_cast<sta::LibertyPgPort*>(l);
-  auto r_port = std::any_cast<sta::LibertyPgPort*>(r);
-  return strcmp(l_port->name(), r_port->name()) < 0;
-}
-
-void LibertyPgPortDescriptor::visitAllObjects(
-    const std::function<void(const Selected&)>& func) const
-{
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
-      network->libertyLibraryIterator()};
-
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* library = lib_iter->next();
-    sta::LibertyCellIterator cell_iter(library);
-    while (cell_iter.hasNext()) {
-      sta::LibertyCell* cell = cell_iter.next();
-      sta::LibertyCellPgPortIterator port_iter(cell);
-      while (port_iter.hasNext()) {
-        sta::LibertyPgPort* port = port_iter.next();
-        func({port, this});
-      }
-    }
-  }
-}
-
-odb::dbMTerm* LibertyPgPortDescriptor::getMTerm(const std::any& object) const
-{
-  auto port = std::any_cast<sta::LibertyPgPort*>(object);
-  odb::dbMaster* master = sta_->getDbNetwork()->staToDb(port->cell());
-  odb::dbMTerm* mterm = master->findMTerm(port->name());
-
-  return mterm;
-}
 
 CornerDescriptor::CornerDescriptor(sta::dbSta* sta) : sta_(sta)
 {
@@ -826,7 +703,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                                                     100 * power.duty(),
                                                     freq,
                                                     power.originName());
-      port_power_activity.push_back({port_id, activity_info});
+      port_power_activity.emplace_back(port_id, activity_info);
 
       const sta::Unit* timeunit = sta_->units()->timeUnit();
       const auto setup_arrival
@@ -838,7 +715,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                       "{} {}",
                       timeunit->asString(setup_arrival, kFloatPrecision),
                       timeunit->scaledSuffix());
-      port_arrival_setup.push_back({port_id, setup_text});
+      port_arrival_setup.emplace_back(port_id, setup_text);
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
       const std::string hold_text
@@ -847,7 +724,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 : fmt::format("{} {}",
                               timeunit->asString(hold_arrival, kFloatPrecision),
                               timeunit->scaledSuffix());
-      port_arrival_hold.push_back({port_id, hold_text});
+      port_arrival_hold.emplace_back(port_id, hold_text);
     }
   }
   props.push_back({"Max arrival times", port_arrival_setup});
@@ -857,10 +734,10 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   PropertyList power;
   for (auto* corner : *sta_->corners()) {
     const auto power_info = sta_->power(inst, corner);
-    power.push_back(
-        {gui->makeSelected(corner),
-         Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
-             + "W"});
+    power.emplace_back(
+        gui->makeSelected(corner),
+        Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
+            + "W");
   }
   props.push_back({"Total power", power});
 
@@ -958,15 +835,13 @@ std::set<const sta::Pin*> ClockDescriptor::getClockPins(sta::Clock* clock) const
   std::set<const sta::Pin*> pins;
   for (auto* pin : sta_->startpointPins()) {
     const auto pin_clocks = sta_->clocks(pin);
-    if (std::find(pin_clocks.begin(), pin_clocks.end(), clock)
-        != pin_clocks.end()) {
+    if (std::ranges::find(pin_clocks, clock) != pin_clocks.end()) {
       pins.insert(pin);
     }
   }
   for (auto* pin : sta_->endpointPins()) {
     const auto pin_clocks = sta_->clocks(pin);
-    if (std::find(pin_clocks.begin(), pin_clocks.end(), clock)
-        != pin_clocks.end()) {
+    if (std::ranges::find(pin_clocks, clock) != pin_clocks.end()) {
       pins.insert(pin);
     }
   }

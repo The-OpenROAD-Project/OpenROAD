@@ -202,6 +202,10 @@ void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
 
 int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 {
+  if (net->getBTermCount() + net->getITermCount() == 0) {
+    return 0;
+  }
+
   int min_x = std::numeric_limits<int>::max();
   int min_y = std::numeric_limits<int>::max();
   int max_x = std::numeric_limits<int>::min();
@@ -257,14 +261,14 @@ Tree SteinerTreeBuilder::flute(const std::vector<int>& x,
   return flute_->flute(x, y, acc);
 }
 
-int SteinerTreeBuilder::wirelength(Tree t)
+int SteinerTreeBuilder::wirelength(const Tree& t)
 {
-  return flute_->wirelength(std::move(t));
+  return flute_->wirelength(t);
 }
 
-void SteinerTreeBuilder::plottree(Tree t)
+void SteinerTreeBuilder::plottree(const Tree& t)
 {
-  flute_->plottree(std::move(t));
+  flute_->plottree(t);
 }
 
 Tree SteinerTreeBuilder::flutes(const std::vector<int>& xs,
@@ -381,7 +385,7 @@ void Tree::printTree(utl::Logger* logger) const
                      (float) branch[i].y,
                      branch[i].n);
     }
-    for (int i = deg; i < 2 * deg - 2; i++) {
+    for (int i = deg; i < branch.size(); i++) {
       logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
                      i,
                      (float) branch[i].x,

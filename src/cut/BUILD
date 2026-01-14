@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(
     default_visibility = ["//:__subpackages__"],
+    features = ["layering_check"],
 )
 
 cc_library(
@@ -31,10 +32,12 @@ cc_library(
     includes = ["include"],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party/abc:abc-lib",
         "@boost.bind",
         "@boost.config",
         "@boost.fusion",
@@ -42,6 +45,5 @@ cc_library(
         "@boost.optional",
         "@boost.phoenix",
         "@boost.spirit",
-        "@edu_berkeley_abc//:abc-lib",
     ],
 )

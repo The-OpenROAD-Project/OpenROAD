@@ -11,6 +11,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/drObj/drNet.h"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
@@ -28,6 +29,8 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+using odb::dbTechLayerType;
+
 namespace drt {
 
 gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
@@ -41,9 +44,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
       if (bterm->hasNet()) {
         owner = bterm->getNet();
       } else {
-        dbSigType sigType = bterm->getType();
-        isFloatingVDD = (sigType == dbSigType::POWER);
-        isFloatingVSS = (sigType == dbSigType::GROUND);
+        odb::dbSigType sigType = bterm->getType();
+        isFloatingVDD = (sigType == odb::dbSigType::POWER);
+        isFloatingVSS = (sigType == odb::dbSigType::GROUND);
         owner = obj;
       }
       break;
@@ -53,9 +56,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
       if (instTerm->hasNet()) {
         owner = instTerm->getNet();
       } else {
-        dbSigType sigType = instTerm->getTerm()->getType();
-        isFloatingVDD = (sigType == dbSigType::POWER);
-        isFloatingVSS = (sigType == dbSigType::GROUND);
+        odb::dbSigType sigType = instTerm->getTerm()->getType();
+        isFloatingVDD = (sigType == odb::dbSigType::POWER);
+        isFloatingVSS = (sigType == odb::dbSigType::GROUND);
         owner = obj;
       }
       break;
@@ -987,7 +990,7 @@ void FlexGCWorker::Impl::initPA1()
 void FlexGCWorker::Impl::updateGCWorker()
 {
   if (!getDRWorker()) {
-    std::cout << "Error: updateGCWorker expects a valid DRWorker" << std::endl;
+    std::cout << "Error: updateGCWorker expects a valid DRWorker\n";
     exit(1);
   }
 

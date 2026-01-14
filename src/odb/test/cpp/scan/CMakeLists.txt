@@ -9,6 +9,7 @@ set(TEST_LIBS
   lefin
   lefout
   cdl
+  tst
   ${TCL_LIBRARY}
   Boost::boost
   utl_lib

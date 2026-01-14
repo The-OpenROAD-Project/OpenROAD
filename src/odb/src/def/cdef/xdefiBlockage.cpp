@@ -37,6 +37,8 @@
 
 #include "defiBlockage.h"
 #include "defiBlockage.hpp"
+#include "defiMisc.hpp"
+#include "defiTypedefs.h"
 
 union udefiPoints
 {

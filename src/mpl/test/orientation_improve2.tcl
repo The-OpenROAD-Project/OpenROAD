@@ -10,7 +10,7 @@ read_def "./testcases/orientation_improve1.def"
 exclude_io_pin_region -region bottom:* -region right:* -region top:*
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/orientation_improve2 -halo_width 0.3
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 0.3
 
 set def_file [make_result_file orientation_improve2.def]
 write_def $def_file

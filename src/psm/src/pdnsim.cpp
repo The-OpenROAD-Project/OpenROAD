@@ -205,6 +205,9 @@ void PDNSim::setGeneratedSourceSettings(const GeneratedSourceSettings& settings)
   if (settings.strap_track_pitch > 0) {
     generated_source_settings_.strap_track_pitch = settings.strap_track_pitch;
   }
+  if (settings.resistance > 0) {
+    generated_source_settings_.resistance = settings.resistance;
+  }
 }
 
 void PDNSim::clearSolvers()
@@ -232,6 +235,21 @@ void PDNSim::inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*)
   clearSolvers();
 }
 
+void PDNSim::inDbBPinCreate(odb::dbBPin*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinAddBox(odb::dbBox*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinRemoveBox(odb::dbBox*)
+{
+  clearSolvers();
+}
+
 void PDNSim::inDbBPinDestroy(odb::dbBPin*)
 {
   clearSolvers();
@@ -253,7 +271,7 @@ void PDNSim::inDbSWirePostDestroySBoxes(odb::dbSWire*)
 }
 
 // Functions of decap cells
-void PDNSim::addDecapMaster(dbMaster* decap_master, double decap_cap)
+void PDNSim::addDecapMaster(odb::dbMaster* decap_master, double decap_cap)
 {
   opendp_->addDecapMaster(decap_master, decap_cap);
 }

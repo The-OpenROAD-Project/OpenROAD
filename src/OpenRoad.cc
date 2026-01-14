@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "ord/Version.hh"
+#include "tcl.h"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -33,6 +34,8 @@
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
 #include "dpl/Opendp.h"
+#include "drt/MakeTritonRoute.h"
+#include "drt/TritonRoute.h"
 #include "dst/Distributed.h"
 #include "dst/MakeDistributed.h"
 #include "est/EstimateParasitics.h"
@@ -80,8 +83,6 @@
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
-#include "triton_route/MakeTritonRoute.h"
-#include "triton_route/TritonRoute.h"
 #include "upf/MakeUpf.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
@@ -101,10 +102,8 @@ extern int Ord_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-using odb::dbBlock;
 using odb::dbChip;
 using odb::dbDatabase;
-using odb::dbLib;
 using odb::dbTech;
 
 using utl::ORD;
@@ -167,7 +166,7 @@ OpenRoad* OpenRoad::openRoad()
 void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 {
   if (!reinit_ok && app_) {
-    std::cerr << "Attempt to reinitialize the application." << std::endl;
+    std::cerr << "Attempt to reinitialize the application.\n";
     exit(1);
   }
   app_ = app;
@@ -267,6 +266,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   rsz::initResizer(tcl_interp);
   ppl::initIoplacer(tcl_interp);
   gpl::initReplace(tcl_interp);
+  gpl::initReplaceGraphics(replace_, logger_);
   dpl::initOpendp(tcl_interp);
   fin::initFinale(tcl_interp);
   ram::initRamGen(tcl_interp);
@@ -485,16 +485,48 @@ void OpenRoad::writeCdl(const char* out_filename,
 
 void OpenRoad::read3Dbv(const std::string& filename)
 {
-  odb::ThreeDBlox parser(logger_, db_);
+  odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbv(filename);
 }
 
 void OpenRoad::read3Dbx(const std::string& filename)
 {
-  odb::ThreeDBlox parser(logger_, db_);
+  odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
+  check3DBlox();
+  db_->triggerPostRead3Dbx(db_->getChip());
 }
 
+void OpenRoad::read3DBloxBMap(const std::string& filename)
+{
+  odb::ThreeDBlox parser(logger_, db_);
+  parser.readBMap(filename);
+}
+
+void OpenRoad::check3DBlox()
+{
+  if (db_->getChip() == nullptr) {
+    logger_->error(utl::ORD, 76, "No design loaded.");
+    return;
+  }
+  odb::ThreeDBlox checker(logger_, db_, sta_);
+  checker.check();
+}
+
+void OpenRoad::write3Dbv(const std::string& filename)
+{
+  odb::ThreeDBlox writer(logger_, db_, sta_);
+  writer.writeDbv(filename, db_->getChip());
+}
+
+void OpenRoad::write3Dbx(const std::string& filename)
+{
+  odb::ThreeDBlox writer(logger_, db_, sta_);
+  writer.writeDbx(filename, db_->getChip());
+}
+
+// TODO: bool hierarchy should be removed in the future.
+// It is retained for a while for backward compatibility.
 void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   try {
@@ -504,7 +536,7 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
   // treat this as a hierarchical network.
-  if (hierarchy) {
+  if (hierarchy || db_->hasHierarchy()) {
     logger_->warn(
         ORD,
         12,

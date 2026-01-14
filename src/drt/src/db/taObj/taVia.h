@@ -20,11 +20,11 @@ class taRef : public taPinFig
 {
  public:
   // getters
-  virtual dbOrientType getOrient() const = 0;
+  virtual odb::dbOrientType getOrient() const = 0;
   virtual odb::Point getOrigin() const = 0;
   virtual odb::dbTransform getTransform() const = 0;
   // setters
-  virtual void setOrient(const dbOrientType& tmpOrient) = 0;
+  virtual void setOrient(const odb::dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const odb::Point& tmpPoint) = 0;
   virtual void setTransform(const odb::dbTransform& xform) = 0;
 };
@@ -81,8 +81,8 @@ class taVia : public taRef
    * setTransform
    */
 
-  dbOrientType getOrient() const override { return dbOrientType(); }
-  void setOrient(const dbOrientType& tmpOrient) override { ; }
+  odb::dbOrientType getOrient() const override { return odb::dbOrientType(); }
+  void setOrient(const odb::dbOrientType& tmpOrient) override { ; }
   odb::Point getOrigin() const override { return origin_; }
   void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
   odb::dbTransform getTransform() const override

@@ -29,8 +29,6 @@
 
 #include "lefiMisc.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -39,6 +37,7 @@
 #include <vector>
 
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefiUtil.hpp"
 #include "lex.h"
 

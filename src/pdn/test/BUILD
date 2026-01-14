@@ -1,10 +1,13 @@
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
+    "asap7_macro_covered_partial",
     "asap7_no_via_generate",
     "asap7_no_via_generate_v1_snapped",
     "asap7_offcenter_via",
@@ -44,11 +47,14 @@ COMPULSORY_TESTS = [
     "core_grid_start_power",
     "core_grid_start_power_strap_ground",
     "core_grid_strap_count",
+    "core_grid_strap_outside_core",
     "core_grid_via_snap",
     "core_grid_with_M6_min_area",
     "core_grid_with_M7_pins",
+    "core_grid_with_bterms",
     "core_grid_with_dual_rings",
     "core_grid_with_fixed_pins",
+    "core_grid_with_m2_straps",
     "core_grid_with_rings",
     "core_grid_with_rings_connect",
     "core_grid_with_rings_different_offset",
@@ -60,6 +66,7 @@ COMPULSORY_TESTS = [
     "core_grid_with_rings_with_straps",
     "core_grid_with_rings_with_straps_rings_over_core",
     "core_grid_with_routing_obstructions",
+    "core_grid_with_secondary_no_shapes",
     "core_grid_with_single_edge_pins",
     "core_grid_with_single_layer_rings",
     "design_width",
@@ -98,10 +105,12 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_flipchip",
     "pads_black_parrot_flipchip_connect_bumps",
     "pads_black_parrot_flipchip_connect_overpads",
+    "pads_black_parrot_grid_define",
     "pads_black_parrot_limit_connect",
     "pads_black_parrot_max_width",
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
+    "pads_black_parrot_straps",
     "pads_connect_from_non_pref_edge",
     "power_switch",
     "power_switch_cut_rows",
@@ -172,6 +181,7 @@ filegroup(
         "Nangate45_vias/Nangate45_adjacentcuts.lef",
         "asap7_data/fakeram7_256x32.lef",
         "asap7_data/fakeram7_256x32_covered.lef",
+        "asap7_data/fakeram7_256x32_covered_partial.lef",
         "asap7_data/fakeram7_256x32_notcovered.lef",
         "asap7_vias/asap7_tech_1x.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing.lef",
@@ -267,6 +277,7 @@ filegroup(
             ],
         ) + {
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
+            "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
@@ -285,7 +296,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = ["manual"] if test_name in MANUAL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

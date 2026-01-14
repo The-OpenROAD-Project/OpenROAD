@@ -4,8 +4,8 @@ read_lef testcase/ispd18_sample/ispd18_sample.input.lef
 read_def testcase/ispd18_sample/ispd18_sample.input.def
 read_guides testcase/ispd18_sample/ispd18_sample.input.guide
 
-detailed_route -output_drc results/single_step.output.drc.rpt \
-  -output_maze results/single_step.output.maze.log \
+detailed_route -output_drc [make_result_file single_step.output.drc.rpt] \
+  -output_maze [make_result_file single_step.output.maze.log] \
   -verbose 0 \
   -single_step_dr
 

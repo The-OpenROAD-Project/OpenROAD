@@ -4,6 +4,7 @@
 #include "utl/Progress.h"
 
 #include <algorithm>
+#include <csignal>
 #include <ctime>
 #include <memory>
 #include <mutex>
@@ -136,21 +137,16 @@ bool Progress::removeReporter(ProgressReporter* reporter)
   }
 
   bool found_reporter = false;
-  reporters_.erase(
-      std::remove_if(reporters_.begin(),
-                     reporters_.end(),
-                     [reporter, &found_reporter](
-                         const std::weak_ptr<ProgressReporter>& other) -> bool {
-                       const auto other_ptr = other.lock();
-                       if (!other_ptr) {
-                         return true;
-                       }
+  std::erase_if(reporters_, [&](const auto& other) {
+    const auto other_ptr = other.lock();
+    if (!other_ptr) {
+      return true;
+    }
 
-                       bool found = other_ptr.get() == reporter;
-                       found_reporter |= found;
-                       return found;
-                     }),
-      reporters_.end());
+    bool found = other_ptr.get() == reporter;
+    found_reporter |= found;
+    return found;
+  });
   return found_reporter;
 }
 

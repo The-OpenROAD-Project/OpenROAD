@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,6 +15,7 @@
 #include "db/obj/frBoundary.h"
 #include "db/obj/frMTerm.h"
 #include "frBaseTypes.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -76,7 +78,12 @@ class frMaster : public frBlockObject
     }
     return nullptr;
   }
-  dbMasterType getMasterType() { return masterType_; }
+  odb::dbMasterType getMasterType() { return masterType_; }
+  bool hasPinAccessUpdate() const { return !updated_pa_indices_.empty(); }
+  const std::set<int>& getUpdatedPAIndices() const
+  {
+    return updated_pa_indices_;
+  }
 
   // setters
   void addTerm(std::unique_ptr<frMTerm> in)
@@ -114,7 +121,9 @@ class frMaster : public frBlockObject
   {
     blockages_.push_back(std::move(in));
   }
-  void setMasterType(const dbMasterType& in) { masterType_ = in; }
+  void setMasterType(const odb::dbMasterType& in) { masterType_ = in; }
+  void setHasPinAccessUpdate(int in) { updated_pa_indices_.insert(in); }
+  void clearUpdatedPAIndices() { updated_pa_indices_.clear(); }
   // others
   frBlockObjectEnum typeId() const override { return frcMaster; }
 
@@ -124,7 +133,8 @@ class frMaster : public frBlockObject
   std::vector<frBoundary> boundaries_;
   odb::Rect dieBox_;
   frString name_;
-  dbMasterType masterType_{dbMasterType::CORE};
+  odb::dbMasterType masterType_{odb::dbMasterType::CORE};
+  std::set<int> updated_pa_indices_;
 
   friend class io::Parser;
 };

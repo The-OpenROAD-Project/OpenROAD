@@ -1,5 +1,7 @@
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "ant_check",
@@ -23,21 +25,7 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
-        "gcd_sky130.def",
         "helpers.tcl",
-        "merged_spacing.lef",
-        "sky130hs/sky130_fd_sc_hs__tt_025C_1v80.lib",
-        "sky130hs/sky130_fd_sc_hs_merged.lef",
-        "sky130hs/sky130hs.pdn.tcl",
-        "sky130hs/sky130hs.rc",
-        "sky130hs/sky130hs.rcx_rules",
-        "sky130hs/sky130hs.tlef",
-        "sky130hs/sky130hs.tracks",
-        "sky130hs/sky130hs.vars",
-        "sky130hs/sky130hs_ip_global.cfg",
-        "sky130hs/sky130hs_std_cell.lef",
-        "sky130hs/sky130hs_tt.lib",
-        "sw130_random.def",
     ],
 )
 
@@ -52,6 +40,25 @@ filegroup(
             "ant_report": [
                 "ant_check.lef",
                 "ant_check.def",
+            ],
+            "check_api1": [
+                "merged_spacing.lef",
+                "sw130_random.def",
+            ],
+            "check_drt1": [
+                "merged_spacing.lef",
+                "sw130_random.def",
+            ],
+            "check_grt1": [
+                "gcd_sky130.def",
+                "sky130hs/sky130hs_tt.lib",
+                "sky130hs/sky130hs_std_cell.lef",
+                "sky130hs/sky130hs.tlef",
+            ],
+            "no-check_grt1": [
+                "gcd_sky130.def",
+                "sky130hs/sky130hs_tt.lib",
+                "sky130hs/sky130hs_std_cell.lef",
             ],
         }.get(test_name, []),
     )

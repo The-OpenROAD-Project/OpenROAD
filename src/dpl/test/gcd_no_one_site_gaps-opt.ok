@@ -30,16 +30,16 @@ Detailed placement improvement.
 [INFO DPL-0304] Pass   1 of reordering; objective is 1.498735e+07.
 [INFO DPL-0305] End of reordering; objective is 1.498735e+07, improvement is 0.87 percent.
 [INFO DPL-0303] Running algorithm for random improvement.
-[INFO DPL-0324] Random improver is using displacement generator.
+[INFO DPL-0324] Random improver is using random generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
-[INFO DPL-0332] End of pass, Generator displacement called 5880 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 5880, swaps 1619, moves  3999 since last reset.
+[INFO DPL-0332] End of pass, Generator random called 5880 times.
+[INFO DPL-0335] Generator random, Cumulative attempts 5880, swaps 1619, moves  3999 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.498735e+07, Scratch cost 1.479654e+07, Incremental cost 1.479654e+07, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 1.479654e+07.
 [INFO DPL-0327] Pass   1 of random improver; improvement in cost is 1.27 percent.
-[INFO DPL-0332] End of pass, Generator displacement called 5880 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 11760, swaps 3328, moves  7928 since last reset.
+[INFO DPL-0332] End of pass, Generator random called 5880 times.
+[INFO DPL-0335] Generator random, Cumulative attempts 11760, swaps 3328, moves  7928 since last reset.
 [INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.479654e+07, Scratch cost 1.471108e+07, Incremental cost 1.471108e+07, Mismatch? N
 [INFO DPL-0338] End of pass, Total cost is 1.471108e+07.
 [INFO DPL-0327] Pass   2 of random improver; improvement in cost is 0.58 percent.

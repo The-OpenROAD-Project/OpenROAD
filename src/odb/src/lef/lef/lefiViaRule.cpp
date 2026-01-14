@@ -34,6 +34,7 @@
 #include <cstring>
 
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 #include "lex.h"
 
 BEGIN_LEF_PARSER_NAMESPACE
@@ -41,22 +42,6 @@ BEGIN_LEF_PARSER_NAMESPACE
 // *****************************************************************************
 // lefiViaRuleLayer
 // *****************************************************************************
-
-lefiViaRuleLayer::lefiViaRuleLayer()
-    : widthMin_(0.0),
-      widthMax_(0.0),
-      overhang_(0.0),
-      metalOverhang_(0.0),
-      resistance_(0.0),
-      spacingStepX_(0.0),
-      spacingStepY_(0.0),
-      xl_(0.0),
-      yl_(0.0),
-      xh_(0.0),
-      yh_(0.0)
-{
-  Init();
-}
 
 void lefiViaRuleLayer::Init()
 {
@@ -90,17 +75,12 @@ void lefiViaRuleLayer::setName(const char* name)
   hasRect_ = 0;
 }
 
+// Destroy will be called explicitly so not dtor needed
 void lefiViaRuleLayer::Destroy()
 {
   if (name_) {
     lefFree(name_);
   }
-}
-
-lefiViaRuleLayer::~lefiViaRuleLayer()
-{
-  // Destroy will be called explicitly
-  // so do nothing here.
 }
 
 void lefiViaRuleLayer::setHorizontal()
@@ -144,7 +124,6 @@ void lefiViaRuleLayer::setOverhangToEnclosure(double d)
   } else {
     overhang2_ = d;  // overhang1_ already set, set to overhang2_
   }
-  return;
 }
 
 // 5.5

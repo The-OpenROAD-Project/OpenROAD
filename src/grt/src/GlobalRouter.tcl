@@ -12,21 +12,21 @@ proc set_global_routing_layer_adjustment { args } {
     lassign $args layer adj
 
     if { $layer == "*" } {
-      sta::check_positive_float "adjustment" $adj
+      sta::check_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
     } elseif { [regexp -all {([^-]+)-([^ ]+)} $layer] } {
       lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" \
         $layer] first_layer last_layer
       for { set l $first_layer } { $l <= $last_layer } { incr l } {
         grt::check_routing_layer $l
-        sta::check_positive_float "adjustment" $adj
+        sta::check_float "adjustment" $adj
 
         grt::add_layer_adjustment $l $adj
       }
     } else {
       set layer_idx [grt::parse_layer_name $layer]
       grt::check_routing_layer $layer_idx
-      sta::check_positive_float "adjustment" $adj
+      sta::check_float "adjustment" $adj
 
       grt::add_layer_adjustment $layer_idx $adj
     }
@@ -48,7 +48,7 @@ proc set_global_routing_region_adjustment { args } {
     utl::error GRT 47 "Missing dbTech."
   }
   set tech [ord::get_db_tech]
-  set lef_units [$tech getLefUnits]
+  set lef_units [$tech getDbUnitsPerMicron]
 
   if { [info exists keys(-layer)] } {
     set layer $keys(-layer)
@@ -146,6 +146,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
                                   [-critical_nets_percentage percent] \
+                                  [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
                                   [-verbose] \
                                   [-start_incremental] \
@@ -157,7 +158,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -grid_origin -critical_nets_percentage -congestion_report_iter_step
+          -grid_origin -critical_nets_percentage -congestion_report_iter_step\
+          -skip_large_fanout_nets
          } \
     flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental \
           -use_cugr}
@@ -214,6 +216,12 @@ proc global_route { args } {
 
   grt::set_use_cugr [info exists flags(-use_cugr)]
 
+  if { [info exists keys(-skip_large_fanout_nets)] } {
+    set fanout $keys(-skip_large_fanout_nets)
+    sta::check_positive_integer "-skip_large_fanout_nets" $fanout
+    grt::set_skip_large_fanout $fanout
+  }
+
   set allow_congestion [info exists flags(-allow_congestion)]
   grt::set_allow_congestion $allow_congestion
 
@@ -233,11 +241,14 @@ proc global_route { args } {
 
 sta::define_cmd_args "repair_antennas" { diode_cell \
                                          [-iterations iterations] \
-                                         [-ratio_margin ratio_margin]}
+                                         [-ratio_margin ratio_margin] \
+                                         [-jumper_only] \
+                                         [-diode_only] \
+                                         [-allow_congestion]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-    keys {-iterations -ratio_margin} flags {}
+    keys {-iterations -ratio_margin} flags {-jumper_only -diode_only -allow_congestion}
   if { [ord::get_db_block] == "NULL" } {
     utl::error GRT 104 "No design block found."
   }
@@ -277,6 +288,16 @@ proc repair_antennas { args } {
       sta::check_positive_integer "-iterations" $iterations
     }
 
+    set allow_congestion [info exists flags(-allow_congestion)]
+    grt::set_allow_congestion $allow_congestion
+
+    set jumper_only [info exists flags(-jumper_only)]
+    set diode_only [info exists flags(-diode_only)]
+
+    if { $jumper_only && $diode_only } {
+      utl::error GRT 294 "Only use either -jumper_only or -diode_only flag"
+    }
+
     set ratio_margin 0
     if { [info exists keys(-ratio_margin)] } {
       set ratio_margin $keys(-ratio_margin)
@@ -285,7 +306,7 @@ proc repair_antennas { args } {
       }
     }
 
-    return [grt::repair_antennas $diode_mterm $iterations $ratio_margin]
+    return [grt::repair_antennas $diode_mterm $iterations $ratio_margin $jumper_only $diode_only]
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
   }
@@ -453,6 +474,81 @@ proc report_wire_length { args } {
   } else {
     utl::error GRT 238 "-net is required."
   }
+}
+
+sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name \
+                                                  [-layer1 layer1] \
+                                                  [-layer2 layer2] \
+                                                  [-verbose] }
+
+proc estimate_path_resistance { args } {
+  sta::parse_key_args "estimate_path_resistance" args \
+    keys {-layer1 -layer2} \
+    flags {-verbose}
+
+  if { [llength $args] != 2 } {
+    utl::error GRT 289 "estimate_path_resistance requires two pin names."
+  }
+  lassign $args pin1_name pin2_name
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 290 "Missing dbBlock."
+  }
+
+  set pin1 [$block findITerm $pin1_name]
+  if { $pin1 != "NULL" } {
+    set pin1 [grt::iterm_to_object $pin1]
+  } else {
+    set pin1 [$block findBTerm $pin1_name]
+    if { $pin1 != "NULL" } {
+      set pin1 [grt::bterm_to_object $pin1]
+    }
+  }
+  if { $pin1 == "NULL" } {
+    utl::error GRT 291 "Pin $pin1_name not found."
+  }
+
+  set pin2 [$block findITerm $pin2_name]
+  if { $pin2 != "NULL" } {
+    set pin2 [grt::iterm_to_object $pin2]
+  } else {
+    set pin2 [$block findBTerm $pin2_name]
+    if { $pin2 != "NULL" } {
+      set pin2 [grt::bterm_to_object $pin2]
+    }
+  }
+  if { $pin2 == "NULL" } {
+    utl::error GRT 292 "Pin $pin2_name not found."
+  }
+
+  set verbose [info exists flags(-verbose)]
+
+  if { [info exists keys(-layer1)] && [info exists keys(-layer2)] } {
+    set layer1_name $keys(-layer1)
+    set layer2_name $keys(-layer2)
+
+    set tech [ord::get_db_tech]
+    if { [info exists layer1_name] } {
+      set layer1 [$tech findLayer $layer1_name]
+    }
+    if { $layer1 == "NULL" } {
+      utl::error GRT 293 "Layer $layer1_name not found."
+    }
+
+    if { [info exists layer2_name] } {
+      set layer2 [$tech findLayer $layer2_name]
+    }
+    if { $layer2 == "NULL" } {
+      utl::error GRT 287 "Layer $layer2_name not found."
+    }
+
+    return [grt::estimate_path_resistance $pin1 $pin2 $layer1 $layer2 $verbose]
+  } elseif { [info exists keys(-layer1)] || [info exists keys(-layer2)] } {
+    utl::error GRT 288 "Both or neither -layer1 and -layer2 must be provided."
+  }
+
+  return [grt::estimate_path_resistance $pin1 $pin2 $verbose]
 }
 
 namespace eval grt {

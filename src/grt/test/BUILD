@@ -1,5 +1,7 @@
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 TESTS = [
     "bus_route",
     "clock_route",
@@ -23,9 +25,12 @@ TESTS = [
     "est_rc2",
     "est_rc3",
     "est_rc4",
+    "est_rc_cugr1",
+    "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
     "gcd_flute",
+    "increase_capacity1",
     "inst_pin_out_of_die",
     "invalid_pin_placement",
     "invalid_routing_layer",
@@ -43,7 +48,9 @@ TESTS = [
     "pd3",
     "pd4",
     "pin_access1",
+    "pin_access1_cugr",
     "pin_access2",
+    "pin_access2_cugr",
     "pin_edge",
     "pin_track_not_aligned",
     "pre_routed1",
@@ -65,6 +72,9 @@ TESTS = [
     "repair_antennas4",
     "repair_antennas_error1",
     "repair_antennas_error2",
+    "repair_antennas_only_diodes",
+    "repair_antennas_only_jumpers",
+    "repair_antennas_allow_congestion",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",
@@ -76,6 +86,7 @@ TESTS = [
     "set_nets_to_route1",
     "silence",
     "single_row",
+    "skip_large_fanout1",
     "soft_ndr_4w_6s",
     "top_level_term1",
     "top_level_term2",
@@ -107,7 +118,18 @@ filegroup(
     ),
 )
 
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "cugr_adjustment1",
+    "cugr_adjustment2",
+    "cugr_adjustment3",
+    "gcd_cugr",
+    "pin_access1_cugr",
+    "pin_access2_cugr",
+]
+
 [regression_test(
     name = test_name,
     data = [":test_resources"],
+    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]

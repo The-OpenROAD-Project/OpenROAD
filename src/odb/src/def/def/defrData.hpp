@@ -27,12 +27,37 @@
 // *****************************************************************************
 // *****************************************************************************
 
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <map>
 #include <string>
 #include <vector>
 
+#include "defiAssertion.hpp"
+#include "defiBlockage.hpp"
+#include "defiComponent.hpp"
+#include "defiDefs.hpp"
+#include "defiFPC.hpp"
+#include "defiFill.hpp"
+#include "defiGroup.hpp"
+#include "defiIOTiming.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
+#include "defiNet.hpp"
+#include "defiNonDefault.hpp"
+#include "defiPartition.hpp"
+#include "defiPath.hpp"
+#include "defiPinCap.hpp"
+#include "defiPinProp.hpp"
+#include "defiProp.hpp"
+#include "defiRegion.hpp"
+#include "defiRowTrack.hpp"
+#include "defiScanchain.hpp"
+#include "defiSite.hpp"
+#include "defiSlot.hpp"
+#include "defiTimingDisable.hpp"
+#include "defiVia.hpp"
 #include "defrCallBacks.hpp"
 #include "defrReader.hpp"
 #include "defrSettings.hpp"
@@ -88,8 +113,8 @@ class defrData
   void UNGETC(char ch);
   char* ringCopy(const char* string);
   int DefGetTokenFromStack(char* s);
-  inline void print_lines(long long lines);
-  const char* lines2str(long long lines);
+  inline void print_lines(int64_t lines);
+  const char* lines2str(int64_t lines);
   static inline void IncCurPos(char** curPos, char** buffer, int* bufferSize);
   int DefGetToken(char** buffer, int* bufferSize);
   static void uc_array(char* source, char* dest);
@@ -250,7 +275,7 @@ class defrData
   int input_level{-1};
   char* last{nullptr};  // points to the last valid char in the buffer, or null
   int new_is_keyword{0};
-  long long nlines{1};
+  int64_t nlines{1};
   char* rowName{nullptr};  // to hold the rowName for message
   int iOTimingWarnings{0};
   char* magic;

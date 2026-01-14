@@ -101,22 +101,35 @@ class RepairDesign : dbStaState
                           float& violation);
   bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
 
-  void repairNet(
-      Net* net,
-      const Pin* drvr_pin,
-      Vertex* drvr,
-      bool check_slew,
-      bool check_cap,
-      bool check_fanout,
-      int max_length,  // dbu
-      bool resize_drvr,
-      Corner* corner_w_load_slew_viol,  // if not null, signals a violation
-                                        // hidden by an annotation
-      int& repaired_net_count,
-      int& slew_violations,
-      int& cap_violations,
-      int& fanout_violations,
-      int& length_violations);
+  void repairDriver(Vertex* drvr,
+                    bool check_slew,
+                    bool check_cap,
+                    bool check_fanout,
+                    int max_length,  // dbu
+                    bool resize_drvr,
+                    Corner* corner_w_load_slew_viol,
+                    int& repaired_net_count,
+                    int& slew_violations,
+                    int& cap_violations,
+                    int& fanout_violations,
+                    int& length_violations);
+
+  void repairNet(Net* net,
+                 const Pin* drvr_pin,
+                 Vertex* drvr,
+                 bool check_slew,
+                 bool check_cap,
+                 bool check_fanout,
+                 int max_length,  // dbu
+                 bool resize_drvr,
+                 Corner* corner_w_load_slew_viol,  // if not null, signals
+                                                   // a violation hidden by
+                                                   // an annotation
+                 int& repaired_net_count,
+                 int& slew_violations,
+                 int& cap_violations,
+                 int& fanout_violations,
+                 int& length_violations);
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
@@ -140,6 +153,11 @@ class RepairDesign : dbStaState
                  int& wire_length,
                  PinSeq& load_pins);
   void checkSlewLimit(float ref_cap, float max_load_slew);
+  void repairNetVia(const BufferedNetPtr& bnet,
+                    int level,
+                    // Return values.
+                    int& wire_length,
+                    PinSeq& load_pins);
   void repairNetWire(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
@@ -221,6 +239,8 @@ class RepairDesign : dbStaState
                      bool end,
                      int repaired_net_count) const;
 
+  void computeSlewRCFactor();
+
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
@@ -249,8 +269,12 @@ class RepairDesign : dbStaState
   int print_interval_ = 0;
   std::shared_ptr<ResizerObserver> graphics_;
 
-  // Elmore factor for 20-80% slew thresholds.
-  static constexpr float elmore_skew_factor_ = 1.39;
+  float r_strongest_buffer_ = 0;
+
+  // Shape factor: what we need to multiply the RC product with
+  // to get a slew estimate
+  float slew_rc_factor_ = 0;
+
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
 };

@@ -104,7 +104,6 @@ struct defPoint
   int _x;
   int _y;
 
-  defPoint() {}
-
+  defPoint() = default;
   defPoint(int x, int y) : _x(x), _y(y) {}
 };

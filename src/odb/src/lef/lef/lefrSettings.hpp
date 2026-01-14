@@ -35,6 +35,7 @@
 #include <set>
 #include <string>
 
+#include "lefiKRDefs.hpp"
 #include "lefrReader.hpp"
 
 #define lefMaxOxides 32

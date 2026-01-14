@@ -1,16 +1,26 @@
 #pragma once
 
 #include <csignal>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "grt/GRoute.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbDatabase;
+class dbNet;
+class dbITerm;
+class dbBTerm;
 }  // namespace odb
+
+namespace sta {
+class dbSta;
+}  // namespace sta
 
 namespace stt {
 class SteinerTreeBuilder;
@@ -58,13 +68,22 @@ class CUGR
  public:
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
-       stt::SteinerTreeBuilder* stt_builder);
+       stt::SteinerTreeBuilder* stt_builder,
+       sta::dbSta* sta);
   ~CUGR();
-  void init(int min_routing_layer, int max_routing_layer);
+  void init(int min_routing_layer,
+            int max_routing_layer,
+            const std::set<odb::dbNet*>& clock_nets);
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   void updateDbCongestion();
+  void getITermsAccessPoints(
+      odb::dbNet* net,
+      std::map<odb::dbITerm*, odb::Point3D>& access_points);
+  void getBTermsAccessPoints(
+      odb::dbNet* net,
+      std::map<odb::dbBTerm*, odb::Point3D>& access_points);
 
  private:
   void updateOverflowNets(std::vector<int>& netIndices);
@@ -79,10 +98,12 @@ class CUGR
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
+  std::map<odb::dbNet*, GRNet*> db_net_map_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+  sta::dbSta* sta_;
 
   Constants constants_;
 

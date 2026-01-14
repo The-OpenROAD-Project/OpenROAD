@@ -59,7 +59,7 @@ set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 set(OPENROAD_SHARE ${CMAKE_INSTALL_PREFIX}/share/openroad)
 
 # Default c++ standard used unless otherwise specified in target_compile_features.
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "the C++ standard to use for this project")
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -107,6 +107,51 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
 message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
+
+# Detect OS distribution and version from /etc/os-release
+# LTO is known to cause build errors on Debian 11 and Rocky Linux 8
+set(LTO_UNSUPPORTED_OS FALSE)
+if(EXISTS "/etc/os-release")
+  file(STRINGS "/etc/os-release" OS_RELEASE_CONTENTS)
+  set(OS_ID "")
+  set(OS_VERSION_ID "")
+  foreach(line ${OS_RELEASE_CONTENTS})
+    if(line MATCHES "^ID=(.*)$")
+      string(REGEX REPLACE "^ID=\"?([^\"]*)\"?$" "\\1" OS_ID "${line}")
+    endif()
+    if(line MATCHES "^VERSION_ID=(.*)$")
+      string(REGEX REPLACE "^VERSION_ID=\"?([^\"]*)\"?$" "\\1" OS_VERSION_ID "${line}")
+    endif()
+  endforeach()
+
+  # Check for unsupported OS for LTO
+  if((OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11") OR
+     (OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8"))
+    set(LTO_UNSUPPORTED_OS TRUE)
+    message(STATUS "Detected unsupported OS (${OS_ID} ${OS_VERSION_ID}): LTO will be disabled due to known build issues")
+  endif()
+endif()
+
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
+set(LTO_STATUS "disabled")
+if (LINK_TIME_OPTIMIZATION AND NOT LTO_UNSUPPORTED_OS)
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
+  if(lto_supported)
+    # LTO is enabled globally for Release build
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO FALSE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
+
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
+    if(UPPER_BUILD_TYPE STREQUAL "RELEASE")
+      set(LTO_STATUS "enabled")
+    endif()
+  else()
+    set(LTO_STATUS "not supported: ${lto_error}")
+  endif()
+endif()
+message(STATUS "LTO/IPO is ${LTO_STATUS}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(

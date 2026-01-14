@@ -20,6 +20,7 @@
 #include "db/obj/frVia.h"
 #include "frBaseTypes.h"
 #include "global.h"
+#include "odb/dbTypes.h"
 
 namespace drt {
 class frInstTerm;
@@ -188,8 +189,8 @@ class frNet : public frBlockObject
     vias_.clear();
     pwires_.clear();
   }
-  dbSigType getType() const { return type_; }
-  void setType(const dbSigType& in) { type_ = in; }
+  odb::dbSigType getType() const { return type_; }
+  void setType(const odb::dbSigType& in) { type_ = in; }
   frBlockObjectEnum typeId() const override { return frcNet; }
   void updateNondefaultRule(frNonDefaultRule* n)
   {
@@ -228,6 +229,8 @@ class frNet : public frBlockObject
   const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
   void setHasJumpers(bool has_jumpers) { has_jumpers_ = has_jumpers; }
   bool hasJumpers() { return has_jumpers_; }
+  void setToBeDeleted(bool to_be_deleted) { to_be_deleted_ = to_be_deleted; }
+  bool toBeDeleted() { return to_be_deleted_; }
 
  protected:
   frString name_;
@@ -251,7 +254,7 @@ class frNet : public frBlockObject
   std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
   std::vector<frRect> orig_guides_;
-  dbSigType type_{dbSigType::SIGNAL};
+  odb::dbSigType type_{odb::dbSigType::SIGNAL};
   bool modified_{false};
   bool isFakeNet_{false};  // indicate floating PG nets
   frNonDefaultRule* ndr_{nullptr};
@@ -267,5 +270,6 @@ class frNet : public frBlockObject
   // to prevent antenna violations
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
+  bool to_be_deleted_{false};
 };
 }  // namespace drt

@@ -10,12 +10,15 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+
+using odb::dbTechLayerType;
 
 namespace drt {
 
@@ -1323,10 +1326,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
 {
   if (targetNet_) {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -1338,10 +1339,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
     }
   } else {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {

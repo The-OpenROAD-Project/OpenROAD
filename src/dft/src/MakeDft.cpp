@@ -3,6 +3,7 @@
 
 #include "dft/MakeDft.hh"
 
+#include "tcl.h"
 #include "utl/decode.h"
 
 namespace dft {

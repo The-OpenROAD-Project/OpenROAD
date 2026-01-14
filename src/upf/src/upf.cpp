@@ -17,6 +17,7 @@
 #include "odb/geom.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 #include "writer.h"
 
 namespace upf {
@@ -348,7 +349,8 @@ static odb::dbPowerDomain* match_module_to_domain(
 
   for (auto const& path : path_to_domain) {
     std::string name = path.first;
-    if (current_path.find(name) == 0 && name.length() > longest_prefix_length) {
+    if (current_path.starts_with(name)
+        && name.length() > longest_prefix_length) {
       longest_prefix_length = name.length();
       longest_prefix = std::move(name);
     }
@@ -1251,7 +1253,7 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
   instantiate_logic_ports(logger, block);
 
   auto pds = block->getPowerDomains();
-  if (pds.size() == 0) {  // No power domains defined
+  if (pds.empty()) {  // No power domains defined
     return true;
   }
 

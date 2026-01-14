@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "triton_route/TritonRoute.h"
+#include "drt/TritonRoute.h"
 
 #include <algorithm>
 #include <fstream>
@@ -26,6 +26,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
 #include "distributed/drUpdate.h"
@@ -44,6 +45,7 @@
 #include "odb/db.h"
 #include "odb/dbId.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -55,8 +57,9 @@
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 
-namespace drt {
+using odb::dbTechLayerType;
 
+namespace drt {
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
                          utl::CallBackHandler* callback_handler,
@@ -569,13 +572,14 @@ void TritonRoute::initDesign()
       || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
   }
+  const bool design_exists = getDesign()->getTopBlock() != nullptr;
   io::Parser parser(db_, getDesign(), logger_, router_cfg_.get());
-  if (getDesign()->getTopBlock() != nullptr) {
+  if (design_exists) {
     parser.updateDesign();
-    return;
+  } else {
+    parser.readTechAndLibs(db_);
+    parser.readDesign(db_);
   }
-  parser.readTechAndLibs(db_);
-  parser.readDesign(db_);
   auto tech = getDesign()->getTech();
 
   if (!router_cfg_->VIAINPIN_BOTTOMLAYER_NAME.empty()) {
@@ -625,9 +629,11 @@ void TritonRoute::initDesign()
                     router_cfg_->REPAIR_PDN_LAYER_NAME);
     }
   }
-  parser.postProcess();
-  db_callback_->addOwner(db_->getChip()->getBlock());
-  initGraphics();
+  if (!design_exists) {
+    parser.postProcess();
+    db_callback_->addOwner(db_->getChip()->getBlock());
+    initGraphics();
+  }
 }
 
 void TritonRoute::initGraphics()
@@ -1103,17 +1109,36 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   writer.updateDb(db_, router_cfg_.get(), true);
 }
 
-void TritonRoute::deleteInstancePAData(frInst* inst)
+void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)
 {
   if (pa_) {
-    pa_->deleteInst(inst);
+    pa_->removeFromInstsSet(inst);
+    if (delete_inst) {
+      pa_->deleteInst(inst);
+    }
   }
 }
 
 void TritonRoute::addInstancePAData(frInst* inst)
 {
   if (pa_) {
-    pa_->addInst(inst);
+    pa_->addDirtyInst(inst);
+  }
+}
+
+void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
+{
+  if (pa_) {
+    pa_->addAvoidViaDef(via_def);
+  }
+}
+void TritonRoute::updateDirtyPAData()
+{
+  if (pa_) {
+    design_->getTopBlock()->removeDeletedObjects();
+    pa_->updateDirtyInsts();
+    io::Writer writer(getDesign(), logger_);
+    writer.updateDb(getDb(), getRouterConfiguration(), true);
   }
 }
 
@@ -1261,7 +1286,7 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
                    "Non-routing layer {} can't be set unidirectional",
                    layerName);
   }
-  design_->getTech()->setUnidirectionalLayer(dbLayer);
+  router_cfg_->unidirectional_layers_.insert(dbLayer);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)

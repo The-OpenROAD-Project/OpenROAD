@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <triton_route/TritonRoute.h>
-
 #include <cstdint>
 #include <deque>
 #include <list>
@@ -31,7 +29,9 @@
 #include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
+#include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
+#include "drt/TritonRoute.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -96,6 +96,7 @@ class FlexDR
   struct IterationsControl
   {
     bool skip_till_changed{false};
+    bool tried_guide_flow{false};
     SearchRepairArgs last_args;
     bool fixing_max_spacing{false};
   };
@@ -206,6 +207,8 @@ class FlexDR
   odb::Rect getDRVBBox(const odb::Rect& drv_rect) const;
   void stubbornTilesFlow(const SearchRepairArgs& args,
                          IterationProgress& iter_prog);
+  void guideTilesFlow(const SearchRepairArgs& args,
+                      IterationProgress& iter_prog);
   void optimizationFlow(const SearchRepairArgs& args,
                         IterationProgress& iter_prog);
 };

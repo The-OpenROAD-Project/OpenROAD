@@ -13,6 +13,7 @@
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -70,8 +71,8 @@ class frInst : public frRef
    * setTransform
    */
 
-  dbOrientType getOrient() const override { return xform_.getOrient(); }
-  void setOrient(const dbOrientType& tmpOrient) override
+  odb::dbOrientType getOrient() const override { return xform_.getOrient(); }
+  void setOrient(const odb::dbOrientType& tmpOrient) override
   {
     xform_.setOrient(tmpOrient);
   }
@@ -128,6 +129,10 @@ class frInst : public frRef
   odb::Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);
+  bool hasPinAccessUpdate() const { return has_pin_access_update_; }
+  void setHasPinAccessUpdate(bool in) { has_pin_access_update_ = in; }
+  odb::dbTransform getLatestPATransform() const { return latest_pa_xform_; }
+  void setLatestPATransform() { latest_pa_xform_ = xform_; }
 
  private:
   frString name_;
@@ -136,8 +141,10 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   odb::dbInst* db_inst_;
   odb::dbTransform xform_;
+  odb::dbTransform latest_pa_xform_;
   int pinAccessIdx_{-1};
   bool toBeDeleted_{false};
+  bool has_pin_access_update_{true};
 };
 
 }  // namespace drt

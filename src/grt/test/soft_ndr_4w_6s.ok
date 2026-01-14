@@ -51,34 +51,133 @@ Net: clknet_2_3__leaf_clk NDR cost in met5 (float/int): 4.084084/5  Edge cost: 5
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      28120         12728          54.74%
-met2       Vertical        22154         10101          54.41%
-met3       Horizontal      13338          2923          78.09%
-met4       Vertical         8968          1517          83.08%
-met5       Horizontal       2964          1406          52.56%
+met1       Horizontal      27480         13349          51.42%
+met2       Vertical        21571         10101          53.17%
+met3       Horizontal      14023          3922          72.03%
+met4       Vertical        10804          2886          73.29%
+met5       Horizontal       3108          1406          54.76%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[WARNING GRT-0273] Disabled NDR for the clk net.
-[WARNING GRT-0273] Disabled NDR for the clknet_0_clk net.
-[INFO GRT-0197] Via related to pin nodes: 144
-[INFO GRT-0198] Via related Steiner nodes: 14
+[INFO GRT-0102] Start extra iteration 1/50
+[INFO GRT-0102] Start extra iteration 2/50
+[INFO GRT-0102] Start extra iteration 3/50
+[INFO GRT-0102] Start extra iteration 4/50
+[INFO GRT-0102] Start extra iteration 5/50
+[INFO GRT-0102] Start extra iteration 6/50
+[INFO GRT-0102] Start extra iteration 7/50
+[INFO GRT-0102] Start extra iteration 8/50
+[INFO GRT-0102] Start extra iteration 9/50
+[INFO GRT-0102] Start extra iteration 10/50
+[INFO GRT-0102] Start extra iteration 11/50
+[INFO GRT-0102] Start extra iteration 12/50
+[INFO GRT-0102] Start extra iteration 13/50
+[INFO GRT-0102] Start extra iteration 14/50
+[INFO GRT-0102] Start extra iteration 15/50
+[INFO GRT-0102] Start extra iteration 16/50
+[INFO GRT-0102] Start extra iteration 17/50
+[INFO GRT-0102] Start extra iteration 18/50
+[INFO GRT-0102] Start extra iteration 19/50
+[INFO GRT-0102] Start extra iteration 20/50
+[INFO GRT-0102] Start extra iteration 21/50
+[INFO GRT-0102] Start extra iteration 22/50
+[INFO GRT-0102] Start extra iteration 23/50
+[INFO GRT-0102] Start extra iteration 24/50
+[INFO GRT-0102] Start extra iteration 25/50
+[INFO GRT-0102] Start extra iteration 26/50
+[INFO GRT-0102] Start extra iteration 27/50
+[INFO GRT-0102] Start extra iteration 28/50
+[INFO GRT-0102] Start extra iteration 29/50
+[INFO GRT-0102] Start extra iteration 30/50
+[INFO GRT-0102] Start extra iteration 31/50
+[INFO GRT-0102] Start extra iteration 32/50
+[INFO GRT-0102] Start extra iteration 33/50
+[INFO GRT-0102] Start extra iteration 34/50
+[INFO GRT-0102] Start extra iteration 35/50
+[INFO GRT-0102] Start extra iteration 36/50
+[INFO GRT-0102] Start extra iteration 37/50
+[INFO GRT-0102] Start extra iteration 38/50
+[INFO GRT-0102] Start extra iteration 39/50
+[INFO GRT-0102] Start extra iteration 40/50
+[INFO GRT-0102] Start extra iteration 41/50
+[INFO GRT-0102] Start extra iteration 42/50
+[INFO GRT-0102] Start extra iteration 43/50
+[INFO GRT-0102] Start extra iteration 44/50
+[INFO GRT-0102] Start extra iteration 45/50
+[INFO GRT-0102] Start extra iteration 46/50
+[INFO GRT-0102] Start extra iteration 47/50
+[INFO GRT-0102] Start extra iteration 48/50
+[INFO GRT-0102] Start extra iteration 49/50
+[WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clk
+[INFO GRT-0102] Start extra iteration 1/50
+[INFO GRT-0102] Start extra iteration 2/50
+[INFO GRT-0102] Start extra iteration 3/50
+[INFO GRT-0102] Start extra iteration 4/50
+[INFO GRT-0102] Start extra iteration 5/50
+[INFO GRT-0102] Start extra iteration 6/50
+[INFO GRT-0102] Start extra iteration 7/50
+[INFO GRT-0102] Start extra iteration 8/50
+[INFO GRT-0102] Start extra iteration 9/50
+[INFO GRT-0102] Start extra iteration 10/50
+[INFO GRT-0102] Start extra iteration 11/50
+[INFO GRT-0102] Start extra iteration 12/50
+[INFO GRT-0102] Start extra iteration 13/50
+[INFO GRT-0102] Start extra iteration 14/50
+[INFO GRT-0102] Start extra iteration 15/50
+[INFO GRT-0102] Start extra iteration 16/50
+[INFO GRT-0102] Start extra iteration 17/50
+[INFO GRT-0102] Start extra iteration 18/50
+[INFO GRT-0102] Start extra iteration 19/50
+[INFO GRT-0102] Start extra iteration 20/50
+[INFO GRT-0102] Start extra iteration 21/50
+[INFO GRT-0102] Start extra iteration 22/50
+[INFO GRT-0102] Start extra iteration 23/50
+[INFO GRT-0102] Start extra iteration 24/50
+[INFO GRT-0102] Start extra iteration 25/50
+[INFO GRT-0102] Start extra iteration 26/50
+[INFO GRT-0102] Start extra iteration 27/50
+[INFO GRT-0102] Start extra iteration 28/50
+[INFO GRT-0102] Start extra iteration 29/50
+[INFO GRT-0102] Start extra iteration 30/50
+[INFO GRT-0102] Start extra iteration 31/50
+[INFO GRT-0102] Start extra iteration 32/50
+[INFO GRT-0102] Start extra iteration 33/50
+[INFO GRT-0102] Start extra iteration 34/50
+[INFO GRT-0102] Start extra iteration 35/50
+[INFO GRT-0102] Start extra iteration 36/50
+[INFO GRT-0102] Start extra iteration 37/50
+[INFO GRT-0102] Start extra iteration 38/50
+[INFO GRT-0102] Start extra iteration 39/50
+[INFO GRT-0102] Start extra iteration 40/50
+[INFO GRT-0102] Start extra iteration 41/50
+[INFO GRT-0102] Start extra iteration 42/50
+[INFO GRT-0102] Start extra iteration 43/50
+[INFO GRT-0102] Start extra iteration 44/50
+[INFO GRT-0102] Start extra iteration 45/50
+[INFO GRT-0102] Start extra iteration 46/50
+[INFO GRT-0102] Start extra iteration 47/50
+[INFO GRT-0102] Start extra iteration 48/50
+[INFO GRT-0102] Start extra iteration 49/50
+[WARNING GRT-0273] Disabled NDR (to reduce congestion) for net: clknet_0_clk
+[INFO GRT-0102] Start extra iteration 1/50
+[INFO GRT-0197] Via related to pin nodes: 143
+[INFO GRT-0198] Via related Steiner nodes: 11
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 195
-[INFO GRT-0112] Final usage 3D: 990
+[INFO GRT-0111] Final number of vias: 191
+[INFO GRT-0112] Final usage 3D: 975
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1             12728           248            1.95%             0 /  0 /  0
-met2             10101           122            1.21%             0 /  0 /  0
-met3              2923            23            0.79%             0 /  0 /  0
-met4              1517            12            0.79%             0 /  0 /  0
+met1             13349           242            1.81%             0 /  0 /  0
+met2             10101           125            1.24%             0 /  0 /  0
+met3              3922            23            0.59%             0 /  0 /  0
+met4              2886            12            0.42%             0 /  0 /  0
 met5              1406             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            28675           405            1.41%             0 /  0 /  0
+Total            31664           402            1.27%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1756 um
+[INFO GRT-0018] Total wirelength: 1720 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

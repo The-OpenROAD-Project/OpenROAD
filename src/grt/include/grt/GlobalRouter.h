@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -18,6 +19,7 @@
 #include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
 
@@ -154,11 +156,16 @@ class GlobalRouter
   void setResistanceAware(bool resistance_aware);
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
+  void setSkipLargeFanoutNets(int skip_large_fanout)
+  {
+    skip_large_fanout_ = skip_large_fanout;
+  };
 
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void ensurePinsPositions(odb::dbNet* db_net);
+  bool findCoveredAccessPoint(const Net* net, Pin& pin);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -180,6 +187,7 @@ class GlobalRouter
                    bool end_incremental = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
+  NetRouteMap getPartialRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
   bool isNonLeafClock(odb::dbNet* db_net);
@@ -193,6 +201,8 @@ class GlobalRouter
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
                      float ratio_margin,
+                     bool jumper_only,
+                     bool diode_only,
                      int num_threads = 1);
   void updateResources(const int& init_x,
                        const int& init_y,
@@ -280,9 +290,23 @@ class GlobalRouter
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
+  // Report wire resistance
+  float getLayerResistance(int layer, int length, odb::dbNet* net);
+  float getViaResistance(int from_layer, int to_layer);
+  double dbuToMicrons(int dbu);
+  float estimatePathResistance(odb::dbObject* pin1,
+                               odb::dbObject* pin2,
+                               bool verbose = false);
+  float estimatePathResistance(odb::dbObject* pin1,
+                               odb::dbObject* pin2,
+                               odb::dbTechLayer* layer1,
+                               odb::dbTechLayer* layer2,
+                               bool verbose = false);
+
   bool findPinAccessPointPositions(
       const Pin& pin,
-      std::map<int, std::vector<PointPair>>& ap_positions);
+      std::map<int, std::vector<PointPair>>& ap_positions,
+      bool all_access_points = false);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -316,6 +340,13 @@ class GlobalRouter
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
+  int computeGCellCapacity(int x,
+                           int y,
+                           int track_init,
+                           int track_pitch,
+                           int track_count,
+                           bool horizontal);
+  odb::Rect getGCellRect(int x, int y);
   void initNetlist(std::vector<Net*>& nets);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
@@ -326,11 +357,10 @@ class GlobalRouter
       std::map<int, std::vector<odb::Rect>>& layer_obs_map);
   void adjustTileSet(const TileSet& tiles_to_reduce,
                      odb::dbTechLayer* tech_layer);
-  void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
-  void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
                                     int max_routing_layer);
-  void computeUserLayerAdjustments(int max_routing_layer);
+  void computeUserLayerAdjustments(int min_routing_layer,
+                                   int max_routing_layer);
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);
@@ -362,6 +392,7 @@ class GlobalRouter
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
+  void updatePinAccessPoints();
   void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
@@ -429,9 +460,10 @@ class GlobalRouter
 
   // db functions
   void initGrid(int max_layer);
-  void computeCapacities(int max_layer);
   void findTrackPitches(int max_layer);
   std::vector<Net*> findNets(bool init_clock_nets);
+  void findClockNets(const std::vector<Net*>& nets,
+                     std::set<odb::dbNet*>& clock_nets);
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
@@ -458,7 +490,6 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   void initGridAndNets();
-  void ensureLayerForGuideDimension(int max_routing_layer);
   void configFastRoute();
 
   utl::Logger* logger_;
@@ -480,8 +511,8 @@ class GlobalRouter
   std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
+  bool is_incremental_;
   float adjustment_;
-  int layer_for_guide_dimension_;
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
   bool allow_congestion_;
@@ -493,6 +524,7 @@ class GlobalRouter
   int total_diodes_count_;
   bool is_congested_{false};
   bool use_cugr_{false};
+  int skip_large_fanout_{std::numeric_limits<int>::max()};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

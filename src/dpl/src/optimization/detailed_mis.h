@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
 namespace dpl {
 class Node;

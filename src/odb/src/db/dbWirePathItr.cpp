@@ -26,54 +26,50 @@ namespace odb {
 //////////////////////////////////////////////////////////////////////////////////
 dbWirePathItr::dbWirePathItr()
 {
-  _opcode = dbWireDecoder::END_DECODE;
-  _prev_x = 0;
-  _prev_y = 0;
-  _prev_ext = 0;
-  _has_prev_ext = false;
-  _dw = 0;
-  _rule = nullptr;
-  _wire = nullptr;
-}
-
-dbWirePathItr::~dbWirePathItr()
-{
+  opcode_ = dbWireDecoder::END_DECODE;
+  prev_x_ = 0;
+  prev_y_ = 0;
+  prev_ext_ = 0;
+  has_prev_ext_ = false;
+  dw_ = 0;
+  rule_ = nullptr;
+  wire_ = nullptr;
 }
 
 void dbWirePathItr::begin(dbWire* wire)
 {
-  _decoder.begin(wire);
-  _opcode = _decoder.next();
-  _prev_x = 0;
-  _prev_y = 0;
-  _prev_ext = 0;
-  _has_prev_ext = false;
-  _dw = 0;
-  _rule = nullptr;
-  _wire = wire;
+  decoder_.begin(wire);
+  opcode_ = decoder_.next();
+  prev_x_ = 0;
+  prev_y_ = 0;
+  prev_ext_ = 0;
+  has_prev_ext_ = false;
+  dw_ = 0;
+  rule_ = nullptr;
+  wire_ = wire;
 }
 
 #define DB_WIRE_PATH_ITR_INVALID_OPCODE 0
 
 bool dbWirePathItr::getNextPath(dbWirePath& path)
 {
-  if ((_opcode == dbWireDecoder::PATH) || (_opcode == dbWireDecoder::JUNCTION)
-      || (_opcode == dbWireDecoder::SHORT)
-      || (_opcode == dbWireDecoder::VWIRE)) {
+  if ((opcode_ == dbWireDecoder::PATH) || (opcode_ == dbWireDecoder::JUNCTION)
+      || (opcode_ == dbWireDecoder::SHORT)
+      || (opcode_ == dbWireDecoder::VWIRE)) {
     dbTechLayerRule* lyr_rule = nullptr;
-    _rule = nullptr;
+    rule_ = nullptr;
 
-    if (_opcode == dbWireDecoder::JUNCTION) {
-      path.junction_id = _decoder.getJunctionValue();
+    if (opcode_ == dbWireDecoder::JUNCTION) {
+      path.junction_id = decoder_.getJunctionValue();
       path.is_branch = true;
     } else {
       path.is_branch = false;
     }
 
-    if ((_opcode == dbWireDecoder::SHORT)
-        || (_opcode == dbWireDecoder::VWIRE)) {
+    if ((opcode_ == dbWireDecoder::SHORT)
+        || (opcode_ == dbWireDecoder::VWIRE)) {
       path.is_short = true;
-      path.short_junction = _decoder.getJunctionValue();
+      path.short_junction = decoder_.getJunctionValue();
     } else {
       path.is_short = false;
       path.short_junction = 0;
@@ -81,71 +77,71 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
 
     path.iterm = nullptr;
     path.bterm = nullptr;
-    path.layer = _decoder.getLayer();
+    path.layer = decoder_.getLayer();
 
   get_point:
 
-    _opcode = _decoder.next();
+    opcode_ = decoder_.next();
 
-    if (_opcode == dbWireDecoder::POINT) {
-      _decoder.getPoint(_prev_x, _prev_y);
-      _prev_ext = 0;
-      _has_prev_ext = false;
-
-      if (path.is_branch == false) {
-        path.junction_id = _decoder.getJunctionId();
-      }
-    } else if (_opcode == dbWireDecoder::POINT_EXT) {
-      _decoder.getPoint(_prev_x, _prev_y, _prev_ext);
-      _has_prev_ext = true;
+    if (opcode_ == dbWireDecoder::POINT) {
+      decoder_.getPoint(prev_x_, prev_y_);
+      prev_ext_ = 0;
+      has_prev_ext_ = false;
 
       if (path.is_branch == false) {
-        path.junction_id = _decoder.getJunctionId();
+        path.junction_id = decoder_.getJunctionId();
+      }
+    } else if (opcode_ == dbWireDecoder::POINT_EXT) {
+      decoder_.getPoint(prev_x_, prev_y_, prev_ext_);
+      has_prev_ext_ = true;
+
+      if (path.is_branch == false) {
+        path.junction_id = decoder_.getJunctionId();
       }
 
-    } else if (_opcode == dbWireDecoder::RULE) {
-      lyr_rule = _decoder.getRule();
-      _rule = lyr_rule->getNonDefaultRule();
+    } else if (opcode_ == dbWireDecoder::RULE) {
+      lyr_rule = decoder_.getRule();
+      rule_ = lyr_rule->getNonDefaultRule();
       goto get_point;  // rules preceded a point...
     } else {
       assert(DB_WIRE_PATH_ITR_INVALID_OPCODE);
     }
 
-    path.point.setX(_prev_x);
-    path.point.setY(_prev_y);
+    path.point.setX(prev_x_);
+    path.point.setY(prev_y_);
 
     // Check for sequence: (BTERM), (ITERM), (BTERM, ITERM) or, (ITERM BTERM)
-    dbWireDecoder::OpCode next_opcode = _decoder.peek();
+    dbWireDecoder::OpCode next_opcode = decoder_.peek();
 
     if (next_opcode == dbWireDecoder::BTERM) {
-      _opcode = _decoder.next();
-      path.bterm = _decoder.getBTerm();
+      opcode_ = decoder_.next();
+      path.bterm = decoder_.getBTerm();
     }
 
     else if (next_opcode == dbWireDecoder::ITERM) {
-      _opcode = _decoder.next();
-      path.iterm = _decoder.getITerm();
+      opcode_ = decoder_.next();
+      path.iterm = decoder_.getITerm();
     }
 
-    next_opcode = _decoder.peek();
+    next_opcode = decoder_.peek();
 
     if (next_opcode == dbWireDecoder::BTERM) {
-      _opcode = _decoder.next();
-      path.bterm = _decoder.getBTerm();
+      opcode_ = decoder_.next();
+      path.bterm = decoder_.getBTerm();
     }
 
     else if (next_opcode == dbWireDecoder::ITERM) {
-      _opcode = _decoder.next();
-      path.iterm = _decoder.getITerm();
+      opcode_ = decoder_.next();
+      path.iterm = decoder_.getITerm();
     }
 
-    path.rule = _rule;
+    path.rule = rule_;
     if (lyr_rule) {
-      _dw = lyr_rule->getWidth() >> 1;
+      dw_ = lyr_rule->getWidth() >> 1;
     } else {
-      _dw = _decoder.getLayer()->getWidth() >> 1;
+      dw_ = decoder_.getLayer()->getWidth() >> 1;
     }
-    _opcode = _decoder.next();
+    opcode_ = decoder_.next();
     return true;
   }
 
@@ -155,28 +151,28 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
 inline void dbWirePathItr::getTerms(dbWirePathShape& s)
 {
   // Check for sequence: (BTERM), (ITERM), (BTERM, ITERM) or, (ITERM BTERM)
-  dbWireDecoder::OpCode next_opcode = _decoder.peek();
+  dbWireDecoder::OpCode next_opcode = decoder_.peek();
 
   if (next_opcode == dbWireDecoder::BTERM) {
-    _opcode = _decoder.next();
-    s.bterm = _decoder.getBTerm();
+    opcode_ = decoder_.next();
+    s.bterm = decoder_.getBTerm();
   }
 
   else if (next_opcode == dbWireDecoder::ITERM) {
-    _opcode = _decoder.next();
-    s.iterm = _decoder.getITerm();
+    opcode_ = decoder_.next();
+    s.iterm = decoder_.getITerm();
   }
 
-  next_opcode = _decoder.peek();
+  next_opcode = decoder_.peek();
 
   if (next_opcode == dbWireDecoder::BTERM) {
-    _opcode = _decoder.next();
-    s.bterm = _decoder.getBTerm();
+    opcode_ = decoder_.next();
+    s.bterm = decoder_.getBTerm();
   }
 
   else if (next_opcode == dbWireDecoder::ITERM) {
-    _opcode = _decoder.next();
-    s.iterm = _decoder.getITerm();
+    opcode_ = decoder_.next();
+    s.iterm = decoder_.getITerm();
   }
 }
 
@@ -185,7 +181,7 @@ bool dbWirePathItr::getNextShape(dbWirePathShape& s)
   s.iterm = nullptr;
   s.bterm = nullptr;
 nextOpCode:
-  switch (_opcode) {
+  switch (opcode_) {
     case dbWireDecoder::PATH:
     case dbWireDecoder::JUNCTION:
     case dbWireDecoder::SHORT:
@@ -195,34 +191,34 @@ nextOpCode:
     case dbWireDecoder::RECT: {
       // order wires doesn't understand RECTs so just hide them for now
       // they aren't required to establish connectivity in our flow
-      _opcode = _decoder.next();
+      opcode_ = decoder_.next();
       goto nextOpCode;
     }
     case dbWireDecoder::POINT: {
       int cur_x;
       int cur_y;
-      _decoder.getPoint(cur_x, cur_y);
-      s.junction_id = _decoder.getJunctionId();
+      decoder_.getPoint(cur_x, cur_y);
+      s.junction_id = decoder_.getJunctionId();
       s.point.setX(cur_x);
       s.point.setY(cur_y);
-      s.layer = _decoder.getLayer();
-      s.shape.setSegment(_prev_x,
-                         _prev_y,
-                         _prev_ext,
-                         _has_prev_ext,
+      s.layer = decoder_.getLayer();
+      s.shape.setSegment(prev_x_,
+                         prev_y_,
+                         prev_ext_,
+                         has_prev_ext_,
                          cur_x,
                          cur_y,
                          0,
                          false,
-                         _dw,
-                         _dw,
+                         dw_,
+                         dw_,
                          s.layer);
       getTerms(s);
 
-      _prev_x = cur_x;
-      _prev_y = cur_y;
-      _prev_ext = 0;
-      _has_prev_ext = false;
+      prev_x_ = cur_x;
+      prev_y_ = cur_y;
+      prev_ext_ = 0;
+      has_prev_ext_ = false;
       break;
     }
 
@@ -230,102 +226,102 @@ nextOpCode:
       int cur_x;
       int cur_y;
       int cur_ext;
-      _decoder.getPoint(cur_x, cur_y, cur_ext);
+      decoder_.getPoint(cur_x, cur_y, cur_ext);
 
       //
       // By defintion a colinear-point with an extension must begin
       // a new path-segment
       //
-      if ((cur_x == _prev_x) && (cur_y == _prev_y)) {
-        _prev_ext = cur_ext;
-        _has_prev_ext = true;
-        _opcode = _decoder.next();
+      if ((cur_x == prev_x_) && (cur_y == prev_y_)) {
+        prev_ext_ = cur_ext;
+        has_prev_ext_ = true;
+        opcode_ = decoder_.next();
         goto nextOpCode;
       }
 
-      s.junction_id = _decoder.getJunctionId();
+      s.junction_id = decoder_.getJunctionId();
       s.point.setX(cur_x);
       s.point.setY(cur_y);
-      s.layer = _decoder.getLayer();
-      s.shape.setSegment(_prev_x,
-                         _prev_y,
-                         _prev_ext,
-                         _has_prev_ext,
+      s.layer = decoder_.getLayer();
+      s.shape.setSegment(prev_x_,
+                         prev_y_,
+                         prev_ext_,
+                         has_prev_ext_,
                          cur_x,
                          cur_y,
                          cur_ext,
                          true,
-                         _dw,
-                         _dw,
+                         dw_,
+                         dw_,
                          s.layer);
       getTerms(s);
 
-      _prev_x = cur_x;
-      _prev_y = cur_y;
-      _prev_ext = cur_ext;
-      _has_prev_ext = true;
+      prev_x_ = cur_x;
+      prev_y_ = cur_y;
+      prev_ext_ = cur_ext;
+      has_prev_ext_ = true;
       break;
     }
 
     case dbWireDecoder::VIA: {
-      dbVia* via = _decoder.getVia();
+      dbVia* via = decoder_.getVia();
       dbBox* box = via->getBBox();
       Rect b = box->getBox();
-      int xmin = b.xMin() + _prev_x;
-      int ymin = b.yMin() + _prev_y;
-      int xmax = b.xMax() + _prev_x;
-      int ymax = b.yMax() + _prev_y;
+      int xmin = b.xMin() + prev_x_;
+      int ymin = b.yMin() + prev_y_;
+      int xmax = b.xMax() + prev_x_;
+      int ymax = b.yMax() + prev_y_;
       Rect r(xmin, ymin, xmax, ymax);
-      s.junction_id = _decoder.getJunctionId();
-      s.point.setX(_prev_x);
-      s.point.setY(_prev_y);
-      s.layer = _decoder.getLayer();
+      s.junction_id = decoder_.getJunctionId();
+      s.point.setX(prev_x_);
+      s.point.setY(prev_y_);
+      s.layer = decoder_.getLayer();
       s.shape.setVia(via, r);
       getTerms(s);
-      _dw = _decoder.getLayer()->getWidth() >> 1;
-      if (_rule) {
-        dbTechLayerRule* lyr_rule = _rule->getLayerRule(_decoder.getLayer());
+      dw_ = decoder_.getLayer()->getWidth() >> 1;
+      if (rule_) {
+        dbTechLayerRule* lyr_rule = rule_->getLayerRule(decoder_.getLayer());
         if (lyr_rule) {
-          _dw = lyr_rule->getWidth() >> 1;
+          dw_ = lyr_rule->getWidth() >> 1;
         }
       }
-      _prev_ext = 0;
-      _prev_ext = 0;
-      _has_prev_ext = false;
+      prev_ext_ = 0;
+      prev_ext_ = 0;
+      has_prev_ext_ = false;
       break;
     }
 
     case dbWireDecoder::TECH_VIA: {
-      dbTechVia* via = _decoder.getTechVia();
+      dbTechVia* via = decoder_.getTechVia();
       dbBox* box = via->getBBox();
       Rect b = box->getBox();
-      int xmin = b.xMin() + _prev_x;
-      int ymin = b.yMin() + _prev_y;
-      int xmax = b.xMax() + _prev_x;
-      int ymax = b.yMax() + _prev_y;
+      int xmin = b.xMin() + prev_x_;
+      int ymin = b.yMin() + prev_y_;
+      int xmax = b.xMax() + prev_x_;
+      int ymax = b.yMax() + prev_y_;
       Rect r(xmin, ymin, xmax, ymax);
-      s.junction_id = _decoder.getJunctionId();
-      s.point.setX(_prev_x);
-      s.point.setY(_prev_y);
-      s.layer = _decoder.getLayer();
+      s.junction_id = decoder_.getJunctionId();
+      s.point.setX(prev_x_);
+      s.point.setY(prev_y_);
+      s.layer = decoder_.getLayer();
       s.shape.setVia(via, r);
       getTerms(s);
-      _dw = _decoder.getLayer()->getWidth() >> 1;
-      if (_rule) {
-        dbTechLayerRule* lyr_rule = _rule->getLayerRule(_decoder.getLayer());
+      dw_ = decoder_.getLayer()->getWidth() >> 1;
+      if (rule_) {
+        dbTechLayerRule* lyr_rule = rule_->getLayerRule(decoder_.getLayer());
         if (lyr_rule) {
-          _dw = lyr_rule->getWidth() >> 1;
+          dw_ = lyr_rule->getWidth() >> 1;
         }
       }
-      _prev_ext = 0;
-      _has_prev_ext = false;
+      prev_ext_ = 0;
+      has_prev_ext_ = false;
       break;
     }
 
     case dbWireDecoder::RULE: {
-      dbTechLayerRule* rule = _decoder.getRule();
-      _dw = rule->getWidth() >> 1;
-      _opcode = _decoder.next();
+      dbTechLayerRule* rule = decoder_.getRule();
+      dw_ = rule->getWidth() >> 1;
+      opcode_ = decoder_.next();
       goto nextOpCode;
     }
 
@@ -333,12 +329,12 @@ nextOpCode:
       return false;
 
     default:
-      ZASSERT(DB_WIRE_PATH_ITR_INVALID_OPCODE);
-      _opcode = _decoder.next();
+      assert(DB_WIRE_PATH_ITR_INVALID_OPCODE);
+      opcode_ = decoder_.next();
       goto nextOpCode;
   }
 
-  _opcode = _decoder.next();
+  opcode_ = decoder_.next();
   return true;
 }
 

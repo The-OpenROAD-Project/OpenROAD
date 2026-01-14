@@ -104,8 +104,6 @@ class Rebuffer : public sta::dbStaState
                        Net* net,  // output of buffer.
                        int level,
                        Instance* parent_in,
-                       odb::dbITerm* mod_net_drvr,
-                       odb::dbModNet* mod_net_in,
                        const char* instance_base_name);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
@@ -171,6 +169,8 @@ class Rebuffer : public sta::dbStaState
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr float relaxation_factor_ = 0.01;
+
+  double long_wire_stepping_runtime_ = 0;
 
   friend class RepairSetup;
   friend class BufferMove;

@@ -110,10 +110,6 @@ class RepairAntennas
   }
   void legalizePlacedCells();
   AntennaViolations getAntennaViolations() { return antenna_violations_; }
-  void setAntennaViolations(AntennaViolations antenna_violations)
-  {
-    antenna_violations_ = antenna_violations;
-  }
   int getDiodesCount() { return diode_insts_.size(); }
   void clearViolations() { antenna_violations_.clear(); }
   void destroyNetWires(const std::vector<odb::dbNet*>& nets_to_repair);
@@ -236,7 +232,7 @@ class RepairAntennas
   odb::dbOrientType getRowOrient(const odb::Point& point);
   RoutePtPinsMap findRoutePtPins(Net* net);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
-                           const int pin_layer,
+                           int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,
                            const GRoute& route);
 

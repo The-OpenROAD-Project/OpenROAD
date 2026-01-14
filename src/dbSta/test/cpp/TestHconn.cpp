@@ -1,10 +1,6 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <tcl.h>
 #include <unistd.h>
 
 #include <cstddef>
@@ -37,12 +33,15 @@
 
 namespace odb {
 
+static const std::string prefix("_main/src/dbSta/test/");
+static constexpr bool kDebugMsgs = false;
+
 /*
   Extract the hierarchical information in human readable format.
   Shows the dbNet and dbModNet view of the database.
 */
 
-void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
+static void DbStrDebugHierarchy(dbBlock* block, std::stringstream& str_db)
 {
   str_db << fmt::format("Debug: Data base tables for block at {}:\n",
                         block->getName());
@@ -216,9 +215,9 @@ class TestHconn : public ::tst::Fixture
   void SetUp() override
   {
     // this will be so much easier with read_def
-    auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
-    library_ = readLiberty(path.string().c_str());
-    lib_ = loadTechAndLib("tech", "Nangate45.lef", "./Nangate45/Nangate45.lef");
+    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
+    lib_ = loadTechAndLib(
+        "tech", "Nangate45", prefix + "Nangate45/Nangate45.lef");
 
     db_network_ = sta_->getDbNetwork();
     // turn on hierarchy
@@ -529,9 +528,11 @@ class TestHconn : public ::tst::Fixture
     inv4_3_op_->connect(op2_net_);
     inv4_4_op_->connect(op3_net_);
 
-    // std::stringstream str_str;
-    //    DbStrDebugHierarchy(block_, str_str);
-    //    printf("The Flat design created %s\n", str_str.str().c_str());
+    if (kDebugMsgs) {
+      std::stringstream str_str;
+      DbStrDebugHierarchy(block_, str_str);
+      printf("The Flat design created %s\n", str_str.str().c_str());
+    }
 
     // Now build the hierarchical "overlay"
     // What we are doing here is adding the modnets which hook up
@@ -647,11 +648,12 @@ class TestHconn : public ::tst::Fixture
     inv4_mod_level2_inst_o3_miterm_->connect(inv4_mod_level2_inst_o3_mnet_);
     inv4_mod_level1_master_o3_port_->connect(inv4_mod_level2_inst_o3_mnet_);
 
-    // Uncomment this to see the full design
-    //    std::stringstream full_design;
-    //    DbStrDebugHierarchy(block_, full_design);
-    //    printf("The  design created (flat and hierarchical) %s\n",
-    //	   full_design.str().c_str());
+    if (kDebugMsgs) {
+      std::stringstream full_design;
+      DbStrDebugHierarchy(block_, full_design);
+      printf("The  design created (flat and hierarchical) %s\n",
+             full_design.str().c_str());
+    }
   }
 
   sta::LibertyLibrary* library_;
@@ -790,9 +792,11 @@ class TestHconn : public ::tst::Fixture
 
 TEST_F(TestHconn, ConnectionMade)
 {
-  //  std::stringstream str_str_initial;
-  //  DbStrDebugHierarchy(block_, str_str_initial);
-  //  printf("The initial design: %s\n", str_str_initial.str().c_str());
+  if (kDebugMsgs) {
+    std::stringstream str_str_initial;
+    DbStrDebugHierarchy(block_, str_str_initial);
+    printf("The initial design: %s\n", str_str_initial.str().c_str());
+  }
 
   // ECO test: get initial state before we start modifying
   // the design. Then at end we undo everything and
@@ -898,10 +902,11 @@ TEST_F(TestHconn, ConnectionMade)
   db_network_->hierarchicalConnect(
       inv1_2_inst_op0, inv4_4_ip_, hier_net_name.c_str());
 
-  // Uncomment this to see the final design
-  //  std::stringstream str_str_final;
-  //  DbStrDebugHierarchy(block_, str_str_final);
-  //  printf("The final design: %s\n", str_str_final.str().c_str());
+  if (kDebugMsgs) {
+    std::stringstream str_str_final;
+    DbStrDebugHierarchy(block_, str_str_final);
+    printf("The final design: %s\n", str_str_final.str().c_str());
+  }
 
   // Example of how to turn on the call backs for all the bterms/iterms
   // used by the sta
@@ -947,7 +952,6 @@ TEST_F(TestHconn, ConnectionMade)
   // Journalling test.
   // Undo everything and check initial state preserved
   //
-  odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
   size_t restored_db_net_count = block_->getNets().size();

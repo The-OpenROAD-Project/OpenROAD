@@ -8,11 +8,25 @@
 #include <string_view>
 #include <vector>
 
+#include "defiBlockage.hpp"
+#include "defiComponent.hpp"
+#include "defiDefs.hpp"
+#include "defiFill.hpp"
+#include "defiGroup.hpp"
+#include "defiNet.hpp"
+#include "defiNonDefault.hpp"
+#include "defiPinCap.hpp"
+#include "defiPinProp.hpp"
+#include "defiProp.hpp"
+#include "defiRegion.hpp"
+#include "defiRowTrack.hpp"
+#include "defiScanchain.hpp"
+#include "defiSite.hpp"
+#include "defiVia.hpp"
 #include "definBase.h"
 #include "defrReader.hpp"
 #include "odb/db.h"
 #include "odb/defin.h"
-#include "odb/odb.h"
 
 namespace utl {
 class Logger;
@@ -57,7 +71,8 @@ class definReader : public definBase
 
   void readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
-                dbChip* chip);
+                dbChip* chip,
+                bool issue_callback);
 
  private:
   void init();

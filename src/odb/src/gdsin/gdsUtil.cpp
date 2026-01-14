@@ -57,7 +57,7 @@ uint8_t fromRecordType(RecordType recordType)
 
 DataType toDataType(uint8_t dataType)
 {
-  if (dataType >= (uint8_t) DataType::INVALID_DT) {
+  if (dataType >= (uint8_t) DataType::kInvalid) {
     throw std::runtime_error("Corrupted GDS, Invalid data type!");
   }
   return static_cast<DataType>(dataType);
@@ -65,7 +65,7 @@ DataType toDataType(uint8_t dataType)
 
 uint8_t fromDataType(DataType dataType)
 {
-  if (dataType >= DataType::INVALID_DT) {
+  if (dataType >= DataType::kInvalid) {
     throw std::runtime_error("Corrupted GDS, Invalid data type!");
   }
   return static_cast<uint8_t>(dataType);
@@ -119,7 +119,7 @@ std::map<std::pair<int16_t, int16_t>, std::string> getLayerMap(
       continue;
     }
     const boost::property_tree::ptree& layer = pairs.second;
-    const std::string name = layer.get<std::string>("name", "");
+    std::string name = layer.get<std::string>("name", "");
     const std::string source = layer.get<std::string>("source", "");
     const size_t at_pos = source.find('@');
     const size_t slash_pos = source.find('/');

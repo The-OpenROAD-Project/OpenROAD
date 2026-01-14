@@ -52,48 +52,52 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 #include "defwWriter.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 
-#define MAXCBS 33
+static constexpr int MAXCBS = 33;
 
-#define defwVersionCbk 0
-#define defwCaseSensitiveCbk 1
-#define defwDividerCbk 2
-#define defwBusBitCbk 3
-#define defwDesignCbk 4
-#define defwTechCbk 5
-#define defwArrayCbk 6
-#define defwFloorPlanCbk 7
-#define defwUnitsCbk 8
-#define defwHistoryCbk 9
-#define defwPropDefCbk 10
-#define defwDieAreaCbk 11
-#define defwRowCbk 12
-#define defwTrackCbk 13
-#define defwGcellGridCbk 14
-#define defwDefaultCapCbk 15
-#define defwCanplaceCbk 16
-#define defwCannotOccupyCbk 17
-#define defwViaCbk 18
-#define defwRegionCbk 19
-#define defwComponentCbk 20
-#define defwPinCbk 21
-#define defwPinPropCbk 22
-#define defwSNetCbk 23
-#define defwNetCbk 24
-#define defwIOTimingCbk 25
-#define defwScanchainCbk 26
-#define defwConstraintCbk 27
-#define defwAssertionCbk 28 /* pre 5.2 */
-#define defwGroupCbk 29
-#define defwBlockageCbk 30
-#define defwExtCbk 31
-#define defwDesignEndCbk 32
-
-/* NEW CALLBACK - then place it here. */
+enum Callbacks
+{
+  defwVersionCbk = 0,
+  defwCaseSensitiveCbk = 1,
+  defwDividerCbk = 2,
+  defwBusBitCbk = 3,
+  defwDesignCbk = 4,
+  defwTechCbk = 5,
+  defwArrayCbk = 6,
+  defwFloorPlanCbk = 7,
+  defwUnitsCbk = 8,
+  defwHistoryCbk = 9,
+  defwPropDefCbk = 10,
+  defwDieAreaCbk = 11,
+  defwRowCbk = 12,
+  defwTrackCbk = 13,
+  defwGcellGridCbk = 14,
+  defwDefaultCapCbk = 15,
+  defwCanplaceCbk = 16,
+  defwCannotOccupyCbk = 17,
+  defwViaCbk = 18,
+  defwRegionCbk = 19,
+  defwComponentCbk = 20,
+  defwPinCbk = 21,
+  defwPinPropCbk = 22,
+  defwSNetCbk = 23,
+  defwNetCbk = 24,
+  defwIOTimingCbk = 25,
+  defwScanchainCbk = 26,
+  defwConstraintCbk = 27,
+  defwAssertionCbk = 28, /* pre 5.2 */
+  defwGroupCbk = 29,
+  defwBlockageCbk = 30,
+  defwExtCbk = 31,
+  defwDesignEndCbk = 32,
+  /* NEW CALLBACK - then place it here. */
+};
 
 int defWRetVal;
 extern int defwHasInit;
@@ -102,10 +106,10 @@ extern int defwHasInitCbk;
 DEFI_LOG_FUNCTION defwErrorLogFunction;
 DEFI_WARNING_LOG_FUNCTION defwWarningLogFunction;
 
-#define WRITER_CALLBACK(func, type)                      \
-  if ((defWRetVal = (*func)(type, defwUserData)) == 0) { \
-  } else {                                               \
-    return defWRetVal;                                   \
+#define WRITER_CALLBACK(func, type)         \
+  defWRetVal = (*func)(type, defwUserData); \
+  if (defWRetVal != 0) {                    \
+    return defWRetVal;                      \
   }
 
 #define CHECK_DEF_STATUS(status) \
@@ -329,7 +333,7 @@ void defwSetUnusedCallbacks(defwVoidCbkFnType func)
 
   for (i = 0; i < MAXCBS; i++) {
     if (defwCallbacksSeq[i] == nullptr) {
-      defwCallbacksSeq[i] = (defwVoidCbkFnType) func;
+      defwCallbacksSeq[i] = func;
     }
   }
 }

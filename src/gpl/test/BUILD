@@ -2,6 +2,8 @@ load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 TESTS = [
     "ar01",
     "ar02",
@@ -37,20 +39,12 @@ TESTS = [
     "simple08",
     "simple09",
     "simple10",
+    "region01",
 ]
 
 py_library(
     name = "helpers",
     srcs = ["helpers.py"],
-    imports = ["."],
-    deps = [
-        "//openroad:openroadpy",
-    ],
-)
-
-py_library(
-    name = "gpl_aux",
-    srcs = ["gpl_aux.py"],
     imports = ["."],
     deps = [
         "//openroad:openroadpy",
@@ -85,9 +79,15 @@ filegroup(
     ),
 )
 
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "incremental02",
+]
+
 [regression_test(
     name = test_name,
     data = [":test_resources"],
+    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
 PY_TESTS = [
@@ -109,7 +109,6 @@ PY_TESTS = [
     "simple03",
     "simple04",
     "simple05",
-    "simple06",
     "simple07",
     "simple08",
     "simple09",
@@ -124,7 +123,6 @@ PY_TESTS = [
             ":test_resources",
         ],
         deps = [
-            ":gpl_aux",
             ":helpers",
             "//openroad:openroadpy",
         ],
@@ -135,9 +133,39 @@ PY_TESTS = [
 cc_test(
     name = "gpl_fft_unittest",
     srcs = ["fft_test.cc"],
+    features = ["-layering_check"],  # TODO: includes private headers
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/gpl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "mbff_test",
+    srcs = ["mbff_test.cpp"],
+    data = [
+        "library/test/test0.lef",
+        "library/test/test0.lib",
+    ],
+    deps = [
+        "//:openroad_lib",
+        "//bazel:runfiles",
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "//src/dpl",
+        "//src/est",
+        "//src/gpl",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@com_google_absl//absl/strings",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

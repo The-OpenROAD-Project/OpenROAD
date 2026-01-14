@@ -97,7 +97,7 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
 
   const double dbu_to_micron = block_->getDbUnitsPerMicron();
 
-  csv << "x0,y0,x1,y1,value" << std::endl;
+  csv << "x0,y0,x1,y1,value (" << getValueUnits() << ")\n";
   for (const auto& map_col : map_) {
     for (const auto& map_value : map_col) {
       if (!map_value->has_value) {
@@ -112,7 +112,7 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
       csv << box_rect.xMax() / dbu_to_micron << ",";
       csv << box_rect.yMax() / dbu_to_micron << ",";
       csv << std::scientific << std::setprecision(6);
-      csv << scaled_value << std::endl;
+      csv << scaled_value << '\n';
     }
   }
 
@@ -216,10 +216,10 @@ void HeatMapDataSource::setShowLegend(bool legend)
 
 Painter::Color HeatMapDataSource::getColor(double value) const
 {
-  auto find_val
-      = std::find_if(color_lower_bounds_.begin(),
-                     color_lower_bounds_.end(),
-                     [value](const double other) { return other >= value; });
+  auto find_val = std::ranges::find_if(
+      color_lower_bounds_,
+
+      [value](const double other) { return other >= value; });
   const double color_index
       = std::distance(color_lower_bounds_.begin(), find_val);
   return color_generator_.getColor(
@@ -338,12 +338,10 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 HeatMapDataSource::MapView HeatMapDataSource::getMapView(
     const odb::Rect& bounds)
 {
-  const auto x_low_find
-      = std::lower_bound(map_x_grid_.begin(), map_x_grid_.end(), bounds.xMin());
+  const auto x_low_find = std::ranges::lower_bound(map_x_grid_, bounds.xMin());
   const auto x_high_find
       = std::upper_bound(x_low_find, map_x_grid_.end(), bounds.xMax());
-  const auto y_low_find
-      = std::lower_bound(map_y_grid_.begin(), map_y_grid_.end(), bounds.yMin());
+  const auto y_low_find = std::ranges::lower_bound(map_y_grid_, bounds.yMin());
   const auto y_high_find
       = std::upper_bound(y_low_find, map_y_grid_.end(), bounds.yMax());
 
@@ -607,7 +605,7 @@ void HeatMapDataSource::updateMapColors()
         lower_bound = display_range_max_ - lower_bound + display_range_min_;
       }
     } else {
-      std::reverse(color_lower_bounds_.begin(), color_lower_bounds_.end());
+      std::ranges::reverse(color_lower_bounds_);
     }
   } else {
     const double step = (display_range_max_ - display_range_min_) / color_count;
@@ -650,9 +648,7 @@ std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() const
       = (getRealRangeMaximumValue() - linear_start) / (count - 1);
   for (int i = 0; i < count; i++) {
     int idx = std::round(i * index_incr);
-    if (idx > color_count) {
-      idx = color_count;
-    }
+    idx = std::min(idx, color_count);
     double value = color_lower_bounds_[idx];
     if (!log_scale_) {
       value = linear_step * i + linear_start;
@@ -842,7 +838,7 @@ void HeatMapRenderer::setSettings(const Settings& settings)
   Renderer::setSettings(settings);
   Renderer::Settings data_settings;
   for (const auto& [name, value] : settings) {
-    if (name.find(kDatasourcePrefix) == 0) {
+    if (name.starts_with(kDatasourcePrefix)) {
       data_settings[name.substr(strlen(kDatasourcePrefix))] = value;
     }
   }

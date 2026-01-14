@@ -10,7 +10,6 @@
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -26,14 +25,14 @@ class dbOStream;
 
 struct _dbBTermFlags
 {
-  dbIoType::Value _io_type : 4;
-  dbSigType::Value _sig_type : 4;
-  uint _orient : 4;  // This field is not used anymore. Replaced by bpin...
-  uint _status : 4;  // This field is not used anymore. Replaced by bpin...
-  uint _spef : 1;
-  uint _special : 1;
-  uint _mark : 1;
-  uint _spare_bits : 13;
+  dbIoType::Value io_type : 4;
+  dbSigType::Value sig_type : 4;
+  uint32_t orient : 4;  // This field is not used anymore. Replaced by bpin...
+  uint32_t status : 4;  // This field is not used anymore. Replaced by bpin...
+  uint32_t spef : 1;
+  uint32_t special : 1;
+  uint32_t mark : 1;
+  uint32_t spare_bits : 13;
 };
 
 //
@@ -44,28 +43,8 @@ class _dbBTerm : public _dbObject
  public:
   enum Field  // dbJournalField name
   {
-    FLAGS
+    kFlags
   };
-  // PERSISTANT-MEMBERS
-  _dbBTermFlags _flags;
-  uint _ext_id;
-  char* _name;
-  dbId<_dbBTerm> _next_entry;
-  dbId<_dbNet> _net;
-  dbId<_dbModNet> _mnet;
-  dbId<_dbBTerm> _next_bterm;
-  dbId<_dbBTerm> _prev_bterm;
-  dbId<_dbBTerm> _next_modnet_bterm;
-  dbId<_dbBTerm> _prev_modnet_bterm;
-  dbId<_dbBlock> _parent_block;  // Up hierarchy: TWG
-  dbId<_dbITerm> _parent_iterm;  // Up hierarchy: TWG
-  dbId<_dbBPin> _bpins;          // Up hierarchy: TWG
-  dbId<_dbBTerm> _ground_pin;
-  dbId<_dbBTerm> _supply_pin;
-  std::uint32_t _sta_vertex_id;  // not saved
-  Rect _constraint_region;
-  dbId<_dbBTerm> _mirrored_bterm;
-  bool _is_mirrored;
 
   _dbBTerm(_dbDatabase*);
   _dbBTerm(_dbDatabase*, const _dbBTerm& b);
@@ -81,6 +60,27 @@ class _dbBTerm : public _dbObject
   bool operator!=(const _dbBTerm& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBTerm& rhs) const;
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  _dbBTermFlags flags_;
+  uint32_t ext_id_;
+  char* name_;
+  dbId<_dbBTerm> next_entry_;
+  dbId<_dbNet> net_;
+  dbId<_dbModNet> mnet_;
+  dbId<_dbBTerm> next_bterm_;
+  dbId<_dbBTerm> prev_bterm_;
+  dbId<_dbBTerm> next_modnet_bterm_;
+  dbId<_dbBTerm> prev_modnet_bterm_;
+  dbId<_dbBlock> parent_block_;  // Up hierarchy
+  dbId<_dbITerm> parent_iterm_;  // Up hierarchy
+  dbId<_dbBPin> bpins_;          // Up hierarchy
+  dbId<_dbBTerm> ground_pin_;
+  dbId<_dbBTerm> supply_pin_;
+  std::uint32_t sta_vertex_id_;  // not saved
+  Rect constraint_region_;
+  dbId<_dbBTerm> mirrored_bterm_;
+  bool is_mirrored_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm);

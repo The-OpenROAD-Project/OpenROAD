@@ -9,8 +9,6 @@
 
 #include "db_sta/dbSta.hh"
 
-#include <tcl.h>
-
 #include <algorithm>  // min
 #include <cctype>
 #include <cmath>
@@ -43,6 +41,7 @@
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
+#include "sta/Sta.hh"
 #include "sta/StaMain.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -147,7 +146,7 @@ class dbStaReport : public sta::ReportTcl
 class dbStaCbk : public dbBlockCallBackObj
 {
  public:
-  dbStaCbk(dbSta* sta, Logger* logger);
+  dbStaCbk(dbSta* sta);
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(dbInst* inst) override;
   void inDbInstDestroy(dbInst* inst) override;
@@ -156,9 +155,13 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override;
   void inDbInstSwapMasterAfter(dbInst* inst) override;
   void inDbNetDestroy(dbNet* net) override;
+  void inDbModNetDestroy(dbModNet* modnet) override;
   void inDbITermPostConnect(dbITerm* iterm) override;
   void inDbITermPreDisconnect(dbITerm* iterm) override;
   void inDbITermDestroy(dbITerm* iterm) override;
+  void inDbModITermPostConnect(dbModITerm* moditerm) override;
+  void inDbModITermPreDisconnect(dbModITerm* moditerm) override;
+  void inDbModITermDestroy(dbModITerm* moditerm) override;
   void inDbBTermPostConnect(dbBTerm* bterm) override;
   void inDbBTermPreDisconnect(dbBTerm* bterm) override;
   void inDbBTermCreate(dbBTerm*) override;
@@ -172,7 +175,6 @@ class dbStaCbk : public dbBlockCallBackObj
 
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
-  Logger* logger_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -226,7 +228,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   }
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
-  db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+  db_cbk_ = std::make_unique<dbStaCbk>(this);
   buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
@@ -286,7 +288,8 @@ void dbSta::postReadLef(dbTech* tech, dbLib* library)
 
 void dbSta::postReadDef(dbBlock* block)
 {
-  if (!block->getParent()) {
+  // If this is the top block of the main chip:
+  if (!block->getParent() && block->getChip() == block->getDb()->getChip()) {
     db_network_->readDefAfter(block);
     db_cbk_->addOwner(block);
     db_cbk_->setNetwork(db_network_);
@@ -568,11 +571,10 @@ void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
   }
 }
 
-std::string toLowerCase(std::string str)
+static std::string toLowerCase(std::string str)
 {
-  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
+  std::ranges::transform(
+      str, str.begin(), [](unsigned char c) { return std::tolower(c); });
   return str;
 }
 
@@ -729,6 +731,141 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
 
   histogram.generateBins(num_bins);
   histogram.report();
+}
+
+int dbSta::checkSanity()
+{
+  ensureGraph();
+  ensureLevelized();
+
+  int pre_warn_cnt = logger_->getWarningCount();
+
+  checkSanityDrvrVertexEdges();
+
+  int post_warn_cnt = logger_->getWarningCount();
+  return post_warn_cnt - pre_warn_cnt;
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const odb::dbObject* term) const
+{
+  if (term == nullptr) {
+    logger_->error(
+        utl::STA, 2056, "checkSanityDrvrVertexEdges: input term is null");
+    return;
+  }
+
+  sta::Pin* pin = db_network_->dbToSta(const_cast<odb::dbObject*>(term));
+  if (pin == nullptr) {
+    logger_->error(utl::STA,
+                   2057,
+                   "checkSanityDrvrVertexEdges: failed to convert dbObject to "
+                   "sta::Pin for {}",
+                   term->getName());
+    return;
+  }
+
+  checkSanityDrvrVertexEdges(pin);
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
+{
+  if (db_network_->isDriver(pin) == false) {
+    return;
+  }
+
+  sta::Graph* graph = this->graph();
+  sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
+
+  if (drvr_vertex == nullptr) {
+    logger_->warn(utl::STA,
+                  2058,
+                  "checkSanityDrvrVertexEdges: could not find driver vertex "
+                  "for pin {}",
+                  db_network_->pathName(pin));
+    return;
+  }
+
+  // Store edges and load vertices to check for consistency
+  std::set<std::string> edge_str_set;
+  std::set<sta::Vertex*> visited_to_vertices;
+  sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph);
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    sta::Vertex* to_vertex = edge->to(graph);
+
+    // Check duplicate edges
+    if (edge_str_set.find(edge->to_string(this)) != edge_str_set.end()) {
+      logger_->error(utl::STA,
+                     2059,
+                     "Duplicate edge found: {}",
+                     edge->to_string(this).c_str());
+    }
+
+    edge_str_set.insert(edge->to_string(this));
+    visited_to_vertices.insert(to_vertex);
+  }
+
+  // Compare with ODB connectivity
+  bool has_inconsistency = false;
+  odb::dbObject* drvr_obj = db_network_->staToDb(pin);
+  odb::dbNet* net = nullptr;
+  if (drvr_obj) {
+    if (drvr_obj->getObjectType() == odb::dbITermObj) {
+      net = static_cast<odb::dbITerm*>(drvr_obj)->getNet();
+    } else if (drvr_obj->getObjectType() == odb::dbBTermObj) {
+      net = static_cast<odb::dbBTerm*>(drvr_obj)->getNet();
+    }
+  }
+
+  if (net) {
+    std::set<sta::Pin*> odb_loads;
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      if (iterm != drvr_obj) {
+        odb_loads.insert(db_network_->dbToSta(iterm));
+      }
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm != drvr_obj) {
+        odb_loads.insert(db_network_->dbToSta(bterm));
+      }
+    }
+
+    std::set<sta::Pin*> sta_loads;
+    for (sta::Vertex* to_vertex : visited_to_vertices) {
+      sta_loads.insert(to_vertex->pin());
+    }
+
+    // Loads in ODB must appear in STA edges.
+    // - STA can have more edges than loads in ODB
+    for (sta::Pin* odb_load : odb_loads) {
+      if (sta_loads.find(odb_load) == sta_loads.end()) {
+        logger_->warn(utl::STA,
+                      2063,
+                      "Inconsistent load: ODB has load '{}', but STA does not.",
+                      db_network_->pathName(odb_load));
+        has_inconsistency = true;
+      }
+    }
+  }
+
+  if (has_inconsistency) {
+    logger_->error(utl::STA,
+                   2064,
+                   "Inconsistencies found in driver vertex edges for pin {}.",
+                   db_network_->pathName(pin));
+  }
+}
+
+void dbSta::checkSanityDrvrVertexEdges() const
+{
+  // Iterate over all driver vertices in the graph.
+  sta::VertexIterator vertex_iter(this->graph());
+  while (vertex_iter.hasNext()) {
+    sta::Vertex* vertex = vertex_iter.next();
+    if (vertex->isDriver(this->network())) {
+      checkSanityDrvrVertexEdges(db_network_->staToDb(vertex->pin()));
+    }
+  }
 }
 
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
@@ -926,7 +1063,7 @@ const char* dbStaReport::redirectStringEnd()
 //
 ////////////////////////////////////////////////////////////////
 
-dbStaCbk::dbStaCbk(dbSta* sta, Logger* logger) : sta_(sta), logger_(logger)
+dbStaCbk::dbStaCbk(dbSta* sta) : sta_(sta)
 {
 }
 
@@ -990,6 +1127,12 @@ void dbStaCbk::inDbNetDestroy(dbNet* db_net)
   network_->deleteNetBefore(net);
 }
 
+void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
+{
+  Net* net = network_->dbToSta(modnet);
+  network_->deleteNetBefore(net);
+}
+
 void dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
 {
   Pin* pin = network_->dbToSta(iterm);
@@ -1007,6 +1150,23 @@ void dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
 void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
 {
   sta_->deletePinBefore(network_->dbToSta(iterm));
+}
+
+void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
+{
+  Pin* pin = network_->dbToSta(moditerm);
+  network_->connectPinAfter(pin);
+}
+
+void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
+{
+  Pin* pin = network_->dbToSta(moditerm);
+  network_->disconnectPinBefore(pin);
+}
+
+void dbStaCbk::inDbModITermDestroy(dbModITerm* moditerm)
+{
+  sta_->deletePinBefore(network_->dbToSta(moditerm));
 }
 
 void dbStaCbk::inDbBTermPostConnect(dbBTerm* bterm)

@@ -39,163 +39,167 @@
 #include <ctime>
 
 #include "crypt.hpp"
+#include "lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 
 // States of the writer.
-#define LEFW_UNINIT 0
-#define LEFW_INIT 1
-#define LEFW_ARRAY_START 2
-#define LEFW_BEGINEXT_START 3
-#define LEFW_CORRECTTABLE_START 4
-#define LEFW_IRDROP_START 5
-#define LEFW_LAYER_START 6
-#define LEFW_LAYERROUTING_START 7
-#define LEFW_LAYERROUTING_SP_START 8
-#define LEFW_MACRO_START 9
-#define LEFW_NOISETABLE_START 10
-#define LEFW_NONDEFAULTRULE_START 11
-#define LEFW_PROPERTYDEF_START 12
-#define LEFW_SPACING_START 13
-#define LEFW_UNITS_START 14
-#define LEFW_VIA_START 15
-#define LEFW_VIARULE_START 16
-#define LEFW_VIARULEGEN_START 17
+enum State
+{
+  LEFW_UNINIT = 0,
+  LEFW_INIT = 1,
+  LEFW_ARRAY_START = 2,
+  LEFW_BEGINEXT_START = 3,
+  LEFW_CORRECTTABLE_START = 4,
+  LEFW_IRDROP_START = 5,
+  LEFW_LAYER_START = 6,
+  LEFW_LAYERROUTING_START = 7,
+  LEFW_LAYERROUTING_SP_START = 8,
+  LEFW_MACRO_START = 9,
+  LEFW_NOISETABLE_START = 10,
+  LEFW_NONDEFAULTRULE_START = 11,
+  LEFW_PROPERTYDEF_START = 12,
+  LEFW_SPACING_START = 13,
+  LEFW_UNITS_START = 14,
+  LEFW_VIA_START = 15,
+  LEFW_VIARULE_START = 16,
+  LEFW_VIARULEGEN_START = 17,
 
-#define LEFW_ANTENNASIZE 18
-#define LEFW_ARRAY 19
-#define LEFW_BEGINEXT 20
-#define LEFW_BUSBITCHARS 21
-#define LEFW_CASESENSITIVE 22
-#define LEFW_CORRECTTABLE 23
-#define LEFW_DIELECTRIC 24
-#define LEFW_DIVIDERCHAR 25
-#define LEFW_EDGERATE 26
-#define LEFW_IRDROP 27
-#define LEFW_LAYER 28
-#define LEFW_LAYERACCURRENT 29
-#define LEFW_LAYERDCCURRENT 30
-#define LEFW_LAYERROUTING 31
-#define LEFW_LAYERROUTINGWIDTH 32
-#define LEFW_MACRO 33
-#define LEFW_MACRO_CAPACITANCE 34
-#define LEFW_MACRO_INPUTNOISEMARGIN 35
-#define LEFW_MACRO_FALLCURRENTSOURCE 36
-#define LEFW_MACRO_FALLSATCUR 37
-#define LEFW_MACRO_FALLTHRESH 38
-#define LEFW_MACRO_FALLVOLTAGETHRESHOLD 39
-#define LEFW_MACRO_IV_TABLES 40
-#define LEFW_MACRO_LEAKAGE 41
-#define LEFW_MACRO_LEQ 42
-#define LEFW_MACRO_OUTPUTNOISEMARGIN 43
-#define LEFW_MACRO_OUTPUTRESISTANCE 44
-#define LEFW_MACRO_PINFOREIGN 45
-#define LEFW_MACRO_PINLEQ 46
-#define LEFW_MACRO_POWER 47
-#define LEFW_MACRO_PULLDOWNRES 48
-#define LEFW_MACRO_RESISTANCE 49
-#define LEFW_MACRO_RISESATCUR 50
-#define LEFW_MACRO_RISETHRESH 51
-#define LEFW_MACRO_RISEVOLTAGETHRESHOLD 52
-#define LEFW_MACRO_SOURCE 53
-#define LEFW_MACRO_TIEOFFR 54
-#define LEFW_MACRO_TIMING 55
-#define LEFW_MACRO_VHI 56
-#define LEFW_MACRO_VLO 57
-#define LEFW_MINFEATURE 58
-#define LEFW_NONDEFAULTRULE 59
-#define LEFW_NONDEFAULTRULELAYER 60
-#define LEFW_NOISEMARGIN 61
-#define LEFW_NOISETABLE 62
-#define LEFW_NOWIREEXTATPIN 63
-#define LEFW_PROPERTYDEF 64
-#define LEFW_SCALEFACTOR 65
-#define LEFW_SITE 66
-#define LEFW_SPACING 67
-#define LEFW_THRESHOLD1 68
-#define LEFW_THRESHOLD2 69
-#define LEFW_UNITS 70
-#define LEFW_VERSION 71
-#define LEFW_VIA 72
-#define LEFW_VIAFOREIGN 73
-#define LEFW_VIARULE 74
-#define LEFW_VIARULEGENERATE 75
-#define LEFW_VIARULEGEN 76
-#define LEFW_VIATOPOFSTACKONLY 77
-#define LEFW_VIAVIARULE 78
+  LEFW_ANTENNASIZE = 18,
+  LEFW_ARRAY = 19,
+  LEFW_BEGINEXT = 20,
+  LEFW_BUSBITCHARS = 21,
+  LEFW_CASESENSITIVE = 22,
+  LEFW_CORRECTTABLE = 23,
+  LEFW_DIELECTRIC = 24,
+  LEFW_DIVIDERCHAR = 25,
+  LEFW_EDGERATE = 26,
+  LEFW_IRDROP = 27,
+  LEFW_LAYER = 28,
+  LEFW_LAYERACCURRENT = 29,
+  LEFW_LAYERDCCURRENT = 30,
+  LEFW_LAYERROUTING = 31,
+  LEFW_LAYERROUTINGWIDTH = 32,
+  LEFW_MACRO = 33,
+  LEFW_MACRO_CAPACITANCE = 34,
+  LEFW_MACRO_INPUTNOISEMARGIN = 35,
+  LEFW_MACRO_FALLCURRENTSOURCE = 36,
+  LEFW_MACRO_FALLSATCUR = 37,
+  LEFW_MACRO_FALLTHRESH = 38,
+  LEFW_MACRO_FALLVOLTAGETHRESHOLD = 39,
+  LEFW_MACRO_IV_TABLES = 40,
+  LEFW_MACRO_LEAKAGE = 41,
+  LEFW_MACRO_LEQ = 42,
+  LEFW_MACRO_OUTPUTNOISEMARGIN = 43,
+  LEFW_MACRO_OUTPUTRESISTANCE = 44,
+  LEFW_MACRO_PINFOREIGN = 45,
+  LEFW_MACRO_PINLEQ = 46,
+  LEFW_MACRO_POWER = 47,
+  LEFW_MACRO_PULLDOWNRES = 48,
+  LEFW_MACRO_RESISTANCE = 49,
+  LEFW_MACRO_RISESATCUR = 50,
+  LEFW_MACRO_RISETHRESH = 51,
+  LEFW_MACRO_RISEVOLTAGETHRESHOLD = 52,
+  LEFW_MACRO_SOURCE = 53,
+  LEFW_MACRO_TIEOFFR = 54,
+  LEFW_MACRO_TIMING = 55,
+  LEFW_MACRO_VHI = 56,
+  LEFW_MACRO_VLO = 57,
+  LEFW_MINFEATURE = 58,
+  LEFW_NONDEFAULTRULE = 59,
+  LEFW_NONDEFAULTRULELAYER = 60,
+  LEFW_NOISEMARGIN = 61,
+  LEFW_NOISETABLE = 62,
+  LEFW_NOWIREEXTATPIN = 63,
+  LEFW_PROPERTYDEF = 64,
+  LEFW_SCALEFACTOR = 65,
+  LEFW_SITE = 66,
+  LEFW_SPACING = 67,
+  LEFW_THRESHOLD1 = 68,
+  LEFW_THRESHOLD2 = 69,
+  LEFW_UNITS = 70,
+  LEFW_VERSION = 71,
+  LEFW_VIA = 72,
+  LEFW_VIAFOREIGN = 73,
+  LEFW_VIARULE = 74,
+  LEFW_VIARULEGENERATE = 75,
+  LEFW_VIARULEGEN = 76,
+  LEFW_VIATOPOFSTACKONLY = 77,
+  LEFW_VIAVIARULE = 78,
 
-#define LEFW_END 79
-#define LEFW_ARRAY_END 80
-#define LEFW_BEGINEXT_END 81
-#define LEFW_CORRECTTABLE_END 82
-#define LEFW_IRDROP_END 83
-#define LEFW_LAYER_END 84
-#define LEFW_LAYERROUTING_END 85
-#define LEFW_LAYERROUTING_SPACINGTABLE_END 86
-#define LEFW_MACRO_END 87
-#define LEFW_NOISETABLE_END 88
-#define LEFW_NONDEFAULTRULE_END 89
-#define LEFW_PROPERTYDEF_END 90
-#define LEFW_SITE_END 91
-#define LEFW_SPACING_END 92
-#define LEFW_VIA_END 93
-#define LEFW_VIARULE_END 94
-#define LEFW_VIARULEGEN_END 95
-#define LEFW_UNITS_END 96
+  LEFW_END = 79,
+  LEFW_ARRAY_END = 80,
+  LEFW_BEGINEXT_END = 81,
+  LEFW_CORRECTTABLE_END = 82,
+  LEFW_IRDROP_END = 83,
+  LEFW_LAYER_END = 84,
+  LEFW_LAYERROUTING_END = 85,
+  LEFW_LAYERROUTING_SPACINGTABLE_END = 86,
+  LEFW_MACRO_END = 87,
+  LEFW_NOISETABLE_END = 88,
+  LEFW_NONDEFAULTRULE_END = 89,
+  LEFW_PROPERTYDEF_END = 90,
+  LEFW_SITE_END = 91,
+  LEFW_SPACING_END = 92,
+  LEFW_VIA_END = 93,
+  LEFW_VIARULE_END = 94,
+  LEFW_VIARULEGEN_END = 95,
+  LEFW_UNITS_END = 96,
 
-// 5.4
-// ANTENNA for LAYER
-#define LEFW_ANTENNAINPUTGATEAREA 97
-#define LEFW_ANTENNAINOUTDIFFAREA 98
-#define LEFW_ANTENNAOUTPUTDIFFAREA 99
-#define LEFW_ANTENNAMODEL 100
-#define LEFW_ANTENNAAREARATIO 101
-#define LEFW_ANTENNADIFFAREARATIO 102
-#define LEFW_ANTENNADIFFAREARATIOPWL 103
-#define LEFW_ANTENNACUMAREARATIO 104
-#define LEFW_ANTENNACUMDIFFAREARATIO 105
-#define LEFW_ANTENNACUMDIFFAREARATIOPWL 106
-#define LEFW_ANTENNAAREAFACTOR 107
-#define LEFW_ANTENNASIDEAREARATIO 108
-#define LEFW_ANTENNADIFFSIDEAREARATIO 109
-#define LEFW_ANTENNADIFFSIDEAREARATIOPWL 110
-#define LEFW_ANTENNACUMSIDEAREARATIO 111
-#define LEFW_ANTENNACUMDIFFSIDEAREARATIO 112
-#define LEFW_ANTENNACUMDIFFSIDEAREARATIOPWL 113
-#define LEFW_ANTENNASIDEAREAFACTOR 114
-// ANTENNA for MACRO PIN
-#define LEFW_ANTENNAPARTIALMETALAREA 115
-#define LEFW_ANTENNAPARTIALMETALSIDEAREA 116
-#define LEFW_ANTENNAGATEAREA 117
-#define LEFW_ANTENNADIFFAREA 118
-#define LEFW_ANTENNAMAXAREACAR 119
-#define LEFW_ANTENNAMAXSIDEAREACAR 120
-#define LEFW_ANTENNAPARTIALCUTAREA 121
-#define LEFW_ANTENNAMAXCUTCAR 122
-#define LEFW_CLEARANCEMEASURE 123
-#define LEFW_DENSITYCHECKWINDOW 124
-#define LEFW_DENSITYCHECKSTEP 125
-#define LEFW_DESIGNRULEWIDTH 126
-#define LEFW_FILLACTIVESPACING 127
-#define LEFW_MANUFACTURINGGRID 128
-#define LEFW_MAXADJACENTSLOTSPACING 129
-#define LEFW_MAXCOAXIALSLOTSPACING 130
-#define LEFW_MAXEDGESLOTSPACING 131
-#define LEFW_MAXIMUMDENSITY 132
-#define LEFW_MINIMUMDENSITY 133
-#define LEFW_ROWABUTSPACING 134
-#define LEFW_ROWMINSPACING 135
-#define LEFW_SLOTWIREWIDTH 136
-#define LEFW_SLOTWIRELENGTH 137
-#define LEFW_SLOTWIDTH 138
-#define LEFW_SLOTLENGTH 139
-#define LEFW_SPLITWIREWIDTH 140
-#define LEFW_USEMINSPACING 141
-#define LEFW_FIXEDMASK 142
+  // 5.4
+  // ANTENNA for LAYER
+  LEFW_ANTENNAINPUTGATEAREA = 97,
+  LEFW_ANTENNAINOUTDIFFAREA = 98,
+  LEFW_ANTENNAOUTPUTDIFFAREA = 99,
+  LEFW_ANTENNAMODEL = 100,
+  LEFW_ANTENNAAREARATIO = 101,
+  LEFW_ANTENNADIFFAREARATIO = 102,
+  LEFW_ANTENNADIFFAREARATIOPWL = 103,
+  LEFW_ANTENNACUMAREARATIO = 104,
+  LEFW_ANTENNACUMDIFFAREARATIO = 105,
+  LEFW_ANTENNACUMDIFFAREARATIOPWL = 106,
+  LEFW_ANTENNAAREAFACTOR = 107,
+  LEFW_ANTENNASIDEAREARATIO = 108,
+  LEFW_ANTENNADIFFSIDEAREARATIO = 109,
+  LEFW_ANTENNADIFFSIDEAREARATIOPWL = 110,
+  LEFW_ANTENNACUMSIDEAREARATIO = 111,
+  LEFW_ANTENNACUMDIFFSIDEAREARATIO = 112,
+  LEFW_ANTENNACUMDIFFSIDEAREARATIOPWL = 113,
+  LEFW_ANTENNASIDEAREAFACTOR = 114,
+  // ANTENNA for MACRO PIN
+  LEFW_ANTENNAPARTIALMETALAREA = 115,
+  LEFW_ANTENNAPARTIALMETALSIDEAREA = 116,
+  LEFW_ANTENNAGATEAREA = 117,
+  LEFW_ANTENNADIFFAREA = 118,
+  LEFW_ANTENNAMAXAREACAR = 119,
+  LEFW_ANTENNAMAXSIDEAREACAR = 120,
+  LEFW_ANTENNAPARTIALCUTAREA = 121,
+  LEFW_ANTENNAMAXCUTCAR = 122,
+  LEFW_CLEARANCEMEASURE = 123,
+  LEFW_DENSITYCHECKWINDOW = 124,
+  LEFW_DENSITYCHECKSTEP = 125,
+  LEFW_DESIGNRULEWIDTH = 126,
+  LEFW_FILLACTIVESPACING = 127,
+  LEFW_MANUFACTURINGGRID = 128,
+  LEFW_MAXADJACENTSLOTSPACING = 129,
+  LEFW_MAXCOAXIALSLOTSPACING = 130,
+  LEFW_MAXEDGESLOTSPACING = 131,
+  LEFW_MAXIMUMDENSITY = 132,
+  LEFW_MINIMUMDENSITY = 133,
+  LEFW_ROWABUTSPACING = 134,
+  LEFW_ROWMINSPACING = 135,
+  LEFW_SLOTWIREWIDTH = 136,
+  LEFW_SLOTWIRELENGTH = 137,
+  LEFW_SLOTWIDTH = 138,
+  LEFW_SLOTLENGTH = 139,
+  LEFW_SPLITWIREWIDTH = 140,
+  LEFW_USEMINSPACING = 141,
+  LEFW_FIXEDMASK = 142,
 
-#define LEFW_DONE 999
+  LEFW_DONE = 999,
+};
 
-#define MAXSYN 143
+static constexpr int MAXSYN = 143;
 
 // *****************************************************************************
 // Global Variables
@@ -206,48 +210,44 @@ using LEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 LEFI_LOG_FUNCTION lefwErrorLogFunction;
 LEFI_WARNING_LOG_FUNCTION lefwWarningLogFunction;
 
-FILE* lefwFile = nullptr;         // File to write to.
-int lefwSynArray[MAXSYN];         // array of syntax
-int lefwLines = 0;                // number of lines written
-int lefwState = LEFW_UNINIT;      // Current state of writer
-int lefwDidInit = 0;              // required section
-int lefwDidLayer = 0;             // required section
-int lefwDidVia = 0;               // required section
-int lefwDidViaRule = 0;           // required section
-int lefwDidViaSite = 0;           // required section
-int lefwDidViaMacro = 0;          // required section
-int lefwCounter = 0;              // number of nets, components in section
-int lefwLineItemCounter = 0;      // number of items on current line
-int lefwHasArrayReq = 0;          // array required data
-int lefwIsArrayFloorp = 0;        // array floorplan flag
-int lefwIsArrayDef = 0;           // array default cap flag
-int lefwIsCorrectTable = 0;       // correctiontable flag
-int lefwIsCut = 0;                // cut layer
-int lefwIsEdgerate = 0;           // edgerate within noisetable
-int lefwIsFloorp = 0;             // floorplan within array
-int lefwIsImplant = 0;            // implant layer
-int lefwIsMacroDensity = 0;       // macro density flag
-int lefwIsMacroObs = 0;           // macro obs flag
-int lefwIsMacroObsLayer = 0;      // macro obs layer within macro obs
-int lefwIsMacroPin = 0;           // macro pin flag
-int lefwIsMacroPinPortLayer = 0;  // macro pin port layer within macro pin port
-int lefwIsMacroPinPort = 0;       // macro pin port within macro pin
-int lefwIsMacroTiming = 0;        // macro timing flag
-int lefwIsMacroTimingModel = 0;   // macro timing model flag
-int lefwIsMaxviastack = 0;        // maximum stacked-via
-int lefwIsNoiseTable = 0;         // noisetable flag
-int lefwIsNonDefaultRule = 0;     // nondefaultrule flag
-int lefwIsOutResist = 0;          // outputResistance within edgerate
-int lefwIsRouting = 0;            // routing
-int lefwIsRoutingMinCut = 0;      // routing Minimumcut
-int lefwIsRoutingMinCutDist = 0;  // routing Minimumcut distance
-int lefwIsRoutingMinCutLen = 0;   // routing Minimumcut length within
-int lefwIsRoutingReqData = 0;     // layer routing required data are provided
-int lefwNumViaRuleLayers = 0;     // number of via rule in a via rule
-int lefwOldState = 0;             // the previous state
-int lefwTableLen = 0;             // width or cutarea for the tableEntries
-int lefwHasInit = 0;              // for lefwInit has called
-int lefwHasInitCbk = 0;           // for lefwInitCbk has called
+FILE* lefwFile = nullptr;              // File to write to.
+static int lefwSynArray[MAXSYN];       // array of syntax
+static int lefwLines = 0;              // number of lines written
+static State lefwState = LEFW_UNINIT;  // Current state of writer
+static int lefwDidInit = 0;            // required section
+static int lefwDidLayer = 0;           // required section
+static int lefwHasArrayReq = 0;        // array required data
+static int lefwIsArrayFloorp = 0;      // array floorplan flag
+static int lefwIsArrayDef = 0;         // array default cap flag
+static int lefwIsCorrectTable = 0;     // correctiontable flag
+static int lefwIsCut = 0;              // cut layer
+static int lefwIsEdgerate = 0;         // edgerate within noisetable
+static int lefwIsFloorp = 0;           // floorplan within array
+static int lefwIsImplant = 0;          // implant layer
+static int lefwIsMacroDensity = 0;     // macro density flag
+static int lefwIsMacroObs = 0;         // macro obs flag
+static int lefwIsMacroObsLayer = 0;    // macro obs layer within macro obs
+static int lefwIsMacroPin = 0;         // macro pin flag
+static int lefwIsMacroPinPortLayer
+    = 0;  // macro pin port layer within macro pin port
+static int lefwIsMacroPinPort = 0;       // macro pin port within macro pin
+static int lefwIsMacroTiming = 0;        // macro timing flag
+static int lefwIsMacroTimingModel = 0;   // macro timing model flag
+static int lefwIsMaxviastack = 0;        // maximum stacked-via
+static int lefwIsNoiseTable = 0;         // noisetable flag
+static int lefwIsNonDefaultRule = 0;     // nondefaultrule flag
+static int lefwIsOutResist = 0;          // outputResistance within edgerate
+static int lefwIsRouting = 0;            // routing
+static int lefwIsRoutingMinCut = 0;      // routing Minimumcut
+static int lefwIsRoutingMinCutDist = 0;  // routing Minimumcut distance
+static int lefwIsRoutingMinCutLen = 0;   // routing Minimumcut length within
+static int lefwIsRoutingReqData
+    = 0;  // layer routing required data are provided
+static int lefwNumViaRuleLayers = 0;      // number of via rule in a via rule
+static State lefwOldState = LEFW_UNINIT;  // the previous state
+static int lefwTableLen = 0;  // width or cutarea for the tableEntries
+int lefwHasInit = 0;          // for lefwInit has called
+int lefwHasInitCbk = 0;       // for lefwInitCbk has called
 static int lefwWriteEncrypt
     = 0;                      // for writing out encrypted file, default is 0
 static int prtSemiColon = 0;  // sometimes ; is not printed yet
@@ -410,7 +410,8 @@ char lefwStateStr[MAXSYN][80] = {
     "SLOTWIDTH",                                      // 138
     "SLOTLENGTH",                                     // 139
     "SPLITWIREWIDTH",                                 // 140
-    "USEMINSPACING PIN"                               // 141
+    "USEMINSPACING PIN",                              // 141
+    "FIXEDMASK"                                       // 142
 };
 
 // internal function
@@ -5393,9 +5394,9 @@ int lefwViaRuleLayer(const char* layerName,
   if (lefwNumViaRuleLayers >= 2) {
     return LEFW_BAD_ORDER;
   }
-  if ((status = lefwViaRulePrtLayer(
-           layerName, direction, minWidth, maxWidth, overhang, metalOverhang))
-      != LEFW_OK) {
+  status = lefwViaRulePrtLayer(
+      layerName, direction, minWidth, maxWidth, overhang, metalOverhang);
+  if (status != LEFW_OK) {
     return status;
   }
   lefwNumViaRuleLayers++;
@@ -5527,9 +5528,9 @@ int lefwViaRuleGenLayer(const char* layerName,
   } else {
     fprintf(lefwFile, "\n");
   }
-  if ((status = lefwViaRulePrtLayer(
-           layerName, direction, minWidth, maxWidth, overhang, metalOverhang))
-      != LEFW_OK) {
+  status = lefwViaRulePrtLayer(
+      layerName, direction, minWidth, maxWidth, overhang, metalOverhang);
+  if (status != LEFW_OK) {
     return status;
   }
   lefwNumViaRuleLayers++;
@@ -11156,7 +11157,6 @@ void lefwPrintError(int status)
                 versionNum);
       }
   }
-  return;
 }
 
 void lefwAddComment(const char* comment)
@@ -11168,7 +11168,6 @@ void lefwAddComment(const char* comment)
       fprintf(lefwFile, "# %s\n", comment);
     }
   }
-  return;
 }
 
 void lefwAddIndent()
@@ -11178,7 +11177,6 @@ void lefwAddIndent()
   } else {
     fprintf(lefwFile, "   ");
   }
-  return;
 }
 
 // ***************************

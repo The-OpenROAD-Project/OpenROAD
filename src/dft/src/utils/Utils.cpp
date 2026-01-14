@@ -17,6 +17,7 @@
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/SdcClass.hh"
+#include "utl/Logger.h"
 
 namespace dft::utils {
 

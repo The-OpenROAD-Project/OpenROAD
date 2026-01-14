@@ -34,6 +34,7 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
@@ -70,7 +71,7 @@ void defiAssertion::Init()
 void defiAssertion::Destroy()
 {
   free(netName_);
-  free((char*) (itemTypes_));
+  free(itemTypes_);
   free((char*) (items_));
 }
 
@@ -384,7 +385,7 @@ void defiAssertion::bumpItems()
     newTypes[i] = itemTypes_[i];
   }
   free((char*) items_);
-  free((char*) itemTypes_);
+  free(itemTypes_);
   items_ = newItems;
   itemTypes_ = newTypes;
 }

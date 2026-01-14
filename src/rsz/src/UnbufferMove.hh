@@ -30,7 +30,7 @@ class UnbufferMove : public BaseMove
 
   bool removeBufferIfPossible(Instance* buffer, bool honorDontTouchFixed);
   bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed);
-  void removeBuffer(Instance* buffer);
+  bool removeBuffer(Instance* buffer);
 
  private:
   bool bufferBetweenPorts(Instance* buffer);

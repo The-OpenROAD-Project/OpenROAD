@@ -17,6 +17,8 @@
 #include "boost/heap/d_ary_heap.hpp"
 #include "lemon/list_graph.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
+#include "utl/Logger.h"
 
 namespace pdr {
 
@@ -433,6 +435,15 @@ Tree primDijkstra(const vector<int>& x,
                   const float alpha,
                   Logger* logger)
 {
+  if (x.size() != y.size()) {
+    logger->error(
+        utl::STT, 8, "x size ({}) != y size ({})", x.size(), y.size());
+  }
+
+  if (x.empty()) {
+    logger->error(utl::STT, 9, "Invalid request for an empty Steiner tree.");
+  }
+
   ListGraph graph;
   ListGraph::NodeMap<Point> node_point(graph);  // Node -> location
 

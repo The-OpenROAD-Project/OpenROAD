@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "optimization/detailed_manager.h"
@@ -313,8 +315,8 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 double ShiftLegalizer::clump(std::vector<Node*>& order)
 {
   // Clumps provided cells.
-  std::fill(offset_.begin(), offset_.end(), 0);
-  std::fill(ptr_.begin(), ptr_.end(), (Clump*) nullptr);
+  std::ranges::fill(offset_, 0);
+  std::ranges::fill(ptr_, (Clump*) nullptr);
 
   const size_t n = dummiesLeft_.size() + order.size() + dummiesRight_.size();
 

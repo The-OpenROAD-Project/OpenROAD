@@ -1,7 +1,8 @@
-#define BOOST_TEST_MODULE TestGroup
+#include <array>
 #include <string>
+#include <utility>
 
-#include "boost/test/included/unit_test.hpp"
+#include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -9,13 +10,14 @@
 namespace odb {
 namespace {
 
-struct F_DETAILED
+class GroupFixture : public SimpleDbFixture
 {
-  F_DETAILED()
+ protected:
+  GroupFixture()
   {
-    db = create2LevetDbNoBTerms();
-    block = db->getChip()->getBlock();
-    lib = db->findLib("lib1");
+    create2LevetDbNoBTerms();
+    block = db_->getChip()->getBlock();
+    lib = db_->findLib("lib1");
     master_mod1 = dbModule::create(block, "master_mod1");
     master_mod2 = dbModule::create(block, "master_mod2");
     master_mod3 = dbModule::create(block, "master_mod3");
@@ -53,7 +55,6 @@ struct F_DETAILED
     domain->addPowerNet(n2);
     domain->addPowerNet(n3);
   }
-  ~F_DETAILED() { dbDatabase::destroy(db); }
   dbDatabase* db;
   dbLib* lib;
   dbBlock* block;
@@ -77,179 +78,161 @@ struct F_DETAILED
   dbGroup* child3;
   dbRegion* region;
 };
-BOOST_FIXTURE_TEST_SUITE(test_suite, F_DETAILED)
-BOOST_AUTO_TEST_CASE(test_group_default)
+
+TEST_F(GroupFixture, test_group_default)
 {
-  BOOST_TEST(group != nullptr);
-  BOOST_TEST(dbGroup::create(block, "group") == nullptr);
-  BOOST_TEST(block->getGroups().size() == 5);
+  ASSERT_NE(group, nullptr);
+  EXPECT_EQ(dbGroup::create(block, "group"), nullptr);
+  EXPECT_EQ(block->getGroups().size(), 5);
   dbGroup* new_group = block->findGroup("group");
-  BOOST_TEST(new_group != nullptr);
-  BOOST_TEST(std::string(new_group->getName()) == "group");
+  ASSERT_NE(new_group, nullptr);
+  EXPECT_STREQ(new_group->getName(), "group");
   dbGroup::destroy(new_group);
-  BOOST_TEST(block->getGroups().size() == 4);
-  BOOST_TEST(block->findGroup("group") == nullptr);
-  BOOST_TEST(region->getGroups().size() == 1);
-  BOOST_TEST(*region->getGroups().begin() == domain);
-  BOOST_TEST(domain->getRegion() == region);
-  BOOST_TEST(child1->getType() == dbGroupType::PHYSICAL_CLUSTER);
-  BOOST_TEST(domain->getType() == dbGroupType::VOLTAGE_DOMAIN);
+  EXPECT_EQ(block->getGroups().size(), 4);
+  EXPECT_EQ(block->findGroup("group"), nullptr);
+  EXPECT_EQ(region->getGroups().size(), 1);
+  EXPECT_EQ(*region->getGroups().begin(), domain);
+  EXPECT_EQ(domain->getRegion(), region);
+  EXPECT_EQ(child1->getType(), dbGroupType::PHYSICAL_CLUSTER);
+  EXPECT_EQ(domain->getType(), dbGroupType::VOLTAGE_DOMAIN);
   domain->setType(dbGroupType::PHYSICAL_CLUSTER);
-  BOOST_TEST(domain->getType() == dbGroupType::PHYSICAL_CLUSTER);
+  EXPECT_EQ(domain->getType(), dbGroupType::PHYSICAL_CLUSTER);
 }
-BOOST_AUTO_TEST_CASE(test_group_modinst)
+TEST_F(GroupFixture, test_group_modinst)
 {
   auto insts = group->getModInsts();
-  BOOST_TEST(insts.size() == 3);
-  BOOST_TEST(*insts.begin() == i3);
-  BOOST_TEST(i3->getGroup() == group);
+  EXPECT_EQ(insts.size(), 3);
+  EXPECT_EQ(*insts.begin(), i3);
+  EXPECT_EQ(i3->getGroup(), group);
   group->removeModInst(i3);
-  BOOST_TEST(insts.size() == 2);
-  BOOST_TEST(i3->getGroup() == nullptr);
-  BOOST_TEST(*insts.begin() == i2);
+  EXPECT_EQ(insts.size(), 2);
+  EXPECT_EQ(i3->getGroup(), nullptr);
+  EXPECT_EQ(*insts.begin(), i2);
   dbModInst::destroy(i2);
-  BOOST_TEST(insts.size() == 1);
-  BOOST_TEST(*insts.begin() == i1);
+  EXPECT_EQ(insts.size(), 1);
+  EXPECT_EQ(*insts.begin(), i1);
   dbGroup::destroy(group);
-  BOOST_TEST(i1->getGroup() == nullptr);
+  EXPECT_EQ(i1->getGroup(), nullptr);
 }
-BOOST_AUTO_TEST_CASE(test_group_inst)
+TEST_F(GroupFixture, test_group_inst)
 {
   auto insts = group->getInsts();
-  BOOST_TEST(insts.size() == 3);
-  BOOST_TEST(*insts.begin() == inst3);
-  BOOST_TEST(inst3->getGroup() == group);
+  EXPECT_EQ(insts.size(), 3);
+  EXPECT_EQ(*insts.begin(), inst3);
+  EXPECT_EQ(inst3->getGroup(), group);
   group->removeInst(inst3);
-  BOOST_TEST(insts.size() == 2);
-  BOOST_TEST(inst3->getGroup() == nullptr);
-  BOOST_TEST(*insts.begin() == inst2);
+  EXPECT_EQ(insts.size(), 2);
+  EXPECT_EQ(inst3->getGroup(), nullptr);
+  EXPECT_EQ(*insts.begin(), inst2);
   dbInst::destroy(inst2);
-  BOOST_TEST(insts.size() == 1);
-  BOOST_TEST(*insts.begin() == inst1);
+  EXPECT_EQ(insts.size(), 1);
+  EXPECT_EQ(*insts.begin(), inst1);
   dbGroup::destroy(group);
-  BOOST_TEST(inst1->getGroup() == nullptr);
+  EXPECT_EQ(inst1->getGroup(), nullptr);
 }
-BOOST_AUTO_TEST_CASE(test_group_net)
+TEST_F(GroupFixture, test_group_net)
 {
   auto power_nets = domain->getPowerNets();
   auto ground_nets = domain->getGroundNets();
-  BOOST_TEST(power_nets.size() == 3);
-  BOOST_TEST(ground_nets.size() == 0);
-  BOOST_TEST(*power_nets.begin() == n1);
+  EXPECT_EQ(power_nets.size(), 3);
+  EXPECT_EQ(ground_nets.size(), 0);
+  EXPECT_EQ(*power_nets.begin(), n1);
   domain->removeNet(n1);
-  BOOST_TEST(power_nets.size() == 2);
-  BOOST_TEST(*power_nets.begin() == n2);
+  EXPECT_EQ(power_nets.size(), 2);
+  EXPECT_EQ(*power_nets.begin(), n2);
   dbNet::destroy(n2);
-  BOOST_TEST(power_nets.size() == 1);
-  BOOST_TEST(*power_nets.begin() == n3);
+  EXPECT_EQ(power_nets.size(), 1);
+  EXPECT_EQ(*power_nets.begin(), n3);
   domain->addGroundNet(n3);
-  BOOST_TEST(power_nets.size() == 0);
-  BOOST_TEST(ground_nets.size() == 1);
-  BOOST_TEST(*ground_nets.begin() == n3);
+  EXPECT_EQ(power_nets.size(), 0);
+  EXPECT_EQ(ground_nets.size(), 1);
+  EXPECT_EQ(*ground_nets.begin(), n3);
 }
-BOOST_AUTO_TEST_CASE(test_group_group)
+TEST_F(GroupFixture, test_group_group)
 {
   auto groups = group->getGroups();
-  BOOST_TEST(groups.size() == 3);
-  BOOST_TEST(*groups.begin() == child3);
-  BOOST_TEST(child3->getParentGroup() == group);
+  EXPECT_EQ(groups.size(), 3);
+  EXPECT_EQ(*groups.begin(), child3);
+  EXPECT_EQ(child3->getParentGroup(), group);
   group->removeGroup(child3);
-  BOOST_TEST(groups.size() == 2);
-  BOOST_TEST(child3->getParentGroup() == nullptr);
-  BOOST_TEST(*groups.begin() == child2);
+  EXPECT_EQ(groups.size(), 2);
+  EXPECT_EQ(child3->getParentGroup(), nullptr);
+  EXPECT_EQ(*groups.begin(), child2);
   dbGroup::destroy(child2);
-  BOOST_TEST(groups.size() == 1);
-  BOOST_TEST(*groups.begin() == child1);
+  EXPECT_EQ(groups.size(), 1);
+  EXPECT_EQ(*groups.begin(), child1);
   dbGroup::destroy(group);
-  BOOST_TEST(child1->getParentGroup() == nullptr);
+  EXPECT_EQ(child1->getParentGroup(), nullptr);
 }
-BOOST_AUTO_TEST_CASE(test_group_modinst_iterator)
+
+template <typename T>
+void expect_str_names(dbSet<T> objects, const std::array<const char*, 3>& names)
+{
+  for (auto [itr, i] = std::pair{objects.begin(), 0}; itr != objects.end();
+       ++itr, ++i) {
+    EXPECT_STREQ((*itr)->getName(), names[i]);
+  }
+}
+
+template <typename T>
+void expect_names(dbSet<T> objects, const std::array<const char*, 3>& names)
+{
+  for (auto [itr, i] = std::pair{objects.begin(), 0}; itr != objects.end();
+       ++itr, ++i) {
+    EXPECT_EQ((*itr)->getName(), names[i]);
+  }
+}
+
+TEST_F(GroupFixture, test_group_modinst_iterator)
 {
   dbSet<dbModInst> modinsts = group->getModInsts();
-  dbSet<dbModInst>::iterator modinst_itr;
-  int i;
-  BOOST_TEST(modinsts.reversible());
-  for (int j = 0; j < 2; j++) {
-    if (j == 1) {
-      modinsts.reverse();
-    }
-    for (modinst_itr = modinsts.begin(), i = j ? 1 : 3;
-         modinst_itr != modinsts.end();
-         ++modinst_itr, i = i + (j ? 1 : -1)) {
-      BOOST_TEST(std::string(((dbModInst*) *modinst_itr)->getName())
-                 == "i" + std::to_string(i));
-    }
-  }
+  expect_str_names(modinsts, {"i3", "i2", "i1"});
+
+  EXPECT_TRUE(modinsts.reversible());
+  modinsts.reverse();
+
+  expect_str_names(modinsts, {"i1", "i2", "i3"});
 }
-BOOST_AUTO_TEST_CASE(test_group_inst_iterator)
+TEST_F(GroupFixture, test_group_inst_iterator)
 {
   dbSet<dbInst> insts = group->getInsts();
-  dbSet<dbInst>::iterator inst_itr;
-  int i;
-  BOOST_TEST(insts.reversible());
-  for (int j = 0; j < 2; j++) {
-    if (j == 1) {
-      insts.reverse();
-    }
-    for (inst_itr = insts.begin(), i = j ? 1 : 3; inst_itr != insts.end();
-         ++inst_itr, i = i + (j ? 1 : -1)) {
-      BOOST_TEST(std::string(((dbInst*) *inst_itr)->getName())
-                 == "i" + std::to_string(i));
-    }
-  }
+  expect_names(insts, {"i3", "i2", "i1"});
+
+  EXPECT_TRUE(insts.reversible());
+  insts.reverse();
+
+  expect_names(insts, {"i1", "i2", "i3"});
 }
-BOOST_AUTO_TEST_CASE(test_group_net_iterators)
+TEST_F(GroupFixture, test_group_net_iterators)
 {
   dbSet<dbNet> nets = group->getPowerNets();
-  dbSet<dbNet>::iterator net_itr;
-  int i;
-  BOOST_TEST(nets.reversible());
-  for (int j = 0; j < 2; j++) {
-    if (j == 1) {
-      nets.reverse();
-    }
-    for (net_itr = nets.begin(), i = j ? 3 : 1; net_itr != nets.end();
-         ++net_itr, i = i + (j ? -1 : 1)) {
-      BOOST_TEST(std::string(((dbNet*) *net_itr)->getName())
-                 == "n" + std::to_string(i));
-    }
-  }
+
+  expect_names(nets, {"n3", "n2", "n1"});
+  nets.reverse();
+  expect_names(nets, {"n1", "n2", "n3"});
+
   group->addGroundNet(n1);
   group->addGroundNet(n2);
   group->addGroundNet(n3);
 
   nets = group->getGroundNets();
-  BOOST_TEST(nets.reversible());
-  for (int j = 0; j < 2; j++) {
-    if (j == 1) {
-      nets.reverse();
-    }
-    for (net_itr = nets.begin(), i = j ? 3 : 1; net_itr != nets.end();
-         ++net_itr, i = i + (j ? -1 : 1)) {
-      BOOST_TEST(std::string(((dbNet*) *net_itr)->getName())
-                 == "n" + std::to_string(i));
-    }
-  }
+  EXPECT_TRUE(nets.reversible());
+
+  expect_names(nets, {"n1", "n2", "n3"});
+  nets.reverse();
+  expect_names(nets, {"n3", "n2", "n1"});
 }
-BOOST_AUTO_TEST_CASE(test_group_group_iterator)
+TEST_F(GroupFixture, test_group_group_iterator)
 {
   dbSet<dbGroup> children = group->getGroups();
-  dbSet<dbGroup>::iterator group_itr;
-  int i;
-  BOOST_TEST(children.reversible());
-  for (int j = 0; j < 2; j++) {
-    if (j == 1) {
-      children.reverse();
-    }
-    for (group_itr = children.begin(), i = j ? 1 : 3;
-         group_itr != children.end();
-         ++group_itr, i = i + (j ? 1 : -1)) {
-      BOOST_TEST(std::string(((dbGroup*) *group_itr)->getName())
-                 == "child" + std::to_string(i));
-    }
-  }
+
+  expect_str_names(children, {"child3", "child2", "child1"});
+
+  EXPECT_TRUE(children.reversible());
+  children.reverse();
+
+  expect_str_names(children, {"child1", "child2", "child3"});
 }
-BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
 }  // namespace odb

@@ -5,15 +5,16 @@
 
 #include <algorithm>
 #include <cassert>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <iosfwd>
+#include <numbers>
 #include <tuple>
 #include <vector>
 
 #include "odb/isotropy.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -30,10 +31,10 @@ class Point
   Point(int x, int y);
   ~Point() = default;
   Point& operator=(const Point& rhs) = default;
-  bool operator==(const Point& rhs) const;
-  bool operator!=(const Point& rhs) const { return !(*this == rhs); };
-  bool operator<(const Point& rhs) const;
-  bool operator>=(const Point& rhs) const { return !(*this < rhs); }
+
+#ifndef SWIG
+  auto operator<=>(const Point&) const = default;
+#endif
 
   int get(Orientation2D orient) const;
   int getX() const { return x_; }
@@ -76,10 +77,9 @@ class Point3D
   Point3D(const Point3D& p) : x_(p.x()), y_(p.y()), z_(p.z()) {}
   Point3D(const Point& p, int z) : x_(p.x()), y_(p.y()), z_(z) {}
 
-  bool operator==(const Point3D& rhs) const;
-  bool operator!=(const Point3D& rhs) const { return !(*this == rhs); }
-  bool operator<(const Point3D& rhs) const;
-  bool operator>=(const Point3D& rhs) const { return !(*this < rhs); }
+#ifndef SWIG
+  auto operator<=>(const Point3D&) const = default;
+#endif
 
   int z() const { return z_; }
   void setZ(int z) { z_ = z; }
@@ -104,6 +104,117 @@ class Point3D
 };
 
 std::ostream& operator<<(std::ostream& os, const Point3D& pIn);
+
+class Cuboid
+{
+ public:
+  Cuboid() = default;
+  Cuboid(const Cuboid& other) = default;
+  Cuboid(const Point3D& p1, const Point3D& p2);
+  Cuboid(int x1, int y1, int z1, int x2, int y2, int z2);
+
+  Cuboid& operator=(const Cuboid& b) = default;
+#ifndef SWIG
+  auto operator<=>(const Cuboid&) const = default;
+#endif
+
+  // Reinitialize the cuboid
+  void init(int x1, int y1, int z1, int x2, int y2, int z2);
+
+  // Reinitialize the cuboid without normalization
+  void reset(int x1, int y1, int z1, int x2, int y2, int z2);
+
+  // Moves the cuboid to the new point.
+  void moveTo(int x, int y, int z);
+
+  // Moves the cuboid by the offset amount
+  void moveDelta(int dx, int dy, int dz);
+
+  void mergeInit();
+
+  // Indicates if the cuboid has a negative width, height or depth
+  bool isInverted() const;
+
+  void set_xlo(int x);
+  void set_xhi(int x);
+  void set_ylo(int y);
+  void set_yhi(int y);
+  void set_zlo(int z);
+  void set_zhi(int z);
+
+  int xMin() const { return xlo_; }
+  int yMin() const { return ylo_; }
+  int zMin() const { return zlo_; }
+  int xMax() const { return xhi_; }
+  int yMax() const { return yhi_; }
+  int zMax() const { return zhi_; }
+  int dx() const { return xhi_ - xlo_; }
+  int dy() const { return yhi_ - ylo_; }
+  int dz() const { return zhi_ - zlo_; }
+  int xCenter() const { return (xlo_ + xhi_) / 2; }
+  int yCenter() const { return (ylo_ + yhi_) / 2; }
+  int zCenter() const { return (zlo_ + zhi_) / 2; }
+
+  std::vector<Point3D> getPoints() const;
+  Point3D lll() const;  // lower corner (xMin, yMin, zMin)
+  Point3D uur() const;  // upper corner (xMax, yMax, zMax)
+  Point3D center() const;
+
+  // A point intersects any part of this cuboid.
+  bool intersects(const Point3D& p) const;
+
+  // A cuboid intersects any part of this cuboid.
+  bool intersects(const Cuboid& b) const;
+
+  // A point intersects the interior of this cuboid
+  bool overlaps(const Point3D& p) const;
+
+  // A cuboid intersects the interior of this cuboid
+  bool overlaps(const Cuboid& b) const;
+
+  //  A cuboid is contained in the interior of this cuboid
+  bool contains(const Cuboid& b) const;
+
+  //  A cuboid is completely contained in the interior of this cuboid,
+  bool inside(const Cuboid& b) const;
+
+  // Return the point inside cuboid that is closest to pt.
+  Point3D closestPtInside(const Point3D& pt) const;
+
+  // Compute the union of this cuboid and a point.
+  void merge(const Point3D& p, Cuboid& result);
+
+  // Compute the union of these two cuboides.
+  void merge(const Cuboid& b, Cuboid& result);
+
+  // Compute the union of this cuboid an point.
+  // The result is stored in this cuboid.
+  void merge(const Point3D& p);
+
+  // Compute the union of these two cuboides. The result is stored in this
+  // cuboid.
+  void merge(const Cuboid& b);
+
+  // Bloat each side of the cuboid by the margin.
+  void bloat(int margin, Cuboid& result) const;
+
+  // Compute the intersection of these two cuboides.
+  Cuboid intersect(const Cuboid& b) const;
+
+  int64_t volume() const;
+
+  void printf(FILE* fp, const char* prefix = "");
+  void print(const char* prefix = "");
+
+ private:
+  int xlo_ = 0;
+  int ylo_ = 0;
+  int zlo_ = 0;
+  int xhi_ = 0;
+  int yhi_ = 0;
+  int zhi_ = 0;
+};
+std::ostream& operator<<(std::ostream& os, const Cuboid& cIn);
 
 /*
 an Oct represents a 45-degree routing segment as 2 connected octagons
@@ -174,8 +285,9 @@ class Oct
   Oct(int x1, int y1, int x2, int y2, int width);
   ~Oct() = default;
   Oct& operator=(const Oct& r) = default;
-  bool operator==(const Oct& r) const;
-  bool operator!=(const Oct& r) const { return !(*this == r); };
+#ifndef SWIG
+  auto operator<=>(const Oct&) const = default;
+#endif
   void init(Point p1, Point p2, int width);
   OCT_DIR getDir() const;
   Point getCenterHigh() const;
@@ -212,12 +324,9 @@ class Rect
   Rect(int x1, int y1, int x2, int y2);
 
   Rect& operator=(const Rect& r) = default;
-  bool operator==(const Rect& r) const;
-  bool operator!=(const Rect& r) const { return !(*this == r); };
-  bool operator<(const Rect& r) const;
-  bool operator>(const Rect& r) const { return r < *this; }
-  bool operator<=(const Rect& r) const { return !(*this > r); }
-  bool operator>=(const Rect& r) const { return !(*this < r); }
+#ifndef SWIG
+  auto operator<=>(const Rect&) const = default;
+#endif
 
   // Reinitialize the rectangle
   void init(int x1, int y1, int x2, int y2);
@@ -239,7 +348,7 @@ class Rect
 
   int minDXDY() const;
   int maxDXDY() const;
-  int getDir() const;
+  Orientation2D getDir() const;
 
   void set_xlo(int x);
   void set_xhi(int x);
@@ -353,12 +462,9 @@ class Polygon
   std::vector<Point> getPoints() const;
   void setPoints(const std::vector<Point>& points);
 
-  bool operator==(const Polygon& p) const;
-  bool operator!=(const Polygon& p) const { return !(*this == p); };
-  bool operator<(const Polygon& p) const;
-  bool operator>(const Polygon& p) const { return p < *this; }
-  bool operator<=(const Polygon& p) const { return !(*this > p); }
-  bool operator>=(const Polygon& p) const { return !(*this < p); }
+#ifndef SWIG
+  auto operator<=>(const Polygon&) const = default;
+#endif
 
   bool isRect() const;
   Rect getEnclosingRect() const;
@@ -392,12 +498,9 @@ class Line
   Line(int x0, int y0, int x1, int y1);
 
   Line& operator=(const Line& r) = default;
-  bool operator==(const Line& r) const;
-  bool operator!=(const Line& r) const { return !(*this == r); };
-  bool operator<(const Line& r) const;
-  bool operator>(const Line& r) const { return r < *this; }
-  bool operator<=(const Line& r) const { return !(*this > r); }
-  bool operator>=(const Line& r) const { return !(*this < r); }
+#ifndef SWIG
+  auto operator<=>(const Line&) const = default;
+#endif
 
   std::vector<Point> getPoints() const;
   Point pt0() const;
@@ -420,11 +523,6 @@ inline Point::Point(int x, int y)
 {
   x_ = x;
   y_ = y;
-}
-
-inline bool Point::operator==(const Point& rhs) const
-{
-  return std::tie(x_, y_) == std::tie(rhs.x_, rhs.y_);
 }
 
 inline int Point::get(Orientation2D orient) const
@@ -479,27 +577,6 @@ inline int64_t Point::manhattanDistance(Point p0, Point p1)
   return dx + dy;
 }
 
-inline bool Point::operator<(const Point& rhs) const
-{
-  return std::tie(x_, y_) < std::tie(rhs.x_, rhs.y_);
-}
-
-inline bool Point3D::operator==(const Point3D& rhs) const
-{
-  return std::tie(x_, y_, z_) == std::tie(rhs.x_, rhs.y_, rhs.z_);
-}
-
-inline bool Point3D::operator<(const Point3D& rhs) const
-{
-  return std::tie(x_, y_, z_) < std::tie(rhs.x_, rhs.y_, rhs.z_);
-}
-
-inline bool Rect::operator<(const Rect& rhs) const
-{
-  return std::tie(xlo_, ylo_, xhi_, yhi_)
-         < std::tie(rhs.xlo_, rhs.ylo_, rhs.xhi_, rhs.yhi_);
-}
-
 inline Rect::Rect(const int x1, const int y1, const int x2, const int y2)
 {
   init(x1, y1, x2, y2);
@@ -540,12 +617,6 @@ inline void Rect::init(int x1, int y1, int x2, int y2)
   std::tie(ylo_, yhi_) = std::minmax(y1, y2);
 }
 
-inline bool Rect::operator==(const Rect& r) const
-{
-  return std::tie(xlo_, ylo_, xhi_, yhi_)
-         == std::tie(r.xlo_, r.ylo_, r.xhi_, r.yhi_);
-}
-
 inline int Rect::minDXDY() const
 {
   return std::min(dx(), dy());
@@ -556,17 +627,14 @@ inline int Rect::maxDXDY() const
   return std::max(dx(), dy());
 }
 
-inline int Rect::getDir() const
+inline Orientation2D Rect::getDir() const
 {
   const int DX = dx();
   const int DY = dy();
   if (DX < DY) {
-    return 0;
+    return vertical;
   }
-  if (DX > DY) {
-    return 1;
-  }
-  return -1;
+  return horizontal;
 }
 
 inline void Rect::moveTo(int x, int y)
@@ -842,12 +910,6 @@ inline Oct::Oct(int x1, int y1, int x2, int y2, int width)
   init(p1, p2, width);
 }
 
-inline bool Oct::operator==(const Oct& r) const
-{
-  return std::tie(center_low_, center_high_, A_)
-         == std::tie(r.center_low_, r.center_high_, r.A_);
-}
-
 inline void Oct::init(const Point p1, const Point p2, int width)
 {
   if (p1.getY() > p2.getY()) {
@@ -940,7 +1002,7 @@ inline int Oct::yMax() const
 inline std::vector<Point> Oct::getPoints() const
 {
   OCT_DIR dir = getDir();
-  int B = ceil((A_ * 2) / (sqrt(2))) - A_;
+  int B = ceil((A_ * 2) / std::numbers::sqrt2) - A_;
   std::vector<Point> points(9);
   points[0] = points[8] = Point(center_low_.getX() - B,
                                 center_low_.getY() - A_);  // low oct (-B,-A)
@@ -1019,16 +1081,6 @@ inline bool Polygon::isRect() const
   return *this == Polygon(getEnclosingRect());
 }
 
-inline bool Polygon::operator==(const Polygon& p) const
-{
-  return points_ == p.points_;
-}
-
-inline bool Polygon::operator<(const Polygon& p) const
-{
-  return points_ < p.points_;
-}
-
 inline Line::Line(const Point& pt0, const Point& pt1) : pt0_(pt0), pt1_(pt1)
 {
 }
@@ -1060,16 +1112,6 @@ inline void Line::addY(int value)
   pt1_.setY(pt1_.getY() + value);
 }
 
-inline bool Line::operator==(const Line& r) const
-{
-  return pt0_ == r.pt0_ && pt1_ == r.pt1_;
-}
-
-inline bool Line::operator<(const Line& r) const
-{
-  return std::tie(pt0_, pt1_) < std::tie(r.pt0_, r.pt1_);
-}
-
 inline std::vector<Point> Line::getPoints() const
 {
   std::vector<Point> pts{pt0_, pt1_};
@@ -1084,6 +1126,270 @@ inline int manhattanDistance(const Rect& r, const Point& p)
   const int dx = std::abs(x - std::clamp(x, r.xMin(), r.xMax()));
   const int dy = std::abs(y - std::clamp(y, r.yMin(), r.yMax()));
   return dx + dy;
+}
+
+inline Cuboid::Cuboid(const int x1,
+                      const int y1,
+                      const int z1,
+                      const int x2,
+                      const int y2,
+                      const int z2)
+{
+  init(x1, y1, z1, x2, y2, z2);
+}
+
+inline Cuboid::Cuboid(const Point3D& p1, const Point3D& p2)
+    : Cuboid(p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z())
+{
+}
+
+inline void Cuboid::set_xlo(int x)
+{
+  xlo_ = x;
+}
+
+inline void Cuboid::set_xhi(int x)
+{
+  xhi_ = x;
+}
+
+inline void Cuboid::set_ylo(int y)
+{
+  ylo_ = y;
+}
+
+inline void Cuboid::set_yhi(int y)
+{
+  yhi_ = y;
+}
+
+inline void Cuboid::set_zlo(int z)
+{
+  zlo_ = z;
+}
+
+inline void Cuboid::set_zhi(int z)
+{
+  zhi_ = z;
+}
+
+inline void Cuboid::reset(int x1, int y1, int z1, int x2, int y2, int z2)
+{
+  xlo_ = x1;
+  xhi_ = x2;
+  ylo_ = y1;
+  yhi_ = y2;
+  zlo_ = z1;
+  zhi_ = z2;
+}
+
+inline void Cuboid::init(int x1, int y1, int z1, int x2, int y2, int z2)
+{
+  std::tie(xlo_, xhi_) = std::minmax(x1, x2);
+  std::tie(ylo_, yhi_) = std::minmax(y1, y2);
+  std::tie(zlo_, zhi_) = std::minmax(z1, z2);
+}
+
+inline void Cuboid::moveTo(int x, int y, int z)
+{
+  const int DX = dx();
+  const int DY = dy();
+  const int DZ = dz();
+  xlo_ = x;
+  ylo_ = y;
+  zlo_ = z;
+  xhi_ = x + DX;
+  yhi_ = y + DY;
+  zhi_ = z + DZ;
+}
+
+inline void Cuboid::moveDelta(int dx, int dy, int dz)
+{
+  xlo_ += dx;
+  ylo_ += dy;
+  zlo_ += dz;
+  xhi_ += dx;
+  yhi_ += dy;
+  zhi_ += dz;
+}
+
+inline std::vector<Point3D> Cuboid::getPoints() const
+{
+  return {Point3D(xlo_, ylo_, zlo_),   // min x, min y, min z
+          Point3D(xhi_, ylo_, zlo_),   // max x, min y, min z
+          Point3D(xhi_, yhi_, zlo_),   // max x, max y, min z
+          Point3D(xlo_, yhi_, zlo_),   // min x, max y, min z
+          Point3D(xlo_, ylo_, zhi_),   // min x, min y, max z
+          Point3D(xhi_, ylo_, zhi_),   // max x, min y, max z
+          Point3D(xhi_, yhi_, zhi_),   // max x, max y, max z
+          Point3D(xlo_, yhi_, zhi_)};  // min x, max y, max z
+}
+
+inline Point3D Cuboid::lll() const
+{
+  return Point3D(xlo_, ylo_, zlo_);
+}
+
+inline Point3D Cuboid::uur() const
+{
+  return Point3D(xhi_, yhi_, zhi_);
+}
+
+inline Point3D Cuboid::center() const
+{
+  return Point3D(xCenter(), yCenter(), zCenter());
+}
+
+inline bool Cuboid::intersects(const Point3D& p) const
+{
+  return (p.x() >= xlo_) && (p.x() <= xhi_) && (p.y() >= ylo_)
+         && (p.y() <= yhi_) && (p.z() >= zlo_) && (p.z() <= zhi_);
+}
+
+inline bool Cuboid::intersects(const Cuboid& b) const
+{
+  return (b.xhi_ >= xlo_) && (b.xlo_ <= xhi_) && (b.yhi_ >= ylo_)
+         && (b.ylo_ <= yhi_) && (b.zhi_ >= zlo_) && (b.zlo_ <= zhi_);
+}
+
+inline bool Cuboid::overlaps(const Point3D& p) const
+{
+  return (p.x() > xlo_) && (p.x() < xhi_) && (p.y() > ylo_) && (p.y() < yhi_)
+         && (p.z() > zlo_) && (p.z() < zhi_);
+}
+
+inline bool Cuboid::overlaps(const Cuboid& b) const
+{
+  return (b.xhi_ > xlo_) && (b.xlo_ < xhi_) && (b.yhi_ > ylo_)
+         && (b.ylo_ < yhi_) && (b.zhi_ > zlo_) && (b.zlo_ < zhi_);
+}
+
+inline bool Cuboid::contains(const Cuboid& b) const
+{
+  return (xlo_ <= b.xlo_) && (ylo_ <= b.ylo_) && (zlo_ <= b.zlo_)
+         && (xhi_ >= b.xhi_) && (yhi_ >= b.yhi_) && (zhi_ >= b.zhi_);
+}
+
+inline bool Cuboid::inside(const Cuboid& b) const
+{
+  return (xlo_ < b.xlo_) && (ylo_ < b.ylo_) && (zlo_ < b.zlo_)
+         && (xhi_ > b.xhi_) && (yhi_ > b.yhi_) && (zhi_ > b.zhi_);
+}
+
+inline Point3D Cuboid::closestPtInside(const Point3D& pt) const
+{
+  return Point3D(std::min(std::max(pt.x(), xMin()), xMax()),
+                 std::min(std::max(pt.y(), yMin()), yMax()),
+                 std::min(std::max(pt.z(), zMin()), zMax()));
+}
+
+inline void Cuboid::merge(const Point3D& p, Cuboid& result)
+{
+  result.xlo_ = std::min(xlo_, p.x());
+  result.ylo_ = std::min(ylo_, p.y());
+  result.zlo_ = std::min(zlo_, p.z());
+  result.xhi_ = std::max(xhi_, p.x());
+  result.yhi_ = std::max(yhi_, p.y());
+  result.zhi_ = std::max(zhi_, p.z());
+}
+
+inline void Cuboid::merge(const Cuboid& b, Cuboid& result)
+{
+  result.xlo_ = std::min(xlo_, b.xlo_);
+  result.ylo_ = std::min(ylo_, b.ylo_);
+  result.zlo_ = std::min(zlo_, b.zlo_);
+  result.xhi_ = std::max(xhi_, b.xhi_);
+  result.yhi_ = std::max(yhi_, b.yhi_);
+  result.zhi_ = std::max(zhi_, b.zhi_);
+}
+
+inline void Cuboid::merge(const Point3D& p)
+{
+  xlo_ = std::min(xlo_, p.x());
+  ylo_ = std::min(ylo_, p.y());
+  zlo_ = std::min(zlo_, p.z());
+  xhi_ = std::max(xhi_, p.x());
+  yhi_ = std::max(yhi_, p.y());
+  zhi_ = std::max(zhi_, p.z());
+}
+
+inline void Cuboid::merge(const Cuboid& b)
+{
+  xlo_ = std::min(xlo_, b.xlo_);
+  ylo_ = std::min(ylo_, b.ylo_);
+  zlo_ = std::min(zlo_, b.zlo_);
+  xhi_ = std::max(xhi_, b.xhi_);
+  yhi_ = std::max(yhi_, b.yhi_);
+  zhi_ = std::max(zhi_, b.zhi_);
+}
+
+inline void Cuboid::bloat(int margin, Cuboid& result) const
+{
+  result.xlo_ = xlo_ - margin;
+  result.ylo_ = ylo_ - margin;
+  result.zlo_ = zlo_ - margin;
+  result.xhi_ = xhi_ + margin;
+  result.yhi_ = yhi_ + margin;
+  result.zhi_ = zhi_ + margin;
+}
+
+inline Cuboid Cuboid::intersect(const Cuboid& b) const
+{
+  assert(intersects(b));
+  Cuboid result;
+  result.xlo_ = std::max(xlo_, b.xlo_);
+  result.ylo_ = std::max(ylo_, b.ylo_);
+  result.zlo_ = std::max(zlo_, b.zlo_);
+  result.xhi_ = std::min(xhi_, b.xhi_);
+  result.yhi_ = std::min(yhi_, b.yhi_);
+  result.zhi_ = std::min(zhi_, b.zhi_);
+  return result;
+}
+
+inline int64_t Cuboid::volume() const
+{
+  return static_cast<int64_t>(dx()) * dy() * dz();
+}
+
+inline void Cuboid::mergeInit()
+{
+  xlo_ = INT_MAX;
+  ylo_ = INT_MAX;
+  zlo_ = INT_MAX;
+  xhi_ = INT_MIN;
+  yhi_ = INT_MIN;
+  zhi_ = INT_MIN;
+}
+
+inline bool Cuboid::isInverted() const
+{
+  return xlo_ > xhi_ || ylo_ > yhi_ || zlo_ > zhi_;
+}
+
+inline void Cuboid::printf(FILE* fp, const char* prefix)
+{
+  fprintf(fp,
+          "%s%12d %12d %12d - %12d %12d %12d\n",
+          prefix,
+          xlo_,
+          ylo_,
+          zlo_,
+          dx(),
+          dy(),
+          dz());
+}
+
+inline void Cuboid::print(const char* prefix)
+{
+  fprintf(stdout,
+          "%s%12d %12d %12d - %12d %12d %12d\n",
+          prefix,
+          xlo_,
+          ylo_,
+          zlo_,
+          dx(),
+          dy(),
+          dz());
 }
 
 #ifndef SWIG

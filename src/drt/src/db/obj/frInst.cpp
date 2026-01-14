@@ -6,6 +6,7 @@
 #include "db/obj/frBlock.h"
 #include "db/obj/frMaster.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 namespace drt {
 
@@ -28,7 +29,7 @@ odb::Rect frInst::getBoundaryBBox() const
 odb::dbTransform frInst::getNoRotationTransform() const
 {
   odb::dbTransform xfm = getTransform();
-  xfm.setOrient(dbOrientType(dbOrientType::R0));
+  xfm.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
   return xfm;
 }
 

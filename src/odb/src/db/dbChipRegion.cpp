@@ -18,6 +18,7 @@
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
 #include "dbTech.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -62,7 +63,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.side_;
   stream >> obj.layer_;
   stream >> obj.box_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_bump_tbl_;
   }
   return stream;
@@ -93,7 +94,7 @@ void _dbChipRegion::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  chip_bump_tbl_->collectMemInfo(info.children_["chip_bump_tbl_"]);
+  chip_bump_tbl_->collectMemInfo(info.children["chip_bump_tbl_"]);
 }
 
 _dbChipRegion::~_dbChipRegion()
@@ -133,6 +134,25 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 }
 
 // User Code Begin dbChipRegionPublicMethods
+
+// Returns the region's cuboid in the master chip's coordinate system.
+// Note: This differs from dbChipRegionInst::getCuboid() which returns
+// the transformed cuboid in the parent's coordinate system.
+Cuboid dbChipRegion::getCuboid() const
+{
+  _dbChipRegion* obj = (_dbChipRegion*) this;
+  Rect box = obj->box_;
+  int z = 0;
+  if (getSide() == dbChipRegion::Side::FRONT) {
+    z = getChip()->getThickness();
+  } else if (getSide() == dbChipRegion::Side::BACK) {
+    z = 0;
+  } else {
+    z = getChip()->getThickness() / 2;
+  }
+  return Cuboid(box.xMin(), box.yMin(), z, box.xMax(), box.yMax(), z);
+}
+
 dbChip* dbChipRegion::getChip() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
@@ -155,7 +175,7 @@ dbTechLayer* dbChipRegion::getLayer() const
   }
 
   _dbTech* tech = (_dbTech*) chip->getBlock()->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(obj->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
 }
 
 dbChipRegion* dbChipRegion::create(dbChip* chip,

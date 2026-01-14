@@ -4,6 +4,7 @@
 #include "SplitLoadMove.hh"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <string>
 #include <utility>
@@ -12,6 +13,7 @@
 #include "BaseMove.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -28,6 +30,8 @@ using std::pair;
 using std::string;
 using std::vector;
 
+using odb::dbModNet;
+using odb::dbNet;
 using odb::Point;
 
 using utl::RSZ;
@@ -56,6 +60,21 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
                            PathExpanded* expanded,
                            float setup_slack_margin)
 {
+  // SplitLoadMove: Optimize timing by splitting high-fanout nets
+  //
+  // Purpose: Reduce capacitive load on critical path by dividing loads into
+  //          two groups based on timing slack.
+  //
+  // Algorithm:
+  //   1. Sort all fanout loads by slack margin (timing slack relative to
+  //   driver)
+  //   2. Upper 50% (loads with MORE timing slack)  → driven by new buffer
+  //   3. Lower 50% (loads on CRITICAL path)        → driven by original driver
+  //
+  // Result: Critical loads see reduced capacitance, improving setup timing.
+  //
+  // Precondition: Fanout count must exceed split_load_min_fanout_
+  //
   Pin* drvr_pin = drvr_path->pin(this);
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Path* load_path = expanded->path(drvr_index + 1);
@@ -71,7 +90,6 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     return false;
   }
 
-  // Divide and conquer.
   debugPrint(logger_,
              RSZ,
              "repair_setup",
@@ -112,149 +130,81 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     }
   }
 
-  sort(fanout_slacks.begin(),
-       fanout_slacks.end(),
-       [=](const pair<Vertex*, Slack>& pair1,
-           const pair<Vertex*, Slack>& pair2) {
-         return (pair1.second > pair2.second
-                 || (pair1.second == pair2.second
-                     && network_->pathNameLess(pair1.first->pin(),
-                                               pair2.first->pin())));
-       });
+  std::ranges::sort(fanout_slacks,
+                    [=, this](const pair<Vertex*, Slack>& pair1,
+                              const pair<Vertex*, Slack>& pair2) {
+                      return (pair1.second > pair2.second
+                              || (pair1.second == pair2.second
+                                  && network_->pathNameLess(
+                                      pair1.first->pin(), pair2.first->pin())));
+                    });
 
-  // H-fix get both the mod net and db net (if present).
+  // Get both the mod net and db net (if present).
   dbNet* db_drvr_net;
-  odb::dbModNet* db_mod_drvr_net;
+  dbModNet* db_mod_drvr_net;
   db_network_->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
-
-  // H-Fix Use driver parent for hierarchy, not the top instance
-  Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
 
   LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
   const Point drvr_loc = db_network_->location(drvr_pin);
 
-  // H-Fix make the buffer in the parent of the driver pin
-  Instance* buffer = makeBuffer(buffer_cell, "split", parent, drvr_loc);
-  debugPrint(logger_,
-             RSZ,
-             "split_load",
-             1,
-             "ACCEPT make_buffer {}",
-             network_->pathName(buffer));
-  debugPrint(logger_,
-             RSZ,
-             "repair_setup",
-             3,
-             "split_load make_buffer {}",
-             network_->pathName(buffer));
-  addMove(buffer);
-
-  // H-fix make the out net in the driver parent
-  Net* out_net = db_network_->makeNet(parent);
-
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-
-  Pin* buffer_ip_pin;
-  Pin* buffer_op_pin;
-  resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  (void) buffer_ip_pin;
-
-  // Split the loads with extra slack to an inserted buffer.
-  // before
-  // drvr_pin -> net -> load_pins
-  // after
-  // drvr_pin -> net -> load_pins with low slack
-  //                 -> buffer_in -> net -> rest of loads
-
-  // Hierarchical case:
-  // If the driver was hooked to a modnet.
-  //
-  // If the loads are partitioned then we introduce new modnets
-  // punch through.
-  //
-  // Create the buffer in the driver module.
-  //
-  // For non-buffered loads, use original modnet (if any).
-  //
-  // For buffered loads use dbNetwork::hierarchicalConnect
-  // which may introduce new modnets.
-  //
-  // Before:
-  // drvr_pin -> modnet -> load pins {Partition1, Partition2}
-  //
-  // after
-  // drvr_pin -> mod_net -> load pins with low slack {Partition1}
-  //                    -> buffer_in -> mod_net* -> rest of loads {Partition2}
-  //
-
-  // connect input of buffer to the original driver db net
-  sta_->connectPin(buffer, input, db_network_->dbToSta(db_drvr_net));
-
-  // invalidate the dbNet
-  estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
-
-  // out_net is the db net
-  sta_->connectPin(buffer, output, out_net);
-
+  // Identify loads to split (top 50% with most slack)
+  PinSet load_pins(network_);
   const int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
-    pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
-    Vertex* load_vertex = fanout_slack.first;
+    Vertex* load_vertex = fanout_slacks[i].first;
     Pin* load_pin = load_vertex->pin();
-
-    odb::dbITerm* load_iterm = nullptr;
-    load_iterm = db_network_->flatPin(load_pin);
 
     // Leave ports connected to original net so verilog port names are
     // preserved.
     if (!network_->isTopLevelPort(load_pin)) {
-      LibertyPort* load_port = network_->libertyPort(load_pin);
-      Instance* load = network_->instance(load_pin);
-      (void) (load_port);
-      (void) (load);
-
-      // stash the modnet,if any,  for the load
-      odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
-
-      // This will kill both the flat (dbNet) and hier (modnet) connection
-      load_iterm->disconnect();
-
-      // Flat connection to dbNet
-      load_iterm->connect(db_network_->staToDb(out_net));
-
-      //
-      // H-Fix. Support connecting across hierachy.
-      //
-      Instance* load_parent = db_network_->getOwningInstanceParent(load_pin);
-
-      if (load_parent != parent) {
-        odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
-        odb::dbITerm* load_pin_iterm = db_network_->flatPin(load_pin);
-        if (load_pin_iterm && buffer_op_pin_iterm) {
-          db_network_->hierarchicalConnect(buffer_op_pin_iterm, load_pin_iterm);
-        }
-      } else {
-        if (load_iterm && db_mod_load_net) {
-          // For hierarchical case, we simultaneously connect the
-          // hierarchical net and the modnet to make sure they
-          // get reassociated. (so all modnet pins refer to flat net).
-          load_iterm->disconnect();
-          db_network_->connectPin(load_pin, out_net, (Net*) db_mod_load_net);
-          //          iterm->connect(db_mod_load_net);
-        }
-      }
+      load_pins.insert(load_pin);
     }
   }
 
-  Pin* buffer_out_pin = network_->findPin(buffer, output);
-  resizer_->resizeToTargetSlew(buffer_out_pin);
-  // H-Fix, only invalidate db nets.
-  // resizer_->parasiticsInvalid(net);
-  estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
-  estimate_parasitics_->parasiticsInvalid(out_net);
+  if (load_pins.empty()) {
+    return false;
+  }
 
-  return true;
+  // Insert buffer
+  Net* drvr_net = db_network_->dbToSta(db_drvr_net);
+  Instance* buffer
+      = resizer_->insertBufferBeforeLoads(drvr_net,
+                                          &load_pins,
+                                          buffer_cell,
+                                          &drvr_loc,
+                                          "split",
+                                          nullptr,
+                                          odb::dbNameUniquifyType::IF_NEEDED);
+
+  if (buffer) {
+    debugPrint(logger_,
+               RSZ,
+               "split_load",
+               1,
+               "ACCEPT make_buffer {}",
+               network_->pathName(buffer));
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               3,
+               "split_load make_buffer {}",
+               network_->pathName(buffer));
+    addMove(buffer);
+
+    LibertyPort *input, *output;
+    buffer_cell->bufferPorts(input, output);
+    Pin* buffer_out_pin = network_->findPin(buffer, output);
+    resizer_->resizeToTargetSlew(buffer_out_pin);
+
+    // Invalidate parasitics for both original and new nets
+    estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
+    Net* out_net = network_->net(buffer_out_pin);
+    estimate_parasitics_->parasiticsInvalid(out_net);
+
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace rsz

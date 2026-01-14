@@ -33,6 +33,7 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
@@ -112,7 +113,7 @@ void defiPropType::bumpProps()
       newt[i] = propTypes_[i];
     }
     free((char*) (propNames_));
-    free((char*) (propTypes_));
+    free(propTypes_);
   }
   propNames_ = newpn;
   propTypes_ = newt;

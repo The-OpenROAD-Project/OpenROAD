@@ -175,8 +175,9 @@ class RDLRouter
 
   void writeToDb(odb::dbNet* net,
                  const std::vector<odb::Point>& route,
-                 const RouteTarget& source,
-                 const RouteTarget& target);
+                 const RouteTarget* source,
+                 const RouteTarget* target,
+                 const std::set<odb::Rect>& stubs);
   std::vector<std::pair<odb::Point, odb::Point>> simplifyRoute(
       const std::vector<odb::Point>& route) const;
   odb::Rect correctEndPoint(const odb::Rect& route,
@@ -245,6 +246,9 @@ class RDLRouter
   // Debugging
   RDLGui* gui_;
   odb::dbNet* debug_net_{nullptr};
+
+  // Consts
+  static constexpr const char* kRouteProperty = "RDL_ROUTE";
 };
 
 }  // namespace pad

@@ -3,8 +3,6 @@
 
 #include "ord/Timing.h"
 
-#include <tcl.h>
-
 #include <algorithm>
 #include <array>
 #include <cstring>

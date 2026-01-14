@@ -5,6 +5,7 @@
 
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 
 namespace dpl {
 
@@ -22,9 +23,9 @@ struct GapInfo
 
 struct DecapCell
 {
-  dbMaster* master;
+  odb::dbMaster* master;
   double capacitance;
-  DecapCell(dbMaster* master, double& capacitance)
+  DecapCell(odb::dbMaster* master, double& capacitance)
       : master(master), capacitance(capacitance)
   {
   }

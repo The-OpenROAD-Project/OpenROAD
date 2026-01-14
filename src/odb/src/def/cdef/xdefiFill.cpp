@@ -37,6 +37,8 @@
 
 #include "defiFill.h"
 #include "defiFill.hpp"
+#include "defiMisc.hpp"
+#include "defiTypedefs.h"
 
 union udefiPoints
 {

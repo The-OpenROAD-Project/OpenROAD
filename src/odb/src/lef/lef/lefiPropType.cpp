@@ -33,6 +33,7 @@
 #include <cstring>
 
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 #include "lex.h"
 
 BEGIN_LEF_PARSER_NAMESPACE
@@ -112,7 +113,7 @@ void lefiPropType::bumpProps()
       newt[i] = propTypes_[i];
     }
     free((char*) (propNames_));
-    free((char*) (propTypes_));
+    free(propTypes_);
   }
   propNames_ = newpn;
   propTypes_ = newt;

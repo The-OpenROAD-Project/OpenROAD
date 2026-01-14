@@ -2,6 +2,8 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "hybrid_rows",
@@ -16,8 +18,11 @@ COMPULSORY_TESTS = [
     "init_floorplan8",
     "init_floorplan9",
     "init_floorplan10",
+    "init_floorplan11",
+    "init_floorplan_dbl_row",
     "init_floorplan_even_rows",
     "init_floorplan_flip_sites",
+    "init_floorplan_gap",
     "init_floorplan_odd_rows",
     "init_floorplan_polygon",
     "init_floorplan_polygon2",

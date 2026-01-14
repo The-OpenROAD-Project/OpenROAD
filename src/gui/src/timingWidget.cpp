@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QModelIndexList>
 #include <QPushButton>
 #include <QSettings>
 #include <QSortFilterProxyModel>
@@ -18,6 +19,7 @@
 #include <QWidget>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -129,7 +131,7 @@ void TimingWidget::setColumnDisplayMenu()
     action->setCheckable(true);
     action->setChecked(true);
 
-    connect(action, &QAction::triggered, this, [=](bool checked) {
+    connect(action, &QAction::triggered, this, [=, this](bool checked) {
       hideColumn(column_index, checked);
     });
 
@@ -518,7 +520,7 @@ QString TimingWidget::generateClosestMatchString(CommandType type,
 
   command += focus_view_ == setup_timing_table_view_ ? " -path_delay max"
                                                      : " -path_delay min";
-  command += " -fields {capacitance slew input_pins nets fanout} -format "
+  command += " -fields {capacitance slew input_pins net fanout} -format "
             "full_clock_expanded";
 
   return command;
@@ -785,6 +787,37 @@ void TimingWidget::showEvent(QShowEvent* event)
 void TimingWidget::hideEvent(QHideEvent* event)
 {
   toggleRenderer(false);
+}
+
+void TimingWidget::showWorstTimingPath(bool setup)
+{
+  if (setup_timing_paths_model_ == nullptr
+      || hold_timing_paths_model_ == nullptr) {
+    return;
+  }
+
+  if (setup_timing_paths_model_->rowCount() == 0
+      && hold_timing_paths_model_->rowCount() == 0) {
+    populatePaths();
+  }
+
+  QTableView* table_view
+      = setup ? setup_timing_table_view_ : hold_timing_table_view_;
+  QAbstractItemModel* model = table_view->model();
+  if (model->rowCount() > 0) {
+    QModelIndex index = model->index(0, 0);
+    table_view->setCurrentIndex(index);
+    // Ensure the selection signal is emitted even if the index was already
+    // selected
+    selectedRowChanged(table_view->selectionModel()->selection(),
+                       QItemSelection());
+  }
+}
+
+void TimingWidget::clearSelection()
+{
+  setup_timing_table_view_->clearSelection();
+  hold_timing_table_view_->clearSelection();
 }
 
 void TimingWidget::modelWasReset()

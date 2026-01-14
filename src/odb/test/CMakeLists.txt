@@ -2,9 +2,13 @@ or_integration_tests(
   "odb"
   TESTS
     abstract_origin
+    all_pins_placed1
+    all_pins_placed2
     bterm_hier_create
+    check_3dblox
     check_routing_tracks
     create_blockage
+    create_obstruction
     create_sboxes
     def_dup_net
     def_parser
@@ -14,6 +18,8 @@ or_integration_tests(
     design_is_routed_fail1
     design_is_routed_fail2
     dont_touch
+    dump_netlists
+    dump_netlists_withfill
     dump_nets
     dump_via_rules
     dump_vias
@@ -45,12 +51,17 @@ or_integration_tests(
     replace_hier_mod3
     replace_hier_mod4
     replace_hier_mod5
+    replace_hier_mod6
+    replace_hier_mod_report_checks
     rounding
     row_settings
     sky130hd_multi_patterned
     smash_vias
     transform
     wire_encoder
+    write_cdl
+    write_3dbv
+    write_3dbx
     write_def58
     write_def58_gzip
     write_lef_and_def
@@ -58,8 +69,6 @@ or_integration_tests(
     write_macro_placement
   PASSFAIL_TESTS
     cpp_tests
-    dump_netlists
-    dump_netlists_withfill
     test_block
     test_bterm
     test_destroy

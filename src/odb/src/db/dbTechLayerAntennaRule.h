@@ -11,7 +11,6 @@
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -28,52 +27,52 @@ class lefout;
 // An antenna multiplier factor is applied to metal. A separate factor may
 // be used for diffusion connected metal.
 //
-class _ARuleFactor
+class ARuleFactor
 {
  public:
-  double _factor;
-  bool _explicit;
-  bool _diff_use_only;
-
-  _ARuleFactor();
+  ARuleFactor();
   void setFactor(double factor, bool diffuse);
-  bool operator==(const _ARuleFactor& rhs) const;
-  bool operator!=(const _ARuleFactor& rhs) const { return !operator==(rhs); }
+  bool operator==(const ARuleFactor& rhs) const;
+  bool operator!=(const ARuleFactor& rhs) const { return !operator==(rhs); }
+
+  double factor_;
+  bool explicit_;
+  bool diff_use_only_;
 };
 
-inline _ARuleFactor::_ARuleFactor()
+inline ARuleFactor::ARuleFactor()
 {
-  _factor = 1.0;
-  _explicit = false;
-  _diff_use_only = false;
+  factor_ = 1.0;
+  explicit_ = false;
+  diff_use_only_ = false;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _ARuleFactor& arf);
-dbIStream& operator>>(dbIStream& stream, _ARuleFactor& arf);
+dbOStream& operator<<(dbOStream& stream, const ARuleFactor& arf);
+dbIStream& operator>>(dbIStream& stream, ARuleFactor& arf);
 
 //
 // An antenna rule ratio is a single ratio for non-diffusion connected segments
 // or a piecewise linear function of diffusion area for diffusion connected
 // segments.
 //
-class _ARuleRatio
+class ARuleRatio
 {
  public:
-  double _ratio{0.0};
-  dbVector<double> _diff_idx;
-  dbVector<double> _diff_ratio;
-
   void setRatio(double ratio);
   void setDiff(const std::vector<double>& diff_idx,
                const std::vector<double>& ratios);
   void setDiff(double ratio);  // single value stored as PWL
 
-  bool operator==(const _ARuleRatio& rhs) const;
-  bool operator!=(const _ARuleRatio& rhs) const { return !operator==(rhs); }
+  bool operator==(const ARuleRatio& rhs) const;
+  bool operator!=(const ARuleRatio& rhs) const { return !operator==(rhs); }
+
+  double ratio_{0.0};
+  dbVector<double> diff_idx_;
+  dbVector<double> diff_ratio_;
 };
 
-dbOStream& operator<<(dbOStream& stream, const _ARuleRatio& arrt);
-dbIStream& operator>>(dbIStream& stream, _ARuleRatio& arrt);
+dbOStream& operator<<(dbOStream& stream, const ARuleRatio& arrt);
+dbIStream& operator>>(dbIStream& stream, ARuleRatio& arrt);
 
 ///  An antenna rule comprises a multiplier factor for area and sidearea
 ///  (perimeter), as well as ratios for the area and sidearea for both
@@ -82,35 +81,23 @@ dbIStream& operator>>(dbIStream& stream, _ARuleRatio& arrt);
 class _dbTechLayerAntennaRule : public _dbObject
 {
  public:
-  dbId<_dbTechLayer> _layer;
-  _ARuleFactor _area_mult;
-  _ARuleFactor _sidearea_mult;
-  _ARuleRatio _par_area_val;
-  _ARuleRatio _cum_area_val;
-  _ARuleRatio _par_sidearea_val;
-  _ARuleRatio _cum_sidearea_val;
-  _ARuleRatio _area_diff_reduce_val;
-  double _gate_plus_diff_factor;
-  double _area_minus_diff_factor;
-  bool _has_antenna_cumroutingpluscut;
-
   _dbTechLayerAntennaRule(_dbDatabase*)
-      : _gate_plus_diff_factor(0),
-        _area_minus_diff_factor(0),
-        _has_antenna_cumroutingpluscut(false)
+      : gate_plus_diff_factor_(0),
+        area_minus_diff_factor_(0),
+        has_antenna_cumroutingpluscut_(false)
   {
   }
   _dbTechLayerAntennaRule(_dbDatabase*, const _dbTechLayerAntennaRule& r)
-      : _layer(r._layer),
-        _area_mult(r._area_mult),
-        _sidearea_mult(r._sidearea_mult),
-        _par_area_val(r._par_area_val),
-        _cum_area_val(r._cum_area_val),
-        _par_sidearea_val(r._par_sidearea_val),
-        _cum_sidearea_val(r._cum_sidearea_val),
-        _area_diff_reduce_val(r._area_diff_reduce_val),
-        _gate_plus_diff_factor(r._gate_plus_diff_factor),
-        _area_minus_diff_factor(r._area_minus_diff_factor)
+      : layer_(r.layer_),
+        area_mult_(r.area_mult_),
+        sidearea_mult_(r.sidearea_mult_),
+        par_area_val_(r.par_area_val_),
+        cum_area_val_(r.cum_area_val_),
+        par_sidearea_val_(r.par_sidearea_val_),
+        cum_sidearea_val_(r.cum_sidearea_val_),
+        area_diff_reduce_val_(r.area_diff_reduce_val_),
+        gate_plus_diff_factor_(r.gate_plus_diff_factor_),
+        area_minus_diff_factor_(r.area_minus_diff_factor_)
   {
   }
 
@@ -120,6 +107,18 @@ class _dbTechLayerAntennaRule : public _dbObject
     return !operator==(rhs);
   }
   void collectMemInfo(MemInfo& info);
+
+  dbId<_dbTechLayer> layer_;
+  ARuleFactor area_mult_;
+  ARuleFactor sidearea_mult_;
+  ARuleRatio par_area_val_;
+  ARuleRatio cum_area_val_;
+  ARuleRatio par_sidearea_val_;
+  ARuleRatio cum_sidearea_val_;
+  ARuleRatio area_diff_reduce_val_;
+  double gate_plus_diff_factor_;
+  double area_minus_diff_factor_;
+  bool has_antenna_cumroutingpluscut_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAntennaRule& inrule);
@@ -144,7 +143,7 @@ class _dbTechAntennaAreaElement
   friend dbIStream& operator>>(dbIStream& stream,
                                _dbTechAntennaAreaElement*& aae);
 
-  _dbTechAntennaAreaElement(const _dbTechAntennaAreaElement& e);
+  _dbTechAntennaAreaElement(const _dbTechAntennaAreaElement& e) = default;
 
   bool operator==(const _dbTechAntennaAreaElement& rhs) const;
   bool operator!=(const _dbTechAntennaAreaElement& rhs) const
@@ -152,13 +151,13 @@ class _dbTechAntennaAreaElement
     return !operator==(rhs);
   }
 
-  double getArea() const { return _area; }
-  dbId<_dbTechLayer> getLayerId() const { return _lyidx; }
+  double getArea() const { return area_; }
+  dbId<_dbTechLayer> getLayerId() const { return lyidx_; }
 
  private:
   _dbTechAntennaAreaElement() = default;
-  double _area{-1.0};
-  dbId<_dbTechLayer> _lyidx;
+  double area_{-1.0};
+  dbId<_dbTechLayer> lyidx_;
 };
 
 //
@@ -167,12 +166,6 @@ class _dbTechAntennaAreaElement
 class _dbTechAntennaPinModel : public _dbObject
 {
  public:
-  dbId<_dbMTerm> _mterm;
-  dbVector<_dbTechAntennaAreaElement*> _gate_area;
-  dbVector<_dbTechAntennaAreaElement*> _max_area_car;
-  dbVector<_dbTechAntennaAreaElement*> _max_sidearea_car;
-  dbVector<_dbTechAntennaAreaElement*> _max_cut_car;
-
   _dbTechAntennaPinModel(_dbDatabase*, const _dbTechAntennaPinModel& m);
   _dbTechAntennaPinModel(_dbDatabase*) {}
   ~_dbTechAntennaPinModel();
@@ -188,6 +181,12 @@ class _dbTechAntennaPinModel : public _dbObject
       _dbDatabase* db,
       const dbVector<_dbTechAntennaAreaElement*>& elements,
       std::vector<std::pair<double, dbTechLayer*>>& result);
+
+  dbId<_dbMTerm> mterm_;
+  dbVector<_dbTechAntennaAreaElement*> gate_area_;
+  dbVector<_dbTechAntennaAreaElement*> max_area_car_;
+  dbVector<_dbTechAntennaAreaElement*> max_sidearea_car_;
+  dbVector<_dbTechAntennaAreaElement*> max_cut_car_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechAntennaPinModel& inmod);

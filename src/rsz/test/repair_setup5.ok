@@ -8,6 +8,18 @@
 [WARNING STA-1554] repair_setup5.tcl line 1, 'u1/X' is not a valid start point.
 [WARNING STA-1551] repair_setup5.tcl line 1, 'u5/A' is not a valid endpoint.
 worst slack max -1.88
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u5/X                                    1.51    7.70   -6.20 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+u5/X                                    0.13    0.68   -0.55 (VIOLATED)
+
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
@@ -15,8 +27,21 @@ worst slack max -1.88
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |       -1.9 |      1 | u5/A
-    final |       0 |      12 |        0 |      0 |     0 |   +46.7% |    0.083 |        0.0 |      0 | u5/A
+        1 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |       -1.9 |      1 | u5/A
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |       -1.9 |      1 | u5/A
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 12 instances: 12 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u5/X                                    1.51    7.70   -6.20 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+u5/X                                    0.13    0.68   -0.55 (VIOLATED)
+
 Repair timing output passed/skipped equivalence test
-worst slack max 0.08
+worst slack max -1.88

@@ -34,6 +34,7 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
@@ -78,7 +79,7 @@ void defiFPC::Destroy()
   nameLength_ = 0;
 
   free((char*) (names_));
-  free((char*) (rowOrComp_));
+  free(rowOrComp_);
   namesAllocated_ = 0;
 }
 

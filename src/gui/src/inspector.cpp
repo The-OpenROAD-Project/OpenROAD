@@ -10,20 +10,19 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QMenu>
+#include <QMessageBox>
+#include <QPainter>
 #include <QPushButton>
 #include <QString>
+#include <QStyleOptionViewItem>
+#include <QTextDocument>
 #include <QVariant>
 #include <QWidget>
 #include <algorithm>
 #include <any>
 #include <cmath>
-#include <iterator>
-#include <map>
-#include <set>
 #include <stdexcept>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -85,24 +84,32 @@ void SelectedItemModel::updateObject()
 
   auto editors = object_.getEditors();
 
-  for (const auto& prop : object_.getProperties()) {
-    QStandardItem* name_item = nullptr;
-    QStandardItem* value_item = nullptr;
+  try {
+    for (const auto& prop : object_.getProperties()) {
+      QStandardItem* name_item = nullptr;
+      QStandardItem* value_item = nullptr;
 
-    makePropertyItem(prop, name_item, value_item);
+      makePropertyItem(prop, name_item, value_item);
 
-    appendRow({name_item, value_item});
+      appendRow({name_item, value_item});
 
-    // make editor if found
-    auto editor_found = editors.find(prop.name);
-    if (editor_found != editors.end()) {
-      auto& editor = (*editor_found).second;
-      makeItemEditor(prop.name,
-                     value_item,
-                     object_,
-                     EditorItemDelegate::getEditorType(prop.value),
-                     editor);
+      // make editor if found
+      auto editor_found = editors.find(prop.name);
+      if (editor_found != editors.end()) {
+        auto& editor = (*editor_found).second;
+        makeItemEditor(prop.name,
+                       value_item,
+                       object_,
+                       EditorItemDelegate::getEditorType(prop.value),
+                       editor);
+      }
     }
+  } catch (const std::runtime_error& error) {
+    QMessageBox::critical(qobject_cast<QWidget*>(parent()),
+                          error.what(),
+                          "Failed to populate properties.");
+    appendRow({makeItem(QString::fromStdString("error")),
+               makeItem(QString(error.what()))});
   }
 
   endResetModel();
@@ -125,6 +132,8 @@ void SelectedItemModel::makePropertyItem(const Descriptor::Property& property,
   // as children rows
   if (auto sel_set = std::any_cast<Descriptor::PropertyList>(&value)) {
     value_item = makePropertyList(name_item, sel_set->begin(), sel_set->end());
+  } else if (auto sel_set = std::any_cast<PropertyTable>(&value)) {
+    value_item = makePropertyTable(name_item, *sel_set);
   } else if (auto sel_set = std::any_cast<SelectionSet>(&value)) {
     value_item = makeList(name_item, sel_set->begin(), sel_set->end());
   } else if (auto v_list = std::any_cast<std::vector<std::any>>(&value)) {
@@ -180,9 +189,7 @@ QStandardItem* SelectedItemModel::makeList(QStandardItem* name_item,
     name_item->appendRow({index_item, selected_item});
   }
 
-  QString items = QString::number(index) + " items";
-
-  return makeItem(items);
+  return makeItem(QString(QString::number(index) + " items"));
 }
 
 template <typename Iterator>
@@ -195,9 +202,50 @@ QStandardItem* SelectedItemModel::makePropertyList(QStandardItem* name_item,
     name_item->appendRow({makeItem(name, true), makeItem(value)});
   }
 
-  QString items = QString::number(name_item->rowCount()) + " items";
+  return makeItem(QString(QString::number(name_item->rowCount()) + " items"));
+}
 
-  return makeItem(items);
+QStandardItem* SelectedItemModel::makePropertyTable(QStandardItem* name_item,
+                                                    const PropertyTable& table)
+{
+  const int rows = table.getData().size();
+  const int columns = table.getColumnHeaders().size();
+
+  QStandardItem* table_item = makeItem(QString());
+
+  QString html;
+  html += "<style>th, td {padding: 2px; border: 1px solid black; text-align: center; vertical-align: middle;}</style>";
+  html += "<table>";
+  // setup column headers
+  html += "<tr><th />";
+  for (int col = 0; col < columns; col++) {
+    html += "<th>";
+    html += QString::fromStdString(table.getColumnHeaders().at(col))
+                .replace("\n", "<br>");
+    html += "</th>";
+  }
+  html += "</tr>";
+  // add rows
+  for (int row = 0; row < rows; row++) {
+    html += "<tr>";
+    html += "<th>";
+    html += QString::fromStdString(table.getRowHeaders().at(row))
+                .replace("\n", "<br>");
+    html += "</th>";
+    for (int col = 0; col < columns; col++) {
+      html += "<td>";
+      html += QString::fromStdString(table.getData().at(row).at(col))
+                  .replace("\n", "<br>");
+      html += "</td>";
+    }
+    html += "</tr>";
+  }
+  html += "</table>";
+  table_item->setData(html, EditorItemDelegate::kHtml);
+
+  name_item->appendRow({nullptr, table_item});
+
+  return makeItem(QString(QString::number(rows * columns) + " items"));
 }
 
 void SelectedItemModel::makeItemEditor(const std::string& name,
@@ -231,7 +279,7 @@ void SelectedItemModel::makeItemEditor(const std::string& name,
 
 EditorItemDelegate::EditorItemDelegate(SelectedItemModel* model,
                                        QObject* parent)
-    : QItemDelegate(parent),
+    : QStyledItemDelegate(parent),
       model_(model),
       background_(model->getEditableColor())
 {
@@ -372,6 +420,51 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(
     return EditorItemDelegate::kBool;
   }
   return EditorItemDelegate::kString;
+}
+
+void EditorItemDelegate::paint(QPainter* painter,
+                               const QStyleOptionViewItem& option,
+                               const QModelIndex& index) const
+{
+  if (index.model()->data(index, kHtml).toString().isEmpty()) {
+    QStyledItemDelegate::paint(painter, option, index);
+    return;
+  }
+
+  QStyleOptionViewItem options(option);
+  initStyleOption(&options, index);
+
+  painter->save();
+
+  QTextDocument doc;
+  doc.setHtml(index.model()->data(index, kHtml).toString());
+
+  /* Call this to get the focus rect and selection background. */
+  options.text = "";
+  options.widget->style()->drawControl(
+      QStyle::CE_ItemViewItem, &options, painter);
+
+  /* Draw using text document. */
+  painter->translate(options.rect.left(), options.rect.top());
+  const QRectF clip(0, 0, options.rect.width(), options.rect.height());
+  doc.drawContents(painter, clip);
+
+  painter->restore();
+}
+
+QSize EditorItemDelegate::sizeHint(const QStyleOptionViewItem& option,
+                                   const QModelIndex& index) const
+{
+  if (index.model()->data(index, kHtml).toString().isEmpty()) {
+    return QStyledItemDelegate::sizeHint(option, index);
+  }
+  QStyleOptionViewItem options(option);
+  initStyleOption(&options, index);
+
+  QTextDocument doc;
+  doc.setHtml(index.model()->data(index, kHtml).toString());
+  doc.setTextWidth(options.rect.width());
+  return QSize(doc.idealWidth(), doc.size().height());
 }
 
 ////////
@@ -796,7 +889,7 @@ void Inspector::inspect(const Selected& object)
   }
 
   // check if object is part of history, otherwise delete history
-  if (std::find(navigation_history_.begin(), navigation_history_.end(), object)
+  if (std::ranges::find(navigation_history_, object)
       == navigation_history_.end()) {
     navigation_history_.clear();
   }
@@ -813,7 +906,7 @@ void Inspector::inspect(const Selected& object)
   reload();
 
   // update iterator
-  selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
+  selected_itr_ = std::ranges::find(selected_, selection_);
   selected_itr_label_->setText(
       QString::number(getSelectedIteratorPosition() + 1) + "/"
       + QString::number(selected_.size()));
@@ -903,7 +996,8 @@ void Inspector::makeAction(const Descriptor::Action& action)
       {"Add to highlight", ":/highlight_on.png"},
       {"Focus", ":/focus.png"},
       {"De-focus", ":/defocus.png"},
-      {"Navigate back", ":/undo.png"}};
+      {"Navigate back", ":/undo.png"},
+      {"Insert Buffer", ":/buffer.png"}};
   std::vector<std::pair<std::string, QString>> symbol_replacements{
       {"Fanin Cone", "▷"}, {"Fanout Cone", "◁"}};
 

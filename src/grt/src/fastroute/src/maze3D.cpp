@@ -210,8 +210,12 @@ void FastRouteCore::setupHeap3D(int netID,
   if (num_terminals == 2) {  // 2-pin net
     const int node1_alias = treenodes[n1].stackAlias;
     const int node2_alias = treenodes[n2].stackAlias;
-    const int node1_access_layer = nets_[netID]->getPinL()[node1_alias];
-    const int node2_access_layer = nets_[netID]->getPinL()[node2_alias];
+
+    const int pin_idx1 = sttrees_[netID].node_to_pin_idx[node1_alias];
+    const int pin_idx2 = sttrees_[netID].node_to_pin_idx[node2_alias];
+
+    const int node1_access_layer = nets_[netID]->getPinL()[pin_idx1];
+    const int node2_access_layer = nets_[netID]->getPinL()[pin_idx2];
 
     d1_3D[node1_access_layer][y1][x1] = 0;
     directions_3D[node1_access_layer][y1][x1] = Direction::Origin;
@@ -678,28 +682,6 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
   const float wire_resistance
       = getLayerResistance(from_layer, length * tile_size_, net);
 
-  // Check congestion
-  bool congested = false;
-  if (from_x == to_x) {  // vertical
-    int min_y = std::min(from_y, to_y);
-    if (v_edges_3D_[from_layer][min_y][from_x].usage
-            + net->getLayerEdgeCost(from_layer)
-        > v_edges_3D_[from_layer][min_y][from_x].cap) {
-      congested = true;
-    }
-  } else {  // horizontal
-    int min_x = std::min(from_x, to_x);
-    if (h_edges_3D_[from_layer][from_y][min_x].usage
-            + net->getLayerEdgeCost(from_layer)
-        > h_edges_3D_[from_layer][from_y][min_x].cap) {
-      congested = true;
-    }
-  }
-
-  if (congested) {
-    base_cost = BIG_INT;  // Heavy penalty for congestion
-  }
-
   return base_cost + wire_resistance;
 }
 
@@ -713,6 +695,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
+  if (enable_resistance_aware_) {
+    updateSlacks(.8);
+    netpinOrderInc();
+  }
+
   const int endIND = tree_order_pv_.size() * 0.9;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
@@ -720,6 +707,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     FrNet* net = nets_[netID];
     int8_t edge_cost = 0;
+
+    // Enable resistance aware routing only if the net needs it
+    if (enable_resistance_aware_) {
+      resistance_aware_ = net->isResAware();
+    }
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
@@ -733,6 +725,16 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
         continue;
       }
+
+      // Force resistance-aware if edge length > 100
+      if (enable_resistance_aware_) {
+        if (treeedge->len > 100) {
+          resistance_aware_ = true;
+        } else {
+          resistance_aware_ = net->isResAware();
+        }
+      }
+
       int n1 = treeedge->n1;
       int n2 = treeedge->n2;
       const int n1x = treenodes[n1].x;
@@ -846,8 +848,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::West;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -893,8 +894,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][curY][tmpX].y = curY;
                 directions_3D_[curL][curY][tmpX] = Direction::East;
                 const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -940,8 +940,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::North;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -985,8 +984,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                 pr_3D_[curL][tmpY][curX].y = curY;
                 directions_3D_[curL][tmpY][curX] = Direction::South;
                 const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                const auto it
-                    = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+                const auto it = std::ranges::find(src_heap_3D_, dtmp);
                 if (it != src_heap_3D_.end()) {
                   const int pos = it - src_heap_3D_.begin();
                   updateHeap3D(src_heap_3D_, pos);
@@ -1030,8 +1028,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Down;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            const auto it
-                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            const auto it = std::ranges::find(src_heap_3D_, dtmp);
             if (it != src_heap_3D_.end()) {
               const int pos = it - src_heap_3D_.begin();
               updateHeap3D(src_heap_3D_, pos);
@@ -1073,8 +1070,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             pr_3D_[tmpL][curY][curX].y = curY;
             directions_3D_[tmpL][curY][curX] = Direction::Up;
             const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            const auto it
-                = std::find(src_heap_3D_.begin(), src_heap_3D_.end(), dtmp);
+            const auto it = std::ranges::find(src_heap_3D_, dtmp);
             if (it != src_heap_3D_.end()) {
               const int pos = it - src_heap_3D_.begin();
               updateHeap3D(src_heap_3D_, pos);

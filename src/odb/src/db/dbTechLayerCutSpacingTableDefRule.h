@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <tuple>
@@ -11,7 +12,6 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -24,30 +24,30 @@ class _dbTechLayerCutClassRule;
 
 struct dbTechLayerCutSpacingTableDefRuleFlags
 {
-  bool default_valid_ : 1;
-  bool same_mask_ : 1;
-  bool same_net_ : 1;
-  bool same_metal_ : 1;
-  bool same_via_ : 1;
-  bool layer_valid_ : 1;
-  bool no_stack_ : 1;
-  bool non_zero_enclosure_ : 1;
-  bool prl_for_aligned_cut_ : 1;
-  bool center_to_center_valid_ : 1;
-  bool center_and_edge_valid_ : 1;
-  bool no_prl_ : 1;
-  bool prl_valid_ : 1;
-  bool max_x_y_ : 1;
-  bool end_extension_valid_ : 1;
-  bool side_extension_valid_ : 1;
-  bool exact_aligned_spacing_valid_ : 1;
-  bool horizontal_ : 1;
-  bool prl_horizontal_ : 1;
-  bool vertical_ : 1;
-  bool prl_vertical_ : 1;
-  bool non_opposite_enclosure_spacing_valid_ : 1;
-  bool opposite_enclosure_resize_spacing_valid_ : 1;
-  uint spare_bits_ : 9;
+  bool default_valid : 1;
+  bool same_mask : 1;
+  bool same_net : 1;
+  bool same_metal : 1;
+  bool same_via : 1;
+  bool layer_valid : 1;
+  bool no_stack : 1;
+  bool non_zero_enclosure : 1;
+  bool prl_for_aligned_cut : 1;
+  bool center_to_center_valid : 1;
+  bool center_and_edge_valid : 1;
+  bool no_prl : 1;
+  bool prl_valid : 1;
+  bool max_x_y : 1;
+  bool end_extension_valid : 1;
+  bool side_extension_valid : 1;
+  bool exact_aligned_spacing_valid : 1;
+  bool horizontal : 1;
+  bool prl_horizontal : 1;
+  bool vertical : 1;
+  bool prl_vertical : 1;
+  bool non_opposite_enclosure_spacing_valid : 1;
+  bool opposite_enclosure_resize_spacing_valid : 1;
+  uint32_t spare_bits : 9;
 };
 
 class _dbTechLayerCutSpacingTableDefRule : public _dbObject
@@ -78,8 +78,8 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   dbVector<std::pair<std::string, int>> non_opp_enc_spacing_tbl_;
   dbVector<std::tuple<std::string, int, int, int>> opp_enc_spacing_tbl_;
   dbVector<dbVector<std::pair<int, int>>> spacing_tbl_;
-  std::map<std::string, uint> row_map_;
-  std::map<std::string, uint> col_map_;
+  std::map<std::string, uint32_t> row_map_;
+  std::map<std::string, uint32_t> col_map_;
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableDefRule& obj);

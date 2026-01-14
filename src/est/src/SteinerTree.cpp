@@ -31,7 +31,7 @@ void SteinerTree::setTree(const stt::Tree& tree)
 
   // Find driver steiner point.
   drvr_steiner_pt_ = null_pt;
-  const Point drvr_loc = drvr_location_;
+  const odb::Point drvr_loc = drvr_location_;
   const int drvr_x = drvr_loc.getX();
   const int drvr_y = drvr_loc.getY();
   const int branch_count = tree_.branchCount();
@@ -51,7 +51,7 @@ SteinerTree::SteinerTree(const Pin* drvr_pin,
 {
 }
 
-SteinerTree::SteinerTree(Point drvr_location, Logger* logger)
+SteinerTree::SteinerTree(odb::Point drvr_location, Logger* logger)
     : drvr_location_(drvr_location), logger_(logger)
 {
 }
@@ -75,16 +75,16 @@ int SteinerTree::branchCount() const
   return tree_.branchCount();
 }
 
-void SteinerTree::locAddPin(const Point& loc, const Pin* pin)
+void SteinerTree::locAddPin(const odb::Point& loc, const Pin* pin)
 {
   loc_pin_map_[loc].push_back(pin);
 }
 
 void SteinerTree::branch(int index,
                          // Return values.
-                         Point& pt1,
+                         odb::Point& pt1,
                          int& steiner_pt1,
-                         Point& pt2,
+                         odb::Point& pt2,
                          int& steiner_pt2,
                          int& wire_length)
 {
@@ -92,8 +92,8 @@ void SteinerTree::branch(int index,
   steiner_pt1 = index;
   steiner_pt2 = branch_pt1.n;
   stt::Branch& branch_pt2 = tree_.branch[steiner_pt2];
-  pt1 = Point(branch_pt1.x, branch_pt1.y);
-  pt2 = Point(branch_pt2.x, branch_pt2.y);
+  pt1 = odb::Point(branch_pt1.x, branch_pt1.y);
+  pt2 = odb::Point(branch_pt2.x, branch_pt2.y);
   wire_length
       = abs(branch_pt1.x - branch_pt2.x) + abs(branch_pt1.y - branch_pt2.y);
 }
@@ -153,10 +153,10 @@ SteinerPt SteinerTree::drvrPt() const
   return drvr_steiner_pt_;
 }
 
-Point SteinerTree::location(const SteinerPt pt) const
+odb::Point SteinerTree::location(const SteinerPt pt) const
 {
   const stt::Branch branch_pt = tree_.branch[pt];
-  return Point(branch_pt.x, branch_pt.y);
+  return odb::Point(branch_pt.x, branch_pt.y);
 }
 
 SteinerPt SteinerTree::top() const
@@ -271,39 +271,6 @@ void SteinerTree::populateSides(const SteinerPt from,
   }
 }
 
-int SteinerTree::distance(const SteinerPt from, const SteinerPt to) const
-{
-  if (from == SteinerNull || to == SteinerNull) {
-    return -1;
-  }
-  if (from == to) {
-    return 0;
-  }
-  const Point from_pt = location(from);
-  const Point to_pt = location(to);
-  const SteinerPt left_from = left(from);
-  const SteinerPt right_from = right(from);
-  if (left_from == to || right_from == to) {
-    return abs(from_pt.x() - to_pt.x()) + abs(from_pt.y() - to_pt.y());
-  }
-  if (left_from == SteinerNull && right_from == SteinerNull) {
-    return -1;
-  }
-
-  const int find_left = distance(left_from, to);
-  if (find_left >= 0) {
-    return find_left + abs(from_pt.x() - to_pt.x())
-           + abs(from_pt.y() - to_pt.y());
-  }
-
-  const int find_right = distance(right_from, to);
-  if (find_right >= 0) {
-    return find_right + abs(from_pt.x() - to_pt.x())
-           + abs(from_pt.y() - to_pt.y());
-  }
-  return -1;
-}
-
 const Pin* SteinerTree::pin(const SteinerPt pt) const
 {
   validatePoint(pt);
@@ -315,7 +282,7 @@ const Pin* SteinerTree::pin(const SteinerPt pt) const
 
 ////////////////////////////////////////////////////////////////
 
-size_t PointHash::operator()(const Point& pt) const
+size_t PointHash::operator()(const odb::Point& pt) const
 {
   size_t hash = sta::hash_init_value;
   hashIncr(hash, pt.x());
@@ -323,7 +290,7 @@ size_t PointHash::operator()(const Point& pt) const
   return hash;
 }
 
-bool PointEqual::operator()(const Point& pt1, const Point& pt2) const
+bool PointEqual::operator()(const odb::Point& pt1, const odb::Point& pt2) const
 {
   return pt1.x() == pt2.x() && pt1.y() == pt2.y();
 }

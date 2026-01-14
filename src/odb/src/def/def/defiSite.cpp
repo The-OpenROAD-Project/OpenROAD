@@ -34,6 +34,8 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
 #include "defiUtil.hpp"
 #include "defrData.hpp"
 

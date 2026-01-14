@@ -4,6 +4,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "45_gcd",
@@ -11,6 +13,8 @@ COMPULSORY_TESTS = [
     "gcd",
     "generate_pattern",
     "names",
+    "net_name_consistency",
+    "coordinates",
 ]
 
 # Disabled in CMakeLists.txt
@@ -18,6 +22,11 @@ MANUAL_TESTS = [
     "generate_rules",
     "rcx_man_tcl_check",
     "rcx_readme_msgs_check",
+]
+
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "net_name_consistency",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -95,7 +104,8 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        tags = ["manual"] if test_name in MANUAL_TESTS or
+                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -104,9 +114,9 @@ filegroup(
 cc_test(
     name = "rcx_unittest",
     srcs = ["ext2dBoxTest.cpp"],
-    linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
         "//src/rcx",
-        "@boost.test",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

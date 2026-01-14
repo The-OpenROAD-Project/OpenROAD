@@ -2,8 +2,8 @@ source "helpers.tcl"
 
 
 set db [ord::get_db]
-read_lef "data/Nangate45/NangateOpenCellLibrary.mod.lef"
-set lib [$db findLib NangateOpenCellLibrary]
+read_lef "Nangate45/Nangate45.lef"
+read_lef "Nangate45/Nangate45_stdcell.lef"
 read_def "data/gcd/floorplan.def"
 set chip [$db getChip]
 

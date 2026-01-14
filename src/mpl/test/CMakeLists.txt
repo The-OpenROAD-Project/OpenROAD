@@ -26,7 +26,11 @@ or_integration_tests(
     boundary_push3
     centralization1
     clocked_macro
-    fixed_macros
+    keep_clustering_data
+    fixed_macros1
+    fixed_macros2
+    fixed_covers
+    macros_without_pins1
 )
 
 # Skipped

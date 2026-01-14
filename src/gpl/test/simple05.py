@@ -1,6 +1,6 @@
 from openroad import Design, Tech
 import helpers
-import gpl_aux
+import gpl
 
 bazel_working_dir = "/_main/src/gpl/test/"
 helpers.if_bazel_change_working_dir_to(bazel_working_dir)
@@ -10,7 +10,9 @@ tech.readLef("./nangate45.lef")
 design = helpers.make_design(tech)
 design.readDef("./simple05.def")
 
-gpl_aux.global_placement(design, skip_initial_place=True)
+options = gpl.PlaceOptions()
+options.initialPlaceMaxIter = 0
+design.getReplace().doPlace(1, options)
 
 def_file = helpers.make_result_file("simple05.def")
 design.writeDef(def_file)

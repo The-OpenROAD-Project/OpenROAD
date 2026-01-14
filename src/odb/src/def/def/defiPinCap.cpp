@@ -29,16 +29,17 @@
 
 #include "defiPinCap.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 #include "defiComponent.hpp"
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
 #include "defiUtil.hpp"
 #include "defrData.hpp"
+#include "defrSettings.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 
@@ -118,7 +119,7 @@ void defiPinAntennaModel::clear()
   int i;
 
   if (oxide_) {
-    free((char*) (oxide_));
+    free(oxide_);
   }
   oxide_ = nullptr;
 
@@ -527,7 +528,7 @@ void defiPinPort::clear()
     struct defiPoints* p;
     for (i = 0; i < numPolys_; i++) {
       if (polygonNames_[i]) {
-        free((char*) (polygonNames_[i]));
+        free(polygonNames_[i]);
       }
       p = polygons_[i];
       free((char*) (p->x));
@@ -1077,7 +1078,7 @@ void defiPin::clear()
     struct defiPoints* p;
     for (i = 0; i < numPolys_; i++) {
       if (polygonNames_[i]) {
-        free((char*) (polygonNames_[i]));
+        free(polygonNames_[i]);
       }
       p = polygons_[i];
       free((char*) (p->x));
@@ -1607,7 +1608,6 @@ void defiPin::addAntennaModel(int oxide)
   }
   amo->Init();
   amo->setAntennaModel(oxide);
-  return;
 }
 
 // 5.5

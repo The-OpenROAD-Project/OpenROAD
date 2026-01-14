@@ -29,13 +29,13 @@
 
 #include "defiVia.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE

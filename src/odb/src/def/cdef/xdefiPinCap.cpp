@@ -35,8 +35,10 @@
 
 #include <cstdio>
 
+#include "defiMisc.hpp"
 #include "defiPinCap.h"
 #include "defiPinCap.hpp"
+#include "defiTypedefs.h"
 
 union udefiPoints
 {

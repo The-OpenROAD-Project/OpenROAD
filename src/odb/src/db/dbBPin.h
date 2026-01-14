@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -20,24 +21,15 @@ class dbOStream;
 
 struct _dbBPinFlags
 {
-  dbPlacementStatus::Value _status : 4;
-  uint _has_min_spacing : 1;
-  uint _has_effective_width : 1;
-  uint _spare_bits : 26;
+  dbPlacementStatus::Value status : 4;
+  uint32_t has_min_spacing : 1;
+  uint32_t has_effective_width : 1;
+  uint32_t spare_bits : 26;
 };
 
 class _dbBPin : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  _dbBPinFlags _flags;
-  dbId<_dbBTerm> _bterm;
-  dbId<_dbBox> _boxes;
-  dbId<_dbBPin> _next_bpin;
-  uint _min_spacing;      // 5.6 DEF
-  uint _effective_width;  // 5.6 DEF
-  dbVector<dbId<_dbAccessPoint>> aps_;
-
   _dbBPin(_dbDatabase*, const _dbBPin& p);
   _dbBPin(_dbDatabase*);
 
@@ -45,6 +37,15 @@ class _dbBPin : public _dbObject
   bool operator!=(const _dbBPin& rhs) const { return !operator==(rhs); }
   void collectMemInfo(MemInfo& info);
   void removeBox(_dbBox* box);
+
+  // PERSISTANT-MEMBERS
+  _dbBPinFlags flags_;
+  dbId<_dbBTerm> bterm_;
+  dbId<_dbBox> boxes_;
+  dbId<_dbBPin> next_bpin_;
+  uint32_t min_spacing_;      // 5.6 DEF
+  uint32_t effective_width_;  // 5.6 DEF
+  dbVector<dbId<_dbAccessPoint>> aps_;
 };
 
 dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin);

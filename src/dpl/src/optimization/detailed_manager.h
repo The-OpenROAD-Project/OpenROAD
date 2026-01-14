@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/network.h"
 #include "util/journal.h"
@@ -297,6 +298,7 @@ class DetailedMgr
   bool trySwap1(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
   // Helper routines for making moves and swaps.
+  bool checkSiteOrientation(Node* node, DbuX x, DbuY y);
   bool shift(std::vector<Node*>& cells,
              std::vector<DbuX>& targetLeft,
              std::vector<DbuX>& posLeft,

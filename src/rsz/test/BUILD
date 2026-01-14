@@ -1,6 +1,8 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
+package(features = ["layering_check"])
+
 exports_files(
     ["hi_fanout.tcl"],
     visibility = ["//visibility:public"],
@@ -31,16 +33,23 @@ TESTS = [
     "gain_buffering1",
     "gain_buffering1_hier",
     "gcd_resize",
+    "insert_buffer",
+    "insert_buffer_hier",
     "liberty_dont_use",
-    "pin_swap1",
     "pinswap_flat",
     "pinswap_hier",
+    "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
     "recover_power_verbose",
+    "remove_buffers_hier1",
     "remove_buffers1",
     "remove_buffers2",
-    "remove_buffers3",
+    "remove_buffers4",
+    "remove_buffers4_hier",
+    "remove_buffers5",
+    "remove_buffers5_hier",
+    "remove_buffers6",
     "repair_cap1",
     "repair_cap2",
     "repair_cap3",
@@ -107,7 +116,8 @@ TESTS = [
     "repair_setup9_hier",
     "repair_setup_sizedown",
     "repair_setup_sizeup_match",
-    "repair_setup_undo",
+    "repair_setup_undo1",
+    "repair_setup_undo2",
     "repair_slew1",
     "repair_slew10",
     "repair_slew11",
@@ -149,6 +159,7 @@ TESTS = [
     "repair_wire8",
     "repair_wire9",
     "replace_arith_modules1",
+    "replace_arith_modules2",
     "report_buffers_asap7",
     "report_buffers_gf180",
     "report_buffers_ihp",
@@ -221,23 +232,100 @@ BIG_TESTS = [
     "repair_fanout6",
 ]
 
-[regression_test(
-    name = test_name,
-    size = "large" if test_name in BIG_TESTS else "medium",
-    data = [":test_resources"] + extra_deps.get(test_name, []),
-) for test_name in TESTS]
+[
+    regression_test(
+        name = test_name,
+        size = "large" if test_name in BIG_TESTS else "medium",
+        data = [":test_resources"] + extra_deps.get(test_name, []),
+    )
+    for test_name in TESTS
+]
 
 cc_test(
     name = "rsz_buffer_removal",
     srcs = [
         "cpp/TestBufferRemoval.cc",
     ],
-    linkstatic = True,  # TODO: remove once deps define all symbols
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_buffer_removal2",
+    srcs = [
+        "cpp/TestBufferRemoval2.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_buffer_removal3",
+    srcs = ["cpp/TestBufferRemoval3.cc"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ] + glob(["cpp/TestBufferRemoval3*.v"]),
     deps = [
         "//src/dbSta",
-        "//src/dpl",
-        "//src/rsz",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_insert_buffer",
+    srcs = ["cpp/TestInsertBuffer.cpp"],
+    data = glob(["cpp/TestInsertBuffer*.v"]),
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/tst",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

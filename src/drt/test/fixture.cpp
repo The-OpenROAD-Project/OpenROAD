@@ -47,7 +47,11 @@
 #include "frRegionQuery.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
+
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 
@@ -122,23 +126,25 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   std::vector<frBoundary> bounds;
   frBoundary bound;
   std::vector<odb::Point> points;
-  points.push_back(odb::Point(originX, originY));
-  points.push_back(odb::Point(sizeX, originY));
-  points.push_back(odb::Point(sizeX, sizeY));
-  points.push_back(odb::Point(originX, sizeY));
+  points.emplace_back(originX, originY);
+  points.emplace_back(sizeX, originY);
+  points.emplace_back(sizeX, sizeY);
+  points.emplace_back(originX, sizeY);
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
-  block->setMasterType(dbMasterType::CORE);
+  block->setMasterType(odb::dbMasterType::CORE);
   block->setId(++numMasters);
   auto blkPtr = block.get();
   design->addMaster(std::move(block));
 
+  using odb::dbIoType;
+  using odb::dbSigType;
   odb::dbMaster* master
       = odb::dbMaster::create(*db_->getLibs().begin(), "dummy");
   master->setWidth(1000);
   master->setHeight(1000);
-  master->setType(dbMasterType::CORE);
+  master->setType(odb::dbMasterType::CORE);
   odb::dbMTerm::create(master, "a", dbIoType::INPUT, dbSigType::SIGNAL);
   odb::dbMTerm::create(master, "b", dbIoType::INPUT, dbSigType::SIGNAL);
   odb::dbMTerm::create(master, "c", dbIoType::OUTPUT, dbSigType::SIGNAL);
@@ -175,7 +181,7 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
 }
 
 frTerm* Fixture::makeMacroPin(frMaster* master,
-                              std::string name,
+                              const std::string& name,
                               frCoord xl,
                               frCoord yl,
                               frCoord xh,
@@ -187,9 +193,9 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   auto term = uTerm.get();
   term->setId(id);
   master->addTerm(std::move(uTerm));
-  dbSigType termType = dbSigType::SIGNAL;
+  odb::dbSigType termType = odb::dbSigType::SIGNAL;
   term->setType(termType);
-  dbIoType termDirection = dbIoType::INPUT;
+  odb::dbIoType termDirection = odb::dbIoType::INPUT;
   term->setDirection(termDirection);
   auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
@@ -207,9 +213,8 @@ frInst* Fixture::makeInst(const char* name,
                           frMaster* master,
                           odb::dbMaster* db_master)
 {
-  auto ptr_db_inst = std::make_unique<odb::dbInst>();
-  odb::dbInst* db_inst
-      = ptr_db_inst->create(db_->getChip()->getBlock(), db_master, "dummy");
+  auto db_inst
+      = odb::dbInst::create(db_->getChip()->getBlock(), db_master, "dummy");
   odb::dbTransform trans;
   db_inst->setTransform(trans);
   auto uInst = std::make_unique<frInst>(name, master, db_inst);
@@ -244,12 +249,12 @@ void Fixture::makeDesign()
 
   // GC assumes these fake nets exist
   auto vssFakeNet = std::make_unique<frNet>("frFakeVSS", router_cfg.get());
-  vssFakeNet->setType(dbSigType::GROUND);
+  vssFakeNet->setType(odb::dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
   auto vddFakeNet = std::make_unique<frNet>("frFakeVDD", router_cfg.get());
-  vddFakeNet->setType(dbSigType::POWER);
+  vddFakeNet->setType(odb::dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vddFakeNet));
 
@@ -378,8 +383,8 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
 
 frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<std::pair<frCoord, frCoord>> valTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<std::pair<frCoord, frCoord>>& valTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -396,8 +401,8 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
 frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
     frLayerNum layer_num,
     frCoord spacing,
-    std::vector<frCoord> eol,
-    std::vector<frCoord> ext,
+    const std::vector<frCoord>& eol,
+    const std::vector<frCoord>& ext,
     bool parallelOnly)
 {
   frTechObject* tech = design->getTech();
@@ -415,15 +420,15 @@ frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
 
 frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<frCoord> prlTbl,
-    std::vector<std::vector<frCoord>> spacingTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<frCoord>& prlTbl,
+    const std::vector<std::vector<frCoord>>& spacingTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   frCollection<frSpacingTableTwRowType> rows;
   for (size_t i = 0; i < widthTbl.size(); i++) {
-    rows.push_back(frSpacingTableTwRowType(widthTbl[i], prlTbl[i]));
+    rows.emplace_back(widthTbl[i], prlTbl[i]);
   }
   std::unique_ptr<frConstraint> uCon
       = std::make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
@@ -749,6 +754,8 @@ frViaDef* Fixture::makeViaDef(const char* name,
       case 1:
         via_p->addLayer2Fig(std::move(pinFig));
         break;
+      default:
+        logger->error(DRT, 624, "Unexpected layer diff {}", l - layer_num);
     }
   }
 

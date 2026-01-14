@@ -3,6 +3,8 @@
 
 #include "dbCCSeg.h"
 
+#include <cassert>
+#include <cstdint>
 #include <cstdio>
 
 #include "dbBlock.h"
@@ -24,31 +26,31 @@ template class dbTable<_dbCCSeg>;
 
 bool _dbCCSeg::operator==(const _dbCCSeg& rhs) const
 {
-  if (_flags._spef_mark_1 != rhs._flags._spef_mark_1) {
+  if (flags_.spef_mark_1 != rhs.flags_.spef_mark_1) {
     return false;
   }
 
-  if (_flags._mark != rhs._flags._mark) {
+  if (flags_.mark != rhs.flags_.mark) {
     return false;
   }
 
-  if (_flags._inFileCnt != rhs._flags._inFileCnt) {
+  if (flags_.inFileCnt != rhs.flags_.inFileCnt) {
     return false;
   }
 
-  if (_cap_node[0] != rhs._cap_node[0]) {
+  if (cap_node_[0] != rhs.cap_node_[0]) {
     return false;
   }
 
-  if (_cap_node[1] != rhs._cap_node[1]) {
+  if (cap_node_[1] != rhs.cap_node_[1]) {
     return false;
   }
 
-  if (_next[0] != rhs._next[0]) {
+  if (next_[0] != rhs.next_[0]) {
     return false;
   }
 
-  if (_next[1] != rhs._next[1]) {
+  if (next_[1] != rhs.next_[1]) {
     return false;
   }
 
@@ -67,36 +69,37 @@ void dbCCSeg::adjustCapacitance(float factor, int corner)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
   float& value
-      = (*block->_cc_val_tbl)[(seg->getOID() - 1) * block->_corners_per_block
+      = (*block->cc_val_tbl_)[((seg->getOID() - 1) * block->corners_per_block_)
                               + 1 + corner];
   float prev_value = value;
   value *= factor;
 
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg {}, adjustCapacitance {}, corner {}",
-               seg->getId(),
-               factor,
-               corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::CAPACITANCE);
-    block->_journal->pushParam(prev_value);
-    block->_journal->pushParam(value);
-    block->_journal->pushParam(0);
-    block->_journal->endAction();
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg {}, adjustCapacitance {}, corner {}",
+             seg->getId(),
+             factor,
+             corner);
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(seg->getId());
+    block->journal_->pushParam(_dbCCSeg::kCapacitance);
+    block->journal_->pushParam(prev_value);
+    block->journal_->pushParam(value);
+    block->journal_->pushParam(0);
+    block->journal_->endAction();
   }
 }
 
 void dbCCSeg::adjustCapacitance(float factor)
 {
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
-  uint corner;
-  for (corner = 0; corner < block->_corners_per_block; corner++) {
+  uint32_t corner;
+  for (corner = 0; corner < block->corners_per_block_; corner++) {
     adjustCapacitance(factor, corner);
   }
 }
@@ -105,20 +108,20 @@ double dbCCSeg::getCapacitance(int corner)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
-  return (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+  uint32_t cornerCnt = block->corners_per_block_;
+  assert((corner >= 0) && ((uint32_t) corner < cornerCnt));
+  return (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
 }
 
-void dbCCSeg::accAllCcCap(double* ttcap, double MillerMult)
+void dbCCSeg::accAllCcCap(double* ttcap, double miller_mult)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  for (uint ii = 0; ii < cornerCnt; ii++) {
+  uint32_t cornerCnt = block->corners_per_block_;
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
     ttcap[ii]
-        += ((*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii])
-           * MillerMult;
+        += ((*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii])
+           * miller_mult;
   }
 }
 
@@ -126,9 +129,10 @@ void dbCCSeg::getAllCcCap(double* ttcap)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  for (uint ii = 0; ii < cornerCnt; ii++) {
-    ttcap[ii] = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+  uint32_t cornerCnt = block->corners_per_block_;
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
+    ttcap[ii]
+        = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
   }
 }
 
@@ -136,32 +140,34 @@ void dbCCSeg::setAllCcCap(double* ttcap)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  for (uint ii = 0; ii < cornerCnt; ii++) {
-    (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = ttcap[ii];
+  uint32_t cornerCnt = block->corners_per_block_;
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
+    (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii]
+        = ttcap[ii];
   }
-  if (block->_journal) {
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg::setAllCcCap, ccseg: {}, caps: {}",
+             seg->getId(),
+             ttcap[0]);
+
+  if (block->journal_) {
     char ccCaps[400];
     int pos = 0;
     ccCaps[0] = '\0';
-    for (uint ii = 0; ii < cornerCnt; ii++) {
+    for (uint32_t ii = 0; ii < cornerCnt; ii++) {
       pos += sprintf(&ccCaps[pos], "%f ", ttcap[ii]);
     }
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg::setAllCcCap, ccseg: {}, caps: {}",
-               seg->getId(),
-               ttcap[0]);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbCCSeg::SETALLCCCAP);
-    for (uint ii = 0; ii < cornerCnt; ii++) {
-      block->_journal->pushParam(ttcap[ii]);
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(getId());
+    block->journal_->pushParam(_dbCCSeg::kSetAllCcCap);
+    for (uint32_t ii = 0; ii < cornerCnt; ii++) {
+      block->journal_->pushParam(ttcap[ii]);
     }
-    block->_journal->endAction();
+    block->journal_->endAction();
   }
 }
 
@@ -169,31 +175,32 @@ void dbCCSeg::setCapacitance(double cap, int corner)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  uint32_t cornerCnt = block->corners_per_block_;
+  assert((corner >= 0) && ((uint32_t) corner < cornerCnt));
 
   float& value
-      = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value = (float) cap;
 
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg {}, setCapacitance {}, corner {}",
-               seg->getId(),
-               value,
-               corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::CAPACITANCE);
-    block->_journal->pushParam(prev_value);
-    block->_journal->pushParam(value);
-    block->_journal->pushParam(corner);
-    block->_journal->endAction();
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg {}, setCapacitance {}, corner {}",
+             seg->getId(),
+             value,
+             corner);
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(seg->getId());
+    block->journal_->pushParam(_dbCCSeg::kCapacitance);
+    block->journal_->pushParam(prev_value);
+    block->journal_->pushParam(value);
+    block->journal_->pushParam(corner);
+    block->journal_->endAction();
   }
 }
 
@@ -201,31 +208,32 @@ void dbCCSeg::addCapacitance(double cap, int corner)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  ZASSERT((corner >= 0) && ((uint) corner < cornerCnt));
+  uint32_t cornerCnt = block->corners_per_block_;
+  assert((corner >= 0) && ((uint32_t) corner < cornerCnt));
 
   float& value
-      = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + corner];
+      = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + corner];
   float prev_value = value;
   value += (float) cap;
 
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg {}, addCapacitance {}, corner {}",
-               seg->getId(),
-               value,
-               corner);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::CAPACITANCE);
-    block->_journal->pushParam(prev_value);
-    block->_journal->pushParam(value);
-    block->_journal->pushParam(corner);
-    block->_journal->endAction();
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg {}, addCapacitance {}, corner {}",
+             seg->getId(),
+             value,
+             corner);
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(seg->getId());
+    block->journal_->pushParam(_dbCCSeg::kCapacitance);
+    block->journal_->pushParam(prev_value);
+    block->journal_->pushParam(value);
+    block->journal_->pushParam(corner);
+    block->journal_->endAction();
   }
 }
 
@@ -234,30 +242,31 @@ void dbCCSeg::addCcCapacitance(dbCCSeg* other)
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   _dbCCSeg* oseg = (_dbCCSeg*) other;
-  uint cornerCnt = block->_corners_per_block;
+  uint32_t cornerCnt = block->corners_per_block_;
 
-  for (uint ii = 0; ii < cornerCnt; ii++) {
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
     float& value
-        = (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii];
+        = (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii];
     float& ovalue
-        = (*block->_cc_val_tbl)[(oseg->getOID() - 1) * cornerCnt + 1 + ii];
+        = (*block->cc_val_tbl_)[((oseg->getOID() - 1) * cornerCnt) + 1 + ii];
     value += ovalue;
   }
 
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg {}, other dbCCSeg {}, addCcCapacitance",
-               seg->getOID(),
-               oseg->getOID());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::ADDCCCAPACITANCE);
-    block->_journal->pushParam(oseg->getId());
-    block->_journal->endAction();
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg {}, other dbCCSeg {}, addCcCapacitance",
+             seg->getOID(),
+             oseg->getOID());
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(seg->getId());
+    block->journal_->pushParam(_dbCCSeg::kAddCcCapacitance);
+    block->journal_->pushParam(oseg->getId());
+    block->journal_->endAction();
   }
 }
 
@@ -265,7 +274,7 @@ dbCapNode* dbCCSeg::getSourceCapNode()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  _dbCapNode* n = block->_cap_node_tbl->getPtr(seg->_cap_node[0]);
+  _dbCapNode* n = block->cap_node_tbl_->getPtr(seg->cap_node_[0]);
   return (dbCapNode*) n;
 }
 
@@ -273,11 +282,11 @@ dbCapNode* dbCCSeg::getTargetCapNode()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  _dbCapNode* n = block->_cap_node_tbl->getPtr(seg->_cap_node[1]);
+  _dbCapNode* n = block->cap_node_tbl_->getPtr(seg->cap_node_[1]);
   return (dbCapNode*) n;
 }
 
-uint dbCCSeg::getSourceNodeNum()
+uint32_t dbCCSeg::getSourceNodeNum()
 {
   dbCapNode* n = getSourceCapNode();
   return n->getNode();
@@ -285,14 +294,14 @@ uint dbCCSeg::getSourceNodeNum()
 
 /*
 void
-dbCCSeg::setSourceNode( uint source_node )
+dbCCSeg::setSourceNode( uint32_t source_node )
 {
     _dbCCSeg * seg = (_dbCCSeg *) this;
     seg->_source_cap_node = source_node;
 }
 */
 
-uint dbCCSeg::getTargetNodeNum()
+uint32_t dbCCSeg::getTargetNodeNum()
 {
   dbCapNode* n = getTargetCapNode();
   return n->getNode();
@@ -300,7 +309,7 @@ uint dbCCSeg::getTargetNodeNum()
 
 /*
 void
-dbCCSeg::setTargetNode( uint target_node )
+dbCCSeg::setTargetNode( uint32_t target_node )
 {
     _dbCCSeg * seg = (_dbCCSeg *) this;
     seg->_target_cap_node = target_node;
@@ -319,47 +328,47 @@ dbNet* dbCCSeg::getTargetNet()
   return node->getNet();
 }
 
-uint dbCCSeg::getInfileCnt()
+uint32_t dbCCSeg::getInfileCnt()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  return (seg->_flags._inFileCnt);
+  return (seg->flags_.inFileCnt);
 }
 
 void dbCCSeg::incrInfileCnt()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  seg->_flags._inFileCnt++;
+  seg->flags_.inFileCnt++;
 }
 
 bool dbCCSeg::isMarked()
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  return seg->_flags._mark == 1;
+  return seg->flags_.mark == 1;
 }
 
 void dbCCSeg::setMark(bool value)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  seg->_flags._mark = (value == true) ? 1 : 0;
+  seg->flags_.mark = (value == true) ? 1 : 0;
 }
 
-void dbCCSeg::printCapnCC(uint capn)
+void dbCCSeg::printCapnCC(uint32_t capn)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  uint sidx;
-  if (capn == seg->_cap_node[0]) {
+  uint32_t sidx;
+  if (capn == seg->cap_node_[0]) {
     sidx = 0;
-  } else if (capn == seg->_cap_node[1]) {
+  } else if (capn == seg->cap_node_[1]) {
     sidx = 1;
   } else {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
-               "DB_ECO",
-               1,
+               "DB_EDIT",
+               2,
                "ccSeg {} has capnd {} {}, not {} !",
                getId(),
-               (uint) seg->_cap_node[0],
-               (uint) seg->_cap_node[1],
+               (uint32_t) seg->cap_node_[0],
+               (uint32_t) seg->cap_node_[1],
                capn);
     return;
   }
@@ -368,41 +377,41 @@ void dbCCSeg::printCapnCC(uint capn)
       21,
       "    ccSeg={} capn0={} next0={} capn1={} next1={}",
       getId(),
-      (uint) seg->_cap_node[0],
-      (uint) seg->_next[0],
-      (uint) seg->_cap_node[1],
-      (uint) seg->_next[1]);
-  if (seg->_next[sidx] == 0) {
+      (uint32_t) seg->cap_node_[0],
+      (uint32_t) seg->next_[0],
+      (uint32_t) seg->cap_node_[1],
+      (uint32_t) seg->next_[1]);
+  if (seg->next_[sidx] == 0) {
     return;
   }
   dbBlock* block = (dbBlock*) seg->getOwner();
-  dbCCSeg* nseg = getCCSeg(block, seg->_next[sidx]);
+  dbCCSeg* nseg = getCCSeg(block, seg->next_[sidx]);
   nseg->printCapnCC(capn);
 }
 
-bool dbCCSeg::checkCapnCC(uint capn)
+bool dbCCSeg::checkCapnCC(uint32_t capn)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  uint sidx;
-  if (capn == seg->_cap_node[0]) {
+  uint32_t sidx;
+  if (capn == seg->cap_node_[0]) {
     sidx = 0;
-  } else if (capn == seg->_cap_node[1]) {
+  } else if (capn == seg->cap_node_[1]) {
     sidx = 1;
   } else {
     getImpl()->getLogger()->info(utl::ODB,
                                  22,
                                  "ccSeg {} has capnd {} {}, not {} !",
                                  getId(),
-                                 (uint) seg->_cap_node[0],
-                                 (uint) seg->_cap_node[1],
+                                 (uint32_t) seg->cap_node_[0],
+                                 (uint32_t) seg->cap_node_[1],
                                  capn);
     return false;
   }
-  if (seg->_next[sidx] == 0) {
+  if (seg->next_[sidx] == 0) {
     return true;
   }
   dbBlock* block = (dbBlock*) seg->getOwner();
-  dbCCSeg* nseg = getCCSeg(block, seg->_next[sidx]);
+  dbCCSeg* nseg = getCCSeg(block, seg->next_[sidx]);
   bool rc = nseg->checkCapnCC(capn);
   return rc;
 }
@@ -410,8 +419,8 @@ bool dbCCSeg::checkCapnCC(uint capn)
 /*
  * TODO: ????
 dbCCSeg *
-dbCCSeg::relinkTgtCC (dbNet *net_, dbCCSeg *pseg_, uint src_cap_node, uint
-tgt_cap_node)
+dbCCSeg::relinkTgtCC (dbNet *net_, dbCCSeg *pseg_, uint32_t src_cap_node,
+uint32_t tgt_cap_node)
 {
     _dbNet *tnet = (_dbNet *)net_;
     _dbCCSeg *pseg = (_dbCCSeg *)pseg_;
@@ -422,8 +431,8 @@ tgt_cap_node)
     }
     dbTable<_dbCCSeg> *cct = ((_dbBlock *)tnet->getOwner())->_cc_seg_tbl;
     _dbCCSeg *seg;
-    uint psid = 0;
-    uint tsid;
+    uint32_t psid = 0;
+    uint32_t tsid;
     for (tsid = tnet->_cc_tgt_segs; tsid; tsid = seg->_next_target)
     {
         seg = cct->getPtr(tsid);
@@ -450,20 +459,20 @@ static _dbCCSeg* findParallelCCSeg(_dbBlock* block,
                                    _dbCapNode* tgt,
                                    bool reInsert)
 {
-  uint src_id = src->getOID();
-  uint tgt_id = tgt->getOID();
+  uint32_t src_id = src->getOID();
+  uint32_t tgt_id = tgt->getOID();
   _dbCCSeg* pccs = nullptr;
   _dbCCSeg* ccs = nullptr;
-  uint seg;
+  uint32_t seg;
 
-  for (seg = tgt->_cc_segs; seg;) {
-    ccs = block->_cc_seg_tbl->getPtr(seg);
+  for (seg = tgt->cc_segs_; seg;) {
+    ccs = block->cc_seg_tbl_->getPtr(seg);
 
-    if (ccs->_cap_node[0] == tgt_id && ccs->_cap_node[1] == src_id) {
+    if (ccs->cap_node_[0] == tgt_id && ccs->cap_node_[1] == src_id) {
       break;
     }
 
-    if (ccs->_cap_node[1] == tgt_id && ccs->_cap_node[0] == src_id) {
+    if (ccs->cap_node_[1] == tgt_id && ccs->cap_node_[0] == src_id) {
       break;
     }
 
@@ -476,9 +485,9 @@ static _dbCCSeg* findParallelCCSeg(_dbBlock* block,
   if (!pccs || !reInsert) {
     return ccs;
   }
-  pccs->_next[pccs->idx(tgt_id)] = ccs->next(tgt_id);
-  ccs->_next[ccs->idx(tgt_id)] = tgt->_cc_segs;
-  tgt->_cc_segs = ccs->getOID();
+  pccs->next_[pccs->idx(tgt_id)] = ccs->next(tgt_id);
+  ccs->next_[ccs->idx(tgt_id)] = tgt->cc_segs_;
+  tgt->cc_segs_ = ccs->getOID();
   return ccs;
 }
 
@@ -494,8 +503,8 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
 {
   _dbBlock* block = (_dbBlock*) src_->getImpl()->getOwner();
 
-  uint srcNetId = src_->getNet()->getImpl()->getOID();
-  uint tgtNetId = tgt_->getNet()->getImpl()->getOID();
+  uint32_t srcNetId = src_->getNet()->getImpl()->getOID();
+  uint32_t tgtNetId = tgt_->getNet()->getImpl()->getOID();
 
   _dbCapNode* src = (_dbCapNode*) src_;
   _dbCapNode* tgt = (_dbCapNode*) tgt_;
@@ -504,22 +513,22 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
     tgt = (_dbCapNode*) src_;
   }
 
-  if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg::create, nodeA = {}, nodeB = {}, merge = {}",
-               src->getOID(),
-               tgt->getOID(),
-               mergeParallel);
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg::create, nodeA = {}, nodeB = {}, merge = {}",
+             src->getOID(),
+             tgt->getOID(),
+             mergeParallel);
 
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(src->getOID());
-    block->_journal->pushParam(tgt->getOID());
-    block->_journal->pushParam(mergeParallel);
-    block->_journal->endAction();
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kCreateObject);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(src->getOID());
+    block->journal_->pushParam(tgt->getOID());
+    block->journal_->pushParam(mergeParallel);
+    block->journal_->endAction();
   }
 
   _dbCCSeg* seg;
@@ -530,51 +539,52 @@ dbCCSeg* dbCCSeg::create(dbCapNode* src_, dbCapNode* tgt_, bool mergeParallel)
     }
   }
 
-  seg = block->_cc_seg_tbl->create();
-  // seg->_flags._cnt = block->_num_corners;
+  seg = block->cc_seg_tbl_->create();
+  // seg->flags_._cnt = block->_num_corners;
 
   // set corner values
-  uint cornerCnt = block->_corners_per_block;
-  if (block->_maxCCSegId >= seg->getOID()) {
-    for (uint ii = 0; ii < cornerCnt; ii++) {
-      (*block->_cc_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
+  uint32_t cornerCnt = block->corners_per_block_;
+  if (block->max_cc_seg_id_ >= seg->getOID()) {
+    for (uint32_t ii = 0; ii < cornerCnt; ii++) {
+      (*block->cc_val_tbl_)[((seg->getOID() - 1) * cornerCnt) + 1 + ii] = 0.0;
     }
   } else {
-    block->_maxCCSegId = seg->getOID();
-    uint ccCapIdx = block->_cc_val_tbl->getIdx(cornerCnt, (float) 0.0);
-    ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == ccCapIdx);
+    block->max_cc_seg_id_ = seg->getOID();
+    [[maybe_unused]] uint32_t ccCapIdx
+        = block->cc_val_tbl_->getIdx(cornerCnt, (float) 0.0);
+    assert((seg->getOID() - 1) * cornerCnt + 1 == ccCapIdx);
   }
 
-  seg->_cap_node[0] = src->getOID();
-  seg->_next[0] = src->_cc_segs;
-  src->_cc_segs = seg->getOID();
+  seg->cap_node_[0] = src->getOID();
+  seg->next_[0] = src->cc_segs_;
+  src->cc_segs_ = seg->getOID();
 
-  seg->_cap_node[1] = tgt->getOID();
-  seg->_next[1] = tgt->_cc_segs;
-  tgt->_cc_segs = seg->getOID();
+  seg->cap_node_[1] = tgt->getOID();
+  seg->next_[1] = tgt->cc_segs_;
+  tgt->cc_segs_ = seg->getOID();
   return (dbCCSeg*) seg;
 }
 
 static void unlink_cc_seg(_dbBlock* block, _dbCapNode* node, _dbCCSeg* s)
 {
   dbId<_dbCapNode> cid = node->getOID();
-  uint prev = 0;
-  uint next = node->_cc_segs;
-  uint seg = s->getOID();
+  uint32_t prev = 0;
+  uint32_t next = node->cc_segs_;
+  uint32_t seg = s->getOID();
 
   while (next) {
     if (next == seg) {
       if (prev == 0) {
-        node->_cc_segs = s->next(cid);
+        node->cc_segs_ = s->next(cid);
       } else {
-        _dbCCSeg* p = block->_cc_seg_tbl->getPtr(prev);
+        _dbCCSeg* p = block->cc_seg_tbl_->getPtr(prev);
         p->next(cid) = s->next(cid);
       }
 
       break;
     }
 
-    _dbCCSeg* ncc = block->_cc_seg_tbl->getPtr(next);
+    _dbCCSeg* ncc = block->cc_seg_tbl_->getPtr(next);
     prev = next;
     next = ncc->next(cid);
   }
@@ -584,46 +594,48 @@ void dbCCSeg::unLink_cc_seg(dbCapNode* capn)
 {
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   unlink_cc_seg(block, (_dbCapNode*) capn, (_dbCCSeg*) this);
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg::unLink, ccseg: {}, capNode: {}",
-               getId(),
-               capn->getId());
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbCCSeg::UNLINKCCSEG);
-    block->_journal->pushParam(capn->getId());
-    block->_journal->endAction();
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg::unLink, ccseg: {}, capNode: {}",
+             getId(),
+             capn->getId());
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(getId());
+    block->journal_->pushParam(_dbCCSeg::kUnlinkCcSeg);
+    block->journal_->pushParam(capn->getId());
+    block->journal_->endAction();
   }
 }
 
-void dbCCSeg::Link_cc_seg(dbCapNode* capn, uint cseq)
+void dbCCSeg::Link_cc_seg(dbCapNode* capn, uint32_t cseq)
 {
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   _dbCapNode* tgt = (_dbCapNode*) capn;
-  ((_dbCCSeg*) this)->_next[cseq] = tgt->_cc_segs;
-  tgt->_cc_segs = getId();
+  ((_dbCCSeg*) this)->next_[cseq] = tgt->cc_segs_;
+  tgt->cc_segs_ = getId();
 
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg::Link, ccseg: {}, capNode: {}, cseq: {}",
-               getId(),
-               capn->getId(),
-               cseq);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(getId());
-    block->_journal->pushParam(_dbCCSeg::LINKCCSEG);
-    block->_journal->pushParam(capn->getId());
-    block->_journal->pushParam(cseq);
-    block->_journal->endAction();
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg::Link, ccseg: {}, capNode: {}, cseq: {}",
+             getId(),
+             capn->getId(),
+             cseq);
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(getId());
+    block->journal_->pushParam(_dbCCSeg::kLinkCcSeg);
+    block->journal_->pushParam(capn->getId());
+    block->journal_->pushParam(cseq);
+    block->journal_->endAction();
   }
 }
 
@@ -632,8 +644,8 @@ void dbCCSeg::disconnect(dbCCSeg* tcc_)
   _dbCCSeg* tcc = (_dbCCSeg*) tcc_;
   dbBlock* block = (dbBlock*) tcc->getOwner();
 
-  dbCapNode* src = dbCapNode::getCapNode(block, tcc->_cap_node[0]);
-  dbCapNode* tgt = dbCapNode::getCapNode(block, tcc->_cap_node[1]);
+  dbCapNode* src = dbCapNode::getCapNode(block, tcc->cap_node_[0]);
+  dbCapNode* tgt = dbCapNode::getCapNode(block, tcc->cap_node_[1]);
   tcc_->unLink_cc_seg(src);
   tcc_->unLink_cc_seg(tgt);
 }
@@ -643,8 +655,8 @@ void dbCCSeg::connect(dbCCSeg* tcc_)
   _dbCCSeg* tcc = (_dbCCSeg*) tcc_;
   dbBlock* block = (dbBlock*) tcc->getOwner();
 
-  dbCapNode* src = dbCapNode::getCapNode(block, tcc->_cap_node[0]);
-  dbCapNode* tgt = dbCapNode::getCapNode(block, tcc->_cap_node[1]);
+  dbCapNode* src = dbCapNode::getCapNode(block, tcc->cap_node_[0]);
+  dbCapNode* tgt = dbCapNode::getCapNode(block, tcc->cap_node_[1]);
   tcc_->Link_cc_seg(src, 0);
   tcc_->Link_cc_seg(tgt, 1);
 }
@@ -653,48 +665,50 @@ void dbCCSeg::destroy(dbCCSeg* seg_)
   _dbCCSeg* seg = (_dbCCSeg*) seg_;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
-  if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg::destroy, seg id: {}",
-               seg->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam((uint) 1);  //  regular destroy
-    block->_journal->endAction();
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg::destroy, seg id: {}",
+             seg->getId());
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kDeleteObject);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(seg->getId());
+    block->journal_->pushParam((uint32_t) 1);  //  regular destroy
+    block->journal_->endAction();
   }
 
-  _dbCapNode* src = block->_cap_node_tbl->getPtr(seg->_cap_node[0]);
-  _dbCapNode* tgt = block->_cap_node_tbl->getPtr(seg->_cap_node[1]);
+  _dbCapNode* src = block->cap_node_tbl_->getPtr(seg->cap_node_[0]);
+  _dbCapNode* tgt = block->cap_node_tbl_->getPtr(seg->cap_node_[1]);
   unlink_cc_seg(block, src, seg);
   unlink_cc_seg(block, tgt, seg);
   dbProperty::destroyProperties(seg);
-  block->_cc_seg_tbl->destroy(seg);
+  block->cc_seg_tbl_->destroy(seg);
 }
 void dbCCSeg::destroyS(dbCCSeg* seg_)
 {
   _dbCCSeg* seg = (_dbCCSeg*) seg_;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
 
-  if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg::destroy, seg id: {}",
-               seg->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam((uint) 0);  //  simple destroy
-    block->_journal->endAction();
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg::destroy, seg id: {}",
+             seg->getId());
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kDeleteObject);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(seg->getId());
+    block->journal_->pushParam((uint32_t) 0);  //  simple destroy
+    block->journal_->endAction();
   }
 
   dbProperty::destroyProperties(seg);
-  block->_cc_seg_tbl->destroy(seg);
+  block->cc_seg_tbl_->destroy(seg);
 }
 
 dbSet<dbCCSeg>::iterator dbCCSeg::destroy(dbSet<dbCCSeg>::iterator& itr)
@@ -711,12 +725,12 @@ void dbCCSeg::swapCapnode(dbCapNode* orig_, dbCapNode* new_)
   _dbBlock* block = (_dbBlock*) seg->getOwner();
   _dbCapNode* orig = (_dbCapNode*) orig_;
   _dbCapNode* newn = (_dbCapNode*) new_;
-  uint oid = orig->getOID();
-  uint nid = newn->getOID();
-  uint sidx;
-  if (oid == seg->_cap_node[0]) {
+  uint32_t oid = orig->getOID();
+  uint32_t nid = newn->getOID();
+  uint32_t sidx;
+  if (oid == seg->cap_node_[0]) {
     sidx = 0;
-  } else if (oid == seg->_cap_node[1]) {
+  } else if (oid == seg->cap_node_[1]) {
     sidx = 1;
   } else {
     getImpl()->getLogger()->error(
@@ -727,41 +741,42 @@ void dbCCSeg::swapCapnode(dbCapNode* orig_, dbCapNode* new_)
         oid);
   }
   unlink_cc_seg(block, orig, seg);
-  seg->_cap_node[sidx] = nid;
-  seg->_next[sidx] = newn->_cc_segs;
-  newn->_cc_segs = seg->getOID();
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbCCSeg {}, origCapNode {}, newCapNode {}, swapCapnode",
-               seg->getOID(),
-               oid,
-               nid);
-    block->_journal->beginAction(dbJournal::UPDATE_FIELD);
-    block->_journal->pushParam(dbCCSegObj);
-    block->_journal->pushParam(seg->getId());
-    block->_journal->pushParam(_dbCCSeg::SWAPCAPNODE);
-    block->_journal->pushParam(oid);
-    block->_journal->pushParam(nid);
-    block->_journal->endAction();
+  seg->cap_node_[sidx] = nid;
+  seg->next_[sidx] = newn->cc_segs_;
+  newn->cc_segs_ = seg->getOID();
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: dbCCSeg {}, origCapNode {}, newCapNode {}, swapCapnode",
+             seg->getOID(),
+             oid,
+             nid);
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kUpdateField);
+    block->journal_->pushParam(dbCCSegObj);
+    block->journal_->pushParam(seg->getId());
+    block->journal_->pushParam(_dbCCSeg::kSwapCapNode);
+    block->journal_->pushParam(oid);
+    block->journal_->pushParam(nid);
+    block->journal_->endAction();
   }
 }
 
-dbCapNode* dbCCSeg::getTheOtherCapn(dbCapNode* oneCap, uint& cid)
+dbCapNode* dbCCSeg::getTheOtherCapn(dbCapNode* oneCap, uint32_t& cid)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
-  cid = ((_dbCapNode*) oneCap)->getOID() == seg->_cap_node[1] ? 0 : 1;
-  _dbCapNode* n = block->_cap_node_tbl->getPtr(seg->_cap_node[cid]);
+  cid = ((_dbCapNode*) oneCap)->getOID() == seg->cap_node_[1] ? 0 : 1;
+  _dbCapNode* n = block->cap_node_tbl_->getPtr(seg->cap_node_[cid]);
   return (dbCapNode*) n;
 }
 
-dbCCSeg* dbCCSeg::getCCSeg(dbBlock* block_, uint dbid_)
+dbCCSeg* dbCCSeg::getCCSeg(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbCCSeg*) block->_cc_seg_tbl->getPtr(dbid_);
+  return (dbCCSeg*) block->cc_seg_tbl_->getPtr(dbid_);
 }
 
 void _dbCCSeg::collectMemInfo(MemInfo& info)

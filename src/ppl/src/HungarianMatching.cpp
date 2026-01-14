@@ -63,7 +63,7 @@ void HungarianMatching::createMatrix()
       std::vector<int> larger_costs;
       int slot_index = 0;
       for (int i = begin_slot_; i <= end_slot_; ++i) {
-        const Point& slot_pos = slots_[i].pos;
+        const odb::Point& slot_pos = slots_[i].pos;
         if (slots_[i].blocked) {
           continue;
         }
@@ -91,11 +91,6 @@ void HungarianMatching::createMatrix()
       pin_index++;
     }
   }
-}
-
-inline bool samePos(Point& a, Point& b)
-{
-  return (a.x() == b.x() && a.y() == b.y());
 }
 
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
@@ -199,7 +194,7 @@ void HungarianMatching::createMatrixForGroups()
     group_sizes.push_back(pins.size());
   }
 
-  std::sort(group_sizes.begin(), group_sizes.end(), std::greater<int>());
+  std::ranges::sort(group_sizes, std::greater<int>());
 
   if (!group_sizes.empty()) {
     valid_starting_slots_.clear();
@@ -244,7 +239,7 @@ void HungarianMatching::createMatrixForGroups()
       for (int i : valid_starting_slots_) {
         int group_hpwl = 0;
         for (const int io_idx : pins) {
-          const Point& slot_pos = slots_[i].pos;
+          const odb::Point& slot_pos = slots_[i].pos;
 
           hungarian_matrix_[slot_index].resize(num_pin_groups_,
                                                std::numeric_limits<int>::max());

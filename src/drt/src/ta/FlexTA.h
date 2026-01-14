@@ -115,19 +115,14 @@ class FlexTAWorker
         logger_(logger),
         router_cfg_(router_cfg),
         save_updates_(save_updates),
-        dir_(dbTechLayerDir::NONE),
-        taIter_(0),
-        rq_(this),
-        numAssigned_(0),
-        totCost_(0),
-        maxRetry_(1),
-        hardIroutesMode_(false)
+        dir_(odb::dbTechLayerDir::NONE),
+        rq_(this)
   {
   }
   // setters
   void setRouteBox(const odb::Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const odb::Rect& boxIn) { extBox_ = boxIn; }
-  void setDir(const dbTechLayerDir& in) { dir_ = in; }
+  void setDir(const odb::dbTechLayerDir& in) { dir_ = in; }
   void setTAIter(int in) { taIter_ = in; }
   void addIroute(std::unique_ptr<taPin> in, bool isExt = false)
   {
@@ -161,7 +156,7 @@ class FlexTAWorker
   frDesign* getDesign() const { return design_; }
   const odb::Rect& getRouteBox() const { return routeBox_; }
   const odb::Rect& getExtBox() const { return extBox_; }
-  dbTechLayerDir getDir() const { return dir_; }
+  odb::dbTechLayerDir getDir() const { return dir_; }
   int getTAIter() const { return taIter_; }
   bool isInitTA() const { return (taIter_ == 0); }
   frRegionQuery* getRegionQuery() const { return design_->getRegionQuery(); }
@@ -196,8 +191,8 @@ class FlexTAWorker
   bool save_updates_;
   odb::Rect routeBox_;
   odb::Rect extBox_;
-  dbTechLayerDir dir_;
-  int taIter_;
+  odb::dbTechLayerDir dir_;
+  int taIter_{0};
   FlexTAWorkerRegionQuery rq_;
 
   std::vector<std::unique_ptr<taPin>> iroutes_;  // unsorted iroutes
@@ -205,10 +200,10 @@ class FlexTAWorker
   std::vector<std::vector<frCoord>> trackLocs_;
   std::set<taPin*, taPinComp>
       reassignIroutes_;  // iroutes to be assigned in sorted order
-  int numAssigned_;
-  int totCost_;
-  int maxRetry_;
-  bool hardIroutesMode_;
+  int numAssigned_{0};
+  int totCost_{0};
+  int maxRetry_{1};
+  bool hardIroutesMode_{false};
 
   //// others
   void init();

@@ -39,8 +39,6 @@ struct Constraint;
 struct Section;
 struct Slot;
 
-using odb::Point;
-
 using utl::Logger;
 
 // A list of pins that will be placed together in the die boundary
@@ -150,10 +148,10 @@ class IOPlacer
                  Edge edge,
                  odb::Line line,
                  bool is_die_polygon);
-  std::vector<Point> findLayerSlots(int layer,
-                                    Edge edge,
-                                    odb::Line line,
-                                    bool is_die_polygon);
+  std::vector<odb::Point> findLayerSlots(int layer,
+                                         Edge edge,
+                                         odb::Line line,
+                                         bool is_die_polygon);
   void initTopLayerGrid();
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();

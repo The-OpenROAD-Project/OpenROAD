@@ -3,28 +3,26 @@
 
 #pragma once
 
-#include <iterator>
-
-#include "odb/odb.h"
+#include <cstdint>
 
 namespace odb {
 
 class dbObject;
-class dbObjectTable;
 
 class dbIterator
 {
  public:
-  virtual bool reversible() = 0;
-  virtual bool orderReversed() = 0;
-  virtual void reverse(dbObject* parent) = 0;
-  virtual uint sequential() = 0;
-  virtual uint size(dbObject* parent) = 0;
-  virtual uint begin(dbObject* parent) = 0;
-  virtual uint end(dbObject* parent) = 0;
-  virtual uint next(uint id, ...) = 0;
-  virtual dbObject* getObject(uint id, ...) = 0;
   virtual ~dbIterator() = default;
+
+  virtual bool reversible() const = 0;
+  virtual bool orderReversed() const = 0;
+  virtual void reverse(dbObject* parent) = 0;
+  virtual uint32_t sequential() const = 0;
+  virtual uint32_t size(dbObject* parent) const = 0;
+  virtual uint32_t begin(dbObject* parent) const = 0;
+  virtual uint32_t end(dbObject* parent) const = 0;
+  virtual uint32_t next(uint32_t id, ...) const = 0;
+  virtual dbObject* getObject(uint32_t id, ...) = 0;
 };
 
 }  // namespace odb

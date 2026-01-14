@@ -19,7 +19,7 @@ set_io_pin_constraint -pin_names { io_1 io_2 } -region top:*
 set_io_pin_constraint -pin_names { io_3 io_4 } -region bottom:*
 
 set_thread_count 0
-rtl_macro_placer -boundary_weight 0 -report_directory results/boundary_push2 -halo_width 0.3
+rtl_macro_placer -boundary_weight 0 -report_directory [make_result_dir] -halo_width 0.3
 
 set def_file [make_result_file boundary_push2.def]
 write_def $def_file

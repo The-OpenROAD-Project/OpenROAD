@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbChipConnItr.h"
 
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipConn.h"
 #include "dbTable.h"
@@ -17,12 +19,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbChipConnItr::reversible()
+bool dbChipConnItr::reversible() const
 {
   return true;
 }
 
-bool dbChipConnItr::orderReversed()
+bool dbChipConnItr::orderReversed() const
 {
   return true;
 }
@@ -31,12 +33,12 @@ void dbChipConnItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbChip* chip = (_dbChip*) parent;
-  uint id = chip->conns_;
-  uint list = 0;
+  uint32_t id = chip->conns_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbChipConn* chipconn = _chip_conn_tbl->getPtr(id);
-    uint n = chipconn->chip_conn_next_;
+    _dbChipConn* chipconn = chip_conn_tbl_->getPtr(id);
+    uint32_t n = chipconn->chip_conn_next_;
     chipconn->chip_conn_next_ = list;
     list = id;
     id = n;
@@ -45,15 +47,15 @@ void dbChipConnItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipConnItr::sequential()
+uint32_t dbChipConnItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipConnItr::size(dbObject* parent)
+uint32_t dbChipConnItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbChipConnItr::begin(parent); id != dbChipConnItr::end(parent);
        id = dbChipConnItr::next(id)) {
@@ -63,7 +65,7 @@ uint dbChipConnItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbChipConnItr::begin(dbObject* parent)
+uint32_t dbChipConnItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChip* chip = (_dbChip*) parent;
@@ -71,22 +73,22 @@ uint dbChipConnItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbChipConnItr::end(dbObject* /* unused: parent */)
+uint32_t dbChipConnItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipConnItr::next(uint id, ...)
+uint32_t dbChipConnItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
-  _dbChipConn* chipconn = _chip_conn_tbl->getPtr(id);
+  _dbChipConn* chipconn = chip_conn_tbl_->getPtr(id);
   return chipconn->chip_conn_next_;
   // User Code End next
 }
 
-dbObject* dbChipConnItr::getObject(uint id, ...)
+dbObject* dbChipConnItr::getObject(uint32_t id, ...)
 {
-  return _chip_conn_tbl->getPtr(id);
+  return chip_conn_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp

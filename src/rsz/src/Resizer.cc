@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -17,6 +19,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -25,6 +28,7 @@
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
 #include "ConcreteSwapArithModules.hh"
+#include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
@@ -41,11 +45,15 @@
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
+#include "sta/Clock.hh"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
@@ -60,18 +68,20 @@
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/NetworkCmp.hh"
 #include "sta/Parasitics.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
-#include "sta/StaMain.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 #include "utl/scope.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
@@ -108,7 +118,6 @@ using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
 using sta::NetTermIterator;
-using sta::NetworkEdit;
 using sta::Port;
 using sta::PortDirection;
 using sta::stringLess;
@@ -165,15 +174,15 @@ Resizer::Resizer(Logger* logger,
 
   db_network_->addObserver(this);
 
+  size_up_move_ = std::make_unique<SizeUpMove>(this);
+  size_up_match_move_ = std::make_unique<SizeUpMatchMove>(this);
+  size_down_move_ = std::make_unique<SizeDownMove>(this);
   buffer_move_ = std::make_unique<BufferMove>(this);
   clone_move_ = std::make_unique<CloneMove>(this);
-  size_down_move_ = std::make_unique<SizeDownMove>(this);
-  size_up_move_ = std::make_unique<SizeUpMove>(this);
-  split_load_move_ = std::make_unique<SplitLoadMove>(this);
   swap_pins_move_ = std::make_unique<SwapPinsMove>(this);
-  unbuffer_move_ = std::make_unique<UnbufferMove>(this);
   vt_swap_speed_move_ = std::make_unique<VTSwapSpeedMove>(this);
-  size_up_match_move_ = std::make_unique<SizeUpMatchMove>(this);
+  unbuffer_move_ = std::make_unique<UnbufferMove>(this);
+  split_load_move_ = std::make_unique<SplitLoadMove>(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this);
   repair_design_ = std::make_unique<RepairDesign>(this);
@@ -253,7 +262,7 @@ VertexSeq Resizer::orderedLoadPinVertices()
 ////////////////////////////////////////////////////////////////
 constexpr static double double_equal_tolerance
     = std::numeric_limits<double>::epsilon() * 10;
-bool rszFuzzyEqual(double v1, double v2)
+static bool rszFuzzyEqual(double v1, double v2)
 {
   if (v1 == v2) {
     return true;
@@ -394,9 +403,6 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   // timing information. So initBlock(), a light version of init(), is
   // sufficient.
   initBlock();
-  // Disable incremental timing.
-  graph_delay_calc_->delaysInvalid();
-  search_->arrivalsInvalid();
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   if (insts.empty()) {
@@ -425,6 +431,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     }
   }
   unbuffer_move_->commitMoves();
+  estimate_parasitics_->updateParasitics();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
@@ -638,9 +645,7 @@ bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
     return false;
   }
 
-  std::sort(test_points.begin(), test_points.end());
-  auto last = std::unique(test_points.begin(), test_points.end());
-  test_points.erase(last, test_points.end());
+  utl::sort_and_unique(test_points);
 
   // Ignore cell timing above this C_load/C_in ratio as that is far off
   // from the target ratio we use in sizing (this cut-off helps prune the
@@ -734,8 +739,23 @@ void Resizer::reportFastBufferSizes()
 {
   resizePreamble();
 
+  // Sort fast buffers by capacitance and then by name.
+  std::vector<LibertyCell*> buffers{buffer_fast_sizes_.begin(),
+                                    buffer_fast_sizes_.end()};
+  std::ranges::sort(buffers, [=](const LibertyCell* a, const LibertyCell* b) {
+    LibertyPort* scratch;
+    LibertyPort* in_a;
+    LibertyPort* in_b;
+
+    a->bufferPorts(in_a, scratch);
+    b->bufferPorts(in_b, scratch);
+
+    return std::make_pair(in_a->capacitance(), std::string_view(a->name()))
+           < std::make_pair(in_b->capacitance(), std::string_view(b->name()));
+  });
+
   logger_->report("\nFast Buffer Report:");
-  logger_->report("There are {} fast buffers", buffer_fast_sizes_.size());
+  logger_->report("There are {} fast buffers", buffers.size());
   logger_->report("{:->80}", "");
   logger_->report(
       "Cell                                        Area  Input  Intrinsic "
@@ -744,7 +764,7 @@ void Resizer::reportFastBufferSizes()
       "                                                   Cap    Delay    Res");
   logger_->report("{:->80}", "");
 
-  for (auto size : buffer_fast_sizes_) {
+  for (auto size : buffers) {
     LibertyPort *in, *out;
     size->bufferPorts(in, out);
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>7.1f}",
@@ -819,9 +839,9 @@ void Resizer::findBuffers()
   for (const auto& [site_type, count] : lib_data_->cells_by_site) {
     site_list.emplace_back(site_type, (float) count / buffer_list.size());
   }
-  std::sort(site_list.begin(),
-            site_list.end(),
-            [](const auto& a, const auto& b) { return a.second > b.second; });
+  std::ranges::sort(site_list, [](const auto& a, const auto& b) {
+    return a.second > b.second;
+  });
   int num_best_sites = std::min(2, (int) lib_data_->cells_by_site.size());
   for (int i = 0; i < num_best_sites; i++) {
     debugRDPrint2("findBuffers: {} is a dominant site",
@@ -883,11 +903,9 @@ void Resizer::findBuffers()
     }
 
     // Sort this bucket by drive_res * input_cap (ascending)
-    std::sort(bucket_buffers.begin(),
-              bucket_buffers.end(),
-              [](const auto& a, const auto& b) {
-                return a.second < b.second;  // Compare by R * C
-              });
+    std::ranges::sort(bucket_buffers, [](const auto& a, const auto& b) {
+      return a.second < b.second;  // Compare by R * C
+    });
 
     // Select up to 2 best buffers from this bucket
     if (num_best_sites == 1) {
@@ -1126,7 +1144,6 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
                                bool verbose)
 {
   dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
-  odb::dbModNet* top_pin_hier_net = db_network_->hierNet(top_pin);
 
   // Filter to see if we need to do anything..
   bool has_non_buffer = false;
@@ -1182,72 +1199,9 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
         RSZ, 214, "Buffering input port {}.", network_->name(top_pin));
   }
 
-  // make the buffer and its output net.
-  Instance* parent = db_network_->topInstance();
-  Net* buffer_out = db_network_->makeNet(parent);
-  dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
-  Point pin_loc = db_network_->location(top_pin);
-  Instance* buffer = makeBuffer(buffer_cell, "input", parent, pin_loc);
-  inserted_buffer_count_++;
-
-  Pin* buffer_ip_pin = nullptr;
-  Pin* buffer_op_pin = nullptr;
-  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-
-  pin_iter
-      = network_->connectedPinIterator(db_network_->dbToSta(top_pin_flat_net));
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (pin != top_pin) {
-      odb::dbBTerm* dest_bterm;
-      odb::dbModITerm* dest_moditerm;
-      odb::dbITerm* dest_iterm;
-      db_network_->staToDb(pin, dest_iterm, dest_bterm, dest_moditerm);
-      odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
-      sta_->disconnectPin(const_cast<Pin*>(pin));
-      if (dest_modnet) {
-        if (dest_iterm) {
-          dest_iterm->connect(dest_modnet);
-        }
-        if (dest_moditerm) {
-          dest_moditerm->connect(dest_modnet);
-        }
-      }
-      if (dest_iterm) {
-        dest_iterm->connect(buffer_out_flat_net);
-      } else if (dest_bterm) {
-        dest_bterm->connect(buffer_out_flat_net);
-      }
-    }
-  }
-  delete pin_iter;
-
-  db_network_->connectPin(buffer_ip_pin,
-                          db_network_->dbToSta(top_pin_flat_net));
-  db_network_->connectPin(buffer_op_pin,
-                          db_network_->dbToSta(buffer_out_flat_net));
-  //
-  // we are going to push the top mod net into the core
-  // so we rename it to avoid conflict with top level
-  // name. We name it the same as the flat net used on
-  // the buffer output.
-  //
-
-  if (top_pin_hier_net) {
-    top_pin_hier_net->rename(buffer_out_flat_net->getName().c_str());
-    db_network_->connectPin(buffer_op_pin,
-                            db_network_->dbToSta(top_pin_hier_net));
-  }
-
-  //
-  // Remove the top net connection to the mod net, if any
-  // and make sure top pin connected to just the flat net.
-  //
-  if (top_pin_hier_net) {
-    db_network_->disconnectPin(const_cast<Pin*>(top_pin));
-    db_network_->connectPin(const_cast<Pin*>(top_pin),
-                            db_network_->dbToSta(top_pin_flat_net));
-  }
+  Instance* buffer = nullptr;
+  Net* target_net = db_network_->dbToSta(top_pin_flat_net);
+  buffer = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
 
   return buffer;
 }
@@ -1341,64 +1295,8 @@ void Resizer::bufferOutput(const Pin* top_pin,
         RSZ, 215, "Buffering output port {}.", network_->name(top_pin));
   }
 
-  NetworkEdit* network = networkEdit();
-
-  odb::dbITerm* top_pin_op_iterm;
-  odb::dbBTerm* top_pin_op_bterm;
-  odb::dbModITerm* top_pin_op_moditerm;
-
-  db_network_->staToDb(
-      top_pin, top_pin_op_iterm, top_pin_op_bterm, top_pin_op_moditerm);
-
-  odb::dbNet* flat_op_net = top_pin_op_bterm->getNet();
-  odb::dbModNet* hier_op_net = top_pin_op_bterm->getModNet();
-
-  sta_->disconnectPin(const_cast<Pin*>(top_pin));
-
-  LibertyPort *input, *output;
-  assert(buffer_cell);
-  buffer_cell->bufferPorts(input, output);
-
-  Instance* parent = network->topInstance();
-  Net* buffer_out = db_network_->makeNet(parent);
-
-  Point pin_loc = db_network_->location(top_pin);
-  // buffer made in top level.
-  Instance* buffer = makeBuffer(buffer_cell, "output", parent, pin_loc);
-  inserted_buffer_count_++;
-
-  // connect original input (hierarchical or flat) to buffer input
-  // handle hierarchy
-  Pin* buffer_ip_pin = nullptr;
-  Pin* buffer_op_pin = nullptr;
-  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-
-  // get the iterms. Note this are never null (makeBuffer properly instantiates
-  // them and we know to always expect an iterm.). However, the api (flatPin)
-  // truly checks to see if the pins could be moditerms & if they are returns
-  // null, so coverity rationally reasons that the iterm could be null,
-  // so we add some extra checking here. This is a consequence of
-  //"hiding" the full api.
-  //
-  odb::dbITerm* buffer_op_pin_iterm = db_network_->flatPin(buffer_op_pin);
-  odb::dbITerm* buffer_ip_pin_iterm = db_network_->flatPin(buffer_ip_pin);
-
-  if (buffer_ip_pin_iterm && buffer_op_pin_iterm) {
-    if (flat_op_net) {
-      buffer_ip_pin_iterm->connect(flat_op_net);
-    }
-    if (hier_op_net) {
-      buffer_ip_pin_iterm->connect(hier_op_net);
-    }
-    buffer_op_pin_iterm->connect(db_network_->staToDb(buffer_out));
-    top_pin_op_bterm->connect(db_network_->staToDb(buffer_out));
-    SwapNetNames(buffer_op_pin_iterm, buffer_ip_pin_iterm);
-    // rename the mod net to match the flat net.
-    if (buffer_ip_pin_iterm->getNet() && buffer_ip_pin_iterm->getModNet()) {
-      buffer_ip_pin_iterm->getModNet()->rename(
-          buffer_ip_pin_iterm->getNet()->getName().c_str());
-    }
-  }
+  insertBufferBeforeLoad(
+      const_cast<Pin*>(top_pin), buffer_cell, nullptr, "output");
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1519,7 +1417,9 @@ std::vector<sta::LibertyPort*> Resizer::libraryPins(LibertyCell* cell) const
   sta::LibertyCellPortIterator itr(cell);
   while (itr.hasNext()) {
     auto port = itr.next();
-    pins.emplace_back(port);
+    if (!port->isPwrGnd()) {
+      pins.emplace_back(port);
+    }
   }
   return pins;
 }
@@ -1596,6 +1496,16 @@ bool Resizer::hasFanout(Vertex* drvr)
 {
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   return edge_iter.hasNext();
+}
+
+bool Resizer::hasFanout(Pin* drvr)
+{
+  if (network_->isDriver(drvr) == false) {
+    return false;
+  }
+
+  Vertex* vertex = graph_->pinDrvrVertex(drvr);
+  return hasFanout(vertex);
 }
 
 static float targetLoadDist(float load_cap, float target_load)
@@ -1704,26 +1614,24 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
 
   // Sort equiv cells by ascending area and leakage
   // STA sorts them by drive resistance
-  std::stable_sort(equiv_cells.begin(),
-                   equiv_cells.end(),
-                   [this](LibertyCell* a, LibertyCell* b) {
-                     dbMaster* master_a = this->getDbNetwork()->staToDb(a);
-                     dbMaster* master_b = this->getDbNetwork()->staToDb(b);
-                     if (master_a && master_b) {
-                       if (master_a->getArea() != master_b->getArea()) {
-                         return master_a->getArea() < master_b->getArea();
-                       }
-                     }
-                     std::optional<float> leakage_a = this->cellLeakage(a);
-                     std::optional<float> leakage_b = this->cellLeakage(b);
-                     // Compare leakages only if they are defined
-                     if (leakage_a && leakage_b) {
-                       return *leakage_a < *leakage_b;
-                     }
-                     // Cell 'a' has a priority as it has lower
-                     // drive resistance than 'b' after STA sort
-                     return leakage_a.has_value() && !leakage_b.has_value();
-                   });
+  std::ranges::stable_sort(equiv_cells, [this](LibertyCell* a, LibertyCell* b) {
+    dbMaster* master_a = this->getDbNetwork()->staToDb(a);
+    dbMaster* master_b = this->getDbNetwork()->staToDb(b);
+    if (master_a && master_b) {
+      if (master_a->getArea() != master_b->getArea()) {
+        return master_a->getArea() < master_b->getArea();
+      }
+    }
+    std::optional<float> leakage_a = this->cellLeakage(a);
+    std::optional<float> leakage_b = this->cellLeakage(b);
+    // Compare leakages only if they are defined
+    if (leakage_a && leakage_b) {
+      return *leakage_a < *leakage_b;
+    }
+    // Cell 'a' has a priority as it has lower
+    // drive resistance than 'b' after STA sort
+    return leakage_a.has_value() && !leakage_b.has_value();
+  });
 
   logger_->report(
       "The following {} cells are equivalent to {}{}",
@@ -2179,14 +2087,13 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
   }
 
   // Sort the list in ascending order of leakage
-  std::stable_sort(vt_equiv_cells.begin(),
-                   vt_equiv_cells.end(),
-                   [this](LibertyCell* cell1, LibertyCell* cell2) {
-                     std::optional<float> leak1 = this->cellLeakage(cell1);
-                     std::optional<float> leak2 = this->cellLeakage(cell2);
-                     // Treat missing leakage as 0
-                     return leak1.value_or(0.0) < leak2.value_or(0.0);
-                   });
+  std::ranges::stable_sort(
+      vt_equiv_cells, [this](LibertyCell* cell1, LibertyCell* cell2) {
+        std::optional<float> leak1 = this->cellLeakage(cell1);
+        std::optional<float> leak2 = this->cellLeakage(cell2);
+        // Treat missing leakage as 0
+        return leak1.value_or(0.0) < leak2.value_or(0.0);
+      });
 
   // Pick only one cell from each VT category
   const std::string source_name = source_cell->name();
@@ -2473,7 +2380,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
       float highest_cin = 0;
       for (LibertyCell* size : equiv_cells) {
         float size_cin;
-        if ((!cell->isBuffer() || buffer_fast_sizes_.count(size))
+        if ((!cell->isBuffer() || buffer_fast_sizes_.contains(size))
             && getCin(size, size_cin)) {
           if (load_cap < size_cin * cap_ratio) {
             if (upsize_only && size == cell) {
@@ -2679,9 +2586,7 @@ void Resizer::findResizeSlacks1()
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
-    Net* net = network_->isTopLevelPort(drvr_pin)
-                   ? network_->net(network_->term(drvr_pin))
-                   : network_->net(drvr_pin);
+    Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
         && !drvr->isConstant()
         // Hands off special nets.
@@ -2698,8 +2603,19 @@ NetSeq Resizer::resizeWorstSlackNets()
   for (auto pair : net_slack_map_) {
     nets.push_back(pair.first);
   }
-  sort(nets, [this](const Net* net1, const Net* net2) {
-    return resizeNetSlack(net1) < resizeNetSlack(net2);
+  // We are manually breaking ties to enforce stability, so use std::sort since
+  // there is no need to pay the cost for stable sorting here
+  std::ranges::sort(nets, [this](const Net* net1, const Net* net2) {
+    auto slack1 = resizeNetSlack(net1);
+    auto slack2 = resizeNetSlack(net2);
+    if (slack1 != slack2) {
+      return slack1 < slack2;
+    }
+
+    // In the event of a tie use ID to keep the sort stable.
+    auto dbnet1 = db_network_->staToDb(net1);
+    auto dbnet2 = db_network_->staToDb(net2);
+    return dbnet1->getId() < dbnet2->getId();
   });
 
   int nworst_nets = std::ceil(nets.size() * worst_slack_nets_percent_ / 100.0);
@@ -2934,7 +2850,11 @@ void Resizer::reportDontUse() const
   if (dont_use_.empty()) {
     logger_->report("  none");
   } else {
-    for (auto* cell : dont_use_) {
+    std::vector<LibertyCell*> sorted_cells(dont_use_.begin(), dont_use_.end());
+    std::ranges::sort(sorted_cells, utl::natural_compare, [](auto* cell) {
+      return std::string_view(cell->name());
+    });
+    for (auto* cell : sorted_cells) {
       if (!isLinkCell(cell)) {
         continue;
       }
@@ -3283,7 +3203,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
     // Find load pins
     bool keep_tie = false;
-    std::set<const Pin*> load_pins;
+    PinSet load_pins_set(db_network_);
     std::unique_ptr<NetConnectedPinIterator> pin_iter(
         network_->connectedPinIterator(drvr_net));
     while (pin_iter->hasNext()) {
@@ -3307,8 +3227,15 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       // cell cannot be inserted within the ALU module.
       load_pin = findArithBoundaryPin(load_pin);
 
-      load_pins.insert(load_pin);
+      load_pins_set.insert(load_pin);
     }
+
+    // Convert to vector and sort by pin path name for deterministic order
+    std::vector<const Pin*> load_pins(load_pins_set.begin(),
+                                      load_pins_set.end());
+    std::ranges::sort(load_pins, [this](const Pin* a, const Pin* b) {
+      return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+    });
 
     // Create new TIE cell instances for each load pin
     for (const Pin* load_pin : load_pins) {
@@ -3374,11 +3301,11 @@ const Pin* Resizer::findArithBoundaryPin(const Pin* load_pin)
   return load_pin;
 }
 
-void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
-                                         const char* new_inst_name,
-                                         Instance* parent,
-                                         LibertyPort* tie_port,
-                                         int separation_dbu)
+Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
+                                              const char* new_inst_name,
+                                              Instance* parent,
+                                              LibertyPort* tie_port,
+                                              int separation_dbu)
 {
   LibertyCell* tie_cell = tie_port->libertyCell();
 
@@ -3427,7 +3354,7 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
     load_iterm->disconnect();  // This is required
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_iterm, connection_name.c_str());
-    return;
+    return new_tie_inst;
   }
 
   // load_pin is a hier pin
@@ -3438,7 +3365,7 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
     // load_mod_iterm.
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_mod_iterm, connection_name.c_str());
-    return;
+    return new_tie_inst;
   }
 
   // load_pin is an output port
@@ -3449,18 +3376,29 @@ void Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
         connection_name.c_str(), parent, odb::dbNameUniquifyType::IF_NEEDED);
     new_tie_iterm->connect(db_network_->staToDb(new_net));
     load_bterm->connect(db_network_->staToDb(new_net));
-    return;
+    return new_tie_inst;
   }
 
-  assert(false);  // Should not reach here
+  logger_->error(
+      RSZ, 216, "Should not reach here. createNewTieCellForLoadPin() failed.");
+  return nullptr;
 }
 
 void Resizer::deleteTieCellAndNet(const Instance* tie_inst,
                                   LibertyPort* tie_port)
 {
-  // Delete inst output net.
+  // Get flat and hier nets.
   Pin* tie_pin = network_->findPin(tie_inst, tie_port);
-  dbNet* tie_flat_net = db_network_->flatNet(tie_pin);
+  odb::dbModNet* tie_hier_net;
+  dbNet* tie_flat_net;
+  db_network_->net(tie_pin, tie_flat_net, tie_hier_net);
+
+  // Delete hier net if it is dangling.
+  if (tie_hier_net && tie_hier_net->connectionCount() <= 1) {
+    odb::dbModNet::destroy(tie_hier_net);
+  }
+
+  // Delete inst output net.
   Net* tie_net = db_network_->dbToSta(tie_flat_net);
   sta_->deleteNet(tie_net);
   estimate_parasitics_->removeNetFromParasiticsInvalid(tie_net);
@@ -3491,6 +3429,7 @@ void Resizer::findCellInstances(LibertyCell* cell,
                                 // Return value.
                                 InstanceSeq& insts)
 {
+  // TODO: iterating dbInsts in dbBlock might be better. try it
   LeafInstanceIterator* inst_iter = network_->leafInstanceIterator();
   while (inst_iter->hasNext()) {
     Instance* inst = inst_iter->next();
@@ -3499,6 +3438,13 @@ void Resizer::findCellInstances(LibertyCell* cell,
     }
   }
   delete inst_iter;
+
+  // Deterministic ordering of tie instances by full instance name
+  // - This sort is to remove non-determinism.
+  // - The sort will be removed when hierarhical flow is enabled by default.
+  std::ranges::sort(insts, [this](const Instance* a, const Instance* b) {
+    return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+  });
 }
 
 // Place the tie instance on the side of the load pin.
@@ -4232,6 +4178,12 @@ void Resizer::repairNet(Net* net,
 void Resizer::repairClkNets(double max_wire_length)
 {
   resizePreamble();
+
+  if (clk_buffers_.empty()) {
+    std::vector<std::string> inferred_buffers;
+    inferClockBufferList(nullptr, inferred_buffers);  // update clk_buffers_
+  }
+
   utl::SetAndRestore set_buffers(buffer_cells_, clk_buffers_);
 
   repair_design_->repairClkNets(max_wire_length);
@@ -4353,6 +4305,7 @@ void Resizer::cloneClkInverter(Instance* inv)
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
+                          int max_iterations,
                           int max_repairs_per_pass,
                           bool match_cell_footprint,
                           bool verbose,
@@ -4378,6 +4331,7 @@ bool Resizer::repairSetup(double setup_margin,
   return repair_setup_->repairSetup(setup_margin,
                                     repair_tns_end_percent,
                                     max_passes,
+                                    max_iterations,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
@@ -4418,6 +4372,7 @@ bool Resizer::repairHold(
     // Max buffer count as percent of design instance count.
     float max_buffer_percent,
     int max_passes,
+    int max_iterations,
     bool match_cell_footprint,
     bool verbose)
 {
@@ -4444,6 +4399,7 @@ bool Resizer::repairHold(
                                   allow_setup_violations,
                                   max_buffer_percent,
                                   max_passes,
+                                  max_iterations,
                                   verbose);
 }
 
@@ -4514,13 +4470,15 @@ void Resizer::journalBegin()
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   odb::dbDatabase::beginEco(block_);
 
-  buffer_move_->undoMoves();
-  size_down_move_->undoMoves();
   size_up_move_->undoMoves();
+  size_up_match_move_->undoMoves();
+  size_down_move_->undoMoves();
+  buffer_move_->undoMoves();
   clone_move_->undoMoves();
-  split_load_move_->undoMoves();
   swap_pins_move_->undoMoves();
+  vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
+  split_load_move_->undoMoves();
 }
 
 void Resizer::journalEnd()
@@ -4530,49 +4488,52 @@ void Resizer::journalEnd()
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
-  odb::dbDatabase::endEco(block_);
+  odb::dbDatabase::commitEco(block_);
 
   int move_count_ = 0;
   move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_up_match_move_->numPendingMoves();
   move_count_ += size_down_move_->numPendingMoves();
   move_count_ += buffer_move_->numPendingMoves();
   move_count_ += clone_move_->numPendingMoves();
   move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += vt_swap_speed_move_->numPendingMoves();
   move_count_ += unbuffer_move_->numPendingMoves();
 
-  debugPrint(
-      logger_,
-      RSZ,
-      "opt_moves",
-      2,
-      "COMMIT {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
-      move_count_,
-      size_up_move_->numPendingMoves(),
-      size_down_move_->numPendingMoves(),
-      buffer_move_->numPendingMoves(),
-      clone_move_->numPendingMoves(),
-      swap_pins_move_->numPendingMoves(),
-      unbuffer_move_->numPendingMoves());
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             2,
+             "COMMIT {} moves: up {} up_match {} down {} buffer {} clone {} "
+             "swap {} vt_swap {} unbuf {}",
+             move_count_,
+             size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
 
   accepted_move_count_ += move_count_;
 
-  buffer_move_->commitMoves();
   size_up_move_->commitMoves();
-  size_down_move_->commitMoves();
-  clone_move_->commitMoves();
-  split_load_move_->commitMoves();
-  swap_pins_move_->commitMoves();
-  unbuffer_move_->commitMoves();
   size_up_match_move_->commitMoves();
+  size_down_move_->commitMoves();
+  buffer_move_->commitMoves();
+  clone_move_->commitMoves();
+  swap_pins_move_->commitMoves();
   vt_swap_speed_move_->commitMoves();
+  unbuffer_move_->commitMoves();
+  split_load_move_->commitMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              1,
-             "TOTAL {} moves (acc {} rej {}):  up {} up_match {} down {} "
-             "buffer {} clone "
-             "{} swap {} unbuf {} vt_swap {}",
+             "TOTAL {} moves (acc {} rej {}): up {} up_match {} down {} buffer "
+             "{} clone {} swap {} vt_swap {} unbuf {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
@@ -4582,8 +4543,8 @@ void Resizer::journalEnd()
              buffer_move_->numCommittedMoves(),
              clone_move_->numCommittedMoves(),
              swap_pins_move_->numCommittedMoves(),
-             unbuffer_move_->numCommittedMoves(),
-             vt_swap_speed_move_->numCommittedMoves());
+             vt_swap_speed_move_->numCommittedMoves(),
+             unbuffer_move_->numCommittedMoves());
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -4606,7 +4567,7 @@ void Resizer::journalRestore()
   init();
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
-    odb::dbDatabase::endEco(block_);
+    odb::dbDatabase::undoEco(block_);
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -4616,70 +4577,81 @@ void Resizer::journalRestore()
   }
 
   // Odb callbacks invalidate parasitics
-  odb::dbDatabase::endEco(block_);
   odb::dbDatabase::undoEco(block_);
 
   estimate_parasitics_->updateParasitics();
   sta_->findRequireds();
 
   // Update transform counts
-  debugPrint(
-      logger_,
-      RSZ,
-      "journal",
-      1,
-      "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
-      size_up_move_->numPendingMoves() + size_down_move_->numPendingMoves(),
-      buffer_move_->numPendingMoves(),
-      clone_move_->numPendingMoves(),
-      swap_pins_move_->numPendingMoves(),
-      unbuffer_move_->numPendingMoves());
+  debugPrint(logger_,
+             RSZ,
+             "journal",
+             1,
+             "Undid {} up {} up_match {} down {} buffer {} clone {} swap {} "
+             "vt_swap {} unbuf",
+             size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
 
   int move_count_ = 0;
-  move_count_ += size_down_move_->numPendingMoves();
   move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_up_match_move_->numPendingMoves();
+  move_count_ += size_down_move_->numPendingMoves();
   move_count_ += buffer_move_->numPendingMoves();
   move_count_ += clone_move_->numPendingMoves();
   move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += vt_swap_speed_move_->numPendingMoves();
   move_count_ += unbuffer_move_->numPendingMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              2,
-             "UNDO {} moves: up {} down {} buffer {} clone {} swap {} unbuf {}",
+             "UNDO {} moves: up {} up_match {} down {} buffer {} clone {} swap "
+             "{} vt_swap {} unbuf {}",
              move_count_,
              size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
              size_down_move_->numPendingMoves(),
              buffer_move_->numPendingMoves(),
              clone_move_->numPendingMoves(),
              swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
              unbuffer_move_->numPendingMoves());
 
   rejected_move_count_ += move_count_;
 
-  size_down_move_->undoMoves();
   size_up_move_->undoMoves();
+  size_up_match_move_->undoMoves();
+  size_down_move_->undoMoves();
   buffer_move_->undoMoves();
   clone_move_->undoMoves();
-  split_load_move_->undoMoves();
   swap_pins_move_->undoMoves();
+  vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
+  split_load_move_->undoMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              1,
-             "TOTAL {} moves (acc {} rej {}):  up {} down {} buffer {} clone "
-             "{} swap {} unbuf {}",
+             "TOTAL {} moves (acc {} rej {}): up {} up_match {} down {} buffer "
+             "{} clone {} swap {} vt_swap {} unbuf {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
              size_up_move_->numCommittedMoves(),
+             size_up_match_move_->numCommittedMoves(),
              size_down_move_->numCommittedMoves(),
              buffer_move_->numCommittedMoves(),
              clone_move_->numCommittedMoves(),
              swap_pins_move_->numCommittedMoves(),
+             vt_swap_speed_move_->numCommittedMoves(),
              unbuffer_move_->numCommittedMoves());
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
@@ -4740,8 +4712,310 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
   return inst;
 }
 
-// If underscore is true, an underscore will be used to concat unique instance
-// index. This is added to cover the existing usage.
+Instance* Resizer::insertBufferAfterDriver(
+    Net* net,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
+{
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+  if (!buffer_master) {
+    logger_->error(
+        RSZ,
+        3000,
+        "insertBufferAfterDriver: Cannot find dbMaster for buffer cell {}",
+        buffer_cell->name());
+    return nullptr;
+  }
+
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (!db_net) {
+    logger_->error(RSZ,
+                   3001,
+                   "insertBufferAfterDriver: Cannot convert net {} to dbNet",
+                   network_->pathName(net));
+    return nullptr;
+  }
+
+  odb::dbInst* buffer_inst = insertBufferAfterDriver(db_net,
+                                                     buffer_master,
+                                                     loc,
+                                                     new_buf_base_name,
+                                                     new_net_base_name,
+                                                     uniquify);
+  return db_network_->dbToSta(buffer_inst);
+}
+
+odb::dbInst* Resizer::insertBufferAfterDriver(
+    odb::dbNet* net,
+    odb::dbMaster* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
+{
+  // Find the driver of the current net using ODB API
+  odb::dbITerm* drvr_iterm = net->getFirstOutput();
+  odb::dbObject* drvr_obj = nullptr;
+
+  if (drvr_iterm) {
+    drvr_obj = drvr_iterm;
+  } else {
+    // Check for BTerm driver
+    odb::dbSet<odb::dbBTerm> bterms = net->getBTerms();
+    for (odb::dbBTerm* bterm : bterms) {
+      if (bterm->getIoType() == odb::dbIoType::INPUT
+          || bterm->getIoType() == odb::dbIoType::INOUT) {
+        drvr_obj = bterm;
+        break;
+      }
+    }
+  }
+
+  if (!drvr_obj) {
+    logger_->error(RSZ,
+                   3002,
+                   "insertBufferAfterDriver: No driver found for net {}",
+                   net->getName());
+    return nullptr;
+  }
+
+  odb::dbInst* buffer_inst = net->insertBufferAfterDriver(drvr_obj,
+                                                          buffer_cell,
+                                                          loc,
+                                                          new_buf_base_name,
+                                                          new_net_base_name,
+                                                          uniquify);
+
+  if (!buffer_inst) {
+    logger_->error(RSZ,
+                   3003,
+                   "insertBufferAfterDriver: Failed to insert buffer after "
+                   "driver for net {}",
+                   net->getName());
+    return nullptr;
+  }
+
+  // Legalize the buffer position and update the design area
+  insertBufferPostProcess(buffer_inst);
+
+  return buffer_inst;
+}
+
+Instance* Resizer::insertBufferBeforeLoad(
+    Pin* load_pin,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
+{
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+  if (!buffer_master) {
+    logger_->error(
+        RSZ,
+        3007,
+        "insertBufferBeforeLoad: Cannot find dbMaster for buffer cell {}",
+        buffer_cell->name());
+    return nullptr;
+  }
+
+  odb::dbObject* db_load_pin = db_network_->staToDb(load_pin);
+  if (!db_load_pin
+      || (db_load_pin->getObjectType() != odb::dbObjectType::dbITermObj
+          && db_load_pin->getObjectType() != odb::dbObjectType::dbBTermObj)) {
+    logger_->error(
+        RSZ,
+        3008,
+        "insertBufferBeforeLoad: Load pin '{}' is not an ITerm or BTerm",
+        network_->pathName(load_pin));
+    return nullptr;
+  }
+
+  odb::dbInst* buffer_inst = insertBufferBeforeLoad(db_load_pin,
+                                                    buffer_master,
+                                                    loc,
+                                                    new_buf_base_name,
+                                                    new_net_base_name,
+                                                    uniquify);
+  return db_network_->dbToSta(buffer_inst);
+}
+
+odb::dbInst* Resizer::insertBufferBeforeLoad(
+    odb::dbObject* load_pin,
+    odb::dbMaster* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify)
+{
+  // Find the flat net of the load_pin
+  dbNet* db_net = nullptr;
+  if (load_pin->getObjectType() == odb::dbObjectType::dbITermObj) {
+    odb::dbITerm* iterm = static_cast<odb::dbITerm*>(load_pin);
+    db_net = iterm->getNet();
+  } else if (load_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
+    odb::dbBTerm* bterm = static_cast<odb::dbBTerm*>(load_pin);
+    db_net = bterm->getNet();
+  }
+
+  if (!db_net) {
+    logger_->error(RSZ,
+                   3014,
+                   "insertBufferBeforeLoad: No net found for load pin {}",
+                   load_pin->getName());
+    return nullptr;
+  }
+
+  // Insert buffer before the load_pin
+  odb::dbInst* buffer_inst = db_net->insertBufferBeforeLoad(load_pin,
+                                                            buffer_cell,
+                                                            loc,
+                                                            new_buf_base_name,
+                                                            new_net_base_name,
+                                                            uniquify);
+
+  if (!buffer_inst) {
+    logger_->error(RSZ,
+                   3017,
+                   "insertBufferBeforeLoad: Failed to insert buffer before "
+                   "load for load pin '{}'",
+                   load_pin->getName());
+    return nullptr;
+  }
+
+  // Legalize the buffer position and update the design area
+  insertBufferPostProcess(buffer_inst);
+
+  return buffer_inst;
+}
+
+Instance* Resizer::insertBufferBeforeLoads(
+    Net* net,
+    PinSeq* loads,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify,
+    bool loads_on_diff_nets)
+{
+  // PinSeq -> PinSet
+  PinSet load_set{db_network_};
+  for (const Pin* pin : *loads) {
+    load_set.insert(pin);
+  }
+
+  return insertBufferBeforeLoads(net,
+                                 &load_set,
+                                 buffer_cell,
+                                 loc,
+                                 new_buf_base_name,
+                                 new_net_base_name,
+                                 uniquify,
+                                 loads_on_diff_nets);
+}
+
+Instance* Resizer::insertBufferBeforeLoads(
+    Net* net,
+    PinSet* loads,
+    LibertyCell* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify,
+    bool loads_on_diff_nets)
+{
+  odb::dbMaster* buffer_master
+      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+  if (!buffer_master) {
+    logger_->error(
+        RSZ,
+        3004,
+        "insertBufferBeforeLoads: Cannot find dbMaster for buffer cell {}",
+        buffer_cell->name());
+    return nullptr;
+  }
+
+  std::set<odb::dbObject*> db_loads;
+  if (loads) {
+    for (const Pin* pin : *loads) {
+      db_loads.insert(db_network_->staToDb(pin));
+    }
+  }
+
+  odb::dbNet* db_net = net ? db_network_->staToDb(net) : nullptr;
+
+  odb::dbInst* buffer_inst = insertBufferBeforeLoads(db_net,
+                                                     db_loads,
+                                                     buffer_master,
+                                                     loc,
+                                                     new_buf_base_name,
+                                                     new_net_base_name,
+                                                     uniquify,
+                                                     loads_on_diff_nets);
+  return db_network_->dbToSta(buffer_inst);
+}
+
+odb::dbInst* Resizer::insertBufferBeforeLoads(
+    odb::dbNet* net,
+    const std::set<odb::dbObject*>& loads,
+    odb::dbMaster* buffer_cell,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const odb::dbNameUniquifyType& uniquify,
+    bool loads_on_diff_nets)
+{
+  if (loads.empty()) {
+    logger_->warn(RSZ, 3015, "insertBufferBeforeLoads: no loads specified");
+    return nullptr;
+  }
+
+  // If no net provided, try to infer from loads
+  if (!net) {
+    odb::dbObject* first_load = *loads.begin();
+    if (first_load->getObjectType() == odb::dbObjectType::dbITermObj) {
+      net = static_cast<odb::dbITerm*>(first_load)->getNet();
+    } else if (first_load->getObjectType() == odb::dbObjectType::dbBTermObj) {
+      net = static_cast<odb::dbBTerm*>(first_load)->getNet();
+    }
+  }
+
+  if (!net) {
+    logger_->error(RSZ, 3016, "Cannot infer net from loads.");
+    return nullptr;
+  }
+
+  // Make a non-const copy for dbNet API
+  std::set<odb::dbObject*> loads_copy = loads;
+
+  odb::dbInst* buffer_inst = net->insertBufferBeforeLoads(loads_copy,
+                                                          buffer_cell,
+                                                          loc,
+                                                          new_buf_base_name,
+                                                          new_net_base_name,
+                                                          uniquify,
+                                                          loads_on_diff_nets);
+
+  if (!buffer_inst) {
+    logger_->error(RSZ,
+                   3006,
+                   "Failed to insert buffer before loads for net {}",
+                   net->getName());
+    return nullptr;
+  }
+
+  // Legalize the buffer position and update the design area
+  insertBufferPostProcess(buffer_inst);
+
+  return buffer_inst;
+}
+
 Instance* Resizer::makeInstance(LibertyCell* cell,
                                 const char* name,
                                 Instance* parent,
@@ -4769,6 +5043,28 @@ Instance* Resizer::makeInstance(LibertyCell* cell,
   }
   designAreaIncr(area(db_inst->getMaster()));
   return inst;
+}
+
+void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
+{
+  // Legalize the position of the buffer in case it leaves the die
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
+    opendp_->legalCellPos(buffer_inst);
+  }
+
+  // Increment the design area
+  designAreaIncr(area(buffer_inst->getMaster()));
+
+  // Update GUI
+  if (graphics_) {
+    graphics_->makeBuffer(buffer_inst);
+  }
+
+  // Increment the inserted buffer count
+  inserted_buffer_count_++;
 }
 
 void Resizer::setLocation(dbInst* db_inst, const Point& pt)
@@ -4866,30 +5162,27 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
           pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
       if (!corner1) {
         // Fixup for nangate45: see comment in maxInputSlew
-        if (!corner1) {
-          LibertyPort* port = network_->libertyPort(pin);
-          if (port) {
-            bool exists;
-            port->libertyLibrary()->defaultMaxSlew(limit1, exists);
-            if (exists) {
-              slew1 = 0.0;
-              corner1 = tgt_slew_corner_;
-              for (const RiseFall* rf : RiseFall::range()) {
-                const DcalcAnalysisPt* dcalc_ap
-                    = corner1->findDcalcAnalysisPt(max_);
-                const Vertex* vertex = graph_->pinLoadVertex(pin);
-                Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
-                if (slew2 > slew1) {
-                  slew1 = slew2;
-                }
-              }
+        LibertyPort* port = network_->libertyPort(pin);
+        if (port) {
+          bool exists;
+          port->libertyLibrary()->defaultMaxSlew(limit1, exists);
+          if (exists) {
+            slew1 = 0.0;
+            corner1 = tgt_slew_corner_;
+            limit = limit1;
+            for (const RiseFall* rf : RiseFall::range()) {
+              const DcalcAnalysisPt* dcalc_ap
+                  = corner1->findDcalcAnalysisPt(max_);
+              const Vertex* vertex = graph_->pinLoadVertex(pin);
+              Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
+              slew1 = std::max(slew1, slew2);
             }
           }
         }
-      }
-      if (corner1) {
+      } else {
         limit1 *= (1.0 - slew_margin / 100.0);
-        limit = min(limit, limit1);
+        limit1 = min(limit, limit1);
+        limit = limit1;
         slack1 = limit1 - slew1;
         if (slack1 < slack) {
           slew = slew1;
@@ -4953,7 +5246,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   std::set<const Instance*> kept_instances;
 
   auto keepInst = [&](const Instance* inst) {
-    if (!kept_instances.count(inst)) {
+    if (!kept_instances.contains(inst)) {
       kept_instances.insert(inst);
       queue.push_back(inst);
     }
@@ -5016,7 +5309,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
 
   int remove_inst_count = 0, remove_net_count = 0;
   for (auto inst : network_->leafInstances()) {
-    if (!kept_instances.count(inst)) {
+    if (!kept_instances.contains(inst)) {
       sta_->deleteInstance((Instance*) inst);
       remove_inst_count++;
     }
@@ -5086,7 +5379,7 @@ void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
 MoveType Resizer::parseMove(const std::string& s)
 {
   std::string lower = s;
-  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  std::ranges::transform(lower, lower.begin(), ::tolower);
   if (lower == "buffer") {
     return rsz::MoveType::BUFFER;
   }
@@ -5195,6 +5488,169 @@ bool Resizer::checkAndMarkVTSwappable(
   }
 
   return true;
+}
+
+bool Resizer::isClockCellCandidate(sta::LibertyCell* cell)
+{
+  return (!cell->dontUse() && !this->dontUse(cell) && !cell->alwaysOn()
+          && !cell->isIsolationCell() && !cell->isLevelShifter());
+}
+
+void Resizer::inferClockBufferList(const char* lib_name,
+                                   std::vector<std::string>& buffers)
+{
+  // Lists to store different types of clock buffer candidates based on several
+  // criteria.
+  sta::Vector<sta::LibertyCell*> clock_cell_attribute_buffers;
+  sta::Vector<sta::LibertyCell*> lef_use_clock_buffers;
+  sta::Vector<sta::LibertyCell*> clkbuf_pattern_buffers;
+  sta::Vector<sta::LibertyCell*> buf_pattern_buffers;
+  sta::Vector<sta::LibertyCell*> all_candidate_buffers;
+
+  // Patterns for matching common clock buffer and general buffer naming
+  // conventions.
+  sta::PatternMatch patternClkBuf(".*CLKBUF.*",
+                                  /* is_regexp */ true,
+                                  /* nocase */ true,
+                                  /* Tcl_interp* */ sta_->tclInterp());
+  sta::PatternMatch patternBuf(".*BUF.*",
+                               /* is_regexp */ true,
+                               /* nocase */ true,
+                               /* Tcl_interp* */ nullptr);
+
+  // 1. Iterate over all liberty libraries to find candidate cells.
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      network_->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    // Filter by library name if provided.
+    if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+      continue;
+    }
+
+    // Collect candidates by checking cell attributes and LEF pin signal types.
+    for (sta::LibertyCell* buffer : *lib->buffers()) {
+      if (!isClockCellCandidate(buffer)) {
+        continue;
+      }
+      all_candidate_buffers.emplace_back(buffer);
+
+      // Priority 1: Check for explicit "is_clock_cell" attribute in liberty.
+      if (buffer->isClockCell()) {
+        clock_cell_attribute_buffers.emplace_back(buffer);
+      }
+
+      // Priority 2: Check for any input pin with LEF signal type set to CLOCK.
+      odb::dbMaster* master = db_->findMaster(buffer->name());
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        if (mterm->getIoType() == odb::dbIoType::INPUT
+            && mterm->getSigType() == odb::dbSigType::CLOCK) {
+          lef_use_clock_buffers.emplace_back(buffer);
+          break;  // Avoid duplicates for multiple clock pins
+        }
+      }
+    }
+
+    // Priority 3: Collections based on naming pattern matching (CLKBUF).
+    for (sta::LibertyCell* buffer :
+         lib->findLibertyCellsMatching(&patternClkBuf)) {
+      if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+        clkbuf_pattern_buffers.emplace_back(buffer);
+      }
+    }
+
+    // Priority 4: Collections based on naming pattern matching (BUF).
+    for (sta::LibertyCell* buffer :
+         lib->findLibertyCellsMatching(&patternBuf)) {
+      if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+        buf_pattern_buffers.emplace_back(buffer);
+      }
+    }
+  }
+
+  // 2. Select the final list of buffers based on the defined priority.
+  // We take the first non-empty set found.
+  sta::Vector<sta::LibertyCell*>* selected_ptr = nullptr;
+  if (!clock_cell_attribute_buffers.empty()) {
+    selected_ptr = &clock_cell_attribute_buffers;
+    for (sta::LibertyCell* buffer : *selected_ptr) {
+      debugPrint(logger_,
+                 RSZ,
+                 "inferClockBufferList",
+                 1,
+                 "{} has clock cell attribute",
+                 buffer->name());
+    }
+  } else if (!lef_use_clock_buffers.empty()) {
+    selected_ptr = &lef_use_clock_buffers;
+    for (sta::LibertyCell* buffer : *selected_ptr) {
+      odb::dbMaster* master = db_->findMaster(buffer->name());
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        if (mterm->getIoType() == odb::dbIoType::INPUT
+            && mterm->getSigType() == odb::dbSigType::CLOCK) {
+          debugPrint(logger_,
+                     RSZ,
+                     "inferClockBufferList",
+                     1,
+                     "{} has input port {} with LEF USE as CLOCK",
+                     buffer->name(),
+                     mterm->getName());
+          break;
+        }
+      }
+    }
+  } else if (!clkbuf_pattern_buffers.empty()) {
+    selected_ptr = &clkbuf_pattern_buffers;
+    for (sta::LibertyCell* buffer : *selected_ptr) {
+      debugPrint(logger_,
+                 RSZ,
+                 "inferClockBufferList",
+                 1,
+                 "{} found by 'CLKBUF' pattern match",
+                 buffer->name());
+    }
+  } else if (!buf_pattern_buffers.empty()) {
+    selected_ptr = &buf_pattern_buffers;
+    for (sta::LibertyCell* buffer : *selected_ptr) {
+      debugPrint(logger_,
+                 RSZ,
+                 "inferClockBufferList",
+                 1,
+                 "{} found by 'BUF' pattern match",
+                 buffer->name());
+    }
+  } else {
+    // Priority 5: Fallback to all buffers that are valid clock cell candidates.
+    debugPrint(logger_,
+               RSZ,
+               "inferClockBufferList",
+               1,
+               "No buffers with clock attributes or name patterns found, using "
+               "all buffers");
+    selected_ptr = &all_candidate_buffers;
+    if (selected_ptr->empty()) {
+      logger_->error(
+          RSZ,
+          110,
+          "No clock buffer candidates could be found from any libraries.");
+    }
+  }
+
+  // 3. Finalize the inferred list: store it in Resizer and populate the output
+  // vector of buffer names.
+  if (selected_ptr != nullptr) {
+    setClockBuffersList(*selected_ptr);
+
+    for (sta::LibertyCell* buffer : *selected_ptr) {
+      buffers.emplace_back(buffer->name());
+      debugPrint(logger_,
+                 RSZ,
+                 "inferClockBufferList",
+                 1,
+                 "{} has been inferred as clock buffer",
+                 buffer->name());
+    }
+  }
 }
 
 }  // namespace rsz

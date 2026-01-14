@@ -3,7 +3,11 @@
 
 #include "journal.h"
 
+#include <ranges>
+
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
+#include "odb/db.h"
 #include "optimization/detailed_manager.h"
 
 namespace dpl {
@@ -18,7 +22,7 @@ void paintInGrid(Grid* grid, Node* node)
 {
   const auto grid_x = grid->gridX(DbuX(node->getLeft()));
   const auto grid_y = grid->gridRoundY(DbuY(node->getBottom()));
-  dbSite* site = node->getDbInst()->getMaster()->getSite();
+  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
   const auto orientation
       = grid->getSiteOrientation(grid_x, grid_y, site).value();
   grid->paintPixel(node, grid_x, grid_y);
@@ -71,9 +75,8 @@ void Journal::undo(const JournalAction* action, const bool positions_only) const
 ////////////////////////////////////////////////////////////////////////////////
 void Journal::undo(bool positions_only) const
 {
-  for (auto it = actions_.rbegin(); it != actions_.rend(); ++it) {
-    auto action = (*it).get();
-    undo(action, positions_only);
+  for (const auto& action : std::ranges::reverse_view(actions_)) {
+    undo(action.get(), positions_only);
   }
 }
 ////////////////////////////////////////////////////////////////////////////////

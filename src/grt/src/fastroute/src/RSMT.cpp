@@ -4,12 +4,14 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <map>
 #include <tuple>
 #include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -22,7 +24,7 @@ struct Pnt
   int o;
 };
 
-int orderx(const Pnt* a, const Pnt* b)
+static int orderx(const Pnt* a, const Pnt* b)
 {
   return a->x < b->x;
 }
@@ -115,6 +117,17 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
     }
   }
+
+  // Map the node indices to the pin indices of the net
+  std::map<odb::Point, int> pos_count;
+  for (int i = 0; i < d; i++) {
+    odb::Point pos{treenodes[i].x, treenodes[i].y};
+    pos_count[pos]++;
+    const int pin_idx = nets_[ind]->getPinIdxFromPosition(
+        treenodes[i].x, treenodes[i].y, pos_count[pos]);
+    sttrees_[ind].node_to_pin_idx[i] = pin_idx;
+  }
+
   // Copy num neighbors
   for (int i = 0; i < numnodes; i++) {
     treenodes[i].nbr_count = nbrcnt[i];
@@ -235,7 +248,7 @@ void FastRouteCore::fluteNormal(const int netID,
         std::swap(ptp[i], ptp[minidx]);
       }
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), orderx);
+      std::ranges::stable_sort(ptp, orderx);
     }
 
     for (int i = 0; i < d; i++) {
@@ -261,7 +274,7 @@ void FastRouteCore::fluteNormal(const int netID,
       ys[d - 1] = ptp[d - 1]->y;
       s[d - 1] = ptp[d - 1]->o;
     } else {
-      std::stable_sort(ptp.begin(), ptp.end(), ordery);
+      std::ranges::stable_sort(ptp, ordery);
       for (int i = 0; i < d; i++) {
         ys[i] = ptp[i]->y;
         s[i] = ptp[i]->o;
@@ -488,18 +501,10 @@ bool FastRouteCore::VTreeSuite(const int netID)
 
   const int deg = nets_[netID]->getNumPins();
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
+    xmin = std::min(xmin, nets_[netID]->getPinX(i));
+    xmax = std::max(xmax, nets_[netID]->getPinX(i));
+    ymin = std::min(ymin, nets_[netID]->getPinY(i));
+    ymax = std::max(ymax, nets_[netID]->getPinY(i));
   }
 
   return (ymax - ymin) > 3 * (xmax - xmin);
@@ -514,18 +519,10 @@ bool FastRouteCore::HTreeSuite(const int netID)
 
   const int deg = nets_[netID]->getNumPins();
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
+    xmin = std::min(xmin, nets_[netID]->getPinX(i));
+    xmax = std::max(xmax, nets_[netID]->getPinX(i));
+    ymin = std::min(ymin, nets_[netID]->getPinY(i));
+    ymax = std::max(ymax, nets_[netID]->getPinY(i));
   }
 
   return 5 * (ymax - ymin) < (xmax - xmin);
@@ -540,18 +537,10 @@ float FastRouteCore::coeffADJ(const int netID)
   int ymin = BIG_INT;
 
   for (int i = 0; i < deg; i++) {
-    if (xmin > nets_[netID]->getPinX(i)) {
-      xmin = nets_[netID]->getPinX(i);
-    }
-    if (xmax < nets_[netID]->getPinX(i)) {
-      xmax = nets_[netID]->getPinX(i);
-    }
-    if (ymin > nets_[netID]->getPinY(i)) {
-      ymin = nets_[netID]->getPinY(i);
-    }
-    if (ymax < nets_[netID]->getPinY(i)) {
-      ymax = nets_[netID]->getPinY(i);
-    }
+    xmin = std::min(xmin, nets_[netID]->getPinX(i));
+    xmax = std::max(xmax, nets_[netID]->getPinX(i));
+    ymin = std::min(ymin, nets_[netID]->getPinY(i));
+    ymax = std::max(ymax, nets_[netID]->getPinY(i));
   }
 
   int Hcap = 0;
@@ -594,9 +583,7 @@ float FastRouteCore::coeffADJ(const int netID)
     }
   }
 
-  if (coef < 1.2) {
-    coef = 1.2;
-  }
+  coef = std::max<double>(coef, 1.2);
 
   return coef;
 }

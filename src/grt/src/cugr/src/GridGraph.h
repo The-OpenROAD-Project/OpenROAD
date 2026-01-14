@@ -13,6 +13,7 @@
 #include "GRTree.h"
 #include "Layers.h"
 #include "geo.h"
+#include "odb/db.h"
 #include "robin_hood.h"
 
 namespace grt {
@@ -106,7 +107,7 @@ class GridGraph
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
   // Misc
-  AccessPointSet selectAccessPoints(const GRNet* net) const;
+  AccessPointSet selectAccessPoints(GRNet* net) const;
 
   // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
@@ -150,6 +151,13 @@ class GridGraph
   {
     return unit_length_short_costs_[layer_index];
   }
+  void translateAccessPointsToGrid(
+      odb::dbAccessPoint* ap,
+      int x,
+      int y,
+      AccessPointSet& selected_access_points) const;
+  bool findODBAccessPoints(const GRNet* net,
+                           AccessPointSet& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
@@ -174,6 +182,8 @@ class GridGraph
   const int num_layers_;
   const int x_size_;
   const int y_size_;
+
+  const Design* design_;
 
   // Unit costs
   CostT unit_length_wire_cost_;

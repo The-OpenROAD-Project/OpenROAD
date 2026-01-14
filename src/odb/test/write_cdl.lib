@@ -1,0 +1,58 @@
+ library(MACRO_CELL){
+
+  input_threshold_pct_fall : 60;
+  input_threshold_pct_rise : 40;
+  output_threshold_pct_fall : 60;
+  output_threshold_pct_rise : 40;
+  slew_lower_threshold_pct_fall : 10;
+  slew_lower_threshold_pct_rise : 10;
+  slew_upper_threshold_pct_fall : 90;
+  slew_upper_threshold_pct_rise : 90;
+
+  type(bus_1_0){
+   base_type : array;
+   bit_from : 1;
+   bit_to : 0;
+   bit_width : 2;
+   data_type : bit;
+   downto : true;
+  }
+
+  cell(MACRO_CELL){
+   is_macro_cell : true;
+   pg_pin(GND){
+    pg_type : primary_ground;
+   }
+   pg_pin(VDD){
+    pg_type : primary_power;
+   }
+   bus(IN_REG){
+    bus_type : bus_1_0;
+    direction : input;
+    pin(IN_REG[0]){
+     direction : input;
+     related_ground_pin : GNDD;
+     related_power_pin : VDDD;
+    }
+    pin(IN_REG[1]){
+     direction : input;
+     related_ground_pin : GNDD;
+     related_power_pin : VDDD;
+    }
+   }
+   bus(OUT_REG){
+    bus_type : bus_1_0;
+    direction : output;
+    pin(OUT_REG[0]){
+     direction : output;
+     related_ground_pin : GNDD;
+     related_power_pin : VDDD;
+    }
+    pin(OUT_REG[1]){
+     direction : output;
+     related_ground_pin : GNDD;
+     related_power_pin : VDDD;
+    }
+   }
+  }
+ }

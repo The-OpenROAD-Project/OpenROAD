@@ -14,6 +14,7 @@
 #include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 namespace odb {
 class dbTechLayer;
@@ -85,10 +86,10 @@ class frLayer
   frUInt4 getWidth() const { return width_; }
   frUInt4 getWrongDirWidth() const { return db_layer_->getWrongWayWidth(); }
   frUInt4 getMinWidth() const { return minWidth_; }
-  dbTechLayerDir getDir() const
+  odb::dbTechLayerDir getDir() const
   {
     if (fakeCut_ || fakeMasterslice_) {
-      return dbTechLayerDir::NONE;
+      return odb::dbTechLayerDir::NONE;
     }
     return db_layer_->getDirection();
   }
@@ -96,19 +97,19 @@ class frLayer
   {
     return (fakeCut_ || fakeMasterslice_)
                ? false
-               : db_layer_->getDirection() == dbTechLayerDir::VERTICAL;
+               : db_layer_->getDirection() == odb::dbTechLayerDir::VERTICAL;
   }
   bool isHorizontal() const
   {
     return (fakeCut_ || fakeMasterslice_)
                ? false
-               : db_layer_->getDirection() == dbTechLayerDir::HORIZONTAL;
+               : db_layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
   }
   bool isRoutable() const
   {
     return (fakeCut_ || fakeMasterslice_)
                ? false
-               : db_layer_->getType() == dbTechLayerType::ROUTING;
+               : db_layer_->getType() == odb::dbTechLayerType::ROUTING;
   }
   bool isUnidirectional() const
   {
@@ -136,14 +137,14 @@ class frLayer
   {
     return viaDefs_;
   }
-  dbTechLayerType getType() const
+  odb::dbTechLayerType getType() const
   {
     if (fakeCut_) {
-      return dbTechLayerType::CUT;
+      return odb::dbTechLayerType::CUT;
     }
 
     if (fakeMasterslice_) {
-      return dbTechLayerType::MASTERSLICE;
+      return odb::dbTechLayerType::MASTERSLICE;
     }
 
     return db_layer_->getType();

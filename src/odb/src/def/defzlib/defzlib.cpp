@@ -38,6 +38,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
 #include "defrReader.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
@@ -65,7 +67,7 @@ defGZFile defGZipOpen(const char* gzipPath, const char* mode)
     /* successfully open the gzip file */
     /* set the read function to read from a compressed file */
     defrSetReadFunction(defGZip_read);
-    return (defGZFile) fptr;
+    return fptr;
   }
   return nullptr;
 }

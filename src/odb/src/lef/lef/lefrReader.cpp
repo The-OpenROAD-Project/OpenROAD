@@ -28,20 +28,19 @@
 // *****************************************************************************
 #include "lefrReader.hpp"
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 #include "lefiDebug.hpp"
+#include "lefiKRDefs.hpp"
 #include "lefrCallBacks.hpp"
 #include "lefrData.hpp"
 #include "lefrSettings.hpp"
 #include "lex.h"
 
-#define NOCBK 100
-#define NOLEFMSG 4701  // 4701 = 4700 + 1, message starts on 1
+static constexpr int NOCBK = 100;
+static constexpr int NOLEFMSG = 4701;  // 4701 = 4700 + 1, message starts on 1
 
 #define LEF_INIT lef_init(__FUNCTION__)
 
@@ -349,19 +348,19 @@ void lefrSetUnusedCallbacks(lefrVoidCbkFnType func)
     lefCallbacks->EdgeRateThreshold2Cbk = (lefrDoubleCbkFnType) func;
   }
   if (lefCallbacks->IRDropBeginCbk == nullptr) {
-    lefCallbacks->IRDropBeginCbk = (lefrVoidCbkFnType) func;
+    lefCallbacks->IRDropBeginCbk = func;
   }
   if (lefCallbacks->IRDropCbk == nullptr) {
     lefCallbacks->IRDropCbk = (lefrIRDropCbkFnType) func;
   }
   if (lefCallbacks->IRDropEndCbk == nullptr) {
-    lefCallbacks->IRDropEndCbk = (lefrVoidCbkFnType) func;
+    lefCallbacks->IRDropEndCbk = func;
   }
   if (lefCallbacks->LayerCbk == nullptr) {
     lefCallbacks->LayerCbk = (lefrLayerCbkFnType) func;
   }
   if (lefCallbacks->LibraryEndCbk == nullptr) {
-    lefCallbacks->LibraryEndCbk = (lefrVoidCbkFnType) func;
+    lefCallbacks->LibraryEndCbk = func;
   }
   if (lefCallbacks->MacroBeginCbk == nullptr) {
     lefCallbacks->MacroBeginCbk = (lefrStringCbkFnType) func;
@@ -409,25 +408,25 @@ void lefrSetUnusedCallbacks(lefrVoidCbkFnType func)
     lefCallbacks->PinCbk = (lefrPinCbkFnType) func;
   }
   if (lefCallbacks->PropBeginCbk == nullptr) {
-    lefCallbacks->PropBeginCbk = (lefrVoidCbkFnType) func;
+    lefCallbacks->PropBeginCbk = func;
   }
   if (lefCallbacks->PropCbk == nullptr) {
     lefCallbacks->PropCbk = (lefrPropCbkFnType) func;
   }
   if (lefCallbacks->PropEndCbk == nullptr) {
-    lefCallbacks->PropEndCbk = (lefrVoidCbkFnType) func;
+    lefCallbacks->PropEndCbk = func;
   }
   if (lefCallbacks->SiteCbk == nullptr) {
     lefCallbacks->SiteCbk = (lefrSiteCbkFnType) func;
   }
   if (lefCallbacks->SpacingBeginCbk == nullptr) {
-    lefCallbacks->SpacingBeginCbk = (lefrVoidCbkFnType) func;
+    lefCallbacks->SpacingBeginCbk = func;
   }
   if (lefCallbacks->SpacingCbk == nullptr) {
     lefCallbacks->SpacingCbk = (lefrSpacingCbkFnType) func;
   }
   if (lefCallbacks->SpacingEndCbk == nullptr) {
-    lefCallbacks->SpacingEndCbk = (lefrVoidCbkFnType) func;
+    lefCallbacks->SpacingEndCbk = func;
   }
   if (lefCallbacks->UnitsCbk == nullptr) {
     lefCallbacks->UnitsCbk = (lefrUnitsCbkFnType) func;

@@ -5,14 +5,38 @@ if { [info exists ::env(TEST_TMPDIR)] } {
 } else {
   set test_dir [file dirname [file normalize [info script]]]
 }
-set result_dir [file join $test_dir "results"]
 
-proc make_result_file { filename } {
+if { [info exists ::env(RESULTS_DIR)] } {
+  set result_dir $::env(RESULTS_DIR)
+} else {
+  set result_dir [file join $test_dir "results"]
+}
+
+proc make_result_dir { } {
   variable result_dir
   if { ![file exists $result_dir] } {
     file mkdir $result_dir
   }
+  return $result_dir
+}
+
+proc make_result_test_dir { subdir } {
+  variable result_dir
+  set full_path [file join $result_dir $subdir]
+  if { ![file exists $full_path] } {
+    file mkdir $full_path
+  }
+  return $full_path
+}
+
+proc make_result_file { filename } {
+  variable result_dir
+
+  make_result_dir
+
   set root [file rootname $filename]
+  set dir [file dirname $filename]
+  make_result_test_dir $dir
   set ext [file extension $filename]
   set filename "$root-tcl$ext"
   return [file join $result_dir $filename]
@@ -39,7 +63,39 @@ proc write_verilog_for_eqy { test stage remove_cells } {
   }
 }
 
-proc run_equivalence_test { test lib remove_cells } {
+# Argument Description
+# lib_dir:         specifies directory with Verilog library files to be read
+#                  alongside tested design
+# liberty_files:   specifies list of PDK liberty files to be read
+# remove_cells:    specifies remove_cells mode for write_verilog_for_eqy call
+
+sta::define_cmd_args "run_equivalence_test" {
+                                            [-lib_dir lib_dir]
+                                            [-liberty_files liberty_files]
+                                            [-remove_cells remove_cells]
+                                          }
+
+proc run_equivalence_test { test args } {
+  sta::parse_key_args "run_equivalence_test" args \
+    keys {-lib_dir -liberty_files -remove_cells} \
+    flags {}
+
+  set lib_files ""
+  set liberty_files ""
+  set remove_cells "None"
+
+  if { [info exists keys(-lib_dir)] } {
+    set lib_files [glob $keys(-lib_dir)/*]
+  }
+
+  if { [info exists keys(-liberty_files)] } {
+    set liberty_files $keys(-liberty_files)
+  }
+
+  if { [info exists keys(-remove_cells)] } {
+    set remove_cells $keys(-remove_cells)
+  }
+
   write_verilog_for_eqy $test after $remove_cells
   # eqy config file for test
   set test_script [make_result_file "${test}.eqy"]
@@ -49,17 +105,45 @@ proc run_equivalence_test { test lib remove_cells } {
   set after_netlist [make_result_file "${test}_after.v"]
   # output directory for test
   set run_dir [make_result_file "${test}_output"]
-  # verilog lib files to run test
-  set lib_files [glob $lib/*]
   set outfile [open $test_script w]
 
   set top_cell [current_design]
   # Gold netlist
-  # tclint-disable-next-line line-length
-  puts $outfile "\[gold]\nread_verilog -sv $before_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
+  puts $outfile "\[gold\]"
+  if { $liberty_files != "" } {
+    puts $outfile "read_liberty -ignore_miss_func -overwrite $liberty_files"
+  }
+  puts $outfile "read_verilog -sv $before_netlist $lib_files"
+  puts $outfile "prep -top $top_cell -flatten"
+  puts $outfile "memory_map\n"
+
   # Modified netlist
-  # tclint-disable-next-line line-length
-  puts $outfile "\[gate]\nread_verilog -sv  $after_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
+  puts $outfile "\[gate\]"
+  if { $liberty_files != "" } {
+    puts $outfile "read_liberty -ignore_miss_func -overwrite $liberty_files"
+  }
+  puts $outfile "read_verilog -sv $after_netlist $lib_files"
+  puts $outfile "prep -top $top_cell -flatten"
+  puts $outfile "memory_map\n"
+
+  # Recommendation from eqy team on how to speed up a design
+  puts $outfile "\[match *]\ngate-nomatch _*_.*"
+
+  # See issue OpenROAD#6545 "Equivalence check failure due to non-unique resizer nets"
+  puts $outfile "gate-nomatch net*"
+
+  # Forbid matching on buffer instances or cloned instances to make it less
+  # likely EQY will fail to prove equivalence because of its assuming structural
+  # similarity between gold and gate netlists. This doesn't remove coverage.
+  puts $outfile "gate-nomatch clone*"
+  puts $outfile "gate-nomatch place*"
+  puts $outfile "gate-nomatch rebuffer*"
+  puts $outfile "gate-nomatch wire*"
+  puts $outfile "gate-nomatch place*\n\n"
+
+  # See issue YosysHQ/yosys#5486 "Basic abc script affects equivalence check with eqy"
+  # Create a single partition
+  puts $outfile "\[collect *\]\ngroup *"
 
   # Equivalence check recipe
   puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
@@ -70,10 +154,8 @@ proc run_equivalence_test { test lib remove_cells } {
     catch { exec eqy -d $run_dir $test_script > /dev/null }
     set count 0
     catch {
-      set count [
-        exec grep -c "Successfully proved designs equivalent"
-        $run_dir/logfile.txt
-      ]
+      set count [exec grep -c "Successfully proved designs equivalent" \
+        $run_dir/logfile.txt]
     }
     if { $count == 0 } {
       puts "Repair timing output failed equivalence test"

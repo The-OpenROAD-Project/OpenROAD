@@ -32,12 +32,35 @@
 
 #include <cstdarg>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <string_view>
 
+#include "defiAssertion.hpp"
+#include "defiBlockage.hpp"
+#include "defiComponent.hpp"
 #include "defiDefs.hpp"
+#include "defiFPC.hpp"
+#include "defiFill.hpp"
+#include "defiGroup.hpp"
+#include "defiIOTiming.hpp"
 #include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
+#include "defiNet.hpp"
+#include "defiNonDefault.hpp"
+#include "defiPartition.hpp"
+#include "defiPath.hpp"
+#include "defiPinCap.hpp"
+#include "defiPinProp.hpp"
+#include "defiProp.hpp"
+#include "defiRegion.hpp"
+#include "defiRowTrack.hpp"
+#include "defiScanchain.hpp"
+#include "defiSite.hpp"
+#include "defiSlot.hpp"
+#include "defiTimingDisable.hpp"
 #include "defiUser.hpp"
+#include "defiVia.hpp"
 
 #define DEF_MSGS 4013
 #define CBMAX 150  // Number of callbacks.
@@ -606,7 +629,7 @@ extern void defrSetUnusedCallbacks(defrVoidCbkFnType func);
 
 // Return the current line number in the input file.
 extern int defrLineNumber();
-extern long long defrLongLineNumber();
+extern int64_t defrLongLineNumber();
 
 // Routine to set the message logging routine for errors
 #ifndef DEFI_LOG_FUNCTION
@@ -653,8 +676,8 @@ using DEFI_LINE_NUMBER_FUNCTION = void (*)(int);
 extern void defrSetLineNumberFunction(DEFI_LINE_NUMBER_FUNCTION);
 
 // Routine to set the line number of the file that is parsing routine (takes
-// long long)
-using DEFI_LONG_LINE_NUMBER_FUNCTION = void (*)(long long);
+// int64_t)
+using DEFI_LONG_LINE_NUMBER_FUNCTION = void (*)(int64_t);
 extern void defrSetLongLineNumberFunction(DEFI_LONG_LINE_NUMBER_FUNCTION);
 
 // Routine to set the line number of the file that is parsing routine (takes
@@ -663,9 +686,9 @@ using DEFI_CONTEXT_LINE_NUMBER_FUNCTION = void (*)(defiUserData userData, int);
 extern void defrSetContextLineNumberFunction(DEFI_CONTEXT_LINE_NUMBER_FUNCTION);
 
 // Routine to set the line number of the file that is parsing routine (takes
-// long long Used in re-enterable environment.
+// int64_t Used in re-enterable environment.
 using DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION
-    = void (*)(defiUserData userData, long long);
+    = void (*)(defiUserData userData, int64_t);
 extern void defrSetContextLongLineNumberFunction(
     DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION);
 
@@ -695,7 +718,7 @@ extern void defrSetMagicCommentString(char*);
 extern void defrDisablePropStrProcess();
 
 // Testing purposes only
-extern void defrSetNLines(long long n);
+extern void defrSetNLines(int64_t n);
 
 // Routine to set the max number of warnings for a perticular section
 

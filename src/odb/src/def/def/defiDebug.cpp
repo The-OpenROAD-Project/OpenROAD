@@ -33,6 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 #include "defrSettings.hpp"
 

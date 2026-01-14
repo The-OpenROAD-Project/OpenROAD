@@ -14,6 +14,8 @@
 #include "dbChipBumpInst.h"
 #include "dbChipBumpInstItr.h"
 #include "dbChipInst.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipRegionInst>;
@@ -76,6 +78,15 @@ void _dbChipRegionInst::collectMemInfo(MemInfo& info)
 ////////////////////////////////////////////////////////////////////
 
 // User Code Begin dbChipRegionInstPublicMethods
+
+// Returns the region's cuboid transformed into the parent chip's
+// coordinate system.
+Cuboid dbChipRegionInst::getCuboid() const
+{
+  Cuboid cuboid = getChipRegion()->getCuboid();
+  getChipInst()->getTransform().apply(cuboid);
+  return cuboid;
+}
 
 dbChipInst* dbChipRegionInst::getChipInst() const
 {

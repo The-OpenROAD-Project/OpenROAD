@@ -1,7 +1,6 @@
 # corner pad/endcaps with obstructions
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_liberty Nangate45/Nangate45_typ.lib
 read_lef obstruction1.lef
 read_def obstruction1.def
 

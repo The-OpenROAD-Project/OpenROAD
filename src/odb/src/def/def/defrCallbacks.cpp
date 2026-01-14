@@ -29,6 +29,9 @@
 
 #include "defrCallBacks.hpp"
 
+#include "defiKRDefs.hpp"
+#include "defrReader.hpp"
+
 BEGIN_DEF_PARSER_NAMESPACE
 
 void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
@@ -40,16 +43,16 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     TechnologyCbk = (defrStringCbkFnType) f;
   }
   if (!DesignEndCbk) {
-    DesignEndCbk = (defrVoidCbkFnType) f;
+    DesignEndCbk = f;
   }
   if (!PropCbk) {
     PropCbk = (defrPropCbkFnType) f;
   }
   if (!PropDefEndCbk) {
-    PropDefEndCbk = (defrVoidCbkFnType) f;
+    PropDefEndCbk = f;
   }
   if (!PropDefStartCbk) {
-    PropDefStartCbk = (defrVoidCbkFnType) f;
+    PropDefStartCbk = f;
   }
   if (!ArrayNameCbk) {
     ArrayNameCbk = (defrStringCbkFnType) f;
@@ -79,7 +82,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     ComponentStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!ComponentEndCbk) {
-    ComponentEndCbk = (defrVoidCbkFnType) f;
+    ComponentEndCbk = f;
   }
   if (!ComponentCbk) {
     ComponentCbk = (defrComponentCbkFnType) f;
@@ -88,7 +91,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     NetStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!NetEndCbk) {
-    NetEndCbk = (defrVoidCbkFnType) f;
+    NetEndCbk = f;
   }
   if (!NetCbk) {
     NetCbk = (defrNetCbkFnType) f;
@@ -145,7 +148,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     StartPinsCbk = (defrIntegerCbkFnType) f;
   }
   if (!PinEndCbk) {
-    PinEndCbk = (defrVoidCbkFnType) f;
+    PinEndCbk = f;
   }
   if (!DefaultCapCbk) {
     DefaultCapCbk = (defrIntegerCbkFnType) f;
@@ -163,7 +166,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     ViaStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!ViaEndCbk) {
-    ViaEndCbk = (defrVoidCbkFnType) f;
+    ViaEndCbk = f;
   }
   if (!ViaCbk) {
     ViaCbk = (defrViaCbkFnType) f;
@@ -172,7 +175,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     RegionStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!RegionEndCbk) {
-    RegionEndCbk = (defrVoidCbkFnType) f;
+    RegionEndCbk = f;
   }
   if (!RegionCbk) {
     RegionCbk = (defrRegionCbkFnType) f;
@@ -181,7 +184,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     SNetStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!SNetEndCbk) {
-    SNetEndCbk = (defrVoidCbkFnType) f;
+    SNetEndCbk = f;
   }
   if (!SNetCbk) {
     SNetCbk = (defrNetCbkFnType) f;
@@ -192,7 +195,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     GroupsStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!GroupsEndCbk) {
-    GroupsEndCbk = (defrVoidCbkFnType) f;
+    GroupsEndCbk = f;
   }
   if (!GroupNameCbk) {
     GroupNameCbk = (defrStringCbkFnType) f;
@@ -210,7 +213,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     AssertionsStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!AssertionsEndCbk) {
-    AssertionsEndCbk = (defrVoidCbkFnType) f;
+    AssertionsEndCbk = f;
   }
   if (!AssertionCbk) {
     AssertionCbk = (defrAssertionCbkFnType) f;
@@ -219,7 +222,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     ConstraintsStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!ConstraintsEndCbk) {
-    ConstraintsEndCbk = (defrVoidCbkFnType) f;
+    ConstraintsEndCbk = f;
   }
   if (!ConstraintCbk) {
     ConstraintCbk = (defrAssertionCbkFnType) f;
@@ -228,7 +231,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     ScanchainsStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!ScanchainsEndCbk) {
-    ScanchainsEndCbk = (defrVoidCbkFnType) f;
+    ScanchainsEndCbk = f;
   }
   if (!ScanchainCbk) {
     ScanchainCbk = (defrScanchainCbkFnType) f;
@@ -237,7 +240,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     IOTimingsStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!IOTimingsEndCbk) {
-    IOTimingsEndCbk = (defrVoidCbkFnType) f;
+    IOTimingsEndCbk = f;
   }
   if (!IOTimingCbk) {
     IOTimingCbk = (defrIOTimingCbkFnType) f;
@@ -246,7 +249,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     FPCStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!FPCEndCbk) {
-    FPCEndCbk = (defrVoidCbkFnType) f;
+    FPCEndCbk = f;
   }
   if (!FPCCbk) {
     FPCCbk = (defrFPCCbkFnType) f;
@@ -255,7 +258,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     TimingDisablesStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!TimingDisablesEndCbk) {
-    TimingDisablesEndCbk = (defrVoidCbkFnType) f;
+    TimingDisablesEndCbk = f;
   }
   if (!TimingDisableCbk) {
     TimingDisableCbk = (defrTimingDisableCbkFnType) f;
@@ -264,7 +267,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     PartitionsStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!PartitionsEndCbk) {
-    PartitionsEndCbk = (defrVoidCbkFnType) f;
+    PartitionsEndCbk = f;
   }
   if (!PartitionCbk) {
     PartitionCbk = (defrPartitionCbkFnType) f;
@@ -273,7 +276,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     PinPropStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!PinPropEndCbk) {
-    PinPropEndCbk = (defrVoidCbkFnType) f;
+    PinPropEndCbk = f;
   }
   if (!PinPropCbk) {
     PinPropCbk = (defrPinPropCbkFnType) f;
@@ -285,7 +288,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     BlockageStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!BlockageEndCbk) {
-    BlockageEndCbk = (defrVoidCbkFnType) f;
+    BlockageEndCbk = f;
   }
   if (!BlockageCbk) {
     BlockageCbk = (defrBlockageCbkFnType) f;
@@ -294,7 +297,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     SlotStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!SlotEndCbk) {
-    SlotEndCbk = (defrVoidCbkFnType) f;
+    SlotEndCbk = f;
   }
   if (!SlotCbk) {
     SlotCbk = (defrSlotCbkFnType) f;
@@ -303,7 +306,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     FillStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!FillEndCbk) {
-    FillEndCbk = (defrVoidCbkFnType) f;
+    FillEndCbk = f;
   }
   if (!FillCbk) {
     FillCbk = (defrFillCbkFnType) f;
@@ -312,7 +315,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     NonDefaultStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!NonDefaultEndCbk) {
-    NonDefaultEndCbk = (defrVoidCbkFnType) f;
+    NonDefaultEndCbk = f;
   }
   if (!NonDefaultCbk) {
     NonDefaultCbk = (defrNonDefaultCbkFnType) f;
@@ -321,7 +324,7 @@ void defrCallbacks::SetUnusedCallbacks(defrVoidCbkFnType f)
     StylesStartCbk = (defrIntegerCbkFnType) f;
   }
   if (!StylesEndCbk) {
-    StylesEndCbk = (defrVoidCbkFnType) f;
+    StylesEndCbk = f;
   }
   if (!StylesCbk) {
     StylesCbk = (defrStylesCbkFnType) f;

@@ -4,18 +4,18 @@
   "fields": [
     {
       "type": "bit",
-      "name": "corner_type_",
+      "name": "corner_type",
       "flags": [
         "private"
       ]
     },
     {
       "type": "bit",
-      "name": "same_mask_"
+      "name": "same_mask"
     },
     {
       "type": "bit",
-      "name": "corner_only_"
+      "name": "corner_only"
     },
     {
       "type": "int",
@@ -24,7 +24,7 @@
     },
     {
       "type": "bit",
-      "name": "except_eol_"
+      "name": "except_eol"
     },
     {
       "type": "int",
@@ -33,7 +33,7 @@
     },
     {
       "type": "bit",
-      "name": "except_jog_length_"
+      "name": "except_jog_length"
     },
     {
       "type": "int",
@@ -42,7 +42,7 @@
     },
     {
       "type": "bit",
-      "name": "edge_length_valid_"
+      "name": "edge_length_valid"
     },
     {
       "type": "int",
@@ -51,11 +51,11 @@
     },
     {
       "type": "bit",
-      "name": "include_shape_"
+      "name": "include_shape"
     },
     {
       "type": "bit",
-      "name": "min_length_valid_"
+      "name": "min_length_valid"
     },
     {
       "type": "int",
@@ -64,11 +64,11 @@
     },
     {
       "type": "bit",
-      "name": "except_notch_"
+      "name": "except_notch"
     },
     {
       "type": "bit",
-      "name": "except_notch_length_valid_"
+      "name": "except_notch_length_valid"
     },
     {
       "type": "int",
@@ -77,15 +77,15 @@
     },
     {
       "type": "bit",
-      "name": "except_same_net_"
+      "name": "except_same_net"
     },
     {
       "type": "bit",
-      "name": "except_same_metal_"
+      "name": "except_same_metal"
     },
     {
       "type": "bit",
-      "name": "corner_to_corner_"
+      "name": "corner_to_corner"
     }
   ],
   "enums": [
@@ -100,5 +100,11 @@
   ],
   "cpp_includes": [
     "dbTechLayer.h"
+  ],
+  "cpp_sys_includes": [
+    "utility"
+  ],
+  "h_sys_includes": [
+    "utility"
   ]
 }

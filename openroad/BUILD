@@ -4,6 +4,8 @@ load("@openroad_rules_python//python:defs.bzl", "py_library")
 # Copyright (c) 2025-2025, The OpenROAD Authors
 load("@openroad_rules_python//python:packaging.bzl", "py_package", "py_wheel")
 
+package(features = ["layering_check"])
+
 py_library(
     name = "openroadpy",
     srcs = [

@@ -41,6 +41,7 @@ class DebugScopedTimer : public Timer
                    const char* group,
                    int level,
                    const std::string& msg);
+  DebugScopedTimer(double& aggregate);
   ~DebugScopedTimer() override;
 
  private:

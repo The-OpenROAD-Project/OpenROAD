@@ -34,6 +34,7 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
@@ -51,12 +52,12 @@ void defiOrdered::clear()
 {
   int i;
   for (i = 0; i < num_; i++) {
-    free((char*) (inst_[i]));
+    free(inst_[i]);
     if (in_[i]) {
-      free((char*) (in_[i]));
+      free(in_[i]);
     }
     if (out_[i]) {
-      free((char*) (out_[i]));
+      free(out_[i]);
     }
   }
   num_ = 0;
@@ -66,9 +67,9 @@ void defiOrdered::Destroy()
 {
   int i;
   for (i = 0; i < num_; i++) {
-    free((char*) (inst_[i]));
-    free((char*) (in_[i]));
-    free((char*) (out_[i]));
+    free(inst_[i]);
+    free(in_[i]);
+    free(out_[i]);
   }
   free((char*) (inst_));
   free((char*) (in_));
@@ -254,7 +255,7 @@ void defiScanchain::clear()
   commonOutPin_ = nullptr;
   hasPartition_ = 0;
   if (partName_) {
-    free((char*) (partName_));
+    free(partName_);
   }
   partName_ = nullptr;
   maxBits_ = -1;

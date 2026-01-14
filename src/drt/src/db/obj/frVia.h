@@ -10,6 +10,7 @@
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -83,8 +84,8 @@ class frVia : public frRef
    * setTransform
    */
 
-  dbOrientType getOrient() const override { return dbOrientType(); }
-  void setOrient(const dbOrientType& tmpOrient) override { ; }
+  odb::dbOrientType getOrient() const override { return odb::dbOrientType(); }
+  void setOrient(const odb::dbOrientType& tmpOrient) override { ; }
   odb::Point getOrigin() const override { return origin_; }
   void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
   odb::dbTransform getTransform() const override

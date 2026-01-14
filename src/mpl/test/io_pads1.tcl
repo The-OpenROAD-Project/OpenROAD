@@ -8,7 +8,7 @@ read_lef testcases/macro_only.lef
 read_def testcases/io_pads1.def
 
 set_thread_count 0
-rtl_macro_placer -report_directory results/io_pads1 -halo_width 4.0
+rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0
 
 set def_file [make_result_file "io_pads1.def"]
 write_def $def_file

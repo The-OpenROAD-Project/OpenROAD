@@ -27,14 +27,13 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <string.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
+#include "defiDefs.hpp"
 #include "defwWriter.hpp"
 #include "defwWriterCalls.hpp"
 
@@ -1755,7 +1754,8 @@ main(int argc, char** argv)
       argv++;
       argc--;
       outfile = *argv;
-      if ((fout = fopen(outfile, "w")) == nullptr) {
+      fout = fopen(outfile, "w");
+      if (fout == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }

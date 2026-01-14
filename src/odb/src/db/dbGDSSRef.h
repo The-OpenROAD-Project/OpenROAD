@@ -12,7 +12,6 @@
 #include "dbCore.h"
 #include "dbGDSStructure.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -30,10 +29,10 @@ class _dbGDSSRef : public _dbObject
   bool operator<(const _dbGDSSRef& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  Point _origin;
-  std::vector<std::pair<std::int16_t, std::string>> _propattr;
-  dbGDSSTrans _transform;
-  dbId<_dbGDSStructure> _structure;
+  Point origin_;
+  std::vector<std::pair<std::int16_t, std::string>> propattr_;
+  dbGDSSTrans transform_;
+  dbId<_dbGDSStructure> structure_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj);

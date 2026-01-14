@@ -3,6 +3,7 @@
 
 #include "odb/dbWireCodec.h"
 
+#include <cassert>
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
@@ -35,19 +36,19 @@ namespace odb {
 
 inline unsigned char dbWireEncoder::getOp(int idx)
 {
-  return _opcodes[idx];
+  return opcodes_[idx];
 }
 
 inline void dbWireEncoder::updateOp(int idx, unsigned char op)
 {
-  _opcodes[idx] = op;
+  opcodes_[idx] = op;
 }
 
 inline void dbWireEncoder::addOp(unsigned char op, int value)
 {
-  _data.push_back(value);
-  _opcodes.push_back(op);
-  ++_idx;
+  data_.push_back(value);
+  opcodes_.push_back(op);
+  ++idx_;
 }
 
 inline unsigned char dbWireEncoder::getWireType(dbWireType type)
@@ -56,28 +57,30 @@ inline unsigned char dbWireEncoder::getWireType(dbWireType type)
 
   switch (type.getValue()) {
     case dbWireType::NONE:
-      wire_type = WOP_NONE;
+      wire_type = kNone;
       break;
 
     case dbWireType::COVER:
-      wire_type = WOP_COVER;
+      wire_type = kCover;
       break;
 
     case dbWireType::FIXED:
-      wire_type = WOP_FIXED;
+      wire_type = kFixed;
       break;
 
     case dbWireType::ROUTED:
-      wire_type = WOP_ROUTED;
+      wire_type = kRouted;
       break;
 
     case dbWireType::NOSHIELD:
-      wire_type = WOP_NOSHIELD;
+      wire_type = kNoShield;
       break;
 
-    default:
-      _wire_type = WOP_NONE;
-      break;
+    case dbWireType::SHIELD: {
+      utl::Logger* logger = wire_->getImpl()->getLogger();
+      logger->error(
+          utl::ODB, 1113, "Shield type should not occur on a wire segment");
+    } break;
   }
 
   return wire_type;
@@ -97,240 +100,236 @@ inline void dbWireEncoder::initPath(dbTechLayer* layer,
 
 void dbWireEncoder::initPath(dbTechLayer* layer, unsigned char wire_type)
 {
-  _wire_type = wire_type;
-  _point_cnt = 0;
-  _via_cnt = 0;
-  _layer = layer;
-  _non_default_rule = 0;
-  _rule_opcode = 0;
-  _prev_extended_colinear_pnt = false;
+  wire_type_ = wire_type;
+  point_cnt_ = 0;
+  via_cnt_ = 0;
+  layer_ = layer;
+  non_default_rule_ = 0;
+  rule_opcode_ = 0;
+  prev_extended_colinear_pnt_ = false;
 }
 
 void dbWireEncoder::initPath(dbTechLayer* layer,
                              unsigned char wire_type,
                              dbTechLayerRule* rule)
 {
-  _wire_type = wire_type;
-  _point_cnt = 0;
-  _via_cnt = 0;
-  _layer = layer;
-  _non_default_rule = rule->getImpl()->getOID();
+  wire_type_ = wire_type;
+  point_cnt_ = 0;
+  via_cnt_ = 0;
+  layer_ = layer;
+  non_default_rule_ = rule->getImpl()->getOID();
 
   if (rule->isBlockRule()) {
-    _rule_opcode = WOP_RULE | WOP_BLOCK_RULE;
+    rule_opcode_ = kRule | WOP_BLOCK_RULE;
   } else {
-    _rule_opcode = WOP_RULE;
+    rule_opcode_ = kRule;
   }
 
-  _prev_extended_colinear_pnt = false;
-  _x = 0;
-  _y = 0;
+  prev_extended_colinear_pnt_ = false;
+  x_ = 0;
+  y_ = 0;
 }
 
 dbWireEncoder::dbWireEncoder()
-    : _wire(nullptr),
-      _tech(nullptr),
-      _block(nullptr),
-      _layer(nullptr),
-      _idx(0),
-      _x(0),
-      _y(0),
-      _non_default_rule(0),
-      _point_cnt(0),
-      _via_cnt(0),
-      _prev_extended_colinear_pnt(false),
-      _wire_type(0),
-      _rule_opcode(0)
-{
-}
-
-dbWireEncoder::~dbWireEncoder()
+    : wire_(nullptr),
+      tech_(nullptr),
+      block_(nullptr),
+      layer_(nullptr),
+      idx_(0),
+      x_(0),
+      y_(0),
+      non_default_rule_(0),
+      point_cnt_(0),
+      via_cnt_(0),
+      prev_extended_colinear_pnt_(false),
+      wire_type_(0),
+      rule_opcode_(0)
 {
 }
 
 void dbWireEncoder::begin(dbWire* wire)
 {
   clear();
-  _wire = (_dbWire*) wire;
-  _block = wire->getBlock();
-  _tech = _block->getTech();
+  wire_ = (_dbWire*) wire;
+  block_ = wire->getBlock();
+  tech_ = block_->getTech();
 }
 
 void dbWireEncoder::clear()
 {
-  _wire = nullptr;
-  _block = nullptr;
-  _tech = nullptr;
-  _data.clear();
-  _opcodes.clear();
-  _layer = nullptr;
-  _idx = 0;
-  _x = 0;
-  _y = 0;
-  _non_default_rule = 0;
-  _rule_opcode = 0;
-  _point_cnt = 0;
-  _via_cnt = 0;
-  _prev_extended_colinear_pnt = false;
+  wire_ = nullptr;
+  block_ = nullptr;
+  tech_ = nullptr;
+  data_.clear();
+  opcodes_.clear();
+  layer_ = nullptr;
+  idx_ = 0;
+  x_ = 0;
+  y_ = 0;
+  non_default_rule_ = 0;
+  rule_opcode_ = 0;
+  point_cnt_ = 0;
+  via_cnt_ = 0;
+  prev_extended_colinear_pnt_ = false;
 }
 
 void dbWireEncoder::append(dbWire* wire)
 {
-  _wire = (_dbWire*) wire;
-  _block = wire->getBlock();
-  _tech = _block->getDb()->getTech();
-  _data = _wire->_data;
-  _opcodes = _wire->_opcodes;
-  _layer = nullptr;
-  _idx = _data.size();
-  _x = 0;
-  _y = 0;
-  _non_default_rule = 0;
-  _rule_opcode = 0;
-  _point_cnt = 0;
-  _via_cnt = 0;
-  _prev_extended_colinear_pnt = false;
+  wire_ = (_dbWire*) wire;
+  block_ = wire->getBlock();
+  tech_ = block_->getDb()->getTech();
+  data_ = wire_->data_;
+  opcodes_ = wire_->opcodes_;
+  layer_ = nullptr;
+  idx_ = data_.size();
+  x_ = 0;
+  y_ = 0;
+  non_default_rule_ = 0;
+  rule_opcode_ = 0;
+  point_cnt_ = 0;
+  via_cnt_ = 0;
+  prev_extended_colinear_pnt_ = false;
 }
 
 #define DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT 0
 
-int dbWireEncoder::addPoint(int x, int y, uint property)
+int dbWireEncoder::addPoint(int x, int y, uint32_t property)
 {
-  int jct_id = _idx;
+  int jct_id = idx_;
 
-  if (_non_default_rule == 0) {
-    if (_point_cnt == 0) {
-      addOp(WOP_X | WOP_DEFAULT_WIDTH, x);
-      addOp(WOP_Y | WOP_DEFAULT_WIDTH, y);
-      _x = x;
-      _y = y;
+  if (non_default_rule_ == 0) {
+    if (point_cnt_ == 0) {
+      addOp(kX | WOP_DEFAULT_WIDTH, x);
+      addOp(kY | WOP_DEFAULT_WIDTH, y);
+      x_ = x;
+      y_ = y;
       jct_id++;
-      _point_cnt++;
-    } else if ((_x == x) && (_y == y)) {
-      addOp(WOP_COLINEAR | WOP_DEFAULT_WIDTH, 0);
-    } else if (_y == y) {
-      addOp(WOP_X | WOP_DEFAULT_WIDTH, x);
-      _x = x;
-      _point_cnt++;
-    } else if (_x == x) {
-      addOp(WOP_Y | WOP_DEFAULT_WIDTH, y);
-      _y = y;
-      _point_cnt++;
+      point_cnt_++;
+    } else if ((x_ == x) && (y_ == y)) {
+      addOp(kColinear | WOP_DEFAULT_WIDTH, 0);
+    } else if (y_ == y) {
+      addOp(kX | WOP_DEFAULT_WIDTH, x);
+      x_ = x;
+      point_cnt_++;
+    } else if (x_ == x) {
+      addOp(kY | WOP_DEFAULT_WIDTH, y);
+      y_ = y;
+      point_cnt_++;
     } else {
-      ZASSERT(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
+      assert(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
     }
   } else {
-    if (_point_cnt == 0) {
-      addOp(WOP_X, x);
-      addOp(WOP_Y, y);
-      _x = x;
-      _y = y;
-      _point_cnt++;
+    if (point_cnt_ == 0) {
+      addOp(kX, x);
+      addOp(kY, y);
+      x_ = x;
+      y_ = y;
+      point_cnt_++;
       jct_id++;
-    } else if ((_x == x) && (_y == y)) {
-      addOp(WOP_COLINEAR, 0);
-    } else if (_y == y) {
-      addOp(WOP_X, x);
-      _x = x;
-      _point_cnt++;
-    } else if (_x == x) {
-      addOp(WOP_Y, y);
-      _y = y;
-      _point_cnt++;
+    } else if ((x_ == x) && (y_ == y)) {
+      addOp(kColinear, 0);
+    } else if (y_ == y) {
+      addOp(kX, x);
+      x_ = x;
+      point_cnt_++;
+    } else if (x_ == x) {
+      addOp(kY, y);
+      y_ = y;
+      point_cnt_++;
     } else {
-      ZASSERT(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
+      assert(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
     }
 
-    if (_point_cnt
-        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
-      addOp(_rule_opcode, _non_default_rule);
+    if (point_cnt_
+        && ((point_cnt_ & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
+      addOp(rule_opcode_, non_default_rule_);
     }
   }
-  if (_point_cnt != 1) {
-    addOp(WOP_PROPERTY, property);
+  if (point_cnt_ != 1) {
+    addOp(kProperty, property);
   }
 
-  _prev_extended_colinear_pnt = false;
+  prev_extended_colinear_pnt_ = false;
   return jct_id;
 }
 
 #define DB_WIRE_ENCODER_COLINEAR_EXT_RULE_1() \
-  ((_point_cnt > 1) || ((_point_cnt > 0) && (_via_cnt > 0)))
+  ((point_cnt_ > 1) || ((point_cnt_ > 0) && (via_cnt_ > 0)))
 #define DB_WIRE_ENCODER_COLINEAR_EXT_RULE_2() \
-  (_prev_extended_colinear_pnt == false)
+  (prev_extended_colinear_pnt_ == false)
 
-int dbWireEncoder::addPoint(int x, int y, int ext, uint property)
+int dbWireEncoder::addPoint(int x, int y, int ext, uint32_t property)
 {
-  int jct_id = _idx;
+  int jct_id = idx_;
 
-  if (_non_default_rule == 0) {
-    if (_point_cnt == 0) {
-      addOp(WOP_X | WOP_DEFAULT_WIDTH, x);
-      addOp(WOP_Y | WOP_EXTENSION | WOP_DEFAULT_WIDTH, y);
-      addOp(WOP_OPERAND, ext);
-      _x = x;
-      _y = y;
-      _point_cnt++;
+  if (non_default_rule_ == 0) {
+    if (point_cnt_ == 0) {
+      addOp(kX | WOP_DEFAULT_WIDTH, x);
+      addOp(kY | WOP_EXTENSION | WOP_DEFAULT_WIDTH, y);
+      addOp(kOperand, ext);
+      x_ = x;
+      y_ = y;
+      point_cnt_++;
       jct_id++;
-      _prev_extended_colinear_pnt = false;
-    } else if ((_x == x) && (_y == y)) {
-      ZASSERT(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_1());
-      ZASSERT(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_2());
-      addOp(WOP_COLINEAR | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
-      _prev_extended_colinear_pnt = true;
-    } else if (_y == y) {
-      addOp(WOP_X | WOP_EXTENSION | WOP_DEFAULT_WIDTH, x);
-      addOp(WOP_OPERAND, ext);
-      _x = x;
-      _point_cnt++;
-      _prev_extended_colinear_pnt = false;
-    } else if (_x == x) {
-      addOp(WOP_Y | WOP_EXTENSION | WOP_DEFAULT_WIDTH, y);
-      addOp(WOP_OPERAND, ext);
-      _y = y;
-      _point_cnt++;
-      _prev_extended_colinear_pnt = false;
+      prev_extended_colinear_pnt_ = false;
+    } else if ((x_ == x) && (y_ == y)) {
+      assert(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_1());
+      assert(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_2());
+      addOp(kColinear | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
+      prev_extended_colinear_pnt_ = true;
+    } else if (y_ == y) {
+      addOp(kX | WOP_EXTENSION | WOP_DEFAULT_WIDTH, x);
+      addOp(kOperand, ext);
+      x_ = x;
+      point_cnt_++;
+      prev_extended_colinear_pnt_ = false;
+    } else if (x_ == x) {
+      addOp(kY | WOP_EXTENSION | WOP_DEFAULT_WIDTH, y);
+      addOp(kOperand, ext);
+      y_ = y;
+      point_cnt_++;
+      prev_extended_colinear_pnt_ = false;
     } else {
-      ZASSERT(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
+      assert(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
     }
   } else {
-    if (_point_cnt == 0) {
-      addOp(WOP_X, x);
-      addOp(WOP_Y | WOP_EXTENSION, y);
-      addOp(WOP_OPERAND, ext);
-      _x = x;
-      _y = y;
-      _point_cnt++;
+    if (point_cnt_ == 0) {
+      addOp(kX, x);
+      addOp(kY | WOP_EXTENSION, y);
+      addOp(kOperand, ext);
+      x_ = x;
+      y_ = y;
+      point_cnt_++;
       jct_id++;
-      _prev_extended_colinear_pnt = false;
-    } else if ((_x == x) && (_y == y)) {
-      ZASSERT(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_1());
-      ZASSERT(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_2());
-      addOp(WOP_COLINEAR | WOP_EXTENSION, ext);
-      _prev_extended_colinear_pnt = true;
-    } else if (_y == y) {
-      addOp(WOP_X | WOP_EXTENSION, x);
-      addOp(WOP_OPERAND, ext);
-      _x = x;
-      _point_cnt++;
-      _prev_extended_colinear_pnt = false;
-    } else if (_x == x) {
-      addOp(WOP_Y | WOP_EXTENSION, y);
-      addOp(WOP_OPERAND, ext);
-      _y = y;
-      _point_cnt++;
-      _prev_extended_colinear_pnt = false;
+      prev_extended_colinear_pnt_ = false;
+    } else if ((x_ == x) && (y_ == y)) {
+      assert(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_1());
+      assert(DB_WIRE_ENCODER_COLINEAR_EXT_RULE_2());
+      addOp(kColinear | WOP_EXTENSION, ext);
+      prev_extended_colinear_pnt_ = true;
+    } else if (y_ == y) {
+      addOp(kX | WOP_EXTENSION, x);
+      addOp(kOperand, ext);
+      x_ = x;
+      point_cnt_++;
+      prev_extended_colinear_pnt_ = false;
+    } else if (x_ == x) {
+      addOp(kY | WOP_EXTENSION, y);
+      addOp(kOperand, ext);
+      y_ = y;
+      point_cnt_++;
+      prev_extended_colinear_pnt_ = false;
     } else {
-      ZASSERT(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
+      assert(DB_WIRE_ENCODER_NON_ORTHOGANAL_SEGMENT);
     }
 
-    if (_point_cnt
-        && ((_point_cnt & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
-      addOp(_rule_opcode, _non_default_rule);
+    if (point_cnt_
+        && ((point_cnt_ & (WOP_NON_DEFAULT_WIDTH_POINT_CNT - 1)) == 0)) {
+      addOp(rule_opcode_, non_default_rule_);
     }
   }
-  if (_point_cnt != 1) {
-    addOp(WOP_PROPERTY, property);
+  if (point_cnt_ != 1) {
+    addOp(kProperty, property);
   }
 
   return jct_id;
@@ -338,75 +337,75 @@ int dbWireEncoder::addPoint(int x, int y, int ext, uint property)
 
 int dbWireEncoder::addVia(dbVia* via)
 {
-  int jct_id = _idx;
-  ZASSERT(_point_cnt != 0);
+  int jct_id = idx_;
+  assert(point_cnt_ != 0);
   dbTechLayer* top = via->getTopLayer();
   dbTechLayer* bot = via->getBottomLayer();
 
-  if (top == _layer) {
-    _layer = bot;
-    addOp(WOP_VIA, via->getImpl()->getOID());
-  } else if (bot == _layer) {
-    _layer = top;
-    addOp(WOP_VIA | WOP_VIA_EXIT_TOP, via->getImpl()->getOID());
+  if (top == layer_) {
+    layer_ = bot;
+    addOp(kVia, via->getImpl()->getOID());
+  } else if (bot == layer_) {
+    layer_ = top;
+    addOp(kVia | WOP_VIA_EXIT_TOP, via->getImpl()->getOID());
   } else {
-    ZASSERT(DB_WIRE_ENCODER_INVALID_VIA_LAYER);
-    addOp(WOP_VIA, 0);
+    assert(DB_WIRE_ENCODER_INVALID_VIA_LAYER);
+    addOp(kVia, 0);
   }
 
-  _via_cnt++;
+  via_cnt_++;
   return jct_id;
 }
 
 int dbWireEncoder::addTechVia(dbTechVia* via)
 {
-  int jct_id = _idx;
-  ZASSERT(_point_cnt != 0);
+  int jct_id = idx_;
+  assert(point_cnt_ != 0);
   dbTechLayer* top = via->getTopLayer();
   dbTechLayer* bot = via->getBottomLayer();
 
-  if (top == _layer) {
-    _layer = bot;
-    addOp(WOP_TECH_VIA, via->getImpl()->getOID());
-  } else if (bot == _layer) {
-    _layer = top;
-    addOp(WOP_TECH_VIA | WOP_VIA_EXIT_TOP, via->getImpl()->getOID());
+  if (top == layer_) {
+    layer_ = bot;
+    addOp(kTechVia, via->getImpl()->getOID());
+  } else if (bot == layer_) {
+    layer_ = top;
+    addOp(kTechVia | WOP_VIA_EXIT_TOP, via->getImpl()->getOID());
   } else {
-    ZASSERT(DB_WIRE_ENCODER_INVALID_VIA_LAYER);
-    addOp(WOP_TECH_VIA, 0);
+    assert(DB_WIRE_ENCODER_INVALID_VIA_LAYER);
+    addOp(kTechVia, 0);
   }
   clearColor();
 
-  _via_cnt++;
+  via_cnt_++;
   return jct_id;
 }
 
 void dbWireEncoder::addRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2)
 {
   // order must match dbWireDecoder::next
-  ZASSERT(_point_cnt != 0);
-  addOp(WOP_RECT, deltaX1);
-  addOp(WOP_OPERAND, deltaY1);
-  addOp(WOP_OPERAND, deltaX2);
-  addOp(WOP_OPERAND, deltaY2);
+  assert(point_cnt_ != 0);
+  addOp(kRect, deltaX1);
+  addOp(kOperand, deltaY1);
+  addOp(kOperand, deltaX2);
+  addOp(kOperand, deltaY2);
 }
 
 void dbWireEncoder::addITerm(dbITerm* iterm)
 {
-  ZASSERT(_point_cnt != 0);
-  addOp(WOP_ITERM, iterm->getImpl()->getOID());
+  assert(point_cnt_ != 0);
+  addOp(kIterm, iterm->getImpl()->getOID());
 }
 
 void dbWireEncoder::addBTerm(dbBTerm* bterm)
 {
-  ZASSERT(_point_cnt != 0);
-  addOp(WOP_BTERM, bterm->getImpl()->getOID());
+  assert(point_cnt_ != 0);
+  addOp(kBterm, bterm->getImpl()->getOID());
 }
 
 void dbWireEncoder::newPath(dbTechLayer* layer, dbWireType type)
 {
   initPath(layer, type);
-  addOp(WOP_PATH | _wire_type, layer->getImpl()->getOID());
+  addOp(kPath | wire_type_, layer->getImpl()->getOID());
 }
 
 void dbWireEncoder::newPath(dbTechLayer* layer,
@@ -414,110 +413,110 @@ void dbWireEncoder::newPath(dbTechLayer* layer,
                             dbTechLayerRule* rule)
 {
   initPath(layer, type, rule);
-  addOp(WOP_PATH | _wire_type, layer->getImpl()->getOID());
-  addOp(_rule_opcode, _non_default_rule);
+  addOp(kPath | wire_type_, layer->getImpl()->getOID());
+  addOp(rule_opcode_, non_default_rule_);
 }
 
 void dbWireEncoder::newPath(int jct_id)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
 
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, _wire_type);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, wire_type_);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
 
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(WOP_COLINEAR | WOP_DEFAULT_WIDTH, 0);
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(kColinear | WOP_DEFAULT_WIDTH, 0);
 }
 
 void dbWireEncoder::newPath(int jct_id, dbWireType type)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, type);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(WOP_COLINEAR | WOP_DEFAULT_WIDTH, 0);
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, type);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(kColinear | WOP_DEFAULT_WIDTH, 0);
 }
 
 void dbWireEncoder::newPathShort(int jct_id,
                                  dbTechLayer* layer,
                                  dbWireType type)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   initPath(layer, type);
-  addOp(WOP_SHORT | _wire_type, layer->getImpl()->getOID());
-  addOp(WOP_OPERAND, jct_id);
+  addOp(kShort | wire_type_, layer->getImpl()->getOID());
+  addOp(kOperand, jct_id);
 }
 
 void dbWireEncoder::newPathVirtualWire(int jct_id,
                                        dbTechLayer* layer,
                                        dbWireType type)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   initPath(layer, type);
-  addOp(WOP_VWIRE | _wire_type, layer->getImpl()->getOID());
-  addOp(WOP_OPERAND, jct_id);
+  addOp(kVwire | wire_type_, layer->getImpl()->getOID());
+  addOp(kOperand, jct_id);
 }
 
 void dbWireEncoder::newPathExt(int jct_id, int ext)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, _wire_type);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(WOP_COLINEAR | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, wire_type_);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(kColinear | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
 }
 
 void dbWireEncoder::newPathExt(int jct_id, int ext, dbWireType type)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, type);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(WOP_COLINEAR | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, type);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(kColinear | WOP_EXTENSION | WOP_DEFAULT_WIDTH, ext);
 }
 
 void dbWireEncoder::newPath(int jct_id, dbTechLayerRule* rule)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, _wire_type, rule);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(_rule_opcode, _non_default_rule);
-  addOp(WOP_COLINEAR, 0);
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, wire_type_, rule);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(rule_opcode_, non_default_rule_);
+  addOp(kColinear, 0);
 }
 
 void dbWireEncoder::newPath(int jct_id, dbWireType type, dbTechLayerRule* rule)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, type, rule);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(_rule_opcode, _non_default_rule);
-  addOp(WOP_COLINEAR, 0);
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, type, rule);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(rule_opcode_, non_default_rule_);
+  addOp(kColinear, 0);
 }
 
 void dbWireEncoder::newPathShort(int jct_id,
@@ -525,11 +524,11 @@ void dbWireEncoder::newPathShort(int jct_id,
                                  dbWireType type,
                                  dbTechLayerRule* rule)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   initPath(layer, type, rule);
-  addOp(WOP_SHORT | _wire_type, layer->getImpl()->getOID());
-  addOp(WOP_OPERAND, jct_id);
-  addOp(_rule_opcode, _non_default_rule);
+  addOp(kShort | wire_type_, layer->getImpl()->getOID());
+  addOp(kOperand, jct_id);
+  addOp(rule_opcode_, non_default_rule_);
 }
 
 void dbWireEncoder::newPathVirtualWire(int jct_id,
@@ -537,25 +536,25 @@ void dbWireEncoder::newPathVirtualWire(int jct_id,
                                        dbWireType type,
                                        dbTechLayerRule* rule)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   initPath(layer, type, rule);
-  addOp(WOP_VWIRE | _wire_type, layer->getImpl()->getOID());
-  addOp(WOP_OPERAND, jct_id);
-  addOp(_rule_opcode, _non_default_rule);
+  addOp(kVwire | wire_type_, layer->getImpl()->getOID());
+  addOp(kOperand, jct_id);
+  addOp(rule_opcode_, non_default_rule_);
 }
 
 void dbWireEncoder::newPathExt(int jct_id, int ext, dbTechLayerRule* rule)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, _wire_type, rule);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(_rule_opcode, _non_default_rule);
-  addOp(WOP_COLINEAR | WOP_EXTENSION, ext);
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, wire_type_, rule);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(rule_opcode_, non_default_rule_);
+  addOp(kColinear | WOP_EXTENSION, ext);
 }
 
 void dbWireEncoder::newPathExt(int jct_id,
@@ -563,44 +562,44 @@ void dbWireEncoder::newPathExt(int jct_id,
                                dbWireType type,
                                dbTechLayerRule* rule)
 {
-  ZASSERT((jct_id >= 0) && (jct_id < _idx));
+  assert((jct_id >= 0) && (jct_id < idx_));
   WirePoint pnt;
-  getPrevPoint(_tech, _block, _opcodes, _data, jct_id, true, pnt);
-  initPath(pnt._layer, type, rule);
-  _x = pnt._x;
-  _y = pnt._y;
-  _point_cnt = 1;
-  addOp(WOP_JUNCTION | _wire_type, jct_id);
-  addOp(_rule_opcode, _non_default_rule);
-  addOp(WOP_COLINEAR | WOP_EXTENSION, ext);
+  getPrevPoint(tech_, block_, opcodes_, data_, jct_id, true, pnt);
+  initPath(pnt.layer, type, rule);
+  x_ = pnt.x;
+  y_ = pnt.y;
+  point_cnt_ = 1;
+  addOp(kJunction | wire_type_, jct_id);
+  addOp(rule_opcode_, non_default_rule_);
+  addOp(kColinear | WOP_EXTENSION, ext);
 }
 
 void dbWireEncoder::end()
 {
-  if (_opcodes.empty()) {
+  if (opcodes_.empty()) {
     return;
   }
 
-  uint n = _opcodes.size();
+  uint32_t n = opcodes_.size();
 
   // Free the old memory
-  _wire->_data.~dbVector<int>();
-  new (&_wire->_data) dbVector<int>();
-  _wire->_data.reserve(n);
-  _wire->_data = _data;
+  wire_->data_.~dbVector<int>();
+  new (&wire_->data_) dbVector<int>();
+  wire_->data_.reserve(n);
+  wire_->data_ = data_;
 
   // Free the old memory
-  _wire->_opcodes.~dbVector<unsigned char>();
-  new (&_wire->_opcodes) dbVector<unsigned char>();
-  _wire->_opcodes.reserve(n);
-  _wire->_opcodes = _opcodes;
+  wire_->opcodes_.~dbVector<unsigned char>();
+  new (&wire_->opcodes_) dbVector<unsigned char>();
+  wire_->opcodes_.reserve(n);
+  wire_->opcodes_ = opcodes_;
 
   // Should we calculate the bbox???
-  ((_dbBlock*) _block)->_flags._valid_bbox = 0;
-  _point_cnt = 0;
+  ((_dbBlock*) block_)->flags_.valid_bbox = 0;
+  point_cnt_ = 0;
 
-  for (auto callback : ((_dbBlock*) _block)->_callbacks) {
-    callback->inDbWirePostModify((dbWire*) _wire);
+  for (auto callback : ((_dbBlock*) block_)->callbacks_) {
+    callback->inDbWirePostModify((dbWire*) wire_);
   }
 }
 
@@ -609,20 +608,20 @@ void dbWireEncoder::setColor(uint8_t mask_color)
   // LEF/DEF says 3 is the max number of supported masks per layer.
   // 0 is also not a valid mask.
   if (mask_color < 1 || mask_color > 3) {
-    utl::Logger* logger = _wire->getImpl()->getLogger();
+    utl::Logger* logger = wire_->getImpl()->getLogger();
     logger->error(utl::ODB,
                   1102,
                   "Mask color: {}, but must be between 1 and 3",
                   mask_color);
   }
 
-  addOp(WOP_COLOR, mask_color);
+  addOp(kColor, mask_color);
 }
 
 void dbWireEncoder::clearColor()
 {
   // 0 is a special value representing no mask color.
-  addOp(WOP_COLOR, 0);
+  addOp(kColor, 0);
 }
 
 void dbWireEncoder::setViaColor(uint8_t bottom_color,
@@ -633,7 +632,7 @@ void dbWireEncoder::setViaColor(uint8_t bottom_color,
   // 0 is also not a valid mask.
   for (const auto color : {bottom_color, cut_color, top_color}) {
     if (color > 3) {
-      utl::Logger* logger = _wire->getImpl()->getLogger();
+      utl::Logger* logger = wire_->getImpl()->getLogger();
       logger->error(
           utl::ODB, 1103, "Mask color: {}, but must be between 0 and 3", color);
     }
@@ -642,13 +641,13 @@ void dbWireEncoder::setViaColor(uint8_t bottom_color,
   // encode as XX BB CC TT
   const uint8_t mask_color = bottom_color << 4 | cut_color << 2 | top_color;
 
-  addOp(WOP_VIACOLOR, mask_color);
+  addOp(kViaColor, mask_color);
 }
 
 void dbWireEncoder::clearViaColor()
 {
   // 0 is a special value representing no mask color.
-  addOp(WOP_VIACOLOR, 0);
+  addOp(kViaColor, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -663,54 +662,50 @@ void dbWireEncoder::clearViaColor()
 
 dbWireDecoder::dbWireDecoder()
 {
-  _wire = nullptr;
-  _block = nullptr;
-  _tech = nullptr;
-}
-
-dbWireDecoder::~dbWireDecoder()
-{
+  wire_ = nullptr;
+  block_ = nullptr;
+  tech_ = nullptr;
 }
 
 void dbWireDecoder::begin(dbWire* wire)
 {
-  _wire = (_dbWire*) wire;
-  _block = wire->getBlock();
-  _tech = _block->getDb()->getTech();
-  _x = 0;
-  _y = 0;
-  _default_width = true;
-  _layer = nullptr;
-  _idx = 0;
-  _jct_id = -1;
-  _opcode = END_DECODE;
-  _wire_type = dbWireType::NONE;
-  _point_cnt = 0;
-  _property = 0;
-  _deltaX1 = 0;
-  _deltaY1 = 0;
-  _deltaX2 = 0;
-  _deltaY2 = 0;
+  wire_ = (_dbWire*) wire;
+  block_ = wire->getBlock();
+  tech_ = block_->getDb()->getTech();
+  x_ = 0;
+  y_ = 0;
+  default_width_ = true;
+  layer_ = nullptr;
+  idx_ = 0;
+  jct_id_ = -1;
+  opcode_ = END_DECODE;
+  wire_type_ = dbWireType::NONE;
+  point_cnt_ = 0;
+  property_ = 0;
+  deltaX1_ = 0;
+  deltaY1_ = 0;
+  deltaX2_ = 0;
+  deltaY2_ = 0;
 }
 
 inline unsigned char dbWireDecoder::nextOp(int& value)
 {
-  ZASSERT(_idx < (int) _wire->length());
-  value = _wire->_data[_idx];
-  return _wire->_opcodes[_idx++];
+  assert(idx_ < (int) wire_->length());
+  value = wire_->data_[idx_];
+  return wire_->opcodes_[idx_++];
 }
 
-inline unsigned char dbWireDecoder::nextOp(uint& value)
+inline unsigned char dbWireDecoder::nextOp(uint32_t& value)
 {
-  ZASSERT(_idx < (int) _wire->length());
-  value = (uint) _wire->_data[_idx];
-  return _wire->_opcodes[_idx++];
+  assert(idx_ < (int) wire_->length());
+  value = (uint32_t) wire_->data_[idx_];
+  return wire_->opcodes_[idx_++];
 }
 
 inline unsigned char dbWireDecoder::peekOp()
 {
-  ZASSERT(_idx < (int) _wire->length());
-  return _wire->_opcodes[_idx];
+  assert(idx_ < (int) wire_->length());
+  return wire_->opcodes_[idx_];
 }
 
 //
@@ -719,63 +714,63 @@ inline unsigned char dbWireDecoder::peekOp()
 //
 inline void dbWireDecoder::flushRule()
 {
-  if (_idx != (int) _wire->_opcodes.size()) {
-    if ((_wire->_opcodes[_idx] & WOP_OPCODE_MASK) == WOP_RULE) {
-      ++_idx;
+  if (idx_ != (int) wire_->opcodes_.size()) {
+    if ((wire_->opcodes_[idx_] & WOP_OPCODE_MASK) == kRule) {
+      ++idx_;
     }
   }
 }
 
 dbWireDecoder::OpCode dbWireDecoder::peek() const
 {
-  int idx = _idx;
+  int idx = idx_;
 
 nextOpCode:
 
-  if (idx == (int) _wire->_opcodes.size()) {
+  if (idx == (int) wire_->opcodes_.size()) {
     return END_DECODE;
   }
 
-  unsigned char opcode = _wire->_opcodes[idx];
+  unsigned char opcode = wire_->opcodes_[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_PATH:
+    case kPath:
       return PATH;
 
-    case WOP_SHORT:
+    case kShort:
       return SHORT;
 
-    case WOP_JUNCTION:
+    case kJunction:
       return JUNCTION;
 
-    case WOP_RULE:
+    case kRule:
       return RULE;
 
-    case WOP_X:
-    case WOP_Y:
-    case WOP_COLINEAR:
+    case kX:
+    case kY:
+    case kColinear:
       if (opcode & WOP_EXTENSION) {
         return POINT_EXT;
       }
 
       return POINT;
 
-    case WOP_VIA:
+    case kVia:
       return VIA;
 
-    case WOP_TECH_VIA:
+    case kTechVia:
       return TECH_VIA;
 
-    case WOP_ITERM:
+    case kIterm:
       return ITERM;
 
-    case WOP_BTERM:
+    case kBterm:
       return BTERM;
 
-    case WOP_RECT:
+    case kRect:
       return RECT;
 
-    case WOP_VWIRE:
+    case kVwire:
       return VWIRE;
 
     default:
@@ -788,139 +783,145 @@ dbWireDecoder::OpCode dbWireDecoder::next()
 {
 nextOpCode:
 
-  if (_idx == (int) _wire->_opcodes.size()) {
+  if (idx_ == (int) wire_->opcodes_.size()) {
     return END_DECODE;
   }
 
-  _jct_id = _idx;
-  unsigned char opcode = nextOp(_operand);
+  jct_id_ = idx_;
+  unsigned char opcode = nextOp(operand_);
+  const WireOp wire_op = static_cast<WireOp>(opcode & WOP_OPCODE_MASK);
+  switch (wire_op) {
+    case kPath: {
+      layer_ = dbTechLayer::getTechLayer(tech_, operand_);
+      point_cnt_ = 0;
+      default_width_ = true;
 
-  switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_PATH: {
-      _layer = dbTechLayer::getTechLayer(_tech, _operand);
-      _point_cnt = 0;
-      _default_width = true;
-
-      switch (opcode & WOP_WIRE_TYPE_MASK) {
-        case WOP_NONE:
-          _wire_type = dbWireType::NONE;
+      const WireType wire_type
+          = static_cast<WireType>(opcode & WOP_WIRE_TYPE_MASK);
+      switch (wire_type) {
+        case kNone:
+          wire_type_ = dbWireType::NONE;
           break;
 
-        case WOP_COVER:
-          _wire_type = dbWireType::COVER;
+        case kCover:
+          wire_type_ = dbWireType::COVER;
           break;
 
-        case WOP_FIXED:
-          _wire_type = dbWireType::FIXED;
+        case kFixed:
+          wire_type_ = dbWireType::FIXED;
           break;
 
-        case WOP_ROUTED:
-          _wire_type = dbWireType::ROUTED;
+        case kRouted:
+          wire_type_ = dbWireType::ROUTED;
           break;
 
-        case WOP_NOSHIELD:
-          _wire_type = dbWireType::NOSHIELD;
+        case kNoShield:
+          wire_type_ = dbWireType::NOSHIELD;
           break;
       }
 
-      return _opcode = PATH;
+      return opcode_ = PATH;
     }
 
-    case WOP_SHORT: {
-      _layer = dbTechLayer::getTechLayer(_tech, _operand);
-      _point_cnt = 0;
-      _default_width = true;
+    case kShort: {
+      layer_ = dbTechLayer::getTechLayer(tech_, operand_);
+      point_cnt_ = 0;
+      default_width_ = true;
 
-      switch (opcode & WOP_WIRE_TYPE_MASK) {
-        case WOP_NONE:
-          _wire_type = dbWireType::NONE;
+      const WireType wire_type
+          = static_cast<WireType>(opcode & WOP_WIRE_TYPE_MASK);
+      switch (wire_type) {
+        case kNone:
+          wire_type_ = dbWireType::NONE;
           break;
 
-        case WOP_COVER:
-          _wire_type = dbWireType::COVER;
+        case kCover:
+          wire_type_ = dbWireType::COVER;
           break;
 
-        case WOP_FIXED:
-          _wire_type = dbWireType::FIXED;
+        case kFixed:
+          wire_type_ = dbWireType::FIXED;
           break;
 
-        case WOP_ROUTED:
-          _wire_type = dbWireType::ROUTED;
+        case kRouted:
+          wire_type_ = dbWireType::ROUTED;
           break;
 
-        case WOP_NOSHIELD:
-          _wire_type = dbWireType::NOSHIELD;
+        case kNoShield:
+          wire_type_ = dbWireType::NOSHIELD;
           break;
       }
 
       // getjuction id
-      nextOp(_operand2);
-      return _opcode = SHORT;
+      nextOp(operand2_);
+      return opcode_ = SHORT;
     }
 
-    case WOP_JUNCTION: {
+    case kJunction: {
       WirePoint pnt;
       getPrevPoint(
-          _tech, _block, _wire->_opcodes, _wire->_data, _operand, true, pnt);
-      _layer = pnt._layer;
-      _x = pnt._x;
-      _y = pnt._y;
-      _point_cnt = 0;
-      _default_width = true;
+          tech_, block_, wire_->opcodes_, wire_->data_, operand_, true, pnt);
+      layer_ = pnt.layer;
+      x_ = pnt.x;
+      y_ = pnt.y;
+      point_cnt_ = 0;
+      default_width_ = true;
 
-      switch (opcode & WOP_WIRE_TYPE_MASK) {
-        case WOP_NONE:
-          _wire_type = dbWireType::NONE;
+      const WireType wire_type
+          = static_cast<WireType>(opcode & WOP_WIRE_TYPE_MASK);
+      switch (wire_type) {
+        case kNone:
+          wire_type_ = dbWireType::NONE;
           break;
 
-        case WOP_COVER:
-          _wire_type = dbWireType::COVER;
+        case kCover:
+          wire_type_ = dbWireType::COVER;
           break;
 
-        case WOP_FIXED:
-          _wire_type = dbWireType::FIXED;
+        case kFixed:
+          wire_type_ = dbWireType::FIXED;
           break;
 
-        case WOP_ROUTED:
-          _wire_type = dbWireType::ROUTED;
+        case kRouted:
+          wire_type_ = dbWireType::ROUTED;
           break;
 
-        case WOP_NOSHIELD:
-          _wire_type = dbWireType::NOSHIELD;
+        case kNoShield:
+          wire_type_ = dbWireType::NOSHIELD;
           break;
       }
 
-      return _opcode = JUNCTION;
+      return opcode_ = JUNCTION;
     }
 
-    case WOP_RULE:
-      _default_width = false;
+    case kRule:
+      default_width_ = false;
       _block_rule = (opcode & WOP_BLOCK_RULE);
-      return _opcode = RULE;
+      return opcode_ = RULE;
 
-    case WOP_X: {
-      _x = _operand;
+    case kX: {
+      x_ = operand_;
 
-      if (_point_cnt == 0) {
-        _jct_id = _idx;
-        opcode = nextOp(_y);
-        _point_cnt = 1;
+      if (point_cnt_ == 0) {
+        jct_id_ = idx_;
+        opcode = nextOp(y_);
+        point_cnt_ = 1;
 
         if (opcode & WOP_EXTENSION) {
-          nextOp(_operand2);
-          return _opcode = POINT_EXT;
+          nextOp(operand2_);
+          return opcode_ = POINT_EXT;
         }
 
-        return _opcode = POINT;
+        return opcode_ = POINT;
       }
 
-      _point_cnt++;
+      point_cnt_++;
 
       if (opcode & WOP_EXTENSION) {
-        nextOp(_operand2);
-        _opcode = POINT_EXT;
+        nextOp(operand2_);
+        opcode_ = POINT_EXT;
       } else {
-        _opcode = POINT;
+        opcode_ = POINT;
       }
 
       // if ( peekOp() == WOP_PROPERTY )
@@ -929,22 +930,22 @@ nextOpCode:
       //    assert(opcode == WOP_PROPERTY);
       //}
       // else
-      _property = 0;
+      property_ = 0;
 
       flushRule();
-      return _opcode;
+      return opcode_;
     }
 
-    case WOP_Y: {
-      ZASSERT(_point_cnt != 0);
-      _point_cnt++;
-      _y = _operand;
+    case kY: {
+      assert(point_cnt_ != 0);
+      point_cnt_++;
+      y_ = operand_;
 
       if (opcode & WOP_EXTENSION) {
-        nextOp(_operand2);
-        _opcode = POINT_EXT;
+        nextOp(operand2_);
+        opcode_ = POINT_EXT;
       } else {
-        _opcode = POINT;
+        opcode_ = POINT;
       }
 
       // if ( peekOp() == WOP_PROPERTY )
@@ -953,20 +954,20 @@ nextOpCode:
       //    assert(opcode == WOP_PROPERTY);
       //}
       // else
-      _property = 0;
+      property_ = 0;
 
       flushRule();
-      return _opcode;
+      return opcode_;
     }
 
-    case WOP_COLINEAR: {
-      _point_cnt++;
+    case kColinear: {
+      point_cnt_++;
 
       if (opcode & WOP_EXTENSION) {
-        _operand2 = _operand;
-        _opcode = POINT_EXT;
+        operand2_ = operand_;
+        opcode_ = POINT_EXT;
       } else {
-        _opcode = POINT;
+        opcode_ = POINT;
       }
 
       // if ( peekOp() == WOP_PROPERTY )
@@ -975,181 +976,183 @@ nextOpCode:
       //    assert(opcode == WOP_PROPERTY);
       //}
       // else
-      _property = 0;
+      property_ = 0;
 
       flushRule();
-      return _opcode;
+      return opcode_;
     }
 
-    case WOP_VIA: {
-      dbVia* via = dbVia::getVia(_block, _operand);
+    case kVia: {
+      dbVia* via = dbVia::getVia(block_, operand_);
 
       if (opcode & WOP_VIA_EXIT_TOP) {
-        _layer = via->getTopLayer();
+        layer_ = via->getTopLayer();
       } else {
-        _layer = via->getBottomLayer();
+        layer_ = via->getBottomLayer();
       }
 
-      return _opcode = VIA;
+      return opcode_ = VIA;
     }
 
-    case WOP_TECH_VIA: {
-      dbTechVia* via = dbTechVia::getTechVia(_tech, _operand);
+    case kTechVia: {
+      dbTechVia* via = dbTechVia::getTechVia(tech_, operand_);
 
       if (opcode & WOP_VIA_EXIT_TOP) {
-        _layer = via->getTopLayer();
+        layer_ = via->getTopLayer();
       } else {
-        _layer = via->getBottomLayer();
+        layer_ = via->getBottomLayer();
       }
 
-      return _opcode = TECH_VIA;
+      return opcode_ = TECH_VIA;
     }
 
-    case WOP_RECT:
+    case kRect:
       // order matches dbWireEncoder::addRect
-      _deltaX1 = _operand;
-      nextOp(_deltaY1);
-      nextOp(_deltaX2);
-      nextOp(_deltaY2);
-      return _opcode = RECT;
+      deltaX1_ = operand_;
+      nextOp(deltaY1_);
+      nextOp(deltaX2_);
+      nextOp(deltaY2_);
+      return opcode_ = RECT;
 
-    case WOP_ITERM:
-      return _opcode = ITERM;
+    case kIterm:
+      return opcode_ = ITERM;
 
-    case WOP_BTERM:
-      return _opcode = BTERM;
+    case kBterm:
+      return opcode_ = BTERM;
 
-    case WOP_OPERAND:
-      ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE_SEQUENCE);
+    case kOperand:
+      assert(DB_WIRE_DECODE_INVALID_OPCODE_SEQUENCE);
       goto nextOpCode;
 
-    case WOP_PROPERTY:
+    case kProperty:
       goto nextOpCode;
 
-    case WOP_VWIRE: {
-      _layer = dbTechLayer::getTechLayer(_tech, _operand);
-      _point_cnt = 0;
-      _default_width = true;
+    case kVwire: {
+      layer_ = dbTechLayer::getTechLayer(tech_, operand_);
+      point_cnt_ = 0;
+      default_width_ = true;
 
-      switch (opcode & WOP_WIRE_TYPE_MASK) {
-        case WOP_NONE:
-          _wire_type = dbWireType::NONE;
+      const WireType wire_type
+          = static_cast<WireType>(opcode & WOP_WIRE_TYPE_MASK);
+      switch (wire_type) {
+        case kNone:
+          wire_type_ = dbWireType::NONE;
           break;
 
-        case WOP_COVER:
-          _wire_type = dbWireType::COVER;
+        case kCover:
+          wire_type_ = dbWireType::COVER;
           break;
 
-        case WOP_FIXED:
-          _wire_type = dbWireType::FIXED;
+        case kFixed:
+          wire_type_ = dbWireType::FIXED;
           break;
 
-        case WOP_ROUTED:
-          _wire_type = dbWireType::ROUTED;
+        case kRouted:
+          wire_type_ = dbWireType::ROUTED;
           break;
 
-        case WOP_NOSHIELD:
-          _wire_type = dbWireType::NOSHIELD;
+        case kNoShield:
+          wire_type_ = dbWireType::NOSHIELD;
           break;
       }
 
       // getjuction id
-      nextOp(_operand2);
-      return _opcode = VWIRE;
+      nextOp(operand2_);
+      return opcode_ = VWIRE;
     }
 
-    case WOP_NOP:
+    case kNop:
       goto nextOpCode;
 
-    case WOP_COLOR: {
+    case kColor: {
       // 3 MSB bits of the opcode represent the color
-      _color = static_cast<uint8_t>(_operand);
+      color_ = static_cast<uint8_t>(operand_);
 
-      if (_color.value() == 0) {
-        _color = std::nullopt;
+      if (color_.value() == 0) {
+        color_ = std::nullopt;
       }
 
       goto nextOpCode;
     }
 
-    case WOP_VIACOLOR: {
-      uint8_t viacolor = static_cast<uint8_t>(_operand);
+    case kViaColor: {
+      uint8_t viacolor = static_cast<uint8_t>(operand_);
       if (viacolor == 0) {
-        _viacolor = std::nullopt;
+        viacolor_ = std::nullopt;
       } else {
-        _viacolor = ViaColor();
-        _viacolor.value().bottom_color = (viacolor & 0x30) >> 4;
-        _viacolor.value().cut_color = (viacolor & 0x0c) >> 2;
-        _viacolor.value().top_color = (viacolor & 0x03);
+        viacolor_ = ViaColor();
+        viacolor_.value().bottom_color = (viacolor & 0x30) >> 4;
+        viacolor_.value().cut_color = (viacolor & 0x0c) >> 2;
+        viacolor_.value().top_color = (viacolor & 0x03);
       }
 
       goto nextOpCode;
     }
 
     default:
-      ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE);
+      assert(DB_WIRE_DECODE_INVALID_OPCODE);
       goto nextOpCode;
   }
 }
 
 dbTechLayer* dbWireDecoder::getLayer() const
 {
-  return _layer;
+  return layer_;
 }
 
 dbTechLayerRule* dbWireDecoder::getRule() const
 {
-  ZASSERT(_opcode == RULE);
+  assert(opcode_ == RULE);
 
   if (_block_rule) {
-    return dbTechLayerRule::getTechLayerRule(_block, _operand);
+    return dbTechLayerRule::getTechLayerRule(block_, operand_);
   }
-  return dbTechLayerRule::getTechLayerRule(_tech, _operand);
+  return dbTechLayerRule::getTechLayerRule(tech_, operand_);
 }
 
 void dbWireDecoder::getPoint(int& x, int& y) const
 {
-  ZASSERT(_opcode == POINT);
-  x = _x;
-  y = _y;
+  assert(opcode_ == POINT);
+  x = x_;
+  y = y_;
 }
 
 void dbWireDecoder::getPoint(int& x, int& y, int& ext) const
 {
-  ZASSERT(_opcode == POINT_EXT);
-  x = _x;
-  y = _y;
-  ext = _operand2;
+  assert(opcode_ == POINT_EXT);
+  x = x_;
+  y = y_;
+  ext = operand2_;
 }
 
-uint dbWireDecoder::getProperty() const
+uint32_t dbWireDecoder::getProperty() const
 {
-  ZASSERT(((_opcode == POINT) || (_opcode == POINT_EXT)) && (_point_cnt > 1));
-  return _property;
+  assert(((opcode_ == POINT) || (opcode_ == POINT_EXT)) && (point_cnt_ > 1));
+  return property_;
 }
 
 dbVia* dbWireDecoder::getVia() const
 {
-  ZASSERT(_opcode == VIA);
-  dbVia* via = dbVia::getVia(_block, _operand);
+  assert(opcode_ == VIA);
+  dbVia* via = dbVia::getVia(block_, operand_);
   return via;
 }
 
 dbTechVia* dbWireDecoder::getTechVia() const
 {
-  ZASSERT(_opcode == TECH_VIA);
-  dbTechVia* via = dbTechVia::getTechVia(_tech, _operand);
+  assert(opcode_ == TECH_VIA);
+  dbTechVia* via = dbTechVia::getTechVia(tech_, operand_);
   return via;
 }
 
 std::optional<uint8_t> dbWireDecoder::getColor() const
 {
-  return _color;
+  return color_;
 }
 
 std::optional<dbWireDecoder::ViaColor> dbWireDecoder::getViaColor() const
 {
-  return _viacolor;
+  return viacolor_;
 }
 
 void dbWireDecoder::getRect(int& deltaX1,
@@ -1157,48 +1160,48 @@ void dbWireDecoder::getRect(int& deltaX1,
                             int& deltaX2,
                             int& deltaY2) const
 {
-  ZASSERT(_opcode == RECT);
-  deltaX1 = _deltaX1;
-  deltaY1 = _deltaY1;
-  deltaX2 = _deltaX2;
-  deltaY2 = _deltaY2;
+  assert(opcode_ == RECT);
+  deltaX1 = deltaX1_;
+  deltaY1 = deltaY1_;
+  deltaX2 = deltaX2_;
+  deltaY2 = deltaY2_;
 }
 
 dbITerm* dbWireDecoder::getITerm() const
 {
-  ZASSERT(_opcode == ITERM);
-  dbITerm* iterm = dbITerm::getITerm(_block, _operand);
+  assert(opcode_ == ITERM);
+  dbITerm* iterm = dbITerm::getITerm(block_, operand_);
   return iterm;
 }
 
 dbBTerm* dbWireDecoder::getBTerm() const
 {
-  ZASSERT(_opcode == BTERM);
-  dbBTerm* bterm = dbBTerm::getBTerm(_block, _operand);
+  assert(opcode_ == BTERM);
+  dbBTerm* bterm = dbBTerm::getBTerm(block_, operand_);
   return bterm;
 }
 
 dbWireType dbWireDecoder::getWireType() const
 {
-  ZASSERT((_opcode == PATH) || (_opcode == JUNCTION) || (_opcode == SHORT)
-          || (_opcode == VWIRE));
-  return dbWireType((dbWireType::Value) _wire_type);
+  assert((opcode_ == PATH) || (opcode_ == JUNCTION) || (opcode_ == SHORT)
+         || (opcode_ == VWIRE));
+  return dbWireType((dbWireType::Value) wire_type_);
 }
 
 int dbWireDecoder::getJunctionId() const
 {
-  return _jct_id;
+  return jct_id_;
 }
 
 int dbWireDecoder::getJunctionValue() const
 {
-  ZASSERT((_opcode == JUNCTION) || (_opcode == SHORT) || (_opcode == VWIRE));
+  assert((opcode_ == JUNCTION) || (opcode_ == SHORT) || (opcode_ == VWIRE));
 
-  if (_opcode == SHORT || _opcode == VWIRE) {
-    return _operand2;
+  if (opcode_ == SHORT || opcode_ == VWIRE) {
+    return operand2_;
   }
 
-  return _operand;
+  return operand_;
 }
 
 void dumpDecoder4Net(dbNet* innet)
@@ -1217,17 +1220,13 @@ void dumpDecoder4Net(dbNet* innet)
   }
 
   dbWireDecoder decoder;
-  dbWireDecoder::OpCode opcode;
-  int x, y, ext;
   decoder.begin(wire0);
   logger->info(
       utl::ODB, 64, "{} begin decoder for net {}", prfx, innet->getName());
 
-  dbTechLayer* layer;
-  dbWireType wtype;
   dbTechLayerRule* lyr_rule = nullptr;
   while (true) {
-    opcode = decoder.next();
+    dbWireDecoder::OpCode opcode = decoder.next();
     if (opcode == dbWireDecoder::END_DECODE) {
       logger->info(
           utl::ODB, 65, "{} End decoder for net {}", prfx, innet->getName());
@@ -1236,10 +1235,10 @@ void dumpDecoder4Net(dbNet* innet)
 
     switch (opcode) {
       case dbWireDecoder::PATH: {
-        layer = decoder.getLayer();
-        wtype = decoder.getWireType();
+        dbTechLayer* layer = decoder.getLayer();
+        dbWireType wtype = decoder.getWireType();
         if (decoder.peek() == dbWireDecoder::RULE) {
-          opcode = decoder.next();
+          decoder.next();
           lyr_rule = decoder.getRule();
           logger->info(utl::ODB,
                        66,
@@ -1261,16 +1260,17 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::JUNCTION: {
-        uint jct = decoder.getJunctionValue();
+        uint32_t jct = decoder.getJunctionValue();
         lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
-          opcode = decoder.next();
+          decoder.next();
           lyr_rule = decoder.getRule();
           opcode = decoder.peek();
         }
         if (opcode == dbWireDecoder::POINT_EXT) {
-          opcode = decoder.next();
+          decoder.next();
+          int x, y, ext;
           decoder.getPoint(x, y, ext);
           if (lyr_rule) {
             logger->info(
@@ -1295,7 +1295,8 @@ void dumpDecoder4Net(dbNet* innet)
                          ext);
           }
         } else if (opcode == dbWireDecoder::POINT) {
-          opcode = decoder.next();
+          decoder.next();
+          int x, y;
           decoder.getPoint(x, y);
           if (lyr_rule) {
             logger->info(
@@ -1327,13 +1328,11 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::SHORT: {
-        uint jval = decoder.getJunctionValue();
-        layer = decoder.getLayer();
-        wtype = decoder.getWireType();
+        uint32_t jval = decoder.getJunctionValue();
         lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
-          opcode = decoder.next();
+          decoder.next();
           lyr_rule = decoder.getRule();
         }
         if (lyr_rule) {
@@ -1350,13 +1349,11 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::VWIRE: {
-        uint jval = decoder.getJunctionValue();
-        layer = decoder.getLayer();
-        wtype = decoder.getWireType();
+        uint32_t jval = decoder.getJunctionValue();
         lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
-          opcode = decoder.next();
+          decoder.next();
           lyr_rule = decoder.getRule();
         }
         if (lyr_rule) {
@@ -1374,12 +1371,14 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::POINT: {
+        int x, y;
         decoder.getPoint(x, y);
         logger->info(utl::ODB, 77, "{} Found point {} {}", prfx, x, y);
         break;
       }
 
       case dbWireDecoder::POINT_EXT: {
+        int x, y, ext;
         decoder.getPoint(x, y, ext);
         logger->info(
             utl::ODB, 78, "{} Found point(ext){} {} {}", prfx, x, y, ext);
@@ -1420,9 +1419,8 @@ void dumpDecoder4Net(dbNet* innet)
       }
 
       case dbWireDecoder::RULE: {
-        if (strcmp(
-                lyr_rule->getNonDefaultRule()->getName().c_str(),
-                (decoder.getRule())->getNonDefaultRule()->getName().c_str())) {
+        if (lyr_rule->getNonDefaultRule()->getName()
+            != (decoder.getRule())->getNonDefaultRule()->getName()) {
           logger->error(
               utl::ODB,
               83,

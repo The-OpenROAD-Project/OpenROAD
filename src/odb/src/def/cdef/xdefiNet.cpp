@@ -35,8 +35,10 @@
 
 #include <cstdio>
 
+#include "defiMisc.hpp"
 #include "defiNet.h"
 #include "defiNet.hpp"
+#include "defiTypedefs.h"
 
 union udefiPoints
 {

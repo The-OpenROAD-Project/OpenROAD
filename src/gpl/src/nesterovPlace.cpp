@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "graphics.h"
+#include "AbstractGraphics.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -25,8 +25,6 @@
 namespace gpl {
 using utl::GPL;
 
-NesterovPlace::NesterovPlace() = default;
-
 NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              const std::shared_ptr<PlacerBaseCommon>& pbc,
                              const std::shared_ptr<NesterovBaseCommon>& nbc,
@@ -34,10 +32,10 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              std::shared_ptr<RouteBase> rb,
                              std::shared_ptr<TimingBase> tb,
+                             std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
-    : NesterovPlace()
+    : npVars_(npVars)
 {
-  npVars_ = npVars;
   pbc_ = pbc;
   nbc_ = nbc;
   pbVec_ = pbVec;
@@ -52,16 +50,19 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
     db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
   }
 
-  if (npVars.debug && Graphics::guiActive()) {
-    graphics_ = std::make_unique<Graphics>(log_,
-                                           this,
-                                           pbc,
-                                           nbc,
-                                           pbVec,
-                                           nbVec,
-                                           npVars_.debug_draw_bins,
-                                           npVars.debug_inst);
+  if (graphics) {
+    graphics_ = std::move(graphics);
+    graphics_->setDebugOn(npVars.debug);
+    graphics_->debugForNesterovPlace(this,
+                                     pbc_,
+                                     nbc_,
+                                     rb_,
+                                     pbVec_,
+                                     nbVec_,
+                                     npVars_.debug_draw_bins,
+                                     npVars_.debug_inst);
   }
+
   init();
 }
 
@@ -70,9 +71,10 @@ NesterovPlace::~NesterovPlace()
   reset();
 }
 
-void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdatePrevGradient(
+    const std::shared_ptr<NesterovBase>& nb)
 {
-  nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
+  nb->nbUpdatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
   float wireLengthGradSum = nb->getWireLengthGradSum();
   float densityGradSum = nb->getDensityGradSum();
 
@@ -95,16 +97,16 @@ void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
 
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
-    updatePrevGradient(nb);
+    npUpdatePrevGradient(nb);
     return;
   }
 
   checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
-void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 {
-  nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
+  nb->nbUpdateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
   float wireLengthGradSum = nb->getWireLengthGradSum();
   float densityGradSum = nb->getDensityGradSum();
 
@@ -127,16 +129,17 @@ void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
-    updateCurGradient(nb);
+    npUpdateCurGradient(nb);
     return;
   }
 
   checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
-void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
+void NesterovPlace::npUpdateNextGradient(
+    const std::shared_ptr<NesterovBase>& nb)
 {
-  nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
+  nb->nbUpdateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
 
   float wireLengthGradSum = nb->getWireLengthGradSum();
   float densityGradSum = nb->getDensityGradSum();
@@ -160,7 +163,7 @@ void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
 
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
-    updateNextGradient(nb);
+    npUpdateNextGradient(nb);
     return;
   }
   checkInvalidValues(wireLengthGradSum, densityGradSum);
@@ -195,7 +198,7 @@ void NesterovPlace::init()
 
   for (auto& nb : nbVec_) {
     // fill in curSLPSumGrads_, curSLPWireLengthGrads_, curSLPDensityGrads_
-    updateCurGradient(nb);
+    npUpdateCurGradient(nb);
 
     // approximately fill in
     // prevSLPCoordi_ to calculate lc vars
@@ -210,7 +213,7 @@ void NesterovPlace::init()
 
   for (auto& nb : nbVec_) {
     // update previSumGrads_, prevSLPWireLengthGrads_, prevSLPDensityGrads_
-    updatePrevGradient(nb);
+    npUpdatePrevGradient(nb);
   }
 
   for (auto& nb : nbVec_) {
@@ -245,7 +248,6 @@ void NesterovPlace::init()
 // clear reset
 void NesterovPlace::reset()
 {
-  npVars_.reset();
   log_ = nullptr;
 
   densityPenaltyStor_.clear();
@@ -266,23 +268,36 @@ void NesterovPlace::reset()
 }
 
 void NesterovPlace::updateIterGraphics(
-    const int iter,
+    int iter,
     const std::string& reports_dir,
     const std::string& routability_driven_dir,
-    const int routability_driven_revert_count,
-    const int timing_driven_count,
+    int routability_driven_revert_count,
+    int timing_driven_count,
     bool& final_routability_image_saved)
 {
-  if (!graphics_) {
+  if (!graphics_ || !graphics_->enabled()) {
     return;
   }
 
   // For JPEG Saving
   updateDb();
 
-  const int debug_start_iter = npVars_.debug_start_iter;
+  // Calculate RUDY every stride iteration, depending on debug_rudy_start
+  if (npVars_.routability_driven_mode && npVars_.debug
+      && npVars_.debug_rudy_start > 0 && iter >= npVars_.debug_rudy_start
+      && npVars_.debug_rudy_stride > 0
+      && (iter - npVars_.debug_rudy_start) % npVars_.debug_rudy_stride == 0) {
+    rb_->calculateRudyTiles();
+    rb_->updateRudyAverage(/*verbose=*/false);
+  }
+
+  graphics_->addIter(iter, average_overflow_unscaled_);
+
+  if (!npVars_.debug) {
+    return;
+  }
+  int debug_start_iter = npVars_.debug_start_iter;
   if (debug_start_iter == 0 || iter + 1 >= debug_start_iter) {
-    graphics_->addIter(iter, average_overflow_unscaled_);
     bool update
         = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
     if (update) {
@@ -294,7 +309,7 @@ void NesterovPlace::updateIterGraphics(
 
   if (npVars_.debug_generate_images && iter == 0) {
     std::string gif_path = fmt::format("{}/placement.gif", reports_dir);
-    graphics_->getGuiObjectFromGraphics()->gifStart(gif_path);
+    placement_gif_key_ = graphics_->gifStart(gif_path);
   }
 
   if (npVars_.debug_generate_images && iter % 10 == 0) {
@@ -310,10 +325,10 @@ void NesterovPlace::updateIterGraphics(
                                     timing_driven_count);
     std::string label_name = fmt::format("frame_label_{}", iter);
 
-    gui::Gui* gui = graphics_->getGuiObjectFromGraphics();
-    graphics_->addFrameLabel(gui, bbox, label, label_name);
-    gui->gifAddFrame(region, width_px, dbu_per_pixel, delay);
-    gui->deleteLabel(label_name);
+    graphics_->addFrameLabel(bbox, label, label_name);
+    graphics_->gifAddFrame(
+        placement_gif_key_, region, width_px, dbu_per_pixel, delay);
+    graphics_->deleteLabel(label_name);
   }
 
   // Save image once if routability not needed and below routability overflow
@@ -363,9 +378,9 @@ void NesterovPlace::updateIterGraphics(
   }
 }
 
-void NesterovPlace::runTimingDriven(const int iter,
+void NesterovPlace::runTimingDriven(int iter,
                                     const std::string& timing_driven_dir,
-                                    const int routability_driven_revert_count,
+                                    int routability_driven_revert_count,
                                     int& timing_driven_count,
                                     int64_t& td_accumulated_delta_area,
                                     bool is_routability_gpl_iter)
@@ -379,7 +394,7 @@ void NesterovPlace::runTimingDriven(const int iter,
     // update db's instance location from current density coordinates
     updateDb();
 
-    if (graphics_) {
+    if (graphics_ && graphics_->enabled()) {
       graphics_->addTimingDrivenIter(iter);
 
       if (npVars_.debug_generate_images) {
@@ -424,33 +439,40 @@ void NesterovPlace::runTimingDriven(const int iter,
     }
 
     auto block = pbc_->db()->getChip()->getBlock();
-    int nb_total_gcells_delta = 0;
     int nb_gcells_before_td = 0;
     int nb_gcells_after_td = 0;
-    int nbc_total_gcells_before_td = nbc_->getNewGcellsCount();
+    int nbc_total_gcells_before_td = nbc_->getGCells().size();
+
     for (auto& nb : nbVec_) {
       nb_gcells_before_td += nb->getGCells().size();
     }
 
     bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+    // TODO remove fillers for TD iterations
+    // for (auto& nesterov : nbVec_) {
+    //   nesterov->cutFillerCells(nbc_->getDeltaArea());
+    // }
+
     nbVec_[0]->setTrueReprintIterHeader();
     ++timing_driven_count;
 
+    const int nbc_total_gcells_delta
+        = nbc_->getNewGcellsCount() - nbc_->getDeletedGcellsCount();
     td_accumulated_delta_area += nbc_->getDeltaArea();
     for (auto& nb : nbVec_) {
       nb_gcells_after_td += nb->getGCells().size();
     }
-    nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
-    if (nb_total_gcells_delta != nbc_->getNewGcellsCount()) {
+    const int nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
+    if (nb_total_gcells_delta != nbc_total_gcells_delta) {
       log_->warn(GPL,
                  92,
                  "Mismatch in #cells between central object and all regions. "
                  "NesterovBaseCommon: {}, Summing all regions: {}",
-                 nbc_->getNewGcellsCount(),
+                 nbc_total_gcells_delta,
                  nb_total_gcells_delta);
     }
 
-    if (graphics_ && npVars_.debug_generate_images) {
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       updateDb();
       bool select_buffers = !virtual_td_iter;
       graphics_->saveLabeledImage(
@@ -477,6 +499,8 @@ void NesterovPlace::runTimingDriven(const int iter,
                                + nesterov->getTotalFillerArea())
             / static_cast<float>(nesterov->getWhiteSpaceArea()));
 
+        nesterov->setMovableArea(nesterov->getTargetDensity()
+                                 * nesterov->getWhiteSpaceArea());
         float rsz_delta_area_microns
             = block->dbuAreaToMicrons(nbc_->getDeltaArea());
         float rsz_delta_area_percentage
@@ -490,19 +514,25 @@ void NesterovPlace::runTimingDriven(const int iter,
             rsz_delta_area_microns,
             rsz_delta_area_percentage);
 
-        float new_gcells_percentage = 0.0f;
+        float delta_gcells_percentage = 0.0f;
         if (nbc_total_gcells_before_td > 0) {
-          new_gcells_percentage
-              = (nbc_->getNewGcellsCount()
+          delta_gcells_percentage
+              = ((nbc_total_gcells_delta)
                  / static_cast<float>(nbc_total_gcells_before_td))
                 * 100.0f;
         }
         log_->info(
             GPL,
             108,
-            "Timing-driven: repair_design, gpl cells created: {} ({:+.2f}%)",
+            "Timing-driven: repair_design, gpl delta gcells: {} ({:+.2f}%)",
+            (nbc_total_gcells_delta),
+            delta_gcells_percentage);
+        log_->info(
+            GPL,
+            109,
+            "Timing-driven: repair_design, gcells created: {}, deleted: {}",
             nbc_->getNewGcellsCount(),
-            new_gcells_percentage);
+            nbc_->getDeletedGcellsCount());
 
         log_->info(GPL,
                    110,
@@ -512,6 +542,7 @@ void NesterovPlace::runTimingDriven(const int iter,
         nbc_->resetNewGcellsCount();
         nesterov->updateAreas();
         nesterov->updateDensitySize();
+        nesterov->checkConsistency();
       }
 
       // update snapshot after non-virtual TD
@@ -548,7 +579,8 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
     num_region_diverged_ += nb->checkDivergence();
   }
 
-  if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0) {
+  if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0
+      && (!npVars_.routability_driven_mode || !is_routability_need_)) {
     if (is_min_hpwl_) {
       diverge_snapshot_WlCoefX = wireLengthCoefX_;
       diverge_snapshot_WlCoefY = wireLengthCoefY_;
@@ -572,7 +604,7 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
     // overflow.
     // // revert back to the original rb solutions
     // // one more opportunity
-    // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
+    // if (!isDivergeTriedRevert && rb_->getRevertCount() >= 1) {
     //   // get back to the working rc size
     //   rb_->revertGCellSizeToMinRc();
     //   curA = route_snapshotA;
@@ -623,18 +655,18 @@ bool NesterovPlace::isDiverged(float& diverge_snapshot_WlCoefX,
 }
 
 void NesterovPlace::routabilitySnapshot(
-    const int iter,
-    const float curA,
+    int iter,
+    float curA,
     const std::string& routability_driven_dir,
-    const int routability_driven_revert_count,
-    const int timing_driven_count,
+    int routability_driven_revert_count,
+    int timing_driven_count,
     bool& is_routability_snapshot_saved,
     float& route_snapshot_WlCoefX,
     float& route_snapshot_WlCoefY,
     float& route_snapshotA)
 {
   if (!is_routability_snapshot_saved && npVars_.routability_driven_mode
-      && routability_save_snapshot_ >= average_overflow_unscaled_) {
+      && npVars_.routability_snapshot_overflow >= average_overflow_unscaled_) {
     route_snapshot_WlCoefX = wireLengthCoefX_;
     route_snapshot_WlCoefY = wireLengthCoefY_;
     route_snapshotA = curA;
@@ -644,13 +676,22 @@ void NesterovPlace::routabilitySnapshot(
       nb->saveSnapshot();
     }
 
-    log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter);
-    if (graphics_) {
+    log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter + 1);
+    odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+    const int64_t hpwl = nbc_->getHpwl();
+    log_->report("{:9d} | {:8.4f} | {:13.6e} | {:8} | {:9} | {:>5}",
+                 iter,
+                 average_overflow_unscaled_,
+                 block->dbuToMicrons(hpwl),
+                 " ",
+                 " ",
+                 " ");
+    if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilitySnapshot(iter);
     }
 
     // Save image of routability snapshot
-    if (graphics_ && npVars_.debug_generate_images) {
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       graphics_->saveLabeledImage(
           fmt::format("{}/0_routability_snapshot_{:05d}.png",
                       routability_driven_dir,
@@ -664,8 +705,8 @@ void NesterovPlace::routabilitySnapshot(
   }
 }
 
-void NesterovPlace::runRoutability(const int iter,
-                                   const int timing_driven_count,
+void NesterovPlace::runRoutability(int iter,
+                                   int timing_driven_count,
                                    const std::string& routability_driven_dir,
                                    const float route_snapshotA,
                                    const float route_snapshot_WlCoefX,
@@ -680,7 +721,7 @@ void NesterovPlace::runRoutability(const int iter,
     nbVec_[0]->setTrueReprintIterHeader();
     ++routability_driven_revert_count;
 
-    if (graphics_ && npVars_.debug_generate_images) {
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       updateDb();
       std::string label = fmt::format("Iter {} |R: {} |T: {}",
                                       iter,
@@ -701,6 +742,33 @@ void NesterovPlace::runRoutability(const int iter,
           label,
           /* select_buffers = */ false,
           "Heat Maps/Estimated Congestion (RUDY)");
+
+      odb::Rect region;
+      int width_px = 500;
+      odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
+      int max_dim = std::max(bbox.dx(), bbox.dy());
+      double dbu_per_pixel = static_cast<double>(max_dim) / 1000.0;
+      int delay = 20;
+      std::string label_name = fmt::format("frame_label_routability_{}", iter);
+
+      if (routability_gif_key_ == -1) {
+        log_->report("start routability gif at iter {}", iter);
+        std::string gif_path
+            = fmt::format("{}/routability.gif", routability_driven_dir);
+        gif_path = fmt::format("{}/routability.gif", routability_driven_dir);
+        routability_gif_key_ = graphics_->gifStart(gif_path);
+      }
+
+      graphics_->addFrameLabel(bbox, label, label_name);
+
+      graphics_->setDisplayControl("Heat Maps/Estimated Congestion (RUDY)",
+                                   true);
+      graphics_->gifAddFrame(
+          routability_gif_key_, region, width_px, dbu_per_pixel, delay);
+      graphics_->setDisplayControl("Heat Maps/Estimated Congestion (RUDY)",
+                                   false);
+
+      graphics_->deleteLabel(label_name);
     }
 
     // recover the densityPenalty values
@@ -710,7 +778,7 @@ void NesterovPlace::runRoutability(const int iter,
     is_routability_need_ = result.first;
     bool isRevertInitNeeded = result.second;
 
-    if (graphics_) {
+    if (graphics_ && graphics_->enabled()) {
       graphics_->addRoutabilityIter(iter, isRevertInitNeeded);
     }
 
@@ -730,13 +798,8 @@ void NesterovPlace::runRoutability(const int iter,
     }
 
     if (is_routability_need_ && isRevertInitNeeded) {
-      log_->info(
-          GPL, 87, "Routability end iteration: reverting from divergence.");
-    }
-
-    if (is_routability_need_ && !isRevertInitNeeded) {
       log_->info(GPL,
-                 88,
+                 87,
                  "Routability end iteration: increase inflation and revert "
                  "back to snapshot.");
     }
@@ -756,6 +819,11 @@ void NesterovPlace::runRoutability(const int iter,
     }
 
     if (!is_routability_need_) {
+      if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images
+          && routability_gif_key_ != -1) {
+        graphics_->gifEnd(routability_gif_key_);
+        routability_gif_key_ = -1;
+      }
       for (auto& nb : nbVec_) {
         end_routability_area += nb->getNesterovInstsArea();
       }
@@ -774,8 +842,8 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
   }
 
   if (num_region_converge == nbVec_.size()) {
-    if (graphics_ && npVars_.debug_generate_images) {
-      graphics_->getGuiObjectFromGraphics()->gifEnd();
+    if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
+      graphics_->gifEnd(placement_gif_key_);
     }
     return true;
   }
@@ -809,7 +877,7 @@ void NesterovPlace::cleanReportsDirs(
           }
         };
 
-  if (graphics_ && npVars_.debug_generate_images) {
+  if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
     clean_directory(timing_driven_dir);
     clean_directory(routability_driven_dir);
   }
@@ -819,7 +887,8 @@ void NesterovPlace::doBackTracking(const float coeff)
 {
   // Back-Tracking loop
   int numBackTrak = 0;
-  for (numBackTrak = 0; numBackTrak < npVars_.maxBackTrack; numBackTrak++) {
+  for (numBackTrak = 0; numBackTrak < NesterovPlaceVars::maxBackTrack;
+       numBackTrak++) {
     // fill in nextCoordinates with given stepLength_
     for (auto& nb : nbVec_) {
       nb->nesterovUpdateCoordinates(coeff);
@@ -829,7 +898,7 @@ void NesterovPlace::doBackTracking(const float coeff)
 
     num_region_diverged_ = 0;
     for (auto& nb : nbVec_) {
-      updateNextGradient(nb);
+      npUpdateNextGradient(nb);
       num_region_diverged_ += nb->isDiverged();
     }
 
@@ -863,7 +932,7 @@ void NesterovPlace::doBackTracking(const float coeff)
   }
 
   debugPrint(log_, GPL, "np", 1, "NumBackTrak: {}", numBackTrak + 1);
-  if (npVars_.maxBackTrack == numBackTrak) {
+  if (NesterovPlaceVars::maxBackTrack == numBackTrak) {
     debugPrint(log_,
                GPL,
                "np",
@@ -872,12 +941,29 @@ void NesterovPlace::doBackTracking(const float coeff)
   }
 }
 
-void NesterovPlace::reportResults(const int nesterov_iter,
-                                  const int64_t original_area,
-                                  const int64_t end_routability_area,
-                                  const int64_t td_accumulated_delta_area)
+void NesterovPlace::reportResults(int nesterov_iter,
+                                  int64_t original_area,
+                                  int64_t end_routability_area,
+                                  int64_t td_accumulated_delta_area)
 {
   auto block = pbc_->db()->getChip()->getBlock();
+
+  if (graphics_ && graphics_->enabled()) {
+    // Final plot point
+    graphics_->addIter(nesterov_iter, average_overflow_unscaled_);
+
+    if (npVars_.debug_generate_images) {
+      updateDb();
+      std::string label
+          = fmt::format("Final Iter {} |R: ? |T: ?", nesterov_iter);
+
+      graphics_->saveLabeledImage(
+          fmt::format(
+              "{}/final_nesterov_{:05d}.png", getReportsDir(), nesterov_iter),
+          label,
+          /* select_buffers = */ false);
+    }
+  }
 
   if (nesterov_iter >= npVars_.maxNesterovIter) {
     log_->warn(GPL,
@@ -926,7 +1012,7 @@ void NesterovPlace::reportResults(const int nesterov_iter,
              placement_diff);
 }
 
-int NesterovPlace::doNesterovPlace(const int start_iter)
+int NesterovPlace::doNesterovPlace(int start_iter)
 {
   // if replace diverged in init() function, Nesterov must be skipped.
   if (num_region_diverged_ > 0) {
@@ -955,7 +1041,8 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
   int64_t td_accumulated_delta_area = 0;
   int64_t end_routability_area = 0;
 
-  if (graphics_ && npVars_.debug_start_iter == start_iter) {
+  if (graphics_ && graphics_->enabled() && npVars_.debug
+      && npVars_.debug_start_iter == start_iter) {
     graphics_->cellPlot(true);
   }
 
@@ -976,6 +1063,15 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
       = reports_dir + "/gpl_routability_driven";
 
   cleanReportsDirs(timing_driven_dir, routability_driven_dir);
+  if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
+    updateDb();
+    std::string label = fmt::format("init_nesterov");
+
+    graphics_->saveLabeledImage(
+        fmt::format("{}/init_nesterov.png", getReportsDir()),
+        label,
+        /* select_buffers = */ false);
+  }
 
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
@@ -1067,7 +1163,7 @@ int NesterovPlace::doNesterovPlace(const int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  if (graphics_) {
+  if (graphics_ && graphics_->enabled() && npVars_.debug) {
     graphics_->status("End placement");
     graphics_->cellPlot(true);
 
@@ -1107,7 +1203,7 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
   debugPrint(log_, GPL, "np", 1, "NewWireLengthCoef: {:g}", wireLengthCoefX_);
 }
 
-void NesterovPlace::updateNextIter(const int iter)
+void NesterovPlace::updateNextIter(int iter)
 {
   total_sum_overflow_ = 0;
   total_sum_overflow_unscaled_ = 0;
@@ -1168,11 +1264,12 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 {
   auto gcell_index = nbc_->createCbkGCell(db_inst);
-  for (auto& nesterov : nbVec_) {
-    // TODO: manage regions, not every NB should create a
-    // gcell.
-    nesterov->createCbkGCell(db_inst, gcell_index);
-  }
+  // Always create gcell on top-level
+  nbVec_[0]->createCbkGCell(db_inst, gcell_index);
+  // TODO: create new gcell in its proper region
+  // for (auto& nesterov : nbVec_) {
+  //   nesterov->createCbkGCell(db_inst, gcell_index);
+  // }
 }
 
 void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)

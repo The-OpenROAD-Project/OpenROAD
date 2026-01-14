@@ -10,6 +10,7 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"
 #include "frBaseTypes.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -21,10 +22,10 @@ class frTerm : public frBlockObject
   virtual frNet* getNet() const = 0;
   const frString& getName() const { return name_; }
   // setters
-  void setType(const dbSigType& in) { type_ = in; }
-  dbSigType getType() const { return type_; }
-  void setDirection(const dbIoType& in) { direction_ = in; }
-  dbIoType getDirection() const { return direction_; }
+  void setType(const odb::dbSigType& in) { type_ = in; }
+  odb::dbSigType getType() const { return type_; }
+  void setDirection(const odb::dbIoType& in) { direction_ = in; }
+  odb::dbIoType getDirection() const { return direction_; }
   // others
   void setIndexInOwner(int value) { index_in_owner_ = value; }
   int getIndexInOwner() { return index_in_owner_; }
@@ -47,8 +48,8 @@ class frTerm : public frBlockObject
 
   frString name_;        // A, B, Z, VSS, VDD
   frNet* net_{nullptr};  // set later, term in instTerm does not have net
-  dbSigType type_{dbSigType::SIGNAL};
-  dbIoType direction_{dbIoType::INPUT};
+  odb::dbSigType type_{odb::dbSigType::SIGNAL};
+  odb::dbIoType direction_{odb::dbIoType::INPUT};
   int index_in_owner_{0};
   odb::Rect bbox_;
 };

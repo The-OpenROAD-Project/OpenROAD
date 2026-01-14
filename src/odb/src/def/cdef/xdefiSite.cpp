@@ -35,8 +35,10 @@
 
 #include <cstdio>
 
+#include "defiMisc.hpp"
 #include "defiSite.h"
 #include "defiSite.hpp"
+#include "defiTypedefs.h"
 
 union udefiPoints
 {

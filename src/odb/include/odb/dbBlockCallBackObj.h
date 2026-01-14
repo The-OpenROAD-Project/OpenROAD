@@ -5,8 +5,6 @@
 
 #include <list>
 
-#include "odb/odb.h"
-
 namespace odb {
 
 class dbBPin;
@@ -18,8 +16,6 @@ class dbFill;
 class dbITerm;
 class dbInst;
 class dbIoType;
-class dbMarker;
-class dbMarkerCategory;
 class dbMaster;
 class dbModBTerm;
 class dbModule;
@@ -48,6 +44,9 @@ class dbWire;
 class dbBlockCallBackObj
 {
  public:
+  dbBlockCallBackObj() { owner_ = nullptr; }
+  virtual ~dbBlockCallBackObj() { removeOwner(); }
+
   // dbInst Start
   virtual void inDbInstCreate(dbInst*) {}
   virtual void inDbInstCreate(dbInst*, dbRegion*) {}
@@ -80,6 +79,8 @@ class dbBlockCallBackObj
   // dbModNet Start
   virtual void inDbModNetCreate(dbModNet*) {}
   virtual void inDbModNetDestroy(dbModNet*) {}
+  virtual void inDbModNetPreMerge(dbModNet*, dbModNet*) {}
+  virtual void inDbModNetPreConnectTermsOf(dbModNet*, dbNet*) {}
   // dbModNet End
 
   // dbITerm Start
@@ -123,7 +124,12 @@ class dbBlockCallBackObj
 
   // dbBPin Start
   virtual void inDbBPinCreate(dbBPin*) {}
+  virtual void inDbBPinAddBox(dbBox*) {}
+  virtual void inDbBPinRemoveBox(dbBox*) {}
   virtual void inDbBPinDestroy(dbBPin*) {}
+  virtual void inDbBPinPlacementStatusBefore(dbBPin*, const dbPlacementStatus&)
+  {
+  }
   // dbBPin End
 
   // dbBlockage Start
@@ -178,34 +184,22 @@ class dbBlockCallBackObj
   virtual void inDbFillCreate(dbFill*) {}
   // dbFill End
 
-  // dbMarkerCategory Start
-  virtual void inDbMarkerCategoryCreate(dbMarkerCategory*) {}
-  virtual void inDbMarkerCategoryDestroy(dbMarkerCategory*) {}
-  // dbMarkerCategory End
-
-  // dbMarker Start
-  virtual void inDbMarkerCreate(dbMarker*) {}
-  virtual void inDbMarkerDestroy(dbMarker*) {}
-  // dbMarker End
-
   virtual void inDbBlockStreamOutBefore(dbBlock*) {}
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}
   virtual void inDbBlockReadNetsBefore(dbBlock*) {}
   virtual void inDbBlockSetDieArea(dbBlock*) {}
+  virtual void inDbBlockSetCoreArea(dbBlock*) {}
 
   // allow ECO client initialization - payam
   virtual dbBlockCallBackObj& operator()() { return *this; }
 
   // Manipulate _callback list of owner -- in journal.cpp
   void addOwner(dbBlock* new_owner);
-  bool hasOwner() const { return (_owner != nullptr); }
+  bool hasOwner() const { return (owner_ != nullptr); }
   void removeOwner();
 
-  dbBlockCallBackObj() { _owner = nullptr; }
-  virtual ~dbBlockCallBackObj() { removeOwner(); }
-
  private:
-  dbBlock* _owner;
+  dbBlock* owner_;
 };
 
 }  // namespace odb

@@ -20,8 +20,12 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "ta/FlexTA.h"
+
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
 
 namespace drt {
 
@@ -88,9 +92,7 @@ void FlexTAWorker::initTracks()
         frCoord highCoord = (isH ? getRouteBox().yMax() : getRouteBox().xMax());
         int trackNum
             = (lowCoord - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-        if (trackNum < 0) {
-          trackNum = 0;
-        }
+        trackNum = std::max(trackNum, 0);
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
             < lowCoord) {
           trackNum++;
@@ -646,7 +648,7 @@ void FlexTAWorker::initCosts()
       }
       if (trackLoc == std::numeric_limits<frCoord>::max()) {
         std::cout << "Error: FlexTAWorker::initCosts does not find trackLoc"
-                  << std::endl;
+                  << '\n';
         exit(1);
       }
       assignIroute_getCost(iroute.get(), trackLoc, drcCost);
@@ -794,7 +796,7 @@ void FlexTAWorker::initFixedObjs()
         bloatDist = initFixedObjs_calcBloatDist(obj, layerNum, bounds);
         initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
       } else {
-        std::cout << "Warning: unsupported type in initFixedObjs" << std::endl;
+        std::cout << "Warning: unsupported type in initFixedObjs\n";
       }
     }
     auto costResults = [this, layerNum, width](
@@ -809,9 +811,9 @@ void FlexTAWorker::initFixedObjs()
           case frcInstBlockage: {
             auto instBlkg = (static_cast<frInstBlockage*>(obj));
             auto inst = instBlkg->getInst();
-            dbMasterType masterType = inst->getMaster()->getMasterType();
+            odb::dbMasterType masterType = inst->getMaster()->getMasterType();
             if (!masterType.isBlock() && !masterType.isPad()
-                && masterType != dbMasterType::RING) {
+                && masterType != odb::dbMasterType::RING) {
               continue;
             }
             if (bounds.minDXDY() <= 2 * width) {

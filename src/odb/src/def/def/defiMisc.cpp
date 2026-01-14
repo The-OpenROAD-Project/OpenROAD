@@ -34,6 +34,7 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
@@ -129,7 +130,6 @@ void defiGeometries::points(int index, int* x, int* y) const
   }
   *x = x_[index];
   *y = y_[index];
-  return;
 }
 
 ////////////////////////////////////////////////////

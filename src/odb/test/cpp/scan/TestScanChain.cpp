@@ -1,35 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2023, Google LLC
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <filesystem>
 #include <fstream>
 #include <ios>
 #include <string>
@@ -37,8 +9,6 @@
 #include <variant>
 #include <vector>
 
-#include "env.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
@@ -69,12 +39,12 @@ std::string GetName(const std::variant<dbBTerm*, dbITerm*>& pin)
       pin);
 }
 
-class TestScanChain : public testing::Test
+class TestScanChain : public SimpleDbFixture
 {
  protected:
   TestScanChain()
   {
-    db_ = create2LevetDbWithBTerms();
+    create2LevetDbWithBTerms();
     block_ = db_->getChip()->getBlock();
     dft_ = block_->getDft();
 
@@ -87,7 +57,8 @@ class TestScanChain : public testing::Test
 
   void SetUpTmpPath(const std::string& name)
   {
-    tmp_path_ = testTmpPath("results", name);
+    std::filesystem::create_directory("results");
+    tmp_path_ = "results/" + name;
   }
 
   // Writes a temporal DB and then tries to read the contents back to check if
@@ -118,7 +89,6 @@ class TestScanChain : public testing::Test
     return db;
   }
 
-  dbDatabase* db_;
   dbBlock* block_;
   std::string tmp_path_;
   dbDft* dft_;
@@ -148,20 +118,20 @@ TEST_F(TestScanChain, CreateScanChain)
   dbDft* dft2 = block2->getDft();
 
   odb::dbSet<dbScanChain> scan_chains2 = dft2->getScanChains();
-  EXPECT_THAT(scan_chains2.size(), 1);
+  EXPECT_EQ(scan_chains2.size(), 1);
 
   dbScanChain* scan_chain2 = *scan_chains2.begin();
 
   odb::dbSet<dbScanPartition> scan_partition2
       = scan_chain2->getScanPartitions();
-  EXPECT_THAT(scan_partition2.size(), 1);
-  EXPECT_THAT(scan_partition2.begin()->getName(), kPartition1);
+  EXPECT_EQ(scan_partition2.size(), 1);
+  EXPECT_EQ(scan_partition2.begin()->getName(), kPartition1);
 
   odb::dbSet<dbScanList> scan_lists2 = scan_partition2.begin()->getScanLists();
-  EXPECT_THAT(scan_lists2.size(), 1);
+  EXPECT_EQ(scan_lists2.size(), 1);
 
   odb::dbSet<dbScanInst> scan_insts2 = scan_lists2.begin()->getScanInsts();
-  EXPECT_THAT(scan_insts2.size(), 1);
+  EXPECT_EQ(scan_insts2.size(), 1);
 }
 
 TEST_F(TestScanChain, CreateScanChainWithPartition)
@@ -208,11 +178,11 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
   dbDft* dft2 = block2->getDft();
 
   dbSet<dbScanChain> scan_chains2 = dft2->getScanChains();
-  EXPECT_THAT(scan_chains2.size(), 1);
+  EXPECT_EQ(scan_chains2.size(), 1);
 
   dbSet<dbScanPartition> scan_partitions2
       = scan_chains2.begin()->getScanPartitions();
-  EXPECT_THAT(scan_partitions2.size(), 2);
+  EXPECT_EQ(scan_partitions2.size(), 2);
 
   auto iterator = scan_partitions2.begin();
 
@@ -220,8 +190,8 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
   ++iterator;
   dbScanPartition* partition22 = *iterator;
 
-  EXPECT_THAT(partition12->getName(), kPartition1);
-  EXPECT_THAT(partition22->getName(), kPartition2);
+  EXPECT_EQ(partition12->getName(), kPartition1);
+  EXPECT_EQ(partition22->getName(), kPartition2);
 
   // check the created instances
 
@@ -232,9 +202,9 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
   for (dbScanList* scan_list : scan_lists12) {
     for (dbScanInst* scan_inst : scan_list->getScanInsts()) {
       const dbScanInst::AccessPins& access_pins = scan_inst->getAccessPins();
-      EXPECT_THAT(GetName(access_pins.scan_in), "a");
-      EXPECT_THAT(GetName(access_pins.scan_out), "o");
-      EXPECT_THAT(instances_[i]->getName(), scan_inst->getInst()->getName());
+      EXPECT_EQ(GetName(access_pins.scan_in), "a");
+      EXPECT_EQ(GetName(access_pins.scan_out), "o");
+      EXPECT_EQ(instances_[i]->getName(), scan_inst->getInst()->getName());
       ++i;
     }
   }
@@ -242,9 +212,9 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
   for (dbScanList* scan_list : scan_lists22) {
     for (dbScanInst* scan_inst : scan_list->getScanInsts()) {
       const dbScanInst::AccessPins& access_pins = scan_inst->getAccessPins();
-      EXPECT_THAT(GetName(access_pins.scan_in), "a");
-      EXPECT_THAT(GetName(access_pins.scan_out), "o");
-      EXPECT_THAT(instances_[i]->getName(), scan_inst->getInst()->getName());
+      EXPECT_EQ(GetName(access_pins.scan_in), "a");
+      EXPECT_EQ(GetName(access_pins.scan_out), "o");
+      EXPECT_EQ(instances_[i]->getName(), scan_inst->getInst()->getName());
       ++i;
     }
   }

@@ -43,7 +43,7 @@ OdbCallBack::OdbCallBack(est::EstimateParasitics* estimate_parasitics,
 {
 }
 
-void OdbCallBack::inDbInstCreate(dbInst* inst)
+void OdbCallBack::inDbInstCreate(odb::dbInst* inst)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -51,19 +51,9 @@ void OdbCallBack::inDbInstCreate(dbInst* inst)
              1,
              "inDbInstCreate {}",
              inst->getName());
-  Instance* sta_inst = db_network_->dbToSta(inst);
-  std::unique_ptr<InstancePinIterator> pin_iter{
-      network_->pinIterator(sta_inst)};
-  while (pin_iter->hasNext()) {
-    Pin* pin = pin_iter->next();
-    Net* net = network_->net(pin);
-    if (net) {
-      estimate_parasitics_->parasiticsInvalid(net);
-    }
-  }
 }
 
-void OdbCallBack::inDbNetCreate(dbNet* net)
+void OdbCallBack::inDbNetCreate(odb::dbNet* net)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -74,7 +64,7 @@ void OdbCallBack::inDbNetCreate(dbNet* net)
   estimate_parasitics_->parasiticsInvalid(net);
 }
 
-void OdbCallBack::inDbNetDestroy(dbNet* net)
+void OdbCallBack::inDbNetDestroy(odb::dbNet* net)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -88,7 +78,7 @@ void OdbCallBack::inDbNetDestroy(dbNet* net)
   }
 }
 
-void OdbCallBack::inDbITermPostConnect(dbITerm* iterm)
+void OdbCallBack::inDbITermPostConnect(odb::dbITerm* iterm)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -96,13 +86,13 @@ void OdbCallBack::inDbITermPostConnect(dbITerm* iterm)
              1,
              "inDbITermPostConnect iterm {}",
              iterm->getName());
-  dbNet* db_net = iterm->getNet();
+  odb::dbNet* db_net = iterm->getNet();
   if (db_net) {
     estimate_parasitics_->parasiticsInvalid(db_net);
   }
 }
 
-void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, dbNet* net)
+void OdbCallBack::inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -114,7 +104,7 @@ void OdbCallBack::inDbITermPostDisconnect(dbITerm* iterm, dbNet* net)
   estimate_parasitics_->parasiticsInvalid(net);
 }
 
-void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
+void OdbCallBack::inDbInstSwapMasterAfter(odb::dbInst* inst)
 {
   debugPrint(estimate_parasitics_->getLogger(),
              utl::EST,
@@ -136,7 +126,7 @@ void OdbCallBack::inDbInstSwapMasterAfter(dbInst* inst)
     // the parasitics are updated for each resize.
     if (!port || !port->direction()->isAnyTristate()) {
       // we can only update parasitics for flat net
-      odb::dbNet* db_net = db_network_->flatNet(net);
+      odb::dbNet* db_net = db_network_->findFlatDbNet(net);
       estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_net));
     }
   }

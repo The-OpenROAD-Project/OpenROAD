@@ -6,6 +6,8 @@ or_integration_tests(
     gcd
     generate_pattern
     names
+    net_name_consistency
+    coordinates
   PASSFAIL_TESTS
     rcx_unit_test
 )

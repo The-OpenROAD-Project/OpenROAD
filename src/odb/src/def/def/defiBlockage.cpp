@@ -34,6 +34,8 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defiKRDefs.hpp"
+#include "defiMisc.hpp"
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
@@ -149,7 +151,6 @@ void defiBlockage::setPlacement()
 {
   /* 10/29/2001 - Wanda da Rosa, new enhancement */
   hasPlacement_ = 1;
-  return;
 }
 
 void defiBlockage::setComponent(const char* name)

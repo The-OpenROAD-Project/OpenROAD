@@ -34,6 +34,8 @@
 /*                              and other keywords                     */
 
 #include <cctype>
+#include <cinttypes>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -42,9 +44,11 @@
 
 #include "defiDebug.hpp"
 #include "defiDefs.hpp"
+#include "defiKRDefs.hpp"
 #include "defiPath.hpp"
 #include "defrCallBacks.hpp"
 #include "defrData.hpp"
+#include "defrReader.hpp"
 #include "defrSettings.hpp"
 
 #ifdef WIN32
@@ -112,12 +116,14 @@ void defrData::reload_buffer()
   if (first_buffer) {
     first_buffer = 0;
     if (settings->ReadFunction) {
-      if ((nb = (*settings->ReadFunction)(File, buffer, 4)) != 4) {
+      nb = (*settings->ReadFunction)(File, buffer, 4);
+      if (nb != 4) {
         next = nullptr;
         return;
       }
     } else {
-      if ((nb = fread(buffer, 1, 4, File)) != 4) {
+      nb = fread(buffer, 1, 4, File);
+      if (nb != 4) {
         next = nullptr;
         return;
       }
@@ -234,7 +240,7 @@ int defrData::DefGetTokenFromStack(char* s)
   return false; /* if we get here, we ran out of input levels */
 }
 
-void defrData::print_lines(long long lines)
+void defrData::print_lines(int64_t lines)
 {
   if (lines % settings->defiDeltaNumberLines) {
     return;
@@ -252,12 +258,12 @@ void defrData::print_lines(long long lines)
   }
 }
 
-const char* defrData::lines2str(long long lines)
+const char* defrData::lines2str(int64_t lines)
 {
 #ifdef _WIN32
   sprintf(lineBuffer, "%I64d", lines);
 #else
-  sprintf(lineBuffer, "%lld", lines);
+  sprintf(lineBuffer, "%" PRId64, lines);
 #endif
 
   return lineBuffer;
@@ -272,7 +278,7 @@ void defrData::IncCurPos(char** curPos, char** buffer, int* bufferSize)
     return;
   }
 
-  long offset = *curPos - *buffer;
+  int64_t offset = *curPos - *buffer;
 
   *bufferSize *= 2;
   *buffer = (char*) realloc(*buffer, *bufferSize);
@@ -428,6 +434,9 @@ void defrData::StoreAlias()
   std::string so_far; /* contains alias contents as we build it */
 
   if (strcmp(line, "=") != 0) {
+    free(aname);
+    free(line);
+    free(uc_line);
     defError(6000, "Expecting '='");
     return;
   }
@@ -439,6 +448,9 @@ void defrData::StoreAlias()
     for (i = 0; i < tokenSize - 1; i++) {
       int ch = GETC();
       if (ch == EOF) {
+        free(aname);
+        free(line);
+        free(uc_line);
         defError(6001, "End of file in &ALIAS");
         return;
       }
@@ -1131,11 +1143,16 @@ void defrData::defInfo(int msgNum, const char* s)
             lines2str(nlines));
   } else {
     if (!hasOpenedDefLogFile) {
-      if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
+      defrLog = fopen("defRWarning.log", "w");
+      if (defrLog == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING(DEFPARS-8500): Unable to open the file defRWarning.log in "
             "%s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1148,11 +1165,16 @@ void defrData::defInfo(int msgNum, const char* s)
                 lines2str(nlines));
       }
     } else {
-      if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
+      defrLog = fopen("defRWarning.log", "a");
+      if (defrLog == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (DEFPARS-8500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Info messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1212,11 +1234,16 @@ void defrData::defWarning(int msgNum, const char* s)
             lines2str(nlines));
   } else {
     if (!hasOpenedDefLogFile) {
-      if ((defrLog = fopen("defRWarning.log", "w")) == nullptr) {
+      defrLog = fopen("defRWarning.log", "w");
+      if (defrLog == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (DEFPARS-7500): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;
@@ -1229,11 +1256,16 @@ void defrData::defWarning(int msgNum, const char* s)
                 lines2str(nlines));
       }
     } else {
-      if ((defrLog = fopen("defRWarning.log", "a")) == nullptr) {
+      defrLog = fopen("defRWarning.log", "a");
+      if (defrLog == nullptr) {
+        char buffer[PATH_MAX];
+        if (getcwd(buffer, sizeof(buffer)) == nullptr) {
+          strcpy(buffer, "<unknown>");
+        }
         printf(
             "WARNING (DEFAPRS-7501): Unable to open the file defRWarning.log "
             "in %s.\n",
-            getcwd(nullptr, 64));
+            buffer);
         printf("Warning messages will not be printed.\n");
       } else {
         hasOpenedDefLogFile = 1;

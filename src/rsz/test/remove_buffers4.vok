@@ -1,0 +1,88 @@
+module top (clk,
+    in1,
+    in10,
+    in2,
+    in3,
+    in4,
+    in5,
+    in6,
+    in7,
+    in8,
+    in9,
+    out2,
+    out3,
+    out4,
+    out5,
+    out1);
+ input clk;
+ input in1;
+ input in10;
+ input in2;
+ input in3;
+ input in4;
+ input in5;
+ input in6;
+ input in7;
+ input in8;
+ input in9;
+ output out2;
+ output out3;
+ output out4;
+ output out5;
+ output out1;
+
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
+ wire reg1_q;
+ wire reg2_q;
+ wire sub1_out1;
+ wire sub1_out2;
+ wire \sub1_inst/sub2_out1 ;
+ wire \sub1_inst/sub2_out2 ;
+ wire \sub1_inst/sub2_inst/w1 ;
+
+ AND2_X1 and1 (.A1(in6),
+    .A2(in7),
+    .ZN(n1));
+ AOI21_X1 aoi1 (.A(n1),
+    .B1(n2),
+    .B2(sub1_out2),
+    .ZN(out5));
+ NAND2_X1 nand1 (.A1(sub1_out1),
+    .A2(n3),
+    .ZN(n4));
+ NOR2_X1 nor1 (.A1(sub1_out2),
+    .A2(in10),
+    .ZN(n5));
+ OR2_X1 or1 (.A1(in8),
+    .A2(in9),
+    .ZN(n2));
+ DFF_X1 reg1 (.D(in1),
+    .Q(reg1_q));
+ DFF_X1 reg2 (.D(n3),
+    .Q(reg2_q));
+ OAI21_X1 \sub1_inst/oai_inst  (.B1(in1),
+    .ZN(sub1_out1));
+ AND2_X1 \sub1_inst/sub2_inst/and_inst  (.A1(in1),
+    .A2(in2),
+    .ZN(\sub1_inst/sub2_inst/w1 ));
+ NOR2_X1 \sub1_inst/sub2_inst/nor_inst  (.A1(in3),
+    .A2(in4),
+    .ZN(\sub1_inst/sub2_out2 ));
+ XOR2_X1 \sub1_inst/sub2_inst/xor_inst  (.A(\sub1_inst/sub2_inst/w1 ),
+    .B(in3),
+    .Z(\sub1_inst/sub2_out1 ));
+ XNOR2_X1 \sub1_inst/xnor_inst  (.A(\sub1_inst/sub2_out2 ),
+    .B(in5),
+    .ZN(sub1_out2));
+ XOR2_X1 xor1 (.A(reg1_q),
+    .B(sub1_out1),
+    .Z(n3));
+ assign out2 = n4;
+ assign out3 = n5;
+ assign out4 = n5;
+ assign out1 = reg2_q;
+endmodule
