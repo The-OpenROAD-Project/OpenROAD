@@ -135,17 +135,17 @@ filegroup(
                     "testcases/macro_only.lib",
                 ],
                 "io_constraints3": [
-                    "testcases/io_constraints1.def",
+                    "testcases/io_constraints3.def",
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                 ],
                 "io_constraints4": [
-                    "testcases/io_constraints1.def",
+                    "testcases/io_constraints4.def",
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                 ],
                 "io_constraints5": [
-                    "testcases/io_constraints1.def",
+                    "testcases/io_constraints4.def",
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                 ],
