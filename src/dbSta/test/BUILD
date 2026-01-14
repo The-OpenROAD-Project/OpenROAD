@@ -7,13 +7,13 @@ load("//test:regression.bzl", "regression_test")
 package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
-COMPULSORY_TESTS = [
+ALL_TESTS = [
     "block_sta1",
     "check_axioms",
     "clock_pin",
     "constant1",
-    # "escape_slash", # different result compared to CMake
-    # "escape_slash_hier", # different result compared to CMake
+    "escape_slash",
+    "escape_slash_hier",
     "find_clks1",
     "find_clks2",
     "get_ports1",
@@ -68,8 +68,6 @@ COMPULSORY_TESTS = [
     "write_verilog9",
     "write_verilog9_hier",
 ]
-
-ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -177,7 +175,6 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
