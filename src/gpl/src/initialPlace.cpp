@@ -157,8 +157,6 @@ void InitialPlace::placeInstsInitialPositions()
                               region_y_max - (region_y_max - region_y_min) / 2);
       ++count_region_center;
     } else if (!ipVars_.forceCenter && db_inst->isPlaced()) {
-      // It is helpful to pick up the placement from mpl if available.
-      // We now do this by default unless forceCenter is enabled.
       const auto bbox = db_inst->getBBox()->getBox();
       inst->setCenterLocation(bbox.xCenter(), bbox.yCenter());
       ++count_db_location;
