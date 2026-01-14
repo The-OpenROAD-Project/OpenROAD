@@ -5,6 +5,7 @@
 [INFO ODB-0128] Design: fake_macros
 [INFO ODB-0131]     Created 10 components and 32 component-terminals.
 [INFO ODB-0133]     Created 12 nets and 24 connections.
+[WARNING ODB-0404] Connection soc_to_virtual has missing regions (top: found, bottom: null)
 [INFO ODB-0541] More than one lib exists, multiple files will be written.
 No differences found.
 pass

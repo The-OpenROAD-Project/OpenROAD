@@ -15,6 +15,29 @@
 #include "utl/unionFind.h"
 namespace odb {
 
+// Compute the global (root-level) cuboid for a region instance by applying
+// hierarchical transforms. Transform order (innermost to outermost):
+//   1. Start with region's raw cuboid in master coordinates
+//   2. Apply conn_path transforms (path from connection's chip to region)
+//   3. Apply parent_path transforms (path from root to connection's chip)
+// Both paths are traversed in reverse (leaf-to-root) to accumulate transforms
+// correctly. This matches the transform accumulation in unfoldChip().
+odb::Cuboid getGlobalCuboid(dbChipRegionInst* region_inst,
+                            const std::vector<dbChipInst*>& conn_path,
+                            const std::vector<dbChipInst*>& parent_path)
+{
+  odb::Cuboid cuboid = region_inst->getChipRegion()->getCuboid();
+
+  for (auto inst : conn_path | std::views::reverse) {
+    inst->getTransform().apply(cuboid);
+  }
+  for (auto inst : parent_path | std::views::reverse) {
+    inst->getTransform().apply(cuboid);
+  }
+
+  return cuboid;
+}
+
 std::string UnfoldedChip::getName() const
 {
   std::string name;
@@ -40,9 +63,10 @@ void Checker::check(odb::dbChip* chip)
   }
   odb::dbMarkerCategory* category
       = odb::dbMarkerCategory::createOrReplace(chip, "3DBlox");
-  checkFloatingChips(category);
+
+  checkConnectionRegions(chip, category);
   checkOverlappingChips(category);
-  // checkConnectionRegions(chip, category);
+  checkFloatingChips(category);
 }
 
 void Checker::unfoldChip(odb::dbChipInst* chip_inst,
@@ -189,6 +213,106 @@ void Checker::checkOverlappingChips(odb::dbMarkerCategory* category)
                  inst2->getName());
       marker->setComment(comment);
     }
+  }
+}
+
+void Checker::checkConnectionRegions(odb::dbChip* chip,
+                                     odb::dbMarkerCategory* category)
+{
+  odb::dbMarkerCategory* conn_category
+      = odb::dbMarkerCategory::createOrReplace(category, "Connected regions");
+
+  // Pass errors by reference for recursive accumulation across hierarchy.
+  // Note: Current implementation is O(connections * hierarchy_depth).
+  // Future optimization should consider spatial indexing (R-tree) for region
+  // intersection queries.
+  int errors = 0;
+  std::vector<dbChipInst*> path;
+  checkConnectionRegionsRecursive(chip, conn_category, path, errors);
+
+  if (errors > 0) {
+    logger_->warn(
+        utl::ODB, 206, "Found {} non-intersecting connections", errors);
+  }
+}
+
+void Checker::checkConnectionRegionsRecursive(odb::dbChip* chip,
+                                              odb::dbMarkerCategory* category,
+                                              std::vector<dbChipInst*>& path,
+                                              int& errors)
+{
+  for (auto conn : chip->getChipConns()) {
+    auto top_region_inst = conn->getTopRegion();
+    auto bottom_region_inst = conn->getBottomRegion();
+
+    if (!top_region_inst || !bottom_region_inst) {
+      logger_->warn(utl::ODB,
+                    404,
+                    "Connection {} has missing regions (top: {}, bottom: {})",
+                    conn->getName(),
+                    top_region_inst ? "found" : "null",
+                    bottom_region_inst ? "found" : "null");
+      continue;
+    }
+
+    odb::Cuboid top_cuboid
+        = getGlobalCuboid(top_region_inst, conn->getTopRegionPath(), path);
+    odb::Cuboid bottom_cuboid = getGlobalCuboid(
+        bottom_region_inst, conn->getBottomRegionPath(), path);
+
+    // Bloat each region by half the connection thickness.
+    // Total tolerance = thickness, representing the maximum allowed gap
+    // between the two surfaces for them to be considered "connected".
+    top_cuboid.bloat(conn->getThickness() / 2.0, top_cuboid);
+    bottom_cuboid.bloat(conn->getThickness() / 2.0, bottom_cuboid);
+
+    if (!top_cuboid.intersects(bottom_cuboid)) {
+      errors++;
+      odb::dbMarker* marker = odb::dbMarker::create(category);
+      odb::Rect bbox(top_cuboid.xMin(),
+                     top_cuboid.yMin(),
+                     top_cuboid.xMax(),
+                     top_cuboid.yMax());
+      marker->addShape(bbox);
+      bbox = odb::Rect(bottom_cuboid.xMin(),
+                       bottom_cuboid.yMin(),
+                       bottom_cuboid.xMax(),
+                       bottom_cuboid.yMax());
+      marker->addShape(bbox);
+
+      marker->addSource(conn);
+
+      std::string comment
+          = "Connection " + conn->getName() + " regions do not intersect";
+      marker->setComment(comment);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "3dblox",
+                 1,
+                 "Connection {} regions do not intersect (top: "
+                 "[{},{},{}]-[{},{},{}], bottom: [{},{},{}]-[{},{},{}])",
+                 conn->getName(),
+                 top_cuboid.xMin(),
+                 top_cuboid.yMin(),
+                 top_cuboid.zMin(),
+                 top_cuboid.xMax(),
+                 top_cuboid.yMax(),
+                 top_cuboid.zMax(),
+                 bottom_cuboid.xMin(),
+                 bottom_cuboid.yMin(),
+                 bottom_cuboid.zMin(),
+                 bottom_cuboid.xMax(),
+                 bottom_cuboid.yMax(),
+                 bottom_cuboid.zMax());
+    }
+  }
+
+  // Recurse into sub-chips
+  for (auto inst : chip->getChipInsts()) {
+    path.push_back(inst);
+    checkConnectionRegionsRecursive(
+        inst->getMasterChip(), category, path, errors);
+    path.pop_back();
   }
 }
 

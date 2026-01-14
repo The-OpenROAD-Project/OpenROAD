@@ -295,3 +295,20 @@ suppress_message ORD 30
 
 # suppress grt message with the suggested adjustment
 suppress_message GRT 704
+
+proc get_3dblox_marker_count { sub_category_name } {
+  set top_chip [[ord::get_db] getChip]
+  set category [$top_chip findMarkerCategory "3DBlox"]
+  if { $category == "NULL" } {
+    return 0
+  }
+  set sub_category [$category findMarkerCategory $sub_category_name]
+  if { $sub_category == "NULL" } {
+    return 0
+  }
+  return [$sub_category getMarkerCount]
+}
+
+proc get_3dblox_connected_errors { } {
+  return [get_3dblox_marker_count "Connected regions"]
+}

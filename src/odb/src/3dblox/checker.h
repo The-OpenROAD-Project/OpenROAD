@@ -25,6 +25,12 @@ class Checker
  private:
   void checkFloatingChips(odb::dbMarkerCategory* category);
   void checkOverlappingChips(odb::dbMarkerCategory* category);
+  void checkConnectionRegions(odb::dbChip* chip,
+                              odb::dbMarkerCategory* category);
+  void checkConnectionRegionsRecursive(odb::dbChip* chip,
+                                       odb::dbMarkerCategory* category,
+                                       std::vector<dbChipInst*>& path,
+                                       int& errors);
   void unfoldChip(odb::dbChipInst* chip_inst, UnfoldedChip& unfolded_chip);
   utl::Logger* logger_ = nullptr;
   std::vector<UnfoldedChip> unfolded_chips_;
