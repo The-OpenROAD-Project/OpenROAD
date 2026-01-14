@@ -73,10 +73,17 @@ void Opendp::detailedPlacement()
   if (!arch_->getRegions().empty()) {
     placeGroups();
   }
+
+  if (debug_observer_) {
+    logger_->report("Pause before detail placement.");
+    debug_observer_->redrawAndPause();
+  }
+
   place();
 
   if (debug_observer_) {
-    debug_observer_->endPlacement();
+    logger_->report("Pause after detail placement.");
+    debug_observer_->redrawAndPause();
   }
 }
 
@@ -957,7 +964,7 @@ bool Opendp::checkPixels(const Node* cell,
       }
     }
   }
-  
+
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
   return drc_engine_->checkDRC(cell, x, y, orient);
 }
@@ -1257,26 +1264,6 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
                           original_y,
                           cell->getLeft(),
                           cell->getBottom(),
-                          was_placed);
-    journal_->addAction(action);
-  }
-}
-
-void Opendp::unplaceCell(Node* cell)
-{
-  if (cell->isFixed() || !cell->isPlaced()) {
-    return;
-  }
-  if (journal_) {
-    UnplaceCellAction action(cell, cell->isHold());
-    journal_->addAction(action);
-  }
-  grid_->erasePixel(cell);
-  cell->setPlaced(false);
-  cell->setHold(false);
-}
-
-}  // namespace dpl
                           was_placed);
     journal_->addAction(action);
   }
