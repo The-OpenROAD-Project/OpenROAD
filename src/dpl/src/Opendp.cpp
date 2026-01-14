@@ -18,9 +18,7 @@
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
-// NOLINTNEXTLINE(misc-include-cleaner)  // Needed for DecapCell/GapInfo
-// completeness in ~Opendp()
-#include "infrastructure/DecapObjects.h"
+#include "infrastructure/DecapObjects.h"  // NOLINT(misc-include-cleaner) Needed for DecapCell/GapInfo completeness in ~Opendp()
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
