@@ -84,8 +84,7 @@ struct UnfoldedChip
 class UnfoldedModel
 {
  public:
-  UnfoldedModel(utl::Logger* logger);
-  void build(dbChip* chip);
+  UnfoldedModel(utl::Logger* logger, dbChip* chip);
 
   const std::deque<UnfoldedChip>& getChips() const { return unfolded_chips_; }
   const std::deque<UnfoldedConnection>& getConnections() const

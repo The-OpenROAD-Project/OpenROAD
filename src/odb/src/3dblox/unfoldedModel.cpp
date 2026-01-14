@@ -43,16 +43,7 @@ std::string UnfoldedChip::getName() const
 {
   std::string name;
   char delimiter = '/';
-  if (!chip_inst_path.empty()) {
-    dbBlock* block = chip_inst_path[0]->getParentChip()->getBlock();
-    if (block) {
-      char d = block->getHierarchyDelimiter();
-      if (d != 0) {
-        delimiter = d;
-      }
-    }
-  }
-  for (auto* chip_inst : chip_inst_path) {
+  for (dbChipInst* chip_inst : chip_inst_path) {
     if (!name.empty()) {
       name += delimiter;
     }
@@ -66,11 +57,8 @@ std::string UnfoldedChip::getPathKey() const
   return getName();
 }
 
-UnfoldedModel::UnfoldedModel(utl::Logger* logger) : logger_(logger)
-{
-}
-
-void UnfoldedModel::build(dbChip* chip)
+UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
+    : logger_(logger)
 {
   for (dbChipInst* chip_inst : chip->getChipInsts()) {
     UnfoldedChip unfolded_chip;
@@ -86,13 +74,14 @@ void UnfoldedModel::unfoldChip(dbChipInst* chip_inst,
   unfolded_chip.chip_inst_path.push_back(chip_inst);
 
   if (chip_inst->getMasterChip()->getChipType() == dbChip::ChipType::HIER) {
-    for (auto sub_inst : chip_inst->getMasterChip()->getChipInsts()) {
+    for (dbChipInst* sub_inst : chip_inst->getMasterChip()->getChipInsts()) {
       unfoldChip(sub_inst, unfolded_chip);
     }
   } else {
     // Original logic: Leaf chip cuboid calculation
     unfolded_chip.cuboid = chip_inst->getMasterChip()->getCuboid();
-    for (auto inst : unfolded_chip.chip_inst_path | std::views::reverse) {
+    for (dbChipInst* inst :
+         unfolded_chip.chip_inst_path | std::views::reverse) {
       inst->getTransform().apply(unfolded_chip.cuboid);
     }
 

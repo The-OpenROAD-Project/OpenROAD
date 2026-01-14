@@ -13,7 +13,6 @@ add_library(3dblox
   dbxWriter.cpp
   3dblox.cpp
   unfoldedModel.cpp
-  threeDBloxValidator.cpp
   checker.cpp
 )
 
