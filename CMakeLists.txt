@@ -124,16 +124,11 @@ if(EXISTS "/etc/os-release")
     endif()
   endforeach()
 
-  # Check for Debian 11 (Bullseye)
-  if(OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11")
+  # Check for unsupported OS for LTO
+  if((OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11") OR
+     (OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8"))
     set(LTO_UNSUPPORTED_OS TRUE)
-    message(STATUS "Detected Debian 11: LTO will be disabled due to known build issues")
-  endif()
-
-  # Check for Rocky Linux 8
-  if(OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8")
-    set(LTO_UNSUPPORTED_OS TRUE)
-    message(STATUS "Detected Rocky Linux 8: LTO will be disabled due to known build issues")
+    message(STATUS "Detected unsupported OS (${OS_ID} ${OS_VERSION_ID}): LTO will be disabled due to known build issues")
   endif()
 endif()
 
