@@ -132,26 +132,25 @@ if(EXISTS "/etc/os-release")
 endif()
 
 option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
+set(LTO_STATUS "disabled")
 if (LINK_TIME_OPTIMIZATION AND NOT LTO_UNSUPPORTED_OS)
   include(CheckIPOSupported)
-  # 1. Check if the compiler/linker even supports LTO
   check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
   if(lto_supported)
-    # LTO is enabled globally for Release builds
+    # LTO is enabled globally for Release build
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO FALSE)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
 
     string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
     if(UPPER_BUILD_TYPE STREQUAL "RELEASE")
-      message(STATUS "LTO/IPO is enabled")
-    else()
-      message(STATUS "LTO/IPO is disabled")
+      set(LTO_STATUS "enabled")
     endif()
   else()
-    message(STATUS "LTO/IPO is not supported: ${lto_error}")
+    set(LTO_STATUS "not supported: ${lto_error}")
   endif()
 endif()
+message(STATUS "LTO/IPO is ${LTO_STATUS}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(
