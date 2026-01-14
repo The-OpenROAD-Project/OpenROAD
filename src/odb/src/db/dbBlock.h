@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <list>
 #include <map>
@@ -22,7 +23,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -102,7 +102,7 @@ class dbGroupPowerNetItr;
 class dbGroupGroundNetItr;
 class dbSWireItr;
 class dbNameServer;
-template <uint page_size>
+template <uint32_t page_size>
 class dbBoxItr;
 class dbSBoxItr;
 class dbCapNodeItr;
@@ -119,8 +119,8 @@ class _dbDft;
 
 struct _dbBlockFlags
 {
-  uint valid_bbox : 1;
-  uint spare_bits : 31;
+  uint32_t valid_bbox : 1;
+  uint32_t spare_bits : 31;
 };
 
 struct _dbBTermGroup
@@ -163,7 +163,9 @@ class _dbBlock : public _dbObject
   bool operator==(const _dbBlock& rhs) const;
   bool operator!=(const _dbBlock& rhs) const { return !operator==(rhs); }
 
-  int globalConnect(const std::vector<dbGlobalConnect*>& connects);
+  int globalConnect(const std::vector<dbGlobalConnect*>& connects,
+                    bool force,
+                    bool verbose);
   _dbTech* getTech();
 
   dbObjectTable* getObjectTable(dbObjectType type);
@@ -174,7 +176,7 @@ class _dbBlock : public _dbObject
   std::string makeNewName(dbModInst* parent,
                           const char* base_name,
                           const dbNameUniquifyType& uniquify,
-                          uint& unique_index,
+                          uint32_t& unique_index,
                           const std::function<bool(const char*)>& exists);
 
   // PERSISTANT-MEMBERS
@@ -185,7 +187,7 @@ class _dbBlock : public _dbObject
   char left_bus_delimiter_;
   char right_bus_delimiter_;
   unsigned char num_ext_corners_;
-  uint corners_per_block_;
+  uint32_t corners_per_block_;
   char* corner_name_list_;
   char* name_;
   Polygon die_area_;
@@ -212,12 +214,12 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbGroup> group_hash_;
   dbIntHashTable<_dbInstHdr> inst_hdr_hash_;
   dbHashTable<_dbBTerm> bterm_hash_;
-  uint max_cap_node_id_;
-  uint max_rseg_id_;
-  uint max_cc_seg_id_;
+  uint32_t max_cap_node_id_;
+  uint32_t max_rseg_id_;
+  uint32_t max_cc_seg_id_;
   dbVector<dbId<_dbBlock>> children_;
   dbVector<dbId<_dbTechLayer>> component_mask_shift_;
-  uint currentCcAdjOrder_;
+  uint32_t currentCcAdjOrder_;
   dbId<_dbDft> dft_;
   int min_routing_layer_;
   int max_routing_layer_;
@@ -225,8 +227,9 @@ class _dbBlock : public _dbObject
   int max_layer_for_clock_;
   std::vector<_dbBTermGroup> bterm_groups_;
   _dbBTermTopLayerGrid bterm_top_layer_grid_;
-  uint unique_net_index_{1};   // unique index used to create a new net name
-  uint unique_inst_index_{1};  // unique index used to create a new inst name
+  uint32_t unique_net_index_{1};  // unique index used to create a new net name
+  uint32_t unique_inst_index_{
+      1};  // unique index used to create a new inst name
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* bterm_tbl_;

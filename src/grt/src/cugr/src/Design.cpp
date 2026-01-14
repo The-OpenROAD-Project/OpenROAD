@@ -1,5 +1,6 @@
 #include "Design.h"
 
+#include <cstdint>
 #include <iostream>
 #include <set>
 #include <vector>
@@ -74,15 +75,10 @@ void Design::readLayers()
       odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
       if (track_grid != nullptr) {
         layers_.emplace_back(tech_layer, track_grid);
-        if (tech_layer->getRoutingLevel() == 3) {
-          int track_step, track_init, num_tracks;
-          track_grid->getAverageTrackSpacing(
-              track_step, track_init, num_tracks);
-          default_gridline_spacing_ = track_step * 15;
-        }
       }
     }
   }
+  default_gridline_spacing_ = block_->getGCellTileSize();
 }
 
 void Design::readNetlist()
@@ -210,8 +206,8 @@ int Design::readSpecialNetObstructions()
       continue;
     }
 
-    odb::uint wire_cnt = 0;
-    odb::uint via_cnt = 0;
+    uint32_t wire_cnt = 0;
+    uint32_t via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0) {
       continue;

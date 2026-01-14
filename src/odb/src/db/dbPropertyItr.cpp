@@ -3,6 +3,8 @@
 
 #include "dbPropertyItr.h"
 
+#include <cstdint>
+
 #include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -30,14 +32,14 @@ void dbPropertyItr::reverse(dbObject* parent)
 {
   _dbObject* parent_impl = parent->getImpl();
   dbObjectTable* table = parent_impl->getTable();
-  uint id = table->getPropList(parent_impl->getOID());
+  uint32_t id = table->getPropList(parent_impl->getOID());
 
   if (id) {
-    uint list = 0;
+    uint32_t list = 0;
 
     while (id != 0) {
-      _dbProperty* p = _prop_tbl->getPtr(id);
-      uint n = p->next_;
+      _dbProperty* p = prop_tbl_->getPtr(id);
+      uint32_t n = p->next_;
       p->next_ = list;
       list = id;
       id = n;
@@ -47,15 +49,15 @@ void dbPropertyItr::reverse(dbObject* parent)
   }
 }
 
-uint dbPropertyItr::sequential() const
+uint32_t dbPropertyItr::sequential() const
 {
   return 0;
 }
 
-uint dbPropertyItr::size(dbObject* parent) const
+uint32_t dbPropertyItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbPropertyItr::begin(parent); id != dbPropertyItr::end(parent);
        id = dbPropertyItr::next(id)) {
@@ -65,27 +67,27 @@ uint dbPropertyItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbPropertyItr::begin(dbObject* parent) const
+uint32_t dbPropertyItr::begin(dbObject* parent) const
 {
   dbObjectTable* table = parent->getImpl()->getTable();
-  uint id = table->getPropList(parent->getImpl()->getOID());
+  uint32_t id = table->getPropList(parent->getImpl()->getOID());
   return id;
 }
 
-uint dbPropertyItr::end(dbObject* /* unused: parent */) const
+uint32_t dbPropertyItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbPropertyItr::next(uint id, ...) const
+uint32_t dbPropertyItr::next(uint32_t id, ...) const
 {
-  _dbProperty* prop = _prop_tbl->getPtr(id);
+  _dbProperty* prop = prop_tbl_->getPtr(id);
   return prop->next_;
 }
 
-dbObject* dbPropertyItr::getObject(uint id, ...)
+dbObject* dbPropertyItr::getObject(uint32_t id, ...)
 {
-  return _prop_tbl->getPtr(id);
+  return prop_tbl_->getPtr(id);
 }
 
 }  // namespace odb

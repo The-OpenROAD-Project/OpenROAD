@@ -14,6 +14,7 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frViaDef.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRCMap.h"
@@ -191,7 +192,7 @@ void FlexGR::initLayerPitch()
               << "  line-2-Via Pitch = " << std::fixed << std::setprecision(5)
               << minLine2ViaPitch
                      / (double) (design_->getTopBlock()->getDBUPerUU())
-              << std::endl;
+              << '\n';
     if (trackPitches_[zIdx] < minLine2ViaPitch) {
       std::cout << "Warning: Track pitch is too small compared with line-2-via "
                    "pitch\n";
@@ -211,7 +212,7 @@ void FlexGR::initGCell()
   if (gcellPatterns.empty()) {
     auto layer = design_->getTech()->getLayer(2);
     auto pitch = layer->getPitch();
-    std::cout << std::endl
+    std::cout << '\n'
               << "Generating GCell with size = 15 tracks, using layer "
               << layer->getName() << " pitch  = "
               << pitch / (double) (design_->getTopBlock()->getDBUPerUU())
@@ -248,7 +249,7 @@ void FlexGR::initGCell()
 
 void FlexGR::initCMap()
 {
-  std::cout << std::endl << "initializing congestion map...\n";
+  std::cout << '\n' << "initializing congestion map...\n";
   auto cmap = std::make_unique<FlexGRCMap>(design_, router_cfg_);
   cmap->setLayerTrackPitches(trackPitches_);
   cmap->setLayerLine2ViaPitches(line2ViaPitches_);
@@ -274,7 +275,7 @@ void FlexGRWorker::initBoundary()
       if (cptr->hasNet()) {
         initBoundary_splitPathSeg(cptr);
       } else {
-        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
+        std::cout << "Error: initNetObjs hasNet() empty\n";
       }
     }
   }
@@ -467,18 +468,18 @@ void FlexGRWorker::initNets_roots(
       if (cptr->hasNet()) {
         initNetObjs_roots_pathSeg(cptr, nets, netRoots);
       } else {
-        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
+        std::cout << "Error: initNetObjs hasNet() empty\n";
       }
     } else if (rptr->typeId() == grcVia) {
       auto cptr = static_cast<grVia*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_roots_via(cptr, nets, netRoots);
       } else {
-        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
+        std::cout << "Error: initNetObjs hasNet() empty\n";
       }
     } else {
-      std::cout << rptr->typeId() << std::endl;
-      std::cout << "Error: initNetObjs unsupported type" << std::endl;
+      std::cout << rptr->typeId() << '\n';
+      std::cout << "Error: initNetObjs unsupported type\n";
     }
   }
 }
@@ -796,8 +797,7 @@ void FlexGRWorker::initNet_updateCMap(grNet* net, bool isAdd)
             }
           }
         } else {
-          std::cout << "Error: non-colinear pathSeg in updateCMap_net"
-                    << std::endl;
+          std::cout << "Error: non-colinear pathSeg in updateCMap_net\n";
         }
       }
     }
@@ -1000,7 +1000,7 @@ void FlexGRWorker::initNets_regionQuery()
 
 void FlexGRWorker::initNets_printNets()
 {
-  std::cout << std::endl << "printing grNets\n";
+  std::cout << '\n' << "printing grNets\n";
   for (auto& net : nets_) {
     initNets_printNet(net.get());
   }
@@ -1013,7 +1013,7 @@ void FlexGRWorker::initNets_printNet(grNet* net)
   nodeQ.push_back(root);
 
   std::cout << "start traversing subnet of " << net->getFrNet()->getName()
-            << std::endl;
+            << '\n';
 
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
@@ -1031,7 +1031,7 @@ void FlexGRWorker::initNets_printNet(grNet* net)
     odb::Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
     std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-              << std::endl;
+              << '\n';
 
     for (auto child : node->getChildren()) {
       nodeQ.push_back(child);
@@ -1042,7 +1042,7 @@ void FlexGRWorker::initNets_printNet(grNet* net)
 void FlexGRWorker::initNets_printFNets(
     frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots)
 {
-  std::cout << std::endl << "printing frNets\n";
+  std::cout << '\n' << "printing frNets\n";
   for (auto& [net, roots] : netRoots) {
     for (auto root : roots) {
       initNets_printFNet(root);
@@ -1056,7 +1056,7 @@ void FlexGRWorker::initNets_printFNet(frNode* root)
   nodeQ.push_back(root);
 
   std::cout << "start traversing subnet of " << root->getNet()->getName()
-            << std::endl;
+            << '\n';
 
   bool isRoot = true;
 
@@ -1076,7 +1076,7 @@ void FlexGRWorker::initNets_printFNet(frNode* root)
     odb::Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
     std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-              << std::endl;
+              << '\n';
 
     if (isRoot || node->getType() == frNodeTypeEnum::frcSteiner) {
       for (auto child : node->getChildren()) {

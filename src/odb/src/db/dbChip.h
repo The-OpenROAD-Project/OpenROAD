@@ -4,13 +4,16 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
+// User Code Begin Includes
+#include <list>
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -19,6 +22,7 @@ class _dbDatabase;
 class dbPropertyItr;
 class _dbNameCache;
 class dbBlockItr;
+class dbChipCallBackObj;
 class _dbProperty;
 class _dbChipRegion;
 class _dbMarkerCategory;
@@ -42,7 +46,7 @@ class _dbChip : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* name_;
-  uint type_;
+  uint32_t type_;
   Point offset_;
   int width_;
   int height_;
@@ -75,6 +79,10 @@ class _dbChip : public _dbObject
   dbTable<_dbChipRegion>* chip_region_tbl_;
   dbTable<_dbMarkerCategory>* marker_categories_tbl_;
   dbId<_dbChip> next_entry_;
+
+  // User Code Begin Fields
+  std::list<dbChipCallBackObj*> callbacks_;
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChip& obj);

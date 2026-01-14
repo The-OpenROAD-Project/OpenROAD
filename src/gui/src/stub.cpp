@@ -92,9 +92,7 @@ void Renderer::redraw()
 {
 }
 
-Renderer::~Renderer()
-{
-}
+Renderer::~Renderer() = default;
 
 SpectrumGenerator::SpectrumGenerator(double scale) : scale_(scale)
 {

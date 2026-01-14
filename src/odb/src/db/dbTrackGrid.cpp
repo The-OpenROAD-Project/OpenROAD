@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 #include "dbBlock.h"
@@ -19,8 +20,8 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace odb {
 
@@ -89,7 +90,7 @@ const std::vector<int>& dbTrackGrid::getGridX()
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
 
   if (grid->grid_x_.empty()) {
-    uint i;
+    uint32_t i;
 
     for (i = 0; i < grid->x_origin_.size(); ++i) {
       int j;
@@ -109,12 +110,7 @@ const std::vector<int>& dbTrackGrid::getGridX()
       return grid->grid_x_;
     }
 
-    // sort coords in asscending order
-    std::sort(grid->grid_x_.begin(), grid->grid_x_.end());
-
-    // remove any duplicates
-    auto new_end = std::unique(grid->grid_x_.begin(), grid->grid_x_.end());
-    grid->grid_x_.erase(new_end, grid->grid_x_.end());
+    utl::sort_and_unique(grid->grid_x_);
   }
 
   return grid->grid_x_;
@@ -133,7 +129,7 @@ const std::vector<int>& dbTrackGrid::getGridY()
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
 
   if (grid->grid_y_.empty()) {
-    uint i;
+    uint32_t i;
 
     for (i = 0; i < grid->y_origin_.size(); ++i) {
       int j;
@@ -153,12 +149,7 @@ const std::vector<int>& dbTrackGrid::getGridY()
       return grid->grid_y_;
     }
 
-    // sort coords in asscending order
-    std::sort(grid->grid_y_.begin(), grid->grid_y_.end());
-
-    // remove any duplicates
-    auto new_end = std::unique(grid->grid_y_.begin(), grid->grid_y_.end());
-    grid->grid_y_.erase(new_end, grid->grid_y_.end());
+    utl::sort_and_unique(grid->grid_y_);
   }
 
   return grid->grid_y_;
@@ -331,7 +322,7 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
   return (dbTrackGrid*) grid;
 }
 
-dbTrackGrid* dbTrackGrid::getTrackGrid(dbBlock* block_, uint dbid_)
+dbTrackGrid* dbTrackGrid::getTrackGrid(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbTrackGrid*) block->track_grid_tbl_->getPtr(dbid_);
@@ -349,14 +340,14 @@ void _dbTrackGrid::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["x_origin"].add(x_origin_);
-  info.children_["x_count"].add(x_count_);
-  info.children_["x_step"].add(x_step_);
-  info.children_["y_origin"].add(y_origin_);
-  info.children_["y_count"].add(y_count_);
-  info.children_["y_step"].add(y_step_);
-  info.children_["first_mask"].add(first_mask_);
-  info.children_["samemask"].add(samemask_);
+  info.children["x_origin"].add(x_origin_);
+  info.children["x_count"].add(x_count_);
+  info.children["x_step"].add(x_step_);
+  info.children["y_origin"].add(y_origin_);
+  info.children["y_count"].add(y_count_);
+  info.children["y_step"].add(y_step_);
+  info.children["first_mask"].add(first_mask_);
+  info.children["samemask"].add(samemask_);
 }
 
 void _dbTrackGrid::getAverageTrackPattern(bool is_x,

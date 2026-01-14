@@ -225,6 +225,12 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
+  // Sanity checkers
+  int checkSanity();
+  void checkSanityDrvrVertexEdges(const Pin* pin) const;
+  void checkSanityDrvrVertexEdges(const odb::dbObject* term) const;
+  void checkSanityDrvrVertexEdges() const;
+
   using Sta::netSlack;
   using Sta::replaceCell;
 

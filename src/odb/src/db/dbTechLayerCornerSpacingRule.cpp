@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <utility>
 
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -110,8 +111,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
   stream >> obj.min_length_;
   stream >> obj.except_notch_length_;
   // User Code Begin >>
-  stream >> obj._width_tbl;
-  stream >> obj._spacing_tbl;
+  stream >> obj.width_tbl_;
+  stream >> obj.spacing_tbl_;
   // User Code End >>
   return stream;
 }
@@ -130,8 +131,8 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.min_length_;
   stream << obj.except_notch_length_;
   // User Code Begin <<
-  stream << obj._width_tbl;
-  stream << obj._spacing_tbl;
+  stream << obj.width_tbl_;
+  stream << obj.spacing_tbl_;
   // User Code End <<
   return stream;
 }
@@ -142,8 +143,8 @@ void _dbTechLayerCornerSpacingRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["width_tbl"].add(_width_tbl);
-  info.children_["spacing_tbl"].add(_spacing_tbl);
+  info.children["width_tbl"].add(width_tbl_);
+  info.children["spacing_tbl"].add(spacing_tbl_);
   // User Code End collectMemInfo
 }
 
@@ -401,33 +402,33 @@ bool dbTechLayerCornerSpacingRule::isCornerToCorner() const
 }
 
 // User Code Begin dbTechLayerCornerSpacingRulePublicMethods
-void dbTechLayerCornerSpacingRule::addSpacing(uint width,
-                                              uint spacing1,
-                                              uint spacing2)
+void dbTechLayerCornerSpacingRule::addSpacing(uint32_t width,
+                                              uint32_t spacing1,
+                                              uint32_t spacing2)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  obj->_width_tbl.push_back(width);
-  obj->_spacing_tbl.push_back(std::make_pair(spacing1, spacing2));
+  obj->width_tbl_.push_back(width);
+  obj->spacing_tbl_.push_back(std::make_pair(spacing1, spacing2));
 }
 
 void dbTechLayerCornerSpacingRule::getSpacingTable(
     std::vector<std::pair<int, int>>& tbl)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  tbl = obj->_spacing_tbl;
+  tbl = obj->spacing_tbl_;
 }
 
 void dbTechLayerCornerSpacingRule::getWidthTable(std::vector<int>& tbl)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
-  tbl = obj->_width_tbl;
+  tbl = obj->width_tbl_;
 }
 
 void dbTechLayerCornerSpacingRule::setType(CornerType _type)
 {
   _dbTechLayerCornerSpacingRule* obj = (_dbTechLayerCornerSpacingRule*) this;
 
-  obj->flags_.corner_type = (uint) _type;
+  obj->flags_.corner_type = (uint32_t) _type;
 }
 
 dbTechLayerCornerSpacingRule::CornerType dbTechLayerCornerSpacingRule::getType()
@@ -449,7 +450,7 @@ dbTechLayerCornerSpacingRule* dbTechLayerCornerSpacingRule::create(
 
 dbTechLayerCornerSpacingRule*
 dbTechLayerCornerSpacingRule::getTechLayerCornerSpacingRule(dbTechLayer* inly,
-                                                            uint dbid)
+                                                            uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCornerSpacingRule*)

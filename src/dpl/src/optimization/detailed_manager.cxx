@@ -199,7 +199,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       continue;
     }
 
-    std::sort(blockages.begin(), blockages.end(), compareBlockages());
+    std::ranges::sort(blockages, compareBlockages());
 
     std::stack<Blockage> s;
     s.push(blockages[0]);
@@ -225,9 +225,8 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
     // Intervals need to be sorted, but they are currently in reverse order. Can
     // either resort or reverse.
-    std::sort(blockages.begin(),
-              blockages.end(),
-              compareBlockages());  // Sort to get them left to right.
+    std::ranges::sort(blockages,
+                      compareBlockages());  // Sort to get them left to right.
   }
 }
 
@@ -1171,7 +1170,7 @@ int DetailedMgr::checkOverlapInSegments()
 
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesX());
+    std::ranges::sort(temp, compareNodesX());
 
     for (int j = 1; j < temp.size(); j++) {
       const Node* ndi = temp[j - 1];
@@ -1224,7 +1223,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesL());
+    std::ranges::sort(temp, compareNodesL());
 
     for (int j = 1; j < temp.size(); j++) {
       const Node* ndl = temp[j - 1];
@@ -1420,7 +1419,7 @@ int DetailedMgr::checkRegionAssignment()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesL());
+    std::ranges::sort(temp, compareNodesL());
 
     for (const Node* ndi : temp) {
       if (ndi->getGroupId() != segments_[s]->getRegId()) {
@@ -1874,7 +1873,7 @@ bool DetailedMgr::shift(std::vector<Node*>& cells,
   // Change cell widths to be in terms of number of sites.
   std::vector<int> swid;
   swid.resize(ncells);
-  std::fill(swid.begin(), swid.end(), 0);
+  std::ranges::fill(swid, 0);
   int rsites = 0;
   for (int i = 0; i < ncells; i++) {
     const Node* ndi = cells[i];

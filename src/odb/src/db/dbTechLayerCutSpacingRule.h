@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -21,7 +22,7 @@ struct dbTechLayerCutSpacingRuleFlags
   bool same_net : 1;
   bool same_metal : 1;
   bool same_via : 1;
-  uint cut_spacing_type : 3;
+  uint32_t cut_spacing_type : 3;
   bool stack : 1;
   bool orthogonal_spacing_valid : 1;
   bool above_width_enclosure_valid : 1;
@@ -37,7 +38,7 @@ struct dbTechLayerCutSpacingRuleFlags
   bool above_width_valid : 1;
   bool mask_overlap : 1;
   bool wrong_direction : 1;
-  uint adjacent_cuts : 2;
+  uint32_t adjacent_cuts : 2;
   bool exact_aligned : 1;
   bool cut_class_to_all : 1;
   bool no_prl : 1;
@@ -56,7 +57,7 @@ struct dbTechLayerCutSpacingRuleFlags
   bool prl_valid : 1;
   bool below : 1;
   bool par_within_enclosure_valid : 1;
-  uint spare_bits : 22;
+  uint32_t spare_bits : 22;
 };
 
 class _dbTechLayerCutSpacingRule : public _dbObject
@@ -89,15 +90,15 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   int extension_;
   int eol_width_;
   // EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts
-  uint num_cuts_;
+  uint32_t num_cuts_;
   // WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin
   int within_;
   // WITHIN cutWithin cutWithin2
   int second_within_;
   dbId<_dbTechLayerCutClassRule> cut_class_;
-  uint two_cuts_;
-  uint prl_;
-  uint par_length_;
+  uint32_t two_cuts_;
+  uint32_t prl_;
+  uint32_t par_length_;
   int cut_area_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj);

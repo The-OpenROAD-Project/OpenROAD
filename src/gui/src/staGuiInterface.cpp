@@ -891,8 +891,7 @@ void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
 {
   sta::Search* search = sta_->search();
   const sta::PathGroupSeq path_groups = search->pathGroups(path_end);
-  const auto iter
-      = std::find(path_groups.begin(), path_groups.end(), path_group_);
+  const auto iter = std::ranges::find(path_groups, path_group_);
   if (iter != path_groups.end()) {
     if (clk_ != nullptr) {
       sta::Path* path = path_end->path();
@@ -1348,7 +1347,7 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
 
   for (const auto& [level, pin_list] : map) {
     int next_level = level + 1;
-    if (map.count(next_level) == 0) {
+    if (!map.contains(next_level)) {
       break;
     }
 
@@ -1417,11 +1416,12 @@ void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
 
   for (const auto& path : paths) {
     for (const auto& node : path->getPathNodes()) {
-      auto pin_find = std::find_if(pin_order.begin(),
-                                   pin_order.end(),
-                                   [&node](const TimingPathNode* other) {
-                                     return node->getPin() == other->getPin();
-                                   });
+      auto pin_find
+          = std::ranges::find_if(pin_order,
+
+                                 [&node](const TimingPathNode* other) {
+                                   return node->getPin() == other->getPin();
+                                 });
 
       if (pin_find != pin_order.end()) {
         TimingPathNode* pin_node = *pin_find;
@@ -1435,10 +1435,9 @@ void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
   }
 
   for (auto& [level, pin_list] : map) {
-    std::sort(
-        pin_list.begin(), pin_list.end(), [](const auto& l, const auto& r) {
-          return l->getPathSlack() > r->getPathSlack();
-        });
+    std::ranges::sort(pin_list, [](const auto& l, const auto& r) {
+      return l->getPathSlack() > r->getPathSlack();
+    });
   }
 }
 

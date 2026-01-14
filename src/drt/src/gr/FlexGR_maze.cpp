@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "odb/geom.h"
@@ -124,7 +125,7 @@ void FlexGRWorker::route_mazeIterInit()
                   cptr->getGrNet()->setRipup(true);
                 } else {
                   std::cout << "Error: route_mazeIterInit hasGrNet() empty"
-                            << std::endl;
+                            << '\n';
                 }
               }
             }
@@ -342,7 +343,7 @@ void FlexGRWorker::modCong_pathSeg(grPathSeg* pathSeg, bool isAdd)
       }
     }
   } else {
-    std::cout << "Error: non-colinear pathSeg in modCong_pathSeg" << std::endl;
+    std::cout << "Error: non-colinear pathSeg in modCong_pathSeg\n";
   }
 }
 
@@ -496,7 +497,7 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
   nodeQ.push_back(root);
 
   std::cout << "start traversing subnet of " << net->getFrNet()->getName()
-            << std::endl;
+            << '\n';
 
   while (!nodeQ.empty()) {
     auto node = nodeQ.front();
@@ -514,7 +515,7 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
     odb::Point loc = node->getLoc();
     frLayerNum lNum = node->getLayerNum();
     std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-              << std::endl;
+              << '\n';
 
     for (auto child : node->getChildren()) {
       nodeQ.push_back(child);
@@ -530,7 +531,7 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
       odb::Point loc = child->getLoc();
       frLayerNum lNum = child->getLayerNum();
       std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-                << std::endl;
+                << '\n';
     }
   }
 }
@@ -607,14 +608,13 @@ grNode* FlexGRWorker::routeNet_getNextDst(
                   << std::flush;
       }
       gridGraph_.getPoint(mazeIdx.x(), mazeIdx.y(), pt);
-      frCoord dx = std::max(std::max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
-      frCoord dy = std::max(std::max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
-      frCoord dz
-          = std::max(std::max(gridGraph_.getZHeight(ccMazeIdx1.z())
-                                  - gridGraph_.getZHeight(mazeIdx.z()),
-                              gridGraph_.getZHeight(mazeIdx.z())
-                                  - gridGraph_.getZHeight(ccMazeIdx2.z())),
-                     0);
+      frCoord dx = std::max({ll.x() - pt.x(), pt.x() - ur.x(), 0});
+      frCoord dy = std::max({ll.y() - pt.y(), pt.y() - ur.y(), 0});
+      frCoord dz = std::max({gridGraph_.getZHeight(ccMazeIdx1.z())
+                                 - gridGraph_.getZHeight(mazeIdx.z()),
+                             gridGraph_.getZHeight(mazeIdx.z())
+                                 - gridGraph_.getZHeight(ccMazeIdx2.z()),
+                             0});
       if (dx + dy + dz < currDist) {
         currDist = dx + dy + dz;
         nextDst = node;
@@ -627,7 +627,7 @@ grNode* FlexGRWorker::routeNet_getNextDst(
 
   if (nextDst == nullptr) {
     std::cout << "Error: nextDst node is nullptr\n" << std::flush;
-    std::cout << nextDst->getNet()->getFrNet()->getName() << std::endl;
+    std::cout << nextDst->getNet()->getFrNet()->getName() << '\n';
   }
   return nextDst;
 }
@@ -653,7 +653,7 @@ grNode* FlexGRWorker::routeNet_postAstarUpdate(
     gridGraph_.setSrc(mi);
     localConnComps.insert(mi);
   } else {
-    std::cout << "Error: routeNet_postAstarUpdate path is empty" << std::endl;
+    std::cout << "Error: routeNet_postAstarUpdate path is empty\n";
   }
 
   for (int i = 0; i < (int) path.size() - 1; i++) {

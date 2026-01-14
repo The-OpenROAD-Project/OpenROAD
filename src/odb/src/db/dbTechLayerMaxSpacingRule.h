@@ -4,10 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;

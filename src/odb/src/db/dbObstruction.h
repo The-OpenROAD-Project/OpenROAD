@@ -3,9 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,14 +18,14 @@ class dbOStream;
 
 struct _dbObstructionFlags
 {
-  uint slot_obs : 1;
-  uint fill_obs : 1;
-  uint pushed_down : 1;
-  uint has_min_spacing : 1;
-  uint has_effective_width : 1;
-  uint except_pg_nets : 1;
-  uint _is_system_reserved : 1;
-  uint spare_bits : 25;
+  uint32_t slot_obs : 1;
+  uint32_t fill_obs : 1;
+  uint32_t pushed_down : 1;
+  uint32_t has_min_spacing : 1;
+  uint32_t has_effective_width : 1;
+  uint32_t except_pg_nets : 1;
+  uint32_t is_system_reserved : 1;
+  uint32_t spare_bits : 25;
 };
 
 class _dbObstruction : public _dbObject
@@ -32,7 +33,6 @@ class _dbObstruction : public _dbObject
  public:
   _dbObstruction(_dbDatabase*, const _dbObstruction& o);
   _dbObstruction(_dbDatabase*);
-  ~_dbObstruction();
 
   bool operator==(const _dbObstruction& rhs) const;
   bool operator!=(const _dbObstruction& rhs) const { return !operator==(rhs); }

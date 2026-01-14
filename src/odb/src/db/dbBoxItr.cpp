@@ -4,6 +4,7 @@
 #include "dbBoxItr.h"
 
 #include <cassert>
+#include <cstdint>
 
 #include "dbBPin.h"
 #include "dbBTerm.h"
@@ -24,30 +25,30 @@
 
 namespace odb {
 
-template <uint page_size>
+template <uint32_t page_size>
 bool dbBoxItr<page_size>::reversible() const
 {
   return true;
 }
 
-template <uint page_size>
+template <uint32_t page_size>
 bool dbBoxItr<page_size>::orderReversed() const
 {
   return true;
 }
 
-template <uint page_size>
+template <uint32_t page_size>
 void dbBoxItr<page_size>::reverse(dbObject* parent)
 {
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
       _dbRegion* region = (_dbRegion*) parent;
-      uint id = region->boxes_;
-      uint list = 0;
+      uint32_t id = region->boxes_;
+      uint32_t list = 0;
 
       while (id != 0) {
         _dbBox* b = box_tbl_->getPtr(id);
-        uint n = b->next_box_;
+        uint32_t n = b->next_box_;
         b->next_box_ = list;
         list = id;
         id = n;
@@ -62,12 +63,12 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbViaObj: {
       _dbVia* via = (_dbVia*) parent;
-      uint id = via->boxes_;
-      uint list = 0;
+      uint32_t id = via->boxes_;
+      uint32_t list = 0;
 
       while (id != 0) {
         _dbBox* b = box_tbl_->getPtr(id);
-        uint n = b->next_box_;
+        uint32_t n = b->next_box_;
         b->next_box_ = list;
         list = id;
         id = n;
@@ -79,12 +80,12 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbMasterObj: {
       _dbMaster* master = (_dbMaster*) parent;
-      uint id = master->obstructions_;
-      uint list = 0;
+      uint32_t id = master->obstructions_;
+      uint32_t list = 0;
 
       while (id != 0) {
         _dbBox* b = box_tbl_->getPtr(id);
-        uint n = b->next_box_;
+        uint32_t n = b->next_box_;
         b->next_box_ = list;
         list = id;
         id = n;
@@ -96,12 +97,12 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbMPinObj: {
       _dbMPin* pin = (_dbMPin*) parent;
-      uint id = pin->geoms_;
-      uint list = 0;
+      uint32_t id = pin->geoms_;
+      uint32_t list = 0;
 
       while (id != 0) {
         _dbBox* b = box_tbl_->getPtr(id);
-        uint n = b->next_box_;
+        uint32_t n = b->next_box_;
         b->next_box_ = list;
         list = id;
         id = n;
@@ -113,29 +114,29 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbTechViaObj: {
       _dbTechVia* via = (_dbTechVia*) parent;
-      uint id = via->_boxes;
-      uint list = 0;
+      uint32_t id = via->boxes_;
+      uint32_t list = 0;
 
       while (id != 0) {
         _dbBox* b = box_tbl_->getPtr(id);
-        uint n = b->next_box_;
+        uint32_t n = b->next_box_;
         b->next_box_ = list;
         list = id;
         id = n;
       }
 
-      via->_boxes = list;
+      via->boxes_ = list;
       break;
     }
 
     case dbBPinObj: {
       _dbBPin* bpin = (_dbBPin*) parent;
-      uint id = bpin->boxes_;
-      uint list = 0;
+      uint32_t id = bpin->boxes_;
+      uint32_t list = 0;
 
       while (id != 0) {
         _dbBox* b = box_tbl_->getPtr(id);
-        uint n = b->next_box_;
+        uint32_t n = b->next_box_;
         b->next_box_ = list;
         list = id;
         id = n;
@@ -147,12 +148,12 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
 
     case dbPolygonObj: {
       _dbPolygon* pbox = (_dbPolygon*) parent;
-      uint id = pbox->boxes_;
-      uint list = 0;
+      uint32_t id = pbox->boxes_;
+      uint32_t list = 0;
 
       while (id != 0) {
         _dbBox* b = box_tbl_->getPtr(id);
-        uint n = b->next_box_;
+        uint32_t n = b->next_box_;
         b->next_box_ = list;
         list = id;
         id = n;
@@ -167,17 +168,17 @@ void dbBoxItr<page_size>::reverse(dbObject* parent)
   }
 }
 
-template <uint page_size>
-uint dbBoxItr<page_size>::sequential() const
+template <uint32_t page_size>
+uint32_t dbBoxItr<page_size>::sequential() const
 {
   return 0;
 }
 
-template <uint page_size>
-uint dbBoxItr<page_size>::size(dbObject* parent) const
+template <uint32_t page_size>
+uint32_t dbBoxItr<page_size>::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbBoxItr::begin(parent); id != dbBoxItr::end(parent);
        id = dbBoxItr::next(id)) {
@@ -187,8 +188,8 @@ uint dbBoxItr<page_size>::size(dbObject* parent) const
   return cnt;
 }
 
-template <uint page_size>
-uint dbBoxItr<page_size>::begin(dbObject* parent) const
+template <uint32_t page_size>
+uint32_t dbBoxItr<page_size>::begin(dbObject* parent) const
 {
   switch (parent->getImpl()->getType()) {
     case dbRegionObj: {
@@ -237,7 +238,7 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
 
     case dbTechViaObj: {
       _dbTechVia* via = (_dbTechVia*) parent;
-      return via->_boxes;
+      return via->boxes_;
     }
 
     case dbBPinObj: {
@@ -257,14 +258,14 @@ uint dbBoxItr<page_size>::begin(dbObject* parent) const
   return 0;
 }
 
-template <uint page_size>
-uint dbBoxItr<page_size>::end(dbObject* /* unused: parent */) const
+template <uint32_t page_size>
+uint32_t dbBoxItr<page_size>::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-template <uint page_size>
-uint dbBoxItr<page_size>::next(uint id, ...) const
+template <uint32_t page_size>
+uint32_t dbBoxItr<page_size>::next(uint32_t id, ...) const
 {
   _dbBox* box = box_tbl_->getPtr(id);
 
@@ -312,8 +313,8 @@ uint dbBoxItr<page_size>::next(uint id, ...) const
   return 0;
 }
 
-template <uint page_size>
-dbObject* dbBoxItr<page_size>::getObject(uint id, ...)
+template <uint32_t page_size>
+dbObject* dbBoxItr<page_size>::getObject(uint32_t id, ...)
 {
   return box_tbl_->getPtr(id);
 }

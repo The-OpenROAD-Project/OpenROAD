@@ -109,7 +109,7 @@ void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["class_name"].add(class_name_);
+  info.children["class_name"].add(class_name_);
   // User Code End collectMemInfo
 }
 
@@ -265,7 +265,7 @@ dbTechLayerEolKeepOutRule* dbTechLayerEolKeepOutRule::create(
 
 dbTechLayerEolKeepOutRule*
 dbTechLayerEolKeepOutRule::getTechLayerEolKeepOutRule(dbTechLayer* inly,
-                                                      uint dbid)
+                                                      uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerEolKeepOutRule*) layer->eol_keep_out_rules_tbl_->getPtr(

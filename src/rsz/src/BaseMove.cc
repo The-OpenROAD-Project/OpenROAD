@@ -18,6 +18,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -27,6 +28,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
+#include "sta/UnorderedMap.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
 
@@ -557,7 +559,7 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
     if (port == nullptr) {
       // reject the transform if we can't estimate
       // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                  "because pin {} has no liberty port",
                  db_network_->name(params.driver), db_network_->name(pin));
       // clang-format on
@@ -581,7 +583,7 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
     if ((accept_if_slack_improves && fuzzyGreater(old_slack, new_slack))
         || (!accept_if_slack_improves && new_slack < 0)) {
       // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                  "because pin {} will have a violating or worse slack of {}",
                  db_network_->name(params.driver), db_network_->name(pin),
                  new_slack);
@@ -982,14 +984,26 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
 
 LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
 {
-  LibertyCellSeq buffer_sizes;
   if (base->isBuffer()) {
+    if (!resizer_->buffer_fast_sizes_.contains(base)) {
+      return LibertyCellSeq();
+    }
+
+    LibertyCellSeq buffer_sizes;
+    buffer_sizes.reserve(resizer_->buffer_fast_sizes_.size());
     for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
       buffer_sizes.push_back(buffer);
     }
-    if (resizer_->buffer_fast_sizes_.count(base) == 0) {
-      return LibertyCellSeq();
-    }
+    // Sort output to ensure deterministic order
+    std::ranges::sort(buffer_sizes,
+                      [](LibertyCell const* c1, LibertyCell const* c2) {
+                        auto area1 = c1->area();
+                        auto area2 = c2->area();
+                        if (area1 != area2) {
+                          return area1 < area2;
+                        }
+                        return c1->id() < c2->id();
+                      });
     return buffer_sizes;
   }
   return resizer_->getSwappableCells(base);

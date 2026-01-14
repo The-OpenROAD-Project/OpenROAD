@@ -11,7 +11,6 @@
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -144,7 +143,7 @@ class _dbTechAntennaAreaElement
   friend dbIStream& operator>>(dbIStream& stream,
                                _dbTechAntennaAreaElement*& aae);
 
-  _dbTechAntennaAreaElement(const _dbTechAntennaAreaElement& e);
+  _dbTechAntennaAreaElement(const _dbTechAntennaAreaElement& e) = default;
 
   bool operator==(const _dbTechAntennaAreaElement& rhs) const;
   bool operator!=(const _dbTechAntennaAreaElement& rhs) const

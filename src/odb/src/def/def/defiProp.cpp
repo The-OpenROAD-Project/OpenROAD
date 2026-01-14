@@ -66,9 +66,9 @@ defiProp::~defiProp()
 
 void defiProp::setPropType(const char* typ, const char* string)
 {
-  int len;
   propType_ = (char*) typ;
-  if ((len = strlen(string) + 1) > nameSize_) {
+  const int len = strlen(string) + 1;
+  if (len > nameSize_) {
     bumpName(len);
   }
   strcpy(propName_, defData->DEFCASE(string));
@@ -104,10 +104,10 @@ void defiProp::setPropString()
 
 void defiProp::setPropNameMapString(const char* string)
 {
-  int len;
   dataType_ = 'N';
   hasNameMapString_ = 1;
-  if ((len = strlen(string) + 1) > stringLength_) {
+  const int len = strlen(string) + 1;
+  if (len > stringLength_) {
     bumpSize(len);
   }
   strcpy(stringData_, defData->DEFCASE(string));
@@ -115,9 +115,9 @@ void defiProp::setPropNameMapString(const char* string)
 
 void defiProp::setPropQString(const char* string)
 {
-  int len;
   dataType_ = 'Q';
-  if ((len = strlen(string) + 1) > stringLength_) {
+  const int len = strlen(string) + 1;
+  if (len > stringLength_) {
     bumpSize(len);
   }
   strcpy(stringData_, defData->DEFCASE(string));

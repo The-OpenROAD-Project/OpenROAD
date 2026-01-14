@@ -1,0 +1,216 @@
+module top (clk,
+    in1,
+    in2,
+    in3,
+    in4,
+    out1,
+    out2);
+ input clk;
+ input in1;
+ input in2;
+ input in3;
+ input in4;
+ output out1;
+ output out2;
+
+ wire m2_out1;
+ wire m1_out2;
+ wire m1_out1;
+ wire n1;
+ wire n2;
+
+ BUF_X1 buf1 (.A(m1_out1),
+    .Z(n1));
+ BUF_X1 buf2 (.A(m2_out1),
+    .Z(n2));
+ DFF_X1 dff_out1 (.D(n1),
+    .CK(clk),
+    .Q(out1));
+ DFF_X1 dff_out2 (.D(n2),
+    .CK(clk),
+    .Q(out2));
+ mid1 u_mid1 (.clk(clk),
+    .in1(in1),
+    .in2(in2),
+    .out1(m1_out1),
+    .out2(m1_out2));
+ mid2 u_mid2 (.clk(clk),
+    .in1(in3),
+    .in2(in4),
+    .out1(m2_out1));
+endmodule
+module mid1 (clk,
+    in1,
+    in2,
+    out1,
+    out2);
+ input clk;
+ input in1;
+ input in2;
+ output out1;
+ output out2;
+
+ wire l2_out2;
+ wire l2_out1;
+ wire l1_out;
+ wire n_before_loads3;
+ wire n_inferred4;
+
+ BUF_X1 b_inferred4 (.A(l2_out1),
+    .Z(n_inferred4));
+ BUF_X1 b_before_loads3 (.A(l2_out1),
+    .Z(n_before_loads3));
+ DFF_X1 dff_load1 (.D(n_before_loads3),
+    .CK(clk));
+ DFF_X1 dff_load10 (.D(l2_out1),
+    .CK(clk));
+ DFF_X1 dff_load2 (.D(n_before_loads3),
+    .CK(clk));
+ DFF_X1 dff_load3 (.D(n_inferred4),
+    .CK(clk));
+ DFF_X1 dff_load4 (.D(n_inferred4),
+    .CK(clk));
+ DFF_X1 dff_load5 (.D(l2_out1),
+    .CK(clk));
+ DFF_X1 dff_load6 (.D(l2_out1),
+    .CK(clk));
+ DFF_X1 dff_load7 (.D(l2_out1),
+    .CK(clk));
+ DFF_X1 dff_load8 (.D(l2_out1),
+    .CK(clk));
+ DFF_X1 dff_load9 (.D(l2_out1),
+    .CK(clk));
+ DFF_X1 dff_out1 (.D(l1_out),
+    .CK(clk),
+    .Q(out1));
+ DFF_X1 dff_out2 (.D(l2_out1),
+    .CK(clk),
+    .Q(out2));
+ leaf1 u_leaf1 (.clk(clk),
+    .in1(in1),
+    .out1(l1_out));
+ leaf2 u_leaf2 (.clk(clk),
+    .in1(in2),
+    .out1(l2_out1),
+    .out2(l2_out2));
+endmodule
+module leaf1 (clk,
+    in1,
+    out1);
+ input clk;
+ input in1;
+ output out1;
+
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n_after_drvr1;
+ wire n_before_load2;
+
+ BUF_X1 b_before_load2 (.A(n2),
+    .Z(n_before_load2));
+ BUF_X1 b_after_drvr1 (.A(n_after_drvr1),
+    .Z(n1));
+ BUF_X1 buf1 (.A(n1),
+    .Z(n2));
+ BUF_X1 buf2 (.A(n_before_load2),
+    .Z(n3));
+ DFF_X1 dff1 (.D(in1),
+    .CK(clk),
+    .Q(n_after_drvr1));
+ DFF_X1 dff2 (.D(n3),
+    .CK(clk),
+    .Q(out1));
+endmodule
+module leaf2 (clk,
+    in1,
+    out1,
+    out2);
+ input clk;
+ input in1;
+ output out1;
+ output out2;
+
+ wire n1;
+ wire n2;
+ wire n3;
+
+ BUF_X1 buf1 (.A(n1),
+    .Z(n2));
+ BUF_X1 buf2 (.A(n1),
+    .Z(n3));
+ DFF_X1 dff1 (.D(in1),
+    .CK(clk),
+    .Q(n1));
+ DFF_X1 dff2 (.D(n2),
+    .CK(clk),
+    .Q(out1));
+ DFF_X1 dff3 (.D(n3),
+    .CK(clk),
+    .Q(out2));
+endmodule
+module mid2 (clk,
+    in1,
+    in2,
+    out1);
+ input clk;
+ input in1;
+ input in2;
+ output out1;
+
+ wire l4_out;
+ wire l3_out;
+ wire n1;
+
+ BUF_X1 buf1 (.A(l3_out),
+    .Z(n1));
+ DFF_X1 dff_out1 (.D(n1),
+    .CK(clk),
+    .Q(out1));
+ leaf3 u_leaf3 (.clk(clk),
+    .in1(in1),
+    .out1(l3_out));
+ leaf4 u_leaf4 (.clk(clk),
+    .in1(in2),
+    .out1(l4_out));
+endmodule
+module leaf3 (clk,
+    in1,
+    out1);
+ input clk;
+ input in1;
+ output out1;
+
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
+
+ BUF_X1 buf1 (.A(n1),
+    .Z(n2));
+ BUF_X1 buf2 (.A(n2),
+    .Z(n3));
+ BUF_X1 buf3 (.A(n3),
+    .Z(n4));
+ BUF_X1 buf4 (.A(n4),
+    .Z(n5));
+ DFF_X1 dff1 (.D(in1),
+    .CK(clk),
+    .Q(n1));
+ DFF_X1 dff2 (.D(n5),
+    .CK(clk),
+    .Q(out1));
+endmodule
+module leaf4 (clk,
+    in1,
+    out1);
+ input clk;
+ input in1;
+ output out1;
+
+
+ DFF_X1 dff1 (.D(in1),
+    .CK(clk),
+    .Q(out1));
+endmodule

@@ -458,11 +458,9 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
           }
         }
 
-        std::stable_sort(targets.begin(),
-                         targets.end(),
-                         [](const auto& lhs, const auto& rhs) {
-                           return distance(lhs) < distance(rhs);
-                         });
+        std::ranges::stable_sort(targets, [](const auto& lhs, const auto& rhs) {
+          return distance(lhs) < distance(rhs);
+        });
 
         debugPrint(
             logger_,
@@ -735,7 +733,7 @@ std::set<odb::Point> RDLRouter::generateTerminalAccessPoints(
 template <class InputIt>
 static odb::Point getValidGridPoint(
     InputIt begin,
-    InputIt end,
+    const InputIt& end,
     const std::function<bool(const odb::Point&)>& valid)
 {
   odb::Point snap;
@@ -952,12 +950,9 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 
     for (const auto& vertex : vertex_to_modify) {
       for (const auto& edge : getVertexEdges(vertex)) {
-        if (std::find(
-                vertex_to_modify.begin(), vertex_to_modify.end(), edge.m_source)
+        if (std::ranges::find(vertex_to_modify, edge.m_source)
                 != vertex_to_modify.end()
-            && std::find(vertex_to_modify.begin(),
-                         vertex_to_modify.end(),
-                         edge.m_target)
+            && std::ranges::find(vertex_to_modify, edge.m_target)
                    != vertex_to_modify.end()) {
           access.removed_edges.push_back(removeGraphEdge(edge));
         }
@@ -1889,6 +1884,18 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
 
   for (auto* iterm : net->getITerms()) {
     if (!iterm->getInst()->isPlaced()) {
+      continue;
+    }
+
+    auto* prop = odb::dbBoolProperty::find(iterm, kRouteProperty);
+    if (prop && !prop->getValue()) {
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Router",
+                 2,
+                 "Skipping termininal on {}: {}",
+                 net->getName(),
+                 iterm->getName());
       continue;
     }
 

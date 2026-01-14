@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbPagedVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -19,7 +20,7 @@ class dbOStream;
 ///
 /// Each object must have the following "named" fields:
 ///
-///     uint          id_
+///     uint32_t          id_
 ///     dbId<T>       next_entry_
 ///
 //////////////////////////////////////////////////////////
@@ -29,7 +30,7 @@ class dbIntHashTable
  public:
   dbIntHashTable();
   dbIntHashTable(const dbIntHashTable<T>& t);
-  ~dbIntHashTable();
+
   bool operator==(const dbIntHashTable<T>& rhs) const;
   bool operator!=(const dbIntHashTable<T>& rhs) const
   {
@@ -40,14 +41,14 @@ class dbIntHashTable
   void shrinkTable();
   void setTable(dbTable<T>* table) { obj_tbl_ = table; }
 
-  T* find(uint id);
-  int hasMember(uint id);
+  T* find(uint32_t id);
+  int hasMember(uint32_t id);
   void insert(T* object);
   void remove(T* object);
 
   // PERSISTANT-MEMBERS
   dbPagedVector<dbId<T>, 256, 8> hash_tbl_;
-  uint num_entries_;
+  uint32_t num_entries_;
 
   // NON-PERSISTANT-MEMBERS
   dbTable<T>* obj_tbl_;

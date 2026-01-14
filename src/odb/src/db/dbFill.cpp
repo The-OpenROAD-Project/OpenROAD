@@ -3,6 +3,8 @@
 
 #include "dbFill.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -32,7 +34,7 @@ bool _dbFill::operator==(const _dbFill& rhs) const
     return false;
   }
 
-  if (_rect != rhs._rect) {
+  if (rect_ != rhs.rect_) {
     return false;
   }
 
@@ -41,11 +43,11 @@ bool _dbFill::operator==(const _dbFill& rhs) const
 
 bool _dbFill::operator<(const _dbFill& rhs) const
 {
-  if (_rect < rhs._rect) {
+  if (rect_ < rhs.rect_) {
     return true;
   }
 
-  if (_rect > rhs._rect) {
+  if (rect_ > rhs.rect_) {
     return false;
   }
 
@@ -92,7 +94,7 @@ _dbTechLayer* _dbFill::getTechLayer() const
 void dbFill::getRect(Rect& rect)
 {
   _dbFill* fill = (_dbFill*) this;
-  rect = fill->_rect;
+  rect = fill->rect_;
 }
 
 bool dbFill::needsOPC()
@@ -101,7 +103,7 @@ bool dbFill::needsOPC()
   return fill->flags_.opc;
 }
 
-uint dbFill::maskNumber()
+uint32_t dbFill::maskNumber()
 {
   _dbFill* fill = (_dbFill*) this;
   return fill->flags_.mask_id;
@@ -115,7 +117,7 @@ dbTechLayer* dbFill::getTechLayer()
 
 dbFill* dbFill::create(dbBlock* block,
                        bool needs_opc,
-                       uint mask_number,
+                       uint32_t mask_number,
                        dbTechLayer* layer,
                        int x1,
                        int y1,
@@ -127,7 +129,7 @@ dbFill* dbFill::create(dbBlock* block,
   fill->flags_.opc = needs_opc;
   fill->flags_.mask_id = mask_number;
   fill->flags_.layer_id = layer->getImpl()->getOID();
-  fill->_rect.init(x1, y1, x2, y2);
+  fill->rect_.init(x1, y1, x2, y2);
 
   for (auto cb : block_internal->callbacks_) {
     cb->inDbFillCreate((dbFill*) fill);
@@ -152,7 +154,7 @@ dbSet<dbFill>::iterator dbFill::destroy(dbSet<dbFill>::iterator& itr)
   return next;
 }
 
-dbFill* dbFill::getFill(dbBlock* block_, uint dbid_)
+dbFill* dbFill::getFill(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbFill*) block->fill_tbl_->getPtr(dbid_);

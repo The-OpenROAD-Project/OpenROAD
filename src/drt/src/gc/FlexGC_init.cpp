@@ -11,6 +11,7 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "db/drObj/drNet.h"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
@@ -989,7 +990,7 @@ void FlexGCWorker::Impl::initPA1()
 void FlexGCWorker::Impl::updateGCWorker()
 {
   if (!getDRWorker()) {
-    std::cout << "Error: updateGCWorker expects a valid DRWorker" << std::endl;
+    std::cout << "Error: updateGCWorker expects a valid DRWorker\n";
     exit(1);
   }
 

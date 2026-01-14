@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace LefParser {

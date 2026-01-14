@@ -14,6 +14,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
@@ -449,7 +450,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
       ndrSpc2
           = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
     }
-    reqSpcVal = std::max(reqSpcVal, std::max(ndrSpc1, ndrSpc2));
+    reqSpcVal = std::max({reqSpcVal, ndrSpc1, ndrSpc2});
   }
 
   // no violation if spacing satisfied
@@ -873,10 +874,8 @@ void FlexGCWorker::Impl::checkMetalSpacing()
 {
   if (targetNet_) {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -910,10 +909,8 @@ void FlexGCWorker::Impl::checkMetalSpacing()
     }
   } else {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -1164,24 +1161,24 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
   frCoord candX = -1, candY = -1;
   // ensure this is a real corner to corner case
   if (con->getCornerType() == frCornerTypeEnum::CONVEX) {
-    if (cornerX >= (candX = gtl::xh(*rect))) {
-      if (cornerY >= (candY = gtl::yh(*rect))) {
+    if (candX = gtl::xh(*rect); cornerX >= candX) {
+      if (candY = gtl::yh(*rect); cornerY >= candY) {
         if (corner->getDir() != frCornerDirEnum::SW) {
           return;
         }
-      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+      } else if (candY = gtl::yl(*rect); cornerY <= candY) {
         if (corner->getDir() != frCornerDirEnum::NW) {
           return;
         }
       } else {
         return;
       }
-    } else if (cornerX <= (candX = gtl::xl(*rect))) {
-      if (cornerY >= (candY = gtl::yh(*rect))) {
+    } else if (candX = gtl::xl(*rect); cornerX <= candX) {
+      if (candY = gtl::yh(*rect); cornerY >= candY) {
         if (corner->getDir() != frCornerDirEnum::SE) {
           return;
         }
-      } else if (cornerY <= (candY = gtl::yl(*rect))) {
+      } else if (candY = gtl::yl(*rect); cornerY <= candY) {
         if (corner->getDir() != frCornerDirEnum::NE) {
           return;
         }
@@ -1371,10 +1368,8 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
   }
   if (targetNet_) {
     // layer --> net --> polygon --> corner
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING
@@ -1398,10 +1393,8 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing()
     }
   } else {
     // layer --> net --> polygon --> corner
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING
@@ -2131,7 +2124,7 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
 
   // sort constraints to ensure the smallest rect width will have
   // preference above other rect width statements
-  std::sort(constraints.begin(), constraints.end(), sort_cmp);
+  std::ranges::sort(constraints, sort_cmp);
 
   bool check_rect_width = true;
 
@@ -2234,7 +2227,7 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
     gtl::get_max_rectangles(rects, polySet);
     if (rects.size() == 1) {
       int min_width = db_rule->getRectWidth();
-      auto rect = rects.back();
+      const auto& rect = rects.back();
       auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
       auto yLen = gtl::delta(rect, gtl::VERTICAL);
       bool apply_rect_width_area = false;
@@ -2418,10 +2411,8 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
 {
   if (targetNet_) {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -2433,10 +2424,8 @@ void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
     }
   } else {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -3644,10 +3633,8 @@ void FlexGCWorker::Impl::checkCutSpacing()
 {
   if (targetNet_) {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::CUT) {
@@ -3662,10 +3649,8 @@ void FlexGCWorker::Impl::checkCutSpacing()
     }
   } else {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::CUT) {
@@ -3823,7 +3808,7 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
     drNet* net = nullptr;
     auto& workerRegionQuery = getDRWorker()->getWorkerRegionQuery();
     odb::Rect markerBBox = marker->getBBox();
-    if ((int) markerBBox.maxDXDY() < (frCoord) layer->getWidth()) {
+    if (markerBBox.maxDXDY() < (frCoord) layer->getWidth()) {
       continue;
     }
     workerRegionQuery.query(markerBBox, lNum, results);
@@ -4032,10 +4017,8 @@ void FlexGCWorker::Impl::checkMinimumCut()
 {
   if (targetNet_) {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -4052,10 +4035,8 @@ void FlexGCWorker::Impl::checkMinimumCut()
     }
   } else {
     // layer --> net --> polygon --> maxrect
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {

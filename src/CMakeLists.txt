@@ -175,6 +175,7 @@ add_compile_options(
   -ffp-contract=off
   # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
   $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
+  $<$<CXX_COMPILER_ID:AppleClang>:-Wmismatched-tags>
   $<$<BOOL:${ASAN}>:-fsanitize=address>
   $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
   $<$<BOOL:${ASAN}>:-g>

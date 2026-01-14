@@ -155,7 +155,7 @@ class RepairSetup : public sta::dbStaState
   int removed_buffer_count_ = 0;
   double initial_design_area_ = 0;
 
-  std::vector<BaseMove*> move_sequence;
+  std::vector<BaseMove*> move_sequence_;
 
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();

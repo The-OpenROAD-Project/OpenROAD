@@ -4,26 +4,26 @@
 #ifdef BAZEL
 %{
 
-#include <boost/stacktrace.hpp>
 #include <cstdlib>
 #include <sstream>
 
+#include "boost/stacktrace/stacktrace.hpp"
 #include "utl/Logger.h"
 %}
 #else
 %{
-
-#include <boost/stacktrace.hpp>
+  
 #include <cstdlib>
 #include <sstream>
 
+#include "boost/stacktrace/stacktrace.hpp"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 %}
 #endif
 
 %exception {
-  try { $function }
+  try { $action }
   catch (std::bad_alloc &) {
     fprintf(stderr, "Error: out of memory.");
     abort();

@@ -3,6 +3,7 @@
 
 #include "dbSite.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -60,7 +61,7 @@ bool _dbSite::operator==(const _dbSite& rhs) const
     return false;
   }
 
-  if (flags_._class != rhs.flags_._class) {
+  if (flags_.site_class != rhs.flags_.site_class) {
     return false;
   }
 
@@ -120,7 +121,7 @@ _dbSite::_dbSite(_dbDatabase*)
   flags_.x_symmetry = 0;
   flags_.y_symmetry = 0;
   flags_.R90_symmetry = 0;
-  flags_._class = dbSiteClass::CORE;
+  flags_.site_class = dbSiteClass::CORE;
   flags_.is_hybrid = 0;
   flags_.spare_bits = 0;
 }
@@ -213,13 +214,13 @@ bool dbSite::getSymmetryR90()
 dbSiteClass dbSite::getClass()
 {
   _dbSite* site = (_dbSite*) this;
-  return dbSiteClass(site->flags_._class);
+  return dbSiteClass(site->flags_.site_class);
 }
 
 void dbSite::setClass(dbSiteClass type)
 {
   _dbSite* site = (_dbSite*) this;
-  site->flags_._class = type.getValue();
+  site->flags_.site_class = type.getValue();
 }
 
 void dbSite::setRowPattern(const RowPattern& row_pattern)
@@ -282,7 +283,7 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
   return (dbSite*) site;
 }
 
-dbSite* dbSite::getSite(dbLib* lib, uint oid)
+dbSite* dbSite::getSite(dbLib* lib, uint32_t oid)
 {
   _dbLib* lib_impl = (_dbLib*) lib;
   return (dbSite*) lib_impl->site_tbl_->getPtr(oid);
@@ -293,13 +294,13 @@ void _dbSite::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["row_pattern"].add(row_pattern_);
+  info.children["name"].add(name_);
+  info.children["row_pattern"].add(row_pattern_);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 {
-  uint* bit_field = (uint*) &site.flags_;
+  uint32_t* bit_field = (uint32_t*) &site.flags_;
   stream << *bit_field;
   stream << site.name_;
   stream << site.height_;
@@ -311,14 +312,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 
 dbIStream& operator>>(dbIStream& stream, _dbSite& site)
 {
-  uint* bit_field = (uint*) &site.flags_;
+  uint32_t* bit_field = (uint32_t*) &site.flags_;
   stream >> *bit_field;
   stream >> site.name_;
   stream >> site.height_;
   stream >> site.width_;
   stream >> site.next_entry_;
   _dbDatabase* db = site.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_site_row_pattern)) {
+  if (db->isSchema(kSchemaSiteRowPattern)) {
     stream >> site.row_pattern_;
   }
   return stream;

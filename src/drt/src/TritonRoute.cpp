@@ -26,6 +26,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
 #include "distributed/drUpdate.h"
@@ -59,7 +60,6 @@
 using odb::dbTechLayerType;
 
 namespace drt {
-
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
                          utl::CallBackHandler* callback_handler,
@@ -572,13 +572,14 @@ void TritonRoute::initDesign()
       || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
   }
+  const bool design_exists = getDesign()->getTopBlock() != nullptr;
   io::Parser parser(db_, getDesign(), logger_, router_cfg_.get());
-  if (getDesign()->getTopBlock() != nullptr) {
+  if (design_exists) {
     parser.updateDesign();
-    return;
+  } else {
+    parser.readTechAndLibs(db_);
+    parser.readDesign(db_);
   }
-  parser.readTechAndLibs(db_);
-  parser.readDesign(db_);
   auto tech = getDesign()->getTech();
 
   if (!router_cfg_->VIAINPIN_BOTTOMLAYER_NAME.empty()) {
@@ -628,9 +629,11 @@ void TritonRoute::initDesign()
                     router_cfg_->REPAIR_PDN_LAYER_NAME);
     }
   }
-  parser.postProcess();
-  db_callback_->addOwner(db_->getChip()->getBlock());
-  initGraphics();
+  if (!design_exists) {
+    parser.postProcess();
+    db_callback_->addOwner(db_->getChip()->getBlock());
+    initGraphics();
+  }
 }
 
 void TritonRoute::initGraphics()
@@ -1123,6 +1126,12 @@ void TritonRoute::addInstancePAData(frInst* inst)
   }
 }
 
+void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
+{
+  if (pa_) {
+    pa_->addAvoidViaDef(via_def);
+  }
+}
 void TritonRoute::updateDirtyPAData()
 {
   if (pa_) {
@@ -1277,7 +1286,7 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
                    "Non-routing layer {} can't be set unidirectional",
                    layerName);
   }
-  design_->getTech()->setUnidirectionalLayer(dbLayer);
+  router_cfg_->unidirectional_layers_.insert(dbLayer);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)

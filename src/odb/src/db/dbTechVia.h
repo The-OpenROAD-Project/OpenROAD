@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/dbViaParams.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -21,10 +22,10 @@ class dbOStream;
 
 struct _dbTechViaFlags
 {
-  uint default_via : 1;
-  uint top_of_stack : 1;
-  uint has_params : 1;
-  uint spare_bits : 29;
+  uint32_t default_via : 1;
+  uint32_t top_of_stack : 1;
+  uint32_t has_params : 1;
+  uint32_t spare_bits : 29;
 };
 
 class _dbTechVia : public _dbObject
@@ -44,7 +45,7 @@ class _dbTechVia : public _dbObject
   char* name_;
   char* pattern_;
   dbId<_dbBox> bbox_;  // Caching the bbox speeds up defin imports.
-  dbId<_dbBox> _boxes;
+  dbId<_dbBox> boxes_;
   dbId<_dbTechLayer> top_;     // Caching the layer speeds up defin imports.
   dbId<_dbTechLayer> bottom_;  // Caching the layer speeds up defin imports.
   dbId<_dbTechNonDefaultRule> non_default_rule_;

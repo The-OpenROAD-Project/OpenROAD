@@ -3,6 +3,7 @@
 
 #include "dpl/OptMirror.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <unordered_set>
@@ -18,7 +19,6 @@ namespace dpl {
 
 using utl::DPL;
 
-using std::sort;
 using std::unordered_set;
 
 using odb::dbITerm;
@@ -63,11 +63,10 @@ void OptimizeMirroring::run()
   }
 
   // Sort net boxes by net hpwl.
-  sort(sorted_boxes.begin(),
-       sorted_boxes.end(),
-       [](NetBox* net_box1, NetBox* net_box2) -> bool {
-         return net_box1->hpwl() > net_box2->hpwl();
-       });
+  std::ranges::sort(sorted_boxes,
+                    [](NetBox* net_box1, NetBox* net_box2) -> bool {
+                      return net_box1->hpwl() > net_box2->hpwl();
+                    });
 
   std::vector<odb::dbInst*> mirror_candidates
       = findMirrorCandidates(sorted_boxes);

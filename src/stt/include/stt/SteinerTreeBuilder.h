@@ -81,8 +81,8 @@ class SteinerTreeBuilder
   void setMinHPWLAlpha(int min_hpwl, float alpha);
 
   Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
-  int wirelength(Tree t);
-  void plottree(Tree t);
+  int wirelength(const Tree& t);
+  void plottree(const Tree& t);
   Tree flutes(const std::vector<int>& xs,
               const std::vector<int>& ys,
               const std::vector<int>& s,

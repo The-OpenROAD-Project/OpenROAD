@@ -100,6 +100,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestAlgorithms",
+    srcs = [
+        "cpp/TestAlgorithms.cpp",
+    ],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestSuppressStdout",
     srcs = ["cpp/TestSuppressStdout.cpp"],
     deps = [

@@ -22,7 +22,7 @@ using utl::DPL;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
-using utl::format_as;
+using utl::format_as;  // NOLINT(misc-unused-using-decls)
 
 static odb::dbTechLayer* getImplant(dbMaster* master)
 {
@@ -68,13 +68,9 @@ dbMasterSeq Opendp::filterFillerMasters(const dbMasterSeq& filler_masters) const
   }
 
   // Remove fillers with PAD or BLOCK classes
-  filtered_masters.erase(std::remove_if(filtered_masters.begin(),
-                                        filtered_masters.end(),
-                                        [](dbMaster* master) -> bool {
-                                          return master->isPad()
-                                                 || master->isBlock();
-                                        }),
-                         filtered_masters.end());
+  std::erase_if(filtered_masters, [](dbMaster* master) -> bool {
+    return master->isPad() || master->isBlock();
+  });
 
   if (logger_->debugCheck(DPL, "filler", 2)) {
     debugPrint(logger_,
@@ -105,11 +101,9 @@ void Opendp::fillerPlacement(const dbMasterSeq& filler_masters,
   auto filler_masters_by_implant = splitByImplant(filtered_masters);
 
   for (auto& [layer, masters] : filler_masters_by_implant) {
-    std::sort(masters.begin(),
-              masters.end(),
-              [](dbMaster* master1, dbMaster* master2) {
-                return master1->getWidth() > master2->getWidth();
-              });
+    std::ranges::sort(masters, [](dbMaster* master1, dbMaster* master2) {
+      return master1->getWidth() > master2->getWidth();
+    });
   }
 
   gap_fillers_.clear();
@@ -217,10 +211,11 @@ void Opendp::placeRowFillers(GridY row,
       for (dbMaster* master : fillers) {
         std::string inst_name
             = prefix + to_string(row.v) + "_" + to_string(k.v);
-        odb::dbInst* inst = odb::dbInst::create(block_,
-                                                master,
-                                                inst_name.c_str(),
-                                                /* physical_only */ true);
+        odb::dbInst* inst
+            = odb::dbInst::makeUniqueDbInst(block_,
+                                            master,
+                                            inst_name.c_str(),
+                                            /* physical_only */ true);
         DbuX x{core_.xMin() + gridToDbu(k, site_width)};
         DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
         inst->setOrient(orient);

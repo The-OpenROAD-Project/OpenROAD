@@ -114,12 +114,8 @@ class IntervalT
   // Update() is always safe, FastUpdate() assumes existing values
   void Update(int newVal)
   {
-    if (newVal < low_) {
-      low_ = newVal;
-    }
-    if (newVal > high_) {
-      high_ = newVal;
-    }
+    low_ = std::min(newVal, low_);
+    high_ = std::max(newVal, high_);
   }
   void FastUpdate(int newVal)
   {
@@ -336,7 +332,7 @@ class BoxT
   {
     return {x_.GetNearestPointTo(pt.x()), y_.GetNearestPointTo(pt.y())};
   }
-  BoxT GetNearestPointsTo(BoxT val) const
+  BoxT GetNearestPointsTo(const BoxT& val) const
   {
     return {x_.GetNearestPointsTo(val.x_), y_.GetNearestPointsTo(val.y_)};
   }

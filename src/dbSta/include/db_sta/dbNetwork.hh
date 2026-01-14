@@ -73,7 +73,7 @@ class dbNetwork : public ConcreteNetwork
   CellPortIterator* portIterator(const Cell* cell) const override;
 
   // Sanity checkers
-  void checkAxioms(odb::dbObject* obj = nullptr) const;
+  int checkAxioms(odb::dbObject* obj = nullptr) const;
   void checkSanityModBTerms() const;
   void checkSanityModITerms() const;
   void checkSanityModuleInsts() const;
@@ -119,6 +119,7 @@ class dbNetwork : public ConcreteNetwork
                dbITerm*& iterm,
                dbBTerm*& bterm,
                dbModITerm*& moditerm) const;
+  dbObject* staToDb(const Pin* pin) const;
 
   dbNet* staToDb(const Net* net) const;
   void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
@@ -145,6 +146,12 @@ class dbNetwork : public ConcreteNetwork
   Pin* dbToSta(dbBTerm* bterm) const;
   Term* dbToStaTerm(dbBTerm* bterm) const;
   Pin* dbToSta(dbITerm* iterm) const;
+
+  ///
+  /// Convert dbObject* to Pin* if it's a terminal type (dbITerm or dbBTerm or
+  /// dbModITerm)
+  ///
+  Pin* dbToSta(dbObject* term_obj) const;
   Instance* dbToSta(dbInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
@@ -187,9 +194,15 @@ class dbNetwork : public ConcreteNetwork
   bool isConnected(const Net* net, const Pin* pin) const override;
   bool isConnected(const Net* net1, const Net* net2) const override;
   bool isConnected(const Pin* source_pin, const Pin* dest_pin) const;
+
+  // DEPRECATED.
+  // - Use dbNet::hierarchicalConnect(dbObject* driver, dbObject* load) instead.
+  // - The new API can handle both dbBTerm and dbIterm.
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name = "net");
+
+  // This API is still needed if dbModITerm connection is required.
   void hierarchicalConnect(dbITerm* source_pin,
                            dbModITerm* dest_pin,
                            const char* connection_name = "net");
@@ -394,9 +407,9 @@ class dbNetwork : public ConcreteNetwork
 
   // hierarchy handler, set in openroad tested in network child traverserser
 
-  void setHierarchy() { hierarchy_ = true; }
-  void disableHierarchy() { hierarchy_ = false; }
-  bool hasHierarchy() const { return hierarchy_; }
+  void setHierarchy() { db_->setHierarchy(true); }
+  void disableHierarchy() { db_->setHierarchy(false); }
+  bool hasHierarchy() const { return db_->hasHierarchy(); }
   bool hasHierarchicalElements() const;
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
@@ -416,6 +429,9 @@ class dbNetwork : public ConcreteNetwork
   bool hasMembers(const Port* port) const override;
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
+  PinSet* drivers(const Pin* pin) override;
+  PinSet* drivers(const Net* net) override;
+  void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   using Network::cell;
@@ -470,7 +486,6 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
-  bool hierarchy_ = false;
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;

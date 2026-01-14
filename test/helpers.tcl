@@ -20,12 +20,23 @@ proc make_result_dir { } {
   return $result_dir
 }
 
+proc make_result_test_dir { subdir } {
+  variable result_dir
+  set full_path [file join $result_dir $subdir]
+  if { ![file exists $full_path] } {
+    file mkdir $full_path
+  }
+  return $full_path
+}
+
 proc make_result_file { filename } {
   variable result_dir
 
   make_result_dir
 
   set root [file rootname $filename]
+  set dir [file dirname $filename]
+  make_result_test_dir $dir
   set ext [file extension $filename]
   set filename "$root-tcl$ext"
   return [file join $result_dir $filename]
@@ -55,7 +66,7 @@ proc write_verilog_for_eqy { test stage remove_cells } {
 # Argument Description
 # lib_dir:         specifies directory with Verilog library files to be read
 #                  alongside tested design
-# liberty_files:   specifies list of SDK liberty files to be read
+# liberty_files:   specifies list of PDK liberty files to be read
 # remove_cells:    specifies remove_cells mode for write_verilog_for_eqy call
 
 sta::define_cmd_args "run_equivalence_test" {
@@ -102,7 +113,7 @@ proc run_equivalence_test { test args } {
   if { $liberty_files != "" } {
     puts $outfile "read_liberty -ignore_miss_func -overwrite $liberty_files"
   }
-  puts $outfile "read_verilog -sv $after_netlist $lib_files"
+  puts $outfile "read_verilog -sv $before_netlist $lib_files"
   puts $outfile "prep -top $top_cell -flatten"
   puts $outfile "memory_map\n"
 

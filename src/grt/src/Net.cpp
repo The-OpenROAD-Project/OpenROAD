@@ -4,11 +4,13 @@
 #include "Net.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -93,22 +95,15 @@ void Net::destroyPins()
 
 void Net::destroyITermPin(odb::dbITerm* iterm)
 {
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == getITermName(iterm);
-                             }),
-              pins_.end());
+  std::erase_if(pins_, [&](const Pin& pin) {
+    return pin.getName() == getITermName(iterm);
+  });
 }
 
 void Net::destroyBTermPin(odb::dbBTerm* bterm)
 {
-  pins_.erase(std::remove_if(pins_.begin(),
-                             pins_.end(),
-                             [&](const Pin& pin) {
-                               return pin.getName() == bterm->getName();
-                             }),
-              pins_.end());
+  std::erase_if(
+      pins_, [&](const Pin& pin) { return pin.getName() == bterm->getName(); });
 }
 
 int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
@@ -133,7 +128,7 @@ int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
 bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
 {
   int bterms_above_max_layer = getNumBTermsAboveMaxLayer(max_routing_layer);
-  odb::uint wire_cnt = 0, via_cnt = 0;
+  uint32_t wire_cnt = 0, via_cnt = 0;
   net_->getWireCount(wire_cnt, via_cnt);
 
   if (wire_cnt != 0 || via_cnt == 0) {

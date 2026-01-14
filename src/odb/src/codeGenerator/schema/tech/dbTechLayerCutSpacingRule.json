@@ -24,7 +24,7 @@
       "name": "same_via"
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "cut_spacing_type",
       "flags": [
         "no-get",
@@ -166,7 +166,7 @@
       "default": 0
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "adjacent_cuts",
       "bits": 2
     },
@@ -175,7 +175,7 @@
       "name": "exact_aligned"
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "num_cuts_",
       "comment": "// EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts",
       "default": 0
@@ -269,17 +269,17 @@
       "name": "par_within_enclosure_valid"
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "two_cuts_",
       "default": 0
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "prl_",
       "default": 0
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "par_length_",
       "default": 0
     },

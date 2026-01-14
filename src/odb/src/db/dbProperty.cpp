@@ -30,9 +30,6 @@ template class dbTable<_dbProperty>;
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
-  if (flags_.type != rhs.flags_.type) {
-    return false;
-  }
   if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
@@ -91,7 +88,7 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& obj)
     case kDbBoolProp: {
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
-      uint boolean;
+      uint32_t boolean;
       stream >> boolean;
       obj.value_ = static_cast<bool>(boolean);
       break;
@@ -137,7 +134,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj)
     case kDbBoolProp:
       // Older versions of the spec treated bools as uints
       // retain backwards compatability
-      stream << static_cast<uint>(std::get<bool>(obj.value_));
+      stream << static_cast<uint32_t>(std::get<bool>(obj.value_));
       break;
 
     case kDbIntProp:
@@ -163,7 +160,7 @@ void _dbProperty::collectMemInfo(MemInfo& info)
 
   // User Code Begin collectMemInfo
   if (flags_.type == kDbStringProp) {
-    info.children_["string"].add(std::get<std::string>(value_));
+    info.children["string"].add(std::get<std::string>(value_));
   }
   // User Code End collectMemInfo
 }
@@ -259,7 +256,7 @@ next_object:
   switch (object->getObjectType()) {
     case dbDatabaseObj: {
       _dbDatabase* db = (_dbDatabase*) object;
-      return db->_prop_tbl;
+      return db->prop_tbl_;
     }
 
     case dbChipObj: {
@@ -293,21 +290,21 @@ next_object:
 
 _dbProperty* _dbProperty::createProperty(dbObject* object_,
                                          const char* name,
-                                         _PropTypeEnum type)
+                                         PropTypeEnum type)
 {
   _dbObject* object = (_dbObject*) object_;
   dbTable<_dbProperty>* propTable = getPropTable(object);
 
   // Create property
   _dbProperty* prop = propTable->create();
-  uint oid = object->getOID();
+  uint32_t oid = object->getOID();
   prop->flags_.type = type;
   prop->flags_.owner_type = object->getType();
   prop->owner_ = oid;
 
   // Get name-id, increment reference count
   _dbNameCache* cache = getNameCache(object);
-  uint name_id = cache->addName(name);
+  uint32_t name_id = cache->addName(name);
   prop->name_ = name_id;
 
   // Link property into owner's prop-list
@@ -354,7 +351,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
 {
   _dbNameCache* cache = _dbProperty::getNameCache(object);
 
-  uint name_id = cache->findName(name);
+  uint32_t name_id = cache->findName(name);
 
   if (name_id == 0) {
     return nullptr;
@@ -375,7 +372,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
 {
   _dbNameCache* cache = _dbProperty::getNameCache(object);
 
-  uint name_id = cache->findName(name);
+  uint32_t name_id = cache->findName(name);
 
   if (name_id == 0) {
     return nullptr;
@@ -385,7 +382,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
     _dbProperty* p_impl = (_dbProperty*) p;
 
     if ((p_impl->name_ == name_id)
-        && (p_impl->flags_.type == (_PropTypeEnum) type)) {
+        && (p_impl->flags_.type == (PropTypeEnum) type)) {
       return p;
     }
   }
@@ -410,7 +407,7 @@ void dbProperty::destroy(dbProperty* prop_)
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->owner_);
   dbId<_dbProperty> cur = propList;
-  uint oid = prop->getOID();
+  uint32_t oid = prop->getOID();
 
   while (cur) {
     _dbProperty* p = propTable->getPtr(cur);
@@ -441,7 +438,7 @@ void dbProperty::destroy(dbProperty* prop_)
 void dbProperty::destroyProperties(dbObject* obj)
 {
   _dbObject* object = obj->getImpl();
-  uint oid = object->getOID();
+  uint32_t oid = object->getOID();
   dbObjectTable* objTable = object->getTable();
   dbId<_dbProperty> cur = objTable->getPropList(oid);
 

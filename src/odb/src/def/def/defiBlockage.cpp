@@ -151,7 +151,6 @@ void defiBlockage::setPlacement()
 {
   /* 10/29/2001 - Wanda da Rosa, new enhancement */
   hasPlacement_ = 1;
-  return;
 }
 
 void defiBlockage::setComponent(const char* name)

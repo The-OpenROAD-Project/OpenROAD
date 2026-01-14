@@ -31,7 +31,7 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         3
-    final |   +200.0% |       0 |       2 |             1 |         0
+    final |   +233.3% |       0 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
@@ -39,7 +39,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Driver    length delay
 wire1/Z manhtn 569.8 steiner 569.8 0.04
 u2/Z manhtn 488.7 steiner 488.7 0.03
-wire2/Z manhtn 441.4 steiner 441.4 0.03
+wire2/Z manhtn 441.2 steiner 441.2 0.03
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -53,15 +53,15 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    1.008    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-  38.151    0.081    0.096    0.112 ^ u2/Z (BUF_X1)
-            0.089    0.033    0.145 ^ wire2/A (CLKBUF_X3)
-  36.574    0.026    0.072    0.217 ^ wire2/Z (CLKBUF_X3)
-            0.041    0.027    0.244 ^ wire1/A (BUF_X4)
-  42.829    0.020    0.041    0.285 ^ wire1/Z (BUF_X4)
-            0.047    0.036    0.320 ^ out1 (out)
-                              0.320   data arrival time
+  40.130    0.084    0.098    0.115 ^ u2/Z (BUF_X1)
+            0.094    0.036    0.151 ^ wire2/A (BUF_X4)
+  36.564    0.019    0.042    0.193 ^ wire2/Z (BUF_X4)
+            0.036    0.026    0.219 ^ wire1/A (BUF_X4)
+  42.829    0.020    0.040    0.259 ^ wire1/Z (BUF_X4)
+            0.047    0.036    0.295 ^ out1 (out)
+                              0.295   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 
 
-[INFO RSZ-0026] Removed 3 buffers.
+[INFO RSZ-0026] Removed 4 buffers.

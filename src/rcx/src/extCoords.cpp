@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
+
 #include "parse.h"
 #include "rcx/array1.h"
 #include "rcx/extSpef.h"
@@ -9,17 +11,17 @@
 
 namespace rcx {
 
-void extSpef::initNodeCoordTables(uint memChunk)
+void extSpef::initNodeCoordTables(uint32_t memChunk)
 {
-  _capNodeTable = new Ath__array1D<uint>(memChunk);
-  _xCoordTable = new Ath__array1D<double>(memChunk);
-  _yCoordTable = new Ath__array1D<double>(memChunk);
-  _x1CoordTable = new Ath__array1D<int>(memChunk);
-  _x2CoordTable = new Ath__array1D<int>(memChunk);
-  _y1CoordTable = new Ath__array1D<int>(memChunk);
-  _y2CoordTable = new Ath__array1D<int>(memChunk);
-  _levelTable = new Ath__array1D<uint>(memChunk);
-  _idTable = new Ath__array1D<uint>(16);
+  _capNodeTable = new Array1D<uint32_t>(memChunk);
+  _xCoordTable = new Array1D<double>(memChunk);
+  _yCoordTable = new Array1D<double>(memChunk);
+  _x1CoordTable = new Array1D<int>(memChunk);
+  _x2CoordTable = new Array1D<int>(memChunk);
+  _y1CoordTable = new Array1D<int>(memChunk);
+  _y2CoordTable = new Array1D<int>(memChunk);
+  _levelTable = new Array1D<uint32_t>(memChunk);
+  _idTable = new Array1D<uint32_t>(16);
 }
 
 void extSpef::resetNodeCoordTables()
@@ -56,7 +58,7 @@ void extSpef::deleteNodeCoordTables()
   _idTable = nullptr;
 }
 
-bool extSpef::readNodeCoords(uint cpos)
+bool extSpef::readNodeCoords(uint32_t cpos)
 {
   //*CONN
   //*I *877470:SI_x5000y1770 I *C 3.54000 125.970 *L 2.41675 *D R00SPX00HA0
@@ -66,37 +68,38 @@ bool extSpef::readNodeCoords(uint cpos)
   //*N *2:4 *C 3.07000 120.190 M4
   //*N *2:5 *C 3.07000 120.190 M1
 
-  uint wCnt = _parser->getWordCnt();
+  uint32_t wCnt = _parser->getWordCnt();
   if (cpos + 3 > wCnt) {
     return false;
   }
 
-  uint id1;
-  uint tokenCnt = _nodeParser->mkWords(_parser->get(1));
+  uint32_t id1;
+  uint32_t tokenCnt = _nodeParser->mkWords(_parser->get(1));
   if (tokenCnt == 2 && _nodeParser->isDigit(1, 0)) {  // internal node
     id1 = _nodeParser->getInt(0, 1);
     if (id1 != _tmpNetSpefId) {
       return false;
     }
   }
-  uint netId = 0;
-  uint nodeId = getCapNodeId(_parser->get(1), nullptr, &netId);
+  uint32_t netId = 0;
+  uint32_t nodeId = getCapNodeId(_parser->get(1), nullptr, &netId);
   double x = _parser->getDouble(cpos + 1);
   double y = _parser->getDouble(cpos + 2);
 
   _capNodeTable->add(nodeId);
   _xCoordTable->add(x);
   _yCoordTable->add(y);
-  uint level = 0;
+  uint32_t level = 0;
   _levelTable->add(level);
   return true;
 }
 
-int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
+int extSpef::findNodeIndexFromNodeCoords(
+    uint32_t targetCapNodeId)  // TO OPTIMIZE
 {
-  uint ii;
+  uint32_t ii;
   for (ii = 0; ii < _capNodeTable->getCnt(); ii++) {
-    uint capId = _capNodeTable->get(ii);
+    uint32_t capId = _capNodeTable->get(ii);
     if (capId == targetCapNodeId) {
       break;
     }
@@ -114,7 +117,7 @@ namespace rcx {
 
 void Grid::dealloc()
 {
-  for (uint ii = 0; ii <= _searchHiTrack; ii++) {
+  for (uint32_t ii = 0; ii <= _searchHiTrack; ii++) {
     Track* btrack = _trackTable[ii];
     if (btrack == nullptr) {
       continue;
@@ -132,8 +135,8 @@ void Grid::dealloc()
 
 void GridTable::dealloc()
 {
-  for (uint dir = 0; dir < _rowCnt; dir++) {
-    for (uint jj = 1; jj < _colCnt; jj++) {
+  for (uint32_t dir = 0; dir < _rowCnt; dir++) {
+    for (uint32_t jj = 1; jj < _colCnt; jj++) {
       Grid* netGrid = _gridTable[dir][jj];
       if (netGrid == nullptr) {
         continue;

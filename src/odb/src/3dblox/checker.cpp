@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <functional>
 #include <map>
 #include <ranges>
 #include <string>
@@ -13,6 +12,7 @@
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "utl/unionFind.h"
 namespace odb {
 
 std::string UnfoldedChip::getName() const
@@ -35,7 +35,8 @@ Checker::Checker(utl::Logger* logger) : logger_(logger)
 void Checker::check(odb::dbChip* chip)
 {
   for (auto chip_inst : chip->getChipInsts()) {
-    unfoldChip(chip_inst, UnfoldedChip());
+    UnfoldedChip unfolded_chip;
+    unfoldChip(chip_inst, unfolded_chip);
   }
   odb::dbMarkerCategory* category
       = odb::dbMarkerCategory::createOrReplace(chip, "3DBlox");
@@ -44,7 +45,8 @@ void Checker::check(odb::dbChip* chip)
   // checkConnectionRegions(chip, category);
 }
 
-void Checker::unfoldChip(odb::dbChipInst* chip_inst, UnfoldedChip unfolded_chip)
+void Checker::unfoldChip(odb::dbChipInst* chip_inst,
+                         UnfoldedChip& unfolded_chip)
 {
   unfolded_chip.chip_inst_path.push_back(chip_inst);
   if (chip_inst->getMasterChip()->getChipType() == dbChip::ChipType::HIER) {
@@ -71,43 +73,13 @@ void Checker::unfoldChip(odb::dbChipInst* chip_inst, UnfoldedChip unfolded_chip)
         unfolded_chip.cuboid.yMax() / chip_inst->getDb()->getDbuPerMicron(),
         unfolded_chip.cuboid.zMax() / chip_inst->getDb()->getDbuPerMicron());
     unfolded_chips_.push_back(unfolded_chip);
+    // Cuboid is overwritten in each leaf - no restoration needed
   }
+  unfolded_chip.chip_inst_path.pop_back();
 }
 void Checker::checkFloatingChips(odb::dbMarkerCategory* category)
 {
-  // Union-Find data structure
-  std::vector<int> parent(unfolded_chips_.size());
-  std::vector<int> rank(unfolded_chips_.size(), 0);
-
-  // Initialize: each chip is its own parent
-  for (size_t i = 0; i < unfolded_chips_.size(); i++) {
-    parent[i] = i;
-  }
-
-  // Find with path compression
-  std::function<int(int)> find = [&](int x) {
-    if (parent[x] != x) {
-      parent[x] = find(parent[x]);
-    }
-    return parent[x];
-  };
-
-  // Union by rank
-  auto unite = [&](int x, int y) {
-    int px = find(x);
-    int py = find(y);
-    if (px == py) {
-      return;
-    }
-    if (rank[px] < rank[py]) {
-      parent[px] = py;
-    } else if (rank[px] > rank[py]) {
-      parent[py] = px;
-    } else {
-      parent[py] = px;
-      rank[px]++;
-    }
-  };
+  utl::UnionFind uf(unfolded_chips_.size());
 
   // Check all pairs for intersection and union them
   for (size_t i = 0; i < unfolded_chips_.size(); i++) {
@@ -115,7 +87,7 @@ void Checker::checkFloatingChips(odb::dbMarkerCategory* category)
     for (size_t j = i + 1; j < unfolded_chips_.size(); j++) {
       auto cuboid_j = unfolded_chips_[j].cuboid;
       if (cuboid_i.intersects(cuboid_j)) {
-        unite(i, j);
+        uf.unite(i, j);
       }
     }
   }
@@ -123,7 +95,7 @@ void Checker::checkFloatingChips(odb::dbMarkerCategory* category)
   // Group chips by their root parent
   std::map<int, std::vector<UnfoldedChip*>> sets;
   for (size_t i = 0; i < unfolded_chips_.size(); i++) {
-    sets[find(i)].push_back(&unfolded_chips_[i]);
+    sets[uf.find(i)].push_back(&unfolded_chips_[i]);
   }
 
   if (sets.size() > 1) {

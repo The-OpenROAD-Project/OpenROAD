@@ -229,14 +229,14 @@ bool dbTechLayerAreaRule::isExceptRectangle() const
   return obj->flags_.except_rectangle;
 }
 
-void dbTechLayerAreaRule::setOverlap(uint overlap)
+void dbTechLayerAreaRule::setOverlap(uint32_t overlap)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
   obj->flags_.overlap = overlap;
 }
 
-uint dbTechLayerAreaRule::getOverlap() const
+uint32_t dbTechLayerAreaRule::getOverlap() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 

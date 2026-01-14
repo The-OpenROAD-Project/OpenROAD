@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,10 +19,10 @@ class dbOStream;
 
 struct _dbCCSegFlags
 {
-  uint spef_mark_1 : 1;
-  uint mark : 1;
-  uint inFileCnt : 4;
-  uint spare_bits : 26;
+  uint32_t spef_mark_1 : 1;
+  uint32_t mark : 1;
+  uint32_t inFileCnt : 4;
+  uint32_t spare_bits : 26;
 };
 
 class _dbCCSeg : public _dbObject
@@ -40,7 +41,6 @@ class _dbCCSeg : public _dbObject
 
   _dbCCSeg(_dbDatabase* db);
   _dbCCSeg(_dbDatabase* db, const _dbCCSeg& s);
-  ~_dbCCSeg();
 
   int idx(dbId<_dbCapNode> n) { return n == cap_node_[0] ? 0 : 1; }
   dbId<_dbCCSeg>& next(dbId<_dbCapNode> n) { return next_[idx(n)]; }
@@ -78,13 +78,9 @@ inline _dbCCSeg::_dbCCSeg(_dbDatabase*, const _dbCCSeg& s) : flags_(s.flags_)
   next_[1] = s.next_[1];
 }
 
-inline _dbCCSeg::~_dbCCSeg()
-{
-}
-
 inline dbOStream& operator<<(dbOStream& stream, const _dbCCSeg& seg)
 {
-  uint* bit_field = (uint*) &seg.flags_;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream << *bit_field;
   stream << seg.cap_node_[0];
   stream << seg.cap_node_[1];
@@ -95,7 +91,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbCCSeg& seg)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbCCSeg& seg)
 {
-  uint* bit_field = (uint*) &seg.flags_;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream >> *bit_field;
   stream >> seg.cap_node_[0];
   stream >> seg.cap_node_[1];

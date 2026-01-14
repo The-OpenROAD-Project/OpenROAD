@@ -27,6 +27,7 @@
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
@@ -236,25 +237,25 @@ void FlexDRWorker::initNetObjs(
       if (cptr->hasNet()) {
         initNetObjs_pathSeg(cptr, nets, netRouteObjs, netExtObjs);
       } else {
-        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
+        std::cout << "Error: initNetObjs hasNet() empty\n";
       }
     } else if (rptr->typeId() == frcVia) {
       auto cptr = static_cast<frVia*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_via(cptr, nets, netRouteObjs, netExtObjs);
       } else {
-        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
+        std::cout << "Error: initNetObjs hasNet() empty\n";
       }
     } else if (rptr->typeId() == frcPatchWire) {
       auto cptr = static_cast<frPatchWire*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_patchWire(cptr, nets, netRouteObjs, netExtObjs);
       } else {
-        std::cout << "Error: initNetObjs hasNet() empty" << std::endl;
+        std::cout << "Error: initNetObjs hasNet() empty\n";
       }
     } else {
       std::cout << rptr->typeId() << "\n";
-      std::cout << "Error: initCopyDRObjs unsupported type" << std::endl;
+      std::cout << "Error: initCopyDRObjs unsupported type\n";
     }
   }
   if (isInitDR()) {
@@ -812,8 +813,7 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       }
     } else if (connFig->typeId() == drcPatchWire) {
     } else {
-      std::cout << "Error: initNets_searchRepair_pin2epMap unsupported type"
-                << std::endl;
+      std::cout << "Error: initNets_searchRepair_pin2epMap unsupported type\n";
     }
   }
 }
@@ -844,8 +844,7 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_routeObjEnd(
       const auto lNum = obj->getLayerNum();
       nodeMap[{bp, lNum}].insert(i);
     } else {
-      std::cout << "Error: initNets_searchRepair_nodeMap unsupported type"
-                << std::endl;
+      std::cout << "Error: initNets_searchRepair_nodeMap unsupported type\n";
     }
   }
 }
@@ -1014,7 +1013,7 @@ void FlexDRWorker::initNets_searchRepair_connComp(
   };
 
   int currNetIdx = 0;
-  auto it = find(adjVisited.begin(), adjVisited.end(), false);
+  auto it = std::ranges::find(adjVisited, false);
   while (it != adjVisited.end()) {
     std::priority_queue<wf> pq;
     int srcIdx = distance(adjVisited.begin(), it);
@@ -1034,7 +1033,7 @@ void FlexDRWorker::initNets_searchRepair_connComp(
         }
       }
     }
-    it = find(adjVisited.begin(), adjVisited.end(), false);
+    it = std::ranges::find(adjVisited, false);
     ++currNetIdx;
   }
 }
@@ -1070,7 +1069,7 @@ void FlexDRWorker::initNets_searchRepair(
 
     std::vector<std::vector<std::unique_ptr<drConnFig>>> vExtObjs;
 
-    const auto it = max_element(compIdx.begin(), compIdx.end());
+    const auto it = std::ranges::max_element(compIdx);
     const int numSubNets = (it == compIdx.end()) ? 1 : ((*it) + 1);
     // put all pure ext objs to the first subnet
     vExtObjs.resize(numSubNets);
@@ -1313,12 +1312,11 @@ void FlexDRWorker::initNet_boundary(
     }
     // initDR
   } else {
-    transform(bounds.begin(),
-              bounds.end(),
-              inserter(extBounds, extBounds.end()),
-              [](const std::pair<odb::Point, frLayerNum>& pr) {
-                return std::make_pair(pr, 0);
-              });
+    std::ranges::transform(bounds,
+                           inserter(extBounds, extBounds.end()),
+                           [](const std::pair<odb::Point, frLayerNum>& pr) {
+                             return std::make_pair(pr, 0);
+                           });
   }
   for (auto& [pr, area] : extBounds) {
     auto& [pt, lNum] = pr;
@@ -1584,7 +1582,7 @@ frLayerNum FlexDRWorker::initTrackCoords_getNonPref(frLayerNum lNum)
   const auto lDir = getTech()->getLayer(lNum)->getDir();
   auto lDir2 = dbTechLayerDir::NONE;
 
-  switch (lDir) {
+  switch (lDir.getValue()) {
     case dbTechLayerDir::HORIZONTAL:
       lDir2 = dbTechLayerDir::VERTICAL;
       break;
@@ -1677,7 +1675,7 @@ void FlexDRWorker::initTrackCoords_route(drNet* net,
       }
     } else if (uConnFig->typeId() == drcPatchWire) {
     } else {
-      std::cout << "Error: initTrackCoords unsupported type" << std::endl;
+      std::cout << "Error: initTrackCoords unsupported type\n";
     }
   }
 }
@@ -1778,7 +1776,7 @@ void FlexDRWorker::initMazeIdx_connFig(drConnFig* connFig)
     } else {
       std::cout << "Error: initMazeIdx_connFig pathseg no idx (" << bp.x()
                 << ", " << bp.y() << ") (" << ep.x() << ", " << ep.y() << ") "
-                << getTech()->getLayer(lNum)->getName() << std::endl;
+                << getTech()->getLayer(lNum)->getName() << '\n';
     }
   } else if (connFig->typeId() == drcVia) {
     auto obj = static_cast<drVia*>(connFig);
@@ -1795,11 +1793,11 @@ void FlexDRWorker::initMazeIdx_connFig(drConnFig* connFig)
     } else {
       std::cout << "Error: initMazeIdx_connFig via no idx (" << bp.x() << ", "
                 << bp.y() << ") "
-                << getTech()->getLayer(layer1Num + 1)->getName() << std::endl;
+                << getTech()->getLayer(layer1Num + 1)->getName() << '\n';
     }
   } else if (connFig->typeId() == drcPatchWire) {
   } else {
-    std::cout << "Error: initMazeIdx_connFig unsupported type" << std::endl;
+    std::cout << "Error: initMazeIdx_connFig unsupported type\n";
   }
 }
 
@@ -1825,7 +1823,7 @@ void FlexDRWorker::initMazeIdx_ap(drAccessPattern* ap)
     }
   } else {
     std::cout << "Error: initMazeIdx_ap no idx (" << bp.x() << ", " << bp.y()
-              << ") " << getTech()->getLayer(lNum)->getName() << std::endl;
+              << ") " << getTech()->getLayer(lNum)->getName() << '\n';
   }
 
   if (gridGraph_.hasMazeIdx(bp, lNum + 2)) {
@@ -2084,8 +2082,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
         if (i == 4) {
           std::cout
               << "Warning: marker bloat 4x width but could not find two grids "
-                 "to add marker cost"
-              << std::endl;
+                 "to add marker cost\n";
           std::cout << "  marker -- src: ";
           for (auto src : marker.getSrcs()) {
             if (src) {
@@ -2307,7 +2304,7 @@ void FlexDRWorker::route_queue_init_queue(
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
-      routes.push_back({net, 0, true, nullptr});
+      routes.emplace_back(net, 0, true, nullptr);
       // reserve via because all nets are ripped up
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
@@ -2336,7 +2333,7 @@ void FlexDRWorker::route_queue_init_queue(
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
-      routes.push_back({net, 0, true, nullptr});
+      routes.emplace_back(net, 0, true, nullptr);
       initMazeCost_via_helper(net, true);
     }
   } else if (getRipupMode() == RipUpMode::INCR) {
@@ -2350,7 +2347,7 @@ void FlexDRWorker::route_queue_init_queue(
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
-      routes.push_back({net, 0, true, nullptr});
+      routes.emplace_back(net, 0, true, nullptr);
       // reserve via because all nets are ripped up
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
@@ -2497,11 +2494,9 @@ void FlexDRWorker::route_queue_update_from_marker(
         owners.insert(src);
       }
     }
-    std::set_difference(owners.begin(),
-                        owners.end(),
-                        movableAggressorOwners.begin(),
-                        movableAggressorOwners.end(),
-                        std::inserter(otherOwners, otherOwners.end()));
+    std::ranges::set_difference(owners,
+                                movableAggressorOwners,
+                                std::inserter(otherOwners, otherOwners.end()));
     for (auto& owner : otherOwners) {
       if (owner && owner->typeId() == frcNet) {
         auto fNet = static_cast<frNet*>(owner);
@@ -2562,7 +2557,8 @@ void FlexDRWorker::route_queue_update_from_marker(
               allowAvoidRipup = true;
               dNet->setNRipupAvoids(0);
             }
-            routes.push_back({dNet, dNet->getNumReroutes(), true, checkingObj});
+            routes.emplace_back(
+                dNet, dNet->getNumReroutes(), true, checkingObj);
           }
         }
       }
@@ -2571,14 +2567,14 @@ void FlexDRWorker::route_queue_update_from_marker(
   for (drNet* dNet : avoidRipupCandidates) {
     if (dNet->getPins().size() <= 1 || allowAvoidRipup) {
       dNet->incNRipupAvoids();
-      checks.push_back({dNet, -1, false, checkingObj});
+      checks.emplace_back(dNet, -1, false, checkingObj);
     } else {
       dNet->setNRipupAvoids(0);
-      routes.push_back({dNet, dNet->getNumReroutes(), true, checkingObj});
+      routes.emplace_back(dNet, dNet->getNumReroutes(), true, checkingObj);
     }
   }
   for (auto& victimOwner : uniqueVictimOwners) {
-    checks.push_back({victimOwner, -1, false, checkingObj});
+    checks.emplace_back(victimOwner, -1, false, checkingObj);
   }
 }
 

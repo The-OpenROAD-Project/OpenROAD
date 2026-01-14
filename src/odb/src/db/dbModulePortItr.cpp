@@ -4,13 +4,14 @@
 // Generator Code Begin Cpp
 #include "dbModulePortItr.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbBusPort.h"
 #include "dbModBTerm.h"
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -34,15 +35,15 @@ void dbModulePortItr::reverse(dbObject* parent)
 {
 }
 
-uint dbModulePortItr::sequential() const
+uint32_t dbModulePortItr::sequential() const
 {
   return 0;
 }
 
-uint dbModulePortItr::size(dbObject* parent) const
+uint32_t dbModulePortItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbModulePortItr::begin(parent); id != dbModulePortItr::end(parent);
        id = dbModulePortItr::next(id)) {
@@ -52,7 +53,7 @@ uint dbModulePortItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbModulePortItr::begin(dbObject* parent) const
+uint32_t dbModulePortItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* _module = (_dbModule*) parent;
@@ -60,12 +61,12 @@ uint dbModulePortItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbModulePortItr::end(dbObject* /* unused: parent */) const
+uint32_t dbModulePortItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModulePortItr::next(uint id, ...) const
+uint32_t dbModulePortItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbModBTerm* modbterm = modbterm_tbl_->getPtr(id);
@@ -83,7 +84,7 @@ uint dbModulePortItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbModulePortItr::getObject(uint id, ...)
+dbObject* dbModulePortItr::getObject(uint32_t id, ...)
 {
   return modbterm_tbl_->getPtr(id);
 }

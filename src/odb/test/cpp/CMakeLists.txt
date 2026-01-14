@@ -38,6 +38,7 @@ add_executable(TestChips TestChips.cpp)
 add_executable(Test3DBloxParser Test3DBloxParser.cpp)
 add_executable(Test3DBloxChecker Test3DBloxChecker.cpp)
 add_executable(TestSwapMaster TestSwapMaster.cpp)
+add_executable(TestWriteReadDbHier TestWriteReadDbHier.cpp)
 
 target_link_libraries(OdbGTests ${TEST_LIBS})
 target_link_libraries(TestCallBacks ${TEST_LIBS})
@@ -56,6 +57,7 @@ target_link_libraries(TestChips ${TEST_LIBS})
 target_link_libraries(Test3DBloxParser ${TEST_LIBS})
 target_link_libraries(Test3DBloxChecker ${TEST_LIBS})
 target_link_libraries(TestSwapMaster ${TEST_LIBS})
+target_link_libraries(TestWriteReadDbHier ${TEST_LIBS})
 
 # Skip the tests from being registered here, since they are called via
 # cpp_tests.tcl and don't need to be executed twice. The cpp_tests.tcl
@@ -82,6 +84,7 @@ add_dependencies(build_and_test
         Test3DBloxParser
         Test3DBloxChecker
         TestSwapMaster
+        TestWriteReadDbHier
         OdbGTests
 )
 add_subdirectory(helper)

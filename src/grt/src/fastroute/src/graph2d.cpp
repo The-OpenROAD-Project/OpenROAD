@@ -501,9 +501,7 @@ void Graph2D::addCongestedNDRnet(const int net_id, const uint16_t num_edges)
 
 void Graph2D::sortCongestedNDRnets()
 {
-  std::sort(congested_ndrs_.begin(),
-            congested_ndrs_.end(),
-            NDRCongestionComparator());
+  std::ranges::sort(congested_ndrs_, NDRCongestionComparator());
 }
 
 int Graph2D::getOneCongestedNDRnet()

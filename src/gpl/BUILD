@@ -75,6 +75,7 @@ cc_library(
         "@boost.random",
         "@boost.stacktrace",
         "@boost.tokenizer",
+        "@boost.unordered",
         "@boost.utility",
         "@com_github_quantamhd_lemon//:lemon",
         "@eigen",

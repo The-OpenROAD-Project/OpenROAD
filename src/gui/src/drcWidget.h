@@ -19,7 +19,7 @@
 #include "gui/gui.h"
 #include "inspector.h"
 #include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/geom.h"
 
 namespace utl {
@@ -51,7 +51,7 @@ class DRCRenderer : public Renderer
   odb::dbMarkerCategory* category_;
 };
 
-class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
+class DRCWidget : public QDockWidget, public odb::dbChipCallBackObj
 {
   Q_OBJECT
 
@@ -72,7 +72,7 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
 
  public slots:
   void loadReport(const QString& filename);
-  void setBlock(odb::dbBlock* block);
+  void setChip(odb::dbChip* chip);
   void clicked(const QModelIndex& index);
   void doubleClicked(const QModelIndex& index);
   void selectReport();
@@ -103,7 +103,7 @@ class DRCWidget : public QDockWidget, public odb::dbBlockCallBackObj
   ObjectTree* view_;
   DRCItemModel* model_;
 
-  odb::dbBlock* block_;
+  odb::dbChip* chip_;
 
   QComboBox* categories_;
   QPushButton* load_;
