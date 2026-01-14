@@ -42,10 +42,12 @@
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "VTSwapMove.hh"
-#include "boost/functional/hash.hpp"
+#include "boost/container_hash/hash.hpp"
 #include "boost/multi_array.hpp"
+#include "boost/multi_array/base.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -2105,7 +2107,8 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   return swappable_cells_cache_[source_cell];
 }
 
-size_t getCommonLength(const std::string& string1, const std::string& string2)
+static size_t getCommonLength(const std::string& string1,
+                              const std::string& string2)
 {
   size_t common_len = 0;
   size_t len_limit = std::min(string1.length(), string2.length());
@@ -2291,8 +2294,8 @@ void Resizer::makeEquivCells()
 
 // When there are multiple VT layers, create a composite name
 // by removing conflicting characters.
-std::string mergeVTLayerNames(const std::string& new_name,
-                              const std::string& curr_name)
+static std::string mergeVTLayerNames(const std::string& new_name,
+                                     const std::string& curr_name)
 {
   std::string merged;
   size_t len = std::max(new_name.size(), curr_name.size());
@@ -2322,7 +2325,7 @@ std::string mergeVTLayerNames(const std::string& new_name,
 // and trailing underscore
 // LVT => L (no VT)
 // VTL_ => L (no VT, no trailing underscore)
-void compressVTLayerName(std::string& name)
+static void compressVTLayerName(std::string& name)
 {
   if (name.empty()) {
     return;
@@ -2355,7 +2358,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    VTCategory vt_cat{0, "-"};
+    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -2385,7 +2388,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   if (hash1 == 0) {
-    VTCategory vt_cat{0, "-"};
+    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -2396,7 +2399,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   compressVTLayerName(new_layer_name);
-  VTCategory vt_cat{vt_hash_map_[hash1], std::move(new_layer_name)};
+  VTCategory vt_cat{.vt_index = vt_hash_map_[hash1],
+                    .vt_name = std::move(new_layer_name)};
   const auto& [new_it, _] = vt_map_.emplace(master, std::move(vt_cat));
   debugPrint(logger_,
              RSZ,
@@ -3431,7 +3435,7 @@ Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
   Instance* load_inst = network_->instance(load_pin);
   if (network_->isTopInstance(load_inst) == false) {
     dbInst* db_inst = nullptr;
-    dbModInst* db_mod_inst = nullptr;
+    odb::dbModInst* db_mod_inst = nullptr;
     odb::dbModule* module = nullptr;
     db_network_->staToDb(load_inst, db_inst, db_mod_inst);
     if (db_inst) {
@@ -5131,7 +5135,7 @@ Instance* Resizer::makeInstance(LibertyCell* cell,
   debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
 
   // make new instance name
-  dbModInst* parent_mod_inst = db_network_->getModInst(parent);
+  odb::dbModInst* parent_mod_inst = db_network_->getModInst(parent);
   std::string full_name
       = block_->makeNewInstName(parent_mod_inst, name, uniquify);
 
