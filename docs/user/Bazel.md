@@ -1,5 +1,7 @@
 # Testing local changes with Bazel
 
+Bazel handles most dependencies automatically but X11 tend to be very system specific.  You may need to install `sudo apt-get install libxcb-cursor0` on some systems.
+
 First [install Baselisk](https://bazel.build/install/bazelisk), then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
 
     bazelisk test --jobs=4 src/...
