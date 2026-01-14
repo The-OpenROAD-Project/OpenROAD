@@ -3,12 +3,23 @@
 
 #include "extended_technology_mapping.h"
 
+#include <cstdint>
+#include <cstring>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <tuple>
+
 #include "aig/aig/aig.h"
 #include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
+#include "lorina/common.hpp"
+#include "lorina/diagnostics.hpp"
 #include "map/mio/mio.h"
+#include "map/scl/sclLib.h"
+#include "misc/vec/vecStr.h"
 #include "mockturtle/algorithms/emap.hpp"
 #include "mockturtle/io/genlib_reader.hpp"
 #include "mockturtle/networks/aig.hpp"
@@ -18,13 +29,16 @@
 #include "mockturtle/views/cell_view.hpp"
 #include "mockturtle/views/names_view.hpp"
 #include "mockturtle/views/topo_view.hpp"
+#include "odb/db.h"
+#include "odb/dbSet.h"
 #include "ord/OpenRoad.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Search.hh"
 #include "utl/Logger.h"
 
 namespace abc {
-Vec_Str_t* Abc_SclProduceGenlibStrSimple(SC_Lib* p);
+Vec_Str_t* Abc_SclProduceGenlibStrSimple(SC_Lib* p);  // NOLINT
 }  // namespace abc
 
 namespace rmp {

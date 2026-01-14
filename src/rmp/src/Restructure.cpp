@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include "rmp/Restructure.h"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -27,7 +29,6 @@
 #include "db_sta/dbSta.hh"
 #include "extended_technology_mapping.h"
 #include "odb/db.h"
-#include "rmp/Restructure.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"

@@ -3,13 +3,16 @@
 
 #pragma once
 
+#include <cassert>
 #include <utility>
 #include <vector>
 
 #include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
+#include "kitty/dynamic_truth_table.hpp"
 #include "mockturtle/algorithms/cleanup.hpp"
+#include "mockturtle/io/genlib_reader.hpp"
 #include "mockturtle/networks/aig.hpp"
 #include "mockturtle/utils/tech_library.hpp"
 #include "mockturtle/views/names_view.hpp"
@@ -186,7 +189,8 @@ LogicCut::BuildMappedMockturtleNetwork(
     sta::Instance* driver_inst = network->instance(driver_pin);
     sta::LibertyCell* driver_cell = network->libertyCell(driver_inst);
 
-    // Driver should not be sequential or outside the cut (handled by logic extractor)
+    // Driver should not be sequential or outside the cut (handled by logic
+    // extractor)
     assert(driver_cell && !driver_cell->hasSequentials()
            && cut_instances_set.contains(driver_inst));
 
