@@ -1,0 +1,66 @@
+[INFO ODB-0227] LEF file: Nangate45_data/Nangate45-opt.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+Placement Analysis
+---------------------------------
+total displacement          0.1 u
+average displacement        0.0 u
+max displacement            0.1 u
+original HPWL            7709.3 u
+legalized HPWL           7709.4 u
+delta HPWL                    0 %
+
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL            7709.4 u
+legalized HPWL           7709.4 u
+delta HPWL                    0 %
+
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL            7709.4 u
+legalized HPWL           7709.4 u
+delta HPWL                    0 %
+
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL            7709.4 u
+legalized HPWL           7709.4 u
+delta HPWL                    0 %
+
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL            7709.4 u
+legalized HPWL           7709.4 u
+delta HPWL                    0 %
+
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL            7709.4 u
+legalized HPWL           7709.4 u
+delta HPWL                    0 %
+
+No differences found.

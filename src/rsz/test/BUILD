@@ -145,6 +145,8 @@ TESTS = [
     "repair_tie8",
     "repair_tie9",
     "repair_tie10_hier",
+    "repair_tie11_hier",
+    "repair_tie12_hier",
     "repair_wire1",
     "repair_wire10",
     "repair_wire11",
@@ -230,26 +232,11 @@ BIG_TESTS = [
     "repair_fanout6",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "repair_tie11_hier",
-    "repair_tie12_hier",
-    "pinswap_flat",
-    "pinswap_hier",
-    "repair_fanout1_hier",
-    "repair_fanout2_hier",
-    "repair_fanout3_hier",
-    "repair_setup4_flat",
-    "repair_setup4_hier",
-    "split_load_hier",
-]
-
 [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
         data = [":test_resources"] + extra_deps.get(test_name, []),
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
     )
     for test_name in TESTS
 ]
