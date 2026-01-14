@@ -317,6 +317,9 @@ void Opendp::place()
   if (have_multi_row_cells_) {
     for (Node* cell : sorted_cells) {
       if (isMultiRow(cell)) {
+        if (cell->getType() != Node::CELL) {
+          logger_->error(DPL, 1000, "cell is not CELL");
+        }
         debugPrint(logger_,
                    DPL,
                    "place",
@@ -331,6 +334,9 @@ void Opendp::place()
   }
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
+      if (cell->getType() != Node::CELL) {
+        logger_->error(DPL, 1001, "cell is not CELL");
+      }
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
@@ -552,6 +558,9 @@ int Opendp::refine()
 
 bool Opendp::mapMove(Node* cell)
 {
+  if (cell->getType() != Node::CELL) {
+    logger_->error(DPL, 1002, "cell is not CELL");
+  }
   const GridPt init = legalGridPt(cell, false);
   return mapMove(cell, init);
 }
@@ -601,9 +610,9 @@ bool Opendp::shiftMove(Node* cell)
          y++) {
       Pixel* pixel = grid_->gridPixel(x, y);
       if (pixel) {
-        Node* cell = pixel->cell;
-        if (cell && !cell->isFixed()) {
-          region_cells.insert(cell);
+        Node* cell_tmp = pixel->cell;
+        if (cell_tmp && !cell_tmp->isFixed()) {
+          region_cells.insert(cell_tmp);
         }
       }
     }
@@ -1155,6 +1164,13 @@ void Opendp::legalCellPos(odb::dbInst* db_inst)
 DbuPt Opendp::initialLocation(const Node* cell, const bool padded) const
 {
   DbuPt loc;
+  auto* c = cell->getDbInst();
+  if (c == nullptr) {
+    std::cout << "nullptr (cell : " << cell->name() << ")" << std::endl;
+  }
+  if (cell->getType() != Node::CELL) {
+    logger_->error(DPL, 1005, "cell is not CELL");
+  }
   cell->getDbInst()->getLocation(loc.x.v, loc.y.v);
   loc.x -= core_.xMin();
   if (padded) {
@@ -1174,6 +1190,9 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
   if (cell->isFixed()) {
     logger_->critical(
         DPL, 26, "legalPt called on fixed cell {}.", cell->name());
+  }
+  if (cell->getType() != Node::CELL) {
+    logger_->error(DPL, 1004, "cell is not CELL");
   }
 
   const DbuPt init = initialLocation(cell, padded);
@@ -1214,6 +1233,9 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
 
 GridPt Opendp::legalGridPt(const Node* cell, const bool padded) const
 {
+  if (cell->getType() != Node::CELL) {
+    logger_->error(DPL, 1003, "cell is not CELL");
+  }
   const DbuPt pt = legalPt(cell, padded);
   return GridPt(grid_->gridX(pt.x), grid_->gridSnapDownY(pt.y));
 }
