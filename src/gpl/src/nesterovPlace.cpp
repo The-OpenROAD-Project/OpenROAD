@@ -1261,8 +1261,38 @@ void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 
 void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
 {
+  if (db_inst == nullptr) {
+    log_->warn(GPL, 327, "Trying to destroy odb::dbInst* nullptr");
+    return;
+  }
+
+  bool destroyed = false;
   for (auto& nesterov : nbVec_) {
-    nesterov->destroyCbkGCell(db_inst);
+    std::pair<odb::dbInst*, size_t> replaced
+        = nesterov->destroyCbkGCell(db_inst);
+    if (replaced.first) {
+      bool updated = false;
+      for (auto& nesterov : nbVec_) {
+        updated |= nesterov->updateHandle(replaced.first, replaced.second);
+      }
+      if (!updated) {
+        log_->error(GPL,
+                    326,
+                    "NesterovPlace destroyCbkGCell failed to update db_inst {}",
+                    replaced.first->getName());
+      }
+    }
+    if (replaced.second > 0) {
+      destroyed = true;
+    }
+  }
+  if (!destroyed) {
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "warn db_inst ({}) not destroyed inside GPL",
+               db_inst->getName());
   }
 }
 
@@ -1324,6 +1354,7 @@ void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst)
 // TODO: use the region to create new gcell.
 void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
 {
+  nesterov_place_->createCbkGCell(db_inst);
 }
 
 void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)
