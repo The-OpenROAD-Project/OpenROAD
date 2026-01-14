@@ -3092,7 +3092,8 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
     frLayer* layer = fr_tech->getLayer(tech_layer->getName());
     if (layer) {
       router_cfg_->TOP_ROUTING_LAYER = layer->getLayerNum();
-      // Auto-extend to top available routing layer to utilize M8/M9 if available
+      // Auto-extend to top available routing layer to utilize M8/M9 if
+      // available
       for (frLayerNum layer_num = fr_tech->getTopLayerNum();
            layer_num > router_cfg_->TOP_ROUTING_LAYER;
            layer_num--) {
