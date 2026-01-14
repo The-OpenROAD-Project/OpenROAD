@@ -12,8 +12,8 @@ ALL_TESTS = [
     "check_axioms",
     "clock_pin",
     "constant1",
-    # "escape_slash", # different result compared to CMake
-    # "escape_slash_hier", # different result compared to CMake
+    "escape_slash",
+    "escape_slash_hier",
     "find_clks1",
     "find_clks2",
     "get_ports1",
