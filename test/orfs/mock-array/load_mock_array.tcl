@@ -57,6 +57,3 @@ for { set x 0 } { $x < $::env(ARRAY_COLS) } { incr x } {
     check_log_for_warning log.txt
   }
 }
-
-set vcd_file $::env(VCD_STIMULI)
-log_cmd read_vcd -scope TOP/MockArray $vcd_file
