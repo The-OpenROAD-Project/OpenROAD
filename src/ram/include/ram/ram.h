@@ -71,9 +71,12 @@ class RamGen
                 odb::dbMaster* tapcell,
                 int max_tap_dist);
 
-  void ramPdngen();
-  void ramPinplacer();
-  void ramFiller();
+  void ramPdngen(const char* power_pin, const char* ground_pin,
+                 const char* route_name, int route_width, 
+                 const char* ver_name, int ver_width, int ver_pitch,
+                 const char* hor_name, int hor_width, int hor_pitch);
+  void ramPinplacer(const char* ver_name, const char* hor_name);
+  void ramFiller(const std::vector<std::string>& filler_cells);
   void ramRouting();
 
  private:

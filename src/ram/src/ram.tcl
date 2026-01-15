@@ -128,13 +128,13 @@ proc generate_ram { args } {
   ord::design_created
 
   if { [info exists keys(-power_pin)] } {
-    set power_net $keys(-power_pin)
+    set power_pin $keys(-power_pin)
   } else {
     utl::error RAM 5 "The -power_pin argument must be specified."
   }
 
   if { [info exists keys(-ground_pin)] } {
-    set ground_net $keys(-ground_pin)
+    set ground_pin $keys(-ground_pin)
   } else {
     utl::error RAM 6 "The -ground_pin argument must be specified."
   }
@@ -149,6 +149,7 @@ proc generate_ram { args } {
     utl::error RAM 12 "-routing_layer is not a list of 2 values"
   } else {
     lassign $routing_layer route_name route_width
+    set route_width [ord::microns_to_dbu $route_width] 
   }
 
   if { [info exists keys(-ver_layer)] } {
@@ -161,6 +162,8 @@ proc generate_ram { args } {
     utl::error RAM 14 "-ver_layer is not a list of 2 values"
   } else {
     lassign $ver_layer ver_name ver_width ver_pitch
+    set ver_width [ord::microns_to_dbu $ver_width]
+    set ver_pitch [ord::microns_to_dbu $ver_pitch]
   }
 
   if { [info exists keys(-hor_layer)] } {
@@ -173,6 +176,8 @@ proc generate_ram { args } {
     utl::error RAM 17 "-hor_layer is not a list of 2 values"
   } else {
     lassign $hor_layer hor_name hor_width hor_pitch
+    set hor_width [ord::microns_to_dbu $hor_width]
+    set hor_pitch [ord::microns_to_dbu $hor_pitch]
   }
 
   if { [info exists keys(-filler_cells)] } {
@@ -200,16 +205,18 @@ proc generate_ram { args } {
 # add_pdn_connect -layers [list $ver_name $hor_name]
 
 # pdngen
-  ram::ram_pdngen
+  ram::ram_pdngen $power_pin $ground_pin $route_name $route_width \
+                  $ver_name $ver_width $ver_pitch \
+                  $hor_name $hor_width $hor_pitch
 
   make_tracks -x_offset 0 -y_offset 0
-  ram::ram_pinplacer
+  ram::ram_pinplacer $ver_name $hor_name
 #  set_io_pin_constraint -direction output -region top:*
 #  set_io_pin_constraint -pin_names {D[*]} -region top:*
 #
 #  place_pins -hor_layers $hor_name -ver_layers $ver_name
 
-  ram::ram_filler
+  ram::ram_filler $filler_cells
 #  filler_placement $filler_cells
   ram::ram_routing
 #  global_route

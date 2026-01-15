@@ -392,7 +392,10 @@ void RamGen::findMasters()
   }
 }
 
-void RamGen::ramPdngen()
+void RamGen::ramPdngen(const char* power_pin, const char* ground_pin, 
+                       const char* route_name, int route_width,
+                       const char* ver_name, int ver_width, int ver_pitch,
+                       const char* hor_name, int hor_width, int hor_pitch)
 {
   // need parameters for power and ground nets 
   auto power_net = dbNet::create(block_, "VDD");
@@ -404,8 +407,8 @@ void RamGen::ramPdngen()
   ground_net->setSigType(odb::dbSigType::GROUND);
   
   // find a way to get the power and ground net names associated with cells used 
-  block_->addGlobalConnect(nullptr, ".*", "VPWR", power_net, true);
-  block_->addGlobalConnect(nullptr, ".*", "VGND", ground_net, true);
+  block_->addGlobalConnect(nullptr, ".*", power_pin, power_net, true);
+  block_->addGlobalConnect(nullptr, ".*", ground_pin, ground_net, true);
  
   block_->globalConnect();
  
@@ -421,15 +424,15 @@ void RamGen::ramPdngen()
   
   // parameters are the same in the tcl script 
   // add_followpin
-  pdngen_->makeFollowpin(grid, pdn_tech->findLayer("met1"), 480, pdn::ExtensionMode::BOUNDARY); 
+  pdngen_->makeFollowpin(grid, pdn_tech->findLayer(route_name), route_width, pdn::ExtensionMode::BOUNDARY); 
   
   //add_pdn_stripe
-  pdngen_->makeStrap(grid, pdn_tech->findLayer("met2"), 480, 0, 40000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
-  pdngen_->makeStrap(grid, pdn_tech->findLayer("met3"), 480, 0, 20000, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
+  pdngen_->makeStrap(grid, pdn_tech->findLayer(ver_name), ver_width, 0, ver_pitch, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
+  pdngen_->makeStrap(grid, pdn_tech->findLayer(hor_name), hor_width, 0, hor_pitch, 0, 0, false, pdn::StartsWith::GRID, pdn::ExtensionMode::BOUNDARY, {}, false);
 
   //add_pdn_connect
-  pdngen_->makeConnect(grid, pdn_tech->findLayer("met1"), pdn_tech->findLayer("met2"), 0,0, {}, {}, 0, 0, {}, {}, "");
-  pdngen_->makeConnect(grid, pdn_tech->findLayer("met2"), pdn_tech->findLayer("met3"), 0,0, {}, {}, 0, 0, {}, {}, "");
+  pdngen_->makeConnect(grid, pdn_tech->findLayer(route_name), pdn_tech->findLayer(ver_name), 0,0, {}, {}, 0, 0, {}, {}, "");
+  pdngen_->makeConnect(grid, pdn_tech->findLayer(ver_name), pdn_tech->findLayer(hor_name), 0,0, {}, {}, 0, 0, {}, {}, "");
  
   //pdngen 
   pdngen_->checkSetup();
@@ -438,7 +441,7 @@ void RamGen::ramPdngen()
   pdngen_->resetShapes();
 }
 
-void RamGen::ramPinplacer() {
+void RamGen::ramPinplacer(const char* ver_name, const char* hor_name) {
 
   const odb::Rect& die_bounds = block_->getDieArea(); 
   odb::Rect top_constraint = block_->findConstraintRegion(odb::Direction2D::North, die_bounds.xMin(), die_bounds.xMax()); 
@@ -446,17 +449,20 @@ void RamGen::ramPinplacer() {
 
   block_->addBTermsToConstraint(D_bTerms, top_constraint); 
   auto pin_tech = block_->getDb()->getTech();
-  ioPlacer_->addHorLayer(pin_tech->findLayer("met3"));
-  ioPlacer_->addVerLayer(pin_tech->findLayer("met2"));
+  ioPlacer_->addHorLayer(pin_tech->findLayer(hor_name));
+  ioPlacer_->addVerLayer(pin_tech->findLayer(ver_name));
   ioPlacer_->runHungarianMatching();
 }
 
-void RamGen::ramFiller() {
+void RamGen::ramFiller(const vector<std::string>& filler_cells) {
   vector<odb::dbMaster*> filler_masters;
-  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_1")); 
-  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_2"));
-  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_4"));
-  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_8"));
+  for (const std::string& cell : filler_cells) {
+    filler_masters.push_back(db_->findMaster(cell.c_str()));
+  }
+//  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_1")); 
+//  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_2"));
+//  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_4"));
+//  filler_masters.push_back(db_->findMaster("sky130_fd_sc_hd__fill_8"));
   opendp_->fillerPlacement(filler_masters, "FILLER_", false); 
 }
 

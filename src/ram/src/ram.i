@@ -2,6 +2,10 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 %{
+
+#include <vector>
+#include <string>
+
 #include "ord/OpenRoad.hh"
 #include "ram/ram.h"
 #include "utl/Logger.h"
@@ -15,6 +19,9 @@ utl::Logger* getLogger();
 
 %}
 
+%include <std_vector.i>
+%include <std_string.i>
+%template(vector_str) std::vector<std::string>;
 %include "../../Exception.i"
 
 %inline %{
@@ -84,23 +91,29 @@ generate_ram_netlist_cmd(int bytes_per_word,
                     max_tap_dist);
 }
 
-void ram_pdngen() 
+void ram_pdngen(const char* power_pin, const char* ground_pin, 
+                const char* route_name, int route_width, 
+                const char* ver_name, int ver_width, int ver_pitch,
+                const char* hor_name, int hor_width, int hor_pitch)
+ 
 {
   RamGen* ram_gen = ord::getRamGen();
-  ram_gen->ramPdngen();
-
+  ram_gen->ramPdngen(power_pin, ground_pin, 
+                     route_name, route_width,
+                     ver_name, ver_width, ver_pitch, 
+                     hor_name, hor_width, hor_pitch);
 }
 
-void ram_pinplacer()
+void ram_pinplacer(const char* ver_name, const char* hor_name)
 {
   RamGen* ram_gen = ord::getRamGen();
-  ram_gen->ramPinplacer();
+  ram_gen->ramPinplacer(ver_name, hor_name);
 }
 
-void ram_filler()
+void ram_filler(const std::vector<std::string>& filler_cells)
 {
   RamGen* ram_gen = ord::getRamGen();
-  ram_gen->ramFiller();
+  ram_gen->ramFiller(filler_cells);
 }
 
 void ram_routing()
