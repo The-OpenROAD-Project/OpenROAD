@@ -133,16 +133,17 @@ void RamGen::makeCellByte(Grid& ram_grid,
 
   int first_byte = byte_number * 9;
   for (int bit = first_byte; bit < first_byte + 8; ++bit) {
+    int local_bit = bit - first_byte;
     auto name = fmt::format("{}.bit{}", prefix, bit);
     vector<dbNet*> outs;
     outs.reserve(read_ports);
     for (int read_port = 0; read_port < read_ports; ++read_port) {
-      outs.push_back(data_output[read_port][bit]->getNet());
+      outs.push_back(data_output[read_port][local_bit]->getNet());
     }
 
     ram_grid.addCell(
         makeCellBit(
-            name, read_ports, gclock_net, select_b_nets, data_input[bit], outs),
+            name, read_ports, gclock_net, select_b_nets, data_input[local_bit], outs),
         bit);
   }
 
@@ -423,7 +424,7 @@ void RamGen::generate(const int bytes_per_word,
   // cell for WE AND gate/inverter
   // extra column is for decoder cells
   int col_cell_count = bytes_per_word * 9;
-  Grid ram_grid(odb::horizontal, col_cell_count + 1);
+  Grid ram_grid(odb::horizontal, col_cell_count + bytes_per_word);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
 
@@ -498,8 +499,10 @@ void RamGen::generate(const int bytes_per_word,
       auto cell_name = fmt::format("storage_{}_{}", row, col);
       if (word_count == 2) {
         decoder_output_nets.clear();
-        decoder_output_nets.push_back(row == 0 ? inv_addr[0]
-                                               : addr[0]->getNet());
+        dbNet* addr_net = (row == 0 ? inv_addr[0] : addr[0]->getNet());
+        for (int i = 0; i < read_ports; ++i) {
+          decoder_output_nets.push_back(addr_net);
+        }
       } else {
         decoder_output_nets = selectNets(cell_name, read_ports);
       }
@@ -520,17 +523,17 @@ void RamGen::generate(const int bytes_per_word,
                                           decoder_output_nets,
                                           decoder_input_nets[row]);
 
-      ram_grid.addCell(std::move(decoder_and_cell), (bytes_per_word * 9));
+      ram_grid.addCell(std::move(decoder_and_cell), (bytes_per_word * 9) + col);
     }
 
     for (int bit = 0; bit < 8; ++bit) {
       auto buffer_grid_cell = std::make_unique<Cell>();
       makeCellInst(buffer_grid_cell.get(),
                    "buffer",
-                   fmt::format("in[{}]", bit),
+                   fmt::format("in[{}]", bit + col * 8),
                    buffer_cell_,
                    {{"A", D_bTerms[bit]->getNet()}, {"X", D_nets[bit]}});
-      ram_grid.addCell(std::move(buffer_grid_cell), bit);
+      ram_grid.addCell(std::move(buffer_grid_cell), col * 9 + bit);
     }
   }
 
