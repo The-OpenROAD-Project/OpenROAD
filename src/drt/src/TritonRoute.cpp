@@ -696,20 +696,19 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  FlexDR::SearchRepairArgs args = {size,
-                                   offset,
-                                   mazeEndIter,
-                                   workerDRCCost,
-                                   workerMarkerCost,
-                                   workerFixedShapeCost,
-                                   workerMarkerDecay,
-                                   getMode(ripupMode),
-                                   followGuide};
+  FlexDR::SearchRepairArgs args = {.size = size,
+                                   .offset = offset,
+                                   .mazeEndIter = mazeEndIter,
+                                   .workerDRCCost = workerDRCCost,
+                                   .workerMarkerCost = workerMarkerCost,
+                                   .workerFixedShapeCost = workerFixedShapeCost,
+                                   .workerMarkerDecay = workerMarkerDecay,
+                                   .ripupMode = getMode(ripupMode),
+                                   .followGuide = followGuide};
   dr_->searchRepair(args);
   dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
-
 void TritonRoute::endFR()
 {
   if (router_cfg_->SINGLE_STEP_DR) {

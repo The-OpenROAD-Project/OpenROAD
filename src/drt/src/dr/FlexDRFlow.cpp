@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <string>
+
 #include "dr/FlexDR.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 

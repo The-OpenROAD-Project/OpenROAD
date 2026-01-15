@@ -1340,7 +1340,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 {
   // Calculate flow state
   const auto flow_state = flow_state_machine_->determineNextFlow(
-      {getDesign()->getTopBlock()->getNumMarkers(), args});
+      {.num_violations = getDesign()->getTopBlock()->getNumMarkers(),
+       .args = args});
 
   const RipUpMode ripupMode = args.ripupMode;
   if ((ripupMode == RipUpMode::DRC || ripupMode == RipUpMode::NEARDRC)
