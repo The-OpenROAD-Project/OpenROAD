@@ -99,8 +99,8 @@ class FastRouteCore
   void clear();
   void saveCongestion(int iter = -1);
   void setGridsAndLayers(int x, int y, int nLayers);
-  void addVCapacity(short verticalCapacity, int layer);
-  void addHCapacity(short horizontalCapacity, int layer);
+  void addVCapacity(int16_t verticalCapacity, int layer);
+  void addHCapacity(int16_t horizontalCapacity, int layer);
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
   void setResistanceAware(bool resistance_aware);
@@ -179,17 +179,20 @@ class FastRouteCore
   void getCongestionGrid(std::vector<CongestionInformation>& congestionGridV,
                          std::vector<CongestionInformation>& congestionGridH);
 
-  const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
-  const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
+  const std::vector<int16_t>& getVerticalCapacities() { return v_capacity_3D_; }
+  const std::vector<int16_t>& getHorizontalCapacities()
+  {
+    return h_capacity_3D_;
+  }
   int getAvailableResources(int x1, int y1, int x2, int y2, int layer);
   int getEdgeCapacity(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
-  void setLastColVCapacity(short cap, int layer)
+  void setLastColVCapacity(int16_t cap, int layer)
   {
     last_col_v_capacity_3D_[layer] = cap;
   }
-  void setLastRowHCapacity(short cap, int layer)
+  void setLastRowHCapacity(int16_t cap, int layer)
   {
     last_row_h_capacity_3D_[layer] = cap;
   }
@@ -319,7 +322,7 @@ class FastRouteCore
       std::vector<std::pair<int16_t, int16_t>>& blocked_positions);
   void routeLShape(const TreeNode& startpoint,
                    const TreeNode& endpoint,
-                   std::vector<std::pair<short, short>>& blocked_positions,
+                   std::vector<std::pair<int16_t, int16_t>>& blocked_positions,
                    std::vector<GPoint3D>& new_route);
   void convertToMazerouteNet(int netID);
   void setupHeap(int netID,
@@ -645,10 +648,10 @@ class FastRouteCore
   bool regular_x_;
   bool regular_y_;
 
-  std::vector<short> v_capacity_3D_;
-  std::vector<short> h_capacity_3D_;
-  std::vector<short> last_col_v_capacity_3D_;
-  std::vector<short> last_row_h_capacity_3D_;
+  std::vector<int16_t> v_capacity_3D_;
+  std::vector<int16_t> h_capacity_3D_;
+  std::vector<int16_t> last_col_v_capacity_3D_;
+  std::vector<int16_t> last_row_h_capacity_3D_;
   std::vector<double> cost_hvh_;       // Horizontal first Z
   std::vector<double> cost_vhv_;       // Vertical first Z
   std::vector<double> cost_h_;         // Horizontal segment cost
@@ -680,10 +683,10 @@ class FastRouteCore
   multi_array<Edge3D, 3> h_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<Edge3D, 3> v_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<int, 2> corr_edge_;
-  multi_array<short, 2> parent_x1_;
-  multi_array<short, 2> parent_y1_;
-  multi_array<short, 2> parent_x3_;
-  multi_array<short, 2> parent_y3_;
+  multi_array<int16_t, 2> parent_x1_;
+  multi_array<int16_t, 2> parent_y1_;
+  multi_array<int16_t, 2> parent_x3_;
+  multi_array<int16_t, 2> parent_y3_;
   multi_array<bool, 2> hv_;
   multi_array<bool, 2> hyper_v_;
   multi_array<bool, 2> hyper_h_;
@@ -716,5 +719,7 @@ class FastRouteCore
   multi_array<int, 3> d1_3D_;
   multi_array<int, 3> d2_3D_;
 };
+
+extern const char* getNetName(odb::dbNet* db_net);
 
 }  // namespace grt

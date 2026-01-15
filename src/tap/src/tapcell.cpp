@@ -222,7 +222,7 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
   return insts;
 }
 
-inline void findStartEnd(int x,
+static void findStartEnd(int x,
                          int width,
                          const odb::dbOrientType& orient,
                          int& x_start,

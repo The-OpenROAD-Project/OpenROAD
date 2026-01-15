@@ -214,6 +214,7 @@ class ClusteringEngine
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
+  bool mergeHonorsMaxThresholds(const Cluster* a, const Cluster* b) const;
   bool sameConnectionSignature(Cluster* a, Cluster* b) const;
   bool strongConnection(Cluster* a,
                         Cluster* b,
@@ -308,7 +309,6 @@ class ClusteringEngine
   int min_macro_{0};
   int max_std_cell_{0};
   int min_std_cell_{0};
-  const float size_tolerance_ = 0.1;
 
   // Variables for data flow
   DataFlow data_connections_;

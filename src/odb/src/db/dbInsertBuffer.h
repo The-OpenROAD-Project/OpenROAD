@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <map>
 #include <set>
 #include <string>
 
@@ -49,7 +50,7 @@ class dbInsertBuffer
       const char* new_net_base_name = kDefaultNetBaseName,
       const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
   dbInst* insertBufferBeforeLoads(
-      std::set<dbObject*>& load_pins,
+      const std::set<dbObject*>& load_pins,
       const dbMaster* buffer_master,
       const Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -67,10 +68,6 @@ class dbInsertBuffer
   void hierarchicalConnect(dbObject* driver, dbObject* load);
 
  private:
-  void validateArgumentsSimple(dbObject* term_obj,
-                               const dbMaster* buffer_master) const;
-  void validateArgumentsBeforeLoads(std::set<dbObject*>& load_pins,
-                                    const dbMaster* buffer_master) const;
   void resetMembers();
   dbInst* insertBufferSimple(dbObject* term_obj,
                              const dbMaster* buffer_master,
@@ -79,30 +76,29 @@ class dbInsertBuffer
                              const char* new_net_base_name,
                              const dbNameUniquifyType& uniquify,
                              bool insertBefore);
-  bool validateTermAndGetModNet(dbObject* term_obj, dbModNet*& mod_net) const;
   dbInst* checkAndCreateBuffer();
-  bool checkDontTouch(dbITerm* iterm) const;
-  void placeNewBuffer(dbInst* buffer_inst, const Point* loc, dbObject* term);
-  void rewireBufferSimple(bool insertBefore,
-                          dbModNet* orig_mod_net,
-                          dbObject* term);
+  bool checkDontTouch(const dbITerm* iterm) const;
+  dbNet* createNewFlatNet(const std::set<dbObject*>& connected_terms);
+  std::string makeUniqueHierName(const dbModule* module,
+                                 const std::string& base_name,
+                                 const char* suffix = nullptr) const;
+  int getModuleDepth(const dbModule* mod) const;
+  dbModule* findLCA(dbModule* m1, dbModule* m2) const;
+  dbModNet* getFirstDriverModNetInTargetModule(
+      const std::set<dbModNet*>& modnets_in_target_module) const;
+  bool checkAllLoadsAreTargets(dbModNet* net,
+                               const std::set<dbObject*>& load_pins) const;
   bool getPinLocation(const dbObject* pin, int& x, int& y) const;
   bool computeCentroid(const dbObject* drvr_pin,
                        const std::set<dbObject*>& load_pins,
                        Point& result) const;
-  dbNet* createNewFlatNet(std::set<dbObject*>& connected_terms);
-  std::string makeUniqueHierName(dbModule* module,
-                                 const std::string& base_name,
-                                 const char* suffix = nullptr) const;
-  int getModuleDepth(dbModule* mod) const;
-  dbModule* findLCA(dbModule* m1, dbModule* m2) const;
-  bool stitchLoadToDriver(dbITerm* load_pin,
-                          dbITerm* drvr_term,
-                          const std::set<dbObject*>& load_pins);
-  dbModNet* getFirstDriverModNetInTargetModule(
-      const std::set<dbModNet*>& modnets_in_target_module) const;
-  bool checkAllLoadsAreTargets(dbModNet* net,
-                               const std::set<dbObject*>& load_pins);
+  void placeBufferAtLocation(dbInst* buffer_inst,
+                             const Point& loc,
+                             const char* reason = "argument");
+  void placeBufferAtPin(dbInst* buffer_inst, const dbObject* term);
+  void placeBufferAtCentroid(dbInst* buffer_inst,
+                             const dbObject* drvr_pin,
+                             const std::set<dbObject*>& load_pins);
 
   ///
   /// This function identifies hierarchical nets (dbModNet) that can be reused
@@ -116,10 +112,10 @@ class dbInsertBuffer
   //------------------------------------------------------------------
   // Helper functions for hierarchicalConnect
   //------------------------------------------------------------------
-  dbModNet* getModNet(dbObject* obj) const;
-  dbNet* getNet(dbObject* obj) const;
-  dbModule* getModule(dbObject* obj) const;
-  std::string getName(dbObject* obj) const;
+  dbModNet* getModNet(const dbObject* obj) const;
+  dbNet* getNet(const dbObject* obj) const;
+  dbModule* getModule(const dbObject* obj) const;
+  std::string getName(const dbObject* obj) const;
   void connect(dbObject* obj, dbNet* net);
   void connect(dbObject* obj, dbModNet* net);
   void ensureFlatNetConnection(dbObject* driver, dbObject* load);
@@ -138,6 +134,9 @@ class dbInsertBuffer
                               dbObject* load,
                               dbModule* driver_mod,
                               dbModule* load_mod);
+  bool stitchLoadToDriver(dbITerm* load_pin,
+                          dbITerm* drvr_term,
+                          const std::set<dbObject*>& load_pins);
 
   //------------------------------------------------------------------
   // Helper functions for stitchLoadToDriver
@@ -162,15 +161,25 @@ class dbInsertBuffer
                                dbModITerm* top_mod_iterm);
 
   //------------------------------------------------------------------
+  // Helper functions for insertBufferSimple
+  //------------------------------------------------------------------
+  void validateArgumentsSimple(const dbObject* term_obj,
+                               const dbMaster* buffer_master) const;
+  bool validateTermAndGetModNet(const dbObject* term_obj,
+                                dbModNet*& mod_net) const;
+  void rewireBufferSimple(bool insertBefore,
+                          dbModNet* orig_mod_net,
+                          dbObject* term);
+
+  //------------------------------------------------------------------
   // Helper functions for insertBufferBeforeLoads
   //------------------------------------------------------------------
+  void validateArgumentsBeforeLoads(const std::set<dbObject*>& load_pins,
+                                    const dbMaster* buffer_master) const;
   dbModule* validateLoadPinsAndFindLCA(const std::set<dbObject*>& load_pins,
                                        bool loads_on_diff_nets) const;
-  void createNewFlatAndHierNets(std::set<dbObject*>& load_pins);
-  void rewireBufferLoadPins(std::set<dbObject*>& load_pins);
-  void placeBufferAtLocation(dbInst* buffer_inst,
-                             const Point* loc,
-                             std::set<dbObject*>& load_pins);
+  void createNewFlatAndHierNets(const std::set<dbObject*>& load_pins);
+  void rewireBufferLoadPins(const std::set<dbObject*>& load_pins);
   void setBufferAttributes(dbInst* buffer_inst);
   void validateBufferMaster() const;
 
@@ -195,7 +204,10 @@ class dbInsertBuffer
   void dlogMovedBTermLoad(int load_idx,
                           int num_loads,
                           const dbBTerm* load) const;
-  void dlogPlacingBuffer(const dbInst* buffer_inst, const Point& loc) const;
+  void dlogPlacedBuffer(const dbInst* buffer_inst,
+                        const Point& loc,
+                        const char* reason) const;
+  void dlogUnplacedBuffer(const dbInst* buffer_inst, const char* reason) const;
   void dlogInsertBufferSuccess(const dbInst* buffer_inst) const;
   void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;
@@ -223,7 +235,7 @@ class dbInsertBuffer
 
   // dbModNet has target loads only (true) or
   // mixed target and non-target loads (false)
-  std::map<dbModNet*, bool> is_target_only_cache_;
+  mutable std::map<dbModNet*, bool> is_target_only_cache_;
 
   // Indicates a dbModNet in a module can be reused (w/o port punching) or not
   std::map<dbModule*, std::set<dbModNet*>> module_reusable_nets_;

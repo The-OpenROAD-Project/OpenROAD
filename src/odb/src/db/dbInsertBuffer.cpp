@@ -129,7 +129,11 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
   rewireBufferSimple(insertBefore, orig_mod_net, term_obj);
 
   // 5. Place the new buffer
-  placeNewBuffer(buffer_inst, loc, term_obj);
+  if (loc) {
+    placeBufferAtLocation(buffer_inst, *loc);
+  } else {
+    placeBufferAtPin(buffer_inst, term_obj);
+  }
 
   // 6. Set buffer attributes
   setBufferAttributes(buffer_inst);
@@ -138,7 +142,7 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
 }
 
 dbInst* dbInsertBuffer::insertBufferBeforeLoads(
-    std::set<dbObject*>& load_pins,
+    const std::set<dbObject*>& load_pins,
     const dbMaster* buffer_master,
     const Point* loc,
     const char* new_buf_base_name,
@@ -188,7 +192,11 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   rewireBufferLoadPins(load_pins);
 
   // 5. Place the Buffer
-  placeBufferAtLocation(buffer_inst, loc, load_pins);
+  if (loc) {
+    placeBufferAtLocation(buffer_inst, *loc);
+  } else {
+    placeBufferAtCentroid(buffer_inst, orig_drvr_pin_, load_pins);
+  }
 
   // 6. Set buffer attributes
   setBufferAttributes(buffer_inst);
@@ -199,7 +207,7 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   return buffer_inst;
 }
 
-bool dbInsertBuffer::validateTermAndGetModNet(dbObject* term_obj,
+bool dbInsertBuffer::validateTermAndGetModNet(const dbObject* term_obj,
                                               dbModNet*& mod_net) const
 {
   mod_net = nullptr;
@@ -211,7 +219,7 @@ bool dbInsertBuffer::validateTermAndGetModNet(dbObject* term_obj,
 
   // Validate term type and connectivity
   if (term_obj->getObjectType() == dbITermObj) {
-    dbITerm* iterm = static_cast<dbITerm*>(term_obj);
+    const dbITerm* iterm = static_cast<const dbITerm*>(term_obj);
     if (iterm->getNet() != net_) {
       return false;  // Not connected to this net
     }
@@ -223,7 +231,7 @@ bool dbInsertBuffer::validateTermAndGetModNet(dbObject* term_obj,
 
     mod_net = iterm->getModNet();
   } else if (term_obj->getObjectType() == dbBTermObj) {
-    dbBTerm* bterm = static_cast<dbBTerm*>(term_obj);
+    const dbBTerm* bterm = static_cast<const dbBTerm*>(term_obj);
     if (bterm->getNet() != net_) {
       return false;  // Not connected to this net
     }
@@ -285,40 +293,42 @@ dbInst* dbInsertBuffer::checkAndCreateBuffer()
   return buffer_inst;
 }
 
-bool dbInsertBuffer::checkDontTouch(dbITerm* iterm) const
+bool dbInsertBuffer::checkDontTouch(const dbITerm* iterm) const
 {
-  if (iterm && iterm->getInst()->isDoNotTouch()) {
+  if (iterm == nullptr) {
+    return false;
+  }
+
+  if (iterm->getInst()->isDoNotTouch()) {
     return true;
   }
 
   dbNet* net = iterm->getNet();
-  if (net && net->isDoNotTouch()) {
+  if (net != nullptr && net->isDoNotTouch()) {
     return true;
   }
 
   return false;
 }
 
-void dbInsertBuffer::placeNewBuffer(dbInst* buffer_inst,
-                                    const Point* loc,
-                                    dbObject* term)
+void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst,
+                                           const Point& loc,
+                                           const char* reason)
+{
+  buffer_inst->setLocation(loc.getX(), loc.getY());
+  buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  dlogPlacedBuffer(buffer_inst, loc, reason);
+}
+
+void dbInsertBuffer::placeBufferAtPin(dbInst* buffer_inst, const dbObject* term)
 {
   int x = 0;
   int y = 0;
-  bool placed = false;
-  if (loc) {
-    x = loc->getX();
-    y = loc->getY();
-    placed = true;
-  } else {
-    placed = getPinLocation(term, x, y);
-  }
-
-  if (placed) {
-    buffer_inst->setLocation(x, y);
-    buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  if (getPinLocation(term, x, y)) {
+    placeBufferAtLocation(buffer_inst, Point(x, y), "pin location");
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
+    dlogUnplacedBuffer(buffer_inst, "pin location not available");
   }
 }
 
@@ -424,7 +434,8 @@ bool dbInsertBuffer::computeCentroid(const dbObject* drvr_pin,
   return true;
 }
 
-dbNet* dbInsertBuffer::createNewFlatNet(std::set<dbObject*>& connected_terms)
+dbNet* dbInsertBuffer::createNewFlatNet(
+    const std::set<dbObject*>& connected_terms)
 {
   // Create a new net for buffering in the target module.
   //
@@ -487,22 +498,35 @@ dbNet* dbInsertBuffer::createNewFlatNet(std::set<dbObject*>& connected_terms)
   return new_net;
 }
 
-std::string dbInsertBuffer::makeUniqueHierName(dbModule* module,
+std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const std::string& base_name,
                                                const char* suffix) const
 {
   std::string name = (suffix == nullptr) ? base_name : base_name + suffix;
+  const char hier_delim = block_->getHierarchyDelimiter();
+  const std::string hier_prefix
+      = module->isTop() ? "" : (module->getHierarchicalName() + hier_delim);
+
+  // Helper to check if a dbNet is an internal net of the 'module'.
+  // Note that the new name must not conflict with any internal flat nets.
+  auto hasInternalDbNet = [&](const std::string& net_base_name) {
+    dbNet* net = block_->findNet((hier_prefix + net_base_name).c_str());
+    return net != nullptr && net->isInternalTo(const_cast<dbModule*>(module));
+  };
+
+  // Ensure uniqueness against ModNets, ModBTerms, and internal dbNets
   int id = 0;
   std::string unique_name = name;
-  // Ensure uniqueness against both ModNets and ModBTerms
   while (module->getModNet(unique_name.c_str())
-         || module->findModBTerm(unique_name.c_str())) {
+         || module->findModBTerm(unique_name.c_str())
+         || hasInternalDbNet(unique_name)) {
     unique_name = fmt::format("{}_{}", name, id++);
   }
+
   return unique_name;
 }
 
-int dbInsertBuffer::getModuleDepth(dbModule* mod) const
+int dbInsertBuffer::getModuleDepth(const dbModule* mod) const
 {
   int depth = 0;
   while (mod != nullptr) {
@@ -557,7 +581,7 @@ dbModule* dbInsertBuffer::findLCA(dbModule* m1, dbModule* m2) const
 
 bool dbInsertBuffer::checkAllLoadsAreTargets(
     dbModNet* start_net,
-    const std::set<dbObject*>& load_pins)
+    const std::set<dbObject*>& load_pins) const
 {
   if (start_net == nullptr) {
     return true;
@@ -935,37 +959,37 @@ dbModNet* dbInsertBuffer::getFirstDriverModNetInTargetModule(
       dbHierSearchDir::FANOUT);
 }
 
-dbModNet* dbInsertBuffer::getModNet(dbObject* obj) const
+dbModNet* dbInsertBuffer::getModNet(const dbObject* obj) const
 {
   if (obj->getObjectType() == dbITermObj) {
-    return static_cast<dbITerm*>(obj)->getModNet();
+    return static_cast<const dbITerm*>(obj)->getModNet();
   }
   if (obj->getObjectType() == dbModITermObj) {
-    return static_cast<dbModITerm*>(obj)->getModNet();
+    return static_cast<const dbModITerm*>(obj)->getModNet();
   }
   if (obj->getObjectType() == dbBTermObj) {
-    return static_cast<dbBTerm*>(obj)->getModNet();
+    return static_cast<const dbBTerm*>(obj)->getModNet();
   }
   assert(false);
   return nullptr;
 }
 
-dbNet* dbInsertBuffer::getNet(dbObject* obj) const
+dbNet* dbInsertBuffer::getNet(const dbObject* obj) const
 {
   if (obj->getObjectType() == dbITermObj) {
-    return static_cast<dbITerm*>(obj)->getNet();
+    return static_cast<const dbITerm*>(obj)->getNet();
   }
   if (obj->getObjectType() == dbBTermObj) {
-    return static_cast<dbBTerm*>(obj)->getNet();
+    return static_cast<const dbBTerm*>(obj)->getNet();
   }
   assert(false);
   return nullptr;
 }
 
-dbModule* dbInsertBuffer::getModule(dbObject* obj) const
+dbModule* dbInsertBuffer::getModule(const dbObject* obj) const
 {
   if (obj->getObjectType() == dbITermObj) {
-    return static_cast<dbITerm*>(obj)->getInst()->getModule();
+    return static_cast<const dbITerm*>(obj)->getInst()->getModule();
   }
   if (obj->getObjectType() == dbBTermObj) {
     return block_->getTopModule();
@@ -973,13 +997,13 @@ dbModule* dbInsertBuffer::getModule(dbObject* obj) const
   return nullptr;
 }
 
-std::string dbInsertBuffer::getName(dbObject* obj) const
+std::string dbInsertBuffer::getName(const dbObject* obj) const
 {
   if (obj->getObjectType() == dbITermObj) {
-    return static_cast<dbITerm*>(obj)->getMTerm()->getName();
+    return static_cast<const dbITerm*>(obj)->getMTerm()->getName();
   }
   if (obj->getObjectType() == dbBTermObj) {
-    return static_cast<dbBTerm*>(obj)->getName();
+    return static_cast<const dbBTerm*>(obj)->getName();
   }
   assert(false);
   return "";
@@ -1340,7 +1364,8 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
   return target_module;
 }
 
-void dbInsertBuffer::createNewFlatAndHierNets(std::set<dbObject*>& load_pins)
+void dbInsertBuffer::createNewFlatAndHierNets(
+    const std::set<dbObject*>& load_pins)
 {
   // Create a new flat net
   std::set<dbObject*> connected_terms;
@@ -1379,7 +1404,7 @@ void dbInsertBuffer::createNewFlatAndHierNets(std::set<dbObject*>& load_pins)
   }
 }
 
-void dbInsertBuffer::rewireBufferLoadPins(std::set<dbObject*>& load_pins)
+void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
 {
   // 1.1. Connect Buffer Input to the Original Net
   buf_input_iterm_->connect(net_);
@@ -1452,24 +1477,18 @@ void dbInsertBuffer::rewireBufferLoadPins(std::set<dbObject*>& load_pins)
   }
 }
 
-void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst,
-                                           const Point* loc,
-                                           std::set<dbObject*>& load_pins)
+void dbInsertBuffer::placeBufferAtCentroid(dbInst* buffer_inst,
+                                           const dbObject* drvr_pin,
+                                           const std::set<dbObject*>& load_pins)
 {
   Point placement_loc;
-
-  if (loc) {
-    placement_loc = *loc;
+  if (computeCentroid(drvr_pin, load_pins, placement_loc)) {
+    placeBufferAtLocation(buffer_inst, placement_loc, "centroid");
   } else {
-    // Compute centroid; if all pins are unplaced, skip placement
-    if (!computeCentroid(orig_drvr_pin_, load_pins, placement_loc)) {
-      buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
-      return;
-    }
+    buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
+    dlogUnplacedBuffer(buffer_inst,
+                       "centroid computation failed (no placed pins)");
   }
-
-  dlogPlacingBuffer(buffer_inst, placement_loc);
-  placeNewBuffer(buffer_inst, &placement_loc, nullptr);
 }
 
 void dbInsertBuffer::setBufferAttributes(dbInst* buffer_inst)
@@ -1537,7 +1556,7 @@ void dbInsertBuffer::dlogLCAModule(const dbModule* target_module) const
                "BeforeLoads: LCA module: {} '{}'",
                target_module ? target_module->getName() : "null_module",
                target_mod_inst ? target_mod_inst->getHierarchicalName()
-                               : "<null_modinst_or_top>");
+                               : "<top_or_null_mod_inst>");
   }
 }
 
@@ -1659,17 +1678,31 @@ void dbInsertBuffer::dlogMovedBTermLoad(int load_idx,
                           : "");
 }
 
-void dbInsertBuffer::dlogPlacingBuffer(const dbInst* buffer_inst,
-                                       const Point& loc) const
+void dbInsertBuffer::dlogPlacedBuffer(const dbInst* buffer_inst,
+                                      const Point& loc,
+                                      const char* reason) const
 {
   debugPrint(logger_,
              utl::ODB,
              "insert_buffer",
              1,
-             "BeforeLoads: Placing buffer '{}' at ({}, {})",
+             "Placed the new buffer '{}' at ({}, {}) using {}",
              buffer_inst->getName(),
              loc.getX(),
-             loc.getY());
+             loc.getY(),
+             reason);
+}
+
+void dbInsertBuffer::dlogUnplacedBuffer(const dbInst* buffer_inst,
+                                        const char* reason) const
+{
+  debugPrint(logger_,
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "Buffer '{}' set to UNPLACED: {}",
+             buffer_inst->getName(),
+             reason);
 }
 
 void dbInsertBuffer::dlogInsertBufferSuccess(const dbInst* buffer_inst) const
@@ -1683,7 +1716,7 @@ void dbInsertBuffer::dlogInsertBufferSuccess(const dbInst* buffer_inst) const
 }
 
 void dbInsertBuffer::validateArgumentsSimple(
-    dbObject* term_obj,
+    const dbObject* term_obj,
     const dbMaster* buffer_master) const
 {
   if (term_obj == nullptr) {
@@ -1698,7 +1731,7 @@ void dbInsertBuffer::validateArgumentsSimple(
 }
 
 void dbInsertBuffer::validateArgumentsBeforeLoads(
-    std::set<dbObject*>& load_pins,
+    const std::set<dbObject*>& load_pins,
     const dbMaster* buffer_master) const
 {
   if (load_pins.empty()) {

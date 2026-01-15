@@ -146,9 +146,21 @@ class DbBaseVia : public DbVia
   virtual std::string getName() const = 0;
   virtual odb::Rect getViaRect(bool include_enclosure,
                                bool include_via_shape,
-                               bool include_bottom = true,
-                               bool include_top = true) const
+                               bool include_bottom,
+                               bool include_top) const
       = 0;
+
+  odb::Rect getViaRect(bool include_enclosure,
+                       bool include_via_shape,
+                       bool include_bottom) const
+  {
+    return getViaRect(
+        include_enclosure, include_via_shape, include_bottom, true);
+  }
+  odb::Rect getViaRect(bool include_enclosure, bool include_via_shape) const
+  {
+    return getViaRect(include_enclosure, include_via_shape, true);
+  }
 
   int getCount() const { return count_; }
 
@@ -187,8 +199,9 @@ class DbTechVia : public DbBaseVia
   std::string getName() const override;
   odb::Rect getViaRect(bool include_enclosure,
                        bool include_via_shape,
-                       bool include_bottom = true,
-                       bool include_top = true) const override;
+                       bool include_bottom,
+                       bool include_top) const override;
+  using DbBaseVia::getViaRect;
 
  private:
   odb::dbTechVia* via_;
@@ -243,8 +256,9 @@ class DbGenerateVia : public DbBaseVia
   std::string getName() const override;
   odb::Rect getViaRect(bool include_enclosure,
                        bool include_via_shape,
-                       bool include_bottom = true,
-                       bool include_top = true) const override;
+                       bool include_bottom,
+                       bool include_top) const override;
+  using DbBaseVia::getViaRect;
 
  private:
   odb::Rect rect_;
@@ -447,9 +461,10 @@ class ViaGenerator
 
   virtual bool isSetupValid(odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const;
-  virtual bool checkConstraints(bool check_cuts = true,
-                                bool check_min_cut = true,
-                                bool check_enclosure = true) const;
+  virtual bool checkConstraints(bool check_cuts,
+                                bool check_min_cut,
+                                bool check_enclosure) const;
+  bool checkConstraints() const { return checkConstraints(true, true, true); }
 
   // determine the shape of the vias
   bool build(bool bottom_is_internal_layer, bool top_is_internal_layer);

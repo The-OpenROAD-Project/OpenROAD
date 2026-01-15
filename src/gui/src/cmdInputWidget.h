@@ -42,10 +42,13 @@ class CmdInputWidget : public QPlainTextEdit
   void addCommandToOutput(const QString& cmd);
 
  public slots:
-  virtual void executeCommand(const QString& cmd,
-                              bool echo = true,
-                              bool silent = false)
-      = 0;
+  virtual void executeCommand(const QString& cmd, bool echo, bool silent) = 0;
+
+  void executeCommand(const QString& cmd, bool echo)
+  {
+    executeCommand(cmd, echo, false);
+  }
+  void executeCommand(const QString& cmd) { executeCommand(cmd, true); }
 
  private slots:
   void updateSize();

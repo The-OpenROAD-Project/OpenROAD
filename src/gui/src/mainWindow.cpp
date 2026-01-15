@@ -45,6 +45,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
+#include "gotoDialog.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "helpWidget.h"
@@ -395,10 +396,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       drc_viewer_->updateSelection(*selected_.begin());
     }
   });
-  connect(this,
-          &MainWindow::displayUnitsChanged,
+  connect(viewers_,
+          &LayoutTabs::viewUpdated,
           goto_dialog_,
-          &GotoLocationDialog::updateUnits);
+          &GotoLocationDialog::updateLocation);
   connect(selection_timer_.get(), &QTimer::timeout, [this]() {
     emit selectionChanged();
   });
@@ -1431,6 +1432,11 @@ void MainWindow::zoomTo(const odb::Rect& rect_dbu)
   viewers_->zoomTo(rect_dbu);
 }
 
+void MainWindow::zoomTo(const odb::Point& focus, int diameter)
+{
+  viewers_->zoomTo(focus, diameter);
+}
+
 void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
   if (items.empty()) {
@@ -1471,7 +1477,7 @@ void MainWindow::showGotoDialog()
     return;
   }
 
-  goto_dialog_->show_init();
+  goto_dialog_->showInit();
 }
 
 void MainWindow::showHelp()
@@ -1937,7 +1943,9 @@ void MainWindow::saveDesign()
 
   try {
     ord::OpenRoad::openRoad()->writeDb(file.toStdString().c_str());
-  } catch (const std::exception&) {
+  } catch (const std::exception& e) {
+    QMessageBox::warning(
+        this, "Save Error", QString("Db save failed: %1").arg(e.what()));
   }
 }
 
