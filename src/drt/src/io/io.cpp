@@ -3092,23 +3092,6 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
     frLayer* layer = fr_tech->getLayer(tech_layer->getName());
     if (layer) {
       router_cfg_->TOP_ROUTING_LAYER = layer->getLayerNum();
-      // Auto-extend to top available routing layer to utilize M8/M9 if
-      // available
-      for (frLayerNum layer_num = fr_tech->getTopLayerNum();
-           layer_num > router_cfg_->TOP_ROUTING_LAYER;
-           layer_num--) {
-        if (fr_tech->getLayer(layer_num)->getType()
-            == dbTechLayerType::ROUTING) {
-          logger_->warn(DRT,
-                        274,
-                        "Extending topRoutingLayer from {} to {} to reduce "
-                        "congestion and DRC.",
-                        layer->getName(),
-                        fr_tech->getLayer(layer_num)->getName());
-          router_cfg_->TOP_ROUTING_LAYER = layer_num;
-          break;
-        }
-      }
     } else {
       logger_->warn(utl::DRT,
                     273,
