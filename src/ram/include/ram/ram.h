@@ -42,7 +42,7 @@ namespace grt {
 class GlobalRouter;
 }
 
-namespace drt{
+namespace drt {
 class TritonRoute;
 }
 
@@ -58,8 +58,14 @@ class Grid;
 class RamGen
 {
  public:
-  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger, pdn::PdnGen* pdngen, ppl::IOPlacer* ioPlacer,
-          dpl::Opendp* opendp_, grt::GlobalRouter* global_router_, drt::TritonRoute* detailed_router_);
+  RamGen(sta::dbNetwork* network,
+         odb::dbDatabase* db,
+         Logger* logger,
+         pdn::PdnGen* pdngen,
+         ppl::IOPlacer* ioPlacer,
+         dpl::Opendp* opendp_,
+         grt::GlobalRouter* global_router_,
+         drt::TritonRoute* detailed_router_);
   ~RamGen() = default;
 
   void generate(int bytes_per_word,
@@ -71,10 +77,16 @@ class RamGen
                 odb::dbMaster* tapcell,
                 int max_tap_dist);
 
-  void ramPdngen(const char* power_pin, const char* ground_pin,
-                 const char* route_name, int route_width, 
-                 const char* ver_name, int ver_width, int ver_pitch,
-                 const char* hor_name, int hor_width, int hor_pitch);
+  void ramPdngen(const char* power_pin,
+                 const char* ground_pin,
+                 const char* route_name,
+                 int route_width,
+                 const char* ver_name,
+                 int ver_width,
+                 int ver_pitch,
+                 const char* hor_name,
+                 int hor_width,
+                 int hor_pitch);
   void ramPinplacer(const char* ver_name, const char* hor_name);
   void ramFiller(const std::vector<std::string>& filler_cells);
   void ramRouting();

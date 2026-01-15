@@ -149,7 +149,7 @@ proc generate_ram { args } {
     utl::error RAM 12 "-routing_layer is not a list of 2 values"
   } else {
     lassign $routing_layer route_name route_width
-    set route_width [ord::microns_to_dbu $route_width] 
+    set route_width [ord::microns_to_dbu $route_width]
   }
 
   if { [info exists keys(-ver_layer)] } {
@@ -186,39 +186,14 @@ proc generate_ram { args } {
     utl::error RAM 18 "The -filler_cells argument must be specified."
   }
 
-# add_global_connection -net VDD -pin_pattern $power_net -power
-# add_global_connection -net VSS -pin_pattern $ground_net -ground
-
-# global_connect
-
-# set_voltage_domain -power VDD -ground VSS
-# define_pdn_grid -name ram_grid -voltage_domains {CORE}
-
-# add_pdn_stripe -grid ram_grid -layer $route_name \
-#  -width $route_width -followpins -extend_to_boundary
-# add_pdn_stripe -grid ram_grid -layer $ver_name \
-#  -width $ver_width -pitch $ver_pitch -extend_to_boundary
-# add_pdn_stripe -grid ram_grid -layer $hor_name \
-#  -width $hor_width -pitch $hor_pitch -extend_to_boundary
-#
-# add_pdn_connect -layers [list $route_name $ver_name]
-# add_pdn_connect -layers [list $ver_name $hor_name]
-
-# pdngen
   ram::ram_pdngen $power_pin $ground_pin $route_name $route_width \
-                  $ver_name $ver_width $ver_pitch \
-                  $hor_name $hor_width $hor_pitch
+    $ver_name $ver_width $ver_pitch $hor_name $hor_width $hor_pitch
 
   make_tracks -x_offset 0 -y_offset 0
+
   ram::ram_pinplacer $ver_name $hor_name
-#  set_io_pin_constraint -direction output -region top:*
-#  set_io_pin_constraint -pin_names {D[*]} -region top:*
-#
-#  place_pins -hor_layers $hor_name -ver_layers $ver_name
 
   ram::ram_filler $filler_cells
-#  filler_placement $filler_cells
+
   ram::ram_routing
-#  global_route
-#  detailed_route -verbose 0
 }
