@@ -175,6 +175,22 @@ set_max_utilization(double max_utilization)
 }
 
 void
+set_equiv_filter_fallback(bool enabled)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->setEquivFilterFallback(enabled);
+}
+
+void
+set_setup_tns_checkpoint(bool enabled)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->setSetupTnsCheckpoint(enabled);
+}
+
+void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {

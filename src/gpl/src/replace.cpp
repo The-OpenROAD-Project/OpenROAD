@@ -260,9 +260,10 @@ bool Replace::initNesterovPlace(const PlaceOptions& options, const int threads)
 
   if (!tb_) {
     tb_ = std::make_shared<TimingBase>(nbc_, rs_, log_);
+    tb_->setUseNewNetWeights(options.timingDrivenUseNewNetWeights);
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
     float timing_net_weight_max = options.timingNetWeightMax;
-    if (utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")
+    if (options.timingDrivenUseNewNetWeights
         && !options.timingNetWeightMaxUserSet) {
       if (auto env_max = utl::getEnvFloat("GPL_WEIGHT_MAX")) {
         if (*env_max > 0.0f) {

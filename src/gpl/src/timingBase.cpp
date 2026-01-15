@@ -28,13 +28,6 @@ namespace gpl {
 using utl::GPL;
 
 // TimingBase
-TimingBase::TimingBase()
-{
-  if (utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")) {
-    loadEnvOverrides();
-  }
-}
-
 TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
                        rsz::Resizer* rs,
                        utl::Logger* log)
@@ -43,7 +36,12 @@ TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
   rs_ = rs;
   nbc_ = std::move(nbc);
   log_ = log;
-  if (utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")) {
+}
+
+void TimingBase::setUseNewNetWeights(bool enabled)
+{
+  use_new_net_weights_ = enabled;
+  if (use_new_net_weights_) {
     loadEnvOverrides();
   }
 }
@@ -56,10 +54,6 @@ void TimingBase::initTimingOverflowChk()
 
 void TimingBase::loadEnvOverrides()
 {
-  if (!utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD")) {
-    return;
-  }
-
   if (auto env_max = utl::getEnvFloat("GPL_WEIGHT_MAX", log_, GPL, 124)) {
     if (*env_max > 0.0F) {
       net_weight_max_ = *env_max;
@@ -220,9 +214,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
     return false;
   }
 
-  const bool use_orfs_new_openroad
-      = utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
-  if (!use_orfs_new_openroad) {
+  if (!use_new_net_weights_) {
     int weighted_net_count = 0;
     for (auto& gNet : nbc_->getGNets()) {
       // default weight

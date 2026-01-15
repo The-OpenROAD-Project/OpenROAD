@@ -147,13 +147,14 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-cap_margin cap_margin] \
                                       [-buffer_gain gain] \
                                       [-pre_placement] \
+                                      [-equiv_filter_fallback] \
                                       [-match_cell_footprint] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-match_cell_footprint -verbose -pre_placement}
+    flags {-equiv_filter_fallback -match_cell_footprint -verbose -pre_placement}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -170,6 +171,7 @@ proc repair_design { args } {
   est::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
+  rsz::set_equiv_filter_fallback [info exists flags(-equiv_filter_fallback)]
   set verbose [info exists flags(-verbose)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
     $pre_placement $match_cell_footprint $verbose
@@ -239,6 +241,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-hold_margin hold_margin]\
                                         [-slack_margin slack_margin]\
                                         [-libraries libs]\
+                                        [-routed_parasitics_src {global_routing|detailed_routing}]\
                                         [-allow_setup_violations]\
                                         [-sequence move_string]\
                                         [-skip_pin_swap]\
@@ -254,6 +257,8 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-max_iterations iterations]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
+                                        [-equiv_filter_fallback] \
+                                        [-setup_tns_checkpoint] \
                                         [-match_cell_footprint] \
                                         [-max_repairs_per_pass max_repairs_per_pass]\
                                         [-verbose]}
@@ -261,11 +266,12 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
-            -libraries -max_utilization -max_buffer_percent -sequence \
+            -libraries -routed_parasitics_src -max_utilization -max_buffer_percent -sequence \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
-             -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint -verbose}
+             -skip_vt_swap -skip_crit_vt_swap -equiv_filter_fallback -setup_tns_checkpoint \
+             -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -343,29 +349,24 @@ proc repair_timing { args } {
   }
 
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
-
-  set orfs_new_openroad 0
-  if { [info exists ::env(ORFS_ENABLE_NEW_OPENROAD)] } {
-    set value [string tolower [string trim $::env(ORFS_ENABLE_NEW_OPENROAD)]]
-    if { [lsearch -exact {1 true yes on} $value] != -1 } {
-      set orfs_new_openroad 1
-    }
-  }
+  rsz::set_equiv_filter_fallback [info exists flags(-equiv_filter_fallback)]
+  rsz::set_setup_tns_checkpoint [info exists flags(-setup_tns_checkpoint)]
 
   if { [design_is_routed] } {
-    if { $orfs_new_openroad } {
-      set use_detailed_parasitics 1
-      if { [info exists ::env(NG45_USE_DETAILED_PARA)] } {
-        set use_detailed_parasitics [expr { $::env(NG45_USE_DETAILED_PARA) ? 1 : 0 }]
+    set parasitics_src "detailed_routing"
+    if { [info exists keys(-routed_parasitics_src)] } {
+      set parasitics_src $keys(-routed_parasitics_src)
+      if {
+        [lsearch -exact {global_routing detailed_routing} $parasitics_src]
+        == -1
+      } {
+        utl::error RSZ 287 [format \
+          "Invalid -routed_parasitics_src %s (expected global_routing|%s)." \
+          $parasitics_src \
+          "detailed_routing"]
       }
-      set para_src [expr {
-        $use_detailed_parasitics ? "detailed_routing"
-        : "global_routing"
-      }]
-      est::set_parasitics_src $para_src
-    } else {
-      est::set_parasitics_src "detailed_routing"
     }
+    est::set_parasitics_src $parasitics_src
   }
 
   set max_repairs_per_pass 1

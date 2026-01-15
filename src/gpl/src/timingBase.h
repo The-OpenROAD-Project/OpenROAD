@@ -25,7 +25,7 @@ class GNet;
 class TimingBase
 {
  public:
-  TimingBase();
+  TimingBase() = default;
   TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
              rsz::Resizer* rs,
              utl::Logger* log);
@@ -38,6 +38,7 @@ class TimingBase
   void clearTimingNetWeightOverflow();
   size_t getTimingNetWeightOverflowSize() const;
 
+  void setUseNewNetWeights(bool enabled);
   void setTimingNetWeightMax(float max);
 
   // updateNetWeight.
@@ -54,6 +55,7 @@ class TimingBase
 
   std::vector<int> timingNetWeightOverflow_;
   std::vector<int> timingOverflowChk_;
+  bool use_new_net_weights_ = false;
   float net_weight_max_ = 5;
   float net_weight_exponent_ = 1.0;
   // When enabled, normalize net criticality against 0 slack (violations)

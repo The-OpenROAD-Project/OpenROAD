@@ -83,7 +83,6 @@
 #include "sta/TimingRole.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
-#include "utl/Environment.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 #include "utl/scope.h"
@@ -1926,9 +1925,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
     return {};
   }
 
-  const bool use_orfs_new_openroad
-      = utl::envVarTruthy("ORFS_ENABLE_NEW_OPENROAD");
-  if (!use_orfs_new_openroad) {
+  if (!equiv_filter_fallback_) {
     LibertyCellSeq swappable_cells;
     LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
 
@@ -2915,6 +2912,20 @@ int Resizer::metersToDbu(double dist) const
 void Resizer::setMaxUtilization(double max_utilization)
 {
   max_area_ = coreArea() * max_utilization;
+}
+
+void Resizer::setEquivFilterFallback(bool enabled)
+{
+  if (equiv_filter_fallback_ == enabled) {
+    return;
+  }
+  equiv_filter_fallback_ = enabled;
+  swappable_cells_cache_.clear();
+}
+
+void Resizer::setSetupTnsCheckpoint(bool enabled)
+{
+  setup_tns_checkpoint_ = enabled;
 }
 
 bool Resizer::overMaxArea()
