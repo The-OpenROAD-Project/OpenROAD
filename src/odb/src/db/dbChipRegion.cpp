@@ -135,6 +135,9 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 
 // User Code Begin dbChipRegionPublicMethods
 
+// Returns the region's cuboid in the master chip's coordinate system.
+// Note: This differs from dbChipRegionInst::getCuboid() which returns
+// the transformed cuboid in the parent's coordinate system.
 Cuboid dbChipRegion::getCuboid() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
