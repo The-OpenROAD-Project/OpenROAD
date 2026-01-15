@@ -43,7 +43,9 @@ estimate_parasitics -placement
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
 puts "Checking equivalence after swap #2 (Rollback)..."
-run_equivalence_test replace_hier_mod2 sky130hd/work_around_yosys "None"
+run_equivalence_test replace_hier_mod2 \
+  -lib_dir ./sky130hd/work_around_yosys/ \
+  -remove_cells "None"
 
 # Swap #3. BRENT_KUNG -> KOGGE_STONE (Redo)
 replace_hier_module _551_ LCU_16_KOGGE_STONE
@@ -59,4 +61,6 @@ estimate_parasitics -placement
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
 puts "Checking equivalence after swap #4 (Rollback again)..."
-run_equivalence_test replace_hier_mod2 sky130hd/work_around_yosys "None"
+run_equivalence_test replace_hier_mod2 \
+  -lib_dir ./sky130hd/work_around_yosys/ \
+  -remove_cells "None"
