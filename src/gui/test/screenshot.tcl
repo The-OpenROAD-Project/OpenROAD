@@ -1,4 +1,4 @@
-# test for removing non-fixed bterms
+# test for creating a screenshot
 source "helpers.tcl"
 
 read_lef Nangate45/Nangate45_tech.lef
