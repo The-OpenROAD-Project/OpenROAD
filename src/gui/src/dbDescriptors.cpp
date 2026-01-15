@@ -4,6 +4,7 @@
 #include "dbDescriptors.h"
 
 #include <QInputDialog>
+#include <QMessageBox>
 #include <QString>
 #include <QStringList>
 #include <algorithm>
@@ -11,6 +12,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <limits>
 #include <map>
@@ -30,6 +32,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "insertBufferDialog.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -1989,6 +1992,68 @@ Descriptor::Actions DbNetDescriptor::getActions(const std::any& object) const
                                              return makeSelected(net);
                                            }});
     }
+  }
+  int drivers = 0;
+  for (auto* iterm : net->getITerms()) {
+    const auto iotype = iterm->getIoType();
+    if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
+      drivers++;
+    }
+  }
+  for (auto* bterm : net->getBTerms()) {
+    const auto iotype = bterm->getIoType();
+    if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT
+        || iotype == odb::dbIoType::FEEDTHRU) {
+      drivers++;
+    }
+  }
+
+  if (drivers <= 1) {
+    actions.push_back(
+        {"Insert Buffer", [this, net]() {
+           InsertBufferDialog dialog(net, sta_, nullptr);
+           if (dialog.exec() == QDialog::Accepted) {
+             odb::dbMaster* master = dialog.getSelectedMaster();
+             odb::dbObject* driver = nullptr;
+             std::set<odb::dbObject*> loads;
+             dialog.getSelection(driver, loads);
+
+             std::string buf_name = dialog.getBufferName().toStdString();
+             std::string net_name = dialog.getNetName().toStdString();
+             const char* buf_p
+                 = buf_name.empty() ? kDefaultBufBaseName : buf_name.c_str();
+             const char* net_p
+                 = net_name.empty() ? kDefaultNetBaseName : net_name.c_str();
+
+             try {
+               odb::dbInst* buffer_inst = nullptr;
+               if (driver) {
+                 buffer_inst = net->insertBufferAfterDriver(
+                     driver,
+                     master,
+                     nullptr,
+                     buf_p,
+                     net_p,
+                     odb::dbNameUniquifyType::IF_NEEDED);
+               } else if (!loads.empty()) {
+                 buffer_inst = net->insertBufferBeforeLoads(
+                     loads,
+                     master,
+                     nullptr,
+                     buf_p,
+                     net_p,
+                     odb::dbNameUniquifyType::IF_NEEDED);
+               }
+               Gui::get()->redraw();
+               if (buffer_inst) {
+                 return Gui::get()->makeSelected(buffer_inst);
+               }
+             } catch (const std::exception& e) {
+               QMessageBox::critical(nullptr, "Error", e.what());
+             }
+           }
+           return makeSelected(net);
+         }});
   }
   return actions;
 }

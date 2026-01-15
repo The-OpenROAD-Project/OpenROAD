@@ -109,7 +109,7 @@ function(swig_lib)
       set_property(TARGET ${ARG_NAME} PROPERTY SWIG_COMPILE_OPTIONS -flatstaticmethod)
     endif()
 
-    swig_link_libraries(${ARG_NAME}
+    target_link_libraries(${ARG_NAME}
       PUBLIC
         Python3::Python
     )
