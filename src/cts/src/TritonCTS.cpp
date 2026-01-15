@@ -168,7 +168,7 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return (existMaxFanout) ? 0 : fanout;
+    return (existMaxFanout) ? fanout : 0;
   }
 
   openSta_->sdc()->fanoutLimit(
