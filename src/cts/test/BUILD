@@ -10,6 +10,7 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
+    "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
     "check_buffers",

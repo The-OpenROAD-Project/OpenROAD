@@ -1428,7 +1428,7 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
   if (!options_->getMaxWl()) {
     wirelengthThreshold = kSlewThreshold * techChar_->getMaxSegmentLength();
   } else {
-    wirelengthThreshold = options_->getMaxWl() / techChar_->getLengthUnit();
+    wirelengthThreshold = options_->getMaxWl() / options_->getWireSegmentUnit();
   }
 
   debugPrint(
@@ -1445,8 +1445,8 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
     const unsigned numWires = (segmentLength - length) / charSegLength;
 
     if (numWires >= 1) {
-      debugPrint(logger_, CTS, "tech char", 1, "curr wl = {}", currWl);
       for (int wireCount = 0; wireCount < numWires; ++wireCount) {
+        debugPrint(logger_, CTS, "tech char", 1, "curr wl = {}", currWl);
         unsigned outCap = 0, outSlew = 0;
         unsigned key = 0;
         if (options_->isSimpleSegmentEnabled()) {
