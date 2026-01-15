@@ -214,3 +214,10 @@ http_archive(
         "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
     ],
 )
+
+single_version_override(
+    module_name = "boost.context",
+    patch_strip = 1,
+    patches = ["//bazel:boost_context_disable_parse_headers.patch"],
+    version = BOOST_VERSION,
+)
