@@ -25,6 +25,19 @@ RUN apt-get -y update \
       docker-buildx-plugin \
       docker-ce \
       docker-ce-cli \
+      libdbus-1-3 \
+      libfontconfig1 \
+      libsm6 \
+      libx11-xcb1 \
+      libxcb-cursor0 \
+      libxcb1-dev \
+      libxcb-icccm4 \
+      libxcb-keysyms1 \
+      libxcb-randr0 \
+      libxcb-shape0 \
+      libxcb-sync1 \
+      libxcb-xfixes0 \
+      libxcb-xkb1 \
       openjdk-21-jre-headless \
       python3 \
       python3-yaml \
