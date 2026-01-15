@@ -551,8 +551,8 @@ class FastRouteCore
   // Resistance-aware related functions
   float getWireResistance(int layer, int length, FrNet* net);
   float getViaResistance(int from_layer, int to_layer);
-  int getWireResistanceCost(int layer, int length, FrNet* net);
-  int getViaResistanceCost(int from_layer, int to_layer);
+  int getWireCost(int layer, int length, FrNet* net);
+  int getViaCost(int from_layer, int to_layer);
   float getNetResistance(FrNet* net, bool assume_layer = false);
   float getResAwareScore(FrNet* net);
   void updateWorstMetrics(FrNet* net);

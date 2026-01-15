@@ -691,17 +691,17 @@ float FastRouteCore::getMazeRouteCost3D(const int net_id,
   if (is_via) {
     // Via transition cost
     base_cost = via_cost_;
-    const int via_resistance = getViaResistanceCost(from_layer, to_layer);
+    const int via_resistance_cost = getViaCost(from_layer, to_layer);
 
-    return base_cost + via_resistance;
+    return base_cost + via_resistance_cost;
   }
 
   // Wire segment cost
   const float length = abs(to_x - from_x) + abs(to_y - from_y);
-  const float wire_resistance
-      = getWireResistanceCost(from_layer, length * tile_size_, net);
+  const float wire_resistance_cost
+      = getWireCost(from_layer, length * tile_size_, net);
 
-  return base_cost + wire_resistance;
+  return base_cost + wire_resistance_cost;
 }
 
 void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
@@ -847,7 +847,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float cost = getMazeRouteCost3D(
                 netID, curL, curL, curX, curY, curX - 1, curY, false);
             const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const int penalty = (new_len > original_len) ? detour_penalty_ : 0;
+            const float penalty = (new_len > original_len && resistance_aware_)
+                                      ? detour_penalty_
+                                      : 0;
             const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
             if (h_edges_3D_[curL][curY][curX - 1].usage + edge_cost
                     <= h_edges_3D_[curL][curY][curX - 1].cap
@@ -897,7 +899,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float cost = getMazeRouteCost3D(
                 netID, curL, curL, curX, curY, curX + 1, curY, false);
             const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const int penalty = (new_len > original_len) ? detour_penalty_ : 0;
+            const float penalty = (new_len > original_len && resistance_aware_)
+                                      ? detour_penalty_
+                                      : 0;
             const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
             const int tmpX = curX + 1;  // the right neighbor
 
@@ -948,7 +952,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float cost = getMazeRouteCost3D(
                 netID, curL, curL, curX, curY, curX, curY - 1, false);
             const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const int penalty = (new_len > original_len) ? detour_penalty_ : 0;
+            const float penalty = (new_len > original_len && resistance_aware_)
+                                      ? detour_penalty_
+                                      : 0;
             const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
             const int tmpY = curY - 1;  // the bottom neighbor
             if (v_edges_3D_[curL][curY - 1][curX].usage + edge_cost
@@ -997,7 +1003,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float cost = getMazeRouteCost3D(
                 netID, curL, curL, curX, curY, curX, curY + 1, false);
             const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const int penalty = (new_len > original_len) ? detour_penalty_ : 0;
+            const float penalty = (new_len > original_len && resistance_aware_)
+                                      ? detour_penalty_
+                                      : 0;
             const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
             const int tmpY = curY + 1;  // the top neighbor
             if (v_edges_3D_[curL][curY][curX].usage + edge_cost
@@ -1047,7 +1055,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           const float cost = getMazeRouteCost3D(
               netID, curL, curL - 1, curX, curY, curX, curY, true);
           const int new_len = path_len_3D_[curL][curY][curX] + 1;
-          const int penalty = (new_len > original_len) ? detour_penalty_ : 0;
+          const float penalty = (new_len > original_len && resistance_aware_
+                                 && !is_incremental_grt_)
+                                    ? detour_penalty_
+                                    : 0;
           const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
           const int tmpL = curL - 1;  // the bottom neighbor
 
@@ -1094,7 +1105,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           const float cost = getMazeRouteCost3D(
               netID, curL, curL + 1, curX, curY, curX, curY, true);
           const int new_len = path_len_3D_[curL][curY][curX] + 1;
-          const int penalty = (new_len > original_len) ? detour_penalty_ : 0;
+          const float penalty = (new_len > original_len && resistance_aware_
+                                 && !is_incremental_grt_)
+                                    ? detour_penalty_
+                                    : 0;
           const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
           const int tmpL = curL + 1;  // the bottom neighbor
           if (d1_3D_[tmpL][curY][curX]
