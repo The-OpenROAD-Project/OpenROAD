@@ -824,13 +824,13 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   int8_t edge_cost = net->getEdgeCost();
 
   if (y1 == y2) {  // horizontal edge
-    graph2d_.updateUsageH({x1, x2}, y1, net, used * edge_cost);
     for (int x = x1; x < x2; x++) {
+      graph2d_.updateUsageH(x, y1, net, used * edge_cost);
       h_edges_3D_[k][y1][x].usage += used * layer_edge_cost;
     }
   } else if (x1 == x2) {  // vertical edge
-    graph2d_.updateUsageV(x1, {y1, y2}, net, used * edge_cost);
     for (int y = y1; y < y2; y++) {
+      graph2d_.updateUsageV(x1, y, net, used * edge_cost);
       v_edges_3D_[k][y][x1].usage += used * layer_edge_cost;
     }
   }
