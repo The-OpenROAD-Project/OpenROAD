@@ -430,7 +430,7 @@ void EstimateParasitics::updateParasitics()
     case ParasiticsSrc::global_routing:
     case ParasiticsSrc::detailed_routing: {
       // TODO: update detailed route for modified nets
-      incr_groute_->updateRoutes(update_routes_cnt);
+      incr_groute_->updateRoutes();
       for (const Net* net : parasitics_invalid_) {
         estimateGlobalRouteRC(db_network_->staToDb(net));
       }

@@ -818,27 +818,21 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   getMinMaxLayer(min_layer, max_layer);
   initRoutingLayers(min_layer, max_layer);
 
-  // Release the resources used by the dirty nets.
-  for (odb::dbNet* db_net : dirty_nets_) {
-    Net* net = db_net_map_[db_net];
-    if (net->areSegmentsRestored()) {
-      updateNetResources(net, true);
-      net->setAreSegmentsRestored(false);
-    } else if (!net->isMergedNet()) {
-      fastroute_->clearNetRoute(db_net);
-    }
-  }
-
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     updateNetPins(net);
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-
     if (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
+      if (net->areSegmentsRestored()) {
+        updateNetResources(net, true);
+        net->setAreSegmentsRestored(false);
+      } else if (!net->isMergedNet()) {
+        fastroute_->clearNetRoute(db_net);
+      }
       routes_[db_net].clear();
       db_net->clearGuides();
     } else if (net->isMergedNet()) {
@@ -861,6 +855,12 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     return false;
   }
 
+  if (net->areSegmentsRestored()) {
+    updateNetResources(net, true);
+  } else if (!net->isMergedNet()) {
+    fastroute_->clearNetRoute(db_net);
+  }
+
   routes_[db_net].clear();
   for (odb::dbGuide* guide : db_net->getGuides()) {
     int layer_idx = guide->getLayer()->getRoutingLevel();
@@ -874,8 +874,12 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
 
   std::string pins_not_covered;
   if (!netIsCovered(db_net, pins_not_covered)) {
-    routes_[db_net].clear();
-    return false;
+    logger_->error(GRT,
+                   303,
+                   "Fail to restore routing segments from guides for net {}. "
+                   "The following pins are not covered: {}",
+                   net->getName(),
+                   pins_not_covered);
   }
 
   net->setRestoreRouteFromGuides(false);
@@ -5895,6 +5899,7 @@ void GRouteDbCbk::inDbNetPostGuideRestore(odb::dbNet* net)
 {
   Net* fr_net = grouter_->getNet(net);
   fr_net->setRestoreRouteFromGuides(true);
+  grouter_->addDirtyNet(net);
 }
 
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
