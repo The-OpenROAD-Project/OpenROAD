@@ -53,7 +53,8 @@ static bool checkMasterSymmetry(Architecture* arch, const Node* nd, int rowId)
   using odb::dbOrientType;
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
     return true;
-  } else if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
+  }
+  if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
     return (masterSym & Symmetry_X) != 0;
   }
   return false;
