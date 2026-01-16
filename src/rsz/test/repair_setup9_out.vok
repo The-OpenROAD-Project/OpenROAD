@@ -74,6 +74,10 @@ module top (clk,
  DFF_X1 \u_mid1/dff_out2  (.D(\u_mid1/net ),
     .CK(clk),
     .Q(m1_out2));
+ BUF_X4 \u_mid1/rebuffer1  (.A(\u_mid1/l2_out1 ),
+    .Z(\u_mid1/net1 ));
+ BUF_X4 \u_mid1/split  (.A(\u_mid1/net1 ),
+    .Z(\u_mid1/net ));
  BUF_X2 \u_mid1/u_leaf1/buf1  (.A(\u_mid1/u_leaf1/n1 ),
     .Z(\u_mid1/u_leaf1/n2 ));
  BUF_X2 \u_mid1/u_leaf1/buf2  (.A(\u_mid1/u_leaf1/n2 ),
@@ -119,8 +123,4 @@ module top (clk,
  DFF_X1 \u_mid2/u_leaf4/dff1  (.D(in4),
     .CK(clk),
     .Q(\u_mid2/l4_out ));
- BUF_X4 \u_mid1/rebuffer1  (.A(\u_mid1/l2_out1 ),
-    .Z(\u_mid1/net1 ));
- BUF_X4 \u_mid1/split  (.A(\u_mid1/net1 ),
-    .Z(\u_mid1/net ));
 endmodule
