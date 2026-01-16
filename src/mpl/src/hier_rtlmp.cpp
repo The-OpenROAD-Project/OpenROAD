@@ -127,6 +127,12 @@ void HierRTLMP::setGuidanceRegions(
   guides_ = guidance_regions;
 }
 
+void HierRTLMP::setMacroHalos(
+    const std::map<odb::dbInst*, std::pair<int, int>>& halos)
+{
+  halos_ = halos;
+}
+
 // Options related to clustering
 
 void HierRTLMP::setClusterSize(int max_num_macro,
@@ -263,9 +269,86 @@ void HierRTLMP::init()
 // Private functions
 ////////////////////////////////////////////////////////////////////////
 
+std::string HierRTLMP::generateMacroAndCoreDimensionsTable(
+    const HardMacro* hard_macro,
+    const odb::Rect& core) const
+{
+  std::string table;
+
+  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
+  table += fmt::format("\n-----------------------------------------");
+  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
+                       block_->dbuToMicrons(hard_macro->getWidth()),
+                       block_->dbuToMicrons(core.dx()));
+  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
+                       block_->dbuToMicrons(hard_macro->getHeight()),
+                       block_->dbuToMicrons(core.dy()));
+
+  return table;
+}
+
+// Creates the hard macros objects and inserts them in the tree map
+void HierRTLMP::createHardMacros(odb::dbModule* module)
+{
+  const odb::Rect& core = block_->getCoreArea();
+
+  for (odb::dbInst* inst : module->getInsts()) {
+    if (inst->isBlock()) {
+      if (inst->isFixed()) {
+        logger_->info(MPL, 62, "Found fixed macro {}.", inst->getName());
+
+        if (!inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
+          clustering_engine_->addIgnorableMacro(inst);
+          logger_->info(MPL,
+                        63,
+                        "{} is outside the macro placement area and will be "
+                        "ignored.",
+                        inst->getName());
+          continue;
+        }
+
+        tree_->has_fixed_macros = true;
+      }
+
+      int halo_width
+          = halos_.contains(inst) ? halos_[inst].first : tree_->halo_width;
+      int halo_height
+          = halos_.contains(inst) ? halos_[inst].second : tree_->halo_height;
+
+      if (halos_.contains(inst)) {
+        logger_->report(
+            "{} HAS NONDEFAULT HALOS {}", inst->getName(), halos_[inst]);
+      }
+
+      auto macro = std::make_unique<HardMacro>(inst, halo_width, halo_height);
+
+      if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
+        logger_->error(
+            MPL,
+            6,
+            "Found macro that does not fit in the core.\nName: {}\n{}",
+            inst->getName(),
+            generateMacroAndCoreDimensionsTable(macro.get(), core));
+      }
+
+      tree_->maps.inst_to_hard[inst] = std::move(macro);
+    }
+  }
+
+  for (odb::dbModInst* child : module->getChildren()) {
+    createHardMacros(child->getMaster());
+  }
+}
+
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
+  clustering_engine_ = std::make_unique<ClusteringEngine>(
+      block_, network_, logger_, tritonpart_, graphics_.get());
+
+  createHardMacros(block_->getTopModule());
+  // Set target structure
+  clustering_engine_->setTree(tree_.get());
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {

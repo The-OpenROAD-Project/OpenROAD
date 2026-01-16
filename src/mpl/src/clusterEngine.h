@@ -163,6 +163,7 @@ class ClusteringEngine
 
   int getNumberOfIOs(Cluster* target) const;
 
+  void addIgnorableMacro(odb::dbInst* inst);
   bool isIgnoredInst(odb::dbInst* inst);
 
  private:
@@ -176,8 +177,6 @@ class ClusteringEngine
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                                  const odb::Rect& core) const;
   std::vector<odb::dbInst*> getUnfixedMacros();
   void setDieArea();
   void setFloorplanShape();

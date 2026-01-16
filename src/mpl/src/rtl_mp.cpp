@@ -86,7 +86,7 @@ bool MacroPlacer::place(const int num_threads,
     hier_rtlmp_->setDataFlowDriven();
   }
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
-  // hier_rtlmp_->setHalos(macro_halos_);
+  hier_rtlmp_->setMacroHalos(macro_halos_);
 
   hier_rtlmp_->run();
 

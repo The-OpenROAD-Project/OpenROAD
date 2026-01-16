@@ -81,6 +81,7 @@ class HierRTLMP
   void setHaloHeight(int halo_height);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
+  void setMacroHalos(const std::map<odb::dbInst*, std::pair<int, int>>& halos);
 
   // Clustering Related Options
   void setClusterSize(int max_num_macro,
@@ -126,6 +127,9 @@ class HierRTLMP
   using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
   using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
 
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
+  void createHardMacros(odb::dbModule* module);
   void runMultilevelAutoclustering();
   void runHierarchicalMacroPlacement();
 
@@ -297,6 +301,8 @@ class HierRTLMP
 
   std::map<std::string, odb::Rect> fences_;   // macro_name, fence
   std::map<odb::dbInst*, odb::Rect> guides_;  // Macro -> Guidance Region
+  std::map<odb::dbInst*, std::pair<int, int>>
+      halos_;  // Macro -> Halo {width, height}
   std::vector<odb::Rect> placement_blockages_;
   std::vector<odb::Rect> io_blockages_;
 
