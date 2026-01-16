@@ -177,6 +177,7 @@ or_integration_tests(
     report_equiv_cells
     replace_arith_modules1
     replace_arith_modules2
+    replace_arith_modules3
     report_buffers_asap7
     report_buffers_nangate45
     report_buffers_ihp

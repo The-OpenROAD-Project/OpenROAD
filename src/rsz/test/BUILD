@@ -158,6 +158,7 @@ TESTS = [
     "repair_wire9",
     "replace_arith_modules1",
     "replace_arith_modules2",
+    "replace_arith_modules3",
     "report_buffers_asap7",
     "report_buffers_gf180",
     "report_buffers_ihp",
