@@ -1303,7 +1303,6 @@ void FastRouteCore::layerAssignmentV4()
 
 void FastRouteCore::layerAssignment()
 {
-  // const float kLayerAssignmentResAwarePercentage = 0.0;
   is_3d_step_ = false;
   updateSlacks();
   is_3d_step_ = true;
