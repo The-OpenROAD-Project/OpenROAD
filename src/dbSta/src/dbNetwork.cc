@@ -1623,23 +1623,11 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
   }
   if (moditerm) {
     // get the direction of the modbterm
-    const char* pin_name_raw = moditerm->getName();
-    if (pin_name_raw == nullptr) {
-      return PortDirection::input();
-    }
-    std::string pin_name = pin_name_raw;
+    std::string pin_name = moditerm->getName();
     dbModInst* mod_inst = moditerm->getParent();
-    if (mod_inst == nullptr) {
-      return PortDirection::input();
-    }
     dbModule* module = mod_inst->getMaster();
-    if (module == nullptr) {
-      return PortDirection::input();
-    }
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
-    if (modbterm_local == nullptr) {
-      return PortDirection::input();
-    }
+    assert(modbterm_local != nullptr);
     PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
@@ -2005,33 +1993,23 @@ void dbNetwork::visitConnectedPins(const Net* net,
       visitor(pin);
     }
 
+    // visit below nets
     for (dbModITerm* moditerm : mod_net->getModITerms()) {
       dbModInst* mod_inst = moditerm->getParent();
       // note we are dealing with a uniquified hierarchy
       // so one master per instance..
-      if (mod_inst == nullptr) {
-        continue;
-      }
       dbModule* module = mod_inst->getMaster();
-      if (module == nullptr) {
-        continue;
-      }
-      const char* name_raw = moditerm->getName();
-      if (name_raw == nullptr) {
-        continue;
-      }
-      std::string pin_name = name_raw;
+      std::string pin_name = moditerm->getName();
       dbModBTerm* mod_bterm = module->findModBTerm(pin_name.c_str());
-      if (mod_bterm == nullptr) {
-        continue;
-      }
       Term* below_term = dbToStaTerm(mod_bterm);
+      // traverse along rest of net
       Net* below_net = this->net(below_term);
-      if (below_net && below_net != net) {
+      if (below_net) {
         visitConnectedPins(below_net, visitor, visited_nets);
       }
     }
 
+    // visit above nets
     for (dbModBTerm* modbterm : mod_net->getModBTerms()) {
       dbModule* db_module = modbterm->getParent();
       if (db_module == nullptr) {
@@ -2041,18 +2019,14 @@ void dbNetwork::visitConnectedPins(const Net* net,
       if (mod_inst == nullptr) {
         continue;
       }
-      const char* name_raw = modbterm->getName();
-      if (name_raw == nullptr) {
-        continue;
-      }
-      std::string pin_name = name_raw;
+      std::string pin_name = modbterm->getName();
       dbModITerm* mod_iterm = mod_inst->findModITerm(pin_name.c_str());
       if (mod_iterm) {
         Pin* above_pin = dbToSta(mod_iterm);
         visitor(above_pin);
         // traverse along rest of net
         Net* above_net = this->net(above_pin);
-        if (above_net && above_net != net) {
+        if (above_net) {
           visitConnectedPins(above_net, visitor, visited_nets);
         }
       }
@@ -2104,13 +2078,10 @@ Pin* dbNetwork::pin(const Term* term) const
     // get the moditerm
     dbModule* cur_module = modbterm->getParent();
     dbModInst* cur_mod_inst = cur_module->getModInst();
-    if (cur_mod_inst != nullptr) {
-      std::string pin_name = modbterm->getName();
-      dbModITerm* parent_moditerm
-          = cur_mod_inst->findModITerm(pin_name.c_str());
-      if (parent_moditerm) {
-        return dbToSta(parent_moditerm);
-      }
+    std::string pin_name = modbterm->getName();
+    dbModITerm* parent_moditerm = cur_mod_inst->findModITerm(pin_name.c_str());
+    if (parent_moditerm) {
+      return dbToSta(parent_moditerm);
     }
   }
   return nullptr;

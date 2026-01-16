@@ -30,6 +30,14 @@ class ConcreteSwapArithModules : public SwapArithModules
                              const std::string& target,
                              float slack_threshold,
                              std::set<dbModInst*>& insts) override;
+
+  ///
+  /// Swaps modules in the provided set to match the target.
+  /// @param insts set of module instances to swap (input) or
+  ///              new module instances after the swap (output)
+  /// @param target optimization target (e.g., "setup")
+  /// @return true if any instance was swapped
+  ///
   bool doSwapInstances(std::set<dbModInst*>& insts,
                        const std::string& target) override;
 
@@ -38,7 +46,6 @@ class ConcreteSwapArithModules : public SwapArithModules
   void produceNewModuleName(const std::string& old_name,
                             std::string& new_name,
                             const std::string& target) override;
-  void rebuildInternalGraph(dbModInst* mod_inst);
 
   bool init_ = false;
 };

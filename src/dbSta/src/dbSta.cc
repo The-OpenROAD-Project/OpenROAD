@@ -173,12 +173,10 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbBTermDestroy(dbBTerm* bterm) override;
   void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
   void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
-  void inDbModInstCreate(dbModInst* modinst) override;   // jk: added
-  void inDbModInstDestroy(dbModInst* modinst) override;  // jk: added
-  void inDbModBTermPostConnect(
-      dbModBTerm* modbterm) override;  // jk: not needed?
-  void inDbModBTermPreDisconnect(
-      dbModBTerm* modbterm) override;  // jk: not needed?
+  void inDbModInstCreate(dbModInst* modinst) override;
+  void inDbModInstDestroy(dbModInst* modinst) override;
+  void inDbModBTermPostConnect(dbModBTerm* modbterm) override;
+  void inDbModBTermPreDisconnect(dbModBTerm* modbterm) override;
 
  private:
   // for inDbInstSwapMasterBefore/inDbInstSwapMasterAfter
@@ -241,7 +239,6 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_network_->init(db, logger);
   db_cbk_ = std::make_unique<dbStaCbk>(this);
   buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
-  ignore_db_callbacks_ = false;  // jk: rm?
 }
 
 void dbSta::updateComponentsState()
@@ -273,18 +270,6 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 }
 
 ////////////////////////////////////////////////////////////////
-
-// jk: rm?
-void dbSta::setIgnoreDbCallbacks(bool ignore)
-{
-  ignore_db_callbacks_ = ignore;
-}
-
-// jk: rm?
-bool dbSta::ignoreDbCallbacks() const
-{
-  return ignore_db_callbacks_;
-}
 
 void dbSta::makeReport()
 {
@@ -759,7 +744,6 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
 
 int dbSta::checkSanity()
 {
-  // logger_->info(utl::STA, 2025, "Entering checkSanity"); // jk: dlog
   ensureGraph();
   ensureLevelized();
 
@@ -865,9 +849,6 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
   // Loads in ODB must appear in STA edges.
   for (const sta::Pin* odb_load : odb_loads) {
     if (sta_loads.find(odb_load) == sta_loads.end()) {
-      // jk: dlog
-      // printf("DEBUG: STA-2301 Triggered for pin %s\n",
-      //       db_network_->pathName(odb_load));
       logger_->warn(
           utl::STA,
           2301,
@@ -920,10 +901,6 @@ void dbSta::checkSanityNetlistConsistency() const
         };
 
   check_module(block->getTopModule());
-  // jk: dlog
-  // printf("DEBUG: checkSanityNetlistConsistency checked %d ModITerm
-  // drivers\n",
-  //        mod_pin_cnt);
 }
 
 void dbSta::checkSanityDrvrVertexEdges() const
@@ -1148,17 +1125,11 @@ void dbStaCbk::setNetwork(dbNetwork* network)
 
 void dbStaCbk::inDbInstCreate(dbInst* inst)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   sta_->makeInstanceAfter(network_->dbToSta(inst));
 }
 
 void dbStaCbk::inDbInstDestroy(dbInst* inst)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
@@ -1166,25 +1137,16 @@ void dbStaCbk::inDbInstDestroy(dbInst* inst)
 
 void dbStaCbk::inDbModuleCreate(dbModule* module)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   network_->registerHierModule(network_->dbToSta(module));
 }
 
 void dbStaCbk::inDbModuleDestroy(dbModule* module)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   network_->unregisterHierModule(network_->dbToSta(module));
 }
 
 void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   LibertyCell* to_lib_cell = network_->libertyCell(network_->dbToSta(master));
   LibertyCell* from_lib_cell = network_->libertyCell(inst);
   Instance* sta_inst = network_->dbToSta(inst);
@@ -1200,9 +1162,6 @@ void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
 
 void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Instance* sta_inst = network_->dbToSta(inst);
 
   if (swap_master_arcs_equiv_) {
@@ -1214,9 +1173,6 @@ void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
 
 void dbStaCbk::inDbNetDestroy(dbNet* db_net)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Net* net = network_->dbToSta(db_net);
   sta_->deleteNetBefore(net);
   network_->deleteNetBefore(net);
@@ -1224,119 +1180,66 @@ void dbStaCbk::inDbNetDestroy(dbNet* db_net)
 
 void dbStaCbk::inDbModNetDestroy(dbModNet* modnet)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Net* net = network_->dbToSta(modnet);
   network_->deleteNetBefore(net);
 }
 
 void dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Pin* pin = network_->dbToSta(iterm);
-  // jk: dlog
-  // printf("DEBUG: inDbITermPostConnect iterm=%s pin=%s\n",
-  //        iterm->getInst()->getName().c_str(),
-  //        network_->name(pin));
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
 }
 
 void dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Pin* pin = network_->dbToSta(iterm);
-  // jk: dlog
-  // printf("DEBUG: inDbITermPreDisconnect iterm=%s pin=%s\n",
-  //        iterm->getInst()->getName().c_str(),
-  //        network_->name(pin));
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
 void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   sta_->deletePinBefore(network_->dbToSta(iterm));
 }
 
 void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Pin* pin = network_->dbToSta(moditerm);
-  // jk: dlog
-  // printf("DEBUG: inDbModITermPostConnect moditerm=%s pin=%p name=%s\n",
-  //        moditerm->getName(),
-  //        pin,
-  //        network_->name(pin));
   network_->connectPinAfter(pin);
-  sta_->connectPinAfter(pin);  // jk: needed?
+  // Connection is made by dbITerm callbacks. Calling this causes problem.
+  // sta_->connectPinAfter(pin);
 }
 
 void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Pin* pin = network_->dbToSta(moditerm);
-  // jk: dlog
-  // printf("DEBUG: inDbModITermPreDisconnect moditerm=%s pin=%s\n",
-  //        moditerm->getName(),
-  //        network_->name(pin));
-  sta_->disconnectPinBefore(pin);  // jk: needed?
+  // Connection is made by dbITerm callbacks. Calling this causes problem.
+  // sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
 void dbStaCbk::inDbModITermDestroy(dbModITerm* moditerm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   sta_->deletePinBefore(network_->dbToSta(moditerm));
 }
 
 void dbStaCbk::inDbBTermPostConnect(dbBTerm* bterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Pin* pin = network_->dbToSta(bterm);
-  // jk: dlog
-  // printf("DEBUG: inDbBTermPostConnect bterm=%s pin=%s\n",
-  //        bterm->getName().c_str(),
-  //        network_->name(pin));
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
 }
 
 void dbStaCbk::inDbBTermPreDisconnect(dbBTerm* bterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   Pin* pin = network_->dbToSta(bterm);
-  // jk: dlog
-  // printf("DEBUG: inDbBTermPreDisconnect bterm=%s pin=%s\n",
-  //        bterm->getName().c_str(),
-  //        network_->name(pin));
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
 void dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
   sta_->getDbNetwork()->makeTopPort(bterm);
   Pin* pin = network_->dbToSta(bterm);
   sta_->makePortPinAfter(pin);
@@ -1363,13 +1266,11 @@ void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
   bterm->staSetVertexId(object_id_null);
 }
 
-// jk: needed
 void dbStaCbk::inDbModInstCreate(dbModInst* modinst)
 {
   sta_->makeInstanceAfter(network_->dbToSta(modinst));
 }
 
-// jk: needed
 void dbStaCbk::inDbModInstDestroy(dbModInst* modinst)
 {
   sta_->deleteInstanceBefore(network_->dbToSta(modinst));
@@ -1377,23 +1278,10 @@ void dbStaCbk::inDbModInstDestroy(dbModInst* modinst)
 
 void dbStaCbk::inDbModBTermPostConnect(dbModBTerm* modbterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
 }
 
 void dbStaCbk::inDbModBTermPreDisconnect(dbModBTerm* modbterm)
 {
-  if (sta_->ignoreDbCallbacks()) {
-    return;
-  }
-  // jk: needed?
-  // Use efficient pin-based update instead of networkChanged()
-  // Pin* pin = network_->dbToSta(modbterm);
-  // sta_->disconnectPinBefore(pin);
-  // network_->disconnectPinBefore(pin);
-  // printf("DEBUG: inDbModBTermPreDisconnect modbterm=%s\n",
-  // modbterm->getName());
 }
 
 ////////////////////////////////////////////////////////////////
