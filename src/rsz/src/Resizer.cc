@@ -4,7 +4,6 @@
 #include "rsz/Resizer.hh"
 
 #include <algorithm>
-#include <fstream>
 #include <cassert>
 #include <cctype>
 #include <cmath>
@@ -4160,7 +4159,6 @@ void Resizer::repairDesign(double max_wire_length,
   }
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
-  sta_->checkSanity();
 }
 
 int Resizer::repairDesignBufferCount() const
@@ -4461,20 +4459,20 @@ void Resizer::swapArithModules(int path_count,
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (swap_arith_modules_->replaceArithModules(
           path_count, target, slack_margin)) {
-    
-    // Dump Incremental
-    sta_->findRequireds(); // Ensure slacks are up to date
-    sta_->dumpPinSlacks("_202_", "slack_incr.log");
-
-    // Force Full Update
-    sta_->networkChanged();
+    // Update levels and parasitics
+    // - Note that updateParasitics() requires correct levels
+    sta_->ensureLevelized();
     estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
 
-    // Dump Full
-    sta_->dumpPinSlacks("_202_", "slack_full.log");
+    // Module swap requires constant propagation and full update timing because
+    // it changes many cell instances and incremental update of STA data
+    // structure is incomplete.
+    sta_->clearLogicConstants();
+    sta_->updateTiming(true);
+    sta_->findRequireds();  // Recompute timing
   }
 }
+
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
 void Resizer::journalBegin()
