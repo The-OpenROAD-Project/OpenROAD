@@ -78,6 +78,7 @@ class MacroPlacer
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
+  void addMacroHalo(odb::dbInst* macro, std::pair<int, int> halo);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -92,6 +93,7 @@ class MacroPlacer
   odb::dbDatabase* db_ = nullptr;
 
   std::map<odb::dbInst*, odb::Rect> guidance_regions_;
+  std::map<odb::dbInst*, std::pair<int, int>> macro_halos_;
 };
 
 }  // namespace mpl
