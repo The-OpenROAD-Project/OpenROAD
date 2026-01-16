@@ -4915,22 +4915,29 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
-  // Do not merge the routing if the survivor net is already dirty.
-  if (!net1->isDirtyNet()) {
-    connectRouting(db_net1, db_net2);
+  // Try to connect the routing of the two nets
+  if (connectRouting(db_net1, db_net2)) {
     net1->setIsMergedNet(true);
     net1->setMergedNet(db_net2);
+    net1->setDirtyNet(false);
     net2->setIsMergedNet(true);
     net2->setMergedNet(db_net1);
+  } else {
+    // After failing to connect the routing, the survivor net still have
+    // uncovered pins and needs to be re-routed
+    net1->setDirtyNet(true);
   }
 }
 
-void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
+bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
 
-  // find the pin positions in the buffer that connects the two nets
+  // Find the pin positions in the buffer that connects the two nets.
+  // At the time this function is called, the buffer information still preserved
+  // on GRT data structures, allowing us to use it to define the connection
+  // position.
   odb::Point pin_pos1;
   odb::Point pin_pos2;
   findBufferPinPostions(net1, net2, pin_pos1, pin_pos2);
@@ -4947,6 +4954,10 @@ void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   } else {
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   }
+
+  updateNetPins(net1);
+  std::string dump;
+  return netIsCovered(db_net1, dump);
 }
 
 void GlobalRouter::findBufferPinPostions(Net* net1,
