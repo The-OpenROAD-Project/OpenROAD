@@ -4211,9 +4211,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
       delete db_net_map_[db_net];
     }
     db_net_map_[db_net] = net;
-    makeItermPins(net, db_net, grid_->getGridArea());
-    makeBtermPins(net, db_net, grid_->getGridArea());
-    findPins(net);
+    updateNetPins(net);
     return net;
   }
   return nullptr;
@@ -4231,6 +4229,15 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);
   routes_.erase(db_net);
+}
+
+void GlobalRouter::updateNetPins(Net* net)
+{
+  odb::dbNet* db_net = net->getDbNet();
+  net->destroyPins();
+  makeItermPins(net, db_net, grid_->getGridArea());
+  makeBtermPins(net, db_net, grid_->getGridArea());
+  findPins(net);
 }
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)

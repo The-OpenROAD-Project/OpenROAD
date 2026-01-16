@@ -329,6 +329,7 @@ class GlobalRouter
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
+  void updateNetPins(Net* net);
 
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
