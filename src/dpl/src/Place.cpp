@@ -32,6 +32,7 @@
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "util/journal.h"
+#include "util/symmetry.h"
 #include "utl/Logger.h"
 // #define ODP_DEBUG
 
@@ -55,6 +56,7 @@ std::string Opendp::printBgBox(
                      queryBox.max_corner().x(),
                      queryBox.max_corner().y());
 }
+
 void Opendp::detailedPlacement()
 {
   if (debug_observer_) {
@@ -948,7 +950,42 @@ bool Opendp::checkPixels(const Node* cell,
     }
   }
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
+
+  // Check for symmetry
+  auto* dbMaster = cell->getDbInst()->getMaster();
+  unsigned masterSym = 0;
+  if (dbMaster->getSymmetryX()) {
+    masterSym |= Symmetry_X;
+  }
+  if (dbMaster->getSymmetryY()) {
+    masterSym |= Symmetry_Y;
+  }
+  if (dbMaster->getSymmetryR90()) {
+    masterSym |= Symmetry_ROT90;
+  }
+  if (!checkMasterSym(masterSym, orient)) {
+    return false;
+  }
+
   return drc_engine_->checkDRC(cell, x, y, orient);
+}
+
+bool Opendp::checkMasterSym(unsigned siteSym, unsigned cellOri) const
+{
+  using odb::dbOrientType;
+  if (siteSym == Symmetry_Y) {
+    return (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY);
+  } else if (siteSym == Symmetry_X) {
+    return (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MX);
+  } else if (siteSym == (Symmetry_X | Symmetry_Y)) {
+    return (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY
+            || cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX);
+  } else if (siteSym == Symmetry_UNKNOWN) {
+    return (cellOri == dbOrientType::R0);
+  } else {
+    // ROT90 or empty (R0 only)
+    return (cellOri == dbOrientType::R0);
+  }
 }
 
 ////////////////////////////////////////////////////////////////
