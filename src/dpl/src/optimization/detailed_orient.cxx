@@ -492,49 +492,34 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
   using odb::dbOrientType;
   //  Check for master symmetry
   bool legalSym = false;
-  if (siteSym == Symmetry_Y) {
-    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
+  switch (cellOri) {
+    case dbOrientType::R0:
       legalSym = true;
-    }
-  } else if (siteSym == Symmetry_X) {
-    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MX) {
-      legalSym = true;
-    }
-  } else if (siteSym == (Symmetry_X | Symmetry_Y)) {
-    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY
-        || cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX) {
-      legalSym = true;
-    }
-  } else if (siteSym == Symmetry_UNKNOWN) {
-    if (cellOri == dbOrientType::R0) {
-      legalSym = true;
-    }
-  } else {
-    // ROT90 or empty (R0 only)
-    if (cellOri == dbOrientType::R0) {
-      legalSym = true;
-    }
+      break;
+    case dbOrientType::MX:
+      legalSym = (siteSym & Symmetry_X) != 0;
+      break;
+    case dbOrientType::MY:
+      legalSym = (siteSym & Symmetry_Y) != 0;
+      break;
+    case dbOrientType::R180:
+      legalSym = (siteSym & Symmetry_X) && (siteSym & Symmetry_Y);
+      break;
+    case dbOrientType::R90:
+    case dbOrientType::R270:
+      legalSym = (siteSym & Symmetry_ROT90) != 0;
+      break;
+    case dbOrientType::MXR90:
+    case dbOrientType::MYR90:
+      legalSym = (siteSym & Symmetry_ROT90) && (siteSym & Symmetry_X)
+                 && (siteSym & Symmetry_Y);
+      break;
+    default:
+      legalSym = false;
+      break;
   }
 
-  if (!legalSym) {
-    return false;
-  }
-
-  // Check for row compatibility
-  if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
-    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
-      return true;
-    }
-    return false;
-  }
-  if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
-    if (cellOri == dbOrientType::MX || cellOri == dbOrientType::R180) {
-      return true;
-    }
-    return false;
-  }
-
-  return true;
+  return legalSym;
 }
 
 }  // namespace dpl

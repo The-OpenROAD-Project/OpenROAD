@@ -970,21 +970,27 @@ bool Opendp::checkPixels(const Node* cell,
   return drc_engine_->checkDRC(cell, x, y, orient);
 }
 
-bool Opendp::checkMasterSym(unsigned siteSym, unsigned cellOri) const
+bool Opendp::checkMasterSym(unsigned masterSym, unsigned cellOri) const
 {
   using odb::dbOrientType;
-  if (siteSym == Symmetry_Y) {
-    return (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY);
-  } else if (siteSym == Symmetry_X) {
-    return (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MX);
-  } else if (siteSym == (Symmetry_X | Symmetry_Y)) {
-    return (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY
-            || cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX);
-  } else if (siteSym == Symmetry_UNKNOWN) {
-    return (cellOri == dbOrientType::R0);
-  } else {
-    // ROT90 or empty (R0 only)
-    return (cellOri == dbOrientType::R0);
+  switch (cellOri) {
+    case dbOrientType::R0:
+      return true;
+    case dbOrientType::MX:
+      return (masterSym & Symmetry_X) != 0;
+    case dbOrientType::MY:
+      return (masterSym & Symmetry_Y) != 0;
+    case dbOrientType::R180:
+      return (masterSym & Symmetry_X) && (masterSym & Symmetry_Y);
+    case dbOrientType::R90:
+    case dbOrientType::R270:
+      return (masterSym & Symmetry_ROT90) != 0;
+    case dbOrientType::MXR90:
+    case dbOrientType::MYR90:
+      return (masterSym & Symmetry_ROT90) && (masterSym & Symmetry_X)
+             && (masterSym & Symmetry_Y);
+    default:
+      return false;
   }
 }
 
