@@ -10,6 +10,7 @@
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 
 namespace utl {
 class Logger;

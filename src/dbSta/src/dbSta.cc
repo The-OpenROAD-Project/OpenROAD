@@ -15,6 +15,8 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <functional>
 #include <map>
@@ -31,6 +33,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
@@ -38,8 +41,10 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
@@ -1429,21 +1434,18 @@ void dbSta::dumpPinSlacks(const char* inst_name,
           }
         }
         std::string pin_name = network()->name(pin);
-        char buf[512];
-        snprintf(buf,
-                 sizeof(buf),
-                 "%e %e %e %e %e",
-                 slack,
-                 arrival,
-                 required,
-                 cap,
-                 res);
-        lines.push_back(pin_name + " " + buf);
+        lines.push_back(fmt::format("{} {:e} {:e} {:e} {:e} {:e}",
+                                    pin_name,
+                                    slack,
+                                    arrival,
+                                    required,
+                                    cap,
+                                    res));
       }
     }
   }
 
-  std::sort(lines.begin(), lines.end());
+  std::ranges::sort(lines);
   out << "Pin_Name Slack Arrival Required Capacitance Resistance\n";
   for (const auto& line : lines) {
     out << line << "\n";
@@ -1526,10 +1528,11 @@ void dbSta::dumpGraphConnections(const char* inst_name, const char* filename)
       }
 
       std::string src_cell_name = get_cell_type(pin);
-      std::string src_str = std::string(network()->name(pin)) + " ("
-                            + src_cell_name
-                            + ", V_ID:" + std::to_string(g->id(vertex))
-                            + ", LV:" + std::to_string(vertex->level()) + ")";
+      std::string src_str = fmt::format("{} ({}, V_ID:{}, LV:{})",
+                                        network()->name(pin),
+                                        src_cell_name,
+                                        g->id(vertex),
+                                        vertex->level());
 
       // Outgoing Edges
       sta::VertexOutEdgeIterator out_iter(vertex, g);
@@ -1541,11 +1544,13 @@ void dbSta::dumpGraphConnections(const char* inst_name, const char* filename)
         std::string dst_cell_name = get_cell_type(to_pin);
         std::string dst_pin_name = to_pin ? network()->name(to_pin) : "NO_PIN";
 
-        std::string dst_str = dst_pin_name + " (" + dst_cell_name
-                              + ", V_ID:" + std::to_string(g->id(to))
-                              + ", LV:" + std::to_string(to->level()) + ")";
+        std::string dst_str = fmt::format("{} ({}, V_ID:{}, LV:{})",
+                                          dst_pin_name,
+                                          dst_cell_name,
+                                          g->id(to),
+                                          to->level());
 
-        lines.push_back(src_str + " -> " + dst_str);
+        lines.push_back(fmt::format("{} -> {}", src_str, dst_str));
       }
 
       // Incoming Edges - Check for external drivers
@@ -1572,19 +1577,20 @@ void dbSta::dumpGraphConnections(const char* inst_name, const char* filename)
           std::string from_pin_name
               = from_pin ? network()->name(from_pin) : "NO_PIN";
 
-          std::string from_str = from_pin_name + " (" + from_cell_name
-                                 + ", V_ID:" + std::to_string(g->id(from))
-                                 + ", LV:" + std::to_string(from->level())
-                                 + ")";
+          std::string from_str = fmt::format("{} ({}, V_ID:{}, LV:{})",
+                                             from_pin_name,
+                                             from_cell_name,
+                                             g->id(from),
+                                             from->level());
 
           // Print as outgoing from the external source
-          lines.push_back(from_str + " -> " + src_str);
+          lines.push_back(fmt::format("{} -> {}", from_str, src_str));
         }
       }
     }
   }
 
-  std::sort(lines.begin(), lines.end());
+  std::ranges::sort(lines);
 
   out << "DEBUG GRAPH DUMP for " << db_mod_inst->getName()
       << " (Master: " << master->getName() << ")\n";

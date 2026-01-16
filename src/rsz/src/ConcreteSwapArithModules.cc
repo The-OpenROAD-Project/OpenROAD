@@ -4,17 +4,17 @@
 #include "ConcreteSwapArithModules.hh"
 
 #include <algorithm>
-#include <fstream>
 #include <vector>
 
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Network.hh"
+#include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
-#include "sta/Report.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
@@ -24,15 +24,12 @@ namespace rsz {
 using odb::dbBlock;
 using odb::dbInst;
 using odb::dbModInst;
-using odb::dbModITerm;
 using odb::dbModule;
 using odb::dbStringProperty;
-using sta::Graph;
 using sta::Instance;
 using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
-using sta::PortDirection;
 using sta::Slack;
 using sta::Vertex;
 using sta::VertexSet;
