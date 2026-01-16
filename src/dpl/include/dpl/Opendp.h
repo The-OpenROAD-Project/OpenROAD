@@ -198,7 +198,7 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
-  bool checkMasterSym(unsigned siteSym, unsigned cellOri) const;
+  bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
   bool shiftMove(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);

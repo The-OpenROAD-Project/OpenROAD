@@ -52,15 +52,9 @@ static bool checkMasterSymmetry(Architecture* arch, const Node* nd, int rowId)
 
   using odb::dbOrientType;
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
-    if (DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::R0)
-        || DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::MY)) {
-      return true;
-    }
+    return true;
   } else if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
-    if (DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::MX)
-        || DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::R180)) {
-      return true;
-    }
+    return (masterSym & Symmetry_X) != 0;
   }
   return false;
 }

@@ -199,7 +199,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
           return false;
           break;
       }
-      if (isLegalSym(arch_->getRow(row)->getOrient(), masterSym, newOri)) {
+      if (isLegalSym(masterSym, newOri)) {
         ndi->adjustCurrOrient(newOri);
         return true;
       }
@@ -207,8 +207,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
     }
 
     // No need to flip.
-    if (isLegalSym(
-            arch_->getRow(row)->getOrient(), masterSym, ndi->getOrient())) {
+    if (isLegalSym(masterSym, ndi->getOrient())) {
       return true;
     }
     return false;
@@ -255,18 +254,15 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
 
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
     if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
-      return isLegalSym(rowOri, masterSym, cellOri);
+      return isLegalSym(masterSym, cellOri);
     }
 
     if (cellOri == dbOrientType::MX) {
-      if (isLegalSym(rowOri, masterSym, dbOrientType::R0)) {
-        ndi->adjustCurrOrient(dbOrientType::R0);
-        return true;
-      }
-      return false;
+      ndi->adjustCurrOrient(dbOrientType::R0);
+      return true;
     }
     if (cellOri == dbOrientType::R180) {
-      if (isLegalSym(rowOri, masterSym, dbOrientType::MY)) {
+      if (isLegalSym(masterSym, dbOrientType::MY)) {
         ndi->adjustCurrOrient(dbOrientType::MY);
         return true;
       }
@@ -276,18 +272,18 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   }
   if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
     if (cellOri == dbOrientType::MX || cellOri == dbOrientType::R180) {
-      return isLegalSym(rowOri, masterSym, cellOri);
+      return isLegalSym(masterSym, cellOri);
     }
 
     if (cellOri == dbOrientType::R0) {
-      if (isLegalSym(rowOri, masterSym, dbOrientType::MX)) {
+      if (isLegalSym(masterSym, dbOrientType::MX)) {
         ndi->adjustCurrOrient(dbOrientType::MX);
         return true;
       }
       return false;
     }
     if (cellOri == dbOrientType::MY) {
-      if (isLegalSym(rowOri, masterSym, dbOrientType::R180)) {
+      if (isLegalSym(masterSym, dbOrientType::R180)) {
         ndi->adjustCurrOrient(dbOrientType::R180);
         return true;
       }
@@ -485,9 +481,7 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row)
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-bool DetailedOrient::isLegalSym(unsigned rowOri,
-                                unsigned siteSym,
-                                unsigned cellOri)
+bool DetailedOrient::isLegalSym(unsigned siteSym, unsigned cellOri)
 {
   using odb::dbOrientType;
   //  Check for master symmetry

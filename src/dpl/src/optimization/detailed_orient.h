@@ -30,7 +30,7 @@ class DetailedOrient
 
   // Other.
   unsigned orientFind(Node* ndi, int row);
-  static bool isLegalSym(unsigned rowOri, unsigned siteSym, unsigned cellOri);
+  static bool isLegalSym(unsigned siteSym, unsigned cellOri);
 
  private:
   Architecture* arch_;
