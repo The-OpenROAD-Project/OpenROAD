@@ -204,6 +204,6 @@ Corner: slow
         -583.83   slack (VIOLATED)
 
 
-wns max -151.35
-tns max -5188.85
+wns max -583.83
+tns max -21938.18
 Repair timing output passed/skipped equivalence test
