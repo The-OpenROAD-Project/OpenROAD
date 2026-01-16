@@ -457,9 +457,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
           == odb::dbTechLayerType::CUT) {
         continue;
       }
-      if (via->getViaLayerRule(i)->getLayer()->getNumber() / 2 < z) {
-        z = via->getViaLayerRule(i)->getLayer()->getNumber() / 2;
-      }
+      z = std::min(via->getViaLayerRule(i)->getLayer()->getNumber() / 2, z);
     }
     fnd->addViaRule(getTech()->getViaRule(via->getName()), z);
   }
@@ -1121,16 +1119,11 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       }
     }
 
-    if (bterm_bottom_layer_idx > router_cfg_->TOP_ROUTING_LAYER) {
-      termIn->setIsAboveTopLayer(true);
-    } else if (bterm_bottom_layer_idx >= router_cfg_->BOTTOM_ROUTING_LAYER) {
-      // do nothing
-    }
-
     if (bterm_bottom_layer_idx > router_cfg_->TOP_ROUTING_LAYER
         && term->getNet()->getWire() != nullptr) {
       frLayerNum finalLayerNum = 0;
       odb::Rect bbox = getViaBoxForTermAboveMaxLayer(term, finalLayerNum);
+      termIn->setIsAboveTopLayer(true);
       setBTerms_addPinFig_helper(pinIn.get(), bbox, finalLayerNum);
     } else {
       for (auto pin : term->getBPins()) {
