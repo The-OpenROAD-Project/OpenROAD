@@ -24,12 +24,46 @@
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "util/journal.h"
+#include "util/symmetry.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPL;
 
 namespace dpl {
+
+// Helper to check if a cell's master allows the orientation required by the row
+static bool checkMasterSymmetry(Architecture* arch, const Node* nd, int rowId)
+{
+  const auto* rowPtr = arch->getRow(rowId);
+  const unsigned rowOri = rowPtr->getOrient();
+
+  auto* dbMaster = nd->getDbInst()->getMaster();
+  unsigned masterSym = 0;
+  if (dbMaster->getSymmetryX()) {
+    masterSym |= Symmetry_X;
+  }
+  if (dbMaster->getSymmetryY()) {
+    masterSym |= Symmetry_Y;
+  }
+  if (dbMaster->getSymmetryR90()) {
+    masterSym |= Symmetry_ROT90;
+  }
+
+  using odb::dbOrientType;
+  if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
+    if (DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::R0)
+        || DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::MY)) {
+      return true;
+    }
+  } else if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
+    if (DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::MX)
+        || DetailedOrient::isLegalSym(rowOri, masterSym, dbOrientType::R180)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
@@ -512,6 +546,9 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
     if (nd->getGroupId() != curr->getRegId()) {
       continue;
     }
+    if (!checkMasterSymmetry(arch_, nd, curr->getRowId())) {
+      continue;
+    }
 
     // Work with left edge.
     const DbuX x1 = curr->getMinX();
@@ -549,6 +586,9 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
         for (DetailedSeg* curr : segsInRow_[below]) {
           // Updated for regions.
           if (nd->getGroupId() != curr->getRegId()) {
+            continue;
+          }
+          if (!checkMasterSymmetry(arch_, nd, curr->getRowId())) {
             continue;
           }
 
@@ -589,6 +629,9 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
         for (DetailedSeg* curr : segsInRow_[above]) {
           // Updated for regions.
           if (nd->getGroupId() != curr->getRegId()) {
+            continue;
+          }
+          if (!checkMasterSymmetry(arch_, nd, curr->getRowId())) {
             continue;
           }
 
@@ -695,6 +738,10 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
     // call to this routine will check both the bottom and the top rows
     // for power compatibility.
     if (!arch_->powerCompatible(nd, arch_->getRow(r), flip)) {
+      continue;
+    }
+
+    if (!checkMasterSymmetry(arch_, nd, r)) {
       continue;
     }
 
@@ -2193,6 +2240,11 @@ bool DetailedMgr::tryMove(Node* ndi,
 {
   // Based on the input, call an appropriate routine to try
   // and generate a move.
+  if (!checkMasterSymmetry(arch_, ndi, segments_[sj]->getRowId())) {
+    rejectMove();
+    return false;
+  }
+
   if (arch_->getCellHeightInRows(ndi) == 1) {
     // Single height cell.
     if (si != sj) {
@@ -2227,6 +2279,10 @@ bool DetailedMgr::trySwap(Node* ndi,
                           const DbuY yj,
                           const int sj)
 {
+  if (!checkMasterSymmetry(arch_, ndi, segments_[sj]->getRowId())) {
+    rejectMove();
+    return false;
+  }
   if (trySwap1(ndi, xi, yi, si, xj, yj, sj)) {
     return verifyMove();
   }
@@ -2702,6 +2758,10 @@ bool DetailedMgr::trySwap1(Node* ndi,
   if (ndj == ndi || ndj == nullptr) {
     return false;
   }
+  if (!checkMasterSymmetry(arch_, ndj, segments_[si]->getRowId())) {
+    return false;
+  }
+
   if (arch_->getCellHeightInRows(ndi) != 1
       || arch_->getCellHeightInRows(ndj) != 1) {
     return false;
