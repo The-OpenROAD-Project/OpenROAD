@@ -1468,10 +1468,13 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
 
   parent->addChildren(std::move(children_clusters));
 
-  // When breaking large flat clusters, the children will
-  // be modified, so, we need to iterate them using indexes.
   const UniqueClusterVector& new_children = parent->getChildren();
-  for (const auto& child : new_children) {
+  // Note that we need to iterate the new children's vector using
+  // indexes, because, if any of these children is broken in two
+  // during the iterations, a new child will be added to the parent,
+  // invalidating the vector iterators.
+  for (int i = 0; i < new_children.size(); ++i) {
+    auto& child = new_children[i];
     child->setParent(parent);
     if (isLargeFlatCluster(child.get())) {
       breakLargeFlatCluster(child.get());
