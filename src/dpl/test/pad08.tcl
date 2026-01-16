@@ -1,7 +1,6 @@
 # set_placement_padding -masters
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_liberty Nangate45/Nangate45_typ.lib
 read_def simple01.def
 # check -masters arg parsing
 set_placement_padding -masters BUF_X4 -left 5

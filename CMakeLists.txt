@@ -21,6 +21,12 @@ cmake_policy(SET CMP0077 NEW)
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
 
+# Interfers with Qt so off by default.
+option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
+
+if (LINK_TIME_OPTIMIZATION)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 # Allow to use external shared boost libraries
 option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)
@@ -118,40 +124,34 @@ if(EXISTS "/etc/os-release")
     endif()
   endforeach()
 
-  # Check for Debian 11 (Bullseye)
-  if(OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11")
+  # Check for unsupported OS for LTO
+  if((OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11") OR
+     (OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8"))
     set(LTO_UNSUPPORTED_OS TRUE)
-    message(STATUS "Detected Debian 11: LTO will be disabled due to known build issues")
-  endif()
-
-  # Check for Rocky Linux 8
-  if(OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8")
-    set(LTO_UNSUPPORTED_OS TRUE)
-    message(STATUS "Detected Rocky Linux 8: LTO will be disabled due to known build issues")
+    message(STATUS "Detected unsupported OS (${OS_ID} ${OS_VERSION_ID}): LTO will be disabled due to known build issues")
   endif()
 endif()
 
 option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: on by default" ON)
+set(LTO_STATUS "disabled")
 if (LINK_TIME_OPTIMIZATION AND NOT LTO_UNSUPPORTED_OS)
   include(CheckIPOSupported)
-  # 1. Check if the compiler/linker even supports LTO
   check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
   if(lto_supported)
-    # LTO is enabled globally for Release builds
+    # LTO is enabled globally for Release build
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO FALSE)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
 
     string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
     if(UPPER_BUILD_TYPE STREQUAL "RELEASE")
-      message(STATUS "LTO/IPO is enabled")
-    else()
-      message(STATUS "LTO/IPO is disabled")
+      set(LTO_STATUS "enabled")
     endif()
   else()
-    message(STATUS "LTO/IPO is not supported: ${lto_error}")
+    set(LTO_STATUS "not supported: ${lto_error}")
   endif()
 endif()
+message(STATUS "LTO/IPO is ${LTO_STATUS}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(
