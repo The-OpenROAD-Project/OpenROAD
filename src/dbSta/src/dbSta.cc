@@ -754,7 +754,6 @@ int dbSta::checkSanity()
 
   int pre_warn_cnt = logger_->getWarningCount();
   checkSanityNetlistConsistency();
-  checkSanityDrvrVertexEdges();
   int post_warn_cnt = logger_->getWarningCount();
 
   return post_warn_cnt - pre_warn_cnt;
@@ -818,20 +817,24 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
   }
 
   std::set<const sta::Pin*> odb_loads;
-  struct ODBLoadVisitor : public PinVisitor
+  class ODBLoadVisitor : public PinVisitor
   {
-    std::set<const sta::Pin*>& loads;
-    const Pin* drvr;
-    const Network* network;
-    ODBLoadVisitor(std::set<const sta::Pin*>& l, const Pin* d, const Network* n)
-        : loads(l), drvr(d), network(n)
+   public:
+    std::set<const sta::Pin*>& loads_;
+    const Pin* drvr_;
+    const Network* network_;
+    ODBLoadVisitor(std::set<const sta::Pin*>& load,
+                   const Pin* drvr,
+                   const Network* network)
+        : loads_(load), drvr_(drvr), network_(network)
     {
     }
+
     void operator()(const Pin* load_pin) override
     {
-      if (load_pin != nullptr && load_pin != drvr
-          && network->isLoad(load_pin)) {
-        loads.insert(load_pin);
+      if (load_pin != nullptr && load_pin != drvr_
+          && network_->isLoad(load_pin)) {
+        loads_.insert(load_pin);
       }
     }
   };
@@ -886,7 +889,6 @@ void dbSta::checkSanityNetlistConsistency() const
     }
   }
 
-  int mod_pin_cnt = 0;
   // Check ModITerms recursively
   std::function<void(odb::dbModule*)> check_module
       = [&](odb::dbModule* module) {
@@ -897,7 +899,6 @@ void dbSta::checkSanityNetlistConsistency() const
             for (odb::dbModITerm* moditerm : mod_inst->getModITerms()) {
               Pin* pin = db_network_->dbToSta(moditerm);
               if (pin != nullptr && db_network_->isDriver(pin)) {
-                mod_pin_cnt++;
                 checkSanityDrvrVertexEdges(pin);
               }
             }
@@ -1030,10 +1031,6 @@ void dbStaReport::vfileWarn(int id,
 
 void dbStaReport::error(int id, const char* fmt, ...)
 {
-  if (isSuppressed(id)) {
-    return;
-  }
-
   va_list args;
   va_start(args, fmt);
   std::unique_lock<std::mutex> lock(buffer_lock_);
@@ -1355,18 +1352,18 @@ sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
   return nullptr;
 }
 
-void dbSta::dumpPinSlacks(const char* inst_name,
-                          const char* filename,
-                          const MinMax* min_max)
+void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
+                                 const char* filename,
+                                 const MinMax* min_max)
 {
   std::ofstream out(filename);
   if (!out) {
     return;
   }
 
-  Instance* sta_inst = network()->findInstance(inst_name);
+  Instance* sta_inst = network()->findInstance(mod_inst_name);
   if (!sta_inst) {
-    out << "Instance " << inst_name << " not found.\n";
+    out << "Instance " << mod_inst_name << " not found.\n";
     return;
   }
 
@@ -1447,13 +1444,14 @@ void dbSta::dumpPinSlacks(const char* inst_name,
 
   std::ranges::sort(lines);
   out << "Pin_Name Slack Arrival Required Capacitance Resistance\n";
-  for (const auto& line : lines) {
+  for (const std::string& line : lines) {
     out << line << "\n";
   }
   logger_->report("Dumped sorted pin slacks to {}", filename);
 }
 
-void dbSta::dumpGraphConnections(const char* inst_name, const char* filename)
+void dbSta::dumpModInstGraphConnections(const char* mod_inst_name,
+                                        const char* filename)
 {
   std::ofstream out(filename);
   if (!out) {
@@ -1462,9 +1460,9 @@ void dbSta::dumpGraphConnections(const char* inst_name, const char* filename)
     return;
   }
 
-  Instance* sta_inst = network()->findInstance(inst_name);
+  Instance* sta_inst = network()->findInstance(mod_inst_name);
   if (!sta_inst) {
-    out << "Instance " << inst_name << " not found.\n";
+    out << "Instance " << mod_inst_name << " not found.\n";
     return;
   }
 
@@ -1562,10 +1560,10 @@ void dbSta::dumpGraphConnections(const char* inst_name, const char* filename)
 
         bool is_external = false;
         if (from_pin) {
-          const char* pin_name = network()->name(from_pin);
+          std::string_view pin_name = network()->name(from_pin);
           std::string mod_prefix = db_mod_inst->getName();
           mod_prefix += "/";  // e.g., "_202_/"
-          if (strncmp(pin_name, mod_prefix.c_str(), mod_prefix.size()) != 0) {
+          if (!pin_name.starts_with(mod_prefix)) {
             is_external = true;
           }
         } else {
@@ -1594,7 +1592,7 @@ void dbSta::dumpGraphConnections(const char* inst_name, const char* filename)
 
   out << "DEBUG GRAPH DUMP for " << db_mod_inst->getName()
       << " (Master: " << master->getName() << ")\n";
-  for (const auto& line : lines) {
+  for (const std::string& line : lines) {
     out << line << "\n";
   }
   out.close();

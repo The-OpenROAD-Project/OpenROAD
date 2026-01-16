@@ -5,10 +5,6 @@
 
 #include "SwapArithModules.hh"
 
-namespace sta {
-class Graph;
-}
-
 namespace rsz {
 
 class Resizer;

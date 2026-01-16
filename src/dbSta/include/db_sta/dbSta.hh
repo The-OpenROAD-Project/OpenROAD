@@ -234,16 +234,14 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void checkSanityDrvrVertexEdges() const;
 
   // Debugging utilities
-  void dumpPinSlacks(const char* inst_name,
-                     const char* filename,
-                     const MinMax* min_max = MinMax::max());
-  void dumpGraphConnections(const char* inst_name, const char* filename);
+  void dumpModInstPinSlacks(const char* mod_inst_name,
+                            const char* filename,
+                            const MinMax* min_max = MinMax::max());
+  void dumpModInstGraphConnections(const char* mod_inst_name,
+                                   const char* filename);
 
   using Sta::netSlack;
   using Sta::replaceCell;
-
-  void setIgnoreDbCallbacks(bool ignore);
-  bool ignoreDbCallbacks() const;
 
  private:
   void makeReport() override;
@@ -260,7 +258,6 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
-  bool ignore_db_callbacks_ = false;
   std::set<dbStaState*> sta_states_;
 
   std::unique_ptr<BufferUseAnalyser> buffer_use_analyser_;
