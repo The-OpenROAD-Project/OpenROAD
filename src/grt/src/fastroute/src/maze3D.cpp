@@ -714,12 +714,15 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
   }
 
+  const int kLowDetourPenalty = 5;
+  const int kHighDetourPenalty = 15;
+
   if (enable_resistance_aware_) {
-    // More flexible during repair stages
-    const int kDetourPenalty = is_incremental_grt_ ? 5 : 15;
     updateSlacks();
     netpinOrderInc();
-    setDetourPenalty(kDetourPenalty);
+    // More flexible during repair stages
+    setDetourPenalty(is_incremental_grt_ ? kLowDetourPenalty
+                                         : kHighDetourPenalty);
   }
 
   const int endIND = tree_order_pv_.size() * 0.9;
