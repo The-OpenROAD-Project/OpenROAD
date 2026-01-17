@@ -85,9 +85,8 @@ class frVia : public frRef
    */
 
   odb::dbOrientType getOrient() const override { return odb::dbOrientType(); }
-  void setOrient(const odb::dbOrientType& tmpOrient) override { ; }
   odb::Point getOrigin() const override { return origin_; }
-  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
+  void setOrigin(const odb::Point& tmpPoint) { origin_ = tmpPoint; }
   odb::dbTransform getTransform() const override
   {
     return odb::dbTransform(origin_);

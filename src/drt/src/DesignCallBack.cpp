@@ -58,8 +58,7 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
   }
   int x, y;
   db_inst->getLocation(x, y);
-  inst->setOrigin({x, y});
-  inst->setOrient(db_inst->getOrient());
+  inst->setTransform({db_inst->getOrient(), {x,y}});
   router_->addInstancePAData(inst);
   if (design->getRegionQuery() != nullptr) {
     design->getRegionQuery()->addBlockObj(inst);
