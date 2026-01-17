@@ -651,6 +651,43 @@ class SpectrumGenerator
  private:
   static const unsigned char kSpectrum[256][3];
   double scale_;
+  static constexpr int kLegendColorIncrement = 2;
+};
+
+class Legend
+{
+ public:
+  Legend() = default;
+
+  virtual void draw(Painter& painter) const = 0;
+};
+
+class LinearLegend : public Legend
+{
+ public:
+  LinearLegend(const std::vector<Painter::Color>& colors);
+
+  void setLegendKey(
+      const std::vector<std::pair<Painter::Color, std::string>>& legend_key);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<Painter::Color> colors_;
+  std::vector<std::pair<Painter::Color, std::string>> legend_key_;
+};
+
+class DiscreteLegend : public Legend
+{
+ public:
+  DiscreteLegend() = default;
+
+  void addLegendKey(const Painter::Color& color, const std::string& text);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<std::pair<Painter::Color, std::string>> color_key_;
 };
 
 // A chart with a single X axis and potentially multiple Y axes
