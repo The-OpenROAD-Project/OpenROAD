@@ -215,6 +215,15 @@ void RDLGui::drawObjects(gui::Painter& painter)
   for (const auto& [pt0, pt1] : snap_) {
     painter.drawLine(pt0, pt1);
   }
+
+  gui::DiscreteLegend legend;
+  legend.addLegendKey(gui::Painter::kRed, "Vertex");
+  legend.addLegendKey(gui::Painter::kGreen, "Edge");
+  legend.addLegendKey(gui::Painter::kCyan, "Obstruction");
+  legend.addLegendKey(gui::Painter::kBlue, "Target");
+  legend.addLegendKey(gui::Painter::kYellow, "Flywire");
+  legend.addLegendKey(gui::Painter::kGreen, "Route");
+  legend.draw(painter);
 }
 
 void RDLGui::addSnap(const odb::Point& pt0, const odb::Point& pt1)
