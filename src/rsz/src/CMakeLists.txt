@@ -51,9 +51,6 @@ target_include_directories(rsz
 target_include_directories(rsz_lib
   PUBLIC
     ../include
-  PRIVATE
-    ${OPENSTA_HOME}
-    ${OPENSTA_HOME}/include/sta
 )
 
 target_link_libraries(rsz_lib
