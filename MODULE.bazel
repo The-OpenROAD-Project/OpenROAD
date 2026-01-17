@@ -103,6 +103,20 @@ bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
     llvm_version = "20.1.8",
+    # OpenROAD Fix: Force GNU libstdc++ on Linux to prevent ABI mismatches.
+    #
+    # Without this, the LLVM toolchain defaults to using LLVM's libc++.
+    # However, OpenROAD links against system libraries (e.g., Tcl, Python,
+    # and Bazel's internal runfiles) that are built against the system's
+    # GNU libstdc++.
+    #
+    # Mixing these two standard libraries creates a "Frankenstein" build where
+    # memory allocated by libstdc++ (e.g., inside a std::string or filebuf)
+    # is erroneously deallocated by libc++, causing "Mismatched free() / delete"
+    # crashes and undefined behavior.
+    stdlib = {
+        "linux": "stdc++",
+    },
 )
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts

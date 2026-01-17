@@ -3472,7 +3472,7 @@
     "@@toolchains_llvm+//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
         "bzlTransitiveDigest": "i54NfnK6i34XT5yyh16sxeFE2U1s0aiixBtMQYMdAMo=",
-        "usagesDigest": "gn25Ya6Nd2hLxoG8Ksgb9RPzvoiElyTJFM/4We+5U2g=",
+        "usagesDigest": "7G8toF/AW/sk6c9g7opVXD/SzHGpTBj2cBqtMJ8qjWU=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -3521,7 +3521,9 @@
               },
               "opt_compile_flags": {},
               "opt_link_flags": {},
-              "stdlib": {},
+              "stdlib": {
+                "linux": "stdc++"
+              },
               "target_settings": {},
               "unfiltered_compile_flags": {},
               "toolchain_roots": {},
