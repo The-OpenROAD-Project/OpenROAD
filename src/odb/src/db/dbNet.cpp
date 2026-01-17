@@ -2372,7 +2372,7 @@ void dbNet::mergeNet(dbNet* in_net)
   }
 
   for (auto callback : block->callbacks_) {
-    callback->inDbNetPreMerge(this, in_net);
+    callback->inDbNetPostMerge(this, in_net);
   }
 
   // 2. Destroy in_net
