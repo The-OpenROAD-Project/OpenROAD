@@ -658,6 +658,7 @@ class Legend
 {
  public:
   Legend() = default;
+  virtual ~Legend() = default;
 
   virtual void draw(Painter& painter) const = 0;
 };

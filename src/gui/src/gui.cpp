@@ -1318,14 +1318,12 @@ void DiscreteLegend::draw(Painter& painter) const
   const odb::Rect& bounds = painter.getBounds();
   const double pixel_per_dbu = painter.getPixelsPerDBU();
   const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
-  const double box_height = 1 / pixel_per_dbu;   // 1 pixels
   const int legend_width = 20 / pixel_per_dbu;   // 20 pixels
   const int text_offset = 2 / pixel_per_dbu;
   const int color_offset = 2 * text_offset;
   const int legend_top = bounds.yMax() - legend_offset;
   const int legend_right = bounds.xMax() - legend_offset;
   const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
 
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
