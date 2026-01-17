@@ -160,15 +160,12 @@ void dbPagedVector<T, P, S>::clear()
 {
   if (pages_) {
     unsigned int i;
-
     for (i = 0; i < page_cnt_; ++i) {
       delete[] pages_[i];
     }
-
     delete[] pages_;
+    pages_ = nullptr;
   }
-
-  pages_ = nullptr;
   page_cnt_ = 0;
   page_tbl_size_ = 0;
   next_idx_ = 0;

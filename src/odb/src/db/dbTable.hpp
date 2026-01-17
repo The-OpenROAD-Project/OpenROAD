@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 #include "dbCommon.h"
 #include "dbCore.h"
@@ -103,7 +104,7 @@ void dbTable<T, page_size>::clear()
       }
     }
 
-    free(page);
+    operator delete(page);
   }
 
   delete[] pages_;
@@ -164,7 +165,7 @@ template <class T, uint32_t page_size>
 void dbTable<T, page_size>::newPage()
 {
   const uint32_t size = (pageSize() * sizeof(T)) + sizeof(dbObjectPage);
-  dbTablePage* page = (dbTablePage*) safe_malloc(size);
+  dbTablePage* page = (dbTablePage*) operator new(size);
   memset(page, 0, size);
 
   const uint32_t page_id = page_cnt_;
@@ -588,7 +589,7 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T, page_size>& table)
   uint32_t i;
   for (i = 0; i < table.page_cnt_; ++i) {
     uint32_t size = (table.pageSize() * sizeof(T)) + sizeof(dbObjectPage);
-    dbTablePage* page = (dbTablePage*) safe_malloc(size);
+    dbTablePage* page = (dbTablePage*) operator new(size);
     memset(page, 0, size);
     page->page_addr_ = i << table.kPageShift;
     page->table_ = &table;
