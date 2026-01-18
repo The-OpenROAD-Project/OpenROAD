@@ -25,15 +25,15 @@ class frInst : public frRef
 {
  public:
   // constructors
-  frInst(const frString& name, frMaster* master, odb::dbInst* db_inst)
-      : name_(name), master_(master), db_inst_(db_inst)
+  frInst(frMaster* master, odb::dbInst* db_inst)
+      : master_(master), db_inst_(db_inst)
   {
   }
   // used for archive serialization
   frInst() : master_(nullptr), db_inst_(nullptr) {}
 
   // getters
-  const frString& getName() const { return name_; }
+  frString getName() const { return db_inst_->getName(); }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frInstTerm>>& getInstTerms() const
   {
@@ -127,7 +127,6 @@ class frInst : public frRef
   void setLatestPATransform() { latest_pa_xform_ = xform_; }
 
  private:
-  frString name_;
   frMaster* master_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
