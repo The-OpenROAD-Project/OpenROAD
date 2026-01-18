@@ -135,7 +135,7 @@ frInst* io::Parser::setInst(odb::dbInst* db_inst)
 
   int x, y;
   db_inst->getLocation(x, y);
-  inst->setTransform({db_inst->getOrient(), {x,y}});
+  inst->setTransform({db_inst->getOrient(), {x, y}});
   int numInstTerms = 0;
   inst->setPinAccessIdx(db_inst->getPinAccessIdx());
   for (auto& term : inst->getMaster()->getTerms()) {
