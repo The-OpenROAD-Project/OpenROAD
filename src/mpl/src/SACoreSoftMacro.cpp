@@ -1137,9 +1137,9 @@ void SACoreSoftMacro::fillDeadSpace()
 int SACoreSoftMacro::getSegmentIndex(const int segment,
                                      const std::vector<int>& coords)
 {
-  auto it = std::ranges::lower_bound(coords, segment);
-
-  return static_cast<int>(std::distance(coords.begin(), it));
+  int index = std::distance(coords.begin(),
+                            std::ranges::lower_bound(coords, segment));
+  return index;
 }
 
 // The blockages here are only those that overlap with the annealing outline.
