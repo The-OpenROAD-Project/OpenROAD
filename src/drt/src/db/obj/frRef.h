@@ -13,7 +13,6 @@ class frRef : public frPinFig
 {
  public:
   // getters
-  virtual odb::dbOrientType getOrient() const = 0;
   virtual odb::Point getOrigin() const = 0;
   virtual odb::dbTransform getTransform() const = 0;
 
