@@ -10,7 +10,7 @@
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frPin.h"
-#include "db/obj/frRef.h"
+#include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -21,7 +21,7 @@ class frBlock;
 class frMaster;
 class frInstTerm;
 
-class frInst : public frRef
+class frInst : public frPinFig
 {
  public:
   // constructors
@@ -62,17 +62,8 @@ class frInst : public frRef
   // others
   frBlockObjectEnum typeId() const override { return frcInst; }
 
-  /* from frRef
-   * getOrient
-   * setOrient
-   * getOrigin
-   * setOrigin
-   * getTransform
-   * setTransform
-   */
-
   odb::dbOrientType getOrient() const { return xform_.getOrient(); }
-  odb::Point getOrigin() const override { return xform_.getOffset(); }
+  odb::Point getOrigin() const { return xform_.getOffset(); }
   odb::dbTransform getTransform() const { return xform_; }
   void setTransform(const odb::dbTransform& xformIn) { xform_ = xformIn; }
   odb::dbInst* getDBInst() const { return db_inst_; }

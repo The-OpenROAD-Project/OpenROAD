@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "db/obj/frRef.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
@@ -16,7 +16,7 @@
 namespace drt {
 class frNet;
 class drVia;
-class frVia : public frRef
+class frVia : public frPinFig
 {
  public:
   // constructors
@@ -27,7 +27,7 @@ class frVia : public frRef
   {
   }
   frVia(const frVia& in)
-      : frRef(in),
+      : frPinFig(in),
         origin_(in.origin_),
         viaDef_(in.viaDef_),
         owner_(in.owner_),
@@ -75,16 +75,7 @@ class frVia : public frRef
   // others
   frBlockObjectEnum typeId() const override { return frcVia; }
 
-  /* from frRef
-   * getOrient
-   * setOrient
-   * getOrigin
-   * setOrigin
-   * getTransform
-   * setTransform
-   */
-
-  odb::Point getOrigin() const override { return origin_; }
+  odb::Point getOrigin() const { return origin_; }
   void setOrigin(const odb::Point& tmpPoint) { origin_ = tmpPoint; }
 
   /* from frPinFig
