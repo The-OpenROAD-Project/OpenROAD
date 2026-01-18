@@ -47,7 +47,7 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getLayer1Figs()) {
       box.merge(fig->getBBox());
     }
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
   odb::Rect getCutBBox() const
@@ -57,7 +57,7 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getCutFigs()) {
       box.merge(fig->getBBox());
     }
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
   odb::Rect getLayer2BBox() const
@@ -67,7 +67,7 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getLayer2Figs()) {
       box.merge(fig->getBBox());
     }
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
   // setters
@@ -86,10 +86,6 @@ class frVia : public frRef
 
   odb::Point getOrigin() const override { return origin_; }
   void setOrigin(const odb::Point& tmpPoint) { origin_ = tmpPoint; }
-  odb::dbTransform getTransform() const override
-  {
-    return odb::dbTransform(origin_);
-  }
 
   /* from frPinFig
    * hasPin
@@ -192,7 +188,7 @@ class frVia : public frRef
       }
     }
     odb::Rect box(xl, yl, xh, yh);
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
   void move(const odb::dbTransform& xform) override { ; }

@@ -14,7 +14,6 @@ class frRef : public frPinFig
  public:
   // getters
   virtual odb::Point getOrigin() const = 0;
-  virtual odb::dbTransform getTransform() const = 0;
 
  protected:
   // constructors

@@ -73,7 +73,7 @@ class frInst : public frRef
 
   odb::dbOrientType getOrient() const { return xform_.getOrient(); }
   odb::Point getOrigin() const override { return xform_.getOffset(); }
-  odb::dbTransform getTransform() const override { return xform_; }
+  odb::dbTransform getTransform() const { return xform_; }
   void setTransform(const odb::dbTransform& xformIn) { xform_ = xformIn; }
   odb::dbInst* getDBInst() const { return db_inst_; }
   odb::dbTransform getDBTransform() const { return db_inst_->getTransform(); }
