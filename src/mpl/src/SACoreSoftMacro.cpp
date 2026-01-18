@@ -641,15 +641,14 @@ void SACoreSoftMacro::calNotchPenalty()
     return;
   }
 
-  struct Neighbors {
+  struct Neighbors
+  {
     bool top = true;
     bool bottom = true;
     bool left = true;
     bool right = true;
 
-    int total() {
-      return top + bottom + left + right;
-    }
+    int total() { return top + bottom + left + right; }
 
     bool operator==(const Neighbors&) const = default;
   };
