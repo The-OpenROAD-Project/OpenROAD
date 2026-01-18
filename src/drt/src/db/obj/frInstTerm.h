@@ -21,10 +21,9 @@ class frAccessPoint;
 class frInstTerm : public frBlockObject
 {
  public:
-  // constructors
   frInstTerm(frInst* inst, frMTerm* term) : inst_(inst), term_(term) {}
   frInstTerm(const frInstTerm& in) = delete;
-  // getters
+
   bool hasNet() const { return (net_); }
   frNet* getNet() const { return net_; }
   frInst* getInst() const { return inst_; }
@@ -33,12 +32,12 @@ class frInstTerm : public frBlockObject
   const std::vector<frAccessPoint*>& getAccessPoints() const { return ap_; }
   frAccessPoint* getAccessPoint(int idx) const { return ap_[idx]; }
   frString getName() const;
-  // setters
+
   void setAPSize(int size) { ap_.resize(size, nullptr); }
   void setAccessPoint(int idx, frAccessPoint* in) { ap_[idx] = in; }
   void addAccessPoint(frAccessPoint* in) { ap_.push_back(in); }
   void setAccessPoints(const std::vector<frAccessPoint*>& in) { ap_ = in; }
-  // others
+
   void clearAccessPoints() { ap_.clear(); }
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);

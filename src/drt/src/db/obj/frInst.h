@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "db/obj/frBlockage.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frPin.h"
-#include "db/obj/frFig.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -24,7 +24,6 @@ class frInstTerm;
 class frInst : public frPinFig
 {
  public:
-  // constructors
   frInst(frMaster* master, odb::dbInst* db_inst)
       : master_(master), db_inst_(db_inst)
   {
@@ -32,7 +31,6 @@ class frInst : public frPinFig
   // used for archive serialization
   frInst() : master_(nullptr), db_inst_(nullptr) {}
 
-  // getters
   frString getName() const { return db_inst_->getName(); }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frInstTerm>>& getInstTerms() const
@@ -45,7 +43,7 @@ class frInst : public frPinFig
   }
   int getPinAccessIdx() const { return pinAccessIdx_; }
   bool isToBeDeleted() const { return toBeDeleted_; }
-  // setters
+
   void addInstTerm(std::unique_ptr<frInstTerm> in)
   {
     instTerms_.push_back(std::move(in));
@@ -59,7 +57,7 @@ class frInst : public frPinFig
   void deletePinAccessIdx() { pinAccessIdx_ = -1; }
   bool hasPinAccessIdx() { return pinAccessIdx_ != -1; }
   void setToBeDeleted(bool in) { toBeDeleted_ = in; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcInst; }
 
   odb::dbOrientType getOrient() const { return xform_.getOrient(); }
@@ -69,42 +67,22 @@ class frInst : public frPinFig
   odb::dbInst* getDBInst() const { return db_inst_; }
   odb::dbTransform getDBTransform() const { return db_inst_->getTransform(); }
 
-  /* from frPinFig
-   * hasPin
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
-
   bool hasPin() const override { return false; }
   frPin* getPin() const override { return nullptr; }
   void addToPin(frPin* in) override { ; }
   void addToPin(frBPin* in) override { ; }
   void removeFromPin() override { ; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
-
   bool hasNet() const override { return false; }
   frNet* getNet() const override { return nullptr; }
   void addToNet(frNet* in) override { ; }
   void removeFromNet() override { ; }
 
-  /* from frFig
-   * getBBox
-   * move
-   * intersects
-   */
-
   odb::Rect getBBox() const override;
 
   void move(const odb::dbTransform& xform) override { ; }
   bool intersects(const odb::Rect& box) const override { return false; }
-  // others
+
   odb::dbTransform getNoRotationTransform() const;
   odb::Rect getBoundaryBBox() const;
 

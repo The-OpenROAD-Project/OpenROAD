@@ -14,16 +14,14 @@ class frInst;
 class frInstBlockage : public frBlockObject
 {
  public:
-  // constructors
   frInstBlockage(frInst* inst, frBlockage* blockage)
       : inst_(inst), blockage_(blockage)
   {
   }
-  // getters
+
   frInst* getInst() const { return inst_; }
   frBlockage* getBlockage() const { return blockage_; }
-  // setters
-  // others
+
   frBlockObjectEnum typeId() const override { return frcInstBlockage; }
   void setIndexeInOwner(int in) { index_in_owner_ = in; }
   int getIndexInOwner() const { return index_in_owner_; }

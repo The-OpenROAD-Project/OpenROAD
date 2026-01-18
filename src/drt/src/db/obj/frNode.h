@@ -18,11 +18,10 @@ class grNode;
 class frNode : public frBlockObject
 {
  public:
-  // constructors
   frNode() = default;
   frNode(frNode& in) = delete;
   frNode(grNode& in);
-  // setters
+
   void addToNet(frNet* in) { net_ = in; }
   void setLoc(const odb::Point& in) { loc_ = in; }
   void setLayerNum(frLayerNum in) { layerNum_ = in; }
@@ -87,7 +86,6 @@ class frNode : public frBlockObject
     children_.clear();
   }
 
-  // getters
   bool hasNet() { return net_; }
   frNet* getNet() { return net_; }
   odb::Point getLoc() { return loc_; }

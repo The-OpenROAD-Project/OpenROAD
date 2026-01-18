@@ -19,7 +19,6 @@ class drVia;
 class frVia : public frPinFig
 {
  public:
-  // constructors
   frVia() = default;
   frVia(const frViaDef* in) : viaDef_(in) {}
   frVia(const frViaDef* def_in, const odb::Point& pt_in)
@@ -38,7 +37,7 @@ class frVia : public frPinFig
   {
   }
   frVia(const drVia& in);
-  // getters
+
   const frViaDef* getViaDef() const { return viaDef_; }
   odb::Rect getLayer1BBox() const
   {
@@ -70,20 +69,14 @@ class frVia : public frPinFig
     box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
-  // setters
+
   void setViaDef(const frViaDef* in) { viaDef_ = in; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcVia; }
 
   odb::Point getOrigin() const { return origin_; }
   void setOrigin(const odb::Point& tmpPoint) { origin_ = tmpPoint; }
 
-  /* from frPinFig
-   * hasPin
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
   bool hasPin() const override
   {
     return (owner_)
@@ -100,12 +93,6 @@ class frVia : public frPinFig
   }
   void removeFromPin() override { owner_ = nullptr; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
   bool hasNet() const override
   {
     return (owner_) && (owner_->typeId() == frcNet);
@@ -116,12 +103,6 @@ class frVia : public frPinFig
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
   void removeFromNet() override { owner_ = nullptr; }
-
-  /* from frFig
-   * getBBox
-   * move
-   * intersects
-   */
 
   odb::Rect getBBox() const override
   {

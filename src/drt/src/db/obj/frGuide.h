@@ -19,7 +19,7 @@ class frGuide : public frConnFig
  public:
   frGuide() = default;
   frGuide(const frGuide& in) = delete;
-  // getters
+
   std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
 
   const odb::Point& getBeginPoint() const { return begin_; }
@@ -33,7 +33,7 @@ class frGuide : public frConnFig
     return routeObj_;
   }
   int getIndexInOwner() const { return index_in_owner_; }
-  // setters
+
   void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
   {
     begin_ = beginIn;
@@ -49,26 +49,14 @@ class frGuide : public frConnFig
   {
     routeObj_ = std::move(routesIn);
   }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcGuide; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
   bool hasNet() const override { return (net_); }
   frNet* getNet() const override { return net_; }
   void addToNet(frNet* in) override { net_ = in; }
   void removeFromNet() override { net_ = nullptr; }
 
-  /* from frFig
-   * getBBox
-   * move, in .cpp
-   * intersects, incomplete
-   */
-  // needs to be updated
   odb::Rect getBBox() const override { return odb::Rect(begin_, end_); }
   void move(const odb::dbTransform& xform) override { ; }
   bool intersects(const odb::Rect& box) const override { return false; }

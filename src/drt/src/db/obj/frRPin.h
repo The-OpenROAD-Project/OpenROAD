@@ -15,13 +15,12 @@ class frAccessPoint;
 class frRPin : public frBlockObject
 {
  public:
-  // constructors
   frRPin() = default;
-  // setters
+
   void setFrTerm(frBlockObject* in) { term_ = in; }
   void setAccessPoint(frAccessPoint* in) { accessPoint_ = in; }
   void addToNet(frNet* in) { net_ = in; }
-  // getters
+
   bool hasFrTerm() const { return term_; }
   frBlockObject* getFrTerm() const { return term_; }
   frAccessPoint* getAccessPoint() const { return accessPoint_; }
@@ -31,7 +30,6 @@ class frRPin : public frBlockObject
   odb::Rect getBBox();
   frLayerNum getLayerNum();
 
-  // others
   frBlockObjectEnum typeId() const override { return frcRPin; }
 
  protected:

@@ -31,12 +31,11 @@ class frNonDefaultRule;
 class frNet : public frBlockObject
 {
  public:
-  // constructors
   frNet(const frString& in, RouterConfiguration* router_cfg)
       : name_(in), router_cfg_(router_cfg)
   {
   }
-  // getters
+
   const frString& getName() const { return name_; }
   const std::vector<frInstTerm*>& getInstTerms() const { return instTerms_; }
   const std::vector<frBTerm*>& getBTerms() const { return bterms_; }
@@ -77,7 +76,7 @@ class frNet : public frBlockObject
   bool isFixed() const { return isFixed_; }
   bool hasGuides() const { return !guides_.empty(); }
   bool hasBTermsAboveTopLayer() const;
-  // setters
+
   void addInstTerm(frInstTerm* in) { instTerms_.push_back(in); }
   void removeInstTerm(frInstTerm* in)
   {
@@ -182,7 +181,7 @@ class frNet : public frBlockObject
   void setIsFake(bool in) { isFakeNet_ = in; }
   void setHasInitialRouting(bool in) { hasInitialRouting_ = in; }
   void setFixed(bool in) { isFixed_ = in; }
-  // others
+
   void clearRoutes()
   {
     shapes_.clear();

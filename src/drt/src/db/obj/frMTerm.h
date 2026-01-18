@@ -18,16 +18,15 @@ class frMaster;
 class frMTerm : public frTerm
 {
  public:
-  // constructors
   frMTerm(const frString& name) : frTerm(name) {}
   frMTerm(const frMTerm& in) = delete;
   frMTerm& operator=(const frMTerm&) = delete;
-  // getters
+
   bool hasNet() const override { return false; }
   frNet* getNet() const override { return nullptr; }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frMPin>>& getPins() const { return pins_; }
-  // setters
+
   void setMaster(frMaster* in) { master_ = in; }
   void addPin(std::unique_ptr<frMPin> in)
   {
@@ -45,7 +44,7 @@ class frMTerm : public frTerm
     in->setId(pins_.size());
     pins_.push_back(std::move(in));
   }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcMTerm; }
   frAccessPoint* getAccessPoint(frCoord x,
                                 frCoord y,

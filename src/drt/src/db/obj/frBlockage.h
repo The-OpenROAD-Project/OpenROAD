@@ -14,13 +14,12 @@ namespace drt {
 class frBlockage : public frBlockObject
 {
  public:
-  // getters
   frBPin* getPin() const { return pin_.get(); }
   frCoord getDesignRuleWidth() const { return design_rule_width_; }
-  // setters
+
   void setPin(std::unique_ptr<frBPin> in) { pin_ = std::move(in); }
   void setDesignRuleWidth(frCoord width) { design_rule_width_ = width; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcBlockage; }
   void setIndexInOwner(int in) { index_in_owner_ = in; }
   int getIndexInOwner() const { return index_in_owner_; }

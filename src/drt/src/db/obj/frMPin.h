@@ -14,18 +14,15 @@ class frMTerm;
 class frMPin : public frPin
 {
  public:
-  // constructors
   frMPin() = default;
   frMPin(const frMPin& in) = delete;
   frMPin& operator=(const frMPin&) = delete;
 
-  // getters
   frMTerm* getTerm() const { return term_; }
 
-  // setters
   // cannot have setterm, must be available when creating
   void setTerm(frMTerm* in) { term_ = in; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcMPin; }
 
  protected:
