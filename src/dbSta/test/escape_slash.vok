@@ -58,6 +58,133 @@ module multi_sink (clk);
  wire delaynet_6_core;
  wire delaynet_7_core;
 
+ CLKBUF_X3 clkbuf_0_clk (.A(clk),
+    .Z(clknet_0_clk));
+ CLKBUF_X3 clkbuf_0_gclk1 (.A(gclk1),
+    .Z(clknet_0_gclk1));
+ CLKBUF_X3 clkbuf_0_gclk3 (.A(gclk3),
+    .Z(clknet_0_gclk3));
+ CLKBUF_X3 clkbuf_0_gclk4 (.A(gclk4),
+    .Z(clknet_0_gclk4));
+ CLKBUF_X3 clkbuf_0_gclk4_regs (.A(gclk4_regs),
+    .Z(clknet_0_gclk4_regs));
+ CLKBUF_X3 clkbuf_0_hi_gclk2 (.A(hi_gclk2),
+    .Z(clknet_0_hi_gclk2));
+ CLKBUF_X3 clkbuf_0_hi_gclk5 (.A(hi_gclk5),
+    .Z(clknet_0_hi_gclk5));
+ CLKBUF_X3 clkbuf_1_0__f_clk (.A(clknet_0_clk),
+    .Z(clknet_1_0__leaf_clk));
+ CLKBUF_X3 clkbuf_1_0__f_gclk4 (.A(clknet_0_gclk4),
+    .Z(clknet_1_0__leaf_gclk4));
+ CLKBUF_X3 clkbuf_1_1__f_clk (.A(delaynet_7_core),
+    .Z(clknet_1_1__leaf_clk));
+ CLKBUF_X3 clkbuf_2_0__f_gclk1 (.A(clknet_0_gclk1),
+    .Z(clknet_2_0__leaf_gclk1));
+ CLKBUF_X3 clkbuf_2_0__f_gclk3 (.A(clknet_0_gclk3),
+    .Z(clknet_2_0__leaf_gclk3));
+ CLKBUF_X3 clkbuf_2_0__f_gclk4_regs (.A(clknet_0_gclk4_regs),
+    .Z(clknet_2_0__leaf_gclk4_regs));
+ CLKBUF_X3 clkbuf_2_0__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
+    .Z(clknet_2_0__leaf_hi_gclk2));
+ CLKBUF_X3 clkbuf_2_1__f_gclk1 (.A(clknet_0_gclk1),
+    .Z(clknet_2_1__leaf_gclk1));
+ CLKBUF_X3 clkbuf_2_1__f_gclk3 (.A(clknet_0_gclk3),
+    .Z(clknet_2_1__leaf_gclk3));
+ CLKBUF_X3 clkbuf_2_1__f_gclk4_regs (.A(clknet_0_gclk4_regs),
+    .Z(clknet_2_1__leaf_gclk4_regs));
+ CLKBUF_X3 clkbuf_2_1__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
+    .Z(clknet_2_1__leaf_hi_gclk2));
+ CLKBUF_X3 clkbuf_2_2__f_gclk1 (.A(clknet_0_gclk1),
+    .Z(clknet_2_2__leaf_gclk1));
+ CLKBUF_X3 clkbuf_2_2__f_gclk3 (.A(clknet_0_gclk3),
+    .Z(clknet_2_2__leaf_gclk3));
+ CLKBUF_X3 clkbuf_2_2__f_gclk4_regs (.A(clknet_0_gclk4_regs),
+    .Z(clknet_2_2__leaf_gclk4_regs));
+ CLKBUF_X3 clkbuf_2_2__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
+    .Z(clknet_2_2__leaf_hi_gclk2));
+ CLKBUF_X3 clkbuf_2_3__f_gclk1 (.A(clknet_0_gclk1),
+    .Z(clknet_2_3__leaf_gclk1));
+ CLKBUF_X3 clkbuf_2_3__f_gclk3 (.A(clknet_0_gclk3),
+    .Z(clknet_2_3__leaf_gclk3));
+ CLKBUF_X3 clkbuf_2_3__f_gclk4_regs (.A(clknet_0_gclk4_regs),
+    .Z(clknet_2_3__leaf_gclk4_regs));
+ CLKBUF_X3 clkbuf_2_3__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
+    .Z(clknet_2_3__leaf_hi_gclk2));
+ CLKBUF_X3 clkbuf_4_0__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_0__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_10__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_10__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_11__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_11__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_12__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_12__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_13__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_13__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_14__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_14__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_15__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_15__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_1__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_1__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_2__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_2__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_3__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_3__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_4__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_4__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_5__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_5__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_6__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_6__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_7__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_7__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_8__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_8__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_4_9__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
+    .Z(clknet_4_9__leaf_hi_gclk5));
+ CLKBUF_X3 clkbuf_regs_0_core (.A(delaynet_2_core),
+    .Z(gclk4_regs));
+ INV_X2 clkload0 (.A(clknet_2_0__leaf_hi_gclk2));
+ INV_X1 clkload1 (.A(clknet_2_1__leaf_hi_gclk2));
+ CLKBUF_X3 clkload10 (.A(clknet_4_7__leaf_hi_gclk5));
+ INV_X4 clkload11 (.A(clknet_4_8__leaf_hi_gclk5));
+ INV_X4 clkload12 (.A(clknet_4_9__leaf_hi_gclk5));
+ INV_X4 clkload13 (.A(clknet_4_10__leaf_hi_gclk5));
+ INV_X4 clkload14 (.A(clknet_4_11__leaf_hi_gclk5));
+ INV_X2 clkload15 (.A(clknet_4_12__leaf_hi_gclk5));
+ INV_X4 clkload16 (.A(clknet_4_13__leaf_hi_gclk5));
+ INV_X2 clkload17 (.A(clknet_4_14__leaf_hi_gclk5));
+ INV_X1 clkload18 (.A(clknet_2_0__leaf_gclk4_regs));
+ INV_X1 clkload19 (.A(clknet_2_2__leaf_gclk4_regs));
+ INV_X1 clkload2 (.A(clknet_2_2__leaf_hi_gclk2));
+ INV_X4 clkload20 (.A(clknet_2_0__leaf_gclk3));
+ INV_X2 clkload21 (.A(clknet_2_1__leaf_gclk3));
+ INV_X2 clkload22 (.A(clknet_2_2__leaf_gclk3));
+ INV_X1 clkload23 (.A(clknet_2_0__leaf_gclk1));
+ INV_X1 clkload24 (.A(clknet_2_3__leaf_gclk1));
+ INV_X4 clkload3 (.A(clknet_4_0__leaf_hi_gclk5));
+ INV_X4 clkload4 (.A(clknet_4_1__leaf_hi_gclk5));
+ INV_X4 clkload5 (.A(clknet_4_2__leaf_hi_gclk5));
+ INV_X4 clkload6 (.A(clknet_4_3__leaf_hi_gclk5));
+ INV_X4 clkload7 (.A(clknet_4_4__leaf_hi_gclk5));
+ INV_X4 clkload8 (.A(clknet_4_5__leaf_hi_gclk5));
+ INV_X2 clkload9 (.A(clknet_4_6__leaf_hi_gclk5));
+ CLKBUF_X3 delaybuf_0_core (.A(clknet_1_1__leaf_clk),
+    .Z(delaynet_0_core));
+ CLKBUF_X3 delaybuf_1_core (.A(gclk4),
+    .Z(delaynet_1_core));
+ CLKBUF_X3 delaybuf_2_core (.A(delaynet_1_core),
+    .Z(delaynet_2_core));
+ CLKBUF_X3 delaybuf_3_core (.A(clknet_1_0__leaf_clk),
+    .Z(delaynet_3_core));
+ CLKBUF_X3 delaybuf_4_core (.A(delaynet_3_core),
+    .Z(delaynet_4_core));
+ CLKBUF_X3 delaybuf_5_core (.A(delaynet_4_core),
+    .Z(delaynet_5_core));
+ CLKBUF_X3 delaybuf_6_core (.A(clknet_0_clk),
+    .Z(delaynet_6_core));
+ CLKBUF_X3 delaybuf_7_core (.A(delaynet_6_core),
+    .Z(delaynet_7_core));
  DFF_X1 \ff0/name  (.CK(clknet_4_7__leaf_hi_gclk5));
  DFF_X1 ff153 (.CK(clknet_2_1__leaf_gclk4_regs));
  DFF_X1 ff154 (.CK(clknet_2_0__leaf_gclk4_regs));
@@ -346,131 +473,4 @@ module multi_sink (clk);
     .GCK(hi_gclk5));
  CLKGATE_X1 \hi_inst/gclk2_inst  (.CK(delaynet_5_core),
     .GCK(hi_gclk2));
- CLKBUF_X3 clkbuf_regs_0_core (.A(delaynet_2_core),
-    .Z(gclk4_regs));
- CLKBUF_X3 clkbuf_0_clk (.A(clk),
-    .Z(clknet_0_clk));
- CLKBUF_X3 clkbuf_1_0__f_clk (.A(clknet_0_clk),
-    .Z(clknet_1_0__leaf_clk));
- CLKBUF_X3 clkbuf_1_1__f_clk (.A(delaynet_7_core),
-    .Z(clknet_1_1__leaf_clk));
- CLKBUF_X3 clkbuf_0_hi_gclk2 (.A(hi_gclk2),
-    .Z(clknet_0_hi_gclk2));
- CLKBUF_X3 clkbuf_2_0__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
-    .Z(clknet_2_0__leaf_hi_gclk2));
- CLKBUF_X3 clkbuf_2_1__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
-    .Z(clknet_2_1__leaf_hi_gclk2));
- CLKBUF_X3 clkbuf_2_2__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
-    .Z(clknet_2_2__leaf_hi_gclk2));
- CLKBUF_X3 clkbuf_2_3__f_hi_gclk2 (.A(clknet_0_hi_gclk2),
-    .Z(clknet_2_3__leaf_hi_gclk2));
- INV_X2 clkload0 (.A(clknet_2_0__leaf_hi_gclk2));
- INV_X1 clkload1 (.A(clknet_2_1__leaf_hi_gclk2));
- INV_X1 clkload2 (.A(clknet_2_2__leaf_hi_gclk2));
- CLKBUF_X3 clkbuf_0_hi_gclk5 (.A(hi_gclk5),
-    .Z(clknet_0_hi_gclk5));
- CLKBUF_X3 clkbuf_4_0__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_0__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_1__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_1__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_2__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_2__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_3__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_3__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_4__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_4__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_5__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_5__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_6__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_6__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_7__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_7__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_8__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_8__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_9__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_9__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_10__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_10__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_11__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_11__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_12__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_12__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_13__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_13__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_14__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_14__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_4_15__f_hi_gclk5 (.A(clknet_0_hi_gclk5),
-    .Z(clknet_4_15__leaf_hi_gclk5));
- INV_X4 clkload3 (.A(clknet_4_0__leaf_hi_gclk5));
- INV_X4 clkload4 (.A(clknet_4_1__leaf_hi_gclk5));
- INV_X4 clkload5 (.A(clknet_4_2__leaf_hi_gclk5));
- INV_X4 clkload6 (.A(clknet_4_3__leaf_hi_gclk5));
- INV_X4 clkload7 (.A(clknet_4_4__leaf_hi_gclk5));
- INV_X4 clkload8 (.A(clknet_4_5__leaf_hi_gclk5));
- INV_X2 clkload9 (.A(clknet_4_6__leaf_hi_gclk5));
- CLKBUF_X3 clkload10 (.A(clknet_4_7__leaf_hi_gclk5));
- INV_X4 clkload11 (.A(clknet_4_8__leaf_hi_gclk5));
- INV_X4 clkload12 (.A(clknet_4_9__leaf_hi_gclk5));
- INV_X4 clkload13 (.A(clknet_4_10__leaf_hi_gclk5));
- INV_X4 clkload14 (.A(clknet_4_11__leaf_hi_gclk5));
- INV_X2 clkload15 (.A(clknet_4_12__leaf_hi_gclk5));
- INV_X4 clkload16 (.A(clknet_4_13__leaf_hi_gclk5));
- INV_X2 clkload17 (.A(clknet_4_14__leaf_hi_gclk5));
- CLKBUF_X3 clkbuf_0_gclk4 (.A(gclk4),
-    .Z(clknet_0_gclk4));
- CLKBUF_X3 clkbuf_1_0__f_gclk4 (.A(clknet_0_gclk4),
-    .Z(clknet_1_0__leaf_gclk4));
- CLKBUF_X3 clkbuf_0_gclk4_regs (.A(gclk4_regs),
-    .Z(clknet_0_gclk4_regs));
- CLKBUF_X3 clkbuf_2_0__f_gclk4_regs (.A(clknet_0_gclk4_regs),
-    .Z(clknet_2_0__leaf_gclk4_regs));
- CLKBUF_X3 clkbuf_2_1__f_gclk4_regs (.A(clknet_0_gclk4_regs),
-    .Z(clknet_2_1__leaf_gclk4_regs));
- CLKBUF_X3 clkbuf_2_2__f_gclk4_regs (.A(clknet_0_gclk4_regs),
-    .Z(clknet_2_2__leaf_gclk4_regs));
- CLKBUF_X3 clkbuf_2_3__f_gclk4_regs (.A(clknet_0_gclk4_regs),
-    .Z(clknet_2_3__leaf_gclk4_regs));
- INV_X1 clkload18 (.A(clknet_2_0__leaf_gclk4_regs));
- INV_X1 clkload19 (.A(clknet_2_2__leaf_gclk4_regs));
- CLKBUF_X3 clkbuf_0_gclk3 (.A(gclk3),
-    .Z(clknet_0_gclk3));
- CLKBUF_X3 clkbuf_2_0__f_gclk3 (.A(clknet_0_gclk3),
-    .Z(clknet_2_0__leaf_gclk3));
- CLKBUF_X3 clkbuf_2_1__f_gclk3 (.A(clknet_0_gclk3),
-    .Z(clknet_2_1__leaf_gclk3));
- CLKBUF_X3 clkbuf_2_2__f_gclk3 (.A(clknet_0_gclk3),
-    .Z(clknet_2_2__leaf_gclk3));
- CLKBUF_X3 clkbuf_2_3__f_gclk3 (.A(clknet_0_gclk3),
-    .Z(clknet_2_3__leaf_gclk3));
- INV_X4 clkload20 (.A(clknet_2_0__leaf_gclk3));
- INV_X2 clkload21 (.A(clknet_2_1__leaf_gclk3));
- INV_X2 clkload22 (.A(clknet_2_2__leaf_gclk3));
- CLKBUF_X3 clkbuf_0_gclk1 (.A(gclk1),
-    .Z(clknet_0_gclk1));
- CLKBUF_X3 clkbuf_2_0__f_gclk1 (.A(clknet_0_gclk1),
-    .Z(clknet_2_0__leaf_gclk1));
- CLKBUF_X3 clkbuf_2_1__f_gclk1 (.A(clknet_0_gclk1),
-    .Z(clknet_2_1__leaf_gclk1));
- CLKBUF_X3 clkbuf_2_2__f_gclk1 (.A(clknet_0_gclk1),
-    .Z(clknet_2_2__leaf_gclk1));
- CLKBUF_X3 clkbuf_2_3__f_gclk1 (.A(clknet_0_gclk1),
-    .Z(clknet_2_3__leaf_gclk1));
- INV_X1 clkload23 (.A(clknet_2_0__leaf_gclk1));
- INV_X1 clkload24 (.A(clknet_2_3__leaf_gclk1));
- CLKBUF_X3 delaybuf_0_core (.A(clknet_1_1__leaf_clk),
-    .Z(delaynet_0_core));
- CLKBUF_X3 delaybuf_1_core (.A(gclk4),
-    .Z(delaynet_1_core));
- CLKBUF_X3 delaybuf_2_core (.A(delaynet_1_core),
-    .Z(delaynet_2_core));
- CLKBUF_X3 delaybuf_3_core (.A(clknet_1_0__leaf_clk),
-    .Z(delaynet_3_core));
- CLKBUF_X3 delaybuf_4_core (.A(delaynet_3_core),
-    .Z(delaynet_4_core));
- CLKBUF_X3 delaybuf_5_core (.A(delaynet_4_core),
-    .Z(delaynet_5_core));
- CLKBUF_X3 delaybuf_6_core (.A(clknet_0_clk),
-    .Z(delaynet_6_core));
- CLKBUF_X3 delaybuf_7_core (.A(delaynet_6_core),
-    .Z(delaynet_7_core));
 endmodule
