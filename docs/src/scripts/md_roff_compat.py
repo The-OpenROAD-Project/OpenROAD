@@ -166,13 +166,11 @@ def man2_translate(doc, path):
         global_see_also = extract_global_see_also(text)
 
         print(f"{os.path.basename(doc)}")
-        print(
-            f"""Names: {len(func_names)},\
+        print(f"""Names: {len(func_names)},\
         Desc: {len(func_descs)},\
         Syn: {len(func_synopsis)},\
         Options: {len(func_options)},\
-        Args: {len(func_args)}"""
-        )
+        Args: {len(func_args)}""")
         print(f"Global Examples: {'Found' if global_examples else 'None'}")
         print(f"Global See Also: {'Found' if global_see_also else 'None'}")
 
