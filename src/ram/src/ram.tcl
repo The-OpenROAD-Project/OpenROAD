@@ -86,7 +86,7 @@ proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys { -bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell -read_ports
       -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
-        -tapcell -max_tap_dist} flags {}
+        -tapcell -max_tap_dist } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 

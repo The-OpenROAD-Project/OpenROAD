@@ -89,7 +89,7 @@ class RamGen
                  int hor_pitch);
   void ramPinplacer(const char* ver_name, const char* hor_name);
   void ramFiller(const std::vector<std::string>& filler_cells);
-  void ramRouting();
+  void ramRouting(int thread_count);
 
  private:
   void findMasters();

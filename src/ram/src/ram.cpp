@@ -536,9 +536,10 @@ void RamGen::ramFiller(const vector<std::string>& filler_cells)
   opendp_->fillerPlacement(filler_masters, "FILLER_", false);
 }
 
-void RamGen::ramRouting()
+void RamGen::ramRouting(int thread_count)
 {
-  global_router_->setGridOrigin(0, 0);
+  const odb::Rect& die_bounds = block_->getDieArea();
+  global_router_->setGridOrigin(die_bounds.xMin(), die_bounds.yMin());
   global_router_->setCongestionIterations(50);
   global_router_->setCongestionReportIterStep(0);
   global_router_->setAllowCongestion(false);
@@ -546,7 +547,7 @@ void RamGen::ramRouting()
   global_router_->globalRoute(true, false, false);
   drt::ParamStruct params;
   params.verbose = 0;
-  params.num_threads = 1;
+  params.num_threads = thread_count;
   params.enableViaGen = true;
   params.orSeed = -1;
   params.doPa = true;

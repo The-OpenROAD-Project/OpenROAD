@@ -118,8 +118,9 @@ void ram_filler(const std::vector<std::string>& filler_cells)
 
 void ram_routing()
 {
+  const int thread_count = ord::OpenRoad::openRoad()->getThreadCount();
   RamGen* ram_gen = ord::getRamGen();
-  ram_gen->ramRouting();
+  ram_gen->ramRouting(thread_count);
 }
 
 } //namespace_ram
