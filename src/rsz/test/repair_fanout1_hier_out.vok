@@ -18,17 +18,17 @@ module hi_fanout_child (clk1,
  wire net3;
  wire net4;
 
- BUF_X1 fanout4 (.A(net0),
-    .Z(net4));
- BUF_X1 fanout3 (.A(net0),
-    .Z(net3));
- BUF_X1 fanout2 (.A(net0),
-    .Z(net2));
- BUF_X1 fanout1 (.A(net2),
-    .Z(net1));
  DFF_X1 drvr (.D(in),
     .CK(clk1),
     .Q(net0));
+ BUF_X1 fanout1 (.A(net2),
+    .Z(net1));
+ BUF_X1 fanout2 (.A(net0),
+    .Z(net2));
+ BUF_X1 fanout3 (.A(net0),
+    .Z(net3));
+ BUF_X1 fanout4 (.A(net0),
+    .Z(net4));
  DFF_X1 load0 (.D(net1),
     .CK(clk1));
  DFF_X1 load1 (.D(net1),

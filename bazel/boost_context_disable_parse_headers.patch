@@ -1,0 +1,8 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -145,5 +145,4 @@
+         ],
+     ),
+     defines = ["BOOST_ALL_NO_LIB"],
+-    features = ["parse_headers"],
+     includes = ["include"],
