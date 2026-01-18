@@ -91,7 +91,6 @@ class frVia : public frRef
   {
     return odb::dbTransform(origin_);
   }
-  void setTransform(const odb::dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin

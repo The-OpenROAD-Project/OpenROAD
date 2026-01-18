@@ -16,8 +16,6 @@ class frRef : public frPinFig
   virtual odb::dbOrientType getOrient() const = 0;
   virtual odb::Point getOrigin() const = 0;
   virtual odb::dbTransform getTransform() const = 0;
-  // setters
-  virtual void setTransform(const odb::dbTransform& xform) = 0;
 
  protected:
   // constructors
