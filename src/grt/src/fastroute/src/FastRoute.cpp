@@ -65,7 +65,8 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       logger_(log),
       stt_builder_(stt_builder),
       sta_(sta),
-      debug_(new DebugSetting())
+      debug_(new DebugSetting()),
+      detour_penalty_(0)
 {
 }
 
