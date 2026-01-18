@@ -3,13 +3,9 @@
 
 #include "SACoreSoftMacro.h"
 
-#include <bits/ranges_algo.h>
-
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <limits>
-#include <ranges>
 #include <set>
 #include <utility>
 #include <vector>
@@ -674,8 +670,10 @@ void SACoreSoftMacro::calNotchPenalty()
                                            block_->dbuToMicrons(height));
 
     if (graphics_) {
-      graphics_->setNotchPenalty(
-          {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
+      graphics_->setNotchPenalty({.name = "Notch",
+                                  .weight = notch_weight_,
+                                  .value = notch_penalty_,
+                                  .normalization_factor = norm_notch_penalty_});
     }
     return;
   }
@@ -702,7 +700,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
   std::vector<int> x_coords;
   int epsilon = outline_.dx() / 100;
-  for (size_t i = 0; i < x_point.size(); i++) {
+  for (int i = 0; i < x_point.size(); i++) {
     if (i + 1 < x_point.size()
         && std::abs(x_point[i + 1] - x_point[i]) <= epsilon) {
       continue;
@@ -712,7 +710,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
   std::vector<int> y_coords;
   epsilon = outline_.dy() / 100;
-  for (size_t i = 0; i < y_point.size(); i++) {
+  for (int i = 0; i < y_point.size(); i++) {
     if (i + 1 < y_point.size()
         && std::abs(y_point[i + 1] - y_point[i]) <= epsilon) {
       continue;
@@ -841,7 +839,21 @@ void SACoreSoftMacro::calNotchPenalty()
 
       width = x_coords[end_col + 1] - x_coords[start_col];
       height = y_coords[end_row + 1] - y_coords[start_row];
+
+      bool is_notch = false;
       if (n.total() == 4) {
+        is_notch = true;
+      } else if (n.top && n.bottom) {
+        if (height < notch_h_th_) {
+          is_notch = true;
+        }
+      } else if (n.left && n.right) {
+        if (width < notch_v_th_) {
+          is_notch = true;
+        }
+      }
+
+      if (is_notch) {
         notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
                                                 block_->dbuToMicrons(height));
         if (graphics_) {
@@ -849,28 +861,6 @@ void SACoreSoftMacro::calNotchPenalty()
                                         y_coords[start_row],
                                         x_coords[end_col + 1],
                                         y_coords[end_row + 1]));
-        }
-      } else if (n.top && n.bottom) {
-        if (height < notch_h_th_) {
-          notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
-                                                  block_->dbuToMicrons(height));
-          if (graphics_) {
-            graphics_->addNotch(odb::Rect(x_coords[start_col],
-                                          y_coords[start_row],
-                                          x_coords[end_col + 1],
-                                          y_coords[end_row + 1]));
-          }
-        }
-      } else if (n.left && n.right) {
-        if (width < notch_v_th_) {
-          notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
-                                                  block_->dbuToMicrons(height));
-          if (graphics_) {
-            graphics_->addNotch(odb::Rect(x_coords[start_col],
-                                          y_coords[start_row],
-                                          x_coords[end_col + 1],
-                                          y_coords[end_row + 1]));
-          }
         }
       }
     }
