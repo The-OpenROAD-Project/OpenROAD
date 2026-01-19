@@ -304,7 +304,7 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool start_incremental,
                                bool end_incremental)
 {
-  auto start = std::chrono::high_resolution_clock::now();
+  auto start = std::chrono::steady_clock::now();
   bool has_routable_nets = false;
   is_incremental_ = (start_incremental || end_incremental);
 
@@ -409,7 +409,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
   }
 
-  auto end = std::chrono::high_resolution_clock::now();
+  auto end = std::chrono::steady_clock::now();
   if (show_runtime_) {
     auto runtime
         = std::chrono::duration_cast<std::chrono::seconds>(end - start);

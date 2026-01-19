@@ -315,7 +315,7 @@ class GlobalRouter
   bool isInitialized() const { return initialized_; }
   bool isCongested() const { return is_congested_; }
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
-  bool showRuntime() { return show_runtime_; }
+  bool showRuntime() const { return show_runtime_; }
   void setShowRuntime(bool show) { show_runtime_ = show; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
