@@ -21,7 +21,7 @@ class frBlock;
 class frMaster;
 class frInstTerm;
 
-class frInst : public frPinFig
+class frInst : public frBlockObject
 {
  public:
   frInst(frMaster* master, odb::dbInst* db_inst)
@@ -68,21 +68,7 @@ class frInst : public frPinFig
   odb::dbInst* getDBInst() const { return db_inst_; }
   odb::dbTransform getDBTransform() const { return db_inst_->getTransform(); }
 
-  bool hasPin() const override { return false; }
-  frPin* getPin() const override { return nullptr; }
-  void addToPin(frPin* in) override { ; }
-  void addToPin(frBPin* in) override { ; }
-  void removeFromPin() override { ; }
-
-  bool hasNet() const override { return false; }
-  frNet* getNet() const override { return nullptr; }
-  void addToNet(frNet* in) override { ; }
-  void removeFromNet() override { ; }
-
-  odb::Rect getBBox() const override;
-
-  void move(const odb::dbTransform& xform) override { ; }
-  bool intersects(const odb::Rect& box) const override { return false; }
+  odb::Rect getBBox() const;
 
   odb::dbTransform getNoRotationTransform() const;
   odb::Rect getBoundaryBBox() const;
