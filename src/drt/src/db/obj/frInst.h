@@ -27,6 +27,9 @@ class frInst : public frPinFig
   frInst(frMaster* master, odb::dbInst* db_inst)
       : master_(master), db_inst_(db_inst)
   {
+    if (db_inst_ == nullptr) {
+      throw std::runtime_error("frInst requires non-null dbInst");
+    }
   }
   // used for archive serialization
   frInst() : master_(nullptr), db_inst_(nullptr) {}
