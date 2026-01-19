@@ -191,6 +191,29 @@ void LayoutViewer::setChip(odb::dbChip* chip)
   fit();
 }
 
+std::map<odb::dbChip*, odb::dbChipInst*> LayoutViewer::getChips() const
+{
+  std::map<odb::dbChip*, odb::dbChipInst*> chips;
+  if (getChip() == nullptr) {
+    return chips;
+  }
+  std::vector<odb::dbChip*> stack;
+
+  chips[getChip()] = nullptr;
+  stack.push_back(getChip());
+  while (!stack.empty()) {
+    odb::dbChip* curr_chip = stack.back();
+    stack.pop_back();
+
+    for (auto chip_inst : curr_chip->getChipInsts()) {
+      odb::dbChip* tmp_chip = chip_inst->getMasterChip();
+      stack.push_back(tmp_chip);
+      chips[tmp_chip] = chip_inst;
+    }
+  }
+  return chips;
+}
+
 void LayoutViewer::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
@@ -229,15 +252,21 @@ Rect LayoutViewer::getBounds() const
 {
   Rect bbox{0, 0, chip_->getWidth(), chip_->getHeight()};
 
-  for (auto chip_inst : getChip()->getDb()->getChipInsts()) {
-    bbox.merge(chip_inst->getBBox());
+  for (const auto it : getChips()) {
+    auto chip = it.first;
+    auto chip_inst = it.second;
 
-    dbBlock* block = chip_inst->getMasterChip()->getBlock();
+    bbox.merge(chip_inst ? chip_inst->getBBox() : chip->getBBox());
+
+    dbBlock* block = chip->getBlock();
     if (!block) {
       continue;
     }
+
     Rect die_area = block->getDieArea();
-    chip_inst->getTransform().apply(die_area);
+    if (chip_inst) {
+      chip_inst->getTransform().apply(die_area);
+    }
     bbox.merge(die_area);
   }
   return bbox;
@@ -597,21 +626,25 @@ LayoutViewer::searchNearestEdge(odb::Point pt, bool horizontal, bool vertical)
                             pt.x() + search_radius,
                             pt.y() + search_radius);
   }
+  for (const auto it : getChips()) {
+    auto chip = it.first;
+    auto chip_inst = it.second;
 
-  for (auto chip_inst : getChip()->getDb()->getChipInsts()) {
-    dbBlock* block = chip_inst->getMasterChip()->getBlock();
+    dbBlock* block = chip->getBlock();
     if (!block) {
       continue;
     }
 
-    // Convert to the chip_inst coordinates
-    dbTransform inverse_transform = chip_inst->getTransform();
-    inverse_transform.invert();
-    inverse_transform.apply(search_line);
-    inverse_transform.apply(pt);
-    auto& [p1, p2] = closest_edge;
-    inverse_transform.apply(p1);
-    inverse_transform.apply(p2);
+    if (chip_inst) {
+      // Convert to the chip_inst coordinates
+      dbTransform inverse_transform = chip_inst->getTransform();
+      inverse_transform.invert();
+      inverse_transform.apply(search_line);
+      inverse_transform.apply(pt);
+      auto& [p1, p2] = closest_edge;
+      inverse_transform.apply(p1);
+      inverse_transform.apply(p2);
+    }
 
     // get die bounding box
     check_rect(block->getDieArea());
@@ -804,12 +837,15 @@ LayoutViewer::searchNearestEdge(odb::Point pt, bool horizontal, bool vertical)
       }
     }
 
-    // Convert back to the global coordinates
-    dbTransform transform = chip_inst->getTransform();
-    transform.apply(search_line);
-    transform.apply(pt);
-    transform.apply(p1);
-    transform.apply(p2);
+    if (chip_inst) {
+      // Convert back to the global coordinates
+      dbTransform transform = chip_inst->getTransform();
+      transform.apply(search_line);
+      transform.apply(pt);
+      auto& [p1, p2] = closest_edge;
+      transform.apply(p1);
+      transform.apply(p2);
+    }
   }
 
   const bool ok = edge_distance != std::numeric_limits<int>::max();
