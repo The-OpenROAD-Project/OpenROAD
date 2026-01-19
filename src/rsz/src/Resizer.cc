@@ -4459,10 +4459,20 @@ void Resizer::swapArithModules(int path_count,
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (swap_arith_modules_->replaceArithModules(
           path_count, target, slack_margin)) {
+    // Update levels and parasitics
+    // - Note that updateParasitics() requires correct levels
+    sta_->ensureLevelized();
     estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+
+    // Module swap requires constant propagation and full update timing because
+    // it changes many cell instances and incremental update of STA data
+    // structure is incomplete.
+    sta_->clearLogicConstants();
+    sta_->updateTiming(true);
+    sta_->findRequireds();  // Recompute timing
   }
 }
+
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
 void Resizer::journalBegin()
