@@ -32,7 +32,7 @@ class frInst : public frPinFig
     }
   }
   // used for archive serialization
-  frInst() : master_(nullptr), db_inst_(nullptr) {}
+  frInst() = default;
 
   frString getName() const { return db_inst_->getName(); }
   frMaster* getMaster() const { return master_; }
@@ -53,7 +53,7 @@ class frInst : public frPinFig
   }
   void addInstBlockage(std::unique_ptr<frInstBlockage> in)
   {
-    in->setIndexeInOwner(instBlockages_.size());
+    in->setIndexInOwner(instBlockages_.size());
     instBlockages_.push_back(std::move(in));
   }
   void setPinAccessIdx(int in) { pinAccessIdx_ = in; }
@@ -96,10 +96,10 @@ class frInst : public frPinFig
   void setLatestPATransform() { latest_pa_xform_ = xform_; }
 
  private:
-  frMaster* master_;
+  frMaster* master_{nullptr};
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
-  odb::dbInst* db_inst_;
+  odb::dbInst* db_inst_{nullptr};
   odb::dbTransform xform_;
   odb::dbTransform latest_pa_xform_;
   int pinAccessIdx_{-1};
