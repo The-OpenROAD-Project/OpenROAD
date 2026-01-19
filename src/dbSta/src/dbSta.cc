@@ -824,10 +824,10 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
     std::set<const sta::Pin*>& loads_;
     const Pin* drvr_;
     const Network* network_;
-    ODBLoadVisitor(std::set<const sta::Pin*>& load,
+    ODBLoadVisitor(std::set<const sta::Pin*>& loads,
                    const Pin* drvr,
                    const Network* network)
-        : loads_(load), drvr_(drvr), network_(network)
+        : loads_(loads), drvr_(drvr), network_(network)
     {
     }
 
@@ -863,8 +863,8 @@ void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
           2301,
           "Inconsistent load: ODB has load '{}' for driver '{}', but STA graph "
           "edge is missing.",
-          odb_load ? db_network_->pathName(odb_load) : "NULL",
-          pin ? db_network_->pathName(pin) : "NULL");
+          db_network_->pathName(odb_load),
+          db_network_->pathName(pin));
     }
   }
 }
