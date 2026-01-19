@@ -1468,16 +1468,14 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
 
   parent->addChildren(std::move(children_clusters));
 
-  const UniqueClusterVector& new_children = parent->getChildren();
-  // Note that we need to iterate the new children's vector using
-  // indexes, because, if any of these children is broken in two
-  // during the iterations, a new child will be added to the parent,
-  // invalidating the vector iterators.
-  for (int i = 0; i < new_children.size(); ++i) {
-    auto& child = new_children[i];
-    child->setParent(parent);
-    if (isLargeFlatCluster(child.get())) {
-      breakLargeFlatCluster(child.get());
+  // Note that use a copy of the current children's list in order to be
+  // able to use a range-based loop. That is needed, because the parent's
+  // children will change if a child of the list is broken.
+  std::vector<Cluster*> new_children = parent->getRawChildren();
+  for (Cluster* new_child : new_children) {
+    new_child->setParent(parent);
+    if (isLargeFlatCluster(new_child)) {
+      breakLargeFlatCluster(new_child);
     }
   }
 }

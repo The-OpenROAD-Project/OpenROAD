@@ -521,6 +521,16 @@ const UniqueClusterVector& Cluster::getChildren() const
   return children_;
 }
 
+std::vector<Cluster*> Cluster::getRawChildren() const
+{
+  std::vector<Cluster*> raw_children(children_.size());
+  std::transform(children_.begin(),
+                 children_.end(),
+                 raw_children.begin(),
+                 [](const auto& child) { return child.get(); });
+  return raw_children;
+}
+
 bool Cluster::isLeaf() const
 {
   return children_.empty();
