@@ -23,13 +23,14 @@ u5/X                                    0.13    0.68   -0.55 (VIOLATED)
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
---------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |       -1.9 |      1 | u5/A
-        1 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |       -1.9 |      1 | u5/A
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |       -1.9 |      1 | u5/A
---------------------------------------------------------------------------------------------------------------
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |        0.0 |       -1.9 |      1 | u5/A
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |        0.0 |       -1.9 |      1 | u5/A
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |        0.0 |       -1.9 |      1 | u5/A
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.882 |        0.0 |       -1.9 |      1 | u5/A
+------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 max slew
 

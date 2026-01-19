@@ -27,11 +27,7 @@ class SwapPinsMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
-              int drvr_index,
-              Slack drvr_slack,
-              PathExpanded* expanded,
-              float setup_slack_margin) override;
+  bool doMove(const Pin* drvr_pin, float setup_slack_margin) override;
 
   const char* name() override { return "SwapPinsMove"; }
 

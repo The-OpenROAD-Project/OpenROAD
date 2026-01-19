@@ -241,6 +241,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-libraries libs]\
                                         [-allow_setup_violations]\
                                         [-sequence move_string]\
+                                        [-phases "phase1 phase2 ..."]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
                                         [-skip_size_down]\
@@ -262,6 +263,7 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
+            -phases \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
@@ -293,6 +295,12 @@ proc repair_timing { args } {
     set sequence $keys(-sequence)
   } else {
     set sequence ""
+  }
+
+  if { [info exists keys(-phases)] } {
+    set phases $keys(-phases)
+  } else {
+    set phases ""
   }
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
@@ -364,7 +372,7 @@ proc repair_timing { args } {
     if { $setup } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
-        $sequence \
+        $sequence $phases \
         $skip_pin_swap $skip_gate_cloning $skip_size_down $skip_buffering \
         $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
     }

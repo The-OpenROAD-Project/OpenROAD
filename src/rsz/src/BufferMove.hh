@@ -28,11 +28,7 @@ class BufferMove : public BaseMove
  public:
   BufferMove(Resizer* resizer);
 
-  bool doMove(const Path* drvr_path,
-              int drvr_index,
-              Slack drvr_slack,
-              PathExpanded* expanded,
-              float setup_slack_margin) override;
+  bool doMove(const Pin* drvr_pin, float setup_slack_margin) override;
 
   const char* name() override { return "BufferMove"; }
 

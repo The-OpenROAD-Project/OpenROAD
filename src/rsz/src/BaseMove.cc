@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -67,6 +68,7 @@ using sta::Slew;
 using sta::TimingArc;
 using sta::TimingArcSet;
 using sta::Vertex;
+using sta::VertexInEdgeIterator;
 using sta::VertexOutEdgeIterator;
 
 using InputSlews = std::array<Slew, RiseFall::index_count>;
@@ -87,16 +89,7 @@ BaseMove::BaseMove(Resizer* resizer)
 
   accepted_count_ = 0;
   rejected_count_ = 0;
-  all_inst_set_ = InstanceSet(db_network_);
   pending_count_ = 0;
-  pending_inst_set_ = InstanceSet(db_network_);
-}
-
-void BaseMove::commitMoves()
-{
-  accepted_count_ += pending_count_;
-  pending_count_ = 0;
-  pending_inst_set_.clear();
 }
 
 void BaseMove::init()
@@ -105,7 +98,63 @@ void BaseMove::init()
   rejected_count_ = 0;
   accepted_count_ = 0;
   pending_inst_set_.clear();
+  accepted_inst_set_.clear();
   all_inst_set_.clear();
+  pending_move_info_.clear();
+}
+
+void BaseMove::startMove(const Pin* drvr_pin)
+{
+  assert(!active_move_info_);
+  active_move_info_ = new MoveInfo(this, drvr_pin);
+}
+
+bool BaseMove::endMove(bool accepted)
+{
+  assert(active_move_info_);
+  if (accepted) {
+    pending_move_info_.push_back(active_move_info_);
+  } else {
+    delete active_move_info_;
+  }
+  active_move_info_ = nullptr;
+  return accepted;
+}
+
+void BaseMove::countMove(Instance* inst, int count)
+{
+  // Add it as a candidate move, not accepted yet
+  // This count is for the cloned gates where we only count the clone
+  // but we also add the main gate to the pending set.
+  // This count is also used when we add more than 1 buffer during rebuffer.
+  // Default is to add 1 to the pending count.
+  pending_count_ += count;
+  pending_inst_set_.insert(inst);
+  // Add it to all moves, even though it wasn't accepted.
+  // This is the behavior to match the current resizer.
+  all_inst_set_.insert(inst);
+  // Record this in the active move info
+  if (active_move_info_) {
+    active_move_info_->changes.emplace_back(inst, count);
+  }
+}
+
+void BaseMove::discountMove(Instance* inst, int count)
+{
+  pending_count_ -= count;
+  pending_inst_set_.erase(inst);
+}
+
+void BaseMove::commitMoves()
+{
+  accepted_count_ += pending_count_;
+  pending_count_ = 0;
+  accepted_inst_set_.merge(pending_inst_set_);
+  pending_inst_set_.clear();
+  for (auto info : pending_move_info_) {
+    delete info;
+  }
+  pending_move_info_.clear();
 }
 
 void BaseMove::undoMoves()
@@ -113,6 +162,10 @@ void BaseMove::undoMoves()
   rejected_count_ += pending_count_;
   pending_count_ = 0;
   pending_inst_set_.clear();
+  for (auto info : pending_move_info_) {
+    delete info;
+  }
+  pending_move_info_.clear();
 }
 
 int BaseMove::hasMoves(Instance* inst) const
@@ -143,21 +196,6 @@ int BaseMove::numRejectedMoves() const
 int BaseMove::numMoves() const
 {
   return accepted_count_ + pending_count_;
-}
-
-void BaseMove::addMove(Instance* inst, int count)
-{
-  // Add it as a candidate move, not accepted yet
-  // This count is for the cloned gates where we only count the clone
-  // but we also add the main gate to the pending set.
-  // This count is also used when we add more than 1 buffer during rebuffer.
-  // Default is to add 1 to the pending count.
-  pending_count_ += count;
-  // Add it to all moves, even though it wasn't accepted.
-  // This is the behavior to match the current resizer.
-  all_inst_set_.insert(inst);
-  // Also add it to the pending moves
-  pending_inst_set_.insert(inst);
 }
 
 double BaseMove::area(Cell* cell)
@@ -435,7 +473,6 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   }
   LibertyPort *buffer_input_port, *buffer_output_port;
   params.driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
 
   // Compute delay degradation at prev driver due to increased load cap
   resizer_->annotateInputSlews(network_->instance(params.prev_driver_pin),
@@ -448,10 +485,10 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
                   - resizer_->portCapacitance(buffer_input_port, params.corner);
   resizer_->gateDelays(prev_drvr_port, new_cap, dcalc_ap, new_delay, new_slew);
   float delay_degrad
-      = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
+      = *std::max_element(new_delay, new_delay + RiseFall::index_count)
+        - *std::max_element(old_delay, old_delay + RiseFall::index_count);
   float delay_imp
       = resizer_->bufferDelay(params.driver_cell,
-                              params.driver_path->transition(sta_),
                               dcalc->loadCap(params.driver_pin, dcalc_ap),
                               dcalc_ap);
   resizer_->resetInputSlews();
@@ -1009,6 +1046,71 @@ LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
   return resizer_->getSwappableCells(base);
 }
 
-////////////////////////////////////////////////////////////////
-// namespace rsz
+void BaseMove::getPrevNextPins(const Pin* drvr_pin,
+                               // Return values
+                               Pin*& prev_drvr_pin,
+                               Pin*& input_pin,
+                               Pin*& load_pin)
+{
+  Vertex* drvr_vertex = graph_->vertex(network_->vertexId(drvr_pin));
+
+  // Find the worst slack fanout (load)
+  Vertex* load_vertex = nullptr;
+  Slack load_slack = sta::INF;
+  VertexOutEdgeIterator out_edge_iter(drvr_vertex, graph_);
+  while (out_edge_iter.hasNext()) {
+    Edge* edge = out_edge_iter.next();
+    Vertex* fanout_vertex = edge->to(graph_);
+    Slack fanout_slack = sta_->vertexSlack(fanout_vertex, resizer_->max_);
+    if (fanout_slack < load_slack || load_vertex == nullptr) {
+      load_vertex = fanout_vertex;
+      load_slack = fanout_slack;
+    }
+  }
+  load_pin = load_vertex ? load_vertex->pin() : nullptr;
+
+  // Find the input pin with the worst slack (similar to getEffortDelays)
+  // Skip output-to-output arcs in libraries like asap7
+  Vertex* worst_input_vertex = nullptr;
+  Slack worst_input_slack = sta::INF;
+  VertexInEdgeIterator in_edge_iter(drvr_vertex, graph_);
+  while (in_edge_iter.hasNext()) {
+    Edge* prev_edge = in_edge_iter.next();
+    Vertex* from_vertex = prev_edge->from(graph_);
+    const Pin* from_pin = from_vertex->pin();
+
+    // Skip output pins (output-to-output arcs in asap7 multi-output gates)
+    if (!from_pin || network_->direction(from_pin)->isOutput()) {
+      continue;
+    }
+
+    // Get slack for this input
+    Slack from_slack = sta_->vertexSlack(from_vertex, resizer_->max_);
+    if (from_slack < worst_input_slack || worst_input_vertex == nullptr) {
+      worst_input_slack = from_slack;
+      worst_input_vertex = from_vertex;
+    }
+  }
+  input_pin = worst_input_vertex ? worst_input_vertex->pin() : nullptr;
+
+  // Find the driver of the input pin (previous driver)
+  if (worst_input_vertex) {
+    Vertex* prev_drvr_vertex = nullptr;
+    Slack prev_drvr_slack = sta::INF;
+    VertexInEdgeIterator prev_edge_iter(worst_input_vertex, graph_);
+    while (prev_edge_iter.hasNext()) {
+      Edge* edge = prev_edge_iter.next();
+      Vertex* from_vertex = edge->from(graph_);
+      Slack from_slack = sta_->vertexSlack(from_vertex, resizer_->max_);
+      if (from_slack < prev_drvr_slack || prev_drvr_vertex == nullptr) {
+        prev_drvr_slack = from_slack;
+        prev_drvr_vertex = from_vertex;
+      }
+    }
+    prev_drvr_pin = prev_drvr_vertex ? prev_drvr_vertex->pin() : nullptr;
+  } else {
+    prev_drvr_pin = nullptr;
+  }
+}
+
 }  // namespace rsz

@@ -44,12 +44,13 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: SizeDownMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
---------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
-    final |       0 |      13 |        0 |      0 |     0 |    -2.8% |   -0.029 |       -0.0 |      1 | r2/D
---------------------------------------------------------------------------------------------------------------
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |        0.0 |       -0.2 |      1 | r2/D
+       2* |       0 |       3 |        0 |      0 |     0 |   -16.1% |   -0.201 |        0.0 |       -0.2 |      1 | r2/D
+    final |       0 |      13 |        0 |      0 |     0 |    -2.8% |   -0.029 |        0.0 |       -0.0 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 13 instances: 9 up, 1 up match, 3 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
