@@ -310,6 +310,15 @@ module hi_fanout (clk1,
  wire net2;
  wire net3;
 
+ NAND2_X4 clone1 (.A1(clk_to_nand0),
+    .A2(clk_to_nand1),
+    .ZN(net1));
+ NAND2_X4 clone2 (.A1(clk_to_nand0),
+    .A2(clk_to_nand1),
+    .ZN(net2));
+ NAND2_X4 clone3 (.A1(clk_to_nand1),
+    .A2(clk_to_nand0),
+    .ZN(net3));
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand0));
@@ -769,13 +778,4 @@ module hi_fanout (clk1,
  NAND2_X4 nand_inst_0 (.A1(clk_to_nand1),
     .A2(clk_to_nand0),
     .ZN(net0));
- NAND2_X4 clone1 (.A1(clk_to_nand0),
-    .A2(clk_to_nand1),
-    .ZN(net1));
- NAND2_X4 clone2 (.A1(clk_to_nand0),
-    .A2(clk_to_nand1),
-    .ZN(net2));
- NAND2_X4 clone3 (.A1(clk_to_nand1),
-    .A2(clk_to_nand0),
-    .ZN(net3));
 endmodule

@@ -996,7 +996,8 @@ void Inspector::makeAction(const Descriptor::Action& action)
       {"Add to highlight", ":/highlight_on.png"},
       {"Focus", ":/focus.png"},
       {"De-focus", ":/defocus.png"},
-      {"Navigate back", ":/undo.png"}};
+      {"Navigate back", ":/undo.png"},
+      {"Insert Buffer", ":/buffer.png"}};
   std::vector<std::pair<std::string, QString>> symbol_replacements{
       {"Fanin Cone", "▷"}, {"Fanout Cone", "◁"}};
 

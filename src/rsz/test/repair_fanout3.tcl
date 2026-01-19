@@ -9,5 +9,7 @@ set_max_fanout 10 [current_design]
 report_check_types -max_fanout
 write_verilog_for_eqy repair_fanout3 before "LEFONLY*"
 repair_design
-run_equivalence_test repair_fanout3 ./Nangate45/work_around_yosys/ "LEFONLY*"
+run_equivalence_test repair_fanout3 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "LEFONLY*"
 report_check_types -max_fanout
