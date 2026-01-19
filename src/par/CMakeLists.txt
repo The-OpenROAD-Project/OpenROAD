@@ -14,6 +14,11 @@ if (LOAD_CPLEX)
   include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
 endif (LOAD_CPLEX)
 
+find_package(SCIP REQUIRED)
+if(TARGET libscip AND NOT TARGET SCIP::libscip)
+    add_library(SCIP::libscip ALIAS libscip)
+endif()
+
 find_package(Threads REQUIRED)
 find_package(ortools REQUIRED)
 

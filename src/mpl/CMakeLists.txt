@@ -3,7 +3,10 @@
 
 include("openroad")
 
-
+find_package(SCIP REQUIRED)
+if(TARGET libscip AND NOT TARGET SCIP::libscip)
+    add_library(SCIP::libscip ALIAS libscip)
+endif()
 
 find_package(ortools REQUIRED)
 

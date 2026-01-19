@@ -8,6 +8,11 @@ include("openroad")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+find_package(SCIP REQUIRED)
+if(TARGET libscip AND NOT TARGET SCIP::libscip)
+    add_library(SCIP::libscip ALIAS libscip)
+endif()
+
 find_package(Eigen3 REQUIRED)
 find_package(ortools REQUIRED)
 find_package(LEMON NAMES LEMON lemon REQUIRED)
