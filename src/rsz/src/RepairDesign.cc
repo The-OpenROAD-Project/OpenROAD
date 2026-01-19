@@ -649,6 +649,30 @@ void RepairDesign::findBufferSizes()
   });
 }
 
+/// Gain buffering: Make a buffer tree to satisfy fanout and cap constraints
+///
+/// Purpose: Reduce fanout count and total loading capacitance.
+///
+/// @param net The net to be buffered
+/// @param drvr_pin The driver pin of the net
+/// @param max_fanout Maximum fanout allowed per buffer (gain buffering
+/// constraint)
+///
+/// Algorithm:
+///   1. Sinks are collected and sorted by timing criticality (required time).
+///   2. Sinks are grouped based on driving cell's max fanout and max buffer
+///      load capacity (e.g., 9 * input cap of the largest buffer).
+///   3. Insert the smallest buffer satisfying the following criteria.
+///      "buffer_input_cap > accumulated_load_cap / gain ratio"
+///   4. The new buffer's input is treated as a new sink and re-added to the
+///      queue to recursively build the tree.
+///   5. Incremental timing update.
+///
+/// Why use required time instead of slack?
+/// - Arrival times change as the buffer tree is built, while required time
+///   does not change. So required times is a more stable metric for bottom-up
+///   construction and critical path isolation.
+///
 bool RepairDesign::performGainBuffering(Net* net,
                                         const Pin* drvr_pin,
                                         int max_fanout)
@@ -701,7 +725,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     }
   };
 
-  // Collect all sinks
+  // 1. Collect all sinks
   std::vector<EnqueuedPin> sinks;
 
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
@@ -744,8 +768,8 @@ bool RepairDesign::performGainBuffering(Net* net,
   }
   std::ranges::sort(sinks, PinRequiredHigher(network_));
 
-  // Iterate until we satisfy both the gain condition and max_fanout
-  // on drvr_pin
+  // 2. Iterate until we satisfy both the gain condition and max_fanout
+  //    on drvr_pin
   while (sinks.size() > max_fanout
          || (has_driver_cin && load > cin * gate_gain)) {
     float load_acc = 0;
@@ -766,102 +790,47 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     // Find the smallest buffer satisfying the gain condition on
     // its output pin
-    auto size = buffer_sizes_.begin();
-    for (; size != buffer_sizes_.end() - 1; size++) {
-      if (bufferCin(*size) > load_acc / resizer_->buffer_sizing_cap_ratio_) {
+    auto buf_cell = buffer_sizes_.begin();
+    for (; buf_cell != buffer_sizes_.end() - 1; buf_cell++) {
+      if (bufferCin(*buf_cell)
+          > load_acc / resizer_->buffer_sizing_cap_ratio_) {
         break;
       }
     }
 
-    if (bufferCin(*size) >= 0.9f * load_acc) {
+    if (bufferCin(*buf_cell) >= 0.9f * load_acc) {
       // We are getting dimishing returns on inserting a buffer, stop
       // the algorithm here (we might have been called with a low gain value)
       break;
     }
 
-    // Get scope of driver, put any new buffers in that scope
-    sta::Pin* driver_pin = nullptr;
-    odb::dbModule* driver_parent = db_network_->getNetDriverParentModule(
-        net, driver_pin, db_network_->hasHierarchy());
-    odb::dbModInst* parent_mod_inst = driver_parent->getModInst();
-    Instance* parent;
-    if (parent_mod_inst) {
-      parent = db_network_->dbToSta(parent_mod_inst);
-    } else {
-      parent = db_network_->topInstance();
-    }
-
-    // note any hierarchical nets.
-    // and move them to the output of the buffer.
-    odb::dbModNet* driver_mod_net = db_network_->hierNet(driver_pin);
-    if (driver_mod_net) {
-      // only disconnect the modnet, we hook it to the output of the buffer.
-      db_network_->disconnectPin(driver_pin,
-                                 db_network_->dbToSta(driver_mod_net));
-    }
-
-    Net* new_net = db_network_->makeNet(parent);
-    dbNet* net_db = db_network_->staToDb(net);
-    dbNet* new_net_db = db_network_->staToDb(new_net);
-    new_net_db->setSigType(net_db->getSigType());
-    // TODO: Propagate NDR settings
-    if (net_db->getNonDefaultRule()) {
-      new_net_db->setNonDefaultRule(net_db->getNonDefaultRule());
-    }
-
-    const Point drvr_loc = db_network_->location(drvr_pin);
-
-    // create instance in driver parent
-    Instance* inst = resizer_->makeBuffer(*size, "gain", parent, drvr_loc);
-
     LibertyPort *size_in, *size_out;
-    (*size)->bufferPorts(size_in, size_out);
-    Pin* buffer_ip_pin = nullptr;
-    Pin* buffer_op_pin = nullptr;
-    resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
-    db_network_->connectPin(buffer_ip_pin, net);
-
-    // connect the buffer output to the new flat net and any modnet
-    // Keep the original input net driving the buffer.
-    // Update the hierarchical net/flat net correspondence because
-    // the hierarhical net is moved to the output of the buffer.
-
-    db_network_->connectPin(
-        buffer_op_pin, new_net, db_network_->dbToSta(driver_mod_net));
-
-    repaired_net = true;
-    inserted_buffer_count_++;
-    if (graphics_) {
-      dbInst* db_inst = db_network_->staToDb(inst);
-      graphics_->makeBuffer(db_inst);
-    }
-
+    (*buf_cell)->bufferPorts(size_in, size_out);
     int max_level = 0;
-    for (auto it = sinks.begin(); it != group_end; it++) {
-      Pin* sink_pin = it->pin;
-      LibertyPort* sink_port = network_->libertyPort(it->pin);
-      Instance* sink_inst = network_->instance(it->pin);
-      load -= sink_port->capacitance();
-      max_level = std::max(it->level, max_level);
+    Pin* new_input_pin = nullptr;
 
-      odb::dbModNet* sink_mod_net = db_network_->hierNet(sink_pin);
-      // rewire the sink pin, taking care of both the flat net
-      // and the hierarchical net. Update the hierarchical net
-      // flat net correspondence
-      db_network_->disconnectPin(sink_pin);
-      db_network_->connectPin(sink_pin,
-                              db_network_->dbToSta(new_net_db),
-                              db_network_->dbToSta(sink_mod_net));
+    // 3. Insert a new buffer
+    PinSet group_set(db_network_);
+    for (auto it = sinks.begin(); it != group_end; it++) {
+      group_set.insert(it->pin);
+      max_level = std::max(it->level, max_level);
       if (it->level == 0) {
-        Pin* new_pin = network_->findPin(sink_inst, sink_port);
-        tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
+        tree_boundary.push_back(graph_->pinLoadVertex(it->pin));
       }
     }
 
-    Pin* new_input_pin = buffer_ip_pin;
+    Instance* inst = resizer_->insertBufferBeforeLoads(
+        net, &group_set, *buf_cell, nullptr, "gain");
+    if (inst) {
+      repaired_net = true;
+      inserted_buffer_count_++;
+      Pin* buffer_op_pin = nullptr;
+      resizer_->getBufferPins(inst, new_input_pin, buffer_op_pin);
+    }
 
-    Delay buffer_delay
-        = resizer_->bufferDelay(*size, load_acc, resizer_->tgt_slew_dcalc_ap_);
+    // 4. New buffer input pin is enqueued as a new sink
+    Delay buffer_delay = resizer_->bufferDelay(
+        *buf_cell, load_acc, resizer_->tgt_slew_dcalc_ap_);
 
     auto new_pin = EnqueuedPin{new_input_pin,
                                (group_end - 1)->required_path,
@@ -873,8 +842,11 @@ bool RepairDesign::performGainBuffering(Net* net,
         std::ranges::upper_bound(sinks, new_pin, PinRequiredHigher(network_)),
         new_pin);
 
+    load -= load_acc;
     load += size_in->capacitance();
   }
+
+  // 5. Incremental timing update
   sta_->ensureLevelized();
   sta::Level max_level = 0;
   for (auto vertex : tree_boundary) {

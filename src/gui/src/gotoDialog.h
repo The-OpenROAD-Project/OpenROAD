@@ -19,9 +19,9 @@ class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
  public:
   GotoLocationDialog(QWidget* parent = nullptr, LayoutTabs* viewers = nullptr);
  public slots:
-  void updateLocation(QLineEdit* x_edit, QLineEdit* y_edit);
-  void updateUnits(int dbu_per_micron, bool use_dbu);
-  void show_init();
+  void updateLocation();
+  void showInit();
+  void goTo();
   void accept() override;
 };
 }  // namespace gui

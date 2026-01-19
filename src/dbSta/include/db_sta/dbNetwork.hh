@@ -10,6 +10,7 @@
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 
 namespace utl {
 class Logger;
@@ -190,12 +191,16 @@ class dbNetwork : public ConcreteNetwork
                                      bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
+  bool isSpecial(Net* net);
+  void visitConnectedPins(const Net* net,
+                          PinVisitor& visitor,
+                          NetSet& visited_nets) const override;
+
   using Network::isConnected;
   bool isConnected(const Net* net, const Pin* pin) const override;
   bool isConnected(const Net* net1, const Net* net2) const override;
   bool isConnected(const Pin* source_pin, const Pin* dest_pin) const;
-
-  // DEPRECATED.
+  // Get the flat net (dbNet) with the Net*.
   // - Use dbNet::hierarchicalConnect(dbObject* driver, dbObject* load) instead.
   // - The new API can handle both dbBTerm and dbIterm.
   void hierarchicalConnect(dbITerm* source_pin,
@@ -345,7 +350,6 @@ class dbNetwork : public ConcreteNetwork
   NetPinIterator* pinIterator(const Net* net) const override;
   NetTermIterator* termIterator(const Net* net) const override;
   const Net* highestConnectedNet(Net* net) const override;
-  bool isSpecial(Net* net);
 
   // Get the flat net (dbNet) with the Net*.
   // If the net is a hierarchical net (dbModNet), return nullptr
@@ -455,9 +459,6 @@ class dbNetwork : public ConcreteNetwork
   void makeTopCell();
   void findConstantNets();
   void makeAccessHashes();
-  void visitConnectedPins(const Net* net,
-                          PinVisitor& visitor,
-                          NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
   ObjectId getDbNwkObjectId(const dbObject* object) const;
 
