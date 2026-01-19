@@ -7,10 +7,8 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockage.h"
-#include "db/obj/frFig.h"
+#include "db/obj/frBlockObject.h"
 #include "db/obj/frInstBlockage.h"
-#include "db/obj/frPin.h"
 #include "frBaseTypes.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -24,15 +22,10 @@ class frInstTerm;
 class frInst : public frBlockObject
 {
  public:
-  frInst(frMaster* master, odb::dbInst* db_inst)
-      : master_(master), db_inst_(db_inst)
-  {
-    if (db_inst_ == nullptr) {
-      throw std::runtime_error("frInst requires non-null dbInst");
-    }
-  }
+  frInst(frMaster* master, odb::dbInst* db_inst);
   // used for archive serialization
-  frInst() = default;
+  frInst();
+  ~frInst() override;
 
   frString getName() const { return db_inst_->getName(); }
   frMaster* getMaster() const { return master_; }
@@ -47,10 +40,7 @@ class frInst : public frBlockObject
   int getPinAccessIdx() const { return pinAccessIdx_; }
   bool isToBeDeleted() const { return toBeDeleted_; }
 
-  void addInstTerm(std::unique_ptr<frInstTerm> in)
-  {
-    instTerms_.push_back(std::move(in));
-  }
+  void addInstTerm(std::unique_ptr<frInstTerm> in);
   void addInstBlockage(std::unique_ptr<frInstBlockage> in)
   {
     in->setIndexInOwner(instBlockages_.size());
