@@ -187,9 +187,7 @@ std::vector<std::vector<float>> Hypergraph::GetLowerVertexBalance(
   std::vector<float> vertex_balance = GetTotalVertexWeights();
   for (auto& value : base_balance) {
     value -= ub_factor * 0.01;
-    if (value <= 0.0) {
-      value = 0.0;
-    }
+    value = std::max<double>(value, 0.0);
   }
   std::vector<std::vector<float>> lower_block_balance(num_parts,
                                                       vertex_balance);
@@ -208,9 +206,7 @@ void Hypergraph::ResetVertexCAttr()
 
 void Hypergraph::ResetHyperedgeTimingAttr()
 {
-  std::fill(hyperedge_timing_attr_.begin(),
-            hyperedge_timing_attr_.end(),
-            std::numeric_limits<float>::max());
+  std::ranges::fill(hyperedge_timing_attr_, std::numeric_limits<float>::max());
 }
 
 void Hypergraph::ResetPathTimingCost()

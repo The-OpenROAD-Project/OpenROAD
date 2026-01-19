@@ -60,7 +60,7 @@ template <typename T>
 static void add_limit(Descriptor::Properties& props,
                       sta::LibertyPort* port,
                       const char* label,
-                      LimitFunc<T> func,
+                      const LimitFunc<T>& func,
                       const char* suffix)
 {
   for (const auto* elem : T::range()) {
@@ -151,7 +151,8 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
   props.push_back({"Delay model", delay_model});
 
   auto format_unit = [](float value, const sta::Unit* unit) -> std::string {
-    return fmt::format("{} {}", unit->asString(value), unit->scaledSuffix());
+    return fmt::format(
+        "{} {}", unit->asString(value), unit->scaleAbbrevSuffix());
   };
 
   props.push_back(
@@ -187,7 +188,7 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
     for (const sta::MinMax* min_max :
          {sta::MinMax::min(), sta::MinMax::max()}) {
       const auto& libs = corner->libertyLibraries(min_max);
-      if (std::find(libs.begin(), libs.end(), library) != libs.end()) {
+      if (std::ranges::find(libs, library) != libs.end()) {
         corners.insert(gui->makeSelected(corner));
       }
     }
@@ -703,7 +704,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                                                     100 * power.duty(),
                                                     freq,
                                                     power.originName());
-      port_power_activity.push_back({port_id, activity_info});
+      port_power_activity.emplace_back(port_id, activity_info);
 
       const sta::Unit* timeunit = sta_->units()->timeUnit();
       const auto setup_arrival
@@ -714,8 +715,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 : fmt::format(
                       "{} {}",
                       timeunit->asString(setup_arrival, kFloatPrecision),
-                      timeunit->scaledSuffix());
-      port_arrival_setup.push_back({port_id, setup_text});
+                      timeunit->scaleAbbrevSuffix());
+      port_arrival_setup.emplace_back(port_id, setup_text);
       const auto hold_arrival
           = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
       const std::string hold_text
@@ -723,8 +724,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                 ? "None"
                 : fmt::format("{} {}",
                               timeunit->asString(hold_arrival, kFloatPrecision),
-                              timeunit->scaledSuffix());
-      port_arrival_hold.push_back({port_id, hold_text});
+                              timeunit->scaleAbbrevSuffix());
+      port_arrival_hold.emplace_back(port_id, hold_text);
     }
   }
   props.push_back({"Max arrival times", port_arrival_setup});
@@ -734,10 +735,10 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   PropertyList power;
   for (auto* corner : *sta_->corners()) {
     const auto power_info = sta_->power(inst, corner);
-    power.push_back(
-        {gui->makeSelected(corner),
-         Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
-             + "W"});
+    power.emplace_back(
+        gui->makeSelected(corner),
+        Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
+            + "W");
   }
   props.push_back({"Total power", power});
 
@@ -835,15 +836,13 @@ std::set<const sta::Pin*> ClockDescriptor::getClockPins(sta::Clock* clock) const
   std::set<const sta::Pin*> pins;
   for (auto* pin : sta_->startpointPins()) {
     const auto pin_clocks = sta_->clocks(pin);
-    if (std::find(pin_clocks.begin(), pin_clocks.end(), clock)
-        != pin_clocks.end()) {
+    if (std::ranges::find(pin_clocks, clock) != pin_clocks.end()) {
       pins.insert(pin);
     }
   }
   for (auto* pin : sta_->endpointPins()) {
     const auto pin_clocks = sta_->clocks(pin);
-    if (std::find(pin_clocks.begin(), pin_clocks.end(), clock)
-        != pin_clocks.end()) {
+    if (std::ranges::find(pin_clocks, clock) != pin_clocks.end()) {
       pins.insert(pin);
     }
   }
@@ -865,7 +864,7 @@ Descriptor::Properties ClockDescriptor::getProperties(
   props.push_back({"Period",
                    fmt::format("{} {}",
                                timeunit->asString(clock->period()),
-                               timeunit->scaledSuffix())});
+                               timeunit->scaleAbbrevSuffix())});
 
   props.push_back({"Is virtual", clock->isVirtual()});
   props.push_back({"Is generated", clock->isGenerated()});

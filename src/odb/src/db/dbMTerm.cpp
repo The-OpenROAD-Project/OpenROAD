@@ -3,8 +3,7 @@
 
 #include "dbMTerm.h"
 
-#include <string.h>
-
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -25,7 +24,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/lefout.h"
-#include "odb/odb.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace odb {
@@ -136,7 +134,7 @@ _dbMTerm::~_dbMTerm()
 
 dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 {
-  uint* bit_field = (uint*) &mterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &mterm.flags_;
   stream << *bit_field;
   stream << mterm.order_id_;
   stream << mterm.name_;
@@ -155,7 +153,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMTerm& mterm)
 
 dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
 {
-  uint* bit_field = (uint*) &mterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &mterm.flags_;
   stream >> *bit_field;
   stream >> mterm.order_id_;
   stream >> mterm.name_;
@@ -195,7 +193,7 @@ char* dbMTerm::getName(dbBlock* block, dbMaster* master, char* ttname)
 {
   char* mtname = (char*) getConstName();
   char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
-  uint ii = 0;
+  uint32_t ii = 0;
   block->getBusDelimiters(blk_left_bus_del, blk_right_bus_del);
   if (blk_left_bus_del == '\0' || blk_right_bus_del == '\0') {
     return mtname;
@@ -244,7 +242,7 @@ dbMTermShapeType dbMTerm::getShape()
   return dbMTermShapeType(mterm->flags_.shape_type);
 }
 
-void dbMTerm::setMark(uint v)
+void dbMTerm::setMark(uint32_t v)
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
   mterm->flags_.mark = v;
@@ -475,7 +473,7 @@ void dbMTerm::setSigType(dbSigType type)
   }
 }
 
-dbMTerm* dbMTerm::getMTerm(dbMaster* master_, uint dbid_)
+dbMTerm* dbMTerm::getMTerm(dbMaster* master_, uint32_t dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMTerm*) master->mterm_tbl_->getPtr(dbid_);
@@ -486,22 +484,22 @@ void _dbMTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 
   // These fields have unusal pointer ownship semantics relative to
   // the rest of odb (not a table but a vector of owning pointers).
   // Should be just by value.
-  info.children_["_par_met_area"].add(par_met_area_);
-  info.children_["_par_met_area"].size
+  info.children["_par_met_area"].add(par_met_area_);
+  info.children["_par_met_area"].size
       += par_met_area_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_par_met_sidearea"].add(par_met_sidearea_);
-  info.children_["_par_met_sidearea"].size
+  info.children["_par_met_sidearea"].add(par_met_sidearea_);
+  info.children["_par_met_sidearea"].size
       += par_met_sidearea_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_par_cut_area"].add(par_cut_area_);
-  info.children_["_par_cut_area"].size
+  info.children["_par_cut_area"].add(par_cut_area_);
+  info.children["_par_cut_area"].size
       += par_cut_area_.size() * sizeof(_dbTechAntennaAreaElement);
-  info.children_["_diffarea"].add(diffarea_);
-  info.children_["_diffarea"].size
+  info.children["_diffarea"].add(diffarea_);
+  info.children["_diffarea"].size
       += diffarea_.size() * sizeof(_dbTechAntennaAreaElement);
 }
 

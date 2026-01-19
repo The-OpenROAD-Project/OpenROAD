@@ -111,6 +111,7 @@ enum class BufferedNetType
   load,
   junction,
   wire,
+  via,
   buffer
 };
 
@@ -134,6 +135,14 @@ class BufferedNet
               const Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics);
+  // via
+  BufferedNet(BufferedNetType type,
+              const Point& location,
+              int layer,
+              int ref_layer,
+              const BufferedNetPtr& ref,
+              const Corner* corner,
+              const Resizer* resizer);
   // junc
   BufferedNet(BufferedNetType type,
               const Point& location,
@@ -167,14 +176,20 @@ class BufferedNet
   const Pin* loadPin() const { return load_pin_; }
   // wire
   int length() const;
-  // routing level
-  int layer() const { return layer_; }
   void wireRC(const Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics,
               // Return values.
               double& res,
               double& cap);
+  // via
+  double viaResistance(const Corner* corner,
+                       const Resizer* resizer,
+                       const est::EstimateParasitics* estimate_parasitics);
+  // wire, via
+  int layer() const { return layer_; }
+  // via
+  int refLayer() const { return ref_layer_; }
   // buffer
   LibertyCell* bufferCell() const { return buffer_cell_; }
   // junction  left
@@ -205,6 +220,11 @@ class BufferedNet
 
   // Downstream buffer count.
   int bufferCount() const;
+
+  // Downstream number of loads.
+  // This is distinct from fanout because fanout is seeded from
+  // `resizer->portFanoutLoad(load_port)`
+  int loadCount() const;
 
   float area() const { return area_; }
 
@@ -256,9 +276,11 @@ class BufferedNet
   const Pin* load_pin_{nullptr};
   // only used by buffer type
   LibertyCell* buffer_cell_{nullptr};
-  // only used by wire type
+  // only used by wire and via type
   int layer_{null_layer};
-  // only used by buffer, wire, and junc types
+  // only used by via type
+  int ref_layer_{null_layer};
+  // only used by buffer, wire, via, and junc types
   BufferedNetPtr ref_;
   // only used by junc type
   BufferedNetPtr ref2_;

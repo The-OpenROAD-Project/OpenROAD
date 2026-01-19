@@ -33,6 +33,7 @@ class Logger;
 }
 
 namespace mpl {
+struct BundledNet;
 class HardMacro;
 class SoftMacro;
 class Cluster;
@@ -42,6 +43,7 @@ using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
+using BundledNetList = std::vector<BundledNet>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -201,6 +203,7 @@ class Cluster
   UniqueClusterVector releaseChildren();
   Cluster* getParent() const;
   const UniqueClusterVector& getChildren() const;
+  std::vector<Cluster*> getRawChildren() const;
 
   bool isLeaf() const;
   std::string getIsLeafString() const;
@@ -382,7 +385,7 @@ class SoftMacro
             Cluster* cluster);
   SoftMacro(utl::Logger* logger,
             const HardMacro* hard_macro,
-            const odb::Point* offset = nullptr);
+            const odb::Rect* outline = nullptr);
 
   const std::string& getName() const;
 
@@ -429,6 +432,9 @@ class SoftMacro
   Cluster* getCluster() const;
   // calculate macro utilization
   float getMacroUtil() const;
+
+  // Debug
+  void reportShapeCurve(utl::Logger* logger) const;
 
  private:
   int findIntervalIndex(const IntervalList& interval_list,

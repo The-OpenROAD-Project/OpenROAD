@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbPowerSwitch.h"
 
+#include <cstdlib>
 #include <map>
 #include <string>
 
@@ -55,26 +56,29 @@ _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db)
   name_ = nullptr;
 }
 
-dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFIOSupplyPort& obj)
+static dbIStream& operator>>(dbIStream& stream,
+                             dbPowerSwitch::UPFIOSupplyPort& obj)
 {
   stream >> obj.port_name;
   stream >> obj.supply_net_name;
   return stream;
 }
-dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFControlPort& obj)
+static dbIStream& operator>>(dbIStream& stream,
+                             dbPowerSwitch::UPFControlPort& obj)
 {
   stream >> obj.port_name;
   stream >> obj.net_name;
   return stream;
 }
-dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFAcknowledgePort& obj)
+static dbIStream& operator>>(dbIStream& stream,
+                             dbPowerSwitch::UPFAcknowledgePort& obj)
 {
   stream >> obj.port_name;
   stream >> obj.net_name;
   stream >> obj.boolean_expression;
   return stream;
 }
-dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFOnState& obj)
+static dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFOnState& obj)
 {
   stream >> obj.state_name;
   stream >> obj.input_supply_port;
@@ -86,7 +90,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj.name_;
   stream >> obj.next_entry_;
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_update_db_power_switch)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateDbPowerSwitch)) {
     stream >> obj.in_supply_port_;
     stream >> obj.out_supply_port_;
     stream >> obj.control_port_;
@@ -96,8 +100,8 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
     dbVector<std::string> in_supply_port;
     stream >> in_supply_port;
     for (const auto& port : in_supply_port) {
-      obj.in_supply_port_.emplace_back(
-          dbPowerSwitch::UPFIOSupplyPort{port, ""});
+      obj.in_supply_port_.emplace_back(dbPowerSwitch::UPFIOSupplyPort{
+          .port_name = port, .supply_net_name = ""});
     }
     dbVector<std::string> out_supply_port;
     stream >> out_supply_port;
@@ -108,18 +112,22 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
     dbVector<std::string> control_port;
     stream >> control_port;
     for (const auto& port : control_port) {
-      obj.control_port_.emplace_back(dbPowerSwitch::UPFControlPort{port, ""});
+      obj.control_port_.emplace_back(
+          dbPowerSwitch::UPFControlPort{.port_name = port, .net_name = ""});
     }
     dbVector<std::string> on_state;
     stream >> on_state;
     for (const auto& state : on_state) {
-      obj.on_state_.emplace_back(dbPowerSwitch::UPFOnState{state, "", ""});
+      obj.on_state_.emplace_back(
+          dbPowerSwitch::UPFOnState{.state_name = state,
+                                    .input_supply_port = "",
+                                    .boolean_expression = ""});
     }
     dbId<_dbNet> net;
     stream >> net;  // unused
   }
   stream >> obj.power_domain_;
-  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpfPowerSwitchMapping)) {
     stream >> obj.lib_cell_;
     stream >> obj.lib_;
     stream >> obj.port_map_;
@@ -128,29 +136,30 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream,
-                      const dbPowerSwitch::UPFIOSupplyPort& obj)
+static dbOStream& operator<<(dbOStream& stream,
+                             const dbPowerSwitch::UPFIOSupplyPort& obj)
 {
   stream << obj.port_name;
   stream << obj.supply_net_name;
   return stream;
 }
-dbOStream& operator<<(dbOStream& stream,
-                      const dbPowerSwitch::UPFControlPort& obj)
+static dbOStream& operator<<(dbOStream& stream,
+                             const dbPowerSwitch::UPFControlPort& obj)
 {
   stream << obj.port_name;
   stream << obj.net_name;
   return stream;
 }
-dbOStream& operator<<(dbOStream& stream,
-                      const dbPowerSwitch::UPFAcknowledgePort& obj)
+static dbOStream& operator<<(dbOStream& stream,
+                             const dbPowerSwitch::UPFAcknowledgePort& obj)
 {
   stream << obj.port_name;
   stream << obj.net_name;
   stream << obj.boolean_expression;
   return stream;
 }
-dbOStream& operator<<(dbOStream& stream, const dbPowerSwitch::UPFOnState& obj)
+static dbOStream& operator<<(dbOStream& stream,
+                             const dbPowerSwitch::UPFOnState& obj)
 {
   stream << obj.state_name;
   stream << obj.input_supply_port;
@@ -181,13 +190,20 @@ void _dbPowerSwitch::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(name_);
-  info.children_["in_supply_port"].add(in_supply_port_);
-  info.children_["control_port"].add(control_port_);
-  info.children_["acknowledge_port"].add(acknowledge_port_);
-  info.children_["on_state"].add(on_state_);
-  info.children_["port_map"].add(port_map_);
+  info.children["name"].add(name_);
+  info.children["in_supply_port"].add(in_supply_port_);
+  info.children["control_port"].add(control_port_);
+  info.children["acknowledge_port"].add(acknowledge_port_);
+  info.children["on_state"].add(on_state_);
+  info.children["port_map"].add(port_map_);
   // User Code End collectMemInfo
+}
+
+_dbPowerSwitch::~_dbPowerSwitch()
+{
+  if (name_) {
+    free((void*) name_);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -242,7 +258,8 @@ void dbPowerSwitch::addInSupplyPort(const std::string& in_port,
                                     const std::string& net)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->in_supply_port_.emplace_back(UPFIOSupplyPort{in_port, net});
+  obj->in_supply_port_.emplace_back(
+      UPFIOSupplyPort{.port_name = in_port, .supply_net_name = net});
 }
 
 void dbPowerSwitch::setOutSupplyPort(const std::string& out_port,
@@ -257,7 +274,8 @@ void dbPowerSwitch::addControlPort(const std::string& control_port,
                                    const std::string& control_net)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->control_port_.emplace_back(UPFControlPort{control_port, control_net});
+  obj->control_port_.emplace_back(
+      UPFControlPort{.port_name = control_port, .net_name = control_net});
 }
 
 void dbPowerSwitch::addAcknowledgePort(const std::string& port_name,
@@ -266,7 +284,9 @@ void dbPowerSwitch::addAcknowledgePort(const std::string& port_name,
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   obj->acknowledge_port_.emplace_back(
-      UPFAcknowledgePort{port_name, net_name, boolean_expression});
+      UPFAcknowledgePort{.port_name = port_name,
+                         .net_name = net_name,
+                         .boolean_expression = boolean_expression});
 }
 
 void dbPowerSwitch::addOnState(const std::string& on_state,
@@ -275,7 +295,9 @@ void dbPowerSwitch::addOnState(const std::string& on_state,
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   obj->on_state_.emplace_back(
-      UPFOnState{on_state, port_name, boolean_expression});
+      UPFOnState{.state_name = on_state,
+                 .input_supply_port = port_name,
+                 .boolean_expression = boolean_expression});
 }
 
 void dbPowerSwitch::setLibCell(dbMaster* master)
@@ -376,7 +398,7 @@ std::vector<dbPowerSwitch::UPFOnState> dbPowerSwitch::getOnStates()
 dbMaster* dbPowerSwitch::getLibCell()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  return (dbMaster*) dbMaster::getMaster(
+  return dbMaster::getMaster(
       dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->lib_),
       obj->lib_cell_);
 }
@@ -392,7 +414,7 @@ std::map<std::string, dbMTerm*> dbPowerSwitch::getPortMap()
   }
 
   for (auto const& [key, val] : obj->port_map_) {
-    dbMTerm* mterm = (dbMTerm*) dbMTerm::getMTerm(cell, val);
+    dbMTerm* mterm = dbMTerm::getMTerm(cell, val);
     port_mapping[key] = mterm;
   }
 

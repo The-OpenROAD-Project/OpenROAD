@@ -337,7 +337,7 @@ void PartitionMgr::getRents(float& Rratio, float& p, float& q, float& avgK)
     flag = partitionCluster(triton_part, modMgr, cv);
   }
 
-  if (block->getInsts().size() >= 1 && block->getBTerms().size() >= 1) {
+  if (!block->getInsts().empty() && !block->getBTerms().empty()) {
     auto m = std::make_shared<Module>(modMgr.getNumModules());
     m->setAvgK(avgK);
     m->setAvgInsts(block->getInsts().size());
@@ -374,7 +374,7 @@ bool PartitionMgr::partitionCluster(
     cv.push_back(resultCV[1]);
 
     for (int j = 0; j < 2; ++j) {
-      auto newC = resultCV[j];
+      const auto& newC = resultCV[j];
       int newGateNum = newC->getNumInsts();
       if (newGateNum < MIN_GATE_NUM_PER_CLUSTER) {
         flag = false;
@@ -463,7 +463,7 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
   // Make the iteration order stable
   std::vector<odb::dbNet*> cluster_nets_sorted(cluster_nets.begin(),
                                                cluster_nets.end());
-  std::sort(cluster_nets_sorted.begin(), cluster_nets_sorted.end());
+  std::ranges::sort(cluster_nets_sorted);
   /*
   std::sort(
       cluster_nets_sorted.begin(),
@@ -605,9 +605,9 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
   double* y = new double[n];
 
   auto modules = modMgr.getModules();
-  std::sort(
-      modules.begin(),
-      modules.end(),
+  std::ranges::sort(
+      modules,
+
       [](const std::shared_ptr<Module>& m1, const std::shared_ptr<Module>& m2) {
         return std::make_tuple(m1->getAvgInsts(), m1->getId())
                < std::make_tuple(m2->getAvgInsts(), m2->getId());
@@ -615,7 +615,7 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
 
   const double b = log(modules[n - 1]->getAvgK());
   for (int i = 0; i < n; i++) {
-    auto m = modules[i];
+    const auto& m = modules[i];
     x[i] = log(m->getAvgInsts());
     y[i] = log(m->getAvgT()) - b;
   }

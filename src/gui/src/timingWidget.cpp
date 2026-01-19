@@ -789,6 +789,37 @@ void TimingWidget::hideEvent(QHideEvent* event)
   toggleRenderer(false);
 }
 
+void TimingWidget::showWorstTimingPath(bool setup)
+{
+  if (setup_timing_paths_model_ == nullptr
+      || hold_timing_paths_model_ == nullptr) {
+    return;
+  }
+
+  if (setup_timing_paths_model_->rowCount() == 0
+      && hold_timing_paths_model_->rowCount() == 0) {
+    populatePaths();
+  }
+
+  QTableView* table_view
+      = setup ? setup_timing_table_view_ : hold_timing_table_view_;
+  QAbstractItemModel* model = table_view->model();
+  if (model->rowCount() > 0) {
+    QModelIndex index = model->index(0, 0);
+    table_view->setCurrentIndex(index);
+    // Ensure the selection signal is emitted even if the index was already
+    // selected
+    selectedRowChanged(table_view->selectionModel()->selection(),
+                       QItemSelection());
+  }
+}
+
+void TimingWidget::clearSelection()
+{
+  setup_timing_table_view_->clearSelection();
+  hold_timing_table_view_->clearSelection();
+}
+
 void TimingWidget::modelWasReset()
 {
   setup_timing_table_view_->resizeColumnsToContents();

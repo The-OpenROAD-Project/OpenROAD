@@ -28,7 +28,7 @@ void Histogram<DataType>::generateBins(int bins,
   }
 
   // Reset and populate each bin with count.
-  std::fill(bins_.begin(), bins_.end(), 0);
+  std::ranges::fill(bins_, 0);
   bins_.resize(bins, 0);
 
   if (!hasData()) {
@@ -60,7 +60,7 @@ void Histogram<DataType>::report(int precision) const
   }
 
   const int num_bins = getBinsCount();
-  const int largest_bin = *std::max_element(bins_.begin(), bins_.end());
+  const int largest_bin = *std::ranges::max_element(bins_);
 
   int bin_label_width = 0;
   for (int bin = 0; bin <= num_bins; bin++) {

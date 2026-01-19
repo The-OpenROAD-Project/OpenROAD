@@ -37,12 +37,12 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 61447
 Placement Analysis
 ---------------------------------
-total displacement       6730.8 u
+total displacement       6732.8 u
 average displacement       23.8 u
 max displacement           35.5 u
 original HPWL               0.9 u
-legalized HPWL            454.9 u
-delta HPWL                51331 %
+legalized HPWL            456.3 u
+delta HPWL                51484 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
@@ -66,8 +66,8 @@ delta HPWL                51331 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(1003215, 1965350), (1006445, 1972180)].
-[INFO CTS-0024]  Normalized sink region: [(71.6582, 140.382), (71.8889, 140.87)].
+[INFO CTS-0023]  Original sink region: [(1003215, 1966190), (1006445, 1973020)].
+[INFO CTS-0024]  Normalized sink region: [(71.6582, 140.442), (71.8889, 140.93)].
 [INFO CTS-0025]     Width:  0.2307.
 [INFO CTS-0026]     Height: 0.4879.
  Level 1
@@ -236,7 +236,7 @@ delta HPWL                51331 %
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
 [INFO CTS-0015]     Created 17 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 5:1, 6:3, 7:3, 8:3, 9:1, 10:1, 11:2, 12:1, 13:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 5:1, 6:2, 7:3, 8:5, 9:2, 11:1, 13:1, 14:1..
 [INFO CTS-0017]     Max level of the clock tree: 4.
 [INFO CTS-0018]     Created 2 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
@@ -248,7 +248,7 @@ delta HPWL                51331 %
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
 [INFO CTS-0015]     Created 5 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 8:2, 9:1, 11:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 8:2, 10:2..
 [INFO CTS-0017]     Max level of the clock tree: 2.
 [INFO CTS-0018]     Created 5 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
@@ -265,7 +265,7 @@ delta HPWL                51331 %
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 4
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 31.68 um
+[INFO CTS-0101]  Average sink wire length 31.36 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 0
 [INFO CTS-0098] Clock net "hi_gclk2"
@@ -277,38 +277,39 @@ delta HPWL                51331 %
 [INFO CTS-0098] Clock net "hi_gclk5"
 [INFO CTS-0099]  Sinks 149
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 24.83 um
+[INFO CTS-0101]  Average sink wire length 24.39 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 15
 [INFO CTS-0124] Clock net "gclk4"
 [INFO CTS-0125]  Sinks 1
 [INFO CTS-0098] Clock net "gclk4_regs"
-[INFO CTS-0099]  Sinks 39
+[INFO CTS-0099]  Sinks 38
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 30.63 um
+[INFO CTS-0101]  Average sink wire length 30.88 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Dummy loads inserted 3
+[INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0098] Clock net "gclk3"
 [INFO CTS-0099]  Sinks 39
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 13.20 um
+[INFO CTS-0101]  Average sink wire length 13.38 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 3
 [INFO CTS-0098] Clock net "gclk1"
 [INFO CTS-0099]  Sinks 38
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 28.47 um
+[INFO CTS-0101]  Average sink wire length 28.34 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0033] Balancing latency for clock core
 [DEBUG CTS-insertion delay] new delay buffer delaybuf_0_core is inserted at (1004147 1977105)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_core is inserted at (1001622 1965472)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_core is inserted at (1004613 1958637)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_core is inserted at (1004147 1961285)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_core is inserted at (1003681 1963932)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_core is inserted at (1005080 1974656)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_core is inserted at (1005080 1979323)
-[INFO CTS-0036]  inserted 7 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 7
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_core is inserted at (1002153 1965991)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_core is inserted at (1001091 1965793)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_core is inserted at (1004613 1959267)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_core is inserted at (1004147 1961705)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_core is inserted at (1003681 1964142)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_core is inserted at (1005080 1975496)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_7_core is inserted at (1005080 1980163)
+[INFO CTS-0036]  inserted 8 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 8
 No differences found.
 No differences found.

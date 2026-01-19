@@ -36,7 +36,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/isotropy.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -166,7 +165,7 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
 {
-  uint* bit_field = (uint*) &bterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &bterm.flags_;
   stream << *bit_field;
   stream << bterm.ext_id_;
   stream << bterm.name_;
@@ -193,7 +192,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
 {
   dbBlock* block = (dbBlock*) (bterm.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  uint* bit_field = (uint*) &bterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &bterm.flags_;
   stream >> *bit_field;
   stream >> bterm.ext_id_;
   stream >> bterm.name_;
@@ -201,7 +200,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm.net_;
   stream >> bterm.next_bterm_;
   stream >> bterm.prev_bterm_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> bterm.mnet_;
     stream >> bterm.next_modnet_bterm_;
     stream >> bterm.prev_modnet_bterm_;
@@ -211,13 +210,13 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm.bpins_;
   stream >> bterm.ground_pin_;
   stream >> bterm.supply_pin_;
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
+  if (bterm.getDatabase()->isSchema(kSchemaBtermConstraintRegion)) {
     stream >> bterm.constraint_region_;
   }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
+  if (bterm.getDatabase()->isSchema(kSchemaBtermMirroredPin)) {
     stream >> bterm.mirrored_bterm_;
   }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
+  if (bterm.getDatabase()->isSchema(kSchemaBtermIsMirrored)) {
     stream >> bterm.is_mirrored_;
   }
 
@@ -263,7 +262,7 @@ void dbBTerm::setSigType(dbSigType type)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  uint prev_flags = flagsToUInt(bterm);
+  uint32_t prev_flags = flagsToUInt(bterm);
 
   bterm->flags_.sig_type = type.getValue();
 
@@ -295,7 +294,7 @@ void dbBTerm::setIoType(dbIoType type)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  uint prev_flags = flagsToUInt(bterm);
+  uint32_t prev_flags = flagsToUInt(bterm);
 
   bterm->flags_.io_type = type.getValue();
 
@@ -323,7 +322,7 @@ dbIoType dbBTerm::getIoType() const
   return dbIoType(bterm->flags_.io_type);
 }
 
-void dbBTerm::setSpefMark(uint v)
+void dbBTerm::setSpefMark(uint32_t v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->flags_.spef = v;
@@ -343,7 +342,7 @@ void dbBTerm::setSpecial()
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->flags_.special = 1;
 }
-void dbBTerm::setMark(uint v)
+void dbBTerm::setMark(uint32_t v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->flags_.mark = v;
@@ -353,12 +352,12 @@ bool dbBTerm::isSetMark()
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->flags_.mark > 0 ? true : false;
 }
-void dbBTerm::setExtId(uint v)
+void dbBTerm::setExtId(uint32_t v)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->ext_id_ = v;
 }
-uint dbBTerm::getExtId()
+uint32_t dbBTerm::getExtId()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->ext_id_;
@@ -386,8 +385,18 @@ dbModNet* dbBTerm::getModNet() const
   return nullptr;
 }
 
+void dbBTerm::connect(dbNet* db_net, dbModNet* modnet)
+{
+  connect(db_net);
+  connect(modnet);
+}
+
 void dbBTerm::connect(dbModNet* mod_net)
 {
+  if (mod_net == nullptr) {
+    return;
+  }
+
   dbModule* parent_module = mod_net->getParent();
   _dbBlock* block = (_dbBlock*) (parent_module->getOwner());
   _dbModNet* _mod_net = (_dbModNet*) mod_net;
@@ -403,6 +412,10 @@ void dbBTerm::connect(dbModNet* mod_net)
 
 void dbBTerm::connect(dbNet* net_)
 {
+  if (net_ == nullptr) {
+    return;
+  }
+
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) net->getOwner();
@@ -471,10 +484,10 @@ void dbBTerm::disconnectDbNet()
   }
 }
 
-dbSet<dbBPin> dbBTerm::getBPins()
+dbSet<dbBPin> dbBTerm::getBPins() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
-  return dbSet<dbBPin>(this, block->bpin_itr_);
+  return dbSet<dbBPin>(const_cast<dbBTerm*>(this), block->bpin_itr_);
 }
 
 dbITerm* dbBTerm::getITerm()
@@ -538,7 +551,7 @@ dbPlacementStatus dbBTerm::getFirstPinPlacementStatus()
   return bpins.begin()->getPlacementStatus();
 }
 
-bool dbBTerm::getFirstPinLocation(int& x, int& y)
+bool dbBTerm::getFirstPinLocation(int& x, int& y) const
 {
   for (dbBPin* bpin : getBPins()) {
     for (dbBox* box : bpin->getBoxes()) {
@@ -828,7 +841,7 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
       callback->inDbBTermPreDisconnect((dbBTerm*) this);
     }
 
-    uint id = bterm->getOID();
+    uint32_t id = bterm->getOID();
 
     if (net->bterms_ == id) {
       net->bterms_ = bterm->next_bterm_;
@@ -878,7 +891,7 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
       block->journal_->endAction();
     }
 
-    uint id = bterm->getOID();
+    uint32_t id = bterm->getOID();
     if (mod_net->bterms_ == id) {
       mod_net->bterms_ = bterm->next_modnet_bterm_;
       if (mod_net->bterms_ != 0) {
@@ -924,7 +937,7 @@ void _dbBTerm::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
@@ -935,7 +948,7 @@ dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
   return next;
 }
 
-dbBTerm* dbBTerm::getBTerm(dbBlock* block_, uint oid)
+dbBTerm* dbBTerm::getBTerm(dbBlock* block_, uint32_t oid)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBTerm*) block->bterm_tbl_->getPtr(oid);

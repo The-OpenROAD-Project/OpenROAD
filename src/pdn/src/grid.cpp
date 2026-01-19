@@ -203,12 +203,11 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
 
     // sort shapes so they get written to db in the same order.  Shapes
     // are non-overlapping so comparing one corner should be a total order.
-    std::sort(
-        all_shapes.begin(), all_shapes.end(), [](const auto& l, const auto& r) {
-          auto lc = l->getRect().ll();
-          auto rc = r->getRect().ll();
-          return lc < rc;
-        });
+    std::ranges::sort(all_shapes, [](const auto& l, const auto& r) {
+      auto lc = l->getRect().ll();
+      auto rc = r->getRect().ll();
+      return lc < rc;
+    });
 
     for (const auto& shape : all_shapes) {
       const auto& rect = shape->getRect();
@@ -237,16 +236,12 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
 
       if (techlayer.hasGrid()) {
         std::vector<int> grid = techlayer.getGrid();
-        grid.erase(
-            std::remove_if(grid.begin(),
-                           grid.end(),
-                           [&obs, is_horizontal](int pos) {
-                             if (is_horizontal) {
-                               return !(obs.yMin() <= pos && pos <= obs.yMax());
-                             }
-                             return !(obs.xMin() <= pos && pos <= obs.xMax());
-                           }),
-            grid.end());
+        std::erase_if(grid, [&obs, is_horizontal](int pos) {
+          if (is_horizontal) {
+            return !(obs.yMin() <= pos && pos <= obs.yMax());
+          }
+          return !(obs.xMin() <= pos && pos <= obs.xMax());
+        });
         // add by tracks
         const int min_width = techlayer.getMinWidth();
         const int half0_min_width = min_width / 2;
@@ -523,10 +518,10 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
     odb::dbTechLayer* upper_layer = connect->getUpperLayer();
 
     // check if both layers have shapes
-    if (shapes.count(lower_layer) == 0) {
+    if (!shapes.contains(lower_layer)) {
       continue;
     }
-    if (shapes.count(upper_layer) == 0) {
+    if (!shapes.contains(upper_layer)) {
       continue;
     }
 
@@ -845,11 +840,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   getIntersections(vias, search_shapes);
 
   auto remove_set_of_vias = [&vias](std::set<ViaPtr>& remove_vias) {
-    auto remove
-        = std::remove_if(vias.begin(), vias.end(), [&](const ViaPtr& via) {
-            return remove_vias.count(via) != 0;
-          });
-    vias.erase(remove, vias.end());
+    std::erase_if(vias,
+                  [&](const ViaPtr& via) { return remove_vias.contains(via); });
     remove_vias.clear();
   };
 
@@ -940,9 +932,10 @@ void Grid::getVias(std::vector<ViaPtr>& vias) const
 
 void Grid::removeVia(const ViaPtr& via)
 {
-  auto find = std::find_if(vias_.begin(),
-                           vias_.end(),
-                           [via](const auto& other) { return via == other; });
+  auto find
+      = std::ranges::find_if(vias_,
+
+                             [via](const auto& other) { return via == other; });
   if (find != vias_.end()) {
     vias_.remove(*find);
   }
@@ -1004,7 +997,7 @@ std::map<Shape*, std::vector<odb::dbBox*>> Grid::writeToDb(
   std::vector<ViaPtr> vias;
   getVias(vias);
   // sort the vias so they are written to db in the same order
-  std::sort(vias.begin(), vias.end(), [](const auto& l, const auto& r) {
+  std::ranges::sort(vias, [](const auto& l, const auto& r) {
     auto* l_low_layer = l->getLowerLayer();
     int l_low_level = l_low_layer->getNumber();
     auto* l_high_layer = l->getUpperLayer();
@@ -1250,11 +1243,10 @@ std::set<odb::dbInst*> Grid::getInstances() const
 
 void Grid::removeStrap(Straps* strap)
 {
-  straps_.erase(std::find_if(straps_.begin(),
-                             straps_.end(),
-                             [strap](const std::unique_ptr<Straps>& other) {
-                               return strap == other.get();
-                             }));
+  straps_.erase(std::ranges::find_if(
+      straps_, [strap](const std::unique_ptr<Straps>& other) {
+        return strap == other.get();
+      }));
 }
 
 bool Grid::hasShapes() const
@@ -1658,13 +1650,9 @@ std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const
     }
   }
 
-  nets.erase(std::remove_if(nets.begin(),
-                            nets.end(),
-                            [&connected_nets](odb::dbNet* net) {
-                              return connected_nets.find(net)
-                                     == connected_nets.end();
-                            }),
-             nets.end());
+  std::erase_if(nets, [&connected_nets](odb::dbNet* net) {
+    return connected_nets.find(net) == connected_nets.end();
+  });
 
   return nets;
 }
@@ -1704,7 +1692,7 @@ void InstanceGrid::checkSetup() const
   // check blockages above pins
   const auto nets = getNets(startsWithPower());
   for (auto* iterm : inst_->getITerms()) {
-    if (std::find(nets.begin(), nets.end(), iterm->getNet()) == nets.end()) {
+    if (std::ranges::find(nets, iterm->getNet()) == nets.end()) {
       continue;
     }
     odb::dbTechLayer* top = nullptr;

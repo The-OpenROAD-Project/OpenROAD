@@ -3,8 +3,7 @@
 
 #include "dbRegion.h"
 
-#include <string.h>
-
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -25,7 +24,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -117,7 +115,7 @@ bool _dbRegion::operator<(const _dbRegion& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 {
-  uint* bit_field = (uint*) &r.flags_;
+  uint32_t* bit_field = (uint32_t*) &r.flags_;
   stream << *bit_field;
   stream << r.name_;
   stream << r.insts_;
@@ -128,7 +126,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbRegion& r)
 {
-  uint* bit_field = (uint*) &r.flags_;
+  uint32_t* bit_field = (uint32_t*) &r.flags_;
   stream >> *bit_field;
   stream >> r.name_;
   stream >> r.insts_;
@@ -215,7 +213,7 @@ void dbRegion::removeInst(dbInst* inst_)
   _dbInst* inst = (_dbInst*) inst_;
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
-  uint id = inst->getOID();
+  uint32_t id = inst->getOID();
 
   if (region->insts_ == id) {
     region->insts_ = inst->region_next_;
@@ -247,7 +245,7 @@ void dbRegion::removeGroup(dbGroup* group)
   }
   _dbBlock* block = (_dbBlock*) region->getOwner();
 
-  uint id = _group->getOID();
+  uint32_t id = _group->getOID();
 
   if (region->groups_ == id) {
     region->groups_ = _group->region_next_;
@@ -366,7 +364,7 @@ dbSet<dbRegion>::iterator dbRegion::destroy(dbSet<dbRegion>::iterator& itr)
   return next;
 }
 
-dbRegion* dbRegion::getRegion(dbBlock* block_, uint dbid_)
+dbRegion* dbRegion::getRegion(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRegion*) block->region_tbl_->getPtr(dbid_);
@@ -377,7 +375,7 @@ void _dbRegion::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 }
 
 }  // namespace odb

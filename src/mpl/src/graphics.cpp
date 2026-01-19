@@ -467,7 +467,7 @@ void Graphics::drawObjects(gui::Painter& painter)
                        bbox.yCenter(),
                        gui::Painter::kCenter,
                        std::to_string(i++));
-    switch (macro.getOrientation()) {
+    switch (macro.getOrientation().getValue()) {
       case odb::dbOrientType::R0: {
         painter.drawLine(bbox.xMin(),
                          bbox.yMin() + 0.1 * height,
@@ -506,8 +506,6 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   if (show_bundled_nets_) {
-    painter.setPen(gui::Painter::kYellow, true);
-
     if (!hard_macros_.empty()) {
       drawBundledNets(painter, hard_macros_);
     }
@@ -580,21 +578,31 @@ template <typename T>
 void Graphics::drawBundledNets(gui::Painter& painter,
                                const std::vector<T>& macros)
 {
-  for (const auto& bundled_net : bundled_nets_) {
-    const T& source = macros[bundled_net.terminals.first];
-    const T& target = macros[bundled_net.terminals.second];
+  painter.setPen(gui::Painter::kYellow, true);
 
-    if (target.isClusterOfUnplacedIOPins()) {
-      drawDistToRegion(painter, source, target);
-      continue;
-    }
-
-    odb::Point from(source.getPinX(), source.getPinY());
-    odb::Point to(target.getPinX(), target.getPinY());
-
-    addOutlineOffsetToLine(from, to);
-    painter.drawLine(from, to);
+  for (const auto& net : nets_) {
+    drawBundledNet(painter, macros, net);
   }
+}
+
+template <typename T>
+void Graphics::drawBundledNet(gui::Painter& painter,
+                              const std::vector<T>& macros,
+                              const BundledNet& net)
+{
+  const T& source = macros[net.terminals.first];
+  const T& target = macros[net.terminals.second];
+
+  if (target.isClusterOfUnplacedIOPins()) {
+    drawDistToRegion(painter, source, target);
+    return;
+  }
+
+  odb::Point from(source.getPinX(), source.getPinY());
+  odb::Point to(target.getPinX(), target.getPinY());
+
+  addOutlineOffsetToLine(from, to);
+  painter.drawLine(from, to);
 }
 
 template <typename T>
@@ -700,9 +708,9 @@ void Graphics::setOnlyFinalResult(bool only_final_result)
   only_final_result_ = only_final_result;
 }
 
-void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
+void Graphics::setNets(const BundledNetList& nets)
 {
-  bundled_nets_ = bundled_nets;
+  nets_ = nets;
 }
 
 void Graphics::setTargetClusterId(const int target_cluster_id)
@@ -757,7 +765,7 @@ void Graphics::eraseDrawing()
   hard_macros_.clear();
   macro_blockages_.clear();
   placement_blockages_.clear();
-  bundled_nets_.clear();
+  nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
   blocked_regions_for_pins_.clear();

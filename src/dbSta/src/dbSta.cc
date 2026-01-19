@@ -15,13 +15,17 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <regex>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "boost/json.hpp"
@@ -30,19 +34,26 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
@@ -146,7 +157,7 @@ class dbStaReport : public sta::ReportTcl
 class dbStaCbk : public dbBlockCallBackObj
 {
  public:
-  dbStaCbk(dbSta* sta, Logger* logger);
+  dbStaCbk(dbSta* sta);
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(dbInst* inst) override;
   void inDbInstDestroy(dbInst* inst) override;
@@ -168,6 +179,10 @@ class dbStaCbk : public dbBlockCallBackObj
   void inDbBTermDestroy(dbBTerm* bterm) override;
   void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
   void inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type) override;
+  void inDbModInstCreate(dbModInst* modinst) override;
+  void inDbModInstDestroy(dbModInst* modinst) override;
+  void inDbModBTermPostConnect(dbModBTerm* modbterm) override;
+  void inDbModBTermPreDisconnect(dbModBTerm* modbterm) override;
 
  private:
   // for inDbInstSwapMasterBefore/inDbInstSwapMasterAfter
@@ -175,7 +190,6 @@ class dbStaCbk : public dbBlockCallBackObj
 
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
-  Logger* logger_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -229,7 +243,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   }
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
-  db_cbk_ = std::make_unique<dbStaCbk>(this, logger);
+  db_cbk_ = std::make_unique<dbStaCbk>(this);
   buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
@@ -572,11 +586,10 @@ void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
   }
 }
 
-std::string toLowerCase(std::string str)
+static std::string toLowerCase(std::string str)
 {
-  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
+  std::ranges::transform(
+      str, str.begin(), [](unsigned char c) { return std::tolower(c); });
   return str;
 }
 
@@ -733,6 +746,180 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
 
   histogram.generateBins(num_bins);
   histogram.report();
+}
+
+int dbSta::checkSanity()
+{
+  ensureGraph();
+  ensureLevelized();
+
+  int pre_warn_cnt = logger_->getWarningCount();
+  checkSanityNetlistConsistency();
+  int post_warn_cnt = logger_->getWarningCount();
+
+  return post_warn_cnt - pre_warn_cnt;
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const odb::dbObject* term) const
+{
+  if (term == nullptr) {
+    logger_->error(
+        utl::STA, 2056, "checkSanityDrvrVertexEdges: input term is null");
+    return;
+  }
+
+  sta::Pin* pin = db_network_->dbToSta(const_cast<odb::dbObject*>(term));
+  if (pin == nullptr) {
+    logger_->error(utl::STA,
+                   2057,
+                   "checkSanityDrvrVertexEdges: failed to convert dbObject to "
+                   "sta::Pin for {}",
+                   term->getName());
+    return;
+  }
+
+  checkSanityDrvrVertexEdges(pin);
+}
+
+void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
+{
+  if (pin == nullptr || db_network_->isDriver(pin) == false) {
+    return;
+  }
+
+  sta::Graph* graph = this->graph();
+  if (graph == nullptr) {
+    return;  // Graph not yet built, skip check
+  }
+  sta::Vertex* drvr_vertex = graph->pinDrvrVertex(pin);
+
+  if (drvr_vertex == nullptr) {
+    logger_->warn(utl::STA,
+                  2058,
+                  "checkSanityDrvrVertexEdges: could not find driver vertex "
+                  "for pin {}",
+                  db_network_->pathName(pin));
+    return;
+  }
+
+  // Store load vertices to check for consistency
+  std::set<sta::Vertex*> visited_to_vertices;
+  sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph);
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    sta::Vertex* to_vertex = edge->to(graph);
+    visited_to_vertices.insert(to_vertex);
+  }
+
+  // Compare with ODB connectivity
+  Net* sta_net = network_->net(pin);
+  if (sta_net == nullptr) {
+    return;
+  }
+
+  std::set<const sta::Pin*> odb_loads;
+  class ODBLoadVisitor : public PinVisitor
+  {
+   public:
+    std::set<const sta::Pin*>& loads_;
+    const Pin* drvr_;
+    const Network* network_;
+    ODBLoadVisitor(std::set<const sta::Pin*>& loads,
+                   const Pin* drvr,
+                   const Network* network)
+        : loads_(loads), drvr_(drvr), network_(network)
+    {
+    }
+
+    void operator()(const Pin* load_pin) override
+    {
+      if (load_pin != nullptr && load_pin != drvr_
+          && network_->isLoad(load_pin)) {
+        loads_.insert(load_pin);
+      }
+    }
+  };
+
+  ODBLoadVisitor visitor(odb_loads, pin, network_);
+  NetSet visited_nets(network_);
+  sta_net = db_network_->net(pin);
+  if (sta_net) {
+    db_network_->visitConnectedPins(sta_net, visitor, visited_nets);
+  }
+
+  std::set<const sta::Pin*> sta_loads;
+  for (sta::Vertex* to_vertex : visited_to_vertices) {
+    const Pin* load_pin = to_vertex->pin();
+    if (load_pin != nullptr) {
+      sta_loads.insert(load_pin);
+    }
+  }
+
+  // Loads in ODB must appear in STA edges.
+  for (const sta::Pin* odb_load : odb_loads) {
+    if (sta_loads.find(odb_load) == sta_loads.end()) {
+      logger_->warn(
+          utl::STA,
+          2301,
+          "Inconsistent load: ODB has load '{}' for driver '{}', but STA graph "
+          "edge is missing.",
+          db_network_->pathName(odb_load),
+          db_network_->pathName(pin));
+    }
+  }
+}
+
+void dbSta::checkSanityNetlistConsistency() const
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  // Check all ITerms
+  for (odb::dbITerm* iterm : block->getITerms()) {
+    if (iterm->getNet() != nullptr) {
+      checkSanityDrvrVertexEdges(iterm);
+    }
+  }
+
+  // Check BTerms
+  for (odb::dbBTerm* bterm : block->getBTerms()) {
+    if (bterm->getNet() != nullptr) {
+      checkSanityDrvrVertexEdges(bterm);
+    }
+  }
+
+  // Check ModITerms recursively
+  std::function<void(odb::dbModule*)> check_module
+      = [&](odb::dbModule* module) {
+          if (module == nullptr) {
+            return;
+          }
+          for (odb::dbModInst* mod_inst : module->getModInsts()) {
+            for (odb::dbModITerm* moditerm : mod_inst->getModITerms()) {
+              Pin* pin = db_network_->dbToSta(moditerm);
+              if (pin != nullptr && db_network_->isDriver(pin)) {
+                checkSanityDrvrVertexEdges(pin);
+              }
+            }
+            check_module(mod_inst->getMaster());
+          }
+        };
+
+  check_module(block->getTopModule());
+}
+
+void dbSta::checkSanityDrvrVertexEdges() const
+{
+  // Iterate over all driver vertices in the graph.
+  sta::VertexIterator vertex_iter(this->graph());
+  while (vertex_iter.hasNext()) {
+    sta::Vertex* vertex = vertex_iter.next();
+    if (vertex->isDriver(this->network())) {
+      checkSanityDrvrVertexEdges(db_network_->staToDb(vertex->pin()));
+    }
+  }
 }
 
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
@@ -930,7 +1117,7 @@ const char* dbStaReport::redirectStringEnd()
 //
 ////////////////////////////////////////////////////////////////
 
-dbStaCbk::dbStaCbk(dbSta* sta, Logger* logger) : sta_(sta), logger_(logger)
+dbStaCbk::dbStaCbk(dbSta* sta) : sta_(sta)
 {
 }
 
@@ -1023,13 +1210,15 @@ void dbStaCbk::inDbModITermPostConnect(dbModITerm* moditerm)
 {
   Pin* pin = network_->dbToSta(moditerm);
   network_->connectPinAfter(pin);
-  sta_->connectPinAfter(pin);
+  // Connection is made by dbITerm callbacks. Calling this causes problem.
+  // sta_->connectPinAfter(pin);
 }
 
 void dbStaCbk::inDbModITermPreDisconnect(dbModITerm* moditerm)
 {
   Pin* pin = network_->dbToSta(moditerm);
-  sta_->disconnectPinBefore(pin);
+  // Connection is made by dbITerm callbacks. Calling this causes problem.
+  // sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
@@ -1078,6 +1267,24 @@ void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
+}
+
+void dbStaCbk::inDbModInstCreate(dbModInst* modinst)
+{
+  sta_->makeInstanceAfter(network_->dbToSta(modinst));
+}
+
+void dbStaCbk::inDbModInstDestroy(dbModInst* modinst)
+{
+  sta_->deleteInstanceBefore(network_->dbToSta(modinst));
+}
+
+void dbStaCbk::inDbModBTermPostConnect(dbModBTerm* modbterm)
+{
+}
+
+void dbStaCbk::inDbModBTermPreDisconnect(dbModBTerm* modbterm)
+{
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1144,6 +1351,253 @@ sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
     }
   }
   return nullptr;
+}
+
+void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
+                                 const char* filename,
+                                 const MinMax* min_max)
+{
+  std::ofstream out(filename);
+  if (!out) {
+    return;
+  }
+
+  Instance* sta_inst = network()->findInstance(mod_inst_name);
+  if (!sta_inst) {
+    out << "Instance " << mod_inst_name << " not found.\n";
+    return;
+  }
+
+  std::vector<std::string> lines;
+
+  odb::dbInst* db_inst = nullptr;
+  odb::dbModInst* db_mod_inst = nullptr;
+  db_network_->staToDb(sta_inst, db_inst, db_mod_inst);
+
+  if (db_mod_inst) {
+    odb::dbModule* master = db_mod_inst->getMaster();
+    for (odb::dbInst* leaf : master->getInsts()) {
+      for (odb::dbITerm* iterm : leaf->getITerms()) {
+        if (iterm->getSigType().isSupply()) {
+          continue;
+        }
+        Pin* pin = db_network_->dbToSta(iterm);
+        float slack = pinSlack(pin, min_max);
+        float arrival = 0.0;
+        float required = 0.0;
+
+        Graph* g = graph();
+        Vertex* vertex = g->pinDrvrVertex(pin);
+        if (!vertex) {
+          vertex = g->pinLoadVertex(pin);
+        }
+        if (vertex) {
+          float min_s = 1e30;
+          for (Corner* corner : *corners()) {
+            PathAnalysisPt* path_ap = corner->findPathAnalysisPt(min_max);
+            if (!path_ap) {
+              continue;
+            }
+            for (const RiseFall* rf : RiseFall::range()) {
+              float s = vertexSlack(vertex, rf, path_ap);
+              if (s < min_s) {
+                min_s = s;
+                arrival = vertexArrival(vertex, rf, path_ap);
+                required = vertexRequired(vertex, rf, path_ap);
+              }
+            }
+          }
+        }
+
+        float cap = 0.0;
+        float res = 0.0;
+        Net* net = network()->net(pin);
+        if (net) {
+          Parasitics* parasitics = this->parasitics();
+          Corner* corner = corners()->findCorner(0);
+
+          if (parasitics && corner) {
+            const ParasiticAnalysisPt* ap
+                = corner->findParasiticAnalysisPt(MinMax::max());
+            if (ap) {
+              Parasitic* p = parasitics->findParasiticNetwork(net, ap);
+              if (p) {
+                cap = parasitics->capacitance(p);
+                ParasiticResistorSeq resistors = parasitics->resistors(p);
+                for (ParasiticResistor* r : resistors) {
+                  res += parasitics->value(r);
+                }
+              }
+            }
+          }
+        }
+        std::string pin_name = network()->name(pin);
+        lines.push_back(fmt::format("{} {:e} {:e} {:e} {:e} {:e}",
+                                    pin_name,
+                                    slack,
+                                    arrival,
+                                    required,
+                                    cap,
+                                    res));
+      }
+    }
+  }
+
+  std::ranges::sort(lines);
+  out << "Pin_Name Slack Arrival Required Capacitance Resistance\n";
+  for (const std::string& line : lines) {
+    out << line << "\n";
+  }
+  logger_->report("Dumped sorted pin slacks to {}", filename);
+}
+
+void dbSta::dumpModInstGraphConnections(const char* mod_inst_name,
+                                        const char* filename)
+{
+  std::ofstream out(filename);
+  if (!out) {
+    logger_->warn(
+        utl::STA, 203, "Could not open debug file {} for writing.", filename);
+    return;
+  }
+
+  Instance* sta_inst = network()->findInstance(mod_inst_name);
+  if (!sta_inst) {
+    out << "Instance " << mod_inst_name << " not found.\n";
+    return;
+  }
+
+  odb::dbInst* db_inst = nullptr;
+  odb::dbModInst* db_mod_inst = nullptr;
+  db_network_->staToDb(sta_inst, db_inst, db_mod_inst);
+
+  if (!db_mod_inst) {
+    return;  // Only for ModInst for now
+  }
+
+  odb::dbModule* master = db_mod_inst->getMaster();
+  if (!master) {
+    return;
+  }
+
+  std::vector<std::string> lines;
+  Graph* g = graph();
+
+  auto get_cell_type = [&](Pin* p) -> std::string {
+    if (!p) {
+      return "NO_PIN";
+    }
+    if (network()->isTopLevelPort(p)) {
+      const PortDirection* dir = network()->direction(p);
+      if (dir) {
+        if (dir->isInput()) {
+          return "PI";
+        }
+        if (dir->isOutput()) {
+          return "PO";
+        }
+        if (dir->isBidirect()) {
+          return "PIO";
+        }
+      }
+      return "PORT";
+    }
+    Instance* inst = network()->instance(p);
+    if (inst) {
+      LibertyCell* cell = network()->libertyCell(inst);
+      if (cell) {
+        return cell->name();
+      }
+      return "BLOCK";
+    }
+    return "UNKNOWN";
+  };
+
+  // Iterate over all leaf instances inside the hierarchical module
+  for (odb::dbInst* inst : master->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      Pin* pin = db_network_->dbToSta(iterm);
+      Vertex* vertex = g->pinDrvrVertex(pin);
+      if (!vertex) {
+        vertex = g->pinLoadVertex(pin);
+      }
+
+      if (!vertex) {
+        continue;
+      }
+
+      std::string src_cell_name = get_cell_type(pin);
+      std::string src_str = fmt::format("{} ({}, V_ID:{}, LV:{})",
+                                        network()->name(pin),
+                                        src_cell_name,
+                                        g->id(vertex),
+                                        vertex->level());
+
+      // Outgoing Edges
+      sta::VertexOutEdgeIterator out_iter(vertex, g);
+      while (out_iter.hasNext()) {
+        sta::Edge* edge = out_iter.next();
+        Vertex* to = edge->to(g);
+        Pin* to_pin = to->pin();
+
+        std::string dst_cell_name = get_cell_type(to_pin);
+        std::string dst_pin_name = to_pin ? network()->name(to_pin) : "NO_PIN";
+
+        std::string dst_str = fmt::format("{} ({}, V_ID:{}, LV:{})",
+                                          dst_pin_name,
+                                          dst_cell_name,
+                                          g->id(to),
+                                          to->level());
+
+        lines.push_back(fmt::format("{} -> {}", src_str, dst_str));
+      }
+
+      // Incoming Edges - Check for external drivers
+      sta::VertexInEdgeIterator in_iter(vertex, g);
+      while (in_iter.hasNext()) {
+        sta::Edge* edge = in_iter.next();
+        Vertex* from = edge->from(g);
+        Pin* from_pin = from->pin();
+
+        bool is_external = false;
+        if (from_pin) {
+          std::string_view pin_name = network()->name(from_pin);
+          std::string mod_prefix = db_mod_inst->getName();
+          mod_prefix += "/";  // e.g., "_202_/"
+          if (!pin_name.starts_with(mod_prefix)) {
+            is_external = true;
+          }
+        } else {
+          is_external = true;
+        }
+
+        if (is_external) {
+          std::string from_cell_name = get_cell_type(from_pin);
+          std::string from_pin_name
+              = from_pin ? network()->name(from_pin) : "NO_PIN";
+
+          std::string from_str = fmt::format("{} ({}, V_ID:{}, LV:{})",
+                                             from_pin_name,
+                                             from_cell_name,
+                                             g->id(from),
+                                             from->level());
+
+          // Print as outgoing from the external source
+          lines.push_back(fmt::format("{} -> {}", from_str, src_str));
+        }
+      }
+    }
+  }
+
+  std::ranges::sort(lines);
+
+  out << "DEBUG GRAPH DUMP for " << db_mod_inst->getName()
+      << " (Master: " << master->getName() << ")\n";
+  for (const std::string& line : lines) {
+    out << line << "\n";
+  }
+  out.close();
+  logger_->report("Dumped sorted STA graph connections to {}", filename);
 }
 
 }  // namespace sta

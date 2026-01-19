@@ -3,6 +3,7 @@
 
 #include "dbRow.h"
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -162,7 +163,7 @@ const char* dbRow::getConstName()
 dbSite* dbRow::getSite()
 {
   _dbRow* row = (_dbRow*) this;
-  _dbDatabase* db = (_dbDatabase*) row->getDatabase();
+  _dbDatabase* db = row->getDatabase();
   _dbLib* lib = db->lib_tbl_->getPtr(row->lib_);
   _dbSite* site = lib->site_tbl_->getPtr(row->site_);
   return (dbSite*) site;
@@ -214,17 +215,17 @@ Rect dbRow::getBBox()
   dbTransform transform(getOrient());
   Rect r(0, 0, w, h);
   transform.apply(r);
-  int dx = (int) r.dx();
-  int dy = (int) r.dy();
+  int dx = r.dx();
+  int dy = r.dy();
   Point origin = getOrigin();
 
   if (row->flags_.dir == dbRowDir::HORIZONTAL) {
-    int xMax = origin.x() + (row->site_cnt_ - 1) * row->spacing_ + dx;
+    int xMax = origin.x() + ((row->site_cnt_ - 1) * row->spacing_) + dx;
     int yMax = origin.y() + dy;
     return Rect(origin.x(), origin.y(), xMax, yMax);
   }
   int xMax = origin.x() + dx;
-  int yMax = origin.y() + (row->site_cnt_ - 1) * row->spacing_ + dy;
+  int yMax = origin.y() + ((row->site_cnt_ - 1) * row->spacing_) + dy;
   return Rect(origin.x(), origin.y(), xMax, yMax);
 }
 
@@ -281,7 +282,7 @@ dbSet<dbRow>::iterator dbRow::destroy(dbSet<dbRow>::iterator& itr)
   return next;
 }
 
-dbRow* dbRow::getRow(dbBlock* block_, uint dbid_)
+dbRow* dbRow::getRow(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRow*) block->row_tbl_->getPtr(dbid_);
@@ -292,7 +293,7 @@ void _dbRow::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 }
 
 }  // namespace odb

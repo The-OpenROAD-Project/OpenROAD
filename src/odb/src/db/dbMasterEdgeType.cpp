@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbMasterEdgeType.h"
 
+#include <cstdint>
 #include <string>
 
 #include "dbDatabase.h"
@@ -79,7 +80,7 @@ void _dbMasterEdgeType::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["edge_type"].add(edge_type_);
+  info.children["edge_type"].add(edge_type_);
   // User Code End collectMemInfo
 }
 
@@ -160,7 +161,7 @@ void dbMasterEdgeType::setEdgeDir(dbMasterEdgeType::EdgeDir edge_dir)
 {
   _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
 
-  obj->edge_dir_ = (uint) edge_dir;
+  obj->edge_dir_ = (uint32_t) edge_dir;
 }
 
 dbMasterEdgeType::EdgeDir dbMasterEdgeType::getEdgeDir() const

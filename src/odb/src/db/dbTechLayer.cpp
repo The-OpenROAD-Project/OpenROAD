@@ -527,7 +527,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  if (obj.getDatabase()->isSchema(db_schema_orth_spc_tbl)) {
+  if (obj.getDatabase()->isSchema(kSchemaOrthSpcTbl)) {
     stream >> obj.orth_spacing_tbl_;
   }
   stream >> *obj.cut_class_rules_tbl_;
@@ -543,27 +543,26 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.eol_ext_rules_tbl_;
   stream >> *obj.array_spacing_rules_tbl_;
   stream >> *obj.eol_keep_out_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_max_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaMaxSpacing)) {
     stream >> *obj.max_spacing_rules_tbl_;
   }
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58ForbiddenSpacing)) {
     stream >> *obj.forbidden_spacing_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
+  if (obj.getDatabase()->isSchema(kSchemaKeepoutZone)) {
     stream >> *obj.keepout_zone_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaWrongdirSpacing)) {
     stream >> *obj.wrongdir_spacing_rules_tbl_;
   }
-  if (obj.getDatabase()->isSchema(
-          db_schema_lef58_two_wires_forbidden_spacing)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58TwoWiresForbiddenSpacing)) {
     stream >> *obj.two_wires_forbidden_spc_rules_tbl_;
   }
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_layer_adjustment)) {
+  if (obj.getDatabase()->isSchema(kSchemaLayerAdjustment)) {
     stream >> obj.layer_adjustment_;
   } else {
     obj.layer_adjustment_ = 0.0;
@@ -606,7 +605,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj.two_widths_sp_spacing_;
   stream >> obj.oxide1_;
   stream >> obj.oxide2_;
-  if (obj.getDatabase()->isSchema(db_schema_wrongway_width)) {
+  if (obj.getDatabase()->isSchema(kSchemaWrongwayWidth)) {
     stream >> obj.wrong_way_width_;
   } else {
     obj.wrong_way_width_ = obj.width_;
@@ -617,7 +616,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
       }
     }
   }
-  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+  if (obj.getDatabase()->isSchema(kSchemaLef58Pitch)) {
     stream >> obj.first_last_pitch_;
   }
   // User Code End >>
@@ -764,75 +763,75 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  cut_class_rules_tbl_->collectMemInfo(info.children_["cut_class_rules_tbl_"]);
+  cut_class_rules_tbl_->collectMemInfo(info.children["cut_class_rules_tbl_"]);
 
   spacing_eol_rules_tbl_->collectMemInfo(
-      info.children_["spacing_eol_rules_tbl_"]);
+      info.children["spacing_eol_rules_tbl_"]);
 
   cut_spacing_rules_tbl_->collectMemInfo(
-      info.children_["cut_spacing_rules_tbl_"]);
+      info.children["cut_spacing_rules_tbl_"]);
 
-  minstep_rules_tbl_->collectMemInfo(info.children_["minstep_rules_tbl_"]);
+  minstep_rules_tbl_->collectMemInfo(info.children["minstep_rules_tbl_"]);
 
   corner_spacing_rules_tbl_->collectMemInfo(
-      info.children_["corner_spacing_rules_tbl_"]);
+      info.children["corner_spacing_rules_tbl_"]);
 
   spacing_table_prl_rules_tbl_->collectMemInfo(
-      info.children_["spacing_table_prl_rules_tbl_"]);
+      info.children["spacing_table_prl_rules_tbl_"]);
 
   cut_spacing_table_orth_tbl_->collectMemInfo(
-      info.children_["cut_spacing_table_orth_tbl_"]);
+      info.children["cut_spacing_table_orth_tbl_"]);
 
   cut_spacing_table_def_tbl_->collectMemInfo(
-      info.children_["cut_spacing_table_def_tbl_"]);
+      info.children["cut_spacing_table_def_tbl_"]);
 
-  cut_enc_rules_tbl_->collectMemInfo(info.children_["cut_enc_rules_tbl_"]);
+  cut_enc_rules_tbl_->collectMemInfo(info.children["cut_enc_rules_tbl_"]);
 
-  eol_ext_rules_tbl_->collectMemInfo(info.children_["eol_ext_rules_tbl_"]);
+  eol_ext_rules_tbl_->collectMemInfo(info.children["eol_ext_rules_tbl_"]);
 
   array_spacing_rules_tbl_->collectMemInfo(
-      info.children_["array_spacing_rules_tbl_"]);
+      info.children["array_spacing_rules_tbl_"]);
 
   eol_keep_out_rules_tbl_->collectMemInfo(
-      info.children_["eol_keep_out_rules_tbl_"]);
+      info.children["eol_keep_out_rules_tbl_"]);
 
   max_spacing_rules_tbl_->collectMemInfo(
-      info.children_["max_spacing_rules_tbl_"]);
+      info.children["max_spacing_rules_tbl_"]);
 
   width_table_rules_tbl_->collectMemInfo(
-      info.children_["width_table_rules_tbl_"]);
+      info.children["width_table_rules_tbl_"]);
 
-  min_cuts_rules_tbl_->collectMemInfo(info.children_["min_cuts_rules_tbl_"]);
+  min_cuts_rules_tbl_->collectMemInfo(info.children["min_cuts_rules_tbl_"]);
 
-  area_rules_tbl_->collectMemInfo(info.children_["area_rules_tbl_"]);
+  area_rules_tbl_->collectMemInfo(info.children["area_rules_tbl_"]);
 
   forbidden_spacing_rules_tbl_->collectMemInfo(
-      info.children_["forbidden_spacing_rules_tbl_"]);
+      info.children["forbidden_spacing_rules_tbl_"]);
 
   keepout_zone_rules_tbl_->collectMemInfo(
-      info.children_["keepout_zone_rules_tbl_"]);
+      info.children["keepout_zone_rules_tbl_"]);
 
   wrongdir_spacing_rules_tbl_->collectMemInfo(
-      info.children_["wrongdir_spacing_rules_tbl_"]);
+      info.children["wrongdir_spacing_rules_tbl_"]);
 
   two_wires_forbidden_spc_rules_tbl_->collectMemInfo(
-      info.children_["two_wires_forbidden_spc_rules_tbl_"]);
+      info.children["two_wires_forbidden_spc_rules_tbl_"]);
 
   // User Code Begin collectMemInfo
-  info.children_["orth_spacing"].add(orth_spacing_tbl_);
-  info.children_["cut_class_rules_hash"].add(cut_class_rules_hash_);
-  info.children_["name"].add(name_);
-  info.children_["alias"].add(alias_);
-  spacing_rules_tbl_->collectMemInfo(info.children_["spacing_rules_tbl"]);
-  min_cut_rules_tbl_->collectMemInfo(info.children_["min_cut_rules_tbl"]);
-  min_enc_rules_tbl_->collectMemInfo(info.children_["min_enc_rules_tbl"]);
-  v55inf_tbl_->collectMemInfo(info.children_["v55inf_tbl"]);
-  info.children_["v55sp_length_idx"].add(v55sp_length_idx_);
-  info.children_["v55sp_width_idx"].add(v55sp_width_idx_);
-  info.children_["v55sp_spacing"].add(v55sp_spacing_);
-  info.children_["two_widths_sp_idx"].add(two_widths_sp_idx_);
-  info.children_["two_widths_sp_prl"].add(two_widths_sp_prl_);
-  info.children_["two_widths_sp_spacing"].add(two_widths_sp_spacing_);
+  info.children["orth_spacing"].add(orth_spacing_tbl_);
+  info.children["cut_class_rules_hash"].add(cut_class_rules_hash_);
+  info.children["name"].add(name_);
+  info.children["alias"].add(alias_);
+  spacing_rules_tbl_->collectMemInfo(info.children["spacing_rules_tbl"]);
+  min_cut_rules_tbl_->collectMemInfo(info.children["min_cut_rules_tbl"]);
+  min_enc_rules_tbl_->collectMemInfo(info.children["min_enc_rules_tbl"]);
+  v55inf_tbl_->collectMemInfo(info.children["v55inf_tbl"]);
+  info.children["v55sp_length_idx"].add(v55sp_length_idx_);
+  info.children["v55sp_width_idx"].add(v55sp_width_idx_);
+  info.children["v55sp_spacing"].add(v55sp_spacing_);
+  info.children["two_widths_sp_idx"].add(two_widths_sp_idx_);
+  info.children["two_widths_sp_prl"].add(two_widths_sp_prl_);
+  info.children["two_widths_sp_spacing"].add(two_widths_sp_spacing_);
   // User Code End collectMemInfo
 }
 
@@ -882,22 +881,19 @@ _dbTechLayer::~_dbTechLayer()
 }
 
 // User Code Begin PrivateMethods
-uint _dbTechLayer::getV55RowIdx(const int& rowVal) const
+uint32_t _dbTechLayer::getV55RowIdx(const int& rowVal) const
 {
-  auto pos = --(std::lower_bound(
-      v55sp_width_idx_.begin(), v55sp_width_idx_.end(), rowVal));
+  auto pos = --(std::ranges::lower_bound(v55sp_width_idx_, rowVal));
   return std::max(0, (int) std::distance(v55sp_width_idx_.begin(), pos));
 }
-uint _dbTechLayer::getV55ColIdx(const int& colVal) const
+uint32_t _dbTechLayer::getV55ColIdx(const int& colVal) const
 {
-  auto pos = --(std::lower_bound(
-      v55sp_length_idx_.begin(), v55sp_length_idx_.end(), colVal));
+  auto pos = --(std::ranges::lower_bound(v55sp_length_idx_, colVal));
   return std::max(0, (int) std::distance(v55sp_length_idx_.begin(), pos));
 }
-uint _dbTechLayer::getTwIdx(const int width, const int prl) const
+uint32_t _dbTechLayer::getTwIdx(const int width, const int prl) const
 {
-  auto pos = std::lower_bound(
-      two_widths_sp_idx_.begin(), two_widths_sp_idx_.end(), width);
+  auto pos = std::ranges::lower_bound(two_widths_sp_idx_, width);
   if (pos != two_widths_sp_idx_.begin()) {
     --pos;
   }
@@ -917,14 +913,14 @@ uint _dbTechLayer::getTwIdx(const int width, const int prl) const
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayer::setWrongWayWidth(uint wrong_way_width)
+void dbTechLayer::setWrongWayWidth(uint32_t wrong_way_width)
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
 
   obj->wrong_way_width_ = wrong_way_width;
 }
 
-uint dbTechLayer::getWrongWayWidth() const
+uint32_t dbTechLayer::getWrongWayWidth() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return obj->wrong_way_width_;
@@ -1164,7 +1160,7 @@ bool dbTechLayer::isRectOnlyExceptNonCorePins() const
 void dbTechLayer::setLef58Type(LEF58_TYPE type)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.lef58_type = (uint) type;
+  layer->flags_.lef58_type = (uint32_t) type;
   if ((type == odb::dbTechLayer::MIMCAP
        || type == odb::dbTechLayer::STACKEDMIMCAP)
       && getType() == dbTechLayerType::ROUTING) {
@@ -1269,7 +1265,7 @@ void dbTechLayer::setAlias(const char* alias)
   layer->alias_ = safe_strdup(alias);
 }
 
-uint dbTechLayer::getWidth() const
+uint32_t dbTechLayer::getWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->width_;
@@ -1308,13 +1304,13 @@ void dbTechLayer::setEdgeCapacitance(double cap)
   layer->edge_capacitance_ = cap;
 }
 
-uint dbTechLayer::getWireExtension()
+uint32_t dbTechLayer::getWireExtension()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->wire_extension_;
 }
 
-void dbTechLayer::setWireExtension(uint ext)
+void dbTechLayer::setWireExtension(uint32_t ext)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->wire_extension_ = ext;
@@ -1325,15 +1321,15 @@ int dbTechLayer::getSpacing(int w, int l)
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
   bool found_spacing = false;
-  uint spacing = MAX_INT;
+  uint32_t spacing = MAX_INT;
 
   bool found_over_spacing = false;
-  uint over_spacing = MAX_INT;
-  uint width = (uint) w;
-  uint length = (uint) l;
+  uint32_t over_spacing = MAX_INT;
+  uint32_t width = (uint32_t) w;
+  uint32_t length = (uint32_t) l;
 
   for (auto cur_rule : getV54SpacingRules()) {
-    uint rmin, rmax;
+    uint32_t rmin, rmax;
     if (cur_rule->getRange(rmin, rmax)) {
       if ((width >= rmin) && (width <= rmax)) {
         spacing = std::min(spacing, cur_rule->getSpacing());
@@ -1346,8 +1342,8 @@ int dbTechLayer::getSpacing(int w, int l)
     }
   }
 
-  std::vector<std::vector<uint>> v55rules;
-  uint i, j;
+  std::vector<std::vector<uint32_t>> v55rules;
+  uint32_t i, j;
   if (getV55SpacingTable(v55rules)) {
     for (i = 1; (i < layer->v55sp_width_idx_.size())
                 && (width > layer->v55sp_width_idx_[i]);
@@ -1382,9 +1378,9 @@ void dbTechLayer::getMaxWideDRCRange(int& owidth, int& olength)
   olength = owidth;
 
   for (auto rule : getV54SpacingRules()) {
-    uint rmin, rmax;
+    uint32_t rmin, rmax;
     if (rule->getRange(rmin, rmax)) {
-      if (rmin > (uint) owidth) {
+      if (rmin > (uint32_t) owidth) {
         owidth = rmin;
         olength = rmin;
       }
@@ -1408,9 +1404,9 @@ void dbTechLayer::getMinWideDRCRange(int& owidth, int& olength)
   olength = owidth;
 
   for (auto rule : getV54SpacingRules()) {
-    uint rmin, rmax;
+    uint32_t rmin, rmax;
     if (rule->getRange(rmin, rmax)) {
-      if (rmin < (uint) owidth) {
+      if (rmin < (uint32_t) owidth) {
         owidth = rmin;
         olength = rmin;
       }
@@ -1438,8 +1434,8 @@ bool dbTechLayer::hasV55SpacingRules() const
 }
 
 bool dbTechLayer::getV55SpacingWidthsAndLengths(
-    std::vector<uint>& width_idx,
-    std::vector<uint>& length_idx) const
+    std::vector<uint32_t>& width_idx,
+    std::vector<uint32_t>& length_idx) const
 {
   if (!hasV55SpacingRules()) {
     return false;
@@ -1456,8 +1452,8 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
 
   fmt::print(writer.out(), "SPACINGTABLE\n");
   fmt::print(writer.out(), "  PARALLELRUNLENGTH");
-  dbVector<uint>::const_iterator v55_itr;
-  uint wddx, lndx;
+  dbVector<uint32_t>::const_iterator v55_itr;
+  uint32_t wddx, lndx;
 
   for (v55_itr = layer->v55sp_length_idx_.begin();
        v55_itr != layer->v55sp_length_idx_.end();
@@ -1481,7 +1477,7 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
 }
 
 bool dbTechLayer::getV55SpacingTable(
-    std::vector<std::vector<uint>>& sptbl) const
+    std::vector<std::vector<uint32_t>>& sptbl) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
@@ -1489,10 +1485,10 @@ bool dbTechLayer::getV55SpacingTable(
     return false;
   }
 
-  uint i, j;
+  uint32_t i, j;
   sptbl.clear();
   sptbl.resize(layer->v55sp_spacing_.numRows());
-  std::vector<uint> tmpvec;
+  std::vector<uint32_t> tmpvec;
   tmpvec.reserve(layer->v55sp_spacing_.numCols());
   for (i = 0; i < layer->v55sp_spacing_.numRows(); i++) {
     tmpvec.clear();
@@ -1511,42 +1507,44 @@ int dbTechLayer::findV55Spacing(const int width, const int prl) const
     return 0;
   }
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  uint rowIdx = layer->getV55RowIdx(width);
-  uint colIdx = layer->getV55ColIdx(prl);
+  uint32_t rowIdx = layer->getV55RowIdx(width);
+  uint32_t colIdx = layer->getV55ColIdx(prl);
   return layer->v55sp_spacing_(rowIdx, colIdx);
 }
 
-void dbTechLayer::initV55LengthIndex(uint numelems)
+void dbTechLayer::initV55LengthIndex(uint32_t numelems)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->v55sp_length_idx_.reserve(numelems);
 }
 
-void dbTechLayer::addV55LengthEntry(uint length)
+void dbTechLayer::addV55LengthEntry(uint32_t length)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->v55sp_length_idx_.push_back(length);
 }
 
-void dbTechLayer::initV55WidthIndex(uint numelems)
+void dbTechLayer::initV55WidthIndex(uint32_t numelems)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->v55sp_width_idx_.reserve(numelems);
 }
 
-void dbTechLayer::addV55WidthEntry(uint width)
+void dbTechLayer::addV55WidthEntry(uint32_t width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->v55sp_width_idx_.push_back(width);
 }
 
-void dbTechLayer::initV55SpacingTable(uint numrows, uint numcols)
+void dbTechLayer::initV55SpacingTable(uint32_t numrows, uint32_t numcols)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->v55sp_spacing_.resize(numrows, numcols);
 }
 
-void dbTechLayer::addV55SpacingTableEntry(uint inrow, uint incol, uint spacing)
+void dbTechLayer::addV55SpacingTableEntry(uint32_t inrow,
+                                          uint32_t incol,
+                                          uint32_t spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->v55sp_spacing_(inrow, incol) = spacing;
@@ -1564,8 +1562,8 @@ void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
   fmt::print(writer.out(), "SPACINGTABLE TWOWIDTHS");
-  dbVector<uint>::const_iterator itr;
-  uint wddx, lndx;
+  dbVector<uint32_t>::const_iterator itr;
+  uint32_t wddx, lndx;
 
   for (wddx = 0, itr = layer->two_widths_sp_idx_.begin();
        itr != layer->two_widths_sp_idx_.end();
@@ -1581,38 +1579,39 @@ void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
   fmt::print(writer.out(), " ;\n");
 }
 
-uint dbTechLayer::getTwoWidthsSpacingTableEntry(uint row, uint col) const
+uint32_t dbTechLayer::getTwoWidthsSpacingTableEntry(uint32_t row,
+                                                    uint32_t col) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->two_widths_sp_spacing_(row, col);
 }
 
-uint dbTechLayer::getTwoWidthsSpacingTableNumWidths() const
+uint32_t dbTechLayer::getTwoWidthsSpacingTableNumWidths() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->two_widths_sp_idx_.size();
 }
 
-uint dbTechLayer::getTwoWidthsSpacingTableWidth(uint row) const
+uint32_t dbTechLayer::getTwoWidthsSpacingTableWidth(uint32_t row) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->two_widths_sp_idx_.at(row);
 }
 
-bool dbTechLayer::getTwoWidthsSpacingTableHasPRL(uint row) const
+bool dbTechLayer::getTwoWidthsSpacingTableHasPRL(uint32_t row) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->two_widths_sp_prl_.at(row) >= 0;
 }
 
-uint dbTechLayer::getTwoWidthsSpacingTablePRL(uint row) const
+uint32_t dbTechLayer::getTwoWidthsSpacingTablePRL(uint32_t row) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->two_widths_sp_prl_.at(row);
 }
 
 bool dbTechLayer::getTwoWidthsSpacingTable(
-    std::vector<std::vector<uint>>& sptbl) const
+    std::vector<std::vector<uint32_t>>& sptbl) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
@@ -1620,10 +1619,10 @@ bool dbTechLayer::getTwoWidthsSpacingTable(
     return false;
   }
 
-  uint i, j;
+  uint32_t i, j;
   sptbl.clear();
   sptbl.resize(layer->two_widths_sp_spacing_.numRows());
-  std::vector<uint> tmpvec;
+  std::vector<uint32_t> tmpvec;
   tmpvec.reserve(layer->two_widths_sp_spacing_.numCols());
   for (i = 0; i < layer->two_widths_sp_spacing_.numRows(); i++) {
     tmpvec.clear();
@@ -1636,23 +1635,24 @@ bool dbTechLayer::getTwoWidthsSpacingTable(
   return true;
 }
 
-void dbTechLayer::initTwoWidths(uint num_widths)
+void dbTechLayer::initTwoWidths(uint32_t num_widths)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->two_widths_sp_idx_.reserve(num_widths);
   layer->two_widths_sp_spacing_.resize(num_widths, num_widths);
 }
 
-void dbTechLayer::addTwoWidthsIndexEntry(uint width, int parallel_run_length)
+void dbTechLayer::addTwoWidthsIndexEntry(uint32_t width,
+                                         int parallel_run_length)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->two_widths_sp_idx_.push_back(width);
   layer->two_widths_sp_prl_.push_back(parallel_run_length);
 }
 
-void dbTechLayer::addTwoWidthsSpacingTableEntry(uint inrow,
-                                                uint incol,
-                                                uint spacing)
+void dbTechLayer::addTwoWidthsSpacingTableEntry(uint32_t inrow,
+                                                uint32_t incol,
+                                                uint32_t spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->two_widths_sp_spacing_(inrow, incol) = spacing;
@@ -1816,13 +1816,13 @@ void dbTechLayer::writeAntennaRulesLef(lefout& writer) const
   }
 }
 
-uint dbTechLayer::getNumMasks() const
+uint32_t dbTechLayer::getNumMasks() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->flags_.num_masks;
 }
 
-void dbTechLayer::setNumMasks(uint number)
+void dbTechLayer::setNumMasks(uint32_t number)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (number < 1 || number > 3) {
@@ -1832,7 +1832,7 @@ void dbTechLayer::setNumMasks(uint number)
   layer->flags_.num_masks = number;
 }
 
-bool dbTechLayer::getThickness(uint& inthk) const
+bool dbTechLayer::getThickness(uint32_t& inthk) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_thickness) {
@@ -1843,7 +1843,7 @@ bool dbTechLayer::getThickness(uint& inthk) const
   return false;
 }
 
-void dbTechLayer::setThickness(uint thickness)
+void dbTechLayer::setThickness(uint32_t thickness)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_thickness = true;
@@ -1880,7 +1880,7 @@ bool dbTechLayer::hasMaxWidth() const
   return (layer->flags_.has_max_width);
 }
 
-uint dbTechLayer::getMaxWidth() const
+uint32_t dbTechLayer::getMaxWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_max_width) {
@@ -1890,20 +1890,20 @@ uint dbTechLayer::getMaxWidth() const
   return MAX_INT;  // Default
 }
 
-void dbTechLayer::setMaxWidth(uint max_width)
+void dbTechLayer::setMaxWidth(uint32_t max_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_max_width = true;
   layer->max_width_ = max_width;
 }
 
-uint dbTechLayer::getMinWidth() const
+uint32_t dbTechLayer::getMinWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->min_width_;
 }
 
-void dbTechLayer::setMinWidth(uint min_width)
+void dbTechLayer::setMinWidth(uint32_t min_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->min_width_ = min_width;
@@ -1915,7 +1915,7 @@ bool dbTechLayer::hasMinStep() const
   return (layer->min_step_ >= 0);
 }
 
-uint dbTechLayer::getMinStep() const
+uint32_t dbTechLayer::getMinStep() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->min_step_ >= 0) {
@@ -1925,7 +1925,7 @@ uint dbTechLayer::getMinStep() const
   return 0;  // Default
 }
 
-void dbTechLayer::setMinStep(uint min_step)
+void dbTechLayer::setMinStep(uint32_t min_step)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->min_step_ = min_step;
@@ -1937,7 +1937,7 @@ bool dbTechLayer::hasProtrusion() const
   return (layer->flags_.has_protrusion);
 }
 
-uint dbTechLayer::getProtrusionWidth() const
+uint32_t dbTechLayer::getProtrusionWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_protrusion) {
@@ -1947,7 +1947,7 @@ uint dbTechLayer::getProtrusionWidth() const
   return 0;  // Default
 }
 
-uint dbTechLayer::getProtrusionLength() const
+uint32_t dbTechLayer::getProtrusionLength() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_protrusion) {
@@ -1957,7 +1957,7 @@ uint dbTechLayer::getProtrusionLength() const
   return 0;  // Default
 }
 
-uint dbTechLayer::getProtrusionFromWidth() const
+uint32_t dbTechLayer::getProtrusionFromWidth() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_protrusion) {
@@ -1967,9 +1967,9 @@ uint dbTechLayer::getProtrusionFromWidth() const
   return 0;  // Default
 }
 
-void dbTechLayer::setProtrusion(uint pt_width,
-                                uint pt_length,
-                                uint pt_from_width)
+void dbTechLayer::setProtrusion(uint32_t pt_width,
+                                uint32_t pt_length,
+                                uint32_t pt_from_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_protrusion = true;
@@ -2100,13 +2100,13 @@ bool dbTechLayer::hasMinStepMaxLength() const
   return layer->min_step_max_length_ >= 0;
 }
 
-uint dbTechLayer::getMinStepMaxLength() const
+uint32_t dbTechLayer::getMinStepMaxLength() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->min_step_max_length_;
 }
 
-void dbTechLayer::setMinStepMaxLength(uint length)
+void dbTechLayer::setMinStepMaxLength(uint32_t length)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->min_step_max_length_ = length;
@@ -2118,13 +2118,13 @@ bool dbTechLayer::hasMinStepMaxEdges() const
   return layer->min_step_max_edges_ >= 0;
 }
 
-uint dbTechLayer::getMinStepMaxEdges() const
+uint32_t dbTechLayer::getMinStepMaxEdges() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->min_step_max_edges_;
 }
 
-void dbTechLayer::setMinStepMaxEdges(uint edges)
+void dbTechLayer::setMinStepMaxEdges(uint32_t edges)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->min_step_max_edges_ = edges;
@@ -2249,7 +2249,7 @@ dbTechLayer* dbTechLayer::create(dbTech* tech_,
   return (dbTechLayer*) layer;
 }
 
-dbTechLayer* dbTechLayer::getTechLayer(dbTech* tech_, uint dbid_)
+dbTechLayer* dbTechLayer::getTechLayer(dbTech* tech_, uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechLayer*) tech->layer_tbl_->getPtr(dbid_);

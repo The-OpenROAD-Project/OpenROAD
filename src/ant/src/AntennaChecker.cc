@@ -167,7 +167,7 @@ void AntennaChecker::Impl::initAntennaRules()
       const odb::dbTechLayerAntennaRule::pwl_pair diffPSR
           = antenna_rule->getDiffPSR();
 
-      uint wire_thickness_dbu = 0;
+      uint32_t wire_thickness_dbu = 0;
       tech_layer->getThickness(wire_thickness_dbu);
 
       const odb::dbTechLayerType layerType = tech_layer->getType();
@@ -492,7 +492,7 @@ void AntennaChecker::Impl::calculateAreas(
 
       if (it.first->getRoutingLevel() != 0) {
         // Calculate side area of wire
-        uint wire_thickness_dbu = 0;
+        uint32_t wire_thickness_dbu = 0;
         it.first->getThickness(wire_thickness_dbu);
         double wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
         info.side_area = block_->dbuToMicrons(gtl::perimeter(node_it->pol)
@@ -1212,8 +1212,7 @@ int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
     }
     omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < nets_.size(); i++) {
-      odb::dbNet* net = nets_[i];
+    for (auto net : nets_) {
       Violations antenna_violations;
       int pin_viol_count
           = checkNet(net, verbose, true, nullptr, 0, antenna_violations);

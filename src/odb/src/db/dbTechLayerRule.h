@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -20,8 +21,8 @@ class dbOStream;
 
 struct _dbTechLayerRuleFlags
 {
-  uint block_rule : 1;
-  uint spare_bits : 31;
+  uint32_t block_rule : 1;
+  uint32_t spare_bits : 31;
 };
 
 class _dbTechLayerRule : public _dbObject
@@ -29,7 +30,6 @@ class _dbTechLayerRule : public _dbObject
  public:
   _dbTechLayerRule(_dbDatabase*);
   _dbTechLayerRule(_dbDatabase*, const _dbTechLayerRule& r);
-  ~_dbTechLayerRule();
 
   _dbTech* getTech();
   _dbBlock* getBlock();
@@ -56,12 +56,12 @@ class _dbTechLayerRule : public _dbObject
 
   // PERSISTANT-MEMBERS
   _dbTechLayerRuleFlags flags_;
-  uint width_;
-  uint spacing_;
+  uint32_t width_;
+  uint32_t spacing_;
   double resistance_;
   double capacitance_;
   double edge_capacitance_;
-  uint wire_extension_;
+  uint32_t wire_extension_;
   dbId<_dbTechNonDefaultRule> non_default_rule_;
   dbId<_dbTechLayer> layer_;
 };

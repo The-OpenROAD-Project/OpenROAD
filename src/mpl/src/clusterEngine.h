@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -161,7 +162,7 @@ class ClusteringEngine
 
   int getNumberOfIOs(Cluster* target) const;
 
-  static bool isIgnoredInst(odb::dbInst* inst);
+  bool isIgnoredInst(odb::dbInst* inst);
 
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
@@ -179,7 +180,6 @@ class ClusteringEngine
   std::vector<odb::dbInst*> getUnfixedMacros();
   void setDieArea();
   void setFloorplanShape();
-  void searchForFixedInstsInsideFloorplanShape();
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
@@ -214,6 +214,7 @@ class ClusteringEngine
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
+  bool mergeHonorsMaxThresholds(const Cluster* a, const Cluster* b) const;
   bool sameConnectionSignature(Cluster* a, Cluster* b) const;
   bool strongConnection(Cluster* a,
                         Cluster* b,
@@ -308,7 +309,6 @@ class ClusteringEngine
   int min_macro_{0};
   int max_std_cell_{0};
   int min_std_cell_{0};
-  const float size_tolerance_ = 0.1;
 
   // Variables for data flow
   DataFlow data_connections_;
@@ -316,11 +316,12 @@ class ClusteringEngine
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
   const int max_num_of_hops_ = 5;
-
   const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
+
+  std::unordered_set<odb::dbInst*> ignorable_macros_;
 };
 
 }  // namespace mpl

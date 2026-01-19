@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -17,13 +18,15 @@ struct dbTechLayerCutClassRuleFlags
 {
   bool length_valid : 1;
   bool cuts_valid : 1;
-  uint spare_bits : 30;
+  uint32_t spare_bits : 30;
 };
 
 class _dbTechLayerCutClassRule : public _dbObject
 {
  public:
   _dbTechLayerCutClassRule(_dbDatabase*);
+
+  ~_dbTechLayerCutClassRule();
 
   bool operator==(const _dbTechLayerCutClassRule& rhs) const;
   bool operator!=(const _dbTechLayerCutClassRule& rhs) const

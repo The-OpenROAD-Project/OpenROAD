@@ -7,69 +7,69 @@
             "type":"char *",
             "flags":["no-set"],
             "default":"nullptr",
-            "schema":"db_schema_update_hierarchy"
+            "schema":"kSchemaUpdateHierarchy"
         },
         {
             "name":"flags_",
-            "type":"uint",
+            "type":"uint32_t",
             "flags":["private"],
             "default":"0",
-            "schema":"db_schema_update_hierarchy"	
+            "schema":"kSchemaUpdateHierarchy"
 	},
         {
 	    "name":"parent_moditerm_",
 	    "type":"dbId<_dbModITerm>",
 	    "parent":"dbBlock",
 	    "flags":["private"],
-	    "schema":"db_schema_update_hierarchy"	
+	    "schema":"kSchemaUpdateHierarchy"
         },
         {
             "name":"parent_",
             "type":"dbId<_dbModule>",
             "flags":["no-set"],
-            "schema":"db_schema_update_hierarchy",
+            "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
         {
             "name":"modnet_",
             "type":"dbId<_dbModNet>",
             "flags":["private"],
-            "schema":"db_schema_update_hierarchy",
+            "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
         {
             "name":"next_net_modbterm_",
             "type":"dbId<_dbModBTerm>",
             "flags":["private"],
-            "schema":"db_schema_update_hierarchy",
+            "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
         {
             "name":"prev_net_modbterm_",
             "type":"dbId<_dbModBTerm>",
             "flags":["private"],
-            "schema":"db_schema_update_hierarchy",
+            "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
         {
             "name":"busPort_",
             "type":"dbId<_dbBusPort>",
             "flags":["private"],
-            "schema":"db_schema_odb_busport",
+            "schema":"kSchemaOdbBusport",
             "parent":"dbBlock"
         },
         {
             "name":"next_entry_",
             "type":"dbId<_dbModBTerm>",
             "flags":["private"],
-            "schema":"db_schema_update_hierarchy",
+            "schema":"kSchemaUpdateHierarchy",
             "parent":"dbBlock"
         },
         {
             "name":"prev_entry_",
             "type":"dbId<_dbModBTerm>",
             "flags":["private"],
-            "schema":"db_schema_hier_port_removal",
+            "schema":"kSchemaHierPortRemoval",
             "parent":"dbBlock"
         }
     ],

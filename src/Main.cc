@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <libgen.h>
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
 #include <strings.h>
 
@@ -314,14 +313,8 @@ int main(int argc, char* argv[])
 #ifdef ENABLE_READLINE
 static int tclReadlineInit(Tcl_Interp* interp)
 {
-  std::array<const char*, 7> readline_cmds = {
-      "history event",
-      "eval $auto_index(::tclreadline::ScriptCompleter)",
-      "::tclreadline::readline builtincompleter true",
-      "::tclreadline::readline customcompleter ::tclreadline::ScriptCompleter",
-      "proc ::tclreadline::prompt1 {} { return \"openroad> \" }",
-      "proc ::tclreadline::prompt2 {} { return \"...> \" }",
-      "::tclreadline::Loop"};
+  std::array<const char*, 2> readline_cmds
+      = {"ord::setup_tclreadline", "::tclreadline::Loop"};
 
   for (auto cmd : readline_cmds) {
     if (TCL_ERROR == Tcl_Eval(interp, cmd)) {
@@ -371,8 +364,7 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
     )";
 
   if (Tcl_Eval(interp, tcl_script) == TCL_ERROR) {
-    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp)
-              << std::endl;
+    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp) << '\n';
     return "";
   }
 

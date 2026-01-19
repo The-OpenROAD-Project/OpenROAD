@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 
@@ -12,7 +13,6 @@
 #include "odb/db.h"
 #include "odb/dbId.h"
 #include "odb/dbSet.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -27,6 +27,8 @@ class _dbPowerSwitch : public _dbObject
 {
  public:
   _dbPowerSwitch(_dbDatabase*);
+
+  ~_dbPowerSwitch();
 
   bool operator==(const _dbPowerSwitch& rhs) const;
   bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }

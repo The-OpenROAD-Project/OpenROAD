@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
@@ -12,7 +13,6 @@
 #include "odb/dbMatrix.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -33,7 +33,7 @@ class _dbDatabase;
 class _dbMetalWidthViaMap;
 class _dbCellEdgeSpacing;
 class dbTechLayerItr;
-template <uint page_size>
+template <uint32_t page_size>
 class dbBoxItr;
 class dbIStream;
 class dbOStream;
@@ -49,7 +49,7 @@ struct _dbTechFlags
   dbOnOffType::Value use_min_spacing_obs : 1;
   dbOnOffType::Value has_use_min_spacing_pin : 1;
   dbOnOffType::Value use_min_spacing_pin : 1;
-  uint spare_bits : 22;
+  uint32_t spare_bits : 22;
 };
 
 class _dbTech : public _dbObject
@@ -68,7 +68,7 @@ class _dbTech : public _dbObject
   void collectMemInfo(MemInfo& info);
 
  private:
-  double _version;
+  double version_;
 
  public:
   // PERSISTANT-MEMBERS

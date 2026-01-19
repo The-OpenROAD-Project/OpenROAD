@@ -89,14 +89,14 @@ void _dbTechLayerSpacingTablePrlRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["length_tbl"].add(length_tbl_);
-  info.children_["width_tbl"].add(width_tbl_);
-  MemInfo& spacing_info = info.children_["spacing_tbl"];
+  info.children["length_tbl"].add(length_tbl_);
+  info.children["width_tbl"].add(width_tbl_);
+  MemInfo& spacing_info = info.children["spacing_tbl"];
   for (const auto& s : spacing_tbl_) {
     spacing_info.add(s);
   }
-  info.children_["influence_tbl"].add(influence_tbl_);
-  info.children_["within_tbl"].add(_within_tbl_);
+  info.children["influence_tbl"].add(influence_tbl_);
+  info.children["within_tbl"].add(_within_tbl_);
   // User Code End collectMemInfo
 }
 
@@ -171,24 +171,23 @@ bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
 
 // User Code Begin dbTechLayerSpacingTablePrlRulePublicMethods
 
-uint _dbTechLayerSpacingTablePrlRule::getWidthIdx(const int width) const
+uint32_t _dbTechLayerSpacingTablePrlRule::getWidthIdx(const int width) const
 {
-  auto pos = --(std::lower_bound(width_tbl_.begin(), width_tbl_.end(), width));
+  auto pos = --(std::ranges::lower_bound(width_tbl_, width));
   return std::max(0, (int) std::distance(width_tbl_.begin(), pos));
 }
 
-uint _dbTechLayerSpacingTablePrlRule::getLengthIdx(const int length) const
+uint32_t _dbTechLayerSpacingTablePrlRule::getLengthIdx(const int length) const
 {
-  auto pos
-      = --(std::lower_bound(length_tbl_.begin(), length_tbl_.end(), length));
+  auto pos = --(std::ranges::lower_bound(length_tbl_, length));
   return std::max(0, (int) std::distance(length_tbl_.begin(), pos));
 }
 
 void dbTechLayerSpacingTablePrlRule::setTable(
-    std::vector<int> width_tbl,
-    std::vector<int> length_tbl,
-    std::vector<std::vector<int>> spacing_tbl,
-    std::map<uint, std::pair<int, int>> excluded_map)
+    const std::vector<int>& width_tbl,
+    const std::vector<int>& length_tbl,
+    const std::vector<std::vector<int>>& spacing_tbl,
+    const std::map<uint32_t, std::pair<int, int>>& excluded_map)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
@@ -206,7 +205,7 @@ void dbTechLayerSpacingTablePrlRule::getTable(
     std::vector<int>& width_tbl,
     std::vector<int>& length_tbl,
     std::vector<std::vector<int>>& spacing_tbl,
-    std::map<uint, std::pair<int, int>>& excluded_map)
+    std::map<uint32_t, std::pair<int, int>>& excluded_map)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
@@ -219,7 +218,7 @@ void dbTechLayerSpacingTablePrlRule::getTable(
 }
 
 void dbTechLayerSpacingTablePrlRule::setSpacingTableInfluence(
-    std::vector<std::tuple<int, int, int>> influence_tbl)
+    const std::vector<std::tuple<int, int, int>>& influence_tbl)
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
@@ -238,7 +237,7 @@ dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
 dbTechLayerSpacingTablePrlRule*
 dbTechLayerSpacingTablePrlRule::getTechLayerSpacingTablePrlRule(
     dbTechLayer* inly,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerSpacingTablePrlRule*)
@@ -259,8 +258,8 @@ int dbTechLayerSpacingTablePrlRule::getSpacing(const int width,
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  uint rowIdx = obj->getWidthIdx(width);
-  uint colIdx = obj->getLengthIdx(length);
+  uint32_t rowIdx = obj->getWidthIdx(width);
+  uint32_t colIdx = obj->getLengthIdx(length);
   return obj->spacing_tbl_[rowIdx][colIdx];
 }
 
@@ -268,7 +267,7 @@ bool dbTechLayerSpacingTablePrlRule::hasExceptWithin(int width) const
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  uint rowIdx = obj->getWidthIdx(width);
+  uint32_t rowIdx = obj->getWidthIdx(width);
   return (obj->_within_tbl_.find(rowIdx) != obj->_within_tbl_.end());
 }
 
@@ -277,7 +276,7 @@ std::pair<int, int> dbTechLayerSpacingTablePrlRule::getExceptWithin(
 {
   _dbTechLayerSpacingTablePrlRule* obj
       = (_dbTechLayerSpacingTablePrlRule*) this;
-  uint rowIdx = obj->getWidthIdx(width);
+  uint32_t rowIdx = obj->getWidthIdx(width);
   return obj->_within_tbl_.at(rowIdx);
 }
 

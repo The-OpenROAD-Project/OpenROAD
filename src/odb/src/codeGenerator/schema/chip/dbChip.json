@@ -21,101 +21,101 @@
     {
       "name": "name_",
       "type": "char *",
-      "schema": "db_schema_chip_extended",
+      "schema": "kSchemaChipExtended",
       "default": "nullptr",
       "flags": ["no-set"]
     },
     {
       "name": "type_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": 0,
-      "schema": "db_schema_chip_extended",
+      "schema": "kSchemaChipExtended",
       "flags": ["private"]
     },
     {
       "name": "offset_",
       "type": "Point",
       "default": "{}",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "width_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "height_",
       "type": "int", 
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "thickness_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "shrink_",
       "type": "float",
       "default": "0.0",
       "comment": "// range (0, 1]",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "seal_ring_east_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "seal_ring_west_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "seal_ring_north_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "seal_ring_south_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "scribe_line_east_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "scribe_line_west_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "scribe_line_north_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "scribe_line_south_",
       "type": "int",
       "default": "0",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "tsv_",
       "type": "bool",
       "default": "false",
-      "schema": "db_schema_chip_extended"
+      "schema": "kSchemaChipExtended"
     },
     {
       "name": "top_",
@@ -147,19 +147,19 @@
       "name": "chipinsts_",
       "type": "dbId<_dbChipInst>",
       "flags": ["private"],
-      "schema":"db_schema_chip_inst"
+      "schema":"kSchemaChipInst"
     },
     {
       "name": "conns_",
       "type": "dbId<_dbChipConn>",
       "flags": ["private"],
-      "schema": "db_schema_chip_region"
+      "schema": "kSchemaChipRegion"
     },
     {
       "name": "nets_",
       "type": "dbId<_dbChipNet>",
       "flags": ["private"],
-      "schema": "db_schema_chip_bump"
+      "schema": "kSchemaChipBump"
     },
     {
       "name": "chipinsts_map_",
@@ -175,7 +175,7 @@
       "name": "tech_",
       "type": "dbId<_dbTech>",
       "flags": ["private"],
-      "schema": "db_schema_chip_tech"
+      "schema": "kSchemaChipTech"
     },
     {
       "name": "marker_categories_map_",
@@ -183,7 +183,7 @@
       "flags": ["private", "no-serial"]
     }
   ],
-  "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr"],
+  "declared_classes": ["dbPropertyItr", "_dbNameCache","dbBlockItr","dbChipCallBackObj"],
   "h_includes": [
     "odb/geom.h"
   ],
@@ -195,6 +195,15 @@
     "dbBlock.h", 
     "dbTech.h", 
     "dbPropertyItr.h",
-    "dbChipConn.h"
+    "dbChipConn.h",
+    "dbChipConnItr.h",
+    "dbChipInst.h",
+    "dbChipInstItr.h",
+    "dbChipNet.h",
+    "dbChipNetItr.h",
+    "dbCommon.h",
+    "odb/dbChipCallBackObj.h",
+    "odb/dbObject.h",
+    "odb/geom.h"
   ]
 } 

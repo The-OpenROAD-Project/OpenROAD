@@ -43,7 +43,6 @@ class SACoreHardMacro;
 using BoundaryToRegionsMap = std::map<Boundary, std::queue<odb::Rect>>;
 using SoftMacroNameToIdMap = std::map<std::string, int>;
 using ClusterToMacroMap = std::map<int, int>;  // cluster_id -> macro_id
-using BundledNetList = std::vector<BundledNet>;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
@@ -101,7 +100,6 @@ class HierRTLMP
   void setNotchWeight(float notch_weight);
   void setMacroBlockageWeight(float macro_blockage_weight);
   void setTargetUtil(float target_util);
-  void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
   void setKeepClusteringData(bool keep_clustering_data);
@@ -146,7 +144,9 @@ class HierRTLMP
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   IntervalList computeWidthIntervals(const TilingList& tilings);
-  void setTightPackingTilings(Cluster* macro_array);
+  TilingList generateTilingsForMacroCluster(int macro_width,
+                                            int macro_height,
+                                            int number_of_macros);
   void searchAvailableRegionsForUnconstrainedPins();
   BoundaryToRegionsMap getBoundaryToBlockedRegionsMap(
       const std::vector<odb::Rect>& blocked_regions_for_pins) const;
@@ -166,15 +166,22 @@ class HierRTLMP
   void setPlacementBlockages();
 
   // Fine Shaping
-  bool runFineShaping(Cluster* parent,
-                      std::vector<SoftMacro>& macros,
-                      std::map<std::string, int>& soft_macro_id_map,
-                      float target_util,
-                      float target_dead_space);
+  int computeTinyClusterMaxNumberOfStdCells() const;
+  bool singleArraySingleStdCellCluster(
+      const std::vector<SoftMacro>& soft_macros) const;
+  void setMacroClustersShapes(std::vector<SoftMacro>& soft_macros) const;
+  std::vector<float> computeUtilizationList(float total_number_of_runs) const;
+  bool validUtilization(float utilization,
+                        const odb::Rect& outline,
+                        const std::vector<SoftMacro>& soft_macros) const;
+  std::vector<SoftMacro> applyUtilization(
+      float utilization,
+      const odb::Rect& outline,
+      const std::vector<SoftMacro>& original_soft_macros) const;
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
-  void placeChildren(Cluster* parent, bool ignore_std_cell_area = false);
+  void placeChildren(Cluster* parent);
 
   std::vector<odb::Rect> findBlockagesWithinOutline(
       const odb::Rect& outline) const;
@@ -195,10 +202,7 @@ class HierRTLMP
   void updateChildrenRealLocation(Cluster* parent,
                                   float offset_x,
                                   float offset_y);
-  void mergeNets(std::vector<BundledNet>& nets);
-  void considerFixedMacro(const odb::Rect& outline,
-                          std::vector<SoftMacro>& sa_macros,
-                          Cluster* fixed_macro_cluster) const;
+  void mergeNets(BundledNetList& nets);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
@@ -242,13 +246,14 @@ class HierRTLMP
                                                const odb::Rect& overlay) const;
 
   // For debugging
+  void reportShapeCurves(const std::vector<SoftMacro>& soft_macros) const;
   template <typename SACore>
   void printPlacementResult(Cluster* parent,
                             const odb::Rect& outline,
                             SACore* sa_core);
   void writeNetFile(const std::string& file_name_prefix,
                     std::vector<SoftMacro>& macros,
-                    std::vector<BundledNet>& nets);
+                    BundledNetList& nets);
   void writeFloorplanFile(const std::string& file_name_prefix,
                           std::vector<SoftMacro>& macros);
   template <typename SACore>
@@ -271,13 +276,7 @@ class HierRTLMP
   int num_threads_ = 10;       // number of threads
   const int random_seed_ = 0;  // random seed for deterministic
 
-  float target_dead_space_ = 0.2;  // dead space for the cluster
-  float target_util_ = 0.25;       // target utilization of the design
-  const float target_dead_space_step_ = 0.05;  // step for dead space
-  const float target_util_step_ = 0.1;         // step for utilization
-  const float num_target_util_ = 10;
-  const float num_target_dead_space_ = 20;
-
+  float target_utilization_{0.0};
   float min_ar_ = 0.3;  // the aspect ratio range for StdCellCluster (min_ar_, 1
                         // / min_ar_)
 
@@ -300,6 +299,7 @@ class HierRTLMP
   std::vector<odb::Rect> io_blockages_;
 
   PinAccessDepthLimits pin_access_depth_limits_;
+  float tiny_cluster_max_number_of_std_cells_{0};
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;

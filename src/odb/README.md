@@ -70,13 +70,13 @@ All database objects are in the `odb` namespace.
 -   `dbLib`
 
 All database objects have a 32bit object identifier accessed with the
-`dbObject::getOID` base class member function that returns a `uint`. This
+`dbObject::getOID` base class member function that returns a `uint32_t`. This
 identifier is preserved across save/restores of the database so it should
 be used to reference database object by data structures instead of pointers
 if the reference lifetime is across database save/restores. OIDs allow the
 database to have exactly the same layout across save/restores.
 
-The database distance units are **nanometers** and use the type `uint`.
+The database distance units are **nanometers** and use the type `uint32_t`.
 
 ### Create Physical Cluster
 

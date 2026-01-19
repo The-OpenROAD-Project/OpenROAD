@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 
 #include "odb/dbIterator.h"
@@ -68,7 +69,7 @@ class dbSetIterator<dbCCSeg>
  private:
   friend class dbSet<dbCCSeg>;
 
-  dbSetIterator(dbIterator* itr, uint id, uint pid)
+  dbSetIterator(dbIterator* itr, uint32_t id, uint32_t pid)
   {
     itr_ = itr;
     cur_ = id;
@@ -76,8 +77,8 @@ class dbSetIterator<dbCCSeg>
   }
 
   dbIterator* itr_;
-  uint cur_;
-  uint pid_;
+  uint32_t cur_;
+  uint32_t pid_;
 };
 
 template <>
@@ -110,7 +111,7 @@ class dbSet<dbCCSeg>
   ///
   /// Returns the number of items in this set.
   ///
-  uint size() { return itr_->size(parent_); }
+  uint32_t size() { return itr_->size(parent_); }
 
   ///
   /// Return a begin() iterator.
@@ -126,7 +127,7 @@ class dbSet<dbCCSeg>
   /// Returns the maximum number sequential elements the this set
   /// may iterate.
   ///
-  uint sequential() { return itr_->sequential(); }
+  uint32_t sequential() { return itr_->sequential(); }
 
   ///
   /// Returns true if this set is reversible.
@@ -147,7 +148,7 @@ class dbSet<dbCCSeg>
  private:
   dbIterator* itr_;
   dbObject* parent_;
-  uint pid_;
+  uint32_t pid_;
 };
 
 }  // namespace odb

@@ -44,7 +44,6 @@ class RoutingCallBack : public dst::JobCallBack
       : router_(router),
         dist_(dist),
         logger_(logger),
-        init_(true),
         pa_(router->getDesign(),
             logger,
             nullptr,
@@ -241,7 +240,7 @@ class RoutingCallBack : public dst::JobCallBack
   utl::Logger* logger_;
   std::string design_path_;
   std::string router_cfg_path_;
-  bool init_;
+  bool init_{true};
   FlexDRViaData via_data_;
   FlexPA pa_;
 };

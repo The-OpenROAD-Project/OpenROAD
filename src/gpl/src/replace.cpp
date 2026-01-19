@@ -270,6 +270,8 @@ bool Replace::initNesterovPlace(const PlaceOptions& options, const int threads)
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
+    npVars.debug_rudy_start = gui_debug_rudy_start_;
+    npVars.debug_rudy_stride = gui_debug_rudy_stride_;
     npVars.debug_generate_images = gui_debug_generate_images_;
     npVars.debug_images_path = gui_debug_images_path_;
 
@@ -343,7 +345,7 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
     density = nbVec_[0]->getUniformTargetDensity();
   }
 
-  std::string _ = log_->redirectStringEnd();
+  log_->redirectStringEnd();  // discard output
   return density;
 }
 
@@ -353,6 +355,8 @@ void Replace::setDebug(const int pause_iterations,
                        const bool initial,
                        odb::dbInst* inst,
                        const int start_iter,
+                       const int start_rudy,
+                       const int rudy_stride,
                        const bool generate_images,
                        const std::string& images_path)
 {
@@ -363,6 +367,8 @@ void Replace::setDebug(const int pause_iterations,
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
+  gui_debug_rudy_start_ = start_rudy;
+  gui_debug_rudy_stride_ = rudy_stride;
   gui_debug_generate_images_ = generate_images;
   gui_debug_images_path_ = images_path;
 }

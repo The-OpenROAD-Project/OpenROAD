@@ -321,6 +321,7 @@ bool FlexPA::genPatternsGC(
     const std::set<frBlockObject*>& target_objs,
     const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
     const PatternType pattern_type,
+    // NOLINTNEXTLINE(readability-non-const-parameter)
     std::set<frBlockObject*>* owners)
 {
   if (objs.empty()) {

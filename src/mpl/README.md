@@ -41,7 +41,6 @@ rtl_macro_placer
     [-notch_weight notch_weight]
     [-macro_blockage_weight macro_blockage_weight]
     [-target_util target_util]
-    [-target_dead_space target_dead_space]
     [-min_ar min_ar]
     [-report_directory report_directory]
     [-write_macro_placement file_name]
@@ -60,8 +59,7 @@ rtl_macro_placer
 | `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-halo_width` | Horizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
 | `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Defines the global fence bounding box coordinates. The default values are the core area coordinates). |
-| `-target_util` | Specifies the target utilization of `MixedCluster` and has higher priority than target_dead_space. The allowed values are floats, and the default value is `0.25`. |
-| `-target_dead_space` | Specifies the target dead space percentage, which influences the utilization of `StandardCellCluster`. The allowed values are floats, and the default value is `0.05`. |
+| `-target_util` | Specifies the target utilization. The allowed values are floats and the default value is `0.25`. |
 | `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a `StandardCellCluster` from $[a, \frac{1}{a}]$. The allowed values are floats, and the default value is `0.33`. |
 | `-report_directory` | Save reports to this directory. |
 | `-write_macro_placement` | Generates a file with the design's macro placement in the format of calls for the `place_macro` command. |

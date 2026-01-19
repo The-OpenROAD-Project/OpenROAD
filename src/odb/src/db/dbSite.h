@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -19,12 +20,12 @@ class _dbSite;
 
 struct dbSiteFlags
 {
-  uint x_symmetry : 1;
-  uint y_symmetry : 1;
-  uint R90_symmetry : 1;
-  dbSiteClass::Value _class : 4;
-  uint is_hybrid : 1;
-  uint spare_bits : 24;
+  uint32_t x_symmetry : 1;
+  uint32_t y_symmetry : 1;
+  uint32_t R90_symmetry : 1;
+  dbSiteClass::Value site_class : 4;
+  uint32_t is_hybrid : 1;
+  uint32_t spare_bits : 24;
 };
 
 struct OrientedSiteInternal

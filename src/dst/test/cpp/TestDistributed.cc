@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -10,15 +11,15 @@
 #include "gtest/gtest.h"
 #include "utl/Logger.h"
 
-using namespace dst;
+namespace dst {
 
 TEST(test_suite, test_distributed)
 {
   utl::Logger* logger = new utl::Logger();
   Distributed* dist = new Distributed(logger);
   std::string local_ip = "127.0.0.1";
-  unsigned short worker_port = 1235;
-  unsigned short balancer_port = 1236;
+  uint16_t worker_port = 1235;
+  uint16_t balancer_port = 1236;
 
   // Test callbacks interface
   dist->addCallBack(new HelperCallBack(dist));
@@ -47,3 +48,5 @@ TEST(test_suite, test_distributed)
   EXPECT_TRUE(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
   EXPECT_EQ(result.getJobType(), JobMessage::JobType::kSuccess);
 }
+
+}  // namespace dst

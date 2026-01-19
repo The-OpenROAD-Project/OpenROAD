@@ -18,7 +18,7 @@
 
 namespace odb {
 
-uint dbObject::getId() const
+uint32_t dbObject::getId() const
 {
   return getImpl()->getOID();
 }

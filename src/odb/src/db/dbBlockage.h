@@ -3,9 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,13 +18,13 @@ class dbOStream;
 
 struct _dbBlockageFlags
 {
-  uint pushed_down : 1;
-  uint soft : 1;
+  uint32_t pushed_down : 1;
+  uint32_t soft : 1;
   // For denoting that the blockage is not to be written or
   // rendered. It only exists to support non-rectangular
   // floorplans.
-  uint is_system_reserved : 1;
-  uint spare_bits : 29;
+  uint32_t is_system_reserved : 1;
+  uint32_t spare_bits : 29;
 };
 
 class _dbBlockage : public _dbObject
@@ -31,7 +32,6 @@ class _dbBlockage : public _dbObject
  public:
   _dbBlockage(_dbDatabase* db);
   _dbBlockage(_dbDatabase* db, const _dbBlockage& b);
-  ~_dbBlockage();
 
   _dbInst* getInst();
   _dbBox* getBBox() const;
@@ -64,13 +64,9 @@ inline _dbBlockage::_dbBlockage(_dbDatabase*, const _dbBlockage& b)
 {
 }
 
-inline _dbBlockage::~_dbBlockage()
-{
-}
-
 inline dbOStream& operator<<(dbOStream& stream, const _dbBlockage& blockage)
 {
-  uint* bit_field = (uint*) &blockage.flags_;
+  uint32_t* bit_field = (uint32_t*) &blockage.flags_;
   stream << *bit_field;
   stream << blockage.inst_;
   stream << blockage.bbox_;
@@ -80,7 +76,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbBlockage& blockage)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbBlockage& blockage)
 {
-  uint* bit_field = (uint*) &blockage.flags_;
+  uint32_t* bit_field = (uint32_t*) &blockage.flags_;
   stream >> *bit_field;
   stream >> blockage.inst_;
   stream >> blockage.bbox_;

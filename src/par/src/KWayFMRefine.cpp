@@ -6,6 +6,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <thread>
 #include <utility>
@@ -141,10 +142,8 @@ float KWayFMRefine::Pass(
 
   // find the best solution and restore the status which achieves the best
   // solution traverse the moves_trace in the reversing order
-  for (auto move_iter = moves_trace.rbegin(); move_iter != moves_trace.rend();
-       move_iter++) {
+  for (auto& vertex_move : std::ranges::reverse_view(moves_trace)) {
     // stop when we encounter the best_vertex_id
-    auto& vertex_move = *move_iter;
     if (vertex_move->GetVertex() == best_vertex_id) {
       break;  // stop here
     }

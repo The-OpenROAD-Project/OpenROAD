@@ -15,13 +15,13 @@
   "fields": [
     {
       "name": "unused_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": [
         "private"
       ],
       "default": 0,
       "comment": "// As the elements of a free dbTable are 12 bytes long, we need this additional member in order to make _dbScanList big enough to allow safe casting between table members.",
-      "schema": "db_schema_block_owns_scan_insts"
+      "schema": "kSchemaBlockOwnsScanInsts"
     },
     {
       "name": "first_scan_inst_",
@@ -29,7 +29,7 @@
       "flags": [
         "private"
       ],
-      "schema": "db_schema_block_owns_scan_insts"
+      "schema": "kSchemaBlockOwnsScanInsts"
     }
   ]
 }

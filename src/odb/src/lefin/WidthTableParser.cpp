@@ -10,7 +10,7 @@
 #include "odb/lefin.h"
 #include "parserUtils.h"
 
-using namespace odb;
+namespace odb {
 
 void WidthTableParser::addWidth(double width)
 {
@@ -52,3 +52,5 @@ void WidthTableParser::parse(const std::string& s)
     }
   });
 }
+
+}  // namespace odb

@@ -48,7 +48,7 @@ void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
     // draw guides
     NetRouteMap& routes = groute_->getRoutes();
-    GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
+    GRoute& groute = routes[net];
     for (GSegment& seg : groute) {
       int layer1 = seg.init_layer;
       int layer2 = seg.final_layer;

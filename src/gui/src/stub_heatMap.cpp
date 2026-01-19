@@ -41,9 +41,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
 {
 }
 
-HeatMapDataSource::~HeatMapDataSource()
-{
-}
+HeatMapDataSource::~HeatMapDataSource() = default;
 
 void HeatMapDataSource::registerHeatMap()
 {

@@ -31,10 +31,9 @@ odb::dbTechLayer* Shape::getLayer() const
   return layer_;
 }
 
-std::vector<std::unique_ptr<Connection>> Shape::connectNodes(
-    const IRNetwork::NodeTree& layer_nodes)
+Connections Shape::connectNodes(const IRNetwork::NodeTree& layer_nodes)
 {
-  std::vector<std::unique_ptr<Connection>> shape_connections;
+  Connections shape_connections;
 
   Node::NodeSet used;
 

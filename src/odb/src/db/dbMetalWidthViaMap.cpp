@@ -12,6 +12,8 @@
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbTech.h"
 // User Code End Includes
 namespace odb {
@@ -94,7 +96,7 @@ void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["via_name"].add(via_name_);
+  info.children["via_name"].add(via_name_);
   // User Code End collectMemInfo
 }
 
@@ -226,7 +228,7 @@ void dbMetalWidthViaMap::destroy(dbMetalWidthViaMap* via_map)
 }
 
 dbMetalWidthViaMap* dbMetalWidthViaMap::getMetalWidthViaMap(dbTech* tech,
-                                                            uint dbid)
+                                                            uint32_t dbid)
 {
   _dbTech* _tech = (_dbTech*) tech;
   return (dbMetalWidthViaMap*) _tech->metal_width_via_map_tbl_->getPtr(dbid);

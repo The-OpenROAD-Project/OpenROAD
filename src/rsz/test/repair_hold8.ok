@@ -9,8 +9,8 @@ worst slack max 1.84
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |  -0.088 |  -0.151 | r2/D
-    final |       0 |      38 |            0 |  +139.0% |   0.207 |   0.000 | r2/D
+    final |       0 |      37 |            0 |  +135.4% |   0.209 |   0.000 | r1/D
 --------------------------------------------------------------------------------------
-[INFO RSZ-0032] Inserted 38 hold buffers.
+[INFO RSZ-0032] Inserted 37 hold buffers.
 worst slack min 0.21
 worst slack max 1.64
