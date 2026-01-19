@@ -152,6 +152,11 @@ set_skip_large_fanout(int skip_large_fanout)
   getGlobalRouter()->setSkipLargeFanoutNets(skip_large_fanout);
 }
 
+void set_show_runtime(bool show_runtime)
+{
+  getGlobalRouter()->setShowRuntime(show_runtime);
+}
+
 void
 global_route(bool start_incremental, bool end_incremental)
 {

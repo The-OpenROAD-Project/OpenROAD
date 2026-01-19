@@ -152,7 +152,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-start_incremental] \
                                   [-end_incremental] \
                                   [-use_cugr] \
-                                  [-resistance_aware]
+                                  [-resistance_aware] \
+                                  [-show_runtime]
 }
 
 proc global_route { args } {
@@ -162,7 +163,7 @@ proc global_route { args } {
           -skip_large_fanout_nets
          } \
     flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental \
-          -use_cugr}
+          -use_cugr -show_runtime}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -230,6 +231,8 @@ proc global_route { args } {
 
   set start_incremental [info exists flags(-start_incremental)]
   set end_incremental [info exists flags(-end_incremental)]
+
+  grt::set_show_runtime [info exists flags(-show_runtime)]
 
   grt::global_route $start_incremental $end_incremental
 

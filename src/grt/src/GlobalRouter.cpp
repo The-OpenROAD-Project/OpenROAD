@@ -4,6 +4,7 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -303,6 +304,7 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool start_incremental,
                                bool end_incremental)
 {
+  auto start = std::chrono::high_resolution_clock::now();
   bool has_routable_nets = false;
   is_incremental_ = (start_incremental || end_incremental);
 
@@ -405,6 +407,17 @@ void GlobalRouter::globalRoute(bool save_guides,
                      "Global routing finished with congestion. Check the "
                      "congestion regions in the DRC Viewer.");
     }
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  if (show_runtime_) {
+    auto runtime
+        = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+    int hour = runtime.count() / 3600;
+    int min = (runtime.count() % 3600) / 60;
+    int sec = runtime.count() % 60;
+    logger_->info(
+        GRT, 303, "Global routing runtime = {:02}:{:02}:{:02}", hour, min, sec);
   }
 }
 

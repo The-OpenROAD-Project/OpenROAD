@@ -31,6 +31,7 @@ global_route
     [-end_incremental]
     [-use_cugr]
     [-resistance_aware]
+    [-show_runtime]
 ```
 
 #### Options
@@ -50,6 +51,7 @@ global_route
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
 | `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
+| `-show_runtime`| This flag enables runtime report at the end of the global route execution. The default is false. |
 
 ### Set Routing Layers
 
