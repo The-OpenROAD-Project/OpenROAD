@@ -63,10 +63,8 @@ class frInst : public frPinFig
 
   frBlockObjectEnum typeId() const override { return frcInst; }
 
-  odb::dbOrientType getOrient() const { return xform_.getOrient(); }
-  odb::Point getOrigin() const { return xform_.getOffset(); }
-  odb::dbTransform getTransform() const { return xform_; }
-  void setTransform(const odb::dbTransform& xformIn) { xform_ = xformIn; }
+  odb::dbOrientType getOrient() const { return getDBTransform().getOrient(); }
+  odb::Point getOrigin() const { return getDBInst()->getLocation(); }
   odb::dbInst* getDBInst() const { return db_inst_; }
   odb::dbTransform getDBTransform() const { return db_inst_->getTransform(); }
 
@@ -92,16 +90,15 @@ class frInst : public frPinFig
   frInstTerm* getInstTerm(int index);
   bool hasPinAccessUpdate() const { return has_pin_access_update_; }
   void setHasPinAccessUpdate(bool in) { has_pin_access_update_ = in; }
-  odb::dbTransform getLatestPATransform() const { return latest_pa_xform_; }
-  void setLatestPATransform() { latest_pa_xform_ = xform_; }
+  bool isMovedSincePA() const { return pa_xform_ != getDBTransform(); }
+  void setPATransform() { pa_xform_ = getDBTransform(); }
 
  private:
   frMaster* master_{nullptr};
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   odb::dbInst* db_inst_{nullptr};
-  odb::dbTransform xform_;
-  odb::dbTransform latest_pa_xform_;
+  odb::dbTransform pa_xform_;
   int pinAccessIdx_{-1};
   bool toBeDeleted_{false};
   bool has_pin_access_update_{true};

@@ -28,9 +28,7 @@ odb::Rect frInst::getBoundaryBBox() const
 
 odb::dbTransform frInst::getNoRotationTransform() const
 {
-  odb::dbTransform xfm = getTransform();
-  xfm.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
-  return xfm;
+  return {odb::dbOrientType::R0, db_inst_->getLocation()};
 }
 
 frInstTerm* frInst::getInstTerm(const int index)
