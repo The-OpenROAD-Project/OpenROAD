@@ -94,14 +94,16 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    DbuX lx{core.xMin() + cell->getLeft()};
-    DbuY ly{core.yMin() + cell->getBottom()};
+    DbuX final_x{core.xMin() + cell->getLeft()};
+    DbuY final_y{core.yMin() + cell->getBottom()};
 
-    dbBox* bbox = cell->getDbInst()->getBBox();
-    odb::Point initial_location(bbox->xMin(), bbox->yMin());
-    odb::Point final_location(lx.v, ly.v);
+    dbBox* initial_bbox = cell->getDbInst()->getBBox();
+    odb::Point initial_location(initial_bbox->xMin(), initial_bbox->yMin());
+    odb::Point final_location(final_x.v, final_y.v);
     float len = odb::Point::squaredDistance(initial_location, final_location);
     if (len <= 0) {
+      std::cout << "Cell " << cell->getDbInst()->getName() << " is not moved."
+                << std::endl;
       continue;
     }
 

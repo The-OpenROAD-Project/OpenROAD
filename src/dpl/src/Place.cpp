@@ -331,7 +331,26 @@ void Opendp::place()
                    "Placing multi-row cell {}",
                    cell->name());
         if (!mapMove(cell)) {
-          shiftMove(cell);
+          if (debug_observer_) {
+            logger_->report("Unsuccessful mapmove(), multi-row cell {}",
+                            cell->name());
+            debug_observer_->redrawAndPause();
+          }
+          if (shiftMove(cell)) {
+            if (debug_observer_) {
+              logger_->report("Successful shiftmove(), multi-row cell {}",
+                              cell->name());
+              debug_observer_->redrawAndPause();
+            }
+          } else if (debug_observer_) {
+            logger_->report("Unsuccessful shiftmove(), multi-row cell {}",
+                            cell->name());
+            debug_observer_->redrawAndPause();
+          }
+        } else if (debug_observer_) {
+          logger_->report("Successful mapmove(), multi-row cell {}",
+                          cell->name());
+          debug_observer_->redrawAndPause();
         }
       }
     }
@@ -339,7 +358,26 @@ void Opendp::place()
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
       if (!mapMove(cell)) {
-        shiftMove(cell);
+        if (debug_observer_) {
+          logger_->report("Unsuccessful mapmove(), single-row cell {}",
+                          cell->name());
+          debug_observer_->redrawAndPause();
+        }
+        if (shiftMove(cell)) {
+          if (debug_observer_) {
+            logger_->report("Successful shiftmove(), single-row cell {}",
+                            cell->name());
+            debug_observer_->redrawAndPause();
+          }
+        } else if (debug_observer_) {
+          logger_->report("Unsuccessful shiftmove(), single-row cell {}",
+                          cell->name());
+          debug_observer_->redrawAndPause();
+        }
+      } else if (debug_observer_) {
+        logger_->report("Successful mapmove(), single-row cell {}",
+                        cell->name());
+        debug_observer_->redrawAndPause();
       }
     }
   }
