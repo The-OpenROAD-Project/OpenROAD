@@ -1813,28 +1813,15 @@ void DefOut::Impl::writeSpecialPath(dbSBox* box)
 
   dbWireShapeType type = box->getWireShapeType();
 
-  if (mask != 0) {
-    if (type.getValue() == dbWireShapeType::NONE) {
-      *_out << " " << ln << " " << defdist(w) << " ( " << defdist(x1) << " "
-            << defdist(y1) << " ) MASK " << mask << " ( " << defdist(x2) << " "
-            << defdist(y2) << " )";
-    } else {
-      *_out << " " << ln << " " << defdist(w) << " + SHAPE " << type.getString()
-            << " + MASK " << mask << " + ( " << defdist(x1) << " "
-            << defdist(y1) << " ) ( " << defdist(x2) << " " << defdist(y2)
-            << " )";
-    }
-  } else {
-    if (type.getValue() == dbWireShapeType::NONE) {
-      *_out << " " << ln << " " << defdist(w) << " ( " << defdist(x1) << " "
-            << defdist(y1) << " ) ( " << defdist(x2) << " " << defdist(y2)
-            << " )";
-    } else {
-      *_out << " " << ln << " " << defdist(w) << " + SHAPE " << type.getString()
-            << " ( " << defdist(x1) << " " << defdist(y1) << " ) ( "
-            << defdist(x2) << " " << defdist(y2) << " )";
-    }
+  *_out << " " << ln << " " << defdist(w);
+  if (type.getValue() != dbWireShapeType::NONE) {
+    *_out << " + SHAPE " << type.getString();
   }
+  *_out << " ( " << defdist(x1) << " " << defdist(y1) << " )";
+  if (mask != 0) {
+    *_out << " MASK " << mask;
+  }
+  *_out << " ( " << defdist(x2) << " " << defdist(y2) << " )";
 }
 
 void DefOut::Impl::writeNet(dbNet* net)

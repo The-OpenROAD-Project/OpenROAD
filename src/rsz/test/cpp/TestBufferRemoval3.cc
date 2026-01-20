@@ -67,7 +67,7 @@ TEST_F(BufRemTest3, RemoveBufferCase9)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -134,7 +134,7 @@ TEST_F(BufRemTest3, RemoveBufferCase8)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -202,7 +202,7 @@ TEST_F(BufRemTest3, RemoveBufferCase7)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -271,7 +271,7 @@ TEST_F(BufRemTest3, RemoveBufferCase6)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -348,7 +348,7 @@ TEST_F(BufRemTest3, RemoveBufferCase5)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -420,7 +420,7 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -547,7 +547,7 @@ TEST_F(BufRemTest3, RemoveBufferCase3)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -634,7 +634,7 @@ TEST_F(BufRemTest3, RemoveBufferCase2)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -713,7 +713,7 @@ TEST_F(BufRemTest3, RemoveBufferCase1)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -799,7 +799,7 @@ TEST_F(BufRemTest3, RemoveBufferCase0)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),

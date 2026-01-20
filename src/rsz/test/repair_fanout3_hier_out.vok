@@ -13,23 +13,23 @@ module hi_fanout (a,
  wire net1;
  wire net5;
 
- BUF_X1 fanout8 (.A(net5),
-    .Z(net8));
- BUF_X1 fanout7 (.A(net8),
-    .Z(net7));
- BUF_X1 fanout6 (.A(net8),
-    .Z(net6));
- BUF_X1 fanout5 (.A(net6),
-    .Z(a));
- BUF_X1 fanout4 (.A(net5),
-    .Z(net4));
- BUF_X1 fanout3 (.A(net4),
-    .Z(net3));
- BUF_X1 fanout1 (.A(net4),
-    .Z(net1));
  DFF_X1 drvr (.D(in),
     .CK(clk1),
     .Q(net5));
+ BUF_X1 fanout1 (.A(net4),
+    .Z(net1));
+ BUF_X1 fanout3 (.A(net4),
+    .Z(net3));
+ BUF_X1 fanout4 (.A(net5),
+    .Z(net4));
+ BUF_X1 fanout5 (.A(net6),
+    .Z(a));
+ BUF_X1 fanout6 (.A(net8),
+    .Z(net6));
+ BUF_X1 fanout7 (.A(net8),
+    .Z(net7));
+ BUF_X1 fanout8 (.A(net5),
+    .Z(net8));
  hi_fanout_child hi_fanout_inst1 (.net5_1(net7),
     .net5_0(net6),
     .net5(a),
