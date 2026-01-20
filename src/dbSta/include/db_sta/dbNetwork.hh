@@ -10,6 +10,7 @@
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 
 namespace utl {
 class Logger;
@@ -73,7 +74,7 @@ class dbNetwork : public ConcreteNetwork
   CellPortIterator* portIterator(const Cell* cell) const override;
 
   // Sanity checkers
-  void checkAxioms(odb::dbObject* obj = nullptr) const;
+  int checkAxioms(odb::dbObject* obj = nullptr) const;
   void checkSanityModBTerms() const;
   void checkSanityModITerms() const;
   void checkSanityModuleInsts() const;
@@ -119,6 +120,7 @@ class dbNetwork : public ConcreteNetwork
                dbITerm*& iterm,
                dbBTerm*& bterm,
                dbModITerm*& moditerm) const;
+  dbObject* staToDb(const Pin* pin) const;
 
   dbNet* staToDb(const Net* net) const;
   void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
@@ -145,6 +147,12 @@ class dbNetwork : public ConcreteNetwork
   Pin* dbToSta(dbBTerm* bterm) const;
   Term* dbToStaTerm(dbBTerm* bterm) const;
   Pin* dbToSta(dbITerm* iterm) const;
+
+  ///
+  /// Convert dbObject* to Pin* if it's a terminal type (dbITerm or dbBTerm or
+  /// dbModITerm)
+  ///
+  Pin* dbToSta(dbObject* term_obj) const;
   Instance* dbToSta(dbInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
@@ -161,6 +169,11 @@ class dbNetwork : public ConcreteNetwork
 
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
+
+  bool isPGSupply(dbITerm* iterm) const;
+  bool isPGSupply(dbBTerm* bterm) const;
+  bool isPGSupply(dbNet* net) const;
+
   // dbStaCbk::inDbBTermCreate
   Port* makeTopPort(dbBTerm* bterm);
   dbBTerm* isTopPort(const Port*) const;
@@ -178,13 +191,23 @@ class dbNetwork : public ConcreteNetwork
                                      bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
+  bool isSpecial(Net* net);
+  void visitConnectedPins(const Net* net,
+                          PinVisitor& visitor,
+                          NetSet& visited_nets) const override;
+
   using Network::isConnected;
   bool isConnected(const Net* net, const Pin* pin) const override;
   bool isConnected(const Net* net1, const Net* net2) const override;
   bool isConnected(const Pin* source_pin, const Pin* dest_pin) const;
+  // Get the flat net (dbNet) with the Net*.
+  // - Use dbNet::hierarchicalConnect(dbObject* driver, dbObject* load) instead.
+  // - The new API can handle both dbBTerm and dbIterm.
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name = "net");
+
+  // This API is still needed if dbModITerm connection is required.
   void hierarchicalConnect(dbITerm* source_pin,
                            dbModITerm* dest_pin,
                            const char* connection_name = "net");
@@ -246,8 +269,26 @@ class dbNetwork : public ConcreteNetwork
   Instance* instance(const Pin* pin) const override;
   Net* net(const Pin* pin) const override;
   void net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const;
+
+  ///
+  /// Get a dbNet connected to the input pin.
+  /// - If both dbNet and dbModNet are connected to the input pin,
+  ///   this function returns the dbNet.
+  /// - NOTE: If only dbModNet is connected to the input pin, this
+  ///   function returns nullptr. If you need to get the dbNet corresponding to
+  ///   the dbModNet, use findFlatDbNet() instead.
+  ///
   dbNet* flatNet(const Pin* pin) const;
+
+  ///
+  /// Get a dbModNet connected to the input pin.
+  /// - If both dbNet and dbModNet are connected to the input pin,
+  ///   this function returns the dbModNet.
+  /// - If only dbNet is connected to the input pin, this function returns
+  ///   nullptr.
+  ///
   dbModNet* hierNet(const Pin* pin) const;
+
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
   dbBlock* getBlockOf(const Pin* pin) const;
@@ -309,7 +350,6 @@ class dbNetwork : public ConcreteNetwork
   NetPinIterator* pinIterator(const Net* net) const override;
   NetTermIterator* termIterator(const Net* net) const override;
   const Net* highestConnectedNet(Net* net) const override;
-  bool isSpecial(Net* net);
 
   // Get the flat net (dbNet) with the Net*.
   // If the net is a hierarchical net (dbModNet), return nullptr
@@ -331,6 +371,11 @@ class dbNetwork : public ConcreteNetwork
   Net* findFlatNet(const Pin* pin) const;
 
   bool hasPort(const Net* net) const;
+
+  // Return the highest net above the given net.
+  // - If the net is a flat net, return it.
+  // - If the net is a hier net, return the modnet in the highest hierarchy.
+  Net* highestNetAbove(Net* net) const override;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
@@ -366,9 +411,9 @@ class dbNetwork : public ConcreteNetwork
 
   // hierarchy handler, set in openroad tested in network child traverserser
 
-  void setHierarchy() { hierarchy_ = true; }
-  void disableHierarchy() { hierarchy_ = false; }
-  bool hasHierarchy() const { return hierarchy_; }
+  void setHierarchy() { db_->setHierarchy(true); }
+  void disableHierarchy() { db_->setHierarchy(false); }
+  bool hasHierarchy() const { return db_->hasHierarchy(); }
   bool hasHierarchicalElements() const;
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
@@ -388,6 +433,9 @@ class dbNetwork : public ConcreteNetwork
   bool hasMembers(const Port* port) const override;
   Port* findMember(const Port* port, int index) const override;
   PortMemberIterator* memberIterator(const Port* port) const override;
+  PinSet* drivers(const Pin* pin) override;
+  PinSet* drivers(const Net* net) override;
+  void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   using Network::cell;
@@ -411,9 +459,6 @@ class dbNetwork : public ConcreteNetwork
   void makeTopCell();
   void findConstantNets();
   void makeAccessHashes();
-  void visitConnectedPins(const Net* net,
-                          PinVisitor& visitor,
-                          NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name, const char* cell_name);
   ObjectId getDbNwkObjectId(const dbObject* object) const;
 
@@ -442,7 +487,6 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
-  bool hierarchy_ = false;
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;

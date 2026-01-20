@@ -40,7 +40,7 @@ class GRTreeNode : public GRPoint
 
   void addChild(std::shared_ptr<GRTreeNode> child)
   {
-    return children_.push_back(std::move(child));
+    children_.push_back(std::move(child));
   }
 
   static void preorder(

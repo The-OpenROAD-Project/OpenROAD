@@ -19,6 +19,7 @@
 #include "odb/dbMap.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/isotropy.h"
 #include "odb/geom.h"
 #include "odb/wOrder.h"
 #include "odb/util.h"
@@ -34,6 +35,8 @@ using namespace odb;
 
 %typemap(in) (uint) = (int);
 %typemap(out) (uint) = (int);
+%typemap(in) (uint32_t) = (int);
+%typemap(out) (uint32_t) = (int);
 %typemap(out) (uint64) = (long);
 %typemap(out) (int64_t) = (long);
 %apply int* OUTPUT {int* x, int* y, int& ext};
@@ -61,6 +64,7 @@ using namespace odb;
 %include "dbtypes.i"
 %include "dbtypes_common.i"
 
+%include "odb/isotropy.h"
 %include "odb/geom.h"
 %include "polygon.i"
 %include "odb/db.h"

@@ -11,8 +11,7 @@ import os
 # To be used with this substition dict, where portname is a string
 # {'tielohi_port': portname, 'tie' : 'hi'} or
 # {'tielohi_port': portname, 'tie' : 'lo'}
-lohitemp = Template(
-    """set lohiport $tielohi_port
+lohitemp = Template("""set lohiport $tielohi_port
       if { ![sta::is_object $$lohiport] } {
         set lohiport [sta::get_lib_pins $tielohi_port]
         if { [llength $$lohiport] > 1 } {
@@ -23,8 +22,7 @@ lohitemp = Template(
       if { $$lohiport != "" } {
         rmp::set_tie${tie}_port_cmd $$lohiport
       }
-    """
-)
+    """)
 
 
 def set_tiehi(design, tiehi_port):

@@ -865,9 +865,9 @@ proc exclude_io_pin_region { args } {
 
 # Define command arguments for create_blockage (region in microns, density 0-100)
 sta::define_cmd_args "create_blockage" { \
-                [-region {x1 y1 x2 y2}]\
-                [-inst instance]\
-                [-max_density density]\
+                -region {x1 y1 x2 y2} \
+                [-inst instance] \
+                [-max_density density] \
                 [-soft]}
 
 # Placement blockages with various options
@@ -964,6 +964,93 @@ proc create_blockage { args } {
   }
 
   return $blockage
+}
+
+# Define command arguments for create_obstruction
+sta::define_cmd_args "create_obstruction" { \
+                -region {x1 y1 x2 y2} \
+                -layer layer \
+                [-inst instance] \
+                [-slot] [-fill] [-except_pg] \
+                [-min_spacing space] \
+                [-effective_width width]}
+
+# Placement blockages with various options
+proc create_obstruction { args } {
+  sta::parse_key_args "create_obstruction" args \
+    keys {-region -layer -inst -min_spacing -effective_width} \
+    flags {-slot -fill -except_pg}
+
+  # Check that no extra arguments remain
+  sta::check_argc_eq0 "create_obstruction" $args
+
+  if { ![info exists keys(-layer)] } {
+    utl::error ODB 1017 "-layer is required"
+  }
+  set layer [[ord::get_db_tech] findLayer $keys(-layer)]
+  if { $layer == "NULL" } {
+    utl::error ODB 1018 "Unable to find $keys(-layer)"
+  }
+
+  # Check if coordinates are valid
+  if { ![info exists keys(-region)] || [llength $keys(-region)] != 4 } {
+    utl::error ODB 1019 "Invalid coordinates. -region must be a list of 4 values {x1 y1 x2 y2}"
+  }
+
+  set region $keys(-region)
+  set x1 [ord::microns_to_dbu [lindex $region 0]]
+  set y1 [ord::microns_to_dbu [lindex $region 1]]
+  set x2 [ord::microns_to_dbu [lindex $region 2]]
+  set y2 [ord::microns_to_dbu [lindex $region 3]]
+
+  # Validate coordinate ordering
+  if { $x1 >= $x2 || $y1 >= $y2 } {
+    utl::error ODB 1020 "Invalid coordinates: \
+            x1 ([ord::dbu_to_microns $x1]) must be < x2 ([ord::dbu_to_microns $x2]) and \
+            y1 ([ord::dbu_to_microns $y1]) must be < y2 ([ord::dbu_to_microns $y2])"
+  }
+
+  # Get database objects
+  set block [ord::get_db_block]
+
+  # Extract optional arguments
+  set inst_obj "NULL"
+  if { [info exists keys(-inst)] } {
+    set inst_name $keys(-inst)
+    set inst_obj [$block findInst $inst_name]
+    if { $inst_obj == "NULL" } {
+      utl::error ODB 1021 "Instance '$inst_name' not found in design"
+    }
+  }
+
+  # Create the obstruction
+  set obstruction [odb::dbObstruction_create $block $layer $x1 $y1 $x2 $y2 $inst_obj]
+
+  if { $obstruction == "NULL" } {
+    utl::error ODB 1022 "Failed to create obstruction"
+  }
+
+  if { [info exists flags(-slot)] } {
+    $obstruction setSlotObstruction
+  }
+
+  if { [info exists flags(-fill)] } {
+    $obstruction setFillObstruction
+  }
+
+  if { [info exists flags(-except_pg)] } {
+    $obstruction setExceptPGNetsObstruction
+  }
+
+  if { [info exists keys(-min_spacing)] } {
+    $obstruction setMinSpacing [ord::microns_to_dbu $keys(-min_spacing)]
+  }
+
+  if { [info exists keys(-effective_width)] } {
+    $obstruction setEffectiveWidth [ord::microns_to_dbu $keys(-effective_width)]
+  }
+
+  return $obstruction
 }
 
 sta::define_cmd_args "clear_io_pin_constraints" {}

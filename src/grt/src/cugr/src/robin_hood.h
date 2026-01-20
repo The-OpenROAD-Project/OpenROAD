@@ -573,7 +573,7 @@ class BulkPoolAllocator
   // enforce byte alignment of the T's
 #if ROBIN_HOOD(CXX) >= ROBIN_HOOD(CXX14)
   static constexpr size_t ALIGNMENT
-      = (std::max)(std::alignment_of<T>::value, std::alignment_of<T*>::value);
+      = (std::max)(std::alignment_of_v<T>, std::alignment_of_v<T*>);
 #else
   static const size_t ALIGNMENT
       = (ROBIN_HOOD_STD::alignment_of<T>::value
@@ -633,7 +633,7 @@ struct nothrow
 template <typename T>
 struct nothrow
 {
-  static const bool value = std::is_nothrow_swappable<T>::value;
+  static const bool value = std::is_nothrow_swappable_v<T>;
 };
 #endif
 }  // namespace swappable
@@ -655,9 +655,9 @@ struct pair
 
   template <typename U1 = T1,
             typename U2 = T2,
-            typename = typename std::enable_if<
-                std::is_default_constructible<U1>::value
-                && std::is_default_constructible<U2>::value>::type>
+            typename
+            = typename std::enable_if_t<std::is_default_constructible_v<U1>
+                                        && std::is_default_constructible_v<U2>>>
   constexpr pair() noexcept(noexcept(U1()) && noexcept(U2()))
       : first(), second()
   {
@@ -763,35 +763,34 @@ inline void swap(pair<A, B>& a, pair<A, B>& b) noexcept(
 }
 
 template <typename A, typename B>
-inline constexpr bool operator==(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator==(pair<A, B> const& x, pair<A, B> const& y)
 {
   return (x.first == y.first) && (x.second == y.second);
 }
 template <typename A, typename B>
-inline constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x == y);
 }
 template <typename A, typename B>
-inline constexpr bool
-operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
+constexpr bool operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
     noexcept(std::declval<A const&>() < std::declval<A const&>())
     && noexcept(std::declval<B const&>() < std::declval<B const&>()))
 {
   return x.first < y.first || (!(y.first < x.first) && x.second < y.second);
 }
 template <typename A, typename B>
-inline constexpr bool operator>(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator>(pair<A, B> const& x, pair<A, B> const& y)
 {
   return y < x;
 }
 template <typename A, typename B>
-inline constexpr bool operator<=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator<=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x > y);
 }
 template <typename A, typename B>
-inline constexpr bool operator>=(pair<A, B> const& x, pair<A, B> const& y)
+constexpr bool operator>=(pair<A, B> const& x, pair<A, B> const& y)
 {
   return !(x < y);
 }
@@ -928,11 +927,11 @@ struct hash<std::shared_ptr<T>>
 };
 
 template <typename Enum>
-struct hash<Enum, typename std::enable_if<std::is_enum<Enum>::value>::type>
+struct hash<Enum, typename std::enable_if_t<std::is_enum_v<Enum>>>
 {
   size_t operator()(Enum e) const noexcept
   {
-    using Underlying = typename std::underlying_type<Enum>::type;
+    using Underlying = typename std::underlying_type_t<Enum>;
     return hash<Underlying>{}(static_cast<Underlying>(e));
   }
 };
@@ -1056,30 +1055,29 @@ class Table
     : public WrapHash<Hash>,
       public WrapKeyEqual<KeyEqual>,
       detail::NodeAllocator<
-          typename std::conditional<
-              std::is_void<T>::value,
+          typename std::conditional_t<
+              std::is_void_v<T>,
               Key,
-              robin_hood::pair<
-                  typename std::conditional<IsFlat, Key, Key const>::type,
-                  T>>::type,
+              robin_hood::
+                  pair<typename std::conditional_t<IsFlat, Key, Key const>, T>>,
           4,
           16384,
           IsFlat>
 {
  public:
   static constexpr bool is_flat = IsFlat;
-  static constexpr bool is_map = !std::is_void<T>::value;
+  static constexpr bool is_map = !std::is_void_v<T>;
   static constexpr bool is_set = !is_map;
   static constexpr bool is_transparent
       = has_is_transparent<Hash>::value && has_is_transparent<KeyEqual>::value;
 
   using key_type = Key;
   using mapped_type = T;
-  using value_type = typename std::conditional<
+  using value_type = typename std::conditional_t<
       is_set,
       Key,
-      robin_hood::pair<typename std::conditional<is_flat, Key, Key const>::type,
-                       T>>::type;
+      robin_hood::pair<typename std::conditional_t<is_flat, Key, Key const>,
+                       T>>;
   using size_type = size_t;
   using hasher = Hash;
   using key_equal = KeyEqual;
@@ -1136,10 +1134,9 @@ class Table
     {
     }
 
-    DataNode(
-        M& ROBIN_HOOD_UNUSED(map) /*unused*/,
-        DataNode<M, true>&&
-            n) noexcept(std::is_nothrow_move_constructible<value_type>::value)
+    DataNode(M& ROBIN_HOOD_UNUSED(map) /*unused*/,
+             DataNode<M, true>&&
+                 n) noexcept(std::is_nothrow_move_constructible_v<value_type>)
         : mData(std::move(n.mData))
     {
     }
@@ -1157,42 +1154,42 @@ class Table
 
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_map, typename VT::first_type&>::type
-        getFirst() noexcept
+    typename std::enable_if_t<is_map,
+                              typename VT::first_type&> getFirst() noexcept
     {
       return mData.first;
     }
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_set, VT&>::type getFirst() noexcept
+    typename std::enable_if_t<is_set, VT&> getFirst() noexcept
     {
       return mData;
     }
 
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_map, typename VT::first_type const&>::type
-        getFirst() const noexcept
+    typename std::enable_if_t<is_map, typename VT::first_type const&> getFirst()
+        const noexcept
     {
       return mData.first;
     }
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_set, VT const&>::type getFirst() const noexcept
+    typename std::enable_if_t<is_set, VT const&> getFirst() const noexcept
     {
       return mData;
     }
 
     template <typename MT = mapped_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_map, MT&>::type getSecond() noexcept
+    typename std::enable_if_t<is_map, MT&> getSecond() noexcept
     {
       return mData.second;
     }
 
     template <typename MT = mapped_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_set, MT const&>::type getSecond() const noexcept
+    typename std::enable_if_t<is_set, MT const&> getSecond() const noexcept
     {
       return mData.second;
     }
@@ -1243,42 +1240,42 @@ class Table
 
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_map, typename VT::first_type&>::type
-        getFirst() noexcept
+    typename std::enable_if_t<is_map,
+                              typename VT::first_type&> getFirst() noexcept
     {
       return mData->first;
     }
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_set, VT&>::type getFirst() noexcept
+    typename std::enable_if_t<is_set, VT&> getFirst() noexcept
     {
       return *mData;
     }
 
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_map, typename VT::first_type const&>::type
-        getFirst() const noexcept
+    typename std::enable_if_t<is_map, typename VT::first_type const&> getFirst()
+        const noexcept
     {
       return mData->first;
     }
     template <typename VT = value_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_set, VT const&>::type getFirst() const noexcept
+    typename std::enable_if_t<is_set, VT const&> getFirst() const noexcept
     {
       return *mData;
     }
 
     template <typename MT = mapped_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_map, MT&>::type getSecond() noexcept
+    typename std::enable_if_t<is_map, MT&> getSecond() noexcept
     {
       return mData->second;
     }
 
     template <typename MT = mapped_type>
     ROBIN_HOOD(NODISCARD)
-    typename std::enable_if<is_map, MT const&>::type getSecond() const noexcept
+    typename std::enable_if_t<is_map, MT const&> getSecond() const noexcept
     {
       return mData->second;
     }
@@ -1308,12 +1305,13 @@ class Table
   // applicable.
   ROBIN_HOOD(NODISCARD)
   key_type const& getFirstConst(key_type const& k) const noexcept { return k; }
+  key_type&& getFirstConst(key_type&& k) const noexcept { return std::move(k); }
 
   // in case we have non-void mapped_type, we have a standard robin_hood::pair
   template <typename Q = mapped_type>
   ROBIN_HOOD(NODISCARD)
-  typename std::enable_if<!std::is_void<Q>::value, key_type const&>::type
-      getFirstConst(value_type const& vt) const noexcept
+  typename std::enable_if_t<!std::is_void_v<Q>, key_type const&> getFirstConst(
+      value_type const& vt) const noexcept
   {
     return vt.first;
   }
@@ -1419,16 +1417,15 @@ class Table
   class Iter
   {
    private:
-    using NodePtr =
-        typename std::conditional<IsConst, Node const*, Node*>::type;
+    using NodePtr = typename std::conditional_t<IsConst, Node const*, Node*>;
 
    public:
     using difference_type = std::ptrdiff_t;
     using value_type = typename Self::value_type;
-    using reference = typename std::
-        conditional<IsConst, value_type const&, value_type&>::type;
-    using pointer = typename std::
-        conditional<IsConst, value_type const*, value_type*>::type;
+    using reference =
+        typename std::conditional_t<IsConst, value_type const&, value_type&>;
+    using pointer =
+        typename std::conditional_t<IsConst, value_type const*, value_type*>;
     using iterator_category = std::forward_iterator_tag;
 
     // default constructed iterator can be compared to itself, but WON'T return
@@ -1441,8 +1438,7 @@ class Table
 
     // Conversion constructor from iterator to const_iterator.
     template <bool OtherIsConst,
-              typename
-              = typename std::enable_if<IsConst && !OtherIsConst>::type>
+              typename = typename std::enable_if_t<IsConst && !OtherIsConst>>
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     Iter(Iter<OtherIsConst> const& other) noexcept
         : mKeyVals(other.mKeyVals), mInfo(other.mInfo)
@@ -1463,8 +1459,7 @@ class Table
     }
 
     template <bool OtherIsConst,
-              typename
-              = typename std::enable_if<IsConst && !OtherIsConst>::type>
+              typename = typename std::enable_if_t<IsConst && !OtherIsConst>>
     Iter& operator=(Iter<OtherIsConst> const& other) noexcept
     {
       mKeyVals = other.mKeyVals;
@@ -1590,7 +1585,7 @@ class Table
 
   // Shift everything up by one element. Tries to move stuff around.
   void shiftUp(size_t startIdx, size_t const insertion_idx) noexcept(
-      std::is_nothrow_move_assignable<Node>::value)
+      std::is_nothrow_move_assignable_v<Node>)
   {
     auto idx = startIdx;
     ::new (static_cast<void*>(mKeyVals + idx))
@@ -1610,8 +1605,7 @@ class Table
     }
   }
 
-  void shiftDown(size_t idx) noexcept(
-      std::is_nothrow_move_assignable<Node>::value)
+  void shiftDown(size_t idx) noexcept(std::is_nothrow_move_assignable_v<Node>)
   {
     // until we find one that is either empty or has zero offset.
     // TODO(martinus) we don't need to move everything, just the last one for
@@ -1774,14 +1768,14 @@ class Table
   {
     ROBIN_HOOD_TRACE(this)
     if (o.mMask) {
-      mHashMultiplier = std::move(o.mHashMultiplier);
+      mHashMultiplier = o.mHashMultiplier;
       mKeyVals = std::move(o.mKeyVals);
-      mInfo = std::move(o.mInfo);
-      mNumElements = std::move(o.mNumElements);
-      mMask = std::move(o.mMask);
-      mMaxNumElementsAllowed = std::move(o.mMaxNumElementsAllowed);
-      mInfoInc = std::move(o.mInfoInc);
-      mInfoHashShift = std::move(o.mInfoHashShift);
+      mInfo = o.mInfo;
+      mNumElements = o.mNumElements;
+      mMask = o.mMask;
+      mMaxNumElementsAllowed = o.mMaxNumElementsAllowed;
+      mInfoInc = o.mInfoInc;
+      mInfoHashShift = o.mInfoHashShift;
       // set other's mask to 0 so its destructor won't do anything
       o.init();
     }
@@ -1794,14 +1788,14 @@ class Table
       if (o.mMask) {
         // only move stuff if the other map actually has some data
         destroy();
-        mHashMultiplier = std::move(o.mHashMultiplier);
+        mHashMultiplier = o.mHashMultiplier;
         mKeyVals = std::move(o.mKeyVals);
-        mInfo = std::move(o.mInfo);
-        mNumElements = std::move(o.mNumElements);
-        mMask = std::move(o.mMask);
-        mMaxNumElementsAllowed = std::move(o.mMaxNumElementsAllowed);
-        mInfoInc = std::move(o.mInfoInc);
-        mInfoHashShift = std::move(o.mInfoHashShift);
+        mInfo = o.mInfo;
+        mNumElements = o.mNumElements;
+        mMask = o.mMask;
+        mMaxNumElementsAllowed = o.mMaxNumElementsAllowed;
+        mInfoInc = o.mInfoInc;
+        mInfoHashShift = o.mInfoHashShift;
         WHash::operator=(std::move(static_cast<WHash&>(o)));
         WKeyEqual::operator=(std::move(static_cast<WKeyEqual&>(o)));
         DataPool::operator=(std::move(static_cast<DataPool&>(o)));
@@ -1876,8 +1870,8 @@ class Table
     }
 
     // clean up old stuff
-    Destroyer<Self, IsFlat && std::is_trivially_destructible<Node>::value>{}
-        .nodes(*this);
+    Destroyer<Self, IsFlat && std::is_trivially_destructible_v<Node>>{}.nodes(
+        *this);
 
     if (mMask != o.mMask) {
       // no luck: we don't have the same array size allocated, so we need to
@@ -1931,8 +1925,8 @@ class Table
       return;
     }
 
-    Destroyer<Self, IsFlat && std::is_trivially_destructible<Node>::value>{}
-        .nodes(*this);
+    Destroyer<Self, IsFlat && std::is_trivially_destructible_v<Node>>{}.nodes(
+        *this);
 
     auto const numElementsWithBuffer = calcNumElementsWithBuffer(mMask + 1);
     // clear everything, then set the sentinel again
@@ -1974,7 +1968,7 @@ class Table
   }
 
   template <typename Q = mapped_type>
-  typename std::enable_if<!std::is_void<Q>::value, Q&>::type operator[](
+  typename std::enable_if_t<!std::is_void_v<Q>, Q&> operator[](
       const key_type& key)
   {
     ROBIN_HOOD_TRACE(this)
@@ -2006,8 +2000,7 @@ class Table
   }
 
   template <typename Q = mapped_type>
-  typename std::enable_if<!std::is_void<Q>::value, Q&>::type operator[](
-      key_type&& key)
+  typename std::enable_if_t<!std::is_void_v<Q>, Q&> operator[](key_type&& key)
   {
     ROBIN_HOOD_TRACE(this)
     auto idxAndState = insertKeyPrepareEmptySpot(key);
@@ -2169,7 +2162,7 @@ class Table
 
   template <typename OtherKey, typename Self_ = Self>
   // NOLINTNEXTLINE(modernize-use-nodiscard)
-  typename std::enable_if<Self_::is_transparent, size_t>::type count(
+  typename std::enable_if_t<Self_::is_transparent, size_t> count(
       const OtherKey& key) const
   {
     ROBIN_HOOD_TRACE(this)
@@ -2187,7 +2180,7 @@ class Table
 
   template <typename OtherKey, typename Self_ = Self>
   // NOLINTNEXTLINE(modernize-use-nodiscard)
-  typename std::enable_if<Self_::is_transparent, bool>::type contains(
+  typename std::enable_if_t<Self_::is_transparent, bool> contains(
       const OtherKey& key) const
   {
     return 1U == count(key);
@@ -2197,8 +2190,7 @@ class Table
   // Throws std::out_of_range if element cannot be found
   template <typename Q = mapped_type>
   // NOLINTNEXTLINE(modernize-use-nodiscard)
-  typename std::enable_if<!std::is_void<Q>::value, Q&>::type at(
-      key_type const& key)
+  typename std::enable_if_t<!std::is_void_v<Q>, Q&> at(key_type const& key)
   {
     ROBIN_HOOD_TRACE(this)
     auto kv = mKeyVals + findIdx(key);
@@ -2212,7 +2204,7 @@ class Table
   // Throws std::out_of_range if element cannot be found
   template <typename Q = mapped_type>
   // NOLINTNEXTLINE(modernize-use-nodiscard)
-  typename std::enable_if<!std::is_void<Q>::value, Q const&>::type at(
+  typename std::enable_if_t<!std::is_void_v<Q>, Q const&> at(
       key_type const& key) const
   {
     ROBIN_HOOD_TRACE(this)
@@ -2239,9 +2231,9 @@ class Table
   }
 
   template <typename OtherKey, typename Self_ = Self>
-  typename std::enable_if<
+  typename std::enable_if_t<
       Self_::is_transparent,  // NOLINT(modernize-use-nodiscard)
-      const_iterator>::type   // NOLINT(modernize-use-nodiscard)
+      const_iterator>         // NOLINT(modernize-use-nodiscard)
   find(const OtherKey& key) const
   {  // NOLINT(modernize-use-nodiscard)
     ROBIN_HOOD_TRACE(this)
@@ -2265,7 +2257,7 @@ class Table
   }
 
   template <typename OtherKey, typename Self_ = Self>
-  typename std::enable_if<Self_::is_transparent, iterator>::type find(
+  typename std::enable_if_t<Self_::is_transparent, iterator> find(
       const OtherKey& key)
   {
     ROBIN_HOOD_TRACE(this)
@@ -2496,8 +2488,8 @@ class Table
  private:
   template <typename Q = mapped_type>
   ROBIN_HOOD(NODISCARD)
-  typename std::enable_if<!std::is_void<Q>::value, bool>::type
-      has(const value_type& e) const
+  typename std::enable_if_t<!std::is_void_v<Q>, bool> has(
+      const value_type& e) const
   {
     ROBIN_HOOD_TRACE(this)
     auto it = find(e.first);
@@ -2506,8 +2498,8 @@ class Table
 
   template <typename Q = mapped_type>
   ROBIN_HOOD(NODISCARD)
-  typename std::enable_if<std::is_void<Q>::value, bool>::type
-      has(const value_type& e) const
+  typename std::enable_if_t<std::is_void_v<Q>, bool> has(
+      const value_type& e) const
   {
     ROBIN_HOOD_TRACE(this)
     return find(e) != end();
@@ -2824,7 +2816,7 @@ class Table
       return;
     }
 
-    Destroyer<Self, IsFlat && std::is_trivially_destructible<Node>::value>{}
+    Destroyer<Self, IsFlat && std::is_trivially_destructible_v<Node>>{}
         .nodesDoNotDeallocate(*this);
 
     // This protection against not deleting mMask shouldn't be needed as it's
@@ -2890,8 +2882,8 @@ template <typename Key,
           size_t MaxLoadFactor100 = 80>
 using unordered_map = detail::Table<
     sizeof(robin_hood::pair<Key, T>) <= sizeof(size_t) * 6
-        && std::is_nothrow_move_constructible<robin_hood::pair<Key, T>>::value
-        && std::is_nothrow_move_assignable<robin_hood::pair<Key, T>>::value,
+        && std::is_nothrow_move_constructible_v<robin_hood::pair<Key, T>>
+        && std::is_nothrow_move_assignable_v<robin_hood::pair<Key, T>>,
     MaxLoadFactor100,
     Key,
     T,
@@ -2920,8 +2912,8 @@ template <typename Key,
           size_t MaxLoadFactor100 = 80>
 using unordered_set
     = detail::Table<sizeof(Key) <= sizeof(size_t) * 6
-                        && std::is_nothrow_move_constructible<Key>::value
-                        && std::is_nothrow_move_assignable<Key>::value,
+                        && std::is_nothrow_move_constructible_v<Key>
+                        && std::is_nothrow_move_assignable_v<Key>,
                     MaxLoadFactor100,
                     Key,
                     void,

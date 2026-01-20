@@ -421,7 +421,8 @@ void PdnGen::makeCoreGrid(
     const std::vector<odb::dbTechLayer*>& generate_obstructions,
     PowerCell* powercell,
     odb::dbNet* powercontrol,
-    const char* powercontrolnetwork)
+    const char* powercontrolnetwork,
+    const std::vector<odb::dbTechLayer*>& pad_pin_layers)
 {
   auto grid = std::make_unique<CoreGrid>(
       domain, name, starts_with == POWER, generate_obstructions);
@@ -449,6 +450,9 @@ void PdnGen::makeCoreGrid(
           powercontrol,
           GridSwitchedPower::fromString(powercontrolnetwork, logger_)));
     }
+  }
+  if (!pad_pin_layers.empty()) {
+    grid->setupDirectConnect(pad_pin_layers);
   }
   domain->addGrid(std::move(grid));
 }
@@ -514,7 +518,7 @@ void PdnGen::makeInstanceGrid(
     grid = std::make_unique<InstanceGrid>(
         domain, name, starts_with == POWER, inst, generate_obstructions);
   }
-  if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
+  if (!std::ranges::all_of(halo, [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
   grid->setGridToBoundary(pg_pins_to_boundary);
@@ -554,12 +558,11 @@ void PdnGen::makeRing(Grid* grid,
                       const std::vector<odb::dbNet*>& nets,
                       bool allow_out_of_die)
 {
-  std::array<Rings::Layer, 2> layers{Rings::Layer{layer0, width0, spacing0},
-                                     Rings::Layer{layer1, width1, spacing1}};
-  auto ring = std::make_unique<Rings>(grid, layers);
+  auto ring = std::make_unique<Rings>(grid,
+                                      Rings::Layer{layer0, width0, spacing0},
+                                      Rings::Layer{layer1, width1, spacing1});
   ring->setOffset(offset);
-  if (std::any_of(
-          pad_offset.begin(), pad_offset.end(), [](int o) { return o != 0; })) {
+  if (std::ranges::any_of(pad_offset, [](int o) { return o != 0; })) {
     ring->setPadOffset(pad_offset);
   }
   ring->setExtendToBoundary(extend);
@@ -574,6 +577,13 @@ void PdnGen::makeRing(Grid* grid,
   if (!pad_pin_layers.empty() && grid->type() == Grid::Core) {
     auto* core_grid = static_cast<CoreGrid*>(grid);
     core_grid->setupDirectConnect(pad_pin_layers);
+    for (const auto& comp : core_grid->getStraps()) {
+      PadDirectConnectionStraps* straps
+          = dynamic_cast<PadDirectConnectionStraps*>(comp.get());
+      if (straps) {
+        straps->setTargetType(odb::dbWireShapeType::RING);
+      }
+    }
   }
 }
 
@@ -598,7 +608,8 @@ void PdnGen::makeStrap(Grid* grid,
                        bool snap,
                        StartsWith starts_with,
                        ExtensionMode extend,
-                       const std::vector<odb::dbNet*>& nets)
+                       const std::vector<odb::dbNet*>& nets,
+                       bool allow_out_of_core)
 {
   auto strap = std::make_unique<Straps>(
       grid, layer, width, pitch, spacing, number_of_straps);
@@ -609,6 +620,7 @@ void PdnGen::makeStrap(Grid* grid,
     strap->setStartWithPower(starts_with == POWER);
   }
   strap->setNets(nets);
+  strap->setAllowOutsideCoreArea(allow_out_of_core);
   grid->addStrap(std::move(strap));
 }
 
@@ -698,8 +710,8 @@ void PdnGen::createSrouteWires(
     int max_rows,
     int max_columns,
     const std::vector<odb::dbTechLayer*>& ongrid,
-    std::vector<int> metalwidths,
-    std::vector<int> metalspaces,
+    const std::vector<int>& metalwidths,
+    const std::vector<int>& metalspaces,
     const std::vector<odb::dbInst*>& insts)
 {
   sroute_->createSrouteWires(net,
@@ -737,7 +749,7 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     for (auto* domain : domains) {
       for (const auto& grid : domain->getGrids()) {
         const auto nets = grid->getNets();
-        if (std::find(nets.begin(), nets.end(), net) == nets.end()) {
+        if (std::ranges::find(nets, net) == nets.end()) {
           appear_in_all_grids = false;
         }
       }
@@ -800,6 +812,15 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
+  // Remove empty swires
+  for (auto& [net, swire] : net_map) {
+    if (swire->getWires().empty()) {
+      odb::dbSWire::destroy(swire);
+      logger_->warn(
+          utl::PDN, 213, "No shapes were created for net {}.", net->getName());
+    }
+  }
+
   // remove stale results
   odb::dbMarkerCategory* category = block->findMarkerCategory("PDN");
   if (category != nullptr) {
@@ -858,7 +879,7 @@ void PdnGen::ripUp(odb::dbNet* net)
         if (layer == nullptr) {
           continue;
         }
-        if (net_shapes.count(layer) == 0) {
+        if (!net_shapes.contains(layer)) {
           continue;
         }
 

@@ -7,12 +7,15 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "gpl/Replace.h"
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"
 #include "nesterovBase.h"
@@ -224,8 +227,7 @@ RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
       rcK1(options.routabilityRcK1),
       rcK2(options.routabilityRcK2),
       rcK3(options.routabilityRcK3),
-      rcK4(options.routabilityRcK4),
-      maxInflationIter(options.routabilityMaxInflationIter)
+      rcK4(options.routabilityRcK4)
 {
 }
 
@@ -245,6 +247,8 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   nbc_ = std::move(nbc);
   log_ = log;
   nbVec_ = std::move(nbVec);
+  minRcTargetDensity_.resize(nbVec_.size(), 0);
+  inflatedAreaDelta_.resize(nbVec_.size(), 0);
   init();
 }
 
@@ -252,7 +256,36 @@ RouteBase::~RouteBase() = default;
 
 void RouteBase::resetRoutabilityResources()
 {
-  inflatedAreaDelta_ = 0;
+  for (auto& area : inflatedAreaDelta_) {
+    area = 0;
+  }
+}
+
+void RouteBase::revertToMinCongestion()
+{
+  log_->info(GPL,
+             55,
+             "Reverting inflation values and target density from the "
+             "iteration with "
+             "minimum observed routing congestion.");
+  log_->info(GPL, 56, "Minimum observed routing congestion: {:.4f}", minRc_);
+
+  // revert
+  nbc_->revertGCellSizeToMinRc();
+  for (int j = 0; j < nbVec_.size(); j++) {
+    log_->info(GPL,
+               57,
+               "Target density at minimum routing congestion: {:.4f}{}",
+               minRcTargetDensity_[j],
+               nbVec_[j]->getGroup()
+                   ? " (" + std::string(nbVec_[j]->getGroup()->getName()) + ")"
+                   : "");
+
+    nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
+    nbVec_[j]->restoreRemovedFillers();
+    nbVec_[j]->updateDensitySize();
+  }
+  resetRoutabilityResources();
 }
 
 void RouteBase::init()
@@ -263,12 +296,6 @@ void RouteBase::init()
 
   tg_->setLogger(log_);
   nbc_->resizeMinRcCellSize();
-}
-
-void RouteBase::getRudyResult()
-{
-  nbc_->updateDbGCells();
-  updateRudyRoute();
 }
 
 void RouteBase::getGrtResult()
@@ -296,14 +323,14 @@ void RouteBase::loadGrt()
   grouter_->globalRoute();
 }
 
-int64_t RouteBase::inflatedAreaDelta() const
+std::vector<int64_t> RouteBase::inflatedAreaDelta() const
 {
   return inflatedAreaDelta_;
 }
 
-int RouteBase::numCall() const
+int RouteBase::getRevertCount() const
 {
-  return numCall_;
+  return revert_count_;
 }
 
 static float getUsageCapacityRatio(Tile* tile,
@@ -347,8 +374,9 @@ static float getUsageCapacityRatio(Tile* tile,
   return static_cast<float>(curUse) / curCap;
 }
 
-void RouteBase::updateRudyRoute()
+void RouteBase::calculateRudyTiles()
 {
+  nbc_->updateDbGCells();
   grt::Rudy* rudy = grouter_->getRudy();
   rudy->calculateRudy();
   tg_->setNumRoutingLayers(0);
@@ -516,8 +544,9 @@ std::pair<bool, bool> RouteBase::routability(
 
   float curRc;
   if (rbVars_.useRudy) {
-    getRudyResult();
-    curRc = getRudyRC();
+    calculateRudyTiles();
+    updateRudyAverage(true);
+    curRc = getRudyAverage();
   } else {
     getGrtResult();
     curRc = getGrtRC();
@@ -536,6 +565,7 @@ std::pair<bool, bool> RouteBase::routability(
 
   // saving solutions when minRc happen.
   if ((minRc_ - curRc) > 0.001) {
+    is_min_rc_ = true;
     log_->info(GPL,
                48,
                "Routing congestion ({:.4f}) lower than previous minimum "
@@ -543,14 +573,17 @@ std::pair<bool, bool> RouteBase::routability(
                curRc,
                minRc_);
     minRc_ = curRc;
-    minRcTargetDensity_ = nbVec_[0]->getTargetDensity();
     min_RC_violated_cnt_ = 0;
-    nbVec_[0]->clearRemovedFillers();
+    for (int i = 0; i < nbVec_.size(); i++) {
+      minRcTargetDensity_[i] = nbVec_[i]->getTargetDensity();
+      nbVec_[i]->clearRemovedFillers();
+    }
 
     // save cell size info
     nbc_->updateMinRcCellSize();
 
   } else {
+    is_min_rc_ = false;
     min_RC_violated_cnt_++;
     log_->info(GPL,
                49,
@@ -570,212 +603,196 @@ std::pair<bool, bool> RouteBase::routability(
     }
   }
 
-  inflatedAreaDelta_ = 0;
-
-  // run bloating and get inflatedAreaDelta_
-  for (auto& gCell : nbc_->getGCells()) {
-    // only care about "standard cell"
-    if (!gCell->isStdInstance()) {
-      continue;
-    }
-
-    int idxX = std::min((gCell->dCx() - tg_->lx()) / tg_->tileSizeX(),
-                        tg_->tileCntX() - 1);
-    int idxY = std::min((gCell->dCy() - tg_->ly()) / tg_->tileSizeY(),
-                        tg_->tileCntY() - 1);
-
-    size_t index = idxY * tg_->tileCntX() + idxX;
-    if (index >= tg_->tiles().size()) {
-      continue;
-    }
-    Tile* tile = tg_->tiles()[index];
-
-    // Don't care when inflRatio <= 1
-    if (tile->inflatedRatio() <= 1.0) {
-      continue;
-    }
-
-    int64_t prevCellArea
-        = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
-
-    // bloat
-    gCell->setSize(static_cast<int>(std::round(
-                       gCell->dx() * std::sqrt(tile->inflatedRatio()))),
-                   static_cast<int>(std::round(
-                       gCell->dy() * std::sqrt(tile->inflatedRatio()))),
-                   GCell::GCellChange::kRoutability);
-
-    int64_t newCellArea
-        = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
-
-    // deltaArea is equal to area * deltaRatio
-    // both of original and density size will be changed
-    inflatedAreaDelta_ += newCellArea - prevCellArea;
-
-    //    inflatedAreaDelta_
-    //      = static_cast<int64_t>(round(
-    //        static_cast<int64_t>(gCell->dx())
-    //        * static_cast<int64_t>(gCell->dy())
-    //        * (tile->inflatedRatio() - 1.0)));
-  }
-
-  // target ratio
-  float targetInflationDeltaAreaRatio
-      = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
-
-  // TODO: will be implemented
-  if (inflatedAreaDelta_ > targetInflationDeltaAreaRatio
-                               * (nbVec_[0]->getWhiteSpaceArea()
-                                  - (nbVec_[0]->getNesterovInstsArea()
-                                     + nbVec_[0]->getTotalFillerArea()))) {
-    // TODO dynamic inflation procedure?
-  }
-
+  // inflate cells and remove fillers
+  std::vector<double> prev_white_space_area(nbVec_.size());
+  std::vector<double> prev_movable_area(nbVec_.size());
+  std::vector<double> prev_total_filler_area(nbVec_.size());
+  std::vector<double> prev_total_gcells_area(nbVec_.size());
+  std::vector<double> prev_expected_gcells_area(nbVec_.size());
   dbBlock* block = db_->getChip()->getBlock();
-  float inflated_area_delta_microns
-      = block->dbuAreaToMicrons(inflatedAreaDelta_);
-  float inflated_area_delta_percentage = (static_cast<float>(inflatedAreaDelta_)
-                                          / nbVec_[0]->getNesterovInstsArea())
-                                         * 100.0f;
-  log_->info(GPL,
-             51,
-             format_label_um2_with_delta,
-             "Inflated area:",
-             inflated_area_delta_microns,
-             inflated_area_delta_percentage);
-  log_->info(GPL,
-             52,
-             format_label_float,
-             "Placement target density:",
-             nbVec_[0]->getTargetDensity());
+  for (int i = 0; i < nbVec_.size(); i++) {
+    inflatedAreaDelta_[i] = 0;
+    // run bloating and get inflatedAreaDelta_
+    for (auto& gCellHandle : nbVec_[i]->getGCells()) {
+      // only care about "standard cell"
+      if (!gCellHandle->isStdInstance()) {
+        continue;
+      }
+      if (!gCellHandle.isNesterovBaseCommon()) {
+        log_->error(GPL,
+                    159,
+                    "Gcell {} from group {} is a Std instance, but is not "
+                    "from NesterovBaseCommon. This shouldn't happen.",
+                    gCellHandle->getName(),
+                    nbVec_[i]->getGroup()->getName());
+      }
+      auto gCell = nbc_->getGCellByIndex(gCellHandle.getStorageIndex());
 
-  double prev_white_space_area = nbVec_[0]->getWhiteSpaceArea();
-  double prev_movable_area = nbVec_[0]->getMovableArea();
-  double prev_total_filler_area = nbVec_[0]->getTotalFillerArea();
-  double prev_total_gcells_area
-      = nbVec_[0]->getNesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
-  double prev_expected_gcells_area
-      = inflatedAreaDelta_ + prev_total_gcells_area;
+      int idxX = std::min((gCell->dCx() - tg_->lx()) / tg_->tileSizeX(),
+                          tg_->tileCntX() - 1);
+      int idxY = std::min((gCell->dCy() - tg_->ly()) / tg_->tileSizeY(),
+                          tg_->tileCntY() - 1);
 
-  nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
+      size_t index = (idxY * tg_->tileCntX()) + idxX;
+      if (index >= tg_->tiles().size()) {
+        continue;
+      }
+      Tile* tile = tg_->tiles()[index];
 
-  //
-  // max density detection or,
-  // rc not improvement detection -- (not improved the RC values 3 times in a
-  // row)
-  //
-  bool is_max_density_exceeded
-      = nbVec_[0]->getTargetDensity() > rbVars_.maxDensity;
-  bool congestion_not_improving
-      = min_RC_violated_cnt_ >= max_routability_no_improvement_;
-  bool is_max_routability_revert
-      = routability_driven_revert_count >= max_routability_revert_;
+      // Don't care when inflRatio <= 1
+      if (tile->inflatedRatio() <= 1.0) {
+        continue;
+      }
 
-  if (is_max_density_exceeded || congestion_not_improving
-      || is_max_routability_revert) {
-    if (is_max_density_exceeded) {
+      int64_t prevCellArea = static_cast<int64_t>(gCell->dx())
+                             * static_cast<int64_t>(gCell->dy());
+
+      // bloat
+      gCell->setSize(static_cast<int>(std::round(
+                         gCell->dx() * std::sqrt(tile->inflatedRatio()))),
+                     static_cast<int>(std::round(
+                         gCell->dy() * std::sqrt(tile->inflatedRatio()))),
+                     GCell::GCellChange::kRoutability);
+
+      int64_t newCellArea = static_cast<int64_t>(gCell->dx())
+                            * static_cast<int64_t>(gCell->dy());
+
+      // deltaArea is equal to area * deltaRatio
+      // both of original and density size will be changed
+      inflatedAreaDelta_[i] += newCellArea - prevCellArea;
+    }
+
+    float inflated_area_delta_microns
+        = block->dbuAreaToMicrons(inflatedAreaDelta_[i]);
+    float inflated_area_delta_percentage
+        = (static_cast<float>(inflatedAreaDelta_[i])
+           / nbVec_[i]->getNesterovInstsArea())
+          * 100.0f;
+    log_->info(GPL,
+               51,
+               format_label_um2_with_delta,
+               "Inflated area:",
+               inflated_area_delta_microns,
+               inflated_area_delta_percentage);
+    log_->info(GPL,
+               52,
+               format_label_float,
+               "Placement target density:",
+               nbVec_[i]->getTargetDensity());
+
+    prev_white_space_area[i] = nbVec_[i]->getWhiteSpaceArea();
+    prev_movable_area[i] = nbVec_[i]->getMovableArea();
+    prev_total_filler_area[i] = nbVec_[i]->getTotalFillerArea();
+    prev_total_gcells_area[i]
+        = nbVec_[i]->getNesterovInstsArea() + nbVec_[i]->getTotalFillerArea();
+    prev_expected_gcells_area[i]
+        = inflatedAreaDelta_[i] + prev_total_gcells_area[i];
+
+    nbVec_[i]->cutFillerCells(inflatedAreaDelta_[i]);
+
+    // max density detection
+    if (nbVec_[i]->getTargetDensity() > rbVars_.maxDensity) {
       log_->info(GPL,
                  53,
-                 "Target density {:.4f} exceeds the maximum allowed {:.4f}.",
-                 nbVec_[0]->getTargetDensity(),
-                 rbVars_.maxDensity);
-    }
-    if (congestion_not_improving) {
-      log_->info(GPL,
-                 54,
-                 "No improvement in routing congestion for {} consecutive "
-                 "iterations (limit is {}).",
-                 min_RC_violated_cnt_,
-                 max_routability_no_improvement_);
-    }
-    if (is_max_routability_revert) {
-      log_->info(GPL,
-                 91,
-                 "Routability mode reached the maximum allowed reverts {}",
-                 routability_driven_revert_count);
-    }
+                 "Target density {:.4f} exceeds the maximum allowed {:.4f}{}.",
+                 nbVec_[i]->getTargetDensity(),
+                 rbVars_.maxDensity,
+                 nbVec_[i]->getGroup()
+                     ? " in group " + string(nbVec_[i]->getGroup()->getName())
+                     : "");
 
-    log_->info(
-        GPL,
-        55,
-        "Reverting inflation values and target density from the iteration with "
-        "minimum observed routing congestion.");
+      revertToMinCongestion();
+      return std::make_pair(false, true);
+    }
+  }
 
-    log_->info(GPL, 56, "Minimum observed routing congestion: {:.4f}", minRc_);
+  if (routability_driven_revert_count >= max_routability_revert_) {
     log_->info(GPL,
-               57,
-               "Target density at minimum routing congestion: {:.4f}",
-               minRcTargetDensity_);
+               91,
+               "Routability mode reached the maximum allowed reverts {}",
+               routability_driven_revert_count);
 
-    nbVec_[0]->setTargetDensity(minRcTargetDensity_);
-    nbc_->revertGCellSizeToMinRc();
-    nbVec_[0]->restoreRemovedFillers();
-    nbVec_[0]->updateDensitySize();
-    resetRoutabilityResources();
+    revertToMinCongestion();
+    return std::make_pair(false, true);
+  }
+  // rc not improvement detection -- (not improved the RC values 3 times in a
+  // row)
+  if (min_RC_violated_cnt_ >= max_routability_no_improvement_) {
+    log_->info(GPL,
+               54,
+               "No improvement in routing congestion for {} consecutive "
+               "iterations (limit is {}).",
+               min_RC_violated_cnt_,
+               max_routability_no_improvement_);
 
+    revertToMinCongestion();
     return std::make_pair(false, true);
   }
 
   // updateArea
-  nbVec_[0]->updateAreas();
-  nbVec_[0]->checkConsistency();
+  for (int i = 0; i < nbVec_.size(); i++) {
+    nbVec_[i]->updateAreas();
+    nbVec_[i]->checkConsistency();
 
-  double new_total_gcells_area
-      = nbVec_[0]->getNesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
-  double new_expected_gcells_area = inflatedAreaDelta_ + new_total_gcells_area;
+    double new_total_gcells_area
+        = nbVec_[i]->getNesterovInstsArea() + nbVec_[i]->getTotalFillerArea();
+    double new_expected_gcells_area
+        = inflatedAreaDelta_[i] + new_total_gcells_area;
 
-  auto percentDiff = [](double old_value, double new_value) -> double {
-    if (old_value == 0.0) {
-      return 0.0;
-    }
-    return ((new_value - old_value) / old_value) * 100.0;
-  };
+    auto percentDiff = [](double old_value, double new_value) -> double {
+      if (old_value == 0.0) {
+        return 0.0;
+      }
+      return ((new_value - old_value) / old_value) * 100.0;
+    };
 
-  log_->info(
-      GPL,
-      58,
-      format_label_um2_with_delta,
-      "White space area:",
-      block->dbuAreaToMicrons(nbVec_[0]->getWhiteSpaceArea()),
-      percentDiff(prev_white_space_area, nbVec_[0]->getWhiteSpaceArea()));
+    log_->info(
+        GPL,
+        58,
+        format_label_um2_with_delta,
+        "White space area:",
+        block->dbuAreaToMicrons(nbVec_[i]->getWhiteSpaceArea()),
+        percentDiff(prev_white_space_area[i], nbVec_[i]->getWhiteSpaceArea()));
 
-  log_->info(GPL,
-             59,
-             format_label_um2_with_delta,
-             "Movable instances area:",
-             block->dbuAreaToMicrons(nbVec_[0]->getMovableArea()),
-             percentDiff(prev_movable_area, nbVec_[0]->getMovableArea()));
+    log_->info(GPL,
+               59,
+               format_label_um2_with_delta,
+               "Movable instances area:",
+               block->dbuAreaToMicrons(nbVec_[i]->getMovableArea()),
+               percentDiff(prev_movable_area[i], nbVec_[i]->getMovableArea()));
 
-  log_->info(
-      GPL,
-      60,
-      format_label_um2_with_delta,
-      "Total filler area:",
-      block->dbuAreaToMicrons(nbVec_[0]->getTotalFillerArea()),
-      percentDiff(prev_total_filler_area, nbVec_[0]->getTotalFillerArea()));
+    log_->info(GPL,
+               60,
+               format_label_um2_with_delta,
+               "Total filler area:",
+               block->dbuAreaToMicrons(nbVec_[i]->getTotalFillerArea()),
+               percentDiff(prev_total_filler_area[i],
+                           nbVec_[i]->getTotalFillerArea()));
 
-  log_->info(GPL,
-             61,
-             format_label_um2_with_delta,
-             "Total non-inflated area:",
-             block->dbuAreaToMicrons(new_total_gcells_area),
-             percentDiff(prev_total_gcells_area, new_total_gcells_area));
+    log_->info(GPL,
+               61,
+               format_label_um2_with_delta,
+               "Total non-inflated area:",
+               block->dbuAreaToMicrons(new_total_gcells_area),
+               percentDiff(prev_total_gcells_area[i], new_total_gcells_area));
 
-  log_->info(GPL,
-             62,
-             format_label_um2_with_delta,
-             "Total inflated area:",
-             block->dbuAreaToMicrons(new_expected_gcells_area),
-             percentDiff(prev_expected_gcells_area, new_expected_gcells_area));
+    log_->info(
+        GPL,
+        62,
+        format_label_um2_with_delta,
+        "Total inflated area:",
+        block->dbuAreaToMicrons(new_expected_gcells_area),
+        percentDiff(prev_expected_gcells_area[i], new_expected_gcells_area));
 
-  log_->info(GPL,
-             63,
-             format_label_float,
-             "New Target Density:",
-             nbVec_[0]->getTargetDensity());
+    log_->info(GPL,
+               63,
+               format_label_float,
+               "New Target Density:",
+               nbVec_[i]->getTargetDensity());
 
-  // update densitySizes for all gCell
-  nbVec_[0]->updateDensitySize();
+    // update densitySizes for all gCell
+    nbVec_[i]->updateDensitySize();
+  }
 
   // reset
   resetRoutabilityResources();
@@ -783,38 +800,40 @@ std::pair<bool, bool> RouteBase::routability(
   return std::make_pair(true, true);
 }
 
-float RouteBase::getRudyRC(bool verbose) const
+void RouteBase::updateRudyAverage(bool verbose)
 {
   grt::Rudy* rudy = grouter_->getRudy();
-  double totalRouteOverflow = 0;
-  int overflowTileCnt = 0;
-  std::vector<double> edgeCongArray;
+  total_route_overflow_ = 0.0;
+  overflowed_tiles_count_ = 0;
+  std::vector<double> edge_cong_array;
 
   for (auto& tile : tg_->tiles()) {
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
     // Escape the case when blockage ratio is too huge
     if (ratio >= 0.0f) {
-      totalRouteOverflow += std::fmax(0.0, -1 + ratio);
-      edgeCongArray.push_back(ratio);
+      total_route_overflow_ += std::fmax(0.0, -1 + ratio);
+      edge_cong_array.push_back(ratio);
 
       if (ratio > 1.0) {
-        overflowTileCnt++;
+        overflowed_tiles_count_++;
       }
     }
   }
 
   if (verbose) {
-    log_->info(GPL, 41, "Total routing overflow: {:.4f}", totalRouteOverflow);
+    log_->info(
+        GPL, 41, "Total routing overflow: {:.4f}", total_route_overflow_);
     log_->info(
         GPL,
         42,
         "Number of overflowed tiles: {} ({:.2f}%)",
-        overflowTileCnt,
-        (static_cast<double>(overflowTileCnt) / tg_->tiles().size()) * 100);
+        overflowed_tiles_count_,
+        (static_cast<double>(overflowed_tiles_count_) / tg_->tiles().size())
+            * 100);
   }
 
-  int arraySize = edgeCongArray.size();
-  std::sort(edgeCongArray.rbegin(), edgeCongArray.rend());
+  int arraySize = edge_cong_array.size();
+  std::ranges::sort(edge_cong_array, std::greater<double>());
 
   double avg005RC = 0;
   double avg010RC = 0;
@@ -823,16 +842,16 @@ float RouteBase::getRudyRC(bool verbose) const
 
   for (int i = 0; i < arraySize; ++i) {
     if (i < 0.005 * arraySize) {
-      avg005RC += edgeCongArray[i];
+      avg005RC += edge_cong_array[i];
     }
     if (i < 0.01 * arraySize) {
-      avg010RC += edgeCongArray[i];
+      avg010RC += edge_cong_array[i];
     }
     if (i < 0.02 * arraySize) {
-      avg020RC += edgeCongArray[i];
+      avg020RC += edge_cong_array[i];
     }
     if (i < 0.05 * arraySize) {
-      avg050RC += edgeCongArray[i];
+      avg050RC += edge_cong_array[i];
     }
   }
 
@@ -840,9 +859,10 @@ float RouteBase::getRudyRC(bool verbose) const
   avg010RC /= ceil(0.010 * arraySize);
   avg020RC /= ceil(0.020 * arraySize);
   avg050RC /= ceil(0.050 * arraySize);
-  float finalRC = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
-                   + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
-                  / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
+  final_average_rc_
+      = (rbVars_.rcK1 * avg005RC + rbVars_.rcK2 * avg010RC
+         + rbVars_.rcK3 * avg020RC + rbVars_.rcK4 * avg050RC)
+        / (rbVars_.rcK1 + rbVars_.rcK2 + rbVars_.rcK3 + rbVars_.rcK4);
 
   if (verbose) {
     log_->info(
@@ -856,9 +876,8 @@ float RouteBase::getRudyRC(bool verbose) const
     log_->info(GPL,
                47,
                "Routability iteration weighted routing congestion: {:.4f}",
-               finalRC);
+               final_average_rc_);
   }
-  return finalRC;
 }
 
 // extract RC values
@@ -910,8 +929,8 @@ float RouteBase::getGrtRC() const
   int horArraySize = horEdgeCongArray.size();
   int verArraySize = verEdgeCongArray.size();
 
-  std::sort(horEdgeCongArray.rbegin(), horEdgeCongArray.rend());
-  std::sort(verEdgeCongArray.rbegin(), verEdgeCongArray.rend());
+  std::ranges::sort(std::ranges::reverse_view(horEdgeCongArray));
+  std::ranges::sort(std::ranges::reverse_view(verEdgeCongArray));
 
   double horAvg005RC = 0;
   double horAvg010RC = 0;
@@ -982,9 +1001,9 @@ float RouteBase::getGrtRC() const
 
 void RouteBase::increaseCounter()
 {
-  numCall_++;
+  revert_count_++;
 
-  log_->info(GPL, 40, "Routability iteration: {}", numCall_);
+  log_->info(GPL, 40, "Routability iteration: {}", revert_count_);
 }
 
 }  // namespace gpl

@@ -18,19 +18,19 @@ template class dbTable<_dbGDSLib>;
 
 bool _dbGDSLib::operator==(const _dbGDSLib& rhs) const
 {
-  if (_libname != rhs._libname) {
+  if (lib_name_ != rhs.lib_name_) {
     return false;
   }
-  if (_uu_per_dbu != rhs._uu_per_dbu) {
+  if (uu_per_dbu_ != rhs.uu_per_dbu_) {
     return false;
   }
-  if (_dbu_per_meter != rhs._dbu_per_meter) {
+  if (dbu_per_meter_ != rhs.dbu_per_meter_) {
     return false;
   }
-  if (*_gdsstructure_tbl != *rhs._gdsstructure_tbl) {
+  if (*gdsstructure_tbl_ != *rhs.gdsstructure_tbl_) {
     return false;
   }
-  if (_gdsstructure_hash != rhs._gdsstructure_hash) {
+  if (gdsstructure_hash_ != rhs.gdsstructure_hash_) {
     return false;
   }
   return true;
@@ -46,7 +46,7 @@ dbObjectTable* _dbGDSLib::getObjectTable(dbObjectType type)
 {
   switch (type) {
     case dbGDSStructureObj:
-      return _gdsstructure_tbl;
+      return gdsstructure_tbl_;
     default:
       break;
   }
@@ -55,52 +55,52 @@ dbObjectTable* _dbGDSLib::getObjectTable(dbObjectType type)
 
 _dbGDSLib::_dbGDSLib(_dbDatabase* db)
 {
-  _uu_per_dbu = 1.0;
-  _dbu_per_meter = 1e9;
+  uu_per_dbu_ = 1.0;
+  dbu_per_meter_ = 1e9;
 
-  _gdsstructure_tbl = new dbTable<_dbGDSStructure>(
+  gdsstructure_tbl_ = new dbTable<_dbGDSStructure>(
       db, this, (GetObjTbl_t) &_dbGDSLib::getObjectTable, dbGDSStructureObj);
 
-  _gdsstructure_hash.setTable(_gdsstructure_tbl);
+  gdsstructure_hash_.setTable(gdsstructure_tbl_);
 }
 
 _dbGDSLib::_dbGDSLib(_dbDatabase* db, const _dbGDSLib& r)
-    : _libname(r._libname),
-      _uu_per_dbu(r._uu_per_dbu),
-      _dbu_per_meter(r._dbu_per_meter),
-      _gdsstructure_hash(r._gdsstructure_hash),
-      _gdsstructure_tbl(r._gdsstructure_tbl)
+    : lib_name_(r.lib_name_),
+      uu_per_dbu_(r.uu_per_dbu_),
+      dbu_per_meter_(r.dbu_per_meter_),
+      gdsstructure_hash_(r.gdsstructure_hash_),
+      gdsstructure_tbl_(r.gdsstructure_tbl_)
 {
 }
 
 _dbGDSLib::~_dbGDSLib()
 {
-  delete _gdsstructure_tbl;
+  delete gdsstructure_tbl_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSLib& obj)
 {
-  stream >> obj._libname;
-  stream >> obj._uu_per_dbu;
-  stream >> obj._dbu_per_meter;
-  stream >> *obj._gdsstructure_tbl;
-  stream >> obj._gdsstructure_hash;
+  stream >> obj.lib_name_;
+  stream >> obj.uu_per_dbu_;
+  stream >> obj.dbu_per_meter_;
+  stream >> *obj.gdsstructure_tbl_;
+  stream >> obj.gdsstructure_hash_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSLib& obj)
 {
-  stream << obj._libname;
-  stream << obj._uu_per_dbu;
-  stream << obj._dbu_per_meter;
-  stream << NamedTable("_structure_tbl", obj._gdsstructure_tbl);
-  stream << obj._gdsstructure_hash;
+  stream << obj.lib_name_;
+  stream << obj.uu_per_dbu_;
+  stream << obj.dbu_per_meter_;
+  stream << NamedTable("_structure_tbl", obj.gdsstructure_tbl_);
+  stream << obj.gdsstructure_hash_;
   return stream;
 }
 
 _dbGDSStructure* _dbGDSLib::findStructure(const char* name)
 {
-  return _gdsstructure_hash.find(name);
+  return gdsstructure_hash_.find(name);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -113,45 +113,45 @@ void dbGDSLib::setLibname(std::string libname)
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
 
-  obj->_libname = std::move(libname);
+  obj->lib_name_ = std::move(libname);
 }
 
 std::string dbGDSLib::getLibname() const
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
-  return obj->_libname;
+  return obj->lib_name_;
 }
 
 void dbGDSLib::setUnits(double uu_per_dbu, double dbu_per_meter)
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
 
-  obj->_uu_per_dbu = uu_per_dbu;
-  obj->_dbu_per_meter = dbu_per_meter;
+  obj->uu_per_dbu_ = uu_per_dbu;
+  obj->dbu_per_meter_ = dbu_per_meter;
 }
 
 std::pair<double, double> dbGDSLib::getUnits() const
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
-  return std::make_pair(obj->_uu_per_dbu, obj->_dbu_per_meter);
+  return std::make_pair(obj->uu_per_dbu_, obj->dbu_per_meter_);
 }
 
 dbGDSStructure* dbGDSLib::findGDSStructure(const char* name) const
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
-  return (dbGDSStructure*) obj->_gdsstructure_hash.find(name);
+  return (dbGDSStructure*) obj->gdsstructure_hash_.find(name);
 }
 
 dbSet<dbGDSStructure> dbGDSLib::getGDSStructures()
 {
   _dbGDSLib* obj = (_dbGDSLib*) this;
-  return dbSet<dbGDSStructure>(obj, obj->_gdsstructure_tbl);
+  return dbSet<dbGDSStructure>(obj, obj->gdsstructure_tbl_);
 }
 
 dbGDSLib* dbGDSLib::create(dbDatabase* db, const std::string& name)
 {
   auto* obj = (_dbDatabase*) db;
-  auto lib = (dbGDSLib*) obj->_gds_lib_tbl->create();
+  auto lib = (dbGDSLib*) obj->gds_lib_tbl_->create();
   lib->setLibname(name);
   return lib;
 }
@@ -160,7 +160,7 @@ void dbGDSLib::destroy(dbGDSLib* lib)
 {
   auto* obj = (_dbGDSLib*) lib;
   auto* db = (_dbDatabase*) obj->getOwner();
-  db->_gds_lib_tbl->destroy(obj);
+  db->gds_lib_tbl_->destroy(obj);
 }
 
 void _dbGDSLib::collectMemInfo(MemInfo& info)
@@ -168,9 +168,9 @@ void _dbGDSLib::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["libname"].add(_libname);
-  info.children_["structure_hash"].add(_gdsstructure_hash);
-  _gdsstructure_tbl->collectMemInfo(info.children_["structure"]);
+  info.children["libname"].add(lib_name_);
+  info.children["structure_hash"].add(gdsstructure_hash_);
+  gdsstructure_tbl_->collectMemInfo(info.children["structure"]);
 }
 
 }  // namespace odb

@@ -31,29 +31,23 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
       routed_(false),
       terminals_(dests)
 {
-  terminals_.erase(std::remove_if(terminals_.begin(),
-                                  terminals_.end(),
-                                  [this](odb::dbITerm* other) {
-                                    return iterm_->getInst()
-                                           == other->getInst();
-                                  }),
-                   terminals_.end());
+  std::erase_if(terminals_, [this](odb::dbITerm* other) {
+    return iterm_->getInst() == other->getInst();
+  });
 
   const odb::Point iterm_center = iterm_->getBBox().center();
-  std::stable_sort(terminals_.begin(),
-                   terminals_.end(),
-                   [&iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
-                     const bool lhs_cover = RDLRouter::isCoverTerm(lhs);
-                     const bool rhs_cover = RDLRouter::isCoverTerm(rhs);
+  std::ranges::stable_sort(
+      terminals_, [&iterm_center](odb::dbITerm* lhs, odb::dbITerm* rhs) {
+        const bool lhs_cover = RDLRouter::isCoverTerm(lhs);
+        const bool rhs_cover = RDLRouter::isCoverTerm(rhs);
 
-                     const auto lhs_dist = odb::Point::squaredDistance(
-                         iterm_center, lhs->getBBox().center());
-                     const auto rhs_dist = odb::Point::squaredDistance(
-                         iterm_center, rhs->getBBox().center());
-                     // sort non-cover terms first
-                     return std::tie(lhs_cover, lhs_dist)
-                            < std::tie(rhs_cover, rhs_dist);
-                   });
+        const auto lhs_dist = odb::Point::squaredDistance(
+            iterm_center, lhs->getBBox().center());
+        const auto rhs_dist = odb::Point::squaredDistance(
+            iterm_center, rhs->getBBox().center());
+        // sort non-cover terms first
+        return std::tie(lhs_cover, lhs_dist) < std::tie(rhs_cover, rhs_dist);
+      });
 
   resetRoute();
 }
@@ -229,8 +223,7 @@ bool RDLRoute::isIntersecting(const odb::Point& point, int extent) const
 
 bool RDLRoute::contains(const odb::Point& pt) const
 {
-  return std::find(route_pts_.begin(), route_pts_.end(), pt)
-         != route_pts_.end();
+  return std::ranges::find(route_pts_, pt) != route_pts_.end();
 }
 
 void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)

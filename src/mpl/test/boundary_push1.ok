@@ -1,5 +1,5 @@
 [INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO ODB-0227] LEF file: ./testcases/orientation_improve1.lef, created 9 library cells
+[INFO ODB-0227] LEF file: ./testcases/orientation_improve1.lef, created 10 library cells
 [INFO ODB-0128] Design: boundary_push1
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 4 components and 8 component-terminals.
@@ -12,7 +12,7 @@ Die Area: (0.00, 0.00) (220.02, 221.20),  Floorplan Area: (0.00, 0.00) (220.02, 
 	Halo height: 0.30
 	Area of macros with halos: 40481.44
 	Area of std cell instances + Area of macros: 40000.00
-	Floorplan area: 48668.43
+	Floorplan area: 48668.42
 	Design Utilization: 0.82
 	Floorplan Utilization: 0.00
 	Manufacturing Grid: 10

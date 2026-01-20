@@ -4,9 +4,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "odb/array1.h"
-#include "odb/odb.h"
-#include "odb/util.h"
+#include "rcx/array1.h"
+#include "rcx/util.h"
 
 namespace rcx {
 
@@ -21,7 +20,7 @@ struct SEQ
 class gs
 {
  public:
-  gs(odb::AthPool<SEQ>* seqPool);
+  gs(AthPool<SEQ>* seqPool);
   ~gs();
 
   // set the number of planes
@@ -47,11 +46,11 @@ class gs
   //             order - search by column or by row (GS_COLUMN, GS_ROW)
   //             plane  - which plane to search
   //             array - pool of sequence pointers to get a handle from
-  uint getSeq(int* ll,
-              int* ur,
-              uint order,
-              uint plane,
-              odb::Ath__array1D<SEQ*>* array);
+  uint32_t getSeq(int* ll,
+                  int* ur,
+                  uint32_t order,
+                  uint32_t plane,
+                  Array1D<SEQ*>* array);
 
   // Allocate a SEQ
   SEQ* salloc();
@@ -104,7 +103,7 @@ class gs
   pixint middle_[PIXMAPGRID];
   pixint end_[PIXMAPGRID];
 
-  odb::AthPool<SEQ>* seqPool_;
+  AthPool<SEQ>* seqPool_;
 };
 
 }  // namespace rcx

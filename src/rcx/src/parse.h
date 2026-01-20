@@ -7,16 +7,16 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "odb/array1.h"
+#include "rcx/array1.h"
 #include "utl/Logger.h"
 
 namespace rcx {
 
-class Ath__parser
+class Parser
 {
  public:
-  Ath__parser(utl::Logger* logger);
-  ~Ath__parser();
+  Parser(utl::Logger* logger);
+  ~Parser();
   void openFile(const char* name = nullptr);
   void setInputFP(FILE* fp);
   int mkWords(const char* word, const char* sep = nullptr);
@@ -26,17 +26,15 @@ class Ath__parser
   int getInt(int ii);
   int getInt(int n, int start);
   double getDouble(int ii);
-  void getDoubleArray(odb::Ath__array1D<double>* A,
-                      int start,
-                      double mult = 1.0);
-  odb::Ath__array1D<double>* readDoubleArray(const char* keyword, int start);
+  void getDoubleArray(Array1D<double>* A, int start, double mult = 1.0);
+  Array1D<double>* readDoubleArray(const char* keyword, int start);
   void printWords(FILE* fp);
 
   int getWordCnt();
   char getFirstChar();
 
   void syntaxError(const char* msg);
-  bool mkDir(char* word);
+  bool mkDir(const char* word);
   int mkDirTree(const char* word, const char* sep);
 
   void resetSeparator(const char* s);
@@ -56,17 +54,18 @@ class Ath__parser
   char* _tmpLine;
   char* _wordSeparators;
   char** _wordArray;
-  char _commentChar;
-  int _maxWordCnt;
 
   int _lineNum;
   int _currentWordCnt;
-  int _lineSize;
   FILE* _inFP;
   char* _inputFile;
 
-  int _progressLineChunk;
   utl::Logger* _logger;
+
+  static constexpr int _progressLineChunk = 1000000;
+  static constexpr char _commentChar = '#';
+  static constexpr int _maxWordCnt = 100;
+  static constexpr int _lineSize = 10000;
 };
 
 }  // namespace rcx

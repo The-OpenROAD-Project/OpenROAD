@@ -92,9 +92,7 @@ void Renderer::redraw()
 {
 }
 
-Renderer::~Renderer()
-{
-}
+Renderer::~Renderer() = default;
 
 SpectrumGenerator::SpectrumGenerator(double scale) : scale_(scale)
 {
@@ -204,15 +202,17 @@ void initGui(Tcl_Interp* interp,
   Tcl_Eval(interp, enabled_supported.c_str());
 }
 
-void Gui::gifStart(const std::string& filename)
+int Gui::gifStart(const std::string& filename)
+{
+  return 0;
+}
+
+void Gui::gifEnd(std::optional<int> key)
 {
 }
 
-void Gui::gifEnd()
-{
-}
-
-void Gui::gifAddFrame(const odb::Rect& region,
+void Gui::gifAddFrame(std::optional<int> key,
+                      const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
                       std::optional<int> delay)

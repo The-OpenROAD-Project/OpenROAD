@@ -23,9 +23,12 @@ or_integration_tests(
     est_rc2
     est_rc3
     est_rc4
+    est_rc_cugr1
+    estimate_path_resistance
     gcd
     gcd_cugr
     gcd_flute
+    increase_capacity1
     inst_pin_out_of_die
     invalid_pin_placement
     invalid_routing_layer
@@ -43,7 +46,9 @@ or_integration_tests(
     pd3
     pd4
     pin_access1
+    pin_access1_cugr
     pin_access2
+    pin_access2_cugr
     pin_edge
     pin_track_not_aligned
     pre_routed1
@@ -65,6 +70,9 @@ or_integration_tests(
     repair_antennas4
     repair_antennas_error1
     repair_antennas_error2
+    repair_antennas_only_diodes
+    repair_antennas_only_jumpers
+    repair_antennas_allow_congestion
     report_wire_length1
     report_wire_length2
     report_wire_length3

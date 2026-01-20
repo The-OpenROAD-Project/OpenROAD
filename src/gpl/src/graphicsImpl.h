@@ -17,6 +17,7 @@
 #include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "routeBase.h"
 
 namespace utl {
 class Logger;
@@ -54,6 +55,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void debugForNesterovPlace(NesterovPlace* np,
                              std::shared_ptr<PlacerBaseCommon> pbc,
                              std::shared_ptr<NesterovBaseCommon> nbc,
+                             std::shared_ptr<RouteBase> rb,
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              bool draw_bins,
@@ -73,9 +75,11 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
   void setDebugOn(bool set_on) override { debug_on_ = set_on; }
 
-  void gifStart(std::string_view path) override;
+  void setDisplayControl(std::string_view name, bool value) override;
+
+  int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
-  void gifEnd() override;
+  void gifEnd(int key) override;
 
  protected:
   void cellPlotImpl(bool pause) override;
@@ -89,7 +93,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
                             bool select_buffers,
                             std::string_view heatmap_control,
                             int image_width_px) override;
-  void gifAddFrameImpl(const odb::Rect& region,
+  void gifAddFrameImpl(int key,
+                       const odb::Rect& region,
                        int width_px,
                        double dbu_per_pixel,
                        std::optional<int> delay) override;
@@ -157,6 +162,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::shared_ptr<RouteBase> rb_;
   std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_ = nullptr;
@@ -171,9 +177,9 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   Mode mode_;
   gui::Chart* main_chart_{nullptr};
   gui::Chart* density_chart_{nullptr};
-  gui::Chart* phi_chart_{nullptr};
   gui::Chart* stepLength_chart_{nullptr};
-  bool debug_on_ = false;
+  gui::Chart* routing_chart_{nullptr};
+  bool debug_on_{false};
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

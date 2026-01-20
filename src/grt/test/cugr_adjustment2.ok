@@ -28,17 +28,15 @@ lib DBU:             2000
 die region (in DBU): [x: (0, 200260), y: (0, 201600)]
 num of nets :        579
 num of special nets: 0
-gcell grid:          47 x 47 x 10
+gcell grid:          35 x 35 x 10
 stage 1: pattern routing
-18 / 579 nets have overflow.
-stage 2: pattern routing with possible detours
 0 / 579 nets have overflow.
 routing statistics
-wire length (metric):  36979
-total via count:       3677
+wire length (metric):  36712
+total via count:       2624
 total wire overflow:   0
-min resource: 0.399999737739563
-bottleneck:   (1, 15, 17)
-[INFO GRT-0018] Total wirelength: 9825 um
+min resource: 0.3999999761581421
+bottleneck:   (8, 0, 4)
+[INFO GRT-0018] Total wirelength: 10342 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

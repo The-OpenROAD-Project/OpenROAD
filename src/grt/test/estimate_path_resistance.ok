@@ -1,0 +1,55 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+Test 1: Basic usage with ITerms
+Estimating Path Resistance between pin (_858_/D) and pin (_762_/Z) through net (_000_)
+Via resistance: 5 - From metal1 to metal2 at (59850, 111150)
+Via resistance: 5 - From metal2 to metal3 at (59850, 111150)
+Wire resistance: 10.178572 - From (54150, 111150) - To (59850, 111150) - Layer metal3
+Via resistance: 5 - From metal3 to metal2 at (54150, 111150)
+Wire resistance: 10.178572 - From (54150, 105450) - To (54150, 111150) - Layer metal2
+Via resistance: 5 - From metal2 to metal1 at (54150, 105450)
+Total Resistance: 40.357143 ohms
+Resistance: 40.35714340209961
+
+Test 2: Usage with layers
+Estimating Path Resistance between pin (_858_/D) and pin (_762_/Z) using layers metal2 and metal3
+Via resistance (Start): 5 - From Layer metal1 to metal2
+Wire resistance: 10.178572 - From (54150, 105450) - To (54150, 111150) - Mapped Layer metal2
+Via resistance (Corner): 5 - Between metal3 and metal2
+Wire resistance: 10.178572 - From (54150, 111150) - To (59850, 111150) - Mapped Layer metal3
+Via resistance (End): 10 - From Layer metal1 to metal3
+Total Resistance: 40.357143 ohms
+Resistance: 40.35714340209961
+
+Test 3: Usage with BTerms
+Estimating resistance between BTerm clk and ITerm _858_/CK
+Estimating Path Resistance between pin (clk) and pin (_858_/CK) through net (clk)
+Via resistance: 5 - From metal1 to metal2 at (59850, 105450)
+Wire resistance: 10.178572 - From (59850, 111150) - To (59850, 105450) - Layer metal2
+Via resistance: 5 - From metal2 to metal3 at (59850, 111150)
+Wire resistance: 30.535713 - From (76950, 111150) - To (59850, 111150) - Layer metal3
+Wire resistance: 20.357143 - From (88350, 111150) - To (76950, 111150) - Layer metal3
+Via resistance: 5 - From metal3 to metal2 at (88350, 111150)
+Wire resistance: 20.357143 - From (88350, 122550) - To (88350, 111150) - Layer metal2
+Wire resistance: 20.357143 - From (88350, 133950) - To (88350, 122550) - Layer metal2
+Wire resistance: 10.178572 - From (88350, 139650) - To (88350, 133950) - Layer metal2
+Via resistance: 5 - From metal2 to metal3 at (88350, 139650)
+Wire resistance: 10.178572 - From (94050, 139650) - To (88350, 139650) - Layer metal3
+Via resistance: 5 - From metal3 to metal4 at (94050, 139650)
+Wire resistance: 17.1 - From (94050, 162450) - To (94050, 139650) - Layer metal4
+Via resistance: 3 - From metal4 to metal5 at (94050, 162450)
+Via resistance: 3 - From metal5 to metal6 at (94050, 162450)
+Wire resistance: 25.65 - From (94050, 196650) - To (94050, 162450) - Layer metal6
+Total Resistance: 195.89287 ohms
+Resistance: 195.8928680419922
+
+Test 4: Error handling - Invalid pin
+[ERROR GRT-0291] Pin invalid_pin not found.
+Expected error: GRT-0291
+
+Test 5: Error handling - Missing layer
+[ERROR GRT-0288] Both or neither -layer1 and -layer2 must be provided.
+Expected error: GRT-0288

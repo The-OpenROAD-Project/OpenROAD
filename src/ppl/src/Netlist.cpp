@@ -143,7 +143,7 @@ void Netlist::sortPinsFromGroup(int group_idx, Edge edge)
   PinGroupByIndex& group = io_groups_[group_idx];
   std::vector<int>& pin_indices = group.pin_indices;
   if (group.order && (edge == Edge::top || edge == Edge::left)) {
-    std::reverse(pin_indices.begin(), pin_indices.end());
+    std::ranges::reverse(pin_indices);
   }
 }
 

@@ -11,7 +11,6 @@ using rcx::Ext;
 
 %include <std_string.i>
 %include "../../Exception-py.i"
-%import "odb/odb.h"
 // Python doesn't supported nested classes so this is
 // required to make them available.
 %feature ("flatnested");

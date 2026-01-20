@@ -4,10 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -16,10 +16,10 @@ class _dbDatabase;
 
 struct dbTechLayerEolKeepOutRuleFlags
 {
-  bool class_valid_ : 1;
-  bool corner_only_ : 1;
-  bool except_within_ : 1;
-  uint spare_bits_ : 29;
+  bool class_valid : 1;
+  bool corner_only : 1;
+  bool except_within : 1;
+  uint32_t spare_bits : 29;
 };
 
 class _dbTechLayerEolKeepOutRule : public _dbObject

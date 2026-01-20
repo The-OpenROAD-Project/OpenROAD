@@ -3,6 +3,7 @@
 
 #include "dbMPin.h"
 
+#include <cstdint>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -29,48 +30,44 @@ _dbMPin::_dbMPin(_dbDatabase* db)
 }
 
 _dbMPin::_dbMPin(_dbDatabase* db, const _dbMPin& p)
-    : _mterm(p._mterm), _geoms(p._geoms), _next_mpin(p._next_mpin)
-{
-}
-
-_dbMPin::~_dbMPin()
+    : mterm_(p.mterm_), geoms_(p.geoms_), next_mpin_(p.next_mpin_)
 {
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
 {
-  stream << mpin._mterm;
-  stream << mpin._geoms;
-  stream << mpin._poly_geoms;
-  stream << mpin._next_mpin;
+  stream << mpin.mterm_;
+  stream << mpin.geoms_;
+  stream << mpin.poly_geoms_;
+  stream << mpin.next_mpin_;
   stream << mpin.aps_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
 {
-  stream >> mpin._mterm;
-  stream >> mpin._geoms;
+  stream >> mpin.mterm_;
+  stream >> mpin.geoms_;
   _dbDatabase* db = mpin.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_polygon)) {
-    stream >> mpin._poly_geoms;
+  if (db->isSchema(kSchemaPolygon)) {
+    stream >> mpin.poly_geoms_;
   }
-  stream >> mpin._next_mpin;
+  stream >> mpin.next_mpin_;
   stream >> mpin.aps_;
   return stream;
 }
 
 bool _dbMPin::operator==(const _dbMPin& rhs) const
 {
-  if (_mterm != rhs._mterm) {
+  if (mterm_ != rhs.mterm_) {
     return false;
   }
 
-  if (_geoms != rhs._geoms) {
+  if (geoms_ != rhs.geoms_) {
     return false;
   }
 
-  if (_next_mpin != rhs._next_mpin) {
+  if (next_mpin_ != rhs.next_mpin_) {
     return false;
   }
 
@@ -81,7 +78,7 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   return true;
 }
 
-void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
+void _dbMPin::addAccessPoint(uint32_t idx, _dbAccessPoint* ap)
 {
   if (aps_.size() <= idx) {
     aps_.resize(idx + 1);
@@ -99,7 +96,7 @@ dbMTerm* dbMPin::getMTerm()
 {
   _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
-  return (dbMTerm*) master->_mterm_tbl->getPtr(pin->_mterm);
+  return (dbMTerm*) master->mterm_tbl_->getPtr(pin->mterm_);
 }
 
 dbMaster* dbMPin::getMaster()
@@ -112,16 +109,16 @@ dbSet<dbBox> dbMPin::getGeometry(bool include_decomposed_polygons)
   _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
   if (include_decomposed_polygons) {
-    return dbSet<dbBox>(pin, master->_box_itr);
+    return dbSet<dbBox>(pin, master->box_itr_);
   }
-  return dbSet<dbBox>(pin, master->_pbox_box_itr);
+  return dbSet<dbBox>(pin, master->pbox_box_itr_);
 }
 
 dbSet<dbPolygon> dbMPin::getPolygonGeometry()
 {
   _dbMPin* pin = (_dbMPin*) this;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
-  return dbSet<dbPolygon>(pin, master->_pbox_itr);
+  return dbSet<dbPolygon>(pin, master->pbox_itr_);
 }
 
 Rect dbMPin::getBBox()
@@ -142,7 +139,7 @@ std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
   _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
   std::vector<std::vector<odb::dbAccessPoint*>> result;
   for (const auto& pa : pin->aps_) {
-    result.push_back(std::vector<odb::dbAccessPoint*>());
+    result.emplace_back();
     for (const auto& ap : pa) {
       result.back().push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
     }
@@ -150,21 +147,35 @@ std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
   return result;
 }
 
+void dbMPin::clearPinAccess(const int pin_access_idx)
+{
+  _dbMPin* pin = (_dbMPin*) this;
+  _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
+  if (pin->aps_.size() <= pin_access_idx) {
+    return;
+  }
+  const auto aps = pin->aps_[pin_access_idx];
+  for (const auto& ap : aps) {
+    odb::dbAccessPoint::destroy(
+        (odb::dbAccessPoint*) block->ap_tbl_->getPtr(ap));
+  }
+}
+
 dbMPin* dbMPin::create(dbMTerm* mterm_)
 {
   _dbMTerm* mterm = (_dbMTerm*) mterm_;
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
-  _dbMPin* mpin = master->_mpin_tbl->create();
-  mpin->_mterm = mterm->getOID();
-  mpin->_next_mpin = mterm->_pins;
-  mterm->_pins = mpin->getOID();
+  _dbMPin* mpin = master->mpin_tbl_->create();
+  mpin->mterm_ = mterm->getOID();
+  mpin->next_mpin_ = mterm->pins_;
+  mterm->pins_ = mpin->getOID();
   return (dbMPin*) mpin;
 }
 
-dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
+dbMPin* dbMPin::getMPin(dbMaster* master_, uint32_t dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
-  return (dbMPin*) master->_mpin_tbl->getPtr(dbid_);
+  return (dbMPin*) master->mpin_tbl_->getPtr(dbid_);
 }
 
 void _dbMPin::collectMemInfo(MemInfo& info)
@@ -172,7 +183,7 @@ void _dbMPin::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  MemInfo& ap_info = info.children_["aps"];
+  MemInfo& ap_info = info.children["aps"];
   for (const auto& v : aps_) {
     ap_info.add(v);
   }

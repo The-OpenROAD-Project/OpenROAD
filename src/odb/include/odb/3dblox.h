@@ -5,6 +5,7 @@
 
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace utl {
@@ -15,20 +16,22 @@ class Sta;
 }
 namespace odb {
 class dbDatabase;
-class ChipletDef;
-class ChipletRegion;
 class dbChip;
-class ChipletInst;
-class Connection;
-class DesignDef;
 class dbChipRegionInst;
 class dbChipInst;
-class BumpMapEntry;
 class dbChipRegion;
 class dbBlock;
+class dbBTerm;
 class dbInst;
 class dbTech;
 class dbLib;
+
+struct ChipletDef;
+struct ChipletRegion;
+struct ChipletInst;
+struct Connection;
+struct DesignDef;
+struct BumpMapEntry;
 
 class ThreeDBlox
 {
@@ -50,7 +53,8 @@ class ThreeDBlox
   void createChipInst(const ChipletInst& chip_inst);
   void createConnection(const Connection& connection);
   void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
-  dbInst* createBump(const BumpMapEntry& entry, dbBlock* block);
+  std::pair<dbInst*, dbBTerm*> createBump(const BumpMapEntry& entry,
+                                          dbBlock* block);
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);

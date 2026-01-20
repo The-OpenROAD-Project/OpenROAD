@@ -76,9 +76,9 @@ void _dbDft::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  scan_pins_->collectMemInfo(info.children_["scan_pins_"]);
+  scan_pins_->collectMemInfo(info.children["scan_pins_"]);
 
-  scan_chains_->collectMemInfo(info.children_["scan_chains_"]);
+  scan_chains_->collectMemInfo(info.children["scan_chains_"]);
 }
 
 _dbDft::~_dbDft()

@@ -10,6 +10,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
+#include "sta/MinMax.hh"
 #include "sta/Sta.hh"
 
 namespace ord {
@@ -224,6 +225,20 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                                  bool exclude_inverters) const;
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
+
+  // Sanity checkers
+  int checkSanity();
+  void checkSanityNetlistConsistency() const;
+  void checkSanityDrvrVertexEdges(const Pin* pin) const;
+  void checkSanityDrvrVertexEdges(const odb::dbObject* term) const;
+  void checkSanityDrvrVertexEdges() const;
+
+  // Debugging utilities
+  void dumpModInstPinSlacks(const char* mod_inst_name,
+                            const char* filename,
+                            const MinMax* min_max = MinMax::max());
+  void dumpModInstGraphConnections(const char* mod_inst_name,
+                                   const char* filename);
 
   using Sta::netSlack;
   using Sta::replaceCell;

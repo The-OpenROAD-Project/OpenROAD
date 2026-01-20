@@ -41,6 +41,12 @@ void Opendp::importDb()
   grid_->setCore(core_);
   have_fillers_ = false;
   disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
+  debugPrint(logger_,
+             utl::DPL,
+             "one_site_gap",
+             1,
+             "one_site_gaps disallowed: {}",
+             disallow_one_site_gaps_ ? "true" : "false");
   importClear();
   grid_->examineRows(block_);
   initPlacementDRC();
@@ -112,9 +118,8 @@ void Opendp::createNetwork()
   using odb::dbInst;
   auto block_insts = block->getInsts();
   std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
-  std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {
-    return a->getName() < b->getName();
-  });
+  std::ranges::stable_sort(
+      insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
 
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.

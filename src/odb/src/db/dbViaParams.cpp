@@ -17,177 +17,130 @@ namespace odb {
 
 bool _dbViaParams::operator==(const _dbViaParams& rhs) const
 {
-  if (_x_cut_size != rhs._x_cut_size) {
+  if (x_cut_size_ != rhs.x_cut_size_) {
     return false;
   }
 
-  if (_y_cut_size != rhs._y_cut_size) {
+  if (y_cut_size_ != rhs.y_cut_size_) {
     return false;
   }
 
-  if (_x_cut_spacing != rhs._x_cut_spacing) {
+  if (x_cut_spacing_ != rhs.x_cut_spacing_) {
     return false;
   }
 
-  if (_y_cut_spacing != rhs._y_cut_spacing) {
+  if (y_cut_spacing_ != rhs.y_cut_spacing_) {
     return false;
   }
 
-  if (_x_top_enclosure != rhs._x_top_enclosure) {
+  if (x_top_enclosure_ != rhs.x_top_enclosure_) {
     return false;
   }
 
-  if (_y_top_enclosure != rhs._y_top_enclosure) {
+  if (y_top_enclosure_ != rhs.y_top_enclosure_) {
     return false;
   }
 
-  if (_x_bot_enclosure != rhs._x_bot_enclosure) {
+  if (x_bot_enclosure_ != rhs.x_bot_enclosure_) {
     return false;
   }
 
-  if (_y_bot_enclosure != rhs._y_bot_enclosure) {
+  if (y_bot_enclosure_ != rhs.y_bot_enclosure_) {
     return false;
   }
 
-  if (_num_cut_rows != rhs._num_cut_rows) {
+  if (num_cut_rows_ != rhs.num_cut_rows_) {
     return false;
   }
 
-  if (_num_cut_cols != rhs._num_cut_cols) {
+  if (num_cut_cols_ != rhs.num_cut_cols_) {
     return false;
   }
 
-  if (_x_origin != rhs._x_origin) {
+  if (x_origin_ != rhs.x_origin_) {
     return false;
   }
 
-  if (_y_origin != rhs._y_origin) {
+  if (y_origin_ != rhs.y_origin_) {
     return false;
   }
 
-  if (_x_top_offset != rhs._x_top_offset) {
+  if (x_top_offset_ != rhs.x_top_offset_) {
     return false;
   }
 
-  if (_y_top_offset != rhs._y_top_offset) {
+  if (y_top_offset_ != rhs.y_top_offset_) {
     return false;
   }
 
-  if (_x_bot_offset != rhs._x_bot_offset) {
+  if (x_bot_offset_ != rhs.x_bot_offset_) {
     return false;
   }
 
-  if (_y_bot_offset != rhs._y_bot_offset) {
+  if (y_bot_offset_ != rhs.y_bot_offset_) {
     return false;
   }
 
-  if (_top_layer != rhs._top_layer) {
+  if (top_layer_ != rhs.top_layer_) {
     return false;
   }
 
-  if (_cut_layer != rhs._cut_layer) {
+  if (cut_layer_ != rhs.cut_layer_) {
     return false;
   }
 
-  if (_bot_layer != rhs._bot_layer) {
+  if (bot_layer_ != rhs.bot_layer_) {
     return false;
   }
 
   return true;
 }
 
-_dbViaParams::_dbViaParams(const _dbViaParams& v)
-    : _x_cut_size(v._x_cut_size),
-      _y_cut_size(v._y_cut_size),
-      _x_cut_spacing(v._x_cut_spacing),
-      _y_cut_spacing(v._y_cut_spacing),
-      _x_top_enclosure(v._x_top_enclosure),
-      _y_top_enclosure(v._y_top_enclosure),
-      _x_bot_enclosure(v._x_bot_enclosure),
-      _y_bot_enclosure(v._y_bot_enclosure),
-      _num_cut_rows(v._num_cut_rows),
-      _num_cut_cols(v._num_cut_cols),
-      _x_origin(v._x_origin),
-      _y_origin(v._y_origin),
-      _x_top_offset(v._x_top_offset),
-      _y_top_offset(v._y_top_offset),
-      _x_bot_offset(v._x_bot_offset),
-      _y_bot_offset(v._y_bot_offset),
-      _top_layer(v._top_layer),
-      _cut_layer(v._cut_layer),
-      _bot_layer(v._bot_layer)
-{
-}
-
-_dbViaParams::_dbViaParams()
-{
-  _x_cut_size = 0;
-  _y_cut_size = 0;
-  _x_cut_spacing = 0;
-  _y_cut_spacing = 0;
-  _x_top_enclosure = 0;
-  _y_top_enclosure = 0;
-  _x_bot_enclosure = 0;
-  _y_bot_enclosure = 0;
-  _num_cut_rows = 1;
-  _num_cut_cols = 1;
-  _x_origin = 0;
-  _y_origin = 0;
-  _x_top_offset = 0;
-  _y_top_offset = 0;
-  _x_bot_offset = 0;
-  _y_bot_offset = 0;
-}
-
-_dbViaParams::~_dbViaParams()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbViaParams& v)
 {
-  stream << v._x_cut_size;
-  stream << v._y_cut_size;
-  stream << v._x_cut_spacing;
-  stream << v._y_cut_spacing;
-  stream << v._x_top_enclosure;
-  stream << v._y_top_enclosure;
-  stream << v._x_bot_enclosure;
-  stream << v._y_bot_enclosure;
-  stream << v._num_cut_rows;
-  stream << v._num_cut_cols;
-  stream << v._x_origin;
-  stream << v._y_origin;
-  stream << v._x_top_offset;
-  stream << v._y_top_offset;
-  stream << v._x_bot_offset;
-  stream << v._y_bot_offset;
-  stream << v._top_layer;
-  stream << v._cut_layer;
-  stream << v._bot_layer;
+  stream << v.x_cut_size_;
+  stream << v.y_cut_size_;
+  stream << v.x_cut_spacing_;
+  stream << v.y_cut_spacing_;
+  stream << v.x_top_enclosure_;
+  stream << v.y_top_enclosure_;
+  stream << v.x_bot_enclosure_;
+  stream << v.y_bot_enclosure_;
+  stream << v.num_cut_rows_;
+  stream << v.num_cut_cols_;
+  stream << v.x_origin_;
+  stream << v.y_origin_;
+  stream << v.x_top_offset_;
+  stream << v.y_top_offset_;
+  stream << v.x_bot_offset_;
+  stream << v.y_bot_offset_;
+  stream << v.top_layer_;
+  stream << v.cut_layer_;
+  stream << v.bot_layer_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbViaParams& v)
 {
-  stream >> v._x_cut_size;
-  stream >> v._y_cut_size;
-  stream >> v._x_cut_spacing;
-  stream >> v._y_cut_spacing;
-  stream >> v._x_top_enclosure;
-  stream >> v._y_top_enclosure;
-  stream >> v._x_bot_enclosure;
-  stream >> v._y_bot_enclosure;
-  stream >> v._num_cut_rows;
-  stream >> v._num_cut_cols;
-  stream >> v._x_origin;
-  stream >> v._y_origin;
-  stream >> v._x_top_offset;
-  stream >> v._y_top_offset;
-  stream >> v._x_bot_offset;
-  stream >> v._y_bot_offset;
-  stream >> v._top_layer;
-  stream >> v._cut_layer;
-  stream >> v._bot_layer;
+  stream >> v.x_cut_size_;
+  stream >> v.y_cut_size_;
+  stream >> v.x_cut_spacing_;
+  stream >> v.y_cut_spacing_;
+  stream >> v.x_top_enclosure_;
+  stream >> v.y_top_enclosure_;
+  stream >> v.x_bot_enclosure_;
+  stream >> v.y_bot_enclosure_;
+  stream >> v.num_cut_rows_;
+  stream >> v.num_cut_cols_;
+  stream >> v.x_origin_;
+  stream >> v.y_origin_;
+  stream >> v.x_top_offset_;
+  stream >> v.y_top_offset_;
+  stream >> v.x_bot_offset_;
+  stream >> v.y_bot_offset_;
+  stream >> v.top_layer_;
+  stream >> v.cut_layer_;
+  stream >> v.bot_layer_;
   return stream;
 }
 
@@ -201,97 +154,89 @@ dbViaParams::dbViaParams() : _tech(nullptr)
 {
 }
 
-dbViaParams::dbViaParams(const dbViaParams& p) : _dbViaParams(p), _tech(p._tech)
-{
-}
-
 dbViaParams::dbViaParams(const _dbViaParams& p)
     : _dbViaParams(p), _tech(nullptr)
 {
 }
 
-dbViaParams::~dbViaParams()
-{
-}
-
 int dbViaParams::getXCutSize() const
 {
-  return _x_cut_size;
+  return x_cut_size_;
 }
 
 int dbViaParams::getYCutSize() const
 {
-  return _y_cut_size;
+  return y_cut_size_;
 }
 
 int dbViaParams::getXCutSpacing() const
 {
-  return _x_cut_spacing;
+  return x_cut_spacing_;
 }
 
 int dbViaParams::getYCutSpacing() const
 {
-  return _y_cut_spacing;
+  return y_cut_spacing_;
 }
 
 int dbViaParams::getXTopEnclosure() const
 {
-  return _x_top_enclosure;
+  return x_top_enclosure_;
 }
 
 int dbViaParams::getYTopEnclosure() const
 {
-  return _y_top_enclosure;
+  return y_top_enclosure_;
 }
 
 int dbViaParams::getXBottomEnclosure() const
 {
-  return _x_bot_enclosure;
+  return x_bot_enclosure_;
 }
 
 int dbViaParams::getYBottomEnclosure() const
 {
-  return _y_bot_enclosure;
+  return y_bot_enclosure_;
 }
 
 int dbViaParams::getNumCutRows() const
 {
-  return _num_cut_rows;
+  return num_cut_rows_;
 }
 
 int dbViaParams::getNumCutCols() const
 {
-  return _num_cut_cols;
+  return num_cut_cols_;
 }
 
 int dbViaParams::getXOrigin() const
 {
-  return _x_origin;
+  return x_origin_;
 }
 
 int dbViaParams::getYOrigin() const
 {
-  return _y_origin;
+  return y_origin_;
 }
 
 int dbViaParams::getXTopOffset() const
 {
-  return _x_top_offset;
+  return x_top_offset_;
 }
 
 int dbViaParams::getYTopOffset() const
 {
-  return _y_top_offset;
+  return y_top_offset_;
 }
 
 int dbViaParams::getXBottomOffset() const
 {
-  return _x_bot_offset;
+  return x_bot_offset_;
 }
 
 int dbViaParams::getYBottomOffset() const
 {
-  return _y_bot_offset;
+  return y_bot_offset_;
 }
 
 dbTechLayer* dbViaParams::getTopLayer() const
@@ -300,7 +245,7 @@ dbTechLayer* dbViaParams::getTopLayer() const
     return nullptr;
   }
 
-  return dbTechLayer::getTechLayer(_tech, _top_layer);
+  return dbTechLayer::getTechLayer(_tech, top_layer_);
 }
 
 dbTechLayer* dbViaParams::getCutLayer() const
@@ -309,7 +254,7 @@ dbTechLayer* dbViaParams::getCutLayer() const
     return nullptr;
   }
 
-  return dbTechLayer::getTechLayer(_tech, _cut_layer);
+  return dbTechLayer::getTechLayer(_tech, cut_layer_);
 }
 
 dbTechLayer* dbViaParams::getBottomLayer() const
@@ -318,87 +263,87 @@ dbTechLayer* dbViaParams::getBottomLayer() const
     return nullptr;
   }
 
-  return dbTechLayer::getTechLayer(_tech, _bot_layer);
+  return dbTechLayer::getTechLayer(_tech, bot_layer_);
 }
 
 void dbViaParams::setXCutSize(int value)
 {
-  _x_cut_size = value;
+  x_cut_size_ = value;
 }
 
 void dbViaParams::setYCutSize(int value)
 {
-  _y_cut_size = value;
+  y_cut_size_ = value;
 }
 
 void dbViaParams::setXCutSpacing(int value)
 {
-  _x_cut_spacing = value;
+  x_cut_spacing_ = value;
 }
 
 void dbViaParams::setYCutSpacing(int value)
 {
-  _y_cut_spacing = value;
+  y_cut_spacing_ = value;
 }
 
 void dbViaParams::setXTopEnclosure(int value)
 {
-  _x_top_enclosure = value;
+  x_top_enclosure_ = value;
 }
 
 void dbViaParams::setYTopEnclosure(int value)
 {
-  _y_top_enclosure = value;
+  y_top_enclosure_ = value;
 }
 
 void dbViaParams::setXBottomEnclosure(int value)
 {
-  _x_bot_enclosure = value;
+  x_bot_enclosure_ = value;
 }
 
 void dbViaParams::setYBottomEnclosure(int value)
 {
-  _y_bot_enclosure = value;
+  y_bot_enclosure_ = value;
 }
 
 void dbViaParams::setNumCutRows(int value)
 {
-  _num_cut_rows = value;
+  num_cut_rows_ = value;
 }
 
 void dbViaParams::setNumCutCols(int value)
 {
-  _num_cut_cols = value;
+  num_cut_cols_ = value;
 }
 
 void dbViaParams::setXOrigin(int value)
 {
-  _x_origin = value;
+  x_origin_ = value;
 }
 
 void dbViaParams::setYOrigin(int value)
 {
-  _y_origin = value;
+  y_origin_ = value;
 }
 
 void dbViaParams::setXTopOffset(int value)
 {
-  _x_top_offset = value;
+  x_top_offset_ = value;
 }
 
 void dbViaParams::setYTopOffset(int value)
 {
-  _y_top_offset = value;
+  y_top_offset_ = value;
 }
 
 void dbViaParams::setXBottomOffset(int value)
 {
-  _x_bot_offset = value;
+  x_bot_offset_ = value;
 }
 
 void dbViaParams::setYBottomOffset(int value)
 {
-  _y_bot_offset = value;
+  y_bot_offset_ = value;
 }
 
 void dbViaParams::setTopLayer(dbTechLayer* layer)
@@ -408,7 +353,7 @@ void dbViaParams::setTopLayer(dbTechLayer* layer)
   }
 
   assert(_tech == layer->getTech());
-  _top_layer = layer->getId();
+  top_layer_ = layer->getId();
 }
 
 void dbViaParams::setCutLayer(dbTechLayer* layer)
@@ -418,7 +363,7 @@ void dbViaParams::setCutLayer(dbTechLayer* layer)
   }
 
   assert(_tech == layer->getTech());
-  _cut_layer = layer->getId();
+  cut_layer_ = layer->getId();
 }
 
 void dbViaParams::setBottomLayer(dbTechLayer* layer)
@@ -428,7 +373,7 @@ void dbViaParams::setBottomLayer(dbTechLayer* layer)
   }
 
   assert(_tech == layer->getTech());
-  _bot_layer = layer->getId();
+  bot_layer_ = layer->getId();
 }
 
 }  // namespace odb

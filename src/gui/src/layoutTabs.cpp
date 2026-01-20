@@ -124,6 +124,7 @@ void LayoutTabs::chipLoaded(odb::dbChip* chip)
           &LayoutViewer::focusNetsChanged,
           this,
           &LayoutTabs::focusNetsChanged);
+  connect(viewer, &LayoutViewer::viewUpdated, this, &LayoutTabs::viewUpdated);
 
   emit newViewer(viewer);
 }
@@ -174,6 +175,13 @@ void LayoutTabs::zoomTo(const odb::Rect& rect_dbu)
 {
   if (current_viewer_) {
     current_viewer_->zoomTo(rect_dbu);
+  }
+}
+
+void LayoutTabs::zoomTo(const odb::Point& focus, int diameter)
+{
+  if (current_viewer_) {
+    current_viewer_->zoomTo(focus, diameter);
   }
 }
 

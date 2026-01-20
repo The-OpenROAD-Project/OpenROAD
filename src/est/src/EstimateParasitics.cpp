@@ -21,6 +21,8 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/SteinerTree.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -147,8 +149,8 @@ void EstimateParasitics::sortClkAndSignalLayers()
     return a->getNumber() < b->getNumber();
   };
 
-  std::sort(clk_layers_.begin(), clk_layers_.end(), sortLayers);
-  std::sort(signal_layers_.begin(), signal_layers_.end(), sortLayers);
+  std::ranges::sort(clk_layers_, sortLayers);
+  std::ranges::sort(signal_layers_, sortLayers);
 }
 
 void EstimateParasitics::setHWireSignalRC(const Corner* corner,
@@ -438,6 +440,16 @@ void EstimateParasitics::updateParasitics(bool save_guides)
       break;
   }
 
+  // Router calls into the timer. This means the timer could be caching
+  // delays calculated in the interim period before we had put new parasitic
+  // annotations on the nets affected by a network edit. We need to explicitly
+  // invalidate those delays. Do it in bulk instead of interleaving with each
+  // groute call.
+  if (parasitics_src_ != ParasiticsSrc::none) {
+    for (const Net* net : parasitics_invalid_) {
+      sta_->delaysInvalidFromFanin(net);
+    }
+  }
   parasitics_invalid_.clear();
 }
 
@@ -1006,8 +1018,8 @@ bool EstimateParasitics::isPad(const Instance* inst) const
 
 void EstimateParasitics::parasiticsInvalid(const Net* net)
 {
-  odb::dbNet* db_net = db_network_->flatNet(net);
-  if (haveEstimatedParasitics()) {
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
+  if (haveEstimatedParasitics() && db_net) {
     debugPrint(logger_,
                EST,
                "estimate_parasitics",

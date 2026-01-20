@@ -18,6 +18,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map.hpp"
 #include "gpl/Replace.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -770,6 +771,7 @@ struct NesterovPlaceVars
   float initialPrevCoordiUpdateCoef = 100;         // z_ref_alpha
   const float referenceHpwl;                       // refDeltaHpwl
   const float routability_end_overflow;
+  const float routability_snapshot_overflow;
   const float keepResizeBelowOverflow;
 
   static constexpr int maxRecursionWlCoef = 10;
@@ -786,6 +788,8 @@ struct NesterovPlaceVars
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
   int debug_start_iter = 0;
+  int debug_rudy_start = 5000;
+  int debug_rudy_stride = 1;
   bool debug_generate_images = false;
   std::string debug_images_path = "REPORTS_DIR";
 };
@@ -801,6 +805,7 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
+  void reportInstanceExtensionByPinDensity() const;
   const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
   const std::vector<GNet*>& getGNets() const { return gNets_; }
   const std::vector<GPin*>& getGPins() const { return gPins_; }
@@ -901,14 +906,18 @@ class NesterovBaseCommon
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
-  std::unordered_map<Instance*, GCell*> gCellMap_;
-  std::unordered_map<Pin*, GPin*> gPinMap_;
-  std::unordered_map<Net*, GNet*> gNetMap_;
+  boost::unordered::unordered_flat_map<Instance*, GCell*> gCellMap_;
+  boost::unordered::unordered_flat_map<Pin*, GPin*> gPinMap_;
+  boost::unordered::unordered_flat_map<Net*, GNet*> gNetMap_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
-  std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
-  std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
-  std::unordered_map<odb::dbBTerm*, size_t> db_bterm_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbInst*, size_t>
+      db_inst_to_nbc_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbNet*, size_t>
+      db_net_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbITerm*, size_t>
+      db_iterm_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbBTerm*, size_t>
+      db_bterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
@@ -1130,6 +1139,8 @@ class NesterovBase
                               int gcell_index_stride = 10) const;
 
   std::shared_ptr<PlacerBase> getPb() const { return pb_; }
+
+  odb::dbGroup* getGroup() const { return pb_->getGroup(); }
 
  private:
   NesterovBaseVars nbVars_;

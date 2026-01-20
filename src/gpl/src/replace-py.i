@@ -28,5 +28,8 @@ using gpl::Replace;
 %include "gpl/Replace.h"
 
 namespace std {
+#ifndef SWIG_VECTOR_INT
+#define SWIG_VECTOR_INT
     %template(IntVector) vector<int>;
+#endif
 }

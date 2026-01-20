@@ -28,86 +28,19 @@ lib DBU:             2000
 die region (in DBU): [x: (0, 200260), y: (0, 201600)]
 num of nets :        579
 num of special nets: 0
-gcell grid:          47 x 47 x 10
+gcell grid:          35 x 35 x 10
 stage 1: pattern routing
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-441 / 579 nets have overflow.
+369 / 579 nets have overflow.
 stage 2: pattern routing with possible detours
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-427 / 579 nets have overflow.
+324 / 579 nets have overflow.
 stage 3: maze routing on sparsified routing graph
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-432 / 579 nets have overflow.
+347 / 579 nets have overflow.
 routing statistics
-wire length (metric):  37808
-total via count:       3630
-total wire overflow:   1031
-min resource: -3.899999737739563
-bottleneck:   (1, 19, 17)
-[INFO GRT-0018] Total wirelength: 10111 um
+wire length (metric):  37972
+total via count:       3093
+total wire overflow:   455
+min resource: -3.899999499320984
+bottleneck:   (2, 16, 7)
+[INFO GRT-0018] Total wirelength: 10747 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

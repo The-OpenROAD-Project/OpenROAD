@@ -242,7 +242,7 @@ void Gui::registerRenderer(Renderer* renderer)
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
-  if (renderers_.count(renderer) == 0) {
+  if (!renderers_.contains(renderer)) {
     return;
   }
 
@@ -569,7 +569,7 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
       if (auto props_selected_set
           = std::any_cast<SelectionSet>(&property.value)) {
         if (Descriptor::Property::toString(value) == "CONNECTED"
-            && (*props_selected_set).size() != 0) {
+            && !props_selected_set->empty()) {
           return true;
         }
         for (const auto& selected : *props_selected_set) {
@@ -707,6 +707,11 @@ void Gui::zoomTo(const odb::Rect& rect_dbu)
   main_window->zoomTo(rect_dbu);
 }
 
+void Gui::zoomTo(const odb::Point& focus, int diameter)
+{
+  main_window->zoomTo(focus, diameter);
+}
+
 void Gui::zoomIn()
 {
   main_window->getLayoutViewer()->zoomIn();
@@ -782,6 +787,7 @@ void Gui::saveImage(const std::string& filename,
     const double dbu_per_micron = tech->getDbUnitsPerMicron();
 
     std::string save_cmds;
+
     // build display control commands
     save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
     for (const auto& [control, value] : display_settings) {
@@ -861,6 +867,22 @@ void Gui::saveHistogramImage(const std::string& filename,
       = main_window->getChartsWidget()->modeFromString(mode);
   main_window->getChartsWidget()->saveImage(
       filename, chart_mode, width, height);
+}
+
+void Gui::showWorstTimingPath(bool setup)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->showWorstTimingPath(setup);
+}
+
+void Gui::clearTimingPath()
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->clearSelection();
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name,
@@ -944,7 +966,7 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
 
 void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
 {
-  if (heat_maps_.count(heatmap) == 0) {
+  if (!heat_maps_.contains(heatmap)) {
     return;
   }
 
@@ -994,7 +1016,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   } else {
     auto settings = source->getSettings();
 
-    if (settings.count(option) == 0) {
+    if (!settings.contains(option)) {
       QStringList options;
       options.append(QString::fromStdString(rebuild_map_option));
       for (const auto& [key, kv] : settings) {
@@ -1065,7 +1087,7 @@ Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
 
   auto settings = source->getSettings();
 
-  if (settings.count(option) == 0) {
+  if (!settings.contains(option)) {
     QStringList options;
     for (const auto& [key, kv] : settings) {
       options.append(QString::fromStdString(key));
@@ -1445,7 +1467,7 @@ bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
 #endif
 }
 
-void Gui::gifStart(const std::string& filename)
+int Gui::gifStart(const std::string& filename)
 {
   if (!enabled()) {
     logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
@@ -1455,17 +1477,22 @@ void Gui::gifStart(const std::string& filename)
     logger_->error(utl::GUI, 81, "Filename is required to save a GIF.");
   }
 
-  gif_ = std::make_unique<GIF>();
-  gif_->filename = filename;
-  gif_->writer = nullptr;
+  auto gif = std::make_unique<GIF>();
+  gif->filename = filename;
+  gifs_.emplace_back(std::move(gif));
+  return gifs_.size() - 1;
 }
 
-void Gui::gifAddFrame(const odb::Rect& region,
+void Gui::gifAddFrame(std::optional<int> key,
+                      const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
                       std::optional<int> delay)
 {
-  if (gif_ == nullptr) {
+  if (!key.has_value()) {
+    key = gifs_.size() - 1;
+  }
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 51, "GIF not active");
     return;
   }
@@ -1473,6 +1500,9 @@ void Gui::gifAddFrame(const odb::Rect& region,
   if (db_ == nullptr) {
     logger_->error(utl::GUI, 50, "No design loaded.");
   }
+
+  auto& gif = gifs_[*key];
+
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
   const bool is_offscreen
@@ -1504,32 +1534,32 @@ void Gui::gifAddFrame(const odb::Rect& region,
   QImage img = main_window->getLayoutViewer()->createImage(
       save_region, width_px, dbu_per_pixel);
 
-  if (gif_->writer == nullptr) {
-    gif_->writer = std::make_unique<GifWriter>();
-    gif_->width = img.width();
-    gif_->height = img.height();
-    GifBegin(gif_->writer.get(),
-             gif_->filename.c_str(),
-             gif_->width,
-             gif_->height,
+  if (gif->writer == nullptr) {
+    gif->writer = std::make_unique<GifWriter>();
+    gif->width = img.width();
+    gif->height = img.height();
+    GifBegin(gif->writer.get(),
+             gif->filename.c_str(),
+             gif->width,
+             gif->height,
              delay.value_or(kDefaultGifDelay));
   } else {
     // scale IMG if not matched
-    img = img.scaled(gif_->width, gif_->height, Qt::KeepAspectRatio);
+    img = img.scaled(gif->width, gif->height, Qt::KeepAspectRatio);
   }
 
-  std::vector<uint8_t> frame(gif_->width * gif_->height * 4, 0);
+  std::vector<uint8_t> frame(gif->width * gif->height * 4, 0);
   for (int x = 0; x < img.width(); x++) {
-    if (x >= gif_->width) {
+    if (x >= gif->width) {
       continue;
     }
     for (int y = 0; y < img.height(); y++) {
-      if (y >= gif_->height) {
+      if (y >= gif->height) {
         continue;
       }
 
       const QRgb pixel = img.pixel(x, y);
-      const int frame_offset = (y * gif_->width + x) * 4;
+      const int frame_offset = (y * gif->width + x) * 4;
       frame[frame_offset + 0] = qRed(pixel);
       frame[frame_offset + 1] = qGreen(pixel);
       frame[frame_offset + 2] = qBlue(pixel);
@@ -1537,31 +1567,35 @@ void Gui::gifAddFrame(const odb::Rect& region,
     }
   }
 
-  GifWriteFrame(gif_->writer.get(),
+  GifWriteFrame(gif->writer.get(),
                 frame.data(),
-                gif_->width,
-                gif_->height,
+                gif->width,
+                gif->height,
                 delay.value_or(kDefaultGifDelay));
 }
 
-void Gui::gifEnd()
+void Gui::gifEnd(std::optional<int> key)
 {
-  if (gif_ == nullptr) {
+  if (!key.has_value()) {
+    key = gifs_.size() - 1;
+  }
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 58, "GIF not active");
     return;
   }
 
-  if (gif_->writer == nullptr) {
+  auto& gif = gifs_[*key];
+  if (gif->writer == nullptr) {
     logger_->warn(utl::GUI,
                   107,
                   "Nothing to save to {}. No frames added to gif.",
-                  gif_->filename);
-    gif_ = nullptr;
+                  gif->filename);
+    gif = nullptr;
     return;
   }
 
-  GifEnd(gif_->writer.get());
-  gif_ = nullptr;
+  GifEnd(gif->writer.get());
+  gifs_[*key] = nullptr;
 }
 
 class SafeApplication : public QApplication

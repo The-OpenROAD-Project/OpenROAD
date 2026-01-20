@@ -50,9 +50,9 @@ class ScanStitch
 
   // Typesafe function to create Ports for the scan chains.
   template <typename Port>
-  inline Port CreateNewPort(odb::dbBlock* block,
-                            const std::string& port_name,
-                            odb::dbNet* net = nullptr)
+  Port CreateNewPort(odb::dbBlock* block,
+                     const std::string& port_name,
+                     odb::dbNet* net = nullptr)
   {
     auto port = dft::utils::CreateNewPort(block, port_name, logger_, net);
 

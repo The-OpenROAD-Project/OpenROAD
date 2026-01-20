@@ -19,15 +19,15 @@ add_pdn_ring -grid "Core" -layers {metal8 metal9} -widths 5.0 \
   -spacings 2.0 -core_offsets 4.5 -connect_to_pads
 add_pdn_stripe -followpins -layer metal1 -extend_to_core_ring
 
-add_pdn_stripe -layer metal4 -width 0.48 -pitch 56.0 -offset 2.0 -extend_to_core_ring
+add_pdn_stripe -layer metal4 -width 0.48 -pitch 56.0 -offset 2.0 -extend_to_core_ring -nets {VDD}
 add_pdn_stripe -layer metal7 -width 1.40 -pitch 40.0 -offset 2.0 -extend_to_core_ring
 add_pdn_stripe -layer metal8 -width 1.40 -pitch 40.0 -offset 2.0 -extend_to_core_ring
 add_pdn_stripe -layer metal9 -width 1.40 -pitch 40.0 -offset 2.0 -extend_to_core_ring
 
 
-add_pdn_connect -layers {metal1 metal4}
 add_pdn_connect -layers {metal4 metal7}
-add_pdn_connect -layers {metal7 metal8}
+add_pdn_connect -layers {metal1 metal4}
 add_pdn_connect -layers {metal8 metal9}
+add_pdn_connect -layers {metal7 metal8}
 
 pdngen -report_only

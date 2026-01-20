@@ -24,7 +24,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-drvr/Q                                 60.73   31.21   29.52 (MET)
+drvr/Q                                 60.73   32.17   28.56 (MET)
 
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------

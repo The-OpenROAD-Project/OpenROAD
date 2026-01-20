@@ -1,100 +1,170 @@
-/*
- 
- Hierarchical repeater case
-
- Exercise the case when we want to expose the primary output
- net.
- 
- */
+module hi_fanout (a,
+    clk1,
+    in);
+ output a;
+ input clk1;
+ input in;
 
 
-module hi_fanout (clk1, in, net0);
-   input clk1;
-   input in;
-   output net0;
-
-   DFF_X1 drvr (.CK(clk1),
-      .D(in),
-		.Q(net0));
-   
-   hi_fanout_child hi_fanout_inst1(net0,clk1);
-   hi_fanout_child hi_fanout_inst2(net0,clk1);   
+ DFF_X1 drvr (.D(in),
+    .CK(clk1),
+    .Q(a));
+ hi_fanout_child hi_fanout_inst1 (.a(a),
+    .clk1(clk1));
+ hi_fanout_child_hi_fanout_inst2 hi_fanout_inst2 (.a(a),
+    .clk1(clk1));
 endmodule
+module hi_fanout_child (a,
+    clk1);
+ input a;
+ input clk1;
 
 
-module hi_fanout_child (net0,clk1);
-   input net0; //34 loads
-   input clk1; //34 loads
+ DFF_X1 load0 (.D(a),
+    .CK(clk1));
+ DFF_X1 load1 (.D(a),
+    .CK(clk1));
+ DFF_X1 load10 (.D(a),
+    .CK(clk1));
+ DFF_X1 load11 (.D(a),
+    .CK(clk1));
+ DFF_X1 load12 (.D(a),
+    .CK(clk1));
+ DFF_X1 load13 (.D(a),
+    .CK(clk1));
+ DFF_X1 load14 (.D(a),
+    .CK(clk1));
+ DFF_X1 load15 (.D(a),
+    .CK(clk1));
+ DFF_X1 load16 (.D(a),
+    .CK(clk1));
+ DFF_X1 load17 (.D(a),
+    .CK(clk1));
+ DFF_X1 load18 (.D(a),
+    .CK(clk1));
+ DFF_X1 load19 (.D(a),
+    .CK(clk1));
+ DFF_X1 load2 (.D(a),
+    .CK(clk1));
+ DFF_X1 load20 (.D(a),
+    .CK(clk1));
+ DFF_X1 load21 (.D(a),
+    .CK(clk1));
+ DFF_X1 load22 (.D(a),
+    .CK(clk1));
+ DFF_X1 load23 (.D(a),
+    .CK(clk1));
+ DFF_X1 load24 (.D(a),
+    .CK(clk1));
+ DFF_X1 load25 (.D(a),
+    .CK(clk1));
+ DFF_X1 load26 (.D(a),
+    .CK(clk1));
+ DFF_X1 load27 (.D(a),
+    .CK(clk1));
+ DFF_X1 load28 (.D(a),
+    .CK(clk1));
+ DFF_X1 load29 (.D(a),
+    .CK(clk1));
+ DFF_X1 load3 (.D(a),
+    .CK(clk1));
+ DFF_X1 load30 (.D(a),
+    .CK(clk1));
+ DFF_X1 load31 (.D(a),
+    .CK(clk1));
+ DFF_X1 load32 (.D(a),
+    .CK(clk1));
+ DFF_X1 load33 (.D(a),
+    .CK(clk1));
+ DFF_X1 load34 (.D(a),
+    .CK(clk1));
+ DFF_X1 load4 (.D(a),
+    .CK(clk1));
+ DFF_X1 load5 (.D(a),
+    .CK(clk1));
+ DFF_X1 load6 (.D(a),
+    .CK(clk1));
+ DFF_X1 load7 (.D(a),
+    .CK(clk1));
+ DFF_X1 load8 (.D(a),
+    .CK(clk1));
+ DFF_X1 load9 (.D(a),
+    .CK(clk1));
+endmodule
+module hi_fanout_child_hi_fanout_inst2 (a,
+    clk1);
+ input a;
+ input clk1;
 
- DFF_X1 load0 (.D(net0),
+
+ DFF_X1 load0 (.D(a),
     .CK(clk1));
- DFF_X1 load1 (.D(net0),
+ DFF_X1 load1 (.D(a),
     .CK(clk1));
- DFF_X1 load2 (.D(net0),
+ DFF_X1 load10 (.D(a),
     .CK(clk1));
- DFF_X1 load3 (.D(net0),
+ DFF_X1 load11 (.D(a),
     .CK(clk1));
- DFF_X1 load4 (.D(net0),
+ DFF_X1 load12 (.D(a),
     .CK(clk1));
- DFF_X1 load5 (.D(net0),
+ DFF_X1 load13 (.D(a),
     .CK(clk1));
- DFF_X1 load6 (.D(net0),
+ DFF_X1 load14 (.D(a),
     .CK(clk1));
- DFF_X1 load7 (.D(net0),
+ DFF_X1 load15 (.D(a),
     .CK(clk1));
- DFF_X1 load8 (.D(net0),
+ DFF_X1 load16 (.D(a),
     .CK(clk1));
- DFF_X1 load9 (.D(net0),
+ DFF_X1 load17 (.D(a),
     .CK(clk1));
- DFF_X1 load10 (.D(net0),
+ DFF_X1 load18 (.D(a),
     .CK(clk1));
- DFF_X1 load11 (.D(net0),
+ DFF_X1 load19 (.D(a),
     .CK(clk1));
- DFF_X1 load12 (.D(net0),
+ DFF_X1 load2 (.D(a),
     .CK(clk1));
- DFF_X1 load13 (.D(net0),
+ DFF_X1 load20 (.D(a),
     .CK(clk1));
- DFF_X1 load14 (.D(net0),
+ DFF_X1 load21 (.D(a),
     .CK(clk1));
- DFF_X1 load15 (.D(net0),
+ DFF_X1 load22 (.D(a),
     .CK(clk1));
- DFF_X1 load16 (.D(net0),
+ DFF_X1 load23 (.D(a),
     .CK(clk1));
- DFF_X1 load17 (.D(net0),
+ DFF_X1 load24 (.D(a),
     .CK(clk1));
- DFF_X1 load18 (.D(net0),
+ DFF_X1 load25 (.D(a),
     .CK(clk1));
- DFF_X1 load19 (.D(net0),
+ DFF_X1 load26 (.D(a),
     .CK(clk1));
- DFF_X1 load20 (.D(net0),
+ DFF_X1 load27 (.D(a),
     .CK(clk1));
- DFF_X1 load21 (.D(net0),
+ DFF_X1 load28 (.D(a),
     .CK(clk1));
- DFF_X1 load22 (.D(net0),
+ DFF_X1 load29 (.D(a),
     .CK(clk1));
- DFF_X1 load23 (.D(net0),
+ DFF_X1 load3 (.D(a),
     .CK(clk1));
- DFF_X1 load24 (.D(net0),
+ DFF_X1 load30 (.D(a),
     .CK(clk1));
- DFF_X1 load25 (.D(net0),
+ DFF_X1 load31 (.D(a),
     .CK(clk1));
- DFF_X1 load26 (.D(net0),
+ DFF_X1 load32 (.D(a),
     .CK(clk1));
- DFF_X1 load27 (.D(net0),
+ DFF_X1 load33 (.D(a),
     .CK(clk1));
- DFF_X1 load28 (.D(net0),
+ DFF_X1 load34 (.D(a),
     .CK(clk1));
- DFF_X1 load29 (.D(net0),
+ DFF_X1 load4 (.D(a),
     .CK(clk1));
- DFF_X1 load30 (.D(net0),
+ DFF_X1 load5 (.D(a),
     .CK(clk1));
- DFF_X1 load31 (.D(net0),
+ DFF_X1 load6 (.D(a),
     .CK(clk1));
- DFF_X1 load32 (.D(net0),
+ DFF_X1 load7 (.D(a),
     .CK(clk1));
- DFF_X1 load33 (.D(net0),
+ DFF_X1 load8 (.D(a),
     .CK(clk1));
- DFF_X1 load34 (.D(net0),
+ DFF_X1 load9 (.D(a),
     .CK(clk1));
-   
 endmodule

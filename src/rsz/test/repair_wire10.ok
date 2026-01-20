@@ -22,13 +22,13 @@ Path Type: max
     Cap    Slew   Delay    Time   Description
 -----------------------------------------------------------------------
                    0.00    0.00 ^ input external delay
-   1.26    0.00    0.00    0.00 ^ in1 (in)
+   1.38    0.00    0.00    0.00 ^ in1 (in)
            0.00    0.00    0.00 ^ u1/A (BUF_X1)
-   1.17    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
+   1.29    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
- 151.27    0.23    0.25    0.26 ^ u2/Z (BUF_X1)
+ 151.36    0.23    0.25    0.26 ^ u2/Z (BUF_X1)
            0.60    0.46    0.72 ^ u3/A (BUF_X1)
-   0.24    0.02    0.02    0.74 ^ u3/Z (BUF_X1)
+   0.29    0.02    0.02    0.74 ^ u3/Z (BUF_X1)
            0.02    0.00    0.74 ^ out1 (out)
                            0.74   data arrival time
 -----------------------------------------------------------------------
@@ -42,7 +42,7 @@ in1 manhtn 0.7 steiner 0.7 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +122.2% |       1 |       2 |             1 |         0
+    final |   +166.7% |       1 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
@@ -57,24 +57,24 @@ Path Type: max
     Cap    Slew   Delay    Time   Description
 -----------------------------------------------------------------------
                    0.00    0.00 v input external delay
-   1.16    0.00    0.00    0.00 v in1 (in)
+   1.28    0.00    0.00    0.00 v in1 (in)
            0.00    0.00    0.00 v u1/A (BUF_X1)
-   1.79    0.01    0.02    0.02 v u1/Z (BUF_X1)
+   1.91    0.01    0.02    0.02 v u1/Z (BUF_X1)
            0.01    0.00    0.02 v u2/A (BUF_X2)
-  50.36    0.04    0.07    0.10 v u2/Z (BUF_X2)
-           0.00    0.00    0.10 v wire2/A (CLKBUF_X3)
-  45.66    0.00    0.00    0.10 v wire2/Z (CLKBUF_X3)
-           0.00    0.00    0.10 v wire1/A (CLKBUF_X3)
-  58.08    0.00    0.00    0.10 v wire1/Z (CLKBUF_X3)
-           0.20    0.00    0.10 v u3/A (BUF_X1)
-   0.24    0.01    0.07    0.17 v u3/Z (BUF_X1)
-           0.01    0.00    0.17 v out1 (out)
-                           0.17   data arrival time
+  52.03    0.02    0.04    0.07 v u2/Z (BUF_X2)
+           0.07    0.05    0.12 v wire2/A (BUF_X4)
+  47.33    0.01    0.06    0.17 v wire2/Z (BUF_X4)
+           0.05    0.04    0.21 v wire1/A (BUF_X4)
+  58.05    0.01    0.05    0.27 v wire1/Z (BUF_X4)
+           0.07    0.06    0.33 v u3/A (BUF_X1)
+   0.29    0.01    0.05    0.38 v u3/Z (BUF_X1)
+           0.01    0.00    0.38 v out1 (out)
+                           0.38   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 
 
 Driver    length delay
-wire1/Z manhtn 759.3 steiner 759.3 0.00
-u2/Z manhtn 650.2 steiner 650.2 0.00
-wire2/Z manhtn 587.5 steiner 587.5 0.00
+wire1/Z manhtn 760.4 steiner 760.4 0.00
+u2/Z manhtn 651.7 steiner 651.7 0.00
+wire2/Z manhtn 587.4 steiner 587.4 0.00

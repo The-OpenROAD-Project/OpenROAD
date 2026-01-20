@@ -4,13 +4,13 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <variant>
 
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -21,23 +21,23 @@ class _dbNameCache;
 class dbPropertyItr;
 // User Code End Classes
 
-struct dbPropertyFlags
-{
-  uint _type : 4;
-  uint _owner_type : 8;
-  uint _spare_bits : 20;
-};
-
-// User Code Begin Structs
-enum _PropTypeEnum
+// User Code Begin Types
+enum PropTypeEnum : uint32_t
 {
   // Do not change the order of this enum.
-  DB_STRING_PROP = 0,
-  DB_BOOL_PROP = 1,
-  DB_INT_PROP = 2,
-  DB_DOUBLE_PROP = 3
+  kDbStringProp = 0,
+  kDbBoolProp = 1,
+  kDbIntProp = 2,
+  kDbDoubleProp = 3
 };
-// User Code End Structs
+// User Code End Types
+
+struct dbPropertyFlags
+{
+  PropTypeEnum type : 4;
+  uint32_t owner_type : 8;
+  uint32_t spare_bits : 20;
+};
 
 class _dbProperty : public _dbObject
 {
@@ -55,14 +55,14 @@ class _dbProperty : public _dbObject
   static dbPropertyItr* getItr(dbObject* object);
   static _dbProperty* createProperty(dbObject* object,
                                      const char* name,
-                                     _PropTypeEnum type);
+                                     PropTypeEnum type);
   // User Code End Methods
 
   dbPropertyFlags flags_;
-  uint _name;
-  dbId<_dbProperty> _next;
-  uint _owner;
-  std::variant<std::string, bool, int, double> _value;
+  uint32_t name_;
+  dbId<_dbProperty> next_;
+  uint32_t owner_;
+  std::variant<std::string, bool, int, double> value_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbProperty& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbProperty& obj);

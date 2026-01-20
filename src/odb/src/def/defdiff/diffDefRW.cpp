@@ -30,9 +30,8 @@
 // This program is the diffDef core program.  It has all the callback
 // routines and write it out to a temporary file.
 
-#include <string.h>
-
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -83,9 +82,9 @@ void checkType(defrCallbackType_e c)
 // This function will make sure it round up for all the machine
 double checkDouble(double num)
 {
-  long tempNum;
+  int64_t tempNum;
   if ((num > 1000004) || (num < -1000004)) {
-    tempNum = (long) num;
+    tempNum = (int64_t) num;
     if ((tempNum % 5) == 0) {
       return num + 3;
     }
@@ -174,7 +173,7 @@ int compf(defrCallbackType_e c, defiComponent* co, defiUserData ud)
   }
   if (co->hasHalo()) {
     int left, bottom, right, top;
-    (void) co->haloEdges(&left, &bottom, &right, &top);
+    co->haloEdges(&left, &bottom, &right, &top);
     fprintf(fout, "COMP %s HALO", co->id());
     if (co->hasHaloSoft()) {
       fprintf(fout, " SOFT");
@@ -344,7 +343,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
         p->initTraverse();
         fprintf(fout, "\nNET %s %s", net->name(), wire->wireType());
         nline = 0;
-        while ((path = (int) p->next()) != DEFIPATH_DONE) {
+        while ((path = p->next()) != DEFIPATH_DONE) {
           switch (path) {
             case DEFIPATH_LAYER:
               if (!netSeCmp) {
@@ -778,7 +777,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
 }
 
 // Special Net
-int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
+int snetf(defrCallbackType_e c, const defiNet* net, defiUserData ud)
 {
   // For net and special net.
   int i, j, x, y, z;
@@ -1211,7 +1210,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
   return 0;
 }
 
-int ndr(defrCallbackType_e c, defiNonDefault* nd, defiUserData ud)
+int ndr(defrCallbackType_e c, const defiNonDefault* nd, defiUserData ud)
 {
   // For nondefaultrule
   int i;
@@ -1295,7 +1294,7 @@ char* address(const char* in)
 }
 
 // Assertion or Constraints
-void operand(defrCallbackType_e c, defiAssertion* a, int ind)
+void operand(defrCallbackType_e c, const defiAssertion* a, int ind)
 {
   int i, first = 1;
   char* netName;
@@ -1343,7 +1342,7 @@ void operand(defrCallbackType_e c, defiAssertion* a, int ind)
 }
 
 // Assertion or Constraints
-int constraint(defrCallbackType_e c, defiAssertion* a, defiUserData ud)
+int constraint(defrCallbackType_e c, const defiAssertion* a, defiUserData ud)
 {
   // Handles both constraints and assertions
 
@@ -1382,7 +1381,7 @@ int constraint(defrCallbackType_e c, defiAssertion* a, defiUserData ud)
 }
 
 // Property definitions
-int prop(defrCallbackType_e c, defiProp* p, defiUserData ud)
+int prop(defrCallbackType_e c, const defiProp* p, defiUserData ud)
 {
   checkType(c);
   if (ud != userData) {
@@ -1523,7 +1522,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   defiFill* fill;
   defiStyles* styles;
   int xl, yl, xh, yh;
-  char *name, *a1, *b1;
+  char* name;
   char **inst, **inPin, **outPin;
   int* bits;
   int size;
@@ -1612,7 +1611,8 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       // is set to 1
       if (ignorePE) {
         // check if .extra is in the name, if it is, ignore it
-        if ((extraPinName = strstr(pName, ".extra")) == nullptr) {
+        extraPinName = strstr(pName, ".extra");
+        if (extraPinName == nullptr) {
           tmpPinName = pName;
         } else {
           // make sure name ends with .extraNNN
@@ -1922,7 +1922,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       --numObjs;
       break;
     case defrDefaultCapCbkType:
-      i = (unsigned long long) cl;
+      i = (uint64_t) cl;
       fprintf(fout, "DEFAULTCAP %d\n", i);
       numObjs = i;
       break;
@@ -2186,12 +2186,14 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       sc = (defiScanchain*) cl;
       fprintf(fout, "SCANCHAINS %s", sc->name());
       if (sc->hasStart()) {
-        sc->start(&a1, &b1);
-        fprintf(fout, " START %s %s", sc->name(), a1);
+        const char *a, *b;
+        sc->start(&a, &b);
+        fprintf(fout, " START %s %s", sc->name(), a);
       }
       if (sc->hasStop()) {
-        sc->stop(&a1, &b1);
-        fprintf(fout, " STOP %s %s", sc->name(), a1);
+        const char *a, *b;
+        sc->stop(&a, &b);
+        fprintf(fout, " STOP %s %s", sc->name(), a);
       }
       if (sc->hasCommonInPin() || sc->hasCommonOutPin()) {
         fprintf(fout, " COMMONSCANPINS ");
@@ -2754,13 +2756,14 @@ int diffDefReadFile(char* inFile,
     netSeCmp = 1;
   }
 
-  FILE* f;
-  if ((f = fopen(inFile, "r")) == nullptr) {
+  FILE* f = fopen(inFile, "r");
+  if (f == nullptr) {
     fprintf(stderr, "Couldn't open input file '%s'\n", inFile);
     return (2);
   }
 
-  if ((fout = fopen(outFile, "w")) == nullptr) {
+  fout = fopen(outFile, "w");
+  if (fout == nullptr) {
     fprintf(stderr, "Couldn't open output file '%s'\n", outFile);
     fclose(f);
     return (2);

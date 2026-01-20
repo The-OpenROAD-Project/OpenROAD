@@ -61,6 +61,7 @@ void GraphicsImpl::debugForNesterovPlace(
     NesterovPlace* np,
     std::shared_ptr<PlacerBaseCommon> pbc,
     std::shared_ptr<NesterovBaseCommon> nbc,
+    std::shared_ptr<RouteBase> rb,
     std::vector<std::shared_ptr<PlacerBase>>& pbVec,
     std::vector<std::shared_ptr<NesterovBase>>& nbVec,
     bool draw_bins,
@@ -70,68 +71,62 @@ void GraphicsImpl::debugForNesterovPlace(
 
   pbc_ = std::move(pbc);
   nbc_ = std::move(nbc);
+  rb_ = std::move(rb);
   pbVec_ = pbVec;
   nbVec_ = nbVec;
   np_ = np;
   draw_bins_ = draw_bins;
   mode_ = Nesterov;
 
-  if (enabled()) {
-    // Setup the chart
-    gui::Gui* gui = gui::Gui::get();
-    main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
-    main_chart_->setXAxisFormat("%d");
-    main_chart_->setYAxisFormats({"%.2e", "%.2f"});
-    main_chart_->setYAxisMin({std::nullopt, 0});
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+  // Setup charts
+  gui::Gui* gui = gui::Gui::get();
+  main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
+  main_chart_->setXAxisFormat("%d");
+  main_chart_->setYAxisFormats({"%.2e", "%.2f"});
+  main_chart_->setYAxisMin({std::nullopt, 0});
 
-    // Useful for debugging : Density penalty and PhiCoef
-    if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
-      if (!nbVec_.empty()) {
-        std::vector<std::string> region_names;
-        region_names.reserve(nbVec_.size());
-        for (size_t i = 0; i < nbVec_.size(); ++i) {
-          std::string name;
-          if (nbVec_[i] && nbVec_[i]->getPb() && nbVec_[i]->getPb()->group()) {
-            name = fmt::format(
-                "nb[{}] {}", i, nbVec_[i]->getPb()->group()->getName());
-          } else {
-            name = fmt::format("nb[{}]", i);
-          }
-          region_names.push_back(name);
-        }
-        density_chart_ = gui->addChart(
-            "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
-        density_chart_->setXAxisFormat("%d");
-        density_chart_->setYAxisFormats({"%.2e", "%.2f"});
-        density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
+  density_chart_ = gui->addChart(
+      "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
+  density_chart_->setXAxisFormat("%d");
+  density_chart_->setYAxisFormats({"%.2e", "%.2f"});
+  density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
 
-        stepLength_chart_ = gui->addChart(
-            "GPL StepLength",
-            "Iteration",
-            {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
-        stepLength_chart_->setXAxisFormat("%d");
-        stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
-        stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+  stepLength_chart_ = gui->addChart(
+      "GPL StepLength",
+      "Iteration",
+      {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
+  stepLength_chart_->setXAxisFormat("%d");
+  stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
+  stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+
+  routing_chart_ = gui->addChart(
+      "GPL Routing",
+      "Iteration",
+      {"avg RUDY", "Std area", "% Overflow Tiles", "Total RUDY Overflow"});
+  routing_chart_->setXAxisFormat("%d");
+  routing_chart_->setYAxisFormats({"%.2f", "%.2f", "%.2f", "%.2f"});
+  routing_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0});
+
+  initHeatmap();
+  if (inst) {
+    for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
+      auto cell = nbc_->getGCellByIndex(idx);
+      if (cell->contains(inst)) {
+        selected_ = idx;
+        break;
       }
     }
-    initHeatmap();
-    if (inst) {
-      for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
-        auto cell = nbc_->getGCellByIndex(idx);
-        if (cell->contains(inst)) {
-          selected_ = idx;
-          break;
-        }
-      }
-    }
+  }
 
-    for (const auto& nb : nbVec_) {
-      for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
-        GCellHandle cell_handle = nb->getGCells()[idx];
-        if (cell_handle->contains(inst)) {
-          nb_selected_index_ = idx;
-          break;
-        }
+  for (const auto& nb : nbVec_) {
+    for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
+      GCellHandle cell_handle = nb->getGCells()[idx];
+      if (cell_handle->contains(inst)) {
+        nb_selected_index_ = idx;
+        break;
       }
     }
   }
@@ -285,6 +280,7 @@ void GraphicsImpl::drawSingleGCell(const GCell* gCell,
   switch (gCell->changeType()) {
     case GCell::GCellChange::kRoutability:
       color = gui::Painter::kWhite;
+      color.a = 75;
       break;
     case GCell::GCellChange::kNewInstance:
       color = gui::Painter::kDarkRed;
@@ -545,51 +541,75 @@ void GraphicsImpl::reportSelected()
 
 void GraphicsImpl::addIter(const int iter, const double overflow)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
   main_chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
 
-  if (logger_->debugCheck(utl::GPL, "debugPlot", 1)) {
-    if (density_chart_) {
-      std::vector<double> values;
-      if (!nbVec_.empty() && nbVec_[0]) {
-        values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
-        values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
-      } else {
-        values.push_back(0.0);
-        values.push_back(0.0);
-      }
-      density_chart_->addPoint(iter, values);
+  if (density_chart_) {
+    std::vector<double> values;
+    if (!nbVec_.empty() && nbVec_[0]) {
+      values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
+      values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
+    } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
     }
+    density_chart_->addPoint(iter, values);
+  }
 
-    if (stepLength_chart_) {
-      std::vector<double> values;
-      if (!nbVec_.empty() && nbVec_[0]) {
-        values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
-        values.push_back(
-            static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
-        values.push_back(
-            static_cast<double>(nbVec_[0]->getStoredGradDistance()));
-        values.push_back(
-            static_cast<double>(nbVec_[0]->getNesterovInstsArea()));
-      } else {
-        values.push_back(0.0);
-        values.push_back(0.0);
-        values.push_back(0.0);
-        values.push_back(0.0);
-      }
-      stepLength_chart_->addPoint(iter, values);
+  if (stepLength_chart_) {
+    std::vector<double> values;
+    if (!nbVec_.empty() && nbVec_[0]) {
+      values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
+      values.push_back(
+          static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
+      values.push_back(static_cast<double>(nbVec_[0]->getStoredGradDistance()));
+      values.push_back(
+          block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
+    } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
     }
+    stepLength_chart_->addPoint(iter, values);
+  }
+
+  if (routing_chart_) {
+    std::vector<double> values;
+    if (!nbVec_.empty() && nbVec_[0]) {
+      values.push_back(static_cast<double>(rb_->getRudyAverage()));
+      values.push_back(
+          block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
+      const double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
+      values.push_back(total_tiles > 0.0 ? (static_cast<double>(
+                                                rb_->getOverflowedTilesCount())
+                                            / total_tiles * 100.0)
+                                         : 0.0);
+      values.push_back((rb_->getTotalRudyOverflow()));
+    } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
+    }
+    routing_chart_->addPoint(iter, values);
   }
 }
 
 void GraphicsImpl::addTimingDrivenIter(const int iter)
 {
   main_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+  routing_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
 }
 
 void GraphicsImpl::addRoutabilitySnapshot(int iter)
 {
   main_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  routing_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
 }
 
 void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
@@ -597,6 +617,8 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
   gui::Painter::Color color
       = revert ? gui::Painter::kRed : gui::Painter::kGreen;
   main_chart_->addVerticalMarker(iter, color);
+  routing_chart_->addVerticalMarker(
+      iter, rb_->isMinRc() ? gui::Painter::kMagenta : gui::Painter::kBlack);
 }
 
 void GraphicsImpl::cellPlotImpl(bool pause)
@@ -853,17 +875,18 @@ void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
   gui->clearSelections();
 }
 
-void GraphicsImpl::gifStart(std::string_view path)
+int GraphicsImpl::gifStart(std::string_view path)
 {
-  gui::Gui::get()->gifStart(std::string(path));
+  return gui::Gui::get()->gifStart(std::string(path));
 }
 
-void GraphicsImpl::gifAddFrameImpl(const odb::Rect& region,
+void GraphicsImpl::gifAddFrameImpl(int key,
+                                   const odb::Rect& region,
                                    int width_px,
                                    double dbu_per_pixel,
                                    std::optional<int> delay)
 {
-  gui::Gui::get()->gifAddFrame(region, width_px, dbu_per_pixel, delay);
+  gui::Gui::get()->gifAddFrame(key, region, width_px, dbu_per_pixel, delay);
 }
 
 void GraphicsImpl::deleteLabel(std::string_view label_name)
@@ -871,9 +894,14 @@ void GraphicsImpl::deleteLabel(std::string_view label_name)
   gui::Gui::get()->deleteLabel(std::string(label_name));
 }
 
-void GraphicsImpl::gifEnd()
+void GraphicsImpl::gifEnd(int key)
 {
-  gui::Gui::get()->gifEnd();
+  gui::Gui::get()->gifEnd(key);
+}
+
+void GraphicsImpl::setDisplayControl(std::string_view name, bool value)
+{
+  gui::Gui::get()->setDisplayControlsVisible(std::string(name), value);
 }
 
 }  // namespace gpl

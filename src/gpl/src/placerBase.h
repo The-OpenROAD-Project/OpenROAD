@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map.hpp"
 #include "odb/geom.h"
 
 namespace odb {
@@ -93,7 +94,7 @@ class Instance
   int cy() const;
   int dx() const;
   int dy() const;
-  int64_t area() const;
+  int64_t getArea() const;
 
   void setExtId(int extId);
   int getExtId() const { return extId_; }
@@ -101,6 +102,7 @@ class Instance
   void addPin(Pin* pin);
   const std::vector<Pin*>& getPins() const { return pins_; }
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
+  void extendSizeByScale(double scale, utl::Logger* logger);
 
  private:
   odb::dbInst* inst_ = nullptr;
@@ -333,10 +335,10 @@ class PlacerBaseCommon
 
   std::vector<Instance*> placeInsts_;
 
-  std::unordered_map<odb::dbInst*, Instance*> instMap_;
+  boost::unordered::unordered_flat_map<odb::dbInst*, Instance*> instMap_;
   // The key is a dbITerm or a dbBTerm
-  std::unordered_map<odb::dbObject*, Pin*> pinMap_;
-  std::unordered_map<odb::dbNet*, Net*> netMap_;
+  boost::unordered::unordered_flat_map<odb::dbObject*, Pin*> pinMap_;
+  boost::unordered::unordered_flat_map<odb::dbNet*, Net*> netMap_;
 
   int siteSizeX_ = 0;
   int siteSizeY_ = 0;
@@ -388,7 +390,7 @@ class PlacerBase
   int64_t stdInstsArea() const { return stdInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
-  odb::dbGroup* group() const { return group_; }
+  odb::dbGroup* getGroup() const { return group_; }
 
   void unlockAll();
 

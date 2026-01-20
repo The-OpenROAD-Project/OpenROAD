@@ -46,9 +46,11 @@ or_integration_tests(
     rdl_route_bump_via
     rdl_route_failed
     rdl_route_invalid
+    rdl_route_keep_existing
     rdl_route_max_iterations
     rdl_route_ports
     rdl_route_single_target
+    rdl_route_skip_iterm
     rdl_route_via
     skywater130_caravel
     skywater130_coyote_tc

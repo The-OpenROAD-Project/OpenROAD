@@ -17,6 +17,8 @@
 #include "grid.h"
 #include "grid_component.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "techlayer.h"
@@ -221,7 +223,7 @@ bool Shape::cut(const ObstructionTree& obstructions,
                 std::vector<std::unique_ptr<Shape>>& replacements,
                 const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator-=;
   using Rectangle = boost::polygon::rectangle_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
@@ -496,23 +498,43 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
   // collect existing routing
   for (auto* swire : net->getSWires()) {
     for (auto* box : swire->getWires()) {
-      auto* layer = box->getTechLayer();
-      if (layer == nullptr) {
-        continue;
-      }
+      if (box->isVia()) {
+        odb::dbSet<odb::dbBox> via_boxes;
+        const odb::dbTransform transform(box->getViaXY());
+        if (auto* techvia = box->getTechVia()) {
+          via_boxes = techvia->getBoxes();
+        } else if (auto* blockvia = box->getBlockVia()) {
+          via_boxes = blockvia->getBoxes();
+        }
+        for (auto* via_box : via_boxes) {
+          odb::dbTechLayer* layer = via_box->getTechLayer();
+          if (layer == nullptr) {
+            continue;
+          }
+          odb::Rect rect = via_box->getBox();
+          transform.apply(rect);
+          ShapePtr shape = std::make_shared<Shape>(
+              layer, net, rect, box->getWireShapeType());
+          shape->setShapeType(Shape::FIXED);
+          shape->generateObstruction();
+          map[layer].push_back(std::move(shape));
+        }
+      } else {
+        odb::dbTechLayer* layer = box->getTechLayer();
 
-      odb::Rect rect = box->getBox();
+        odb::Rect rect = box->getBox();
 
-      ShapePtr shape
-          = std::make_shared<Shape>(layer, net, rect, box->getWireShapeType());
-      shape->setShapeType(Shape::FIXED);
-      if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
-        // cannot connect this this safely so make it an obstruction
-        shape->setNet(nullptr);
-        shape->setShapeType(Shape::OBS);
+        ShapePtr shape = std::make_shared<Shape>(
+            layer, net, rect, box->getWireShapeType());
+        shape->setShapeType(Shape::FIXED);
+        if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
+          // cannot connect this this safely so make it an obstruction
+          shape->setNet(nullptr);
+          shape->setShapeType(Shape::OBS);
+        }
+        shape->generateObstruction();
+        map[layer].push_back(std::move(shape));
       }
-      shape->generateObstruction();
-      map[layer].push_back(std::move(shape));
     }
   }
 }

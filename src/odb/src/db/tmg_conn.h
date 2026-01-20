@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -21,39 +22,39 @@ class tmg_rc_sh
             dbTechVia* tech_via,
             dbVia* block_via,
             dbTechNonDefaultRule* rule = nullptr)
-      : _rect(rect),
-        _layer(layer),
-        _tech_via(tech_via),
-        _block_via(block_via),
-        _rule(rule)
+      : rect_(rect),
+        layer_(layer),
+        tech_via_(tech_via),
+        block_via_(block_via),
+        rule_(rule)
   {
   }
 
-  const Rect& rect() const { return _rect; }
-  int xMin() const { return _rect.xMin(); }
-  int xMax() const { return _rect.xMax(); }
-  int yMin() const { return _rect.yMin(); }
-  int yMax() const { return _rect.yMax(); }
-  uint getDX() const { return (_rect.xMax() - _rect.xMin()); }
-  uint getDY() const { return (_rect.yMax() - _rect.yMin()); }
+  const Rect& rect() const { return rect_; }
+  int xMin() const { return rect_.xMin(); }
+  int xMax() const { return rect_.xMax(); }
+  int yMin() const { return rect_.yMin(); }
+  int yMax() const { return rect_.yMax(); }
+  uint32_t getDX() const { return (rect_.xMax() - rect_.xMin()); }
+  uint32_t getDY() const { return (rect_.yMax() - rect_.yMin()); }
 
-  bool isVia() const { return (_tech_via || _block_via); }
-  dbTechVia* getTechVia() const { return _tech_via; }
-  dbVia* getVia() const { return _block_via; }
-  dbTechLayer* getTechLayer() const { return _layer; }
-  dbTechNonDefaultRule* getRule() const { return _rule; }
+  bool isVia() const { return (tech_via_ || block_via_); }
+  dbTechVia* getTechVia() const { return tech_via_; }
+  dbVia* getVia() const { return block_via_; }
+  dbTechLayer* getTechLayer() const { return layer_; }
+  dbTechNonDefaultRule* getRule() const { return rule_; }
 
-  void setXmin(int x) { _rect.set_xlo(x); }
-  void setXmax(int x) { _rect.set_xhi(x); }
-  void setYmin(int y) { _rect.set_ylo(y); }
-  void setYmax(int y) { _rect.set_yhi(y); }
+  void setXmin(int x) { rect_.set_xlo(x); }
+  void setXmax(int x) { rect_.set_xhi(x); }
+  void setYmin(int y) { rect_.set_ylo(y); }
+  void setYmax(int y) { rect_.set_yhi(y); }
 
  private:
-  Rect _rect;
-  dbTechLayer* _layer{nullptr};
-  dbTechVia* _tech_via{nullptr};
-  dbVia* _block_via{nullptr};
-  dbTechNonDefaultRule* _rule{nullptr};
+  Rect rect_;
+  dbTechLayer* layer_{nullptr};
+  dbTechVia* tech_via_{nullptr};
+  dbVia* block_via_{nullptr};
+  dbTechNonDefaultRule* rule_{nullptr};
 };
 
 struct tmg_rc
@@ -64,56 +65,56 @@ struct tmg_rc
          const bool is_vertical,
          const int width,
          const int default_ext)
-      : _from_idx(from_idx),
-        _to_idx(to_idx),
-        _shape(shape),
-        _is_vertical(is_vertical),
-        _width(width),
-        _default_ext(default_ext)
+      : from_idx(from_idx),
+        to_idx(to_idx),
+        shape(shape),
+        is_vertical(is_vertical),
+        width(width),
+        default_ext(default_ext)
   {
   }
-  const int _from_idx;  // index to _ptV
-  int _to_idx;
-  tmg_rc_sh _shape;
-  const bool _is_vertical;
-  const int _width;
-  const int _default_ext;
+  const int from_idx;  // index to _ptV
+  int to_idx;
+  tmg_rc_sh shape;
+  const bool is_vertical;
+  const int width;
+  const int default_ext;
 };
 
 struct tmg_rcpt
 {
-  tmg_rcpt(int x, int y, dbTechLayer* layer) : _x(x), _y(y), _layer(layer) {}
-  const int _x;  // nominal point
-  const int _y;
-  dbTechLayer* const _layer;
-  int _tindex{-1};  // index to _termV
-  tmg_rcpt* _next_for_term{nullptr};
-  tmg_rcpt* _t_alt{nullptr};
-  tmg_rcpt* _next_for_clear{nullptr};
-  tmg_rcpt* _sring{nullptr};
-  int _dbwire_id{-1};
-  bool _fre{false};
-  bool _jct{false};
-  bool _pinpt{false};
-  bool _c2pinpt{false};
+  tmg_rcpt(int x, int y, dbTechLayer* layer) : x(x), y(y), layer(layer) {}
+  const int x;  // nominal point
+  const int y;
+  dbTechLayer* const layer;
+  int tindex{-1};  // index to _termV
+  tmg_rcpt* next_for_term{nullptr};
+  tmg_rcpt* t_alt{nullptr};
+  tmg_rcpt* next_for_clear{nullptr};
+  tmg_rcpt* sring{nullptr};
+  int dbwire_id{-1};
+  bool fre{false};
+  bool jct{false};
+  bool pinpt{false};
+  bool c2pinpt{false};
 };
 
 struct tmg_rcterm
 {
-  tmg_rcterm(dbITerm* iterm) : _iterm(iterm), _bterm(nullptr) {}
-  tmg_rcterm(dbBTerm* bterm) : _iterm(nullptr), _bterm(bterm) {}
-  dbITerm* const _iterm;
-  dbBTerm* const _bterm;
-  tmg_rcpt* _pt;        // list of points
-  tmg_rcpt* _first_pt;  // first point in dfs
+  tmg_rcterm(dbITerm* iterm) : iterm(iterm), bterm(nullptr) {}
+  tmg_rcterm(dbBTerm* bterm) : iterm(nullptr), bterm(bterm) {}
+  dbITerm* const iterm;
+  dbBTerm* const bterm;
+  tmg_rcpt* pt;        // list of points
+  tmg_rcpt* first_pt;  // first point in dfs
 };
 
 struct tmg_rcshort
 {
-  tmg_rcshort(int i0, int i1) : _i0(i0), _i1(i1) {}
-  const int _i0;
-  const int _i1;
-  bool _skip{false};
+  tmg_rcshort(int i0, int i1) : i0(i0), i1(i1) {}
+  const int i0;
+  const int i1;
+  bool skip{false};
 };
 
 // This stores shapes by level through addShape.  Once all the shapes
@@ -157,13 +158,13 @@ class tmg_conn
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
-  bool isConnected() { return _connected; }
+  bool isConnected() { return connected_; }
   int ptDist(int fr, int to) const;
-  const tmg_rcpt& pt(const int index) const { return _ptV[index]; }
+  const tmg_rcpt& pt(const int index) const { return ptV_[index]; }
   void checkConnOrdered();
 
  private:
-  tmg_rcpt& pt(const int index) { return _ptV[index]; }
+  tmg_rcpt& pt(const int index) { return ptV_[index]; }
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
   void findConnections();
@@ -210,35 +211,35 @@ class tmg_conn
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
 
-  int _slicedTilePinCnt;
-  int _stbtx1[200];
-  int _stbty1[200];
-  int _stbtx2[200];
-  int _stbty2[200];
-  dbBTerm* _slicedTileBTerm[200];
-  std::unique_ptr<tmg_conn_search> _search;
-  std::unique_ptr<tmg_conn_graph> _graph;
-  std::vector<tmg_rc> _rcV;
-  std::vector<tmg_rcpt> _ptV;
-  std::vector<tmg_rcterm> _termV;
-  std::vector<tmg_rcterm*> _tstackV;
-  std::vector<tmg_rcshort> _shortV;
-  dbNet* _net;
-  bool _hasSWire;
-  bool _connected;
-  dbWireEncoder _encoder;
-  dbWire* _newWire;
-  dbTechNonDefaultRule* _net_rule;
-  dbTechNonDefaultRule* _path_rule;
-  bool _need_short_wire_id;
-  std::vector<std::array<tmg_connect_shape, 32>> _csVV;
-  std::array<tmg_connect_shape, 32>* _csV;
-  std::vector<int> _csNV;
-  int _csN;
-  tmg_rcpt* _first_for_clear;
+  int slicedTilePinCnt_;
+  int stbtx1_[200];
+  int stbty1_[200];
+  int stbtx2_[200];
+  int stbty2_[200];
+  dbBTerm* slicedTileBTerm_[200];
+  std::unique_ptr<tmg_conn_search> search_;
+  std::unique_ptr<tmg_conn_graph> graph_;
+  std::vector<tmg_rc> rcV_;
+  std::vector<tmg_rcpt> ptV_;
+  std::vector<tmg_rcterm> termV_;
+  std::vector<tmg_rcterm*> tstackV_;
+  std::vector<tmg_rcshort> shortV_;
+  dbNet* net_;
+  bool hasSWire_;
+  bool connected_;
+  dbWireEncoder encoder_;
+  dbWire* newWire_;
+  dbTechNonDefaultRule* net_rule_;
+  dbTechNonDefaultRule* path_rule_;
+  bool need_short_wire_id_;
+  std::vector<std::array<tmg_connect_shape, 32>> csVV_;
+  std::array<tmg_connect_shape, 32>* csV_;
+  std::vector<int> csNV_;
+  int csN_;
+  tmg_rcpt* first_for_clear_;
 
-  int _last_id;
-  int _firstSegmentAfterVia;
+  int last_id_;
+  int firstSegmentAfterVia_;
   utl::Logger* logger_;
 };
 

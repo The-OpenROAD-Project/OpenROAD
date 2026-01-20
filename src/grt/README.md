@@ -114,6 +114,9 @@ also set resource adjustment for a layer range, e.g.: `set_global_routing_layer_
 Metal4-Metal8 0.3` reduces the routing resources of routing layers  `Metal4`,
 `Metal5`, `Metal6`, `Metal7` and `Metal8` by 30%.
 
+Negative adjustment values can be used to increase the capacity of a given metal layer. For example,
+`set_global_routing_layer_adjustment Metal5 -0.5` will increase the total capacity of `Metal5` by 50%.
+
 ```tcl
 set_global_routing_layer_adjustment layer adjustment
 ```
@@ -355,6 +358,24 @@ read_global_route_segments file_name
 | Switch Name | Description |
 | ----- | ----- |
 | `file_name` | Path to global routing segments file. | 
+
+### Estimate Path Resistance Between Two Pins
+
+This command calculates the path resistance between two pins considering the 
+vias and wires connecting them. The two pins need to be connected by the same
+wire.
+
+```tcl
+estimate_path_resistance pin_name_1 pin_name_2 [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `pin_name_1` | Pin name 1 (e.g., `_437_/Y`). | 
+| `pin_name_2` | Pin name 1 (e.g., `_438_/A`). |
+| `-verbose` | Print path details. |
 
 ## Example scripts
 

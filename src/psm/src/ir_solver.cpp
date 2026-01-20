@@ -47,8 +47,8 @@ IRSolver::IRSolver(
     sta::dbSta* sta,
     est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
-    const std::map<odb::dbNet*, std::map<sta::Corner*, Voltage>>& user_voltages,
-    const std::map<odb::dbInst*, std::map<sta::Corner*, Power>>& user_powers,
+    const UserVoltages& user_voltages,
+    const UserPowers& user_powers,
     const PDNSim::GeneratedSourceSettings& generated_source_settings)
     : net_(net),
       logger_(logger),
@@ -285,25 +285,70 @@ void IRSolver::reportUnconnectedNodes() const
       tool_category, net_->getName().c_str());
 
   if (!results.unconnected_nodes.empty()) {
-    odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(net_category, "Unconnected node");
-    for (auto* node : results.unconnected_nodes) {
-      logger_->warn(utl::PSM,
-                    38,
-                    "Unconnected node on net {} at location ({:4.3f}um, "
-                    "{:4.3f}um), layer: {}.",
-                    net_->getName(),
-                    node->getPoint().getX() / dbu,
-                    node->getPoint().getY() / dbu,
-                    node->getLayer()->getName());
+    if (logger_->debugCheck(utl::PSM, "reportnodes", 1)) {
+      odb::dbMarkerCategory* category
+          = odb::dbMarkerCategory::create(net_category, "Unconnected node");
+      for (auto* node : results.unconnected_nodes) {
+        logger_->warn(utl::PSM,
+                      42,
+                      "Unconnected node on net {} at location ({:4.3f}um, "
+                      "{:4.3f}um), layer: {}.",
+                      net_->getName(),
+                      node->getPoint().getX() / dbu,
+                      node->getPoint().getY() / dbu,
+                      node->getLayer()->getName());
 
-      odb::dbMarker* marker = odb::dbMarker::create(category);
-      if (marker == nullptr) {
-        continue;
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          continue;
+        }
+        marker->addSource(net_);
+        marker->setTechLayer(node->getLayer());
+        marker->addShape(node->getPoint());
       }
-      marker->addSource(net_);
-      marker->setTechLayer(node->getLayer());
-      marker->addShape(node->getPoint());
+    }
+    std::map<odb::dbTechLayer*, IRNetwork::ShapeTree> shapes;
+    odb::dbMarkerCategory* category
+        = odb::dbMarkerCategory::create(net_category, "Unconnected shape");
+
+    std::set<const Shape*> reported_shapes;
+    for (auto* node : results.unconnected_nodes) {
+      if (shapes.find(node->getLayer()) == shapes.end()) {
+        // get tree is not found
+        shapes[node->getLayer()] = network_->getShapeTree(node->getLayer());
+      }
+      const auto& layer_shapes = shapes[node->getLayer()];
+      for (auto itr = layer_shapes.qbegin(
+               boost::geometry::index::intersects(node->getPoint()));
+           itr != layer_shapes.qend();
+           itr++) {
+        const Shape* shape = *itr;
+
+        if (reported_shapes.find(shape) != reported_shapes.end()) {
+          continue;
+        }
+        reported_shapes.insert(shape);
+
+        const odb::Rect rect = shape->getShape();
+        logger_->warn(utl::PSM,
+                      38,
+                      "Unconnected shape on net {} at ({:4.3f}um, "
+                      "{:4.3f}um) - ({:4.3f}um, {:4.3f}um), layer: {}.",
+                      net_->getName(),
+                      rect.xMin() / dbu,
+                      rect.yMin() / dbu,
+                      rect.xMax() / dbu,
+                      rect.yMax() / dbu,
+                      shape->getLayer()->getName());
+
+        odb::dbMarker* marker = odb::dbMarker::create(category);
+        if (marker == nullptr) {
+          break;
+        }
+        marker->addSource(net_);
+        marker->setTechLayer(shape->getLayer());
+        marker->addShape(rect);
+      }
     }
   }
 
@@ -431,7 +476,8 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
 }
 
 Connection::ConnectionMap<Connection::Conductance>
-IRSolver::generateConductanceMap(sta::Corner* corner) const
+IRSolver::generateConductanceMap(sta::Corner* corner,
+                                 const Connections& connections) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate conductance map: {}");
@@ -439,7 +485,7 @@ IRSolver::generateConductanceMap(sta::Corner* corner) const
   const Connection::ResistanceMap resistance = getResistanceMap(corner);
 
   Connection::ConnectionMap<Connection::Conductance> conductance;
-  for (const auto& conn : network_->getConnections()) {
+  for (const auto& conn : connections) {
     const auto res = conn->getResistance(resistance);
     conductance[conn.get()] = 1.0 / res;
   }
@@ -447,11 +493,10 @@ IRSolver::generateConductanceMap(sta::Corner* corner) const
   return conductance;
 }
 
-IRSolver::Voltage IRSolver::generateSourceNodes(
-    GeneratedSourceType source_type,
-    const std::string& source_file,
-    sta::Corner* corner,
-    std::vector<std::unique_ptr<SourceNode>>& sources) const
+IRSolver::Voltage IRSolver::generateSourceNodes(GeneratedSourceType source_type,
+                                                const std::string& source_file,
+                                                sta::Corner* corner,
+                                                SourceNodes& sources) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate source nodes: {}");
@@ -493,25 +538,23 @@ IRSolver::Voltage IRSolver::generateSourceNodes(
   return src_voltage;
 }
 
-std::vector<std::unique_ptr<SourceNode>>
-IRSolver::generateSourceNodesFromBTerms() const
+SourceNodes IRSolver::generateSourceNodesFromBTerms() const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate source nodes from bterms: {}");
 
-  std::vector<std::unique_ptr<SourceNode>> src_nodes;
+  SourceNodes src_nodes;
 
-  for (auto* root_node : network_->getBPinShapeNodes()) {
+  for (Node* root_node : network_->getBPinShapeNodes()) {
     src_nodes.push_back(std::make_unique<SourceNode>(root_node));
   }
 
   return src_nodes;
 }
 
-std::vector<std::unique_ptr<SourceNode>>
-IRSolver::generateSourceNodesGenericFull() const
+SourceNodes IRSolver::generateSourceNodesGenericFull() const
 {
-  std::vector<std::unique_ptr<SourceNode>> src_nodes;
+  SourceNodes src_nodes;
 
   logger_->info(utl::PSM,
                 71,
@@ -524,8 +567,7 @@ IRSolver::generateSourceNodesGenericFull() const
   return src_nodes;
 }
 
-std::vector<std::unique_ptr<SourceNode>>
-IRSolver::generateSourceNodesGenericStraps() const
+SourceNodes IRSolver::generateSourceNodesGenericStraps() const
 {
   odb::dbTechLayer* top_layer = network_->getTopLayer();
   odb::dbTechLayer* connect_layer
@@ -581,8 +623,7 @@ IRSolver::generateSourceNodesGenericStraps() const
   return generateSourceNodesFromShapes(straps);
 }
 
-std::vector<std::unique_ptr<SourceNode>>
-IRSolver::generateSourceNodesGenericBumps() const
+SourceNodes IRSolver::generateSourceNodesGenericBumps() const
 {
   const double dbus = getBlock()->getDbUnitsPerMicron();
 
@@ -626,8 +667,8 @@ IRSolver::generateSourceNodesGenericBumps() const
   return generateSourceNodesFromShapes(bumps);
 }
 
-std::vector<std::unique_ptr<SourceNode>>
-IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
+SourceNodes IRSolver::generateSourceNodesFromShapes(
+    const std::set<odb::Rect>& shapes) const
 {
   std::set<odb::Rect> intersect_shapes;
   const auto& top_shapes = network_->getShapes().at(network_->getTopLayer());
@@ -644,7 +685,7 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
     }
   }
 
-  std::map<odb::Point, std::vector<std::unique_ptr<SourceNode>>> source_nodes;
+  std::map<odb::Point, SourceNodes> source_nodes;
   const double dbus = getBlock()->getDbUnitsPerMicron();
 
   const auto top_nodes = network_->getTopLayerNodeTree();
@@ -682,7 +723,7 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
     }
   }
 
-  std::vector<std::unique_ptr<SourceNode>> src_nodes;
+  SourceNodes src_nodes;
   src_nodes.reserve(source_nodes.size());
   for (auto& [pt, nodes] : source_nodes) {
     // ensure nodes are unique
@@ -699,7 +740,7 @@ IRSolver::generateSourceNodesFromShapes(const std::set<odb::Rect>& shapes) const
 IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
     const std::string& source_file,
     sta::Corner* corner,
-    std::vector<std::unique_ptr<SourceNode>>& sources) const
+    SourceNodes& sources) const
 {
   const utl::DebugScopedTimer timer(
       logger_,
@@ -785,23 +826,26 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
   return src_voltage;
 }
 
-void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
-                                   ValueNodeMap<Current>& currents) const
+IRSolver::Power IRSolver::buildNodeCurrentMap(
+    sta::Corner* corner,
+    ValueNodeMap<Current>& currents) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
   // Build power map
+  std::map<odb::dbInst*, Power> instance_powers;
   const auto inst_nodes = network_->getInstanceNodeMapping();
   const Voltage power_voltage = getPowerNetVoltage(corner);
   if (power_voltage == 0) {
     logger_->error(utl::PSM, 74, "Unable to determine voltage for power nets.");
   }
   for (const auto& [inst, power] : getInstancePower(corner)) {
-    const Current current = power / power_voltage;
     auto find_inst = inst_nodes.find(inst);
     if (find_inst == inst_nodes.end()) {
       continue;
     }
+    instance_powers[inst] = power;
+    const Current current = power / power_voltage;
     const auto& nodes = find_inst->second;
     for (auto* node : nodes) {
       currents[node] += current / nodes.size();
@@ -823,12 +867,19 @@ void IRSolver::buildNodeCurrentMap(sta::Corner* corner,
       continue;
     }
 
+    instance_powers[inst] = find_power->second;
     const Current current = find_power->second / power_voltage;
     const auto& nodes = find_inst->second;
     for (auto* node : nodes) {
       currents[node] += current / nodes.size();
     }
   }
+
+  Power total_power = 0.0;
+  for (const auto& [inst, power] : instance_powers) {
+    total_power += power;
+  }
+  return total_power;
 }
 
 std::map<Node*, Connection::ConnectionSet> IRSolver::getNodeConnectionMap(
@@ -860,9 +911,8 @@ std::map<Node*, std::size_t> IRSolver::assignNodeIDs(const Node::NodeSet& nodes,
   return node_index;
 }
 
-std::map<Node*, std::size_t> IRSolver::assignNodeIDs(
-    const std::vector<std::unique_ptr<SourceNode>>& nodes,
-    std::size_t start) const
+std::map<Node*, std::size_t> IRSolver::assignNodeIDs(const SourceNodes& nodes,
+                                                     std::size_t start) const
 {
   Node::NodeSet node_set;
   for (const auto& node : nodes) {
@@ -924,7 +974,7 @@ void IRSolver::buildCondMatrixAndVoltages(
 
 void IRSolver::addSourcesToMatrixAndVoltages(
     Voltage src_voltage,
-    const std::vector<std::unique_ptr<psm::SourceNode>>& sources,
+    const SourceNodes& sources,
     const std::map<Node*, std::size_t>& node_index,
     Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
     Eigen::VectorXd& j_vector) const
@@ -975,7 +1025,33 @@ void IRSolver::solve(sta::Corner* corner,
   voltages.clear();
   currents.clear();
 
-  const auto conductance = generateConductanceMap(corner);
+  // Build source map
+  SourceNodes real_src_nodes;
+  Voltage src_voltage
+      = generateSourceNodes(source_type, source_file, corner, real_src_nodes);
+
+  SourceNodes src_nodes;
+  Connections src_conns;
+  // If resistance is set, add connection from source nodes to new source and
+  // connect
+  if (generated_source_settings_.resistance > 0) {
+    src_nodes.reserve(real_src_nodes.size());
+    src_conns.reserve(real_src_nodes.size());
+    for (const auto& real_src_node : real_src_nodes) {
+      src_conns.push_back(std::make_unique<FixedResistanceConnection>(
+          real_src_node->getSource(),
+          real_src_node.get(),
+          generated_source_settings_.resistance));
+      src_nodes.push_back(std::make_unique<SourceNode>(real_src_node.get()));
+    }
+  } else {
+    src_nodes = std::move(real_src_nodes);
+    real_src_nodes.clear();
+  }
+
+  // Build conductance map
+  Connection::ConnectionMap<Connection::Conductance> conductance
+      = generateConductanceMap(corner, network_->getConnections());
   debugPrint(logger_,
              utl::PSM,
              "stats",
@@ -987,23 +1063,34 @@ void IRSolver::solve(sta::Corner* corner,
     dumpConductance(conductance, "cond");
   }
 
-  const auto node_connections = getNodeConnectionMap(conductance);
+  std::map<Node*, Connection::ConnectionSet> node_connections
+      = getNodeConnectionMap(conductance);
   Node::NodeSet all_nodes;
   for (const auto& [node, conns] : node_connections) {
     all_nodes.insert(node);
   }
 
-  buildNodeCurrentMap(corner, currents);
+  // Add source conductance
+  if (!src_conns.empty()) {
+    const auto src_conductance = generateConductanceMap(corner, src_conns);
+    for (const auto& [conn, cond] : src_conductance) {
+      conductance[conn] = cond;
+    }
+    for (const auto& [node, conns] : getNodeConnectionMap(src_conductance)) {
+      node_connections[node].insert(conns.begin(), conns.end());
+    }
+  }
 
-  // Build source map
-  std::vector<std::unique_ptr<SourceNode>> src_nodes;
-  Voltage src_voltage
-      = generateSourceNodes(source_type, source_file, corner, src_nodes);
+  const Power total_power = buildNodeCurrentMap(corner, currents);
 
   // Solve
   // create vector of nodes
   std::map<Node*, std::size_t> node_index = assignNodeIDs(all_nodes);
   const std::map<Node*, std::size_t> real_node_index = node_index;
+  for (const auto& [node, id] :
+       assignNodeIDs(real_src_nodes, node_index.size())) {
+    node_index[node] = id;
+  }
   for (const auto& [node, id] : assignNodeIDs(src_nodes, node_index.size())) {
     node_index[node] = id;
   }
@@ -1042,6 +1129,7 @@ void IRSolver::solve(sta::Corner* corner,
     if (logger_->debugCheck(utl::PSM, "dump", 1)) {
       network_->dumpNodes(node_index);
       dumpMatrix(g_matrix, "G");
+      dumpVector(j_vector, "J");
     }
     logger_->error(
         utl::PSM,
@@ -1077,6 +1165,7 @@ void IRSolver::solve(sta::Corner* corner,
     voltages[node] = v_vector[node_idx];
   }
   solution_voltages_[corner] = src_voltage;
+  solution_power_[corner] = total_power;
 }
 
 std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
@@ -1270,6 +1359,7 @@ IRSolver::Results IRSolver::getSolution(sta::Corner* corner) const
   }
 
   results.net_voltage = solution_voltages_.at(corner);
+  results.total_power = solution_power_.at(corner);
 
   const bool is_ground = results.net_voltage == 0.0;
   auto worst_calc = [is_ground](Voltage& worst, Voltage check) {
@@ -1357,6 +1447,7 @@ void IRSolver::report(sta::Corner* corner) const
   logger_->report("########## IR report #################");
   logger_->report("Net              : {}", net_->getName());
   logger_->report("Corner           : {}", corner->name());
+  logger_->report("Total power      : {:3.2e} W", results.total_power);
   logger_->report("Supply voltage   : {:3.2e} V", results.net_voltage);
   logger_->report("Worstcase voltage: {:3.2e} V", results.worst_voltage);
   logger_->report("Average voltage  : {:3.2e} V", results.avg_voltage);
@@ -1536,7 +1627,7 @@ void IRSolver::writeSpiceFile(GeneratedSourceType source_type,
   // Add sources
   spice << '\n';
   spice << "* Sources\n";
-  std::vector<std::unique_ptr<SourceNode>> src_nodes;
+  SourceNodes src_nodes;
   const Voltage src_voltage = generateSourceNodes(
       source_type, voltage_source_file, corner, src_nodes);
 
@@ -1563,7 +1654,8 @@ Connection::ConnectionMap<IRSolver::Current> IRSolver::generateCurrentMap(
 {
   const auto& voltages = voltages_.at(corner);
   Connection::ConnectionMap<IRSolver::Current> currents;
-  for (const auto& [connection, cond] : generateConductanceMap(corner)) {
+  for (const auto& [connection, cond] :
+       generateConductanceMap(corner, network_->getConnections())) {
     if (connection->hasITermNode() || connection->hasBPinNode()) {
       continue;
     }

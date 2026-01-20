@@ -24,11 +24,11 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -notch_weight notch_weight \
                                           -macro_blockage_weight macro_blockage_weight \
                                           -target_util   target_util \
-                                          -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
+                                          -data_flow_driven \
                                         }
 proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
@@ -39,10 +39,10 @@ proc rtl_macro_placer { args } {
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight \
          -macro_blockage_weight -target_util \
-         -target_dead_space -min_ar \
+         -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-keep_clustering_data}
+    flags {-keep_clustering_data -data_flow_driven}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -66,8 +66,8 @@ proc rtl_macro_placer { args } {
   set halo_height 0.0
   set fence_lx 0.0
   set fence_ly 0.0
-  set fence_ux 100000000.0
-  set fence_uy 100000000.0
+  set fence_ux 0.0
+  set fence_uy 0.0
 
   set area_weight 0.1
   set outline_weight 100.0
@@ -78,7 +78,6 @@ proc rtl_macro_placer { args } {
   set notch_weight 10.0
   set macro_blockage_weight 10.0
   set target_util 0.25
-  set target_dead_space 0.05
   set min_ar 0.33
   set report_directory "hier_rtlmp"
 
@@ -159,9 +158,6 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-target_util)] } {
     set target_util $keys(-target_util)
   }
-  if { [info exists keys(-target_dead_space)] } {
-    set target_dead_space $keys(-target_dead_space)
-  }
   if { [info exists keys(-min_ar)] } {
     set min_ar $keys(-min_ar)
   }
@@ -191,10 +187,10 @@ proc rtl_macro_placer { args } {
       $guidance_weight $fence_weight $boundary_weight \
       $notch_weight $macro_blockage_weight \
       $target_util \
-      $target_dead_space \
       $min_ar \
       $report_directory \
-      [info exists flags(-keep_clustering_data)]]
+      [info exists flags(-keep_clustering_data)] \
+      [info exists flags(-data_flow_driven)]]
   } {
     return false
   }

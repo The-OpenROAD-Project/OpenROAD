@@ -165,6 +165,11 @@ save_histogram_image
 
 This command can be used to generate an animated gif.
 
+When used with -start this command returns an integer key that can be
+used to distinguish files if multiple are generated.  That key can be
+provided when using -add or -end.  If only a single file is being used
+the key can be ignored.
+
 ```tcl
 save_animated_gif
     -start|-add|-end
@@ -172,6 +177,7 @@ save_animated_gif
     [-area {x0 y0 x1 y1}]
     [-width width]
     [-delay delay]
+    [-key key]
     [filename]
 ```
 
@@ -187,6 +193,7 @@ save_animated_gif
 | `-resolution`| resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.|
 | `-width`| width of the output image in pixels, default will be computed from the resolution. Cannot be used with ``-resolution``.|
 | `-delay`| delay between frames in the GIF.|
+| `-key`| used to distinguish multiple GIF files (returned by -add). Defaults to the most recent GIF.|
 
 ### Select Objects
 
@@ -936,6 +943,30 @@ Update the paths in the Timing Report widget:
 
 ```tcl
 gui::update_timing_report
+```
+
+### Show Worst Path
+
+Update the paths in the Timing Report widget and select the path with the worst slack:
+
+```tcl
+gui::show_worst_path
+    [-setup|-hold]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `-setup` | Select the path with the worst setup slack (default). |
+| `-hold` | Select the path with the worst hold slack. |
+
+### Clear Timing Path
+
+Clear the selected timing path in the Timing Report widget:
+
+```tcl
+gui::clear_timing_path
 ```
 
 ## License

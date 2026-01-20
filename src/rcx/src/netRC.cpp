@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <string.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -14,13 +13,13 @@
 #include <vector>
 
 #include "find_some_net.h"
-#include "odb/array1.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "parse.h"
+#include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extViaModel.h"
@@ -33,8 +32,6 @@ namespace rcx {
 FILE* fp;
 #endif
 
-using odb::Ath__array1D;
-using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;
 using odb::dbCapNode;
@@ -66,10 +63,12 @@ void extMain::print_RC(dbRSeg* rc)
   print_shape(s, rc->getSourceNode(), rc->getTargetNode());
 }
 
-uint extMain::print_shape(const dbShape& shape, const uint j1, const uint j2)
+uint32_t extMain::print_shape(const dbShape& shape,
+                              const uint32_t j1,
+                              const uint32_t j2)
 {
-  const uint dx = shape.xMax() - shape.xMin();
-  const uint dy = shape.yMax() - shape.yMin();
+  const uint32_t dx = shape.xMax() - shape.xMin();
+  const uint32_t dy = shape.yMax() - shape.yMin();
   if (shape.isVia()) {
     dbTechVia* tech_via = shape.getTechVia();
     const std::string vname = tech_via->getName();
@@ -101,7 +100,9 @@ uint extMain::print_shape(const dbShape& shape, const uint j1, const uint j2)
   return 0;
 }
 
-uint extMain::computePathDir(const Point& p1, const Point& p2, uint* length)
+uint32_t extMain::computePathDir(const Point& p1,
+                                 const Point& p2,
+                                 uint32_t* length)
 {
   int len;
   if (p2.getX() == p1.getX()) {
@@ -123,7 +124,7 @@ void extMain::resetSumRCtable()
   _sumUpdated = 0;
   _tmpSumCapTable[0] = 0.0;
   _tmpSumResTable[0] = 0.0;
-  for (uint ii = 1; ii < _metRCTable.getCnt(); ii++) {
+  for (uint32_t ii = 1; ii < _metRCTable.getCnt(); ii++) {
     _tmpSumCapTable[ii] = 0.0;
     _tmpSumResTable[ii] = 0.0;
   }
@@ -132,10 +133,10 @@ void extMain::resetSumRCtable()
 void extMain::addToSumRCtable()
 {
   _sumUpdated = 1;
-  uint ii = 0;
+  uint32_t ii = 0;
   _tmpSumCapTable[ii] += _tmpCapTable[ii];  // _lefRC option
   _tmpSumResTable[ii] += _tmpResTable[ii];  // _lefRC option
-  for (uint ii = 1; ii < _metRCTable.getCnt(); ii++) {
+  for (uint32_t ii = 1; ii < _metRCTable.getCnt(); ii++) {
     _tmpSumCapTable[ii] += _tmpCapTable[ii];
     _tmpSumResTable[ii] += _tmpResTable[ii];
   }
@@ -143,10 +144,10 @@ void extMain::addToSumRCtable()
 
 void extMain::copyToSumRCtable()
 {
-  uint ii = 0;
+  uint32_t ii = 0;
   _tmpSumCapTable[ii] = _tmpCapTable[ii];  // _lefRC option
   _tmpSumResTable[ii] = _tmpResTable[ii];  // _lefRC option
-  for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
     _tmpSumCapTable[ii] = _tmpCapTable[ii];
     _tmpSumResTable[ii] = _tmpResTable[ii];
   }
@@ -169,7 +170,7 @@ double extMain::getViaResistance_b(dbVia* tvia, dbNet* net)
   dbSet<dbBox> boxes = tvia->getBoxes();
   dbSet<dbBox>::iterator bitr;
 
-  uint cutCnt = 0;
+  uint32_t cutCnt = 0;
   for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr) {
     dbBox* box = *bitr;
     dbTechLayer* layer1 = box->getTechLayer();
@@ -204,7 +205,7 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
   int Width[32];
   int Len[32];
   int Level[32];
-  for (uint jj = 1; jj < 32; jj++) {
+  for (uint32_t jj = 1; jj < 32; jj++) {
     Level[jj] = 0;
     Width[jj] = 0;
     Len[jj] = 0;
@@ -227,7 +228,7 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
     int width = std::min(dx, dy);
     int len = std::max(dx, dy);
 
-    uint level = s.getTechLayer()->getRoutingLevel();
+    uint32_t level = s.getTechLayer()->getRoutingLevel();
     if (Len[level] < len) {
       Len[level] = len;
       Width[level] = width;
@@ -251,7 +252,7 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
           _debug_net_id);
     }
   }
-  for (uint jj = 1; jj < 32; jj++) {
+  for (uint32_t jj = 1; jj < 32; jj++) {
     if (Level[jj] == 0) {
       continue;
     }
@@ -259,7 +260,7 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
     int w = Width[jj];
     int len = Len[jj];
 
-    for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
       double areaCap;
       double c1 = getFringe(jj, w, ii, areaCap);
 
@@ -294,11 +295,11 @@ void extMain::getShapeRC(dbNet* net,
 
   if (s.isVia()) {
     double res = 0.0;
-    uint level = 0;
+    uint32_t level = 0;
     if (dbTechVia* tvia = s.getTechVia()) {
       const char* viaName = tvia->getConstName();
       // find res from ViaModelTable
-      for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+      for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
         extMetRCTable* rcTable = _metRCTable.get(ii);
         extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
         if (viaModel != nullptr) {
@@ -315,7 +316,7 @@ void extMain::getShapeRC(dbNet* net,
         tvia->setResistance(res);
       }
       if (res <= 0.0) {
-        const uint width = tvia->getBottomLayer()->getWidth();
+        const uint32_t width = tvia->getBottomLayer()->getWidth();
         res = getResistance(level, width, width, 0);
       }
     } else {
@@ -325,7 +326,7 @@ void extMain::getShapeRC(dbNet* net,
         res = getViaResistance_b(bvia, net);
 
         if (res <= 0.0) {
-          const uint width = bvia->getBottomLayer()->getWidth();
+          const uint32_t width = bvia->getBottomLayer()->getWidth();
           res = getResistance(level, width, width, 0);
         }
       }
@@ -333,14 +334,14 @@ void extMain::getShapeRC(dbNet* net,
     if (level > 0) {
       if (_lefRC) {
         dbVia* bvia = s.getVia();
-        uint width = bvia->getBottomLayer()->getWidth();
+        uint32_t width = bvia->getBottomLayer()->getWidth();
         double areaCap;
         _tmpCapTable[0] = width * 2 * getFringe(level, width, 0, areaCap);
         _tmpCapTable[0] += 2 * areaCap * width * width;
         _tmpResTable[0] = res;
       } else {
         getViaCapacitance(s, net);
-        for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+        for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
           if (viaModelFound) {
             _tmpResTable[ii] = viaResTable[ii];
           } else {
@@ -350,11 +351,11 @@ void extMain::getShapeRC(dbNet* net,
       }
     }
   } else {
-    uint len;
+    uint32_t len;
     computePathDir(prevPoint, pshape.point, &len);
 
-    const uint level = s.getTechLayer()->getRoutingLevel();
-    uint width = std::min(pshape.shape.getDX(), pshape.shape.getDY());
+    const uint32_t level = s.getTechLayer()->getRoutingLevel();
+    uint32_t width = std::min(pshape.shape.getDX(), pshape.shape.getDY());
     len = std::max(pshape.shape.getDX(), pshape.shape.getDY());
     //    const auto [width, len]= std::minmax({pshape.shape.getDX(),
     //    pshape.shape.getDY()});
@@ -371,7 +372,7 @@ void extMain::getShapeRC(dbNet* net,
       const double res = getResistance(level, width, len, 0);
       _tmpResTable[0] = res;
     } else {
-      for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+      for (uint32_t ii = 0; ii < _metRCTable.getCnt(); ii++) {
         double areaCap;
         getFringe(level, width, ii, areaCap);
 
@@ -399,9 +400,9 @@ void extMain::getShapeRC(dbNet* net,
 }
 
 void extMain::setResCapFromLef(dbRSeg* rc,
-                               uint targetCapId,
+                               uint32_t targetCapId,
                                dbShape& s,
-                               uint len)
+                               uint32_t len)
 {
   double cap = 0.0;
   double res = 0.0;
@@ -412,17 +413,17 @@ void extMain::setResCapFromLef(dbRSeg* rc,
     res = via->getResistance();
 
     if (_couplingFlag == 0) {
-      uint n = via->getBottomLayer()->getRoutingLevel();
+      uint32_t n = via->getBottomLayer()->getRoutingLevel();
       len = 2 * via->getBottomLayer()->getWidth();
       cap = _modelTable->get(0)->getTotCapOverSub(n) * len;
     }
   } else {
-    uint level = s.getTechLayer()->getRoutingLevel();
+    uint32_t level = s.getTechLayer()->getRoutingLevel();
     res = _modelTable->get(0)->getRes(level) * len;
 
     cap = _modelTable->get(0)->getTotCapOverSub(level) * len;
   }
-  for (uint ii = 0; ii < _extDbCnt; ii++) {
+  for (uint32_t ii = 0; ii < _extDbCnt; ii++) {
     double xmult = 1.0 + 0.1 * ii;
     rc->setResistance(xmult * res, ii);
 
@@ -443,7 +444,7 @@ void extMain::setResAndCap(dbRSeg* rc,
     rc->setCapacitance(cap, 0);
     return;
   }
-  for (uint ii = 0; ii < _extDbCnt; ii++) {
+  for (uint32_t ii = 0; ii < _extDbCnt; ii++) {
     const int pcdbIdx = getProcessCornerDbIndex(ii);
     double res = _resModify ? restbl[ii] * _resFactor : restbl[ii];
     rc->setResistance(res, pcdbIdx);
@@ -460,7 +461,7 @@ void extMain::setResAndCap(dbRSeg* rc,
   }
 }
 
-void extMain::resetMapping(dbBTerm* bterm, dbITerm* iterm, uint junction)
+void extMain::resetMapping(dbBTerm* bterm, dbITerm* iterm, uint32_t junction)
 {
   if (bterm != nullptr) {
     _btermTable->set(bterm->getId(), 0);
@@ -488,15 +489,15 @@ bool extMain::isTermPathEnded(dbBTerm* bterm, dbITerm* iterm)
   return false;
 }
 
-uint extMain::getCapNodeId(dbNet* net,
-                           dbBTerm* bterm,
-                           dbITerm* iterm,
-                           const uint junction,
-                           const bool branch)
+uint32_t extMain::getCapNodeId(dbNet* net,
+                               dbBTerm* bterm,
+                               dbITerm* iterm,
+                               const uint32_t junction,
+                               const bool branch)
 {
   if (iterm != nullptr) {
-    const uint id = iterm->getId();
-    uint capId = _itermTable->geti(id);
+    const uint32_t id = iterm->getId();
+    uint32_t capId = _itermTable->geti(id);
     if (capId > 0) {
 #ifdef DEBUG_NET_ID
       if (iterm->getNet()->getId() == DEBUG_NET_ID) {
@@ -524,8 +525,8 @@ uint extMain::getCapNodeId(dbNet* net,
     return capId;
   }
   if (bterm != nullptr) {
-    uint id = bterm->getId();
-    uint capId = _btermTable->geti(id);
+    uint32_t id = bterm->getId();
+    uint32_t capId = _btermTable->geti(id);
     if (capId > 0) {
 #ifdef DEBUG_NET_ID
       if (bterm->getNet()->getId() == DEBUG_NET_ID) {
@@ -612,13 +613,13 @@ uint extMain::getCapNodeId(dbNet* net,
     }
   }
 
-  uint ncapId = cap->getId();
+  uint32_t ncapId = cap->getId();
   int tcapId = capId == 0 ? ncapId : -ncapId;
   _nodeTable->set(junction, tcapId);
   return ncapId;
 }
 
-uint extMain::resetMapNodes(dbNet* net)
+uint32_t extMain::resetMapNodes(dbNet* net)
 {
   dbWire* wire = net->getWire();
   if (wire == nullptr) {
@@ -628,7 +629,7 @@ uint extMain::resetMapNodes(dbNet* net)
     _netNoWireCnt++;
     return 0;
   }
-  uint cnt = 0;
+  uint32_t cnt = 0;
 
   dbWirePath path;
   dbWirePathShape pshape;
@@ -647,8 +648,8 @@ uint extMain::resetMapNodes(dbNet* net)
 }
 
 dbRSeg* extMain::addRSeg(dbNet* net,
-                         std::vector<uint>& rsegJid,
-                         uint& srcId,
+                         std::vector<uint32_t>& rsegJid,
+                         uint32_t& srcId,
                          Point& prevPoint,
                          const dbWirePath& path,
                          const dbWirePathShape& pshape,
@@ -660,7 +661,7 @@ dbRSeg* extMain::addRSeg(dbNet* net,
     rsegJid.clear();
     return nullptr;
   }
-  const uint dstId = getCapNodeId(
+  const uint32_t dstId = getCapNodeId(
       net, pshape.bterm, pshape.iterm, pshape.junction_id, isBranch);
   if (dstId == srcId) {
     std::string tname;
@@ -686,8 +687,8 @@ dbRSeg* extMain::addRSeg(dbNet* net,
     print_shape(pshape.shape, srcId, dstId);
   }
 
-  uint length;
-  const uint pathDir = computePathDir(prevPoint, pshape.point, &length);
+  uint32_t length;
+  const uint32_t pathDir = computePathDir(prevPoint, pshape.point, &length);
 
   Point pt;
   if (pshape.junction_id) {
@@ -695,9 +696,9 @@ dbRSeg* extMain::addRSeg(dbNet* net,
   }
   dbRSeg* rc = dbRSeg::create(net, pt.x(), pt.y(), pathDir, true);
 
-  const uint jidl = rsegJid.size();
-  const uint rsid = rc->getId();
-  for (uint jj = 0; jj < jidl; jj++) {
+  const uint32_t jidl = rsegJid.size();
+  const uint32_t rsid = rc->getId();
+  for (uint32_t jj = 0; jj < jidl; jj++) {
     net->getWire()->setProperty(rsegJid[jj], rsid);
   }
   rsegJid.clear();
@@ -750,9 +751,9 @@ bool extMain::getFirstShape(dbNet* net, dbShape& s)
   return status;
 }
 
-uint extMain::getShortSrcJid(uint jid)
+uint32_t extMain::getShortSrcJid(uint32_t jid)
 {
-  for (uint jj = 0; jj < _shortTgtJid.size(); jj++) {
+  for (uint32_t jj = 0; jj < _shortTgtJid.size(); jj++) {
     if (_shortTgtJid[jj] == jid) {
       return _shortSrcJid[jj];
     }
@@ -762,7 +763,7 @@ uint extMain::getShortSrcJid(uint jid)
 
 void extMain::make1stRSeg(dbNet* net,
                           dbWirePath& path,
-                          uint cnid,
+                          uint32_t cnid,
                           bool skipStartWarning)
 {
   int tx = 0;
@@ -799,11 +800,11 @@ void extMain::make1stRSeg(dbNet* net,
   rc->setTargetNode(cnid);
 }
 
-uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
+uint32_t extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
 {
   net->setRCgraph(true);
 
-  const uint rcCnt1 = resetMapNodes(net);
+  const uint32_t rcCnt1 = resetMapNodes(net);
   if (rcCnt1 <= 0) {
     return 0;
   }
@@ -815,7 +816,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
   _shortSrcJid.clear();
   _shortTgtJid.clear();
 
-  uint netId = net->getId();
+  uint32_t netId = net->getId();
 #ifdef DEBUG_NET_ID
   if (netId == DEBUG_NET_ID) {
     fp = fopen("rsegs", "w");
@@ -827,7 +828,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
         logger_, RCX, "rcseg", 1, "RCSEG:R makeNetRCsegs: BEGIN NET {}", netId);
   }
 
-  uint srcJid;
+  uint32_t srcJid;
   dbWire* wire = net->getWire();
   dbWirePathItr pitr;
   if (_mergeResBound != 0.0 || _mergeViaRes) {
@@ -840,7 +841,7 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
       if (path.is_short) {
         _nodeTable->set(path.short_junction, -1);
         srcJid = path.short_junction;
-        for (uint tt = 0; tt < _shortTgtJid.size(); tt++) {
+        for (uint32_t tt = 0; tt < _shortTgtJid.size(); tt++) {
           if (_shortTgtJid[tt] == srcJid) {
             srcJid = _shortSrcJid[tt];  // forward short
             break;
@@ -855,9 +856,9 @@ uint extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
       }
     }
   }
-  uint srcId;
+  uint32_t srcId;
   dbWirePathShape ppshape;
-  uint rcCnt = 0;
+  uint32_t rcCnt = 0;
   bool netHeadMarked = false;
   dbWirePath path;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
@@ -1045,7 +1046,7 @@ int extMain::getShapeProperty_rc(dbNet* net, int rc_id)
   return sid;
 }
 
-uint extMain::getExtBbox(int* x1, int* y1, int* x2, int* y2)
+uint32_t extMain::getExtBbox(int* x1, int* y1, int* x2, int* y2)
 {
   *x1 = _x1;
   *x2 = _x2;
@@ -1073,7 +1074,7 @@ int extMain::setMinTypMax(bool min,
                           int setMin,
                           int setTyp,
                           int setMax,
-                          uint extDbCnt)
+                          uint32_t extDbCnt)
 {
   _modelMap.resetCnt(0);
   _metRCTable.resetCnt(0);
@@ -1123,8 +1124,8 @@ int extMain::setMinTypMax(bool min,
 
   if (_currentModel == nullptr) {
     _currentModel = getRCmodel(0);
-    for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
-      uint jj = _modelMap.get(ii);
+    for (uint32_t ii = 0; ii < _modelMap.getCnt(); ii++) {
+      uint32_t jj = _modelMap.get(ii);
       _metRCTable.add(_currentModel->getMetRCTable(jj));
     }
   }
@@ -1156,18 +1157,18 @@ void extMain::getExtractedCorners()
     return;
   }
 
-  Ath__parser parser(logger_);
-  uint pCornerCnt
+  Parser parser(logger_);
+  uint32_t pCornerCnt
       = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
   if (pCornerCnt <= 0) {
     return;
   }
 
-  _processCornerTable = new Ath__array1D<extCorner*>();
+  _processCornerTable = new Array1D<extCorner*>();
 
-  uint cornerCnt = 0;
-  uint ii, jj;
-  char cName[128];
+  uint32_t cornerCnt = 0;
+  uint32_t ii, jj;
+  std::string cName;
   for (ii = 0; ii < pCornerCnt; ii++) {
     extCorner* t = new extCorner();
     t->_model = parser.getInt(ii);
@@ -1181,14 +1182,14 @@ void extMain::getExtractedCorners()
     return;
   }
 
-  uint sCornerCnt
+  uint32_t sCornerCnt
       = parser.mkWords(_prevControl->_derivedCornerList.c_str(), " ");
   if (sCornerCnt <= 0) {
     return;
   }
 
   if (_scaledCornerTable == nullptr) {
-    _scaledCornerTable = new Ath__array1D<extCorner*>();
+    _scaledCornerTable = new Array1D<extCorner*>();
   }
 
   for (ii = 0; ii < sCornerCnt; ii++) {
@@ -1201,18 +1202,18 @@ void extMain::getExtractedCorners()
       t->_extCornerPtr = _processCornerTable->get(jj);
       break;
     }
-    _block->getExtCornerName(pCornerCnt + ii, &cName[0]);
+    cName = _block->getExtCornerName(pCornerCnt + ii);
     if (jj == pCornerCnt) {
       logger_->warn(RCX,
                     120,
                     "No matching process corner for scaled corner {}, model {}",
-                    &cName[0],
+                    cName,
                     t->_model);
     }
     t->_dbIndex = cornerCnt++;
     _scaledCornerTable->add(t);
   }
-  Ath__array1D<double> A;
+  Array1D<double> A;
 
   parser.mkWords(_prevControl->_resFactorList.c_str(), " ");
   parser.getDoubleArray(&A, 0);
@@ -1246,14 +1247,15 @@ void extMain::makeCornerMapFromExtControl()
     return;
   }
 
-  Ath__parser parser(logger_);
-  uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
+  Parser parser(logger_);
+  uint32_t wordCnt
+      = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
   if (wordCnt <= 0) {
     return;
   }
 
-  char cName[128];
-  for (uint ii = 0; ii < wordCnt; ii++) {
+  std::string cName;
+  for (uint32_t ii = 0; ii < wordCnt; ii++) {
     int index = parser.getInt(ii);
     extCorner* t = nullptr;
     if (index > 0) {  // extracted corner
@@ -1263,9 +1265,9 @@ void extMain::makeCornerMapFromExtControl()
       t = _scaledCornerTable->get((-index) - 1);
     }
     t->_dbIndex = ii;
-    _block->getExtCornerName(ii, &cName[0]);
+    cName = _block->getExtCornerName(ii);
     free(t->_name);
-    t->_name = strdup(&cName[0]);
+    t->_name = strdup(cName.c_str());
   }
 }
 
@@ -1277,10 +1279,10 @@ char* extMain::addRCCorner(const char* name, int model, int userDefined)
     model = model - 100;
   }
   if (_processCornerTable == nullptr) {
-    _processCornerTable = new Ath__array1D<extCorner*>();
+    _processCornerTable = new Array1D<extCorner*>();
   }
 
-  for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+  for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
     extCorner* s = _processCornerTable->get(ii);
     if (s->_model == model) {
       logger_->info(
@@ -1327,7 +1329,7 @@ char* extMain::addRCCorner(const char* name, int model, int userDefined)
 }
 
 char* extMain::addRCCornerScaled(const char* name,
-                                 uint model,
+                                 uint32_t model,
                                  float resFactor,
                                  float ccFactor,
                                  float gndFactor)
@@ -1341,7 +1343,7 @@ char* extMain::addRCCornerScaled(const char* name,
     return nullptr;
   }
 
-  uint jj = 0;
+  uint32_t jj = 0;
   extCorner* pc = nullptr;
   for (; jj < _processCornerTable->getCnt(); jj++) {
     pc = _processCornerTable->get(jj);
@@ -1358,10 +1360,10 @@ char* extMain::addRCCornerScaled(const char* name,
     return nullptr;
   }
   if (_scaledCornerTable == nullptr) {
-    _scaledCornerTable = new Ath__array1D<extCorner*>();
+    _scaledCornerTable = new Array1D<extCorner*>();
   }
 
-  uint ii = 0;
+  uint32_t ii = 0;
   for (; ii < _scaledCornerTable->getCnt(); ii++) {
     extCorner* s = _scaledCornerTable->get(ii);
 
@@ -1399,7 +1401,7 @@ char* extMain::addRCCornerScaled(const char* name,
 void extMain::cleanCornerTables()
 {
   if (_scaledCornerTable != nullptr) {
-    for (uint ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
 
       free(s->_name);
@@ -1409,7 +1411,7 @@ void extMain::cleanCornerTables()
   }
   _scaledCornerTable = nullptr;
   if (_processCornerTable != nullptr) {
-    for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
 
       free(s->_name);
@@ -1470,7 +1472,7 @@ void extMain::deleteCorners()
 void extMain::getCorners(std::list<std::string>& ecl)
 {
   char buffer[64];
-  uint ii;
+  uint32_t ii;
   for (ii = 0; _processCornerTable && ii < _processCornerTable->getCnt();
        ii++) {
     std::string s1c;
@@ -1491,7 +1493,7 @@ void extMain::getCorners(std::list<std::string>& ecl)
 int extMain::getDbCornerIndex(const char* name)
 {
   if (_scaledCornerTable != nullptr) {
-    for (uint ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
 
       if (strcmp(s->_name, name) == 0) {
@@ -1500,7 +1502,7 @@ int extMain::getDbCornerIndex(const char* name)
     }
   }
   if (_processCornerTable != nullptr) {
-    for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
 
       if (strcmp(s->_name, name) == 0) {
@@ -1514,7 +1516,7 @@ int extMain::getDbCornerIndex(const char* name)
 int extMain::getDbCornerModel(const char* name)
 {
   if (_scaledCornerTable != nullptr) {
-    for (uint ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
 
       if (strcmp(s->_name, name) == 0) {
@@ -1523,7 +1525,7 @@ int extMain::getDbCornerModel(const char* name)
     }
   }
   if (_processCornerTable != nullptr) {
-    for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
 
       if (strcmp(s->_name, name) == 0) {
@@ -1541,7 +1543,7 @@ void extMain::makeCornerNameMap()
 
   int A[128];
   extCorner** map = new extCorner*[_cornerCnt];
-  for (uint jj = 0; jj < _cornerCnt; jj++) {
+  for (uint32_t jj = 0; jj < _cornerCnt; jj++) {
     map[jj] = nullptr;
     A[jj] = 0;
   }
@@ -1555,7 +1557,7 @@ void extMain::makeCornerNameMap()
     std::string resList;
     std::string ccList;
     std::string gndcList;
-    for (uint ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
 
       map[s->_dbIndex] = s;
@@ -1579,7 +1581,7 @@ void extMain::makeCornerNameMap()
     std::string extList;
     char buf[128];
 
-    for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+    for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
 
       A[s->_dbIndex] = ii + 1;
@@ -1592,7 +1594,7 @@ void extMain::makeCornerNameMap()
   }
   std::string aList;
 
-  for (uint k = 0; k < _cornerCnt; k++) {
+  for (uint32_t k = 0; k < _cornerCnt; k++) {
     aList += " " + std::to_string(A[k]);
   }
   _prevControl->_cornerIndexList = aList;
@@ -1604,7 +1606,7 @@ void extMain::makeCornerNameMap()
     buff += map[0]->_name;
   }
 
-  for (uint ii = 1; ii < _cornerCnt; ii++) {
+  for (uint32_t ii = 1; ii < _cornerCnt; ii++) {
     extCorner* s = map[ii];
     if (s == nullptr) {
       buff += " " + std::to_string(ii);
@@ -1637,14 +1639,14 @@ bool extMain::setCorners(const char* rulesFileName)
     extRCModel* m = new extRCModel("MINTYPMAX", logger_);
     _modelTable->add(m);
 
-    uint cornerTable[10];
-    uint extDbCnt = 0;
+    uint32_t cornerTable[10];
+    uint32_t extDbCnt = 0;
 
     _minModelIndex = 0;
     _maxModelIndex = 0;
     _typModelIndex = 0;
     if (_processCornerTable != nullptr) {
-      for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+      for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
         extCorner* s = _processCornerTable->get(ii);
         cornerTable[extDbCnt++] = s->_model;
         _modelMap.add(ii);
@@ -1708,22 +1710,23 @@ bool extMain::setCorners(const char* rulesFileName)
   _currentModel = getRCmodel(0);
   if (_v2) {
     if (_processCornerTable != nullptr && _couplingFlag > 0) {
-      for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
+      for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
         extCorner* s = _processCornerTable->get(ii);
         _modelMap.add(s->_model);
         _metRCTable.add(_currentModel->getMetRCTable(s->_model));
       }
     }
   } else {
-    for (uint ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
-      uint jj = _modelMap.get(ii);
+    for (uint32_t ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt();
+         ii++) {
+      uint32_t jj = _modelMap.get(ii);
       _metRCTable.add(_currentModel->getMetRCTable(jj));
     }
   }
   _extDbCnt = _processCornerTable->getCnt();
 
 #ifndef NDEBUG
-  uint scaleCornerCnt = 0;
+  uint32_t scaleCornerCnt = 0;
   if (_scaledCornerTable != nullptr) {
     scaleCornerCnt = _scaledCornerTable->getCnt();
   }
@@ -1734,9 +1737,9 @@ bool extMain::setCorners(const char* rulesFileName)
   return true;
 }
 
-void extMain::addDummyCorners(uint cornerCnt)
+void extMain::addDummyCorners(uint32_t cornerCnt)
 {
-  for (uint ii = 0; ii < cornerCnt; ii++) {
+  for (uint32_t ii = 0; ii < cornerCnt; ii++) {
     addRCCorner(nullptr, ii, -1);
   }
 }
@@ -1754,8 +1757,8 @@ void extMain::updatePrevControl()
   _prevControl->_mergeViaRes = _mergeViaRes;
   _prevControl->_mergeParallelCC = _mergeParallelCC;
   _prevControl->_useDbSdb = _useDbSdb;
-  _prevControl->_CCnoPowerSource = _CCnoPowerSource;
-  _prevControl->_CCnoPowerTarget = _CCnoPowerTarget;
+  _prevControl->_ccNoPowerSource = _ccNoPowerSource;
+  _prevControl->_ccNoPowerTarget = _ccNoPowerTarget;
   _prevControl->_usingMetalPlanes = _usingMetalPlanes;
   if (_currentModel && _currentModel->getRuleFileName()) {
     _prevControl->_ruleFileName = _currentModel->getRuleFileName();
@@ -1778,8 +1781,8 @@ void extMain::getPrevControl()
   _mergeViaRes = _prevControl->_mergeViaRes;
   _mergeParallelCC = _prevControl->_mergeParallelCC;
   _useDbSdb = _prevControl->_useDbSdb;
-  _CCnoPowerSource = _prevControl->_CCnoPowerSource;
-  _CCnoPowerTarget = _prevControl->_CCnoPowerTarget;
+  _ccNoPowerSource = _prevControl->_ccNoPowerSource;
+  _ccNoPowerTarget = _prevControl->_ccNoPowerTarget;
   _usingMetalPlanes = _prevControl->_usingMetalPlanes;
 }
 bool extMain::modelExists(const char* extRules)
@@ -1796,8 +1799,8 @@ bool extMain::modelExists(const char* extRules)
 }
 
 void extMain::makeBlockRCsegs(const char* netNames,
-                              uint cc_up,
-                              uint ccFlag,
+                              uint32_t cc_up,
+                              uint32_t ccFlag,
                               double resBound,
                               bool mergeViaRes,
                               double ccThres,
@@ -1808,7 +1811,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
     return;
   }
 
-  uint debugNetId = 0;
+  uint32_t debugNetId = 0;
 
   _diagFlow = true;
   _couplingFlag = ccFlag;
@@ -1839,8 +1842,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
 
   std::vector<dbNet*> inets;
   _allNet = !findSomeNet(_block, netNames, inets, logger_);
-  for (uint j = 0; j < inets.size(); j++) {
-    dbNet* net = inets[j];
+  for (auto net : inets) {
     net->setMark(true);
   }
 
@@ -1876,7 +1878,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
                 getBlock()->getName().c_str(),
                 _mergeResBound);
 
-  uint cnt = 0;
+  uint32_t cnt = 0;
   for (dbNet* net : _block->getNets()) {
     if (net->getSigType().isSupply()) {
       continue;
@@ -1953,12 +1955,12 @@ void extMain::makeBlockRCsegs(const char* netNames,
     m._maxModelIndex = 0;
     m._currentModel = _currentModel;
     m._diagModel = _currentModel[0].getDiagModel();
-    for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
-      uint jj = _modelMap.get(ii);
+    for (uint32_t ii = 0; ii < _modelMap.getCnt(); ii++) {
+      uint32_t jj = _modelMap.get(ii);
       m._metRCTable.add(_currentModel->getMetRCTable(jj));
     }
-    const uint techLayerCnt = getExtLayerCnt(_tech) + 1;
-    const uint modelLayerCnt = _currentModel->getLayerCnt();
+    const uint32_t techLayerCnt = getExtLayerCnt(_tech) + 1;
+    const uint32_t modelLayerCnt = _currentModel->getLayerCnt();
     m._layerCnt = techLayerCnt < modelLayerCnt ? techLayerCnt : modelLayerCnt;
     if (techLayerCnt == 5 && modelLayerCnt == 8) {
       m._layerCnt = modelLayerCnt;
@@ -2051,7 +2053,7 @@ void extMain::genScaledExt()
     return;
   }
 
-  uint ii = 0;
+  uint32_t ii = 0;
   for (; ii < _scaledCornerTable->getCnt(); ii++) {
     extCorner* sc = _scaledCornerTable->get(ii);
     extCorner* pc = sc->_extCornerPtr;
@@ -2059,8 +2061,8 @@ void extMain::genScaledExt()
       continue;
     }
 
-    uint frdbid = pc->_dbIndex;
-    uint todbid = sc->_dbIndex;
+    uint32_t frdbid = pc->_dbIndex;
+    uint32_t todbid = sc->_dbIndex;
 
     _block->copyExtDb(frdbid,
                       todbid,
@@ -2071,7 +2073,7 @@ void extMain::genScaledExt()
   }
 }
 
-double extMain::getTotalNetCap(uint netId, uint cornerNum)
+double extMain::getTotalNetCap(uint32_t netId, uint32_t cornerNum)
 {
   dbNet* net = dbNet::getNet(_block, netId);
 
@@ -2088,9 +2090,9 @@ double extMain::getTotalNetCap(uint netId, uint cornerNum)
   return cap;
 }
 
-uint extMain::openSpefFile(char* filename, uint mode)
+uint32_t extMain::openSpefFile(char* filename, uint32_t mode)
 {
-  uint debug = 0;
+  uint32_t debug = 0;
   if (filename == nullptr) {
     debug = 1;
   } else if (strcmp(filename, "") == 0) {
@@ -2130,12 +2132,12 @@ void extMain::write_spef_nets(bool flatten, bool parallel)
   _spef->write_spef_nets(flatten, parallel);
 }
 
-uint extMain::writeSPEF(uint netId,
-                        bool single_pi,
-                        uint debug,
-                        int corner,
-                        const char* corner_name,
-                        const char* spef_version)
+uint32_t extMain::writeSPEF(uint32_t netId,
+                            bool single_pi,
+                            uint32_t debug,
+                            int corner,
+                            const char* corner_name,
+                            const char* spef_version)
 {
   if (_block == nullptr) {
     logger_->info(
@@ -2195,7 +2197,7 @@ int extSpef::getWriteCorner(int corner, const char* names)
 
   _active_corner_cnt = 0;
   int cn = 0;
-  Ath__parser parser(logger_);
+  Parser parser(logger_);
   parser.mkWords(names, nullptr);
   for (int ii = 0; ii < parser.getWordCnt(); ii++) {
     cn = _block->getExtCornerIndex(parser.get(ii));
@@ -2303,38 +2305,38 @@ void extMain::writeSPEF(char* filename,
   _spef = nullptr;
 }
 
-uint extMain::readSPEF(char* filename,
-                       char* netNames,
-                       bool force,
-                       bool rConn,
-                       char* nodeCoord,
-                       bool rCap,
-                       bool rOnlyCCcap,
-                       bool rRes,
-                       float cc_thres,
-                       float cc_gnd_factor,
-                       float length_unit,
-                       bool m_map,
-                       bool noCapNumCollapse,
-                       char* capNodeMapFile,
-                       bool log,
-                       int corner,
-                       double low,
-                       double up,
-                       char* excludeSubWord,
-                       char* subWord,
-                       char* statsFile,
-                       const char* dbCornerName,
-                       const char* calibrateBaseCorner,
-                       int spefCorner,
-                       int fixLoop,
-                       bool keepLoadedCorner,
-                       bool stampWire,
-                       uint testParsing,
-                       bool moreToRead,
-                       bool diff,
-                       bool calib,
-                       int app_print_limit)
+uint32_t extMain::readSPEF(char* filename,
+                           char* netNames,
+                           bool force,
+                           bool rConn,
+                           char* nodeCoord,
+                           bool rCap,
+                           bool rOnlyCCcap,
+                           bool rRes,
+                           float cc_thres,
+                           float cc_gnd_factor,
+                           float length_unit,
+                           bool m_map,
+                           bool noCapNumCollapse,
+                           char* capNodeMapFile,
+                           bool log,
+                           int corner,
+                           double low,
+                           double up,
+                           char* excludeSubWord,
+                           char* subWord,
+                           char* statsFile,
+                           const char* dbCornerName,
+                           const char* calibrateBaseCorner,
+                           int spefCorner,
+                           int fixLoop,
+                           bool keepLoadedCorner,
+                           bool stampWire,
+                           uint32_t testParsing,
+                           bool moreToRead,
+                           bool diff,
+                           bool calib,
+                           int app_print_limit)
 {
   if (!_spef || _spef->getBlock() != _block) {
     delete _spef;
@@ -2378,33 +2380,33 @@ uint extMain::readSPEF(char* filename,
     findSomeNet(_block, netNames, inets, logger_);
   }
 
-  uint cnt = _spef->readBlock(0,
-                              inets,
-                              force,
-                              rConn,
-                              nodeCoord,
-                              rCap,
-                              rOnlyCCcap,
-                              rRes,
-                              cc_thres,
-                              length_unit,
-                              _extracted,
-                              keepLoadedCorner,
-                              stampWire,
-                              testParsing,
-                              app_print_limit,
-                              m_map,
-                              corner,
-                              low,
-                              up,
-                              excludeSubWord,
-                              subWord,
-                              statsFile,
-                              dbCornerName,
-                              calibrateBaseCorner,
-                              spefCorner,
-                              fixLoop,
-                              _rsegCoord);
+  uint32_t cnt = _spef->readBlock(0,
+                                  inets,
+                                  force,
+                                  rConn,
+                                  nodeCoord,
+                                  rCap,
+                                  rOnlyCCcap,
+                                  rRes,
+                                  cc_thres,
+                                  length_unit,
+                                  _extracted,
+                                  keepLoadedCorner,
+                                  stampWire,
+                                  testParsing,
+                                  app_print_limit,
+                                  m_map,
+                                  corner,
+                                  low,
+                                  up,
+                                  excludeSubWord,
+                                  subWord,
+                                  statsFile,
+                                  dbCornerName,
+                                  calibrateBaseCorner,
+                                  spefCorner,
+                                  fixLoop,
+                                  _rsegCoord);
   genScaledExt();
 
   if (_spef->_capNodeFile) {
@@ -2472,7 +2474,7 @@ uint extMain::readSPEF(char* filename,
   return cnt;
 }
 
-uint extMain::readSPEFincr(char* filename)
+uint32_t extMain::readSPEFincr(char* filename)
 {
   // assume header/name_map/ports same as first file
 
@@ -2480,18 +2482,18 @@ uint extMain::readSPEFincr(char* filename)
     return 0;
   }
 
-  uint cnt = _spef->readBlockIncr(0);
+  uint32_t cnt = _spef->readBlockIncr(0);
 
   return cnt;
 }
 
-uint extMain::calibrate(char* filename,
-                        bool m_map,
-                        float upperLimit,
-                        float lowerLimit,
-                        const char* dbCornerName,
-                        int corner,
-                        int spefCorner)
+uint32_t extMain::calibrate(char* filename,
+                            bool m_map,
+                            float upperLimit,
+                            float lowerLimit,
+                            const char* dbCornerName,
+                            int corner,
+                            int spefCorner)
 {
   if (!_spef || _spef->getBlock() != _block) {
     delete _spef;

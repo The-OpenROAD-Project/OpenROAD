@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbPagedVector.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -22,8 +22,8 @@ class dbJournalLog
   void clear();
   bool empty() const { return data_.size() == 0; }
 
-  uint idx() const { return idx_; }
-  uint size() const { return data_.size(); }
+  uint32_t idx() const { return idx_; }
+  uint32_t size() const { return data_.size(); }
   void push(bool value);
   void push(char value);
   void push(unsigned char value);
@@ -35,7 +35,7 @@ class dbJournalLog
 
   void begin() { idx_ = 0; }
   bool end() { return idx_ == (int) data_.size(); }
-  void set(uint idx) { idx_ = idx; }
+  void set(uint32_t idx) { idx_ = idx; }
   void moveBackOneInt();
   void moveToEnd();
 
@@ -54,14 +54,14 @@ class dbJournalLog
  private:
   enum LogDataType
   {
-    LOG_BOOL,
-    LOG_CHAR,
-    LOG_UCHAR,
-    LOG_INT,
-    LOG_UINT,
-    LOG_FLOAT,
-    LOG_DOUBLE,
-    LOG_STRING
+    kLogBool,
+    kLogChar,
+    kLogUChar,
+    kLogInt,
+    kLogUInt,
+    kLogFloat,
+    kLogDouble,
+    kLogString
   };
 
   void set_type(LogDataType type);

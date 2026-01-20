@@ -199,7 +199,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       continue;
     }
 
-    std::sort(blockages.begin(), blockages.end(), compareBlockages());
+    std::ranges::sort(blockages, compareBlockages());
 
     std::stack<Blockage> s;
     s.push(blockages[0]);
@@ -225,9 +225,8 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
     // Intervals need to be sorted, but they are currently in reverse order. Can
     // either resort or reverse.
-    std::sort(blockages.begin(),
-              blockages.end(),
-              compareBlockages());  // Sort to get them left to right.
+    std::ranges::sort(blockages,
+                      compareBlockages());  // Sort to get them left to right.
   }
 }
 
@@ -1171,7 +1170,7 @@ int DetailedMgr::checkOverlapInSegments()
 
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesX());
+    std::ranges::sort(temp, compareNodesX());
 
     for (int j = 1; j < temp.size(); j++) {
       const Node* ndi = temp[j - 1];
@@ -1224,7 +1223,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesL());
+    std::ranges::sort(temp, compareNodesL());
 
     for (int j = 1; j < temp.size(); j++) {
       const Node* ndl = temp[j - 1];
@@ -1420,7 +1419,7 @@ int DetailedMgr::checkRegionAssignment()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesL());
+    std::ranges::sort(temp, compareNodesL());
 
     for (const Node* ndi : temp) {
       if (ndi->getGroupId() != segments_[s]->getRegId()) {
@@ -1825,6 +1824,14 @@ bool DetailedMgr::alignPos(const Node* ndi, DbuX& xi, const DbuX xl, DbuX xr)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+bool DetailedMgr::checkSiteOrientation(Node* node, DbuX x, DbuY y)
+{
+  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+  const auto grid_x = grid_->gridX(x);
+  const auto grid_y = grid_->gridSnapDownY(y);
+  return grid_->getSiteOrientation(grid_x, grid_y, site).has_value();
+}
+
 bool DetailedMgr::shift(std::vector<Node*>& cells,
                         std::vector<DbuX>& targetLeft,
                         std::vector<DbuX>& posLeft,
@@ -1866,7 +1873,7 @@ bool DetailedMgr::shift(std::vector<Node*>& cells,
   // Change cell widths to be in terms of number of sites.
   std::vector<int> swid;
   swid.resize(ncells);
-  std::fill(swid.begin(), swid.end(), 0);
+  std::ranges::fill(swid, 0);
   int rsites = 0;
   for (int i = 0; i < ncells; i++) {
     const Node* ndi = cells[i];
@@ -2468,6 +2475,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2486,6 +2494,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2873,6 +2882,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
   const DbuX x2 = ndj->getLeft();
   const DbuY y2 = ndj->getBottom();
   // Build move list.
+
   if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
     return false;
   }
@@ -2902,6 +2912,10 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 {
   // Limit maximum number of cells that can move at once.
   if (journal_.size() >= moveLimit_) {
+    return false;
+  }
+
+  if (!checkSiteOrientation(ndi, newLeft, newBottom)) {
     return false;
   }
 
@@ -2946,6 +2960,11 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   if (journal_.size() >= moveLimit_) {
     return false;
   }
+
+  if (!checkSiteOrientation(ndi, newLeft, newBottom)) {
+    return false;
+  }
+
   // commit move and add to journal
   eraseFromGrid(ndi);
   for (const auto& curSeg : curSegs) {
@@ -2989,6 +3008,7 @@ void DetailedMgr::paintInGrid(Node* node)
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
   odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+
   const auto orientation
       = grid_->getSiteOrientation(grid_x, grid_y, site).value();
   grid_->paintPixel(node, grid_x, grid_y);

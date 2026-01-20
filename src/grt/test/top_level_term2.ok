@@ -25,10 +25,10 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      28120          4366          84.47%
-met2       Vertical        22154          5772          73.95%
-met3       Horizontal      13338          5809          56.45%
-met4       Vertical        10374          4366          57.91%
+met1       Horizontal      28005          4366          84.41%
+met2       Vertical        21571          5772          73.24%
+met3       Horizontal      14023          6808          51.45%
+met4       Vertical        10804          5032          53.42%
 ---------------------------------------------------------------
 
 [INFO GRT-0197] Via related to pin nodes: 0
@@ -43,10 +43,10 @@ Layer         Resource        Demand        Usage (%)    Max H / Max V / Total O
 li1                  0             0            0.00%             0 /  0 /  0
 met1              4366             0            0.00%             0 /  0 /  0
 met2              5772             0            0.00%             0 /  0 /  0
-met3              5809             0            0.00%             0 /  0 /  0
-met4              4366             0            0.00%             0 /  0 /  0
+met3              6808             0            0.00%             0 /  0 /  0
+met4              5032             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            20313             0            0.00%             0 /  0 /  0
+Total            21978             0            0.00%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 0 um
 [INFO GRT-0014] Routed nets: 1

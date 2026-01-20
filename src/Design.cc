@@ -3,6 +3,7 @@
 
 #include "ord/Design.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <istream>
@@ -19,6 +20,7 @@
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
 #include "tcl.h"
+#include "tclDecls.h"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -135,6 +137,7 @@ std::string Design::evalTclString(const std::string& cmd)
   ord::OpenRoad::setOpenRoad(openroad, /* reinit_ok */ true);
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   sta::Sta::setSta(openroad->getSta());
+  Tcl_SetAssocData(tcl_interp, "design", nullptr, this);
   Tcl_Eval(tcl_interp, cmd.c_str());
   return std::string(Tcl_GetStringResult(tcl_interp));
 }
@@ -224,7 +227,7 @@ std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* wire : swire->getWires()) {
         if (wire != nullptr && !(wire->isVia())) {
-          route_length += wire->getLength();
+          route_length += std::max(wire->getDX(), wire->getDY());
         }
       }
     }

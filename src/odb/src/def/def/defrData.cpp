@@ -29,8 +29,6 @@
 
 #include "defrData.hpp"
 
-#include <string.h>
-
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>

@@ -25,7 +25,7 @@
 // User Code Begin Includes
 #include "dbChip.h"
 #include "dbCore.h"
-#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
 // User Code End Includes
 namespace odb {
@@ -33,13 +33,13 @@ template class dbTable<_dbMarker>;
 
 bool _dbMarker::operator==(const _dbMarker& rhs) const
 {
-  if (flags_.visited_ != rhs.flags_.visited_) {
+  if (flags_.visited != rhs.flags_.visited) {
     return false;
   }
-  if (flags_.visible_ != rhs.flags_.visible_) {
+  if (flags_.visible != rhs.flags_.visible) {
     return false;
   }
-  if (flags_.waived_ != rhs.flags_.waived_) {
+  if (flags_.waived != rhs.flags_.waived) {
     return false;
   }
   if (parent_ != rhs.parent_) {
@@ -81,7 +81,7 @@ _dbMarker::_dbMarker(_dbDatabase* db)
   flags_ = {};
   line_number_ = -1;
   // User Code Begin Constructor
-  flags_.visible_ = true;
+  flags_.visible = true;
   // User Code End Constructor
 }
 
@@ -102,7 +102,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
   for (std::size_t i = 0; i < item_count; i++) {
     std::string db_type;
     stream >> db_type;
-    uint db_id;
+    uint32_t db_id;
     stream >> db_id;
 
     obj.sources_.emplace(dbObject::getType(db_type.c_str(), obj.getLogger()),
@@ -115,28 +115,28 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
     stream >> type;
 
     switch (type) {
-      case _dbMarker::ShapeType::Point: {
+      case _dbMarker::ShapeType::kPoint: {
         Point pt;
         stream >> pt;
-        obj.shapes_.push_back(pt);
+        obj.shapes_.emplace_back(pt);
         break;
       }
-      case _dbMarker::ShapeType::Line: {
+      case _dbMarker::ShapeType::kLine: {
         Line l;
         stream >> l;
-        obj.shapes_.push_back(l);
+        obj.shapes_.emplace_back(l);
         break;
       }
-      case _dbMarker::ShapeType::Rect: {
+      case _dbMarker::ShapeType::kRect: {
         Rect r;
         stream >> r;
-        obj.shapes_.push_back(r);
+        obj.shapes_.emplace_back(r);
         break;
       }
-      case _dbMarker::ShapeType::Polygon: {
+      case _dbMarker::ShapeType::kPolygon: {
         Polygon p;
         stream >> p;
-        obj.shapes_.push_back(p);
+        obj.shapes_.emplace_back(p);
         break;
       }
     }
@@ -167,16 +167,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
   stream << static_cast<int>(obj.shapes_.size());
   for (const dbMarker::MarkerShape& shape : obj.shapes_) {
     if (std::holds_alternative<Point>(shape)) {
-      stream << _dbMarker::ShapeType::Point;
+      stream << _dbMarker::ShapeType::kPoint;
       stream << std::get<Point>(shape);
     } else if (std::holds_alternative<Line>(shape)) {
-      stream << _dbMarker::ShapeType::Line;
+      stream << _dbMarker::ShapeType::kLine;
       stream << std::get<Line>(shape);
     } else if (std::holds_alternative<Rect>(shape)) {
-      stream << _dbMarker::ShapeType::Rect;
+      stream << _dbMarker::ShapeType::kRect;
       stream << std::get<Rect>(shape);
     } else {
-      stream << _dbMarker::ShapeType::Polygon;
+      stream << _dbMarker::ShapeType::kPolygon;
       stream << std::get<Polygon>(shape);
     }
   }
@@ -190,9 +190,9 @@ void _dbMarker::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["comment"].add(comment_);
-  info.children_["sources"].add(sources_);
-  info.children_["shapes"].add(shapes_);
+  info.children["comment"].add(comment_);
+  info.children["sources"].add(sources_);
+  info.children["shapes"].add(shapes_);
   // User Code End collectMemInfo
 }
 
@@ -219,7 +219,7 @@ void _dbMarker::writeTR(std::ofstream& report) const
 
   dbMarker* marker = (dbMarker*) this;
 
-  report << "violation type: " << marker->getCategory()->getName() << std::endl;
+  report << "violation type: " << marker->getCategory()->getName() << '\n';
   report << "\tsrcs:";
   for (dbObject* src : marker->getSources()) {
     switch (src->getObjectType()) {
@@ -243,10 +243,10 @@ void _dbMarker::writeTR(std::ofstream& report) const
             utl::ODB, 295, "Unsupported object type: {}", src->getTypeName());
     }
   }
-  report << std::endl;
+  report << '\n';
 
   if (!marker->getComment().empty()) {
-    report << "\tcomment: " << marker->getComment() << std::endl;
+    report << "\tcomment: " << marker->getComment() << '\n';
   }
 
   const Rect bbox = marker->getBBox();
@@ -260,7 +260,7 @@ void _dbMarker::writeTR(std::ofstream& report) const
   } else {
     report << "-";
   }
-  report << std::endl;
+  report << '\n';
 }
 
 void _dbMarker::populatePTree(_dbMarkerCategory::PropertyTree& tree) const
@@ -382,15 +382,15 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
 
   const auto visited = tree.get_optional<bool>("visited");
   if (visited) {
-    flags_.visited_ = visited.value();
+    flags_.visited = visited.value();
   }
   const auto visible = tree.get_optional<bool>("visible");
   if (visible) {
-    flags_.visible_ = visible.value();
+    flags_.visible = visible.value();
   }
   const auto waived = tree.get_optional<bool>("waived");
   if (waived) {
-    flags_.waived_ = waived.value();
+    flags_.waived = waived.value();
   }
 
   const auto line_number = tree.get_optional<int>("line_number");
@@ -561,42 +561,42 @@ void dbMarker::setVisited(bool visited)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->flags_.visited_ = visited;
+  obj->flags_.visited = visited;
 }
 
 bool dbMarker::isVisited() const
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  return obj->flags_.visited_;
+  return obj->flags_.visited;
 }
 
 void dbMarker::setVisible(bool visible)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->flags_.visible_ = visible;
+  obj->flags_.visible = visible;
 }
 
 bool dbMarker::isVisible() const
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  return obj->flags_.visible_;
+  return obj->flags_.visible;
 }
 
 void dbMarker::setWaived(bool waived)
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  obj->flags_.waived_ = waived;
+  obj->flags_.waived = waived;
 }
 
 bool dbMarker::isWaived() const
 {
   _dbMarker* obj = (_dbMarker*) this;
 
-  return obj->flags_.waived_;
+  return obj->flags_.waived;
 }
 
 // User Code Begin dbMarkerPublicMethods
@@ -667,25 +667,25 @@ std::vector<dbMarker::MarkerShape> dbMarker::getShapes() const
 void dbMarker::addShape(const Point& pt)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(pt);
+  marker->shapes_.emplace_back(pt);
 }
 
 void dbMarker::addShape(const Line& line)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(line);
+  marker->shapes_.emplace_back(line);
 }
 
 void dbMarker::addShape(const Rect& rect)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(rect);
+  marker->shapes_.emplace_back(rect);
 }
 
 void dbMarker::addShape(const Polygon& polygon)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(polygon);
+  marker->shapes_.emplace_back(polygon);
 }
 
 void dbMarker::setTechLayer(dbTechLayer* layer)
@@ -744,7 +744,7 @@ dbTechLayer* dbMarker::getTechLayer() const
 
   dbBlock* block = (dbBlock*) marker->getBlock();
   _dbTech* tech = (_dbTech*) block->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(marker->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(marker->layer_);
 }
 
 Rect dbMarker::getBBox() const
@@ -806,11 +806,9 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
 
   _dbMarker* marker = _category->marker_tbl_->create();
 
-  _dbBlock* block = marker->getBlock();
-  if (block) {
-    for (auto cb : block->_callbacks) {
-      cb->inDbMarkerCreate((dbMarker*) marker);
-    }
+  _dbChip* chip = marker->getChip();
+  for (auto cb : chip->callbacks_) {
+    cb->inDbMarkerCreate((dbMarker*) marker);
   }
 
   return (dbMarker*) marker;
@@ -820,8 +818,8 @@ void dbMarker::destroy(dbMarker* marker)
 {
   _dbMarker* _marker = (_dbMarker*) marker;
 
-  _dbBlock* block = _marker->getBlock();
-  for (auto cb : block->_callbacks) {
+  _dbChip* chip = _marker->getChip();
+  for (auto cb : chip->callbacks_) {
     cb->inDbMarkerDestroy(marker);
   }
 

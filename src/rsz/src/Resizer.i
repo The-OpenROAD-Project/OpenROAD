@@ -12,6 +12,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/Network.hh"
 #include "sta/Corner.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
@@ -656,6 +657,88 @@ fully_rebuffer(Pin *pin)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->fullyRebuffer(pin);
+}
+
+Instance*
+insert_buffer_after_driver_cmd(Net *net,
+                              LibertyCell *buffer_cell,
+                              double x, double y,
+                              bool has_loc,
+                              const char *new_buf_base_name,
+                              const char *new_net_base_name)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+
+  Instance* inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    inst = resizer->insertBufferAfterDriver(net, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  } else {
+    inst = resizer->insertBufferAfterDriver(net, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  }
+  return inst;
+}
+
+Instance*
+insert_buffer_before_load_cmd(Pin *load_pin,
+                             LibertyCell *buffer_cell,
+                             double x, double y,
+                             bool has_loc,
+                             const char *new_buf_base_name,
+                             const char *new_net_base_name)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+
+  Instance* inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  } else {
+    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  }
+  return inst;
+}
+
+Instance*
+insert_buffer_before_loads_cmd(Net *net,
+                              PinSet *pins,
+                              LibertyCell *buffer_cell,
+                              double x, double y,
+                              bool has_loc,
+                              const char *new_buf_base_name,
+                              const char *new_net_base_name,
+                              bool loads_on_diff_nets)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+  
+  Instance* inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS, loads_on_diff_nets);
+  } else {
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS, loads_on_diff_nets);
+  }
+
+  delete pins;
+  return inst;
 }
 
 } // namespace

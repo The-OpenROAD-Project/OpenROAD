@@ -87,9 +87,7 @@ using odb::dbRowDir;
 using odb::dbSite;
 using odb::dbTech;
 using odb::dbTechLayer;
-using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
-using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Point;
 using odb::Rect;
@@ -253,7 +251,7 @@ qreal LayoutViewer::computePixelsPerDBU(const QSize& size, const Rect& dbu_rect)
                   size.height() / (double) dbu_rect.dy());
 }
 
-void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
+void LayoutViewer::setPixelsPerDBU(qreal target_pixels_per_dbu)
 {
   if (!hasDesign()) {
     return;
@@ -261,31 +259,27 @@ void LayoutViewer::setPixelsPerDBU(qreal pixels_per_dbu)
 
   bool scroll_bars_visible = scroller_->horizontalScrollBar()->isVisible()
                              || scroller_->verticalScrollBar()->isVisible();
-  bool zoomed_out = pixels_per_dbu_ /*old*/ > pixels_per_dbu /*new*/;
+  bool zoomed_out = pixels_per_dbu_ /*old*/ > target_pixels_per_dbu /*new*/;
 
   if (!scroll_bars_visible && zoomed_out) {
     return;
   }
 
-  const Rect current_viewer(0,
-                            0,
-                            this->size().width() / pixels_per_dbu_,
-                            this->size().height() / pixels_per_dbu_);
+  qreal current_viewer_x = this->size().width() / pixels_per_dbu_;
+  qreal current_viewer_y = this->size().height() / pixels_per_dbu_;
 
   // ensure max size is not exceeded
   qreal maximum_pixels_per_dbu
       = 0.98
         * computePixelsPerDBU(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX),
-                              current_viewer);
-  qreal target_pixels_per_dbu
-      = std::min(pixels_per_dbu, maximum_pixels_per_dbu);
+                              Rect(0, 0, current_viewer_x, current_viewer_y));
 
-  if (target_pixels_per_dbu == maximum_pixels_per_dbu) {
+  if (target_pixels_per_dbu >= maximum_pixels_per_dbu) {
     return;
   }
 
-  const QSize new_size(ceil(current_viewer.dx() * target_pixels_per_dbu),
-                       ceil(current_viewer.dy() * target_pixels_per_dbu));
+  const QSize new_size(ceil(current_viewer_x * target_pixels_per_dbu),
+                       ceil(current_viewer_y * target_pixels_per_dbu));
 
   resize(new_size);
 }
@@ -423,15 +417,44 @@ void LayoutViewer::zoom(const odb::Point& focus,
 
 void LayoutViewer::zoomTo(const Rect& rect_dbu)
 {
-  const Rect padded_rect = getPaddedRect(rect_dbu);
-
-  // set resolution required to view the whole padded rect
-  setPixelsPerDBU(
-      computePixelsPerDBU(scroller_->maximumViewportSize(), padded_rect));
+  qreal pixels_per_DBU
+      = computePixelsPerDBU(scroller_->maximumViewportSize(), rect_dbu);
+  qreal pixels_per_DBU_with_margins
+      = pixels_per_DBU / (1 + 2 * defaultZoomMargin);
+  setPixelsPerDBU(pixels_per_DBU_with_margins);
 
   // center the layout at the middle of the rect
   centerAt(Point(rect_dbu.xMin() + rect_dbu.dx() / 2,
                  rect_dbu.yMin() + rect_dbu.dy() / 2));
+}
+
+void LayoutViewer::zoomTo(const odb::Point& focus, int diameter)
+{
+  odb::Point ref
+      = odb::Point(focus.x() - (diameter / 2), focus.y() - (diameter / 2));
+  zoomTo(odb::Rect(ref.x(), ref.y(), ref.x() + diameter, ref.y() + diameter));
+}
+
+int LayoutViewer::getVisibleDiameter()
+{
+  odb::Rect bounds = getVisibleBounds();
+  // scrollbar
+  int scrollBarWidth
+      = std::ceil((qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent))
+                  / pixels_per_dbu_);
+  if (scroller_->verticalScrollBar()->isVisible()) {
+    bounds.set_xhi(bounds.xMax() + scrollBarWidth);
+  }
+  if (scroller_->horizontalScrollBar()->isVisible()) {
+    bounds.set_yhi(bounds.yMax() + scrollBarWidth);
+  }
+
+  // undo the margin
+  const int smaller_side = std::min(bounds.dx(), bounds.dy());
+  const int margin = std::ceil(smaller_side * 2 * defaultZoomMargin
+                               / (1 + 2 * defaultZoomMargin));
+
+  return std::min(bounds.dx(), bounds.dy()) - margin;
 }
 
 int LayoutViewer::edgeToPointDistance(const odb::Point& pt,
@@ -984,6 +1007,24 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
         }
       }
     }
+
+    // Look for BPins
+    if (options_->areIOPinsVisible() && options_->areIOPinsSelectable()) {
+      for (auto* layer : block->getTech()->getLayers()) {
+        if (!options_->isVisible(layer)) {
+          continue;
+        }
+        for (const auto& [box, bpin] : search_.searchBPins(block,
+                                                           layer,
+                                                           region.xMin(),
+                                                           region.yMin(),
+                                                           region.xMax(),
+                                                           region.yMax(),
+                                                           shape_limit)) {
+          selections.push_back(gui_->makeSelected(bpin));
+        }
+      }
+    }
   }
 
   if (options_->areRulersVisible() && options_->areRulersSelectable()) {
@@ -1082,10 +1123,9 @@ Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
     std::vector<bool> is_selected;
     is_selected.reserve(selections.size());
     for (auto& sel : selections) {
-      is_selected.push_back(selected_.count(sel) != 0);
+      is_selected.push_back(selected_.contains(sel));
     }
-    if (std::all_of(
-            is_selected.begin(), is_selected.end(), [](bool b) { return b; })) {
+    if (std::ranges::all_of(is_selected, [](bool b) { return b; })) {
       // everything is selected, so just return first item
       return selections[0];
     }
@@ -1478,7 +1518,7 @@ LayoutViewer::getRowRects(odb::dbBlock* block, const odb::Rect& bounds)
     bool w_visible = w >= min_resolution_site;
     bool h_visible = h >= min_resolution_row;
 
-    switch (row->getOrient()) {
+    switch (row->getOrient().getValue()) {
       case dbOrientType::R0:
       case dbOrientType::R180:
       case dbOrientType::MY:
@@ -1898,8 +1938,32 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
       brush.a = 100;
     }
 
-    animate_selection_->selection.highlight(
-        gui_painter, Painter::kHighlight, pen_width, brush);
+    odb::Rect bbox;
+    bool draw_hightlight = true;
+    if (animate_selection_->selection.getBBox(bbox)) {
+      const int size = bbox.maxDXDY();
+
+      const int min_size = highlightSizeLimit();
+
+      if (size < min_size) {
+        draw_hightlight = false;
+
+        const int half_size = min_size / 2.0;
+        const int bloat_by = half_size - size;
+
+        odb::Rect draw_rect;
+        bbox.bloat(bloat_by, draw_rect);
+        gui_painter.setPen(Painter::kHighlight, true, pen_width);
+        gui_painter.setBrush(brush, Painter::Brush::kSolid);
+
+        gui_painter.drawRect(draw_rect, 0, 0);
+      }
+    }
+
+    if (draw_hightlight) {
+      animate_selection_->selection.highlight(
+          gui_painter, Painter::kHighlight, pen_width, brush);
+    }
   }
 
   // draw partial ruler if present
@@ -1947,6 +2011,8 @@ void LayoutViewer::fullRepaint()
     setLoadingState();
     viewer_thread_.render(rect, selected_, highlighted_, rulers_, labels_);
   }
+
+  emit(viewUpdated());
 }
 
 void LayoutViewer::fit()
@@ -2472,6 +2538,11 @@ int LayoutViewer::shapeSizeLimit() const
   }
 
   return nominalViewableResolution();
+}
+
+int LayoutViewer::highlightSizeLimit() const
+{
+  return coarseViewableResolution();
 }
 
 int LayoutViewer::fineViewableResolution() const

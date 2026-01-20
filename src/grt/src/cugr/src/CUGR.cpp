@@ -7,7 +7,9 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -20,9 +22,12 @@
 #include "MazeRoute.h"
 #include "Netlist.h"
 #include "PatternRoute.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "geo.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -30,23 +35,32 @@ namespace grt {
 
 CUGR::CUGR(odb::dbDatabase* db,
            utl::Logger* log,
-           stt::SteinerTreeBuilder* stt_builder)
-    : db_(db), logger_(log), stt_builder_(stt_builder)
+           stt::SteinerTreeBuilder* stt_builder,
+           sta::dbSta* sta)
+    : db_(db), logger_(log), stt_builder_(stt_builder), sta_(sta)
 {
 }
 
 CUGR::~CUGR() = default;
 
-void CUGR::init(const int min_routing_layer, const int max_routing_layer)
+void CUGR::init(const int min_routing_layer,
+                const int max_routing_layer,
+                const std::set<odb::dbNet*>& clock_nets)
 {
-  design_ = std::make_unique<Design>(
-      db_, logger_, constants_, min_routing_layer, max_routing_layer);
+  design_ = std::make_unique<Design>(db_,
+                                     logger_,
+                                     sta_,
+                                     constants_,
+                                     min_routing_layer,
+                                     max_routing_layer,
+                                     clock_nets);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();
   gr_nets_.reserve(baseNets.size());
   for (const CUGRNet& baseNet : baseNets) {
     gr_nets_.push_back(std::make_unique<GRNet>(baseNet, grid_graph_.get()));
+    db_net_map_[baseNet.getDbNet()] = gr_nets_.back().get();
   }
 }
 
@@ -255,7 +269,7 @@ void CUGR::sortNetIndices(std::vector<int>& netIndices) const
     auto& net = gr_nets_[netIndex];
     halfParameters[netIndex] = net->getBoundingBox().hp();
   }
-  sort(netIndices.begin(), netIndices.end(), [&](int lhs, int rhs) {
+  std::ranges::sort(netIndices, [&](int lhs, int rhs) {
     return halfParameters[lhs] < halfParameters[rhs];
   });
 }
@@ -327,10 +341,8 @@ void CUGR::getGuides(const GRNet* net,
               layerIdx,
               BoxT(std::max(gpt.x() - padding, 0),
                    std::max(gpt.y() - padding, 0),
-                   std::min(gpt.x() + padding,
-                            (int) grid_graph_->getSize(0) - 1),
-                   std::min(gpt.y() + padding,
-                            (int) grid_graph_->getSize(1) - 1)));
+                   std::min(gpt.x() + padding, grid_graph_->getSize(0) - 1),
+                   std::min(gpt.y() + padding, grid_graph_->getSize(1) - 1)));
           area_of_pin_patches_ += (guides.back().second.x().range() + 1)
                                   * (guides.back().second.y().range() + 1);
         }
@@ -484,6 +496,30 @@ void CUGR::updateDbCongestion()
         db_gcell->setUsage(db_layer, x, y, edge.demand);
       }
     }
+  }
+}
+
+void CUGR::getITermsAccessPoints(
+    odb::dbNet* net,
+    std::map<odb::dbITerm*, odb::Point3D>& access_points)
+{
+  GRNet* gr_net = db_net_map_.at(net);
+  for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
+    const int x = grid_graph_->getGridline(0, ap.point.x());
+    const int y = grid_graph_->getGridline(1, ap.point.y());
+    access_points[iterm] = odb::Point3D(x, y, ap.layers.high() + 1);
+  }
+}
+
+void CUGR::getBTermsAccessPoints(
+    odb::dbNet* net,
+    std::map<odb::dbBTerm*, odb::Point3D>& access_points)
+{
+  GRNet* gr_net = db_net_map_.at(net);
+  for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
+    const int x = grid_graph_->getGridline(0, ap.point.x());
+    const int y = grid_graph_->getGridline(1, ap.point.y());
+    access_points[bterm] = odb::Point3D(x, y, ap.layers.high() + 1);
   }
 }
 
