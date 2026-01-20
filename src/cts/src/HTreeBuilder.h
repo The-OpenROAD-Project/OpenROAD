@@ -362,6 +362,8 @@ class HTreeBuilder : public TreeBuilder
                               const Point<double>& parLoc);
   std::vector<unsigned> clusterDiameters() const { return clusterDiameters_; }
   std::vector<unsigned> clusterSizes() const { return clusterSizes_; }
+  Point<double> resolveLocationCollision(
+      const Point<double>& legalCenter) const;
 
  private:
   Box<double> sinkRegion_;
