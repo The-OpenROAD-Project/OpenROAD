@@ -126,7 +126,7 @@ static const char* name_tbl[] = {"dbGDSLib",
 
                                  // Lib Objects
                                  "dbLib",
-                                 "dbGDSLib",
+                                 "dbGdsLib_obsolete",
                                  "dbSite",
                                  "dbMaster",
                                  "dbMPin",
@@ -246,7 +246,7 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
 
        // Lib Objects
        {0x52, dbLibObj},
-       {0x53, dbGDSLibObj},
+       {0x53, dbGdsLibObj},
        {0x54, dbSiteObj},
        {0x55, dbMasterObj},
        {0x56, dbMPinObj},
@@ -366,7 +366,6 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
 
        // Lib Objects
        {dbLibObj, 0x52},
-       {dbGDSLibObj, 0x53},
        {dbSiteObj, 0x54},
        {dbMasterObj, 0x55},
        {dbMPinObj, 0x56},
