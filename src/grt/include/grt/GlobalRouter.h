@@ -315,8 +315,6 @@ class GlobalRouter
   bool isInitialized() const { return initialized_; }
   bool isCongested() const { return is_congested_; }
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
-  bool showRuntime() const { return show_runtime_; }
-  void setShowRuntime(bool show) { show_runtime_ = show; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
@@ -528,7 +526,6 @@ class GlobalRouter
   bool is_congested_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
-  bool show_runtime_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

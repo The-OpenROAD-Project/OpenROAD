@@ -410,7 +410,7 @@ void GlobalRouter::globalRoute(bool save_guides,
   }
 
   auto end = std::chrono::steady_clock::now();
-  if (show_runtime_) {
+  if (verbose_) {
     auto runtime
         = std::chrono::duration_cast<std::chrono::seconds>(end - start);
     int hour = runtime.count() / 3600;
