@@ -2,7 +2,12 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include <map>
+#include <memory>
+#include <set>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "ViolatorCollector.hh"
@@ -94,7 +99,7 @@ class RepairSetup : public sta::dbStaState
 {
  public:
   RepairSetup(Resizer* resizer);
-  ~RepairSetup();
+  ~RepairSetup() override;
   void setupMoveSequence(const std::vector<MoveType>& sequence,
                          bool skip_pin_swap,
                          bool skip_gate_cloning,

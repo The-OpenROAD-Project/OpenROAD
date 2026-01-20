@@ -4,21 +4,35 @@
 #include "MoveTracker.hh"
 
 #include <algorithm>
+#include <cassert>
+#include <cstddef>
 #include <iomanip>
+#include <ios>
+#include <limits>
 #include <sstream>
+#include <string>
+#include <tuple>
+#include <utility>
 
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -229,7 +243,7 @@ int MoveTracker::getVisitCount(const sta::Pin* pin) const
 
 void MoveTracker::printMoveSummary(const std::string& title)
 {
-  if (moves_.size() == 0) {
+  if (moves_.empty()) {
     return;
   }
 
@@ -282,8 +296,7 @@ void MoveTracker::printMoveSummary(const std::string& title)
 
   int no_attempt_count = 0;
   for (const auto& [pin, visit_count] : visit_count_) {
-    if (std::find(attempted_pins.begin(), attempted_pins.end(), pin)
-        != attempted_pins.end()) {
+    if (std::ranges::find(attempted_pins, pin) != attempted_pins.end()) {
       continue;
     }
     no_attempt_count++;
@@ -301,15 +314,15 @@ void MoveTracker::printMoveSummary(const std::string& title)
              rejected_pins.size(),
              committed_pins.size());
   float attempt_rate_
-      = (moves_.size() > 0)
+      = (!moves_.empty())
             ? (static_cast<float>(attempted_pins.size()) / moves_.size()) * 100
             : 0;
   float reject_rate_
-      = (moves_.size() > 0)
+      = (!moves_.empty())
             ? (static_cast<float>(rejected_pins.size()) / moves_.size()) * 100
             : 0;
   float commit_rate_
-      = (moves_.size() > 0)
+      = (!moves_.empty())
             ? (static_cast<float>(committed_pins.size()) / moves_.size()) * 100
             : 0;
   debugPrint(logger_,
@@ -339,11 +352,11 @@ void MoveTracker::printMoveSummary(const std::string& title)
     float move_commit_count = static_cast<float>(
         std::get<(int) MoveStateType::ATTEMPT_COMMIT>(counts));
     float move_attempt_rate
-        = (moves_.size() > 0) ? (move_attempt_count / moves_.size()) * 100 : 0;
+        = (!moves_.empty()) ? (move_attempt_count / moves_.size()) * 100 : 0;
     float move_reject_rate
-        = (moves_.size() > 0) ? (move_reject_count / moves_.size()) * 100 : 0;
+        = (!moves_.empty()) ? (move_reject_count / moves_.size()) * 100 : 0;
     float move_commit_rate
-        = (moves_.size() > 0) ? (move_commit_count / moves_.size()) * 100 : 0;
+        = (!moves_.empty()) ? (move_commit_count / moves_.size()) * 100 : 0;
     debugPrint(logger_,
                RSZ,
                "move_tracker",
@@ -476,22 +489,20 @@ void MoveTracker::printEndpointSummary(const std::string& title)
   }
 
   // Sort by post-phase slack (most negative first) to show WNS endpoints
-  std::sort(endpoint_stats.begin(),
-            endpoint_stats.end(),
-            [this](const auto& a, const auto& b) {
-              auto slack_it_a = endpoint_slack_.find(a.first);
-              auto slack_it_b = endpoint_slack_.find(b.first);
-              if (slack_it_a == endpoint_slack_.end()) {
-                return false;
-              }
-              if (slack_it_b == endpoint_slack_.end()) {
-                return true;
-              }
-              // Sort by post-phase slack (most negative first)
-              Slack slack_a = std::get<2>(slack_it_a->second);
-              Slack slack_b = std::get<2>(slack_it_b->second);
-              return slack_a < slack_b;
-            });
+  std::ranges::sort(endpoint_stats, [this](const auto& a, const auto& b) {
+    auto slack_it_a = endpoint_slack_.find(a.first);
+    auto slack_it_b = endpoint_slack_.find(b.first);
+    if (slack_it_a == endpoint_slack_.end()) {
+      return false;
+    }
+    if (slack_it_b == endpoint_slack_.end()) {
+      return true;
+    }
+    // Sort by post-phase slack (most negative first)
+    Slack slack_a = std::get<2>(slack_it_a->second);
+    Slack slack_b = std::get<2>(slack_it_b->second);
+    return slack_a < slack_b;
+  });
 
   debugPrint(logger_, RSZ, "move_tracker", 1, "{}:", title);
   debugPrint(logger_,
@@ -805,9 +816,9 @@ void MoveTracker::printSuccessReport(const std::string& title)
   // Sort by count (descending)
   vector<pair<string, int>> sorted_success_types(
       move_type_success_count.begin(), move_type_success_count.end());
-  std::sort(sorted_success_types.begin(),
-            sorted_success_types.end(),
-            [](const auto& a, const auto& b) { return a.second > b.second; });
+  std::ranges::sort(sorted_success_types, [](const auto& a, const auto& b) {
+    return a.second > b.second;
+  });
 
   debugPrint(logger_, RSZ, "move_tracker", 1, "Successful moves by type:");
   for (const auto& [move_type, count] : sorted_success_types) {
@@ -822,12 +833,13 @@ void MoveTracker::printSuccessReport(const std::string& title)
 
   // Show top successful pins (most commits)
   vector<pair<const Pin*, int>> pin_commit_counts;
+  pin_commit_counts.reserve(successful_pins.size());
   for (const auto& [pin, moves] : successful_pins) {
     pin_commit_counts.emplace_back(pin, moves.size());
   }
-  std::sort(pin_commit_counts.begin(),
-            pin_commit_counts.end(),
-            [](const auto& a, const auto& b) { return a.second > b.second; });
+  std::ranges::sort(pin_commit_counts, [](const auto& a, const auto& b) {
+    return a.second > b.second;
+  });
 
   constexpr int max_pins_to_show = 20;
   constexpr int max_move_columns = 6;
@@ -856,9 +868,9 @@ void MoveTracker::printSuccessReport(const std::string& title)
     // Sort moves by count (descending)
     vector<pair<string, int>> sorted_moves(move_counts.begin(),
                                            move_counts.end());
-    std::sort(sorted_moves.begin(),
-              sorted_moves.end(),
-              [](const auto& a, const auto& b) { return a.second > b.second; });
+    std::ranges::sort(sorted_moves, [](const auto& a, const auto& b) {
+      return a.second > b.second;
+    });
 
     // Truncate long pin names
     if (pin_name.length() > 34) {
@@ -945,9 +957,9 @@ void MoveTracker::printFailureReport(const std::string& title)
   // Sort by count (descending)
   vector<pair<string, int>> sorted_reject_types(move_type_reject_count.begin(),
                                                 move_type_reject_count.end());
-  std::sort(sorted_reject_types.begin(),
-            sorted_reject_types.end(),
-            [](const auto& a, const auto& b) { return a.second > b.second; });
+  std::ranges::sort(sorted_reject_types, [](const auto& a, const auto& b) {
+    return a.second > b.second;
+  });
 
   debugPrint(logger_, RSZ, "move_tracker", 1, "Rejected moves by type:");
   for (const auto& [move_type, count] : sorted_reject_types) {
@@ -962,12 +974,13 @@ void MoveTracker::printFailureReport(const std::string& title)
 
   // Show top failed pins (most rejects)
   vector<pair<const Pin*, int>> pin_reject_counts;
+  pin_reject_counts.reserve(failed_pins.size());
   for (const auto& [pin, moves] : failed_pins) {
     pin_reject_counts.emplace_back(pin, moves.size());
   }
-  std::sort(pin_reject_counts.begin(),
-            pin_reject_counts.end(),
-            [](const auto& a, const auto& b) { return a.second > b.second; });
+  std::ranges::sort(pin_reject_counts, [](const auto& a, const auto& b) {
+    return a.second > b.second;
+  });
 
   constexpr int max_pins_to_show = 20;
   constexpr int max_move_columns = 6;
@@ -996,9 +1009,9 @@ void MoveTracker::printFailureReport(const std::string& title)
     // Sort moves by count (descending)
     vector<pair<string, int>> sorted_moves(move_counts.begin(),
                                            move_counts.end());
-    std::sort(sorted_moves.begin(),
-              sorted_moves.end(),
-              [](const auto& a, const auto& b) { return a.second > b.second; });
+    std::ranges::sort(sorted_moves, [](const auto& a, const auto& b) {
+      return a.second > b.second;
+    });
 
     // Truncate long pin names
     if (pin_name.length() > 34) {
@@ -1073,23 +1086,21 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
 
   if (!visited_no_attempt.empty()) {
     // Sort by endpoint slack (most negative first), then by pin slack
-    std::sort(visited_no_attempt.begin(),
-              visited_no_attempt.end(),
-              [this](const Pin* a, const Pin* b) {
-                auto it_a = pin_info_.find(a);
-                auto it_b = pin_info_.find(b);
-                if (it_a == pin_info_.end() || it_b == pin_info_.end()) {
-                  return false;
-                }
-                const PinInfo& info_a = it_a->second;
-                const PinInfo& info_b = it_b->second;
-                // Sort by endpoint slack first (most negative = most critical)
-                if (info_a.endpoint_slack != info_b.endpoint_slack) {
-                  return info_a.endpoint_slack < info_b.endpoint_slack;
-                }
-                // Then by pin slack (most negative first)
-                return info_a.pin_slack < info_b.pin_slack;
-              });
+    std::ranges::sort(visited_no_attempt, [this](const Pin* a, const Pin* b) {
+      auto it_a = pin_info_.find(a);
+      auto it_b = pin_info_.find(b);
+      if (it_a == pin_info_.end() || it_b == pin_info_.end()) {
+        return false;
+      }
+      const PinInfo& info_a = it_a->second;
+      const PinInfo& info_b = it_b->second;
+      // Sort by endpoint slack first (most negative = most critical)
+      if (info_a.endpoint_slack != info_b.endpoint_slack) {
+        return info_a.endpoint_slack < info_b.endpoint_slack;
+      }
+      // Then by pin slack (most negative first)
+      return info_a.pin_slack < info_b.pin_slack;
+    });
 
     debugPrint(logger_,
                RSZ,
@@ -1220,13 +1231,11 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
   }
 
   // Sort by most negative slack
-  std::sort(critical_never_visited.begin(),
-            critical_never_visited.end(),
-            [this](const Pin* a, const Pin* b) {
-              Slack slack_a = sta_->pinSlack(a, MinMax::max());
-              Slack slack_b = sta_->pinSlack(b, MinMax::max());
-              return slack_a < slack_b;  // Most negative first
-            });
+  std::ranges::sort(critical_never_visited, [this](const Pin* a, const Pin* b) {
+    Slack slack_a = sta_->pinSlack(a, MinMax::max());
+    Slack slack_b = sta_->pinSlack(b, MinMax::max());
+    return slack_a < slack_b;  // Most negative first
+  });
 
   if (!critical_never_visited.empty()) {
     debugPrint(logger_,
@@ -1721,12 +1730,8 @@ void MoveTracker::printSlackDistribution(const std::string& title)
 
   // Print summary statistics
   int total_pre = 0;
-  int total_post = 0;
   for (int count : pre_counts) {
     total_pre += count;
-  }
-  for (int count : post_counts) {
-    total_post += count;
   }
 
   debugPrint(logger_, RSZ, "move_tracker", 1, "");
@@ -1863,12 +1868,8 @@ void MoveTracker::printSlackDistribution(const std::string& title)
 
     // Print endpoint summary statistics
     int total_endpoint_pre = 0;
-    int total_endpoint_post = 0;
     for (int count : endpoint_pre_counts) {
       total_endpoint_pre += count;
-    }
-    for (int count : endpoint_post_counts) {
-      total_endpoint_post += count;
     }
 
     debugPrint(logger_, RSZ, "move_tracker", 1, "");
@@ -1919,9 +1920,9 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
   }
 
   // Sort by most critical (most negative slack) first
-  std::sort(violating_endpoints.begin(),
-            violating_endpoints.end(),
-            [](const auto& a, const auto& b) { return a.second < b.second; });
+  std::ranges::sort(violating_endpoints, [](const auto& a, const auto& b) {
+    return a.second < b.second;
+  });
 
   debugPrint(logger_,
              RSZ,
@@ -2230,7 +2231,7 @@ vector<pair<Slack, const sta::PathEnd*>> MoveTracker::enumerateEndpointPaths(
   // Collect (slack, path_end) pairs
   for (const sta::PathEnd* path_end : path_ends) {
     Slack path_slack = path_end->slack(search);
-    result.push_back({path_slack, path_end});
+    result.emplace_back(path_slack, path_end);
   }
 
   return result;
@@ -2301,7 +2302,7 @@ void MoveTracker::printCriticalEndpointPathHistogram(const string& title)
     if (pin) {
       Slack pin_slack = sta_->vertexSlack(vertex, MinMax::max());
       if (pin_slack < 0.0) {  // Only consider violating endpoints
-        endpoint_slacks.push_back({pin_slack, pin});
+        endpoint_slacks.emplace_back(pin_slack, pin);
       }
     }
   }
@@ -2313,9 +2314,9 @@ void MoveTracker::printCriticalEndpointPathHistogram(const string& title)
   }
 
   // Sort by slack (most negative first)
-  std::sort(endpoint_slacks.begin(),
-            endpoint_slacks.end(),
-            [](const auto& a, const auto& b) { return a.first < b.first; });
+  std::ranges::sort(endpoint_slacks, [](const auto& a, const auto& b) {
+    return a.first < b.first;
+  });
 
   // Process top 3 endpoints
   int num_endpoints_to_show
@@ -2368,6 +2369,7 @@ void MoveTracker::printCriticalEndpointPathHistogram(const string& title)
       = range / (num_bins - 1);  // -1 because we want edges, not bins
 
   vector<float> bin_edges;
+  bin_edges.reserve(num_bins);
   for (int i = 0; i < num_bins; i++) {
     bin_edges.push_back(global_min_slack_ns + i * bin_width);
   }

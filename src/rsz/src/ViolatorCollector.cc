@@ -5,10 +5,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <limits>
+#include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "BaseMove.hh"
 #include "BufferMove.hh"
@@ -17,14 +23,22 @@
 #include "RepairSetup.hh"
 #include "rsz/Resizer.hh"
 #include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
+#include "sta/ExceptionPath.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -858,7 +872,7 @@ void ViolatorCollector::collectViolatingStartpoints()
              "Violating startpoints {}/{} {}%",
              violating_startpoints_.size(),
              all_startpoints.size(),
-             all_startpoints.size() > 0
+             !all_startpoints.empty()
                  ? int(violating_startpoints_.size()
                        / double(all_startpoints.size()) * 100)
                  : 0);
@@ -2124,7 +2138,7 @@ void ViolatorCollector::markEndpointVisitedInWNS(const Pin* endpoint)
 
 bool ViolatorCollector::wasEndpointVisitedInWNS(const Pin* endpoint) const
 {
-  return wns_visited_endpoints_.count(endpoint) > 0;
+  return wns_visited_endpoints_.contains(endpoint);
 }
 
 void ViolatorCollector::clearWNSVisitedEndpoints()
@@ -2139,7 +2153,7 @@ void ViolatorCollector::markPinConsidered(const Pin* pin)
 
 bool ViolatorCollector::wasPinConsidered(const Pin* pin) const
 {
-  return considered_pins_.count(pin) > 0;
+  return considered_pins_.contains(pin);
 }
 
 void ViolatorCollector::clearConsideredPins()
@@ -2179,7 +2193,7 @@ std::vector<const Pin*> ViolatorCollector::getCriticalPinsNeverConsidered()
         float slack_ps = sta::delayAsFloat(slack) * 1e12;
 
         // Only track pins with negative slack that haven't been considered
-        if (slack_ps < 0.0 && considered_pins_.count(pin) == 0) {
+        if (slack_ps < 0.0 && !considered_pins_.contains(pin)) {
           never_considered.push_back(pin);
         }
       }
@@ -2265,10 +2279,9 @@ Slack ViolatorCollector::getTNS(bool use_startpoints) const
   if (use_startpoints) {
     // For startpoints, sum TNS across all startpoints
     return const_cast<ViolatorCollector*>(this)->getOverallStartpointTNS();
-  } else {
-    // For endpoints, use STA's totalNegativeSlack
-    return sta_->totalNegativeSlack(max_);
   }
+  // For endpoints, use STA's totalNegativeSlack
+  return sta_->totalNegativeSlack(max_);
 }
 
 // Proxy method: return worst pin based on whether we use startpoints or
@@ -2290,13 +2303,12 @@ const Pin* ViolatorCollector::getWorstPin(bool use_startpoints) const
     }
 
     return worst_pin;
-  } else {
-    // For endpoints, use STA's worstSlack to get the worst vertex
-    Slack wns;
-    Vertex* worst_vertex = nullptr;
-    sta_->worstSlack(max_, wns, worst_vertex);
-    return worst_vertex ? worst_vertex->pin() : nullptr;
   }
+  // For endpoints, use STA's worstSlack to get the worst vertex
+  Slack wns;
+  Vertex* worst_vertex = nullptr;
+  sta_->worstSlack(max_, wns, worst_vertex);
+  return worst_vertex ? worst_vertex->pin() : nullptr;
 }
 
 // Unified wrapper methods for directional traversal (fanin vs fanout)
@@ -2313,9 +2325,8 @@ int ViolatorCollector::getMaxPointCount(bool use_startpoints) const
 {
   if (use_startpoints) {
     return getMaxStartpointCount();
-  } else {
-    return getMaxEndpointCount();
   }
+  return getMaxEndpointCount();
 }
 
 void ViolatorCollector::setToPoint(int index, bool use_startpoints)
@@ -2331,9 +2342,8 @@ Vertex* ViolatorCollector::getCurrentPoint(bool use_startpoints) const
 {
   if (use_startpoints) {
     return getCurrentStartpoint();
-  } else {
-    return getCurrentEndpoint();
   }
+  return getCurrentEndpoint();
 }
 
 const Pin* ViolatorCollector::getCurrentPointPin(bool use_startpoints) const
@@ -2359,13 +2369,11 @@ vector<const Pin*> ViolatorCollector::collectViolatorsByDirectionalTraversal(
     Vertex* startpoint = getCurrentStartpoint();
     return collectViolatorsByFanoutTraversal(
         startpoint, sort_type, slack_threshold);
-  } else {
-    // For endpoints, use fanin (cone) traversal
-    setToEndpoint(point_index);
-    Vertex* endpoint = getCurrentEndpoint();
-    return collectViolatorsByConeTraversal(
-        endpoint, sort_type, slack_threshold);
   }
+  // For endpoints, use fanin (cone) traversal
+  setToEndpoint(point_index);
+  Vertex* endpoint = getCurrentEndpoint();
+  return collectViolatorsByConeTraversal(endpoint, sort_type, slack_threshold);
 }
 
 }  // namespace rsz

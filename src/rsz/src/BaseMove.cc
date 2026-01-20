@@ -150,7 +150,6 @@ void BaseMove::commitMoves()
   accepted_count_ += pending_count_;
   pending_count_ = 0;
   accepted_inst_set_.merge(pending_inst_set_);
-  pending_inst_set_.clear();
   for (auto info : pending_move_info_) {
     delete info;
   }

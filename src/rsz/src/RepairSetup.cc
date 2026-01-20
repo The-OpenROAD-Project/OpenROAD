@@ -8,7 +8,10 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <map>
+#include <memory>
 #include <queue>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -628,7 +631,7 @@ bool RepairSetup::repairPins(
 {
   int changed = 0;
 
-  if (pins.size() == 0) {
+  if (pins.empty()) {
     return false;
   }
   int repairs_per_pass
@@ -695,7 +698,7 @@ bool RepairSetup::repairPins(
       // Skip this move if it's been tried and rejected for this pin
       if (rejected_moves) {
         auto it = rejected_moves->find(drvr_pin);
-        if (it != rejected_moves->end() && it->second.count(move) > 0) {
+        if (it != rejected_moves->end() && it->second.contains(move)) {
           debugPrint(logger_,
                      RSZ,
                      "repair_setup",
@@ -1052,7 +1055,6 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                              return end_slack1.second < end_slack2.second;
                            });
 
-  int num_viols = violating_ends.size();
   int end_index = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
@@ -1145,7 +1147,6 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
       }
 
       if (fuzzyGreaterEqual(end_slack, setup_slack_margin)) {
-        --num_viols;
         if (pass != 1) {
           debugPrint(logger_,
                      RSZ,
@@ -1237,9 +1238,6 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                  delayAsString(end_slack, sta_, digits));
 
       if (better) {
-        if (fuzzyGreaterEqual(end_slack, setup_slack_margin)) {
-          --num_viols;
-        }
         prev_end_slack = end_slack;
         prev_worst_slack = worst_slack;
         decreasing_slack_passes = 0;
@@ -1275,17 +1273,15 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                      delayAsString(prev_worst_slack, sta_, digits));
           resizer_->journalRestore();
           break;
-        } else {
-          debugPrint(
-              logger_,
-              RSZ,
-              "repair_setup",
-              3,
-              "LEGACY{} Phase: Allowing decreasing slack for {}/{} passes",
-              phase_marker,
-              decreasing_slack_passes,
-              decreasing_slack_max_passes);
         }
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   3,
+                   "LEGACY{} Phase: Allowing decreasing slack for {}/{} passes",
+                   phase_marker,
+                   decreasing_slack_passes,
+                   decreasing_slack_max_passes);
       }
 
       if (resizer_->overMaxArea()) {
@@ -1453,7 +1449,7 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
     const Pin* worst_pin = worst_endpoint->pin();
 
     // Check if worst endpoint has already been visited this round
-    if (endpoints_visited_this_round.count(worst_pin) > 0) {
+    if (endpoints_visited_this_round.contains(worst_pin)) {
       if (!any_improvement_this_round) {
         // No progress in entire round - exit WNS phase
         debugPrint(
@@ -1465,22 +1461,21 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
             phase_marker,
             round_number);
         break;
-      } else {
-        // Made progress this round - start new round
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "WNS{} Phase: Round {} complete with improvement, starting "
-                   "round {}",
-                   phase_marker,
-                   round_number,
-                   round_number + 1);
-        endpoints_visited_this_round.clear();
-        any_improvement_this_round = false;
-        round_number++;
-        continue;  // Re-evaluate worst endpoint for new round
       }
+      // Made progress this round - start new round
+      debugPrint(logger_,
+                 RSZ,
+                 "repair_setup",
+                 2,
+                 "WNS{} Phase: Round {} complete with improvement, starting "
+                 "round {}",
+                 phase_marker,
+                 round_number,
+                 round_number + 1);
+      endpoints_visited_this_round.clear();
+      any_improvement_this_round = false;
+      round_number++;
+      continue;  // Re-evaluate worst endpoint for new round
     }
 
     // Check if we need to switch to a different endpoint (worst changed)
@@ -1495,7 +1490,7 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
     if (!current_endpoint) {
       // First iteration - use worst endpoint
       should_switch = true;
-    } else if (endpoints_visited_this_round.count(current_pin) > 0) {
+    } else if (endpoints_visited_this_round.contains(current_pin)) {
       // Current endpoint already visited this round - must switch
       should_switch = true;
     } else if (current_endpoint != worst_endpoint) {
@@ -2304,16 +2299,15 @@ void RepairSetup::repairSetup_TNS(const float setup_slack_margin,
                      current_limit);
           resizer_->journalRestore();
           break;
-        } else {
-          debugPrint(logger_,
-                     RSZ,
-                     "repair_setup",
-                     3,
-                     "TNS{} Phase: Allowing decreasing slack for {}/{} passes",
-                     phase_marker,
-                     decreasing_slack_passes,
-                     current_limit);
         }
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   3,
+                   "TNS{} Phase: Allowing decreasing slack for {}/{} passes",
+                   phase_marker,
+                   decreasing_slack_passes,
+                   current_limit);
       }
 
       if (resizer_->overMaxArea()) {

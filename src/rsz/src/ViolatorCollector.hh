@@ -4,9 +4,21 @@
 #pragma once
 
 #include <cmath>
+#include <cstddef>
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 

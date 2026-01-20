@@ -7,6 +7,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace sta {
@@ -70,12 +71,15 @@ struct MoveStateData
   std::string move_type;
   MoveStateType state;
 
-  MoveStateData(const sta::Pin* p, int c, const std::string mt, MoveStateType s)
+  MoveStateData(const sta::Pin* p,
+                int c,
+                const std::string& mt,
+                MoveStateType s)
       : pin(p), order(c), move_type(mt), state(s)
   {
   }
 
-  MoveStateData(const sta::Pin* p, const std::string mt, MoveStateType s)
+  MoveStateData(const sta::Pin* p, const std::string& mt, MoveStateType s)
       : pin(p), order(0), move_type(mt), state(s)
   {
   }

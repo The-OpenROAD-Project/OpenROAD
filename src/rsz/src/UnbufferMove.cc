@@ -123,9 +123,9 @@ bool UnbufferMove::doMove(const Pin* drvr_pin, float setup_slack_margin)
   Pin* load_pin;
   getPrevNextPins(drvr_pin, prev_drvr_pin, drvr_input_pin, load_pin);
 
-  float curr_fanout, max_fanout, fanout_slack;
+  float curr_fanout, max_fanout, load_slack;
   sta_->checkFanout(
-      prev_drvr_pin, resizer_->max_, curr_fanout, max_fanout, fanout_slack);
+      prev_drvr_pin, resizer_->max_, curr_fanout, max_fanout, load_slack);
   float new_fanout = curr_fanout + fanout(drvr_vertex) - 1;
   if (max_fanout > 0.0) {
     // Honor max fanout when the constraint exists

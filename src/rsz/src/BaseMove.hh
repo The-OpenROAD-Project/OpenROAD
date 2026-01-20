@@ -3,10 +3,12 @@
 
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <memory>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
