@@ -80,6 +80,16 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
   debug_observer_ = std::move(observer);
 }
 
+void Opendp::setJumpMoves(const int jump_moves)
+{
+  jump_moves_ = jump_moves;
+}
+
+void Opendp::setIterativePlacement(const bool iterative)
+{
+  iterative_placement_ = iterative;
+}
+
 void Opendp::setJournal(Journal* journal)
 {
   journal_ = journal;
@@ -482,6 +492,19 @@ void Opendp::groupInitPixels()
       }
     }
   }
+}
+
+odb::Point Opendp::getOdbLocation(const Node* cell) const
+{
+  odb::dbBox* odb_bbox = cell->getDbInst()->getBBox();
+  return {odb_bbox->xMin(), odb_bbox->yMin()};
+}
+
+odb::Point Opendp::getDplLocation(const Node* cell) const
+{
+  DbuX final_x{core_.xMin() + cell->getLeft()};
+  DbuY final_y{core_.yMin() + cell->getBottom()};
+  return {final_x.v, final_y.v};
 }
 
 int divRound(const int dividend, const int divisor)

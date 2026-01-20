@@ -301,6 +301,30 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 
 void Opendp::place()
 {
+  int move_count = 0;
+  auto report_placement = [this, &move_count](
+                              Node* cell, bool mapped, bool shifted) {
+    if (!iterative_placement_) {
+      return;
+    }
+    if (jump_moves_ > 0 && (move_count++ % jump_moves_ != 0)) {
+      return;
+    }
+    if (debug_observer_) {
+      const char* type = isMultiRow(cell) ? "multi-row" : "single-row";
+      if (mapped) {
+        logger_->report("Successful mapMove(), {} cell {}", type, cell->name());
+      } else if (shifted) {
+        logger_->report(
+            "Successful shiftMove(), {} cell {}", type, cell->name());
+      } else {
+        logger_->report(
+            "Unsuccessful placement, {} cell {}", type, cell->name());
+      }
+      debug_observer_->redrawAndPause();
+    }
+  };
+
   vector<Node*> sorted_cells;
   sorted_cells.reserve(network_->getNumCells());
 
@@ -330,54 +354,33 @@ void Opendp::place()
                    1,
                    "Placing multi-row cell {}",
                    cell->name());
-        if (!mapMove(cell)) {
-          if (debug_observer_) {
-            logger_->report("Unsuccessful mapmove(), multi-row cell {}",
-                            cell->name());
-            debug_observer_->redrawAndPause();
-          }
-          if (shiftMove(cell)) {
-            if (debug_observer_) {
-              logger_->report("Successful shiftmove(), multi-row cell {}",
-                              cell->name());
-              debug_observer_->redrawAndPause();
-            }
-          } else if (debug_observer_) {
-            logger_->report("Unsuccessful shiftmove(), multi-row cell {}",
-                            cell->name());
-            debug_observer_->redrawAndPause();
-          }
-        } else if (debug_observer_) {
-          logger_->report("Successful mapmove(), multi-row cell {}",
-                          cell->name());
-          debug_observer_->redrawAndPause();
+        bool mapped = mapMove(cell);
+        bool shifted = false;
+        if (!mapped) {
+          shifted = shiftMove(cell);
+        }
+        odb::Point initial_location = getOdbLocation(cell);
+        odb::Point final_location = getDplLocation(cell);
+        float len
+            = odb::Point::squaredDistance(initial_location, final_location);
+        if (len > 0) {
+          report_placement(cell, mapped, shifted);
         }
       }
     }
   }
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
-      if (!mapMove(cell)) {
-        if (debug_observer_) {
-          logger_->report("Unsuccessful mapmove(), single-row cell {}",
-                          cell->name());
-          debug_observer_->redrawAndPause();
-        }
-        if (shiftMove(cell)) {
-          if (debug_observer_) {
-            logger_->report("Successful shiftmove(), single-row cell {}",
-                            cell->name());
-            debug_observer_->redrawAndPause();
-          }
-        } else if (debug_observer_) {
-          logger_->report("Unsuccessful shiftmove(), single-row cell {}",
-                          cell->name());
-          debug_observer_->redrawAndPause();
-        }
-      } else if (debug_observer_) {
-        logger_->report("Successful mapmove(), single-row cell {}",
-                        cell->name());
-        debug_observer_->redrawAndPause();
+      bool mapped = mapMove(cell);
+      bool shifted = false;
+      if (!mapped) {
+        shifted = shiftMove(cell);
+      }
+      odb::Point initial_location = getOdbLocation(cell);
+      odb::Point final_location = getDplLocation(cell);
+      float len = odb::Point::squaredDistance(initial_location, final_location);
+      if (len > 0) {
+        report_placement(cell, mapped, shifted);
       }
     }
   }
