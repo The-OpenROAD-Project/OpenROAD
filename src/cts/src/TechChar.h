@@ -173,6 +173,8 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
+  sta::ArcDelay computeBufferDelay(odb::dbMaster* bufferMaster, double extra_out_cap);
+
  private:
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
