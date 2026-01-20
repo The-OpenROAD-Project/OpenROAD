@@ -24,6 +24,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
