@@ -304,9 +304,6 @@ void Opendp::place()
   int move_count = 0;
   auto report_placement = [this, &move_count](
                               Node* cell, bool mapped, bool shifted) {
-    if (!iterative_placement_) {
-      return;
-    }
     if (jump_moves_ > 0 && (move_count++ % jump_moves_ != 0)) {
       return;
     }
@@ -359,12 +356,15 @@ void Opendp::place()
         if (!mapped) {
           shifted = shiftMove(cell);
         }
-        odb::Point initial_location = getOdbLocation(cell);
-        odb::Point final_location = getDplLocation(cell);
-        float len
-            = odb::Point::squaredDistance(initial_location, final_location);
-        if (len > 0) {
-          report_placement(cell, mapped, shifted);
+
+        if (iterative_placement_) {
+          odb::Point initial_location = getOdbLocation(cell);
+          odb::Point final_location = getDplLocation(cell);
+          float len
+              = odb::Point::squaredDistance(initial_location, final_location);
+          if (len > 0) {
+            report_placement(cell, mapped, shifted);
+          }
         }
       }
     }
@@ -376,11 +376,15 @@ void Opendp::place()
       if (!mapped) {
         shifted = shiftMove(cell);
       }
-      odb::Point initial_location = getOdbLocation(cell);
-      odb::Point final_location = getDplLocation(cell);
-      float len = odb::Point::squaredDistance(initial_location, final_location);
-      if (len > 0) {
-        report_placement(cell, mapped, shifted);
+
+      if (iterative_placement_) {
+        odb::Point initial_location = getOdbLocation(cell);
+        odb::Point final_location = getDplLocation(cell);
+        float len
+            = odb::Point::squaredDistance(initial_location, final_location);
+        if (len > 0) {
+          report_placement(cell, mapped, shifted);
+        }
       }
     }
   }
