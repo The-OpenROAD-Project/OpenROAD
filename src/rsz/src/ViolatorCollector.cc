@@ -384,15 +384,13 @@ void ViolatorCollector::sortByLoadDelay(float load_delay_threshold)
   // Filter: only keep pins where load_delay > load_delay_threshold *
   // intrinsic_delay If threshold is 0.0 or negative, skip filtering
   if (load_delay_threshold > 0.0) {
-    auto it = std::remove_if(
-        violating_pins_.begin(),
-        violating_pins_.end(),
-        [this, load_delay_threshold](const Pin* pin) {
+    auto it = std::ranges::remove_if(
+        violating_pins_, [this, load_delay_threshold](const Pin* pin) {
           Delay load_delay = pin_data_[pin].load_delay;
           Delay intrinsic_delay = pin_data_[pin].intrinsic_delay;
           return load_delay <= load_delay_threshold * intrinsic_delay;
         });
-    violating_pins_.erase(it, violating_pins_.end());
+    violating_pins_.erase(it.begin(), violating_pins_.end());
   }
 
   for (auto pin : violating_pins_) {
@@ -774,15 +772,13 @@ void ViolatorCollector::sortByHeuristic(float load_delay_threshold)
   // Filter: only keep pins where load_delay > load_delay_threshold *
   // intrinsic_delay If threshold is 0.0 or negative, skip filtering
   if (load_delay_threshold > 0.0) {
-    auto it = std::remove_if(
-        violating_pins_.begin(),
-        violating_pins_.end(),
-        [this, load_delay_threshold](const Pin* pin) {
+    auto it = std::ranges::remove_if(
+        violating_pins_, [this, load_delay_threshold](const Pin* pin) {
           Delay load_delay = pin_data_[pin].load_delay;
           Delay intrinsic_delay = pin_data_[pin].intrinsic_delay;
           return load_delay <= load_delay_threshold * intrinsic_delay;
         });
-    violating_pins_.erase(it, violating_pins_.end());
+    violating_pins_.erase(it.begin(), violating_pins_.end());
   }
 }
 
@@ -2239,9 +2235,7 @@ Slack ViolatorCollector::getOverallStartpointWNS()
 
   for (const auto& [startpoint_pin, slack] : violating_startpoints_) {
     Slack sp_wns = getStartpointWNS(startpoint_pin);
-    if (sp_wns < worst_slack) {
-      worst_slack = sp_wns;
-    }
+    worst_slack = std::min(sp_wns, worst_slack);
   }
 
   return worst_slack == std::numeric_limits<float>::max() ? 0.0 : worst_slack;

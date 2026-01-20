@@ -216,7 +216,7 @@ class RepairSetup : public sta::dbStaState
                                char phase_marker);
   void repairSetup_LastGasp(const OptoParams& params,
                             int& num_viols,
-                            const int max_iterations,
+                            int max_iterations,
                             char phase_marker = 'G');
 
   Logger* logger_ = nullptr;
