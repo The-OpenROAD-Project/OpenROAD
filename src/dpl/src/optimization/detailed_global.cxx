@@ -102,9 +102,16 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     return;
   }
 
-  // Store original displacement limits for restoration later
-  int orig_disp_x, orig_disp_y;
-  mgr_->getMaxDisplacement(orig_disp_x, orig_disp_y);
+  const int row_height = arch_->getRow(0)->getHeight().v;
+
+  // Store original displacement limits for restoration later.
+  // Note: DetailedMgr stores displacement limits in DBU, while setMaxDisplacement
+  // expects values in "sites" (scaled by row height). Convert to keep units
+  // consistent and avoid overflow.
+  int orig_disp_x_dbu, orig_disp_y_dbu;
+  mgr_->getMaxDisplacement(orig_disp_x_dbu, orig_disp_y_dbu);
+  const int orig_disp_x_sites = std::max(1, orig_disp_x_dbu / row_height);
+  const int orig_disp_y_sites = std::max(1, orig_disp_y_dbu / row_height);
   mgr_->getLogger()->info(
       DPL,
       906,
@@ -112,8 +119,10 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
       "(tradeoff={:.1f})",
       tradeoff_);
 
-  const int chip_width = arch_->getMaxX().v - arch_->getMinX().v;
-  const int chip_height = arch_->getMaxY().v - arch_->getMinY().v;
+  const int chip_width_dbu = arch_->getMaxX().v - arch_->getMinX().v;
+  const int chip_height_dbu = arch_->getMaxY().v - arch_->getMinY().v;
+  const int chip_width_sites = std::max(1, chip_width_dbu / row_height);
+  const int chip_height_sites = std::max(1, chip_height_dbu / row_height);
 
   // PASS 1: HPWL Profiling Pass
   mgr_->getLogger()->info(
@@ -207,35 +216,35 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
       stage_name = "Stage " + std::to_string(iteration + 1);
     }
     if (iteration == 0) {
-      mgr_->setMaxDisplacement(chip_width, chip_height);
+      mgr_->setMaxDisplacement(chip_width_sites, chip_height_sites);
       mgr_->getLogger()->info(DPL,
                               921,
                               "Iteration {} ({}): temporary displacement set "
                               "to chip dimensions ({}, {})",
                               iteration + 1,
                               stage_name,
-                              chip_width,
-                              chip_height);
+                              chip_width_sites,
+                              chip_height_sites);
     } else if (iteration == 1) {
-      mgr_->setMaxDisplacement(orig_disp_x * 10, orig_disp_y * 10);
+      mgr_->setMaxDisplacement(orig_disp_x_sites * 10, orig_disp_y_sites * 10);
       mgr_->getLogger()->info(
           DPL,
           922,
           "Iteration {} ({}): displacement relaxed to 10x original ({}, {})",
           iteration + 1,
           stage_name,
-          orig_disp_x * 10,
-          orig_disp_y * 10);
+          orig_disp_x_sites * 10,
+          orig_disp_y_sites * 10);
     } else {
-      mgr_->setMaxDisplacement(orig_disp_x, orig_disp_y);
+      mgr_->setMaxDisplacement(orig_disp_x_sites, orig_disp_y_sites);
       mgr_->getLogger()->info(
           DPL,
           923,
           "Iteration {} ({}): displacement restored to original ({}, {})",
           iteration + 1,
           stage_name,
-          orig_disp_x,
-          orig_disp_y);
+          orig_disp_x_sites,
+          orig_disp_y_sites);
     }
 
     mgr_->getLogger()->info(
@@ -305,13 +314,13 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
       final_budget_utilization);
 
   // Ensure original displacement limits are fully restored
-  mgr_->setMaxDisplacement(orig_disp_x, orig_disp_y);
+  mgr_->setMaxDisplacement(orig_disp_x_sites, orig_disp_y_sites);
   mgr_->getLogger()->info(
       DPL,
       924,
       "Final restoration: displacement limits restored to original ({}, {})",
-      orig_disp_x,
-      orig_disp_y);
+      orig_disp_x_sites,
+      orig_disp_y_sites);
 }
 
 //////////////////////////////////////////////////////////////////////////////
