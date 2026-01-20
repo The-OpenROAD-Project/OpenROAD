@@ -4202,21 +4202,13 @@ void PinModDbNetConnection::operator()(const Pin* pin)
                 ->getOwningInstanceParent(const_cast<Pin*>(pin));
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
-        /*
-          //How to debug in orfs:
-          //uncomment this code
-          //then use gdb -p pid on the openroad process
-          //to see stack trace.
-        printf("Axiom check fail\n");
-        printf("Flat nets are %s %s for modnet %s\n",
-               db_network_->name(db_network_->dbToSta(dbnet_)),
-               db_network_->name(db_network_->dbToSta(candidate_flat_net)),
-               db_network_->name(search_net_));
-        printf("Suspending, access from gdb to debug\n");
-        fflush(stdout);
-        int forever_loop=1;
-        while(forever_loop);
-        */
+        // Dump net connectivity
+        logger_->warn(ORD,
+                      2031,
+                      "Flat net logical inconsistency found. Dump "
+                      "connections of the relevant flat nets.");
+        dbnet_->dump(true);
+        candidate_flat_net->dump(true);
 
         logger_->error(
             ORD,
