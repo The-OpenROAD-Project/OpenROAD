@@ -20,6 +20,9 @@ initialize_floorplan \
   -additional_site unithddbl
 
 make_tracks
+
+set_routing_layers -signal li1-met5
+
 place_pins \
   -hor_layers met3 \
   -ver_layers met2
