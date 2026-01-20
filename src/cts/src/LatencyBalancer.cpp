@@ -71,9 +71,7 @@ void LatencyBalancer::initSta()
 
 sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
 {
-  odb::dbMaster* bufferMaster
-      = db_->findMaster(options_->getRootBuffer().c_str());
-  sta::Cell* bufferMasterCell = network_->dbToSta(bufferMaster);
+  sta::Cell* bufferMasterCell = network_->dbToSta(delayBufMaster_);
   sta::LibertyCell* buffer_cell = network_->libertyCell(bufferMasterCell);
   sta::ArcDelay max_rise_delay = 0;
 
@@ -500,7 +498,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     double locY = (double) (srcY + (offsetY * (i + 1))) / wireSegmentUnit_;
     Point<double> bufferLoc(locX, locY);
     Point<double> legalBufferLoc
-        = root_->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
+        = root_->legalizeOneBuffer(bufferLoc, delayBufMaster_->getName());
 
     odb::Point loc{static_cast<int>(legalBufferLoc.getX() * wireSegmentUnit_),
                    static_cast<int>(legalBufferLoc.getY() * wireSegmentUnit_)};
@@ -511,8 +509,6 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
         = fmt::format("delaynet_{}_{}", delayBufIndex_, clkName);
     std::string newBufferName
         = fmt::format("delaybuf_{}_{}", delayBufIndex_++, clkName);
-    odb::dbMaster* bufferMaster
-        = db_->findMaster(options_->getRootBuffer().c_str());
 
     odb::dbInst* lastBuffer = nullptr;
 
@@ -526,7 +522,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     bool loads_on_different_nets = true;
     lastBuffer = drivingNet->insertBufferBeforeLoads(
         load_pins,
-        bufferMaster,
+        delayBufMaster_,
         &loc,
         newBufferName.c_str(),
         newNetName.c_str(),

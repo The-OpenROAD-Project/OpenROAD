@@ -57,6 +57,7 @@ class LatencyBalancer
                   odb::dbDatabase* db,
                   sta::dbNetwork* network,
                   sta::dbSta* sta,
+                  odb::dbMaster* delayBufMaster,
                   double scalingUnit,
                   double capPerDBU)
       : root_(root),
@@ -65,6 +66,7 @@ class LatencyBalancer
         db_(db),
         network_(network),
         openSta_(sta),
+        delayBufMaster_(delayBufMaster),
         wireSegmentUnit_(scalingUnit),
         capPerDBU_(capPerDBU),
         worseDelay_(std::numeric_limits<float>::min())
@@ -72,6 +74,7 @@ class LatencyBalancer
   }
 
   int run();
+  sta::ArcDelay computeBufferDelay(double extra_out_cap);
 
  private:
   void initSta();
@@ -81,7 +84,6 @@ class LatencyBalancer
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,
                             odb::dbITerm* iterm);
-  sta::ArcDelay computeBufferDelay(double extra_out_cap);
   float computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
@@ -111,6 +113,7 @@ class LatencyBalancer
   sta::dbNetwork* network_ = nullptr;
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timingGraph_ = nullptr;
+  odb::dbMaster* delayBufMaster_ = nullptr;
   double wireSegmentUnit_;
   float bufferDelay_;
   double capPerDBU_;
