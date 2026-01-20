@@ -129,7 +129,6 @@ enum dbObjectType
 
   // Lib Objects
   dbLibObj,
-  dbObsoleteGdsLibObj_DO_NOT_USE,
   dbSiteObj,
   dbMasterObj,
   dbMPinObj,
