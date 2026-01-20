@@ -17,11 +17,25 @@
 
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
 
 namespace {
+
+std::string getChipPathKey(const std::vector<odb::dbChipInst*>& path)
+{
+  std::string key;
+  char delimiter = '/';
+  for (auto* chip_inst : path) {
+    if (!key.empty()) {
+      key += delimiter;
+    }
+    key += chip_inst->getName();
+  }
+  return key;
+}
 
 odb::dbChipRegion::Side computeEffectiveSide(
     odb::dbChipRegion::Side original,
@@ -376,15 +390,7 @@ std::vector<UnfoldedBump*> UnfoldedNet::getDisconnectedBumps(
 
 std::string UnfoldedChip::getName() const
 {
-  std::string name;
-  char delimiter = '/';
-  for (dbChipInst* chip_inst : chip_inst_path) {
-    if (!name.empty()) {
-      name += delimiter;
-    }
-    name += chip_inst->getName();
-  }
-  return name;
+  return getChipPathKey(chip_inst_path);
 }
 
 std::string UnfoldedChip::getPathKey() const
@@ -497,6 +503,7 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* chip_inst,
         local_z = layer_z;
       }
     }
+    // Note: Warning for missing layer is handled at parse time in 3dblox.cpp
 
     Point3D surface_pt(0, 0, local_z);
     for (auto inst : path | std::views::reverse) {
@@ -506,12 +513,17 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* chip_inst,
     uf_region.cuboid.set_zlo(surface_pt.z());
     uf_region.cuboid.set_zhi(surface_pt.z());
 
-    uf_region.cuboid = region_inst->getChipRegion()->getCuboid();
+    odb::Rect footprint = region_inst->getChipRegion()->getBox();
     // Global coordinates for region FOOTPRINT (XY)
     for (auto inst : path | std::views::reverse) {
-      Transform3D t(inst);
-      t.apply(uf_region.cuboid);
+      odb::dbTransform t(inst->getOrient().getOrientType2D(),
+                         odb::Point(inst->getLoc().x(), inst->getLoc().y()));
+      t.apply(footprint);
     }
+    uf_region.cuboid.set_xlo(footprint.xMin());
+    uf_region.cuboid.set_xhi(footprint.xMax());
+    uf_region.cuboid.set_ylo(footprint.yMin());
+    uf_region.cuboid.set_yhi(footprint.yMax());
     // Update Z of global cuboid to match surface_pt
     uf_region.cuboid.set_zlo(surface_pt.z());
     uf_region.cuboid.set_zhi(surface_pt.z());
@@ -563,15 +575,16 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegionFull& uf_region,
     }
     Point local_xy = bump_inst->getLocation();
 
-    Point3D global_pos(local_xy.x(), local_xy.y(), 0);
-    // Apply transforms
+    odb::Point global_xy = local_xy;
+    // Apply 2D transforms
     for (auto inst : path | std::views::reverse) {
-      Transform3D t(inst);
-      t.apply(global_pos);
+      odb::dbTransform t(inst->getOrient().getOrientType2D(),
+                         odb::Point(inst->getLoc().x(), inst->getLoc().y()));
+      t.apply(global_xy);
     }
 
     // Z is the region's connecting surface
-    global_pos.setZ(uf_region.getSurfaceZ());
+    Point3D global_pos(global_xy.x(), global_xy.y(), uf_region.getSurfaceZ());
     uf_bump.global_position = global_pos;
 
     // Extract logical net name from property
@@ -595,15 +608,7 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegionFull& uf_region,
 UnfoldedChip* UnfoldedModel::findUnfoldedChip(
     const std::vector<dbChipInst*>& path)
 {
-  std::string key;
-  char delimiter = '/';
-
-  for (size_t i = 0; i < path.size(); i++) {
-    key += path[i]->getName();
-    if (i < path.size() - 1) {
-      key += delimiter;
-    }
-  }
+  std::string key = getChipPathKey(path);
 
   auto it = chip_path_map_.find(key);
   if (it != chip_path_map_.end()) {

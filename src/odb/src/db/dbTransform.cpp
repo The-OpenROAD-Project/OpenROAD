@@ -79,11 +79,13 @@ static const dbOrientType::Value orientMul[8][8] = {{dbOrientType::R0,
                                                      dbOrientType::R270,
                                                      dbOrientType::R0}};
 
+// Serialize transform: orientation (2D) and offset (3D).
+// Note: mirror_z_ is NOT serialized to maintain backward compatibility
+// with existing .odb files. 3D mirroring is reconstructed from the
+// dbOrientType when needed.
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t)
 {
-  stream << (int) t.orient_;
-  stream << t.offset_;
-  stream << (int) t.orient_;
+  stream << static_cast<int>(t.orient_);
   stream << t.offset_;
   return stream;
 }
@@ -92,7 +94,7 @@ dbIStream& operator>>(dbIStream& stream, dbTransform& t)
 {
   int orient;
   stream >> orient;
-  t.orient_ = (dbOrientType::Value) orient;
+  t.orient_ = static_cast<dbOrientType::Value>(orient);
   stream >> t.offset_;
   return stream;
 }
@@ -225,20 +227,28 @@ void dbTransform::apply(Point3D& p) const
 
 void dbTransform::apply(Rect& r) const
 {
-  Point ll = r.ll();
-  Point ur = r.ur();
-  apply(ll);
-  apply(ur);
-  r.init(ll.x(), ll.y(), ur.x(), ur.y());
+  Point p[4];
+  p[0] = r.ll();
+  p[1] = r.ul();
+  p[2] = r.ur();
+  p[3] = r.lr();
+  r.mergeInit();
+  for (int i = 0; i < 4; i++) {
+    apply(p[i]);
+    r.merge(p[i]);
+  }
 }
 
 void dbTransform::apply(Cuboid& c) const
 {
-  Point3D lll = c.lll();
-  Point3D uur = c.uur();
-  apply(lll);
-  apply(uur);
-  c.init(lll.x(), lll.y(), lll.z(), uur.x(), uur.y(), uur.z());
+  std::vector<Point3D> points = c.getPoints();
+  Cuboid result;
+  result.mergeInit();
+  for (Point3D& p : points) {
+    apply(p);
+    result.merge(p);
+  }
+  c = result;
 }
 
 void dbTransform::apply(Polygon& p) const
