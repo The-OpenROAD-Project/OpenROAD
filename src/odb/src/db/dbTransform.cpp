@@ -233,9 +233,9 @@ void dbTransform::apply(Rect& r) const
   p[2] = r.ur();
   p[3] = r.lr();
   r.mergeInit();
-  for (int i = 0; i < 4; i++) {
-    apply(p[i]);
-    r.merge(p[i]);
+  for (auto& point : p) {
+    apply(point);
+    r.merge(point);
   }
 }
 
@@ -244,7 +244,7 @@ void dbTransform::apply(Cuboid& c) const
   std::vector<Point3D> points = c.getPoints();
   Cuboid result;
   result.mergeInit();
-  for (Point3D& p : points) {
+  for (auto& p : points) {
     apply(p);
     result.merge(p);
   }

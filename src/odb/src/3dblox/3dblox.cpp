@@ -499,17 +499,47 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
 
   inst->setOrigin(x, y);
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
+
+  dbNet* net = nullptr;
   if (entry.net_name != "-") {
-    auto net = block->findNet(entry.net_name.c_str());
-    if (net != nullptr) {
-      bump->setNet(net);
+    net = block->findNet(entry.net_name.c_str());
+    if (net == nullptr) {
+      net = dbNet::create(block, entry.net_name.c_str());
+      logger_->info(utl::ODB,
+                    534,
+                    "Creating missing net {} for bump {}",
+                    entry.net_name,
+                    entry.bump_inst_name);
+    }
+    bump->setNet(net);
+    if (!inst->getITerms().empty()) {
       inst->getITerms().begin()->connect(net);
     }
   }
   if (entry.port_name != "-") {
     auto bterm = block->findBTerm(entry.port_name.c_str());
+    if (bterm == nullptr) {
+      if (net != nullptr) {
+        bterm = dbBTerm::create(net, entry.port_name.c_str());
+        logger_->info(utl::ODB,
+                      533,
+                      "Creating missing port {} for bump {}",
+                      entry.port_name,
+                      entry.bump_inst_name);
+      } else {
+        logger_->warn(utl::ODB,
+                      545,
+                      "Cannot create missing port {} for bump {} because no "
+                      "net is specified.",
+                      entry.port_name,
+                      entry.bump_inst_name);
+      }
+    }
     if (bterm != nullptr) {
       bump->setBTerm(bterm);
+      if (bump->getNet()) {
+        bterm->connect(bump->getNet());
+      }
     }
   }
 }

@@ -62,8 +62,8 @@ odb::dbChipRegion::Side computeEffectiveSide(
   }
 }
 
-odb::Cuboid computeConnectionCuboid(const odb::UnfoldedRegionFull& top,
-                                    const odb::UnfoldedRegionFull& bottom,
+odb::Cuboid computeConnectionCuboid(const odb::UnfoldedRegion& top,
+                                    const odb::UnfoldedRegion& bottom,
                                     int thickness)
 {
   odb::Cuboid result;
@@ -80,101 +80,24 @@ odb::Cuboid computeConnectionCuboid(const odb::UnfoldedRegionFull& top,
   return result;
 }
 
-// Returns {total_thickness, layer_z}
-// layer_z is the z-coordinate of the TOP of the given layer relative to the
-// bottom of the stack.
-std::pair<int, int> getLayerZ(odb::dbTech* tech, odb::dbTechLayer* target_layer)
+// Helper to construct a dbTransform including 3D Z-offset handling for
+// 3DBlox
+odb::dbTransform getTransform(odb::dbChipInst* inst)
 {
-  int total_thickness = 0;
-  int layer_z = 0;
-  bool reached_target = false;
-
-  if (!tech) {
-    return {0, 0};
+  int z_offset = inst->getLoc().z();
+  if (inst->getOrient().isMirrorZ()) {
+    z_offset += inst->getMasterChip()->getThickness();
   }
-
-  for (auto* layer : tech->getLayers()) {
-    auto type = layer->getType();
-    if (type == odb::dbTechLayerType::ROUTING
-        || type == odb::dbTechLayerType::CUT) {
-      uint32_t thick = 0;
-      if (layer->getThickness(thick)) {
-        total_thickness += thick;
-        if (!reached_target) {
-          layer_z += thick;
-        }
-      }
-    }
-    if (layer == target_layer) {
-      reached_target = true;
-    }
-  }
-  return {total_thickness, layer_z};
+  return odb::dbTransform(
+      inst->getOrient(),
+      odb::Point3D(inst->getLoc().x(), inst->getLoc().y(), z_offset));
 }
-
-// Helper class to unify 3D transformations for Points and Cuboids
-class Transform3D
-{
- public:
-  explicit Transform3D(odb::dbChipInst* inst)
-  {
-    // 1. Prepare 2D Transform
-    odb::Point loc_xy(inst->getLoc().x(), inst->getLoc().y());
-    transform_2d_
-        = odb::dbTransform(inst->getOrient().getOrientType2D(), loc_xy);
-
-    // 2. Prepare Z Transform parameters
-    z_offset_ = inst->getLoc().z();
-    mirror_z_ = inst->getOrient().isMirrorZ();
-    thickness_ = inst->getMasterChip()->getThickness();
-  }
-
-  void apply(odb::Point3D& point) const
-  {
-    // Apply 2D
-    transform_2d_.apply(point);
-
-    // Apply Z Mirror
-    if (mirror_z_) {
-      point.setZ(-point.z() + thickness_);
-    }
-
-    // Apply Z Offset
-    point.setZ(point.z() + z_offset_);
-  }
-
-  void apply(odb::Cuboid& cuboid) const
-  {
-    // Apply 2D
-    transform_2d_.apply(cuboid);
-
-    // Apply Z Mirror
-    int zlo = cuboid.zMin();
-    int zhi = cuboid.zMax();
-
-    if (mirror_z_) {
-      zlo = -zlo + thickness_;
-      zhi = -zhi + thickness_;
-      std::swap(zlo, zhi);
-    }
-
-    // Apply Z Offset
-    cuboid.set_zlo(zlo + z_offset_);
-    cuboid.set_zhi(zhi + z_offset_);
-  }
-
- private:
-  odb::dbTransform transform_2d_;
-  int z_offset_;
-  bool mirror_z_;
-  int thickness_;
-};
 
 }  // namespace
 
 namespace odb {
 
-int UnfoldedRegionFull::getSurfaceZ() const
+int UnfoldedRegion::getSurfaceZ() const
 {
   if (isFacingUp()) {
     return cuboid.zMax();
@@ -185,22 +108,22 @@ int UnfoldedRegionFull::getSurfaceZ() const
   return cuboid.zCenter();
 }
 
-bool UnfoldedRegionFull::isFacingUp() const
+bool UnfoldedRegion::isFacingUp() const
 {
   return effective_side == dbChipRegion::Side::FRONT;
 }
 
-bool UnfoldedRegionFull::isFacingDown() const
+bool UnfoldedRegion::isFacingDown() const
 {
   return effective_side == dbChipRegion::Side::BACK;
 }
 
-bool UnfoldedRegionFull::isInternal() const
+bool UnfoldedRegion::isInternal() const
 {
   return effective_side == dbChipRegion::Side::INTERNAL;
 }
 
-bool UnfoldedRegionFull::isInternalExt() const
+bool UnfoldedRegion::isInternalExt() const
 {
   return effective_side == dbChipRegion::Side::INTERNAL_EXT;
 }
@@ -434,19 +357,20 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* chip_inst,
   // local_cuboid for parent is this chip's master-coord cuboid transformed
   // by this instance's transform.
   local_cuboid = unfolded_chip.cuboid;
-  Transform3D t_inst(chip_inst);
+  dbTransform t_inst = getTransform(chip_inst);
   t_inst.apply(local_cuboid);
 
   // GLOBAL cuboid for the UnfoldedChip object
-  // It starts as the master cuboid (leaf) or merged sub-master cuboid
-  // (HIER). We apply the instance transforms of ALL elements in the path
-  // from leaf to root.
+  // Calculate total transform for the path
+  dbTransform total_transform;  // Identity
   for (auto inst : path | std::views::reverse) {
-    Transform3D t(inst);
-    t.apply(unfolded_chip.cuboid);
+    dbTransform t = getTransform(inst);
+    // total = t * total
+    total_transform.concat(t, total_transform);
   }
+  unfolded_chip.transform = total_transform;
+  total_transform.apply(unfolded_chip.cuboid);
 
-  // ... (chip Z-flip handling logic remains same or can be consolidated) ...
   bool z_flipped = false;
   for (auto inst : path) {
     if (inst->getOrient().isMirrorZ()) {
@@ -456,79 +380,17 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* chip_inst,
   unfolded_chip.z_flipped = z_flipped;
 
   // Process Regions
-  int master_thick = master_chip->getThickness();
-
   for (auto* region_inst : chip_inst->getRegions()) {
-    UnfoldedRegionFull uf_region;
+    UnfoldedRegion uf_region;
     uf_region.region_inst = region_inst;
     uf_region.parent_chip = nullptr;  // Set later
     uf_region.effective_side
         = computeEffectiveSide(region_inst->getChipRegion()->getSide(), path);
 
-    // Calculate Z relative to chip bottom
-    int local_z = 0;
-    odb::dbTechLayer* layer = region_inst->getChipRegion()->getLayer();
-    auto original_side = region_inst->getChipRegion()->getSide();
+    uf_region.cuboid = region_inst->getChipRegion()->getCuboid();
+    total_transform.apply(uf_region.cuboid);
 
-    // Default matching dbChipRegion::getCuboid() defaults
-    if (original_side == dbChipRegion::Side::FRONT) {
-      local_z = master_thick;
-    } else if (original_side == dbChipRegion::Side::BACK) {
-      local_z = 0;
-    } else {
-      local_z = master_thick / 2;
-    }
-
-    if (layer) {
-      if (original_side == dbChipRegion::Side::FRONT
-          || original_side == dbChipRegion::Side::INTERNAL
-          || original_side == dbChipRegion::Side::INTERNAL_EXT) {
-        // Front-side BEOL: stack starts at top (thickness) and grows down
-        auto [total_tech_thick, layer_z]
-            = getLayerZ(master_chip->getTech(), layer);
-
-        int dist_from_stack_top = total_tech_thick - layer_z;
-
-        // Assuming stack is aligned to TOP of chip (standard front-side
-        // processing)
-        int z_from_chip_bottom = master_thick - dist_from_stack_top;
-
-        local_z = std::max(0, z_from_chip_bottom);
-
-      } else if (original_side == dbChipRegion::Side::BACK) {
-        // Back-side BEOL: stack starts at bottom of chip (Z=0)
-        auto [total_tech_thick, layer_z]
-            = getLayerZ(master_chip->getTech(), layer);
-        // Stack aligned to bottom. Layer Z is simply layer_z
-        local_z = layer_z;
-      }
-    }
-    // Note: Warning for missing layer is handled at parse time in 3dblox.cpp
-
-    Point3D surface_pt(0, 0, local_z);
-    for (auto inst : path | std::views::reverse) {
-      Transform3D t(inst);
-      t.apply(surface_pt);
-    }
-    uf_region.cuboid.set_zlo(surface_pt.z());
-    uf_region.cuboid.set_zhi(surface_pt.z());
-
-    odb::Rect footprint = region_inst->getChipRegion()->getBox();
-    // Global coordinates for region FOOTPRINT (XY)
-    for (auto inst : path | std::views::reverse) {
-      odb::dbTransform t(inst->getOrient().getOrientType2D(),
-                         odb::Point(inst->getLoc().x(), inst->getLoc().y()));
-      t.apply(footprint);
-    }
-    uf_region.cuboid.set_xlo(footprint.xMin());
-    uf_region.cuboid.set_xhi(footprint.xMax());
-    uf_region.cuboid.set_ylo(footprint.yMin());
-    uf_region.cuboid.set_yhi(footprint.yMax());
-    // Update Z of global cuboid to match surface_pt
-    uf_region.cuboid.set_zlo(surface_pt.z());
-    uf_region.cuboid.set_zhi(surface_pt.z());
-
-    unfoldBumps(uf_region, path);
+    unfoldBumps(uf_region, total_transform);
     unfolded_chip.regions.push_back(uf_region);
   }
 
@@ -548,8 +410,8 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* chip_inst,
   return stable_chip_ptr;
 }
 
-void UnfoldedModel::unfoldBumps(UnfoldedRegionFull& uf_region,
-                                const std::vector<dbChipInst*>& path)
+void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
+                                const dbTransform& transform)
 {
   dbChipRegion* region = uf_region.region_inst->getChipRegion();
 
@@ -575,16 +437,11 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegionFull& uf_region,
     }
     Point local_xy = bump_inst->getLocation();
 
-    odb::Point global_xy = local_xy;
-    // Apply 2D transforms
-    for (auto inst : path | std::views::reverse) {
-      odb::dbTransform t(inst->getOrient().getOrientType2D(),
-                         odb::Point(inst->getLoc().x(), inst->getLoc().y()));
-      t.apply(global_xy);
-    }
+    Point global_xy_pt = local_xy;
+    transform.apply(global_xy_pt);
 
-    // Z is the region's connecting surface
-    Point3D global_pos(global_xy.x(), global_xy.y(), uf_region.getSurfaceZ());
+    Point3D global_pos(
+        global_xy_pt.x(), global_xy_pt.y(), uf_region.getSurfaceZ());
     uf_bump.global_position = global_pos;
 
     // Extract logical net name from property
@@ -617,7 +474,7 @@ UnfoldedChip* UnfoldedModel::findUnfoldedChip(
   return nullptr;
 }
 
-UnfoldedRegionFull* UnfoldedModel::findUnfoldedRegion(
+UnfoldedRegion* UnfoldedModel::findUnfoldedRegion(
     UnfoldedChip* chip,
     dbChipRegionInst* region_inst)
 {
@@ -649,7 +506,7 @@ void UnfoldedModel::unfoldConnectionsRecursive(
       top_full_path.push_back(inst);
     }
     UnfoldedChip* top_chip = findUnfoldedChip(top_full_path);
-    UnfoldedRegionFull* top_region
+    UnfoldedRegion* top_region
         = findUnfoldedRegion(top_chip, top_region_inst);
 
     auto bottom_full_path = parent_path;
@@ -657,7 +514,7 @@ void UnfoldedModel::unfoldConnectionsRecursive(
       bottom_full_path.push_back(inst);
     }
     UnfoldedChip* bottom_chip = findUnfoldedChip(bottom_full_path);
-    UnfoldedRegionFull* bottom_region
+    UnfoldedRegion* bottom_region
         = findUnfoldedRegion(bottom_chip, bottom_region_inst);
 
     if (!top_region && !bottom_region) {

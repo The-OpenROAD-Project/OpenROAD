@@ -11,6 +11,7 @@
 
 #include "odb/3dblox.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -23,15 +24,7 @@ class dbChipConn;
 class dbChipNet;
 
 struct UnfoldedChip;
-
-struct UnfoldedRegion
-{
-  dbChipRegionInst* region_inst;  // non-owning, managed by dbChip
-  dbChipRegion::Side effective_side;
-  Cuboid cuboid;
-  UnfoldedChip* parent_chip
-      = nullptr;  // non-owning, points to UnfoldedModel::unfolded_chips_
-};
+struct UnfoldedRegion;
 
 struct UnfoldedBump
 {
@@ -42,8 +35,13 @@ struct UnfoldedBump
   std::string port_name;
 };
 
-struct UnfoldedRegionFull : public UnfoldedRegion
+struct UnfoldedRegion
 {
+  dbChipRegionInst* region_inst;  // non-owning, managed by dbChip
+  dbChipRegion::Side effective_side;
+  Cuboid cuboid;
+  UnfoldedChip* parent_chip
+      = nullptr;  // non-owning, points to UnfoldedModel::unfolded_chips_
   std::deque<UnfoldedBump> bumps;
   bool isUsed = false;
 
@@ -57,9 +55,9 @@ struct UnfoldedRegionFull : public UnfoldedRegion
 struct UnfoldedConnection
 {
   dbChipConn* connection;  // non-owning, managed by dbChip
-  UnfoldedRegionFull*
+  UnfoldedRegion*
       top_region;  // non-owning, may be null for virtual connections
-  UnfoldedRegionFull*
+  UnfoldedRegion*
       bottom_region;  // non-owning, may be null for virtual connections
   Cuboid connection_cuboid;
   bool is_bterm_connection = false;
@@ -72,7 +70,7 @@ struct UnfoldedNet
 {
   dbChipNet* chip_net;  // non-owning, managed by dbChip
   std::vector<UnfoldedBump*>
-      connected_bumps;  // non-owning, points to UnfoldedRegionFull::bumps
+      connected_bumps;  // non-owning, points to UnfoldedRegion::bumps
 
   std::vector<UnfoldedBump*> getDisconnectedBumps(
       utl::Logger* logger,
@@ -88,13 +86,14 @@ struct UnfoldedChip
 
   std::vector<dbChipInst*> chip_inst_path;  // non-owning, managed by dbChip
   Cuboid cuboid;
+  dbTransform transform;
 
   bool z_flipped = false;
-  std::deque<UnfoldedRegionFull> regions;  // owning container
+  std::deque<UnfoldedRegion> regions;  // owning container
   std::vector<UnfoldedConnection*>
       connected_conns;  // non-owning, points to unfolded_connections_
 
-  std::unordered_map<dbChipRegionInst*, UnfoldedRegionFull*> region_map;
+  std::unordered_map<dbChipRegionInst*, UnfoldedRegion*> region_map;
 };
 
 class UnfoldedModel
@@ -116,16 +115,15 @@ class UnfoldedModel
   UnfoldedChip* buildUnfoldedChip(dbChipInst* chip_inst,
                                   std::vector<dbChipInst*>& path,
                                   Cuboid& local_cuboid);
-  void unfoldBumps(UnfoldedRegionFull& uf_region,
-                   const std::vector<dbChipInst*>& path);
+  void unfoldBumps(UnfoldedRegion& uf_region, const dbTransform& transform);
   void unfoldConnections(dbChip* chip);
   void unfoldConnectionsRecursive(dbChip* chip,
                                   const std::vector<dbChipInst*>& parent_path);
   void unfoldNets(dbChip* chip);
 
   UnfoldedChip* findUnfoldedChip(const std::vector<dbChipInst*>& path);
-  UnfoldedRegionFull* findUnfoldedRegion(UnfoldedChip* chip,
-                                         dbChipRegionInst* region_inst);
+  UnfoldedRegion* findUnfoldedRegion(UnfoldedChip* chip,
+                                     dbChipRegionInst* region_inst);
 
   utl::Logger* logger_;
 
