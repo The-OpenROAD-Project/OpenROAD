@@ -3,12 +3,19 @@
 
 #pragma once
 
+#include <memory>
 #include <set>
+#include <string>
 #include <unordered_set>
 
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/GraphClass.hh"
+#include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 

@@ -3,6 +3,7 @@
 
 #include "dbBlock.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 #include <unistd.h>
 
 #include <algorithm>

@@ -10,6 +10,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "tst/IntegratedFixture.h"
+#include "utl/Logger.h"
 
 namespace odb {
 

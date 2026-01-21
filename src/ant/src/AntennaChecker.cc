@@ -4,6 +4,7 @@
 #include "ant/AntennaChecker.hh"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
