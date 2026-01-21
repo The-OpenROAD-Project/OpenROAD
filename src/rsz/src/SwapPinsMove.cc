@@ -56,92 +56,134 @@ using sta::TimingArc;
 using sta::TimingArcSet;
 using sta::Vertex;
 
-bool SwapPinsMove::doMove(const Path* drvr_path,
-                          int drvr_index,
-                          Slack drvr_slack,
-                          PathExpanded* expanded,
-                          float setup_slack_margin)
+bool SwapPinsMove::doMove(const Pin* drvr_pin, float setup_slack_margin)
 {
-  Pin* drvr_pin = drvr_path->pin(this);
+  startMove(drvr_pin);
+
+  Instance* drvr = network_->instance(drvr_pin);
+
+  // Skip if this is don't touch
+  if (resizer_->dontTouch(drvr)) {
+    debugPrint(logger_,
+               RSZ,
+               "swap_pins_move",
+               2,
+               "REJECT SwapPinsMove {}: {} is \"don't touch\"",
+               network_->pathName(drvr_pin),
+               network_->pathName(drvr));
+    return endMove(false);
+  }
+
+  // Check if we have already dealt with this instance
+  // and prevent any further swaps.
+  if (hasMoves(drvr)) {
+    debugPrint(logger_,
+               RSZ,
+               "swap_pins_move",
+               2,
+               "REJECT SwapPinsMove {}: Already swapped {}",
+               network_->pathName(drvr_pin),
+               network_->pathName(drvr));
+    return endMove(false);
+  }
+
   // Skip if there is no liberty model or this is a single-input cell
   LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-  if (drvr_port == nullptr) {
-    return false;
+  LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
+
+  if (!drvr_cell) {
+    debugPrint(logger_,
+               RSZ,
+               "swap_pins_move",
+               2,
+               "REJECT SwapPinsMove {}: No liberty cell found for {}",
+               network_->pathName(drvr_pin),
+               network_->pathName(drvr));
+    return endMove(false);
   }
-  LibertyCell* cell = drvr_port->libertyCell();
-  if (cell == nullptr) {
-    return false;
+
+  if (drvr_cell->isBuffer() || drvr_cell->isInverter()) {
+    debugPrint(logger_,
+               RSZ,
+               "swap_pins_move",
+               2,
+               "REJECT SwapPinsMove {}: Cell {} is single output",
+               network_->pathName(drvr_pin),
+               drvr_cell->name());
+    return endMove(false);
   }
-  if (cell->isBuffer() || cell->isInverter()) {
-    return false;
-  }
-  Instance* drvr = network_->instance(drvr_pin);
-  const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+
+  const DcalcAnalysisPt* dcalc_ap = resizer_->tgt_slew_dcalc_ap_;
   // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
-  const int in_index = drvr_index - 1;
-  const Path* in_path = expanded->path(in_index);
-  Pin* in_pin = in_path->pin(sta_);
+  Pin* prev_drvr_pin;
+  Pin* drvr_input_pin;
+  Pin* load_pin;
+  getPrevNextPins(drvr_pin, prev_drvr_pin, drvr_input_pin, load_pin);
 
-  if (!resizer_->dontTouch(drvr)) {
-    // We get the driver port and the cell for that port.
-    LibertyPort* input_port = network_->libertyPort(in_pin);
-    LibertyPort* swap_port = input_port;
-    LibertyPortVec ports;
+  // We get the driver port and the cell for that port.
+  LibertyPort* input_port = network_->libertyPort(drvr_input_pin);
+  LibertyPort* swap_port = input_port;
+  LibertyPortVec ports;
 
-    // Skip output to output paths
-    if (input_port->direction()->isOutput()) {
-      return false;
-    }
-
-    // Check if we have already dealt with this instance
-    // and prevent any further swaps.
-    if (hasMoves(drvr) > 0) {
-      return false;
-    }
-
-    // Find the equivalent pins for a cell (simple implementation for now)
-    // stash them. Ports are unique to a cell so we can just cache by port
-    // and that should apply to all instances of that cell with this input_port.
-    if (equiv_pin_map_.find(input_port) == equiv_pin_map_.end()) {
-      equivCellPins(cell, input_port, ports);
-      equiv_pin_map_.insert(input_port, ports);
-    }
-    ports = equiv_pin_map_[input_port];
-    if (!ports.empty()) {
-      // Pass slews at input pins for more accurate delay/slew estimation
-      annotateInputSlews(drvr, dcalc_ap);
-      findSwapPinCandidate(
-          input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
-      resetInputSlews();
-
-      if (!sta::LibertyPort::equiv(swap_port, input_port)) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   3,
-                   "swap pins {} ({}) {} {}",
-                   network_->name(drvr),
-                   cell->name(),
-                   input_port->name(),
-                   swap_port->name());
-
-        debugPrint(logger_,
-                   RSZ,
-                   "opt_moves",
-                   1,
-                   "ACCEPT swap_pins {} ({}) {}<->{}",
-                   network_->name(drvr),
-                   cell->name(),
-                   input_port->name(),
-                   swap_port->name());
-        swapPins(drvr, input_port, swap_port);
-        addMove(drvr);
-        return true;
-      }
-    }
+  // Skip output to output paths
+  if (input_port->direction()->isOutput()) {
+    debugPrint(logger_,
+               RSZ,
+               "swap_pins_move",
+               2,
+               "REJECT SwapPinsMove {}: Output to output path",
+               network_->pathName(drvr_pin));
+    return endMove(false);
   }
-  return false;
+
+  // Find the equivalent pins for a cell (simple implementation for now)
+  // stash them. Ports are unique to a cell so we can just cache by port
+  // and that should apply to all instances of that cell with this input_port.
+  if (equiv_pin_map_.find(input_port) == equiv_pin_map_.end()) {
+    equivCellPins(drvr_cell, input_port, ports);
+    equiv_pin_map_.insert(input_port, ports);
+  }
+  ports = equiv_pin_map_[input_port];
+  if (ports.empty()) {
+    debugPrint(logger_,
+               RSZ,
+               "swap_pins_move",
+               2,
+               "REJECT SwapPinsMove {}: No equivalent pins found",
+               network_->pathName(drvr_pin));
+    return endMove(false);
+  }
+
+  // Pass slews at input pins for more accurate delay/slew estimation
+  annotateInputSlews(drvr, dcalc_ap);
+  findSwapPinCandidate(
+      input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
+  resetInputSlews();
+
+  if (sta::LibertyPort::equiv(swap_port, input_port)) {
+    debugPrint(logger_,
+               RSZ,
+               "swap_pins_move",
+               2,
+               "REJECT SwapPinsMove {}: Selected swap pin is actually the same "
+               "input pin",
+               network_->pathName(drvr_pin));
+    return endMove(false);
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "swap_pins_move",
+             1,
+             "ACCEPT SwapPinsMove {}: Cell {}, pins {} <-> {}",
+             network_->name(drvr_pin),
+             drvr_cell->name(),
+             input_port->name(),
+             swap_port->name());
+  swapPins(drvr, input_port, swap_port);
+  countMove(drvr);
+  return endMove(true);
 }
 
 void SwapPinsMove::swapPins(Instance* inst,

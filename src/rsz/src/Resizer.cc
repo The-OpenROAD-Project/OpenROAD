@@ -41,6 +41,7 @@
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "VTSwapMove.hh"
+#include "ViolatorCollector.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
@@ -4310,6 +4311,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool match_cell_footprint,
                           bool verbose,
                           const std::vector<MoveType>& sequence,
+                          const char* phases,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_size_down,
@@ -4335,6 +4337,7 @@ bool Resizer::repairSetup(double setup_margin,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
+                                    phases,
                                     skip_pin_swap,
                                     skip_gate_cloning,
                                     skip_size_down,

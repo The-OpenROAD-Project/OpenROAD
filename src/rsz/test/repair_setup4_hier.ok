@@ -50,12 +50,13 @@ tns max -2.588
 [INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 11 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 11 out of 11 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
---------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.563 |       -2.6 |     11 | u1/r2/D
-    final |       0 |       9 |        1 |      0 |     0 |    +9.1% |   -0.466 |       -3.3 |     11 | u1/r2/D
---------------------------------------------------------------------------------------------------------------
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.563 |        0.0 |       -2.6 |     11 | u1/r2/D
+      75* |       0 |       9 |        1 |      0 |     0 |    +9.1% |   -0.466 |        0.0 |       -3.3 |     11 | u1/r2/D
+    final |       0 |       9 |        1 |      0 |     0 |    +9.1% |   -0.466 |        0.0 |       -3.3 |     11 | u1/r2/D
+------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 1 buffers.
 [INFO RSZ-0051] Resized 9 instances: 9 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.

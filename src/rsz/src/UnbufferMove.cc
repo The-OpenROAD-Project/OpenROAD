@@ -58,156 +58,181 @@ using sta::Vertex;
 // 2) it doesn't create new max fanout violations
 // 3) it doesn't create new max cap violations
 // 4) it doesn't worsen slack
-bool UnbufferMove::doMove(const Path* drvr_path,
-                          int drvr_index,
-                          Slack drvr_slack,
-                          PathExpanded* expanded,
-                          float setup_slack_margin)
+bool UnbufferMove::doMove(const Pin* drvr_pin, float setup_slack_margin)
 {
-  Vertex* drvr_vertex = drvr_path->vertex(sta_);
-  const Pin* drvr_pin = drvr_vertex->pin();
+  startMove(drvr_pin);
+
+  Instance* drvr = network_->instance(drvr_pin);
   LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
   LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
 
   // TODO:
   // 1. add max slew check
-  if (drvr_cell && drvr_cell->isBuffer()) {
-    Pin* drvr_pin = drvr_path->pin(this);
-    Instance* drvr = network_->instance(drvr_pin);
 
-    // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
-    // cloning because such removal may lead to an inifinte loop or long runtime
-    std::string reason;
-    if (resizer_->swap_pins_move_->hasMoves(drvr)) {
-      reason = "its pins have been swapped";
-    } else if (resizer_->clone_move_->hasMoves(drvr)) {
-      reason = "it has been cloned";
-    } else if (resizer_->split_load_move_->hasMoves(drvr)) {
-      reason = "it was from split load buffering";
-    } else if (resizer_->buffer_move_->hasMoves(drvr)) {
-      reason = "it was from rebuffering";
-    } else if (resizer_->size_up_move_->hasMoves(drvr)) {
-      reason = "it has been resized";
-    }
-    if (!reason.empty()) {
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
-                 4,
-                 "buffer {} is not removed because {}",
-                 db_network_->name(drvr),
-                 reason);
-      return false;
-    }
-
-    // Don't remove buffer if new max fanout violations are created
-    Vertex* drvr_vertex = drvr_path->vertex(sta_);
-    const Path* prev_drvr_path = expanded->path(drvr_index - 2);
-    Vertex* prev_drvr_vertex = prev_drvr_path->vertex(sta_);
-    Pin* prev_drvr_pin = prev_drvr_vertex->pin();
-    float curr_fanout, max_fanout, fanout_slack;
-    sta_->checkFanout(
-        prev_drvr_pin, resizer_->max_, curr_fanout, max_fanout, fanout_slack);
-    float new_fanout = curr_fanout + fanout(drvr_vertex) - 1;
-    if (max_fanout > 0.0) {
-      // Honor max fanout when the constraint exists
-      if (new_fanout > max_fanout) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "buffer {} is not removed because of max fanout limit "
-                   "of {} at {}",
-                   db_network_->name(drvr),
-                   max_fanout,
-                   network_->pathName(prev_drvr_pin));
-        return false;
-      }
-    } else {
-      // No max fanout exists, but don't exceed default fanout limit
-      if (new_fanout > buffer_removal_max_fanout_) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "buffer {} is not removed because of default fanout "
-                   "limit of {} at "
-                   "{}",
-                   db_network_->name(drvr),
-                   buffer_removal_max_fanout_,
-                   network_->pathName(prev_drvr_pin));
-        return false;
-      }
-    }
-
-    // Watch out for new max cap violations
-    float cap, max_cap, cap_slack;
-    const Corner* corner;
-    const RiseFall* tr;
-    sta_->checkCapacitance(prev_drvr_pin,
-                           nullptr /* corner */,
-                           resizer_->max_,
-                           // return values
-                           corner,
-                           tr,
-                           cap,
-                           max_cap,
-                           cap_slack);
-    if (max_cap > 0.0 && corner) {
-      const DcalcAnalysisPt* dcalc_ap
-          = corner->findDcalcAnalysisPt(resizer_->max_);
-      GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-      float drvr_cap = dcalc->loadCap(drvr_pin, dcalc_ap);
-      LibertyPort *buffer_input_port, *buffer_output_port;
-      drvr_cell->bufferPorts(buffer_input_port, buffer_output_port);
-      float new_cap = cap + drvr_cap
-                      - resizer_->portCapacitance(buffer_input_port, corner);
-      if (new_cap > max_cap) {
-        debugPrint(
-            logger_,
-            RSZ,
-            "repair_setup",
-            2,
-            "buffer {} is not removed because of max cap limit of {} at {}",
-            db_network_->name(drvr),
-            max_cap,
-            network_->pathName(prev_drvr_pin));
-        return false;
-      }
-    }
-
-    const Path* drvr_input_path = expanded->path(drvr_index - 1);
-    Vertex* drvr_input_vertex = drvr_input_path->vertex(sta_);
-    SlackEstimatorParams params(setup_slack_margin, corner);
-    params.driver_pin = drvr_pin;
-    params.prev_driver_pin = prev_drvr_pin;
-    params.driver_input_pin = drvr_input_vertex->pin();
-    params.driver = drvr;
-    params.driver_path = drvr_path;
-    params.prev_driver_path = prev_drvr_path;
-    params.driver_cell = drvr_cell;
-    if (!estimatedSlackOK(params)) {
-      return false;
-    }
-
-    if (canRemoveBuffer(drvr, /* honorDontTouch */ true)) {
-      debugPrint(logger_,
-                 RSZ,
-                 "opt_moves",
-                 1,
-                 "ACCEPT unbuffer {}",
-                 network_->pathName(drvr));
-      return removeBuffer(drvr);
-    }
+  if (!drvr_cell) {
     debugPrint(logger_,
                RSZ,
-               "opt_moves",
-               3,
-               "REJECT unbuffer {}",
+               "unbuffer_move",
+               2,
+               "REJECT UnbufferMove {}: No liberty cell found for {}",
+               network_->pathName(drvr_pin),
                network_->pathName(drvr));
+    return endMove(false);
   }
 
-  return false;
+  if (!drvr_cell->isBuffer()) {
+    debugPrint(logger_,
+               RSZ,
+               "unbuffer_move",
+               2,
+               "REJECT UnbufferMove {}: Driver cell ({}) isn't a buffer",
+               network_->pathName(drvr_pin),
+               drvr_cell->name());
+    return endMove(false);
+  }
+
+  // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
+  // cloning because such removal may lead to an inifinte loop or long runtime
+  std::string reason;
+  if (resizer_->swap_pins_move_->hasMoves(drvr)) {
+    reason = "its pins have been swapped";
+  } else if (resizer_->clone_move_->hasMoves(drvr)) {
+    reason = "it has been cloned";
+  } else if (resizer_->split_load_move_->hasMoves(drvr)) {
+    reason = "it was from split load buffering";
+  } else if (resizer_->buffer_move_->hasMoves(drvr)) {
+    reason = "it was from rebuffering";
+  } else if (resizer_->size_up_move_->hasMoves(drvr)) {
+    reason = "it has been resized";
+  }
+  if (!reason.empty()) {
+    debugPrint(logger_,
+               RSZ,
+               "unbuffer_move",
+               2,
+               "REJECT UnbufferMove {}: Buffer is not removed because {}",
+               network_->pathName(drvr_pin),
+               reason);
+    return endMove(false);
+  }
+
+  // Don't remove buffer if new max fanout violations are created
+  Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
+  Pin* prev_drvr_pin;
+  Pin* drvr_input_pin;
+  Pin* load_pin;
+  getPrevNextPins(drvr_pin, prev_drvr_pin, drvr_input_pin, load_pin);
+
+  float curr_fanout, max_fanout, load_slack;
+  sta_->checkFanout(
+      prev_drvr_pin, resizer_->max_, curr_fanout, max_fanout, load_slack);
+  float new_fanout = curr_fanout + fanout(drvr_vertex) - 1;
+  if (max_fanout > 0.0) {
+    // Honor max fanout when the constraint exists
+    if (new_fanout > max_fanout) {
+      debugPrint(logger_,
+                 RSZ,
+                 "unbuffer_move",
+                 2,
+                 "REJECT UnbufferMove {}: "
+                 "New fanout {} >= {} max fanout limit at {}",
+                 network_->pathName(drvr_pin),
+                 new_fanout,
+                 max_fanout,
+                 network_->pathName(prev_drvr_pin));
+      return endMove(false);
+    }
+  } else {
+    // No max fanout exists, but don't exceed default fanout limit
+    if (new_fanout > buffer_removal_max_fanout_) {
+      debugPrint(logger_,
+                 RSZ,
+                 "unbuffer_move",
+                 2,
+                 "REJECT UnbufferMove {}: "
+                 "New fanout {} >= {} default fanout limit at {}",
+                 network_->pathName(drvr_pin),
+                 new_fanout,
+                 buffer_removal_max_fanout_,
+                 network_->pathName(prev_drvr_pin));
+      return endMove(false);
+    }
+  }
+
+  // Watch out for new max cap violations
+  float cap, max_cap, cap_slack;
+  const Corner* corner;
+  const RiseFall* tr;
+  sta_->checkCapacitance(prev_drvr_pin,
+                         nullptr /* corner */,
+                         resizer_->max_,
+                         // return values
+                         corner,
+                         tr,
+                         cap,
+                         max_cap,
+                         cap_slack);
+  if (max_cap > 0.0 && corner) {
+    const DcalcAnalysisPt* dcalc_ap
+        = corner->findDcalcAnalysisPt(resizer_->max_);
+    GraphDelayCalc* dcalc = sta_->graphDelayCalc();
+    float drvr_cap = dcalc->loadCap(drvr_pin, dcalc_ap);
+    LibertyPort *buffer_input_port, *buffer_output_port;
+    drvr_cell->bufferPorts(buffer_input_port, buffer_output_port);
+    float new_cap
+        = cap + drvr_cap - resizer_->portCapacitance(buffer_input_port, corner);
+    if (new_cap > max_cap) {
+      debugPrint(logger_,
+                 RSZ,
+                 "unbuffer_move",
+                 2,
+                 "REJECT UnbufferMove {}: "
+                 "Max cap limit of {} at {} ({} -> {})",
+                 network_->pathName(drvr_pin),
+                 max_cap,
+                 network_->pathName(prev_drvr_pin),
+                 cap,
+                 new_cap);
+      return endMove(false);
+    }
+  }
+
+  SlackEstimatorParams params(setup_slack_margin, corner);
+  params.driver_pin = drvr_vertex->pin();
+  params.prev_driver_pin = prev_drvr_pin;
+  params.driver_input_pin = drvr_input_pin;
+  params.driver = drvr;
+  params.driver_cell = drvr_cell;
+  if (!estimatedSlackOK(params)) {
+    debugPrint(logger_,
+               RSZ,
+               "unbuffer_move",
+               2,
+               "REJECT UnbufferMove {}: Estimated slack not OK",
+               network_->pathName(drvr_pin));
+    return endMove(false);
+  }
+
+  if (!canRemoveBuffer(drvr, /* honorDontTouch */ true)) {
+    debugPrint(logger_,
+               RSZ,
+               "unbuffer_move",
+               2,
+               "REJECT UnbufferMove {}: Can't remove buffer {}",
+               network_->pathName(drvr_pin),
+               network_->pathName(drvr));
+    return endMove(false);
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "unbuffer_move",
+             1,
+             "ACCEPT UnbufferMove {}: Removed buffer {}",
+             network_->pathName(drvr_pin),
+             network_->pathName(drvr));
+  removeBuffer(drvr);
+  return endMove(true);
 }
 
 bool UnbufferMove::removeBufferIfPossible(Instance* buffer,
@@ -318,7 +343,7 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   debugPrint(logger_,
              RSZ,
-             "repair_setup",
+             "unbuffer_move",
              3,
              "remove_buffer {} ({})",
              network_->pathName(buffer),
@@ -343,7 +368,7 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
     return false;
   }
 
-  addMove(buffer);
+  countMove(buffer);
 
   // Remove the unused buffer
   if (out_db_net == nullptr) {
@@ -375,8 +400,8 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
   // Disconnect the buffer and handle the nets
   debugPrint(logger_,
              RSZ,
-             "remove_buffer",
-             1,
+             "unbuffer_move",
+             3,
              "remove_buffer {} (input net) - {} ({}) - {} (output net)",
              db_network_->name(in_net),
              network_->pathName(buffer),

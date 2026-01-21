@@ -44,13 +44,14 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
---------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
-        1 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
-    final |       0 |      10 |        0 |      0 |     0 |   +26.7% |   -0.032 |       -0.0 |      1 | r2/D
---------------------------------------------------------------------------------------------------------------
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |        0.0 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |        0.0 |       -0.2 |      1 | r2/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |        0.0 |       -0.2 |      1 | r2/D
+    final |       0 |      10 |        0 |      0 |     0 |   +26.7% |   -0.032 |        0.0 |       -0.0 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 10 instances: 8 up, 2 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
@@ -94,11 +95,12 @@ Path Type: max
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
---------------------------------------------------------------------------------------------------------------
-        0 |       0 |       2 |        0 |      0 |     0 |    +0.0% |   -0.032 |       -0.0 |      1 | r2/D
-    final |       0 |       2 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |      0 | r2/D
---------------------------------------------------------------------------------------------------------------
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       2 |        0 |      0 |     0 |    +0.0% |   -0.032 |        0.0 |       -0.0 |      1 | r2/D
+       2* |       0 |       2 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |        0.0 |      1 | r2/D
+    final |       0 |       2 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |        0.0 |      0 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 2 buffers.
 [INFO RSZ-0051] Resized 2 instances: 0 up, 2 up match, 0 down, 0 VT

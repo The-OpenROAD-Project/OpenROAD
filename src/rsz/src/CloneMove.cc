@@ -14,7 +14,6 @@
 #include "SplitLoadMove.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -72,95 +71,112 @@ Point CloneMove::computeCloneGateLocation(
   return {centroid_x / count, centroid_y / count};
 }
 
-bool CloneMove::doMove(const Path* drvr_path,
-                       int drvr_index,
-                       Slack drvr_slack,
-                       PathExpanded* expanded,
-                       float setup_slack_margin)
+// CloneMove: Optimize timing by cloning a combinational gate to split loads
+//
+// Purpose: Reduce capacitive load on critical path by dividing loads into
+//          two groups based on timing slack.
+//
+// Algorithm:
+//   1. Check if lower than #fanout threshold, tri-state driver, dont_touch,
+//   ECO pending cell, or single output  -> return false.
+//   2. Sort fanout loads by decreasing order of slack margin (fanout_slack -
+//   driver_slack). High slack margin first.
+//   - It is safer to drive high slack margin cells with the clone. The
+//   original cell drives the critical path.
+//   3. Decide the location for the clone cell
+//   4. Move half of loads w/ high slack margin to the output of the clone
+//   cell.
+//
+// Result: Critical loads see reduced capacitance, improving setup timing.
+//
+// Precondition:
+// - Fanout count must exceed split_load_min_fanout_
+// - No tri-state driver
+// - No dont_touch
+// - No pending-move cell
+// - No multiple output cell
+//
+bool CloneMove::doMove(const Pin* drvr_pin, float setup_slack_margin)
 {
-  // CloneMove: Optimize timing by cloning a combinational gate to split loads
-  //
-  // Purpose: Reduce capacitive load on critical path by dividing loads into
-  //          two groups based on timing slack.
-  //
-  // Algorithm:
-  //   1. Check if lower than #fanout threshold, tri-state driver, dont_touch,
-  //   ECO pending cell, or single output  -> return false.
-  //   2. Sort fanout loads by decreasing order of slack margin (fanout_slack -
-  //   driver_slack). High slack margin first.
-  //   - It is safer to drive high slack margin cells with the clone. The
-  //   original cell drives the critical path.
-  //   3. Decide the location for the clone cell
-  //   4. Move half of loads w/ high slack margin to the output of the clone
-  //   cell.
-  //
-  // Result: Critical loads see reduced capacitance, improving setup timing.
-  //
-  // Precondition:
-  // - Fanout count must exceed split_load_min_fanout_
-  // - No tri-state driver
-  // - No dont_touch
-  // - No pending-move cell
-  // - No multiple output cell
-  //
-  Pin* drvr_pin = drvr_path->pin(this);
-  Vertex* drvr_vertex = drvr_path->vertex(sta_);
-  const Path* load_path = expanded->path(drvr_index + 1);
-  Vertex* load_vertex = load_path->vertex(sta_);
-  Pin* load_pin = load_vertex->pin();
+  startMove(drvr_pin);
+
+  Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
 
   const int fanout = this->fanout(drvr_vertex);
   if (fanout <= split_load_min_fanout_) {
-    return false;
+    debugPrint(logger_,
+               RSZ,
+               "clone_move",
+               2,
+               "REJECT CloneMove {}: Fanout {} <= {} min fanout",
+               network_->pathName(drvr_pin),
+               fanout,
+               split_load_min_fanout_);
+    return endMove(false);
   }
 
   if (!resizer_->okToBufferNet(drvr_pin)) {
-    return false;
+    debugPrint(logger_,
+               RSZ,
+               "clone_move",
+               2,
+               "REJECT CloneMove {}: Not OK to buffer net",
+               network_->pathName(drvr_pin));
+    return endMove(false);
   }
+
   // We can probably relax this with the new ECO code
   if (resizer_->buffer_move_->hasPendingMoves(db_network_->instance(drvr_pin))
       > 0) {
-    return false;
+    debugPrint(logger_,
+               RSZ,
+               "clone_move",
+               2,
+               "REJECT CloneMove {}: Has pending BufferMove",
+               network_->pathName(drvr_pin));
+    return endMove(false);
   }
+
   // We can probably relax this with the new ECO code
   if (resizer_->split_load_move_->hasPendingMoves(
           db_network_->instance(drvr_pin))
       > 0) {
-    return false;
+    debugPrint(logger_,
+               RSZ,
+               "clone_move",
+               2,
+               "REJECT CloneMove {}: Has pending SplitLoadMove",
+               network_->pathName(drvr_pin));
+    return endMove(false);
   }
 
-  // Divide and conquer.
-  debugPrint(logger_,
-             RSZ,
-             "clone",
-             3,
-             "clone driver {} -> {}",
-             network_->pathName(drvr_pin),
-             network_->pathName(load_pin));
-  debugPrint(logger_,
-             RSZ,
-             "repair_setup",
-             3,
-             "clone driver {} -> {}",
-             network_->pathName(drvr_pin),
-             network_->pathName(load_pin));
+  Instance* drvr_inst = db_network_->instance(drvr_pin);
+  if (!resizer_->isSingleOutputCombinational(drvr_inst)) {
+    debugPrint(logger_,
+               RSZ,
+               "clone_move",
+               2,
+               "REJECT CloneMove {}: Not single output combinational",
+               network_->pathName(drvr_pin));
+    return endMove(false);
+  }
 
-  const RiseFall* rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
   // wrt the critical path slack.
+  const Slack drvr_slack = sta_->vertexSlack(drvr_vertex, resizer_->max_);
   vector<pair<Vertex*, Slack>> fanout_slacks;
   VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
     Edge* edge = edge_iter.next();
     Vertex* fanout_vertex = edge->to(graph_);
-    const Slack fanout_slack
-        = sta_->vertexSlack(fanout_vertex, rf, resizer_->max_);
+    const Slack fanout_slack = sta_->vertexSlack(fanout_vertex, resizer_->max_);
     const Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint(logger_,
                RSZ,
-               "clone",
-               4,
-               " fanin {} slack_margin = {}",
+               "clone_move",
+               3,
+               "CloneMove {}: fanin {} slack_margin = {}",
+               network_->pathName(drvr_pin),
                network_->pathName(fanout_vertex->pin()),
                delayAsString(slack_margin, sta_, 3));
     fanout_slacks.emplace_back(fanout_vertex, slack_margin);
@@ -175,20 +191,8 @@ bool CloneMove::doMove(const Path* drvr_path,
                                       pair1.first->pin(), pair2.first->pin())));
                     });
 
-  Instance* drvr_inst = db_network_->instance(drvr_pin);
-
-  if (!resizer_->isSingleOutputCombinational(drvr_inst)) {
-    debugPrint(logger_,
-               RSZ,
-               "opt_moves",
-               3,
-               "REJECT clone {}",
-               network_->pathName(drvr_pin));
-    return false;
-  }
-
   // Hierarchy fix
-  Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
+  Instance* parent = db_network_->getOwningInstanceParent(drvr_vertex->pin());
 
   // This is the meat of the gate cloning code.
   // We need to downsize the current driver AND we need to insert another
@@ -208,29 +212,19 @@ bool CloneMove::doMove(const Path* drvr_path,
 
   debugPrint(logger_,
              RSZ,
-             "opt_moves",
+             "clone_move",
              1,
-             "ACCEPT clone {} ({}) -> {} ({})",
+             "ACCEPT CloneMove {}: ({}) -> {} ({})",
              network_->pathName(drvr_pin),
              original_cell->name(),
              network_->pathName(clone_inst),
              clone_cell->name());
-  debugPrint(logger_,
-             RSZ,
-             "repair_setup",
-             3,
-             "clone {} ({}) -> {} ({})",
-             network_->pathName(drvr_pin),
-             original_cell->name(),
-             network_->pathName(clone_inst),
-             clone_cell->name());
-  addMove(clone_inst);
   // We add the driver instance to the pending move set, but don't count it as a
   // move.
-  addMove(drvr_inst, 0);
+  countMove(clone_inst);
+  countMove(drvr_inst, 0);
 
   // Hierarchy fix, make out_net in parent.
-
   Net* out_net = db_network_->makeNet(parent);
 
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
@@ -320,7 +314,7 @@ bool CloneMove::doMove(const Path* drvr_path,
       }
     }
   }
-  return true;
+  return endMove(true);
 }
 
 }  // namespace rsz
