@@ -677,7 +677,7 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   int num_x = grid.front().size();
 
   Neighbors neighbors;
-  if (start_col > 0) {
+  if (start_row > 0) {
     for (int i = start_col; i <= end_col; i++) {
       if (!grid[start_row - 1][i]) {
         neighbors.bottom = false;

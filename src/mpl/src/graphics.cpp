@@ -404,9 +404,10 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawCluster(root_, painter);
   }
 
-  // Draw blockages only during SA for SoftMacros
+  // Draw blockages and notches only during SA for SoftMacros
   if (!soft_macros_.empty()) {
     drawAllBlockages(painter);
+    drawNotches(painter);
   }
 
   painter.setPen(gui::Painter::kWhite, true);
@@ -536,7 +537,6 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     drawGuides(painter);
     drawFences(painter);
-    drawNotches(painter);
   }
 }
 
@@ -577,6 +577,8 @@ void Graphics::drawNotches(gui::Painter& painter)
 
     painter.drawRect(rect);
   }
+
+  // notches_.clear();
 }
 
 void Graphics::drawBlockedRegionsIndication(gui::Painter& painter)
