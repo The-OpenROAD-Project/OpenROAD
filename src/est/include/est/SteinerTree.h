@@ -22,8 +22,6 @@ const int SteinerNull = -1;
 
 namespace est {
 
-using utl::Logger;
-
 using sta::dbNetwork;
 using sta::hashIncr;
 using sta::Net;
@@ -67,8 +65,10 @@ using SteinerPt = int;
 class SteinerTree
 {
  public:
-  SteinerTree(const Pin* drvr_pin, sta::dbNetwork* db_network, Logger* logger);
-  SteinerTree(odb::Point drvr_location, Logger* logger);
+  SteinerTree(const Pin* drvr_pin,
+              sta::dbNetwork* db_network,
+              utl::Logger* logger);
+  SteinerTree(odb::Point drvr_location, utl::Logger* logger);
   sta::Vector<PinLoc>& pinlocs() { return pinlocs_; }
   int pinCount() const { return pinlocs_.size(); }
   int branchCount() const;
@@ -80,7 +80,7 @@ class SteinerTree
               int& steiner_pt2,
               int& wire_length);
   stt::Branch& branch(int index) { return tree_.branch[index]; }
-  void report(Logger* logger, const Network* network);
+  void report(utl::Logger* logger, const Network* network);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt() const;
   // new APIs for gate cloning
@@ -124,7 +124,7 @@ class SteinerTree
   std::vector<SteinerPt> left_;
   std::vector<SteinerPt> right_;
   std::vector<const Pin*> point_pin_array_;
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 }  // namespace est

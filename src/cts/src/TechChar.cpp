@@ -48,7 +48,7 @@ TechChar::TechChar(CtsOptions* options,
                    rsz::Resizer* resizer,
                    est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
-                   Logger* logger)
+                   utl::Logger* logger)
     : options_(options),
       db_(db),
       resizer_(resizer),
