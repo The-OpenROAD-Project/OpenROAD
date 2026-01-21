@@ -33,11 +33,9 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
 {
   std::vector<sta::Net*> sorted_primary_inputs(primary_inputs.begin(),
                                                primary_inputs.end());
-  std::sort(sorted_primary_inputs.begin(),
-            sorted_primary_inputs.end(),
-            [network](sta::Net* a, sta::Net* b) {
-              return network->id(a) < network->id(b);
-            });
+  std::ranges::sort(sorted_primary_inputs, [network](sta::Net* a, sta::Net* b) {
+    return network->id(a) < network->id(b);
+  });
 
   std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
   for (sta::Net* input_pin : sorted_primary_inputs) {
@@ -63,11 +61,10 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
   std::vector<sta::Net*> sorted_primary_outputs(primary_outputs.begin(),
                                                 primary_outputs.end());
 
-  std::sort(sorted_primary_outputs.begin(),
-            sorted_primary_outputs.end(),
-            [network](sta::Net* a, sta::Net* b) {
-              return network->id(a) < network->id(b);
-            });
+  std::ranges::sort(sorted_primary_outputs,
+                    [network](sta::Net* a, sta::Net* b) {
+                      return network->id(a) < network->id(b);
+                    });
 
   for (sta::Net* output_pin : sorted_primary_outputs) {
     abc::Abc_Obj_t* primary_output_abc = abc::Abc_NtkCreatePo(&abc_network);
@@ -252,11 +249,10 @@ void CreateNets(const std::vector<sta::Net*>& output_nets,
   }
 
   std::vector<sta::Net*> sorted_net(output_nets.begin(), output_nets.end());
-  std::sort(sorted_net.begin(),
-            sorted_net.end(),
-            [network](const sta::Net* a, const sta::Net* b) {
-              return network->id(a) < network->id(b);
-            });
+  std::ranges::sort(sorted_net,
+                    [network](const sta::Net* a, const sta::Net* b) {
+                      return network->id(a) < network->id(b);
+                    });
   // Connect primary outputs from net. Grab first driver pin,
   // should be just one. Then grab the instance of that pin. Then
   // connect the fanout of the abc instance to the primary output of
@@ -284,9 +280,9 @@ void CreateNets(const std::vector<sta::Net*>& output_nets,
   for (auto& [sta_instance, abc_instance] : abc_instances) {
     sorted_instances.emplace_back(sta_instance, abc_instance);
   }
-  std::sort(
-      sorted_instances.begin(),
-      sorted_instances.end(),
+  std::ranges::sort(
+      sorted_instances,
+
       [network](const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& a,
                 const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& b) {
         return network->id(a.first) < network->id(b.first);
@@ -576,12 +572,13 @@ void ConnectInstances(
   for (auto& [abc_obj, sta_instance] : new_instances) {
     sorted_new_instances.emplace_back(abc_obj, sta_instance);
   }
-  std::sort(sorted_new_instances.begin(),
-            sorted_new_instances.end(),
-            [network](const std::pair<abc::Abc_Obj_t*, sta::Instance*>& a,
-                      const std::pair<abc::Abc_Obj_t*, sta::Instance*>& b) {
-              return network->id(a.second) < network->id(b.second);
-            });
+  std::ranges::sort(
+      sorted_new_instances,
+
+      [network](const std::pair<abc::Abc_Obj_t*, sta::Instance*>& a,
+                const std::pair<abc::Abc_Obj_t*, sta::Instance*>& b) {
+        return network->id(a.second) < network->id(b.second);
+      });
 
   for (auto& [abc_obj, sta_instance] : sorted_new_instances) {
     auto std_cell = static_cast<abc::Mio_Gate_t*>(abc::Abc_ObjData(abc_obj));

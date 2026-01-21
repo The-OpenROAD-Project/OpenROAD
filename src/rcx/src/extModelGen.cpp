@@ -3,10 +3,13 @@
 
 #include "rcx/extModelGen.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <list>
 #include <string>
@@ -16,6 +19,7 @@
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/util.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 
@@ -52,7 +56,7 @@ uint32_t extMain::GenExtModel(std::list<std::string> spef_file_list,
 
   std::list<std::string>::iterator it1;
   for (it1 = corner_list.begin(); it1 != corner_list.end(); ++it1) {
-    std::string str = *it1;
+    const std::string& str = *it1;
     corner_name.push_back(str);
   }
   uint32_t widthCnt = 12;
@@ -64,7 +68,7 @@ uint32_t extMain::GenExtModel(std::list<std::string> spef_file_list,
   uint32_t cnt = 0;
   std::list<std::string>::iterator it;
   for (it = spef_file_list.begin(); it != spef_file_list.end(); ++it) {
-    std::string str = *it;
+    const std::string& str = *it;
     const char* filename = str.c_str();
     readSPEF((char*) filename,
              nullptr,
@@ -477,7 +481,7 @@ FILE* extModelGen::InitWriteRules(const char* name,
   fprintf(fp, "\nCorners %ld : ", corner_list.size());
   std::list<std::string>::iterator it;
   for (it = corner_list.begin(); it != corner_list.end(); ++it) {
-    std::string str = *it;
+    const std::string& str = *it;
     fprintf(fp, " %s", str.c_str());
   }
   fprintf(fp, "\n");
@@ -589,6 +593,7 @@ uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
     char* overUnderToken = strdup(p->get(1));  // M2oM1uM3
     int wCnt = w->mkWords(overUnderToken, "ou");
     if (wCnt < 2) {
+      free(overUnderToken);
       continue;
     }
 
@@ -630,6 +635,7 @@ uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
       m._overUnder = false;
       m._over = false;
     }
+    free(overUnderToken);
     // TODO DIAGUNDER
     m._met = met;
 
@@ -794,7 +800,7 @@ uint32_t extModelGen::ReadRCDB(odb::dbBlock* block,
 
 std::list<std::string> extModelGen::GetCornerNames(const char* filename,
                                                    double& version,
-                                                   Logger* logger)
+                                                   utl::Logger* logger)
 {
   bool dbg = false;
   std::list<std::string> corner_list;

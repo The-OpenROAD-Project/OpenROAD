@@ -32,7 +32,10 @@ TESTS = [
     "fanin_fanout1",
     "gain_buffering1",
     "gain_buffering1_hier",
+    "gain_buffering2",
     "gcd_resize",
+    "insert_buffer",
+    "insert_buffer_hier",
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
@@ -143,6 +146,8 @@ TESTS = [
     "repair_tie8",
     "repair_tie9",
     "repair_tie10_hier",
+    "repair_tie11_hier",
+    "repair_tie12_hier",
     "repair_wire1",
     "repair_wire10",
     "repair_wire11",
@@ -156,6 +161,7 @@ TESTS = [
     "repair_wire9",
     "replace_arith_modules1",
     "replace_arith_modules2",
+    "replace_arith_modules3",
     "report_buffers_asap7",
     "report_buffers_gf180",
     "report_buffers_ihp",
@@ -228,26 +234,11 @@ BIG_TESTS = [
     "repair_fanout6",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "repair_tie11_hier",
-    "repair_tie12_hier",
-    "pinswap_flat",
-    "pinswap_hier",
-    "repair_fanout1_hier",
-    "repair_fanout2_hier",
-    "repair_fanout3_hier",
-    "repair_setup4_flat",
-    "repair_setup4_hier",
-    "split_load_hier",
-]
-
 [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
         data = [":test_resources"] + extra_deps.get(test_name, []),
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
     )
     for test_name in TESTS
 ]
@@ -312,22 +303,29 @@ cc_test(
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
-        "cpp/TestBufferRemoval3_0.v",
-        "cpp/TestBufferRemoval3_1.v",
-        "cpp/TestBufferRemoval3_2.v",
-        "cpp/TestBufferRemoval3_3.v",
-        "cpp/TestBufferRemoval3_4.v",
-        "cpp/TestBufferRemoval3_5.v",
-        "cpp/TestBufferRemoval3_6.v",
-        "cpp/TestBufferRemoval3_7.v",
-        "cpp/TestBufferRemoval3_8.v",
-        "cpp/TestBufferRemoval3_9.v",
-    ],
+    ] + glob(["cpp/TestBufferRemoval3*.v"]),
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_insert_buffer",
+    srcs = ["cpp/TestInsertBuffer.cpp"],
+    data = glob(["cpp/TestInsertBuffer*.v"]),
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",

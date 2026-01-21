@@ -144,6 +144,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
+  void setDataFlowDriven() { data_flow_driven_ = true; };
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -214,6 +215,7 @@ class ClusteringEngine
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
+  bool mergeHonorsMaxThresholds(const Cluster* a, const Cluster* b) const;
   bool sameConnectionSignature(Cluster* a, Cluster* b) const;
   bool strongConnection(Cluster* a,
                         Cluster* b,
@@ -308,14 +310,14 @@ class ClusteringEngine
   int min_macro_{0};
   int max_std_cell_{0};
   int min_std_cell_{0};
-  const float size_tolerance_ = 0.1;
 
-  // Variables for data flow
+  // Variables for data flow:
   DataFlow data_connections_;
-
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
-  const int max_num_of_hops_ = 5;
+  const int max_num_of_hops_{5};
+  bool data_flow_driven_{false};
+
   const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};

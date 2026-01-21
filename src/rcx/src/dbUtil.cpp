@@ -328,7 +328,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   odb::dbTechLayer* layer = _routingLayers[routingLayer];
   int minWidth = layer->getWidth();
 
-  if (width < (int) minWidth) {
+  if (width < minWidth) {
     std::string ln = layer->getName();
     logger_->warn(RCX,
                   402,

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -245,7 +247,7 @@ class AthList
 };
 
 // A simple hash implementation
-template <class T>
+template <class T, bool kStoreKey = true>
 class AthHash
 {
   unsigned int* m_listOfPrimes;
@@ -300,18 +302,16 @@ class AthHash
     const char* key;
     T data;
   };
-  int _allocKeyFlag;
 
  public:
   AthList<t_elem>* m_data;
   unsigned int m_prime;
 
-  AthHash(unsigned int size = 100, int store = 1)
+  AthHash(unsigned int size = 100)
   {
     init_list_of_primes();
     m_prime = l_find_largest_prime_below_number(size);
     m_data = new AthList<t_elem>[m_prime];
-    _allocKeyFlag = store;
   }
 
   ~AthHash()
@@ -321,7 +321,7 @@ class AthHash
     for (i = 0; i < m_prime; i++) {
       typename AthList<t_elem>::iterator iter = m_data[i].start();
       while (!iter.end()) {
-        if (_allocKeyFlag > 0) {
+        if (kStoreKey) {
           free((void*) iter.getVal().key);
         }
         iter.next();
@@ -335,7 +335,7 @@ class AthHash
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
     t_elem new_t_elem;
     new_t_elem.data = data;
-    if (_allocKeyFlag > 0) {
+    if (kStoreKey) {
       new_t_elem.key = strdup(key);
     } else {
       new_t_elem.key = key;

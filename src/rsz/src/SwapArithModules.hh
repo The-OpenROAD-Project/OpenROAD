@@ -9,8 +9,10 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/MinMax.hh"
+#include "sta/Path.hh"
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
@@ -60,7 +62,7 @@ class SwapArithModules : public sta::dbStaState
                                      float slack_threshold,
                                      std::set<dbModInst*>& insts)
       = 0;
-  virtual bool doSwapInstances(const std::set<dbModInst*>& insts,
+  virtual bool doSwapInstances(std::set<dbModInst*>& insts,
                                const std::string& target)
       = 0;
 

@@ -4,6 +4,7 @@
 #include "ant/AntennaChecker.hh"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -1212,8 +1213,7 @@ int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
     }
     omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < nets_.size(); i++) {
-      odb::dbNet* net = nets_[i];
+    for (auto net : nets_) {
       Violations antenna_violations;
       int pin_viol_count
           = checkNet(net, verbose, true, nullptr, 0, antenna_violations);

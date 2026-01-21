@@ -689,7 +689,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
     // remove unspecified layers
     for (auto itr = pins_by_layer.begin(); itr != pins_by_layer.end();) {
       auto layer = itr->first;
-      if (std::find(layers_.begin(), layers_.end(), layer) == layers_.end()) {
+      if (std::ranges::find(layers_, layer) == layers_.end()) {
         // remove layer
         itr = pins_by_layer.erase(itr);
       } else {
@@ -729,9 +729,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
   }
 
   for (auto& [layer, layerpins] : pins_by_layer) {
-    layerpins.erase(
-        std::remove_if(layerpins.begin(), layerpins.end(), remove_func),
-        layerpins.end());
+    std::erase_if(layerpins, remove_func);
   }
 
   for (auto itr = pins_by_layer.begin(); itr != pins_by_layer.end();) {
@@ -798,9 +796,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
     return !matches_x && !matches_y;
   };
   for (auto& [layer, layer_pins] : pins_by_layer) {
-    auto remove_itr
-        = std::remove_if(layer_pins.begin(), layer_pins.end(), remove_filter);
-    layer_pins.erase(remove_itr, layer_pins.end());
+    std::erase_if(layer_pins, remove_filter);
   }
 
   std::vector<odb::dbBox*> pins;
@@ -1148,19 +1144,19 @@ PadDirectConnectionStraps::getAssociatedStraps() const
     }
   }
 
-  std::sort(straps.begin(),
-            straps.end(),
-            [](PadDirectConnectionStraps* lhs, PadDirectConnectionStraps* rhs) {
-              std::set<odb::Rect> lhs_pins;
-              std::set<odb::Rect> rhs_pins;
-              for (auto* box : lhs->getPins()) {
-                lhs_pins.insert(box->getBox());
-              }
-              for (auto* box : rhs->getPins()) {
-                rhs_pins.insert(box->getBox());
-              }
-              return *lhs_pins.begin() < *rhs_pins.begin();
-            });
+  std::ranges::sort(
+      straps,
+      [](PadDirectConnectionStraps* lhs, PadDirectConnectionStraps* rhs) {
+        std::set<odb::Rect> lhs_pins;
+        std::set<odb::Rect> rhs_pins;
+        for (auto* box : lhs->getPins()) {
+          lhs_pins.insert(box->getBox());
+        }
+        for (auto* box : rhs->getPins()) {
+          rhs_pins.insert(box->getBox());
+        }
+        return *lhs_pins.begin() < *rhs_pins.begin();
+      });
 
   return straps;
 }
@@ -1173,8 +1169,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(
   }
 
   auto straps = getAssociatedStraps();
-  int index = std::distance(straps.begin(),
-                            std::find(straps.begin(), straps.end(), this));
+  int index = std::distance(straps.begin(), std::ranges::find(straps, this));
 
   debugPrint(getLogger(),
              utl::PDN,

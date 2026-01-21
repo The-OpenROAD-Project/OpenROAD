@@ -4,11 +4,23 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
+#include <memory>
+#include <optional>
+#include <tuple>
 #include <vector>
 
 #include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/geom.h"
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/Path.hh"
+#include "sta/Transition.hh"
 
 namespace est {
 class EstimateParasitics;
@@ -104,8 +116,6 @@ class Rebuffer : public sta::dbStaState
                        Net* net,  // output of buffer.
                        int level,
                        Instance* parent_in,
-                       odb::dbITerm* mod_net_drvr,
-                       odb::dbModNet* mod_net_in,
                        const char* instance_base_name);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;

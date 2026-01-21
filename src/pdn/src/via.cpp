@@ -2429,11 +2429,9 @@ GenerateViaGenerator::GenerateViaGenerator(utl::Logger* logger,
     layers.push_back(layer);
   }
 
-  std::sort(layers.begin(),
-            layers.end(),
-            [](odb::dbTechLayer* l, odb::dbTechLayer* r) {
-              return l->getNumber() < r->getNumber();
-            });
+  std::ranges::sort(layers, [](odb::dbTechLayer* l, odb::dbTechLayer* r) {
+    return l->getNumber() < r->getNumber();
+  });
 
   for (int i = 0; i < 3; i++) {
     layers_[i] = layer_map[layers[i]];
@@ -2798,12 +2796,9 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
                    enc_bottom_rect.yMax() - via_rect.yMax());
   }
   // remove rules that do not fit the tech vias enclosures.
-  bottom.erase(std::remove_if(bottom.begin(),
-                              bottom.end(),
-                              [&](const auto& enc) {
-                                return enc.getX() < odx && enc.getY() < ody;
-                              }),
-               bottom.end());
+  std::erase_if(bottom, [&](const auto& enc) {
+    return enc.getX() < odx && enc.getY() < ody;
+  });
   // "fix" rules to use the tech via enclosure
   for (auto& enc : bottom) {
     if (enc.getX() < odx) {
@@ -2826,12 +2821,9 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
                    enc_top_rect.yMax() - via_rect.yMax());
   }
   // remove rules that do not fit the tech vias enclosures.
-  top.erase(std::remove_if(top.begin(),
-                           top.end(),
-                           [&](const auto& enc) {
-                             return enc.getX() < odx && enc.getY() < ody;
-                           }),
-            top.end());
+  std::erase_if(top, [&](const auto& enc) {
+    return enc.getX() < odx && enc.getY() < ody;
+  });
   // "fix" rules to use the tech via enclosure
   for (auto& enc : top) {
     if (enc.getX() < odx) {

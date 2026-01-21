@@ -18,6 +18,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <sstream>
 #include <string>
@@ -142,6 +143,15 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   int fanout = std::numeric_limits<int>::max();
   float tempFanout;
   bool existMaxFanout;
+
+  // Check if top instance has fanout limit
+  sta::Cell* top_cell = network_->cell(network_->topInstance());
+  openSta_->sdc()->fanoutLimit(
+      top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  }
+
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
   sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
   sta::Port* buffer_port = nullptr;
@@ -158,7 +168,7 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return 0;
+    return (existMaxFanout) ? fanout : 0;
   }
 
   openSta_->sdc()->fanoutLimit(
@@ -205,6 +215,9 @@ void TritonCTS::setupCharacterization()
     }
   }
 
+  block_ = db_->getChip()->getBlock();
+  options_->setDbUnits(block_->getDbUnitsPerMicron());
+
   openSta_->checkFanoutLimitPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
@@ -225,6 +238,10 @@ void TritonCTS::setupCharacterization()
       options_->setMaxFanout(sinkMaxFanout);
     }
   }
+
+  double maxWlMicrons
+      = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
+  options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
 
   // A new characteriztion is always created.
   techChar_ = std::make_unique<TechChar>(options_,
@@ -296,8 +313,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   if (driverNet->isSpecial()) {
     logger_->info(
         CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
-  } else if (std::find(skipNets.begin(), skipNets.end(), driverNet)
-             != skipNets.end()) {
+  } else if (std::ranges::find(skipNets, driverNet) != skipNets.end()) {
     logger_->warn(CTS,
                   44,
                   "Skipping net {}, specified by the user...",
@@ -469,9 +485,7 @@ void TritonCTS::countSinksPostDbWrite(
         double currSinkWl
             = (dist + currWireLength) / double(options_->getDbUnits());
         sinkWireLength += currSinkWl;
-        if (depth > maxDepth) {
-          maxDepth = depth;
-        }
+        maxDepth = std::max(depth, maxDepth);
         if ((minDepth > 0 && depth < minDepth) || (minDepth == 0)) {
           minDepth = depth;
         }
@@ -685,14 +699,6 @@ void TritonCTS::setBufferList(const char* buffers)
     resizer_->setClockBuffersList(selected_buffers);
   }
   options_->setBufferList(bufferList);
-}
-
-std::string toLowerCase(std::string str)
-{
-  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
-  return str;
 }
 
 std::string TritonCTS::getRootBufferToString()
@@ -913,9 +919,7 @@ void TritonCTS::findLongEdges(
     odb::Point driverPt,
     std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
 {
-  double maxWlMicrons
-      = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
-  const int threshold = block_->micronsToDbu(maxWlMicrons);
+  const int threshold = options_->getMaxWl();
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
 
@@ -1173,9 +1177,6 @@ void TritonCTS::findLongEdges(
 
 void TritonCTS::populateTritonCTS()
 {
-  block_ = db_->getChip()->getBlock();
-  options_->setDbUnits(block_->getDbUnitsPerMicron());
-
   clearNumClocks();
 
   // Use dbSta to find all clock nets in the design.
@@ -1724,12 +1725,8 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       if (inst->isClockBuffer()) {
         std::pair<int, int> resultsForBranch
             = branchBufferCount(inst, 1, clockNet);
-        if (resultsForBranch.first < minPath) {
-          minPath = resultsForBranch.first;
-        }
-        if (resultsForBranch.second > maxPath) {
-          maxPath = resultsForBranch.second;
-        }
+        minPath = std::min(resultsForBranch.first, minPath);
+        maxPath = std::max(resultsForBranch.second, maxPath);
       }
     } else {
       rootSubNet->removeSinks(removedSinks);
@@ -1792,8 +1789,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   }
 
   // Check if the main clock net (level 0) is in the level list
-  if (std::find(targetLevels.begin(), targetLevels.end(), 0)
-      != targetLevels.end()) {
+  if (std::ranges::find(targetLevels, 0) != targetLevels.end()) {
     odb::dbNet* clk_net = clockNet.getNetObj();
     clk_net->setNonDefaultRule(clockNDR);
     ndrAppliedNets++;
@@ -1806,8 +1802,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   // Check clock sub nets list and apply NDR if level matches
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     int level = subNet.getTreeLevel();
-    if (std::find(targetLevels.begin(), targetLevels.end(), level)
-        != targetLevels.end()) {
+    if (std::ranges::find(targetLevels, level) != targetLevels.end()) {
       odb::dbNet* net = subNet.getNetObj();
       if (!subNet.isLeafLevel()) {
         net->setNonDefaultRule(clockNDR);
@@ -2000,21 +1995,13 @@ std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
           = clockNet.findClockByName(sinkITerms->getInst()->getName());
       if (clockInst == nullptr) {
         int newResult = bufCounter + 1;
-        if (newResult > maxPath) {
-          maxPath = newResult;
-        }
-        if (newResult < minPath) {
-          minPath = newResult;
-        }
+        maxPath = std::max(newResult, maxPath);
+        minPath = std::min(newResult, minPath);
       } else {
         std::pair<int, int> newResults
             = branchBufferCount(clockInst, bufCounter + 1, clockNet);
-        if (newResults.first < minPath) {
-          minPath = newResults.first;
-        }
-        if (newResults.second > maxPath) {
-          maxPath = newResults.second;
-        }
+        minPath = std::min(newResults.first, minPath);
+        maxPath = std::max(newResults.second, maxPath);
       }
     }
   }
@@ -2126,7 +2113,7 @@ void TritonCTS::findClockRoots(sta::Clock* clk,
     odb::dbModITerm* moditerm;
     network_->staToDb(pin, instTerm, port, moditerm);
     odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
-    if (std::find(skipNets.begin(), skipNets.end(), net) != skipNets.end()) {
+    if (std::ranges::find(skipNets, net) != skipNets.end()) {
       logger_->warn(CTS,
                     42,
                     "Skipping root net {}, specified by the user...",
@@ -2252,7 +2239,7 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   return insDelayPerMicron;
 }
 
-float getInputCap(const sta::LibertyCell* cell)
+static float getInputCap(const sta::LibertyCell* cell)
 {
   sta::LibertyPort *in, *out;
   cell->bufferPorts(in, out);
@@ -2262,7 +2249,7 @@ float getInputCap(const sta::LibertyCell* cell)
   return 0.0;
 }
 
-sta::LibertyCell* findBestDummyCell(
+static sta::LibertyCell* findBestDummyCell(
     const std::vector<sta::LibertyCell*>& dummyCandidates,
     float deltaCap)
 {
@@ -2454,11 +2441,11 @@ void TritonCTS::findCandidateDummyCells(
   }
 
   // Sort cells in ascending order of input cap
-  std::sort(dummyCandidates.begin(),
-            dummyCandidates.end(),
-            [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-              return (getInputCap(cell1) < getInputCap(cell2));
-            });
+  std::ranges::sort(
+      dummyCandidates,
+      [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
+        return (getInputCap(cell1) < getInputCap(cell2));
+      });
 
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
     for (const sta::LibertyCell* libCell : dummyCandidates) {
@@ -2589,11 +2576,10 @@ void TritonCTS::balanceMacroRegisterLatencies()
   double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
 
-  for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
-    TreeBuilder* builder = iter->get();
+  for (auto& builder : std::ranges::reverse_view(builders_)) {
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
       est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
-      LatencyBalancer balancer = LatencyBalancer(builder,
+      LatencyBalancer balancer = LatencyBalancer(builder.get(),
                                                  options_,
                                                  logger_,
                                                  db_,

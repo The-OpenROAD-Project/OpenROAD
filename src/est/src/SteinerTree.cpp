@@ -46,12 +46,12 @@ void SteinerTree::setTree(const stt::Tree& tree)
 
 SteinerTree::SteinerTree(const Pin* drvr_pin,
                          sta::dbNetwork* db_network,
-                         Logger* logger)
+                         utl::Logger* logger)
     : drvr_location_(db_network->location(drvr_pin)), logger_(logger)
 {
 }
 
-SteinerTree::SteinerTree(odb::Point drvr_location, Logger* logger)
+SteinerTree::SteinerTree(odb::Point drvr_location, utl::Logger* logger)
     : drvr_location_(drvr_location), logger_(logger)
 {
 }
@@ -98,7 +98,7 @@ void SteinerTree::branch(int index,
       = abs(branch_pt1.x - branch_pt2.x) + abs(branch_pt1.y - branch_pt2.y);
 }
 
-void SteinerTree::report(Logger* logger, const Network* network)
+void SteinerTree::report(utl::Logger* logger, const Network* network)
 {
   const int branch_count = branchCount();
   for (int i = 0; i < branch_count; i++) {

@@ -485,10 +485,9 @@ void Cluster::addChild(std::unique_ptr<Cluster> child)
 
 std::unique_ptr<Cluster> Cluster::releaseChild(const Cluster* candidate)
 {
-  auto it = std::find_if(
-      children_.begin(), children_.end(), [candidate](const auto& child) {
-        return child.get() == candidate;
-      });
+  auto it = std::ranges::find_if(children_, [candidate](const auto& child) {
+    return child.get() == candidate;
+  });
 
   if (it != children_.end()) {
     std::unique_ptr<Cluster> released_child = std::move(*it);
@@ -501,7 +500,7 @@ std::unique_ptr<Cluster> Cluster::releaseChild(const Cluster* candidate)
 
 void Cluster::addChildren(UniqueClusterVector children)
 {
-  std::move(children.begin(), children.end(), std::back_inserter(children_));
+  std::ranges::move(children, std::back_inserter(children_));
 }
 
 UniqueClusterVector Cluster::releaseChildren()
@@ -520,6 +519,15 @@ Cluster* Cluster::getParent() const
 const UniqueClusterVector& Cluster::getChildren() const
 {
   return children_;
+}
+
+std::vector<Cluster*> Cluster::getRawChildren() const
+{
+  std::vector<Cluster*> raw_children(children_.size());
+  std::ranges::transform(children_,
+                         raw_children.begin(),
+                         [](const auto& child) { return child.get(); });
+  return raw_children;
 }
 
 bool Cluster::isLeaf() const
@@ -963,16 +971,12 @@ int SoftMacro::findIntervalIndex(const IntervalList& interval_list,
     while ((idx < interval_list.size()) && (interval_list[idx].max < value)) {
       idx++;
     }
-    if (interval_list[idx].min > value) {
-      value = interval_list[idx].min;
-    }
+    value = std::max(interval_list[idx].min, value);
   } else { /* Height Intervals */
     while ((idx < interval_list.size()) && (interval_list[idx].min > value)) {
       idx++;
     }
-    if (interval_list[idx].max < value) {
-      value = interval_list[idx].max;
-    }
+    value = std::min(interval_list[idx].max, value);
   }
   return idx;
 }
@@ -1107,9 +1111,9 @@ void SoftMacro::setShapes(const IntervalList& width_intervals, int64_t area)
 
   // Copy & sort the width intervals list.
   IntervalList old_width_intervals = width_intervals;
-  std::sort(old_width_intervals.begin(),
-            old_width_intervals.end(),
-            isMinWidthSmaller);
+  std::ranges::sort(old_width_intervals,
+
+                    isMinWidthSmaller);
 
   // Merge the overlapping intervals.
   for (auto& old_width_interval : old_width_intervals) {
@@ -1275,6 +1279,30 @@ void SoftMacro::setShapeF(int width, int height)
   width_ = width;
   height_ = height;
   area_ = width * static_cast<int64_t>(height);
+}
+
+void SoftMacro::reportShapeCurve(utl::Logger* logger) const
+{
+  logger->report("Name: {}", name_);
+  logger->report("Has Cluster: {}", cluster_ != nullptr);
+  if (cluster_) {
+    logger->report("Type: {}", cluster_->getClusterTypeString());
+  }
+
+  std::string widths_text, heights_text;
+
+  for (const Interval& width_interval : width_intervals_) {
+    widths_text
+        += fmt::format("\t{} -> {}", width_interval.min, width_interval.max);
+  }
+
+  for (const Interval& height_interval : height_intervals_) {
+    heights_text
+        += fmt::format("\t{} -> {}", height_interval.max, height_interval.min);
+  }
+
+  logger->report("Widths: {}", widths_text);
+  logger->report("Heights: {}\n", heights_text);
 }
 
 void Cluster::reportConnections() const

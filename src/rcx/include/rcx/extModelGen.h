@@ -10,13 +10,14 @@
 
 #include "odb/db.h"
 #include "rcx/extRCap.h"
+#include "utl/Logger.h"
 
 namespace rcx {
 
 class extModelGen : public extRCModel
 {
  public:
-  extModelGen(uint32_t layerCnt, const char* name, Logger* logger)
+  extModelGen(uint32_t layerCnt, const char* name, utl::Logger* logger)
       : extRCModel(layerCnt, name, logger)
   {
   }
@@ -32,7 +33,7 @@ class extModelGen : public extRCModel
                        uint32_t modelCnt);
   static std::list<std::string> GetCornerNames(const char* filename,
                                                double& version,
-                                               Logger* logger);
+                                               utl::Logger* logger);
 
   // ----------------------------------- DKF 09212024
   // ---------------------------------------

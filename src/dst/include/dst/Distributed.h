@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -49,8 +50,8 @@ class Distributed
   struct EndPoint
   {
     std::string ip;
-    unsigned short port;
-    EndPoint(const std::string& ip_in, unsigned short port_in)
+    uint16_t port;
+    EndPoint(const std::string& ip_in, uint16_t port_in)
         : ip(ip_in), port(port_in)
     {
     }

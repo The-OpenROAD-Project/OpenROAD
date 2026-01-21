@@ -33,9 +33,8 @@ std::unique_ptr<KDTreeNode> KDTree::buildTree(
   }
 
   auto sorted_points = points;
-  std::sort(
-      sorted_points.begin(),
-      sorted_points.end(),
+  std::ranges::sort(
+      sorted_points,
       [orient](const std::pair<int, Point>& a, const std::pair<int, Point>& b) {
         return orient == horizontal ? a.second.x() < b.second.x()
                                     : a.second.y() < b.second.y();

@@ -96,7 +96,7 @@ void defiGroup::Destroy()
   free((char*) (propNames_));
   free((char*) (propValues_));
   free((char*) (propDValues_));
-  free((char*) (propTypes_));
+  free(propTypes_);
   free((char*) (xl_));
   free((char*) (yl_));
   free((char*) (xh_));
@@ -239,7 +239,7 @@ void defiGroup::addProperty(const char* name,
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;
@@ -283,7 +283,7 @@ void defiGroup::addNumProperty(const char* name,
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;

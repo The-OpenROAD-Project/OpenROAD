@@ -45,7 +45,7 @@ class extMain;
 
 extSpef::extSpef(odb::dbTech* tech,
                  dbBlock* blk,
-                 Logger* logger,
+                 utl::Logger* logger,
                  const char* version,
                  extMain* extmain)
 {
@@ -129,7 +129,7 @@ void extSpef::set_single_pi(const bool v)
   _singleP = v;
 }
 
-void extSpef::setLogger(Logger* logger)
+void extSpef::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
 }
@@ -955,7 +955,7 @@ void extSpef::writeCouplingCaps(dbSet<dbCCSeg>& capSet, const uint32_t netId)
   }
 
   std::vector<dbCCSeg*> vec_cc(capSet.begin(), capSet.end());
-  std::sort(vec_cc.begin(), vec_cc.end(), compareCC());
+  std::ranges::sort(vec_cc, compareCC());
   for (dbCCSeg* cc : vec_cc) {
     writeCNodeNumber();
 
@@ -980,7 +980,7 @@ void extSpef::writeTgtCouplingCaps(dbNet* net, const uint32_t netId)
   net->getTgtCCSegs(vec_cc);
 
   if (!_preserveCapValues) {
-    std::sort(vec_cc.begin(), vec_cc.end(), compareCC());
+    std::ranges::sort(vec_cc, compareCC());
   }
 
   writeCouplingCaps(vec_cc, netId);
@@ -992,7 +992,7 @@ void extSpef::writeSrcCouplingCaps(dbNet* net, const uint32_t netId)
   net->getSrcCCSegs(vec_cc);
 
   if (!_preserveCapValues) {
-    std::sort(vec_cc.begin(), vec_cc.end(), compareCC());
+    std::ranges::sort(vec_cc, compareCC());
   }
 
   writeCouplingCaps(vec_cc, netId);

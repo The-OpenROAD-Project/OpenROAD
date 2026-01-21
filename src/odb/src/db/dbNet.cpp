@@ -4,6 +4,7 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -14,6 +15,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "boost/container/small_vector.hpp"
+#include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
 #include "dbBlock.h"
@@ -29,10 +32,13 @@
 #include "dbGuideItr.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
+#include "dbInsertBuffer.h"
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbMaster.h"
 #include "dbModNet.h"
+#include "dbModule.h"
 #include "dbNetTrack.h"
 #include "dbNetTrackItr.h"
 #include "dbRSeg.h"
@@ -529,16 +535,19 @@ void dbNet::setCcAdjustOrder(uint32_t order)
   net->cc_adjust_order_ = order;
 }
 
-void dbNet::setDrivingITerm(int id)
+void dbNet::setDrivingITerm(const dbITerm* iterm)
 {
   _dbNet* net = (_dbNet*) this;
-  net->driving_iterm_ = id;
+  net->driving_iterm_ = (iterm) ? iterm->getId() : 0;
 }
 
-int dbNet::getDrivingITerm() const
+dbITerm* dbNet::getDrivingITerm() const
 {
   _dbNet* net = (_dbNet*) this;
-  return net->driving_iterm_;
+  if (net->driving_iterm_ <= 0) {
+    return nullptr;
+  }
+  return dbITerm::getITerm(getBlock(), net->driving_iterm_);
 }
 
 bool dbNet::hasFixedBump()
@@ -715,14 +724,14 @@ uint32_t dbNet::maxInternalCapNum()
   }
   return max_n;
 }
-void dbNet::collapseInternalCapNum(FILE* mapFile)
+void dbNet::collapseInternalCapNum(FILE* cap_node_map)
 {
   uint32_t cnt = 1;
   for (dbCapNode* capn : getCapNodes()) {
     cnt++;
     if (capn->isInternal()) {
-      if (mapFile) {
-        fprintf(mapFile, "    %8d : %8d\n", capn->getNode(), cnt);
+      if (cap_node_map) {
+        fprintf(cap_node_map, "    %8d : %8d\n", capn->getNode(), cnt);
       }
       capn->setNode(cnt);
     }
@@ -1199,11 +1208,54 @@ dbBTerm* dbNet::get1stBTerm()
   return bt;
 }
 
+dbObject* dbNet::getFirstDriverTerm() const
+{
+  if (getSigType().isSupply()) {
+    return nullptr;
+  }
+
+  for (dbITerm* iterm : getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (iterm->isClocked()) {
+      continue;
+    }
+
+    if (iterm->getIoType() == dbIoType::OUTPUT
+        || iterm->getIoType() == dbIoType::INOUT) {
+      return iterm;
+    }
+  }
+
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      return bterm;
+    }
+  }
+
+  return nullptr;
+}
+
+dbInst* dbNet::getFirstDriverInst() const
+{
+  dbObject* drvr = getFirstDriverTerm();
+  if (drvr != nullptr && drvr->getObjectType() == dbITermObj) {
+    return static_cast<dbITerm*>(drvr)->getInst();
+  }
+  return nullptr;
+}
+
 dbITerm* dbNet::getFirstOutput() const
 {
-  if (getDrivingITerm() > 0) {
-    return dbITerm::getITerm((dbBlock*) getImpl()->getOwner(),
-                             getDrivingITerm());
+  if (dbITerm* drvrIterm = getDrivingITerm()) {
+    return drvrIterm;
   }
 
   for (dbITerm* tr : getITerms()) {
@@ -1539,12 +1591,12 @@ dbRSeg* dbNet::findRSeg(uint32_t srcn, uint32_t tgtn)
   return nullptr;
 }
 
-void dbNet::set1stRSegId(uint32_t rid)
+void dbNet::set1stRSegId(uint32_t rseg_id)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t pid = net->r_segs_;
-  net->r_segs_ = rid;
+  net->r_segs_ = rseg_id;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -1552,7 +1604,7 @@ void dbNet::set1stRSegId(uint32_t rid)
              2,
              "EDIT: {}, set 1stRSegNode {}",
              getDebugName(),
-             rid);
+             rseg_id);
 
   if (block->journal_) {
     block->journal_->beginAction(dbJournal::kUpdateField);
@@ -1560,7 +1612,7 @@ void dbNet::set1stRSegId(uint32_t rid)
     block->journal_->pushParam(getId());
     block->journal_->pushParam(_dbNet::kHeadRSeg);
     block->journal_->pushParam(pid);
-    block->journal_->pushParam(rid);
+    block->journal_->pushParam(rseg_id);
     block->journal_->endAction();
   }
 }
@@ -1795,7 +1847,7 @@ void dbNet::getCouplingNets(const uint32_t corner,
   }
 }
 
-void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
+void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double miller_mult)
 {
   dbSigType type = getSigType();
   if (type.isSupply()) {
@@ -1815,18 +1867,18 @@ void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
   if (foreign) {
     for (dbCapNode* node : getCapNodes()) {
       if (first) {
-        node->getGndTotalCap(gndcap, totalcap, mcf);
+        node->getGndTotalCap(gndcap, totalcap, miller_mult);
       } else {
-        node->addGndTotalCap(gndcap, totalcap, mcf);
+        node->addGndTotalCap(gndcap, totalcap, miller_mult);
       }
       first = false;
     }
   } else {
     for (dbRSeg* rc : rSet) {
       if (first) {
-        rc->getGndTotalCap(gndcap, totalcap, mcf);
+        rc->getGndTotalCap(gndcap, totalcap, miller_mult);
       } else {
-        rc->addGndTotalCap(gndcap, totalcap, mcf);
+        rc->addGndTotalCap(gndcap, totalcap, miller_mult);
       }
       first = false;
     }
@@ -1855,13 +1907,13 @@ void dbNet::preExttreeMergeRC(double max_cap, uint32_t corner)
   dbRSeg* prc = getZeroRSeg();
   bool firstRC = true;
   uint32_t cnt = 1;
-  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*miller_mult*/);
   for (dbRSeg* rc : rSet) {
     mrsegs.push_back(rc);
     if (firstRC && cnt != 1) {
-      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*miller_mult*/);
     } else {
-      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
+      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*miller_mult*/);
     }
     cnt++;
     firstRC = false;
@@ -2164,6 +2216,16 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
   return (dbNet*) net;
 }
 
+dbNet* dbNet::create(dbBlock* block,
+                     const char* name,
+                     const dbNameUniquifyType& uniquify,
+                     dbModule* parent_module)
+{
+  std::string net_name = block->makeNewNetName(
+      parent_module ? parent_module->getModInst() : nullptr, name, uniquify);
+  return create(block, net_name.c_str());
+}
+
 void dbNet::destroy(dbNet* net_)
 {
   _dbNet* net = (_dbNet*) net_;
@@ -2253,19 +2315,19 @@ dbSet<dbNet>::iterator dbNet::destroy(dbSet<dbNet>::iterator& itr)
   return next;
 }
 
-dbNet* dbNet::getNet(dbBlock* block_, uint32_t dbid_)
+dbNet* dbNet::getNet(dbBlock* block, uint32_t oid)
 {
-  _dbBlock* block = (_dbBlock*) block_;
-  return (dbNet*) block->net_tbl_->getPtr(dbid_);
+  _dbBlock* block_impl = (_dbBlock*) block;
+  return (dbNet*) block_impl->net_tbl_->getPtr(oid);
 }
 
-dbNet* dbNet::getValidNet(dbBlock* block_, uint32_t dbid_)
+dbNet* dbNet::getValidNet(dbBlock* block, uint32_t oid)
 {
-  _dbBlock* block = (_dbBlock*) block_;
-  if (!block->net_tbl_->validId(dbid_)) {
+  _dbBlock* block_impl = (_dbBlock*) block;
+  if (!block_impl->net_tbl_->validId(oid)) {
     return nullptr;
   }
-  return (dbNet*) block->net_tbl_->getPtr(dbid_);
+  return (dbNet*) block_impl->net_tbl_->getPtr(oid);
 }
 
 bool dbNet::canMergeNet(dbNet* in_net)
@@ -2288,27 +2350,29 @@ void dbNet::mergeNet(dbNet* in_net)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  for (auto callback : block->callbacks_) {
-    callback->inDbNetPreMerge(this, in_net);
-  }
-
   // 1. Connect all terminals of in_net to this net.
 
   // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
   // invalidate the iterator by disconnecting a dbITerm.
   // Calling iterm->connect() during iteration with the iterator is not safe.
   // Thus create another vector for safe iterms iteration.
-  auto iterms_set = in_net->getITerms();
-  std::vector<dbITerm*> iterms(iterms_set.begin(), iterms_set.end());
+  dbSet<dbITerm> iterms_set = in_net->getITerms();
+  boost::container::small_vector<dbITerm*, 16> iterms(iterms_set.begin(),
+                                                      iterms_set.end());
   for (dbITerm* iterm : iterms) {
     iterm->connect(this);
   }
 
   // Create vector for safe iteration.
-  auto bterms_set = in_net->getBTerms();
-  std::vector<dbBTerm*> bterms(bterms_set.begin(), bterms_set.end());
+  dbSet<dbBTerm> bterms_set = in_net->getBTerms();
+  boost::container::small_vector<dbBTerm*, 16> bterms(bterms_set.begin(),
+                                                      bterms_set.end());
   for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
+  }
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbNetPostMerge(this, in_net);
   }
 
   // 2. Destroy in_net
@@ -2421,12 +2485,16 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
 {
   modnet_set.clear();
 
-  std::vector<dbModNet*> nets_to_visit;
+  if (getSigType().isSupply()) {
+    return false;
+  }
+
+  boost::container::small_vector<dbModNet*, 16> modnets_to_visit;
 
   // Helper to add a modnet to the result set and the visit queue if it's new.
   auto visitIfNew = [&](dbModNet* modnet) {
     if (modnet && modnet_set.insert(modnet).second) {
-      nets_to_visit.push_back(modnet);
+      modnets_to_visit.push_back(modnet);
     }
   };
 
@@ -2439,9 +2507,9 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
   }
 
   // Perform a DFS traversal to find all connected modnets.
-  while (!nets_to_visit.empty()) {
-    dbModNet* current_mod_net = nets_to_visit.back();
-    nets_to_visit.pop_back();
+  while (!modnets_to_visit.empty()) {
+    dbModNet* current_mod_net = modnets_to_visit.back();
+    modnets_to_visit.pop_back();
 
     for (dbModITerm* mod_iterm : current_mod_net->getModITerms()) {
       if (dbModBTerm* mod_bterm = mod_iterm->getChildModBTerm()) {
@@ -2459,7 +2527,7 @@ bool dbNet::findRelatedModNets(std::set<dbModNet*>& modnet_set) const
   return !modnet_set.empty();
 }
 
-void dbNet::dump() const
+void dbNet::dump(bool show_modnets) const
 {
   utl::Logger* logger = getImpl()->getLogger();
   logger->report("--------------------------------------------------");
@@ -2493,6 +2561,14 @@ void dbNet::dump() const
                    term->getId());
   }
   logger->report("--------------------------------------------------");
+
+  if (show_modnets) {
+    std::set<dbModNet*> modnets;
+    findRelatedModNets(modnets);
+    for (dbModNet* modnet : modnets) {
+      modnet->dump();
+    }
+  }
 }
 
 void _dbNet::collectMemInfo(MemInfo& info)
@@ -2607,7 +2683,7 @@ void dbNet::checkSanityModNetConsistency() const
   // 4. If found any inconsistency, report the difference.
 
   // 4.1. Compare ITerms
-  std::vector<dbITerm*> iterms_in_flat_only;
+  boost::container::small_vector<dbITerm*, 16> iterms_in_flat_only;
   std::ranges::set_difference(
       flat_iterms, hier_iterms, std::back_inserter(iterms_in_flat_only));
 
@@ -2622,7 +2698,7 @@ void dbNet::checkSanityModNetConsistency() const
     }
   }
 
-  std::vector<dbITerm*> iterms_in_hier_only;
+  boost::container::small_vector<dbITerm*, 16> iterms_in_hier_only;
   std::ranges::set_difference(
       hier_iterms, flat_iterms, std::back_inserter(iterms_in_hier_only));
 
@@ -2641,7 +2717,7 @@ void dbNet::checkSanityModNetConsistency() const
   }
 
   // 4.2. Compare BTerms
-  std::vector<dbBTerm*> bterms_in_flat_only;
+  boost::container::small_vector<dbBTerm*, 16> bterms_in_flat_only;
   std::ranges::set_difference(
       flat_bterms, hier_bterms, std::back_inserter(bterms_in_flat_only));
 
@@ -2656,7 +2732,7 @@ void dbNet::checkSanityModNetConsistency() const
     }
   }
 
-  std::vector<dbBTerm*> bterms_in_hier_only;
+  boost::container::small_vector<dbBTerm*, 16> bterms_in_hier_only;
   std::ranges::set_difference(
       hier_bterms, flat_bterms, std::back_inserter(bterms_in_hier_only));
 
@@ -2706,16 +2782,16 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
 
   std::string details;
   if (obj->getObjectType() == dbITermObj) {
-    auto iterm = static_cast<const dbITerm*>(obj);
+    const dbITerm* iterm = static_cast<const dbITerm*>(obj);
     details = fmt::format(" (master: {}, io: {})",
                           iterm->getInst()->getMaster()->getName(),
                           iterm->getIoType().getString());
   } else if (obj->getObjectType() == dbBTermObj) {
-    auto bterm = static_cast<const dbBTerm*>(obj);
+    const dbBTerm* bterm = static_cast<const dbBTerm*>(obj);
     details = fmt::format(" (io: {})", bterm->getIoType().getString());
   } else if (obj->getObjectType() == dbModITermObj) {
-    auto moditerm = static_cast<const dbModITerm*>(obj);
-    if (auto modbterm = moditerm->getChildModBTerm()) {
+    const dbModITerm* moditerm = static_cast<const dbModITerm*>(obj);
+    if (dbModBTerm* modbterm = moditerm->getChildModBTerm()) {
       details = fmt::format(" (module: {}, io: {})",
                             moditerm->getParent()->getMaster()->getName(),
                             modbterm->getIoType().getString());
@@ -2724,7 +2800,7 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
                             moditerm->getParent()->getMaster()->getName());
     }
   } else if (obj->getObjectType() == dbModBTermObj) {
-    auto modbterm = static_cast<const dbModBTerm*>(obj);
+    const dbModBTerm* modbterm = static_cast<const dbModBTerm*>(obj);
     details = fmt::format(" (io: {})", modbterm->getIoType().getString());
   }
 
@@ -2765,7 +2841,7 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
                              logger);
       break;
     case dbITermObj: {
-      auto iterm = static_cast<const dbITerm*>(obj);
+      const dbITerm* iterm = static_cast<const dbITerm*>(obj);
       _dbNet::dumpConnectivityRecursive(
           iterm->getNet(), max_level, level + 1, visited, logger);
       _dbNet::dumpConnectivityRecursive(
@@ -2775,7 +2851,7 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
       break;
     }
     case dbBTermObj: {
-      auto bterm = static_cast<const dbBTerm*>(obj);
+      const dbBTerm* bterm = static_cast<const dbBTerm*>(obj);
       _dbNet::dumpConnectivityRecursive(
           bterm->getNet(), max_level, level + 1, visited, logger);
       _dbNet::dumpConnectivityRecursive(
@@ -2783,7 +2859,7 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
       break;
     }
     case dbModITermObj: {
-      auto moditerm = static_cast<const dbModITerm*>(obj);
+      const dbModITerm* moditerm = static_cast<const dbModITerm*>(obj);
       _dbNet::dumpConnectivityRecursive(
           moditerm->getModNet(), max_level, level + 1, visited, logger);
       _dbNet::dumpConnectivityRecursive(
@@ -2791,14 +2867,14 @@ void _dbNet::dumpConnectivityRecursive(const dbObject* obj,
       break;
     }
     case dbModBTermObj: {
-      auto modbterm = static_cast<const dbModBTerm*>(obj);
+      const dbModBTerm* modbterm = static_cast<const dbModBTerm*>(obj);
       _dbNet::dumpConnectivityRecursive(
           modbterm->getModNet(), max_level, level + 1, visited, logger);
       break;
     }
     case dbInstObj: {
-      auto inst = static_cast<const dbInst*>(obj);
-      for (auto iterm : inst->getITerms()) {
+      const dbInst* inst = static_cast<const dbInst*>(obj);
+      for (dbITerm* iterm : inst->getITerms()) {
         _dbNet::dumpConnectivityRecursive(
             iterm, max_level, level + 1, visited, logger);
       }
@@ -2816,37 +2892,40 @@ void _dbNet::dumpNetConnectivity(const dbNet* net,
                                  std::set<const dbObject*>& visited,
                                  utl::Logger* logger)
 {
-  std::vector<const dbObject*> inputs;
-  std::vector<const dbObject*> outputs;
-  std::vector<const dbObject*> others;
+  boost::container::small_vector<const dbObject*, 16> inputs;
+  boost::container::small_vector<const dbObject*, 16> outputs;
+  boost::container::small_vector<const dbObject*, 16> others;
 
-  for (auto term : net->getITerms()) {
-    if (term->getIoType() == dbIoType::INPUT) {
-      inputs.push_back(term);
-    } else if (term->getIoType() == dbIoType::OUTPUT) {
-      outputs.push_back(term);
+  for (dbITerm* iterm : net->getITerms()) {
+    if (iterm->getIoType() == dbIoType::INPUT) {
+      inputs.push_back(iterm);
+    } else if (iterm->getIoType() == dbIoType::OUTPUT) {
+      outputs.push_back(iterm);
     } else {
-      others.push_back(term);
+      others.push_back(iterm);
     }
   }
-  for (auto term : net->getBTerms()) {
-    if (term->getIoType() == dbIoType::INPUT) {
-      inputs.push_back(term);
-    } else if (term->getIoType() == dbIoType::OUTPUT) {
-      outputs.push_back(term);
+  for (dbBTerm* bterm : net->getBTerms()) {
+    if (bterm->getIoType() == dbIoType::INPUT) {
+      inputs.push_back(bterm);
+    } else if (bterm->getIoType() == dbIoType::OUTPUT) {
+      outputs.push_back(bterm);
     } else {
-      others.push_back(term);
+      others.push_back(bterm);
     }
   }
 
-  for (auto term : inputs) {
-    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  for (const dbObject* in_term : inputs) {
+    _dbNet::dumpConnectivityRecursive(
+        in_term, max_level, level, visited, logger);
   }
-  for (auto term : others) {
-    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  for (const dbObject* other_term : others) {
+    _dbNet::dumpConnectivityRecursive(
+        other_term, max_level, level, visited, logger);
   }
-  for (auto term : outputs) {
-    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  for (const dbObject* out_term : outputs) {
+    _dbNet::dumpConnectivityRecursive(
+        out_term, max_level, level, visited, logger);
   }
 }
 
@@ -2856,9 +2935,9 @@ void _dbNet::dumpModNetConnectivity(const dbModNet* modnet,
                                     std::set<const dbObject*>& visited,
                                     utl::Logger* logger)
 {
-  std::vector<const dbObject*> inputs;
-  std::vector<const dbObject*> outputs;
-  std::vector<const dbObject*> others;
+  boost::container::small_vector<const dbObject*, 16> inputs;
+  boost::container::small_vector<const dbObject*, 16> outputs;
+  boost::container::small_vector<const dbObject*, 16> others;
 
   auto classifyTerm = [&](const auto* term) {
     dbIoType io_type;
@@ -2867,7 +2946,7 @@ void _dbNet::dumpModNetConnectivity(const dbModNet* modnet,
       io_type = term->getIoType();
     } else if constexpr (std::is_same_v<std::decay_t<decltype(*term)>,
                                         dbModITerm>) {
-      if (auto bterm = term->getChildModBTerm()) {
+      if (dbModBTerm* bterm = term->getChildModBTerm()) {
         io_type = bterm->getIoType();
       } else {
         others.push_back(term);
@@ -2887,28 +2966,105 @@ void _dbNet::dumpModNetConnectivity(const dbModNet* modnet,
     }
   };
 
-  for (auto term : modnet->getITerms()) {
-    classifyTerm(term);
+  for (dbITerm* iterm : modnet->getITerms()) {
+    classifyTerm(iterm);
   }
-  for (auto term : modnet->getBTerms()) {
-    classifyTerm(term);
+  for (dbBTerm* bterm : modnet->getBTerms()) {
+    classifyTerm(bterm);
   }
-  for (auto term : modnet->getModITerms()) {
-    classifyTerm(term);
+  for (dbModITerm* moditerm : modnet->getModITerms()) {
+    classifyTerm(moditerm);
   }
-  for (auto term : modnet->getModBTerms()) {
-    classifyTerm(term);
+  for (dbModBTerm* modbterm : modnet->getModBTerms()) {
+    classifyTerm(modbterm);
   }
 
-  for (auto term : inputs) {
-    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  for (const dbObject* in_term : inputs) {
+    _dbNet::dumpConnectivityRecursive(
+        in_term, max_level, level, visited, logger);
   }
-  for (auto term : others) {
-    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  for (const dbObject* other_term : others) {
+    _dbNet::dumpConnectivityRecursive(
+        other_term, max_level, level, visited, logger);
   }
-  for (auto term : outputs) {
-    _dbNet::dumpConnectivityRecursive(term, max_level, level, visited, logger);
+  for (const dbObject* out_term : outputs) {
+    _dbNet::dumpConnectivityRecursive(
+        out_term, max_level, level, visited, logger);
   }
+}
+
+dbInst* dbNet::insertBufferBeforeLoad(dbObject* load_input_term,
+                                      const dbMaster* buffer_master,
+                                      const Point* loc,
+                                      const char* new_buf_base_name,
+                                      const char* new_net_base_name,
+                                      const dbNameUniquifyType& uniquify)
+{
+  dbInsertBuffer insert_buffer(this);
+  return insert_buffer.insertBufferBeforeLoad(load_input_term,
+                                              buffer_master,
+                                              loc,
+                                              new_buf_base_name,
+                                              new_net_base_name,
+                                              uniquify);
+}
+
+dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
+                                       const dbNameUniquifyType& uniquify)
+{
+  dbInsertBuffer insert_buffer(this);
+  return insert_buffer.insertBufferAfterDriver(drvr_output_term,
+                                               buffer_master,
+                                               loc,
+                                               new_buf_base_name,
+                                               new_net_base_name,
+                                               uniquify);
+}
+
+dbInst* dbNet::insertBufferBeforeLoads(const std::set<dbObject*>& load_pins,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
+                                       const dbNameUniquifyType& uniquify,
+                                       bool loads_on_diff_nets)
+{
+  dbInsertBuffer insert_buffer(this);
+  return insert_buffer.insertBufferBeforeLoads(load_pins,
+                                               buffer_master,
+                                               loc,
+                                               new_buf_base_name,
+                                               new_net_base_name,
+                                               uniquify,
+                                               loads_on_diff_nets);
+}
+
+dbInst* dbNet::insertBufferBeforeLoads(const std::vector<dbObject*>& load_pins,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
+                                       const dbNameUniquifyType& uniquify,
+                                       bool loads_on_diff_nets)
+{
+  std::set<dbObject*> load_pins_set(load_pins.begin(), load_pins.end());
+  return insertBufferBeforeLoads(load_pins_set,
+                                 buffer_master,
+                                 loc,
+                                 new_buf_base_name,
+                                 new_net_base_name,
+                                 uniquify,
+                                 loads_on_diff_nets);
+}
+
+void dbNet::hierarchicalConnect(dbObject* driver, dbObject* load)
+{
+  dbInsertBuffer insert_buffer(this);
+  insert_buffer.hierarchicalConnect(driver, load);
 }
 
 }  // namespace odb

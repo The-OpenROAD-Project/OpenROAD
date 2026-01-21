@@ -518,7 +518,7 @@ void PdnGen::makeInstanceGrid(
     grid = std::make_unique<InstanceGrid>(
         domain, name, starts_with == POWER, inst, generate_obstructions);
   }
-  if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
+  if (!std::ranges::all_of(halo, [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
   grid->setGridToBoundary(pg_pins_to_boundary);
@@ -562,8 +562,7 @@ void PdnGen::makeRing(Grid* grid,
                                       Rings::Layer{layer0, width0, spacing0},
                                       Rings::Layer{layer1, width1, spacing1});
   ring->setOffset(offset);
-  if (std::any_of(
-          pad_offset.begin(), pad_offset.end(), [](int o) { return o != 0; })) {
+  if (std::ranges::any_of(pad_offset, [](int o) { return o != 0; })) {
     ring->setPadOffset(pad_offset);
   }
   ring->setExtendToBoundary(extend);
@@ -750,7 +749,7 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     for (auto* domain : domains) {
       for (const auto& grid : domain->getGrids()) {
         const auto nets = grid->getNets();
-        if (std::find(nets.begin(), nets.end(), net) == nets.end()) {
+        if (std::ranges::find(nets, net) == nets.end()) {
           appear_in_all_grids = false;
         }
       }

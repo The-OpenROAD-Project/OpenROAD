@@ -41,7 +41,7 @@ void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos)
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
 
-extConductor::extConductor(Logger* logger)
+extConductor::extConductor(utl::Logger* logger)
 {
   strcpy(_name, "");
   _height = 0;
@@ -295,7 +295,7 @@ bool extConductor::readConductor(Parser* parser)
   return false;
 }
 
-extDielectric::extDielectric(Logger* logger)
+extDielectric::extDielectric(utl::Logger* logger)
 {
   strcpy(_name, "");
   strcpy(_non_conformal_metal, "");
@@ -1057,7 +1057,7 @@ bool extDielectric::readDielectric(Parser* parser)
 extMasterConductor::extMasterConductor(uint32_t condId,
                                        extConductor* cond,
                                        double prevHeight,
-                                       Logger* logger)
+                                       utl::Logger* logger)
 {
   _condId = condId;
   logger_ = logger;
@@ -1148,8 +1148,8 @@ extMasterConductor::extMasterConductor(uint32_t condId,
 
   _dy = 0;
   _e = 0.0;
-  for (uint32_t i = 0; i < 3; i++) {
-    _conformalId[i] = 0;
+  for (unsigned int& id : _conformalId) {
+    id = 0;
   }
 }
 void extMasterConductor::resetThicknessHeight(double height, double thickness)
@@ -1575,7 +1575,7 @@ extMasterConductor::extMasterConductor(uint32_t dielId,
                                        double dx2,
                                        double h,
                                        double th,
-                                       Logger* logger)
+                                       utl::Logger* logger)
 {
   _condId = dielId;
   logger_ = logger;
@@ -1610,8 +1610,8 @@ extMasterConductor::extMasterConductor(uint32_t dielId,
 
   _dy = 0;
   _e = diel->_epsilon;
-  for (uint32_t i = 0; i < 3; i++) {
-    _conformalId[i] = 0;
+  for (unsigned int& id : _conformalId) {
+    id = 0;
   }
 }
 FILE* extProcess::openFile(const char* filename, const char* permissions)
@@ -1689,9 +1689,9 @@ void extProcess::createMasterLayers()
     extDielectric* diel = _dielTable->get(jj);
     if ((diel->_conformal || diel->_trench) && diel->_met) {
       extMasterConductor* mm = _masterConductorTable->get(diel->_met);
-      for (uint32_t i = 0; i < 3; i++) {
-        if (!mm->_conformalId[i]) {
-          mm->_conformalId[i] = jj;
+      for (unsigned int& id : mm->_conformalId) {
+        if (!id) {
+          id = jj;
           break;
         }
       }
@@ -1738,8 +1738,8 @@ Array1D<double>* extProcess::getWidthTable(uint32_t met)
   Array1D<double>* A = new Array1D<double>(11);
   //	for (uint32_t ii= 0; ii<7; ii++) {
   // for (uint32_t ii= 0; ii<3; ii++) {
-  for (uint32_t ii = 0; ii < 8; ii++) {
-    double w = wTable[ii] * min_width;
+  for (double wi : wTable) {
+    double w = wi * min_width;
     A->add(w);
   }
 
@@ -1757,8 +1757,8 @@ Array1D<double>* extProcess::getSpaceTable(uint32_t met)
   // const double sTable[3]= {1.0, 1.5, 2.0};
 
   Array1D<double>* A = new Array1D<double>(5);
-  for (uint32_t ii = 0; ii < 5; ii++) {
-    double s = sTable[ii] * min_spacing;
+  for (double si : sTable) {
+    double s = si * min_spacing;
     A->add(s);
   }
 
@@ -1777,8 +1777,8 @@ Array1D<double>* extProcess::getDiagSpaceTable(uint32_t met)
   Array1D<double>* A = new Array1D<double>(8);
   // for (uint32_t ii = 0; ii < 7; ii++) {
   // for (uint32_t ii = 0; ii < 5; ii++) {
-  for (uint32_t ii = 0; ii < 3; ii++) {
-    double s = sTable[ii] * p;
+  for (double si : sTable) {
+    double s = si * p;
     A->add(s);
   }
 
@@ -1854,7 +1854,7 @@ double extVariation::interpolate(double w,
 
   int jj = X->findNextBiggestIndex(w);
 
-  if (jj >= (int) X->getCnt() - 1) {
+  if (jj >= X->getCnt() - 1) {
     jj = X->getCnt() - 2;
   } else if (jj < 0) {
     jj = 0;
@@ -2224,7 +2224,7 @@ uint32_t extProcess::readProcess(const char* name, char* filename)
 
   return 0;
 }
-extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, Logger* logger)
+extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, utl::Logger* logger)
 {
   logger_ = logger;
   _condTable = new Array1D<extConductor*>(condCnt);

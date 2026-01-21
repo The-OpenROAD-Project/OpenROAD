@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <set>
+#include <string>
+
 #include "SwapArithModules.hh"
 
 namespace rsz {
@@ -26,7 +29,15 @@ class ConcreteSwapArithModules : public SwapArithModules
                              const std::string& target,
                              float slack_threshold,
                              std::set<dbModInst*>& insts) override;
-  bool doSwapInstances(const std::set<dbModInst*>& insts,
+
+  ///
+  /// Swaps modules in the provided set to match the target.
+  /// @param insts set of module instances to swap (input) or
+  ///              new module instances after the swap (output)
+  /// @param target optimization target (e.g., "setup")
+  /// @return true if any instance was swapped
+  ///
+  bool doSwapInstances(std::set<dbModInst*>& insts,
                        const std::string& target) override;
 
  protected:

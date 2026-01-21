@@ -27,7 +27,10 @@ or_integration_tests(
     eqy_repair_setup5
     fanin_fanout1
     gain_buffering1
+    gain_buffering2
     gcd_resize
+    insert_buffer
+    insert_buffer_hier
     liberty_dont_use
     pin_swap1
     pinswap_flat
@@ -83,7 +86,6 @@ or_integration_tests(
     repair_setup_sizedown
     repair_setup_sizeup_match
     repair_setup1
-    repair_setup2
     repair_setup3
     repair_setup4
     repair_setup4_flat
@@ -175,6 +177,7 @@ or_integration_tests(
     report_equiv_cells
     replace_arith_modules1
     replace_arith_modules2
+    replace_arith_modules3
     report_buffers_asap7
     report_buffers_nangate45
     report_buffers_ihp
@@ -191,5 +194,6 @@ or_integration_tests(
 # Skipped
 #rsz_man_tcl_check
 #rsz_readme_msgs_check
+#repair_setup2
 
 add_subdirectory(cpp)

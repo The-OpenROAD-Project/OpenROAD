@@ -3,12 +3,15 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "ScanPin.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace dft {

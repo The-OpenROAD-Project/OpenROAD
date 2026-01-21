@@ -222,7 +222,7 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
   return insts;
 }
 
-inline void findStartEnd(int x,
+static void findStartEnd(int x,
                          int width,
                          const odb::dbOrientType& orient,
                          int& x_start,
@@ -454,7 +454,7 @@ std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
     std::vector<Polygon90::point_type> outline;
 
     for (const auto& pt : core) {
-      auto check = std::find(outline.begin(), outline.end(), pt);
+      auto check = std::ranges::find(outline, pt);
       if (check == outline.end()) {
         outline.push_back(pt);
       } else {
@@ -882,8 +882,7 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
   }
 
   for (const auto& edge : getBoundaryEdges(area, outer)) {
-    if (std::find(filled_edges_.begin(), filled_edges_.end(), edge)
-        == filled_edges_.end()) {
+    if (std::ranges::find(filled_edges_, edge) == filled_edges_.end()) {
       endcaps += placeEndcapEdge(edge, corners, options);
       filled_edges_.push_back(edge);
     }
@@ -1141,7 +1140,7 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
     return 0;
   }
 
-  std::sort(masters.begin(), masters.end(), [](auto* rhs, auto* lhs) {
+  std::ranges::sort(masters, [](auto* rhs, auto* lhs) {
     return rhs->getWidth() > lhs->getWidth();
   });
 

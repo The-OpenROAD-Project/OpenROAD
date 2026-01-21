@@ -707,6 +707,11 @@ void Gui::zoomTo(const odb::Rect& rect_dbu)
   main_window->zoomTo(rect_dbu);
 }
 
+void Gui::zoomTo(const odb::Point& focus, int diameter)
+{
+  main_window->zoomTo(focus, diameter);
+}
+
 void Gui::zoomIn()
 {
   main_window->getLayoutViewer()->zoomIn();

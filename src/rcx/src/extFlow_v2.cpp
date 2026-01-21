@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -138,9 +141,7 @@ int extMain::initSearch(LayerDimensionData& tables,
                                    extRect,
                                    false);
 
-  if (layerCnt <= _currentModel->getLayerCnt()) {
-    layerCnt = _currentModel->getLayerCnt();
-  }
+  layerCnt = std::max(layerCnt, _currentModel->getLayerCnt());
 
   uint32_t maxWidth = 0;
   uint32_t totPowerWireCnt = powerWireCounter(maxWidth);

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "utl/algorithms.h"

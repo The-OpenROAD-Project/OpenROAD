@@ -65,7 +65,8 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       logger_(log),
       stt_builder_(stt_builder),
       sta_(sta),
-      debug_(new DebugSetting())
+      debug_(new DebugSetting()),
+      detour_penalty_(0)
 {
 }
 
@@ -128,6 +129,8 @@ void FastRouteCore::clear()
 
   vertical_blocked_intervals_.clear();
   horizontal_blocked_intervals_.clear();
+
+  detour_penalty_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -203,15 +206,16 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
   d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
+  path_len_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
 }
 
-void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
+void FastRouteCore::addVCapacity(int16_t verticalCapacity, int layer)
 {
   v_capacity_3D_[layer - 1] = verticalCapacity;
   v_capacity_ += v_capacity_3D_[layer - 1];
 }
 
-void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
+void FastRouteCore::addHCapacity(int16_t horizontalCapacity, int layer)
 {
   h_capacity_3D_[layer - 1] = horizontalCapacity;
   h_capacity_ += h_capacity_3D_[layer - 1];
@@ -698,9 +702,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0) {
-        edge_cap = 0;
-      }
+      edge_cap = std::max(edge_cap, 0);
       addAdjustment(x, y, x, y + 1, layer, edge_cap, true);
     }
   }
@@ -721,9 +723,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
         }
       }
       edge_cap -= reduce;
-      if (edge_cap < 0) {
-        edge_cap = 0;
-      }
+      edge_cap = std::max(edge_cap, 0);
       addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
     }
   }
@@ -1375,7 +1375,7 @@ NetRouteMap FastRouteCore::run()
   int slope;
   int max_adj;
   int long_edge_len = 40;
-  const int short_edge_len = 12;
+  int short_edge_len = 12;
   const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
@@ -1450,9 +1450,7 @@ NetRouteMap FastRouteCore::run()
 
     enlarge_ += 5;
     newTH -= 5;
-    if (newTH < 1) {
-      newTH = 1;
-    }
+    newTH = std::max(newTH, 1);
   }
 
   graph2d_.InitEstUsage();
@@ -1477,6 +1475,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("RST Tree before overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1506,9 +1505,7 @@ NetRouteMap FastRouteCore::run()
     } else {
       THRESH_M = 0;
     }
-    if (THRESH_M <= 0) {
-      THRESH_M = 0;
-    }
+    THRESH_M = std::max(THRESH_M, 0);
 
     if (total_overflow_ > 2000) {
       enlarge_ += ESTEP1;  // ENLARGE+(i-1)*ESTEP;
@@ -1599,9 +1596,6 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
-        if (verbose_) {
-          logger_->info(GRT, 103, "Extra Run for hard benchmark.");
-        }
         L = 0;
         upType = 3;
         stopDEC = true;
@@ -1770,9 +1764,9 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
-    logger_->report("Tree 2D after overflow iterations");
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 2D after overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1823,6 +1817,7 @@ NetRouteMap FastRouteCore::run()
     // Increase ripup threshold if res-aware is enabled
     if (enable_resistance_aware_) {
       long_edge_len = BIG_INT;
+      short_edge_len = BIG_INT;
     }
 
     mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
@@ -1854,6 +1849,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->tree3D) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 3D after maze route 3D");
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -2016,6 +2012,11 @@ void FastRouteCore::setGridMax(int x_max, int y_max)
   y_grid_max_ = y_max;
 }
 
+void FastRouteCore::setDetourPenalty(int penalty)
+{
+  detour_penalty_ = penalty;
+}
+
 std::vector<int> FastRouteCore::getOriginalResources()
 {
   std::vector<int> original_resources(num_layers_);
@@ -2085,8 +2086,6 @@ void FastRouteCore::computeCongestionInformation()
 }
 
 ////////////////////////////////////////////////////////////////
-
-const char* getNetName(odb::dbNet* db_net);
 
 const char* FrNet::getName() const
 {

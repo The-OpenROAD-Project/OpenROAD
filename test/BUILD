@@ -18,6 +18,8 @@ filegroup(
     srcs = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fakeram45_64x7.lef",
+        "Nangate45/fakeram45_64x7.lib",
     ],
     visibility = ["//visibility:public"],
 )
