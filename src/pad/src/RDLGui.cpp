@@ -50,9 +50,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
   }
 
   const bool draw_obs = draw_detail && checkDisplayControl(kDrawObs);
+  gui::Painter::Color obs_color = gui::Painter::kCyan;
+  obs_color.a = 127;
   if (draw_obs) {
-    gui::Painter::Color obs_color = gui::Painter::kCyan;
-    obs_color.a = 127;
     painter.setPenAndBrush(obs_color, true);
 
     for (const auto& [rect, poly, ptr, src] : router_->getObstructions()) {
@@ -88,9 +88,9 @@ void RDLGui::drawObjects(gui::Painter& painter)
     }
   }
 
+  gui::Painter::Color edge_color = gui::Painter::kGreen;
+  edge_color.a = 127;
   if (draw_edge) {
-    gui::Painter::Color edge_color = gui::Painter::kGreen;
-    edge_color.a = 127;
     painter.setPenAndBrush(edge_color, true);
 
     for (const auto& v : vertex) {
@@ -215,6 +215,15 @@ void RDLGui::drawObjects(gui::Painter& painter)
   for (const auto& [pt0, pt1] : snap_) {
     painter.drawLine(pt0, pt1);
   }
+
+  gui::DiscreteLegend legend;
+  legend.addLegendKey(gui::Painter::kRed, "Vertex");
+  legend.addLegendKey(edge_color, "Edge");
+  legend.addLegendKey(obs_color, "Obstruction");
+  legend.addLegendKey(gui::Painter::kBlue, "Target");
+  legend.addLegendKey(gui::Painter::kYellow, "Flywire");
+  legend.addLegendKey(gui::Painter::kGreen, "Route");
+  legend.draw(painter);
 }
 
 void RDLGui::addSnap(const odb::Point& pt0, const odb::Point& pt1)
