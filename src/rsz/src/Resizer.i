@@ -175,6 +175,22 @@ set_max_utilization(double max_utilization)
 }
 
 void
+set_equiv_filter_fallback(bool enabled)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->setEquivFilterFallback(enabled);
+}
+
+void
+set_setup_tns_checkpoint(bool enabled)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->setSetupTnsCheckpoint(enabled);
+}
+
+void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {
@@ -600,6 +616,14 @@ eliminate_dead_logic_cmd(bool clean_nets)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->eliminateDeadLogic(clean_nets);
+}
+
+void
+set_eliminate_dead_logic_enabled_cmd(bool enabled)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->setEliminateDeadLogicEnabled(enabled);
 }
 
 void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint,

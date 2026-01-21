@@ -24,10 +24,12 @@ static gpl::PlaceOptions getOptions(
 
   gpl::PlaceOptions options;
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
+  checkFlag(flags,
+            "-timing_driven_use_new_net_weights",
+            options.timingDrivenUseNewNetWeights);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
-  checkFlag(
-      flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
+  checkFlag(flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
   checkFlag(
       flags, "-enable_routing_congestion", options.enable_routing_congestion);
   checkFlag(flags, "-skip_initial_place", [&](bool) {
@@ -62,6 +64,9 @@ static gpl::PlaceOptions getOptions(
            "-timing_driven_net_reweight_overflow",
            options.timingNetWeightOverflows);
   checkKey(keys, "-overflow", options.overflow);
+  if (keys.find("-timing_driven_net_weight_max") != keys.end()) {
+    options.timingNetWeightMaxUserSet = true;
+  }
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);

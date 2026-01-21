@@ -4,8 +4,11 @@
 #include "gpl/Replace.h"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
+#include <cstdlib>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -22,8 +25,8 @@
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
-#include "sta/StaMain.hh"
 #include "timingBase.h"
+#include "utl/Environment.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
 
@@ -257,8 +260,21 @@ bool Replace::initNesterovPlace(const PlaceOptions& options, const int threads)
 
   if (!tb_) {
     tb_ = std::make_shared<TimingBase>(nbc_, rs_, log_);
+    tb_->setUseNewNetWeights(options.timingDrivenUseNewNetWeights);
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
-    tb_->setTimingNetWeightMax(options.timingNetWeightMax);
+    float timing_net_weight_max = options.timingNetWeightMax;
+    if (options.timingDrivenUseNewNetWeights
+        && !options.timingNetWeightMaxUserSet) {
+      if (auto env_max = utl::getEnvFloat("GPL_WEIGHT_MAX")) {
+        if (*env_max > 0.0f) {
+          timing_net_weight_max = *env_max;
+        } else {
+          log_->warn(
+              GPL, 160, "Ignoring GPL_WEIGHT_MAX={} (must be > 0).", *env_max);
+        }
+      }
+    }
+    tb_->setTimingNetWeightMax(timing_net_weight_max);
   }
 
   if (!np_) {

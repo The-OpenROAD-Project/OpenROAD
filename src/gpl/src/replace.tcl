@@ -5,6 +5,7 @@ sta::define_cmd_args "global_placement" {\
     [-skip_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
+    [-timing_driven_use_new_net_weights]\
     [-routability_driven]\
     [-disable_timing_driven]\
     [-disable_routability_driven]\
@@ -59,6 +60,7 @@ proc global_placement { args } {
     flags {-skip_initial_place \
       -skip_nesterov_place \
       -timing_driven \
+      -timing_driven_use_new_net_weights \
       -routability_driven \
       -routability_use_grt \
       -skip_io \

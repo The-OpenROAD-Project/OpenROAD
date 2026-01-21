@@ -54,10 +54,12 @@ struct PlaceOptions
 
   bool skipIoMode = false;
   bool timingDrivenMode = false;
+  bool timingDrivenUseNewNetWeights = false;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
   float timingNetWeightMax = 5;
+  bool timingNetWeightMaxUserSet = false;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
   // timing driven check overflow to keep resizer changes (non-virtual resizer)
