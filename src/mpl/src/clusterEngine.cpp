@@ -51,7 +51,10 @@ void ClusteringEngine::run()
   createRoot();
   setBaseThresholds();
 
-  createDataFlow();
+  if (data_flow_driven_) {
+    createDataFlow();
+  }
+
   createIOClusters();
 
   if (design_metrics_->getNumStdCell() == 0) {
