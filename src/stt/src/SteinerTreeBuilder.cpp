@@ -20,9 +20,9 @@
 
 namespace stt {
 
-static void reportSteinerBranches(const stt::Tree& tree, Logger* logger);
+static void reportSteinerBranches(const stt::Tree& tree, utl::Logger* logger);
 
-SteinerTreeBuilder::SteinerTreeBuilder(odb::dbDatabase* db, Logger* logger)
+SteinerTreeBuilder::SteinerTreeBuilder(odb::dbDatabase* db, utl::Logger* logger)
     : alpha_(0.3),
       min_fanout_alpha_({0, -1}),
       min_hpwl_alpha_({0, -1}),
@@ -292,7 +292,7 @@ static int findLocationIndex(const Tree& tree, int x, int y);
 void reportSteinerTree(const stt::Tree& tree,
                        int drvr_x,
                        int drvr_y,
-                       Logger* logger)
+                       utl::Logger* logger)
 {
   // flute mangles the x/y locations and pdrevII moves the driver to 0
   // so we have to find the driver location index.
@@ -307,13 +307,13 @@ void reportSteinerTree(const stt::Tree& tree,
   }
 }
 
-void reportSteinerTree(const stt::Tree& tree, Logger* logger)
+void reportSteinerTree(const stt::Tree& tree, utl::Logger* logger)
 {
   logger->report("Wire length = {}", tree.length);
   reportSteinerBranches(tree, logger);
 }
 
-static void reportSteinerBranches(const stt::Tree& tree, Logger* logger)
+static void reportSteinerBranches(const stt::Tree& tree, utl::Logger* logger)
 {
   for (int i = 0; i < tree.branchCount(); i++) {
     int x1 = tree.branch[i].x;

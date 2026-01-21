@@ -32,14 +32,9 @@
 #include "sta/Corner.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
-
-namespace utl {
-class Logger;
-}  // namespace utl
+#include "utl/Logger.h"
 
 namespace cts {
-
-using utl::Logger;
 
 struct PairHash
 {
@@ -143,7 +138,7 @@ class TechChar
            rsz::Resizer* resizer,
            est::EstimateParasitics* estimate_parasitics,
            sta::dbNetwork* db_network,
-           Logger* logger);
+           utl::Logger* logger);
 
   void create();
 
@@ -321,7 +316,7 @@ class TechChar
   sta::dbSta* openSta_;
   std::unique_ptr<sta::dbSta> openStaChar_;
   sta::dbNetwork* db_network_;
-  Logger* logger_;
+  utl::Logger* logger_;
   sta::PathAnalysisPt* charPathAnalysis_ = nullptr;
   sta::Corner* charCorner_ = nullptr;
   odb::dbBlock* charBlock_ = nullptr;

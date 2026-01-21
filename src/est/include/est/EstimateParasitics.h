@@ -43,8 +43,6 @@ class CallBackHandler;
 
 namespace est {
 
-using utl::Logger;
-
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
@@ -112,7 +110,7 @@ class EstimateParasiticsCallBack;
 class EstimateParasitics : public dbStaState
 {
  public:
-  EstimateParasitics(Logger* logger,
+  EstimateParasitics(utl::Logger* logger,
                      utl::CallBackHandler* callback_handler,
                      odb::dbDatabase* db,
                      dbSta* sta,
@@ -237,7 +235,7 @@ class EstimateParasitics : public dbStaState
 
   void initBlock();
 
-  Logger* getLogger() { return logger_; }
+  utl::Logger* getLogger() { return logger_; }
 
  private:
   void ensureParasitics();
@@ -262,7 +260,7 @@ class EstimateParasitics : public dbStaState
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   double dbuToMeters(int dist) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;

@@ -57,7 +57,7 @@ using odb::dbInst;
 using odb::dbMasterType;
 using odb::dbModInst;
 
-EstimateParasitics::EstimateParasitics(Logger* logger,
+EstimateParasitics::EstimateParasitics(utl::Logger* logger,
                                        utl::CallBackHandler* callback_handler,
                                        odb::dbDatabase* db,
                                        dbSta* sta,
