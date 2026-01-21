@@ -429,12 +429,10 @@ void RamGen::ramPdngen(const char* power_pin,
 
   block_->globalConnect();
 
-  //  auto openroad = ord::OpenRoad::openRoad();
-  //  auto pdngen = openroad->ord::OpenRoad::getPdnGen();
-
+  std::string grid_name = "ram_grid";
   pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
   pdngen_->makeCoreGrid(pdngen_->findDomain("Core"),
-                        "ram_grid",
+                        grid_name,
                         pdn::StartsWith::GROUND,
                         {},
                         {},
@@ -445,7 +443,7 @@ void RamGen::ramPdngen(const char* power_pin,
 
   // variables for convenience
   auto pdn_tech = block_->getDb()->getTech();
-  auto grid = pdngen_->findGrid("ram_grid")[0];
+  auto grid = pdngen_->findGrid(grid_name).front();
 
   // parameters are the same in the tcl script
   // add_followpin
