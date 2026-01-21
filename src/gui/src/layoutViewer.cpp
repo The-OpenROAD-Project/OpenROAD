@@ -626,6 +626,7 @@ LayoutViewer::searchNearestEdge(odb::Point pt, bool horizontal, bool vertical)
                             pt.x() + search_radius,
                             pt.y() + search_radius);
   }
+  check_rect(chip_->getBBox());
   for (const auto it : getChips()) {
     auto chip = it.first;
     auto chip_inst = it.second;
