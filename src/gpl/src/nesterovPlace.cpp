@@ -824,6 +824,7 @@ void NesterovPlace::runRoutability(int iter,
         graphics_->gifEnd(routability_gif_key_);
         routability_gif_key_ = -1;
       }
+      log_->report("Routability end iteration: {}. Summing up area", iter);
       for (auto& nb : nbVec_) {
         end_routability_area += nb->getNesterovInstsArea();
       }
@@ -981,12 +982,13 @@ void NesterovPlace::reportResults(int nesterov_iter,
   }
 
   if (npVars_.routability_driven_mode) {
+    const int64_t routability_inflation_area = rb_->getTotalInflation();
     const float routability_diff
-        = 100.0 * (end_routability_area - original_area) / original_area;
+        = 100.0 * routability_inflation_area / original_area;
     log_->info(GPL,
                1012,
                "Total routability artificial inflation: {:.2f} ({:+.2f}%)",
-               block->dbuAreaToMicrons(end_routability_area - original_area),
+               block->dbuAreaToMicrons(routability_inflation_area),
                routability_diff);
   }
 
