@@ -23,6 +23,14 @@ namespace cts {
 
 using utl::CTS;
 
+Point<double> HTreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
+                                              const std::string& bufferName)
+{
+  Point<double> legalLoc
+      = TreeBuilder::legalizeOneBuffer(bufferLoc, bufferName);
+  return resolveLocationCollision(legalLoc);
+}
+
 void HTreeBuilder::preSinkClustering(
     const std::vector<std::pair<float, float>>& sinks,
     const std::vector<const ClockInst*>& sinkInsts,
@@ -191,12 +199,9 @@ void HTreeBuilder::preSinkClustering(
           = (xSum / (float) pointCounter);  // geometric center of cluster
       const float normCenterY = (ySum / (float) pointCounter);
       Point<double> center((double) normCenterX, (double) normCenterY);
-      Point<double> legalCenter
+      Point<double> rootBufLoc
           = legalizeOneBuffer(center, options_->getSinkBuffer());
-      commitMoveLoc(center, legalCenter);
-
-      // Slightly modify the legalCenter if it overlaps with a sink location
-      Point<double> rootBufLoc = resolveLocationCollision(legalCenter);
+      commitMoveLoc(center, rootBufLoc);
 
       const char* baseName = secondLevel ? "clkbuf_leaf2_" : "clkbuf_leaf_";
       ClockInst& rootBuffer

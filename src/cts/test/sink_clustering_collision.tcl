@@ -36,6 +36,7 @@ proc create_collision_test { } {
 
   set clk [odb::dbNet_create $block "clk"]
   set term [odb::dbBTerm_create $clk "clk"]
+  $term setIoType INPUT
   set pin [odb::dbBPin_create $term]
   $pin setPlacementStatus FIRM
   odb::dbBox_create $pin $layer 400000 799000 400100 800000

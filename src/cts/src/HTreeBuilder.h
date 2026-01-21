@@ -156,6 +156,8 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
+  Point<double> legalizeOneBuffer(Point<double> bufferLoc,
+                                  const std::string& bufferName) override;
   void findLegalLocations(const Point<double>& parentPoint,
                           const Point<double>& branchPoint,
                           double x1,
