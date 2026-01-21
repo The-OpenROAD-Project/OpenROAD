@@ -730,10 +730,9 @@ bool SACoreSoftMacro::isSegmentEmpty(std::vector<std::vector<bool>>& grid,
   return true;
 }
 
-float SACoreSoftMacro::calSingleNotchPenalty(float width, float height)
+float SACoreSoftMacro::calSingleNotchPenalty(int width, int height)
 {
-  return std::sqrt((width * height)
-                   / block_->dbuAreaToMicrons(outline_.area()));
+  return std::sqrt((width * height) / static_cast<double>(outline_.area()));
 }
 
 // If there is no HardMacroCluster, we do not consider the notch penalty
@@ -759,8 +758,7 @@ void SACoreSoftMacro::calNotchPenalty()
   if (!isValid()) {
     width = std::max(width_, outline_.dx());
     height = std::max(height_, outline_.dy());
-    notch_penalty_ = calSingleNotchPenalty(block_->dbuToMicrons(width),
-                                           block_->dbuToMicrons(height));
+    notch_penalty_ = calSingleNotchPenalty(width, height);
 
     if (graphics_) {
       graphics_->setNotchPenalty({.name = "Notch",
@@ -866,8 +864,7 @@ void SACoreSoftMacro::calNotchPenalty()
       }
 
       if (is_notch) {
-        notch_penalty_ += calSingleNotchPenalty(block_->dbuToMicrons(width),
-                                                block_->dbuToMicrons(height));
+        notch_penalty_ += calSingleNotchPenalty(width, height);
         if (graphics_) {
           graphics_->addNotch(odb::Rect(x_coords[start_col],
                                         y_coords[start_row],

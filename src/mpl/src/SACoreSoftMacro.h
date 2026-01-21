@@ -108,7 +108,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                       int tart_col,
                       int end_row,
                       int end_col);
-  float calSingleNotchPenalty(float width, float height);
+  float calSingleNotchPenalty(int width, int height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
   void calFixedMacrosPenalty();
