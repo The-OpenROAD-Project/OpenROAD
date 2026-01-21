@@ -19,7 +19,8 @@
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.054  0.270 ) um
 [INFO GPL-0004] CoreBBox: (  0.486  0.540 ) ( 11.502 11.340 ) um
-[INFO GPL-0036] Total design original area:     15.528 um^2
+[INFO GPL-0036] Movable instances area:         15.528 um^2
+[INFO GPL-0037] Total instances area:           17.860 um^2
 [INFO GPL-0035] Pin density area adjust:        -1.121 um^2
 [INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:               145
