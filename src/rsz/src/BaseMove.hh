@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

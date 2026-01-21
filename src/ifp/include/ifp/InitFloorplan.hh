@@ -5,11 +5,14 @@
 
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;

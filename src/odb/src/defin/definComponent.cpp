@@ -3,6 +3,8 @@
 
 #include "definComponent.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cassert>
 #include <cctype>
 #include <cstdio>

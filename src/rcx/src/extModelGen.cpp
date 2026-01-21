@@ -3,6 +3,8 @@
 
 #include "rcx/extModelGen.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cassert>
 #include <cmath>
 #include <cstdint>

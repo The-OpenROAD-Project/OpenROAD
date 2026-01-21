@@ -9,8 +9,10 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/MinMax.hh"
+#include "sta/Path.hh"
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
