@@ -122,14 +122,7 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
   const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
   const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
   frVia via(via_def);
-  odb::Rect box;
-  if (via_def->getLayer1Num() == layer_num) {
-    box = via.getLayer1BBox();
-  } else if (via_def->getLayer2Num() == layer_num) {
-    box = via.getLayer2BBox();
-  } else {
-    return;
-  }
+  const odb::Rect box = via.getLayer1BBox();
   const auto via_width = box.dx();
   const auto via_height = box.dy();
   if (via_width > rect_width || via_height > rect_height) {
@@ -157,39 +150,19 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
 void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                                    const gtl::rectangle_data<frCoord>& rect,
                                    const frLayerNum layer_num,
-                                   const bool is_curr_layer_horz,
-                                   const bool is_bterm)
+                                   const bool is_curr_layer_horz)
 {
+  if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
+    return;
+  }
   // hardcode first two single vias
   const int max_num_via_trial = 2;
   int cnt = 0;
-
-  auto process_cut_layer = [&](int cut_layer_num, int& counter) {
-    if (layer_num_to_via_defs_.find(cut_layer_num)
-        == layer_num_to_via_defs_.end()) {
-      return;
-    }
-    for (auto& [tup, via] : layer_num_to_via_defs_[cut_layer_num][1]) {
-      genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
-      counter++;
-      if (counter >= max_num_via_trial) {
-        break;
-      }
-    }
-  };
-
-  if (layer_num + 1 <= getDesign()->getTech()->getTopLayerNum()) {
-    process_cut_layer(layer_num + 1, cnt);
-  }
-
-  if (is_bterm) {
-    int down_via_cnt = 0;
-    const int bottom_layer = getDesign()->getTech()->getBottomLayerNum();
-    for (int l = layer_num - 1; l >= layer_num - 3 && l >= bottom_layer; l--) {
-      process_cut_layer(l, down_via_cnt);
-      if (down_via_cnt >= max_num_via_trial) {
-        break;
-      }
+  for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
+    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
+    cnt++;
+    if (cnt >= max_num_via_trial) {
+      break;
     }
   }
 }
@@ -201,8 +174,7 @@ void FlexPA::genAPCosted(
     const frLayerNum base_layer_num,
     const frLayerNum layer_num,
     const gtl::rectangle_data<frCoord>& rect,
-    const int offset,
-    const bool is_bterm)
+    const int offset)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
   const bool is_curr_layer_horz = layer->isHorizontal();
@@ -223,8 +195,7 @@ void FlexPA::genAPCosted(
       break;
 
     case (frAccessPointEnum::EncOpt):
-      genAPEnclosedBoundary(
-          coords, rect, base_layer_num, is_curr_layer_horz, is_bterm);
+      genAPEnclosedBoundary(coords, rect, base_layer_num, is_curr_layer_horz);
       break;
 
     case (frAccessPointEnum::NearbyGrid):
@@ -263,10 +234,9 @@ void FlexPA::createSingleAccessPoint(
   }
   auto ap = std::make_unique<frAccessPoint>(fpt, layer_num);
 
-  bool local_allow_planar = allow_planar;
-  ap->setMultipleAccesses(frDirEnumPlanar, local_allow_planar);
+  ap->setMultipleAccesses(frDirEnumPlanar, allow_planar);
 
-  if (local_allow_planar) {
+  if (allow_planar) {
     const auto lower_layer = getDesign()->getTech()->getLayer(layer_num);
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
@@ -349,29 +319,8 @@ void FlexPA::createMultipleAccessPoints(
     const frAccessPointEnum upper_type)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
-  bool allow_via = !isIOTerm(inst_term);
+  bool allow_via = true;
   bool allow_planar = true;
-
-  if (layer->getLef58RectOnlyConstraint()) {
-    bool is_width_aligned = false;
-    const auto layer_width = layer->getWidth();
-    if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
-      if (gtl::delta(rect, gtl::VERTICAL) == layer_width) {
-        is_width_aligned = true;
-      }
-    } else if (layer->getDir() == dbTechLayerDir::VERTICAL) {
-      if (gtl::delta(rect, gtl::HORIZONTAL) == layer_width) {
-        is_width_aligned = true;
-      }
-    }
-
-    if (!is_width_aligned) {
-      allow_planar = false;
-      // Enable via access as fallback if planar is blocked
-      allow_via = true;
-    }
-  }
-
   //  only VIA_ACCESS_LAYERNUM layer can have via access
   if (isStdCellTerm(inst_term)) {
     if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
@@ -422,8 +371,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                             std::map<frCoord, frAccessPointEnum>& y_coords,
                             const frAccessPointEnum lower_type,
                             const frAccessPointEnum upper_type,
-                            const bool is_macro_cell_pin,
-                            const bool is_bterm)
+                            const bool is_macro_cell_pin)
 {
   if (OnlyAllowOnGridAccess(layer_num, is_macro_cell_pin)
       && upper_type != frAccessPointEnum::OnGrid) {
@@ -488,8 +436,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                   layer_num,
                   second_layer_num,
                   rect,
-                  offset,
-                  is_bterm);
+                  offset);
     }
   }
   if (!use_center_line) {
@@ -500,9 +447,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                     layer1_track_coords,
                     layer_num,
                     layer_num,
-                    rect,
-                    0,
-                    is_bterm);
+                    rect);
       }
     }
   } else {
@@ -539,7 +484,6 @@ void FlexPA::genAPsFromLayerShapes(
 {
   // IO term is treated as the MacroCellPin as the top block
   bool is_macro_cell_pin = isMacroCellTerm(inst_term) || isIOTerm(inst_term);
-  bool is_bterm = (inst_term == nullptr);
 
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
@@ -553,8 +497,7 @@ void FlexPA::genAPsFromLayerShapes(
                    y_coords,
                    lower_type,
                    upper_type,
-                   is_macro_cell_pin,
-                   is_bterm);
+                   is_macro_cell_pin);
 
     layer_rect_to_coords[layer_num].push_back(
         {bbox_rect, {x_coords, y_coords}});
@@ -692,7 +635,6 @@ bool FlexPA::filterPlanarAccess(
     frInstTerm* inst_term)
 {
   const odb::Point begin_point = ap->getPoint();
-
   // skip viaonly access
   if (!ap->hasAccess(dir)) {
     return false;
@@ -736,7 +678,6 @@ bool FlexPA::filterPlanarAccess(
 
   const bool no_drv
       = isPlanarViolationFree(ap, pin, ps.get(), inst_term, begin_point, layer);
-
   ap->setAccess(dir, no_drv);
 
   return no_drv;
@@ -945,36 +886,31 @@ void FlexPA::filterViaAccess(
 
   if (via_defs.empty()) {  // no via map entry
     // hardcode first two single vias
-    // UP Vias
-    if (layer_num_to_via_defs_.find(layer_num + 1)
-        != layer_num_to_via_defs_.end()) {
-      for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
-        if (inst_term && inst_term->isStubborn()
-            && avoid_via_defs_.contains(via_def)) {
-          continue;
-        }
-        via_defs.emplace_back(via_defs.size(), via_def);
-        if (via_defs.size() >= max_num_via_trial && !deep_search) {
-          break;
-        }
+    auto collect_vias = [&](int adj_layer_num, int max_trial) {
+      if (adj_layer_num > router_cfg_->TOP_ROUTING_LAYER) {
+        return;
       }
-    }
-    // DOWN Vias (Added)
-    if (!inst_term
-        || layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
-      if (layer_num_to_via_defs_.find(layer_num - 1)
+      if (layer_num_to_via_defs_.find(adj_layer_num)
           != layer_num_to_via_defs_.end()) {
-        for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num - 1][1]) {
+        for (auto& [tup, via_def] : layer_num_to_via_defs_[adj_layer_num][1]) {
           if (inst_term && inst_term->isStubborn()
               && avoid_via_defs_.contains(via_def)) {
             continue;
           }
           via_defs.emplace_back(via_defs.size(), via_def);
-          if (via_defs.size() >= max_num_via_trial * 2 && !deep_search) {
+          if (via_defs.size() >= max_trial && !deep_search) {
             break;
           }
         }
       }
+    };
+
+    // UP Vias
+    collect_vias(layer_num + 1, max_num_via_trial);
+
+    // DOWN Vias
+    if (isIOTerm(inst_term)) {
+      collect_vias(layer_num - 1, max_num_via_trial);
     }
   }
 
@@ -982,7 +918,6 @@ void FlexPA::filterViaAccess(
   for (auto& [idx, via_def] : via_defs) {
     auto via = std::make_unique<frVia>(via_def, begin_point);
     const odb::Rect box = via->getLayer1BBox();
-
     if (inst_term && !deep_search) {
       odb::Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
       if (!boundary_bbox.contains(box)) {
@@ -1161,7 +1096,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   design_rule_checker.initPA1();
   design_rule_checker.main();
 
-  bool no_drv = design_rule_checker.getMarkers().empty();
+  const bool no_drv = design_rule_checker.getMarkers().empty();
 
   if (graphics_) {
     graphics_->setViaAP(ap, via, design_rule_checker.getMarkers());
@@ -1177,6 +1112,14 @@ void FlexPA::filterMultipleAPAccesses(
     frInstTerm* inst_term,
     const bool& is_std_cell_pin)
 {
+  if (isIOTerm(inst_term)) {
+    // if the pin is an I/O pin, and there is planar access, return
+    for (auto& ap : aps) {
+      if (ap->hasPlanarAccess()) {
+        return;
+      }
+    }
+  }
   std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
       pin_shapes.size());
   for (int i = 0; i < (int) pin_shapes.size(); i++) {
@@ -1367,17 +1310,6 @@ bool FlexPA::genPinAccessCostBounded(
     if (is_std_cell_pin) {
       if (ap->getLayerNum() <= router_cfg_->VIA_ACCESS_LAYERNUM
           && !ap->hasAccess(frDirEnum::U)) {
-        if (inst_term) {
-          logger_->warn(DRT,
-                        323,
-                        "Filtered AP due to no via access for std cell pin "
-                        "{}/{} at ({}, {}) layer {}",
-                        inst_term->getInst()->getName(),
-                        inst_term->getTerm()->getName(),
-                        ap->getPoint().x(),
-                        ap->getPoint().y(),
-                        ap->getLayerNum());
-        }
         continue;
       }
     }
