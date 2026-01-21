@@ -4982,6 +4982,7 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     net1->setDirtyNet(false);
     net2->setIsMergedNet(true);
     net2->setMergedNet(db_net1);
+    saveGuides({db_net1});
   } else {
     // After failing to connect the routing, the survivor net still have
     // uncovered pins and needs to be re-routed
