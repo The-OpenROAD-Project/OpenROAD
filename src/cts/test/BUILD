@@ -10,6 +10,7 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
+    "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
     "check_buffers",
@@ -106,6 +107,10 @@ filegroup(
                 "array_tile.lef",
                 "array_tile_ins_delay.lib",
             ],
+            "array_max_wl": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
             "array_no_blockages": [
                 "array_tile.lef",
                 "array_tile.lib",
@@ -113,6 +118,7 @@ filegroup(
             "array_repair_clock_nets": [
                 "array_tile.lef",
                 "array_tile.lib",
+                "array_max_wl.defok",
             ],
             "check_buffer_inference1": [
                 "ModNangate45/ModNangate45_typ.lib",
