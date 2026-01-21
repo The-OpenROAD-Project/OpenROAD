@@ -841,29 +841,38 @@ void PlacerBaseCommon::init()
   };
 
   int total_signal_pins = 0;
+  int64_t movable_area = 0;
   int64_t total_area = 0;
-  for (auto& inst : instStor_) {
-    if (!inst.isFixed() && inst.isInstance()) {
-      int pin_count = count_signal_pins(inst);
-      total_signal_pins += pin_count;
+  for (const auto& inst : instStor_) {
+    if (inst.isInstance()) {
       total_area += inst.getArea();
+      if (!inst.isFixed()) {
+        total_signal_pins += count_signal_pins(inst);
+        movable_area += inst.getArea();
+      }
     }
   }
 
   log_->info(GPL,
              36,
              format_label_um2,
-             "Total design original area:",
+             "Movable instances area:",
+             block->dbuAreaToMicrons(movable_area));
+  log_->info(GPL,
+             37,
+             format_label_um2,
+             "Total instances area:",
              block->dbuAreaToMicrons(total_area));
 
-  double avg_density = (total_area > 0)
-                           ? static_cast<double>(total_signal_pins) / total_area
-                           : 0.0;
+  double avg_density
+      = (movable_area > 0)
+            ? static_cast<double>(total_signal_pins) / movable_area
+            : 0.0;
   if (log_->debugCheck(GPL, "extendPinDensity", 1)) {
     double avg_density_micron = block->dbuToMicrons(avg_density);
     double avg_area_per_pin_dbu
         = (total_signal_pins > 0)
-              ? static_cast<double>(total_area) / total_signal_pins
+              ? static_cast<double>(movable_area) / total_signal_pins
               : 0.0;
     double avg_area_per_pin_micron
         = block->dbuAreaToMicrons(avg_area_per_pin_dbu);
