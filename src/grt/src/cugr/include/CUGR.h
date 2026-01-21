@@ -84,6 +84,10 @@ class CUGR
   void getBTermsAccessPoints(
       odb::dbNet* net,
       std::map<odb::dbBTerm*, odb::Point3D>& access_points);
+  void setCriticalNetsPercentage(float percentage)
+  {
+    critical_nets_percentage_ = percentage;
+  }
 
  private:
   void updateOverflowNets(std::vector<int>& netIndices);
@@ -109,6 +113,8 @@ class CUGR
 
   int area_of_pin_patches_ = 0;
   int area_of_wire_patches_ = 0;
+
+  float critical_nets_percentage_ = 0;
 };
 
 }  // namespace grt
