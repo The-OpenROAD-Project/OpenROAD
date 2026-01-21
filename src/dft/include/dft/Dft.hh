@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"

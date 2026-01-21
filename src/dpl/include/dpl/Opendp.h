@@ -104,6 +104,8 @@ class Opendp
   void setPadding(odb::dbMaster* master, int left, int right);
   void setPadding(odb::dbInst* inst, int left, int right);
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
+  void setJumpMoves(int jump_moves);
+  void setIterativePlacement(bool iterative);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -136,6 +138,9 @@ class Opendp
   // Journalling
   Journal* getJournal() const;
   void setJournal(Journal* journal);
+
+  odb::Point getOdbLocation(const Node* cell) const;
+  odb::Point getDplLocation(const Node* cell) const;
 
  private:
   using bgPoint
@@ -350,6 +355,8 @@ class Opendp
 
   std::unique_ptr<DplObserver> debug_observer_;
   std::unique_ptr<Node> dummy_cell_;
+  int jump_moves_ = 0;
+  bool iterative_placement_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

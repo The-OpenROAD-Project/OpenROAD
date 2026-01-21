@@ -4,8 +4,10 @@
 #pragma once
 
 #include <map>
+#include <ostream>
 
 #include "db_sta/dbSta.hh"
+#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 namespace sta {

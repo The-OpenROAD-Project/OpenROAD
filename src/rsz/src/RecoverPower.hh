@@ -3,11 +3,19 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "db_sta/dbSta.hh"
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Path.hh"
 #include "sta/StaState.hh"
+#include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
 namespace est {
