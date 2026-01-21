@@ -4,11 +4,23 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
+#include <memory>
+#include <optional>
+#include <tuple>
 #include <vector>
 
 #include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/geom.h"
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/Path.hh"
+#include "sta/Transition.hh"
 
 namespace est {
 class EstimateParasitics;

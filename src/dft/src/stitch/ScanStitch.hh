@@ -3,7 +3,11 @@
 
 #pragma once
 
+#include <cstddef>
+#include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 

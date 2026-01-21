@@ -41,7 +41,7 @@ void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos)
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
 
-extConductor::extConductor(Logger* logger)
+extConductor::extConductor(utl::Logger* logger)
 {
   strcpy(_name, "");
   _height = 0;
@@ -295,7 +295,7 @@ bool extConductor::readConductor(Parser* parser)
   return false;
 }
 
-extDielectric::extDielectric(Logger* logger)
+extDielectric::extDielectric(utl::Logger* logger)
 {
   strcpy(_name, "");
   strcpy(_non_conformal_metal, "");
@@ -1057,7 +1057,7 @@ bool extDielectric::readDielectric(Parser* parser)
 extMasterConductor::extMasterConductor(uint32_t condId,
                                        extConductor* cond,
                                        double prevHeight,
-                                       Logger* logger)
+                                       utl::Logger* logger)
 {
   _condId = condId;
   logger_ = logger;
@@ -1575,7 +1575,7 @@ extMasterConductor::extMasterConductor(uint32_t dielId,
                                        double dx2,
                                        double h,
                                        double th,
-                                       Logger* logger)
+                                       utl::Logger* logger)
 {
   _condId = dielId;
   logger_ = logger;
@@ -2224,7 +2224,7 @@ uint32_t extProcess::readProcess(const char* name, char* filename)
 
   return 0;
 }
-extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, Logger* logger)
+extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, utl::Logger* logger)
 {
   logger_ = logger;
   _condTable = new Array1D<extConductor*>(condCnt);

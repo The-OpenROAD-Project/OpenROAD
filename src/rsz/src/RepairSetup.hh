@@ -2,6 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 

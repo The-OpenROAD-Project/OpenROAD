@@ -13,14 +13,9 @@
 #include "HTreeBuilder.h"
 #include "TechChar.h"
 #include "Util.h"
-
-namespace utl {
-class Logger;
-}  // namespace utl
+#include "utl/Logger.h"
 
 namespace cts {
-
-using utl::Logger;
 
 class Matching
 {
@@ -80,7 +75,7 @@ class SinkClustering
   static bool isZero(double pos);
 
   const CtsOptions* options_;
-  Logger* logger_;
+  utl::Logger* logger_;
   const TechChar* techChar_;
   std::vector<Point<double>> points_;
   std::vector<float> pointsCap_;

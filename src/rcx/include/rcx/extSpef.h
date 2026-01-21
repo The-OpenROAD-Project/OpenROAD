@@ -13,14 +13,9 @@
 #include "odb/dbShape.h"
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace rcx {
-
-using utl::Logger;
 
 class NameTable;
 class Parser;
@@ -30,7 +25,7 @@ class extSpef
  public:
   extSpef(odb::dbTech* tech,
           odb::dbBlock* blk,
-          Logger* logger,
+          utl::Logger* logger,
           const char* version,
           extMain* extmain);
   ~extSpef();
@@ -98,7 +93,7 @@ class extSpef
   void printAppearance(const int* appcnt, int tapp);
 
  private:
-  void setLogger(Logger* logger);
+  void setLogger(utl::Logger* logger);
   bool matchNetGndCap(odb::dbNet* net,
                       uint32_t dbCorner,
                       double dbCap,
@@ -497,7 +492,7 @@ class extSpef
   uint32_t _childBlockInstBaseMap = 0;
   uint32_t _childBlockNetBaseMap = 0;
 
-  Logger* logger_;
+  utl::Logger* logger_;
 
  public:
   bool _addRepeatedCapValue = true;
