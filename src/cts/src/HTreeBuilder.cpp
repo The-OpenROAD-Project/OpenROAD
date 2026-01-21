@@ -14,6 +14,7 @@
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "TreeBuilder.h"
 #include "Util.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
@@ -209,6 +210,16 @@ void HTreeBuilder::preSinkClustering(
                                   options_->getSinkBuffer(),
                                   rootBufLoc.getX() * wireSegmentUnit_,
                                   rootBufLoc.getY() * wireSegmentUnit_);
+      if (center != rootBufLoc) {
+        debugPrint(logger_,
+                   CTS,
+                   "legalizer",
+                   2,
+                   "preSinkClustering legalizeOneBuffer {}: {} => {}",
+                   baseName + std::to_string(clusterCount),
+                   center,
+                   rootBufLoc);
+      }
 
       if (!secondLevel) {
         addFirstLevelSinkDriver(&rootBuffer);
@@ -228,18 +239,36 @@ void HTreeBuilder::preSinkClustering(
         clockSubNet.setLeafLevel(true);
       }
 
-      const std::pair<float, float> point(rootBufLoc.getX(), rootBufLoc.getY());
-      newSinkLocations.emplace_back(point);
+      bool use_fix = logger_->debugCheck(utl::CTS, "htree_builder_fix", 1);
+      if (!use_fix) {
+        // jk: Original code. Using normCenter instead of legalCenter (=
+        // rootBufLoc) looks slightly weird
+        const Point<double> newSinkPos(normCenterX, normCenterY);
+        const std::pair<float, float> point(normCenterX, normCenterY);
+        newSinkLocations.emplace_back(point);
 
-      // Simulate the float conversion to ensure consistent map keys
-      Point<double> mapKey(point.first, point.second);
+        // jk: temporary error to show the issue. remove this
+        // if (mapLocationToSink_.contains(newSinkPos)) {
+        //  logger_->error(utl::CTS, 9998, "Duplicated location!");
+        //}
 
-      // jk: temporary error to show the issue. remove this
-      if (mapLocationToSink_.contains(mapKey)) {
-        logger_->error(utl::CTS, 9999, "Duplicated location!");
+        mapLocationToSink_[newSinkPos] = &rootBuffer;
+      } else {
+        // jk: New code. QoR impact
+        const std::pair<float, float> point(rootBufLoc.getX(),
+                                            rootBufLoc.getY());
+        newSinkLocations.emplace_back(point);
+
+        // Simulate the float conversion to ensure consistent map keys
+        Point<double> mapKey(point.first, point.second);
+
+        // jk: temporary error to show the issue. remove this
+        if (mapLocationToSink_.contains(mapKey)) {
+          logger_->error(utl::CTS, 9999, "Duplicated location!");
+        }
+
+        mapLocationToSink_[mapKey] = &rootBuffer;
       }
-
-      mapLocationToSink_[mapKey] = &rootBuffer;
     }
     clusterCount++;
   }
