@@ -38,7 +38,7 @@
 #include "utl/Logger.h"
 
 namespace abc {
-Vec_Str_t* Abc_SclProduceGenlibStrSimple(SC_Lib* p);  // NOLINT
+Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib * p, float Slew, float Gain, int nGatesMin, int fUseAll, int * pnCellCount);  // NOLINT
 }  // namespace abc
 
 namespace rmp {
@@ -412,7 +412,9 @@ void extended_technology_mapping(sta::dbSta* sta,
     factory.AddResizer(resizer);
     factory.SetCorner(corner);
     auto abc_library = factory.BuildScl();
-    auto genlib_vec = abc::Abc_SclProduceGenlibStrSimple(abc_library.get());
+    auto lib = abc_library.get();
+    int cell_count = 0;
+    auto genlib_vec = abc::Abc_SclProduceGenlibStr(lib, Abc_SclComputeAverageSlew(lib), 200.0f, 0, true, &cell_count);
     // ABC ends the file with '.end', but mockturtle doesn't like that
     for (int i = 0; i < sizeof(".end\n\0"); i++) {
       Vec_StrPop(genlib_vec);
