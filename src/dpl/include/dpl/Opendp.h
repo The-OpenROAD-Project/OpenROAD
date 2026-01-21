@@ -30,6 +30,10 @@ namespace utl {
 class Logger;
 }
 
+namespace sta {
+class dbSta;
+}
+
 namespace dpl {
 
 using utl::Logger;
@@ -136,6 +140,9 @@ class Opendp
   // Journalling
   Journal* getJournal() const;
   void setJournal(Journal* journal);
+
+  // Set STA for buffer/inverter detection in soft blockage checks
+  void setSta(sta::dbSta* sta) { sta_ = sta; }
 
  private:
   using bgPoint
@@ -259,7 +266,8 @@ class Opendp
                     const std::vector<Node*>& region_placement_failures,
                     const std::vector<Node*>& placement_failures,
                     const std::vector<Node*>& edge_spacing_failures,
-                    const std::vector<Node*>& blocked_layers_failures);
+                    const std::vector<Node*>& blocked_layers_failures,
+                    const std::vector<Node*>& soft_blockage_failures);
   void writeJsonReport(const std::string& filename);
 
   void rectDist(const Node* cell,
@@ -314,6 +322,7 @@ class Opendp
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   odb::Rect core_;
+  sta::dbSta* sta_ = nullptr;  // For buffer/inverter detection
 
   std::unique_ptr<Architecture> arch_;  // Information about rows, etc.
   std::unique_ptr<Network> network_;    // The netlist, cells, etc.

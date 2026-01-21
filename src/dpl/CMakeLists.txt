@@ -52,6 +52,7 @@ target_link_libraries(dpl_lib
     odb
   PRIVATE
     utl_lib
+    dbSta_lib
 )
 
 target_include_directories(dpl_lib
