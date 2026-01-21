@@ -5603,6 +5603,23 @@ std::vector<Net*> IncrementalGRoute::updateRoutes(bool save_guides)
   return groute_->updateDirtyRoutes(save_guides);
 }
 
+std::vector<odb::dbNet*> IncrementalGRoute::updateRoutesDbNets(bool save_guides)
+{
+  const std::vector<Net*> routed_nets = groute_->updateDirtyRoutes(save_guides);
+  std::vector<odb::dbNet*> db_nets;
+  db_nets.reserve(routed_nets.size());
+  for (const Net* net : routed_nets) {
+    if (net == nullptr) {
+      continue;
+    }
+    odb::dbNet* db_net = net->getDbNet();
+    if (db_net != nullptr) {
+      db_nets.push_back(db_net);
+    }
+  }
+  return db_nets;
+}
+
 IncrementalGRoute::~IncrementalGRoute()
 {
   db_cbk_.removeOwner();
@@ -5623,6 +5640,48 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   db_net_map_[net]->setDirtyNet(true);
   db_net_map_[net]->saveLastPinPositions();
   dirty_nets_.insert(net);
+}
+
+void GlobalRouter::discardDirtyNets()
+{
+  for (odb::dbNet* db_net : dirty_nets_) {
+    auto it = db_net_map_.find(db_net);
+    if (it == db_net_map_.end()) {
+      continue;
+    }
+    Net* net = it->second;
+    if (net != nullptr) {
+      net->setDirtyNet(false);
+      net->clearLastPinPositions();
+    }
+  }
+  dirty_nets_.clear();
+}
+
+void GlobalRouter::refreshNetPins(odb::dbNet* db_net)
+{
+  if (db_net == nullptr || grid_ == nullptr) {
+    return;
+  }
+
+  auto it = db_net_map_.find(db_net);
+  if (it == db_net_map_.end()) {
+    return;
+  }
+  Net* net = it->second;
+  if (net == nullptr) {
+    return;
+  }
+
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  initRoutingLayers(min_layer, max_layer);
+
+  net->destroyPins();
+  makeItermPins(net, db_net, grid_->getGridArea());
+  makeBtermPins(net, db_net, grid_->getGridArea());
+  findPins(net);
+  net->saveLastPinPositions();
 }
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
@@ -5795,6 +5854,9 @@ void GRouteDbCbk::inDbPostMoveInst(odb::dbInst* inst)
 
 void GRouteDbCbk::inDbInstSwapMasterAfter(odb::dbInst* inst)
 {
+  if (grouter_->skip_dirty_on_inst_swap_master_) {
+    return;
+  }
   instItermsDirty(inst);
 }
 

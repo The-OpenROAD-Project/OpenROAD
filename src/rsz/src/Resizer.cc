@@ -31,6 +31,7 @@
 #include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
+#include "RecoverPowerMore.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
@@ -185,6 +186,7 @@ Resizer::Resizer(Logger* logger,
   split_load_move_ = std::make_unique<SplitLoadMove>(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this);
+  recover_power_more_ = std::make_unique<RecoverPowerMore>(this);
   repair_design_ = std::make_unique<RepairDesign>(this);
   repair_setup_ = std::make_unique<RepairSetup>(this);
   repair_hold_ = std::make_unique<RepairHold>(this);
@@ -434,6 +436,11 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   estimate_parasitics_->updateParasitics();
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
+}
+
+bool Resizer::removeBuffer(Instance* buffer, const bool honor_dont_touch_fixed)
+{
+  return unbuffer_move_->removeBufferIfPossible(buffer, honor_dont_touch_fixed);
 }
 
 void Resizer::unbufferNet(Net* net)
@@ -4442,7 +4449,14 @@ bool Resizer::recoverPower(float recover_power_percent,
              == est::ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent, verbose);
+  return more_recover_power_
+             ? recover_power_more_->recoverPower(recover_power_percent, verbose)
+             : recover_power_->recoverPower(recover_power_percent, verbose);
+}
+
+void Resizer::setMoreRecoverPower(const bool enable)
+{
+  more_recover_power_ = enable;
 }
 ////////////////////////////////////////////////////////////////
 void Resizer::swapArithModules(int path_count,
@@ -4491,10 +4505,10 @@ void Resizer::journalBegin()
   split_load_move_->undoMoves();
 }
 
-void Resizer::journalEnd()
+void Resizer::journalEnd(bool update_sta)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
-  if (!odb::dbDatabase::ecoEmpty(block_)) {
+  if (update_sta && !odb::dbDatabase::ecoEmpty(block_)) {
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
@@ -4555,6 +4569,61 @@ void Resizer::journalEnd()
              swap_pins_move_->numCommittedMoves(),
              vt_swap_speed_move_->numCommittedMoves(),
              unbuffer_move_->numCommittedMoves());
+}
+
+void Resizer::journalEndSave(bool update_sta)
+{
+  debugPrint(logger_, RSZ, "journal", 1, "journal end (save)");
+  if (update_sta && !odb::dbDatabase::ecoEmpty(block_)) {
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+  }
+  odb::dbDatabase::endEco(block_);
+
+  int move_count_ = 0;
+  move_count_ += size_up_move_->numPendingMoves();
+  move_count_ += size_up_match_move_->numPendingMoves();
+  move_count_ += size_down_move_->numPendingMoves();
+  move_count_ += buffer_move_->numPendingMoves();
+  move_count_ += clone_move_->numPendingMoves();
+  move_count_ += swap_pins_move_->numPendingMoves();
+  move_count_ += vt_swap_speed_move_->numPendingMoves();
+  move_count_ += unbuffer_move_->numPendingMoves();
+
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             2,
+             "SAVE {} moves: up {} up_match {} down {} buffer {} clone {} swap "
+             "{} vt_swap {} unbuf {}",
+             move_count_,
+             size_up_move_->numPendingMoves(),
+             size_up_match_move_->numPendingMoves(),
+             size_down_move_->numPendingMoves(),
+             buffer_move_->numPendingMoves(),
+             clone_move_->numPendingMoves(),
+             swap_pins_move_->numPendingMoves(),
+             vt_swap_speed_move_->numPendingMoves(),
+             unbuffer_move_->numPendingMoves());
+
+  accepted_move_count_ += move_count_;
+
+  size_up_move_->commitMoves();
+  size_up_match_move_->commitMoves();
+  size_down_move_->commitMoves();
+  buffer_move_->commitMoves();
+  clone_move_->commitMoves();
+  swap_pins_move_->commitMoves();
+  vt_swap_speed_move_->commitMoves();
+  unbuffer_move_->commitMoves();
+  split_load_move_->commitMoves();
+}
+
+void Resizer::journalCommitSaved()
+{
+  while (!odb::dbDatabase::ecoStackEmpty(block_)) {
+    odb::dbDatabase::commitEco(block_);
+  }
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
