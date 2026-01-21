@@ -136,11 +136,11 @@ legalized HPWL         193657.1 u
 delta HPWL                    1 %
 
 Clock clk
-   1.15 source latency inst_3_9/clk ^
+   1.16 source latency inst_3_9/clk ^
   -1.01 target latency inst_5_9/clk ^
    0.00 CRPR
 --------------
-   0.14 setup skew
+   0.15 setup skew
 
 Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
@@ -178,7 +178,7 @@ Path Type: max
    0.04    1.04 ^ wire9/Z (BUF_X8)
    0.04    1.09 ^ max_length8/Z (BUF_X8)
    0.05    1.14 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
-   0.00    1.14 ^ inst_1_1/clk (array_tile)
+   0.00    1.15 ^ inst_1_1/clk (array_tile)
    0.21    1.36 ^ inst_1_1/e_out (array_tile)
    0.00    1.36 ^ inst_2_1/w_in (array_tile)
            1.36   data arrival time

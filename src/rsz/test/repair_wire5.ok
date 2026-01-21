@@ -9,13 +9,13 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-pad1/DATA                               0.20    0.27   -0.07 (VIOLATED)
+pad1/DATA                               0.20    0.49   -0.29 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/Z                                   60.65  104.41  -43.75 (VIOLATED)
+u1/Z                                   60.65  104.42  -43.76 (VIOLATED)
 
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining

@@ -19,16 +19,14 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.176 |       -0.2 |      2 | y2
-        4 |       0 |       4 |        0 |      0 |     1 |   +59.3% |   -0.123 |       -0.2 |      2 | y2
-       10 |       0 |       8 |        0 |      0 |     2 |  +144.4% |   -0.123 |       -0.1 |      2 | y2
-       10 |       0 |       4 |        0 |      0 |     1 |   +59.3% |   -0.123 |       -0.2 |      2 | y2
-      10* |       0 |       4 |        0 |      0 |     1 |   +59.3% |   -0.123 |       -0.2 |      2 | y2
-      11* |       0 |       4 |        0 |      0 |     1 |   +59.3% |   -0.123 |       -0.2 |      2 | y2
-      12* |       0 |       4 |        0 |      0 |     1 |   +59.3% |   -0.123 |       -0.2 |      2 | y2
-    final |       0 |       4 |        0 |      0 |     1 |   +59.3% |   -0.123 |       -0.2 |      2 | y2
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.176 |       -0.3 |      2 | y2
+        3 |       0 |       4 |        0 |      0 |     1 |   +59.3% |   -0.130 |       -0.3 |      2 | y1
+        5 |       0 |       5 |        0 |      0 |     1 |   +63.0% |   -0.123 |       -0.2 |      2 | y2
+       6* |       0 |       5 |        0 |      0 |     1 |   +63.0% |   -0.123 |       -0.2 |      2 | y2
+       7* |       0 |       5 |        0 |      0 |     1 |   +63.0% |   -0.123 |       -0.2 |      2 | y2
+    final |       0 |       5 |        0 |      0 |     1 |   +63.0% |   -0.123 |       -0.2 |      2 | y2
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 4 instances: 4 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
