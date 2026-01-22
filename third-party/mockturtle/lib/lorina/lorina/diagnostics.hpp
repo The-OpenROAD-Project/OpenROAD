@@ -83,13 +83,6 @@ public:
    */
   virtual inline void emit( diag_id id, std::vector<std::string> const& args = {} ) const;
 
-  /*! \brief Create custom diagnostic.
-   *
-   * \param level Severity level
-   * \param message Diagnostic message
-   */
-  diag_id create_id( diagnostic_level level, std::string const& message );
-
   /*! \brief Return the number of emitted diagnostics. */
   uint64_t get_num_diagnostics() const;
 
@@ -101,17 +94,8 @@ private:
    */
   void emit_static_diagnostic( diag_id id, std::vector<std::string> const& args ) const;
 
-  /*! \brief Emit diagnostics with custom ID.
-   *
-   * \param id ID of diagnostic
-   * \param args Arguments
-   */
-  void emit_custom_diagnostic( diag_id id, std::vector<std::string> const& args ) const;
-
 protected:
   diagnostic_consumer *client_ = nullptr;  /*!< Diagnostic client. */
-  std::vector<desc_type> custom_diag_info; /*!< Custom diagnostics. */
-  std::map<desc_type, diag_id> custom_diag_ids; /*!< Map from custom ID to diagnostic. */
   mutable uint64_t num_diagnostics{0};
 }; /* diagnostic_engine */
 
@@ -186,15 +170,6 @@ inline diagnostic_engine::diagnostic_engine( diagnostic_consumer *client )
 {
 }
 
-inline diag_id diagnostic_engine::create_id( diagnostic_level level, std::string const& message )
-{
-  desc_type desc{level, message};
-  diag_id id{diag_id( custom_diag_info.size() )};
-  custom_diag_ids.emplace( desc, id );
-  custom_diag_info.emplace_back( desc );
-  return diag_id( uint32_t( diag_id::NUM_STATIC_ERROR_IDS ) + uint32_t( id ) );
-}
-
 inline uint64_t diagnostic_engine::get_num_diagnostics() const
 {
   return num_diagnostics;
@@ -229,31 +204,6 @@ inline void diagnostic_engine::emit_static_diagnostic( diag_id id, std::vector<s
   }
 }
 
-inline void diagnostic_engine::emit_custom_diagnostic( diag_id id, std::vector<std::string> const& args ) const
-{
-  uint32_t const custom_id = uint32_t( id ) - uint32_t( diag_id::NUM_STATIC_ERROR_IDS );
-  assert( uint32_t( custom_id ) < custom_diag_info.size() );
-  diagnostic_level const level = custom_diag_info[custom_id].first;
-  std::string const message = custom_diag_info[custom_id].second;
-  std::string_view const message_view = message;
-  switch ( args.size() )
-  {
-  case 1:
-    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0]) ) );
-    break;
-  case 2:
-    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1]) ) );
-    break;
-  case 3:
-    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1], args[2]) ) );
-    break;
-  default:
-  case 0:
-    assert( args.size() == 0 );
-    client_->handle_diagnostic( level, message );
-  }
-}
-
 inline void diagnostic_engine::emit( diag_id id, std::vector<std::string> const& args ) const
 {
   assert( client_ != nullptr );
@@ -261,10 +211,6 @@ inline void diagnostic_engine::emit( diag_id id, std::vector<std::string> const&
   if ( id < diag_id::NUM_STATIC_ERROR_IDS )
   {
     emit_static_diagnostic( id, args );
-  }
-  else
-  {
-    emit_custom_diagnostic( id, args );
   }
 }
 
