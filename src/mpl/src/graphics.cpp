@@ -454,8 +454,14 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int width = macro.getRealWidth();
     const int height = macro.getRealHeight();
 
-    odb::Rect halo_bbox(macro.getX(), macro.getY(), macro.getX() + macro.getWidth(), macro.getY() + macro.getHeight());
-    odb::Rect macro_bbox(macro.getRealX(), macro.getRealY(), macro.getRealX() + width, macro.getRealY() + height);
+    odb::Rect halo_bbox(macro.getX(),
+                        macro.getY(),
+                        macro.getX() + macro.getWidth(),
+                        macro.getY() + macro.getHeight());
+    odb::Rect macro_bbox(macro.getRealX(),
+                         macro.getRealY(),
+                         macro.getRealX() + width,
+                         macro.getRealY() + height);
 
     halo_bbox.moveDelta(outline_.xMin(), outline_.yMin());
     macro_bbox.moveDelta(outline_.xMin(), outline_.yMin());
