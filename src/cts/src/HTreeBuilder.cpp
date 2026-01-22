@@ -239,36 +239,13 @@ void HTreeBuilder::preSinkClustering(
         clockSubNet.setLeafLevel(true);
       }
 
-      bool use_fix = logger_->debugCheck(utl::CTS, "htree_builder_fix", 1);
-      if (!use_fix) {
-        // jk: Original code. Using normCenter instead of legalCenter (=
-        // rootBufLoc) looks slightly weird
-        const Point<double> newSinkPos(normCenterX, normCenterY);
-        const std::pair<float, float> point(normCenterX, normCenterY);
-        newSinkLocations.emplace_back(point);
+      const std::pair<float, float> point(rootBufLoc.getX(), rootBufLoc.getY());
+      newSinkLocations.emplace_back(point);
 
-        // jk: temporary error to show the issue. remove this
-        // if (mapLocationToSink_.contains(newSinkPos)) {
-        //  logger_->error(utl::CTS, 9998, "Duplicated location!");
-        //}
+      // Simulate the float conversion to ensure consistent map keys
+      Point<double> mapKey(point.first, point.second);
 
-        mapLocationToSink_[newSinkPos] = &rootBuffer;
-      } else {
-        // jk: New code. QoR impact
-        const std::pair<float, float> point(rootBufLoc.getX(),
-                                            rootBufLoc.getY());
-        newSinkLocations.emplace_back(point);
-
-        // Simulate the float conversion to ensure consistent map keys
-        Point<double> mapKey(point.first, point.second);
-
-        // jk: temporary error to show the issue. remove this
-        if (mapLocationToSink_.contains(mapKey)) {
-          logger_->error(utl::CTS, 9999, "Duplicated location!");
-        }
-
-        mapLocationToSink_[mapKey] = &rootBuffer;
-      }
+      mapLocationToSink_[mapKey] = &rootBuffer;
     }
     clusterCount++;
   }
@@ -288,38 +265,34 @@ Point<double> HTreeBuilder::resolveLocationCollision(
 {
   Point<double> resolvedLocation = legalCenter;
 
-  // jk: temporary branch to compare w/ and w/o fix. remove this
-  bool use_fix = logger_->debugCheck(utl::CTS, "htree_builder_fix", 1);
-  if (use_fix) {
-    // Collision check and jittering to ensure unique coordinates
-    unsigned jitterCount = 0;
-    while (true) {
-      // Simulate the float conversion that happens when storing in
-      // newSinkLocations. This is needed because the existing logic uses the
-      // double->float conversion for the center location.
-      Point<double> checkKey((float) resolvedLocation.getX(),
-                             (float) resolvedLocation.getY());
-      if (mapLocationToSink_.find(checkKey) == mapLocationToSink_.end()) {
-        break;
-      }
-      jitterCount++;
-      double offset = (double) jitterCount / wireSegmentUnit_;
-      resolvedLocation.setX(legalCenter.getX() + offset);
+  // Collision check and jittering to ensure unique coordinates
+  unsigned jitterCount = 0;
+  while (true) {
+    // Simulate the float conversion that happens when storing in
+    // newSinkLocations. This is needed because the existing logic uses the
+    // double->float conversion for the center location.
+    Point<double> checkKey((float) resolvedLocation.getX(),
+                           (float) resolvedLocation.getY());
+    if (mapLocationToSink_.find(checkKey) == mapLocationToSink_.end()) {
+      break;
     }
+    jitterCount++;
+    double offset = (double) jitterCount / wireSegmentUnit_;
+    resolvedLocation.setX(legalCenter.getX() + offset);
+  }
 
-    if (jitterCount > 0) {
-      debugPrint(
-          logger_,
-          utl::CTS,
-          "clustering",
-          1,
-          "Resolved collision via jittering ({} times): ({}, {}) -> ({}, {})",
-          jitterCount,
-          legalCenter.getX(),
-          legalCenter.getY(),
-          resolvedLocation.getX(),
-          resolvedLocation.getY());
-    }
+  if (jitterCount > 0) {
+    debugPrint(
+        logger_,
+        utl::CTS,
+        "clustering",
+        1,
+        "Resolved collision via jittering ({} times): ({}, {}) -> ({}, {})",
+        jitterCount,
+        legalCenter.getX(),
+        legalCenter.getY(),
+        resolvedLocation.getX(),
+        resolvedLocation.getY());
   }
   return resolvedLocation;
 }

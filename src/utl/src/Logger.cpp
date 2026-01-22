@@ -67,8 +67,6 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
   }
 
   prometheus_registry_ = std::make_shared<PrometheusRegistry>();
-
-  setDebugLevel(utl::CTS, "htree_builder_fix", 0);  // jk: rm
 }
 
 Logger::~Logger()
