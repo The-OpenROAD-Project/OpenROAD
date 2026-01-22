@@ -49,6 +49,7 @@ class OutStreamHandler
   OutStreamHandler(const char* filename, bool binary = false);
   ~OutStreamHandler();
   std::ostream& getStream();
+  void close();
 
  private:
   std::string filename_;
@@ -66,6 +67,7 @@ class InStreamHandler
   InStreamHandler(const char* filename, bool binary = false);
   ~InStreamHandler();
   std::istream& getStream();
+  void close();
 
  private:
   std::string filename_;
@@ -82,6 +84,7 @@ class FileHandler
   FileHandler(const char* filename, bool binary = false);
   ~FileHandler();
   FILE* getFile();
+  void close();
 
  private:
   std::string filename_;

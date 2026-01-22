@@ -15,6 +15,7 @@
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace gpl {

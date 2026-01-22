@@ -63,6 +63,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
+    src/insertBufferDialog.cpp
     src/clockWidget.cpp
     src/gui_utils.cpp
     src/colorGenerator.cpp
@@ -84,6 +85,14 @@ if (Qt5_FOUND AND BUILD_GUI)
       Boost::boost
       OpenSTA
   )
+
+  # Disable LTO for gui. LTO causes a crash with Qt plugin loading
+  set_target_properties(gui PROPERTIES 
+    INTERPROCEDURAL_OPTIMIZATION OFF
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF
+  )
+  target_compile_options(gui PRIVATE "-fno-lto")
+  target_link_options(gui PRIVATE "-fno-lto")
 
 messages(
   TARGET gui

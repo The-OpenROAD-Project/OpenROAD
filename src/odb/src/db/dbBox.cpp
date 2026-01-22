@@ -1004,9 +1004,18 @@ void dbBox::destroy(dbBox* box)
       block->box_tbl_->destroy(db_box);
       break;
     }
+    case dbBoxOwner::INST: {
+      _dbInst* inst = (_dbInst*) box->getBoxOwner();
+      if (inst->halo_ == db_box->getOID()) {
+        // Only remove if this box is the halo box
+        inst->halo_ = 0;
+        _dbBlock* block = (_dbBlock*) inst->getOwner();
+        block->box_tbl_->destroy(db_box);
+      }
+      return;
+    }
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::BLOCK:
-    case dbBoxOwner::INST:
     case dbBoxOwner::BTERM:
     case dbBoxOwner::VIA:
     case dbBoxOwner::OBSTRUCTION:

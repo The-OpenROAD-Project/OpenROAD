@@ -18,6 +18,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map.hpp"
 #include "gpl/Replace.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -905,14 +906,18 @@ class NesterovBaseCommon
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
-  std::unordered_map<Instance*, GCell*> gCellMap_;
-  std::unordered_map<Pin*, GPin*> gPinMap_;
-  std::unordered_map<Net*, GNet*> gNetMap_;
+  boost::unordered::unordered_flat_map<Instance*, GCell*> gCellMap_;
+  boost::unordered::unordered_flat_map<Pin*, GPin*> gPinMap_;
+  boost::unordered::unordered_flat_map<Net*, GNet*> gNetMap_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
-  std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
-  std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
-  std::unordered_map<odb::dbBTerm*, size_t> db_bterm_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbInst*, size_t>
+      db_inst_to_nbc_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbNet*, size_t>
+      db_net_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbITerm*, size_t>
+      db_iterm_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbBTerm*, size_t>
+      db_bterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.

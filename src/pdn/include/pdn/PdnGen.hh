@@ -6,6 +6,10 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "odb/db.h"
 #include "utl/Logger.h"

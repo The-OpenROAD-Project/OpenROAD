@@ -914,7 +914,7 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::initialPoolMapping() const
 {
   const auto& insts = getInsts();
 
-  std::vector<float> position(insts.size());
+  std::vector<int> position(insts.size());
   for (int i = 0; i < insts.size(); i++) {
     odb::dbInst* inst = insts[i];
     if (ideal_positions_.find(inst) == ideal_positions_.end()) {
@@ -944,6 +944,25 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::initialPoolMapping() const
     odb::dbInst* inst = insts[i];
     mapping[inst] = position[i];
   }
+
+  if (getLogger()->debugCheck(utl::PAD, "PAVA", 2)) {
+    const double dbus = getBlock()->getDbUnitsPerMicron();
+    int idx = 0;
+    getLogger()->debug(utl::PAD, "PAVA", "Pool mapping ({}):", insts.size());
+    for (auto* inst : insts) {
+      getLogger()->debug(
+          utl::PAD,
+          "PAVA",
+          "  {:>5}: {} at {:.4f}um (ideal: {})",
+          ++idx,
+          inst->getName(),
+          mapping[inst] / dbus,
+          ideal_positions_.find(inst) == ideal_positions_.end()
+              ? "N/A"
+              : fmt::format("{:.4f}um", ideal_positions_.at(inst) / dbus));
+    }
+  }
+
   return mapping;
 }
 
@@ -1092,7 +1111,7 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
   std::vector<float> weights(insts.size());
   std::ranges::fill(weights, 1.0);
 
-  std::vector<float> position(insts.size());
+  std::vector<int> position(insts.size());
   for (int i = 0; i < insts.size(); i++) {
     odb::dbInst* inst = insts[i];
     position[i] = initial_positions.at(inst);
@@ -1105,8 +1124,8 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
 
     // Run PAVA
     for (int i = 1; i < insts.size(); i++) {
-      float current_pos = position[i];
-      float previous_pos = position[i - 1];
+      const int current_pos = position[i];
+      const int previous_pos = position[i - 1];
 
       if (current_pos >= previous_pos) {
         continue;
@@ -1115,9 +1134,9 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
       updated = true;
       // Calculate new value
       const float total_weight = weights[i] + weights[i - 1];
-      const float pooled_value
-          = (weights[i] * current_pos + weights[i - 1] * previous_pos)
-            / total_weight;
+      const int pooled_value = std::round(
+          (weights[i] * current_pos + weights[i - 1] * previous_pos)
+          / total_weight);
 
       // Update positions
       position[i] = pooled_value;
@@ -1144,7 +1163,7 @@ std::map<odb::dbInst*, int> PlacerPadPlacer::poolAdjacentViolators(
 
     // Check for legal positions
     for (int i = 0; i < insts.size(); i++) {
-      int pos = position[i];
+      const int pos = position[i];
       odb::dbInst* inst = insts[i];
       const int legal_pos = getNearestLegalPosition(inst, pos);
       if (legal_pos != pos) {

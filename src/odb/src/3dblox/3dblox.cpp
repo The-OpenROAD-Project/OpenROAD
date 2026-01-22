@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "bmapParser.h"
+#include "bmapWriter.h"
 #include "checker.h"
 #include "dbvParser.h"
 #include "dbvWriter.h"
@@ -121,6 +122,16 @@ std::unordered_set<odb::dbLib*> getUsedLibs(odb::dbChip* chip)
   }
   return libs;
 }
+std::unordered_set<odb::dbChipRegion*> getChipletRegions(odb::dbChip* chip)
+{
+  std::unordered_set<odb::dbChipRegion*> regions;
+  for (const auto chipinst : chip->getChipInsts()) {
+    for (const auto region : chipinst->getMasterChip()->getChipRegions()) {
+      regions.insert(region);
+    }
+  }
+  return regions;
+}
 std::string getResultsDirectoryPath(const std::string& file_path)
 {
   std::string current_dir_path;
@@ -169,6 +180,13 @@ void ThreeDBlox::writeDbv(const std::string& dbv_file, odb::dbChip* chip)
     odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeLib(lib);
   }
+  // write bmaps
+  for (auto region : getChipletRegions(chip)) {
+    std::string bmap_file_path = current_dir_path
+                                 + std::string(region->getChip()->getName())
+                                 + "_" + region->getName() + ".bmap";
+    writeBMap(bmap_file_path, region);
+  }
 
   DbvWriter writer(logger_, db_);
   writer.writeChiplet(dbv_file, chip);
@@ -187,6 +205,13 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
 
   DbxWriter writer(logger_, db_);
   writer.writeChiplet(dbx_file, chip);
+}
+
+void ThreeDBlox::writeBMap(const std::string& bmap_file,
+                           odb::dbChipRegion* region)
+{
+  BmapWriter writer(logger_);
+  writer.writeFile(bmap_file, region);
 }
 
 void ThreeDBlox::calculateSize(dbChip* chip)
@@ -265,6 +290,9 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   for (const auto& lef_file : chiplet.external.lef_files) {
     auto lib_name = getFileName(lef_file);
+    if (db_->findLib(lib_name.c_str()) != nullptr) {
+      continue;
+    }
     odb::lefin lef_reader(db_, logger_, false);
     lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
@@ -683,8 +711,9 @@ std::pair<dbInst*, odb::dbBTerm*> ThreeDBlox::createBump(
     if (master == nullptr) {
       logger_->error(utl::ODB,
                      538,
-                     "3DBV Parser Error: Bump cell type {} not found",
-                     entry.bump_cell_type);
+                     "3DBV Parser Error: Bump cell type {} not found for {}",
+                     entry.bump_cell_type,
+                     entry.bump_inst_name);
     }
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
@@ -700,8 +729,9 @@ std::pair<dbInst*, odb::dbBTerm*> ThreeDBlox::createBump(
     if (term == nullptr) {
       logger_->error(utl::ODB,
                      539,
-                     "3DBV Parser Error: Bump port {} not found",
-                     entry.port_name);
+                     "3DBV Parser Error: Bump port {} not found for {}",
+                     entry.port_name,
+                     entry.bump_inst_name);
     }
     net = term->getNet();
   }
@@ -712,20 +742,24 @@ std::pair<dbInst*, odb::dbBTerm*> ThreeDBlox::createBump(
     if (net == nullptr) {
       logger_->error(utl::ODB,
                      543,
-                     "3DBV Parser Error: Bump net {} not found",
-                     entry.net_name);
+                     "3DBV Parser Error: Bump net {} not found for {}",
+                     entry.net_name,
+                     entry.bump_inst_name);
     }
     if (net->getBTerms().empty()) {
       logger_->error(utl::ODB,
                      544,
-                     "3DBV Parser Error: Bump net {} has no bterms",
-                     entry.net_name);
+                     "3DBV Parser Error: Bump net {} has no bterms for {}",
+                     entry.net_name,
+                     entry.bump_inst_name);
     }
     if (net->getBTerms().size() > 1) {
-      logger_->error(utl::ODB,
-                     542,
-                     "3DBV Parser Error: Bump net {} has multiple bterms",
-                     entry.net_name);
+      logger_->error(
+          utl::ODB,
+          542,
+          "3DBV Parser Error: Bump net {} has multiple bterms for {}",
+          entry.net_name,
+          entry.bump_inst_name);
     }
     term = net->get1stBTerm();
   }

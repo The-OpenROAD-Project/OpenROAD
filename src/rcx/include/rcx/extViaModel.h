@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -15,8 +17,6 @@ class Logger;
 }
 
 namespace rcx {
-
-using utl::Logger;
 
 class extViaModel
 {

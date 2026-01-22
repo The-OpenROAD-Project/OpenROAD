@@ -4,6 +4,9 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"

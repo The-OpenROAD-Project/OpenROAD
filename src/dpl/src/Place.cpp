@@ -73,10 +73,17 @@ void Opendp::detailedPlacement()
   if (!arch_->getRegions().empty()) {
     placeGroups();
   }
+
+  if (debug_observer_) {
+    logger_->report("Pause before detail placement.");
+    debug_observer_->redrawAndPause();
+  }
+
   place();
 
   if (debug_observer_) {
-    debug_observer_->endPlacement();
+    logger_->report("Pause after detail placement.");
+    debug_observer_->redrawAndPause();
   }
 }
 
@@ -294,6 +301,27 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 
 void Opendp::place()
 {
+  int move_count = 0;
+  auto report_placement = [this, &move_count](
+                              Node* cell, bool mapped, bool shifted) {
+    if (jump_moves_ > 0 && (move_count++ % jump_moves_ != 0)) {
+      return;
+    }
+    if (debug_observer_) {
+      const char* type = isMultiRow(cell) ? "multi-row" : "single-row";
+      if (mapped) {
+        logger_->report("Successful mapMove(), {} cell {}", type, cell->name());
+      } else if (shifted) {
+        logger_->report(
+            "Successful shiftMove(), {} cell {}", type, cell->name());
+      } else {
+        logger_->report(
+            "Unsuccessful placement, {} cell {}", type, cell->name());
+      }
+      debug_observer_->redrawAndPause();
+    }
+  };
+
   vector<Node*> sorted_cells;
   sorted_cells.reserve(network_->getNumCells());
 
@@ -326,19 +354,40 @@ void Opendp::place()
                    1,
                    "Placing multi-row cell {}",
                    cell->name());
-        if (!mapMove(cell)) {
-          shiftMove(cell);
+        bool mapped = mapMove(cell);
+        bool shifted = false;
+        if (!mapped) {
+          shifted = shiftMove(cell);
+        }
+
+        if (iterative_placement_) {
+          odb::Point initial_location = getOdbLocation(cell);
+          odb::Point final_location = getDplLocation(cell);
+          float len
+              = odb::Point::squaredDistance(initial_location, final_location);
+          if (len > 0) {
+            report_placement(cell, mapped, shifted);
+          }
         }
       }
     }
   }
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
-      if (cell->getType() != Node::CELL) {
-        logger_->error(DPL, 1001, "cell is not CELL");
+      bool mapped = mapMove(cell);
+      bool shifted = false;
+      if (!mapped) {
+        shifted = shiftMove(cell);
       }
-      if (!mapMove(cell)) {
-        shiftMove(cell);
+
+      if (iterative_placement_) {
+        odb::Point initial_location = getOdbLocation(cell);
+        odb::Point final_location = getDplLocation(cell);
+        float len
+            = odb::Point::squaredDistance(initial_location, final_location);
+        if (len > 0) {
+          report_placement(cell, mapped, shifted);
+        }
       }
     }
   }
@@ -914,38 +963,56 @@ bool Opendp::checkPixels(const Node* cell,
         return false;
       }
     }
-    if (disallow_one_site_gaps_) {
-      // here we need to check for abutting first, if there is an abutting
-      // cell then we continue as there is nothing wrong with it if there is
-      // no abutting cell, we will then check cells at 1+ distances we only
-      // need to check on the left and right sides
-      const GridX x_begin = max(GridX{0}, x - 1);
-      const GridY y_begin = max(GridY{0}, y - 1);
-      // inclusive search, so we don't add 1 to the end
-      const GridX x_finish = min(x_end, grid_->getRowSiteCount() - 1);
-      const GridY y_finish = min(y_end, grid_->getRowCount() - 1);
+  }
 
-      auto isAbutted = [this](const GridX x, const GridY y) {
-        const Pixel* pixel = grid_->gridPixel(x, y);
-        return (pixel == nullptr || pixel->cell);
-      };
+  if (disallow_one_site_gaps_) {
+    // here we need to check for abutting first, if there is an abutting
+    // cell then we continue as there is nothing wrong with it if there is
+    // no abutting cell, we will then check cells at 1+ distances we only
+    // need to check on the left and right sides
+    const GridX x_begin = max(GridX{0}, x - 1);
+    const GridY y_begin = max(GridY{0}, y);
+    // inclusive search, so we don't add 1 to the end
+    const GridX x_finish = min(x_end, grid_->getRowSiteCount() - 1);
+    const GridY y_finish = min(y_end, grid_->getRowCount() - 1);
 
-      auto cellAtSite = [this](const GridX x, const GridY y) {
-        const Pixel* pixel = grid_->gridPixel(x, y);
-        return (pixel != nullptr && pixel->cell);
-      };
-      for (GridY y = y_begin; y <= y_finish; ++y) {
-        // left side
-        if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
-          return false;
-        }
-        // right side
-        if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
-          return false;
-        }
+    auto isAbutted = [this](const GridX x, const GridY y) {
+      const Pixel* pixel = grid_->gridPixel(x, y);
+      return (pixel == nullptr || pixel->cell);
+    };
+
+    auto cellAtSite = [this](const GridX x, const GridY y) {
+      const Pixel* pixel = grid_->gridPixel(x, y);
+      return (pixel != nullptr && pixel->cell);
+    };
+    for (GridY y = y_begin; y < y_finish; ++y) {
+      // left side
+      if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
+        debugPrint(logger_,
+                   DPL,
+                   "one_site_gap",
+                   1,
+                   "One site gap left of {}  at ({}, {})",
+                   cell->name(),
+                   x,
+                   y);
+        return false;
+      }
+      // right side
+      if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
+        debugPrint(logger_,
+                   DPL,
+                   "one_site_gap",
+                   1,
+                   "One site gap right of {} at ({}, {})",
+                   cell->name(),
+                   x,
+                   y);
+        return false;
       }
     }
   }
+
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
   return drc_engine_->checkDRC(cell, x, y, orient);
 }

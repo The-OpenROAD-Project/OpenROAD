@@ -6,11 +6,16 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <string>
 
 #include "odb/geom.h"
 #include "spdlog/fmt/fmt.h"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"

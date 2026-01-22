@@ -521,6 +521,15 @@ const UniqueClusterVector& Cluster::getChildren() const
   return children_;
 }
 
+std::vector<Cluster*> Cluster::getRawChildren() const
+{
+  std::vector<Cluster*> raw_children(children_.size());
+  std::ranges::transform(children_,
+                         raw_children.begin(),
+                         [](const auto& child) { return child.get(); });
+  return raw_children;
+}
+
 bool Cluster::isLeaf() const
 {
   return children_.empty();
@@ -1270,6 +1279,30 @@ void SoftMacro::setShapeF(int width, int height)
   width_ = width;
   height_ = height;
   area_ = width * static_cast<int64_t>(height);
+}
+
+void SoftMacro::reportShapeCurve(utl::Logger* logger) const
+{
+  logger->report("Name: {}", name_);
+  logger->report("Has Cluster: {}", cluster_ != nullptr);
+  if (cluster_) {
+    logger->report("Type: {}", cluster_->getClusterTypeString());
+  }
+
+  std::string widths_text, heights_text;
+
+  for (const Interval& width_interval : width_intervals_) {
+    widths_text
+        += fmt::format("\t{} -> {}", width_interval.min, width_interval.max);
+  }
+
+  for (const Interval& height_interval : height_intervals_) {
+    heights_text
+        += fmt::format("\t{} -> {}", height_interval.max, height_interval.min);
+  }
+
+  logger->report("Widths: {}", widths_text);
+  logger->report("Heights: {}\n", heights_text);
 }
 
 void Cluster::reportConnections() const

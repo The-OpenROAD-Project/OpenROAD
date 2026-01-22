@@ -31,7 +31,7 @@ SimulatedAnnealing::SimulatedAnnealing(
     Core* core,
     std::vector<Slot>& slots,
     const std::vector<Constraint>& constraints,
-    Logger* logger,
+    utl::Logger* logger,
     odb::dbDatabase* db)
     : netlist_(netlist),
       core_(core),

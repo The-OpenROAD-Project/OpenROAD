@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "ScanArchitect.hh"
 #include "utl/Logger.h"
 

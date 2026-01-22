@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "rcx/extprocess.h"
+#include "utl/Logger.h"
 
 namespace rcx {
-using utl::Logger;
 
 class extProcess;
 
@@ -18,7 +18,7 @@ class extSolverGen : public extProcess
 {
  public:
   void init();
-  extSolverGen(uint32_t layerCnt, uint32_t dielCnt, Logger* logger)
+  extSolverGen(uint32_t layerCnt, uint32_t dielCnt, utl::Logger* logger)
       : extProcess(layerCnt, dielCnt, logger)
   {
     init();
@@ -62,7 +62,7 @@ class extSolverGen : public extProcess
   void initLogFiles(const char* process_name);
   void closeFiles();
   /*
-  extModelGen(uint32_t layerCnt, const char *name, Logger *logger) :
+  extModelGen(uint32_t layerCnt, const char *name, utl::Logger *logger) :
   extRCModel(layerCnt, name, logger) {} uint32_t ReadRCDB(dbBlock *block,
   uint32_t widthCnt, uint32_t diagOption, char *logFile); void writeRules(FILE
   *fp, bool binary, uint32_t m, int corner=-1); FILE *InitWriteRules(const char

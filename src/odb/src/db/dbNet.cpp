@@ -4,7 +4,6 @@
 #include "dbNet.h"
 
 #include <algorithm>
-#include <boost/container/small_vector.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -16,6 +15,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "boost/container/small_vector.hpp"
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
@@ -1243,6 +1243,15 @@ dbObject* dbNet::getFirstDriverTerm() const
   return nullptr;
 }
 
+dbInst* dbNet::getFirstDriverInst() const
+{
+  dbObject* drvr = getFirstDriverTerm();
+  if (drvr != nullptr && drvr->getObjectType() == dbITermObj) {
+    return static_cast<dbITerm*>(drvr)->getInst();
+  }
+  return nullptr;
+}
+
 dbITerm* dbNet::getFirstOutput() const
 {
   if (dbITerm* drvrIterm = getDrivingITerm()) {
@@ -2341,10 +2350,6 @@ void dbNet::mergeNet(dbNet* in_net)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  for (auto callback : block->callbacks_) {
-    callback->inDbNetPreMerge(this, in_net);
-  }
-
   // 1. Connect all terminals of in_net to this net.
 
   // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
@@ -2364,6 +2369,10 @@ void dbNet::mergeNet(dbNet* in_net)
                                                       bterms_set.end());
   for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
+  }
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbNetPostMerge(this, in_net);
   }
 
   // 2. Destroy in_net

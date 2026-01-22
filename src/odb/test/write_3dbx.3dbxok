@@ -24,8 +24,8 @@ Connection:
   soc_to_virtual:
     top: soc_inst_duplicate.regions.r1
     bot: "~"
-    thicness: 0
+    thickness: 0
   soc_to_soc:
     top: soc_inst_duplicate.regions.r1
     bot: soc_inst.regions.r1
-    thicness: 2
+    thickness: 2

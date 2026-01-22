@@ -38,7 +38,9 @@ using std::vector;
 
 ////////////////////////////////////////////////////////////////
 
-RamGen::RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger)
+RamGen::RamGen(sta::dbNetwork* network,
+               odb::dbDatabase* db,
+               utl::Logger* logger)
     : network_(network), db_(db), logger_(logger)
 {
 }

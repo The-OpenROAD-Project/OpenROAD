@@ -332,7 +332,7 @@ void save_histogram_image(const char* filename, const char* mode, int width_px =
   gui->saveHistogramImage(filename, mode, width_px, height_px);
 }
 
-void show_worst_path(bool setup = true)
+void show_worst_path_internal(bool setup = true)
 {
   if (!check_gui("show_worst_path")) {
     return;
@@ -341,7 +341,7 @@ void show_worst_path(bool setup = true)
   gui->showWorstTimingPath(setup);
 }
 
-void clear_timing_path()
+void clear_timing_path_internal()
 {
   if (!check_gui("clear_timing_path")) {
     return;

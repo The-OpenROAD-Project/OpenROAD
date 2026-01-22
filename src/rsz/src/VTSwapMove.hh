@@ -2,6 +2,7 @@
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
 #include <cmath>
+#include <unordered_set>
 
 #include "BaseMove.hh"
 

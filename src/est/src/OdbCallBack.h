@@ -12,15 +12,12 @@ namespace est {
 
 class EstimateParasitics;
 
-using sta::dbNetwork;
-using sta::Network;
-
 class OdbCallBack : public odb::dbBlockCallBackObj
 {
  public:
   OdbCallBack(EstimateParasitics* estimate_parasitics,
-              Network* network,
-              dbNetwork* db_network);
+              sta::Network* network,
+              sta::dbNetwork* db_network);
 
   void inDbInstCreate(odb::dbInst* inst) override;
   void inDbNetCreate(odb::dbNet* net) override;
@@ -31,8 +28,8 @@ class OdbCallBack : public odb::dbBlockCallBackObj
 
  private:
   EstimateParasitics* estimate_parasitics_;
-  Network* network_;
-  dbNetwork* db_network_;
+  sta::Network* network_;
+  sta::dbNetwork* db_network_;
 };
 
 }  // namespace est

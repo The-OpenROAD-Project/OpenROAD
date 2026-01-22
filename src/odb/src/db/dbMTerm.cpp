@@ -3,6 +3,8 @@
 
 #include "dbMTerm.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>

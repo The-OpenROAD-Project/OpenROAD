@@ -23,7 +23,7 @@ using utl::RCX;
 
 namespace rcx {
 
-void extMain::init(odb::dbDatabase* db, Logger* logger)
+void extMain::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   _db = db;
   _block = nullptr;
@@ -31,7 +31,7 @@ void extMain::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, Logger* logger)
+void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, utl::Logger* logger)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == nullptr) {

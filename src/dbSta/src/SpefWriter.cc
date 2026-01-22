@@ -88,10 +88,11 @@ void SpefWriter::writeHeader()
     stream << "*BUS_DELIMITER []" << '\n';
 
     auto units = network_->units();
-    std::string time_unit = std::string(units->timeUnit()->scaledSuffix());
+    std::string time_unit = std::string(units->timeUnit()->scaleAbbrevSuffix());
     std::string cap_unit
-        = std::string(units->capacitanceUnit()->scaledSuffix());
-    std::string res_unit = std::string(units->resistanceUnit()->scaledSuffix());
+        = std::string(units->capacitanceUnit()->scaleAbbrevSuffix());
+    std::string res_unit
+        = std::string(units->resistanceUnit()->scaleAbbrevSuffix());
     std::ranges::transform(time_unit, time_unit.begin(), ::toupper);
     std::ranges::transform(cap_unit, cap_unit.begin(), ::toupper);
     std::ranges::transform(res_unit, res_unit.begin(), ::toupper);

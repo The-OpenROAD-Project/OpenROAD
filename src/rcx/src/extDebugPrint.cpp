@@ -486,7 +486,7 @@ void extDistRC::printDebug(const char* from,
   }
 }
 
-void extDistRC::printDebugRC(const char* from, Logger* logger)
+void extDistRC::printDebugRC(const char* from, utl::Logger* logger)
 {
   debugPrint(logger,
              RCX,
@@ -516,7 +516,7 @@ void extDistRC::printDebugRC_diag(int met,
                                   int width,
                                   int dist,
                                   int dbUnit,
-                                  Logger* logger)
+                                  utl::Logger* logger)
 {
   char tmp[100];
 
@@ -554,7 +554,7 @@ void extDistRC::printDebugRC(int met,
                              int width,
                              int dist,
                              int dbUnit,
-                             Logger* logger)
+                             utl::Logger* logger)
 {
   char tmp[100];
   if (overMet > 0 && underMet > 0) {
@@ -595,7 +595,7 @@ void extDistRC::printDebugRC(int met,
              res_);
 }
 
-void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
+void extDistRC::printDebugRC_sum(int len, int dbUnit, utl::Logger* logger)
 {
   debugPrint(logger,
              RCX,

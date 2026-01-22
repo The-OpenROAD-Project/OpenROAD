@@ -11,6 +11,8 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
+#include <utility>
+#include <vector>
 
 #include "dbTechLayer.h"
 // User Code End Includes

@@ -2014,6 +2014,11 @@ class dbNet : public dbObject
   dbObject* getFirstDriverTerm() const;
 
   ///
+  /// Get the 1st driver instance
+  ///
+  dbInst* getFirstDriverInst() const;
+
+  ///
   /// Get the 1st output Iterm; can be
   ///
   dbITerm* getFirstOutput() const;

@@ -469,3 +469,30 @@ proc add_label { args } {
     $size \
     $name]
 }
+
+namespace eval gui {
+proc show_worst_path { args } {
+  sta::parse_key_args "show_worst_path" args \
+    keys {} flags {-setup -hold}
+
+  sta::check_argc_eq0 "show_worst_path" $args
+
+  set setup 1
+  if { [info exists flags(-hold)] } {
+    set setup 0
+  }
+
+  gui::show_worst_path_internal $setup
+}
+
+sta::define_cmd_args "clear_timing_path" {}
+
+proc clear_timing_path { args } {
+  sta::parse_key_args "clear_timing_path" args \
+    keys {} flags {}
+
+  sta::check_argc_eq0 "clear_timing_path" $args
+
+  gui::clear_timing_path_internal
+}
+} ;# namespace gui

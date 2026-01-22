@@ -169,7 +169,7 @@ void IntegratedFixture::dumpVerilogAndOdb(const std::string& name) const
 {
   // Write verilog
   std::string vlog_file = name + ".v";
-  sta::writeVerilog(vlog_file.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(vlog_file.c_str(), false, {}, sta_->network());
 
   // Dump ODB content
   std::ofstream orig_odb_file(name + "_odb.txt");
@@ -190,7 +190,7 @@ void IntegratedFixture::writeAndCompareVerilogOutputString(
     bool remove_file)
 {
   const std::string verilog_file = test_name + "_post.v";
-  sta::writeVerilog(verilog_file.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(verilog_file.c_str(), false, {}, sta_->network());
 
   std::ifstream file(verilog_file);
   std::string content((std::istreambuf_iterator<char>(file)),
@@ -211,7 +211,7 @@ void IntegratedFixture::writeAndCompareVerilogOutputFile(
   const std::string golden_file
       = getFilePath(test_root_path_ + "cpp/" + golden_verilog_file);
   const std::string verilog_file = test_name + "_out.v";
-  sta::writeVerilog(verilog_file.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(verilog_file.c_str(), false, {}, sta_->network());
 
   // Read new verilog content
   std::ifstream if_out(verilog_file);

@@ -8,10 +8,7 @@ read_lef "./Nangate45/Nangate45_tech.lef"
 read_lef "./testcases/macro_only.lef"
 read_liberty "./testcases/macro_only.lib"
 
-read_verilog "./testcases/macro_only.v"
-link_design "macro_only"
-
-read_def "./testcases/macro_only.def" -floorplan_initialize
+read_def "./testcases/macro_only.def"
 
 set_macro_guidance_region -macro_name U6 -region {220 5 328 442}
 set_macro_guidance_region -macro_name U1 -region {328 5 436 442}

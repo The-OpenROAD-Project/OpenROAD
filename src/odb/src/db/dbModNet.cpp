@@ -20,7 +20,6 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
-#include <boost/container/small_vector.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -28,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/container/small_vector.hpp"
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbModuleModNetBTermItr.h"

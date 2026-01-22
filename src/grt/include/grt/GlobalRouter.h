@@ -231,7 +231,7 @@ class GlobalRouter
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
   void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
-  void connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  bool connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
   void findBufferPinPostions(Net* net1,
                              Net* net2,
                              odb::Point& pin_pos1,
@@ -329,6 +329,7 @@ class GlobalRouter
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
+  void updateNetPins(Net* net);
 
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
@@ -579,8 +580,8 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbNetCreate(odb::dbNet* net) override;
-  void inDbNetPreMerge(odb::dbNet* preserved_net,
-                       odb::dbNet* removed_net) override;
+  void inDbNetPostMerge(odb::dbNet* preserved_net,
+                        odb::dbNet* removed_net) override;
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;

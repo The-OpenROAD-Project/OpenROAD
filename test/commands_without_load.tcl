@@ -1,9 +1,7 @@
 # Ensure that running commands without loading a design doesn't crash.
 source "helpers.tcl"
 
-# make_port: parallaxsw/OpenSTA/issues/149
 set skip {
-  make_port
   exit_summary
   run_unit_test_and_exit
   vwait

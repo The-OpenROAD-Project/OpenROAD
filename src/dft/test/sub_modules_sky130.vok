@@ -16,15 +16,15 @@ module sub_modules (clock,
  wire \my_shift_register/net1 ;
  wire \my_shift_register/set_b ;
 
- sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff2  (.D(\my_shift_register/net1 ),
-    .Q(output1),
-    .SCD(scan_in_0),
-    .SCE(scan_enable_0),
-    .SET_B(\my_shift_register/set_b ),
-    .CLK(clock));
  sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff1  (.D(port1),
     .Q(\my_shift_register/net1 ),
     .SCD(output1),
+    .SCE(scan_enable_0),
+    .SET_B(\my_shift_register/set_b ),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff2  (.D(\my_shift_register/net1 ),
+    .Q(output1),
+    .SCD(scan_in_0),
     .SCE(scan_enable_0),
     .SET_B(\my_shift_register/set_b ),
     .CLK(clock));

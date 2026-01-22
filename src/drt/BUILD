@@ -122,6 +122,7 @@ cc_library(
         "src/dr/AbstractDRGraphics.h",
         "src/dr/FlexDR.cpp",
         "src/dr/FlexDR.h",
+        "src/dr/FlexDRFlow.cpp",
         "src/dr/FlexDR_conn.cpp",
         "src/dr/FlexDR_conn.h",
         "src/dr/FlexDR_end.cpp",

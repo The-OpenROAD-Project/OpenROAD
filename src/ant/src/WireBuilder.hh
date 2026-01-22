@@ -3,12 +3,16 @@
 
 #pragma once
 
+#include <cstddef>
 #include <map>
 #include <set>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace ant {

@@ -760,6 +760,15 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
       break;
   }
 
+  if (logger_->debugCheck(utl::PAD, "Place", 2)) {
+    int idx = 0;
+    logger_->debug(
+        utl::PAD, "Place", "Pad placement order ({}):", insts.size());
+    for (auto* inst : insts) {
+      logger_->debug(utl::PAD, "Place", "  {:>5}: {}", ++idx, inst->getName());
+    }
+  }
+
   placer->place();
 
   logger_->info(

@@ -12,6 +12,7 @@
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbMaster;
@@ -22,13 +23,7 @@ class dbNetwork;
 class LibertyPort;
 }  // namespace sta
 
-namespace utl {
-class Logger;
-}
-
 namespace ram {
-
-using utl::Logger;
 
 ////////////////////////////////////////////////////////////////
 class Cell;
@@ -38,7 +33,7 @@ class Grid;
 class RamGen
 {
  public:
-  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, Logger* logger);
+  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, utl::Logger* logger);
   ~RamGen() = default;
 
   void generate(int bytes_per_word,
@@ -100,7 +95,7 @@ class RamGen
   sta::dbNetwork* network_;
   odb::dbDatabase* db_;
   odb::dbBlock* block_{nullptr};
-  Logger* logger_;
+  utl::Logger* logger_;
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};

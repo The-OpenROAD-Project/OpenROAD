@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <signal.h>  // NOLINT(modernize-deprecated-headers): for sigaction
+
 #include <atomic>
 #include <csignal>
 #include <ctime>

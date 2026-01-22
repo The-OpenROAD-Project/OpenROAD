@@ -1,5 +1,12 @@
-#include "ScanCell.hh"
 #pragma once
+
+#include <cstdint>
+#include <memory>
+#include <string>
+
+#include "ScanCell.hh"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace dft {
 namespace test {

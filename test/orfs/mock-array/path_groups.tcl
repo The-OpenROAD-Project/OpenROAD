@@ -1,4 +1,4 @@
-source $::env(LOAD_POWER_TCL)
+source $::env(LOAD_MOCK_ARRAY_TCL)
 
 # Various checks on path groups
 set first_path [lindex [find_timing_paths] 0]

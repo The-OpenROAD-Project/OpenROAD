@@ -14,6 +14,7 @@
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"

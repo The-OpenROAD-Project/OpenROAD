@@ -5,7 +5,12 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
+#include <vector>
+
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace utl {
 class Logger;
@@ -33,7 +38,9 @@ class dbEditHierarchy
 {
  public:
   dbEditHierarchy(dbNetwork* db_network, Logger* logger)
-      : db_network_(db_network), logger_(logger){};
+      : db_network_(db_network), logger_(logger)
+  {
+  }
   ~dbEditHierarchy() = default;
   dbEditHierarchy(const dbEditHierarchy&) = delete;
   dbEditHierarchy& operator=(const dbEditHierarchy&) = delete;

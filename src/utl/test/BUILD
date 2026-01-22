@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "tee",
     "tee_fails",
     "test_error",
+    "test_error_exception",
     "test_info",
     "test_metrics",
     "test_suppress_message",
@@ -21,7 +22,6 @@ COMPULSORY_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
-    "test_error_exception",
     "utl_man_tcl_check",
     "utl_readme_msgs_check",
 ]

@@ -3,6 +3,8 @@
 
 #include "utl/Progress.h"
 
+#include <signal.h>  // NOLINT(modernize-deprecated-headers): for sigaction
+
 #include <algorithm>
 #include <csignal>
 #include <ctime>

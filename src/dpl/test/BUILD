@@ -97,82 +97,9 @@ ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
 
 filegroup(
     name = "regression_resources",
-    # Dependencies could be specified more narrowly per test case,
-    # but at least it is not a glob of everything and there are
-    # per test glob patterns below.
     srcs = [
         "Nangate45/Nangate45.lef",
-        "Nangate45/Nangate45.pdn.tcl",
-        "Nangate45/Nangate45.rc",
-        "Nangate45/Nangate45.rcx_rules",
-        "Nangate45/Nangate45.tracks",
-        "Nangate45/Nangate45.vars",
-        "Nangate45/Nangate45_fast.lib",
-        "Nangate45/Nangate45_lvt.lef",
-        "Nangate45/Nangate45_lvt.lib",
-        "Nangate45/Nangate45_slow.lib",
-        "Nangate45/Nangate45_stdcell.lef",
-        "Nangate45/Nangate45_tech.lef",
-        "Nangate45/Nangate45_typ.lib",
-        "Nangate45/fake_macros.lef",
-        "Nangate45/fake_macros.lib",
-        "Nangate45/fakeram45.cfg",
-        "Nangate45/fakeram45_1024x32.lef",
-        "Nangate45/fakeram45_1024x32.lib",
-        "Nangate45/fakeram45_256x16.lef",
-        "Nangate45/fakeram45_256x16.lib",
-        "Nangate45/fakeram45_512x64.lef",
-        "Nangate45/fakeram45_512x64.lib",
-        "Nangate45/fakeram45_64x32.lef",
-        "Nangate45/fakeram45_64x32.lib",
-        "Nangate45/fakeram45_64x7.lef",
-        "Nangate45/fakeram45_64x7.lib",
-        "Nangate45/fakeram45_64x96.lef",
-        "Nangate45/fakeram45_64x96.lib",
-        "Nangate45/work_around_yosys/cells.v",
-        "Nangate45_data/Nangate45.lef",
-        "Nangate45_data/Nangate45-opt.lef",
-        "Nangate45_data/fake_macros.lef",
-        "aes_cipher_top_replace.def",
-        "block.lef",
-        "block2.lef",
-        "edge_spacing.lef",
-        "extra.lef",
-        "fill3.lef",
-        "gcd_nangate45.tcl",
-        "gcd_replace.def",
         "helpers.tcl",
-        "ibex_core_replace.def",
-        "low_util01.tcl",
-        "low_util02.tcl",
-        "low_util03.tcl",
-        "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
-        "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
-        "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
-        "sky130hd/sky130_fd_sc_hd_merged.lef",
-        "sky130hd/sky130hd.pdn.tcl",
-        "sky130hd/sky130hd.rc",
-        "sky130hd/sky130hd.rcx_rules",
-        "sky130hd/sky130hd.tlef",
-        "sky130hd/sky130hd.tracks",
-        "sky130hd/sky130hd.vars",
-        "sky130hd/sky130hd_multi_patterned.tlef",
-        "sky130hd/sky130hd_std_cell.lef",
-        "sky130hd/sky130hd_std_cell_vt.lef",
-        "sky130hd/sky130hd_tt.lib",
-        "sky130hd/sky130hd_vt.tlef",
-        "sky130hd/work_around_yosys/formal_pdk.v",
-        "sky130hs/sky130_fd_sc_hs__tt_025C_1v80.lib",
-        "sky130hs/sky130_fd_sc_hs_merged.lef",
-        "sky130hs/sky130hs.pdn.tcl",
-        "sky130hs/sky130hs.rc",
-        "sky130hs/sky130hs.rcx_rules",
-        "sky130hs/sky130hs.tlef",
-        "sky130hs/sky130hs.tracks",
-        "sky130hs/sky130hs.vars",
-        "sky130hs/sky130hs_ip_global.cfg",
-        "sky130hs/sky130hs_std_cell.lef",
-        "sky130hs/sky130hs_tt.lib",
     ],
 )
 
@@ -184,20 +111,55 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "aes": [
+                "aes_cipher_top_replace.def",
+            ],
+            "blockage1-opt": [
+                "sky130hd/sky130hd.tlef",
+                "sky130hd/sky130hd_std_cell.lef",
+            ],
+            "cell_on_block1": [
+                "block2.lef",
+            ],
+            "cell_on_block2": [
+                "block2.lef",
+                "sky130hd/sky130hd.tlef",
+                "sky130hd/sky130hd_std_cell.lef",
+            ],
             "check1": [
                 "simple01.def",
             ],
+            "check5": [
+                "extra.lef",
+            ],
+            "check6": [
+                "extra.lef",
+            ],
             "check7": [
                 "check6.def",
+                "extra.lef",
+            ],
+            "check8": [
+                "extra.lef",
+            ],
+            "check9": [
+                "extra.lef",
             ],
             "edge_spacing": [
                 "multi_height_rows.def",
+                "Nangate45/fake_macros.lef",
+            ],
+            "edge_spacing-opt": [
+                "edge_spacing.lef",
+                "multi_height_rows.def",
+                "Nangate45/fake_macros.lef",
             ],
             "fillers1": [
                 "simple01.def",
             ],
             "fillers10": [
                 "simple09.def",
+                "Nangate45/fakeram45_64x7.lef",
             ],
             "fillers2": [
                 "simple01.def",
@@ -208,8 +170,14 @@ filegroup(
             "fillers3": [
                 "simple01.def",
             ],
+            "fillers4": [
+                "fill3.lef",
+            ],
             "fillers5": [
                 "fragmented_row04.def",
+            ],
+            "fillers6": [
+                "fill3.lef",
             ],
             "fillers7": [
                 "simple01.def",
@@ -217,6 +185,59 @@ filegroup(
             "fillers9_verbose": [
                 "fillers9.lef",
                 "fillers9.def",
+            ],
+            "gcd": [
+                "gcd_replace.def",
+            ],
+            "gcd_nangate45": [
+                "gcd_replace.def",
+            ],
+            "gcd_no_one_site_gaps-opt": [
+                "Nangate45_data/Nangate45-opt.lef",
+            ],
+            "hybrid_cells": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "hybrid_cells2": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "ibex": [
+                "ibex_core_replace.def",
+            ],
+            "low_util01": [
+                "gcd_replace.def",
+            ],
+            "low_util02": [
+                "aes_cipher_top_replace.def",
+            ],
+            "low_util03": [
+                "ibex_core_replace.def",
+            ],
+            "max_disp1": [
+                "Nangate45/fakeram45_1024x32.lef",
+            ],
+            "mirror1": [
+                "gcd_replace.def",
+            ],
+            "mirror2": [
+                "extra.lef",
+            ],
+            "mirror3": [
+                "gcd_replace.def",
+            ],
+            "multi_height1-opt": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "multi_height_one_site_gap_disallow": [
+                "Nangate45/fake_macros.lef",
+                "Nangate45_data/Nangate45.lef",
+                "Nangate45_data/fake_macros.lef",
+            ],
+            "multi_height_rows": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "obstruction2": [
+                "Nangate45/fakeram45_64x7.lef",
             ],
             "pad01": [
                 "simple01.def",
@@ -232,6 +253,7 @@ filegroup(
                 "check6.def",
             ],
             "pad06": [
+                "extra.lef",
                 "check6.def",
             ],
             "pad07": [
@@ -239,6 +261,13 @@ filegroup(
             ],
             "pad08": [
                 "simple01.def",
+            ],
+            "pad09": [
+                "sky130hs/sky130hs.tlef",
+                "sky130hs/sky130hs_std_cell.lef",
+            ],
+            "regions3": [
+                "Nangate45/fake_macros.lef",
             ],
         }.get(test_name, []),
     )

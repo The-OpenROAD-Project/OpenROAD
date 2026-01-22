@@ -4,6 +4,7 @@
 #pragma once
 #include "db_sta/dbNetwork.hh"
 #include "sta/ConcreteNetwork.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/VerilogReader.hh"
 
 namespace utl {

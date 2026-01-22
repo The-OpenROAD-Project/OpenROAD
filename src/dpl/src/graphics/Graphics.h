@@ -29,7 +29,7 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridY yl,
                  GridX xh,
                  GridY yh) override;
-  void endPlacement() override;
+  void redrawAndPause() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
