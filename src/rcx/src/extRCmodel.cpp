@@ -1495,7 +1495,7 @@ uint32_t extDistWidthRCTable::writeRulesOverUnder(FILE* fp, bool bin)
 }
 extMetRCTable::extMetRCTable(uint32_t layerCnt,
                              AthPool<extDistRC>* rcPool,
-                             Logger* logger,
+                             utl::Logger* logger,
                              bool OUREVERSEORDER)
 {
   logger_ = logger;
@@ -2164,7 +2164,7 @@ uint32_t extRCTable::addCapOver(uint32_t met, uint32_t metUnder, extDistRC* rc)
   return _inTable[met][metUnder]->add(rc);
 }
 
-extRCModel::extRCModel(uint32_t layerCnt, const char* name, Logger* logger)
+extRCModel::extRCModel(uint32_t layerCnt, const char* name, utl::Logger* logger)
 {
   logger_ = logger;
   _layerCnt = layerCnt;
@@ -2199,7 +2199,7 @@ extRCModel::extRCModel(uint32_t layerCnt, const char* name, Logger* logger)
   _metLevel = 0;
 }
 
-extRCModel::extRCModel(const char* name, Logger* logger)
+extRCModel::extRCModel(const char* name, utl::Logger* logger)
 {
   logger_ = logger;
   _layerCnt = 0;

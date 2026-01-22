@@ -8,7 +8,9 @@
 #include "odb/geom.h"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/StaState.hh"
@@ -22,8 +24,6 @@ class EstimateParasitics;
 namespace rsz {
 
 class Resizer;
-
-using utl::Logger;
 
 using odb::Point;
 
@@ -118,7 +118,7 @@ class RepairHold : public sta::dbStaState
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;

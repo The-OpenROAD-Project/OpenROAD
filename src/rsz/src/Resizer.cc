@@ -150,7 +150,7 @@ using sta::CLOCK;
 using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
-Resizer::Resizer(Logger* logger,
+Resizer::Resizer(utl::Logger* logger,
                  dbDatabase* db,
                  dbSta* sta,
                  SteinerTreeBuilder* stt_builder,

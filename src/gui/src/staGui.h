@@ -246,6 +246,7 @@ class TimingPathRenderer : public gui::Renderer
   static constexpr const char* kDataPathLabel = "Data path";
   static constexpr const char* kLaunchClockLabel = "Launch clock";
   static constexpr const char* kCaptureClockLabel = "Capture clock";
+  static constexpr const char* kLegendLabel = "Legend";
 };
 
 class TimingConeRenderer : public gui::Renderer

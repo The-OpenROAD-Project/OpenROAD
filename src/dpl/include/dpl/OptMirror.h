@@ -7,16 +7,11 @@
 #include <unordered_map>
 #include <vector>
 
-namespace utl {
-class Logger;
-}
-
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace dpl {
-
-using utl::Logger;
 
 class NetBox
 {
@@ -45,7 +40,7 @@ using NetBoxes = std::vector<NetBox*>;
 class OptimizeMirroring
 {
  public:
-  OptimizeMirroring(Logger* logger, odb::dbDatabase* db);
+  OptimizeMirroring(utl::Logger* logger, odb::dbDatabase* db);
 
   void run();
 
@@ -60,7 +55,7 @@ class OptimizeMirroring
 
   int64_t hpwl(odb::dbInst* inst);  // Sum of ITerm hpwl's.
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
 

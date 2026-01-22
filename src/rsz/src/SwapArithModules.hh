@@ -29,10 +29,6 @@ class Pin;
 class PinSet;
 }  // namespace sta
 
-namespace utl {
-class Logger;
-}
-
 namespace rsz {
 
 class Resizer;
@@ -40,7 +36,6 @@ class Resizer;
 using odb::dbModInst;
 using sta::Instance;
 using sta::Path;
-using utl::Logger;
 
 class SwapArithModules : public sta::dbStaState
 {
@@ -76,7 +71,7 @@ class SwapArithModules : public sta::dbStaState
   // Member variables
   Resizer* resizer_;
   dbNetwork* db_network_{nullptr};
-  Logger* logger_{nullptr};
+  utl::Logger* logger_{nullptr};
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
 };

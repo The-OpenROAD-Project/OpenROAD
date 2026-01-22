@@ -10,6 +10,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/MinMax.hh"
 #include "sta/StaState.hh"
@@ -30,7 +32,6 @@ class RemoveBuffer;
 class BaseMove;
 
 using odb::Point;
-using utl::Logger;
 
 using sta::Corner;
 using sta::dbNetwork;
@@ -144,7 +145,7 @@ class RepairSetup : public sta::dbStaState
                          const OptoParams& params);
   Slack getInstanceSlack(Instance* inst);
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;

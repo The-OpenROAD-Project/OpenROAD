@@ -26,8 +26,6 @@ using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbRegion;
 
-using utl::Logger;
-
 enum ExtensionMode
 {
   CORE,
@@ -58,7 +56,7 @@ class SRoute;
 class PdnGen
 {
  public:
-  PdnGen(dbDatabase* db, Logger* logger);
+  PdnGen(dbDatabase* db, utl::Logger* logger);
   ~PdnGen();
 
   void reset();
