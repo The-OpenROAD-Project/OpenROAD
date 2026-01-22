@@ -191,15 +191,15 @@ void LayoutViewer::setChip(odb::dbChip* chip)
   fit();
 }
 
-std::map<odb::dbChip*, odb::dbChipInst*> LayoutViewer::getChips() const
+std::map<odb::dbChipInst*, odb::dbChip*> LayoutViewer::getChips() const
 {
-  std::map<odb::dbChip*, odb::dbChipInst*> chips;
+  std::map<odb::dbChipInst*, odb::dbChip*> chips;
   if (getChip() == nullptr) {
     return chips;
   }
   std::vector<odb::dbChip*> stack;
 
-  chips[getChip()] = nullptr;
+  chips[nullptr] = getChip();
   stack.push_back(getChip());
   while (!stack.empty()) {
     odb::dbChip* curr_chip = stack.back();
@@ -208,7 +208,7 @@ std::map<odb::dbChip*, odb::dbChipInst*> LayoutViewer::getChips() const
     for (auto chip_inst : curr_chip->getChipInsts()) {
       odb::dbChip* tmp_chip = chip_inst->getMasterChip();
       stack.push_back(tmp_chip);
-      chips[tmp_chip] = chip_inst;
+      chips[chip_inst] = tmp_chip;
     }
   }
   return chips;
@@ -253,8 +253,8 @@ Rect LayoutViewer::getBounds() const
   Rect bbox{0, 0, chip_->getWidth(), chip_->getHeight()};
 
   for (const auto it : getChips()) {
-    auto chip = it.first;
-    auto chip_inst = it.second;
+    auto chip_inst = it.first;
+    auto chip = it.second;
 
     bbox.merge(chip_inst ? chip_inst->getBBox() : chip->getBBox());
 
@@ -628,8 +628,8 @@ LayoutViewer::searchNearestEdge(odb::Point pt, bool horizontal, bool vertical)
   }
   check_rect(chip_->getBBox());
   for (const auto it : getChips()) {
-    auto chip = it.first;
-    auto chip_inst = it.second;
+    auto chip_inst = it.first;
+    auto chip = it.second;
 
     dbBlock* block = chip->getBlock();
     if (!block) {
