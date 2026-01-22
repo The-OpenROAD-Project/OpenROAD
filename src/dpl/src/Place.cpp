@@ -369,9 +369,6 @@ void Opendp::place()
   if (have_multi_row_cells_) {
     for (Node* cell : sorted_cells) {
       if (isMultiRow(cell)) {
-        if (cell->getType() != Node::CELL) {
-          logger_->error(DPL, 1000, "cell is not CELL");
-        }
         debugPrint(logger_,
                    DPL,
                    "place",
@@ -1386,6 +1383,7 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
     logger_->critical(
         DPL, 26, "legalPt called on fixed cell {}.", cell->name());
   }
+
   const DbuPt init = initialLocation(cell, padded);
   DbuPt legal_pt = legalPt(cell, init);
   GridX grid_x = grid_->gridX(legal_pt.x);
