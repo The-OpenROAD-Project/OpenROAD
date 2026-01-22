@@ -343,12 +343,12 @@ class HardMacro
   // We define x_, y_ and orientation_ here
   // to avoid keep updating OpenDB during simulated annealing
   // Also enable the multi-threading
-  int x_ = 0;            // lower left corner
-  int y_ = 0;            // lower left corner
+  int x_ = 0;  // lower left corner
+  int y_ = 0;  // lower left corner
   Halo halo_;
-  int width_ = 0;        // width_ = macro_width + 2 * halo_.width
-  int height_ = 0;       // height_ = macro_height + 2 * halo_.height
-  std::string name_;     // macro name
+  int width_ = 0;     // width_ = macro_width + 2 * halo_.width
+  int height_ = 0;    // height_ = macro_height + 2 * halo_.height
+  std::string name_;  // macro name
   odb::dbOrientType orientation_ = odb::dbOrientType::R0;
 
   // we assume all the pins locate at the center of all pins
