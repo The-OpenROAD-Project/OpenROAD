@@ -952,9 +952,9 @@ using GRoutePtAdjacents
 size_t RoutePtHash::operator()(const RoutePt& pt) const
 {
   size_t hash = sta::hash_init_value;
-  est::hashIncr(hash, pt.x());
-  est::hashIncr(hash, pt.y());
-  est::hashIncr(hash, pt.layer());
+  sta::hashIncr(hash, pt.x());
+  sta::hashIncr(hash, pt.y());
+  sta::hashIncr(hash, pt.layer());
   return hash;
 }
 

@@ -5,9 +5,16 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
+#include <map>
+#include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -18,9 +25,24 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rsz/OdbCallBack.hh"
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
+#include "sta/Hash.hh"
+#include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Parasitics.hh"
 #include "sta/Path.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
+#include "sta/Transition.hh"
 #include "sta/UnorderedSet.hh"
+#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace grt {

@@ -14,10 +14,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
@@ -44,8 +41,6 @@ struct Tree;
 }  // namespace stt
 
 namespace cts {
-
-using utl::Logger;
 
 class ClockInst;
 class CtsOptions;
@@ -216,7 +211,7 @@ class TritonCTS
 
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   CtsOptions* options_ = nullptr;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;

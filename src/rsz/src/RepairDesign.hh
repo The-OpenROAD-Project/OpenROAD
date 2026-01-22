@@ -3,14 +3,19 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "BufferedNet.hh"
 #include "PreChecks.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/GraphClass.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 

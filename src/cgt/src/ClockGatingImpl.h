@@ -13,6 +13,7 @@
 #include "RandomBits.h"
 #include "cgt/ClockGating.h"
 #include "db_sta/dbSta.hh"
+#include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
 
@@ -21,10 +22,6 @@ using Abc_Ntk_t = struct Abc_Ntk_t_;
 using Abc_Obj_t = struct Abc_Obj_t_;
 using Vec_Ptr_t = struct Vec_Ptr_t_;
 }  // namespace abc
-
-namespace utl {
-class Logger;
-}
 
 namespace odb {
 class dbDatabase;
@@ -42,8 +39,6 @@ class AbcLibraryFactory;
 }  // namespace cut
 
 namespace cgt {
-
-using utl::Logger;
 
 class ClockGating::Impl
 {
@@ -141,7 +136,7 @@ class ClockGating::Impl
   // Helper for inserting new instances/nets into a network.
   NetworkBuilder network_builder_;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   std::unique_ptr<cut::AbcLibraryFactory> abc_factory_;
   std::unique_ptr<cut::AbcLibrary> abc_library_;

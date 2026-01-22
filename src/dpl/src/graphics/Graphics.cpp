@@ -17,8 +17,6 @@
 
 namespace dpl {
 
-using odb::dbBox;
-
 Graphics::Graphics(Opendp* dp,
                    float min_displacement,
                    const odb::dbInst* debug_instance)
@@ -78,8 +76,6 @@ void Graphics::drawObjects(gui::Painter& painter)
     return;
   }
 
-  odb::Rect core = block_->getCoreArea();
-
   // Create a set of selected instances for fast lookup
   std::set<odb::dbInst*> selected_insts;
   auto selection = gui::Gui::get()->selection();
@@ -94,12 +90,8 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    DbuX lx{core.xMin() + cell->getLeft()};
-    DbuY ly{core.yMin() + cell->getBottom()};
-
-    dbBox* bbox = cell->getDbInst()->getBBox();
-    odb::Point initial_location(bbox->xMin(), bbox->yMin());
-    odb::Point final_location(lx.v, ly.v);
+    odb::Point initial_location = dp_->getOdbLocation(cell.get());
+    odb::Point final_location = dp_->getDplLocation(cell.get());
     float len = odb::Point::squaredDistance(initial_location, final_location);
     if (len <= 0) {
       continue;

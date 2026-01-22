@@ -30,6 +30,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "utl/prometheus/client_metric.h"
 #include "utl/prometheus/counter.h"
 #include "utl/prometheus/family.h"
 #include "utl/prometheus/gauge.h"

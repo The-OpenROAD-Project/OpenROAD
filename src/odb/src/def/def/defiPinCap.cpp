@@ -29,6 +29,8 @@
 
 #include "defiPinCap.hpp"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

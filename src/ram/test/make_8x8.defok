@@ -709,29 +709,17 @@ NETS 168 ;
       NEW met1 ( 207 1513 ) M1M2_PR ;
     - D_nets[1].net ( buffer.in[1] X ) ( storage_7_0.bit1.bit D ) ( storage_6_0.bit1.bit D ) ( storage_5_0.bit1.bit D ) ( storage_4_0.bit1.bit D ) ( storage_3_0.bit1.bit D ) ( storage_2_0.bit1.bit D )
       ( storage_1_0.bit1.bit D ) ( storage_0_0.bit1.bit D ) + USE SIGNAL
-      + ROUTED met2 ( 1541 2057 ) ( * 2227 )
-      NEW met1 ( 1495 2227 ) ( 1541 * )
-      NEW met2 ( 1541 1751 ) ( * 2057 )
-      NEW met1 ( 1495 1207 ) ( 1541 * )
-      NEW met2 ( 1495 1207 ) ( * 1751 )
-      NEW met2 ( 1495 1751 ) ( 1541 * )
-      NEW met2 ( 1495 969 ) ( 1541 * )
-      NEW met2 ( 1495 969 ) ( * 1207 )
+      + ROUTED met2 ( 1541 969 ) ( * 1207 )
       NEW met2 ( 1541 663 ) ( * 969 )
       NEW met2 ( 1541 425 ) ( * 663 )
       NEW met2 ( 1541 119 ) ( * 425 )
-      NEW met1 ( 1541 1513 ) ( * 1547 )
-      NEW met1 ( 1357 1547 ) ( 1541 * )
-      NEW met2 ( 1357 1530 ) ( * 1547 )
-      NEW met2 ( 1357 1530 ) ( 1495 * )
-      NEW li1 ( 1541 2057 ) L1M1_PR_MR
-      NEW met1 ( 1541 2057 ) M1M2_PR
-      NEW met1 ( 1541 2227 ) M1M2_PR
-      NEW li1 ( 1495 2227 ) L1M1_PR_MR
-      NEW li1 ( 1541 1751 ) L1M1_PR_MR
-      NEW met1 ( 1541 1751 ) M1M2_PR
+      NEW met2 ( 1541 2057 ) ( * 2227 )
+      NEW met1 ( 1495 2227 ) ( 1541 * )
+      NEW met2 ( 1541 1751 ) ( * 2057 )
+      NEW met2 ( 1541 1513 ) ( * 1751 )
+      NEW met2 ( 1541 1207 ) ( * 1513 )
       NEW li1 ( 1541 1207 ) L1M1_PR_MR
-      NEW met1 ( 1495 1207 ) M1M2_PR
+      NEW met1 ( 1541 1207 ) M1M2_PR
       NEW li1 ( 1541 969 ) L1M1_PR_MR
       NEW met1 ( 1541 969 ) M1M2_PR
       NEW li1 ( 1541 663 ) L1M1_PR_MR
@@ -740,8 +728,14 @@ NETS 168 ;
       NEW met1 ( 1541 425 ) M1M2_PR
       NEW li1 ( 1541 119 ) L1M1_PR_MR
       NEW met1 ( 1541 119 ) M1M2_PR
+      NEW li1 ( 1541 2057 ) L1M1_PR_MR
+      NEW met1 ( 1541 2057 ) M1M2_PR
+      NEW met1 ( 1541 2227 ) M1M2_PR
+      NEW li1 ( 1495 2227 ) L1M1_PR_MR
+      NEW li1 ( 1541 1751 ) L1M1_PR_MR
+      NEW met1 ( 1541 1751 ) M1M2_PR
       NEW li1 ( 1541 1513 ) L1M1_PR_MR
-      NEW met1 ( 1357 1547 ) M1M2_PR ;
+      NEW met1 ( 1541 1513 ) M1M2_PR ;
     - D_nets[2].net ( buffer.in[2] X ) ( storage_7_0.bit2.bit D ) ( storage_6_0.bit2.bit D ) ( storage_5_0.bit2.bit D ) ( storage_4_0.bit2.bit D ) ( storage_3_0.bit2.bit D ) ( storage_2_0.bit2.bit D )
       ( storage_1_0.bit2.bit D ) ( storage_0_0.bit2.bit D ) + USE SIGNAL
       + ROUTED met2 ( 2875 969 ) ( * 1207 )
@@ -780,8 +774,11 @@ NETS 168 ;
       NEW met2 ( 4209 2057 ) ( * 2227 )
       NEW met1 ( 4163 2227 ) ( 4209 * )
       NEW met2 ( 4209 1751 ) ( * 2057 )
-      NEW met2 ( 4209 1513 ) ( * 1751 )
-      NEW met2 ( 4209 1207 ) ( * 1513 )
+      NEW met1 ( 4209 1513 ) ( * 1547 )
+      NEW met1 ( 4209 1547 ) ( 4255 * )
+      NEW met2 ( 4255 1530 ) ( * 1547 )
+      NEW met2 ( 4209 1530 ) ( 4255 * )
+      NEW met2 ( 4209 1207 ) ( * 1751 )
       NEW li1 ( 4209 1207 ) L1M1_PR_MR
       NEW met1 ( 4209 1207 ) M1M2_PR
       NEW li1 ( 4209 969 ) L1M1_PR_MR
@@ -799,7 +796,7 @@ NETS 168 ;
       NEW li1 ( 4209 1751 ) L1M1_PR_MR
       NEW met1 ( 4209 1751 ) M1M2_PR
       NEW li1 ( 4209 1513 ) L1M1_PR_MR
-      NEW met1 ( 4209 1513 ) M1M2_PR ;
+      NEW met1 ( 4255 1547 ) M1M2_PR ;
     - D_nets[4].net ( buffer.in[4] X ) ( storage_7_0.bit4.bit D ) ( storage_6_0.bit4.bit D ) ( storage_5_0.bit4.bit D ) ( storage_4_0.bit4.bit D ) ( storage_3_0.bit4.bit D ) ( storage_2_0.bit4.bit D )
       ( storage_1_0.bit4.bit D ) ( storage_0_0.bit4.bit D ) + USE SIGNAL
       + ROUTED met2 ( 5543 969 ) ( * 1207 )
@@ -924,8 +921,8 @@ NETS 168 ;
       NEW met2 ( 943 221 ) ( * 493 )
       NEW met2 ( 943 2125 ) ( * 2414 0 )
       NEW met2 ( 943 1853 ) ( * 2125 )
-      NEW met2 ( 943 1547 ) ( * 1853 )
-      NEW met2 ( 943 1309 ) ( * 1547 )
+      NEW met2 ( 943 1581 ) ( * 1853 )
+      NEW met2 ( 943 1309 ) ( * 1581 )
       NEW li1 ( 943 1309 ) L1M1_PR_MR
       NEW met1 ( 943 1309 ) M1M2_PR
       NEW li1 ( 943 1037 ) L1M1_PR_MR
@@ -940,8 +937,8 @@ NETS 168 ;
       NEW met1 ( 943 2125 ) M1M2_PR
       NEW li1 ( 943 1853 ) L1M1_PR_MR
       NEW met1 ( 943 1853 ) M1M2_PR
-      NEW li1 ( 943 1547 ) L1M1_PR_MR
-      NEW met1 ( 943 1547 ) M1M2_PR ;
+      NEW li1 ( 943 1581 ) L1M1_PR_MR
+      NEW met1 ( 943 1581 ) M1M2_PR ;
     - Q0[1] ( PIN Q0[1] ) ( storage_7_0.bit1.obuf0 Z ) ( storage_6_0.bit1.obuf0 Z ) ( storage_5_0.bit1.obuf0 Z ) ( storage_4_0.bit1.obuf0 Z ) ( storage_3_0.bit1.obuf0 Z ) ( storage_2_0.bit1.obuf0 Z )
       ( storage_1_0.bit1.obuf0 Z ) ( storage_0_0.bit1.obuf0 Z ) + USE SIGNAL
       + ROUTED met1 ( 2231 1037 ) ( 2277 * )
@@ -978,10 +975,10 @@ NETS 168 ;
       NEW met2 ( 3611 765 ) ( * 935 )
       NEW met2 ( 3611 493 ) ( * 765 )
       NEW met2 ( 3611 221 ) ( * 493 )
-      NEW met2 ( 3611 2125 ) ( * 2414 0 )
-      NEW met2 ( 3611 1853 ) ( * 2125 )
-      NEW met2 ( 3611 1479 ) ( * 1853 )
-      NEW met2 ( 3611 1309 ) ( * 1479 )
+      NEW met2 ( 3611 2023 ) ( * 2414 0 )
+      NEW met2 ( 3611 1853 ) ( * 2023 )
+      NEW met2 ( 3611 1581 ) ( * 1853 )
+      NEW met2 ( 3611 1309 ) ( * 1581 )
       NEW li1 ( 3611 1309 ) L1M1_PR_MR
       NEW met1 ( 3611 1309 ) M1M2_PR
       NEW li1 ( 3611 935 ) L1M1_PR_MR
@@ -992,12 +989,12 @@ NETS 168 ;
       NEW met1 ( 3611 493 ) M1M2_PR
       NEW li1 ( 3611 221 ) L1M1_PR_MR
       NEW met1 ( 3611 221 ) M1M2_PR
-      NEW li1 ( 3611 2125 ) L1M1_PR_MR
-      NEW met1 ( 3611 2125 ) M1M2_PR
+      NEW li1 ( 3611 2023 ) L1M1_PR_MR
+      NEW met1 ( 3611 2023 ) M1M2_PR
       NEW li1 ( 3611 1853 ) L1M1_PR_MR
       NEW met1 ( 3611 1853 ) M1M2_PR
-      NEW li1 ( 3611 1479 ) L1M1_PR_MR
-      NEW met1 ( 3611 1479 ) M1M2_PR ;
+      NEW li1 ( 3611 1581 ) L1M1_PR_MR
+      NEW met1 ( 3611 1581 ) M1M2_PR ;
     - Q0[3] ( PIN Q0[3] ) ( storage_7_0.bit3.obuf0 Z ) ( storage_6_0.bit3.obuf0 Z ) ( storage_5_0.bit3.obuf0 Z ) ( storage_4_0.bit3.obuf0 Z ) ( storage_3_0.bit3.obuf0 Z ) ( storage_2_0.bit3.obuf0 Z )
       ( storage_1_0.bit3.obuf0 Z ) ( storage_0_0.bit3.obuf0 Z ) + USE SIGNAL
       + ROUTED met1 ( 4899 1037 ) ( 4945 * )
@@ -1036,8 +1033,8 @@ NETS 168 ;
       NEW met2 ( 6279 221 ) ( * 493 )
       NEW met2 ( 6279 2125 ) ( * 2414 0 )
       NEW met2 ( 6279 1853 ) ( * 2125 )
-      NEW met2 ( 6279 1581 ) ( * 1853 )
-      NEW met2 ( 6279 1309 ) ( * 1581 )
+      NEW met2 ( 6279 1479 ) ( * 1853 )
+      NEW met2 ( 6279 1309 ) ( * 1479 )
       NEW li1 ( 6279 1309 ) L1M1_PR_MR
       NEW met1 ( 6279 1309 ) M1M2_PR
       NEW li1 ( 6279 1037 ) L1M1_PR_MR
@@ -1052,8 +1049,8 @@ NETS 168 ;
       NEW met1 ( 6279 2125 ) M1M2_PR
       NEW li1 ( 6279 1853 ) L1M1_PR_MR
       NEW met1 ( 6279 1853 ) M1M2_PR
-      NEW li1 ( 6279 1581 ) L1M1_PR_MR
-      NEW met1 ( 6279 1581 ) M1M2_PR ;
+      NEW li1 ( 6279 1479 ) L1M1_PR_MR
+      NEW met1 ( 6279 1479 ) M1M2_PR ;
     - Q0[5] ( PIN Q0[5] ) ( storage_7_0.bit5.obuf0 Z ) ( storage_6_0.bit5.obuf0 Z ) ( storage_5_0.bit5.obuf0 Z ) ( storage_4_0.bit5.obuf0 Z ) ( storage_3_0.bit5.obuf0 Z ) ( storage_2_0.bit5.obuf0 Z )
       ( storage_1_0.bit5.obuf0 Z ) ( storage_0_0.bit5.obuf0 Z ) + USE SIGNAL
       + ROUTED met2 ( 7613 1037 ) ( * 1309 )
@@ -1116,12 +1113,12 @@ NETS 168 ;
       + ROUTED met1 ( 10235 1037 ) ( 10281 * )
       NEW met2 ( 10235 1037 ) ( * 1309 )
       NEW met2 ( 10235 765 ) ( * 1037 )
-      NEW met1 ( 10235 391 ) ( 10281 * )
-      NEW met2 ( 10235 391 ) ( * 765 )
-      NEW met2 ( 10235 221 ) ( * 391 )
-      NEW met1 ( 10235 2125 ) ( 10281 * )
-      NEW met2 ( 10235 2125 ) ( * 2414 0 )
-      NEW met2 ( 10235 1853 ) ( * 2125 )
+      NEW met1 ( 10235 493 ) ( 10281 * )
+      NEW met2 ( 10235 493 ) ( * 765 )
+      NEW met2 ( 10235 221 ) ( * 493 )
+      NEW met1 ( 10235 2091 ) ( 10281 * )
+      NEW met2 ( 10235 2091 ) ( * 2414 0 )
+      NEW met2 ( 10235 1853 ) ( * 2091 )
       NEW met1 ( 10235 1581 ) ( 10281 * )
       NEW met2 ( 10235 1581 ) ( * 1853 )
       NEW met2 ( 10235 1309 ) ( * 1581 )
@@ -1131,12 +1128,12 @@ NETS 168 ;
       NEW met1 ( 10235 1037 ) M1M2_PR
       NEW li1 ( 10235 765 ) L1M1_PR_MR
       NEW met1 ( 10235 765 ) M1M2_PR
-      NEW li1 ( 10281 391 ) L1M1_PR_MR
-      NEW met1 ( 10235 391 ) M1M2_PR
+      NEW li1 ( 10281 493 ) L1M1_PR_MR
+      NEW met1 ( 10235 493 ) M1M2_PR
       NEW li1 ( 10235 221 ) L1M1_PR_MR
       NEW met1 ( 10235 221 ) M1M2_PR
-      NEW li1 ( 10281 2125 ) L1M1_PR_MR
-      NEW met1 ( 10235 2125 ) M1M2_PR
+      NEW li1 ( 10281 2091 ) L1M1_PR_MR
+      NEW met1 ( 10235 2091 ) M1M2_PR
       NEW li1 ( 10235 1853 ) L1M1_PR_MR
       NEW met1 ( 10235 1853 ) M1M2_PR
       NEW li1 ( 10281 1581 ) L1M1_PR_MR
@@ -1149,8 +1146,8 @@ NETS 168 ;
       NEW met2 ( 1311 221 ) ( * 493 )
       NEW met2 ( 1311 2125 ) ( * 2414 0 )
       NEW met2 ( 1311 1853 ) ( * 2125 )
-      NEW met2 ( 1311 1547 ) ( * 1853 )
-      NEW met2 ( 1311 1309 ) ( * 1547 )
+      NEW met2 ( 1311 1581 ) ( * 1853 )
+      NEW met2 ( 1311 1309 ) ( * 1581 )
       NEW li1 ( 1311 1309 ) L1M1_PR_MR
       NEW met1 ( 1311 1309 ) M1M2_PR
       NEW li1 ( 1311 1037 ) L1M1_PR_MR
@@ -1165,8 +1162,8 @@ NETS 168 ;
       NEW met1 ( 1311 2125 ) M1M2_PR
       NEW li1 ( 1311 1853 ) L1M1_PR_MR
       NEW met1 ( 1311 1853 ) M1M2_PR
-      NEW li1 ( 1311 1547 ) L1M1_PR_MR
-      NEW met1 ( 1311 1547 ) M1M2_PR ;
+      NEW li1 ( 1311 1581 ) L1M1_PR_MR
+      NEW met1 ( 1311 1581 ) M1M2_PR ;
     - Q1[1] ( PIN Q1[1] ) ( storage_7_0.bit1.obuf1 Z ) ( storage_6_0.bit1.obuf1 Z ) ( storage_5_0.bit1.obuf1 Z ) ( storage_4_0.bit1.obuf1 Z ) ( storage_3_0.bit1.obuf1 Z ) ( storage_2_0.bit1.obuf1 Z )
       ( storage_1_0.bit1.obuf1 Z ) ( storage_0_0.bit1.obuf1 Z ) + USE SIGNAL
       + ROUTED met1 ( 2599 1037 ) ( 2645 * )
@@ -1205,11 +1202,11 @@ NETS 168 ;
       NEW met1 ( 3887 493 ) ( 3979 * )
       NEW met2 ( 3887 493 ) ( * 765 )
       NEW met2 ( 3887 221 ) ( * 493 )
-      NEW met1 ( 3887 2125 ) ( 3979 * )
-      NEW met2 ( 3887 2125 ) ( * 2414 0 )
-      NEW met2 ( 3887 1853 ) ( * 2125 )
-      NEW met2 ( 3887 1445 ) ( * 1853 )
-      NEW met2 ( 3887 1309 ) ( * 1445 )
+      NEW met2 ( 3887 1989 ) ( * 2414 0 )
+      NEW met2 ( 3887 1853 ) ( * 1989 )
+      NEW met1 ( 3887 1581 ) ( 3979 * )
+      NEW met2 ( 3887 1581 ) ( * 1853 )
+      NEW met2 ( 3887 1309 ) ( * 1581 )
       NEW li1 ( 3887 1309 ) L1M1_PR_MR
       NEW met1 ( 3887 1309 ) M1M2_PR
       NEW li1 ( 3979 1037 ) L1M1_PR_MR
@@ -1220,12 +1217,12 @@ NETS 168 ;
       NEW met1 ( 3887 493 ) M1M2_PR
       NEW li1 ( 3887 221 ) L1M1_PR_MR
       NEW met1 ( 3887 221 ) M1M2_PR
-      NEW li1 ( 3979 2125 ) L1M1_PR_MR
-      NEW met1 ( 3887 2125 ) M1M2_PR
+      NEW li1 ( 3887 1989 ) L1M1_PR_MR
+      NEW met1 ( 3887 1989 ) M1M2_PR
       NEW li1 ( 3887 1853 ) L1M1_PR_MR
       NEW met1 ( 3887 1853 ) M1M2_PR
-      NEW li1 ( 3887 1445 ) L1M1_PR_MR
-      NEW met1 ( 3887 1445 ) M1M2_PR ;
+      NEW li1 ( 3979 1581 ) L1M1_PR_MR
+      NEW met1 ( 3887 1581 ) M1M2_PR ;
     - Q1[3] ( PIN Q1[3] ) ( storage_7_0.bit3.obuf1 Z ) ( storage_6_0.bit3.obuf1 Z ) ( storage_5_0.bit3.obuf1 Z ) ( storage_4_0.bit3.obuf1 Z ) ( storage_3_0.bit3.obuf1 Z ) ( storage_2_0.bit3.obuf1 Z )
       ( storage_1_0.bit3.obuf1 Z ) ( storage_0_0.bit3.obuf1 Z ) + USE SIGNAL
       + ROUTED met1 ( 5267 1037 ) ( 5313 * )
@@ -1264,8 +1261,8 @@ NETS 168 ;
       NEW met2 ( 6647 221 ) ( * 493 )
       NEW met2 ( 6647 2125 ) ( * 2414 0 )
       NEW met2 ( 6647 1853 ) ( * 2125 )
-      NEW met2 ( 6647 1581 ) ( * 1853 )
-      NEW met2 ( 6647 1309 ) ( * 1581 )
+      NEW met2 ( 6647 1547 ) ( * 1853 )
+      NEW met2 ( 6647 1309 ) ( * 1547 )
       NEW li1 ( 6647 1309 ) L1M1_PR_MR
       NEW met1 ( 6647 1309 ) M1M2_PR
       NEW li1 ( 6647 1037 ) L1M1_PR_MR
@@ -1280,8 +1277,8 @@ NETS 168 ;
       NEW met1 ( 6647 2125 ) M1M2_PR
       NEW li1 ( 6647 1853 ) L1M1_PR_MR
       NEW met1 ( 6647 1853 ) M1M2_PR
-      NEW li1 ( 6647 1581 ) L1M1_PR_MR
-      NEW met1 ( 6647 1581 ) M1M2_PR ;
+      NEW li1 ( 6647 1547 ) L1M1_PR_MR
+      NEW met1 ( 6647 1547 ) M1M2_PR ;
     - Q1[5] ( PIN Q1[5] ) ( storage_7_0.bit5.obuf1 Z ) ( storage_6_0.bit5.obuf1 Z ) ( storage_5_0.bit5.obuf1 Z ) ( storage_4_0.bit5.obuf1 Z ) ( storage_3_0.bit5.obuf1 Z ) ( storage_2_0.bit5.obuf1 Z )
       ( storage_1_0.bit5.obuf1 Z ) ( storage_0_0.bit5.obuf1 Z ) + USE SIGNAL
       + ROUTED met1 ( 7935 1037 ) ( 7981 * )
@@ -1372,11 +1369,11 @@ NETS 168 ;
     - addr[0] ( PIN addr[0] ) ( decoder.inv_0 A ) ( decoder_7_0.and_layer0 A ) ( decoder_5_0.and_layer0 A ) ( decoder_3_0.and_layer0 A ) ( decoder_1_0.and_layer0 A ) + USE SIGNAL
       + ROUTED met1 ( 11937 1445 ) ( 12075 * )
       NEW met1 ( 12167 1683 ) ( 12397 * )
-      NEW met2 ( 12167 1598 ) ( * 1683 )
-      NEW met2 ( 12075 1598 ) ( 12167 * )
-      NEW met2 ( 12075 1445 ) ( * 1598 )
+      NEW met2 ( 12167 1666 ) ( * 1683 )
+      NEW met2 ( 12075 1666 ) ( 12167 * )
+      NEW met2 ( 12075 1445 ) ( * 1666 )
       NEW met1 ( 11937 1989 ) ( 12075 * )
-      NEW met2 ( 12075 1598 ) ( * 1989 )
+      NEW met2 ( 12075 1666 ) ( * 1989 )
       NEW met1 ( 11937 391 ) ( 12075 * )
       NEW met2 ( 12075 391 ) ( * 442 )
       NEW met3 ( 12075 442 ) ( 12466 * 0 )
@@ -1417,25 +1414,27 @@ NETS 168 ;
       NEW met1 ( 12167 901 ) M1M2_PR
       NEW li1 ( 12397 969 ) L1M1_PR_MR ;
     - addr[2] ( PIN addr[2] ) ( decoder.inv_2 A ) ( decoder_7_0.and_layer1 B ) ( decoder_6_0.and_layer1 B ) ( decoder_5_0.and_layer1 B ) ( decoder_4_0.and_layer1 B ) + USE SIGNAL
-      + ROUTED met2 ( 12259 1479 ) ( * 1751 )
-      NEW met2 ( 12259 1751 ) ( * 2023 )
+      + ROUTED met1 ( 12259 1479 ) ( 12397 * )
+      NEW met1 ( 12259 1751 ) ( 12397 * )
+      NEW met2 ( 12397 1479 ) ( * 1751 )
+      NEW met1 ( 12259 2023 ) ( 12397 * )
+      NEW met2 ( 12397 1751 ) ( * 2023 )
       NEW met3 ( 12397 578 ) ( 12466 * 0 )
       NEW met2 ( 12397 119 ) ( * 578 )
       NEW met1 ( 12259 1207 ) ( 12397 * )
       NEW met2 ( 12397 578 ) ( * 1207 )
-      NEW met2 ( 12259 1207 ) ( * 1479 )
+      NEW met2 ( 12397 1207 ) ( * 1479 )
       NEW li1 ( 12259 1479 ) L1M1_PR_MR
-      NEW met1 ( 12259 1479 ) M1M2_PR
+      NEW met1 ( 12397 1479 ) M1M2_PR
       NEW li1 ( 12259 1751 ) L1M1_PR_MR
-      NEW met1 ( 12259 1751 ) M1M2_PR
+      NEW met1 ( 12397 1751 ) M1M2_PR
       NEW li1 ( 12259 2023 ) L1M1_PR_MR
-      NEW met1 ( 12259 2023 ) M1M2_PR
+      NEW met1 ( 12397 2023 ) M1M2_PR
       NEW met2 ( 12397 578 ) M2M3_PR
       NEW li1 ( 12397 119 ) L1M1_PR_MR
       NEW met1 ( 12397 119 ) M1M2_PR
       NEW li1 ( 12259 1207 ) L1M1_PR_MR
-      NEW met1 ( 12397 1207 ) M1M2_PR
-      NEW met1 ( 12259 1207 ) M1M2_PR ;
+      NEW met1 ( 12397 1207 ) M1M2_PR ;
     - clk ( PIN clk ) ( storage_7_0.cg CLK ) ( storage_6_0.cg CLK ) ( storage_5_0.cg CLK ) ( storage_4_0.cg CLK ) ( storage_3_0.cg CLK ) ( storage_2_0.cg CLK )
       ( storage_1_0.cg CLK ) ( storage_0_0.cg CLK ) + USE SIGNAL
       + ROUTED met2 ( 11017 119 ) ( * 170 )
@@ -1578,30 +1577,30 @@ NETS 168 ;
       NEW li1 ( 4991 153 ) L1M1_PR_MR
       NEW li1 ( 4577 187 ) L1M1_PR_MR ;
     - storage_0_0.bit4.storage ( storage_0_0.bit4.obuf1 A ) ( storage_0_0.bit4.obuf0 A ) ( storage_0_0.bit4.bit Q ) + USE SIGNAL
-      + ROUTED met1 ( 5911 153 ) ( * 187 )
-      NEW met1 ( 5911 153 ) ( 5957 * )
+      + ROUTED met1 ( 5911 187 ) ( 5957 * )
+      NEW met1 ( 5957 153 ) ( * 187 )
       NEW met1 ( 5957 153 ) ( 6325 * )
       NEW li1 ( 6325 153 ) L1M1_PR_MR
       NEW li1 ( 5957 153 ) L1M1_PR_MR
       NEW li1 ( 5911 187 ) L1M1_PR_MR ;
     - storage_0_0.bit5.storage ( storage_0_0.bit5.obuf1 A ) ( storage_0_0.bit5.obuf0 A ) ( storage_0_0.bit5.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 7291 153 ) ( 7659 * )
-      NEW met1 ( 7245 187 ) ( 7291 * )
-      NEW met1 ( 7291 153 ) ( * 187 )
+      NEW met1 ( 7245 153 ) ( * 187 )
+      NEW met1 ( 7245 153 ) ( 7291 * )
       NEW li1 ( 7291 153 ) L1M1_PR_MR
       NEW li1 ( 7659 153 ) L1M1_PR_MR
       NEW li1 ( 7245 187 ) L1M1_PR_MR ;
     - storage_0_0.bit6.storage ( storage_0_0.bit6.obuf1 A ) ( storage_0_0.bit6.obuf0 A ) ( storage_0_0.bit6.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 8625 153 ) ( 8993 * )
-      NEW met1 ( 8579 187 ) ( 8625 * )
-      NEW met1 ( 8625 153 ) ( * 187 )
+      NEW met1 ( 8579 153 ) ( * 187 )
+      NEW met1 ( 8579 153 ) ( 8625 * )
       NEW li1 ( 8625 153 ) L1M1_PR_MR
       NEW li1 ( 8993 153 ) L1M1_PR_MR
       NEW li1 ( 8579 187 ) L1M1_PR_MR ;
     - storage_0_0.bit7.storage ( storage_0_0.bit7.obuf1 A ) ( storage_0_0.bit7.obuf0 A ) ( storage_0_0.bit7.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 9959 153 ) ( 10327 * )
-      NEW met1 ( 9913 187 ) ( 9959 * )
-      NEW met1 ( 9959 153 ) ( * 187 )
+      NEW met1 ( 9913 153 ) ( * 187 )
+      NEW met1 ( 9913 153 ) ( 9959 * )
       NEW li1 ( 9959 153 ) L1M1_PR_MR
       NEW li1 ( 10327 153 ) L1M1_PR_MR
       NEW li1 ( 9913 187 ) L1M1_PR_MR ;
@@ -1674,8 +1673,8 @@ NETS 168 ;
       NEW met1 ( 9039 187 ) ( 9453 * )
       NEW met1 ( 9039 119 ) ( * 187 )
       NEW met1 ( 8717 119 ) ( 9039 * )
-      NEW met1 ( 10005 187 ) ( * 221 )
-      NEW met1 ( 9729 221 ) ( 10005 * )
+      NEW met1 ( 9959 187 ) ( * 221 )
+      NEW met1 ( 9729 221 ) ( 9959 * )
       NEW met1 ( 2047 85 ) ( * 119 )
       NEW met1 ( 1495 85 ) ( 2047 * )
       NEW met1 ( 1495 85 ) ( * 119 )
@@ -1691,7 +1690,7 @@ NETS 168 ;
       NEW met1 ( 4715 85 ) ( 6049 * )
       NEW met1 ( 1127 119 ) ( 1495 * )
       NEW met1 ( 6049 85 ) ( 7383 * )
-      NEW met1 ( 10005 187 ) ( 11040 * )
+      NEW met1 ( 9959 187 ) ( 11040 * )
       NEW met1 ( 11040 187 ) ( * 221 )
       NEW met1 ( 11040 221 ) ( 11661 * )
       NEW li1 ( 713 153 ) L1M1_PR_MR
@@ -1811,8 +1810,8 @@ NETS 168 ;
     - storage_1_0.decoder0 ( decoder_1_0.and_layer0 X ) ( storage_1_0.select_inv_0 A ) ( storage_1_0.gcand A ) + USE SIGNAL
       + ROUTED met1 ( 11615 459 ) ( 12121 * )
       NEW met1 ( 11385 323 ) ( * 357 )
-      NEW met1 ( 11385 323 ) ( 11707 * )
-      NEW met1 ( 11707 323 ) ( * 459 )
+      NEW met1 ( 11385 323 ) ( 11845 * )
+      NEW met1 ( 11845 323 ) ( * 459 )
       NEW li1 ( 11615 459 ) L1M1_PR_MR
       NEW li1 ( 12121 459 ) L1M1_PR_MR
       NEW li1 ( 11385 357 ) L1M1_PR_MR ;
@@ -1820,40 +1819,40 @@ NETS 168 ;
     - storage_1_0.gclock ( storage_1_0.cg GCLK ) ( storage_1_0.bit7.bit GATE ) ( storage_1_0.bit6.bit GATE ) ( storage_1_0.bit5.bit GATE ) ( storage_1_0.bit4.bit GATE ) ( storage_1_0.bit3.bit GATE ) ( storage_1_0.bit2.bit GATE )
       ( storage_1_0.bit1.bit GATE ) ( storage_1_0.bit0.bit GATE ) + USE SIGNAL
       + ROUTED met1 ( 69 425 ) ( * 459 )
-      NEW met2 ( 9407 374 ) ( * 391 )
-      NEW met3 ( 9407 374 ) ( 10097 * )
-      NEW met2 ( 10097 323 ) ( * 374 )
-      NEW met2 ( 8073 425 ) ( * 442 )
-      NEW met3 ( 8073 442 ) ( 9154 * )
-      NEW met3 ( 9154 374 ) ( * 442 )
-      NEW met3 ( 9154 374 ) ( 9407 * )
-      NEW met2 ( 6739 425 ) ( * 442 )
-      NEW met3 ( 6739 442 ) ( 8073 * )
-      NEW met2 ( 5405 425 ) ( * 442 )
+      NEW met2 ( 9407 425 ) ( * 493 )
+      NEW met1 ( 9407 493 ) ( 10097 * )
+      NEW met2 ( 10097 323 ) ( * 493 )
+      NEW met2 ( 8073 374 ) ( * 391 )
+      NEW met3 ( 8073 374 ) ( 9407 * )
+      NEW met2 ( 9407 374 ) ( * 425 )
+      NEW met2 ( 6739 374 ) ( * 391 )
+      NEW met3 ( 6739 374 ) ( 8073 * )
+      NEW met2 ( 5405 374 ) ( * 391 )
       NEW met1 ( 4071 425 ) ( * 459 )
       NEW met1 ( 4071 459 ) ( 5405 * )
-      NEW met1 ( 5405 425 ) ( * 459 )
+      NEW met1 ( 5405 391 ) ( * 459 )
       NEW met1 ( 2737 425 ) ( * 459 )
       NEW met1 ( 2737 459 ) ( 4071 * )
       NEW met1 ( 1403 425 ) ( * 459 )
       NEW met1 ( 69 459 ) ( 2737 * )
-      NEW met3 ( 5405 442 ) ( 6739 * )
+      NEW met3 ( 5405 374 ) ( 6739 * )
       NEW met1 ( 10097 323 ) ( 11339 * )
       NEW li1 ( 69 425 ) L1M1_PR_MR
-      NEW li1 ( 9407 391 ) L1M1_PR_MR
-      NEW met1 ( 9407 391 ) M1M2_PR
-      NEW met2 ( 9407 374 ) M2M3_PR
-      NEW met2 ( 10097 374 ) M2M3_PR
+      NEW li1 ( 9407 425 ) L1M1_PR_MR
+      NEW met1 ( 9407 425 ) M1M2_PR
+      NEW met1 ( 9407 493 ) M1M2_PR
+      NEW met1 ( 10097 493 ) M1M2_PR
       NEW met1 ( 10097 323 ) M1M2_PR
-      NEW li1 ( 8073 425 ) L1M1_PR_MR
-      NEW met1 ( 8073 425 ) M1M2_PR
-      NEW met2 ( 8073 442 ) M2M3_PR
-      NEW li1 ( 6739 425 ) L1M1_PR_MR
-      NEW met1 ( 6739 425 ) M1M2_PR
-      NEW met2 ( 6739 442 ) M2M3_PR
-      NEW li1 ( 5405 425 ) L1M1_PR_MR
-      NEW met1 ( 5405 425 ) M1M2_PR
-      NEW met2 ( 5405 442 ) M2M3_PR
+      NEW li1 ( 8073 391 ) L1M1_PR_MR
+      NEW met1 ( 8073 391 ) M1M2_PR
+      NEW met2 ( 8073 374 ) M2M3_PR
+      NEW met2 ( 9407 374 ) M2M3_PR
+      NEW li1 ( 6739 391 ) L1M1_PR_MR
+      NEW met1 ( 6739 391 ) M1M2_PR
+      NEW met2 ( 6739 374 ) M2M3_PR
+      NEW li1 ( 5405 391 ) L1M1_PR_MR
+      NEW met1 ( 5405 391 ) M1M2_PR
+      NEW met2 ( 5405 374 ) M2M3_PR
       NEW li1 ( 4071 425 ) L1M1_PR_MR
       NEW li1 ( 2737 425 ) L1M1_PR_MR
       NEW li1 ( 1403 425 ) L1M1_PR_MR
@@ -1877,11 +1876,11 @@ NETS 168 ;
       NEW met1 ( 6049 323 ) ( * 391 )
       NEW met1 ( 4715 323 ) ( 6049 * )
       NEW met1 ( 6049 323 ) ( 7383 * )
-      NEW met1 ( 10051 357 ) ( 11040 * )
-      NEW met1 ( 11040 357 ) ( * 391 )
-      NEW met1 ( 11040 391 ) ( 11431 * )
+      NEW met1 ( 11339 357 ) ( * 391 )
+      NEW met1 ( 11339 391 ) ( 11431 * )
       NEW met1 ( 11431 357 ) ( * 391 )
       NEW met1 ( 11431 357 ) ( 11661 * )
+      NEW met1 ( 10051 357 ) ( 11339 * )
       NEW li1 ( 713 391 ) L1M1_PR_MR
       NEW li1 ( 7383 391 ) L1M1_PR_MR
       NEW li1 ( 8717 391 ) L1M1_PR_MR
@@ -1894,49 +1893,50 @@ NETS 168 ;
     - storage_1_0.select1_b ( storage_1_0.select_inv_1 Y ) ( storage_1_0.bit7.obuf1 TE_B ) ( storage_1_0.bit6.obuf1 TE_B ) ( storage_1_0.bit5.obuf1 TE_B ) ( storage_1_0.bit4.obuf1 TE_B ) ( storage_1_0.bit3.obuf1 TE_B ) ( storage_1_0.bit2.obuf1 TE_B )
       ( storage_1_0.bit1.obuf1 TE_B ) ( storage_1_0.bit0.obuf1 TE_B ) + USE SIGNAL
       + ROUTED met2 ( 1081 425 ) ( * 442 )
-      NEW met2 ( 6417 374 ) ( * 391 )
-      NEW met2 ( 7751 374 ) ( * 391 )
-      NEW met3 ( 6417 374 ) ( 7751 * )
-      NEW met2 ( 9085 374 ) ( * 391 )
-      NEW met3 ( 7751 374 ) ( 9085 * )
+      NEW met2 ( 6417 425 ) ( * 442 )
+      NEW met2 ( 7751 425 ) ( * 442 )
+      NEW met3 ( 6417 442 ) ( 7751 * )
+      NEW met2 ( 9085 425 ) ( * 442 )
+      NEW met3 ( 7751 442 ) ( 9085 * )
       NEW met1 ( 10419 425 ) ( * 459 )
       NEW met1 ( 9085 459 ) ( 10419 * )
-      NEW met1 ( 9085 391 ) ( * 459 )
-      NEW met1 ( 10695 459 ) ( * 493 )
-      NEW met1 ( 10419 459 ) ( 10695 * )
-      NEW met3 ( 1081 442 ) ( 1380 * )
-      NEW met2 ( 5083 374 ) ( * 391 )
-      NEW met2 ( 3749 374 ) ( * 391 )
-      NEW met3 ( 3749 374 ) ( 5083 * )
-      NEW met2 ( 2415 374 ) ( * 391 )
-      NEW met3 ( 2415 374 ) ( 3749 * )
-      NEW met3 ( 1380 374 ) ( * 442 )
-      NEW met3 ( 1380 374 ) ( 2415 * )
-      NEW met3 ( 5083 374 ) ( 6417 * )
-      NEW met1 ( 10695 493 ) ( 11799 * )
+      NEW met1 ( 9085 425 ) ( * 459 )
+      NEW met1 ( 10419 391 ) ( * 425 )
+      NEW met2 ( 5083 425 ) ( * 442 )
+      NEW met2 ( 3749 425 ) ( * 442 )
+      NEW met3 ( 3749 442 ) ( 5083 * )
+      NEW met2 ( 2415 425 ) ( * 442 )
+      NEW met3 ( 2415 442 ) ( 3749 * )
+      NEW met3 ( 1081 442 ) ( 2415 * )
+      NEW met3 ( 5083 442 ) ( 6417 * )
+      NEW met1 ( 11293 391 ) ( * 425 )
+      NEW met1 ( 11293 425 ) ( 11523 * )
+      NEW met1 ( 11523 391 ) ( * 425 )
+      NEW met1 ( 11523 391 ) ( 11799 * )
+      NEW met1 ( 10419 391 ) ( 11293 * )
       NEW met2 ( 1081 442 ) M2M3_PR
       NEW li1 ( 1081 425 ) L1M1_PR_MR
       NEW met1 ( 1081 425 ) M1M2_PR
-      NEW li1 ( 6417 391 ) L1M1_PR_MR
-      NEW met1 ( 6417 391 ) M1M2_PR
-      NEW met2 ( 6417 374 ) M2M3_PR
-      NEW li1 ( 7751 391 ) L1M1_PR_MR
-      NEW met1 ( 7751 391 ) M1M2_PR
-      NEW met2 ( 7751 374 ) M2M3_PR
-      NEW li1 ( 9085 391 ) L1M1_PR_MR
-      NEW met1 ( 9085 391 ) M1M2_PR
-      NEW met2 ( 9085 374 ) M2M3_PR
+      NEW li1 ( 6417 425 ) L1M1_PR_MR
+      NEW met1 ( 6417 425 ) M1M2_PR
+      NEW met2 ( 6417 442 ) M2M3_PR
+      NEW li1 ( 7751 425 ) L1M1_PR_MR
+      NEW met1 ( 7751 425 ) M1M2_PR
+      NEW met2 ( 7751 442 ) M2M3_PR
+      NEW li1 ( 9085 425 ) L1M1_PR_MR
+      NEW met1 ( 9085 425 ) M1M2_PR
+      NEW met2 ( 9085 442 ) M2M3_PR
       NEW li1 ( 10419 425 ) L1M1_PR_MR
-      NEW li1 ( 5083 391 ) L1M1_PR_MR
-      NEW met1 ( 5083 391 ) M1M2_PR
-      NEW met2 ( 5083 374 ) M2M3_PR
-      NEW li1 ( 3749 391 ) L1M1_PR_MR
-      NEW met1 ( 3749 391 ) M1M2_PR
-      NEW met2 ( 3749 374 ) M2M3_PR
-      NEW li1 ( 2415 391 ) L1M1_PR_MR
-      NEW met1 ( 2415 391 ) M1M2_PR
-      NEW met2 ( 2415 374 ) M2M3_PR
-      NEW li1 ( 11799 493 ) L1M1_PR_MR ;
+      NEW li1 ( 5083 425 ) L1M1_PR_MR
+      NEW met1 ( 5083 425 ) M1M2_PR
+      NEW met2 ( 5083 442 ) M2M3_PR
+      NEW li1 ( 3749 425 ) L1M1_PR_MR
+      NEW met1 ( 3749 425 ) M1M2_PR
+      NEW met2 ( 3749 442 ) M2M3_PR
+      NEW li1 ( 2415 425 ) L1M1_PR_MR
+      NEW met1 ( 2415 425 ) M1M2_PR
+      NEW met2 ( 2415 442 ) M2M3_PR
+      NEW li1 ( 11799 391 ) L1M1_PR_MR ;
     - storage_1_0.we0 ( storage_1_0.gcand X ) ( storage_1_0.cg GATE ) + USE SIGNAL
       + ROUTED met1 ( 10925 459 ) ( 11569 * )
       NEW li1 ( 10925 459 ) L1M1_PR_MR
@@ -1954,20 +1954,18 @@ NETS 168 ;
       + ROUTED met1 ( 1955 629 ) ( * 663 )
       NEW met1 ( 1955 629 ) ( 2323 * )
       NEW met1 ( 2323 629 ) ( * 663 )
-      NEW met1 ( 1909 731 ) ( 1955 * )
-      NEW met1 ( 1955 663 ) ( * 731 )
+      NEW met1 ( 1909 663 ) ( * 731 )
+      NEW met1 ( 1909 663 ) ( 1955 * )
       NEW li1 ( 1955 663 ) L1M1_PR_MR
       NEW li1 ( 2323 663 ) L1M1_PR_MR
       NEW li1 ( 1909 731 ) L1M1_PR_MR ;
     - storage_2_0.bit2.storage ( storage_2_0.bit2.obuf1 A ) ( storage_2_0.bit2.obuf0 A ) ( storage_2_0.bit2.bit Q ) + USE SIGNAL
-      + ROUTED met2 ( 3289 629 ) ( * 697 )
+      + ROUTED met1 ( 3289 629 ) ( * 663 )
       NEW met1 ( 3289 629 ) ( 3657 * )
       NEW met1 ( 3657 629 ) ( * 663 )
-      NEW met1 ( 3243 697 ) ( * 731 )
-      NEW met1 ( 3243 697 ) ( 3289 * )
-      NEW li1 ( 3289 697 ) L1M1_PR_MR
-      NEW met1 ( 3289 697 ) M1M2_PR
-      NEW met1 ( 3289 629 ) M1M2_PR
+      NEW met1 ( 3243 663 ) ( * 731 )
+      NEW met1 ( 3243 663 ) ( 3289 * )
+      NEW li1 ( 3289 663 ) L1M1_PR_MR
       NEW li1 ( 3657 663 ) L1M1_PR_MR
       NEW li1 ( 3243 731 ) L1M1_PR_MR ;
     - storage_2_0.bit3.storage ( storage_2_0.bit3.obuf1 A ) ( storage_2_0.bit3.obuf0 A ) ( storage_2_0.bit3.bit Q ) + USE SIGNAL
@@ -2006,18 +2004,15 @@ NETS 168 ;
       NEW li1 ( 8993 663 ) L1M1_PR_MR
       NEW li1 ( 8579 595 ) L1M1_PR_MR ;
     - storage_2_0.bit7.storage ( storage_2_0.bit7.obuf1 A ) ( storage_2_0.bit7.obuf0 A ) ( storage_2_0.bit7.bit Q ) + USE SIGNAL
-      + ROUTED met2 ( 9913 714 ) ( * 731 )
-      NEW met3 ( 9913 714 ) ( 10327 * )
-      NEW met2 ( 10327 663 ) ( * 714 )
-      NEW met1 ( 9913 663 ) ( 9959 * )
-      NEW met1 ( 9913 663 ) ( * 731 )
+      + ROUTED met1 ( 9959 697 ) ( 10005 * )
+      NEW met1 ( 9913 697 ) ( * 731 )
+      NEW met1 ( 9913 697 ) ( 9959 * )
+      NEW met1 ( 10005 629 ) ( 10327 * )
+      NEW met1 ( 10327 629 ) ( * 663 )
+      NEW met1 ( 10005 629 ) ( * 697 )
+      NEW li1 ( 9959 697 ) L1M1_PR_MR
       NEW li1 ( 9913 731 ) L1M1_PR_MR
-      NEW met1 ( 9913 731 ) M1M2_PR
-      NEW met2 ( 9913 714 ) M2M3_PR
-      NEW met2 ( 10327 714 ) M2M3_PR
-      NEW li1 ( 10327 663 ) L1M1_PR_MR
-      NEW met1 ( 10327 663 ) M1M2_PR
-      NEW li1 ( 9959 663 ) L1M1_PR_MR ;
+      NEW li1 ( 10327 663 ) L1M1_PR_MR ;
     - storage_2_0.decoder0 ( decoder_2_0.and_layer0 X ) ( storage_2_0.select_inv_0 A ) ( storage_2_0.gcand A ) + USE SIGNAL
       + ROUTED met1 ( 11615 629 ) ( 11845 * )
       NEW met1 ( 11845 595 ) ( * 629 )
@@ -2030,52 +2025,52 @@ NETS 168 ;
     - storage_2_0.decoder1 ( storage_2_0.select_inv_1 A ) + USE SIGNAL ;
     - storage_2_0.gclock ( storage_2_0.cg GCLK ) ( storage_2_0.bit7.bit GATE ) ( storage_2_0.bit6.bit GATE ) ( storage_2_0.bit5.bit GATE ) ( storage_2_0.bit4.bit GATE ) ( storage_2_0.bit3.bit GATE ) ( storage_2_0.bit2.bit GATE )
       ( storage_2_0.bit1.bit GATE ) ( storage_2_0.bit0.bit GATE ) + USE SIGNAL
-      + ROUTED met2 ( 9407 493 ) ( * 663 )
-      NEW met1 ( 9407 493 ) ( 10465 * )
-      NEW met2 ( 10465 493 ) ( * 595 )
-      NEW met2 ( 8073 578 ) ( * 663 )
-      NEW met3 ( 8073 578 ) ( 9407 * )
-      NEW met2 ( 6739 578 ) ( * 663 )
-      NEW met3 ( 6739 578 ) ( 8073 * )
+      + ROUTED met1 ( 69 595 ) ( * 663 )
+      NEW met2 ( 9407 595 ) ( * 663 )
+      NEW met2 ( 8073 646 ) ( * 663 )
+      NEW met3 ( 8073 646 ) ( 9407 * )
+      NEW met2 ( 6739 646 ) ( * 663 )
+      NEW met3 ( 6739 646 ) ( 8073 * )
+      NEW met3 ( 6670 578 ) ( * 646 )
+      NEW met3 ( 6670 646 ) ( 6739 * )
       NEW met2 ( 5405 578 ) ( * 663 )
-      NEW met3 ( 5405 578 ) ( 6739 * )
-      NEW met1 ( 10465 595 ) ( 11339 * )
       NEW met2 ( 4071 578 ) ( * 663 )
-      NEW met2 ( 2737 578 ) ( * 663 )
-      NEW met3 ( 2737 578 ) ( 4071 * )
-      NEW met1 ( 1403 595 ) ( * 663 )
-      NEW met1 ( 1403 595 ) ( 2737 * )
-      NEW met1 ( 69 595 ) ( * 663 )
-      NEW met1 ( 69 595 ) ( 1403 * )
       NEW met3 ( 4071 578 ) ( 5405 * )
+      NEW met1 ( 2737 663 ) ( 2783 * )
+      NEW met1 ( 2783 595 ) ( * 663 )
+      NEW met1 ( 2783 595 ) ( 4071 * )
+      NEW met1 ( 1403 595 ) ( * 663 )
+      NEW met1 ( 69 595 ) ( 2783 * )
+      NEW met3 ( 5405 578 ) ( 6670 * )
+      NEW met1 ( 9407 595 ) ( 11339 * )
+      NEW li1 ( 69 663 ) L1M1_PR_MR
       NEW li1 ( 9407 663 ) L1M1_PR_MR
       NEW met1 ( 9407 663 ) M1M2_PR
-      NEW met1 ( 9407 493 ) M1M2_PR
-      NEW met1 ( 10465 493 ) M1M2_PR
-      NEW met1 ( 10465 595 ) M1M2_PR
+      NEW met1 ( 9407 595 ) M1M2_PR
       NEW li1 ( 8073 663 ) L1M1_PR_MR
       NEW met1 ( 8073 663 ) M1M2_PR
-      NEW met2 ( 8073 578 ) M2M3_PR
-      NEW met2 ( 9407 578 ) M2M3_PR
+      NEW met2 ( 8073 646 ) M2M3_PR
+      NEW met2 ( 9407 646 ) M2M3_PR
       NEW li1 ( 6739 663 ) L1M1_PR_MR
       NEW met1 ( 6739 663 ) M1M2_PR
-      NEW met2 ( 6739 578 ) M2M3_PR
+      NEW met2 ( 6739 646 ) M2M3_PR
       NEW li1 ( 5405 663 ) L1M1_PR_MR
       NEW met1 ( 5405 663 ) M1M2_PR
       NEW met2 ( 5405 578 ) M2M3_PR
-      NEW li1 ( 11339 595 ) L1M1_PR_MR
       NEW li1 ( 4071 663 ) L1M1_PR_MR
       NEW met1 ( 4071 663 ) M1M2_PR
       NEW met2 ( 4071 578 ) M2M3_PR
       NEW li1 ( 2737 663 ) L1M1_PR_MR
-      NEW met1 ( 2737 663 ) M1M2_PR
-      NEW met2 ( 2737 578 ) M2M3_PR
+      NEW met1 ( 4071 595 ) M1M2_PR
       NEW li1 ( 1403 663 ) L1M1_PR_MR
-      NEW met1 ( 2737 595 ) M1M2_PR
-      NEW li1 ( 69 663 ) L1M1_PR_MR ;
+      NEW li1 ( 11339 595 ) L1M1_PR_MR ;
     - storage_2_0.select0_b ( storage_2_0.select_inv_0 Y ) ( storage_2_0.bit7.obuf0 TE_B ) ( storage_2_0.bit6.obuf0 TE_B ) ( storage_2_0.bit5.obuf0 TE_B ) ( storage_2_0.bit4.obuf0 TE_B ) ( storage_2_0.bit3.obuf0 TE_B ) ( storage_2_0.bit2.obuf0 TE_B )
       ( storage_2_0.bit1.obuf0 TE_B ) ( storage_2_0.bit0.obuf0 TE_B ) + USE SIGNAL
-      + ROUTED met1 ( 7337 663 ) ( 7383 * )
+      + ROUTED met2 ( 1357 493 ) ( * 697 )
+      NEW met1 ( 943 697 ) ( 1357 * )
+      NEW met1 ( 943 663 ) ( * 697 )
+      NEW met1 ( 713 663 ) ( 943 * )
+      NEW met1 ( 7337 663 ) ( 7383 * )
       NEW met1 ( 7337 663 ) ( * 697 )
       NEW met1 ( 7245 697 ) ( 7337 * )
       NEW met1 ( 7245 663 ) ( * 697 )
@@ -2085,21 +2080,35 @@ NETS 168 ;
       NEW met1 ( 6371 629 ) ( * 697 )
       NEW met1 ( 6279 697 ) ( 6371 * )
       NEW met1 ( 6279 663 ) ( * 697 )
-      NEW met1 ( 8671 663 ) ( 8717 * )
-      NEW met1 ( 8671 663 ) ( * 697 )
       NEW met1 ( 8579 697 ) ( 8671 * )
-      NEW met1 ( 8579 663 ) ( * 697 )
-      NEW met1 ( 8533 663 ) ( 8579 * )
-      NEW met1 ( 8533 629 ) ( * 663 )
-      NEW met1 ( 7705 629 ) ( 8533 * )
       NEW met1 ( 7705 629 ) ( * 697 )
       NEW met1 ( 7613 697 ) ( 7705 * )
       NEW met1 ( 7613 663 ) ( * 697 )
       NEW met1 ( 7383 663 ) ( 7613 * )
-      NEW met1 ( 9131 629 ) ( * 697 )
-      NEW met1 ( 8947 697 ) ( 9131 * )
-      NEW met1 ( 8947 663 ) ( * 697 )
-      NEW met1 ( 8717 663 ) ( 8947 * )
+      NEW met1 ( 8947 697 ) ( 9039 * )
+      NEW met1 ( 10281 697 ) ( 10465 * )
+      NEW met1 ( 2047 663 ) ( 2093 * )
+      NEW met2 ( 2093 493 ) ( * 663 )
+      NEW met1 ( 3335 663 ) ( 3381 * )
+      NEW met1 ( 3335 663 ) ( * 765 )
+      NEW met1 ( 2691 765 ) ( 3335 * )
+      NEW met1 ( 2691 663 ) ( * 765 )
+      NEW met1 ( 2461 663 ) ( 2691 * )
+      NEW met1 ( 2461 663 ) ( * 697 )
+      NEW met1 ( 2277 697 ) ( 2461 * )
+      NEW met1 ( 2277 663 ) ( * 697 )
+      NEW met1 ( 2093 663 ) ( 2277 * )
+      NEW met1 ( 4669 663 ) ( 4715 * )
+      NEW met1 ( 4669 663 ) ( * 697 )
+      NEW met1 ( 4577 697 ) ( 4669 * )
+      NEW met1 ( 4577 663 ) ( * 697 )
+      NEW met1 ( 4255 663 ) ( 4577 * )
+      NEW met1 ( 4255 629 ) ( * 663 )
+      NEW met1 ( 3703 629 ) ( 4255 * )
+      NEW met1 ( 3703 629 ) ( * 697 )
+      NEW met1 ( 3611 697 ) ( 3703 * )
+      NEW met1 ( 3611 663 ) ( * 697 )
+      NEW met1 ( 3381 663 ) ( 3611 * )
       NEW met1 ( 6003 663 ) ( 6049 * )
       NEW met1 ( 6003 663 ) ( * 697 )
       NEW met1 ( 5865 697 ) ( 6003 * )
@@ -2108,55 +2117,66 @@ NETS 168 ;
       NEW met1 ( 5037 629 ) ( * 697 )
       NEW met1 ( 4945 697 ) ( 5037 * )
       NEW met1 ( 4945 663 ) ( * 697 )
+      NEW met1 ( 4715 663 ) ( 4945 * )
+      NEW met1 ( 1357 493 ) ( 2093 * )
       NEW met1 ( 6049 663 ) ( 6279 * )
-      NEW met1 ( 4830 663 ) ( 4945 * )
-      NEW met1 ( 2047 697 ) ( * 765 )
-      NEW met1 ( 1449 765 ) ( 2047 * )
-      NEW met1 ( 1449 731 ) ( * 765 )
-      NEW met1 ( 713 731 ) ( 1449 * )
-      NEW met1 ( 713 697 ) ( * 731 )
-      NEW met1 ( 3151 663 ) ( 3381 * )
-      NEW met1 ( 3151 629 ) ( * 663 )
-      NEW met1 ( 2691 629 ) ( 3151 * )
-      NEW met1 ( 2691 629 ) ( * 697 )
-      NEW met1 ( 2047 697 ) ( 2691 * )
-      NEW met1 ( 4347 697 ) ( 4715 * )
-      NEW met1 ( 4347 663 ) ( * 697 )
-      NEW met1 ( 4255 663 ) ( 4347 * )
-      NEW met1 ( 4255 629 ) ( * 663 )
-      NEW met1 ( 4025 629 ) ( 4255 * )
-      NEW met1 ( 4025 629 ) ( * 697 )
-      NEW met1 ( 3381 697 ) ( 4025 * )
-      NEW met1 ( 3381 663 ) ( * 697 )
-      NEW met1 ( 4830 663 ) ( * 697 )
-      NEW met1 ( 4715 697 ) ( 4830 * )
-      NEW met1 ( 10051 697 ) ( 10649 * )
-      NEW met1 ( 10649 697 ) ( * 765 )
-      NEW met1 ( 10649 765 ) ( 11661 * )
-      NEW met1 ( 10051 629 ) ( * 697 )
-      NEW met1 ( 9131 629 ) ( 10051 * )
+      NEW met1 ( 10695 731 ) ( 11661 * )
+      NEW met1 ( 8579 690 ) ( * 697 )
+      NEW met1 ( 8947 690 ) ( * 697 )
+      NEW met1 ( 10043 663 ) ( 10051 * )
+      NEW met2 ( 10051 663 ) ( 10097 * )
+      NEW met2 ( 10097 646 ) ( * 663 )
+      NEW met3 ( 9913 646 ) ( 10097 * )
+      NEW met2 ( 9913 629 ) ( * 646 )
+      NEW met1 ( 9039 629 ) ( 9913 * )
+      NEW met1 ( 10051 663 ) ( 10281 * )
+      NEW met1 ( 8671 663 ) ( 8901 * )
+      NEW met1 ( 8901 663 ) ( * 690 )
+      NEW met1 ( 8901 690 ) ( 8947 * )
+      NEW met1 ( 10465 663 ) ( 10695 * )
+      NEW met1 ( 8533 629 ) ( * 690 )
+      NEW met1 ( 8533 690 ) ( 8579 * )
+      NEW met1 ( 7705 629 ) ( 8533 * )
+      NEW met1 ( 8671 663 ) ( * 697 )
+      NEW met1 ( 9039 629 ) ( * 697 )
+      NEW met1 ( 10281 663 ) ( * 697 )
+      NEW met1 ( 10465 663 ) ( * 697 )
+      NEW met1 ( 10695 663 ) ( * 731 )
+      NEW met1 ( 1357 493 ) M1M2_PR
+      NEW met1 ( 1357 697 ) M1M2_PR
+      NEW li1 ( 713 663 ) L1M1_PR_MR
       NEW li1 ( 7383 663 ) L1M1_PR_MR
-      NEW li1 ( 8717 663 ) L1M1_PR_MR
-      NEW li1 ( 6049 663 ) L1M1_PR_MR
-      NEW li1 ( 2047 697 ) L1M1_PR_MR
-      NEW li1 ( 713 697 ) L1M1_PR_MR
+      NEW li1 ( 2047 663 ) L1M1_PR_MR
+      NEW met1 ( 2093 663 ) M1M2_PR
+      NEW met1 ( 2093 493 ) M1M2_PR
       NEW li1 ( 3381 663 ) L1M1_PR_MR
-      NEW li1 ( 4715 697 ) L1M1_PR_MR
-      NEW li1 ( 10051 697 ) L1M1_PR_MR
-      NEW li1 ( 11661 765 ) L1M1_PR_MR ;
+      NEW li1 ( 4715 663 ) L1M1_PR_MR
+      NEW li1 ( 6049 663 ) L1M1_PR_MR
+      NEW li1 ( 11661 731 ) L1M1_PR_MR
+      NEW li1 ( 10043 663 ) L1M1_PR_MR
+      NEW met1 ( 10051 663 ) M1M2_PR
+      NEW met2 ( 10097 646 ) M2M3_PR
+      NEW met2 ( 9913 646 ) M2M3_PR
+      NEW met1 ( 9913 629 ) M1M2_PR
+      NEW li1 ( 8717 663 ) L1M1_PR_MR
+      NEW met1 ( 8717 663 ) RECT ( -35 -7 0 7 )  ;
     - storage_2_0.select1_b ( storage_2_0.select_inv_1 Y ) ( storage_2_0.bit7.obuf1 TE_B ) ( storage_2_0.bit6.obuf1 TE_B ) ( storage_2_0.bit5.obuf1 TE_B ) ( storage_2_0.bit4.obuf1 TE_B ) ( storage_2_0.bit3.obuf1 TE_B ) ( storage_2_0.bit2.obuf1 TE_B )
       ( storage_2_0.bit1.obuf1 TE_B ) ( storage_2_0.bit0.obuf1 TE_B ) + USE SIGNAL
       + ROUTED met2 ( 1081 646 ) ( * 663 )
       NEW met2 ( 6417 646 ) ( * 663 )
-      NEW met2 ( 7751 646 ) ( * 663 )
-      NEW met3 ( 6417 646 ) ( 7751 * )
-      NEW met2 ( 9085 646 ) ( * 663 )
-      NEW met3 ( 7751 646 ) ( 9085 * )
-      NEW met1 ( 10419 595 ) ( * 663 )
-      NEW met1 ( 9085 595 ) ( 10419 * )
-      NEW met1 ( 9085 595 ) ( * 663 )
-      NEW met1 ( 10695 663 ) ( * 697 )
-      NEW met1 ( 10419 663 ) ( 10695 * )
+      NEW met2 ( 7751 510 ) ( * 663 )
+      NEW met3 ( 6417 510 ) ( 7751 * )
+      NEW met2 ( 6417 510 ) ( * 646 )
+      NEW met2 ( 9085 510 ) ( * 663 )
+      NEW met3 ( 7751 510 ) ( 9085 * )
+      NEW met1 ( 10373 663 ) ( 10419 * )
+      NEW met2 ( 10373 510 ) ( * 663 )
+      NEW met3 ( 9085 510 ) ( 10373 * )
+      NEW met1 ( 10695 459 ) ( * 493 )
+      NEW met1 ( 10557 459 ) ( 10695 * )
+      NEW met1 ( 10557 459 ) ( * 493 )
+      NEW met1 ( 10373 493 ) ( 10557 * )
+      NEW met2 ( 10373 493 ) ( * 510 )
       NEW met2 ( 5083 646 ) ( * 663 )
       NEW met2 ( 3749 646 ) ( * 663 )
       NEW met3 ( 3749 646 ) ( 5083 * )
@@ -2164,11 +2184,8 @@ NETS 168 ;
       NEW met3 ( 2415 646 ) ( 3749 * )
       NEW met3 ( 1081 646 ) ( 2415 * )
       NEW met3 ( 5083 646 ) ( 6417 * )
-      NEW met1 ( 11109 697 ) ( * 731 )
-      NEW met1 ( 11109 731 ) ( 11661 * )
-      NEW met1 ( 11661 663 ) ( * 731 )
-      NEW met1 ( 11661 663 ) ( 11799 * )
-      NEW met1 ( 10695 697 ) ( 11109 * )
+      NEW met2 ( 11799 493 ) ( * 595 )
+      NEW met1 ( 10695 493 ) ( 11799 * )
       NEW met2 ( 1081 646 ) M2M3_PR
       NEW li1 ( 1081 663 ) L1M1_PR_MR
       NEW met1 ( 1081 663 ) M1M2_PR
@@ -2177,11 +2194,15 @@ NETS 168 ;
       NEW met2 ( 6417 646 ) M2M3_PR
       NEW li1 ( 7751 663 ) L1M1_PR_MR
       NEW met1 ( 7751 663 ) M1M2_PR
-      NEW met2 ( 7751 646 ) M2M3_PR
+      NEW met2 ( 7751 510 ) M2M3_PR
+      NEW met2 ( 6417 510 ) M2M3_PR
       NEW li1 ( 9085 663 ) L1M1_PR_MR
       NEW met1 ( 9085 663 ) M1M2_PR
-      NEW met2 ( 9085 646 ) M2M3_PR
+      NEW met2 ( 9085 510 ) M2M3_PR
       NEW li1 ( 10419 663 ) L1M1_PR_MR
+      NEW met1 ( 10373 663 ) M1M2_PR
+      NEW met2 ( 10373 510 ) M2M3_PR
+      NEW met1 ( 10373 493 ) M1M2_PR
       NEW li1 ( 5083 663 ) L1M1_PR_MR
       NEW met1 ( 5083 663 ) M1M2_PR
       NEW met2 ( 5083 646 ) M2M3_PR
@@ -2191,7 +2212,9 @@ NETS 168 ;
       NEW li1 ( 2415 663 ) L1M1_PR_MR
       NEW met1 ( 2415 663 ) M1M2_PR
       NEW met2 ( 2415 646 ) M2M3_PR
-      NEW li1 ( 11799 663 ) L1M1_PR_MR ;
+      NEW met1 ( 11799 493 ) M1M2_PR
+      NEW li1 ( 11799 595 ) L1M1_PR_MR
+      NEW met1 ( 11799 595 ) M1M2_PR ;
     - storage_2_0.we0 ( storage_2_0.gcand X ) ( storage_2_0.cg GATE ) + USE SIGNAL
       + ROUTED met1 ( 10925 629 ) ( 11569 * )
       NEW li1 ( 10925 629 ) L1M1_PR_MR
@@ -2263,44 +2286,36 @@ NETS 168 ;
     - storage_3_0.decoder1 ( storage_3_0.select_inv_1 A ) + USE SIGNAL ;
     - storage_3_0.gclock ( storage_3_0.cg GCLK ) ( storage_3_0.bit7.bit GATE ) ( storage_3_0.bit6.bit GATE ) ( storage_3_0.bit5.bit GATE ) ( storage_3_0.bit4.bit GATE ) ( storage_3_0.bit3.bit GATE ) ( storage_3_0.bit2.bit GATE )
       ( storage_3_0.bit1.bit GATE ) ( storage_3_0.bit0.bit GATE ) + USE SIGNAL
-      + ROUTED met1 ( 69 969 ) ( * 1003 )
-      NEW met1 ( 1035 935 ) ( * 1003 )
-      NEW met2 ( 9407 765 ) ( * 935 )
+      + ROUTED met2 ( 9407 765 ) ( * 935 )
       NEW met1 ( 9407 765 ) ( 10097 * )
       NEW met2 ( 10097 765 ) ( * 867 )
+      NEW met1 ( 10097 867 ) ( 11339 * )
       NEW met2 ( 8073 850 ) ( * 935 )
-      NEW met3 ( 8073 850 ) ( 9407 * )
       NEW met2 ( 6739 850 ) ( * 935 )
       NEW met3 ( 6739 850 ) ( 8073 * )
-      NEW met1 ( 69 1003 ) ( 1380 * )
       NEW met2 ( 5405 850 ) ( * 935 )
-      NEW met2 ( 4071 765 ) ( * 935 )
-      NEW met1 ( 4071 765 ) ( 4393 * )
-      NEW met1 ( 4393 731 ) ( * 765 )
-      NEW met1 ( 4393 731 ) ( 5405 * )
-      NEW met2 ( 5405 731 ) ( * 850 )
-      NEW met2 ( 2737 765 ) ( * 935 )
-      NEW met1 ( 2737 765 ) ( 3289 * )
-      NEW met1 ( 3289 731 ) ( * 765 )
-      NEW met1 ( 3289 731 ) ( 4071 * )
-      NEW met1 ( 4071 731 ) ( * 765 )
-      NEW met1 ( 1380 1003 ) ( * 1037 )
-      NEW met1 ( 1380 1037 ) ( 2185 * )
-      NEW met2 ( 2185 935 ) ( * 1037 )
-      NEW met1 ( 2185 935 ) ( 2737 * )
-      NEW met1 ( 1035 935 ) ( 1403 * )
       NEW met3 ( 5405 850 ) ( 6739 * )
-      NEW met1 ( 10097 867 ) ( 11339 * )
-      NEW li1 ( 69 969 ) L1M1_PR_MR
+      NEW met2 ( 4071 850 ) ( * 935 )
+      NEW met3 ( 4071 850 ) ( 5405 * )
+      NEW met2 ( 2737 850 ) ( * 935 )
+      NEW met3 ( 2737 850 ) ( 4071 * )
+      NEW met2 ( 1403 850 ) ( * 935 )
+      NEW met3 ( 1403 850 ) ( 2737 * )
+      NEW met1 ( 69 969 ) ( * 1003 )
+      NEW met1 ( 69 1003 ) ( 1035 * )
+      NEW met1 ( 1035 935 ) ( * 1003 )
+      NEW met1 ( 1035 935 ) ( 1403 * )
+      NEW met3 ( 8073 850 ) ( 9407 * )
       NEW li1 ( 9407 935 ) L1M1_PR_MR
       NEW met1 ( 9407 935 ) M1M2_PR
       NEW met1 ( 9407 765 ) M1M2_PR
       NEW met1 ( 10097 765 ) M1M2_PR
       NEW met1 ( 10097 867 ) M1M2_PR
+      NEW met2 ( 9407 850 ) M2M3_PR
+      NEW li1 ( 11339 867 ) L1M1_PR_MR
       NEW li1 ( 8073 935 ) L1M1_PR_MR
       NEW met1 ( 8073 935 ) M1M2_PR
       NEW met2 ( 8073 850 ) M2M3_PR
-      NEW met2 ( 9407 850 ) M2M3_PR
       NEW li1 ( 6739 935 ) L1M1_PR_MR
       NEW met1 ( 6739 935 ) M1M2_PR
       NEW met2 ( 6739 850 ) M2M3_PR
@@ -2309,15 +2324,14 @@ NETS 168 ;
       NEW met2 ( 5405 850 ) M2M3_PR
       NEW li1 ( 4071 935 ) L1M1_PR_MR
       NEW met1 ( 4071 935 ) M1M2_PR
-      NEW met1 ( 4071 765 ) M1M2_PR
-      NEW met1 ( 5405 731 ) M1M2_PR
+      NEW met2 ( 4071 850 ) M2M3_PR
       NEW li1 ( 2737 935 ) L1M1_PR_MR
       NEW met1 ( 2737 935 ) M1M2_PR
-      NEW met1 ( 2737 765 ) M1M2_PR
-      NEW met1 ( 2185 1037 ) M1M2_PR
-      NEW met1 ( 2185 935 ) M1M2_PR
+      NEW met2 ( 2737 850 ) M2M3_PR
       NEW li1 ( 1403 935 ) L1M1_PR_MR
-      NEW li1 ( 11339 867 ) L1M1_PR_MR ;
+      NEW met1 ( 1403 935 ) M1M2_PR
+      NEW met2 ( 1403 850 ) M2M3_PR
+      NEW li1 ( 69 969 ) L1M1_PR_MR ;
     - storage_3_0.select0_b ( storage_3_0.select_inv_0 Y ) ( storage_3_0.bit7.obuf0 TE_B ) ( storage_3_0.bit6.obuf0 TE_B ) ( storage_3_0.bit5.obuf0 TE_B ) ( storage_3_0.bit4.obuf0 TE_B ) ( storage_3_0.bit3.obuf0 TE_B ) ( storage_3_0.bit2.obuf0 TE_B )
       ( storage_3_0.bit1.obuf0 TE_B ) ( storage_3_0.bit0.obuf0 TE_B ) + USE SIGNAL
       + ROUTED met1 ( 713 867 ) ( * 935 )
@@ -2351,50 +2365,43 @@ NETS 168 ;
       NEW li1 ( 11661 901 ) L1M1_PR_MR ;
     - storage_3_0.select1_b ( storage_3_0.select_inv_1 Y ) ( storage_3_0.bit7.obuf1 TE_B ) ( storage_3_0.bit6.obuf1 TE_B ) ( storage_3_0.bit5.obuf1 TE_B ) ( storage_3_0.bit4.obuf1 TE_B ) ( storage_3_0.bit3.obuf1 TE_B ) ( storage_3_0.bit2.obuf1 TE_B )
       ( storage_3_0.bit1.obuf1 TE_B ) ( storage_3_0.bit0.obuf1 TE_B ) + USE SIGNAL
-      + ROUTED met2 ( 6417 918 ) ( * 935 )
-      NEW met2 ( 7751 918 ) ( * 935 )
-      NEW met3 ( 6417 918 ) ( 7751 * )
-      NEW met2 ( 9085 918 ) ( * 935 )
-      NEW met3 ( 7751 918 ) ( 9085 * )
+      + ROUTED met2 ( 9085 918 ) ( * 935 )
       NEW met1 ( 10419 969 ) ( * 1003 )
       NEW met1 ( 9085 1003 ) ( 10419 * )
       NEW met1 ( 9085 935 ) ( * 1003 )
       NEW met1 ( 10695 1003 ) ( * 1037 )
       NEW met1 ( 10419 1003 ) ( 10695 * )
-      NEW met2 ( 5083 918 ) ( * 935 )
-      NEW met1 ( 3749 969 ) ( 4025 * )
-      NEW met1 ( 4025 969 ) ( * 974 )
-      NEW met1 ( 4025 974 ) ( 4117 * )
-      NEW met1 ( 4117 969 ) ( * 974 )
-      NEW met1 ( 4117 969 ) ( 4163 * )
-      NEW met1 ( 4163 969 ) ( * 1003 )
-      NEW met1 ( 4163 1003 ) ( 5083 * )
-      NEW met1 ( 5083 935 ) ( * 1003 )
-      NEW met1 ( 2415 969 ) ( * 1003 )
-      NEW met1 ( 2415 1003 ) ( 3749 * )
+      NEW met1 ( 10695 1037 ) ( 11799 * )
+      NEW met2 ( 7751 918 ) ( * 935 )
+      NEW met1 ( 6417 969 ) ( * 1003 )
+      NEW met1 ( 6417 1003 ) ( 7751 * )
+      NEW met1 ( 7751 935 ) ( * 1003 )
+      NEW met1 ( 5083 969 ) ( * 1003 )
+      NEW met1 ( 5083 1003 ) ( 6417 * )
       NEW met1 ( 3749 969 ) ( * 1003 )
+      NEW met1 ( 3749 1003 ) ( 5083 * )
+      NEW met1 ( 2415 969 ) ( * 1003 )
+      NEW met1 ( 2415 1003 ) ( 3657 * )
+      NEW met1 ( 3657 1003 ) ( * 1037 )
+      NEW met1 ( 3657 1037 ) ( 3749 * )
+      NEW met1 ( 3749 1003 ) ( * 1037 )
+      NEW met1 ( 1081 969 ) ( 1495 * )
       NEW met1 ( 1495 969 ) ( * 1003 )
       NEW met1 ( 1495 1003 ) ( 2415 * )
-      NEW met1 ( 1081 969 ) ( 1495 * )
-      NEW met3 ( 5083 918 ) ( 6417 * )
-      NEW met1 ( 10695 1037 ) ( 11799 * )
-      NEW li1 ( 1081 969 ) L1M1_PR_MR
-      NEW li1 ( 6417 935 ) L1M1_PR_MR
-      NEW met1 ( 6417 935 ) M1M2_PR
-      NEW met2 ( 6417 918 ) M2M3_PR
-      NEW li1 ( 7751 935 ) L1M1_PR_MR
-      NEW met1 ( 7751 935 ) M1M2_PR
-      NEW met2 ( 7751 918 ) M2M3_PR
+      NEW met3 ( 7751 918 ) ( 9085 * )
       NEW li1 ( 9085 935 ) L1M1_PR_MR
       NEW met1 ( 9085 935 ) M1M2_PR
       NEW met2 ( 9085 918 ) M2M3_PR
       NEW li1 ( 10419 969 ) L1M1_PR_MR
-      NEW li1 ( 5083 935 ) L1M1_PR_MR
-      NEW met1 ( 5083 935 ) M1M2_PR
-      NEW met2 ( 5083 918 ) M2M3_PR
+      NEW li1 ( 11799 1037 ) L1M1_PR_MR
+      NEW li1 ( 7751 935 ) L1M1_PR_MR
+      NEW met1 ( 7751 935 ) M1M2_PR
+      NEW met2 ( 7751 918 ) M2M3_PR
+      NEW li1 ( 6417 969 ) L1M1_PR_MR
+      NEW li1 ( 5083 969 ) L1M1_PR_MR
       NEW li1 ( 3749 969 ) L1M1_PR_MR
       NEW li1 ( 2415 969 ) L1M1_PR_MR
-      NEW li1 ( 11799 1037 ) L1M1_PR_MR ;
+      NEW li1 ( 1081 969 ) L1M1_PR_MR ;
     - storage_3_0.we0 ( storage_3_0.gcand X ) ( storage_3_0.cg GATE ) + USE SIGNAL
       + ROUTED met1 ( 10925 1003 ) ( 11569 * )
       NEW li1 ( 10925 1003 ) L1M1_PR_MR
@@ -2428,30 +2435,30 @@ NETS 168 ;
       NEW li1 ( 4991 1241 ) L1M1_PR_MR
       NEW li1 ( 4577 1275 ) L1M1_PR_MR ;
     - storage_4_0.bit4.storage ( storage_4_0.bit4.obuf1 A ) ( storage_4_0.bit4.obuf0 A ) ( storage_4_0.bit4.bit Q ) + USE SIGNAL
-      + ROUTED met1 ( 5911 1241 ) ( * 1275 )
-      NEW met1 ( 5911 1241 ) ( 5957 * )
+      + ROUTED met1 ( 5911 1275 ) ( 5957 * )
+      NEW met1 ( 5957 1241 ) ( * 1275 )
       NEW met1 ( 5957 1241 ) ( 6325 * )
       NEW li1 ( 6325 1241 ) L1M1_PR_MR
       NEW li1 ( 5957 1241 ) L1M1_PR_MR
       NEW li1 ( 5911 1275 ) L1M1_PR_MR ;
     - storage_4_0.bit5.storage ( storage_4_0.bit5.obuf1 A ) ( storage_4_0.bit5.obuf0 A ) ( storage_4_0.bit5.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 7291 1241 ) ( 7659 * )
-      NEW met1 ( 7245 1275 ) ( 7291 * )
-      NEW met1 ( 7291 1241 ) ( * 1275 )
+      NEW met1 ( 7245 1241 ) ( * 1275 )
+      NEW met1 ( 7245 1241 ) ( 7291 * )
       NEW li1 ( 7291 1241 ) L1M1_PR_MR
       NEW li1 ( 7659 1241 ) L1M1_PR_MR
       NEW li1 ( 7245 1275 ) L1M1_PR_MR ;
     - storage_4_0.bit6.storage ( storage_4_0.bit6.obuf1 A ) ( storage_4_0.bit6.obuf0 A ) ( storage_4_0.bit6.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 8625 1241 ) ( 8993 * )
-      NEW met1 ( 8579 1275 ) ( 8625 * )
-      NEW met1 ( 8625 1241 ) ( * 1275 )
+      NEW met1 ( 8579 1241 ) ( * 1275 )
+      NEW met1 ( 8579 1241 ) ( 8625 * )
       NEW li1 ( 8625 1241 ) L1M1_PR_MR
       NEW li1 ( 8993 1241 ) L1M1_PR_MR
       NEW li1 ( 8579 1275 ) L1M1_PR_MR ;
     - storage_4_0.bit7.storage ( storage_4_0.bit7.obuf1 A ) ( storage_4_0.bit7.obuf0 A ) ( storage_4_0.bit7.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 9959 1241 ) ( 10327 * )
-      NEW met1 ( 9913 1275 ) ( 9959 * )
-      NEW met1 ( 9959 1241 ) ( * 1275 )
+      NEW met1 ( 9913 1241 ) ( * 1275 )
+      NEW met1 ( 9913 1241 ) ( 9959 * )
       NEW li1 ( 9959 1241 ) L1M1_PR_MR
       NEW li1 ( 10327 1241 ) L1M1_PR_MR
       NEW li1 ( 9913 1275 ) L1M1_PR_MR ;
@@ -2500,6 +2507,7 @@ NETS 168 ;
       NEW li1 ( 6739 1207 ) L1M1_PR_MR
       NEW met1 ( 6739 1207 ) M1M2_PR
       NEW met2 ( 6739 1190 ) M2M3_PR
+      NEW li1 ( 1403 1241 ) L1M1_PR_MR
       NEW li1 ( 5405 1207 ) L1M1_PR_MR
       NEW met1 ( 5405 1207 ) M1M2_PR
       NEW met2 ( 5405 1190 ) M2M3_PR
@@ -2509,7 +2517,6 @@ NETS 168 ;
       NEW met1 ( 2737 1139 ) M1M2_PR
       NEW met1 ( 4071 1139 ) M1M2_PR
       NEW met1 ( 4071 1241 ) M1M2_PR
-      NEW li1 ( 1403 1241 ) L1M1_PR_MR
       NEW li1 ( 11339 1139 ) L1M1_PR_MR ;
     - storage_4_0.select0_b ( storage_4_0.select_inv_0 Y ) ( storage_4_0.bit7.obuf0 TE_B ) ( storage_4_0.bit6.obuf0 TE_B ) ( storage_4_0.bit5.obuf0 TE_B ) ( storage_4_0.bit4.obuf0 TE_B ) ( storage_4_0.bit3.obuf0 TE_B ) ( storage_4_0.bit2.obuf0 TE_B )
       ( storage_4_0.bit1.obuf0 TE_B ) ( storage_4_0.bit0.obuf0 TE_B ) + USE SIGNAL
@@ -2609,18 +2616,18 @@ NETS 168 ;
       NEW li1 ( 10925 1173 ) L1M1_PR_MR
       NEW li1 ( 11569 1173 ) L1M1_PR_MR ;
     - storage_5_0.bit0.storage ( storage_5_0.bit0.obuf1 A ) ( storage_5_0.bit0.obuf0 A ) ( storage_5_0.bit0.bit Q ) + USE SIGNAL
-      + ROUTED met1 ( 621 1479 ) ( 989 * )
-      NEW met1 ( 575 1445 ) ( * 1479 )
-      NEW met1 ( 575 1479 ) ( 621 * )
-      NEW li1 ( 621 1479 ) L1M1_PR_MR
-      NEW li1 ( 989 1479 ) L1M1_PR_MR
+      + ROUTED met1 ( 621 1513 ) ( 989 * )
+      NEW met1 ( 575 1445 ) ( * 1513 )
+      NEW met1 ( 575 1513 ) ( 621 * )
+      NEW li1 ( 621 1513 ) L1M1_PR_MR
+      NEW li1 ( 989 1513 ) L1M1_PR_MR
       NEW li1 ( 575 1445 ) L1M1_PR_MR ;
     - storage_5_0.bit1.storage ( storage_5_0.bit1.obuf1 A ) ( storage_5_0.bit1.obuf0 A ) ( storage_5_0.bit1.bit Q ) + USE SIGNAL
-      + ROUTED met1 ( 1955 1479 ) ( 2323 * )
-      NEW met1 ( 1909 1445 ) ( * 1479 )
-      NEW met1 ( 1909 1479 ) ( 1955 * )
-      NEW li1 ( 1955 1479 ) L1M1_PR_MR
-      NEW li1 ( 2323 1479 ) L1M1_PR_MR
+      + ROUTED met1 ( 1955 1513 ) ( 2323 * )
+      NEW met1 ( 1909 1445 ) ( 1955 * )
+      NEW met1 ( 1955 1445 ) ( * 1513 )
+      NEW li1 ( 1955 1513 ) L1M1_PR_MR
+      NEW li1 ( 2323 1513 ) L1M1_PR_MR
       NEW li1 ( 1909 1445 ) L1M1_PR_MR ;
     - storage_5_0.bit2.storage ( storage_5_0.bit2.obuf1 A ) ( storage_5_0.bit2.obuf0 A ) ( storage_5_0.bit2.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 3289 1513 ) ( 3657 * )
@@ -2631,11 +2638,11 @@ NETS 168 ;
       NEW li1 ( 3243 1445 ) L1M1_PR_MR ;
     - storage_5_0.bit3.storage ( storage_5_0.bit3.obuf1 A ) ( storage_5_0.bit3.obuf0 A ) ( storage_5_0.bit3.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 4623 1513 ) ( 4991 * )
-      NEW met1 ( 4577 1445 ) ( 4623 * )
-      NEW met1 ( 4623 1445 ) ( * 1513 )
+      NEW met1 ( 4577 1581 ) ( 4623 * )
+      NEW met1 ( 4623 1513 ) ( * 1581 )
       NEW li1 ( 4623 1513 ) L1M1_PR_MR
       NEW li1 ( 4991 1513 ) L1M1_PR_MR
-      NEW li1 ( 4577 1445 ) L1M1_PR_MR ;
+      NEW li1 ( 4577 1581 ) L1M1_PR_MR ;
     - storage_5_0.bit4.storage ( storage_5_0.bit4.obuf1 A ) ( storage_5_0.bit4.obuf0 A ) ( storage_5_0.bit4.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 5911 1445 ) ( * 1513 )
       NEW met1 ( 5911 1513 ) ( 5957 * )
@@ -2675,35 +2682,35 @@ NETS 168 ;
     - storage_5_0.decoder1 ( storage_5_0.select_inv_1 A ) + USE SIGNAL ;
     - storage_5_0.gclock ( storage_5_0.cg GCLK ) ( storage_5_0.bit7.bit GATE ) ( storage_5_0.bit6.bit GATE ) ( storage_5_0.bit5.bit GATE ) ( storage_5_0.bit4.bit GATE ) ( storage_5_0.bit3.bit GATE ) ( storage_5_0.bit2.bit GATE )
       ( storage_5_0.bit1.bit GATE ) ( storage_5_0.bit0.bit GATE ) + USE SIGNAL
-      + ROUTED met2 ( 9407 1479 ) ( * 1581 )
+      + ROUTED met1 ( 69 1513 ) ( * 1547 )
+      NEW met1 ( 1035 1479 ) ( * 1547 )
+      NEW met2 ( 9407 1479 ) ( * 1581 )
       NEW met1 ( 9407 1581 ) ( 10097 * )
       NEW met2 ( 10097 1411 ) ( * 1581 )
       NEW met2 ( 8073 1479 ) ( * 1581 )
       NEW met1 ( 8073 1581 ) ( 9407 * )
-      NEW met2 ( 6739 1513 ) ( * 1581 )
+      NEW met2 ( 6739 1479 ) ( * 1581 )
       NEW met1 ( 6739 1581 ) ( 7429 * )
       NEW met2 ( 7429 1479 ) ( * 1581 )
       NEW met1 ( 7429 1479 ) ( 8073 * )
-      NEW met2 ( 6739 1411 ) ( * 1513 )
       NEW met1 ( 10097 1411 ) ( 11339 * )
-      NEW met1 ( 5405 1513 ) ( * 1547 )
-      NEW met1 ( 5405 1547 ) ( 6095 * )
-      NEW met2 ( 6095 1411 ) ( * 1547 )
-      NEW met1 ( 6095 1411 ) ( 6739 * )
-      NEW met1 ( 1035 1513 ) ( 1401 * )
-      NEW met1 ( 1035 1411 ) ( * 1513 )
-      NEW met1 ( 69 1411 ) ( 1035 * )
-      NEW met1 ( 69 1411 ) ( * 1479 )
-      NEW met2 ( 2737 1513 ) ( * 1530 )
-      NEW met3 ( 1265 1530 ) ( 2737 * )
-      NEW met2 ( 1265 1513 ) ( * 1530 )
-      NEW met1 ( 3703 1479 ) ( 4071 * )
-      NEW met1 ( 3703 1479 ) ( * 1547 )
-      NEW met1 ( 2737 1547 ) ( 3703 * )
-      NEW met1 ( 2737 1513 ) ( * 1547 )
-      NEW met1 ( 4071 1479 ) ( * 1547 )
-      NEW met1 ( 4071 1547 ) ( 5405 * )
+      NEW met1 ( 69 1547 ) ( 1380 * )
+      NEW met1 ( 2185 1479 ) ( 2737 * )
+      NEW met2 ( 2185 1479 ) ( * 1581 )
+      NEW met1 ( 1380 1581 ) ( 2185 * )
+      NEW met1 ( 1380 1547 ) ( * 1581 )
+      NEW met1 ( 4071 1411 ) ( * 1479 )
+      NEW met1 ( 2737 1411 ) ( 4071 * )
+      NEW met1 ( 2737 1411 ) ( * 1479 )
+      NEW met1 ( 1035 1479 ) ( 1403 * )
+      NEW met1 ( 4761 1479 ) ( 5405 * )
+      NEW met2 ( 4669 1479 ) ( 4761 * )
+      NEW met2 ( 4669 1411 ) ( * 1479 )
+      NEW met2 ( 5359 1479 ) ( * 1581 )
+      NEW met1 ( 4071 1411 ) ( 4669 * )
+      NEW met1 ( 5359 1581 ) ( 6739 * )
       NEW li1 ( 11339 1411 ) L1M1_PR_MR
+      NEW li1 ( 69 1513 ) L1M1_PR_MR
       NEW li1 ( 9407 1479 ) L1M1_PR_MR
       NEW met1 ( 9407 1479 ) M1M2_PR
       NEW met1 ( 9407 1581 ) M1M2_PR
@@ -2712,116 +2719,119 @@ NETS 168 ;
       NEW li1 ( 8073 1479 ) L1M1_PR_MR
       NEW met1 ( 8073 1479 ) M1M2_PR
       NEW met1 ( 8073 1581 ) M1M2_PR
-      NEW li1 ( 6739 1513 ) L1M1_PR_MR
-      NEW met1 ( 6739 1513 ) M1M2_PR
+      NEW li1 ( 6739 1479 ) L1M1_PR_MR
+      NEW met1 ( 6739 1479 ) M1M2_PR
       NEW met1 ( 6739 1581 ) M1M2_PR
       NEW met1 ( 7429 1581 ) M1M2_PR
       NEW met1 ( 7429 1479 ) M1M2_PR
-      NEW met1 ( 6739 1411 ) M1M2_PR
-      NEW li1 ( 5405 1513 ) L1M1_PR_MR
-      NEW met1 ( 6095 1547 ) M1M2_PR
-      NEW met1 ( 6095 1411 ) M1M2_PR
-      NEW li1 ( 1401 1513 ) L1M1_PR_MR
-      NEW li1 ( 69 1479 ) L1M1_PR_MR
-      NEW li1 ( 2737 1513 ) L1M1_PR_MR
-      NEW met1 ( 2737 1513 ) M1M2_PR
-      NEW met2 ( 2737 1530 ) M2M3_PR
-      NEW met2 ( 1265 1530 ) M2M3_PR
-      NEW met1 ( 1265 1513 ) M1M2_PR
-      NEW li1 ( 4071 1479 ) L1M1_PR_MR ;
+      NEW li1 ( 1403 1479 ) L1M1_PR_MR
+      NEW li1 ( 2737 1479 ) L1M1_PR_MR
+      NEW met1 ( 2185 1479 ) M1M2_PR
+      NEW met1 ( 2185 1581 ) M1M2_PR
+      NEW li1 ( 4071 1479 ) L1M1_PR_MR
+      NEW li1 ( 5405 1479 ) L1M1_PR_MR
+      NEW met1 ( 4761 1479 ) M1M2_PR
+      NEW met1 ( 4669 1411 ) M1M2_PR
+      NEW met1 ( 5359 1581 ) M1M2_PR
+      NEW met1 ( 5359 1479 ) M1M2_PR ;
     - storage_5_0.select0_b ( storage_5_0.select_inv_0 Y ) ( storage_5_0.bit7.obuf0 TE_B ) ( storage_5_0.bit6.obuf0 TE_B ) ( storage_5_0.bit5.obuf0 TE_B ) ( storage_5_0.bit4.obuf0 TE_B ) ( storage_5_0.bit3.obuf0 TE_B ) ( storage_5_0.bit2.obuf0 TE_B )
       ( storage_5_0.bit1.obuf0 TE_B ) ( storage_5_0.bit0.obuf0 TE_B ) + USE SIGNAL
-      + ROUTED met1 ( 7383 1411 ) ( * 1479 )
-      NEW met1 ( 6785 1411 ) ( 7383 * )
-      NEW met1 ( 6785 1411 ) ( * 1445 )
+      + ROUTED met1 ( 713 1411 ) ( * 1479 )
+      NEW met1 ( 7383 1411 ) ( * 1479 )
       NEW met1 ( 8717 1411 ) ( * 1479 )
       NEW met1 ( 7383 1411 ) ( 8717 * )
       NEW met1 ( 10051 1411 ) ( * 1479 )
       NEW met1 ( 8717 1411 ) ( 10051 * )
-      NEW met2 ( 10695 1445 ) ( * 1581 )
-      NEW met1 ( 10051 1445 ) ( 10695 * )
+      NEW met1 ( 10695 1547 ) ( * 1581 )
+      NEW met1 ( 10557 1547 ) ( 10695 * )
+      NEW met1 ( 10557 1547 ) ( * 1581 )
+      NEW met1 ( 10373 1581 ) ( 10557 * )
+      NEW met1 ( 10373 1479 ) ( * 1581 )
+      NEW met1 ( 10051 1479 ) ( 10373 * )
       NEW met1 ( 10695 1581 ) ( 11661 * )
+      NEW met1 ( 2047 1411 ) ( * 1479 )
+      NEW met2 ( 3381 1479 ) ( * 1581 )
+      NEW met1 ( 2691 1581 ) ( 3381 * )
+      NEW met2 ( 2691 1445 ) ( * 1581 )
+      NEW met1 ( 2047 1445 ) ( 2691 * )
+      NEW met1 ( 3979 1479 ) ( * 1513 )
+      NEW met1 ( 3381 1479 ) ( 3979 * )
       NEW met1 ( 6049 1411 ) ( * 1479 )
-      NEW met1 ( 6049 1445 ) ( 6785 * )
-      NEW met1 ( 2047 1513 ) ( * 1581 )
-      NEW met1 ( 713 1581 ) ( 2047 * )
-      NEW met1 ( 713 1513 ) ( * 1581 )
-      NEW met1 ( 3381 1411 ) ( * 1479 )
-      NEW met1 ( 2369 1411 ) ( 3381 * )
-      NEW met2 ( 2369 1411 ) ( * 1513 )
-      NEW met1 ( 2047 1513 ) ( 2369 * )
+      NEW met1 ( 713 1411 ) ( 2047 * )
+      NEW met1 ( 6049 1411 ) ( 7383 * )
+      NEW met1 ( 3979 1513 ) ( 4140 * )
       NEW met1 ( 4715 1411 ) ( * 1479 )
-      NEW met1 ( 3381 1411 ) ( 4715 * )
+      NEW met1 ( 4140 1513 ) ( * 1518 )
+      NEW met2 ( 4140 1518 ) ( * 1530 )
+      NEW met3 ( 4140 1530 ) ( 4393 * )
+      NEW met2 ( 4393 1479 ) ( * 1530 )
+      NEW met1 ( 4393 1479 ) ( 4715 * )
       NEW met1 ( 4715 1411 ) ( 6049 * )
       NEW li1 ( 11661 1581 ) L1M1_PR_MR
+      NEW li1 ( 713 1479 ) L1M1_PR_MR
       NEW li1 ( 7383 1479 ) L1M1_PR_MR
       NEW li1 ( 8717 1479 ) L1M1_PR_MR
       NEW li1 ( 10051 1479 ) L1M1_PR_MR
-      NEW met1 ( 10695 1581 ) M1M2_PR
-      NEW met1 ( 10695 1445 ) M1M2_PR
-      NEW li1 ( 6049 1479 ) L1M1_PR_MR
-      NEW li1 ( 2047 1513 ) L1M1_PR_MR
-      NEW li1 ( 713 1513 ) L1M1_PR_MR
+      NEW li1 ( 2047 1479 ) L1M1_PR_MR
       NEW li1 ( 3381 1479 ) L1M1_PR_MR
-      NEW met1 ( 2369 1411 ) M1M2_PR
-      NEW met1 ( 2369 1513 ) M1M2_PR
-      NEW li1 ( 4715 1479 ) L1M1_PR_MR ;
+      NEW met1 ( 3381 1479 ) M1M2_PR
+      NEW met1 ( 3381 1581 ) M1M2_PR
+      NEW met1 ( 2691 1581 ) M1M2_PR
+      NEW met1 ( 2691 1445 ) M1M2_PR
+      NEW li1 ( 6049 1479 ) L1M1_PR_MR
+      NEW li1 ( 4715 1479 ) L1M1_PR_MR
+      NEW met1 ( 4140 1518 ) M1M2_PR
+      NEW met2 ( 4140 1530 ) M2M3_PR
+      NEW met2 ( 4393 1530 ) M2M3_PR
+      NEW met1 ( 4393 1479 ) M1M2_PR ;
     - storage_5_0.select1_b ( storage_5_0.select_inv_1 Y ) ( storage_5_0.bit7.obuf1 TE_B ) ( storage_5_0.bit6.obuf1 TE_B ) ( storage_5_0.bit5.obuf1 TE_B ) ( storage_5_0.bit4.obuf1 TE_B ) ( storage_5_0.bit3.obuf1 TE_B ) ( storage_5_0.bit2.obuf1 TE_B )
       ( storage_5_0.bit1.obuf1 TE_B ) ( storage_5_0.bit0.obuf1 TE_B ) + USE SIGNAL
-      + ROUTED met1 ( 1081 1411 ) ( * 1479 )
-      NEW met1 ( 11040 1445 ) ( 11799 * )
+      + ROUTED met1 ( 11040 1445 ) ( 11799 * )
       NEW met1 ( 10419 1479 ) ( 11040 * )
       NEW met1 ( 11040 1445 ) ( * 1479 )
-      NEW met1 ( 9085 1513 ) ( 9407 * )
-      NEW met1 ( 9407 1513 ) ( * 1518 )
-      NEW met1 ( 9407 1518 ) ( 9453 * )
-      NEW met1 ( 9453 1518 ) ( * 1547 )
-      NEW met1 ( 9453 1547 ) ( 10373 * )
-      NEW met1 ( 10373 1479 ) ( * 1547 )
-      NEW met1 ( 10373 1479 ) ( 10419 * )
-      NEW met1 ( 7751 1513 ) ( 8027 * )
-      NEW met1 ( 8027 1513 ) ( * 1518 )
-      NEW met1 ( 8027 1518 ) ( 8119 * )
-      NEW met1 ( 8119 1518 ) ( * 1547 )
-      NEW met1 ( 8119 1547 ) ( 9085 * )
-      NEW met1 ( 9085 1513 ) ( * 1547 )
-      NEW met1 ( 6417 1513 ) ( * 1547 )
-      NEW met1 ( 6417 1547 ) ( 7751 * )
+      NEW met1 ( 9085 1513 ) ( 9361 * )
+      NEW met1 ( 9361 1513 ) ( * 1547 )
+      NEW met1 ( 9361 1547 ) ( 10143 * )
+      NEW met2 ( 10143 1445 ) ( * 1547 )
+      NEW met1 ( 10143 1445 ) ( 10419 * )
+      NEW met1 ( 10419 1445 ) ( * 1479 )
       NEW met1 ( 7751 1513 ) ( * 1547 )
-      NEW met1 ( 6210 1547 ) ( 6417 * )
-      NEW met1 ( 5083 1513 ) ( 5359 * )
-      NEW met2 ( 5359 1513 ) ( * 1581 )
-      NEW met1 ( 5359 1581 ) ( 6210 * )
-      NEW met1 ( 6210 1547 ) ( * 1581 )
-      NEW met1 ( 3749 1513 ) ( 4025 * )
-      NEW met1 ( 4025 1513 ) ( * 1581 )
-      NEW met1 ( 4025 1581 ) ( 4761 * )
-      NEW met2 ( 4761 1479 ) ( * 1581 )
-      NEW met1 ( 4761 1479 ) ( 5083 * )
-      NEW met1 ( 5083 1479 ) ( * 1513 )
-      NEW met1 ( 2415 1513 ) ( 2691 * )
-      NEW met2 ( 2691 1513 ) ( * 1581 )
-      NEW met1 ( 2691 1581 ) ( 3795 * )
-      NEW met1 ( 3795 1513 ) ( * 1581 )
-      NEW met1 ( 2047 1411 ) ( * 1445 )
-      NEW met1 ( 2047 1445 ) ( 2415 * )
-      NEW met1 ( 2415 1445 ) ( * 1513 )
-      NEW met1 ( 1081 1411 ) ( 2047 * )
+      NEW met1 ( 7751 1547 ) ( 9085 * )
+      NEW met1 ( 9085 1513 ) ( * 1547 )
+      NEW met1 ( 6417 1513 ) ( 6693 * )
+      NEW met1 ( 6693 1513 ) ( * 1547 )
+      NEW met1 ( 6693 1547 ) ( 7751 * )
+      NEW met1 ( 6417 1513 ) ( * 1547 )
+      NEW met1 ( 3749 1513 ) ( * 1547 )
+      NEW met1 ( 3749 1547 ) ( 4025 * )
+      NEW met1 ( 4025 1547 ) ( * 1581 )
+      NEW met1 ( 2415 1513 ) ( * 1547 )
+      NEW met1 ( 2415 1547 ) ( 3749 * )
+      NEW met1 ( 1495 1513 ) ( * 1547 )
+      NEW met1 ( 1495 1547 ) ( 2415 * )
+      NEW met1 ( 1081 1513 ) ( 1495 * )
+      NEW met2 ( 5083 1513 ) ( * 1598 )
+      NEW met3 ( 4163 1598 ) ( 5083 * )
+      NEW met2 ( 4163 1581 ) ( * 1598 )
+      NEW met1 ( 5405 1513 ) ( * 1547 )
+      NEW met1 ( 5083 1513 ) ( 5405 * )
+      NEW met1 ( 4025 1581 ) ( 4163 * )
+      NEW met1 ( 5405 1547 ) ( 6417 * )
       NEW li1 ( 11799 1445 ) L1M1_PR_MR
-      NEW li1 ( 1081 1479 ) L1M1_PR_MR
+      NEW li1 ( 1081 1513 ) L1M1_PR_MR
       NEW li1 ( 10419 1479 ) L1M1_PR_MR
       NEW li1 ( 9085 1513 ) L1M1_PR_MR
+      NEW met1 ( 10143 1547 ) M1M2_PR
+      NEW met1 ( 10143 1445 ) M1M2_PR
       NEW li1 ( 7751 1513 ) L1M1_PR_MR
       NEW li1 ( 6417 1513 ) L1M1_PR_MR
-      NEW li1 ( 5083 1513 ) L1M1_PR_MR
-      NEW met1 ( 5359 1513 ) M1M2_PR
-      NEW met1 ( 5359 1581 ) M1M2_PR
       NEW li1 ( 3749 1513 ) L1M1_PR_MR
-      NEW met1 ( 4761 1581 ) M1M2_PR
-      NEW met1 ( 4761 1479 ) M1M2_PR
       NEW li1 ( 2415 1513 ) L1M1_PR_MR
-      NEW met1 ( 2691 1513 ) M1M2_PR
-      NEW met1 ( 2691 1581 ) M1M2_PR ;
+      NEW li1 ( 5083 1513 ) L1M1_PR_MR
+      NEW met1 ( 5083 1513 ) M1M2_PR
+      NEW met2 ( 5083 1598 ) M2M3_PR
+      NEW met2 ( 4163 1598 ) M2M3_PR
+      NEW met1 ( 4163 1581 ) M1M2_PR ;
     - storage_5_0.we0 ( storage_5_0.gcand X ) ( storage_5_0.cg GATE ) + USE SIGNAL
       + ROUTED met1 ( 10925 1547 ) ( 11569 * )
       NEW li1 ( 11569 1547 ) L1M1_PR_MR
@@ -2834,9 +2844,11 @@ NETS 168 ;
       NEW li1 ( 989 1785 ) L1M1_PR_MR
       NEW li1 ( 575 1819 ) L1M1_PR_MR ;
     - storage_6_0.bit1.storage ( storage_6_0.bit1.obuf1 A ) ( storage_6_0.bit1.obuf0 A ) ( storage_6_0.bit1.bit Q ) + USE SIGNAL
-      + ROUTED met1 ( 1955 1785 ) ( 2323 * )
-      NEW met1 ( 1909 1785 ) ( * 1819 )
-      NEW met1 ( 1909 1785 ) ( 1955 * )
+      + ROUTED met1 ( 1955 1785 ) ( * 1819 )
+      NEW met1 ( 1955 1819 ) ( 2093 * )
+      NEW met1 ( 2093 1785 ) ( * 1819 )
+      NEW met1 ( 2093 1785 ) ( 2323 * )
+      NEW met1 ( 1909 1819 ) ( 1955 * )
       NEW li1 ( 1955 1785 ) L1M1_PR_MR
       NEW li1 ( 2323 1785 ) L1M1_PR_MR
       NEW li1 ( 1909 1819 ) L1M1_PR_MR ;
@@ -2855,30 +2867,33 @@ NETS 168 ;
       NEW li1 ( 4991 1785 ) L1M1_PR_MR
       NEW li1 ( 4577 1819 ) L1M1_PR_MR ;
     - storage_6_0.bit4.storage ( storage_6_0.bit4.obuf1 A ) ( storage_6_0.bit4.obuf0 A ) ( storage_6_0.bit4.bit Q ) + USE SIGNAL
-      + ROUTED met1 ( 5911 1785 ) ( * 1819 )
-      NEW met1 ( 5911 1785 ) ( 5957 * )
-      NEW met1 ( 5957 1785 ) ( 6325 * )
+      + ROUTED met1 ( 5911 1819 ) ( 6095 * )
+      NEW met1 ( 6095 1785 ) ( * 1819 )
+      NEW met1 ( 6095 1785 ) ( 6325 * )
+      NEW met1 ( 5956 1785 ) ( 5957 * )
+      NEW met1 ( 5957 1785 ) ( * 1819 )
+      NEW li1 ( 5911 1819 ) L1M1_PR_MR
       NEW li1 ( 6325 1785 ) L1M1_PR_MR
-      NEW li1 ( 5957 1785 ) L1M1_PR_MR
-      NEW li1 ( 5911 1819 ) L1M1_PR_MR ;
+      NEW li1 ( 5956 1785 ) L1M1_PR_MR
+      NEW met1 ( 5957 1819 ) RECT ( 0 -7 24 7 )  ;
     - storage_6_0.bit5.storage ( storage_6_0.bit5.obuf1 A ) ( storage_6_0.bit5.obuf0 A ) ( storage_6_0.bit5.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 7291 1785 ) ( 7659 * )
-      NEW met1 ( 7245 1819 ) ( 7291 * )
-      NEW met1 ( 7291 1785 ) ( * 1819 )
+      NEW met1 ( 7245 1785 ) ( * 1819 )
+      NEW met1 ( 7245 1785 ) ( 7291 * )
       NEW li1 ( 7291 1785 ) L1M1_PR_MR
       NEW li1 ( 7659 1785 ) L1M1_PR_MR
       NEW li1 ( 7245 1819 ) L1M1_PR_MR ;
     - storage_6_0.bit6.storage ( storage_6_0.bit6.obuf1 A ) ( storage_6_0.bit6.obuf0 A ) ( storage_6_0.bit6.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 8625 1785 ) ( 8993 * )
-      NEW met1 ( 8579 1819 ) ( 8625 * )
-      NEW met1 ( 8625 1785 ) ( * 1819 )
+      NEW met1 ( 8579 1785 ) ( * 1819 )
+      NEW met1 ( 8579 1785 ) ( 8625 * )
       NEW li1 ( 8625 1785 ) L1M1_PR_MR
       NEW li1 ( 8993 1785 ) L1M1_PR_MR
       NEW li1 ( 8579 1819 ) L1M1_PR_MR ;
     - storage_6_0.bit7.storage ( storage_6_0.bit7.obuf1 A ) ( storage_6_0.bit7.obuf0 A ) ( storage_6_0.bit7.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 9959 1785 ) ( 10327 * )
-      NEW met1 ( 9913 1819 ) ( 9959 * )
-      NEW met1 ( 9959 1785 ) ( * 1819 )
+      NEW met1 ( 9913 1785 ) ( * 1819 )
+      NEW met1 ( 9913 1785 ) ( 9959 * )
       NEW li1 ( 9959 1785 ) L1M1_PR_MR
       NEW li1 ( 10327 1785 ) L1M1_PR_MR
       NEW li1 ( 9913 1819 ) L1M1_PR_MR ;
@@ -2894,154 +2909,156 @@ NETS 168 ;
     - storage_6_0.decoder1 ( storage_6_0.select_inv_1 A ) + USE SIGNAL ;
     - storage_6_0.gclock ( storage_6_0.cg GCLK ) ( storage_6_0.bit7.bit GATE ) ( storage_6_0.bit6.bit GATE ) ( storage_6_0.bit5.bit GATE ) ( storage_6_0.bit4.bit GATE ) ( storage_6_0.bit3.bit GATE ) ( storage_6_0.bit2.bit GATE )
       ( storage_6_0.bit1.bit GATE ) ( storage_6_0.bit0.bit GATE ) + USE SIGNAL
-      + ROUTED met1 ( 69 1683 ) ( * 1751 )
-      NEW met2 ( 1357 1683 ) ( * 1785 )
-      NEW met2 ( 9407 1683 ) ( * 1785 )
+      + ROUTED met2 ( 9407 1683 ) ( * 1785 )
+      NEW met1 ( 9407 1683 ) ( 11339 * )
+      NEW met1 ( 1035 1751 ) ( 1403 * )
+      NEW met1 ( 1035 1751 ) ( * 1819 )
+      NEW met1 ( 897 1819 ) ( 1035 * )
+      NEW met1 ( 897 1819 ) ( * 1853 )
+      NEW met1 ( 69 1853 ) ( 897 * )
+      NEW met1 ( 69 1785 ) ( * 1853 )
+      NEW met1 ( 2737 1717 ) ( * 1751 )
+      NEW met1 ( 1403 1717 ) ( 2737 * )
+      NEW met1 ( 1403 1717 ) ( * 1751 )
+      NEW met1 ( 4071 1717 ) ( * 1751 )
+      NEW met1 ( 2737 1717 ) ( 4071 * )
+      NEW met1 ( 5037 1785 ) ( 5405 * )
+      NEW met1 ( 5037 1751 ) ( * 1785 )
+      NEW met1 ( 4761 1751 ) ( 5037 * )
+      NEW met2 ( 4715 1751 ) ( 4761 * )
+      NEW met2 ( 4715 1717 ) ( * 1751 )
+      NEW met2 ( 4669 1717 ) ( 4715 * )
+      NEW met1 ( 4071 1717 ) ( 4669 * )
+      NEW met1 ( 6739 1785 ) ( * 1819 )
+      NEW met1 ( 6233 1819 ) ( 6739 * )
+      NEW met1 ( 6233 1819 ) ( * 1853 )
+      NEW met1 ( 5405 1853 ) ( 6233 * )
+      NEW met1 ( 5405 1785 ) ( * 1853 )
+      NEW met1 ( 8073 1785 ) ( * 1819 )
+      NEW met1 ( 7521 1819 ) ( 8073 * )
+      NEW met1 ( 7521 1819 ) ( * 1853 )
+      NEW met1 ( 6739 1853 ) ( 7521 * )
+      NEW met1 ( 6739 1819 ) ( * 1853 )
       NEW met2 ( 8073 1683 ) ( * 1785 )
       NEW met1 ( 8073 1683 ) ( 9407 * )
-      NEW met1 ( 6739 1785 ) ( * 1853 )
-      NEW met1 ( 6739 1853 ) ( 7337 * )
-      NEW met1 ( 7337 1819 ) ( * 1853 )
-      NEW met1 ( 7337 1819 ) ( 7705 * )
-      NEW met1 ( 7705 1785 ) ( * 1819 )
-      NEW met1 ( 7705 1785 ) ( 8073 * )
-      NEW met1 ( 9407 1683 ) ( 11339 * )
-      NEW met2 ( 2737 1683 ) ( * 1751 )
-      NEW met2 ( 4071 1683 ) ( * 1751 )
-      NEW met1 ( 2737 1683 ) ( 4071 * )
-      NEW met2 ( 5405 1683 ) ( * 1751 )
-      NEW met1 ( 4071 1683 ) ( 5405 * )
-      NEW met2 ( 6095 1683 ) ( * 1819 )
-      NEW met1 ( 5405 1683 ) ( 6095 * )
-      NEW met1 ( 69 1683 ) ( 2737 * )
-      NEW met1 ( 1357 1785 ) ( 1403 * )
-      NEW met1 ( 6095 1819 ) ( 6739 * )
       NEW li1 ( 11339 1683 ) L1M1_PR_MR
-      NEW li1 ( 69 1751 ) L1M1_PR_MR
-      NEW met1 ( 1357 1785 ) M1M2_PR
-      NEW met1 ( 1357 1683 ) M1M2_PR
       NEW li1 ( 9407 1785 ) L1M1_PR_MR
       NEW met1 ( 9407 1785 ) M1M2_PR
       NEW met1 ( 9407 1683 ) M1M2_PR
-      NEW li1 ( 8073 1785 ) L1M1_PR_MR
-      NEW met1 ( 8073 1785 ) M1M2_PR
-      NEW met1 ( 8073 1683 ) M1M2_PR
-      NEW li1 ( 6739 1785 ) L1M1_PR_MR
+      NEW li1 ( 1403 1751 ) L1M1_PR_MR
+      NEW li1 ( 69 1785 ) L1M1_PR_MR
       NEW li1 ( 2737 1751 ) L1M1_PR_MR
-      NEW met1 ( 2737 1751 ) M1M2_PR
-      NEW met1 ( 2737 1683 ) M1M2_PR
       NEW li1 ( 4071 1751 ) L1M1_PR_MR
-      NEW met1 ( 4071 1751 ) M1M2_PR
-      NEW met1 ( 4071 1683 ) M1M2_PR
-      NEW li1 ( 5405 1751 ) L1M1_PR_MR
-      NEW met1 ( 5405 1751 ) M1M2_PR
-      NEW met1 ( 5405 1683 ) M1M2_PR
-      NEW met1 ( 6095 1819 ) M1M2_PR
-      NEW met1 ( 6095 1683 ) M1M2_PR
-      NEW li1 ( 1403 1785 ) L1M1_PR_MR ;
+      NEW li1 ( 5405 1785 ) L1M1_PR_MR
+      NEW met1 ( 4761 1751 ) M1M2_PR
+      NEW met1 ( 4669 1717 ) M1M2_PR
+      NEW li1 ( 6739 1785 ) L1M1_PR_MR
+      NEW li1 ( 8073 1785 ) L1M1_PR_MR
+      NEW met1 ( 8073 1683 ) M1M2_PR
+      NEW met1 ( 8073 1785 ) M1M2_PR ;
     - storage_6_0.select0_b ( storage_6_0.select_inv_0 Y ) ( storage_6_0.bit7.obuf0 TE_B ) ( storage_6_0.bit6.obuf0 TE_B ) ( storage_6_0.bit5.obuf0 TE_B ) ( storage_6_0.bit4.obuf0 TE_B ) ( storage_6_0.bit3.obuf0 TE_B ) ( storage_6_0.bit2.obuf0 TE_B )
       ( storage_6_0.bit1.obuf0 TE_B ) ( storage_6_0.bit0.obuf0 TE_B ) + USE SIGNAL
-      + ROUTED met1 ( 1035 1751 ) ( * 1819 )
-      NEW met1 ( 713 1751 ) ( 1035 * )
-      NEW met1 ( 1035 1819 ) ( 1380 * )
-      NEW met1 ( 1863 1751 ) ( 2047 * )
-      NEW met1 ( 1863 1751 ) ( * 1853 )
-      NEW met1 ( 1380 1853 ) ( 1863 * )
-      NEW met1 ( 1380 1819 ) ( * 1853 )
-      NEW met1 ( 3197 1751 ) ( 3381 * )
-      NEW met1 ( 3197 1751 ) ( * 1853 )
-      NEW met1 ( 2783 1853 ) ( 3197 * )
-      NEW met1 ( 2783 1819 ) ( * 1853 )
-      NEW met1 ( 2369 1819 ) ( 2783 * )
-      NEW met1 ( 2369 1751 ) ( * 1819 )
-      NEW met1 ( 2047 1751 ) ( 2369 * )
-      NEW met1 ( 4393 1751 ) ( 4715 * )
-      NEW met1 ( 4393 1751 ) ( * 1853 )
-      NEW met1 ( 4117 1853 ) ( 4393 * )
-      NEW met1 ( 4117 1819 ) ( * 1853 )
-      NEW met1 ( 3703 1819 ) ( 4117 * )
-      NEW met1 ( 3703 1751 ) ( * 1819 )
-      NEW met1 ( 3381 1751 ) ( 3703 * )
-      NEW met1 ( 10051 1751 ) ( 10373 * )
-      NEW met1 ( 10373 1751 ) ( * 1819 )
-      NEW met1 ( 10373 1819 ) ( 11661 * )
-      NEW met1 ( 9867 1751 ) ( * 1853 )
-      NEW met1 ( 9867 1751 ) ( 10051 * )
-      NEW met1 ( 5865 1751 ) ( 6049 * )
-      NEW met1 ( 5865 1751 ) ( * 1853 )
-      NEW met1 ( 5451 1853 ) ( 5865 * )
-      NEW met1 ( 5451 1819 ) ( * 1853 )
-      NEW met1 ( 5037 1819 ) ( 5451 * )
-      NEW met1 ( 5037 1751 ) ( * 1819 )
-      NEW met1 ( 7383 1751 ) ( * 1751 )
-      NEW met1 ( 7383 1683 ) ( * 1751 )
-      NEW met1 ( 6233 1683 ) ( 7383 * )
-      NEW met2 ( 6233 1683 ) ( * 1853 )
-      NEW met1 ( 5865 1853 ) ( 6233 * )
-      NEW met1 ( 8395 1751 ) ( 8717 * )
-      NEW met1 ( 8395 1751 ) ( * 1853 )
-      NEW met1 ( 8119 1853 ) ( 8395 * )
-      NEW met1 ( 8119 1819 ) ( * 1853 )
-      NEW met1 ( 7889 1819 ) ( 8119 * )
-      NEW met2 ( 7889 1717 ) ( * 1819 )
-      NEW met1 ( 7383 1717 ) ( 7889 * )
+      + ROUTED met1 ( 9729 1751 ) ( 10051 * )
+      NEW met1 ( 9729 1751 ) ( * 1853 )
+      NEW met1 ( 9361 1853 ) ( 9729 * )
       NEW met1 ( 9361 1819 ) ( * 1853 )
       NEW met1 ( 9039 1819 ) ( 9361 * )
       NEW met1 ( 9039 1751 ) ( * 1819 )
+      NEW met1 ( 10649 1819 ) ( * 1853 )
+      NEW met1 ( 10373 1819 ) ( 10649 * )
+      NEW met1 ( 10373 1751 ) ( * 1819 )
+      NEW met1 ( 10051 1751 ) ( 10373 * )
+      NEW met1 ( 10649 1853 ) ( 11661 * )
+      NEW met1 ( 2047 1751 ) ( * 1751 )
+      NEW met1 ( 2047 1746 ) ( * 1751 )
+      NEW met1 ( 2001 1746 ) ( 2047 * )
+      NEW met1 ( 2001 1746 ) ( * 1751 )
+      NEW met1 ( 1909 1751 ) ( 2001 * )
+      NEW met2 ( 1909 1683 ) ( * 1751 )
+      NEW met1 ( 713 1683 ) ( 1909 * )
+      NEW met1 ( 713 1683 ) ( * 1751 )
+      NEW met2 ( 3381 1683 ) ( * 1751 )
+      NEW met1 ( 1909 1683 ) ( 3381 * )
+      NEW met1 ( 4715 1683 ) ( * 1751 )
+      NEW met1 ( 3381 1683 ) ( 4715 * )
+      NEW met1 ( 6003 1785 ) ( 6049 * )
+      NEW met1 ( 6003 1751 ) ( * 1785 )
+      NEW met1 ( 5865 1751 ) ( 6003 * )
+      NEW met2 ( 5865 1683 ) ( * 1751 )
+      NEW met1 ( 4715 1683 ) ( 5865 * )
+      NEW met2 ( 7383 1683 ) ( * 1751 )
+      NEW met1 ( 5865 1683 ) ( 7383 * )
+      NEW met2 ( 8717 1734 ) ( * 1751 )
+      NEW met3 ( 7383 1734 ) ( 8717 * )
       NEW met1 ( 8717 1751 ) ( 9039 * )
-      NEW met1 ( 4715 1751 ) ( 5037 * )
-      NEW met1 ( 9361 1853 ) ( 9867 * )
-      NEW li1 ( 713 1751 ) L1M1_PR_MR
-      NEW li1 ( 2047 1751 ) L1M1_PR_MR
-      NEW li1 ( 3381 1751 ) L1M1_PR_MR
-      NEW li1 ( 4715 1751 ) L1M1_PR_MR
+      NEW li1 ( 11661 1853 ) L1M1_PR_MR
       NEW li1 ( 10051 1751 ) L1M1_PR_MR
-      NEW li1 ( 11661 1819 ) L1M1_PR_MR
-      NEW li1 ( 6049 1751 ) L1M1_PR_MR
+      NEW li1 ( 2047 1751 ) L1M1_PR_MR
+      NEW met1 ( 1909 1751 ) M1M2_PR
+      NEW met1 ( 1909 1683 ) M1M2_PR
+      NEW li1 ( 713 1751 ) L1M1_PR_MR
+      NEW li1 ( 3381 1751 ) L1M1_PR_MR
+      NEW met1 ( 3381 1751 ) M1M2_PR
+      NEW met1 ( 3381 1683 ) M1M2_PR
+      NEW li1 ( 4715 1751 ) L1M1_PR_MR
+      NEW li1 ( 6049 1785 ) L1M1_PR_MR
+      NEW met1 ( 5865 1751 ) M1M2_PR
+      NEW met1 ( 5865 1683 ) M1M2_PR
       NEW li1 ( 7383 1751 ) L1M1_PR_MR
-      NEW met1 ( 6233 1683 ) M1M2_PR
-      NEW met1 ( 6233 1853 ) M1M2_PR
+      NEW met1 ( 7383 1751 ) M1M2_PR
+      NEW met1 ( 7383 1683 ) M1M2_PR
       NEW li1 ( 8717 1751 ) L1M1_PR_MR
-      NEW met1 ( 7889 1819 ) M1M2_PR
-      NEW met1 ( 7889 1717 ) M1M2_PR ;
+      NEW met1 ( 8717 1751 ) M1M2_PR
+      NEW met2 ( 8717 1734 ) M2M3_PR
+      NEW met2 ( 7383 1734 ) M2M3_PR ;
     - storage_6_0.select1_b ( storage_6_0.select_inv_1 Y ) ( storage_6_0.bit7.obuf1 TE_B ) ( storage_6_0.bit6.obuf1 TE_B ) ( storage_6_0.bit5.obuf1 TE_B ) ( storage_6_0.bit4.obuf1 TE_B ) ( storage_6_0.bit3.obuf1 TE_B ) ( storage_6_0.bit2.obuf1 TE_B )
       ( storage_6_0.bit1.obuf1 TE_B ) ( storage_6_0.bit0.obuf1 TE_B ) + USE SIGNAL
-      + ROUTED met1 ( 1081 1751 ) ( 1380 * )
-      NEW met1 ( 3749 1717 ) ( * 1751 )
-      NEW met1 ( 2415 1717 ) ( * 1751 )
-      NEW met1 ( 2415 1717 ) ( 3749 * )
-      NEW met1 ( 1380 1717 ) ( * 1751 )
-      NEW met1 ( 1380 1717 ) ( 2415 * )
-      NEW met1 ( 10419 1785 ) ( 10649 * )
-      NEW met2 ( 10649 1785 ) ( * 1853 )
-      NEW met1 ( 10649 1853 ) ( 11799 * )
-      NEW met1 ( 10465 1717 ) ( * 1785 )
+      + ROUTED met1 ( 11040 1819 ) ( 11799 * )
+      NEW met1 ( 10419 1785 ) ( 11040 * )
+      NEW met1 ( 11040 1785 ) ( * 1819 )
+      NEW met1 ( 9085 1751 ) ( 9407 * )
+      NEW met1 ( 9407 1746 ) ( * 1751 )
+      NEW met1 ( 9407 1746 ) ( 9453 * )
+      NEW met1 ( 9453 1717 ) ( * 1746 )
+      NEW met1 ( 9453 1717 ) ( 10419 * )
+      NEW met1 ( 10419 1717 ) ( * 1785 )
       NEW met1 ( 9085 1717 ) ( * 1751 )
-      NEW met1 ( 7751 1751 ) ( 7935 * )
-      NEW met1 ( 7935 1717 ) ( * 1751 )
-      NEW met1 ( 7935 1717 ) ( 9085 * )
+      NEW met1 ( 2415 1785 ) ( * 1819 )
+      NEW met1 ( 2185 1819 ) ( 2415 * )
+      NEW met1 ( 2185 1819 ) ( * 1853 )
+      NEW met1 ( 1449 1853 ) ( 2185 * )
+      NEW met1 ( 1449 1819 ) ( * 1853 )
+      NEW met1 ( 1081 1819 ) ( 1449 * )
+      NEW met1 ( 1081 1785 ) ( * 1819 )
+      NEW met1 ( 3749 1785 ) ( * 1819 )
+      NEW met1 ( 3565 1819 ) ( 3749 * )
+      NEW met1 ( 3565 1819 ) ( * 1853 )
+      NEW met1 ( 2783 1853 ) ( 3565 * )
+      NEW met1 ( 2783 1819 ) ( * 1853 )
+      NEW met1 ( 2415 1819 ) ( 2783 * )
+      NEW met2 ( 5083 1751 ) ( * 1819 )
+      NEW met1 ( 4853 1819 ) ( 5083 * )
+      NEW met1 ( 4853 1819 ) ( * 1853 )
+      NEW met1 ( 4117 1853 ) ( 4853 * )
+      NEW met1 ( 4117 1819 ) ( * 1853 )
+      NEW met1 ( 3749 1819 ) ( 4117 * )
       NEW met1 ( 6417 1717 ) ( * 1751 )
-      NEW met1 ( 6417 1717 ) ( 7337 * )
-      NEW met1 ( 7337 1717 ) ( * 1751 )
-      NEW met2 ( 7337 1751 ) ( 7429 * )
-      NEW met1 ( 7429 1751 ) ( 7751 * )
-      NEW met1 ( 5083 1717 ) ( * 1751 )
       NEW met1 ( 5083 1717 ) ( 6417 * )
-      NEW met1 ( 3749 1717 ) ( 5083 * )
-      NEW met1 ( 9085 1717 ) ( 10465 * )
-      NEW li1 ( 1081 1751 ) L1M1_PR_MR
-      NEW li1 ( 3749 1751 ) L1M1_PR_MR
-      NEW li1 ( 2415 1751 ) L1M1_PR_MR
+      NEW met1 ( 5083 1717 ) ( * 1751 )
+      NEW met1 ( 7751 1717 ) ( * 1751 )
+      NEW met1 ( 6417 1717 ) ( 7751 * )
+      NEW met1 ( 7751 1717 ) ( 9085 * )
+      NEW li1 ( 11799 1819 ) L1M1_PR_MR
       NEW li1 ( 10419 1785 ) L1M1_PR_MR
-      NEW met1 ( 10649 1785 ) M1M2_PR
-      NEW met1 ( 10649 1853 ) M1M2_PR
-      NEW li1 ( 11799 1853 ) L1M1_PR_MR
       NEW li1 ( 9085 1751 ) L1M1_PR_MR
-      NEW li1 ( 7751 1751 ) L1M1_PR_MR
+      NEW li1 ( 2415 1785 ) L1M1_PR_MR
+      NEW li1 ( 1081 1785 ) L1M1_PR_MR
+      NEW li1 ( 3749 1785 ) L1M1_PR_MR
+      NEW li1 ( 5083 1751 ) L1M1_PR_MR
+      NEW met1 ( 5083 1751 ) M1M2_PR
+      NEW met1 ( 5083 1819 ) M1M2_PR
       NEW li1 ( 6417 1751 ) L1M1_PR_MR
-      NEW met1 ( 7337 1751 ) M1M2_PR
-      NEW met1 ( 7429 1751 ) M1M2_PR
-      NEW li1 ( 5083 1751 ) L1M1_PR_MR ;
+      NEW li1 ( 7751 1751 ) L1M1_PR_MR ;
     - storage_6_0.we0 ( storage_6_0.gcand X ) ( storage_6_0.cg GATE ) + USE SIGNAL
       + ROUTED met1 ( 10925 1717 ) ( 11569 * )
       NEW li1 ( 11569 1717 ) L1M1_PR_MR
@@ -3082,11 +3099,11 @@ NETS 168 ;
       NEW li1 ( 5957 2057 ) L1M1_PR_MR
       NEW li1 ( 5911 1989 ) L1M1_PR_MR ;
     - storage_7_0.bit5.storage ( storage_7_0.bit5.obuf1 A ) ( storage_7_0.bit5.obuf0 A ) ( storage_7_0.bit5.bit Q ) + USE SIGNAL
-      + ROUTED met1 ( 7291 2057 ) ( 7659 * )
-      NEW met1 ( 7245 1989 ) ( 7291 * )
-      NEW met1 ( 7291 1989 ) ( * 2057 )
-      NEW li1 ( 7291 2057 ) L1M1_PR_MR
-      NEW li1 ( 7659 2057 ) L1M1_PR_MR
+      + ROUTED met1 ( 7291 2023 ) ( 7659 * )
+      NEW met1 ( 7245 1989 ) ( * 2023 )
+      NEW met1 ( 7245 2023 ) ( 7291 * )
+      NEW li1 ( 7291 2023 ) L1M1_PR_MR
+      NEW li1 ( 7659 2023 ) L1M1_PR_MR
       NEW li1 ( 7245 1989 ) L1M1_PR_MR ;
     - storage_7_0.bit6.storage ( storage_7_0.bit6.obuf1 A ) ( storage_7_0.bit6.obuf0 A ) ( storage_7_0.bit6.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 8625 2057 ) ( 8993 * )
@@ -3114,120 +3131,158 @@ NETS 168 ;
     - storage_7_0.gclock ( storage_7_0.cg GCLK ) ( storage_7_0.bit7.bit GATE ) ( storage_7_0.bit6.bit GATE ) ( storage_7_0.bit5.bit GATE ) ( storage_7_0.bit4.bit GATE ) ( storage_7_0.bit3.bit GATE ) ( storage_7_0.bit2.bit GATE )
       ( storage_7_0.bit1.bit GATE ) ( storage_7_0.bit0.bit GATE ) + USE SIGNAL
       + ROUTED met1 ( 69 2057 ) ( * 2091 )
-      NEW met1 ( 1035 2023 ) ( * 2091 )
-      NEW met2 ( 9407 2023 ) ( * 2125 )
-      NEW met1 ( 9407 2125 ) ( 10097 * )
-      NEW met2 ( 10097 1955 ) ( * 2125 )
-      NEW met2 ( 8073 2023 ) ( * 2125 )
-      NEW met1 ( 8073 2125 ) ( 9407 * )
-      NEW met2 ( 6739 2023 ) ( * 2125 )
-      NEW met1 ( 6739 2125 ) ( 7429 * )
-      NEW met2 ( 7429 2023 ) ( * 2125 )
-      NEW met1 ( 7429 2023 ) ( 8073 * )
-      NEW met1 ( 6693 2091 ) ( * 2125 )
-      NEW met1 ( 6693 2125 ) ( 6739 * )
+      NEW met1 ( 9407 2057 ) ( * 2091 )
+      NEW met1 ( 9407 2091 ) ( 10097 * )
+      NEW met2 ( 10097 1955 ) ( * 2091 )
+      NEW met1 ( 8073 2057 ) ( * 2091 )
+      NEW met1 ( 8073 2091 ) ( 9039 * )
+      NEW met1 ( 9039 2023 ) ( * 2091 )
+      NEW met1 ( 9039 2023 ) ( 9407 * )
+      NEW met1 ( 9407 2023 ) ( * 2057 )
+      NEW met1 ( 6739 2057 ) ( 6831 * )
+      NEW met1 ( 6831 2057 ) ( * 2125 )
+      NEW met1 ( 6831 2125 ) ( 7475 * )
+      NEW met1 ( 7475 2091 ) ( * 2125 )
+      NEW met1 ( 7475 2091 ) ( 7705 * )
+      NEW met1 ( 7705 2057 ) ( * 2091 )
+      NEW met1 ( 7705 2057 ) ( 8073 * )
       NEW met1 ( 10097 1955 ) ( 11339 * )
-      NEW met1 ( 2737 2057 ) ( * 2091 )
-      NEW met1 ( 4071 2057 ) ( * 2091 )
-      NEW met1 ( 2737 2091 ) ( 4071 * )
       NEW met1 ( 5405 2057 ) ( * 2091 )
+      NEW met1 ( 4071 2057 ) ( * 2091 )
       NEW met1 ( 4071 2091 ) ( 5405 * )
-      NEW met1 ( 1035 2023 ) ( 1403 * )
-      NEW met1 ( 69 2091 ) ( 2737 * )
-      NEW met1 ( 5405 2091 ) ( 6693 * )
+      NEW met1 ( 2737 2057 ) ( * 2091 )
+      NEW met1 ( 2737 2091 ) ( 3703 * )
+      NEW met1 ( 3703 2023 ) ( * 2091 )
+      NEW met1 ( 3703 2023 ) ( 4071 * )
+      NEW met1 ( 4071 2023 ) ( * 2057 )
+      NEW met1 ( 5405 2091 ) ( 6831 * )
+      NEW met1 ( 1403 2057 ) ( * 2091 )
+      NEW met1 ( 69 2091 ) ( 1403 * )
+      NEW met1 ( 1403 2091 ) ( 2737 * )
       NEW li1 ( 11339 1955 ) L1M1_PR_MR
       NEW li1 ( 69 2057 ) L1M1_PR_MR
-      NEW li1 ( 9407 2023 ) L1M1_PR_MR
-      NEW met1 ( 9407 2023 ) M1M2_PR
-      NEW met1 ( 9407 2125 ) M1M2_PR
-      NEW met1 ( 10097 2125 ) M1M2_PR
+      NEW li1 ( 9407 2057 ) L1M1_PR_MR
+      NEW met1 ( 10097 2091 ) M1M2_PR
       NEW met1 ( 10097 1955 ) M1M2_PR
-      NEW li1 ( 8073 2023 ) L1M1_PR_MR
-      NEW met1 ( 8073 2023 ) M1M2_PR
-      NEW met1 ( 8073 2125 ) M1M2_PR
-      NEW li1 ( 6739 2023 ) L1M1_PR_MR
-      NEW met1 ( 6739 2023 ) M1M2_PR
-      NEW met1 ( 6739 2125 ) M1M2_PR
-      NEW met1 ( 7429 2125 ) M1M2_PR
-      NEW met1 ( 7429 2023 ) M1M2_PR
-      NEW li1 ( 2737 2057 ) L1M1_PR_MR
-      NEW li1 ( 4071 2057 ) L1M1_PR_MR
+      NEW li1 ( 8073 2057 ) L1M1_PR_MR
+      NEW li1 ( 6739 2057 ) L1M1_PR_MR
       NEW li1 ( 5405 2057 ) L1M1_PR_MR
-      NEW li1 ( 1403 2023 ) L1M1_PR_MR ;
+      NEW li1 ( 4071 2057 ) L1M1_PR_MR
+      NEW li1 ( 2737 2057 ) L1M1_PR_MR
+      NEW li1 ( 1403 2057 ) L1M1_PR_MR ;
     - storage_7_0.select0_b ( storage_7_0.select_inv_0 Y ) ( storage_7_0.bit7.obuf0 TE_B ) ( storage_7_0.bit6.obuf0 TE_B ) ( storage_7_0.bit5.obuf0 TE_B ) ( storage_7_0.bit4.obuf0 TE_B ) ( storage_7_0.bit3.obuf0 TE_B ) ( storage_7_0.bit2.obuf0 TE_B )
       ( storage_7_0.bit1.obuf0 TE_B ) ( storage_7_0.bit0.obuf0 TE_B ) + USE SIGNAL
-      + ROUTED met1 ( 713 1955 ) ( * 2023 )
-      NEW met1 ( 7383 1955 ) ( * 2023 )
+      + ROUTED met1 ( 7337 2057 ) ( 7375 * )
+      NEW met1 ( 7337 2057 ) ( * 2091 )
+      NEW met1 ( 7291 2091 ) ( 7337 * )
+      NEW met2 ( 7291 2091 ) ( * 2261 )
       NEW met1 ( 8717 1955 ) ( * 2023 )
       NEW met1 ( 7383 1955 ) ( 8717 * )
+      NEW met2 ( 7383 1955 ) ( * 2006 )
+      NEW met2 ( 7337 2006 ) ( 7383 * )
+      NEW met2 ( 7337 2006 ) ( * 2074 )
+      NEW met2 ( 7291 2074 ) ( 7337 * )
+      NEW met2 ( 7291 2074 ) ( * 2091 )
       NEW met1 ( 10051 1955 ) ( * 2023 )
       NEW met1 ( 8717 1955 ) ( 10051 * )
       NEW met1 ( 10051 1989 ) ( 11661 * )
-      NEW met1 ( 2047 1955 ) ( * 2023 )
+      NEW met2 ( 2093 2023 ) ( * 2125 )
       NEW met1 ( 3381 1955 ) ( * 2023 )
-      NEW met1 ( 2047 1955 ) ( 3381 * )
+      NEW met1 ( 2093 1955 ) ( 3381 * )
+      NEW met2 ( 2093 1955 ) ( * 2023 )
       NEW met1 ( 4715 1955 ) ( * 2023 )
       NEW met1 ( 3381 1955 ) ( 4715 * )
       NEW met1 ( 6049 1955 ) ( * 2023 )
       NEW met1 ( 4715 1955 ) ( 6049 * )
-      NEW met1 ( 713 1955 ) ( 2047 * )
-      NEW met1 ( 6049 1955 ) ( 7383 * )
+      NEW met2 ( 6095 2023 ) ( * 2261 )
+      NEW met1 ( 6049 2023 ) ( 6095 * )
+      NEW met1 ( 6095 2261 ) ( 7291 * )
+      NEW met2 ( 1403 1955 ) ( * 2125 )
+      NEW met1 ( 713 1955 ) ( 1403 * )
+      NEW met1 ( 713 1955 ) ( * 2023 )
+      NEW met1 ( 2047 2023 ) ( 2093 * )
+      NEW met1 ( 1403 2125 ) ( 2093 * )
       NEW li1 ( 11661 1989 ) L1M1_PR_MR
-      NEW li1 ( 713 2023 ) L1M1_PR_MR
-      NEW li1 ( 7383 2023 ) L1M1_PR_MR
+      NEW li1 ( 7375 2057 ) L1M1_PR_MR
+      NEW met1 ( 7291 2091 ) M1M2_PR
+      NEW met1 ( 7291 2261 ) M1M2_PR
       NEW li1 ( 8717 2023 ) L1M1_PR_MR
+      NEW met1 ( 7383 1955 ) M1M2_PR
       NEW li1 ( 10051 2023 ) L1M1_PR_MR
-      NEW li1 ( 2047 2023 ) L1M1_PR_MR
+      NEW met1 ( 2093 2023 ) M1M2_PR
+      NEW met1 ( 2093 2125 ) M1M2_PR
       NEW li1 ( 3381 2023 ) L1M1_PR_MR
+      NEW met1 ( 2093 1955 ) M1M2_PR
       NEW li1 ( 4715 2023 ) L1M1_PR_MR
-      NEW li1 ( 6049 2023 ) L1M1_PR_MR ;
+      NEW li1 ( 6049 2023 ) L1M1_PR_MR
+      NEW met1 ( 6095 2261 ) M1M2_PR
+      NEW met1 ( 6095 2023 ) M1M2_PR
+      NEW met1 ( 1403 2125 ) M1M2_PR
+      NEW met1 ( 1403 1955 ) M1M2_PR
+      NEW li1 ( 713 2023 ) L1M1_PR_MR
+      NEW li1 ( 2047 2023 ) L1M1_PR_MR ;
     - storage_7_0.select1_b ( storage_7_0.select_inv_1 Y ) ( storage_7_0.bit7.obuf1 TE_B ) ( storage_7_0.bit6.obuf1 TE_B ) ( storage_7_0.bit5.obuf1 TE_B ) ( storage_7_0.bit4.obuf1 TE_B ) ( storage_7_0.bit3.obuf1 TE_B ) ( storage_7_0.bit2.obuf1 TE_B )
       ( storage_7_0.bit1.obuf1 TE_B ) ( storage_7_0.bit0.obuf1 TE_B ) + USE SIGNAL
       + ROUTED met1 ( 10419 2057 ) ( 10695 * )
       NEW met1 ( 10695 2057 ) ( * 2125 )
-      NEW met1 ( 9085 2057 ) ( 9361 * )
-      NEW met1 ( 9361 2057 ) ( * 2091 )
-      NEW met1 ( 9361 2091 ) ( 10419 * )
-      NEW met1 ( 10419 2057 ) ( * 2091 )
-      NEW met1 ( 7751 2057 ) ( * 2091 )
-      NEW met1 ( 7751 2091 ) ( 9085 * )
-      NEW met1 ( 9085 2057 ) ( * 2091 )
-      NEW met1 ( 6417 2057 ) ( 6739 * )
-      NEW met1 ( 6739 2057 ) ( * 2062 )
-      NEW met1 ( 6739 2062 ) ( 6785 * )
-      NEW met1 ( 6785 2062 ) ( * 2091 )
-      NEW met1 ( 6785 2091 ) ( 7751 * )
-      NEW met2 ( 6417 2057 ) ( * 2261 )
+      NEW met1 ( 9085 2057 ) ( 9131 * )
+      NEW met1 ( 9131 2057 ) ( * 2125 )
+      NEW met1 ( 9131 2125 ) ( 10419 * )
+      NEW met1 ( 10419 2057 ) ( * 2125 )
+      NEW met1 ( 7751 1989 ) ( * 2023 )
+      NEW met1 ( 7751 1989 ) ( 8073 * )
+      NEW met2 ( 8073 1989 ) ( * 2125 )
+      NEW met1 ( 8073 2125 ) ( 9131 * )
+      NEW met1 ( 6417 1955 ) ( * 2023 )
+      NEW met1 ( 6417 1955 ) ( 7337 * )
+      NEW met1 ( 7337 1955 ) ( * 1989 )
+      NEW met1 ( 7337 1989 ) ( 7751 * )
       NEW met1 ( 10695 2125 ) ( 11799 * )
-      NEW met2 ( 5083 2057 ) ( * 2261 )
-      NEW met2 ( 3749 2057 ) ( * 2261 )
-      NEW met1 ( 3749 2261 ) ( 5083 * )
-      NEW met2 ( 2415 2057 ) ( * 2261 )
-      NEW met1 ( 2415 2261 ) ( 3749 * )
-      NEW met2 ( 1495 2057 ) ( * 2295 )
-      NEW met1 ( 1495 2295 ) ( 2415 * )
-      NEW met1 ( 2415 2261 ) ( * 2295 )
-      NEW met1 ( 1081 2057 ) ( 1495 * )
-      NEW met1 ( 5083 2261 ) ( 6417 * )
+      NEW met1 ( 5083 2057 ) ( 5359 * )
+      NEW met2 ( 5359 2057 ) ( * 2125 )
+      NEW met1 ( 5359 2125 ) ( 6141 * )
+      NEW met2 ( 6141 1955 ) ( * 2125 )
+      NEW met1 ( 3749 2057 ) ( 4025 * )
+      NEW met1 ( 4025 2057 ) ( * 2125 )
+      NEW met1 ( 4025 2125 ) ( 4761 * )
+      NEW met2 ( 4761 2023 ) ( * 2125 )
+      NEW met1 ( 4761 2023 ) ( 5083 * )
+      NEW met1 ( 5083 2023 ) ( * 2057 )
+      NEW met1 ( 2415 2057 ) ( 2691 * )
+      NEW met2 ( 2691 2057 ) ( * 2125 )
+      NEW met1 ( 2691 2125 ) ( 3795 * )
+      NEW met1 ( 3795 2057 ) ( * 2125 )
+      NEW met1 ( 2415 1989 ) ( * 2057 )
+      NEW met1 ( 6141 1955 ) ( 6417 * )
+      NEW met1 ( 2001 1955 ) ( * 1989 )
+      NEW met1 ( 1587 1955 ) ( 2001 * )
+      NEW met2 ( 1587 1955 ) ( * 2074 )
+      NEW met3 ( 1081 2074 ) ( 1587 * )
+      NEW met2 ( 1081 2057 ) ( * 2074 )
+      NEW met1 ( 2001 1989 ) ( 2415 * )
       NEW li1 ( 11799 2125 ) L1M1_PR_MR
-      NEW li1 ( 1081 2057 ) L1M1_PR_MR
       NEW li1 ( 10419 2057 ) L1M1_PR_MR
       NEW li1 ( 9085 2057 ) L1M1_PR_MR
-      NEW li1 ( 7751 2057 ) L1M1_PR_MR
-      NEW li1 ( 6417 2057 ) L1M1_PR_MR
-      NEW met1 ( 6417 2261 ) M1M2_PR
-      NEW met1 ( 6417 2057 ) M1M2_PR
+      NEW li1 ( 7751 2023 ) L1M1_PR_MR
+      NEW met1 ( 8073 1989 ) M1M2_PR
+      NEW met1 ( 8073 2125 ) M1M2_PR
+      NEW li1 ( 6417 2023 ) L1M1_PR_MR
       NEW li1 ( 5083 2057 ) L1M1_PR_MR
-      NEW met1 ( 5083 2057 ) M1M2_PR
-      NEW met1 ( 5083 2261 ) M1M2_PR
+      NEW met1 ( 5359 2057 ) M1M2_PR
+      NEW met1 ( 5359 2125 ) M1M2_PR
+      NEW met1 ( 6141 2125 ) M1M2_PR
+      NEW met1 ( 6141 1955 ) M1M2_PR
       NEW li1 ( 3749 2057 ) L1M1_PR_MR
-      NEW met1 ( 3749 2057 ) M1M2_PR
-      NEW met1 ( 3749 2261 ) M1M2_PR
+      NEW met1 ( 4761 2125 ) M1M2_PR
+      NEW met1 ( 4761 2023 ) M1M2_PR
       NEW li1 ( 2415 2057 ) L1M1_PR_MR
-      NEW met1 ( 2415 2057 ) M1M2_PR
-      NEW met1 ( 2415 2261 ) M1M2_PR
-      NEW met1 ( 1495 2057 ) M1M2_PR
-      NEW met1 ( 1495 2295 ) M1M2_PR ;
+      NEW met1 ( 2691 2057 ) M1M2_PR
+      NEW met1 ( 2691 2125 ) M1M2_PR
+      NEW met1 ( 1587 1955 ) M1M2_PR
+      NEW met2 ( 1587 2074 ) M2M3_PR
+      NEW met2 ( 1081 2074 ) M2M3_PR
+      NEW li1 ( 1081 2057 ) L1M1_PR_MR
+      NEW met1 ( 1081 2057 ) M1M2_PR ;
     - storage_7_0.we0 ( storage_7_0.gcand X ) ( storage_7_0.cg GATE ) + USE SIGNAL
       + ROUTED met1 ( 10925 2091 ) ( 11569 * )
       NEW li1 ( 11569 2091 ) L1M1_PR_MR
