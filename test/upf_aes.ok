@@ -16,6 +16,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: ( 30.360 32.640 ) ( 969.680 968.320 ) um
+[INFO GPL-0036] Movable instances area:     368817.475 um^2
+[INFO GPL-0037] Total instances area:       368817.475 um^2
+[INFO GPL-0035] Pin density area adjust:     51093.513 um^2
 [INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:             18005
 [INFO GPL-0007] Movable instances:               17661
