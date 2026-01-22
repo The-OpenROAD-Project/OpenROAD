@@ -18,13 +18,10 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Sta.hh"
+#include "utl/Logger.h"
 
 namespace ord {
 class OpenRoad;
-}
-
-namespace utl {
-class Logger;
 }
 
 namespace sta {
@@ -86,8 +83,6 @@ class dbStaReport;
 class dbStaCbk;
 class PatternMatch;
 class TestCell;
-
-using utl::Logger;
 
 using odb::dbBlock;
 using odb::dbBlockCallBackObj;
@@ -259,7 +254,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                    LibertyCell* to_lib_cell) override;
 
   dbDatabase* db_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;

@@ -18,14 +18,9 @@
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace sta {
-
-using utl::Logger;
 
 using odb::dbBlock;
 using odb::dbBTerm;
@@ -75,7 +70,7 @@ class dbNetwork : public ConcreteNetwork
   dbNetwork();
   ~dbNetwork() override;
 
-  void init(dbDatabase* db, Logger* logger);
+  void init(dbDatabase* db, utl::Logger* logger);
   void setBlock(dbBlock* block);
   void clear() override;
   CellPortIterator* portIterator(const Cell* cell) const override;
@@ -474,7 +469,7 @@ class dbNetwork : public ConcreteNetwork
   void dumpNetDrvrPinMap() const;
 
   dbDatabase* db_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbBlock* block_ = nullptr;
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;

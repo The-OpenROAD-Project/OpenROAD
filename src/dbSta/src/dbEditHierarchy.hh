@@ -11,14 +11,9 @@
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace sta {
-
-using utl::Logger;
 
 using odb::dbIoType;
 using odb::dbITerm;
@@ -37,7 +32,7 @@ class Pin;
 class dbEditHierarchy
 {
  public:
-  dbEditHierarchy(dbNetwork* db_network, Logger* logger)
+  dbEditHierarchy(dbNetwork* db_network, utl::Logger* logger)
       : db_network_(db_network), logger_(logger)
   {
   }
@@ -45,7 +40,7 @@ class dbEditHierarchy
   dbEditHierarchy(const dbEditHierarchy&) = delete;
   dbEditHierarchy& operator=(const dbEditHierarchy&) = delete;
 
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
   void getParentHierarchy(dbModule* start_module,
                           std::vector<dbModule*>& parent_hierarchy) const;
   dbModule* findLowestCommonModule(std::vector<dbModule*>& itree1,
@@ -135,7 +130,7 @@ class dbEditHierarchy
 
  private:
   dbNetwork* db_network_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 };
 
 }  // namespace sta

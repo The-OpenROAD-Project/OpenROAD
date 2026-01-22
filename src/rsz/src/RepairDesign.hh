@@ -246,7 +246,7 @@ class RepairDesign : dbStaState
 
   void computeSlewRCFactor();
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
   Resizer* resizer_;

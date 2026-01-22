@@ -26,8 +26,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using utl::Logger;
-
 using odb::Point;
 
 using sta::Corner;

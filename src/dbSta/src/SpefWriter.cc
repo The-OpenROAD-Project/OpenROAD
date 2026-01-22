@@ -25,7 +25,7 @@ namespace sta {
 using std::map;
 using utl::ORD;
 
-SpefWriter::SpefWriter(Logger* logger,
+SpefWriter::SpefWriter(utl::Logger* logger,
                        dbSta* sta,
                        std::map<Corner*, std::ostream*>& spef_streams)
     : logger_(logger),
