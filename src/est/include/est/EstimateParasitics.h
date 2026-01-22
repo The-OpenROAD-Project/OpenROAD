@@ -32,11 +32,6 @@
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
 
-namespace grt {
-class GlobalRouter;
-class IncrementalGRoute;
-}  // namespace grt
-
 namespace stt {
 class SteinerTreeBuilder;
 }  // namespace stt
@@ -48,9 +43,6 @@ class CallBackHandler;
 namespace est {
 
 using stt::SteinerTreeBuilder;
-
-using grt::GlobalRouter;
-using grt::IncrementalGRoute;
 
 using sta::Parasitic;
 using sta::ParasiticNode;
@@ -95,7 +87,7 @@ class EstimateParasitics : public sta::dbStaState
                      odb::dbDatabase* db,
                      sta::dbSta* sta,
                      SteinerTreeBuilder* stt_builder,
-                     GlobalRouter* global_router);
+                     grt::GlobalRouter* global_router);
   ~EstimateParasitics() override;
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
@@ -205,9 +197,9 @@ class EstimateParasitics : public sta::dbStaState
 
   sta::dbNetwork* getDbNetwork() { return db_network_; }
   odb::dbBlock* getBlock() { return block_; }
-  GlobalRouter* getGlobalRouter() { return global_router_; }
-  IncrementalGRoute* getIncrementalGRT() { return incr_groute_; }
-  void setIncrementalGRT(IncrementalGRoute* incr_groute)
+  grt::GlobalRouter* getGlobalRouter() { return global_router_; }
+  grt::IncrementalGRoute* getIncrementalGRT() { return incr_groute_; }
+  void setIncrementalGRT(grt::IncrementalGRoute* incr_groute)
   {
     incr_groute_ = incr_groute;
   }
@@ -247,8 +239,8 @@ class EstimateParasitics : public sta::dbStaState
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
   SteinerTreeBuilder* stt_builder_ = nullptr;
-  GlobalRouter* global_router_ = nullptr;
-  IncrementalGRoute* incr_groute_ = nullptr;
+  grt::GlobalRouter* global_router_ = nullptr;
+  grt::IncrementalGRoute* incr_groute_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
