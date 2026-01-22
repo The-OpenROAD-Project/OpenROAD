@@ -29,6 +29,8 @@
 
 #include "lefiMacro.hpp"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>

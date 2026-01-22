@@ -5,8 +5,6 @@
 [INFO ODB-0133]     Created 2 nets and 4 connections.
 [WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
 [INFO DRT-0167] List of default vias:
-  Layer via1
-    default via: via1_7
   Layer via2
     default via: via2_5
   Layer via3

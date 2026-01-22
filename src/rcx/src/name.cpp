@@ -3,6 +3,8 @@
 
 #include "name.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>

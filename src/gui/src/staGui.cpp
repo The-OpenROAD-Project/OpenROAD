@@ -485,6 +485,7 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
   addDisplayControl(kDataPathLabel, true);
   addDisplayControl(kLaunchClockLabel, true);
   addDisplayControl(kCaptureClockLabel, true);
+  addDisplayControl(kLegendLabel, true);
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)
@@ -607,6 +608,16 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
                 checkDisplayControl(kDataPathLabel));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
+
+  if (checkDisplayControl(kLegendLabel)) {
+    DiscreteLegend legend;
+    legend.addLegendKey(kCaptureClockColor, "Capture");
+    legend.addLegendKey(kClockColor, "Launch");
+    legend.addLegendKey(kSignalColor, "Signal");
+    legend.addLegendKey(kPathInstColor, "Inst");
+    legend.addLegendKey(kTermColor, "Term");
+    legend.draw(painter);
+  }
 }
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter,

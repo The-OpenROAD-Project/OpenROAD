@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -12,6 +14,7 @@
 
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extPattern.h"

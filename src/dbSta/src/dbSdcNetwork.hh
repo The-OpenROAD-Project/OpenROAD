@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/SdcNetwork.hh"
 
 namespace sta {
