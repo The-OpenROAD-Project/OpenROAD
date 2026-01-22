@@ -35,7 +35,8 @@ class drAccessPattern : public drBlockObject
   {
     if (hasAccessViaDef(frDirEnum::U)) {
       return (*vU_)[vUIdx_];
-    } else if (hasAccessViaDef(frDirEnum::D)) {
+    }
+    if (hasAccessViaDef(frDirEnum::D)) {
       return (*vD_)[vDIdx_];
     }
     return nullptr;
