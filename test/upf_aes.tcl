@@ -30,11 +30,11 @@ set_routing_layers -signal li1-met5
 place_pins \
   -hor_layers met3 \
   -ver_layers met2
-global_placement -skip_initial_place -density 0.8 -routability_driven -timing_driven
+global_placement -skip_initial_place -density uniform -routability_driven -timing_driven
 
-detailed_placement
-#improve_placement
-#check_placement
+detailed_placement -max_displacement 1000
+improve_placement
+check_placement
 
 set def_file [make_result_file upf_aes.def]
 write_def $def_file
