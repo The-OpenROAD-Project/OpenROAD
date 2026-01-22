@@ -817,30 +817,18 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
   initRoutingLayers(min_layer, max_layer);
-
-  // Release the resources used by the dirty nets.
-  for (odb::dbNet* db_net : dirty_nets_) {
-    Net* net = db_net_map_[db_net];
-    if (net->areSegmentsRestored()) {
-      updateNetResources(net, true);
-      net->setAreSegmentsRestored(false);
-    } else if (!net->isMergedNet()) {
-      fastroute_->clearNetRoute(db_net);
-    }
-  }
-
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     updateNetPins(net);
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-
-    if (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
+    if (pinPositionsChanged(net)
         && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       routes_[db_net].clear();
       db_net->clearGuides();
+      fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
       if (!isConnected(db_net)) {
         logger_->error(
@@ -852,53 +840,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     net->clearLastPinPositions();
   }
   dirty_nets_.clear();
-}
-
-bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
-{
-  Net* net = db_net_map_[db_net];
-  if (db_net->getGuides().empty() || !net->restoreRouteFromGuides()) {
-    return false;
-  }
-
-  routes_[db_net].clear();
-  for (odb::dbGuide* guide : db_net->getGuides()) {
-    int layer_idx = guide->getLayer()->getRoutingLevel();
-    int via_layer_idx = guide->getViaLayer() != nullptr
-                            ? guide->getViaLayer()->getRoutingLevel()
-                            : 0;
-    boxToGlobalRouting(
-        guide->getBox(), layer_idx, via_layer_idx, routes_[db_net]);
-    is_congested_ = is_congested_ || guide->isCongested();
-  }
-
-  std::string pins_not_covered;
-  if (!netIsCovered(db_net, pins_not_covered)) {
-    routes_[db_net].clear();
-    return false;
-  }
-
-  net->setRestoreRouteFromGuides(false);
-  net->setAreSegmentsRestored(true);
-  updateNetResources(net, false);
-
-  return true;
-}
-
-void GlobalRouter::updateNetResources(Net* net, bool increase)
-{
-  GRoute& segments = routes_[net->getDbNet()];
-  for (GSegment& segment : segments) {
-    if (!segment.isVia()) {
-      updateResources(segment.init_x,
-                      segment.init_y,
-                      segment.final_x,
-                      segment.final_y,
-                      segment.final_layer,
-                      increase ? -1 : 1,
-                      net->getDbNet());
-    }
-  }
 }
 
 // This function is not currently enabled
@@ -1371,6 +1312,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 
 bool GlobalRouter::pinPositionsChanged(Net* net)
 {
+  bool is_diferent = false;
   std::map<RoutePt, int> cnt_pos;
   const std::multiset<RoutePt>& last_pos = net->getLastPinPositions();
   for (const Pin& pin : net->getPins()) {
@@ -1382,10 +1324,11 @@ bool GlobalRouter::pinPositionsChanged(Net* net)
   }
   for (const auto& [pos, count] : cnt_pos) {
     if (count != 0) {
-      return true;
+      is_diferent = true;
+      break;
     }
   }
-  return false;
+  return is_diferent;
 }
 
 bool GlobalRouter::newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos)
@@ -1790,16 +1733,18 @@ void GlobalRouter::updateResources(const int& init_x,
                                    odb::dbNet* db_net)
 {
   // transform from real position to grid pos of fastrouter
-  int x0 = ((init_x - grid_->getXMin()) / grid_->getTileSize());
-  int y0 = ((init_y - grid_->getYMin()) / grid_->getTileSize());
-  int x1 = ((final_x - grid_->getXMin()) / grid_->getTileSize());
-  int y1 = ((final_y - grid_->getYMin()) / grid_->getTileSize());
+  int grid_init_x = ((init_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_init_y = ((init_y - grid_->getYMin()) / grid_->getTileSize());
+  int grid_final_x = ((final_x - grid_->getXMin()) / grid_->getTileSize());
+  int grid_final_y = ((final_y - grid_->getYMin()) / grid_->getTileSize());
 
-  // The last gcell is oversized and includes space that the above
-  // calculation doesn't represent so correct it:
-  x1 = std::min(x1, grid_->getXGrids() - 1);
-  y1 = std::min(y1, grid_->getYGrids() - 1);
-  fastroute_->updateEdge2DAnd3DUsage(x0, y0, x1, y1, layer_level, used, db_net);
+  fastroute_->updateEdge2DAnd3DUsage(grid_init_x,
+                                     grid_init_y,
+                                     grid_final_x,
+                                     grid_final_y,
+                                     layer_level,
+                                     used,
+                                     db_net);
 }
 
 void GlobalRouter::updateFastRouteGridsLayer(const int& init_x,
@@ -5762,15 +5707,9 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         // Copy the nets from the set to the vector of dirty nets
         dirty_nets.clear();
         for (odb::dbNet* db_net : congestion_nets) {
-          Net* fr_net = db_net_map_[db_net];
           dirty_nets.push_back(db_net_map_[db_net]);
           // Release resources on FastRouter
-          if (fr_net->areSegmentsRestored()) {
-            updateNetResources(fr_net, true);
-            fr_net->setAreSegmentsRestored(false);
-          } else {
-            fastroute_->clearNetRoute(db_net);
-          }
+          fastroute_->clearNetRoute(db_net);
           // if the net has wires, release resources used by wires
           Net* net = db_net_map_[db_net];
           destroyNetWire(net);
@@ -5885,12 +5824,6 @@ void GRouteDbCbk::inDbNetPostMerge(odb::dbNet* preserved_net,
                                    odb::dbNet* removed_net)
 {
   grouter_->mergeNetsRouting(preserved_net, removed_net);
-}
-
-void GRouteDbCbk::inDbNetPostGuideRestore(odb::dbNet* net)
-{
-  Net* fr_net = grouter_->getNet(net);
-  fr_net->setRestoreRouteFromGuides(true);
 }
 
 void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
