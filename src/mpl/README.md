@@ -137,7 +137,7 @@ set_macro_guidance_region
 | Switch Name | Description |
 | ----- | ----- |
 | `-macro_name` | The name of a macro of the design. |
-| `-region` | The lower left corner and upper right corner {lx ly ux uy} of the region in microns. |
+| `-halo` | The width and height of the halo. |
 
 ## Example scripts
 
