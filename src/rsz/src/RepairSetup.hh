@@ -9,7 +9,6 @@
 #include "boost/functional/hash.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
@@ -37,8 +36,6 @@ namespace rsz {
 class Resizer;
 class RemoveBuffer;
 class BaseMove;
-
-using odb::Point;
 
 using sta::Corner;
 using sta::dbNetwork;
