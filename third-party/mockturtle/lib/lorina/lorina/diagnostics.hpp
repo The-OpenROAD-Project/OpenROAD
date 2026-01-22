@@ -33,10 +33,10 @@
 #pragma once
 
 #include <cassert>
+#include <format>
 #include <iostream>
 #include <map>
-#include <fmt/format.h>
-#include <fmt/color.h>
+#include <string_view>
 
 namespace lorina
 {
@@ -165,59 +165,6 @@ public:
   }
 };
 
-/*! \brief A consumer for diagnostics. */
-class text_diagnostics : public diagnostic_consumer
-{
-public:
-  text_diagnostics() = default;
-  virtual ~text_diagnostics() = default;
-
-  /*! \brief Handle diagnostic.
-   *
-   * \param level Severity level
-   * \param message Diagnostic message
-   */
-  void handle_diagnostic( diagnostic_level level, std::string const& message ) const override
-  {
-    switch ( level )
-    {
-    case diagnostic_level::ignore:
-      break;
-    case diagnostic_level::note:
-      {
-        fmt::print( stdout, fmt::emphasis::bold | fg( fmt::terminal_color::bright_green ), "[i]" );
-        fmt::print( stdout, fmt::emphasis::bold | fg( fmt::color::white ), " {}\n", message );
-      }
-      break;
-    case diagnostic_level::remark:
-      {
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::terminal_color::bright_green ), "[I]" );
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::color::white ), " {}\n", message );
-      }
-      break;
-    case diagnostic_level::warning:
-      {
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::terminal_color::bright_magenta ),"[w]" );
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::color::white ), " {}\n", message );
-      }
-      break;
-    case diagnostic_level::error:
-      {
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::terminal_color::bright_red ), "[e]" );
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::color::white ), " {}\n", message );
-      }
-      break;
-    case diagnostic_level::fatal:
-    default:
-      {
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::terminal_color::bright_red ), "[E]" );
-        fmt::print( stderr, fmt::emphasis::bold | fg( fmt::color::white ), " {}\n", message );
-      }
-      break;
-    }
-  }
-};
-
 inline diagnostic_builder::diagnostic_builder( diagnostic_engine& engine, diag_id id )
   : engine_( engine ), id_( id )
 {
@@ -263,16 +210,17 @@ inline void diagnostic_engine::emit_static_diagnostic( diag_id id, std::vector<s
   assert( id < diag_id::NUM_STATIC_ERROR_IDS );
   diagnostic_level const level = diag_info[uint32_t( id )].first;
   std::string const message = diag_info[uint32_t( id )].second;
+  std::string_view const message_view = message;
   switch ( args.size() )
   {
   case 1:
-    client_->handle_diagnostic( level, fmt::format( fmt::runtime(message), args[0] ) );
+    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0]) ) );
     break;
   case 2:
-    client_->handle_diagnostic( level, fmt::format( fmt::runtime(message), args[0], args[1] ) );
+    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1]) ) );
     break;
   case 3:
-    client_->handle_diagnostic( level, fmt::format( fmt::runtime(message), args[0], args[1], args[2] ) );
+    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1], args[2]) ) );
     break;
   default:
   case 0:
@@ -287,16 +235,17 @@ inline void diagnostic_engine::emit_custom_diagnostic( diag_id id, std::vector<s
   assert( uint32_t( custom_id ) < custom_diag_info.size() );
   diagnostic_level const level = custom_diag_info[custom_id].first;
   std::string const message = custom_diag_info[custom_id].second;
+  std::string_view const message_view = message;
   switch ( args.size() )
   {
   case 1:
-    client_->handle_diagnostic( level, fmt::format( fmt::runtime(message), args[0] ) );
+    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0]) ) );
     break;
   case 2:
-    client_->handle_diagnostic( level, fmt::format( fmt::runtime(message), args[0], args[1] ) );
+    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1]) ) );
     break;
   case 3:
-    client_->handle_diagnostic( level, fmt::format( fmt::runtime(message), args[0], args[1], args[2] ) );
+    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1], args[2]) ) );
     break;
   default:
   case 0:
