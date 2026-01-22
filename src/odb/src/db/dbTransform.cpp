@@ -227,28 +227,20 @@ void dbTransform::apply(Point3D& p) const
 
 void dbTransform::apply(Rect& r) const
 {
-  Point p[4];
-  p[0] = r.ll();
-  p[1] = r.ul();
-  p[2] = r.ur();
-  p[3] = r.lr();
-  r.mergeInit();
-  for (auto& point : p) {
-    apply(point);
-    r.merge(point);
-  }
+  Point ll = r.ll();
+  Point ur = r.ur();
+  apply(ll);
+  apply(ur);
+  r.init(ll.x(), ll.y(), ur.x(), ur.y());
 }
 
 void dbTransform::apply(Cuboid& c) const
 {
-  std::vector<Point3D> points = c.getPoints();
-  Cuboid result;
-  result.mergeInit();
-  for (auto& p : points) {
-    apply(p);
-    result.merge(p);
-  }
-  c = result;
+  Point3D p1 = c.lll();
+  Point3D p2 = c.uur();
+  apply(p1);
+  apply(p2);
+  c.init(p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z());
 }
 
 void dbTransform::apply(Polygon& p) const

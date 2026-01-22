@@ -179,6 +179,40 @@ bool UnfoldedConnection::isValid() const
   int top_z = top_region->getSurfaceZ();
   int bottom_z = bottom_region->getSurfaceZ();
 
+  if (top_region->isInternal() || bottom_region->isInternal()) {
+    // Internal regions are treated as volumes.
+    // 1. If they strictly overlap in Z, they are connected.
+    int t_min = top_region->cuboid.zMin();
+    int t_max = top_region->cuboid.zMax();
+    int b_min = bottom_region->cuboid.zMin();
+    int b_max = bottom_region->cuboid.zMax();
+
+    if (std::max(t_min, b_min) <= std::min(t_max, b_max)) {
+      return true;
+    }
+
+    // 2. If disjoint, use the appropriate surface Z based on pair logic
+    if (standard_pair) {
+      // Top (Upper) >= Bot (Lower).
+      // Top connects from its bottom (zMin). Bot connects from its top (zMax).
+      if (top_region->isInternal()) {
+        top_z = t_min;
+      }
+      if (bottom_region->isInternal()) {
+        bottom_z = b_max;
+      }
+    } else {
+      // Bot (Upper) >= Top (Lower).
+      // Bot connects from its bottom (zMin). Top connects from its top (zMax).
+      if (bottom_region->isInternal()) {
+        bottom_z = b_min;
+      }
+      if (top_region->isInternal()) {
+        top_z = t_max;
+      }
+    }
+  }
+
   if (standard_pair) {
     // Top(Down) should be >= Bot(Up)
     if (top_z < bottom_z) {
@@ -388,6 +422,7 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* chip_inst,
         = computeEffectiveSide(region_inst->getChipRegion()->getSide(), path);
 
     uf_region.cuboid = region_inst->getChipRegion()->getCuboid();
+
     total_transform.apply(uf_region.cuboid);
 
     unfoldBumps(uf_region, total_transform);
@@ -474,9 +509,8 @@ UnfoldedChip* UnfoldedModel::findUnfoldedChip(
   return nullptr;
 }
 
-UnfoldedRegion* UnfoldedModel::findUnfoldedRegion(
-    UnfoldedChip* chip,
-    dbChipRegionInst* region_inst)
+UnfoldedRegion* UnfoldedModel::findUnfoldedRegion(UnfoldedChip* chip,
+                                                  dbChipRegionInst* region_inst)
 {
   if (!chip || !region_inst) {
     return nullptr;
@@ -506,8 +540,7 @@ void UnfoldedModel::unfoldConnectionsRecursive(
       top_full_path.push_back(inst);
     }
     UnfoldedChip* top_chip = findUnfoldedChip(top_full_path);
-    UnfoldedRegion* top_region
-        = findUnfoldedRegion(top_chip, top_region_inst);
+    UnfoldedRegion* top_region = findUnfoldedRegion(top_chip, top_region_inst);
 
     auto bottom_full_path = parent_path;
     for (auto* inst : conn->getBottomRegionPath()) {
