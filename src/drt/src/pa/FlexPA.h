@@ -372,8 +372,7 @@ class FlexPA
                       std::map<frCoord, frAccessPointEnum>& y_coords,
                       frAccessPointEnum lower_type,
                       frAccessPointEnum upper_type,
-                      bool is_macro_cell_pin,
-                      bool is_bterm = false);
+                      bool is_macro_cell_pin);
 
   /**
    * @brief Generates an OnGrid access coordinate (on or half track)
@@ -421,8 +420,7 @@ class FlexPA
   void genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                              const gtl::rectangle_data<frCoord>& rect,
                              frLayerNum layer_num,
-                             bool is_curr_layer_horz,
-                             bool is_bterm = false);
+                             bool is_curr_layer_horz);
 
   /**
    * @brief Calls the other genAP functions according to the informed cost
@@ -443,8 +441,7 @@ class FlexPA
                    frLayerNum base_layer_num,
                    frLayerNum layer_num,
                    const gtl::rectangle_data<frCoord>& rect,
-                   int offset = 0,
-                   bool is_bterm = false);
+                   int offset = 0);
 
   bool OnlyAllowOnGridAccess(frLayerNum layer_num, bool is_macro_cell_pin);
 
