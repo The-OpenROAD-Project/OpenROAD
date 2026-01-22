@@ -21,14 +21,13 @@
 #include "sta/MinMax.hh"
 #include "sta/Path.hh"
 #include "sta/Transition.hh"
+#include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
 }
 
 namespace rsz {
-
-using utl::Logger;
 
 using odb::Point;
 using sta::Corner;
@@ -147,7 +146,7 @@ class Rebuffer : public sta::dbStaState
   bool hasTopLevelOutputPort(Net* net);
   int rebufferPin(const Pin* drvr_pin);
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;

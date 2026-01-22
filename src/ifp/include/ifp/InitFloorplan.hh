@@ -13,10 +13,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace sta {
 class dbNetwork;
@@ -26,7 +23,6 @@ class Report;
 namespace ifp {
 
 using sta::dbNetwork;
-using utl::Logger;
 
 enum class RowParity
 {
@@ -41,7 +37,9 @@ class InitFloorplan
   void makePolygonDie(const odb::Polygon& polygon);
 
   InitFloorplan() = default;  // only for swig
-  InitFloorplan(odb::dbBlock* block, Logger* logger, sta::dbNetwork* network);
+  InitFloorplan(odb::dbBlock* block,
+                utl::Logger* logger,
+                sta::dbNetwork* network);
 
   // utilization is in [0, 100]%
   // The base_site determines the single-height rows.  For hybrid rows it is
@@ -178,7 +176,7 @@ class InitFloorplan
                               const std::set<odb::dbSite*>& flipped_sites);
 
   odb::dbBlock* block_{nullptr};
-  Logger* logger_{nullptr};
+  utl::Logger* logger_{nullptr};
   sta::dbNetwork* network_{nullptr};
 
   // this is a set of sets of all constructed site ids.

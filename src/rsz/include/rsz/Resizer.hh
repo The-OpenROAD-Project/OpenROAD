@@ -59,8 +59,6 @@ class SpefWriter;
 
 namespace rsz {
 
-using utl::Logger;
-
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbInst;
@@ -244,7 +242,7 @@ class OdbCallBack;
 class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
-  Resizer(Logger* logger,
+  Resizer(utl::Logger* logger,
           dbDatabase* db,
           dbSta* sta,
           SteinerTreeBuilder* stt_builder,
@@ -528,7 +526,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void initBlock();
   void journalBeginTest();
   void journalRestoreTest();
-  Logger* logger() const { return logger_; }
+  utl::Logger* logger() const { return logger_; }
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
@@ -829,7 +827,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;

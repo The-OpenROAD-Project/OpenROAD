@@ -1653,7 +1653,7 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
       tree);
 }
 
-static FixedDelay criticalPathDelay(Logger* logger, const BnetPtr& root)
+static FixedDelay criticalPathDelay(utl::Logger* logger, const BnetPtr& root)
 {
   FixedDelay worst_load_slack = FixedDelay::INF;
   visitTree(

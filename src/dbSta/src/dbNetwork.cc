@@ -718,7 +718,7 @@ dbNetwork::dbNetwork()
 
 dbNetwork::~dbNetwork() = default;
 
-void dbNetwork::init(dbDatabase* db, Logger* logger)
+void dbNetwork::init(dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
   logger_ = logger;
@@ -3927,20 +3927,20 @@ class ModDbNetAssociation : public PinVisitor
 {
  public:
   ModDbNetAssociation(dbNetwork* nwk,
-                      Logger* logger,
+                      utl::Logger* logger,
                       dbNet* new_flat_net,
                       dbNet* orig_flat_net);
   void operator()(const Pin* pin) override;
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
   dbNetwork* db_network_;
   dbNet* new_flat_net_;
   dbNet* orig_flat_net_;
 };
 
 ModDbNetAssociation::ModDbNetAssociation(dbNetwork* nwk,
-                                         Logger* logger,
+                                         utl::Logger* logger,
                                          dbNet* new_flat_net,
                                          dbNet* orig_flat_net)
     : logger_(logger),
@@ -4138,21 +4138,21 @@ class PinModDbNetConnection : public PinVisitor
 {
  public:
   PinModDbNetConnection(const dbNetwork* nwk,
-                        Logger* logger,
+                        utl::Logger* logger,
                         const Net* net_to_search);
   void operator()(const Pin* pin) override;
   dbNet* getNet() const { return dbnet_; }
 
  private:
   dbNet* dbnet_;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   bool db_net_search_ = false;
   const Net* search_net_;
   const dbNetwork* db_network_;
 };
 
 PinModDbNetConnection::PinModDbNetConnection(const dbNetwork* nwk,
-                                             Logger* logger,
+                                             utl::Logger* logger,
                                              const Net* net_to_search)
     : db_network_(nwk)
 {

@@ -54,8 +54,6 @@ using odb::dbMaster;
 using odb::dbMaster;
 using odb::Point;
 
-using utl::Logger;
-
 using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
@@ -144,7 +142,7 @@ class BaseMove : public sta::dbStaState
  protected:
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
-  Logger* logger_;
+  utl::Logger* logger_;
   Network* network_;
   dbNetwork* db_network_;
   dbSta* sta_;

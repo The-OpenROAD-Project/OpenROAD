@@ -25,8 +25,6 @@ namespace rsz {
 
 class Resizer;
 
-using utl::Logger;
-
 using odb::Point;
 
 using sta::dbNetwork;
@@ -120,7 +118,7 @@ class RepairHold : public sta::dbStaState
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;

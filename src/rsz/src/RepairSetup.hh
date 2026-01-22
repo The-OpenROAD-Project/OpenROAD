@@ -32,7 +32,6 @@ class RemoveBuffer;
 class BaseMove;
 
 using odb::Point;
-using utl::Logger;
 
 using sta::Corner;
 using sta::dbNetwork;
@@ -146,7 +145,7 @@ class RepairSetup : public sta::dbStaState
                          const OptoParams& params);
   Slack getInstanceSlack(Instance* inst);
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;

@@ -508,7 +508,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     const Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
+    utl::Logger* logger,
     const Network* network)
 {
   BufferedNetPtr bnet = nullptr;
@@ -632,7 +632,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
     const Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
+    utl::Logger* logger,
     const Network* network,
     std::map<Point, std::vector<BufferedNetPtr>>& sink_map)
 {
@@ -790,7 +790,7 @@ static BufferedNetPtr makeBufferedNet(
     const Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
+    utl::Logger* logger,
     dbNetwork* db_network,
     RoutePtSet& visited)
 {
