@@ -113,10 +113,8 @@ create_collision_test
 create_clock -period 5 clk
 set_wire_rc -clock -layer metal5
 
-# jk: DISABLE/ENABLE the fix - Setting to 0 triggers the collision error
-set_debug_level CTS htree_builder_fix 1
-#set_debug_level CTS legalizer 10
-#set_debug_level CTS clustering 10
+#set_debug_level CTS legalizer 4
+#set_debug_level CTS clustering 4
 
 # Cluster diameter must be larger than our group span
 # Group span: 8 * 400 = 3200 dbu = 1.6 um
