@@ -47,8 +47,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using std::vector;
-
 using odb::dbMaster;
 
 using odb::dbMaster;
@@ -246,8 +244,8 @@ class BaseMove : public sta::dbStaState
   ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
   Slack getWorstInputSlack(Instance* inst);
   Slack getWorstOutputSlack(Instance* inst);
-  vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);
-  vector<const Pin*> getOutputPins(const Instance* inst);
+  std::vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);
+  std::vector<const Pin*> getOutputPins(const Instance* inst);
   LibertyCellSeq getSwappableCells(LibertyCell* base);
 
   static constexpr int size_down_max_fanout_ = 10;
