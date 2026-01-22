@@ -135,17 +135,7 @@ DbuY Node::getCenterY() const
 }
 odb::dbInst* Node::getDbInst() const
 {
-  if (type_ != CELL) {
-    if (type_ == UNKNOWN) {
-      std::cout << "UNKNOWN" << std::endl;
-    } else if (type_ == TERMINAL) {
-      std::cout << "TERMINAL" << std::endl;
-    } else if (type_ == MACROCELL) {
-      std::cout << "MACROCELL" << std::endl;
-    } else if (type_ == FILLER) {
-      std::cout << "FILLER" << std::endl;
-    }
-    
+  if (type_ != CELL) {    
     return nullptr;
   }
   return static_cast<odb::dbInst*>(db_owner_);
