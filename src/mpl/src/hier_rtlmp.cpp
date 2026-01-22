@@ -111,14 +111,9 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setHaloWidth(int halo_width)
+void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
 {
-  tree_->halo_width = halo_width;
-}
-
-void HierRTLMP::setHaloHeight(int halo_height)
-{
-  tree_->halo_height = halo_height;
+  tree_->default_halo = {.width = halo_width, .height = halo_height};
 }
 
 void HierRTLMP::setGuidanceRegions(
@@ -127,10 +122,11 @@ void HierRTLMP::setGuidanceRegions(
   guides_ = guidance_regions;
 }
 
-void HierRTLMP::setMacroHalos(
-    const std::map<odb::dbInst*, std::pair<int, int>>& halos)
+void HierRTLMP::addMacroHalo(odb::dbInst* macro,
+                             int halo_width,
+                             int halo_height)
 {
-  halos_ = halos;
+  halos_[macro] = {.width = halo_width, .height = halo_height};
 }
 
 // Options related to clustering
@@ -310,17 +306,10 @@ void HierRTLMP::createHardMacros(odb::dbModule* module)
         tree_->has_fixed_macros = true;
       }
 
-      int halo_width
-          = halos_.contains(inst) ? halos_[inst].first : tree_->halo_width;
-      int halo_height
-          = halos_.contains(inst) ? halos_[inst].second : tree_->halo_height;
+      HardMacro::Halo halo
+          = halos_.contains(inst) ? halos_[inst] : tree_->default_halo;
 
-      if (halos_.contains(inst)) {
-        logger_->report(
-            "{} HAS NONDEFAULT HALOS {}", inst->getName(), halos_[inst]);
-      }
-
-      auto macro = std::make_unique<HardMacro>(inst, halo_width, halo_height);
+      auto macro = std::make_unique<HardMacro>(inst, halo);
 
       if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
         logger_->error(

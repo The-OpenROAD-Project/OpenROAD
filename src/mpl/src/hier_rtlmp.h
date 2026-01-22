@@ -77,11 +77,10 @@ class HierRTLMP
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
-  void setHaloWidth(int halo_width);
-  void setHaloHeight(int halo_height);
+  void setDefaultHalo(int halo_width, int halo_height);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
-  void setMacroHalos(const std::map<odb::dbInst*, std::pair<int, int>>& halos);
+  void addMacroHalo(odb::dbInst* macro, int halo_width, int halo_height);
 
   // Clustering Related Options
   void setClusterSize(int max_num_macro,
@@ -301,7 +300,7 @@ class HierRTLMP
 
   std::map<std::string, odb::Rect> fences_;   // macro_name, fence
   std::map<odb::dbInst*, odb::Rect> guides_;  // Macro -> Guidance Region
-  std::map<odb::dbInst*, std::pair<int, int>>
+  std::map<odb::dbInst*, HardMacro::Halo>
       halos_;  // Macro -> Halo {width, height}
   std::vector<odb::Rect> placement_blockages_;
   std::vector<odb::Rect> io_blockages_;

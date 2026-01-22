@@ -95,8 +95,7 @@ struct PhysicalHierarchy
   BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
-  int halo_width{0};
-  int halo_height{0};
+  HardMacro::Halo default_halo;
   int64_t macro_with_halo_area{0};
 
   // The constraint set by the user.

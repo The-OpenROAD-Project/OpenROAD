@@ -66,8 +66,7 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setMaxNumLevel(max_num_level);
   hier_rtlmp_->setClusterSizeRatioPerLevel(coarsening_ratio);
   hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
-  hier_rtlmp_->setHaloWidth(halo_width);
-  hier_rtlmp_->setHaloHeight(halo_height);
+  hier_rtlmp_->setDefaultHalo(halo_width, halo_height);
   hier_rtlmp_->setGlobalFence(global_fence);
   hier_rtlmp_->setAreaWeight(area_weight);
   hier_rtlmp_->setOutlineWeight(outline_weight);
@@ -86,7 +85,6 @@ bool MacroPlacer::place(const int num_threads,
     hier_rtlmp_->setDataFlowDriven();
   }
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
-  hier_rtlmp_->setMacroHalos(macro_halos_);
 
   hier_rtlmp_->run();
 
@@ -223,13 +221,15 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
   guidance_regions_[macro] = region;
 }
 
-void MacroPlacer::addMacroHalo(odb::dbInst* macro, std::pair<int, int> halo)
+void MacroPlacer::addMacroHalo(odb::dbInst* macro,
+                               int halo_width,
+                               int halo_height)
 {
   if (macro_halos_.find(macro) != macro_halos_.end()) {
     logger_->warn(MPL, 49, "Overwriting halo for macro {}", macro->getName());
   }
 
-  macro_halos_[macro] = halo;
+  hier_rtlmp_->addMacroHalo(macro, halo_width, halo_height);
 }
 
 void MacroPlacer::setMacroPlacementFile(const std::string& file_name)

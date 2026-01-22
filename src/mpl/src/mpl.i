@@ -146,7 +146,7 @@ add_macro_halo(odb::dbInst* macro,
   int width_dbu = block->micronsToDbu(width);
   int height_dbu = block->micronsToDbu(height);
 
-  getMacroPlacer()->addMacroHalo(macro, {width_dbu, height_dbu});
+  getMacroPlacer()->addMacroHalo(macro, width_dbu, height_dbu);
 }
 
 void

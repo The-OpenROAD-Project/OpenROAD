@@ -133,10 +133,7 @@ int64_t ClusteringEngine::computeMacroWithHaloArea(
 {
   int64_t macro_with_halo_area = 0;
   for (odb::dbInst* unfixed_macro : unfixed_macros) {
-    odb::dbMaster* master = unfixed_macro->getMaster();
-    const int width = master->getWidth() + (2 * tree_->halo_width);
-    const int height = master->getHeight() + (2 * tree_->halo_height);
-    macro_with_halo_area += (width * static_cast<int64_t>(height));
+    macro_with_halo_area += tree_->maps.inst_to_hard[unfixed_macro]->getArea();
   }
   return macro_with_halo_area;
 }
@@ -256,8 +253,8 @@ void ClusteringEngine::reportDesignData()
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(tree_->halo_width),
-      block_->dbuToMicrons(tree_->halo_height),
+      block_->dbuToMicrons(tree_->default_halo.width),
+      block_->dbuToMicrons(tree_->default_halo.height),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
