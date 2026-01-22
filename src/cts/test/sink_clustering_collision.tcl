@@ -1,7 +1,6 @@
 # Test if CTS is ok when location collision occurs b/w clk buffer and
 # the centroid of sinks in a cluster.
 source "helpers.tcl"
-source "cts-helpers.tcl"
 
 # Strategy:
 # 1. Place FFs in a grid pattern (deterministic "random" placement)
