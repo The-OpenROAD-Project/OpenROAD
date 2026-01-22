@@ -577,8 +577,6 @@ void Graphics::drawNotches(gui::Painter& painter)
 
     painter.drawRect(rect);
   }
-
-  // notches_.clear();
 }
 
 void Graphics::drawBlockedRegionsIndication(gui::Painter& painter)
