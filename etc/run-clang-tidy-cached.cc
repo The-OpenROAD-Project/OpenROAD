@@ -129,7 +129,9 @@ static constexpr ConfigValues kConfig = {
     .file_exclude_re
     = "src/sta/"  // Don't check 3rd-party submodule
       "|codeGenerator/templates/"
-      "|build/",  // Don't check generated code
+      "|build/"                             // Don't check generated code
+      "|def/(cdef|defrw|defwrite|defdiff)"  // unused code
+      "|lef/(clef|lefrw|lefwrite|lefdiff)",
     .revisit_brokenfiles_if_build_config_newer = false,
 };
 // --------------------------------------------------------------
