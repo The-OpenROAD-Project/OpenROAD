@@ -28,6 +28,7 @@ class SteinerTreeBuilder;
 
 namespace utl {
 class Logger;
+class CallBackHandler;
 }  // namespace utl
 
 namespace grt {
@@ -68,6 +69,7 @@ class CUGR
  public:
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
+       utl::CallBackHandler* callback_handler,
        stt::SteinerTreeBuilder* stt_builder,
        sta::dbSta* sta);
   ~CUGR();
@@ -90,6 +92,9 @@ class CUGR
   }
 
  private:
+  float CalculatePartialSlack();
+  float getNetSlack(odb::dbNet* net);
+  NetRouteMap getPartialRoutes();
   void updateOverflowNets(std::vector<int>& netIndices);
   void patternRoute(std::vector<int>& netIndices);
   void patternRouteWithDetours(std::vector<int>& netIndices);
@@ -106,6 +111,7 @@ class CUGR
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
+  utl::CallBackHandler* callback_handler_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;
 

@@ -32,11 +32,14 @@
 
 namespace grt {
 
+using utl::GRT;
+
 CUGR::CUGR(odb::dbDatabase* db,
            utl::Logger* log,
+           utl::CallBackHandler* callback_handler,
            stt::SteinerTreeBuilder* stt_builder,
            sta::dbSta* sta)
-    : db_(db), logger_(log), stt_builder_(stt_builder), sta_(sta)
+    : db_(db), logger_(log), callback_handler_(callback_handler), stt_builder_(stt_builder), sta_(sta)
 {
 }
 
@@ -48,6 +51,7 @@ void CUGR::init(const int min_routing_layer,
 {
   design_ = std::make_unique<Design>(db_,
                                      logger_,
+                                     callback_handler_,
                                      sta_,
                                      constants_,
                                      min_routing_layer,
@@ -61,6 +65,57 @@ void CUGR::init(const int min_routing_layer,
     gr_nets_.push_back(std::make_unique<GRNet>(baseNet, grid_graph_.get()));
     db_net_map_[baseNet.getDbNet()] = gr_nets_.back().get();
   }
+}
+
+NetRouteMap CUGR::getPartialRoutes()
+{
+  NetRouteMap net_routes;
+  partial_routes_.clear();
+  if (routes_.empty()) {
+    // TODO: CUGR planar route
+    net_routes = partial_routes_;
+  }
+
+  return net_routes;
+}
+
+float CUGR::CalculatePartialSlack()
+{
+  std::vector<float> slacks;
+  slacks.reserve(gr_nets_.size());
+  callback_handler_->triggerOnEstimateParasiticsRequired();
+  for (const auto& net : gr_nets_) {
+    float slack = getNetSlack(net->getDbNet());
+    slacks.push_back(slack);
+    net->setSlack(slack);
+  }
+
+  std::ranges::stable_sort(slacks);
+
+  // Find the slack threshold based on the percentage of critical nets
+  // defined by the user
+  const int threshold_index
+      = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
+  const float slack_th = slacks[threshold_index];
+
+  // Set the non critical nets slack as the lowest float, so they can be
+  // ordered by overflow (and ordered first than the critical nets)
+  // TODO: Add net_id_ to CUGR for net identification
+  for (const auto& net : gr_nets_) {
+    if (net->getSlack() > slack_th) {
+      net->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
+    }
+  }
+
+  return slack_th;
+}
+
+float CUGR::getNetSlack(odb::dbNet* net)
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Net* sta_net = network->dbToSta(net);
+  float slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  return slack;
 }
 
 void CUGR::updateOverflowNets(std::vector<int>& netIndices)
@@ -163,6 +218,8 @@ void CUGR::route()
   for (const auto& net : gr_nets_) {
     netIndices.push_back(net->getIndex());
   }
+
+  updateSlacks();
 
   patternRoute(netIndices);
 
