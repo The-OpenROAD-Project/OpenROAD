@@ -63,7 +63,7 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
                                        odb::dbDatabase* db,
                                        sta::dbSta* sta,
                                        SteinerTreeBuilder* stt_builder,
-                                       GlobalRouter* global_router)
+                                       grt::GlobalRouter* global_router)
     : logger_(logger),
       estimate_parasitics_cbk_(
           std::make_unique<EstimateParasiticsCallBack>(this)),
@@ -1255,8 +1255,8 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(
       case ParasiticsSrc::detailed_routing:
         // TODO: add IncrementalDRoute
         estimate_parasitics_->setIncrementalGRT(
-            new IncrementalGRoute(estimate_parasitics_->getGlobalRouter(),
-                                  estimate_parasitics_->getBlock()));
+            new grt::IncrementalGRoute(estimate_parasitics_->getGlobalRouter(),
+                                       estimate_parasitics_->getBlock()));
         // Don't print verbose messages for incremental routing
         estimate_parasitics_->getGlobalRouter()->setVerbose(false);
         break;
