@@ -98,6 +98,7 @@ cc_test(
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft",
+        "//src/dft/src/utils",
         "//src/odb",
         "//src/utl",
         "@googletest//:gtest",
