@@ -19,6 +19,7 @@ add_library(db
     dbMPinItr.cpp 
     dbMTerm.cpp 
     dbMaster.cpp 
+    dbInsertBuffer.cpp
     dbNet.cpp 
     dbTech.cpp  
     dbTechLayerSpacingRule.cpp 
@@ -61,6 +62,7 @@ add_library(db
     dbJournal.cpp 
     dbJournalLog.cpp 
     dbBlockCallBackObj.cpp 
+    dbChipCallBackObj.cpp 
     dbRegion.cpp 
     dbRegionInstItr.cpp 
     dbExtControl.cpp 

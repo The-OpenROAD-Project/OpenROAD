@@ -2,6 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -9,6 +10,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/MinMax.hh"
 #include "sta/StaState.hh"
@@ -155,7 +158,7 @@ class RepairSetup : public sta::dbStaState
   int removed_buffer_count_ = 0;
   double initial_design_area_ = 0;
 
-  std::vector<BaseMove*> move_sequence;
+  std::vector<BaseMove*> move_sequence_;
 
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();

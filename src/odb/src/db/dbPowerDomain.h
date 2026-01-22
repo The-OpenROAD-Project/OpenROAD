@@ -4,10 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include "odb/geom.h"
 // User Code End Includes
@@ -25,6 +26,8 @@ class _dbPowerDomain : public _dbObject
 {
  public:
   _dbPowerDomain(_dbDatabase*);
+
+  ~_dbPowerDomain();
 
   bool operator==(const _dbPowerDomain& rhs) const;
   bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }

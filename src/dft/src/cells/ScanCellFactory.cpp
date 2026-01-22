@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "ScanCell.hh"
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -209,11 +210,9 @@ std::vector<std::unique_ptr<ScanCell>> CollectScanCells(odb::dbDatabase* db,
   CollectScanCells(chip->getBlock(), sta, logger, scan_cells);
 
   // To keep preview_dft consistent between calls and rollbacks
-  std::sort(scan_cells.begin(),
-            scan_cells.end(),
-            [](const auto& lhs, const auto& rhs) {
-              return lhs->getName() < rhs->getName();
-            });
+  std::ranges::sort(scan_cells, [](const auto& lhs, const auto& rhs) {
+    return lhs->getName() < rhs->getName();
+  });
 
   return scan_cells;
 }

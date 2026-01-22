@@ -10,9 +10,11 @@
 #include <sstream>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "bmapParser.h"
+#include "bmapWriter.h"
 #include "checker.h"
 #include "dbvParser.h"
 #include "dbvWriter.h"
@@ -87,9 +89,7 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
-  calculateSize(db_->getChip());
-  db_->triggerPostRead3Dbx(chip);
-  check();
+  calculateSize(chip);
 }
 
 void ThreeDBlox::check()
@@ -121,6 +121,16 @@ std::unordered_set<odb::dbLib*> getUsedLibs(odb::dbChip* chip)
     }
   }
   return libs;
+}
+std::unordered_set<odb::dbChipRegion*> getChipletRegions(odb::dbChip* chip)
+{
+  std::unordered_set<odb::dbChipRegion*> regions;
+  for (const auto chipinst : chip->getChipInsts()) {
+    for (const auto region : chipinst->getMasterChip()->getChipRegions()) {
+      regions.insert(region);
+    }
+  }
+  return regions;
 }
 std::string getResultsDirectoryPath(const std::string& file_path)
 {
@@ -170,6 +180,13 @@ void ThreeDBlox::writeDbv(const std::string& dbv_file, odb::dbChip* chip)
     odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeLib(lib);
   }
+  // write bmaps
+  for (auto region : getChipletRegions(chip)) {
+    std::string bmap_file_path = current_dir_path
+                                 + std::string(region->getChip()->getName())
+                                 + "_" + region->getName() + ".bmap";
+    writeBMap(bmap_file_path, region);
+  }
 
   DbvWriter writer(logger_, db_);
   writer.writeChiplet(dbv_file, chip);
@@ -190,15 +207,23 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
   writer.writeChiplet(dbx_file, chip);
 }
 
+void ThreeDBlox::writeBMap(const std::string& bmap_file,
+                           odb::dbChipRegion* region)
+{
+  BmapWriter writer(logger_);
+  writer.writeFile(bmap_file, region);
+}
+
 void ThreeDBlox::calculateSize(dbChip* chip)
 {
-  Rect box;
-  box.mergeInit();
+  Cuboid cuboid;
+  cuboid.mergeInit();
   for (auto inst : chip->getChipInsts()) {
-    box.merge(inst->getBBox());
+    cuboid.merge(inst->getCuboid());
   }
-  chip->setWidth(box.dx());
-  chip->setHeight(box.dy());
+  chip->setWidth(cuboid.dx());
+  chip->setHeight(cuboid.dy());
+  chip->setThickness(cuboid.dz());
 }
 
 void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
@@ -265,6 +290,9 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   for (const auto& lef_file : chiplet.external.lef_files) {
     auto lib_name = getFileName(lef_file);
+    if (db_->findLib(lib_name.c_str()) != nullptr) {
+      continue;
+    }
     odb::lefin lef_reader(db_, logger_, false);
     lef_reader.createLib(tech, lib_name.c_str(), lef_file.c_str());
   }
@@ -302,21 +330,33 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
                         chip,
                         /*issue_callback*/ false);
   }
-  chip->setWidth(chiplet.design_width * db_->getDbuPerMicron());
-  chip->setHeight(chiplet.design_height * db_->getDbuPerMicron());
-  chip->setThickness(chiplet.thickness * db_->getDbuPerMicron());
-  chip->setShrink(chiplet.shrink);
+  if (chiplet.design_width != -1.0) {
+    chip->setWidth(chiplet.design_width * db_->getDbuPerMicron());
+  }
+  if (chiplet.design_height != -1.0) {
+    chip->setHeight(chiplet.design_height * db_->getDbuPerMicron());
+  }
+  if (chiplet.thickness != -1.0) {
+    chip->setThickness(chiplet.thickness * db_->getDbuPerMicron());
+  }
+  if (chiplet.shrink != -1.0) {
+    chip->setShrink(chiplet.shrink);
+  }
   chip->setTsv(chiplet.tsv);
 
-  chip->setScribeLineEast(chiplet.scribe_line_right * db_->getDbuPerMicron());
-  chip->setScribeLineWest(chiplet.scribe_line_left * db_->getDbuPerMicron());
-  chip->setScribeLineNorth(chiplet.scribe_line_top * db_->getDbuPerMicron());
-  chip->setScribeLineSouth(chiplet.scribe_line_bottom * db_->getDbuPerMicron());
-
-  chip->setSealRingEast(chiplet.seal_ring_right * db_->getDbuPerMicron());
-  chip->setSealRingWest(chiplet.seal_ring_left * db_->getDbuPerMicron());
-  chip->setSealRingNorth(chiplet.seal_ring_top * db_->getDbuPerMicron());
-  chip->setSealRingSouth(chiplet.seal_ring_bottom * db_->getDbuPerMicron());
+  if (chiplet.scribe_line_right != -1.0) {
+    chip->setScribeLineEast(chiplet.scribe_line_right * db_->getDbuPerMicron());
+    chip->setScribeLineWest(chiplet.scribe_line_left * db_->getDbuPerMicron());
+    chip->setScribeLineNorth(chiplet.scribe_line_top * db_->getDbuPerMicron());
+    chip->setScribeLineSouth(chiplet.scribe_line_bottom
+                             * db_->getDbuPerMicron());
+  }
+  if (chiplet.seal_ring_right != -1.0) {
+    chip->setSealRingEast(chiplet.seal_ring_right * db_->getDbuPerMicron());
+    chip->setSealRingWest(chiplet.seal_ring_left * db_->getDbuPerMicron());
+    chip->setSealRingNorth(chiplet.seal_ring_top * db_->getDbuPerMicron());
+    chip->setSealRingSouth(chiplet.seal_ring_bottom * db_->getDbuPerMicron());
+  }
 
   chip->setOffset(Point(chiplet.offset.x * db_->getDbuPerMicron(),
                         chiplet.offset.y * db_->getDbuPerMicron()));
@@ -324,8 +364,12 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
       && chip->getBlock() == nullptr) {
     // blackbox stage, create block
     auto block = odb::dbBlock::create(chip, chiplet.name.c_str());
-    block->setDieArea(Rect(0, 0, chip->getWidth(), chip->getHeight()));
-    block->setCoreArea(Rect(0, 0, chip->getWidth(), chip->getHeight()));
+    const int x_min = chip->getScribeLineWest() + chip->getSealRingWest();
+    const int y_min = chip->getScribeLineSouth() + chip->getSealRingSouth();
+    const int x_max = x_min + chip->getWidth();
+    const int y_max = y_min + chip->getHeight();
+    block->setDieArea(Rect(x_min, y_min, x_max, y_max));
+    block->setCoreArea(Rect(x_min, y_min, x_max, y_max));
   }
   for (const auto& [_, region] : chiplet.regions) {
     createRegion(region, chip);
@@ -405,8 +449,11 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
   auto bump = dbChipBump::create(chip_region, inst);
   Rect bbox;
   inst->getMaster()->getPlacementBoundary(bbox);
-  inst->setOrigin((entry.x * db_->getDbuPerMicron()) - bbox.xCenter(),
-                  (entry.y * db_->getDbuPerMicron()) - bbox.yCenter());
+  int x = (entry.x * db_->getDbuPerMicron()) - bbox.xCenter()
+          + chip->getOffset().x();
+  int y = (entry.y * db_->getDbuPerMicron()) - bbox.yCenter()
+          + chip->getOffset().y();
+  inst->setOrigin(x, y);
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
   if (entry.net_name != "-") {
     auto net = block->findNet(entry.net_name.c_str());
@@ -454,9 +501,6 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
                    chip_inst.name);
   }
   dbChipInst* inst = dbChipInst::create(db_->getChip(), chip, chip_inst.name);
-  inst->setLoc(Point3D(chip_inst.loc.x * db_->getDbuPerMicron(),
-                       chip_inst.loc.y * db_->getDbuPerMicron(),
-                       chip_inst.z * db_->getDbuPerMicron()));
   auto orient_str = chip_inst.orient;
   if (dup_orient_map.find(orient_str) != dup_orient_map.end()) {
     orient_str = dup_orient_map[orient_str];
@@ -470,6 +514,9 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
                    chip_inst.name);
   }
   inst->setOrient(orient.value());
+  inst->setLoc(Point3D(chip_inst.loc.x * db_->getDbuPerMicron(),
+                       chip_inst.loc.y * db_->getDbuPerMicron(),
+                       chip_inst.z * db_->getDbuPerMicron()));
 }
 std::vector<std::string> splitPath(const std::string& path)
 {
@@ -562,7 +609,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
 
   BmapParser parser(logger_);
   BumpMapData data = parser.parseFile(bmap_file);
-  std::vector<odb::dbInst*> bumps;
+  std::vector<std::pair<odb::dbInst*, odb::dbBTerm*>> bumps;
   bumps.reserve(data.entries.size());
   for (const auto& entry : data.entries) {
     bumps.push_back(createBump(entry, block));
@@ -576,7 +623,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
 
   // Populate where the bpins should be made
   std::map<odb::dbMaster*, BPinInfo> bpininfo;
-  for (dbInst* inst : bumps) {
+  for (const auto& [inst, bterm] : bumps) {
     dbMaster* master = inst->getMaster();
     if (bpininfo.find(master) != bpininfo.end()) {
       continue;
@@ -626,7 +673,11 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
   }
 
   // create bpins
-  for (dbInst* inst : bumps) {
+  for (const auto& [inst, bterm] : bumps) {
+    if (bterm == nullptr) {
+      continue;
+    }
+
     auto masterbpin = bpininfo.find(inst->getMaster());
     if (masterbpin == bpininfo.end()) {
       continue;
@@ -635,28 +686,22 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
     const BPinInfo& pin_info = masterbpin->second;
 
     const dbTransform xform = inst->getTransform();
-    for (dbITerm* iterm : inst->getITerms()) {
-      dbNet* net = iterm->getNet();
-      if (net == nullptr) {
-        continue;
-      }
-      dbBTerm* bterm = net->get1stBTerm();
-      dbBPin* pin = dbBPin::create(bterm);
-      Rect shape = pin_info.rect;
-      xform.apply(shape);
-      dbBox::create(pin,
-                    pin_info.layer,
-                    shape.xMin(),
-                    shape.yMin(),
-                    shape.xMax(),
-                    shape.yMax());
-      pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-      break;
-    }
+    dbBPin* pin = dbBPin::create(bterm);
+    Rect shape = pin_info.rect;
+    xform.apply(shape);
+    dbBox::create(pin,
+                  pin_info.layer,
+                  shape.xMin(),
+                  shape.yMin(),
+                  shape.xMax(),
+                  shape.yMax());
+    pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   }
 }
 
-dbInst* ThreeDBlox::createBump(const BumpMapEntry& entry, dbBlock* block)
+std::pair<dbInst*, odb::dbBTerm*> ThreeDBlox::createBump(
+    const BumpMapEntry& entry,
+    dbBlock* block)
 {
   const int dbus = db_->getDbuPerMicron();
   dbInst* inst = block->findInst(entry.bump_inst_name.c_str());
@@ -666,30 +711,66 @@ dbInst* ThreeDBlox::createBump(const BumpMapEntry& entry, dbBlock* block)
     if (master == nullptr) {
       logger_->error(utl::ODB,
                      538,
-                     "3DBV Parser Error: Bump cell type {} not found",
-                     entry.bump_cell_type);
+                     "3DBV Parser Error: Bump cell type {} not found for {}",
+                     entry.bump_cell_type,
+                     entry.bump_inst_name);
     }
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
   inst->setOrigin(entry.x * dbus, entry.y * dbus);
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
 
-  // Net entry doesn't make sense
-  if (entry.net_name != "-") {
-    dbNet* net = block->findNet(entry.net_name.c_str());
-    if (net == nullptr) {
+  dbNet* net = nullptr;
+  dbBTerm* term = nullptr;
+
+  // Find bterm
+  if (entry.port_name != "-") {
+    term = block->findBTerm(entry.port_name.c_str());
+    if (term == nullptr) {
       logger_->error(utl::ODB,
                      539,
-                     "3DBV Parser Error: Bump net {} not found",
-                     entry.net_name);
+                     "3DBV Parser Error: Bump port {} not found for {}",
+                     entry.port_name,
+                     entry.bump_inst_name);
     }
+    net = term->getNet();
+  }
+
+  // Find term via net
+  if (term == nullptr && entry.net_name != "-") {
+    net = block->findNet(entry.net_name.c_str());
+    if (net == nullptr) {
+      logger_->error(utl::ODB,
+                     543,
+                     "3DBV Parser Error: Bump net {} not found for {}",
+                     entry.net_name,
+                     entry.bump_inst_name);
+    }
+    if (net->getBTerms().empty()) {
+      logger_->error(utl::ODB,
+                     544,
+                     "3DBV Parser Error: Bump net {} has no bterms for {}",
+                     entry.net_name,
+                     entry.bump_inst_name);
+    }
+    if (net->getBTerms().size() > 1) {
+      logger_->error(
+          utl::ODB,
+          542,
+          "3DBV Parser Error: Bump net {} has multiple bterms for {}",
+          entry.net_name,
+          entry.bump_inst_name);
+    }
+    term = net->get1stBTerm();
+  }
+
+  if (net != nullptr) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
       iterm->connect(net);
     }
   }
-  // Port already on the net, so skip
 
-  return inst;
+  return {inst, term};
 }
 
 }  // namespace odb

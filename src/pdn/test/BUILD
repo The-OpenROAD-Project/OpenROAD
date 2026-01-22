@@ -66,6 +66,7 @@ COMPULSORY_TESTS = [
     "core_grid_with_rings_with_straps",
     "core_grid_with_rings_with_straps_rings_over_core",
     "core_grid_with_routing_obstructions",
+    "core_grid_with_secondary_no_shapes",
     "core_grid_with_single_edge_pins",
     "core_grid_with_single_layer_rings",
     "design_width",
@@ -138,11 +139,6 @@ COMPULSORY_TESTS = [
 MANUAL_TESTS = [
     "pdn_man_tcl_check",
     "pdn_readme_msgs_check",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "pads_black_parrot_flipchip_connect_overpads",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -300,8 +296,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = ["manual"] if test_name in MANUAL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

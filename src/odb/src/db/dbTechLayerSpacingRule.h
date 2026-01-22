@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -45,12 +46,11 @@ class _dbTechLayerSpacingRule : public _dbObject
     bool cut_parallel_overlap : 1;
     bool notch_length : 1;
     bool end_of_notch_width : 1;
-    uint spare_bits : 21;
+    uint32_t spare_bits : 21;
   };
 
   _dbTechLayerSpacingRule(_dbDatabase*, const _dbTechLayerSpacingRule& r);
   _dbTechLayerSpacingRule(_dbDatabase*);
-  ~_dbTechLayerSpacingRule();
 
   bool operator==(const _dbTechLayerSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingRule& rhs) const
@@ -61,13 +61,13 @@ class _dbTechLayerSpacingRule : public _dbObject
 
   // PERSISTENT-MEMBERS
   Flags flags_;
-  uint spacing_;
-  uint length_or_influence_;
-  uint r1min_;
-  uint r1max_;
-  uint r2min_;
-  uint r2max_;
-  uint cut_area_;
+  uint32_t spacing_;
+  uint32_t length_or_influence_;
+  uint32_t r1min_;
+  uint32_t r1max_;
+  uint32_t r2min_;
+  uint32_t r2max_;
+  uint32_t cut_area_;
   dbId<_dbTechLayer> layer_;
   dbId<_dbTechLayer> cut_layer_below_;
 };
@@ -108,10 +108,6 @@ inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(_dbDatabase*)
   cut_area_ = 0;
 }
 
-inline _dbTechLayerSpacingRule::~_dbTechLayerSpacingRule()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingRule& rule);
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule);
 
@@ -120,13 +116,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingRule& rule);
 class _dbTechV55InfluenceEntry : public _dbObject
 {
  public:
-  uint _width;
-  uint _within;
-  uint _spacing;
+  uint32_t width_;
+  uint32_t within_;
+  uint32_t spacing_;
 
   _dbTechV55InfluenceEntry(_dbDatabase* db, const _dbTechV55InfluenceEntry& e);
   _dbTechV55InfluenceEntry(_dbDatabase* db);
-  ~_dbTechV55InfluenceEntry();
+
   bool operator==(const _dbTechV55InfluenceEntry& rhs) const;
   bool operator!=(const _dbTechV55InfluenceEntry& rhs) const
   {
@@ -138,20 +134,16 @@ class _dbTechV55InfluenceEntry : public _dbObject
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
     _dbDatabase* /* unused: db */,
     const _dbTechV55InfluenceEntry& e)
-    : _width(e._width), _within(e._within), _spacing(e._spacing)
+    : width_(e.width_), within_(e.within_), spacing_(e.spacing_)
 {
 }
 
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(
     _dbDatabase* /* unused: db */)
 {
-  _width = 0;
-  _within = 0;
-  _spacing = 0;
-}
-
-inline _dbTechV55InfluenceEntry::~_dbTechV55InfluenceEntry()
-{
+  width_ = 0;
+  within_ = 0;
+  spacing_ = 0;
 }
 
 dbOStream& operator<<(dbOStream& stream,

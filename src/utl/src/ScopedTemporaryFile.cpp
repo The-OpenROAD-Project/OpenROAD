@@ -9,6 +9,7 @@
 #include <exception>
 #include <filesystem>
 #include <ios>
+#include <iostream>
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -67,6 +68,9 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
 OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
     : filename_(filename)
 {
+  if (filename_.empty()) {
+    throw std::runtime_error("filename is empty");
+  }
   tmp_filename_ = generate_unused_filename(filename_);
 
   os_.exceptions(std::ofstream::failbit | std::ofstream::badbit);
@@ -93,6 +97,19 @@ OutStreamHandler::OutStreamHandler(const char* filename, bool binary)
 
 OutStreamHandler::~OutStreamHandler()
 {
+  try {
+    close();
+  } catch (const std::exception& e) {
+    std::cerr << "Error: close for " << filename_ << " failed: " << e.what()
+              << "\n";
+  } catch (...) {
+    std::cerr << "Error: close for " << filename_
+              << " failed with unknown error\n";
+  }
+}
+
+void OutStreamHandler::close()
+{
   if (stream_) {
     boost::iostreams::close(*buf_);
     buf_ = nullptr;
@@ -102,9 +119,9 @@ OutStreamHandler::~OutStreamHandler()
   if (os_.is_open()) {
     // Any pending output sequence is written to the file.
     os_.close();
+    // If filename_ exists it will be overwritten
+    fs::rename(tmp_filename_, filename_);
   }
-  // If filename_ exists it will be overwritten
-  fs::rename(tmp_filename_, filename_);
 }
 
 std::ostream& OutStreamHandler::getStream()
@@ -142,6 +159,19 @@ InStreamHandler::InStreamHandler(const char* filename, bool binary)
 
 InStreamHandler::~InStreamHandler()
 {
+  try {
+    close();
+  } catch (const std::exception& e) {
+    std::cerr << "Error: close for " << filename_ << " failed: " << e.what()
+              << "\n";
+  } catch (...) {
+    std::cerr << "Error: close for " << filename_
+              << " failed with unknown error\n";
+  }
+}
+
+void InStreamHandler::close()
+{
   if (stream_) {
     boost::iostreams::close(*buf_);
     buf_ = nullptr;
@@ -149,7 +179,6 @@ InStreamHandler::~InStreamHandler()
   }
 
   if (is_.is_open()) {
-    // Any pending output sequence is written to the file.
     is_.close();
   }
 }
@@ -175,12 +204,29 @@ FileHandler::FileHandler(const char* filename, bool binary)
 
 FileHandler::~FileHandler()
 {
-  if (file_) {
-    // Any unwritten buffered data are flushed to the OS.
-    std::fclose(file_);
+  try {
+    close();
+  } catch (const std::exception& e) {
+    std::cerr << "Error: close for " << filename_ << " failed: " << e.what()
+              << "\n";
+  } catch (...) {
+    std::cerr << "Error: close for " << filename_
+              << " failed with unknown error\n";
   }
-  // If filename_ exists it will be overwritten.
-  fs::rename(tmp_filename_, filename_);
+}
+
+void FileHandler::close()
+{
+  if (file_) {
+    const bool failed = (std::fclose(file_) != 0);
+    file_ = nullptr;
+    if (failed) {
+      throw std::runtime_error("fclose failed for " + tmp_filename_ + ": "
+                               + strerror(errno));
+    }
+    // If filename_ exists it will be overwritten.
+    fs::rename(tmp_filename_, filename_);
+  }
 }
 
 FILE* FileHandler::getFile()

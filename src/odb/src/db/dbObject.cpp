@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <unordered_map>
 
@@ -17,7 +18,7 @@
 
 namespace odb {
 
-uint dbObject::getId() const
+uint32_t dbObject::getId() const
 {
   return getImpl()->getOID();
 }
@@ -125,7 +126,6 @@ static const char* name_tbl[] = {"dbGDSLib",
 
                                  // Lib Objects
                                  "dbLib",
-                                 "dbGDSLib",
                                  "dbSite",
                                  "dbMaster",
                                  "dbMPin",
@@ -245,7 +245,7 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
 
        // Lib Objects
        {0x52, dbLibObj},
-       {0x53, dbGDSLibObj},
+       {0x53, dbGdsLibObj},
        {0x54, dbSiteObj},
        {0x55, dbMasterObj},
        {0x56, dbMPinObj},
@@ -365,7 +365,6 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
 
        // Lib Objects
        {dbLibObj, 0x52},
-       {dbGDSLibObj, 0x53},
        {dbSiteObj, 0x54},
        {dbMasterObj, 0x55},
        {dbMPinObj, 0x56},
@@ -438,22 +437,42 @@ std::string dbObject::getName() const
     case dbNetObj:
       return static_cast<const dbNet*>(this)->getName();
     case dbModNetObj:
-      return static_cast<const dbModNet*>(this)->getName();
+      return static_cast<const dbModNet*>(this)->getHierarchicalName();
     case dbITermObj:
       return static_cast<const dbITerm*>(this)->getName();
     case dbBTermObj:
       return static_cast<const dbBTerm*>(this)->getName();
     case dbModITermObj:
-      return static_cast<const dbModITerm*>(this)->getName();
+      return static_cast<const dbModITerm*>(this)->getHierarchicalName();
     case dbModBTermObj:
-      return static_cast<const dbModBTerm*>(this)->getName();
+      return static_cast<const dbModBTerm*>(this)->getHierarchicalName();
     case dbInstObj:
       return static_cast<const dbInst*>(this)->getName();
+    case dbModuleObj:
+      return static_cast<const dbModule*>(this)->getHierarchicalName();
     case dbModInstObj:
-      return static_cast<const dbModInst*>(this)->getName();
+      return static_cast<const dbModInst*>(this)->getHierarchicalName();
     default:
       return fmt::format("<{}:{}>", getTypeName(), getId());
   }
+}
+
+std::string dbObject::getDebugName() const
+{
+  fmt::memory_buffer buf;
+
+  // dbObject type
+  fmt::format_to(std::back_inserter(buf), "{}({}", getTypeName(), getId());
+
+  // dbObject pointer address if needed
+  if (getImpl()->getLogger()->debugCheck(utl::ODB, "dump_pointer", 1)) {
+    fmt::format_to(
+        std::back_inserter(buf), ", {}", static_cast<const void*>(this));
+  }
+
+  // dbObject name
+  fmt::format_to(std::back_inserter(buf), ", '{}')", getName());
+  return fmt::to_string(buf);
 }
 
 bool dbObject::isValid() const

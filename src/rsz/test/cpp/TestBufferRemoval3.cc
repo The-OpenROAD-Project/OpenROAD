@@ -24,7 +24,7 @@ class BufRemTest3 : public tst::IntegratedFixture
                                "_main/src/rsz/test/")
   {
     if (debug_) {
-      logger_.setDebugLevel(utl::ODB, "DB_ECO", 3);
+      logger_.setDebugLevel(utl::ODB, "DB_EDIT", 2);
       logger_.setDebugLevel(utl::RSZ, "remove_buffer", 3);
     }
   }
@@ -67,7 +67,7 @@ TEST_F(BufRemTest3, RemoveBufferCase9)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -134,7 +134,7 @@ TEST_F(BufRemTest3, RemoveBufferCase8)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -202,7 +202,7 @@ TEST_F(BufRemTest3, RemoveBufferCase7)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -256,6 +256,7 @@ TEST_F(BufRemTest3, RemoveBufferCase6)
   // Pre sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   //----------------------------------------------------
   // Remove buffer
@@ -266,10 +267,11 @@ TEST_F(BufRemTest3, RemoveBufferCase6)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -329,6 +331,7 @@ TEST_F(BufRemTest3, RemoveBufferCase5)
   // Pre sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   //----------------------------------------------------
   // Remove buffer
@@ -341,10 +344,11 @@ TEST_F(BufRemTest3, RemoveBufferCase5)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -360,8 +364,7 @@ TEST_F(BufRemTest3, RemoveBufferCase5)
  output out;
 
 
- BUF_X1 buf0 (.A(in),
-    .Z(out));
+ assign out = in;
 endmodule
 )";
 
@@ -395,6 +398,7 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
   // Pre sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Dump pre ECO state
   if (debug_) {
@@ -412,10 +416,11 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -441,10 +446,6 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
  output out6;
 
 
- BUF_X1 load_top2 (.A(out1),
-    .Z(out2));
- BUF_X1 load_top3 (.A(out1),
-    .Z(out3));
  MOD1 mod1_inst (.clk_in(clk),
     .d_in(in1),
     .q_out(out1));
@@ -455,6 +456,8 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
     .in3(out4),
     .out1(out5),
     .out2(out6));
+ assign out2 = out1;
+ assign out3 = out1;
 endmodule
 module MOD1 (clk_in,
     d_in,
@@ -528,6 +531,7 @@ TEST_F(BufRemTest3, RemoveBufferCase3)
   // Pre sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   //----------------------------------------------------
   // Remove buffer
@@ -539,10 +543,11 @@ TEST_F(BufRemTest3, RemoveBufferCase3)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -613,6 +618,7 @@ TEST_F(BufRemTest3, RemoveBufferCase2)
   // Pre sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   //----------------------------------------------------
   // Remove buffer
@@ -624,10 +630,11 @@ TEST_F(BufRemTest3, RemoveBufferCase2)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -690,6 +697,7 @@ TEST_F(BufRemTest3, RemoveBufferCase1)
   // Pre sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   //----------------------------------------------------
   // Remove buffer
@@ -701,10 +709,11 @@ TEST_F(BufRemTest3, RemoveBufferCase1)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -774,6 +783,7 @@ TEST_F(BufRemTest3, RemoveBufferCase0)
   // Pre sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   //----------------------------------------------------
   // Remove buffer
@@ -785,10 +795,11 @@ TEST_F(BufRemTest3, RemoveBufferCase0)
   // Post sanity check
   sta_->updateTiming(true);
   db_network_->checkAxioms();
+  sta_->checkSanity();
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),

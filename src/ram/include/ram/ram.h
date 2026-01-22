@@ -12,6 +12,7 @@
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbMaster;
@@ -47,8 +48,6 @@ class TritonRoute;
 }
 
 namespace ram {
-
-using utl::Logger;
 
 ////////////////////////////////////////////////////////////////
 class Cell;
@@ -141,7 +140,7 @@ class RamGen
   sta::dbNetwork* network_;
   odb::dbDatabase* db_;
   odb::dbBlock* block_{nullptr};
-  Logger* logger_;
+  utl::Logger* logger_;
   pdn::PdnGen* pdngen_{nullptr};
   ppl::IOPlacer* ioPlacer_{nullptr};
   dpl::Opendp* opendp_{nullptr};

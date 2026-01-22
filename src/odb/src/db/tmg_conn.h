@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -34,8 +35,8 @@ class tmg_rc_sh
   int xMax() const { return rect_.xMax(); }
   int yMin() const { return rect_.yMin(); }
   int yMax() const { return rect_.yMax(); }
-  uint getDX() const { return (rect_.xMax() - rect_.xMin()); }
-  uint getDY() const { return (rect_.yMax() - rect_.yMin()); }
+  uint32_t getDX() const { return (rect_.xMax() - rect_.xMin()); }
+  uint32_t getDY() const { return (rect_.yMax() - rect_.yMin()); }
 
   bool isVia() const { return (tech_via_ || block_via_); }
   dbTechVia* getTechVia() const { return tech_via_; }
@@ -157,7 +158,7 @@ class tmg_conn
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
-  bool isConnected() { return _connected; }
+  bool isConnected() { return connected_; }
   int ptDist(int fr, int to) const;
   const tmg_rcpt& pt(const int index) const { return ptV_[index]; }
   void checkConnOrdered();
@@ -225,7 +226,7 @@ class tmg_conn
   std::vector<tmg_rcshort> shortV_;
   dbNet* net_;
   bool hasSWire_;
-  bool _connected;
+  bool connected_;
   dbWireEncoder encoder_;
   dbWire* newWire_;
   dbTechNonDefaultRule* net_rule_;

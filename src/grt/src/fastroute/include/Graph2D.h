@@ -122,9 +122,9 @@ class Graph2D
   std::vector<int> getMultipleCongestedNDRnet();
 
  private:
-  int x_grid_;
-  int y_grid_;
-  int num_layers_;
+  int x_grid_ = 0;
+  int y_grid_ = 0;
+  int num_layers_ = 0;
   std::set<std::string> congestion_nets_;
 
   void updateCongList(const std::string& net_name, double edge_cost);
@@ -156,7 +156,7 @@ class Graph2D
       h_ndr_nets_;  // The way it is indexed is (X, Y)
   std::vector<NDRCongestion> congested_ndrs_;
 
-  utl::Logger* logger_;
+  utl::Logger* logger_ = nullptr;
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;

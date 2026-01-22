@@ -3,6 +3,7 @@
 
 #include "dbTechViaGenerateRule.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -17,7 +18,6 @@
 #include "dbTechVia.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -31,7 +31,7 @@ template class dbTable<_dbTechViaGenerateRule>;
 
 bool _dbTechViaGenerateRule::operator==(const _dbTechViaGenerateRule& rhs) const
 {
-  if (flags_._default != rhs.flags_._default) {
+  if (flags_.default_via != rhs.flags_.default_via) {
     return false;
   }
 
@@ -62,7 +62,7 @@ _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*)
 {
   name_ = nullptr;
-  flags_._default = 0;
+  flags_.default_via = 0;
   flags_.spare_bits = 0;
 }
 
@@ -75,7 +75,7 @@ _dbTechViaGenerateRule::~_dbTechViaGenerateRule()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaGenerateRule& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream << *bit_field;
   stream << v.name_;
   stream << v.layer_rules_;
@@ -84,7 +84,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechViaGenerateRule& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechViaGenerateRule& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream >> *bit_field;
   stream >> v.name_;
   stream >> v.layer_rules_;
@@ -106,16 +106,16 @@ std::string dbTechViaGenerateRule::getName()
 bool dbTechViaGenerateRule::isDefault()
 {
   _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) this;
-  return rule->flags_._default == 1;
+  return rule->flags_.default_via == 1;
 }
 
-uint dbTechViaGenerateRule::getViaLayerRuleCount()
+uint32_t dbTechViaGenerateRule::getViaLayerRuleCount()
 {
   _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) this;
   return rule->layer_rules_.size();
 }
 
-dbTechViaLayerRule* dbTechViaGenerateRule::getViaLayerRule(uint idx)
+dbTechViaLayerRule* dbTechViaGenerateRule::getViaLayerRule(uint32_t idx)
 {
   _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) this;
   dbTech* tech = (dbTech*) rule->getOwner();
@@ -139,13 +139,13 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech* tech_,
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaGenerateRule* rule = tech->via_generate_rule_tbl_->create();
   rule->name_ = safe_strdup(name);
-  rule->flags_._default = is_default;
+  rule->flags_.default_via = is_default;
   return (dbTechViaGenerateRule*) rule;
 }
 
 dbTechViaGenerateRule* dbTechViaGenerateRule::getTechViaGenerateRule(
     dbTech* tech_,
-    uint dbid_)
+    uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaGenerateRule*) tech->via_generate_rule_tbl_->getPtr(dbid_);
@@ -156,8 +156,8 @@ void _dbTechViaGenerateRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["layer_rules"].add(layer_rules_);
+  info.children["name"].add(name_);
+  info.children["layer_rules"].add(layer_rules_);
 }
 
 }  // namespace odb

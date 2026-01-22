@@ -12,7 +12,7 @@
 #include <sstream>
 #include <vector>
 
-#include "TreeBuilder.h"
+#include "Util.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -29,15 +29,9 @@ SinkClustering::SinkClustering(const CtsOptions* options,
       techChar_(techChar),
       maxInternalDiameter_(10),
       capPerUnit_(0.0),
-      use_max_diameter_((HTree->getTreeType() == TreeType::MacroTree)
-                            ? options->isMacroMaxDiameterSet()
-                            : options->isMaxDiameterSet()),
-      use_max_size_((HTree->getTreeType() == TreeType::MacroTree)
-                        ? options->isMacroSinkClusteringSizeSet()
-                        : options->isSinkClusteringSizeSet()),
       useMaxCapLimit_((HTree->getTreeType() == TreeType::MacroTree)
                           ? false
-                          : !(use_max_size_ && use_max_diameter_)),
+                          : options->getSinkClusteringUseMaxCap()),
       scaleFactor_(1),
       HTree_(HTree)
 {
@@ -107,7 +101,7 @@ void SinkClustering::computeAllThetas()
 void SinkClustering::sortPoints()
 {
   if (firstRun_) {
-    std::sort(thetaIndexVector_.begin(), thetaIndexVector_.end());
+    std::ranges::sort(thetaIndexVector_);
   }
 }
 
@@ -218,7 +212,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                "Stree",
                1,
                "Clustering with max cap limit of {:.3e}",
-               options_->getSinkBufferInputCap() * max_cap__factor_);
+               options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
   // Iterates over the theta vector.
   for (unsigned i = 0; i < thetaIndexVector_.size(); ++i) {
@@ -253,9 +247,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                    + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
           }
           pointIdx++;
-          if (cost > distanceCost) {
-            distanceCost = cost;
-          }
+          distanceCost = std::max(cost, distanceCost);
         }
         // If the cluster size is higher than groupSize,
         // or the distance is higher than maxInternalDiameter_
@@ -286,9 +278,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         } else {
           // Node will be a part of the current cluster, thus, save the highest
           // cost.
-          if (distanceCost > previousCosts[j]) {
-            previousCosts[j] = distanceCost;
-          }
+          previousCosts[j] = std::max(distanceCost, previousCosts[j]);
         }
         // Add vectors in case they are no allocated yet. (Depends if a new
         // cluster was defined above)
@@ -329,9 +319,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                      + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
         }
         pointIdx++;
-        if (cost > distanceCost) {
-          distanceCost = cost;
-        }
+        distanceCost = std::max(cost, distanceCost);
       }
 
       if (isLimitExceeded(solutionPoints[j][clusters[j]].size(),
@@ -353,9 +341,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         clusters[j] = clusters[j] + 1;
         previousCosts[j] = 0;
       } else {
-        if (distanceCost > previousCosts[j]) {
-          previousCosts[j] = distanceCost;
-        }
+        previousCosts[j] = std::max(distanceCost, previousCosts[j]);
       }
       if (solutions[j].size() < (clusters[j] + 1)) {
         solutions[j].emplace_back();
@@ -421,20 +407,11 @@ bool SinkClustering::isLimitExceeded(const unsigned size,
                                      const double capCost,
                                      const unsigned sizeLimit)
 {
-  bool is_limit_exceeded = false;
   if (useMaxCapLimit_) {
-    is_limit_exceeded
-        |= (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
+    return (capCost > options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
-  // size is defined by the user
-  if (use_max_size_) {
-    is_limit_exceeded |= (size >= sizeLimit);
-  }
-  // diameter is defined by the user
-  if (use_max_diameter_) {
-    is_limit_exceeded |= (cost > maxInternalDiameter_);
-  }
-  return is_limit_exceeded;
+
+  return (size >= sizeLimit || cost > maxInternalDiameter_);
 }
 
 void SinkClustering::writePlotFile(unsigned groupSize)

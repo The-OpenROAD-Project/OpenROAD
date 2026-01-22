@@ -4,12 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -20,6 +20,8 @@ class _dbLogicPort : public _dbObject
 {
  public:
   _dbLogicPort(_dbDatabase*);
+
+  ~_dbLogicPort();
 
   bool operator==(const _dbLogicPort& rhs) const;
   bool operator!=(const _dbLogicPort& rhs) const { return !operator==(rhs); }

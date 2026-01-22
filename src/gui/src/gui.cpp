@@ -242,7 +242,7 @@ void Gui::registerRenderer(Renderer* renderer)
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
-  if (renderers_.count(renderer) == 0) {
+  if (!renderers_.contains(renderer)) {
     return;
   }
 
@@ -569,7 +569,7 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
       if (auto props_selected_set
           = std::any_cast<SelectionSet>(&property.value)) {
         if (Descriptor::Property::toString(value) == "CONNECTED"
-            && (*props_selected_set).size() != 0) {
+            && !props_selected_set->empty()) {
           return true;
         }
         for (const auto& selected : *props_selected_set) {
@@ -707,6 +707,11 @@ void Gui::zoomTo(const odb::Rect& rect_dbu)
   main_window->zoomTo(rect_dbu);
 }
 
+void Gui::zoomTo(const odb::Point& focus, int diameter)
+{
+  main_window->zoomTo(focus, diameter);
+}
+
 void Gui::zoomIn()
 {
   main_window->getLayoutViewer()->zoomIn();
@@ -782,6 +787,7 @@ void Gui::saveImage(const std::string& filename,
     const double dbu_per_micron = tech->getDbUnitsPerMicron();
 
     std::string save_cmds;
+
     // build display control commands
     save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
     for (const auto& [control, value] : display_settings) {
@@ -861,6 +867,22 @@ void Gui::saveHistogramImage(const std::string& filename,
       = main_window->getChartsWidget()->modeFromString(mode);
   main_window->getChartsWidget()->saveImage(
       filename, chart_mode, width, height);
+}
+
+void Gui::showWorstTimingPath(bool setup)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->showWorstTimingPath(setup);
+}
+
+void Gui::clearTimingPath()
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->clearSelection();
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name,
@@ -944,7 +966,7 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
 
 void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
 {
-  if (heat_maps_.count(heatmap) == 0) {
+  if (!heat_maps_.contains(heatmap)) {
     return;
   }
 
@@ -994,7 +1016,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   } else {
     auto settings = source->getSettings();
 
-    if (settings.count(option) == 0) {
+    if (!settings.contains(option)) {
       QStringList options;
       options.append(QString::fromStdString(rebuild_map_option));
       for (const auto& [key, kv] : settings) {
@@ -1065,7 +1087,7 @@ Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
 
   auto settings = source->getSettings();
 
-  if (settings.count(option) == 0) {
+  if (!settings.contains(option)) {
     QStringList options;
     for (const auto& [key, kv] : settings) {
       options.append(QString::fromStdString(key));
@@ -1161,6 +1183,8 @@ void Renderer::setSettings(const Renderer::Settings& settings)
   }
 }
 
+//////////////////////////////////////////////////////////////////
+
 SpectrumGenerator::SpectrumGenerator(double max_value) : scale_(1.0 / max_value)
 {
 }
@@ -1188,6 +1212,40 @@ void SpectrumGenerator::drawLegend(
     Painter& painter,
     const std::vector<std::pair<int, std::string>>& legend_key) const
 {
+  const int color_count = getColorCount();
+  std::vector<Painter::Color> colors;
+  colors.reserve(color_count);
+  for (int i = 0; i < color_count; i += kLegendColorIncrement) {
+    const double color_idx = (color_count - 1 - i) / scale_;
+    colors.push_back(getColor(color_idx / color_count));
+  }
+  std::vector<std::pair<Painter::Color, std::string>> legend_key_colors;
+  for (const auto& [legend_value, legend_text] : legend_key) {
+    const int idx = std::clamp(legend_value / kLegendColorIncrement,
+                               0,
+                               static_cast<int>(colors.size()) - 1);
+    legend_key_colors.push_back({colors[idx], legend_text});
+  }
+  LinearLegend legend(colors);
+  legend.setLegendKey(legend_key_colors);
+  legend.draw(painter);
+}
+
+/////////////////////////////////////////////////
+
+LinearLegend::LinearLegend(const std::vector<Painter::Color>& colors)
+    : colors_(colors)
+{
+}
+
+void LinearLegend::setLegendKey(
+    const std::vector<std::pair<Painter::Color, std::string>>& legend_key)
+{
+  legend_key_ = legend_key;
+}
+
+void LinearLegend::draw(Painter& painter) const
+{
   const odb::Rect& bounds = painter.getBounds();
   const double pixel_per_dbu = painter.getPixelsPerDBU();
   const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
@@ -1202,14 +1260,20 @@ void SpectrumGenerator::drawLegend(
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
 
-  const int color_count = getColorCount();
-  const int color_incr = 2;
+  const int color_count = colors_.size();
 
   std::vector<std::pair<odb::Point, std::string>> legend_key_points;
-  for (const auto& [legend_value, legend_text] : legend_key) {
+  for (const auto& [legend_color, legend_text] : legend_key_) {
+    const auto find_color = std::ranges::find(colors_, legend_color);
+    if (find_color == colors_.end()) {
+      continue;
+    }
+    const int legend_value
+        = std::distance(colors_.begin(), find_color);  // index in colors_
+
     const int text_right = legend_left - text_offset;
     const int box_top
-        = legend_top - ((color_count - legend_value) * box_height) / color_incr;
+        = legend_top - ((color_count - legend_value) * box_height);
 
     legend_key_points.push_back({{text_right, box_top}, legend_text});
     const odb::Rect text_bounds = painter.stringBoundaries(
@@ -1225,10 +1289,8 @@ void SpectrumGenerator::drawLegend(
 
   // draw color map
   double box_top = legend_top;
-  for (int i = 0; i < color_count; i += color_incr) {
-    const double color_idx = (color_count - 1 - i) / scale_;
-
-    painter.setPen(getColor(color_idx / color_count), true);
+  for (int i = 0; i < color_count; i++) {
+    painter.setPen(colors_[i], true);
     painter.drawLine(odb::Point(legend_left, box_top),
                      odb::Point(legend_right, box_top));
     box_top -= box_height;
@@ -1242,6 +1304,71 @@ void SpectrumGenerator::drawLegend(
   }
   painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
 }
+
+/////////////////////////////////////////////////
+
+void DiscreteLegend::addLegendKey(const Painter::Color& color,
+                                  const std::string& text)
+{
+  color_key_.emplace_back(color, text);
+}
+
+void DiscreteLegend::draw(Painter& painter) const
+{
+  const odb::Rect& bounds = painter.getBounds();
+  const double pixel_per_dbu = painter.getPixelsPerDBU();
+  const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
+  const int legend_width = 20 / pixel_per_dbu;   // 20 pixels
+  const int text_offset = 2 / pixel_per_dbu;
+  const int color_offset = 2 * text_offset;
+  const int legend_top = bounds.yMax() - legend_offset;
+  const int legend_right = bounds.xMax() - legend_offset;
+  const int legend_left = legend_right - legend_width;
+
+  odb::Rect legend_bounds(
+      legend_left, legend_top, legend_right + text_offset, legend_top);
+
+  std::vector<std::pair<odb::Rect, std::string>> legend_key_rects;
+  std::vector<std::pair<odb::Rect, Painter::Color>> legend_color_rects;
+  int last_text_top = legend_top;
+  for (const auto& [legend_color, legend_text] : color_key_) {
+    const int text_right = legend_left - text_offset;
+
+    const odb::Rect key_rect = painter.stringBoundaries(
+        text_right, last_text_top, Painter::Anchor::kTopRight, legend_text);
+
+    last_text_top = key_rect.yMin();
+
+    legend_key_rects.push_back({key_rect, legend_text});
+    legend_color_rects.push_back({{legend_left + color_offset,
+                                   key_rect.yMin() + color_offset,
+                                   legend_right - color_offset,
+                                   key_rect.yMax() - color_offset},
+                                  legend_color});
+    legend_bounds.merge(key_rect);
+  }
+
+  // draw background
+  painter.setPen(Painter::kDarkGray, true);
+  painter.setBrush(Painter::kDarkGray);
+  painter.drawRect(legend_bounds, 10, 10);
+
+  // draw color map
+  painter.setPen(Painter::kBlack, true);
+  for (const auto& [rect, color] : legend_color_rects) {
+    painter.setBrush(color);
+    painter.drawRect(rect);
+  }
+
+  // draw key values
+  painter.setBrush(Painter::kTransparent);
+  for (const auto& [rect, text] : legend_key_rects) {
+    painter.drawString(
+        rect.xMax(), rect.yCenter(), Painter::Anchor::kRightCenter, text);
+  }
+}
+
+/////////////////////////////////////////////////
 
 void Gui::fit()
 {

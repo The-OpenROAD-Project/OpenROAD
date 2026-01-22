@@ -85,15 +85,15 @@ class TimingPathsModel : public QAbstractTableModel
                    STAGuiInterface* sta,
                    QObject* parent = nullptr);
 
-  int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
-  int columnCount(const QModelIndex& parent
-                  = QModelIndex()) const Q_DECL_OVERRIDE;
+  int rowCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
+  int rowCount() const { return rowCount({}); }
+  int columnCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
+  int columnCount() const { return columnCount({}); }
 
-  QVariant data(const QModelIndex& index,
-                int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  QVariant data(const QModelIndex& index, int role) const Q_DECL_OVERRIDE;
   QVariant headerData(int section,
                       Qt::Orientation orientation,
-                      int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+                      int role) const Q_DECL_OVERRIDE;
 
   TimingPath* getPathAt(const QModelIndex& index) const;
 
@@ -151,15 +151,14 @@ class TimingPathDetailModel : public QAbstractTableModel
                         sta::dbSta* sta,
                         QObject* parent = nullptr);
 
-  int rowCount(const QModelIndex& parent = QModelIndex()) const Q_DECL_OVERRIDE;
-  int columnCount(const QModelIndex& parent
-                  = QModelIndex()) const Q_DECL_OVERRIDE;
+  int rowCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
+  int rowCount() const { return rowCount({}); }
+  int columnCount(const QModelIndex& parent) const Q_DECL_OVERRIDE;
 
-  QVariant data(const QModelIndex& index,
-                int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+  QVariant data(const QModelIndex& index, int role) const Q_DECL_OVERRIDE;
   QVariant headerData(int section,
                       Qt::Orientation orientation,
-                      int role = Qt::DisplayRole) const Q_DECL_OVERRIDE;
+                      int role) const Q_DECL_OVERRIDE;
   Qt::ItemFlags flags(const QModelIndex& index) const Q_DECL_OVERRIDE;
 
   TimingPath* getPath() const { return path_; }
@@ -247,6 +246,7 @@ class TimingPathRenderer : public gui::Renderer
   static constexpr const char* kDataPathLabel = "Data path";
   static constexpr const char* kLaunchClockLabel = "Launch clock";
   static constexpr const char* kCaptureClockLabel = "Capture clock";
+  static constexpr const char* kLegendLabel = "Legend";
 };
 
 class TimingConeRenderer : public gui::Renderer
@@ -277,10 +277,7 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
 {
   Q_OBJECT
  public:
-  GuiDBChangeListener(QObject* parent = nullptr)
-      : QObject(parent), is_modified_(false)
-  {
-  }
+  GuiDBChangeListener(QObject* parent = nullptr) : QObject(parent) {}
 
   void inDbInstCreate(odb::dbInst* /* inst */) override { callback(); }
   void inDbInstDestroy(odb::dbInst* /* inst */) override { callback(); }
@@ -327,7 +324,7 @@ class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
     }
   }
 
-  bool is_modified_;
+  bool is_modified_{false};
 };
 
 class PinSetWidget : public QWidget

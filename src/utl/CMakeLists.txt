@@ -50,6 +50,7 @@ add_library(utl_lib
   src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp
+  src/unionFind.cpp
 )
 
 target_include_directories(utl_lib

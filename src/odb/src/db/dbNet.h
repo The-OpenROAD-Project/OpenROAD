@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <set>
 
 #include "dbCore.h"
@@ -10,7 +11,6 @@
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -35,27 +35,27 @@ struct _dbNetFlags
 {
   dbSigType::Value sig_type : 4;
   dbWireType::Value wire_type : 4;
-  uint special : 1;
-  uint wild_connect : 1;
-  uint wire_ordered : 1;
-  uint unused2 : 1;       // free to reuse
-  uint disconnected : 1;  // this flag is only valid if wire_ordered == true
-  uint spef : 1;
-  uint select : 1;
-  uint mark : 1;
-  uint mark_1 : 1;
-  uint wire_altered : 1;
-  uint extracted : 1;
-  uint rc_graph : 1;
-  uint unused : 1;  // free to reuse
-  uint set_io : 1;
-  uint io : 1;
-  uint dont_touch : 1;
-  uint fixed_bump : 1;
+  uint32_t special : 1;
+  uint32_t wild_connect : 1;
+  uint32_t wire_ordered : 1;
+  uint32_t unused2 : 1;       // free to reuse
+  uint32_t disconnected : 1;  // this flag is only valid if wire_ordered == true
+  uint32_t spef : 1;
+  uint32_t select : 1;
+  uint32_t mark : 1;
+  uint32_t mark_1 : 1;
+  uint32_t wire_altered : 1;
+  uint32_t extracted : 1;
+  uint32_t rc_graph : 1;
+  uint32_t unused : 1;  // free to reuse
+  uint32_t set_io : 1;
+  uint32_t io : 1;
+  uint32_t dont_touch : 1;
+  uint32_t fixed_bump : 1;
   dbSourceType::Value source : 4;
-  uint rc_disconnected : 1;
-  uint block_rule : 1;
-  uint has_jumpers : 1;
+  uint32_t rc_disconnected : 1;
+  uint32_t block_rule : 1;
+  uint32_t has_jumpers : 1;
 };
 
 class _dbNet : public _dbObject
@@ -126,7 +126,7 @@ class _dbNet : public _dbObject
   int weight_;
   int xtalk_;
   float cc_adjust_factor_;
-  uint cc_adjust_order_;
+  uint32_t cc_adjust_order_;
   // NON PERSISTANT-MEMBERS
   int driving_iterm_;
 };

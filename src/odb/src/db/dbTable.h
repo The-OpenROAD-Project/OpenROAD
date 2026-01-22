@@ -3,15 +3,13 @@
 
 #pragma once
 
-#include <vector>
+#include <cstdint>
 
 #include "boost/integer/static_log2.hpp"
 #include "dbCore.h"
-#include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbIterator.h"
 #include "odb/dbObject.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -24,17 +22,17 @@ class dbTablePage final : public dbObjectPage
   char objects_[1];
 };
 
-template <class T, uint page_size /* = 128 */>
+template <class T, uint32_t page_size /* = 128 */>
 class dbTable final : public dbObjectTable, public dbIterator
 {
   static_assert((page_size & (page_size - 1)) == 0,
                 "page_size must be a power of two");
 
   // number of bits to shift to determine page number
-  constexpr static int page_shift = boost::static_log2<page_size>::value;
+  static constexpr int kPageShift = boost::static_log2<page_size>::value;
 
   // bit-mask to get page-offset
-  constexpr static uint page_mask = page_size - 1;
+  static constexpr uint32_t kPageMask = page_size - 1;
 
  public:
   dbTable(_dbDatabase* db,
@@ -45,7 +43,7 @@ class dbTable final : public dbObjectTable, public dbIterator
   ~dbTable() override;
 
   // returns the number of instances of "T" allocated
-  uint size() const { return alloc_cnt_; }
+  uint32_t size() const { return alloc_cnt_; }
 
   // Create a "T", calls T( _dbDatabase * )
   T* create();
@@ -56,7 +54,7 @@ class dbTable final : public dbObjectTable, public dbIterator
   // clear the table
   void clear();
 
-  uint pageSize() const { return page_mask + 1; }
+  uint32_t pageSize() const { return kPageMask + 1; }
 
   // Get the object of this id
   T* getPtr(dbId<T> id) const;
@@ -72,19 +70,19 @@ class dbTable final : public dbObjectTable, public dbIterator
   bool reversible() const override;
   bool orderReversed() const override;
   void reverse(dbObject* parent) override;
-  uint sequential() const override;
-  uint size(dbObject* parent) const override;
-  uint begin(dbObject* parent) const override;
-  uint end(dbObject* parent) const override;
-  uint next(uint id, ...) const override;
-  dbObject* getObject(uint id, ...) override;
-  bool validObject(uint id, ...) override { return validId(id); }
+  uint32_t sequential() const override;
+  uint32_t size(dbObject* parent) const override;
+  uint32_t begin(dbObject* parent) const override;
+  uint32_t end(dbObject* parent) const override;
+  uint32_t next(uint32_t id, ...) const override;
+  dbObject* getObject(uint32_t id, ...) override;
+  bool validObject(uint32_t id, ...) override { return validId(id); }
 
  private:
   void resizePageTbl();
   void newPage();
-  void pushQ(uint& Q, _dbFreeObject* e);
-  _dbFreeObject* popQ(uint& Q);
+  void pushQ(uint32_t& Q, _dbFreeObject* e);
+  _dbFreeObject* popQ(uint32_t& Q);
   void findTop();
   void findBottom();
 
@@ -93,34 +91,34 @@ class dbTable final : public dbObjectTable, public dbIterator
 
   _dbFreeObject* getFreeObj(dbId<T> id);
 
-  template <class U, uint page_size2>
+  template <class U, uint32_t page_size2>
   friend dbOStream& operator<<(dbOStream& stream,
                                const dbTable<U, page_size2>& table);
 
-  template <class U, uint page_size2>
+  template <class U, uint32_t page_size2>
   friend dbIStream& operator>>(dbIStream& stream,
                                dbTable<U, page_size2>& table);
 
   // PERSISTANT-DATA
-  uint top_idx_;        // largest id which has been allocated.
-  uint bottom_idx_;     // smallest id which has been allocated.
-  uint page_cnt_;       // high-water mark of page-table
-  uint page_tbl_size_;  // length of the page table
-  uint alloc_cnt_;      // number of object allocated
-  uint free_list_;      // objects on freelist
+  uint32_t top_idx_;        // largest id which has been allocated.
+  uint32_t bottom_idx_;     // smallest id which has been allocated.
+  uint32_t page_cnt_;       // high-water mark of page-table
+  uint32_t page_tbl_size_;  // length of the page table
+  uint32_t alloc_cnt_;      // number of object allocated
+  uint32_t free_list_;      // objects on freelist
 
   // NON-PERSISTANT-DATA
   dbTablePage** pages_;  // page-table
 };
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 dbOStream& operator<<(dbOStream& stream, const dbTable<T, page_size>& table);
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 dbIStream& operator>>(dbIStream& stream, dbTable<T, page_size>& table);
 
 // Useful if you want to write the table in a named scope
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 struct NamedTable
 {
   NamedTable(const char* name, const dbTable<T, page_size>* table)
@@ -131,7 +129,7 @@ struct NamedTable
   const dbTable<T, page_size>* table;
 };
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 dbOStream& operator<<(dbOStream& stream,
                       const NamedTable<T, page_size>& named_table);
 

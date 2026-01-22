@@ -4,6 +4,7 @@
 #include "gr/FlexGR.h"
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -2128,12 +2129,8 @@ void FlexGR::layerAssign_node_compute(
         int childNodeIdx
             = distance(net->getFirstNonRPinNode()->getIter(), child->getIter());
         int childLayerNum = currComb % cmap_->getNumLayers();
-        if (downstreamMinLayerNum > childLayerNum) {
-          downstreamMinLayerNum = childLayerNum;
-        }
-        if (downstreamMaxLayerNum < childLayerNum) {
-          downstreamMaxLayerNum = childLayerNum;
-        }
+        downstreamMinLayerNum = std::min(downstreamMinLayerNum, childLayerNum);
+        downstreamMaxLayerNum = std::max(downstreamMaxLayerNum, childLayerNum);
         currComb /= cmap_->getNumLayers();
 
         // add downstream cost

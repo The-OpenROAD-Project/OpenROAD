@@ -11,7 +11,6 @@
 #include "dbDatabase.h"
 #include "odb/db.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -29,13 +28,13 @@ class _dbMPin;
 struct dbITermFlags
 {
   // note: number of bits must add up to 32 !!!
-  uint mterm_idx : 20;  // index into inst-hdr-mterm-vector
-  uint spare_bits : 7;
-  uint clocked : 1;
-  uint mark : 1;
-  uint spef : 1;       // Spef flag
-  uint special : 1;    // Special net connection.
-  uint connected : 1;  // terminal is physically connected
+  uint32_t mterm_idx : 20;  // index into inst-hdr-mterm-vector
+  uint32_t spare_bits : 7;
+  uint32_t clocked : 1;
+  uint32_t mark : 1;
+  uint32_t spef : 1;       // Spef flag
+  uint32_t special : 1;    // Special net connection.
+  uint32_t connected : 1;  // terminal is physically connected
 };
 
 class _dbITerm : public _dbObject
@@ -58,7 +57,7 @@ class _dbITerm : public _dbObject
   _dbInst* getInst() const;
 
   dbITermFlags flags_;
-  uint ext_id_;
+  uint32_t ext_id_;
   dbId<_dbNet> net_;
   dbId<_dbModNet> mnet_;
   dbId<_dbInst> inst_;
@@ -100,7 +99,7 @@ inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
 {
-  uint* bit_field = (uint*) &iterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &iterm.flags_;
   stream << *bit_field;
   stream << iterm.ext_id_;
   stream << iterm.net_;
@@ -118,14 +117,14 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
 {
   dbBlock* block = (dbBlock*) (iterm.getOwner());
   _dbDatabase* db = (_dbDatabase*) (block->getDataBase());
-  uint* bit_field = (uint*) &iterm.flags_;
+  uint32_t* bit_field = (uint32_t*) &iterm.flags_;
   stream >> *bit_field;
   stream >> iterm.ext_id_;
   stream >> iterm.net_;
   stream >> iterm.inst_;
   stream >> iterm.next_net_iterm_;
   stream >> iterm.prev_net_iterm_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> iterm.mnet_;
     stream >> iterm.next_modnet_iterm_;
     stream >> iterm.prev_modnet_iterm_;

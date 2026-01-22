@@ -113,7 +113,7 @@ void defiPropType::bumpProps()
       newt[i] = propTypes_[i];
     }
     free((char*) (propNames_));
-    free((char*) (propTypes_));
+    free(propTypes_);
   }
   propNames_ = newpn;
   propTypes_ = newt;

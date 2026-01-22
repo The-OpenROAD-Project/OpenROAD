@@ -4,11 +4,12 @@
 // Generator Code Begin Cpp
 #include "dbGroupInstItr.h"
 
+#include <cstdint>
+
 #include "dbGroup.h"
 #include "dbInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -32,12 +33,12 @@ void dbGroupInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint id = _parent->insts_;
-  uint list = 0;
+  uint32_t id = _parent->insts_;
+  uint32_t list = 0;
 
   while (id != 0) {
     _dbInst* inst = inst_tbl_->getPtr(id);
-    uint n = inst->group_next_;
+    uint32_t n = inst->group_next_;
     inst->group_next_ = list;
     list = id;
     id = n;
@@ -46,15 +47,15 @@ void dbGroupInstItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbGroupInstItr::sequential() const
+uint32_t dbGroupInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbGroupInstItr::size(dbObject* parent) const
+uint32_t dbGroupInstItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbGroupInstItr::begin(parent); id != dbGroupInstItr::end(parent);
        id = dbGroupInstItr::next(id)) {
@@ -64,7 +65,7 @@ uint dbGroupInstItr::size(dbObject* parent) const
   return cnt;
 }
 
-uint dbGroupInstItr::begin(dbObject* parent) const
+uint32_t dbGroupInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbGroup* _parent = (_dbGroup*) parent;
@@ -72,12 +73,12 @@ uint dbGroupInstItr::begin(dbObject* parent) const
   // User Code End begin
 }
 
-uint dbGroupInstItr::end(dbObject* /* unused: parent */) const
+uint32_t dbGroupInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbGroupInstItr::next(uint id, ...) const
+uint32_t dbGroupInstItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
   _dbInst* inst = inst_tbl_->getPtr(id);
@@ -85,7 +86,7 @@ uint dbGroupInstItr::next(uint id, ...) const
   // User Code End next
 }
 
-dbObject* dbGroupInstItr::getObject(uint id, ...)
+dbObject* dbGroupInstItr::getObject(uint32_t id, ...)
 {
   return inst_tbl_->getPtr(id);
 }

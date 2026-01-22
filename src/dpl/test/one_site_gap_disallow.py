@@ -3,7 +3,7 @@ import helpers
 import dpl_aux
 
 tech = Tech()
-tech.readLef("Nangate45_data/Nangate45.lef")
+tech.readLef("Nangate45/Nangate45.lef")
 design = helpers.make_design(tech)
 design.readDef("one_site_gap_disallow.def")
 

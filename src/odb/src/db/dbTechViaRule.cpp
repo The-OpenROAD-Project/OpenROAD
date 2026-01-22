@@ -3,6 +3,7 @@
 
 #include "dbTechViaRule.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -17,7 +18,6 @@
 #include "dbTechVia.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -76,7 +76,7 @@ _dbTechViaRule::~_dbTechViaRule()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream << *bit_field;
   stream << v.name_;
   stream << v.layer_rules_;
@@ -86,7 +86,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechViaRule& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream >> *bit_field;
   stream >> v.name_;
   stream >> v.layer_rules_;
@@ -112,13 +112,13 @@ void dbTechViaRule::addVia(dbTechVia* via)
   rule->vias_.push_back(via->getImpl()->getOID());
 }
 
-uint dbTechViaRule::getViaCount()
+uint32_t dbTechViaRule::getViaCount()
 {
   _dbTechViaRule* rule = (_dbTechViaRule*) this;
   return rule->vias_.size();
 }
 
-dbTechVia* dbTechViaRule::getVia(uint idx)
+dbTechVia* dbTechViaRule::getVia(uint32_t idx)
 {
   _dbTechViaRule* rule = (_dbTechViaRule*) this;
   dbTech* tech = (dbTech*) rule->getOwner();
@@ -131,13 +131,13 @@ dbTechVia* dbTechViaRule::getVia(uint idx)
   return dbTechVia::getTechVia(tech, id);
 }
 
-uint dbTechViaRule::getViaLayerRuleCount()
+uint32_t dbTechViaRule::getViaLayerRuleCount()
 {
   _dbTechViaRule* rule = (_dbTechViaRule*) this;
   return rule->layer_rules_.size();
 }
 
-dbTechViaLayerRule* dbTechViaRule::getViaLayerRule(uint idx)
+dbTechViaLayerRule* dbTechViaRule::getViaLayerRule(uint32_t idx)
 {
   _dbTechViaRule* rule = (_dbTechViaRule*) this;
   dbTech* tech = (dbTech*) rule->getOwner();
@@ -162,7 +162,7 @@ dbTechViaRule* dbTechViaRule::create(dbTech* tech_, const char* name)
   return (dbTechViaRule*) rule;
 }
 
-dbTechViaRule* dbTechViaRule::getTechViaRule(dbTech* tech_, uint dbid_)
+dbTechViaRule* dbTechViaRule::getTechViaRule(dbTech* tech_, uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaRule*) tech->via_rule_tbl_->getPtr(dbid_);
@@ -173,9 +173,9 @@ void _dbTechViaRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["layer_rules"].add(layer_rules_);
-  info.children_["vias"].add(vias_);
+  info.children["name"].add(name_);
+  info.children["layer_rules"].add(layer_rules_);
+  info.children["vias"].add(vias_);
 }
 
 }  // namespace odb

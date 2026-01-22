@@ -4,6 +4,7 @@
 #include "dbInst.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -42,6 +43,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace odb {
 
@@ -58,15 +60,15 @@ class sortMTerm
 
 class sortITerm
 {
-  _dbBlock* _block;
+  _dbBlock* block_;
 
  public:
-  sortITerm(_dbBlock* block) { _block = block; }
+  sortITerm(_dbBlock* block) { block_ = block; }
 
-  bool operator()(uint it1, uint it2)
+  bool operator()(uint32_t it1, uint32_t it2)
   {
-    _dbITerm* iterm1 = _block->iterm_tbl_->getPtr(it1);
-    _dbITerm* iterm2 = _block->iterm_tbl_->getPtr(it2);
+    _dbITerm* iterm1 = block_->iterm_tbl_->getPtr(it1);
+    _dbITerm* iterm2 = block_->iterm_tbl_->getPtr(it2);
     return iterm1->flags_.mterm_idx < iterm2->flags_.mterm_idx;
   }
 };
@@ -142,7 +144,7 @@ _dbInst::~_dbInst()
 
 dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
 {
-  uint* bit_field = (uint*) &inst.flags_;
+  uint32_t* bit_field = (uint32_t*) &inst.flags_;
   stream << *bit_field;
   stream << inst.name_;
   stream << inst.x_;
@@ -168,7 +170,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
 
 dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
 {
-  uint* bit_field = (uint*) &inst.flags_;
+  uint32_t* bit_field = (uint32_t*) &inst.flags_;
   stream >> *bit_field;
   stream >> inst.name_;
   stream >> inst.x_;
@@ -189,24 +191,6 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   stream >> inst.iterms_;
   stream >> inst.halo_;
   stream >> inst.pin_access_idx_;
-
-  dbDatabase* db = (dbDatabase*) (inst.getDatabase());
-  if (((_dbDatabase*) db)->isSchema(db_schema_db_remove_hash)) {
-    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModule* module = nullptr;
-    // if the instance has no module parent put in the top module
-    // We sometimes see instances with _module set to 0 (possibly
-    // introduced downstream) so we stick them in the hash for the
-    // top module.
-    if (inst.module_ == 0) {
-      module = (_dbModule*) (((dbBlock*) block)->getTopModule());
-    } else {
-      module = block->module_tbl_->getPtr(inst.module_);
-    }
-    if (inst.name_) {
-      module->dbinst_hash_[inst.name_] = dbId<_dbInst>(inst.getId());
-    }
-  }
   return stream;
 }
 
@@ -368,16 +352,15 @@ bool dbInst::rename(const char* name)
     return false;
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: {}, rename to '{}'",
+             inst->getDebugName(),
+             name);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: dbInst({} {:p}) '{}', rename to '{}'",
-               getId(),
-               static_cast<void*>(this),
-               getName(),
-               name);
     block->journal_->updateField(this, _dbInst::kName, inst->name_, name);
   }
 
@@ -421,14 +404,16 @@ void dbInst::setOrigin(int x, int y)
   inst->y_ = y;
   _dbInst::setInstBBox(inst);
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: {} setOrigin {}, {}",
+             inst->getDebugName(),
+             x,
+             y);
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setOrigin {}, {}",
-               x,
-               y);
     block->journal_->beginAction(dbJournal::kUpdateField);
     block->journal_->pushParam(inst->getObjectType());
     block->journal_->pushParam(inst->getId());
@@ -513,17 +498,19 @@ void dbInst::setOrient(dbOrientType orient)
   for (auto callback : block->callbacks_) {
     callback->inDbPreMoveInst(this);
   }
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.orient = orient.getValue();
   _dbInst::setInstBBox(inst);
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: {} setOrient {}",
+             inst->getDebugName(),
+             orient.getValue());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setOrient {}",
-               orient.getValue());
     block->journal_->updateField(
         this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
@@ -553,16 +540,19 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
     callback->inDbInstPlacementStatusBefore(this, status);
   }
 
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.status = status.getValue();
   block->flags_.valid_bbox = 0;
+
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: {} setPlacementStatus {}",
+             inst->getDebugName(),
+             status.getValue());
+
   if (block->journal_) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setPlacementStatus {}",
-               status.getValue());
     block->journal_->updateField(
         this, _dbInst::kFlags, prev_flags, flagsToUInt(inst));
   }
@@ -612,7 +602,7 @@ void dbInst::setEcoCreate(bool v)
 {
   _dbInst* inst = (_dbInst*) this;
   // _dbBlock * block = (_dbBlock *) getOwner();
-  // uint prev_flags = flagsToUInt(inst);
+  // uint32_t prev_flags = flagsToUInt(inst);
   if (v) {
     inst->flags_.eco_create = 1;
   } else {
@@ -628,7 +618,7 @@ void dbInst::setEcoDestroy(bool v)
 {
   _dbInst* inst = (_dbInst*) this;
   // _dbBlock * block = (_dbBlock *) getOwner();
-  // uint prev_flags = flagsToUInt(inst);
+  // uint32_t prev_flags = flagsToUInt(inst);
   if (v) {
     inst->flags_.eco_destroy = 1;
   } else {
@@ -644,7 +634,7 @@ void dbInst::setEcoModify(bool v)
 {
   _dbInst* inst = (_dbInst*) this;
   // _dbBlock * block = (_dbBlock *) getOwner();
-  // uint prev_flags = flagsToUInt(inst);
+  // uint32_t prev_flags = flagsToUInt(inst);
   if (v) {
     inst->flags_.eco_modify = 1;
   } else {
@@ -661,7 +651,7 @@ void dbInst::setUserFlag1()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_1 = 1;
 
   if (block->journal_) {
@@ -674,7 +664,7 @@ void dbInst::clearUserFlag1()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_1 = 0;
 
   if (block->journal_) {
@@ -693,7 +683,7 @@ void dbInst::setUserFlag2()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_2 = 1;
 
   if (block->journal_) {
@@ -706,7 +696,7 @@ void dbInst::clearUserFlag2()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_2 = 0;
 
   if (block->journal_) {
@@ -725,7 +715,7 @@ void dbInst::setUserFlag3()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_3 = 1;
 
   if (block->journal_) {
@@ -738,7 +728,7 @@ void dbInst::clearUserFlag3()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
-  uint prev_flags = flagsToUInt(inst);
+  uint32_t prev_flags = flagsToUInt(inst);
   inst->flags_.user_flag_3 = 0;
 
   if (block->journal_) {
@@ -915,10 +905,7 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
     }
   }
 
-  // remove duplicates
-  std::sort(result.begin(), result.end());
-  auto end_itr = std::unique(result.begin(), result.end());
-  result.erase(end_itr, result.end());
+  utl::sort_and_unique(result);
 }
 
 bool dbInst::resetHierarchy(bool verbose)
@@ -1079,7 +1066,7 @@ dbITerm* dbInst::getITerm(dbMTerm* mterm_)
   _dbITerm* iterm = block->iterm_tbl_->getPtr(inst->iterms_[mterm->order_id_]);
   return (dbITerm*) iterm;
 }
-dbITerm* dbInst::getITerm(uint mterm_order_id)
+dbITerm* dbInst::getITerm(uint32_t mterm_order_id)
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
@@ -1113,18 +1100,16 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     return false;
   }
 
+  debugPrint(getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: swapMaster on {} from master '{}' to '{}'",
+             inst->getDebugName(),
+             oldMasterName,
+             newMasterName);
+
   if (block->journal_) {
-    debugPrint(
-        getImpl()->getLogger(),
-        utl::ODB,
-        "DB_ECO",
-        1,
-        "ECO: swapMaster on dbInst({} {:p}) '{}' from master '{}' to '{}'",
-        getId(),
-        static_cast<void*>(this),
-        getName(),
-        oldMasterName,
-        newMasterName);
     dbLib* old_lib = old_master_->getLib();
     dbLib* new_lib = new_master_->getLib();
     block->journal_->beginAction(dbJournal::kSwapObject);
@@ -1166,9 +1151,9 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     return false;
   }
 
-  std::vector<uint> idx_map(old_terms.size());
-  std::sort(new_terms.begin(), new_terms.end(), sortMTerm());
-  std::sort(old_terms.begin(), old_terms.end(), sortMTerm());
+  std::vector<uint32_t> idx_map(old_terms.size());
+  std::ranges::sort(new_terms, sortMTerm());
+  std::ranges::sort(old_terms, sortMTerm());
   std::vector<_dbMTerm*>::iterator i1 = new_terms.begin();
   std::vector<_dbMTerm*>::iterator i2 = old_terms.begin();
 
@@ -1210,8 +1195,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // create a new inst-hdr if needed
   if (new_inst_hdr == nullptr) {
-    new_inst_hdr = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block,
-                                                   (dbMaster*) new_master_);
+    new_inst_hdr
+        = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, new_master_);
   }
 
   new_inst_hdr->inst_cnt_++;
@@ -1223,18 +1208,18 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   // The next two steps invalidates any dbSet<dbITerm> iterators.
 
   // 1) update the iterm-mterm-idx
-  uint cnt = inst->iterms_.size();
+  uint32_t cnt = inst->iterms_.size();
 
-  uint i;
+  uint32_t i;
   for (i = 0; i < cnt; ++i) {
     _dbITerm* it = block->iterm_tbl_->getPtr(inst->iterms_[i]);
-    uint old_idx = it->flags_.mterm_idx;
+    uint32_t old_idx = it->flags_.mterm_idx;
     it->flags_.mterm_idx = idx_map[old_idx];
   }
 
   // 2) reorder the iterms vector
   sortITerm itermCmp(block);
-  std::sort(inst->iterms_.begin(), inst->iterms_.end(), itermCmp);
+  std::ranges::sort(inst->iterms_, itermCmp);
 
   // Notification
   for (auto cb : block->callbacks_) {
@@ -1244,13 +1229,13 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   return true;
 }
 
-void dbInst::setPinAccessIdx(uint idx)
+void dbInst::setPinAccessIdx(uint32_t idx)
 {
   _dbInst* inst = (_dbInst*) this;
   inst->pin_access_idx_ = idx;
 }
 
-uint dbInst::getPinAccessIdx() const
+uint32_t dbInst::getPinAccessIdx() const
 {
   _dbInst* inst = (_dbInst*) this;
   return inst->pin_access_idx_;
@@ -1288,15 +1273,6 @@ dbInst* dbInst::create(dbBlock* block_,
   dbInst* inst = reinterpret_cast<dbInst*>(inst_impl);
 
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create dbInst({}, {:p}) '{}' master '{}'",
-               inst->getId(),
-               static_cast<void*>(inst),
-               name_,
-               master_->getName());
     dbLib* lib = master_->getLib();
     block->journal_->beginAction(dbJournal::kCreateObject);
     block->journal_->pushParam(dbInstObj);
@@ -1314,8 +1290,16 @@ dbInst* dbInst::create(dbBlock* block_,
   block->inst_hash_.insert(inst_impl);
   inst_hdr->inst_cnt_++;
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: create {} master '{}'",
+             inst->getDebugName(),
+             master_->getName());
+
   // create the iterms
-  uint mterm_cnt = inst_hdr->mterms_.size();
+  uint32_t mterm_cnt = inst_hdr->mterms_.size();
   inst_impl->iterms_.resize(mterm_cnt);
 
   for (int i = 0; i < mterm_cnt; ++i) {
@@ -1407,6 +1391,19 @@ dbInst* dbInst::create(dbBlock* top_block,
   return inst;
 }
 
+dbInst* dbInst::create(dbBlock* block,
+                       dbMaster* master,
+                       const char* base_name,
+                       const dbNameUniquifyType& uniquify,
+                       dbModule* parent_module)
+{
+  std::string inst_name = block->makeNewInstName(
+      parent_module ? parent_module->getModInst() : nullptr,
+      base_name,
+      uniquify);
+  return create(block, master, inst_name.c_str(), false, parent_module);
+}
+
 dbInst* dbInst::makeUniqueDbInst(dbBlock* block,
                                  dbMaster* master,
                                  const char* name,
@@ -1457,8 +1454,8 @@ void dbInst::destroy(dbInst* inst_)
         inst->name_);
   }
 
-  uint i;
-  uint n = inst->iterms_.size();
+  uint32_t i;
+  uint32_t n = inst->iterms_.size();
 
   // Delete these in reverse order so undo creates the in
   // the correct order.
@@ -1472,11 +1469,9 @@ void dbInst::destroy(dbInst* inst_)
       for (const auto& [pin, aps] : iterm->getAccessPoints()) {
         for (auto ap : aps) {
           _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-          _ap->iterms_.erase(
-              std::remove_if(_ap->iterms_.begin(),
-                             _ap->iterms_.end(),
-                             [id](const auto& id_in) { return id_in == id; }),
-              _ap->iterms_.end());
+          auto [first, last] = std::ranges::remove_if(
+              _ap->iterms_, [id](const auto& id_in) { return id_in == id; });
+          _ap->iterms_.erase(first, last);
         }
       }
     }
@@ -1498,15 +1493,14 @@ void dbInst::destroy(dbInst* inst_)
     ((_dbModule*) module)->dbinst_hash_.erase(inst_->getName());
   }
 
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: delete {}",
+             inst->getDebugName());
+
   if (block->journal_) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: delete dbInst({}, {:p}) '{}'",
-               inst->getId(),
-               static_cast<void*>(inst),
-               inst_->getName());
     auto master = inst_->getMaster();
     block->journal_->beginAction(dbJournal::kDeleteObject);
     block->journal_->pushParam(dbInstObj);
@@ -1514,7 +1508,7 @@ void dbInst::destroy(dbInst* inst_)
     block->journal_->pushParam(master->getId());
     block->journal_->pushParam(inst_->getName().c_str());
     block->journal_->pushParam(inst_->getId());
-    uint* flags = (uint*) &inst->flags_;
+    uint32_t* flags = (uint32_t*) &inst->flags_;
     block->journal_->pushParam(*flags);
     block->journal_->pushParam(inst->x_);
     block->journal_->pushParam(inst->y_);
@@ -1573,13 +1567,13 @@ dbSet<dbInst>::iterator dbInst::destroy(dbSet<dbInst>::iterator& itr)
   return next;
 }
 
-dbInst* dbInst::getInst(dbBlock* block_, uint dbid_)
+dbInst* dbInst::getInst(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbInst*) block->inst_tbl_->getPtr(dbid_);
 }
 
-dbInst* dbInst::getValidInst(dbBlock* block_, uint dbid_)
+dbInst* dbInst::getValidInst(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (!block->inst_tbl_->validId(dbid_)) {
@@ -1587,7 +1581,26 @@ dbInst* dbInst::getValidInst(dbBlock* block_, uint dbid_)
   }
   return (dbInst*) block->inst_tbl_->getPtr(dbid_);
 }
-dbITerm* dbInst::getFirstOutput()
+
+dbITerm* dbInst::getFirstInput() const
+{
+  for (dbITerm* tr : getITerms()) {
+    if (tr->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (tr->getIoType() != dbIoType::INPUT) {
+      continue;
+    }
+
+    return tr;
+  }
+  getImpl()->getLogger()->warn(
+      utl::ODB, 172, "instance {} has no input pin", getConstName());
+  return nullptr;
+}
+
+dbITerm* dbInst::getFirstOutput() const
 {
   for (dbITerm* tr : getITerms()) {
     if (tr->getSigType().isSupply()) {
@@ -1610,8 +1623,8 @@ void _dbInst::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["iterms"].add(iterms_);
+  info.children["name"].add(name_);
+  info.children["iterms"].add(iterms_);
 }
 
 }  // namespace odb

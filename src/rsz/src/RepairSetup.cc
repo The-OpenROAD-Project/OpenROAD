@@ -63,7 +63,6 @@ using sta::fuzzyEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
 using sta::fuzzyLess;
-using sta::GraphDelayCalc;
 using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
 using sta::PathEndSeq;
@@ -111,90 +110,90 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   resizer_->buffer_moved_into_core_ = false;
 
   if (!sequence.empty()) {
-    move_sequence.clear();
+    move_sequence_.clear();
     for (MoveType move : sequence) {
       switch (move) {
         case MoveType::BUFFER:
           if (!skip_buffering) {
-            move_sequence.push_back(resizer_->buffer_move_.get());
+            move_sequence_.push_back(resizer_->buffer_move_.get());
           }
           break;
         case MoveType::UNBUFFER:
           if (!skip_buffer_removal) {
-            move_sequence.push_back(resizer_->unbuffer_move_.get());
+            move_sequence_.push_back(resizer_->unbuffer_move_.get());
           }
           break;
         case MoveType::SWAP:
           if (!skip_pin_swap) {
-            move_sequence.push_back(resizer_->swap_pins_move_.get());
+            move_sequence_.push_back(resizer_->swap_pins_move_.get());
           }
           break;
         case MoveType::SIZE:
-          move_sequence.push_back(resizer_->size_up_move_.get());
+          move_sequence_.push_back(resizer_->size_up_move_.get());
           if (!skip_size_down) {
-            move_sequence.push_back(resizer_->size_down_move_.get());
+            move_sequence_.push_back(resizer_->size_down_move_.get());
           }
           break;
         case MoveType::SIZEUP:
-          move_sequence.push_back(resizer_->size_up_move_.get());
+          move_sequence_.push_back(resizer_->size_up_move_.get());
           break;
         case MoveType::SIZEDOWN:
           if (!skip_size_down) {
-            move_sequence.push_back(resizer_->size_down_move_.get());
+            move_sequence_.push_back(resizer_->size_down_move_.get());
           }
           break;
         case MoveType::CLONE:
           if (!skip_gate_cloning) {
-            move_sequence.push_back(resizer_->clone_move_.get());
+            move_sequence_.push_back(resizer_->clone_move_.get());
           }
           break;
         case MoveType::SPLIT:
           if (!skip_buffering) {
-            move_sequence.push_back(resizer_->split_load_move_.get());
+            move_sequence_.push_back(resizer_->split_load_move_.get());
           }
           break;
         case MoveType::VTSWAP_SPEED:
           if (!skip_vt_swap
               && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
-            move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
+            move_sequence_.push_back(resizer_->vt_swap_speed_move_.get());
           }
           break;
         case MoveType::SIZEUP_MATCH:
-          move_sequence.push_back(resizer_->size_up_match_move_.get());
+          move_sequence_.push_back(resizer_->size_up_match_move_.get());
           break;
       }
     }
 
   } else {
-    move_sequence.clear();
+    move_sequence_.clear();
     if (!skip_buffer_removal) {
-      move_sequence.push_back(resizer_->unbuffer_move_.get());
+      move_sequence_.push_back(resizer_->unbuffer_move_.get());
     }
     if (!skip_vt_swap && resizer_->lib_data_->sorted_vt_categories.size() > 1) {
-      move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
+      move_sequence_.push_back(resizer_->vt_swap_speed_move_.get());
     }
     // Always  have sizing
-    move_sequence.push_back(resizer_->size_up_move_.get());
+    move_sequence_.push_back(resizer_->size_up_move_.get());
     // Disabled by default for now
     if (!skip_size_down) {
-      // move_sequence.push_back(resizer_->size_down_move_.get());
+      // move_sequence_.push_back(resizer_->size_down_move_.get());
     }
     if (!skip_pin_swap) {
-      move_sequence.push_back(resizer_->swap_pins_move_.get());
+      move_sequence_.push_back(resizer_->swap_pins_move_.get());
     }
     if (!skip_buffering) {
-      move_sequence.push_back(resizer_->buffer_move_.get());
+      move_sequence_.push_back(resizer_->buffer_move_.get());
     }
     if (!skip_gate_cloning) {
-      move_sequence.push_back(resizer_->clone_move_.get());
+      move_sequence_.push_back(resizer_->clone_move_.get());
     }
     if (!skip_buffering) {
-      move_sequence.push_back(resizer_->split_load_move_.get());
+      move_sequence_.push_back(resizer_->split_load_move_.get());
     }
   }
 
   string repair_moves = "Repair move sequence: ";
-  for (auto move : move_sequence) {
+  for (auto move : move_sequence_) {
     move->init();
     repair_moves += move->name() + string(" ");
   }
@@ -214,11 +213,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
   debugPrint(logger_,
              RSZ,
              "repair_setup",
@@ -583,15 +581,15 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   const Slack slack = sta_->vertexSlack(vertex, max_);
   Path* path = sta_->vertexWorstSlackPath(vertex, max_);
 
-  move_sequence.clear();
-  move_sequence = {resizer_->unbuffer_move_.get(),
-                   resizer_->vt_swap_speed_move_.get(),
-                   resizer_->size_down_move_.get(),
-                   resizer_->size_up_move_.get(),
-                   resizer_->swap_pins_move_.get(),
-                   resizer_->buffer_move_.get(),
-                   resizer_->clone_move_.get(),
-                   resizer_->split_load_move_.get()};
+  move_sequence_.clear();
+  move_sequence_ = {resizer_->unbuffer_move_.get(),
+                    resizer_->vt_swap_speed_move_.get(),
+                    resizer_->size_down_move_.get(),
+                    resizer_->size_up_move_.get(),
+                    resizer_->swap_pins_move_.get(),
+                    resizer_->buffer_move_.get(),
+                    resizer_->clone_move_.get(),
+                    resizer_->split_load_move_.get()};
 
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -695,9 +693,9 @@ bool RepairSetup::repairPath(Path* path,
       }
     }
 
-    sort(
-        load_delays.begin(),
-        load_delays.end(),
+    std::ranges::sort(
+        load_delays,
+
         [](pair<int, Delay> pair1, pair<int, Delay> pair2) {
           return pair1.second > pair2.second
                  || (pair1.second == pair2.second && pair1.first > pair2.first);
@@ -740,7 +738,7 @@ bool RepairSetup::repairPath(Path* path,
                  fanout,
                  drvr_index);
 
-      for (BaseMove* move : move_sequence) {
+      for (BaseMove* move : move_sequence_) {
         debugPrint(logger_,
                    RSZ,
                    "repair_setup",
@@ -885,14 +883,14 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
                                       int& num_viols,
                                       const int max_iterations)
 {
-  move_sequence.clear();
+  move_sequence_.clear();
   if (!params.skip_vt_swap) {
-    move_sequence.push_back(resizer_->vt_swap_speed_move_.get());
+    move_sequence_.push_back(resizer_->vt_swap_speed_move_.get());
   }
-  move_sequence.push_back(resizer_->size_up_match_move_.get());
-  move_sequence.push_back(resizer_->size_up_move_.get());
+  move_sequence_.push_back(resizer_->size_up_match_move_.get());
+  move_sequence_.push_back(resizer_->size_up_move_.get());
   if (!params.skip_pin_swap) {
-    move_sequence.push_back(resizer_->swap_pins_move_.get());
+    move_sequence_.push_back(resizer_->swap_pins_move_.get());
   }
 
   // Sort remaining failing endpoints
@@ -904,11 +902,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
   num_viols = violating_ends.size();
 
   float curr_tns = sta_->totalNegativeSlack(max_);
@@ -1069,11 +1066,10 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
       violating_ends.emplace_back(end, end_slack);
     }
   }
-  std::stable_sort(violating_ends.begin(),
-                   violating_ends.end(),
-                   [](const auto& end_slack1, const auto& end_slack2) {
-                     return end_slack1.second < end_slack2.second;
-                   });
+  std::ranges::stable_sort(violating_ends,
+                           [](const auto& end_slack1, const auto& end_slack2) {
+                             return end_slack1.second < end_slack2.second;
+                           });
 
   // Collect 50 critical instances from worst 100 violating endpoints
   // 50 x 100 = 5000 instances

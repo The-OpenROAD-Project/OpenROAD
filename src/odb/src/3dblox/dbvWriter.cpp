@@ -164,6 +164,9 @@ void DbvWriter::writeRegion(YAML::Node& region_node, odb::dbChipRegion* region)
       region_node["side"] = "internal_ext";
       break;
   }
+  std::string bmap_file = std::string(region->getChip()->getName()) + "_"
+                          + region->getName() + ".bmap";
+  region_node["bmap"] = bmap_file;
   if (auto layer = region->getLayer(); layer != nullptr) {
     region_node["layer"] = layer->getName();
   }

@@ -4,6 +4,7 @@
 #include "dbVia.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -26,7 +27,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -57,7 +57,7 @@ bool _dbVia::operator==(const _dbVia& rhs) const
     return false;
   }
 
-  if (flags_.default_ != rhs.flags_.default_) {
+  if (flags_.default_via != rhs.flags_.default_via) {
     return false;
   }
 
@@ -135,7 +135,7 @@ _dbVia::_dbVia(_dbDatabase*)
   flags_.is_tech_via = 0;
   flags_.has_params = 0;
   flags_.orient = dbOrientType::R0;
-  flags_.default_ = false;
+  flags_.default_via = false;
   flags_.spare_bits = 0;
   name_ = nullptr;
   pattern_ = nullptr;
@@ -160,7 +160,7 @@ _dbTech* _dbVia::getTech()
 
 dbOStream& operator<<(dbOStream& stream, const _dbVia& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream << *bit_field;
   stream << v.name_;
   stream << v.pattern_;
@@ -176,7 +176,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbVia& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbVia& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream >> *bit_field;
   stream >> v.name_;
   stream >> v.pattern_;
@@ -386,13 +386,13 @@ dbViaParams dbVia::getViaParams()
 void dbVia::setDefault(bool val)
 {
   _dbVia* via = (_dbVia*) this;
-  via->flags_.default_ = val;
+  via->flags_.default_via = val;
 }
 
 bool dbVia::isDefault()
 {
   _dbVia* via = (_dbVia*) this;
-  return via->flags_.default_;
+  return via->flags_.default_via;
 }
 
 dbVia* dbVia::create(dbBlock* block_, const char* name_)
@@ -535,7 +535,7 @@ bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
   return true;
 }
 
-dbVia* dbVia::getVia(dbBlock* block_, uint dbid_)
+dbVia* dbVia::getVia(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbVia*) block->via_tbl_->getPtr(dbid_);
@@ -615,8 +615,8 @@ void _dbVia::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
-  info.children_["pattern"].add(pattern_);
+  info.children["name"].add(name_);
+  info.children["pattern"].add(pattern_);
 }
 
 }  // namespace odb

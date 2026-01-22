@@ -46,7 +46,7 @@ using std::vector;
 
 RamGen::RamGen(sta::dbNetwork* network,
                odb::dbDatabase* db,
-               Logger* logger,
+               utl::Logger* logger,
                pdn::PdnGen* pdngen,
                ppl::IOPlacer* ioPlacer,
                dpl::Opendp* opendp,

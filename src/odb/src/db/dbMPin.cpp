@@ -3,6 +3,7 @@
 
 #include "dbMPin.h"
 
+#include <cstdint>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -33,10 +34,6 @@ _dbMPin::_dbMPin(_dbDatabase* db, const _dbMPin& p)
 {
 }
 
-_dbMPin::~_dbMPin()
-{
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin)
 {
   stream << mpin.mterm_;
@@ -52,7 +49,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMPin& mpin)
   stream >> mpin.mterm_;
   stream >> mpin.geoms_;
   _dbDatabase* db = mpin.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_polygon)) {
+  if (db->isSchema(kSchemaPolygon)) {
     stream >> mpin.poly_geoms_;
   }
   stream >> mpin.next_mpin_;
@@ -81,7 +78,7 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   return true;
 }
 
-void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
+void _dbMPin::addAccessPoint(uint32_t idx, _dbAccessPoint* ap)
 {
   if (aps_.size() <= idx) {
     aps_.resize(idx + 1);
@@ -142,7 +139,7 @@ std::vector<std::vector<odb::dbAccessPoint*>> dbMPin::getPinAccess() const
   _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
   std::vector<std::vector<odb::dbAccessPoint*>> result;
   for (const auto& pa : pin->aps_) {
-    result.push_back(std::vector<odb::dbAccessPoint*>());
+    result.emplace_back();
     for (const auto& ap : pa) {
       result.back().push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap));
     }
@@ -175,7 +172,7 @@ dbMPin* dbMPin::create(dbMTerm* mterm_)
   return (dbMPin*) mpin;
 }
 
-dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
+dbMPin* dbMPin::getMPin(dbMaster* master_, uint32_t dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMPin*) master->mpin_tbl_->getPtr(dbid_);
@@ -186,7 +183,7 @@ void _dbMPin::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  MemInfo& ap_info = info.children_["aps"];
+  MemInfo& ap_info = info.children["aps"];
   for (const auto& v : aps_) {
     ap_info.add(v);
   }

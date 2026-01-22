@@ -37,14 +37,14 @@ class MplObserver
   virtual void finishedClustering(PhysicalHierarchy* tree) {}
 
   virtual void setMaxLevel(int max_level) {}
-  virtual void setMacroBlockages(const std::vector<mpl::Rect>& macro_blockages)
+  virtual void setMacroBlockages(const std::vector<odb::Rect>& macro_blockages)
   {
   }
   virtual void setPlacementBlockages(
-      const std::vector<mpl::Rect>& placement_blockages)
+      const std::vector<odb::Rect>& placement_blockages)
   {
   }
-  virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
+  virtual void setNets(const BundledNetList& nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
   virtual void setShowClustersIds(bool show_clusters_ids) {}
   virtual void setSkipSteps(bool skip_steps) {}
@@ -54,8 +54,8 @@ class MplObserver
   virtual void setCurrentCluster(Cluster* current_cluster) {}
 
   virtual void setOutline(const odb::Rect& outline) {}
-  virtual void setGuides(const std::map<int, Rect>& guides) {}
-  virtual void setFences(const std::map<int, Rect>& fences) {}
+  virtual void setGuides(const std::map<int, odb::Rect>& guides) {}
+  virtual void setFences(const std::map<int, odb::Rect>& fences) {}
   virtual void setIOConstraintsMap(
       const ClusterToBoundaryRegionMap& io_cluster_to_constraint)
   {

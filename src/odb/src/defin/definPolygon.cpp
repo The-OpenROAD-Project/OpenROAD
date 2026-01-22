@@ -26,7 +26,7 @@ definPolygon::definPolygon(const std::vector<Point>& points) : _points(points)
   }
 
   if (!polygon_is_clockwise(_points)) {
-    std::reverse(_points.begin(), _points.end());
+    std::ranges::reverse(_points);
   }
 }
 

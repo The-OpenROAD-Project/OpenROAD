@@ -14,6 +14,8 @@
 
 #include "Clustering.h"
 #include "SinkClustering.h"
+#include "TechChar.h"
+#include "Util.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
@@ -80,15 +82,63 @@ void HTreeBuilder::preSinkClustering(
 
   unsigned bestClusterSize = 0;
   float bestDiameter = 0.0;
-  // clang-format off
-  debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-             clusterSize, maxDiameter, wireSegmentUnit_);
-  // clang-format on
-  matching.run(clusterSize,
-               maxDiameter,
-               wireSegmentUnit_,
-               bestClusterSize,
-               bestDiameter);
+  if (clusterSizeSet && maxDiameterSet) {
+    // clang-format off
+      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                 clusterSize, maxDiameter, wireSegmentUnit_);
+    // clang-format on
+    matching.run(clusterSize,
+                 maxDiameter,
+                 wireSegmentUnit_,
+                 bestClusterSize,
+                 bestDiameter);
+  } else if (!clusterSizeSet && maxDiameterSet) {
+    // only diameter is set, try clustering sizes of 10, 20 and 30
+    for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
+      // clang-format off
+      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                 clusterSize2, maxDiameter, wireSegmentUnit_);
+      // clang-format on
+      matching.run(clusterSize2,
+                   maxDiameter,
+                   wireSegmentUnit_,
+                   bestClusterSize,
+                   bestDiameter);
+    }
+  } else if (clusterSizeSet && !maxDiameterSet) {
+    // only clustering size is set, try diameters of 50, 100 and 200 um
+    for (unsigned clusterDiameter2 : options_->getSinkClusteringDiameters()) {
+      // clang-format off
+      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                 clusterSize, clusterDiameter2, wireSegmentUnit_);
+      // clang-format on
+      float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
+                           / wireSegmentUnit_;
+      matching.run(clusterSize,
+                   maxDiameter2,
+                   wireSegmentUnit_,
+                   bestClusterSize,
+                   bestDiameter);
+    }
+  } else {  // neighther clustering size nor diameter is set
+    // try diameters of 50, 100 and 200 um
+    for (unsigned clusterDiameter2 : clusterDiameters()) {
+      // try clustering sizes of 10, 20 and 30
+      for (unsigned clusterSize2 : options_->getSinkClusteringSizes()) {
+        // clang-format off
+        debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                   clusterSize2, clusterDiameter2, wireSegmentUnit_);
+        // clang-format on
+        float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
+                             / wireSegmentUnit_;
+        matching.run(clusterSize2,
+                     maxDiameter2,
+                     wireSegmentUnit_,
+                     bestClusterSize,
+                     bestDiameter);
+      }
+    }
+  }
 
   if (clusterSizeSet || maxDiameterSet) {
     logger_->info(
@@ -274,7 +324,9 @@ void HTreeBuilder::initSinkRegion()
   logger_->info(CTS, 26, "    Height: {:.4f}.", sinkRegion_.getHeight());
 }
 
-void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
+static void plotBlockage(std::ofstream& file,
+                         odb::dbDatabase* db_,
+                         int scalingFactor)
 {
   unsigned i = 0;
   for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
@@ -302,7 +354,8 @@ double HTreeBuilder::weightedDistance(const Point<double>& newLoc,
   return dist;
 }
 
-void plotSinks(std::ofstream& file, const std::vector<Point<double>>& sinks)
+static void plotSinks(std::ofstream& file,
+                      const std::vector<Point<double>>& sinks)
 {
   unsigned cnt = 0;
   for (const Point<double>& pt : sinks) {
@@ -358,9 +411,9 @@ void HTreeBuilder::scalePosition(Point<double>& loc,
   loc.setY(y);
 }
 
-void setSiblingPosition(const Point<double>& a,
-                        Point<double>& b,
-                        const Point<double>& parLoc)
+static void setSiblingPosition(const Point<double>& a,
+                               Point<double>& b,
+                               const Point<double>& parLoc)
 {
   double px = parLoc.getX();
   double py = parLoc.getY();
@@ -1128,21 +1181,18 @@ void HTreeBuilder::run()
   unsigned clusterSize = (type_ == TreeType::MacroTree)
                              ? options_->getMacroSinkClusteringSize()
                              : options_->getSinkClusteringSize();
-  bool use_max_diameter = (type_ == TreeType::MacroTree)
-                              ? options_->isMacroMaxDiameterSet()
-                              : options_->isMaxDiameterSet();
-  bool use_max_size = (type_ == TreeType::MacroTree)
-                          ? options_->isMacroSinkClusteringSizeSet()
-                          : options_->isSinkClusteringSizeSet();
   bool useMaxCap = (type_ == TreeType::MacroTree)
                        ? false
-                       : !(use_max_size && use_max_diameter);
+                       : options_->getSinkClusteringUseMaxCap();
 
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
   logger_->info(CTS, 28, " Total number of sinks: {}.", clock_.getNumSinks());
   if (options_->getSinkClustering()) {
-    if (!useMaxCap) {
+    if (useMaxCap) {
+      logger_->info(
+          CTS, 90, " Sinks will be clustered based on buffer max cap.");
+    } else {
       logger_->info(
           CTS,
           29,
@@ -1151,23 +1201,6 @@ void HTreeBuilder::run()
           type_ == TreeType::MacroTree ? "Macro " : "Register",
           clusterSize,
           clusterDiameter);
-    } else if (use_max_diameter && !use_max_size) {
-      logger_->info(CTS,
-                    59,
-                    " {} sinks will be clustered with maximum cluster diameter "
-                    "of {:.1f} um and based on buffer max cap.",
-                    type_ == TreeType::MacroTree ? "Macro " : "Register",
-                    clusterDiameter);
-    } else if (!use_max_diameter && use_max_size) {
-      logger_->info(CTS,
-                    60,
-                    " {} sinks will be clustered in groups of up to {} and "
-                    "based on buffer max cap.",
-                    type_ == TreeType::MacroTree ? "Macro " : "Register",
-                    clusterSize);
-    } else {
-      logger_->info(
-          CTS, 90, " Sinks will be clustered based on buffer max cap.");
     }
   }
   logger_->info(
@@ -1378,6 +1411,7 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
       = options_->getVertexBufferDistance() / (techChar_->getLengthUnit() * 2);
   int remainingLength
       = options_->getBufferDistance() / (techChar_->getLengthUnit());
+  int currWl = 0;
   unsigned inputCap = minInputCap_;
   unsigned inputSlew = 1;
   if (level > 1) {
@@ -1385,10 +1419,29 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
     inputCap = previousLevel.getOutputCap();
     inputSlew = previousLevel.getOutputSlew();
     remainingLength = previousLevel.getRemainingLength();
+    currWl = previousLevel.getCurrWl();
   }
 
-  const unsigned SLEW_THRESHOLD = options_->getMaxSlew();
-  const unsigned INIT_TOLERANCE = 1;
+  const unsigned kSlewThreshold = options_->getMaxSlew();
+  const unsigned kInitTolerance = 1;
+
+  int wirelengthThreshold;
+  // If max wirelength is 0, set it as slew threshold  * maximum topology
+  // wirelength. This will behave as if there was no max wirelength threshold.
+  if (!options_->getMaxWl()) {
+    wirelengthThreshold = kSlewThreshold * techChar_->getMaxSegmentLength();
+  } else {
+    wirelengthThreshold = options_->getMaxWl() / options_->getWireSegmentUnit();
+  }
+
+  debugPrint(
+      logger_, CTS, "tech char", 1, "slew threshold = {}", kSlewThreshold);
+  debugPrint(logger_,
+             CTS,
+             "tech char",
+             1,
+             "wirelength threshold = {}",
+             wirelengthThreshold);
   unsigned length = 0;
   for (int charSegLength = techChar_->getMaxSegmentLength(); charSegLength >= 1;
        --charSegLength) {
@@ -1396,6 +1449,7 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
 
     if (numWires >= 1) {
       for (int wireCount = 0; wireCount < numWires; ++wireCount) {
+        debugPrint(logger_, CTS, "tech char", 1, "curr wl = {}", currWl);
         unsigned outCap = 0, outSlew = 0;
         unsigned key = 0;
         if (options_->isSimpleSegmentEnabled()) {
@@ -1407,8 +1461,8 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
             key = computeMinDelaySegment(charSegLength,
                                          inputSlew,
                                          inputCap,
-                                         SLEW_THRESHOLD,
-                                         INIT_TOLERANCE,
+                                         kSlewThreshold,
+                                         kInitTolerance,
                                          outSlew,
                                          outCap,
                                          true,
@@ -1420,8 +1474,8 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
               key = computeMinDelaySegment(charSegLength,
                                            inputSlew,
                                            inputCap,
-                                           SLEW_THRESHOLD,
-                                           INIT_TOLERANCE,
+                                           kSlewThreshold,
+                                           kInitTolerance,
                                            outSlew,
                                            outCap,
                                            true,
@@ -1432,8 +1486,8 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
               key = computeMinDelaySegment(charSegLength,
                                            inputSlew,
                                            inputCap,
-                                           SLEW_THRESHOLD,
-                                           INIT_TOLERANCE,
+                                           kSlewThreshold,
+                                           kInitTolerance,
                                            outSlew,
                                            outCap,
                                            false,
@@ -1444,10 +1498,12 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
           key = computeMinDelaySegment(charSegLength,
                                        inputSlew,
                                        inputCap,
-                                       SLEW_THRESHOLD,
-                                       INIT_TOLERANCE,
+                                       kSlewThreshold,
+                                       wirelengthThreshold,
+                                       kInitTolerance,
                                        outSlew,
-                                       outCap);
+                                       outCap,
+                                       currWl);
         }
 
         if (key == std::numeric_limits<unsigned>::max()) {
@@ -1472,6 +1528,7 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
 
   topology.setOutputSlew(inputSlew);
   topology.setOutputCap(inputCap);
+  topology.setCurrWl(currWl);
 
   computeBranchingPoints(level, topology);
   topologyForEachLevel_.push_back(topology);
@@ -1500,9 +1557,11 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
                                               const unsigned inputSlew,
                                               const unsigned inputCap,
                                               const unsigned slewThreshold,
+                                              const int wirelengthThreshold,
                                               const unsigned tolerance,
                                               unsigned& outputSlew,
-                                              unsigned& outputCap) const
+                                              unsigned& outputCap,
+                                              int& currWl) const
 {
   unsigned minKey = std::numeric_limits<unsigned>::max();
   unsigned minDelay = std::numeric_limits<unsigned>::max();
@@ -1516,6 +1575,17 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
             if (std::abs((int) seg.getInputCap() - (int) inputCap) > tolerance
                 || std::abs((int) seg.getInputSlew() - (int) inputSlew)
                        > tolerance) {
+              return;
+            }
+
+            if (seg.isBuffered()
+                && (currWl + seg.getWl2FirstBuffer() > wirelengthThreshold)) {
+              return;
+            }
+
+            if (!seg.isBuffered()
+                && (currWl + seg.getWl2FirstBuffer()
+                    > wirelengthThreshold - techChar_->getMinSegmentLength())) {
               return;
             }
 
@@ -1538,6 +1608,7 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
       const WireSegment& bestBufSegment = techChar_->getWireSegment(minBufKey);
       outputSlew = bestBufSegment.getOutputSlew();
       outputCap = bestBufSegment.getLoad();
+      currWl = bestBufSegment.getLastWl();
       return minBufKey;
     }
     if (tolerance < MAX_TOLERANCE) {
@@ -1546,9 +1617,11 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
                                     inputSlew,
                                     inputCap,
                                     slewThreshold,
+                                    wirelengthThreshold,
                                     tolerance + 1,
                                     outputSlew,
-                                    outputCap);
+                                    outputCap,
+                                    currWl);
     }
   }
 
@@ -1561,13 +1634,22 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
                                   inputSlew,
                                   inputCap,
                                   slewThreshold,
+                                  wirelengthThreshold,
                                   tolerance + 1,
                                   outputSlew,
-                                  outputCap);
+                                  outputCap,
+                                  currWl);
   }
 
   const WireSegment& bestSegment = techChar_->getWireSegment(minKey);
-  outputSlew = std::max((unsigned) bestSegment.getOutputSlew(), inputSlew + 1);
+  if (bestSegment.isBuffered()) {
+    outputSlew = bestSegment.getOutputSlew();
+    currWl = bestSegment.getLastWl();
+  } else {
+    outputSlew
+        = std::max((unsigned) bestSegment.getOutputSlew(), inputSlew + 1);
+    currWl += bestSegment.getLastWl();
+  }
   outputCap = bestSegment.getLoad();
 
   return minKey;

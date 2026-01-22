@@ -3,6 +3,7 @@
 
 #include "dbNameCache.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -72,7 +73,7 @@ void _dbName::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(name_);
+  info.children["name"].add(name_);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbName& name)
@@ -122,7 +123,7 @@ bool _dbNameCache::operator==(const _dbNameCache& rhs) const
   return true;
 }
 
-uint _dbNameCache::findName(const char* name)
+uint32_t _dbNameCache::findName(const char* name)
 {
   _dbName* n = name_hash_.find(name);
 
@@ -133,7 +134,7 @@ uint _dbNameCache::findName(const char* name)
   return 0U;
 }
 
-uint _dbNameCache::addName(const char* name)
+uint32_t _dbNameCache::addName(const char* name)
 {
   _dbName* n = name_hash_.find(name);
 
@@ -147,7 +148,7 @@ uint _dbNameCache::addName(const char* name)
   return n->getOID();
 }
 
-void _dbNameCache::removeName(uint id)
+void _dbNameCache::removeName(uint32_t id)
 {
   _dbName* n = name_tbl_->getPtr(id);
   --n->ref_cnt_;
@@ -158,7 +159,7 @@ void _dbNameCache::removeName(uint id)
   }
 }
 
-const char* _dbNameCache::getName(uint id)
+const char* _dbNameCache::getName(uint32_t id)
 {
   _dbName* n = name_tbl_->getPtr(id);
   return n->name_;
@@ -183,8 +184,8 @@ void _dbNameCache::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  name_tbl_->collectMemInfo(info.children_["name_tbl"]);
-  info.children_["name_hash"].add(name_hash_);
+  name_tbl_->collectMemInfo(info.children["name_tbl"]);
+  info.children["name_hash"].add(name_hash_);
 }
 
 }  // namespace odb

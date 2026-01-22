@@ -30,10 +30,6 @@ dbWireShapeItr::dbWireShapeItr()
   tech_ = nullptr;
 }
 
-dbWireShapeItr::~dbWireShapeItr()
-{
-}
-
 inline unsigned char dbWireShapeItr::nextOp(int& value)
 {
   assert(idx_ < (int) wire_->length());
@@ -78,16 +74,16 @@ nextOpCode:
   unsigned char opcode = nextOp(operand);
 
   switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_PATH:
-    case WOP_SHORT:
-    case WOP_VWIRE: {
+    case kPath:
+    case kShort:
+    case kVwire: {
       layer_ = dbTechLayer::getTechLayer(tech_, operand);
       point_cnt_ = 0;
       dw_ = layer_->getWidth() >> 1;
       goto nextOpCode;
     }
 
-    case WOP_JUNCTION: {
+    case kJunction: {
       WirePoint pnt;
       getPrevPoint(
           tech_, block_, wire_->opcodes_, wire_->data_, operand, true, pnt);
@@ -101,7 +97,7 @@ nextOpCode:
       goto nextOpCode;
     }
 
-    case WOP_RULE: {
+    case kRule: {
       if (opcode & WOP_BLOCK_RULE) {
         dbTechLayerRule* rule
             = dbTechLayerRule::getTechLayerRule(block_, operand);
@@ -116,7 +112,7 @@ nextOpCode:
       goto nextOpCode;
     }
 
-    case WOP_X: {
+    case kX: {
       int cur_x = operand;
       int cur_y;
 
@@ -167,7 +163,7 @@ nextOpCode:
       return true;
     }
 
-    case WOP_Y: {
+    case kY: {
       assert(point_cnt_ != 0);
       point_cnt_++;
       int cur_y = operand;
@@ -205,7 +201,7 @@ nextOpCode:
       return true;
     }
 
-    case WOP_COLINEAR: {
+    case kColinear: {
       point_cnt_++;
 
       // A colinear-point with an extension begins a new path-segment
@@ -242,7 +238,7 @@ nextOpCode:
       goto nextOpCode;
     }
 
-    case WOP_VIA: {
+    case kVia: {
       dbVia* via = dbVia::getVia(block_, operand);
 
       if (opcode & WOP_VIA_EXIT_TOP) {
@@ -274,7 +270,7 @@ nextOpCode:
       return true;
     }
 
-    case WOP_TECH_VIA: {
+    case kTechVia: {
       dbTechVia* via = dbTechVia::getTechVia(tech_, operand);
 
       if (opcode & WOP_VIA_EXIT_TOP) {
@@ -306,7 +302,7 @@ nextOpCode:
       return true;
     }
 
-    case WOP_RECT: {
+    case kRect: {
       int deltaX1 = operand;
       int deltaY1;
       int deltaX2;
@@ -322,13 +318,13 @@ nextOpCode:
       return true;
     }
 
-    case WOP_ITERM:
-    case WOP_BTERM:
-    case WOP_OPERAND:
-    case WOP_PROPERTY:
-    case WOP_COLOR:
-    case WOP_VIACOLOR:
-    case WOP_NOP:
+    case kIterm:
+    case kBterm:
+    case kOperand:
+    case kProperty:
+    case kColor:
+    case kViaColor:
+    case kNop:
       goto nextOpCode;
 
     default:

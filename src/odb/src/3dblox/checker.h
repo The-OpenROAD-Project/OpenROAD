@@ -1,10 +1,17 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2026, The OpenROAD Authors
+
 #pragma once
 
-#include "odb/3dblox.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "unfoldedModel.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbChip;
 class dbMarkerCategory;
+
 class Checker
 {
  public:
@@ -13,9 +20,24 @@ class Checker
   void check(odb::dbChip* chip);
 
  private:
-  void checkFloatingChips(odb::dbChip* chip, odb::dbMarkerCategory* category);
-  void checkOverlappingChips(odb::dbChip* chip,
-                             odb::dbMarkerCategory* category);
-  utl::Logger* logger_ = nullptr;
+  void checkFloatingChips(const UnfoldedModel& model,
+                          dbMarkerCategory* category);
+  void checkOverlappingChips(const UnfoldedModel& model,
+                             dbMarkerCategory* category);
+  void checkConnectionRegions(const UnfoldedModel& model,
+                              dbChip* chip,
+                              dbMarkerCategory* category);
+  void checkBumpPhysicalAlignment(const UnfoldedModel& model,
+                                  dbMarkerCategory* category);
+  void checkNetConnectivity(const UnfoldedModel& model,
+                            dbChip* chip,
+                            dbMarkerCategory* category);
+
+  bool isOverlapFullyInConnections(const UnfoldedChip* chip1,
+                                   const UnfoldedChip* chip2,
+                                   const Cuboid& overlap) const;
+
+  utl::Logger* logger_;
 };
+
 }  // namespace odb

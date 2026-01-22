@@ -113,12 +113,18 @@ void Opendp::improvePlacement(const int seed,
     dtParams.script += "disallow_one_site_gaps;";
   }
 
+  if (debug_observer_) {
+    logger_->report("Pause before improve placement.");
+    debug_observer_->redrawAndPause();
+  }
+
   // Run the script.
   Detailed dt(dtParams);
   dt.improve(mgr);
 
   if (debug_observer_) {
-    debug_observer_->endPlacement();
+    logger_->report("Pause after improve placement.");
+    debug_observer_->redrawAndPause();
   }
 
   // Write solution back.

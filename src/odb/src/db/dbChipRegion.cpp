@@ -63,7 +63,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.side_;
   stream >> obj.layer_;
   stream >> obj.box_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_bump_tbl_;
   }
   return stream;
@@ -94,7 +94,7 @@ void _dbChipRegion::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  chip_bump_tbl_->collectMemInfo(info.children_["chip_bump_tbl_"]);
+  chip_bump_tbl_->collectMemInfo(info.children["chip_bump_tbl_"]);
 }
 
 _dbChipRegion::~_dbChipRegion()
@@ -135,6 +135,9 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 
 // User Code Begin dbChipRegionPublicMethods
 
+// Returns the region's cuboid in the master chip's coordinate system.
+// Note: This differs from dbChipRegionInst::getCuboid() which returns
+// the transformed cuboid in the parent's coordinate system.
 Cuboid dbChipRegion::getCuboid() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;

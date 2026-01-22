@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
@@ -91,13 +92,13 @@ frCost FlexGRGridGraph::getEstCost(const FlexMazeIdx& src,
   getPoint(dstMazeIdx1.x(), dstMazeIdx1.y(), dstPoint1);
   getPoint(dstMazeIdx2.x(), dstMazeIdx2.y(), dstPoint2);
   frCoord minCostX = std::max(
-      std::max(dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x()), 0);
+      {dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x(), 0});
   frCoord minCostY = std::max(
-      std::max(dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y()), 0);
+      {dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y(), 0});
   frCoord minCostZ
-      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
-                          getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())),
-                 0);
+      = std::max({getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
+                  getZHeight(src.z()) - getZHeight(dstMazeIdx2.z()),
+                  0});
 
   bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E
               && dir != frDirEnum::W)

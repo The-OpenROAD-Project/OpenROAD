@@ -52,5 +52,11 @@ replace_arith_modules -path_count 100
 report_wns
 report_tns
 
+# QoR must be the same after sta::network_changed
+sta::network_changed
+estimate_parasitics -placement
+report_wns
+report_tns
+
 set write_sdc_file [make_result_file replace_arith_modules1.sdc]
 write_sdc $write_sdc_file

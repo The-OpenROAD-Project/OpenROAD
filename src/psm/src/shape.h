@@ -32,8 +32,7 @@ class Shape
   std::vector<std::unique_ptr<Node>> createFillerNodes(
       int max_distance,
       const IRNetwork::NodeTree& layer_nodes);
-  std::vector<std::unique_ptr<Connection>> connectNodes(
-      const IRNetwork::NodeTree& layer_nodes);
+  Connections connectNodes(const IRNetwork::NodeTree& layer_nodes);
   std::set<Node*> cleanupNodes(
       int min_distance,
       const IRNetwork::NodeTree& layer_nodes,

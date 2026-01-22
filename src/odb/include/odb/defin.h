@@ -6,7 +6,6 @@
 #include <mutex>
 #include <vector>
 
-#include "odb/odb.h"
 namespace utl {
 class Logger;
 }

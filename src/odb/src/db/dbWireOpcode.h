@@ -6,7 +6,6 @@
 #include <cassert>
 
 #include "odb/db.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -28,24 +27,27 @@ namespace odb {
 //                                               D == WOP_DEFAULT_WIDTH,
 //                                               B == WOP_BLOCK_RULE
 //                                               X == unused bit
-#define WOP_PATH 0       //  W W W 0 0 0 0 0 :  operand = layer-id
-#define WOP_SHORT 1      //  W W W 0 0 0 0 1 :  operand = junction-id
-#define WOP_JUNCTION 2   //  W W W 0 0 0 1 0 :  operand = junction-id
-#define WOP_RULE 3       //  B X X 0 0 0 1 1 :  operand = rule-id
-#define WOP_X 4          //  E D X 0 0 1 0 0 :  operand = x-coord
-#define WOP_Y 5          //  E D X 0 0 1 0 1 :  operand = y-coord
-#define WOP_COLINEAR 6   //  E X X 0 0 1 1 0 :  operand = (e == 1) ? ext : 0
-#define WOP_VIA 7        //  T X X 0 0 1 1 1 :  operand = via-id
-#define WOP_TECH_VIA 8   //  T X X 0 1 0 0 0 :  operand = via-id
-#define WOP_ITERM 9      //  X X X 0 1 0 0 1 :  operand = iterm-id
-#define WOP_BTERM 10     //  X X X 0 1 0 1 0 :  operand = bterm-id
-#define WOP_OPERAND 11   //  X X X 0 1 0 1 1 :  operand = integer operand
-#define WOP_PROPERTY 12  //  X X X 0 1 1 0 0 :  operand = integer operand
-#define WOP_VWIRE 13     //  W W W 0 1 1 0 1 :  operand = integer operand
-#define WOP_RECT 14      //  X X X 0 1 1 1 0 :  operand = first offset
-#define WOP_NOP 15       //  X X X 0 1 1 1 1 :  operand = 0
-#define WOP_COLOR 16     //  X X X 1 0 0 0 0 :  operand = integer operand
-#define WOP_VIACOLOR 17  //  X X X 1 0 0 0 1 :  operand = via color
+enum WireOp
+{
+  kPath = 0,       //  W W W 0 0 0 0 0 :  operand = layer-id
+  kShort = 1,      //  W W W 0 0 0 0 1 :  operand = junction-id
+  kJunction = 2,   //  W W W 0 0 0 1 0 :  operand = junction-id
+  kRule = 3,       //  B X X 0 0 0 1 1 :  operand = rule-id
+  kX = 4,          //  E D X 0 0 1 0 0 :  operand = x-coord
+  kY = 5,          //  E D X 0 0 1 0 1 :  operand = y-coord
+  kColinear = 6,   //  E X X 0 0 1 1 0 :  operand = (e == 1) ? ext : 0
+  kVia = 7,        //  T X X 0 0 1 1 1 :  operand = via-id
+  kTechVia = 8,    //  T X X 0 1 0 0 0 :  operand = via-id
+  kIterm = 9,      //  X X X 0 1 0 0 1 :  operand = iterm-id
+  kBterm = 10,     //  X X X 0 1 0 1 0 :  operand = bterm-id
+  kOperand = 11,   //  X X X 0 1 0 1 1 :  operand = integer operand
+  kProperty = 12,  //  X X X 0 1 1 0 0 :  operand = integer operand
+  kVwire = 13,     //  W W W 0 1 1 0 1 :  operand = integer operand
+  kRect = 14,      //  X X X 0 1 1 1 0 :  operand = first offset
+  kNop = 15,       //  X X X 0 1 1 1 1 :  operand = 0
+  kColor = 16,     //  X X X 1 0 0 0 0 :  operand = integer operand
+  kViaColor = 17   //  X X X 1 0 0 0 1 :  operand = via color
+};
 
 // opcode-flags
 #define WOP_VIA_EXIT_TOP \
@@ -61,11 +63,14 @@ namespace odb {
 
 // wire-type-flags
 #define WOP_WIRE_TYPE_MASK 0xE0
-#define WOP_NONE 0x00
-#define WOP_COVER 0x20
-#define WOP_FIXED 0x40
-#define WOP_ROUTED 0x60
-#define WOP_NOSHIELD 0x80
+enum WireType
+{
+  kNone = 0x00,
+  kCover = 0x20,
+  kFixed = 0x40,
+  kRouted = 0x60,
+  kNoShield = 0x80
+};
 
 //////////////////////////////////////////////////////////////////////////////////
 //
@@ -105,8 +110,8 @@ prevOpCode:
   opcode = opcodes[idx];
 
   switch (opcode & WOP_OPCODE_MASK) {
-    case WOP_PATH:
-    case WOP_SHORT: {
+    case kPath:
+    case kShort: {
       if (get_layer) {
         pnt.layer = dbTechLayer::getTechLayer(tech, data[idx]);
 
@@ -121,12 +126,12 @@ prevOpCode:
       goto prevOpCode;
     }
 
-    case WOP_JUNCTION: {
+    case kJunction: {
       idx = data[idx];
       goto prevOpCode;
     }
 
-    case WOP_X: {
+    case kX: {
       if (look_for_x) {
         look_for_x = false;
         pnt.x = data[idx];
@@ -140,7 +145,7 @@ prevOpCode:
       goto prevOpCode;
     }
 
-    case WOP_Y: {
+    case kY: {
       if (look_for_y) {
         look_for_y = false;
         pnt.y = data[idx];
@@ -154,7 +159,7 @@ prevOpCode:
       goto prevOpCode;
     }
 
-    case WOP_VIA: {
+    case kVia: {
       if (get_layer) {
         dbVia* via = dbVia::getVia(block, data[idx]);
 
@@ -175,7 +180,7 @@ prevOpCode:
       goto prevOpCode;
     }
 
-    case WOP_TECH_VIA: {
+    case kTechVia: {
       if (get_layer) {
         dbTechVia* via = dbTechVia::getTechVia(tech, data[idx]);
 

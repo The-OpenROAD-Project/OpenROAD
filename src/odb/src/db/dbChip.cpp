@@ -4,13 +4,21 @@
 // Generator Code Begin Cpp
 #include "dbChip.h"
 
+#include <cstdint>
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 
 #include "dbBlock.h"
 #include "dbBlockItr.h"
 #include "dbChipConn.h"
+#include "dbChipConnItr.h"
+#include "dbChipInst.h"
+#include "dbChipInstItr.h"
+#include "dbChipNet.h"
+#include "dbChipNetItr.h"
 #include "dbChipRegion.h"
+#include "dbCommon.h"
 #include "dbDatabase.h"
 #include "dbMarkerCategory.h"
 #include "dbNameCache.h"
@@ -20,18 +28,12 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
-#include "odb/dbSet.h"
-// User Code Begin Includes
-#include <cstdlib>
-
-#include "dbChipConnItr.h"
-#include "dbChipInst.h"
-#include "dbChipInstItr.h"
-#include "dbChipNet.h"
-#include "dbChipNetItr.h"
-#include "dbCommon.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "odb/geom.h"
+// User Code Begin Includes
+#include <list>
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
@@ -172,78 +174,78 @@ _dbChip::_dbChip(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.name_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.type_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.offset_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.width_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.height_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.thickness_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.shrink_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_east_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_west_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_north_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.seal_ring_south_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_east_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_west_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_north_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.scribe_line_south_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_extended)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.tsv_;
   }
   stream >> obj.top_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_inst)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipInst)) {
     stream >> obj.chipinsts_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
     stream >> obj.conns_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_bump)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> obj.nets_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_tech)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipTech)) {
     stream >> obj.tech_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_region)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
     stream >> *obj.chip_region_tbl_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_chip_marker_categories)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipMarkerCategories)) {
     stream >> *obj.marker_categories_tbl_;
   }
   // User Code Begin >>
   stream >> *obj.block_tbl_;
   stream >> *obj.prop_tbl_;
   stream >> *obj.name_cache_;
-  if (obj.getDatabase()->isSchema(db_schema_chip_hash_table)) {
+  if (obj.getDatabase()->isSchema(kSchemaChipHashTable)) {
     stream >> obj.next_entry_;
   }
   auto chip = (dbChip*) &obj;
@@ -316,16 +318,16 @@ void _dbChip::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  prop_tbl_->collectMemInfo(info.children_["prop_tbl_"]);
+  prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
 
-  chip_region_tbl_->collectMemInfo(info.children_["chip_region_tbl_"]);
+  chip_region_tbl_->collectMemInfo(info.children["chip_region_tbl_"]);
 
   marker_categories_tbl_->collectMemInfo(
-      info.children_["marker_categories_tbl_"]);
+      info.children["marker_categories_tbl_"]);
 
   // User Code Begin collectMemInfo
-  block_tbl_->collectMemInfo(info.children_["block"]);
-  name_cache_->collectMemInfo(info.children_["name_cache"]);
+  block_tbl_->collectMemInfo(info.children["block"]);
+  name_cache_->collectMemInfo(info.children["name_cache"]);
   // User Code End collectMemInfo
 }
 
@@ -342,6 +344,11 @@ _dbChip::~_dbChip()
   delete name_cache_;
   delete block_itr_;
   delete prop_itr_;
+
+  while (!callbacks_.empty()) {
+    auto _cbitr = callbacks_.begin();
+    (*_cbitr)->removeOwner();
+  }
   // User Code End Destructor
 }
 
@@ -625,14 +632,13 @@ dbTech* dbChip::getTech() const
 Rect dbChip::getBBox() const
 {
   _dbChip* _chip = (_dbChip*) this;
-  const int llx = 0 - _chip->scribe_line_east_ - _chip->seal_ring_west_;
-  const int lly = 0 - _chip->scribe_line_south_ - _chip->seal_ring_south_;
-  const int urx
-      = _chip->width_ + _chip->scribe_line_east_ + _chip->seal_ring_east_;
-  const int ury
-      = _chip->height_ + _chip->scribe_line_north_ + _chip->seal_ring_north_;
-  Rect box(llx, lly, urx, ury);
-  box.moveTo(_chip->offset_.x(), _chip->offset_.y());
+  const int dx = _chip->width_ + _chip->scribe_line_east_
+                 + _chip->seal_ring_east_ + _chip->scribe_line_west_
+                 + _chip->seal_ring_west_;
+  const int dy = _chip->height_ + _chip->scribe_line_north_
+                 + _chip->seal_ring_north_ + _chip->scribe_line_south_
+                 + _chip->seal_ring_south_;
+  Rect box(0, 0, dx, dy);
   return box;
 }
 
@@ -665,7 +671,7 @@ dbChip* dbChip::create(dbDatabase* db_,
   }
   _dbChip* chip = db->chip_tbl_->create();
   chip->name_ = safe_strdup(name.c_str());
-  chip->type_ = (uint) type;
+  chip->type_ = (uint32_t) type;
   if (db->chip_ == 0) {
     db->chip_ = chip->getOID();
   }
@@ -679,7 +685,7 @@ dbChip* dbChip::create(dbDatabase* db_,
   return (dbChip*) chip;
 }
 
-dbChip* dbChip::getChip(dbDatabase* db_, uint dbid_)
+dbChip* dbChip::getChip(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbChip*) db->chip_tbl_->getPtr(dbid_);

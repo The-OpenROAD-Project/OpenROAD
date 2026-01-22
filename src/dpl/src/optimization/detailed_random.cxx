@@ -403,7 +403,7 @@ double DetailedRandom::go()
   currTotalCost = initTotalCost;
 
   std::vector<int> gen_count(generators_.size());
-  std::fill(gen_count.begin(), gen_count.end(), 0);
+  std::ranges::fill(gen_count, 0);
   for (int attempt = 0; attempt < maxAttempts; attempt++) {
     // Pick a generator at random.
     int g = mgrPtr_->getRandom(generators_.size());

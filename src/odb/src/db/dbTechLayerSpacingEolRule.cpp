@@ -1452,14 +1452,14 @@ dbTechLayerSpacingEolRule* dbTechLayerSpacingEolRule::create(
 {
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerSpacingEolRule* newrule = layer->spacing_eol_rules_tbl_->create();
-  newrule->_layer = _layer->getImpl()->getOID();
+  newrule->layer_ = _layer->getImpl()->getOID();
 
   return ((dbTechLayerSpacingEolRule*) newrule);
 }
 
 dbTechLayerSpacingEolRule*
 dbTechLayerSpacingEolRule::getTechLayerSpacingEolRule(dbTechLayer* inly,
-                                                      uint dbid)
+                                                      uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerSpacingEolRule*) layer->spacing_eol_rules_tbl_->getPtr(

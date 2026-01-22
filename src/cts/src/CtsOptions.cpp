@@ -31,11 +31,13 @@ void CtsOptions::inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region)
 
 void CtsOptions::limitSinkClusteringSizes(unsigned limit)
 {
-  unsigned new_size = limit;
   if (sinkClustersSizeSet_) {
-    new_size = std::min(new_size, sinkClustersSize_);
+    setSinkClusteringSize(std::min(limit, sinkClustersSize_));
+    return;
   }
-  setSinkClusteringSize(new_size);
+  auto lowerBound = std::ranges::lower_bound(sinkClusteringSizes_, limit);
+  sinkClusteringSizes_.erase(lowerBound, sinkClusteringSizes_.end());
+  sinkClusteringSizes_.push_back(limit);
 }
 
 void CtsOptions::recordBuffer(odb::dbMaster* master, MasterType type)
