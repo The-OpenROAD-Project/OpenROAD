@@ -127,9 +127,9 @@ set_macro_guidance_region
 Command for setting a halo for specific macros. If unset, the macro will use the default values specified in MACRO_PLACE_HALO.
 
 ```tcl
-set_macro_guidance_region
+set_macro_halo
     -macro_name macro_name
-    -region region
+    -halo {width height}
 ```
 
 #### Options
@@ -137,7 +137,7 @@ set_macro_guidance_region
 | Switch Name | Description |
 | ----- | ----- |
 | `-macro_name` | The name of a macro of the design. |
-| `-halo` | The width and height of the halo. |
+| `-halo` | The width and height of the halo, in microns. |
 
 ## Example scripts
 
