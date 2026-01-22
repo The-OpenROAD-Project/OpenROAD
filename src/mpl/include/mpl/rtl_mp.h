@@ -93,7 +93,6 @@ class MacroPlacer
   odb::dbDatabase* db_ = nullptr;
 
   std::map<odb::dbInst*, odb::Rect> guidance_regions_;
-  std::map<odb::dbInst*, std::pair<int, int>> macro_halos_;
 };
 
 }  // namespace mpl

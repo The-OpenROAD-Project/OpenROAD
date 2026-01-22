@@ -225,10 +225,6 @@ void MacroPlacer::addMacroHalo(odb::dbInst* macro,
                                int halo_width,
                                int halo_height)
 {
-  if (macro_halos_.find(macro) != macro_halos_.end()) {
-    logger_->warn(MPL, 49, "Overwriting halo for macro {}", macro->getName());
-  }
-
   hier_rtlmp_->addMacroHalo(macro, halo_width, halo_height);
 }
 
