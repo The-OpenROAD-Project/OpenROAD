@@ -1,5 +1,5 @@
-# Test to reproduce the "Duplicated location!" error (CTS-9999)
-# when htree_builder_fix is disabled, WITHOUT physical FF overlap.
+# Test if CTS is ok when location collision occurs b/w clk buffer and
+# the centroid of sinks in a cluster.
 source "helpers.tcl"
 source "cts-helpers.tcl"
 
