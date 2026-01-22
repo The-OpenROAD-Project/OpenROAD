@@ -9,6 +9,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/Transition.hh"
 
 namespace est {
 class EstimateParasitics;

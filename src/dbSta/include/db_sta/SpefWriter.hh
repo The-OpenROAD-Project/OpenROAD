@@ -9,6 +9,7 @@
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "utl/Logger.h"
 
 namespace sta {

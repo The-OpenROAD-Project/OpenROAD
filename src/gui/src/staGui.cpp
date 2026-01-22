@@ -36,6 +36,7 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -43,10 +44,12 @@
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 
 Q_DECLARE_METATYPE(sta::Corner*);
 
