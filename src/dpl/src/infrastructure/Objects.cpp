@@ -135,7 +135,7 @@ DbuY Node::getCenterY() const
 }
 odb::dbInst* Node::getDbInst() const
 {
-  if (type_ != CELL) {    
+  if (type_ != CELL) {
     return nullptr;
   }
   return static_cast<odb::dbInst*>(db_owner_);
@@ -197,9 +197,6 @@ int64_t Node::area() const
 }
 std::string Node::name() const
 {
-  if (db_owner_ == nullptr) {
-    return "nullptr";
-  }
   if (type_ == CELL) {
     return getDbInst()->getName();
   }
