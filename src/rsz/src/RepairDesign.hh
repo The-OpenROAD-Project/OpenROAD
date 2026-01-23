@@ -52,7 +52,7 @@ class LoadRegion
   std::vector<LoadRegion> regions_;
 };
 
-class RepairDesign : dbStaState
+class RepairDesign : sta::dbStaState
 {
  public:
   explicit RepairDesign(Resizer* resizer);

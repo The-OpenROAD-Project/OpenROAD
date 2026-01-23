@@ -66,7 +66,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::dbStaState;
 using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::GateTimingModel;
@@ -228,7 +227,7 @@ struct LibraryAnalysisData
 
 class OdbCallBack;
 
-class Resizer : public dbStaState, public sta::dbNetworkObserver
+class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 {
  public:
   Resizer(utl::Logger* logger,
