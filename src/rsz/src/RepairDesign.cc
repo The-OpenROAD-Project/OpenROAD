@@ -38,6 +38,7 @@
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/RiseFallValues.hh"
@@ -686,7 +687,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
   struct EnqueuedPin
   {
     Pin* pin;
-    Path* required_path;
+    sta::Path* required_path;
     sta::Delay required_delay;
     int level;
 
@@ -743,7 +744,8 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       sta::Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
         Vertex* vertex = graph_->pinLoadVertex(pin);
-        Path* req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+        sta::Path* req_path
+            = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
         sinks.push_back({const_cast<Pin*>(pin), req_path, 0.0, 0});
       } else {
         logger_->warn(RSZ,

@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "BaseMove.hh"
+#include "sta/Path.hh"
 
 namespace rsz {
 
@@ -12,7 +13,7 @@ class SizeUpMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
+  bool doMove(const sta::Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
               PathExpanded* expanded,
@@ -27,7 +28,7 @@ class SizeUpMatchMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
+  bool doMove(const sta::Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
               PathExpanded* expanded,

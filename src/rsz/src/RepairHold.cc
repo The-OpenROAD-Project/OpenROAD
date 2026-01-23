@@ -30,6 +30,7 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
@@ -533,7 +534,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                                const double hold_margin,
                                const bool allow_setup_violations)
 {
-  Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
   if (end_path) {
     debugPrint(logger_,
                RSZ,

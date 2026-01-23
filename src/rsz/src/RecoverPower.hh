@@ -33,7 +33,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
 using sta::Slack;
@@ -56,11 +55,11 @@ class RecoverPower : public sta::dbStaState
 
  private:
   void init();
-  Vertex* recoverPower(const Path* path, Slack path_slack);
+  Vertex* recoverPower(const sta::Path* path, Slack path_slack);
   bool meetsSizeCriteria(const sta::LibertyCell* cell,
                          const sta::LibertyCell* candidate,
                          bool match_size);
-  bool downsizeDrvr(const Path* drvr_path,
+  bool downsizeDrvr(const sta::Path* drvr_path,
                     int drvr_index,
                     PathExpanded* expanded,
                     bool only_same_size_swap,

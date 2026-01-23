@@ -34,8 +34,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Path;
-
 class SwapArithModules : public sta::dbStaState
 {
  public:
@@ -46,7 +44,7 @@ class SwapArithModules : public sta::dbStaState
                                    const std::string& target,
                                    float slack_threshold)
       = 0;
-  virtual void collectArithInstsOnPath(const Path* path,
+  virtual void collectArithInstsOnPath(const sta::Path* path,
                                        std::set<odb::dbModInst*>& arithInsts)
       = 0;
   virtual bool isArithInstance(const sta::Instance* inst,

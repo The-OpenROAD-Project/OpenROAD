@@ -39,6 +39,7 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/TimingArc.hh"
@@ -123,9 +124,9 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
           case BnetType::load: {
             const Pin* load_pin = node->loadPin();
             Vertex* vertex = graph_->pinLoadVertex(load_pin);
-            Path* req_path
+            sta::Path* req_path
                 = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
-            Path* arrival_path = req_path;
+            sta::Path* arrival_path = req_path;
 
             while (req_path && arrival_path->vertex(sta_) != root_vertex) {
               arrival_path = arrival_path->prevPath();
@@ -248,8 +249,8 @@ std::tuple<sta::Delay, sta::Delay, Slew> Rebuffer::drvrPinTiming(
   sta::Delay delay = 0, correction = INF;
   Slew slew = 0;
   for (auto rf : bnet->slackTransition()->range()) {
-    const Path* arrival_path = arrival_paths_[rf->index()];
-    const Path* driver_path = arrival_path->prevPath();
+    const sta::Path* arrival_path = arrival_paths_[rf->index()];
+    const sta::Path* driver_path = arrival_path->prevPath();
     const TimingArc* driver_arc = arrival_path->prevArc(resizer_);
     const Edge* driver_edge = arrival_path->prevEdge(resizer_);
 
@@ -2093,7 +2094,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
     annotateTiming(original_tree);
 
     Slack slack = slackAtDriverPin(original_tree).toSeconds();
-    Path* req_path = sta_->vertexWorstSlackPath(drvr, sta::MinMax::max());
+    sta::Path* req_path = sta_->vertexWorstSlackPath(drvr, sta::MinMax::max());
     Slack sta_slack
         = req_path ? (req_path->required() - req_path->arrival()) : INF;
 

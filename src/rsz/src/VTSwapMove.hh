@@ -7,6 +7,7 @@
 #include "BaseMove.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 
 namespace rsz {
 
@@ -15,7 +16,7 @@ class VTSwapSpeedMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
+  bool doMove(const sta::Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
               PathExpanded* expanded,
@@ -27,7 +28,7 @@ class VTSwapSpeedMove : public BaseMove
   const char* name() override { return "VTSwapSpeed"; }
 
  private:
-  bool isSwappable(const Path*& drvr_path,
+  bool isSwappable(const sta::Path*& drvr_path,
                    Pin*& drvr_pin,
                    sta::Instance*& drvr,
                    sta::LibertyCell*& drvr_cell,

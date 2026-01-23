@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
 using sta::Slack;
@@ -27,7 +26,7 @@ class CloneMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
+  bool doMove(const sta::Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
               PathExpanded* expanded,
@@ -40,7 +39,7 @@ class CloneMove : public BaseMove
       const Pin* drvr_pin,
       const std::vector<std::pair<Vertex*, Slack>>& fanout_slacks);
 
-  bool cloneDriver(const Path* drvr_path,
+  bool cloneDriver(const sta::Path* drvr_path,
                    int drvr_index,
                    Slack drvr_slack,
                    PathExpanded* expanded);

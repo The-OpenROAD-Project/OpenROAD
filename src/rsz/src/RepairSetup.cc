@@ -22,6 +22,7 @@
 #include "db_sta/dbSta.hh"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/SearchClass.hh"
 // This includes SizeUpMatchMove
 #include "SizeUpMove.hh"
@@ -357,7 +358,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         // clang-format on
         break;
       }
-      Path* end_path = sta_->vertexWorstSlackPath(end, max_);
+      sta::Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
       const bool changed = repairPath(end_path, end_slack, setup_slack_margin);
       if (!changed) {
@@ -579,7 +580,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
 
   Vertex* vertex = graph_->pinLoadVertex(end_pin);
   const Slack slack = sta_->vertexSlack(vertex, max_);
-  Path* path = sta_->vertexWorstSlackPath(vertex, max_);
+  sta::Path* path = sta_->vertexWorstSlackPath(vertex, max_);
 
   move_sequence_.clear();
   move_sequence_ = {resizer_->unbuffer_move_.get(),
@@ -654,7 +655,7 @@ int RepairSetup::fanout(Vertex* vertex)
    figure out how to deal with min implant rules to make it production
    ready)
  */
-bool RepairSetup::repairPath(Path* path,
+bool RepairSetup::repairPath(sta::Path* path,
                              const Slack path_slack,
                              const float setup_slack_margin)
 {
@@ -669,7 +670,7 @@ bool RepairSetup::repairPath(Path* path,
     const int lib_ap = dcalc_ap->libertyIndex();
     // Find load delay for each gate in the path.
     for (int i = start_index; i < path_length; i++) {
-      const Path* path = expanded.path(i);
+      const sta::Path* path = expanded.path(i);
       Vertex* path_vertex = path->vertex(sta_);
       const Pin* path_pin = path->pin(sta_);
       if (i > 0 && path_vertex->isDriver(network_)
@@ -722,7 +723,7 @@ bool RepairSetup::repairPath(Path* path,
       if (changed >= repairs_per_pass) {
         break;
       }
-      const Path* drvr_path = expanded.path(drvr_index);
+      const sta::Path* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
       const Pin* drvr_pin = drvr_vertex->pin();
       sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
@@ -986,7 +987,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
         resizer_->journalEnd();
         break;
       }
-      Path* end_path = sta_->vertexWorstSlackPath(end, max_);
+      sta::Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
       const bool changed
           = repairPath(end_path, end_slack, params.setup_slack_margin);

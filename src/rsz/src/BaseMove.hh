@@ -49,7 +49,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
 using sta::RiseFall;
@@ -73,8 +72,8 @@ struct SlackEstimatorParams
   Pin* prev_driver_pin{nullptr};
   Pin* driver_input_pin{nullptr};
   sta::Instance* driver{nullptr};
-  const Path* driver_path{nullptr};
-  const Path* prev_driver_path{nullptr};
+  const sta::Path* driver_path{nullptr};
+  const sta::Path* prev_driver_path{nullptr};
   sta::LibertyCell* driver_cell{nullptr};
   const float setup_slack_margin;
   const sta::Corner* corner;
@@ -86,7 +85,7 @@ class BaseMove : public sta::dbStaState
   BaseMove(Resizer* resizer);
   ~BaseMove() override = default;
 
-  virtual bool doMove(const Path* drvr_path,
+  virtual bool doMove(const sta::Path* drvr_path,
                       int drvr_index,
                       Slack drvr_slack,
                       PathExpanded* expanded,
