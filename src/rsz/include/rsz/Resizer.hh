@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::LibertyCellSet;
 using sta::LibertyLibrary;
 using sta::LibertyLibrarySeq;
 using sta::LibertyPort;
@@ -815,7 +814,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<Rebuffer> rebuffer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
-  LibertyCellSet dont_use_;
+  sta::LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 
   utl::Logger* logger_ = nullptr;
