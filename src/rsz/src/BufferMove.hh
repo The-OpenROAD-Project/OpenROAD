@@ -17,7 +17,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::RiseFallBoth;
 using sta::Slack;
 using sta::Slew;
 using sta::Vertex;

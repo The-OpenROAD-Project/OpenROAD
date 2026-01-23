@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::RiseFallBoth;
 using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
@@ -78,7 +77,7 @@ class Rebuffer : public sta::dbStaState
                             const BufferedNetPtr& bnet);
 
   FixedDelay bufferDelay(sta::LibertyCell* cell,
-                         const RiseFallBoth* rf,
+                         const sta::RiseFallBoth* rf,
                          float load_cap);
 
   BufferedNetPtr addWire(const BufferedNetPtr& p,
