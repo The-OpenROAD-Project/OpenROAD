@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Required;
 using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;

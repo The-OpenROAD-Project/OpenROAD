@@ -691,7 +691,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     sta::Delay required_delay;
     int level;
 
-    Required required(const StaState*) const
+    sta::Required required(const StaState*) const
     {
       if (required_path == nullptr) {
         return INF;
@@ -699,7 +699,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       return required_path->required() - required_delay;
     }
 
-    std::pair<Required, int> sort_label(const StaState* sta) const
+    std::pair<sta::Required, int> sort_label(const StaState* sta) const
     {
       return std::make_pair(required(sta), -level);
     }

@@ -27,7 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Required;
 using sta::RiseFall;
 using sta::StaState;
 using sta::Unit;
@@ -38,7 +37,7 @@ class RepairSetup;
 
 class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using Requireds = std::array<Required, RiseFall::index_count>;
+using Requireds = std::array<sta::Required, RiseFall::index_count>;
 
 class FixedDelay
 {
