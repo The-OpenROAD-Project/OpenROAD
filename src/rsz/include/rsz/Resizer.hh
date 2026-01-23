@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
@@ -57,17 +58,12 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
-namespace sta {
-class SpefWriter;
-}
-
 namespace rsz {
 
 using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::SpefWriter;
 using sta::TimingArc;
 using sta::UnorderedSet;
 using sta::Vector;
@@ -699,7 +695,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::InstanceSeq findClkInverters();
   void cloneClkInverter(sta::Instance* inv);
 
-  void makePadParasitic(const sta::Net* net, SpefWriter* spef_writer);
+  void makePadParasitic(const sta::Net* net, sta::SpefWriter* spef_writer);
   bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;
