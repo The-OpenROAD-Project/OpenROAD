@@ -49,7 +49,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
 
@@ -84,7 +83,7 @@ class BaseMove : public sta::dbStaState
 
   virtual bool doMove(const sta::Path* drvr_path,
                       int drvr_index,
-                      Slack drvr_slack,
+                      sta::Slack drvr_slack,
                       sta::PathExpanded* expanded,
                       float setup_slack_margin)
   {
@@ -219,8 +218,8 @@ class BaseMove : public sta::dbStaState
                                 sta::LibertyPort* output_port,
                                 float output_load_cap);
   sta::ArcDelay getWorstIntrinsicDelay(const sta::LibertyPort* input_port);
-  Slack getWorstInputSlack(sta::Instance* inst);
-  Slack getWorstOutputSlack(sta::Instance* inst);
+  sta::Slack getWorstInputSlack(sta::Instance* inst);
+  sta::Slack getWorstOutputSlack(sta::Instance* inst);
   std::vector<const sta::LibertyPort*> getOutputPorts(
       const sta::LibertyCell* cell);
   std::vector<const sta::Pin*> getOutputPins(const sta::Instance* inst);

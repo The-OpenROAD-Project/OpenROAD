@@ -400,7 +400,7 @@ bool RepairHold::repairHold(VertexSeq& ends,
   bool repaired = false;
   // Find endpoints with hold violations.
   VertexSeq hold_failures;
-  Slack worst_slack;
+  sta::Slack worst_slack;
   findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
   inserted_buffer_count_ = 0;
   if (!hold_failures.empty()) {
@@ -476,14 +476,14 @@ bool RepairHold::repairHold(VertexSeq& ends,
 void RepairHold::findHoldViolations(VertexSeq& ends,
                                     const double hold_margin,
                                     // Return values.
-                                    Slack& worst_slack,
+                                    sta::Slack& worst_slack,
                                     VertexSeq& hold_violations)
 {
   worst_slack = INF;
   hold_violations.clear();
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
   for (Vertex* end : ends) {
-    const Slack slack = sta_->vertexSlack(end, min_);
+    const sta::Slack slack = sta_->vertexSlack(end, min_);
     if (!sta_->isClock(end->pin()) && slack < hold_margin) {
       debugPrint(logger_,
                  RSZ,
@@ -573,7 +573,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
             Edge* edge = edge_iter.next();
             Vertex* fanout = edge->to(graph_);
             if (pred.searchTo(fanout) && pred.searchThru(edge)) {
-              Slack fanout_hold_slack = sta_->vertexSlack(fanout, min_);
+              sta::Slack fanout_hold_slack = sta_->vertexSlack(fanout, min_);
               sta::Pin* load_pin = fanout->pin();
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
@@ -637,7 +637,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
               // predict. Use the journal to back out the change if
               // the hold buffer blows through the setup margin.
               resizer_->journalBegin();
-              Slack setup_slack_before = sta_->worstSlack(max_);
+              sta::Slack setup_slack_before = sta_->worstSlack(max_);
               Slew slew_before = sta_->vertexSlew(path_vertex, max_);
               makeHoldDelay(path_vertex,
                             load_pins,
@@ -645,7 +645,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                             buffer_cell,
                             buffer_loc);
               Slew slew_after = sta_->vertexSlew(path_vertex, max_);
-              Slack setup_slack_after = sta_->worstSlack(max_);
+              sta::Slack setup_slack_after = sta_->worstSlack(max_);
               float slew_factor
                   = (slew_before > 0) ? slew_after / slew_before : 1.0;
 
@@ -790,10 +790,10 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
-    Slack wns;
+    sta::Slack wns;
     Vertex* worst_vertex;
     sta_->worstSlack(min_, wns, worst_vertex);
-    const Slack tns = sta_->totalNegativeSlack(min_);
+    const sta::Slack tns = sta_->totalNegativeSlack(min_);
 
     std::string itr_field = fmt::format("{}", iteration);
     if (end) {

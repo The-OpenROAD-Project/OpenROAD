@@ -5,6 +5,7 @@
 #include <unordered_set>
 
 #include "BaseMove.hh"
+#include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -19,7 +20,7 @@ class VTSwapSpeedMove : public BaseMove
 
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
-              Slack drvr_slack,
+              sta::Slack drvr_slack,
               sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 

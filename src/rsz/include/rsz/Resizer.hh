@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Slack;
 using sta::Slew;
 using sta::SpefWriter;
 using sta::TimingArc;
@@ -474,8 +473,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
-  std::optional<Slack> resizeNetSlack(const sta::Net* net);
-  std::optional<Slack> resizeNetSlack(const odb::dbNet* db_net);
+  std::optional<sta::Slack> resizeNetSlack(const sta::Net* net);
+  std::optional<sta::Slack> resizeNetSlack(const odb::dbNet* db_net);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
@@ -862,7 +861,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // drive cell (because larger ones would give us a longer length).
   float max_wire_length_ = 0;
   float worst_slack_nets_percent_ = 10;
-  sta::Map<const sta::Net*, Slack> net_slack_map_;
+  sta::Map<const sta::Net*, sta::Slack> net_slack_map_;
 
   std::unordered_map<sta::LibertyCell*, std::optional<float>>
       cell_leakage_cache_;

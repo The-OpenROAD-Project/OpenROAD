@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
 

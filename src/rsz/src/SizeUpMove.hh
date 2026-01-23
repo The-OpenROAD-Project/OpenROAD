@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "BaseMove.hh"
+#include "sta/Delay.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 
@@ -16,7 +17,7 @@ class SizeUpMove : public BaseMove
 
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
-              Slack drvr_slack,
+              sta::Slack drvr_slack,
               sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 
@@ -31,7 +32,7 @@ class SizeUpMatchMove : public BaseMove
 
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
-              Slack drvr_slack,
+              sta::Slack drvr_slack,
               sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 

@@ -73,7 +73,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   VertexSet* endpoints = sta_->endpoints();
   VertexSeq ends_with_slack;
   for (Vertex* end : *endpoints) {
-    const Slack end_slack = sta_->vertexSlack(end, max_);
+    const sta::Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack > setup_slack_margin_
         && end_slack < setup_slack_max_margin_) {
       ends_with_slack.push_back(end);
@@ -97,7 +97,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   // As long as we are here fix at least one path
   max_end_count = std::max(max_end_count, 1);
 
-  Slack worst_slack_before;
+  sta::Slack worst_slack_before;
   Vertex* worst_vertex;
   sta_->worstSlack(max_, worst_slack_before, worst_vertex);
 
@@ -114,8 +114,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   for (Vertex* end : ends_with_slack) {
     resizer_->journalBegin();
-    const Slack end_slack_before = sta_->vertexSlack(end, max_);
-    Slack worst_slack_after;
+    const sta::Slack end_slack_before = sta_->vertexSlack(end, max_);
+    sta::Slack worst_slack_after;
     //=====================================================================
     // Just a counter to know when to break out
     end_index++;
@@ -140,7 +140,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     if (changed) {
       estimate_parasitics_->updateParasitics(true);
       sta_->findRequireds();
-      const Slack end_slack_after = sta_->vertexSlack(end, max_);
+      const sta::Slack end_slack_after = sta_->vertexSlack(end, max_);
 
       sta_->worstSlack(max_, worst_slack_after, worst_vertex);
 
@@ -230,7 +230,7 @@ Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
   resize_count_ = 0;
 
   Vertex* vertex = graph_->pinLoadVertex(end_pin);
-  const Slack slack = sta_->vertexSlack(vertex, max_);
+  const sta::Slack slack = sta_->vertexSlack(vertex, max_);
   const sta::Path* path = sta_->vertexWorstSlackPath(vertex, max_);
   Vertex* drvr_vertex;
 
@@ -247,7 +247,7 @@ Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
 
 // This is the main routine for recovering power.
 Vertex* RecoverPower::recoverPower(const sta::Path* path,
-                                   const Slack path_slack)
+                                   const sta::Slack path_slack)
 {
   PathExpanded expanded(path, sta_);
   Vertex* changed = nullptr;
@@ -327,7 +327,7 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
                                 const int drvr_index,
                                 PathExpanded* expanded,
                                 const bool only_same_size_swap,
-                                const Slack path_slack)
+                                const sta::Slack path_slack)
 {
   const sta::Pin* drvr_pin = drvr_path->pin(this);
   sta::Instance* drvr = network_->instance(drvr_pin);
@@ -398,7 +398,7 @@ sta::LibertyCell* RecoverPower::downsizeCell(
     const float prev_drive,
     const sta::DcalcAnalysisPt* dcalc_ap,
     const bool match_size,
-    const Slack path_slack)
+    const sta::Slack path_slack)
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   sta::LibertyCell* cell = drvr_port->libertyCell();
@@ -474,7 +474,7 @@ void RecoverPower::printProgress(int iteration, bool force, bool end) const
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
-    Slack wns;
+    sta::Slack wns;
     Vertex* worst_vertex;
     sta_->worstSlack(max_, wns, worst_vertex);
 

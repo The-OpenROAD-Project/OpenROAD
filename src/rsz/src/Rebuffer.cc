@@ -2093,9 +2093,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     annotateLoadSlacks(original_tree, drvr);
     annotateTiming(original_tree);
 
-    Slack slack = slackAtDriverPin(original_tree).toSeconds();
+    sta::Slack slack = slackAtDriverPin(original_tree).toSeconds();
     sta::Path* req_path = sta_->vertexWorstSlackPath(drvr, sta::MinMax::max());
-    Slack sta_slack
+    sta::Slack sta_slack
         = req_path ? (req_path->required() - req_path->arrival()) : INF;
 
     // The slack estimation error as observed on the original tree: we have both

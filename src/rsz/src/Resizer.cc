@@ -2637,7 +2637,7 @@ sta::NetSeq Resizer::resizeWorstSlackNets()
   return nets;
 }
 
-std::optional<Slack> Resizer::resizeNetSlack(const sta::Net* net)
+std::optional<sta::Slack> Resizer::resizeNetSlack(const sta::Net* net)
 {
   auto it = net_slack_map_.find(net);
   if (it == net_slack_map_.end()) {
@@ -2646,7 +2646,7 @@ std::optional<Slack> Resizer::resizeNetSlack(const sta::Net* net)
   return it->second;
 }
 
-std::optional<Slack> Resizer::resizeNetSlack(const odb::dbNet* db_net)
+std::optional<sta::Slack> Resizer::resizeNetSlack(const odb::dbNet* db_net)
 {
   const sta::Net* net = db_network_->dbToSta(db_net);
   return resizeNetSlack(net);

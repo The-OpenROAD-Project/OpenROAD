@@ -12,7 +12,6 @@
 
 namespace rsz {
 
-using sta::Slack;
 using sta::Slew;
 
 class SizeDownMove : public BaseMove
@@ -22,7 +21,7 @@ class SizeDownMove : public BaseMove
 
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
-              Slack drvr_slack,
+              sta::Slack drvr_slack,
               sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 

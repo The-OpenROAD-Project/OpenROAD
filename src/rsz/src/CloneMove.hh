@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
 
@@ -26,7 +25,7 @@ class CloneMove : public BaseMove
 
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
-              Slack drvr_slack,
+              sta::Slack drvr_slack,
               sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 
@@ -35,11 +34,11 @@ class CloneMove : public BaseMove
  private:
   odb::Point computeCloneGateLocation(
       const sta::Pin* drvr_pin,
-      const std::vector<std::pair<Vertex*, Slack>>& fanout_slacks);
+      const std::vector<std::pair<Vertex*, sta::Slack>>& fanout_slacks);
 
   bool cloneDriver(const sta::Path* drvr_path,
                    int drvr_index,
-                   Slack drvr_slack,
+                   sta::Slack drvr_slack,
                    sta::PathExpanded* expanded);
 };
 

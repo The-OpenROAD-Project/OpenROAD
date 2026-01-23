@@ -26,12 +26,11 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Slack;
 using sta::StaState;
 using sta::Vertex;
 using sta::VertexSeq;
 
-using Slacks = Slack[sta::RiseFall::index_count][sta::MinMax::index_count];
+using Slacks = sta::Slack[sta::RiseFall::index_count][sta::MinMax::index_count];
 
 class RepairHold : public sta::dbStaState
 {
@@ -73,7 +72,7 @@ class RepairHold : public sta::dbStaState
   void findHoldViolations(VertexSeq& ends,
                           double hold_margin,
                           // Return values.
-                          Slack& worst_slack,
+                          sta::Slack& worst_slack,
                           VertexSeq& hold_violations);
   bool repairHold(VertexSeq& ends,
                   sta::LibertyCell* buffer_cell,

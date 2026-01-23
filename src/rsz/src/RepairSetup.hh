@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Slack;
 using sta::Slew;
 using sta::StaState;
 using sta::TimingArc;
@@ -109,7 +108,9 @@ class RepairSetup : public sta::dbStaState
 
  private:
   void init();
-  bool repairPath(sta::Path* path, Slack path_slack, float setup_slack_margin);
+  bool repairPath(sta::Path* path,
+                  sta::Slack path_slack,
+                  float setup_slack_margin);
   int fanout(Vertex* vertex);
   bool hasTopLevelOutputPort(sta::Net* net);
 
@@ -133,7 +134,7 @@ class RepairSetup : public sta::dbStaState
                          std::unordered_set<Vertex*>& visited,
                          std::unordered_set<sta::Instance*>& notSwappable,
                          const OptoParams& params);
-  Slack getInstanceSlack(sta::Instance* inst);
+  sta::Slack getInstanceSlack(sta::Instance* inst);
 
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;

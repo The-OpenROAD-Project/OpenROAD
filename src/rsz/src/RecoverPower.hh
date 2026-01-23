@@ -30,7 +30,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Slack;
 using sta::StaState;
 using sta::TimingArc;
 using sta::Vertex;
@@ -50,7 +49,7 @@ class RecoverPower : public sta::dbStaState
 
  private:
   void init();
-  Vertex* recoverPower(const sta::Path* path, Slack path_slack);
+  Vertex* recoverPower(const sta::Path* path, sta::Slack path_slack);
   bool meetsSizeCriteria(const sta::LibertyCell* cell,
                          const sta::LibertyCell* candidate,
                          bool match_size);
@@ -58,7 +57,7 @@ class RecoverPower : public sta::dbStaState
                     int drvr_index,
                     sta::PathExpanded* expanded,
                     bool only_same_size_swap,
-                    Slack path_slack);
+                    sta::Slack path_slack);
 
   sta::LibertyCell* downsizeCell(const sta::LibertyPort* in_port,
                                  const sta::LibertyPort* drvr_port,
@@ -66,7 +65,7 @@ class RecoverPower : public sta::dbStaState
                                  float prev_drive,
                                  const sta::DcalcAnalysisPt* dcalc_ap,
                                  bool match_size,
-                                 Slack path_slack);
+                                 sta::Slack path_slack);
   int fanout(Vertex* vertex);
   bool hasTopLevelOutputPort(sta::Net* net);
 
@@ -77,8 +76,8 @@ class RecoverPower : public sta::dbStaState
                        const sta::DcalcAnalysisPt* dcalc_ap);
   float bufferInputCapacitance(sta::LibertyCell* buffer_cell,
                                const sta::DcalcAnalysisPt* dcalc_ap);
-  Slack slackPenalized(BufferedNetPtr bnet);
-  Slack slackPenalized(BufferedNetPtr bnet, int index);
+  sta::Slack slackPenalized(BufferedNetPtr bnet);
+  sta::Slack slackPenalized(BufferedNetPtr bnet, int index);
 
   void printProgress(int iteration, bool force, bool end) const;
 
