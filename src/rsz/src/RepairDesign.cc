@@ -103,7 +103,7 @@ void RepairDesign::init()
 void RepairDesign::computeSlewRCFactor()
 {
   using sta::RiseFall;
-  const LibertyLibrary* library = network_->defaultLibertyLibrary();
+  const sta::LibertyLibrary* library = network_->defaultLibertyLibrary();
   float factor = 0.0;
   for (auto rf : RiseFall::range()) {
     // cast both rise and fall into 1->0 transition

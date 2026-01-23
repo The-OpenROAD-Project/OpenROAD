@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::LibertyLibrary;
 using sta::LibertyLibrarySeq;
 using sta::LibertyPort;
 using sta::Map;

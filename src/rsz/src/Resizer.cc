@@ -973,7 +973,7 @@ void Resizer::findBuffersNoPruning()
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
 
     while (lib_iter->hasNext()) {
-      LibertyLibrary* lib = lib_iter->next();
+      sta::LibertyLibrary* lib = lib_iter->next();
 
       for (sta::LibertyCell* buffer : *lib->buffers()) {
         if (exclude_clock_buffers_) {
@@ -1854,7 +1854,7 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
 
   LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
-    LibertyLibrary* lib = lib_iter->next();
+    sta::LibertyLibrary* lib = lib_iter->next();
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (exclude_clock_buffers_) {
         BufferUse buffer_use = sta_->getBufferUse(buffer);
@@ -2148,7 +2148,7 @@ void Resizer::checkLibertyForAllCorners()
     int lib_ap_index = corner->libertyIndex(max_);
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
-      LibertyLibrary* lib = lib_iter->next();
+      sta::LibertyLibrary* lib = lib_iter->next();
       LibertyCellIterator cell_iter(lib);
       while (cell_iter.hasNext()) {
         sta::LibertyCell* cell = cell_iter.next();
@@ -2175,7 +2175,7 @@ void Resizer::makeEquivCells()
   LibertyLibrarySeq libs;
   LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
-    LibertyLibrary* lib = lib_iter->next();
+    sta::LibertyLibrary* lib = lib_iter->next();
     // massive kludge until makeEquivCells is fixed to only incldue link cells
     LibertyCellIterator cell_iter(lib);
     if (cell_iter.hasNext()) {
@@ -2964,7 +2964,7 @@ void Resizer::findTargetLoads()
     int lib_ap_index = tgt_slew_corner_->libertyIndex(max_);
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
-      LibertyLibrary* lib = lib_iter->next();
+      sta::LibertyLibrary* lib = lib_iter->next();
       LibertyCellIterator cell_iter(lib);
       while (cell_iter.hasNext()) {
         sta::LibertyCell* cell = cell_iter.next();
@@ -3729,7 +3729,7 @@ float Resizer::portFanoutLoad(LibertyPort* port) const
   bool exists;
   port->fanoutLoad(fanout_load, exists);
   if (!exists) {
-    LibertyLibrary* lib = port->libertyLibrary();
+    sta::LibertyLibrary* lib = port->libertyLibrary();
     lib->defaultFanoutLoad(fanout_load, exists);
   }
   if (exists) {
