@@ -22,14 +22,13 @@ namespace ord {
 
 class dbVerilogNetwork;
 
-using sta::ConcreteNetwork;
 using sta::dbNetwork;
 using sta::VerilogReader;
 
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
 // It is NOT part of an Sta.
-class dbVerilogNetwork : public ConcreteNetwork
+class dbVerilogNetwork : public sta::ConcreteNetwork
 {
  public:
   dbVerilogNetwork(sta::dbSta* sta);
