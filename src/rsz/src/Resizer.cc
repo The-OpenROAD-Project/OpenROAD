@@ -55,6 +55,7 @@
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
@@ -3104,7 +3105,7 @@ void Resizer::findBufferTargetSlews()
 
   for (sta::Corner* corner : *sta_->corners()) {
     int lib_ap_index = corner->libertyIndex(max_);
-    const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+    const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const Pvt* pvt = dcalc_ap->operatingConditions();
     // Average slews across buffers at corner.
     Slew slews[RiseFall::index_count]{0.0};
@@ -3728,7 +3729,7 @@ float Resizer::portFanoutLoad(LibertyPort* port) const
 float Resizer::bufferDelay(LibertyCell* buffer_cell,
                            const RiseFall* rf,
                            float load_cap,
-                           const DcalcAnalysisPt* dcalc_ap)
+                           const sta::DcalcAnalysisPt* dcalc_ap)
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -3740,7 +3741,7 @@ float Resizer::bufferDelay(LibertyCell* buffer_cell,
 
 float Resizer::bufferDelay(LibertyCell* buffer_cell,
                            float load_cap,
-                           const DcalcAnalysisPt* dcalc_ap)
+                           const sta::DcalcAnalysisPt* dcalc_ap)
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -3753,7 +3754,7 @@ float Resizer::bufferDelay(LibertyCell* buffer_cell,
 
 void Resizer::bufferDelays(LibertyCell* buffer_cell,
                            float load_cap,
-                           const DcalcAnalysisPt* dcalc_ap,
+                           const sta::DcalcAnalysisPt* dcalc_ap,
                            // Return values.
                            sta::ArcDelay delays[RiseFall::index_count],
                            Slew slews[RiseFall::index_count])
@@ -3767,7 +3768,7 @@ void Resizer::bufferDelays(LibertyCell* buffer_cell,
 // Uses target slew for input slew.
 void Resizer::gateDelays(const LibertyPort* drvr_port,
                          const float load_cap,
-                         const DcalcAnalysisPt* dcalc_ap,
+                         const sta::DcalcAnalysisPt* dcalc_ap,
                          // Return values.
                          sta::ArcDelay delays[RiseFall::index_count],
                          Slew slews[RiseFall::index_count])
@@ -3816,7 +3817,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
 void Resizer::gateDelays(const LibertyPort* drvr_port,
                          const float load_cap,
                          const Slew in_slews[RiseFall::index_count],
-                         const DcalcAnalysisPt* dcalc_ap,
+                         const sta::DcalcAnalysisPt* dcalc_ap,
                          // Return values.
                          sta::ArcDelay delays[RiseFall::index_count],
                          Slew out_slews[RiseFall::index_count])
@@ -3853,7 +3854,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
 sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
                                  const RiseFall* rf,
                                  const float load_cap,
-                                 const DcalcAnalysisPt* dcalc_ap)
+                                 const sta::DcalcAnalysisPt* dcalc_ap)
 {
   sta::ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
@@ -3863,7 +3864,7 @@ sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
 
 sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
                                  const float load_cap,
-                                 const DcalcAnalysisPt* dcalc_ap)
+                                 const sta::DcalcAnalysisPt* dcalc_ap)
 {
   sta::ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
@@ -4053,7 +4054,7 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
   LoadPinIndexMap load_pin_index_map(network_);
   load_pin_index_map[load_pin] = 0;
   for (sta::Corner* corner : *corners) {
-    const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+    const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     estimate_parasitics_->makeWireParasitic(
         net, drvr_pin, load_pin, wire_length, corner, parasitics);
 
@@ -5110,7 +5111,7 @@ void Resizer::setLocation(dbInst* db_inst, const odb::Point& pt)
 float Resizer::portCapacitance(LibertyPort* input,
                                const sta::Corner* corner) const
 {
-  const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyPort* corner_input = input->cornerPort(lib_ap);
   return corner_input->capacitance();
@@ -5118,7 +5119,7 @@ float Resizer::portCapacitance(LibertyPort* input,
 
 float Resizer::bufferSlew(LibertyCell* buffer_cell,
                           float load_cap,
-                          const DcalcAnalysisPt* dcalc_ap)
+                          const sta::DcalcAnalysisPt* dcalc_ap)
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -5181,7 +5182,7 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
             corner1 = tgt_slew_corner_;
             limit = limit1;
             for (const RiseFall* rf : RiseFall::range()) {
-              const DcalcAnalysisPt* dcalc_ap
+              const sta::DcalcAnalysisPt* dcalc_ap
                   = corner1->findDcalcAnalysisPt(max_);
               const Vertex* vertex = graph_->pinLoadVertex(pin);
               Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
@@ -5223,7 +5224,7 @@ void Resizer::setWorstSlackNetsPercent(float percent)
 }
 
 void Resizer::annotateInputSlews(Instance* inst,
-                                 const DcalcAnalysisPt* dcalc_ap)
+                                 const sta::DcalcAnalysisPt* dcalc_ap)
 {
   input_slew_map_.clear();
   std::unique_ptr<InstancePinIterator> inst_pin_iter{

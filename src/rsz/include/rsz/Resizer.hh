@@ -28,6 +28,7 @@
 #include "odb/geom.h"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
@@ -66,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::GateTimingModel;
 using sta::Instance;
@@ -432,7 +432,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                        Slew& slew);
   void setDebugPin(const Pin* pin);
   void setWorstSlackNetsPercent(float);
-  void annotateInputSlews(Instance* inst, const DcalcAnalysisPt* dcalc_ap);
+  void annotateInputSlews(Instance* inst, const sta::DcalcAnalysisPt* dcalc_ap);
   void resetInputSlews();
 
   ////////////////////////////////////////////////////////////////
@@ -627,7 +627,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(LibertyPort* port) const;
   float portCapacitance(LibertyPort* input, const sta::Corner* corner) const;
-  float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap) const;
+  float pinCapacitance(const Pin* pin,
+                       const sta::DcalcAnalysisPt* dcalc_ap) const;
   void swapPins(Instance* inst,
                 LibertyPort* port1,
                 LibertyPort* port2,
@@ -636,39 +637,39 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                             LibertyPort* drvr_port,
                             const sta::LibertyPortSet& equiv_ports,
                             float load_cap,
-                            const DcalcAnalysisPt* dcalc_ap,
+                            const sta::DcalcAnalysisPt* dcalc_ap,
                             // Return value
                             LibertyPort** swap_port);
   void gateDelays(const LibertyPort* drvr_port,
                   float load_cap,
-                  const DcalcAnalysisPt* dcalc_ap,
+                  const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
   void gateDelays(const LibertyPort* drvr_port,
                   float load_cap,
                   const Slew in_slews[RiseFall::index_count],
-                  const DcalcAnalysisPt* dcalc_ap,
+                  const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew out_slews[RiseFall::index_count]);
   sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
                           float load_cap,
-                          const DcalcAnalysisPt* dcalc_ap);
+                          const sta::DcalcAnalysisPt* dcalc_ap);
   sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
                           const RiseFall* rf,
                           float load_cap,
-                          const DcalcAnalysisPt* dcalc_ap);
+                          const sta::DcalcAnalysisPt* dcalc_ap);
   float bufferDelay(LibertyCell* buffer_cell,
                     float load_cap,
-                    const DcalcAnalysisPt* dcalc_ap);
+                    const sta::DcalcAnalysisPt* dcalc_ap);
   float bufferDelay(LibertyCell* buffer_cell,
                     const RiseFall* rf,
                     float load_cap,
-                    const DcalcAnalysisPt* dcalc_ap);
+                    const sta::DcalcAnalysisPt* dcalc_ap);
   void bufferDelays(LibertyCell* buffer_cell,
                     float load_cap,
-                    const DcalcAnalysisPt* dcalc_ap,
+                    const sta::DcalcAnalysisPt* dcalc_ap,
                     // Return values.
                     sta::ArcDelay delays[RiseFall::index_count],
                     Slew slews[RiseFall::index_count]);
@@ -770,7 +771,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                        const sta::Corner* corner);
   float bufferSlew(LibertyCell* buffer_cell,
                    float load_cap,
-                   const DcalcAnalysisPt* dcalc_ap);
+                   const sta::DcalcAnalysisPt* dcalc_ap);
   float maxInputSlew(const LibertyPort* input, const sta::Corner* corner) const;
   void checkLoadSlews(const Pin* drvr_pin,
                       double slew_margin,
@@ -853,7 +854,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool level_drvr_vertices_valid_ = false;
   TgtSlews tgt_slews_;
   sta::Corner* tgt_slew_corner_ = nullptr;
-  const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
+  const sta::DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;
   int inserted_buffer_count_ = 0;

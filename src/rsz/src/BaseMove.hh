@@ -20,6 +20,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/FuncExpr.hh"
@@ -47,7 +48,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::DcalcAnalysisPt;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::InstanceSet;
@@ -160,24 +160,24 @@ class BaseMove : public sta::dbStaState
 
   void gateDelays(const LibertyPort* drvr_port,
                   float load_cap,
-                  const DcalcAnalysisPt* dcalc_ap,
+                  const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
   void gateDelays(const LibertyPort* drvr_port,
                   float load_cap,
                   const Slew in_slews[RiseFall::index_count],
-                  const DcalcAnalysisPt* dcalc_ap,
+                  const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew out_slews[RiseFall::index_count]);
   sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
                           float load_cap,
-                          const DcalcAnalysisPt* dcalc_ap);
+                          const sta::DcalcAnalysisPt* dcalc_ap);
   sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
                           const RiseFall* rf,
                           float load_cap,
-                          const DcalcAnalysisPt* dcalc_ap);
+                          const sta::DcalcAnalysisPt* dcalc_ap);
 
   bool isPortEqiv(sta::FuncExpr* expr,
                   const LibertyCell* cell,
@@ -197,7 +197,7 @@ class BaseMove : public sta::dbStaState
                        const odb::Point& loc);
   bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool estimateInputSlewImpact(Instance* instance,
-                               const DcalcAnalysisPt* dcalc_ap,
+                               const sta::DcalcAnalysisPt* dcalc_ap,
                                Slew old_in_slew[RiseFall::index_count],
                                Slew new_in_slew[RiseFall::index_count],
                                // delay adjustment from prev stage
@@ -211,7 +211,7 @@ class BaseMove : public sta::dbStaState
                           LibertyPort* drvr_port,
                           float load_cap,
                           float prev_drive,
-                          const DcalcAnalysisPt* dcalc_ap);
+                          const sta::DcalcAnalysisPt* dcalc_ap);
   bool replaceCell(Instance* inst, const LibertyCell* replacement);
   bool checkMaxCapViolation(Instance* inst, const LibertyCell* replacement);
   float getInputPinCapacitance(Pin* pin, const LibertyCell* cell);
@@ -224,7 +224,7 @@ class BaseMove : public sta::dbStaState
                              LibertyPort* output_port,
                              float output_slew_factor,
                              float output_cap,
-                             const DcalcAnalysisPt* dcalc_ap);
+                             const sta::DcalcAnalysisPt* dcalc_ap);
   float computeElmoreSlewFactor(const Pin* output_pin,
                                 LibertyPort* output_port,
                                 float output_load_cap);

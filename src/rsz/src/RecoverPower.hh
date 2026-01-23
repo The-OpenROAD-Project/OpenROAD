@@ -9,6 +9,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
@@ -31,7 +32,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::DcalcAnalysisPt;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -73,7 +73,7 @@ class RecoverPower : public sta::dbStaState
                             const LibertyPort* drvr_port,
                             float load_cap,
                             float prev_drive,
-                            const DcalcAnalysisPt* dcalc_ap,
+                            const sta::DcalcAnalysisPt* dcalc_ap,
                             bool match_size,
                             Slack path_slack);
   int fanout(Vertex* vertex);
@@ -82,9 +82,9 @@ class RecoverPower : public sta::dbStaState
   BufferedNetSeq addWireAndBuffer(BufferedNetSeq Z,
                                   BufferedNetPtr bnet_wire,
                                   int level);
-  float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap);
+  float pinCapacitance(const Pin* pin, const sta::DcalcAnalysisPt* dcalc_ap);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
-                               const DcalcAnalysisPt* dcalc_ap);
+                               const sta::DcalcAnalysisPt* dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);
   Slack slackPenalized(BufferedNetPtr bnet, int index);
 

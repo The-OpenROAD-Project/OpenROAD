@@ -665,7 +665,7 @@ bool RepairSetup::repairPath(Path* path,
     const int path_length = expanded.size();
     vector<pair<int, Delay>> load_delays;
     const int start_index = expanded.startIndex();
-    const DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
+    const sta::DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
     const int lib_ap = dcalc_ap->libertyIndex();
     // Find load delay for each gate in the path.
     for (int i = start_index; i < path_length; i++) {

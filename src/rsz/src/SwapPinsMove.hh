@@ -5,6 +5,7 @@
 
 #include "BaseMove.hh"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
@@ -14,7 +15,6 @@
 
 namespace rsz {
 
-using sta::DcalcAnalysisPt;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
@@ -47,12 +47,12 @@ class SwapPinsMove : public BaseMove
   void equivCellPins(const LibertyCell* cell,
                      LibertyPort* input_port,
                      LibertyPortVec& ports);
-  void annotateInputSlews(Instance* inst, const DcalcAnalysisPt* dcalc_ap);
+  void annotateInputSlews(Instance* inst, const sta::DcalcAnalysisPt* dcalc_ap);
   void findSwapPinCandidate(LibertyPort* input_port,
                             LibertyPort* drvr_port,
                             const LibertyPortVec& equiv_ports,
                             float load_cap,
-                            const DcalcAnalysisPt* dcalc_ap,
+                            const sta::DcalcAnalysisPt* dcalc_ap,
                             LibertyPort** swap_port);
   void resetInputSlews();
 

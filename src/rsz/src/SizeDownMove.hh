@@ -3,6 +3,7 @@
 
 #include "BaseMove.hh"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -35,7 +36,7 @@ class SizeDownMove : public BaseMove
   LibertyCell* downSizeGate(const LibertyPort* drvr_port,
                             const LibertyPort* load_port,
                             const Pin* load_pin,
-                            const DcalcAnalysisPt* dcalc_ap,
+                            const sta::DcalcAnalysisPt* dcalc_ap,
                             float slack_margin);
 };
 

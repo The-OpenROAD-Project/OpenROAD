@@ -256,7 +256,8 @@ std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
     Slew rf_slew = 0;
 
     if (driver_path) {
-      const DcalcAnalysisPt* dcalc_ap = arrival_path->dcalcAnalysisPt(sta_);
+      const sta::DcalcAnalysisPt* dcalc_ap
+          = arrival_path->dcalcAnalysisPt(sta_);
       sta::LoadPinIndexMap load_pin_index_map(network_);
       Slew slew = graph_delay_calc_->edgeFromSlew(
           driver_path->vertex(sta_),
@@ -1166,7 +1167,7 @@ FixedDelay Rebuffer::bufferDelay(LibertyCell* cell,
 
   if (rf) {
     for (auto rf1 : rf->range()) {
-      const DcalcAnalysisPt* dcalc_ap
+      const sta::DcalcAnalysisPt* dcalc_ap
           = arrival_paths_[rf1->index()]->dcalcAnalysisPt(sta_);
       LibertyPort *input, *output;
       cell->bufferPorts(input, output);
@@ -1483,7 +1484,7 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(LibertyCell* cell)
   max_slew = maxSlewMargined(max_slew);
   float in_slew = maxSlewMargined(resizer_->maxInputSlew(inp, corner_));
 
-  const DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(max_);
+  const sta::DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(max_);
   auto objective = [&](float load_cap) {
     Slew slew = -INF;
     for (TimingArcSet* arc_set : cell->timingArcSets()) {

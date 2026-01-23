@@ -252,7 +252,7 @@ Vertex* RecoverPower::recoverPower(const Path* path, const Slack path_slack)
     const int path_length = expanded.size();
     vector<pair<int, Delay>> load_delays;
     const int start_index = expanded.startIndex();
-    const DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
+    const sta::DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
     const int lib_ap = dcalc_ap->libertyIndex();
     // Find load delay for each gate in the path.
     for (int i = start_index; i < path_length; i++) {
@@ -326,7 +326,7 @@ bool RecoverPower::downsizeDrvr(const Path* drvr_path,
 {
   const Pin* drvr_pin = drvr_path->pin(this);
   Instance* drvr = network_->instance(drvr_pin);
-  const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+  const sta::DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
   const int in_index = drvr_index - 1;
   const Path* in_path = expanded->path(in_index);
@@ -389,7 +389,7 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
                                         const LibertyPort* drvr_port,
                                         const float load_cap,
                                         const float prev_drive,
-                                        const DcalcAnalysisPt* dcalc_ap,
+                                        const sta::DcalcAnalysisPt* dcalc_ap,
                                         const bool match_size,
                                         const Slack path_slack)
 {

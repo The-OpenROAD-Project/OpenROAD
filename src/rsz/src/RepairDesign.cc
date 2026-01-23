@@ -27,6 +27,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -274,7 +275,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
     for (auto mm : sta::MinMaxAll::all()->range()) {
       for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
         if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
-          const DcalcAnalysisPt* dcalc_ap
+          const sta::DcalcAnalysisPt* dcalc_ap
               = resizer_->tgt_slew_corner_->findDcalcAnalysisPt(mm);
           drvr->setSlewAnnotated(false, rf, dcalc_ap->index());
         }
@@ -337,7 +338,8 @@ void RepairDesign::repairDesign(
       LibertyPort* port = network_->libertyPort(vertex->pin());
       if (port) {
         for (auto corner : *sta_->corners()) {
-          const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+          const sta::DcalcAnalysisPt* dcalc_ap
+              = corner->findDcalcAnalysisPt(max_);
           float limit = resizer_->maxInputSlew(port, corner);
           float actual;
           bool slew_viol = false;
@@ -422,7 +424,8 @@ void RepairDesign::repairDesign(
   if (!annotations_to_clean_up.empty()) {
     for (auto vertex : annotations_to_clean_up) {
       for (auto corner : *sta_->corners()) {
-        const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+        const sta::DcalcAnalysisPt* dcalc_ap
+            = corner->findDcalcAnalysisPt(max_);
         for (const RiseFall* rf : RiseFall::range()) {
           vertex->setSlewAnnotated(false, rf, dcalc_ap->index());
         }
@@ -865,7 +868,7 @@ void RepairDesign::checkDriverArcSlew(const sta::Corner* corner,
                                       float limit,
                                       float& violation)
 {
-  const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
   const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
   GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
   Pin* in_pin = network_->findPin(inst, arc->from()->name());
@@ -1255,7 +1258,7 @@ double RepairDesign::findSlewLoadCap(LibertyPort* drvr_port,
                                      double slew,
                                      const sta::Corner* corner)
 {
-  const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
   double drvr_res = drvr_port->driveResistance();
   if (drvr_res == 0.0) {
     return INF;
@@ -1290,7 +1293,7 @@ double RepairDesign::findSlewLoadCap(LibertyPort* drvr_port,
 double RepairDesign::gateSlewDiff(LibertyPort* drvr_port,
                                   double load_cap,
                                   double slew,
-                                  const DcalcAnalysisPt* dcalc_ap)
+                                  const sta::DcalcAnalysisPt* dcalc_ap)
 {
   sta::ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];

@@ -370,7 +370,7 @@ void RepairHold::bufferHoldDelays(LibertyCell* buffer,
   }
   for (sta::Corner* corner : *sta_->corners()) {
     LibertyPort* corner_port = input->cornerPort(corner->libertyIndex(max_));
-    const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+    const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const float load_cap = corner_port->capacitance();
     sta::ArcDelay gate_delays[RiseFall::index_count];
     Slew slews[RiseFall::index_count];
@@ -598,7 +598,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                        delayAsString(slacks[rise_index_][max_index_], sta_),
                        delayAsString(slacks[fall_index_][max_index_], sta_),
                        load_pins.size());
-            const DcalcAnalysisPt* dcalc_ap
+            const sta::DcalcAnalysisPt* dcalc_ap
                 = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
             float load_cap
                 = graph_delay_calc_->loadCap(end_vertex->pin(), dcalc_ap)

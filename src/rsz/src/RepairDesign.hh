@@ -13,6 +13,7 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/GraphClass.hh"
 #include "sta/LibertyClass.hh"
@@ -184,7 +185,7 @@ class RepairDesign : sta::dbStaState
   double gateSlewDiff(LibertyPort* drvr_port,
                       double load_cap,
                       double slew,
-                      const DcalcAnalysisPt* dcalc_ap);
+                      const sta::DcalcAnalysisPt* dcalc_ap);
   LoadRegion findLoadRegions(const Net* net,
                              const Pin* drvr_pin,
                              int max_fanout);
