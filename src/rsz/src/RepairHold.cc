@@ -706,7 +706,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   sta::Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
 
   // PinSeq -> PinSet
-  PinSet load_pins_set(network_);
+  sta::PinSet load_pins_set(network_);
   for (const sta::Pin* load_pin : load_pins) {
     if (load_pin != nullptr) {
       if (resizer_->dontTouch(load_pin)) {

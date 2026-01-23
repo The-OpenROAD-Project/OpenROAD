@@ -1263,7 +1263,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
 
 bool Resizer::hasTristateOrDontTouchDriver(const sta::Net* net)
 {
-  PinSet* drivers = network_->drivers(net);
+  sta::PinSet* drivers = network_->drivers(net);
   if (drivers) {
     for (const sta::Pin* pin : *drivers) {
       if (isTristateDriver(pin)) {
@@ -2654,7 +2654,7 @@ std::optional<Slack> Resizer::resizeNetSlack(const odb::dbNet* db_net)
 ////////////////////////////////////////////////////////////////
 
 // API for logic resynthesis
-PinSet Resizer::findFaninFanouts(PinSet& end_pins)
+sta::PinSet Resizer::findFaninFanouts(sta::PinSet& end_pins)
 {
   // Abbreviated copyState
   sta_->ensureLevelized();
@@ -2665,7 +2665,7 @@ PinSet Resizer::findFaninFanouts(PinSet& end_pins)
     Vertex* end = graph_->pinLoadVertex(pin);
     ends.insert(end);
   }
-  PinSet fanin_fanout_pins(db_network_);
+  sta::PinSet fanin_fanout_pins(db_network_);
   VertexSet fanin_fanouts = findFaninFanouts(ends);
   for (Vertex* vertex : fanin_fanouts) {
     fanin_fanout_pins.insert(vertex->pin());
@@ -2683,7 +2683,7 @@ VertexSet Resizer::findFaninFanouts(VertexSet& ends)
 }
 
 // Find source pins for logic fanin of ends.
-PinSet Resizer::findFanins(PinSet& end_pins)
+sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 {
   // Abbreviated copyState
   sta_->ensureLevelized();
@@ -2701,7 +2701,7 @@ PinSet Resizer::findFanins(PinSet& end_pins)
     iter.enqueueAdjacentVertices(vertex);
   }
 
-  PinSet fanins(db_network_);
+  sta::PinSet fanins(db_network_);
   while (iter.hasNext()) {
     Vertex* vertex = iter.next();
     if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
@@ -3217,7 +3217,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
 
     // Find load pins
     bool keep_tie = false;
-    PinSet load_pins_set(db_network_);
+    sta::PinSet load_pins_set(db_network_);
     std::unique_ptr<NetConnectedPinIterator> pin_iter(
         network_->connectedPinIterator(drvr_net));
     while (pin_iter->hasNext()) {
@@ -3613,7 +3613,7 @@ sta::NetSeq* Resizer::findFloatingNets()
     sta::Net* net = net_iter->next();
     sta::PinSeq loads;
     sta::PinSeq drvrs;
-    PinSet visited_drvrs(db_network_);
+    sta::PinSet visited_drvrs(db_network_);
     FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
     network_->visitConnectedPins(net, visitor);
     if (drvrs.empty() && !loads.empty()) {
@@ -3625,9 +3625,9 @@ sta::NetSeq* Resizer::findFloatingNets()
   return floating_nets;
 }
 
-PinSet* Resizer::findFloatingPins()
+sta::PinSet* Resizer::findFloatingPins()
 {
-  PinSet* floating_pins = new PinSet(network_);
+  sta::PinSet* floating_pins = new sta::PinSet(network_);
 
   // Find instances with inputs without a net
   LeafInstanceIterator* leaf_iter = network_->leafInstanceIterator();
@@ -3660,7 +3660,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
     sta::Net* net = net_iter->next();
     sta::PinSeq loads;
     sta::PinSeq drvrs;
-    PinSet visited_drvrs(db_network_);
+    sta::PinSet visited_drvrs(db_network_);
     FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
     network_->visitConnectedPins(net, visitor);
     if (drvrs.size() > 1) {
@@ -4932,7 +4932,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
     bool loads_on_diff_nets)
 {
   // PinSeq -> PinSet
-  PinSet load_set{db_network_};
+  sta::PinSet load_set{db_network_};
   for (const sta::Pin* pin : *loads) {
     load_set.insert(pin);
   }
@@ -4949,7 +4949,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
 
 sta::Instance* Resizer::insertBufferBeforeLoads(
     sta::Net* net,
-    PinSet* loads,
+    sta::PinSet* loads,
     sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
@@ -5279,7 +5279,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   };
 
   auto keepPinDriver = [&](sta::Pin* pin) {
-    PinSet* drivers = network_->drivers(pin);
+    sta::PinSet* drivers = network_->drivers(pin);
     if (drivers) {
       for (const sta::Pin* drvr_pin : *drivers) {
         if (auto inst = network_->instance(drvr_pin)) {
@@ -5295,7 +5295,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     while (iter->hasNext()) {
       sta::Pin* pin = iter->next();
       sta::Net* net = network_->net(network_->term(pin));
-      PinSet* drivers = network_->drivers(net);
+      sta::PinSet* drivers = network_->drivers(net);
       if (drivers) {
         for (const sta::Pin* drvr_pin : *drivers) {
           if (auto inst = network_->instance(drvr_pin)) {

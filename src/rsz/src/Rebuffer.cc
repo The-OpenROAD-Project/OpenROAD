@@ -1777,10 +1777,10 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   // representing
   //         the terminals that this subtree drives (i.e., the "loads" seen
   //         from the parent's perspective).
-  std::function<void(const BufferedNetPtr&, PinSet&, int&)> insertBuffers;
+  std::function<void(const BufferedNetPtr&, sta::PinSet&, int&)> insertBuffers;
 
   insertBuffers = [&](const BufferedNetPtr& node,
-                      PinSet& current_loads,
+                      sta::PinSet& current_loads,
                       int& count) {
     switch (node->type()) {
       case BufferedNetType::via:
@@ -1819,7 +1819,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
       case BufferedNetType::buffer: {
         // 1. Collect loads from children first (Bottom-Up)
-        PinSet child_loads(network_);
+        sta::PinSet child_loads(network_);
         insertBuffers(node->ref(), child_loads, count);
 
         if (child_loads.empty()) {
@@ -1897,7 +1897,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   };
 
   int inserted_count = 0;
-  PinSet top_loads(network_);
+  sta::PinSet top_loads(network_);
 
   // Start the bottom-up traversal
   insertBuffers(choice, top_loads, inserted_count);

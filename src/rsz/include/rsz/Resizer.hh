@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::PinSet;
 using sta::Pvt;
 using sta::Required;
 using sta::RiseFall;
@@ -297,7 +296,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       bool loads_on_diff_nets = false);
   sta::Instance* insertBufferBeforeLoads(
       sta::Net* net,
-      PinSet* loads,
+      sta::PinSet* loads,
       sta::LibertyCell* buffer_cell,
       const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -402,7 +401,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void designAreaIncr(float delta);
   // Caller owns return value.
   sta::NetSeq* findFloatingNets();
-  PinSet* findFloatingPins();
+  sta::PinSet* findFloatingPins();
   sta::NetSeq* findOverdrivenNets(bool include_parallel_driven);
   void repairTieFanout(sta::LibertyPort* tie_port,
                        double separation,  // meters
@@ -483,8 +482,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
-  PinSet findFaninFanouts(PinSet& end_pins);
-  PinSet findFanins(PinSet& end_pins);
+  sta::PinSet findFaninFanouts(sta::PinSet& end_pins);
+  sta::PinSet findFanins(sta::PinSet& end_pins);
 
   ////////////////////////////////////////////////////////////////
   sta::dbNetwork* getDbNetwork() { return db_network_; }

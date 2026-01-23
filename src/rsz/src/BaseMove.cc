@@ -732,7 +732,7 @@ bool BaseMove::checkMaxCapViolation(Instance* inst,
     if (!network_->direction(pin)->isAnyInput()) {
       continue;
     }
-    PinSet* drivers = network_->drivers(pin);
+    sta::PinSet* drivers = network_->drivers(pin);
     if (drivers) {
       // Calculate capacitance delta (new - old)
       float old_cap = getInputPinCapacitance(pin, current_cell);

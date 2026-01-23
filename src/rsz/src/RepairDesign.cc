@@ -360,7 +360,7 @@ void RepairDesign::repairDesign(
                                    RiseFallBoth::riseFall(),
                                    limit);
             annotations_to_clean_up.insert(vertex);
-            PinSet* drivers = network_->drivers(vertex->pin());
+            sta::PinSet* drivers = network_->drivers(vertex->pin());
             if (drivers) {
               for (const sta::Pin* drvr_pin : *drivers) {
                 drvr_with_load_slew_viol[graph_->pinDrvrVertex(drvr_pin)]
@@ -478,7 +478,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     int max_length = resizer_->metersToDbu(max_wire_length);
     for (Clock* clk : sdc_->clks()) {
-      const PinSet* clk_pins = sta_->pins(clk);
+      const sta::PinSet* clk_pins = sta_->pins(clk);
       if (clk_pins) {
         for (const sta::Pin* clk_pin : *clk_pins) {
           // clang-format off
@@ -553,9 +553,9 @@ void RepairDesign::repairNet(sta::Net* net,
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
     int max_length = resizer_->metersToDbu(max_wire_length);
-    PinSet* drivers = network_->drivers(net);
+    sta::PinSet* drivers = network_->drivers(net);
     if (drivers && !drivers->empty()) {
-      PinSet::Iterator drvr_iter(drivers);
+      sta::PinSet::Iterator drvr_iter(drivers);
       const sta::Pin* drvr_pin = drvr_iter.next();
       Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
       repairNet(net,
@@ -818,7 +818,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     sta::Pin* new_input_pin = nullptr;
 
     // 3. Insert a new buffer
-    PinSet group_set(db_network_);
+    sta::PinSet group_set(db_network_);
     for (auto it = sinks.begin(); it != group_end; it++) {
       group_set.insert(it->pin);
       max_level = std::max(it->level, max_level);
@@ -2056,7 +2056,7 @@ sta::PinSeq RepairDesign::findLoads(const sta::Pin* drvr_pin)
   sta::PinSeq loads;
   sta::Pin* drvr_pin1 = const_cast<sta::Pin*>(drvr_pin);
   sta::PinSeq drvrs;
-  PinSet visited_drvrs(db_network_);
+  sta::PinSet visited_drvrs(db_network_);
   sta::FindNetDrvrLoads visitor(
       drvr_pin1, visited_drvrs, loads, drvrs, network_);
   network_->visitConnectedPins(drvr_pin1, visitor);
