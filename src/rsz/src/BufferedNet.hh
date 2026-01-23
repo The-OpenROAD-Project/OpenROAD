@@ -27,7 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::StaState;
 using sta::Unit;
 using sta::Units;
 

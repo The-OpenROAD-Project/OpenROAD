@@ -42,6 +42,7 @@
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
+#include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
@@ -852,7 +853,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
   return best_option;
 }
 
-static void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
+static void pruneCapVsAreaOptions(sta::StaState* sta, BufferedNetSeq& options)
 {
   std::ranges::sort(
       options,

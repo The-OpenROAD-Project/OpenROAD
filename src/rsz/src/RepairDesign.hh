@@ -31,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::StaState;
 using sta::Vertex;
 
 // Region for partioning fanout pins.

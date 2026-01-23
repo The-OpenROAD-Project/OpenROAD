@@ -30,7 +30,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::StaState;
 using sta::TimingArc;
 using sta::Vertex;
 

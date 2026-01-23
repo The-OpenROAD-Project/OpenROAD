@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::StaState;
 using sta::Vertex;
 using sta::VertexSeq;
 
