@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, Precision Innovations Inc.
 
+"""Rule to provide build-time notifications."""
+
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 def _notification_impl(ctx):
     if not ctx.attr.is_opt:
+        # buildifier: disable=print
         print("\n" + "=" * 80 + "\n" +
               "  NOTIFICATION: Use --config=opt to build with LTO (Link Time Optimization)\n" +
               "                and get better performance at the expense of longer build time.\n" +
