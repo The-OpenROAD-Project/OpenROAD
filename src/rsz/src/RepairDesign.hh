@@ -8,6 +8,7 @@
 
 #include "BufferedNet.hh"
 #include "PreChecks.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
@@ -28,7 +29,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::dbNetwork;
 using sta::dbSta;
 using sta::Edge;
 using sta::LibertyCell;
@@ -247,7 +247,7 @@ class RepairDesign : dbStaState
   void computeSlewRCFactor();
 
   utl::Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;

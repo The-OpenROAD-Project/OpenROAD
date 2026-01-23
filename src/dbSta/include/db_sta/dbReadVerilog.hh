@@ -22,7 +22,6 @@ namespace ord {
 
 class dbVerilogNetwork;
 
-using sta::dbNetwork;
 using sta::VerilogReader;
 
 // Hierarchical network for read_verilog.
@@ -34,7 +33,10 @@ class dbVerilogNetwork : public sta::ConcreteNetwork
   dbVerilogNetwork(sta::dbSta* sta);
   sta::Cell* findAnyCell(const char* name) override;
   bool isBlackBox(sta::ConcreteCell* cell);
-  dbNetwork* getDbNetwork() { return static_cast<dbNetwork*>(db_network_); }
+  sta::dbNetwork* getDbNetwork()
+  {
+    return static_cast<sta::dbNetwork*>(db_network_);
+  }
 
  private:
   NetworkReader* db_network_ = nullptr;

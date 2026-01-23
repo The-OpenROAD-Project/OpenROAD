@@ -37,7 +37,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
 using sta::Delay;
@@ -149,7 +148,7 @@ class RepairSetup : public sta::dbStaState
   Slack getInstanceSlack(Instance* inst);
 
   utl::Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
 

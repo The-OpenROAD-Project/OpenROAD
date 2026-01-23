@@ -22,6 +22,7 @@
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "UnbufferMove.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
@@ -1553,7 +1554,7 @@ void Rebuffer::characterizeBufferLimits()
   }
 }
 
-static bool isPortBuffer(dbNetwork* network, Instance* inst)
+static bool isPortBuffer(sta::dbNetwork* network, Instance* inst)
 {
   if (network->libertyCell(inst) && network->libertyCell(inst)->isBuffer()) {
     odb::dbInst* db_inst = network->staToDb(inst);

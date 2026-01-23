@@ -29,7 +29,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::dbNetwork;
 using sta::Delay;
 using sta::Instance;
 using sta::LibertyCell;
@@ -146,7 +145,7 @@ class Rebuffer : public sta::dbStaState
   int rebufferPin(const Pin* drvr_pin);
 
   utl::Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
 

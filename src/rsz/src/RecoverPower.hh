@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
@@ -30,7 +31,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
 using sta::LibertyCell;
@@ -92,7 +92,7 @@ class RecoverPower : public sta::dbStaState
   void printProgress(int iteration, bool force, bool end) const;
 
   utl::Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
   const sta::Corner* corner_ = nullptr;

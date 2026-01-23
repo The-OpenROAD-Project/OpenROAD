@@ -70,7 +70,7 @@ class SwapArithModules : public sta::dbStaState
 
   // Member variables
   Resizer* resizer_;
-  dbNetwork* db_network_{nullptr};
+  sta::dbNetwork* db_network_{nullptr};
   utl::Logger* logger_{nullptr};
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();

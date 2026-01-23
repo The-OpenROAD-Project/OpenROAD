@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -25,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::dbNetwork;
 using sta::dbSta;
 using sta::Delay;
 using sta::LibertyCell;
@@ -117,7 +117,7 @@ class RepairHold : public sta::dbStaState
   void printProgress(int iteration, bool force, bool end) const;
 
   utl::Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
 

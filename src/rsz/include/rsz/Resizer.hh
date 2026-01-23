@@ -66,7 +66,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::dbNetwork;
 using sta::dbNetworkObserver;
 using sta::dbSta;
 using sta::dbStaState;
@@ -507,7 +506,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   PinSet findFanins(PinSet& end_pins);
 
   ////////////////////////////////////////////////////////////////
-  dbNetwork* getDbNetwork() { return db_network_; }
+  sta::dbNetwork* getDbNetwork() { return db_network_; }
   odb::dbBlock* getDbBlock() { return block_; }
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -824,7 +823,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   int dbu_ = 0;

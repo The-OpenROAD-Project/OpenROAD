@@ -70,7 +70,7 @@ void PreChecks::checkCapLimit(const Pin* drvr_pin)
     min_cap_load_computed_ = true;
     // Find the smallest buffer/inverter input cap
     min_cap_load_ = sta::INF;
-    dbNetwork* network = resizer_->getDbNetwork();
+    sta::dbNetwork* network = resizer_->getDbNetwork();
     std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
         network->libertyLibraryIterator()};
 
@@ -102,7 +102,7 @@ void PreChecks::checkCapLimit(const Pin* drvr_pin)
                          max_cap1,
                          cap_slack1);
   if (max_cap1 > 0 && max_cap1 < min_cap_load_) {
-    dbNetwork* network = resizer_->getDbNetwork();
+    sta::dbNetwork* network = resizer_->getDbNetwork();
     const sta::Unit* cap_unit = sta_->units()->capacitanceUnit();
     std::string master_name = "-";
     if (sta::Instance* inst = network->instance(drvr_pin)) {

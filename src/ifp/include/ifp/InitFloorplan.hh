@@ -22,8 +22,6 @@ class Report;
 
 namespace ifp {
 
-using sta::dbNetwork;
-
 enum class RowParity
 {
   NONE,

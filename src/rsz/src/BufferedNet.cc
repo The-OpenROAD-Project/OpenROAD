@@ -795,7 +795,7 @@ static BufferedNetPtr makeBufferedNet(
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
-    dbNetwork* db_network,
+    sta::dbNetwork* db_network,
     RoutePtSet& visited)
 {
   if (visited.find(to) != visited.end()) {
