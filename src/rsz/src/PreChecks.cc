@@ -13,6 +13,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -92,7 +93,7 @@ void PreChecks::checkCapLimit(const sta::Pin* drvr_pin)
 
   float cap1, max_cap1, cap_slack1;
   const sta::Corner* corner1;
-  const RiseFall* tr1;
+  const sta::RiseFall* tr1;
   sta_->checkCapacitance(drvr_pin,
                          nullptr,
                          sta::MinMax::max(),

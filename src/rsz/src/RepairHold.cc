@@ -37,6 +37,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
@@ -355,20 +356,21 @@ bool RepairHold::addMatchingBuffers(const sta::LibertyCellSeq& buffer_list,
 
 float RepairHold::bufferHoldDelay(sta::LibertyCell* buffer)
 {
-  sta::Delay delays[RiseFall::index_count];
+  sta::Delay delays[sta::RiseFall::index_count];
   bufferHoldDelays(buffer, delays);
-  return min(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
+  return min(delays[sta::RiseFall::riseIndex()],
+             delays[sta::RiseFall::fallIndex()]);
 }
 
 // Min self delay across corners; buffer -> buffer
 void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
                                   // Return values.
-                                  sta::Delay delays[RiseFall::index_count])
+                                  sta::Delay delays[sta::RiseFall::index_count])
 {
   sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
 
-  for (int rf_index : RiseFall::rangeIndex()) {
+  for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = sta::MinMax::min()->initValue();
   }
   for (sta::Corner* corner : *sta_->corners()) {
@@ -376,10 +378,10 @@ void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
         = input->cornerPort(corner->libertyIndex(max_));
     const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const float load_cap = corner_port->capacitance();
-    sta::ArcDelay gate_delays[RiseFall::index_count];
-    Slew slews[RiseFall::index_count];
+    sta::ArcDelay gate_delays[sta::RiseFall::index_count];
+    Slew slews[sta::RiseFall::index_count];
     resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-    for (int rf_index : RiseFall::rangeIndex()) {
+    for (int rf_index : sta::RiseFall::rangeIndex()) {
       delays[rf_index] = min(delays[rf_index], gate_delays[rf_index]);
     }
   }
@@ -607,8 +609,8 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
             float load_cap
                 = graph_delay_calc_->loadCap(end_vertex->pin(), dcalc_ap)
                   - excluded_cap;
-            sta::ArcDelay buffer_delays[RiseFall::index_count];
-            Slew buffer_slews[RiseFall::index_count];
+            sta::ArcDelay buffer_delays[sta::RiseFall::index_count];
+            Slew buffer_slews[sta::RiseFall::index_count];
             resizer_->bufferDelays(
                 buffer_cell, load_cap, dcalc_ap, buffer_delays, buffer_slews);
             // setup_slack > -hold_slack
@@ -751,7 +753,7 @@ bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
 {
   float cap, limit, slack;
   const sta::Corner* corner;
-  const RiseFall* tr;
+  const sta::RiseFall* tr;
   sta_->checkCapacitance(
       drvr_pin, nullptr, max_, corner, tr, cap, limit, slack);
   float slack_limit_ratio = slack / limit;

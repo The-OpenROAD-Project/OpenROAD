@@ -49,15 +49,14 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
 
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
-using InputSlews = std::array<Slew, RiseFall::index_count>;
-using TgtSlews = std::array<Slew, RiseFall::index_count>;
+using InputSlews = std::array<Slew, sta::RiseFall::index_count>;
+using TgtSlews = std::array<Slew, sta::RiseFall::index_count>;
 
 struct SlackEstimatorParams
 {
@@ -151,20 +150,20 @@ class BaseMove : public sta::dbStaState
                   float load_cap,
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  sta::ArcDelay delays[RiseFall::index_count],
-                  Slew slews[RiseFall::index_count]);
+                  sta::ArcDelay delays[sta::RiseFall::index_count],
+                  Slew slews[sta::RiseFall::index_count]);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
-                  const Slew in_slews[RiseFall::index_count],
+                  const Slew in_slews[sta::RiseFall::index_count],
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  sta::ArcDelay delays[RiseFall::index_count],
-                  Slew out_slews[RiseFall::index_count]);
+                  sta::ArcDelay delays[sta::RiseFall::index_count],
+                  Slew out_slews[sta::RiseFall::index_count]);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
-                          const RiseFall* rf,
+                          const sta::RiseFall* rf,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
 
@@ -188,8 +187,8 @@ class BaseMove : public sta::dbStaState
   bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool estimateInputSlewImpact(sta::Instance* instance,
                                const sta::DcalcAnalysisPt* dcalc_ap,
-                               Slew old_in_slew[RiseFall::index_count],
-                               Slew new_in_slew[RiseFall::index_count],
+                               Slew old_in_slew[sta::RiseFall::index_count],
+                               Slew new_in_slew[sta::RiseFall::index_count],
                                // delay adjustment from prev stage
                                float delay_adjust,
                                SlackEstimatorParams params,

@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
 using sta::SpefWriter;
@@ -80,7 +79,7 @@ using sta::VertexSet;
 
 using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
 using InstanceTuple = std::tuple<sta::Instance*, sta::Instance*>;
-using InputSlews = std::array<Slew, RiseFall::index_count>;
+using InputSlews = std::array<Slew, sta::RiseFall::index_count>;
 
 using SteinerPt = int;
 
@@ -116,7 +115,7 @@ class NetHash
 };
 
 using CellTargetLoadMap = sta::Map<sta::LibertyCell*, float>;
-using TgtSlews = std::array<Slew, RiseFall::index_count>;
+using TgtSlews = std::array<Slew, sta::RiseFall::index_count>;
 
 enum class MoveType
 {
@@ -333,7 +332,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Resize drvr_pin instance to target slew.
   void resizeDrvrToTargetSlew(const sta::Pin* drvr_pin);
   // Accessor for debugging.
-  Slew targetSlew(const RiseFall* rf);
+  Slew targetSlew(const sta::RiseFall* rf);
   // Accessor for debugging.
   float targetLoadCap(sta::LibertyCell* cell);
 
@@ -629,35 +628,35 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   float load_cap,
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  sta::ArcDelay delays[RiseFall::index_count],
-                  Slew slews[RiseFall::index_count]);
+                  sta::ArcDelay delays[sta::RiseFall::index_count],
+                  Slew slews[sta::RiseFall::index_count]);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
-                  const Slew in_slews[RiseFall::index_count],
+                  const Slew in_slews[sta::RiseFall::index_count],
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  sta::ArcDelay delays[RiseFall::index_count],
-                  Slew out_slews[RiseFall::index_count]);
+                  sta::ArcDelay delays[sta::RiseFall::index_count],
+                  Slew out_slews[sta::RiseFall::index_count]);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
-                          const RiseFall* rf,
+                          const sta::RiseFall* rf,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
   float bufferDelay(sta::LibertyCell* buffer_cell,
                     float load_cap,
                     const sta::DcalcAnalysisPt* dcalc_ap);
   float bufferDelay(sta::LibertyCell* buffer_cell,
-                    const RiseFall* rf,
+                    const sta::RiseFall* rf,
                     float load_cap,
                     const sta::DcalcAnalysisPt* dcalc_ap);
   void bufferDelays(sta::LibertyCell* buffer_cell,
                     float load_cap,
                     const sta::DcalcAnalysisPt* dcalc_ap,
                     // Return values.
-                    sta::ArcDelay delays[RiseFall::index_count],
-                    Slew slews[RiseFall::index_count]);
+                    sta::ArcDelay delays[sta::RiseFall::index_count],
+                    Slew slews[sta::RiseFall::index_count]);
   void cellWireDelay(sta::LibertyPort* drvr_port,
                      sta::LibertyPort* load_port,
                      double wire_length,  // meters

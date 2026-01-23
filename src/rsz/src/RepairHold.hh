@@ -26,13 +26,12 @@ namespace rsz {
 
 class Resizer;
 
-using sta::RiseFall;
 using sta::Slack;
 using sta::StaState;
 using sta::Vertex;
 using sta::VertexSeq;
 
-using Slacks = Slack[RiseFall::index_count][sta::MinMax::index_count];
+using Slacks = Slack[sta::RiseFall::index_count][sta::MinMax::index_count];
 
 class RepairHold : public sta::dbStaState
 {
@@ -70,7 +69,7 @@ class RepairHold : public sta::dbStaState
   float bufferHoldDelay(sta::LibertyCell* buffer);
   void bufferHoldDelays(sta::LibertyCell* buffer,
                         // Return values.
-                        sta::Delay delays[RiseFall::index_count]);
+                        sta::Delay delays[sta::RiseFall::index_count]);
   void findHoldViolations(VertexSeq& ends,
                           double hold_margin,
                           // Return values.
@@ -124,8 +123,8 @@ class RepairHold : public sta::dbStaState
   const sta::MinMax* max_ = sta::MinMax::max();
   const int min_index_ = sta::MinMax::minIndex();
   const int max_index_ = sta::MinMax::maxIndex();
-  const int rise_index_ = RiseFall::riseIndex();
-  const int fall_index_ = RiseFall::fallIndex();
+  const int rise_index_ = sta::RiseFall::riseIndex();
+  const int fall_index_ = sta::RiseFall::fallIndex();
 
   static constexpr float hold_slack_limit_ratio_max_ = 0.2;
   static constexpr int print_interval_ = 10;

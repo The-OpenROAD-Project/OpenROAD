@@ -104,7 +104,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
     max_load_slew_ = resizer->maxInputSlew(load_port, corner);
   } else if (network->isTopLevelPort(load_pin)) {
     Port* port = network->port(load_pin);
-    for (auto rf : RiseFall::range()) {
+    for (auto rf : sta::RiseFall::range()) {
       float pin_cap, wire_cap;
       int fanout;
       bool has_pin_cap, has_wire_cap, has_fanout;

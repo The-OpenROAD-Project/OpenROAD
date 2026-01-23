@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::RiseFall;
 using sta::RiseFallBoth;
 using sta::Slack;
 using sta::Slew;
@@ -153,7 +152,7 @@ class Rebuffer : public sta::dbStaState
   float drvr_load_high_water_mark_ = 0.0f;
   const sta::Corner* corner_ = nullptr;
   sta::LibertyPort* drvr_port_ = nullptr;
-  sta::Path* arrival_paths_[RiseFall::index_count] = {nullptr};
+  sta::Path* arrival_paths_[sta::RiseFall::index_count] = {nullptr};
 
   int resizer_max_wire_length_ = 0;
   int wire_length_step_ = 0;

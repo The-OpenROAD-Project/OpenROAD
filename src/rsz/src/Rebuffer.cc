@@ -108,7 +108,7 @@ Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 
 void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
 {
-  for (auto rf_index : RiseFall::rangeIndex()) {
+  for (auto rf_index : sta::RiseFall::rangeIndex()) {
     arrival_paths_[rf_index] = nullptr;
   }
 
@@ -145,7 +145,7 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
               node->setSlackTransition(nullptr);
               node->setSlack(FixedDelay::INF);
             } else {
-              const RiseFall* rf = req_path->transition(sta_);
+              const sta::RiseFall* rf = req_path->transition(sta_);
               node->setSlackTransition(rf->asRiseFallBoth());
               node->setSlack(FixedDelay(
                   req_path->required() - arrival_path->arrival(), resizer_));
@@ -1174,8 +1174,8 @@ FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
           = arrival_paths_[rf1->index()]->dcalcAnalysisPt(sta_);
       sta::LibertyPort *input, *output;
       cell->bufferPorts(input, output);
-      sta::ArcDelay gate_delays[RiseFall::index_count];
-      Slew slews[RiseFall::index_count];
+      sta::ArcDelay gate_delays[sta::RiseFall::index_count];
+      Slew slews[sta::RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
       delay = std::max<FixedDelay>(
           delay, FixedDelay(gate_delays[rf1->index()], resizer_));
