@@ -48,7 +48,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::LoadPinIndexMap;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Network;

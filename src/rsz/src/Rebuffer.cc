@@ -1492,7 +1492,7 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
     for (TimingArcSet* arc_set : cell->timingArcSets()) {
       if (!arc_set->role()->isTimingCheck()) {
         for (TimingArc* arc : arc_set->arcs()) {
-          LoadPinIndexMap load_pin_index_map(network_);
+          sta::LoadPinIndexMap load_pin_index_map(network_);
           ArcDcalcResult dcalc_result
               = arc_delay_calc_->gateDelay(nullptr,
                                            arc,
