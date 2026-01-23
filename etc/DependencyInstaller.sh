@@ -709,9 +709,11 @@ _install_or_tools() {
                 OR_TOOLS_PATH=${or_tools_install_dir}
 
                 # Remove conflicting Boost configuration files included in OR-Tools
-                if [[ -d "${OR_TOOLS_PATH}/lib/cmake" ]]; then
-                    find "${OR_TOOLS_PATH}/lib/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-                fi
+                for lib_dir in "lib" "lib64"; do
+                    if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
+                        find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
+                    fi
+                done
 
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=skipped")
                 return
@@ -745,9 +747,11 @@ _install_or_tools() {
     fi
 
     # Remove conflicting Boost configuration files included in OR-Tools
-    if [[ -d "${OR_TOOLS_PATH}/lib/cmake" ]]; then
-        find "${OR_TOOLS_PATH}/lib/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-    fi
+    for lib_dir in "lib" "lib64"; do
+        if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
+            find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
+        fi
+    done
 
     INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=installed")
 
