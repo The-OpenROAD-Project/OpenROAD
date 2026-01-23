@@ -427,7 +427,7 @@ void RamGen::ramPdngen(const char* power_pin,
   block_->addGlobalConnect(nullptr, ".*", power_pin, power_net, true);
   block_->addGlobalConnect(nullptr, ".*", ground_pin, ground_net, true);
 
-  block_->globalConnect();
+  block_->globalConnect(false, false);
 
   std::string grid_name = "ram_grid";
   pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});

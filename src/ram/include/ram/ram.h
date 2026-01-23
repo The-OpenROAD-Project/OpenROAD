@@ -49,7 +49,6 @@ class TritonRoute;
 
 namespace ram {
 
-////////////////////////////////////////////////////////////////
 class Cell;
 class Layout;
 class Grid;
@@ -59,7 +58,7 @@ class RamGen
  public:
   RamGen(sta::dbNetwork* network,
          odb::dbDatabase* db,
-         Logger* logger,
+         utl::Logger* logger,
          pdn::PdnGen* pdngen,
          ppl::IOPlacer* ioPlacer,
          dpl::Opendp* opendp_,
