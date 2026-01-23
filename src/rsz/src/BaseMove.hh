@@ -47,7 +47,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::dbSta;
 using sta::DcalcAnalysisPt;
 using sta::Instance;
 using sta::InstancePinIterator;
@@ -133,7 +132,7 @@ class BaseMove : public sta::dbStaState
   utl::Logger* logger_;
   Network* network_;
   sta::dbNetwork* db_network_;
-  dbSta* sta_;
+  sta::dbSta* sta_;
   odb::dbDatabase* db_ = nullptr;
   int dbu_ = 0;
   dpl::Opendp* opendp_ = nullptr;

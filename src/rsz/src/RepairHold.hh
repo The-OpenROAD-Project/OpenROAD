@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::dbSta;
 using sta::Delay;
 using sta::LibertyCell;
 using sta::LibertyCellSeq;

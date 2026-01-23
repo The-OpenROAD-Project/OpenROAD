@@ -66,7 +66,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::dbSta;
 using sta::dbStaState;
 using sta::DcalcAnalysisPt;
 using sta::Delay;
@@ -234,7 +233,7 @@ class Resizer : public dbStaState, public sta::dbNetworkObserver
  public:
   Resizer(utl::Logger* logger,
           odb::dbDatabase* db,
-          dbSta* sta,
+          sta::dbSta* sta,
           SteinerTreeBuilder* stt_builder,
           GlobalRouter* global_router,
           dpl::Opendp* opendp,
@@ -677,7 +676,7 @@ class Resizer : public dbStaState, public sta::dbNetworkObserver
   void cellWireDelay(LibertyPort* drvr_port,
                      LibertyPort* load_port,
                      double wire_length,  // meters
-                     std::unique_ptr<dbSta>& sta,
+                     std::unique_ptr<sta::dbSta>& sta,
                      // Return values.
                      Delay& delay,
                      Slew& slew);
@@ -695,14 +694,14 @@ class Resizer : public dbStaState, public sta::dbNetworkObserver
   double area(sta::Cell* cell);
   double splitWireDelayDiff(double wire_length,
                             LibertyCell* buffer_cell,
-                            std::unique_ptr<dbSta>& sta);
+                            std::unique_ptr<sta::dbSta>& sta);
   double maxSlewWireDiff(LibertyPort* drvr_port,
                          LibertyPort* load_port,
                          double wire_length,
                          double max_slew);
   void bufferWireDelay(LibertyCell* buffer_cell,
                        double wire_length,  // meters
-                       std::unique_ptr<dbSta>& sta,
+                       std::unique_ptr<sta::dbSta>& sta,
                        Delay& delay,
                        Slew& slew);
   void findCellInstances(LibertyCell* cell,

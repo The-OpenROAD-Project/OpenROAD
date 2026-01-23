@@ -31,7 +31,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::dbSta;
 using sta::DcalcAnalysisPt;
 using sta::LibertyCell;
 using sta::LibertyPort;

@@ -29,7 +29,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::dbSta;
 using sta::Edge;
 using sta::LibertyCell;
 using sta::LibertyPort;

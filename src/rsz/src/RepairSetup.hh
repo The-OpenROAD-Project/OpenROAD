@@ -37,7 +37,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::dbSta;
 using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::Instance;
