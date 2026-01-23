@@ -48,7 +48,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::InstancePinIterator;
 using sta::InstanceSet;
 using sta::LibertyCell;
 using sta::LibertyPort;

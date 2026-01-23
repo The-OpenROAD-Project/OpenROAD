@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::InstancePinIterator;
 using sta::LoadPinIndexMap;
 using sta::NetConnectedPinIterator;
 using sta::Path;

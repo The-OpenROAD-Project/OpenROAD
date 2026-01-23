@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::InstancePinIterator;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
