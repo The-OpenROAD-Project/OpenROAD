@@ -29,6 +29,7 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
@@ -1460,7 +1461,7 @@ void Rebuffer::init()
   }
 }
 
-void Rebuffer::initOnCorner(Corner* corner)
+void Rebuffer::initOnCorner(sta::Corner* corner)
 {
   corner_ = corner;
   wire_length_step_
@@ -1567,7 +1568,8 @@ static bool isPortBuffer(dbNetwork* network, Instance* inst)
   return false;
 }
 
-BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin, const Corner* corner)
+BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin,
+                                   const sta::Corner* corner)
 {
   BufferedNetPtr tree = resizer_->makeBufferedNet(drvr_pin, corner);
   if (!tree) {

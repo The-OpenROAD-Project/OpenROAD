@@ -2135,7 +2135,7 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
 
 void Resizer::checkLibertyForAllCorners()
 {
-  for (Corner* corner : *sta_->corners()) {
+  for (sta::Corner* corner : *sta_->corners()) {
     int lib_ap_index = corner->libertyIndex(max_);
     LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
@@ -3102,7 +3102,7 @@ void Resizer::findBufferTargetSlews()
   tgt_slews_ = {0.0};
   tgt_slew_corner_ = nullptr;
 
-  for (Corner* corner : *sta_->corners()) {
+  for (sta::Corner* corner : *sta_->corners()) {
     int lib_ap_index = corner->libertyIndex(max_);
     const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const Pvt* pvt = dcalc_ap->operatingConditions();
@@ -3494,7 +3494,7 @@ void Resizer::reportLongWires(int count, int digits)
   VertexSeq drvrs;
   findLongWires(drvrs);
   logger_->report("Driver    length delay");
-  const Corner* corner = sta_->cmdCorner();
+  const sta::Corner* corner = sta_->cmdCorner();
   double wire_res = estimate_parasitics_->wireSignalResistance(corner);
   double wire_cap = estimate_parasitics_->wireSignalCapacitance(corner);
   int i = 0;
@@ -3544,7 +3544,7 @@ void Resizer::findLongWires(VertexSeq& drvrs)
 
 // Find the maximum distance along steiner tree branches from
 // the driver to loads (in dbu).
-int Resizer::findMaxSteinerDist(Vertex* drvr, const Corner* corner)
+int Resizer::findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner)
 
 {
   Pin* drvr_pin = drvr->pin();
@@ -3885,7 +3885,7 @@ double Resizer::findMaxWireLength(bool issue_error)
 double Resizer::findMaxWireLength1(bool issue_error)
 {
   std::optional<double> max_length;
-  for (const Corner* corner : *sta_->corners()) {
+  for (const sta::Corner* corner : *sta_->corners()) {
     if (estimate_parasitics_->wireSignalResistance(corner) <= 0.0) {
       if (issue_error) {
         logger_->warn(RSZ,
@@ -3928,7 +3928,7 @@ double Resizer::findMaxWireLength1(bool issue_error)
 // Find the max wire length before it is faster to split the wire
 // in half with a buffer (in meters).
 double Resizer::findMaxWireLength(LibertyCell* buffer_cell,
-                                  const Corner* corner)
+                                  const sta::Corner* corner)
 {
   initBlock();
   LibertyPort *load_port, *drvr_port;
@@ -3936,7 +3936,8 @@ double Resizer::findMaxWireLength(LibertyCell* buffer_cell,
   return findMaxWireLength(drvr_port, corner);
 }
 
-double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
+double Resizer::findMaxWireLength(LibertyPort* drvr_port,
+                                  const sta::Corner* corner)
 {
   LibertyCell* cell = drvr_port->libertyCell();
   if (db_network_->staToDb(cell) == nullptr) {
@@ -4051,7 +4052,7 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
 
   LoadPinIndexMap load_pin_index_map(network_);
   load_pin_index_map[load_pin] = 0;
-  for (Corner* corner : *corners) {
+  for (sta::Corner* corner : *corners) {
     const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     estimate_parasitics_->makeWireParasitic(
         net, drvr_pin, load_pin, wire_length, corner, parasitics);
@@ -5106,7 +5107,8 @@ void Resizer::setLocation(dbInst* db_inst, const odb::Point& pt)
   db_inst->setLocation(x, y);
 }
 
-float Resizer::portCapacitance(LibertyPort* input, const Corner* corner) const
+float Resizer::portCapacitance(LibertyPort* input,
+                               const sta::Corner* corner) const
 {
   const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
   int lib_ap = dcalc_ap->libertyIndex();
@@ -5127,7 +5129,7 @@ float Resizer::bufferSlew(LibertyCell* buffer_cell,
 }
 
 float Resizer::maxInputSlew(const LibertyPort* input,
-                            const Corner* corner) const
+                            const sta::Corner* corner) const
 {
   float limit;
   bool exists;
@@ -5154,7 +5156,7 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
                              Slew& slew,
                              float& limit,
                              float& slack,
-                             const Corner*& corner)
+                             const sta::Corner*& corner)
 {
   slack = INF;
   limit = INF;
@@ -5162,7 +5164,7 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin != drvr_pin) {
-      const Corner* corner1;
+      const sta::Corner* corner1;
       const RiseFall* tr1;
       Slew slew1;
       float limit1, slack1;

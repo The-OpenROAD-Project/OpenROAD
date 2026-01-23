@@ -28,7 +28,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::Edge;
@@ -98,13 +97,13 @@ class RepairDesign : dbStaState
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
   void performEarlySizingRound(int& repaired_net_count);
 
-  void checkDriverArcSlew(const Corner* corner,
+  void checkDriverArcSlew(const sta::Corner* corner,
                           const Instance* inst,
                           const TimingArc* arc,
                           float load_cap,
                           float limit,
                           float& violation);
-  bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
+  bool repairDriverSlew(const sta::Corner* corner, const Pin* drvr_pin);
 
   void repairDriver(Vertex* drvr,
                     bool check_slew,
@@ -112,7 +111,7 @@ class RepairDesign : dbStaState
                     bool check_fanout,
                     int max_length,  // dbu
                     bool resize_drvr,
-                    Corner* corner_w_load_slew_viol,
+                    sta::Corner* corner_w_load_slew_viol,
                     int& repaired_net_count,
                     int& slew_violations,
                     int& cap_violations,
@@ -127,9 +126,9 @@ class RepairDesign : dbStaState
                  bool check_fanout,
                  int max_length,  // dbu
                  bool resize_drvr,
-                 Corner* corner_w_load_slew_viol,  // if not null, signals
-                                                   // a violation hidden by
-                                                   // an annotation
+                 sta::Corner* corner_w_load_slew_viol,  // if not null, signals
+                                                        // a violation hidden by
+                                                        // an annotation
                  int& repaired_net_count,
                  int& slew_violations,
                  int& cap_violations,
@@ -138,20 +137,21 @@ class RepairDesign : dbStaState
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
-                     const Corner*& corner);
+                     const sta::Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
   void checkSlew(const Pin* drvr_pin,
                  // Return values.
                  Slew& slew,
                  float& limit,
                  float& slack,
-                 const Corner*& corner);
-  float bufferInputMaxSlew(LibertyCell* buffer, const Corner* corner) const;
+                 const sta::Corner*& corner);
+  float bufferInputMaxSlew(LibertyCell* buffer,
+                           const sta::Corner* corner) const;
   void repairNet(const BufferedNetPtr& bnet,
                  const Pin* drvr_pin,
                  float max_cap,
                  int max_length,  // dbu
-                 const Corner* corner);
+                 const sta::Corner* corner);
   void repairNet(const BufferedNetPtr& bnet,
                  int level,
                  // Return values.
@@ -181,7 +181,7 @@ class RepairDesign : dbStaState
   float maxSlewMargined(float max_slew);
   double findSlewLoadCap(LibertyPort* drvr_port,
                          double slew,
-                         const Corner* corner);
+                         const sta::Corner* corner);
   double gateSlewDiff(LibertyPort* drvr_port,
                       double load_cap,
                       double slew,
@@ -264,7 +264,7 @@ class RepairDesign : dbStaState
   int max_length_ = 0;
   double slew_margin_ = 0;
   double cap_margin_ = 0;
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

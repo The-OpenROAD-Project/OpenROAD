@@ -17,6 +17,7 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
@@ -782,7 +783,7 @@ float BaseMove::getInputPinCapacitance(Pin* pin, const LibertyCell* cell)
 bool BaseMove::checkMaxCapOK(const Pin* drvr_pin, float cap_delta)
 {
   float cap, max_cap, cap_slack;
-  const Corner* corner;
+  const sta::Corner* corner;
   const RiseFall* tr;
   sta_->checkCapacitance(drvr_pin,
                          nullptr /* corner */,

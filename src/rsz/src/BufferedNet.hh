@@ -27,7 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Corner;
 using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::LibertyCell;
@@ -127,14 +126,14 @@ class BufferedNet
   BufferedNet(BufferedNetType type,
               const odb::Point& location,
               const Pin* load_pin,
-              const Corner* corner,
+              const sta::Corner* corner,
               const Resizer* resizer);
   // wire
   BufferedNet(BufferedNetType type,
               const odb::Point& location,
               int layer,
               const BufferedNetPtr& ref,
-              const Corner* corner,
+              const sta::Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics);
   // via
@@ -143,7 +142,7 @@ class BufferedNet
               int layer,
               int ref_layer,
               const BufferedNetPtr& ref,
-              const Corner* corner,
+              const sta::Corner* corner,
               const Resizer* resizer);
   // junc
   BufferedNet(BufferedNetType type,
@@ -156,7 +155,7 @@ class BufferedNet
               const odb::Point& location,
               LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
-              const Corner* corner,
+              const sta::Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics);
   std::string to_string(const Resizer* resizer) const;
@@ -178,14 +177,14 @@ class BufferedNet
   const Pin* loadPin() const { return load_pin_; }
   // wire
   int length() const;
-  void wireRC(const Corner* corner,
+  void wireRC(const sta::Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics,
               // Return values.
               double& res,
               double& cap);
   // via
-  double viaResistance(const Corner* corner,
+  double viaResistance(const sta::Corner* corner,
                        const Resizer* resizer,
                        const est::EstimateParasitics* estimate_parasitics);
   // wire, via
@@ -269,7 +268,7 @@ class BufferedNet
   }
 
   bool fitsEnvelope(Metrics target);
-  const Corner* corner() { return corner_; }
+  const sta::Corner* corner() { return corner_; }
 
  private:
   BufferedNetType type_;
@@ -309,7 +308,7 @@ class BufferedNet
   // Delay from driver pin to here
   FixedDelay arrival_delay_ = FixedDelay::ZERO;
 
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
 };
 
 }  // namespace rsz

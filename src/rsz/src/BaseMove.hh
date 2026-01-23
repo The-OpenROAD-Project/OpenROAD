@@ -47,7 +47,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
@@ -75,7 +74,7 @@ using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
 struct SlackEstimatorParams
 {
-  SlackEstimatorParams(const float margin, const Corner* corner)
+  SlackEstimatorParams(const float margin, const sta::Corner* corner)
       : setup_slack_margin(margin), corner(corner)
   {
   }
@@ -88,7 +87,7 @@ struct SlackEstimatorParams
   const Path* prev_driver_path{nullptr};
   LibertyCell* driver_cell{nullptr};
   const float setup_slack_margin;
-  const Corner* corner;
+  const sta::Corner* corner;
 };
 
 class BaseMove : public sta::dbStaState
@@ -139,7 +138,7 @@ class BaseMove : public sta::dbStaState
   odb::dbDatabase* db_ = nullptr;
   int dbu_ = 0;
   dpl::Opendp* opendp_ = nullptr;
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
 
   // Need to track these so we don't optimize the optimzations.
   // This can result in long run-time.

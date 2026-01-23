@@ -20,6 +20,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/Transition.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
@@ -80,7 +81,7 @@ FixedDelay::FixedDelay(sta::Delay float_value, Resizer* resizer)
 BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
                          const Pin* load_pin,
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          const Resizer* resizer)
 {
   if (type != BufferedNetType::load) {
@@ -151,7 +152,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
                          const int layer,
                          const BufferedNetPtr& ref,
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics)
 {
@@ -180,7 +181,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
                          const int layer,
                          const int ref_layer,
                          const BufferedNetPtr& ref,
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          const Resizer* resizer)
 {
   if (type != BufferedNetType::via) {
@@ -206,7 +207,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
                          LibertyCell* buffer_cell,
                          const BufferedNetPtr& ref,
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics)
 {
@@ -396,7 +397,7 @@ int BufferedNet::maxLoadWireLength() const
   return 0;
 }
 
-void BufferedNet::wireRC(const Corner* corner,
+void BufferedNet::wireRC(const sta::Corner* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics,
                          // Return values.
@@ -430,7 +431,7 @@ void BufferedNet::wireRC(const Corner* corner,
 }
 
 double BufferedNet::viaResistance(
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics)
 {
@@ -483,7 +484,7 @@ static const char* to_string(const BufferedNetType type)
 ////////////////////////////////////////////////////////////////
 
 BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
-                                        const Corner* corner)
+                                        const sta::Corner* corner)
 {
   switch (estimate_parasitics_->getParasiticsSrc()) {
     case est::ParasiticsSrc::placement:
@@ -508,7 +509,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     const SteinerPtAdjacents& adjacents,
     const int level,
     SteinerPtPinVisited& pins_visited,
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
@@ -589,7 +590,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
 
 // Make BufferedNet from steiner tree.
 BufferedNetPtr Resizer::makeBufferedNetSteiner(const Pin* drvr_pin,
-                                               const Corner* corner)
+                                               const sta::Corner* corner)
 {
   BufferedNetPtr bnet;
   est::SteinerTree* tree = estimate_parasitics_->makeSteinerTree(drvr_pin);
@@ -632,7 +633,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
     const SteinerPtAdjacents& adjacents,
     const int level,
     SteinerPtPinVisited& pins_visited,
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
@@ -703,7 +704,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
 BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
     odb::Point root,
     const std::vector<BufferedNetPtr>& sinks,
-    const Corner* corner)
+    const sta::Corner* corner)
 {
   BufferedNetPtr bnet = nullptr;
   std::vector<odb::Point> sink_points;
@@ -790,7 +791,7 @@ static BufferedNetPtr makeBufferedNet(
     GRoutePtAdjacents& adjacents,
     RoutePtPinMap& loc_pin_map,
     int level,
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
@@ -876,7 +877,7 @@ static BufferedNetPtr makeBufferedNet(
 }
 
 BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
-                                              const Corner* corner)
+                                              const sta::Corner* corner)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
   const Net* net = db_network_->dbToSta(db_net);

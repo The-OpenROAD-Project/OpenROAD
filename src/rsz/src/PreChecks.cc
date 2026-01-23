@@ -91,7 +91,7 @@ void PreChecks::checkCapLimit(const Pin* drvr_pin)
   }
 
   float cap1, max_cap1, cap_slack1;
-  const Corner* corner1;
+  const sta::Corner* corner1;
   const RiseFall* tr1;
   sta_->checkCapacitance(drvr_pin,
                          nullptr,

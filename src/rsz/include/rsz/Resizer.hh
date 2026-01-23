@@ -66,7 +66,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Corner;
 using sta::dbNetwork;
 using sta::dbNetworkObserver;
 using sta::dbSta;
@@ -480,8 +479,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
   double findMaxWireLength(bool issue_error = true);
-  double findMaxWireLength(LibertyCell* buffer_cell, const Corner* corner);
-  double findMaxWireLength(LibertyPort* drvr_port, const Corner* corner);
+  double findMaxWireLength(LibertyCell* buffer_cell, const sta::Corner* corner);
+  double findMaxWireLength(LibertyPort* drvr_port, const sta::Corner* corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net* net);
 
@@ -621,7 +620,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   ////////////////////////////////////////////////////////////////
 
   void findLongWires(VertexSeq& drvrs);
-  int findMaxSteinerDist(Vertex* drvr, const Corner* corner);
+  int findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner);
   float driveResistance(const Pin* drvr_pin);
   float bufferDriveResistance(const LibertyCell* buffer) const;
   float cellDriveResistance(const LibertyCell* cell) const;
@@ -631,7 +630,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(LibertyPort* port) const;
-  float portCapacitance(LibertyPort* input, const Corner* corner) const;
+  float portCapacitance(LibertyPort* input, const sta::Corner* corner) const;
   float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap) const;
   void swapPins(Instance* inst,
                 LibertyPort* port1,
@@ -688,7 +687,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          Pin* drvr_pin,
                          Pin* load_pin,
                          double wire_length,  // meters
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          Parasitics* parasitics);
   bool overMaxArea();
   bool bufferBetweenPorts(Instance* buffer);
@@ -763,26 +762,27 @@ class Resizer : public dbStaState, public dbNetworkObserver
   LibertyCell* findTargetCell(LibertyCell* cell,
                               float load_cap,
                               bool revisiting_inst);
-  BufferedNetPtr makeBufferedNet(const Pin* drvr_pin, const Corner* corner);
+  BufferedNetPtr makeBufferedNet(const Pin* drvr_pin,
+                                 const sta::Corner* corner);
   BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
-                                        const Corner* corner);
+                                        const sta::Corner* corner);
   BufferedNetPtr makeBufferedNetSteinerOverBnets(
       odb::Point root,
       const std::vector<BufferedNetPtr>& sinks,
-      const Corner* corner);
+      const sta::Corner* corner);
   BufferedNetPtr makeBufferedNetGroute(const Pin* drvr_pin,
-                                       const Corner* corner);
+                                       const sta::Corner* corner);
   float bufferSlew(LibertyCell* buffer_cell,
                    float load_cap,
                    const DcalcAnalysisPt* dcalc_ap);
-  float maxInputSlew(const LibertyPort* input, const Corner* corner) const;
+  float maxInputSlew(const LibertyPort* input, const sta::Corner* corner) const;
   void checkLoadSlews(const Pin* drvr_pin,
                       double slew_margin,
                       // Return values.
                       Slew& slew,
                       float& limit,
                       float& slack,
-                      const Corner*& corner);
+                      const sta::Corner*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance* inst);
 
@@ -856,7 +856,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;
   TgtSlews tgt_slews_;
-  Corner* tgt_slew_corner_ = nullptr;
+  sta::Corner* tgt_slew_corner_ = nullptr;
   const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
   // Instances with multiple output ports that have been resized.
   InstanceSet resized_multi_output_insts_;

@@ -37,7 +37,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;

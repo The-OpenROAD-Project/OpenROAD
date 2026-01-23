@@ -368,7 +368,7 @@ void RepairHold::bufferHoldDelays(LibertyCell* buffer,
   for (int rf_index : RiseFall::rangeIndex()) {
     delays[rf_index] = MinMax::min()->initValue();
   }
-  for (Corner* corner : *sta_->corners()) {
+  for (sta::Corner* corner : *sta_->corners()) {
     LibertyPort* corner_port = input->cornerPort(corner->libertyIndex(max_));
     const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const float load_cap = corner_port->capacitance();
@@ -746,7 +746,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 bool RepairHold::checkMaxSlewCap(const Pin* drvr_pin)
 {
   float cap, limit, slack;
-  const Corner* corner;
+  const sta::Corner* corner;
   const RiseFall* tr;
   sta_->checkCapacitance(
       drvr_pin, nullptr, max_, corner, tr, cap, limit, slack);

@@ -30,7 +30,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
@@ -96,7 +95,7 @@ class RecoverPower : public sta::dbStaState
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
   int resize_count_ = 0;
   const MinMax* max_ = MinMax::max();
 

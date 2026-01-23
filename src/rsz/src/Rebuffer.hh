@@ -29,7 +29,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Corner;
 using sta::dbNetwork;
 using sta::Delay;
 using sta::Instance;
@@ -94,7 +93,8 @@ class Rebuffer : public sta::dbStaState
                          int wire_layer,
                          int level = -1);
 
-  BufferedNetPtr importBufferTree(const Pin* drvr_pin, const Corner* corner);
+  BufferedNetPtr importBufferTree(const Pin* drvr_pin,
+                                  const sta::Corner* corner);
 
   void insertBufferOptions(BufferedNetSeq& opts,
                            int level,
@@ -157,7 +157,7 @@ class Rebuffer : public sta::dbStaState
   float fanout_limit_ = 0.0f;
   float drvr_pin_max_slew_ = 0.0f;
   float drvr_load_high_water_mark_ = 0.0f;
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
   LibertyPort* drvr_port_ = nullptr;
   Path* arrival_paths_[RiseFall::index_count] = {nullptr};
 
