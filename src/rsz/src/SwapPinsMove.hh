@@ -14,7 +14,6 @@
 
 namespace rsz {
 
-using sta::ArcDelay;
 using sta::DcalcAnalysisPt;
 using sta::Instance;
 using sta::InstancePinIterator;

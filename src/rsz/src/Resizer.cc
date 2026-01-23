@@ -3083,7 +3083,7 @@ Slew Resizer::gateSlewDiff(LibertyCell* cell,
 
 {
   const Pvt* pvt = tgt_slew_dcalc_ap_->operatingConditions();
-  ArcDelay arc_delay;
+  sta::ArcDelay arc_delay;
   Slew arc_slew;
   model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
   return arc_slew - out_slew;
@@ -3153,7 +3153,7 @@ void Resizer::findBufferTargetSlews(LibertyCell* buffer,
         const RiseFall* out_rf = arc->toEdge()->asRiseFall();
         float in_cap = input->capacitance(in_rf, max_);
         float load_cap = in_cap * tgt_slew_load_cap_factor;
-        ArcDelay arc_delay;
+        sta::ArcDelay arc_delay;
         Slew arc_slew;
         model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
         model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
@@ -3732,7 +3732,7 @@ float Resizer::bufferDelay(LibertyCell* buffer_cell,
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
+  sta::ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return gate_delays[rf->index()];
@@ -3744,7 +3744,7 @@ float Resizer::bufferDelay(LibertyCell* buffer_cell,
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
+  sta::ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return max(gate_delays[RiseFall::riseIndex()],
@@ -3755,7 +3755,7 @@ void Resizer::bufferDelays(LibertyCell* buffer_cell,
                            float load_cap,
                            const DcalcAnalysisPt* dcalc_ap,
                            // Return values.
-                           ArcDelay delays[RiseFall::index_count],
+                           sta::ArcDelay delays[RiseFall::index_count],
                            Slew slews[RiseFall::index_count])
 {
   LibertyPort *input, *output;
@@ -3769,7 +3769,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
                          const float load_cap,
                          const DcalcAnalysisPt* dcalc_ap,
                          // Return values.
-                         ArcDelay delays[RiseFall::index_count],
+                         sta::ArcDelay delays[RiseFall::index_count],
                          Slew slews[RiseFall::index_count])
 {
   for (int rf_index : RiseFall::rangeIndex()) {
@@ -3802,7 +3802,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
                                          load_pin_index_map,
                                          dcalc_ap);
 
-        const ArcDelay& gate_delay = dcalc_result.gateDelay();
+        const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
         const Slew& drvr_slew = dcalc_result.drvrSlew();
         delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
         slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
@@ -3818,7 +3818,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
                          const Slew in_slews[RiseFall::index_count],
                          const DcalcAnalysisPt* dcalc_ap,
                          // Return values.
-                         ArcDelay delays[RiseFall::index_count],
+                         sta::ArcDelay delays[RiseFall::index_count],
                          Slew out_slews[RiseFall::index_count])
 {
   for (int rf_index : RiseFall::rangeIndex()) {
@@ -3841,7 +3841,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
                                          load_pin_index_map,
                                          dcalc_ap);
 
-        const ArcDelay& gate_delay = dcalc_result.gateDelay();
+        const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
         const Slew& drvr_slew = dcalc_result.drvrSlew();
         delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
         out_slews[out_rf_index] = max(out_slews[out_rf_index], drvr_slew);
@@ -3850,22 +3850,22 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
   }
 }
 
-ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
-                            const RiseFall* rf,
-                            const float load_cap,
-                            const DcalcAnalysisPt* dcalc_ap)
+sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
+                                 const RiseFall* rf,
+                                 const float load_cap,
+                                 const DcalcAnalysisPt* dcalc_ap)
 {
-  ArcDelay delays[RiseFall::index_count];
+  sta::ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
   return delays[rf->index()];
 }
 
-ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
-                            const float load_cap,
-                            const DcalcAnalysisPt* dcalc_ap)
+sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
+                                 const float load_cap,
+                                 const DcalcAnalysisPt* dcalc_ap)
 {
-  ArcDelay delays[RiseFall::index_count];
+  sta::ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
   return max(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
@@ -4073,10 +4073,10 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
                                           drvr_parasitic,
                                           load_pin_index_map,
                                           dcalc_ap);
-          ArcDelay gate_delay = dcalc_result.gateDelay();
+          sta::ArcDelay gate_delay = dcalc_result.gateDelay();
           // Only one load pin, so load_idx is 0.
-          ArcDelay wire_delay = dcalc_result.wireDelay(0);
-          ArcDelay load_slew = dcalc_result.loadSlew(0);
+          sta::ArcDelay wire_delay = dcalc_result.wireDelay(0);
+          sta::ArcDelay load_slew = dcalc_result.loadSlew(0);
           delay = max(delay, gate_delay + wire_delay);
           slew = max(slew, load_slew);
         }
@@ -5120,7 +5120,7 @@ float Resizer::bufferSlew(LibertyCell* buffer_cell,
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
+  sta::ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return max(slews[RiseFall::riseIndex()], slews[RiseFall::fallIndex()]);

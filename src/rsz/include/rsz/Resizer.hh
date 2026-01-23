@@ -66,7 +66,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
@@ -650,22 +649,22 @@ class Resizer : public dbStaState, public dbNetworkObserver
                   float load_cap,
                   const DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  ArcDelay delays[RiseFall::index_count],
+                  sta::ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
   void gateDelays(const LibertyPort* drvr_port,
                   float load_cap,
                   const Slew in_slews[RiseFall::index_count],
                   const DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  ArcDelay delays[RiseFall::index_count],
+                  sta::ArcDelay delays[RiseFall::index_count],
                   Slew out_slews[RiseFall::index_count]);
-  ArcDelay gateDelay(const LibertyPort* drvr_port,
-                     float load_cap,
-                     const DcalcAnalysisPt* dcalc_ap);
-  ArcDelay gateDelay(const LibertyPort* drvr_port,
-                     const RiseFall* rf,
-                     float load_cap,
-                     const DcalcAnalysisPt* dcalc_ap);
+  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+                          float load_cap,
+                          const DcalcAnalysisPt* dcalc_ap);
+  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+                          const RiseFall* rf,
+                          float load_cap,
+                          const DcalcAnalysisPt* dcalc_ap);
   float bufferDelay(LibertyCell* buffer_cell,
                     float load_cap,
                     const DcalcAnalysisPt* dcalc_ap);
@@ -677,7 +676,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                     float load_cap,
                     const DcalcAnalysisPt* dcalc_ap,
                     // Return values.
-                    ArcDelay delays[RiseFall::index_count],
+                    sta::ArcDelay delays[RiseFall::index_count],
                     Slew slews[RiseFall::index_count]);
   void cellWireDelay(LibertyPort* drvr_port,
                      LibertyPort* load_port,

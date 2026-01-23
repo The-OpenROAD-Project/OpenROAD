@@ -409,8 +409,8 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
                = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            const float drive1 = port1->driveResistance();
            const float drive2 = port2->driveResistance();
-           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+           const sta::ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+           const sta::ArcDelay intrinsic2 = port2->intrinsicDelay(this);
            return (std::tie(drive1, intrinsic2) < std::tie(drive2, intrinsic1));
          });
     const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();

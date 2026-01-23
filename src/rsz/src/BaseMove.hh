@@ -47,7 +47,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
@@ -167,22 +166,22 @@ class BaseMove : public sta::dbStaState
                   float load_cap,
                   const DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  ArcDelay delays[RiseFall::index_count],
+                  sta::ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
   void gateDelays(const LibertyPort* drvr_port,
                   float load_cap,
                   const Slew in_slews[RiseFall::index_count],
                   const DcalcAnalysisPt* dcalc_ap,
                   // Return values.
-                  ArcDelay delays[RiseFall::index_count],
+                  sta::ArcDelay delays[RiseFall::index_count],
                   Slew out_slews[RiseFall::index_count]);
-  ArcDelay gateDelay(const LibertyPort* drvr_port,
-                     float load_cap,
-                     const DcalcAnalysisPt* dcalc_ap);
-  ArcDelay gateDelay(const LibertyPort* drvr_port,
-                     const RiseFall* rf,
-                     float load_cap,
-                     const DcalcAnalysisPt* dcalc_ap);
+  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+                          float load_cap,
+                          const DcalcAnalysisPt* dcalc_ap);
+  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+                          const RiseFall* rf,
+                          float load_cap,
+                          const DcalcAnalysisPt* dcalc_ap);
 
   bool isPortEqiv(sta::FuncExpr* expr,
                   const LibertyCell* cell,
@@ -233,7 +232,7 @@ class BaseMove : public sta::dbStaState
   float computeElmoreSlewFactor(const Pin* output_pin,
                                 LibertyPort* output_port,
                                 float output_load_cap);
-  ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
+  sta::ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
   Slack getWorstInputSlack(Instance* inst);
   Slack getWorstOutputSlack(Instance* inst);
   std::vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);

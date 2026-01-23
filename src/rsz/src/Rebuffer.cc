@@ -1168,7 +1168,7 @@ FixedDelay Rebuffer::bufferDelay(LibertyCell* cell,
           = arrival_paths_[rf1->index()]->dcalcAnalysisPt(sta_);
       LibertyPort *input, *output;
       cell->bufferPorts(input, output);
-      ArcDelay gate_delays[RiseFall::index_count];
+      sta::ArcDelay gate_delays[RiseFall::index_count];
       Slew slews[RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
       delay = std::max<FixedDelay>(

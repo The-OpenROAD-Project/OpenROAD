@@ -10,7 +10,6 @@
 
 namespace rsz {
 
-using sta::ArcDelay;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LoadPinIndexMap;

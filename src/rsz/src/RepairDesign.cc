@@ -882,7 +882,7 @@ void RepairDesign::checkDriverArcSlew(const Corner* corner,
                     graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap->index());
     const Pvt* pvt = dcalc_ap->operatingConditions();
 
-    ArcDelay arc_delay;
+    sta::ArcDelay arc_delay;
     Slew arc_slew;
     model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
 
@@ -1291,7 +1291,7 @@ double RepairDesign::gateSlewDiff(LibertyPort* drvr_port,
                                   double slew,
                                   const DcalcAnalysisPt* dcalc_ap)
 {
-  ArcDelay delays[RiseFall::index_count];
+  sta::ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
   resizer_->gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
   Slew gate_slew
