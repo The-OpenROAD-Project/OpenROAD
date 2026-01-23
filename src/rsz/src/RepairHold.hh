@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::PinSeq;
 using sta::RiseFall;
 using sta::Slack;
 using sta::StaState;
@@ -100,7 +99,7 @@ class RepairHold : public sta::dbStaState
                      double hold_margin,
                      bool allow_setup_violations);
   void makeHoldDelay(Vertex* drvr,
-                     PinSeq& load_pins,
+                     sta::PinSeq& load_pins,
                      bool loads_have_out_port,
                      sta::LibertyCell* buffer_cell,
                      const odb::Point& loc);

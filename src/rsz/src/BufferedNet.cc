@@ -519,7 +519,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     const sta::Network* network)
 {
   BufferedNetPtr bnet = nullptr;
-  const PinSeq* pins = tree->pins(to);
+  const sta::PinSeq* pins = tree->pins(to);
   const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
@@ -786,7 +786,7 @@ bool RoutePtEqual::operator()(const RoutePt& pt1, const RoutePt& pt2) const
 static const RoutePt route_pt_null(0, 0, 0);
 
 using RoutePtSet = std::unordered_set<RoutePt, RoutePtHash, RoutePtEqual>;
-using RoutePtPinMap = std::unordered_map<RoutePt, PinSeq, RoutePtHash>;
+using RoutePtPinMap = std::unordered_map<RoutePt, sta::PinSeq, RoutePtHash>;
 
 static BufferedNetPtr makeBufferedNet(
     RoutePt& from,
@@ -811,7 +811,7 @@ static BufferedNetPtr makeBufferedNet(
   odb::Point to_pt(to.x(), to.y());
 
   BufferedNetPtr bnet = nullptr;
-  const PinSeq& pins = loc_pin_map[to];
+  const sta::PinSeq& pins = loc_pin_map[to];
   for (const sta::Pin* pin : pins) {
     if (db_network->isLoad(pin)) {
       auto load_bnet = make_shared<BufferedNet>(

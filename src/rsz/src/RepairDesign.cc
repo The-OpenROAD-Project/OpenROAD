@@ -1329,7 +1329,7 @@ void RepairDesign::repairNet(const BufferedNetPtr& bnet,
   }
 
   int wire_length;
-  PinSeq load_pins;
+  sta::PinSeq load_pins;
   repairNet(bnet, 0, wire_length, load_pins);
 
   if (graphics_) {
@@ -1358,7 +1358,7 @@ void RepairDesign::repairNet(const BufferedNetPtr& bnet,
                              // Return values.
                              // Remaining parasiics after repeater insertion.
                              int& wire_length,  // dbu
-                             PinSeq& load_pins)
+                             sta::PinSeq& load_pins)
 {
   switch (bnet->type()) {
     case BufferedNetType::wire:
@@ -1384,7 +1384,7 @@ void RepairDesign::repairNetVia(const BufferedNetPtr& bnet,
                                 // Return values.
                                 // Remaining parasiics after repeater insertion.
                                 int& wire_length,  // dbu
-                                PinSeq& load_pins)
+                                sta::PinSeq& load_pins)
 {
   repairNet(bnet->ref(), level + 1, wire_length, load_pins);
   bnet->setCapacitance(bnet->ref()->cap());
@@ -1400,7 +1400,7 @@ void RepairDesign::repairNetWire(
     // Return values.
     // Remaining parasiics after repeater insertion.
     int& wire_length,  // dbu
-    PinSeq& load_pins)
+    sta::PinSeq& load_pins)
 {
   debugPrint(logger_,
              RSZ,
@@ -1640,7 +1640,7 @@ void RepairDesign::repairNetJunc(
     // Return values.
     // Remaining parasiics after repeater insertion.
     int& wire_length,  // dbu
-    PinSeq& load_pins)
+    sta::PinSeq& load_pins)
 {
   debugPrint(logger_,
              RSZ,
@@ -1654,7 +1654,7 @@ void RepairDesign::repairNetJunc(
 
   BufferedNetPtr left = bnet->ref();
   int wire_length_left = 0;
-  PinSeq loads_left;
+  sta::PinSeq loads_left;
   repairNet(left, level + 1, wire_length_left, loads_left);
   float cap_left = left->cap();
   float fanout_left = left->fanout();
@@ -1662,7 +1662,7 @@ void RepairDesign::repairNetJunc(
 
   BufferedNetPtr right = bnet->ref2();
   int wire_length_right = 0;
-  PinSeq loads_right;
+  sta::PinSeq loads_right;
   repairNet(right, level + 1, wire_length_right, loads_right);
   float cap_right = right->cap();
   float fanout_right = right->fanout();
@@ -1811,7 +1811,7 @@ void RepairDesign::repairNetLoad(
     // Return values.
     // Remaining parasiics after repeater insertion.
     int& wire_length,  // dbu
-    PinSeq& load_pins)
+    sta::PinSeq& load_pins)
 {
   debugPrint(logger_,
              RSZ,
@@ -1842,7 +1842,8 @@ void RepairDesign::repairNetLoad(
 
 LoadRegion::LoadRegion() = default;
 
-LoadRegion::LoadRegion(PinSeq& pins, odb::Rect& bbox) : pins_(pins), bbox_(bbox)
+LoadRegion::LoadRegion(sta::PinSeq& pins, odb::Rect& bbox)
+    : pins_(pins), bbox_(bbox)
 {
 }
 
@@ -1850,7 +1851,7 @@ LoadRegion RepairDesign::findLoadRegions(const sta::Net* net,
                                          const sta::Pin* drvr_pin,
                                          int max_fanout)
 {
-  PinSeq loads = findLoads(drvr_pin);
+  sta::PinSeq loads = findLoads(drvr_pin);
   odb::Rect bbox = findBbox(loads);
   LoadRegion region(loads, bbox);
   if (graphics_) {
@@ -1937,10 +1938,10 @@ void RepairDesign::makeRegionRepeaters(LoadRegion& region,
                           resize_drvr);
     }
 
-    PinSeq repeater_inputs;
-    PinSeq repeater_loads;
+    sta::PinSeq repeater_inputs;
+    sta::PinSeq repeater_loads;
     for (LoadRegion& sub : region.regions_) {
-      PinSeq& sub_pins = sub.pins_;
+      sta::PinSeq& sub_pins = sub.pins_;
       while (!sub_pins.empty()) {
         repeater_loads.push_back(sub_pins.back());
         sub_pins.pop_back();
@@ -1989,8 +1990,8 @@ void RepairDesign::makeRegionRepeaters(LoadRegion& region,
   }
 }
 
-void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
-                                      PinSeq& repeater_inputs,
+void RepairDesign::makeFanoutRepeater(sta::PinSeq& repeater_loads,
+                                      sta::PinSeq& repeater_inputs,
                                       const odb::Rect& bbox,
                                       const odb::Point& loc,
                                       bool check_slew,
@@ -2038,7 +2039,7 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
   repeater_loads.clear();
 }
 
-odb::Rect RepairDesign::findBbox(PinSeq& pins)
+odb::Rect RepairDesign::findBbox(sta::PinSeq& pins)
 {
   odb::Rect bbox;
   bbox.mergeInit();
@@ -2050,11 +2051,11 @@ odb::Rect RepairDesign::findBbox(PinSeq& pins)
   return bbox;
 }
 
-PinSeq RepairDesign::findLoads(const sta::Pin* drvr_pin)
+sta::PinSeq RepairDesign::findLoads(const sta::Pin* drvr_pin)
 {
-  PinSeq loads;
+  sta::PinSeq loads;
   sta::Pin* drvr_pin1 = const_cast<sta::Pin*>(drvr_pin);
-  PinSeq drvrs;
+  sta::PinSeq drvrs;
   PinSet visited_drvrs(db_network_);
   sta::FindNetDrvrLoads visitor(
       drvr_pin1, visited_drvrs, loads, drvrs, network_);
@@ -2063,7 +2064,7 @@ PinSeq RepairDesign::findLoads(const sta::Pin* drvr_pin)
 }
 
 odb::Point RepairDesign::findClosedPinLoc(const sta::Pin* drvr_pin,
-                                          PinSeq& pins)
+                                          sta::PinSeq& pins)
 {
   odb::Point drvr_loc = db_network_->location(drvr_pin);
   odb::Point closest_pt = drvr_loc;
@@ -2094,7 +2095,7 @@ bool RepairDesign::makeRepeater(const char* reason,
                                 bool resize,
                                 int level,
                                 // Return values.
-                                PinSeq& load_pins,
+                                sta::PinSeq& load_pins,
                                 float& repeater_cap,
                                 float& repeater_fanout,
                                 float& repeater_max_slew)
@@ -2142,7 +2143,7 @@ bool RepairDesign::makeRepeater(
     bool resize,
     int level,
     // Return values.
-    PinSeq& load_pins,  // inout, read, reset, repopulated.
+    sta::PinSeq& load_pins,  // inout, read, reset, repopulated.
     float& repeater_cap,
     float& repeater_fanout,
     float& repeater_max_slew,

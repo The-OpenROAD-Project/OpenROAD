@@ -31,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::PinSeq;
 using sta::Slew;
 using sta::StaState;
 using sta::Vertex;
@@ -41,9 +40,9 @@ class LoadRegion
 {
  public:
   LoadRegion();
-  LoadRegion(PinSeq& pins, odb::Rect& bbox);
+  LoadRegion(sta::PinSeq& pins, odb::Rect& bbox);
 
-  PinSeq pins_;
+  sta::PinSeq pins_;
   odb::Rect bbox_;  // dbu
   std::vector<LoadRegion> regions_;
 };
@@ -153,28 +152,28 @@ class RepairDesign : sta::dbStaState
                  int level,
                  // Return values.
                  int& wire_length,
-                 PinSeq& load_pins);
+                 sta::PinSeq& load_pins);
   void checkSlewLimit(float ref_cap, float max_load_slew);
   void repairNetVia(const BufferedNetPtr& bnet,
                     int level,
                     // Return values.
                     int& wire_length,
-                    PinSeq& load_pins);
+                    sta::PinSeq& load_pins);
   void repairNetWire(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int& wire_length,
-                     PinSeq& load_pins);
+                     sta::PinSeq& load_pins);
   void repairNetJunc(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int& wire_length,
-                     PinSeq& load_pins);
+                     sta::PinSeq& load_pins);
   void repairNetLoad(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int& wire_length,
-                     PinSeq& load_pins);
+                     sta::PinSeq& load_pins);
   float maxSlewMargined(float max_slew);
   double findSlewLoadCap(sta::LibertyPort* drvr_port,
                          double slew,
@@ -195,17 +194,17 @@ class RepairDesign : sta::dbStaState
                            bool check_cap,
                            int max_length,
                            bool resize_drvr);
-  void makeFanoutRepeater(PinSeq& repeater_loads,
-                          PinSeq& repeater_inputs,
+  void makeFanoutRepeater(sta::PinSeq& repeater_loads,
+                          sta::PinSeq& repeater_inputs,
                           const odb::Rect& bbox,
                           const odb::Point& loc,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
                           bool resize_drvr);
-  PinSeq findLoads(const sta::Pin* drvr_pin);
-  odb::Rect findBbox(PinSeq& pins);
-  odb::Point findClosedPinLoc(const sta::Pin* drvr_pin, PinSeq& pins);
+  sta::PinSeq findLoads(const sta::Pin* drvr_pin);
+  odb::Rect findBbox(sta::PinSeq& pins);
+  odb::Point findClosedPinLoc(const sta::Pin* drvr_pin, sta::PinSeq& pins);
   bool isRepeater(const sta::Pin* load_pin);
   bool makeRepeater(const char* reason,
                     const odb::Point& loc,
@@ -213,7 +212,7 @@ class RepairDesign : sta::dbStaState
                     bool resize,
                     int level,
                     // Return values.
-                    PinSeq& load_pins,
+                    sta::PinSeq& load_pins,
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
@@ -224,7 +223,7 @@ class RepairDesign : sta::dbStaState
                     bool resize,
                     int level,
                     // Return values.
-                    PinSeq& load_pins,
+                    sta::PinSeq& load_pins,
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew,

@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::PinSeq;
 using sta::PinSet;
 using sta::Pvt;
 using sta::Required;
@@ -289,7 +288,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   ///
   sta::Instance* insertBufferBeforeLoads(
       sta::Net* net,
-      PinSeq* loads,
+      sta::PinSeq* loads,
       sta::LibertyCell* buffer_cell,
       const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -696,7 +695,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findCellInstances(sta::LibertyCell* cell,
                          // Return value.
                          sta::InstanceSeq& insts);
-  void findLoads(sta::Pin* drvr_pin, PinSeq& loads);
+  void findLoads(sta::Pin* drvr_pin, sta::PinSeq& loads);
   bool isFuncOneZero(const sta::Pin* drvr_pin);
   bool hasPins(sta::Net* net);
   void getPins(sta::Net* net, PinVector& pins) const;

@@ -561,7 +561,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
 
         if (path_vertex->isDriver(network_)
             && resizer_->okToBufferNet(path_pin)) {
-          PinSeq load_pins;
+          sta::PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);
           float excluded_cap = 0.0;
@@ -685,7 +685,7 @@ void RepairHold::mergeInto(Slacks& from, Slacks& result)
 }
 
 void RepairHold::makeHoldDelay(Vertex* drvr,
-                               PinSeq& load_pins,
+                               sta::PinSeq& load_pins,
                                bool loads_have_out_port,  // top level port
                                sta::LibertyCell* buffer_cell,
                                const odb::Point& loc)

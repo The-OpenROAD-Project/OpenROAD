@@ -3611,8 +3611,8 @@ sta::NetSeq* Resizer::findFloatingNets()
   NetIterator* net_iter = network_->netIterator(network_->topInstance());
   while (net_iter->hasNext()) {
     sta::Net* net = net_iter->next();
-    PinSeq loads;
-    PinSeq drvrs;
+    sta::PinSeq loads;
+    sta::PinSeq drvrs;
     PinSet visited_drvrs(db_network_);
     FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
     network_->visitConnectedPins(net, visitor);
@@ -3658,8 +3658,8 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
       network_->netIterator(network_->topInstance()));
   while (net_iter->hasNext()) {
     sta::Net* net = net_iter->next();
-    PinSeq loads;
-    PinSeq drvrs;
+    sta::PinSeq loads;
+    sta::PinSeq drvrs;
     PinSet visited_drvrs(db_network_);
     FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
     network_->visitConnectedPins(net, visitor);
@@ -4923,7 +4923,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(
 
 sta::Instance* Resizer::insertBufferBeforeLoads(
     sta::Net* net,
-    PinSeq* loads,
+    sta::PinSeq* loads,
     sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
