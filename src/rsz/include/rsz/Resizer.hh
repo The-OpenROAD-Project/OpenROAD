@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Parasitics;
 using sta::Pin;
 using sta::PinSeq;
 using sta::PinSet;
@@ -676,7 +675,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                          Pin* load_pin,
                          double wire_length,  // meters
                          const sta::Corner* corner,
-                         Parasitics* parasitics);
+                         sta::Parasitics* parasitics);
   bool overMaxArea();
   bool bufferBetweenPorts(sta::Instance* buffer);
   bool hasPort(const sta::Net* net);

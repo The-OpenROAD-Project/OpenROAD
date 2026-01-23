@@ -4042,7 +4042,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
                             sta::Delay& delay,
                             Slew& slew)
 {
-  Parasitics* parasitics = sta->parasitics();
+  sta::Parasitics* parasitics = sta->parasitics();
   sta::Network* network = sta->network();
   ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
   Corners* corners = sta->corners();
