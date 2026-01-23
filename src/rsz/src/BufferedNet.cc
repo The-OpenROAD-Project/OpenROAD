@@ -260,7 +260,7 @@ void BufferedNet::reportTree(const int level, const Resizer* resizer) const
 std::string BufferedNet::to_string(const Resizer* resizer) const
 {
   sta::Network* sdc_network = resizer->sdcNetwork();
-  Units* units = resizer->units();
+  sta::Units* units = resizer->units();
   sta::Unit* dist_unit = units->distanceUnit();
   const char* x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 2);
   const char* y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 2);

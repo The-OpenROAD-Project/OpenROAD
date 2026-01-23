@@ -27,8 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Units;
-
 class Resizer;
 class RepairSetup;
 
