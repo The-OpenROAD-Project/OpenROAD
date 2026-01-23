@@ -64,7 +64,7 @@ void PreChecks::checkSlewLimit(float ref_cap, float max_load_slew)
   }
 }
 
-void PreChecks::checkCapLimit(const Pin* drvr_pin)
+void PreChecks::checkCapLimit(const sta::Pin* drvr_pin)
 {
   if (!min_cap_load_computed_) {
     min_cap_load_computed_ = true;

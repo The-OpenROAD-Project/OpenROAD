@@ -83,7 +83,7 @@ FixedDelay::FixedDelay(sta::Delay float_value, Resizer* resizer)
 // load
 BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
-                         const Pin* load_pin,
+                         const sta::Pin* load_pin,
                          const sta::Corner* corner,
                          const Resizer* resizer)
 {
@@ -486,7 +486,7 @@ static const char* to_string(const BufferedNetType type)
 
 ////////////////////////////////////////////////////////////////
 
-BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
+BufferedNetPtr Resizer::makeBufferedNet(const sta::Pin* drvr_pin,
                                         const sta::Corner* corner)
 {
   switch (estimate_parasitics_->getParasiticsSrc()) {
@@ -525,7 +525,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (pins && pins_visited.find(to_loc) == pins_visited.end()) {
     pins_visited.insert(to_loc);
-    for (const Pin* pin : *pins) {
+    for (const sta::Pin* pin : *pins) {
       if (network->isLoad(pin)) {
         BufferedNetPtr bnet1 = make_shared<BufferedNet>(
             BufferedNetType::load, tree->location(to), pin, corner, resizer);
@@ -592,7 +592,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
 }
 
 // Make BufferedNet from steiner tree.
-BufferedNetPtr Resizer::makeBufferedNetSteiner(const Pin* drvr_pin,
+BufferedNetPtr Resizer::makeBufferedNetSteiner(const sta::Pin* drvr_pin,
                                                const sta::Corner* corner)
 {
   BufferedNetPtr bnet;
@@ -812,7 +812,7 @@ static BufferedNetPtr makeBufferedNet(
 
   BufferedNetPtr bnet = nullptr;
   const PinSeq& pins = loc_pin_map[to];
-  for (const Pin* pin : pins) {
+  for (const sta::Pin* pin : pins) {
     if (db_network->isLoad(pin)) {
       auto load_bnet = make_shared<BufferedNet>(
           BufferedNetType::load, to_pt, pin, corner, resizer);
@@ -879,7 +879,7 @@ static BufferedNetPtr makeBufferedNet(
   return bnet;
 }
 
-BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
+BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
                                               const sta::Corner* corner)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
@@ -894,8 +894,8 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
   RoutePtPinMap loc_pin_map;
 
   for (grt::PinGridLocation& pin_loc : pin_grid_locs) {
-    Pin* pin = pin_loc.iterm ? db_network_->dbToSta(pin_loc.iterm)
-                             : db_network_->dbToSta(pin_loc.bterm);
+    sta::Pin* pin = pin_loc.iterm ? db_network_->dbToSta(pin_loc.iterm)
+                                  : db_network_->dbToSta(pin_loc.bterm);
     RoutePt pin_route_pt(
         pin_loc.grid_pt.getX(), pin_loc.grid_pt.getY(), pin_loc.conn_layer);
     debugPrint(logger_,

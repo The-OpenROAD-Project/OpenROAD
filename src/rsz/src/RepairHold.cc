@@ -115,7 +115,7 @@ bool RepairHold::repairHold(
 }
 
 // For testing/debug.
-void RepairHold::repairHold(const Pin* end_pin,
+void RepairHold::repairHold(const sta::Pin* end_pin,
                             const double setup_margin,
                             const double hold_margin,
                             const bool allow_setup_violations,
@@ -557,7 +557,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
       // Stop one short of the end so we can get the load.
       for (int i = 0; i < path_vertices.size() - 1; i++) {
         Vertex* path_vertex = path_vertices[i];
-        Pin* path_pin = path_vertex->pin();
+        sta::Pin* path_pin = path_vertex->pin();
 
         if (path_vertex->isDriver(network_)
             && resizer_->okToBufferNet(path_pin)) {
@@ -572,7 +572,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
             Vertex* fanout = edge->to(graph_);
             if (pred.searchTo(fanout) && pred.searchThru(edge)) {
               Slack fanout_hold_slack = sta_->vertexSlack(fanout, min_);
-              Pin* load_pin = fanout->pin();
+              sta::Pin* load_pin = fanout->pin();
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
                 Slacks fanout_slacks;
@@ -691,10 +691,10 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
                                const odb::Point& loc)
 {
   sta::Instance* buffer = nullptr;
-  Pin* buffer_out_pin = nullptr;
+  sta::Pin* buffer_out_pin = nullptr;
 
   // New insert buffer behavior
-  Pin* drvr_pin = drvr->pin();
+  sta::Pin* drvr_pin = drvr->pin();
   odb::dbObject* drvr_db_pin = db_network_->staToDb(drvr_pin);
   odb::dbNet* drvr_dbnet = nullptr;
   if (drvr_db_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
@@ -707,12 +707,12 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // PinSeq -> PinSet
   PinSet load_pins_set(network_);
-  for (const Pin* load_pin : load_pins) {
+  for (const sta::Pin* load_pin : load_pins) {
     if (load_pin != nullptr) {
       if (resizer_->dontTouch(load_pin)) {
         continue;
       }
-      load_pins_set.insert(const_cast<Pin*>(load_pin));
+      load_pins_set.insert(const_cast<sta::Pin*>(load_pin));
     }
   }
 
@@ -747,7 +747,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   }
 }
 
-bool RepairHold::checkMaxSlewCap(const Pin* drvr_pin)
+bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
 {
   float cap, limit, slack;
   const sta::Corner* corner;

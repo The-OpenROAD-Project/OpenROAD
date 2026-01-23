@@ -224,7 +224,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 }
 
 // For testing.
-Vertex* RecoverPower::recoverPower(const Pin* end_pin)
+Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
 {
   init();
   resize_count_ = 0;
@@ -262,7 +262,7 @@ Vertex* RecoverPower::recoverPower(const sta::Path* path,
     for (int i = start_index; i < path_length; i++) {
       const sta::Path* path = expanded.path(i);
       const Vertex* path_vertex = path->vertex(sta_);
-      const Pin* path_pin = path->pin(sta_);
+      const sta::Pin* path_pin = path->pin(sta_);
       if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
         const TimingArc* prev_arc = path->prevArc(sta_);
@@ -301,7 +301,7 @@ Vertex* RecoverPower::recoverPower(const sta::Path* path,
       if (bad_vertices_.find(drvr_vertex) != bad_vertices_.end()) {
         continue;
       }
-      const Pin* drvr_pin = drvr_vertex->pin();
+      const sta::Pin* drvr_pin = drvr_vertex->pin();
       const sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
       const sta::LibertyCell* drvr_cell
           = drvr_port ? drvr_port->libertyCell() : nullptr;
@@ -329,20 +329,20 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
                                 const bool only_same_size_swap,
                                 const Slack path_slack)
 {
-  const Pin* drvr_pin = drvr_path->pin(this);
+  const sta::Pin* drvr_pin = drvr_path->pin(this);
   sta::Instance* drvr = network_->instance(drvr_pin);
   const sta::DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
   const int in_index = drvr_index - 1;
   const sta::Path* in_path = expanded->path(in_index);
-  const Pin* in_pin = in_path->pin(sta_);
+  const sta::Pin* in_pin = in_path->pin(sta_);
   const sta::LibertyPort* in_port = network_->libertyPort(in_pin);
   if (!resizer_->dontTouch(drvr)) {
     float prev_drive = 0.0;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;
       const sta::Path* prev_drvr_path = expanded->path(prev_drvr_index);
-      const Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+      const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
       const sta::LibertyPort* prev_drvr_port
           = network_->libertyPort(prev_drvr_pin);
       if (prev_drvr_port) {

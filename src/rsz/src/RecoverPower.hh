@@ -30,7 +30,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Pin;
 using sta::Slack;
 using sta::StaState;
 using sta::TimingArc;
@@ -47,7 +46,7 @@ class RecoverPower : public sta::dbStaState
   RecoverPower(Resizer* resizer);
   bool recoverPower(float recover_power_percent, bool verbose);
   // For testing.
-  Vertex* recoverPower(const Pin* end_pin);
+  Vertex* recoverPower(const sta::Pin* end_pin);
 
  private:
   void init();
@@ -74,7 +73,8 @@ class RecoverPower : public sta::dbStaState
   BufferedNetSeq addWireAndBuffer(BufferedNetSeq Z,
                                   BufferedNetPtr bnet_wire,
                                   int level);
-  float pinCapacitance(const Pin* pin, const sta::DcalcAnalysisPt* dcalc_ap);
+  float pinCapacitance(const sta::Pin* pin,
+                       const sta::DcalcAnalysisPt* dcalc_ap);
   float bufferInputCapacitance(sta::LibertyCell* buffer_cell,
                                const sta::DcalcAnalysisPt* dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);

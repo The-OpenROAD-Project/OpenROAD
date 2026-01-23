@@ -31,7 +31,7 @@ class SizeDownMove : public BaseMove
  private:
   sta::LibertyCell* downSizeGate(const sta::LibertyPort* drvr_port,
                                  const sta::LibertyPort* load_port,
-                                 const Pin* load_pin,
+                                 const sta::Pin* load_pin,
                                  const sta::DcalcAnalysisPt* dcalc_ap,
                                  float slack_margin);
 };

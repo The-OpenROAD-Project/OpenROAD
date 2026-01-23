@@ -27,7 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Pin;
 using sta::Required;
 using sta::RiseFall;
 using sta::StaState;
@@ -120,7 +119,7 @@ class BufferedNet
   // load
   BufferedNet(BufferedNetType type,
               const odb::Point& location,
-              const Pin* load_pin,
+              const sta::Pin* load_pin,
               const sta::Corner* corner,
               const Resizer* resizer);
   // wire
@@ -169,7 +168,7 @@ class BufferedNet
   float maxLoadSlew() const { return max_load_slew_; }
   void setMaxLoadSlew(float max_slew);
   // load
-  const Pin* loadPin() const { return load_pin_; }
+  const sta::Pin* loadPin() const { return load_pin_; }
   // wire
   int length() const;
   void wireRC(const sta::Corner* corner,
@@ -269,7 +268,7 @@ class BufferedNet
   BufferedNetType type_;
   odb::Point location_;
   // only used by load type
-  const Pin* load_pin_{nullptr};
+  const sta::Pin* load_pin_{nullptr};
   // only used by buffer type
   sta::LibertyCell* buffer_cell_{nullptr};
   // only used by wire and via type

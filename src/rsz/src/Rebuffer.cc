@@ -122,7 +122,7 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
           case BnetType::junction:
             return recurse(node->ref()) + recurse(node->ref2());
           case BnetType::load: {
-            const Pin* load_pin = node->loadPin();
+            const sta::Pin* load_pin = node->loadPin();
             Vertex* vertex = graph_->pinLoadVertex(load_pin);
             sta::Path* req_path
                 = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
@@ -1574,7 +1574,7 @@ static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst)
   return false;
 }
 
-BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin,
+BnetPtr Rebuffer::importBufferTree(const sta::Pin* drvr_pin,
                                    const sta::Corner* corner)
 {
   BufferedNetPtr tree = resizer_->makeBufferedNet(drvr_pin, corner);
@@ -1687,10 +1687,10 @@ static FixedDelay criticalPathDelay(utl::Logger* logger, const BnetPtr& root)
 }
 
 std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
-    Pin* drvr_pin,
+    sta::Pin* drvr_pin,
     const BnetPtr& imported_tree)
 {
-  std::set<const Pin*> imported_as_loads;
+  std::set<const sta::Pin*> imported_as_loads;
   visitTree(
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
         switch (node->type()) {
@@ -1722,7 +1722,7 @@ std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
     queue.pop_back();
 
     while (pin_iter->hasNext()) {
-      const Pin* pin = pin_iter->next();
+      const sta::Pin* pin = pin_iter->next();
       const sta::LibertyPort* port = network_->libertyPort(pin);
       if (port && port->libertyCell()->isBuffer()) {
         sta::LibertyPort *in, *out;
@@ -1731,7 +1731,7 @@ std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
         if (port == in && !imported_as_loads.contains(pin)) {
           sta::Instance* inst = network_->instance(pin);
           insts.push_back(inst);
-          const Pin* out_pin = network_->findPin(inst, out);
+          const sta::Pin* out_pin = network_->findPin(inst, out);
           if (out_pin) {
             queue.push_back(network_->net(out_pin));
           }
@@ -1796,7 +1796,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
       }
 
       case BufferedNetType::load: {
-        const Pin* load_pin = node->loadPin();
+        const sta::Pin* load_pin = node->loadPin();
 
         // Skip DontTouch pins
         if (resizer_->dontTouch(load_pin)) {
@@ -1857,7 +1857,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
           // node
           odb::dbITerm* input_term = buf_inst->findITerm(input->name());
           if (input_term) {
-            Pin* sta_input_pin = db_network_->dbToSta(input_term);
+            sta::Pin* sta_input_pin = db_network_->dbToSta(input_term);
             current_loads.insert(sta_input_pin);
           }
 
@@ -1872,7 +1872,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
           // Print each load pin's full hierarchical name
           if (logger_->debugCheck(RSZ, "rebuffer", 3)) {
-            for (const Pin* load_pin : child_loads) {
+            for (const sta::Pin* load_pin : child_loads) {
               if (load_pin) {
                 debugPrint(logger_,
                            RSZ,
@@ -1953,7 +1953,7 @@ int Rebuffer::fanout(Vertex* vertex) const
   return fanout;
 }
 
-void Rebuffer::setPin(Pin* drvr_pin)
+void Rebuffer::setPin(sta::Pin* drvr_pin)
 {
   // set rebuffering globals
   pin_ = drvr_pin;
@@ -1981,7 +1981,7 @@ void Rebuffer::setPin(Pin* drvr_pin)
   }
 }
 
-void Rebuffer::fullyRebuffer(Pin* user_pin)
+void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 {
   double sta_runtime = 0, bft_runtime = 0, ra_runtime = 0;
   long_wire_stepping_runtime_ = 0;
@@ -1989,9 +1989,9 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   init();
   resizer_->ensureLevelDrvrVertices();
 
-  std::vector<Pin*> filtered_pins;
+  std::vector<sta::Pin*> filtered_pins;
   for (auto drvr : resizer_->level_drvr_vertices_) {
-    Pin* drvr_pin = drvr->pin();
+    sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = nullptr;
     odb::dbNet* net_db = nullptr;
 
@@ -2045,7 +2045,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
 
-    Pin* drvr_pin = filtered_pins[iter];
+    sta::Pin* drvr_pin = filtered_pins[iter];
 
     odb::dbNet* db_net = nullptr;
     if (network_->isTopLevelPort(drvr_pin)) {
@@ -2261,7 +2261,7 @@ bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
 {
   sta::NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
+    const sta::Pin* pin = pin_iter->next();
     if (network_->isTopLevelPort(pin) && network_->direction(pin)->isOutput()) {
       delete pin_iter;
       return true;
@@ -2271,7 +2271,7 @@ bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
   return false;
 }
 
-int Rebuffer::rebufferPin(const Pin* drvr_pin)
+int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 {
   if (network_->isTopLevelPort(drvr_pin)) {
     logger_->warn(RSZ,
@@ -2289,7 +2289,7 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
       // Verilog connects by net name, so there is no way to distinguish the
       // net from the port.
       !hasTopLevelOutputPort(net)) {
-    setPin(const_cast<Pin*>(drvr_pin));
+    setPin(const_cast<sta::Pin*>(drvr_pin));
     BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
 
     if (!bnet) {
@@ -2357,7 +2357,7 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     }
 
     sta::Instance* parent
-        = db_network_->getOwningInstanceParent(const_cast<Pin*>(drvr_pin));
+        = db_network_->getOwningInstanceParent(const_cast<sta::Pin*>(drvr_pin));
     odb::dbITerm* drvr_op_iterm = nullptr;
     odb::dbBTerm* drvr_op_bterm = nullptr;
     odb::dbModITerm* drvr_op_moditerm = nullptr;
@@ -2381,13 +2381,13 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
 }
 
 // Return inserted buffer count.
-int BufferMove::rebuffer(const Pin* drvr_pin)
+int BufferMove::rebuffer(const sta::Pin* drvr_pin)
 {
   return resizer_->rebuffer_->rebufferPin(drvr_pin);
 }
 
 // For testing.
-void BufferMove::rebufferNet(const Pin* drvr_pin)
+void BufferMove::rebufferNet(const sta::Pin* drvr_pin)
 {
   auto& rebuffer = resizer_->rebuffer_;
   rebuffer->init();

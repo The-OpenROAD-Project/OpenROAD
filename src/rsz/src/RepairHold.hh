@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Pin;
 using sta::PinSeq;
 using sta::RiseFall;
 using sta::Slack;
@@ -48,7 +47,7 @@ class RepairHold : public sta::dbStaState
                   int max_passes,
                   int max_iterations,
                   bool verbose);
-  void repairHold(const Pin* end_pin,
+  void repairHold(const sta::Pin* end_pin,
                   double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
@@ -105,7 +104,7 @@ class RepairHold : public sta::dbStaState
                      bool loads_have_out_port,
                      sta::LibertyCell* buffer_cell,
                      const odb::Point& loc);
-  bool checkMaxSlewCap(const Pin* drvr_pin);
+  bool checkMaxSlewCap(const sta::Pin* drvr_pin);
   void mergeInit(Slacks& slacks);
   void mergeInto(Slacks& from, Slacks& result);
 

@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Pin;
 using sta::RiseFall;
 using sta::RiseFallBoth;
 using sta::Slack;
@@ -104,7 +103,7 @@ class RepairSetup : public sta::dbStaState
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
   // For testing.
-  void repairSetup(const Pin* end_pin);
+  void repairSetup(const sta::Pin* end_pin);
   // For testing.
   void reportSwappablePins();
   // Rebuffer one net (for testing).

@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Pin;
 using sta::RiseFall;
 using sta::RiseFallBoth;
 using sta::Slack;
@@ -48,7 +47,7 @@ class Rebuffer : public sta::dbStaState
 {
  public:
   Rebuffer(Resizer* resizer);
-  void fullyRebuffer(Pin* user_pin = nullptr);
+  void fullyRebuffer(sta::Pin* user_pin = nullptr);
 
  protected:
   void init();
@@ -64,7 +63,7 @@ class Rebuffer : public sta::dbStaState
                              FixedDelay slack_target,
                              float alpha);
 
-  void setPin(Pin* drvr_pin);
+  void setPin(sta::Pin* drvr_pin);
 
   std::tuple<sta::Delay, sta::Delay, Slew> drvrPinTiming(
       const BufferedNetPtr& bnet);
@@ -88,7 +87,7 @@ class Rebuffer : public sta::dbStaState
                          int wire_layer,
                          int level = -1);
 
-  BufferedNetPtr importBufferTree(const Pin* drvr_pin,
+  BufferedNetPtr importBufferTree(const sta::Pin* drvr_pin,
                                   const sta::Corner* corner);
 
   void insertBufferOptions(BufferedNetSeq& opts,
@@ -103,7 +102,7 @@ class Rebuffer : public sta::dbStaState
                            int level);
 
   std::vector<sta::Instance*> collectImportedTreeBufferInstances(
-      Pin* drvr_pin,
+      sta::Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
   int exportBufferTree(const BufferedNetPtr& choice,
                        sta::Net* net,  // output of buffer.
@@ -138,7 +137,7 @@ class Rebuffer : public sta::dbStaState
                               int extra_wire_length = 0);
 
   bool hasTopLevelOutputPort(sta::Net* net);
-  int rebufferPin(const Pin* drvr_pin);
+  int rebufferPin(const sta::Pin* drvr_pin);
 
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
@@ -148,7 +147,7 @@ class Rebuffer : public sta::dbStaState
   std::vector<BufferSize> buffer_sizes_;
   std::map<sta::LibertyCell*, BufferSize*> buffer_sizes_index_;
 
-  Pin* pin_ = nullptr;
+  sta::Pin* pin_ = nullptr;
   float fanout_limit_ = 0.0f;
   float drvr_pin_max_slew_ = 0.0f;
   float drvr_load_high_water_mark_ = 0.0f;

@@ -30,7 +30,7 @@ class VTSwapSpeedMove : public BaseMove
 
  private:
   bool isSwappable(const sta::Path*& drvr_path,
-                   Pin*& drvr_pin,
+                   sta::Pin*& drvr_pin,
                    sta::Instance*& drvr,
                    sta::LibertyCell*& drvr_cell,
                    sta::LibertyCell*& best_cell);

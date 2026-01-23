@@ -49,7 +49,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Pin;
 using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
@@ -67,9 +66,9 @@ struct SlackEstimatorParams
   {
   }
 
-  Pin* driver_pin{nullptr};
-  Pin* prev_driver_pin{nullptr};
-  Pin* driver_input_pin{nullptr};
+  sta::Pin* driver_pin{nullptr};
+  sta::Pin* prev_driver_pin{nullptr};
+  sta::Pin* driver_input_pin{nullptr};
   sta::Instance* driver{nullptr};
   const sta::Path* driver_path{nullptr};
   const sta::Path* prev_driver_path{nullptr};
@@ -195,7 +194,7 @@ class BaseMove : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  void getBufferPins(sta::Instance* buffer, Pin*& ip, Pin*& op);
+  void getBufferPins(sta::Instance* buffer, sta::Pin*& ip, sta::Pin*& op);
   int fanout(Vertex* vertex);
 
   sta::LibertyCell* upsizeCell(sta::LibertyPort* in_port,
@@ -206,18 +205,18 @@ class BaseMove : public sta::dbStaState
   bool replaceCell(sta::Instance* inst, const sta::LibertyCell* replacement);
   bool checkMaxCapViolation(sta::Instance* inst,
                             const sta::LibertyCell* replacement);
-  float getInputPinCapacitance(Pin* pin, const sta::LibertyCell* cell);
-  bool checkMaxCapOK(const Pin* drvr_pin, float cap_delta);
+  float getInputPinCapacitance(sta::Pin* pin, const sta::LibertyCell* cell);
+  bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
 
-  bool checkMaxCapViolation(const Pin* output_pin,
+  bool checkMaxCapViolation(const sta::Pin* output_pin,
                             sta::LibertyPort* output_port,
                             float output_cap);
-  bool checkMaxSlewViolation(const Pin* output_pin,
+  bool checkMaxSlewViolation(const sta::Pin* output_pin,
                              sta::LibertyPort* output_port,
                              float output_slew_factor,
                              float output_cap,
                              const sta::DcalcAnalysisPt* dcalc_ap);
-  float computeElmoreSlewFactor(const Pin* output_pin,
+  float computeElmoreSlewFactor(const sta::Pin* output_pin,
                                 sta::LibertyPort* output_port,
                                 float output_load_cap);
   sta::ArcDelay getWorstIntrinsicDelay(const sta::LibertyPort* input_port);
@@ -225,7 +224,7 @@ class BaseMove : public sta::dbStaState
   Slack getWorstOutputSlack(sta::Instance* inst);
   std::vector<const sta::LibertyPort*> getOutputPorts(
       const sta::LibertyCell* cell);
-  std::vector<const Pin*> getOutputPins(const sta::Instance* inst);
+  std::vector<const sta::Pin*> getOutputPins(const sta::Instance* inst);
   sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* base);
 
   static constexpr int size_down_max_fanout_ = 10;

@@ -573,7 +573,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 }
 
 // For testing.
-void RepairSetup::repairSetup(const Pin* end_pin)
+void RepairSetup::repairSetup(const sta::Pin* end_pin)
 {
   init();
   max_repairs_per_pass_ = 1;
@@ -672,7 +672,7 @@ bool RepairSetup::repairPath(sta::Path* path,
     for (int i = start_index; i < path_length; i++) {
       const sta::Path* path = expanded.path(i);
       Vertex* path_vertex = path->vertex(sta_);
-      const Pin* path_pin = path->pin(sta_);
+      const sta::Pin* path_pin = path->pin(sta_);
       if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
         const TimingArc* prev_arc = path->prevArc(sta_);
@@ -725,7 +725,7 @@ bool RepairSetup::repairPath(sta::Path* path,
       }
       const sta::Path* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
-      const Pin* drvr_pin = drvr_vertex->pin();
+      const sta::Pin* drvr_pin = drvr_vertex->pin();
       sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
       sta::LibertyCell* drvr_cell
           = drvr_port ? drvr_port->libertyCell() : nullptr;
@@ -1152,7 +1152,7 @@ void RepairSetup::traverseFaninCone(
 
     // Get the instance associated with this vertex
     sta::Instance* inst = nullptr;
-    Pin* pin = current->pin();
+    sta::Pin* pin = current->pin();
     if (pin) {
       inst = network_->instance(pin);
     }
@@ -1222,7 +1222,7 @@ Slack RepairSetup::getInstanceSlack(sta::Instance* inst)
   // Check all output pins of the instance
   InstancePinIterator* pin_iter = network_->pinIterator(inst);
   while (pin_iter->hasNext()) {
-    Pin* pin = pin_iter->next();
+    sta::Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isAnyOutput()) {
       Vertex* vertex = graph_->pinDrvrVertex(pin);
       if (vertex) {

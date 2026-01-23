@@ -452,7 +452,7 @@ void Resizer::unbufferNet(sta::Net* net)
     queue.pop_back();
 
     while (pin_iter->hasNext()) {
-      const Pin* pin = pin_iter->next();
+      const sta::Pin* pin = pin_iter->next();
       const sta::LibertyPort* port = network_->libertyPort(pin);
       if (port && port->libertyCell()->isBuffer()) {
         sta::LibertyPort *in, *out;
@@ -461,7 +461,7 @@ void Resizer::unbufferNet(sta::Net* net)
         if (port == in) {
           const sta::Instance* inst = network_->instance(pin);
           insts.emplace_back(inst);
-          const Pin* out_pin = network_->findPin(inst, out);
+          const sta::Pin* out_pin = network_->findPin(inst, out);
           if (out_pin) {
             queue.push_back(network_->net(out_pin));
           }
@@ -1056,7 +1056,7 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
     std::unique_ptr<InstancePinIterator> port_iter(
         network_->pinIterator(network_->topInstance()));
     while (port_iter->hasNext()) {
-      Pin* pin = port_iter->next();
+      sta::Pin* pin = port_iter->next();
       Vertex* vertex = graph_->pinDrvrVertex(pin);
       sta::Net* net = network_->net(network_->term(pin));
 
@@ -1146,7 +1146,7 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
 Make sure all the top pins are buffered
 */
 
-sta::Instance* Resizer::bufferInput(const Pin* top_pin,
+sta::Instance* Resizer::bufferInput(const sta::Pin* top_pin,
                                     sta::LibertyCell* buffer_cell,
                                     bool verbose)
 {
@@ -1158,7 +1158,7 @@ sta::Instance* Resizer::bufferInput(const Pin* top_pin,
   NetConnectedPinIterator* pin_iter
       = network_->connectedPinIterator(db_network_->dbToSta(top_pin_flat_net));
   while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
+    const sta::Pin* pin = pin_iter->next();
     // Leave input port pin connected to top net
     if (pin != top_pin) {
       auto inst = network_->instance(pin);
@@ -1234,7 +1234,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
     std::unique_ptr<InstancePinIterator> port_iter(
         network_->pinIterator(network_->topInstance()));
     while (port_iter->hasNext()) {
-      Pin* pin = port_iter->next();
+      sta::Pin* pin = port_iter->next();
       Vertex* vertex = graph_->pinLoadVertex(pin);
       sta::Net* net = network_->net(network_->term(pin));
       if (network_->direction(pin)->isOutput() && net
@@ -1265,7 +1265,7 @@ bool Resizer::hasTristateOrDontTouchDriver(const sta::Net* net)
 {
   PinSet* drivers = network_->drivers(net);
   if (drivers) {
-    for (const Pin* pin : *drivers) {
+    for (const sta::Pin* pin : *drivers) {
       if (isTristateDriver(pin)) {
         return true;
       }
@@ -1286,14 +1286,14 @@ bool Resizer::hasTristateOrDontTouchDriver(const sta::Net* net)
   return false;
 }
 
-bool Resizer::isTristateDriver(const Pin* pin) const
+bool Resizer::isTristateDriver(const sta::Pin* pin) const
 {
   // Note LEF macro PINs do not have a clue about tristates.
   sta::LibertyPort* port = network_->libertyPort(pin);
   return port && port->direction()->isAnyTristate();
 }
 
-void Resizer::bufferOutput(const Pin* top_pin,
+void Resizer::bufferOutput(const sta::Pin* top_pin,
                            sta::LibertyCell* buffer_cell,
                            bool verbose)
 {
@@ -1303,12 +1303,12 @@ void Resizer::bufferOutput(const Pin* top_pin,
   }
 
   insertBufferBeforeLoad(
-      const_cast<Pin*>(top_pin), buffer_cell, nullptr, "output");
+      const_cast<sta::Pin*>(top_pin), buffer_cell, nullptr, "output");
 }
 
 ////////////////////////////////////////////////////////////////
 
-float Resizer::driveResistance(const Pin* drvr_pin)
+float Resizer::driveResistance(const sta::Pin* drvr_pin)
 {
   if (network_->isTopLevelPort(drvr_pin)) {
     InputDrive* drive = sdc_->findInputDrive(network_->port(drvr_pin));
@@ -1506,7 +1506,7 @@ bool Resizer::hasFanout(Vertex* drvr)
   return edge_iter.hasNext();
 }
 
-bool Resizer::hasFanout(Pin* drvr)
+bool Resizer::hasFanout(sta::Pin* drvr)
 {
   if (network_->isDriver(drvr) == false) {
     return false;
@@ -1523,7 +1523,7 @@ static float targetLoadDist(float load_cap, float target_load)
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::resizeDrvrToTargetSlew(const Pin* drvr_pin)
+void Resizer::resizeDrvrToTargetSlew(const sta::Pin* drvr_pin)
 {
   resizePreamble();
   resizeToTargetSlew(drvr_pin);
@@ -2311,7 +2311,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   return new_it->second;
 }
 
-int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
+int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
@@ -2371,7 +2371,7 @@ bool Resizer::getCin(const sta::LibertyCell* cell, float& cin)
   return false;
 }
 
-int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
+int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
@@ -2525,7 +2525,7 @@ bool Resizer::hasMultipleOutputs(const sta::Instance* inst)
   int output_count = 0;
   std::unique_ptr<InstancePinIterator> pin_iter(network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
+    const sta::Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isAnyOutput() && network_->net(pin)) {
       output_count++;
       if (output_count > 1) {
@@ -2596,7 +2596,7 @@ void Resizer::findResizeSlacks1()
   net_slack_map_.clear();
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = level_drvr_vertices_[i];
-    Pin* drvr_pin = drvr->pin();
+    sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
         && !drvr->isConstant()
@@ -2661,7 +2661,7 @@ PinSet Resizer::findFaninFanouts(PinSet& end_pins)
   graph_ = sta_->graph();
 
   VertexSet ends(graph_);
-  for (const Pin* pin : end_pins) {
+  for (const sta::Pin* pin : end_pins) {
     Vertex* end = graph_->pinLoadVertex(pin);
     ends.insert(end);
   }
@@ -2690,7 +2690,7 @@ PinSet Resizer::findFanins(PinSet& end_pins)
   graph_ = sta_->graph();
 
   VertexSet ends(graph_);
-  for (const Pin* pin : end_pins) {
+  for (const sta::Pin* pin : end_pins) {
     Vertex* end = graph_->pinLoadVertex(pin);
     ends.insert(end);
   }
@@ -2907,7 +2907,7 @@ bool Resizer::dontTouch(const sta::Net* net) const
   return db_net->isDoNotTouch();
 }
 
-bool Resizer::dontTouch(const Pin* pin) const
+bool Resizer::dontTouch(const sta::Pin* pin) const
 {
   return dontTouch(network_->instance(pin)) || dontTouch(network_->net(pin));
 }
@@ -3200,7 +3200,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
       continue;
     }
 
-    Pin* drvr_pin = network_->findPin(tie_inst, tie_port);
+    sta::Pin* drvr_pin = network_->findPin(tie_inst, tie_port);
     if (drvr_pin == nullptr) {
       continue;
     }
@@ -3221,7 +3221,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
     std::unique_ptr<NetConnectedPinIterator> pin_iter(
         network_->connectedPinIterator(drvr_net));
     while (pin_iter->hasNext()) {
-      const Pin* load_pin = pin_iter->next();
+      const sta::Pin* load_pin = pin_iter->next();
       if (!(db_network_->isFlat(load_pin))) {
         continue;
       }
@@ -3245,14 +3245,14 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
     }
 
     // Convert to vector and sort by pin path name for deterministic order
-    std::vector<const Pin*> load_pins(load_pins_set.begin(),
-                                      load_pins_set.end());
-    std::ranges::sort(load_pins, [this](const Pin* a, const Pin* b) {
+    std::vector<const sta::Pin*> load_pins(load_pins_set.begin(),
+                                           load_pins_set.end());
+    std::ranges::sort(load_pins, [this](const sta::Pin* a, const sta::Pin* b) {
       return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
     });
 
     // Create new TIE cell instances for each load pin
-    for (const Pin* load_pin : load_pins) {
+    for (const sta::Pin* load_pin : load_pins) {
       sta::Instance* load_inst = network_->instance(load_pin);
 
       // Create a new tie cell instance
@@ -3280,7 +3280,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
   }
 }
 
-const Pin* Resizer::findArithBoundaryPin(const Pin* load_pin)
+const sta::Pin* Resizer::findArithBoundaryPin(const sta::Pin* load_pin)
 {
   sta::Instance* load_inst = network_->instance(load_pin);
   odb::dbModInst* arith_mod_inst = nullptr;
@@ -3315,7 +3315,7 @@ const Pin* Resizer::findArithBoundaryPin(const Pin* load_pin)
   return load_pin;
 }
 
-sta::Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
+sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
                                                    const char* new_inst_name,
                                                    sta::Instance* parent,
                                                    sta::LibertyPort* tie_port,
@@ -3351,7 +3351,7 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
     }
   }
 
-  Pin* new_tie_out_pin = network_->findPin(new_tie_inst, tie_port);
+  sta::Pin* new_tie_out_pin = network_->findPin(new_tie_inst, tie_port);
   assert(new_tie_out_pin != nullptr);
   odb::dbITerm* new_tie_iterm = db_network_->flatPin(new_tie_out_pin);
 
@@ -3402,7 +3402,7 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
                                   sta::LibertyPort* tie_port)
 {
   // Get flat and hier nets.
-  Pin* tie_pin = network_->findPin(tie_inst, tie_port);
+  sta::Pin* tie_pin = network_->findPin(tie_inst, tie_port);
   odb::dbModNet* tie_hier_net;
   odb::dbNet* tie_flat_net;
   db_network_->net(tie_pin, tie_flat_net, tie_hier_net);
@@ -3420,11 +3420,11 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   // Delete the tie instance if no other ports are in use.
   // A tie cell can have both tie hi and low outputs.
   bool has_other_fanout = false;
-  Pin* drvr_pin = network_->findPin(tie_inst, tie_port);
+  sta::Pin* drvr_pin = network_->findPin(tie_inst, tie_port);
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
       network_->pinIterator(tie_inst)};
   while (inst_pin_iter->hasNext()) {
-    Pin* pin = inst_pin_iter->next();
+    sta::Pin* pin = inst_pin_iter->next();
     if (pin != drvr_pin) {
       // hier fix
       sta::Net* net = db_network_->dbToSta(db_network_->flatNet(pin));
@@ -3463,7 +3463,7 @@ void Resizer::findCellInstances(sta::LibertyCell* cell,
 }
 
 // Place the tie instance on the side of the load pin.
-odb::Point Resizer::tieLocation(const Pin* load, int separation)
+odb::Point Resizer::tieLocation(const sta::Pin* load, int separation)
 {
   odb::Point load_loc = db_network_->location(load);
   int load_x = load_loc.getX();
@@ -3514,7 +3514,7 @@ void Resizer::reportLongWires(int count, int digits)
   double wire_cap = estimate_parasitics_->wireSignalCapacitance(corner);
   int i = 0;
   for (Vertex* drvr : drvrs) {
-    Pin* drvr_pin = drvr->pin();
+    sta::Pin* drvr_pin = drvr->pin();
     double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
     double steiner_length = dbuToMeters(findMaxSteinerDist(drvr, corner));
     double delay = (wire_length * wire_res) * (wire_length * wire_cap) * 0.5;
@@ -3539,7 +3539,7 @@ void Resizer::findLongWires(VertexSeq& drvrs)
   while (vertex_iter.hasNext()) {
     Vertex* vertex = vertex_iter.next();
     if (vertex->isDriver(network_)) {
-      Pin* pin = vertex->pin();
+      sta::Pin* pin = vertex->pin();
       // Hands off the clock nets.
       if (!sta_->isClock(pin) && !vertex->isConstant()
           && !vertex->isDisabledConstraint()) {
@@ -3562,7 +3562,7 @@ void Resizer::findLongWires(VertexSeq& drvrs)
 int Resizer::findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner)
 
 {
-  Pin* drvr_pin = drvr->pin();
+  sta::Pin* drvr_pin = drvr->pin();
   BufferedNetPtr bnet = makeBufferedNetSteiner(drvr_pin, corner);
   if (bnet) {
     return bnet->maxLoadWireLength();
@@ -3575,7 +3575,7 @@ double Resizer::maxLoadManhattenDistance(const sta::Net* net)
   NetPinIterator* pin_iter = network_->pinIterator(net);
   int max_dist = 0;
   while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
+    const sta::Pin* pin = pin_iter->next();
     if (network_->isDriver(pin)) {
       Vertex* drvr = graph_->pinDrvrVertex(pin);
       if (drvr) {
@@ -3635,7 +3635,7 @@ PinSet* Resizer::findFloatingPins()
     const sta::Instance* inst = leaf_iter->next();
     InstancePinIterator* pin_iter = network_->pinIterator(inst);
     while (pin_iter->hasNext()) {
-      Pin* pin = pin_iter->next();
+      sta::Pin* pin = pin_iter->next();
       if (network_->direction(pin) != sta::PortDirection::input()) {
         continue;
       }
@@ -3665,7 +3665,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
     network_->visitConnectedPins(net, visitor);
     if (drvrs.size() > 1) {
       bool all_tristate = true;
-      for (const Pin* drvr : drvrs) {
+      for (const sta::Pin* drvr : drvrs) {
         if (!isTristateDriver(drvr)) {
           all_tristate = false;
         }
@@ -3681,7 +3681,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
         bool has_inverters = false;
         std::set<sta::Net*> input_nets;
 
-        for (const Pin* drvr : drvrs) {
+        for (const sta::Pin* drvr : drvrs) {
           const sta::Instance* inst = network_->instance(drvr);
           const sta::LibertyCell* cell = network_->libertyCell(inst);
           if (cell == nullptr) {
@@ -3698,7 +3698,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
           std::unique_ptr<InstancePinIterator> inst_pin_iter(
               network_->pinIterator(inst));
           while (inst_pin_iter->hasNext()) {
-            Pin* inst_pin = inst_pin_iter->next();
+            sta::Pin* inst_pin = inst_pin_iter->next();
             sta::PortDirection* dir = network_->direction(inst_pin);
             if (dir->isAnyInput()) {
               input_nets.insert(network_->net(inst_pin));
@@ -4058,8 +4058,8 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
   sta::Instance* load = sta->makeInstance("load", load_cell, top_inst);
   sta->connectPin(drvr, drvr_port, net);
   sta->connectPin(load, load_port, net);
-  Pin* drvr_pin = network->findPin(drvr, drvr_port);
-  Pin* load_pin = network->findPin(load, load_port);
+  sta::Pin* drvr_pin = network->findPin(drvr, drvr_port);
+  sta::Pin* load_pin = network->findPin(load, load_port);
 
   // Max rise/fall delays.
   delay = -INF;
@@ -4143,7 +4143,7 @@ void Resizer::initDesignArea()
   design_area_ = computeDesignArea();
 }
 
-bool Resizer::isFuncOneZero(const Pin* drvr_pin)
+bool Resizer::isFuncOneZero(const sta::Pin* drvr_pin)
 {
   sta::LibertyPort* port = network_->libertyPort(drvr_pin);
   if (port) {
@@ -4227,14 +4227,14 @@ sta::InstanceSeq Resizer::findClkInverters()
   ClkArrivalSearchPred srch_pred(this);
   BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
   for (Clock* clk : sdc_->clks()) {
-    for (const Pin* pin : clk->leafPins()) {
+    for (const sta::Pin* pin : clk->leafPins()) {
       Vertex* vertex = graph_->pinDrvrVertex(pin);
       bfs.enqueue(vertex);
     }
   }
   while (bfs.hasNext()) {
     Vertex* vertex = bfs.next();
-    const Pin* pin = vertex->pin();
+    const sta::Pin* pin = vertex->pin();
     sta::Instance* inst = network_->instance(pin);
     sta::LibertyCell* lib_cell = network_->libertyCell(inst);
     if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
@@ -4258,8 +4258,8 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   sta::LibertyCell* inv_cell = network_->libertyCell(inv);
   sta::LibertyPort *in_port, *out_port;
   inv_cell->bufferPorts(in_port, out_port);
-  Pin* in_pin = network_->findPin(inv, in_port);
-  Pin* out_pin = network_->findPin(inv, out_port);
+  sta::Pin* in_pin = network_->findPin(inv, in_port);
+  sta::Pin* out_pin = network_->findPin(inv, out_port);
   sta::Net* in_net = db_network_->findFlatNet(in_pin);
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
   sta::Net* out_net = network_->isTopLevelPort(out_pin)
@@ -4270,7 +4270,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
     sta::Instance* top_inst = network_->topInstance();
     NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
-      const Pin* load_pin = load_iter->next();
+      const sta::Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
         odb::Point clone_loc = db_network_->location(load_pin);
         sta::Instance* clone
@@ -4290,7 +4290,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
         sta_->connectPin(clone, out_port, clone_out_net);
 
         // Connect load to clone
-        sta_->disconnectPin(const_cast<Pin*>(load_pin));
+        sta_->disconnectPin(const_cast<sta::Pin*>(load_pin));
         Port* load_port = network_->port(load_pin);
         sta_->connectPin(load, load_port, clone_out_net);
       }
@@ -4367,13 +4367,13 @@ void Resizer::reportSwappablePins()
   swap_pins_move_->reportSwappablePins();
 }
 
-void Resizer::repairSetup(const Pin* end_pin)
+void Resizer::repairSetup(const sta::Pin* end_pin)
 {
   resizePreamble();
   repair_setup_->repairSetup(end_pin);
 }
 
-void Resizer::rebufferNet(const Pin* drvr_pin)
+void Resizer::rebufferNet(const sta::Pin* drvr_pin)
 {
   resizePreamble();
   buffer_move_->rebufferNet(drvr_pin);
@@ -4419,7 +4419,7 @@ bool Resizer::repairHold(
                                   verbose);
 }
 
-void Resizer::repairHold(const Pin* end_pin,
+void Resizer::repairHold(const sta::Pin* end_pin,
                          double setup_margin,
                          double hold_margin,
                          bool allow_setup_violations,
@@ -4709,14 +4709,14 @@ void Resizer::journalRestoreTest()
       removed_buffer_count_old - unbuffer_move_->numMoves());
 }
 
-void Resizer::getBufferPins(sta::Instance* buffer, Pin*& ip, Pin*& op)
+void Resizer::getBufferPins(sta::Instance* buffer, sta::Pin*& ip, sta::Pin*& op)
 {
   ip = nullptr;
   op = nullptr;
   auto pin_iter
       = std::unique_ptr<InstancePinIterator>(network_->pinIterator(buffer));
   while (pin_iter->hasNext()) {
-    Pin* pin = pin_iter->next();
+    sta::Pin* pin = pin_iter->next();
     sta::PortDirection* dir = network_->direction(pin);
     if (dir->isAnyOutput()) {
       op = pin;
@@ -4833,7 +4833,7 @@ odb::dbInst* Resizer::insertBufferAfterDriver(
 }
 
 sta::Instance* Resizer::insertBufferBeforeLoad(
-    Pin* load_pin,
+    sta::Pin* load_pin,
     sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
@@ -4933,7 +4933,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
 {
   // PinSeq -> PinSet
   PinSet load_set{db_network_};
-  for (const Pin* pin : *loads) {
+  for (const sta::Pin* pin : *loads) {
     load_set.insert(pin);
   }
 
@@ -4970,7 +4970,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
 
   std::set<odb::dbObject*> db_loads;
   if (loads) {
-    for (const Pin* pin : *loads) {
+    for (const sta::Pin* pin : *loads) {
       db_loads.insert(db_network_->staToDb(pin));
     }
   }
@@ -5166,7 +5166,7 @@ float Resizer::maxInputSlew(const sta::LibertyPort* input,
   return limit;
 }
 
-void Resizer::checkLoadSlews(const Pin* drvr_pin,
+void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
                              double slew_margin,
                              // Return values.
                              Slew& slew,
@@ -5178,7 +5178,7 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
   limit = INF;
   PinConnectedPinIterator* pin_iter = network_->connectedPinIterator(drvr_pin);
   while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
+    const sta::Pin* pin = pin_iter->next();
     if (pin != drvr_pin) {
       const sta::Corner* corner1;
       const RiseFall* tr1;
@@ -5228,7 +5228,7 @@ void Resizer::warnBufferMovedIntoCore()
   }
 }
 
-void Resizer::setDebugPin(const Pin* pin)
+void Resizer::setDebugPin(const sta::Pin* pin)
 {
   debug_pin_ = pin;
 }
@@ -5245,7 +5245,7 @@ void Resizer::annotateInputSlews(sta::Instance* inst,
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
       network_->pinIterator(inst)};
   while (inst_pin_iter->hasNext()) {
-    Pin* pin = inst_pin_iter->next();
+    sta::Pin* pin = inst_pin_iter->next();
     if (network_->direction(pin)->isInput()) {
       sta::LibertyPort* port = network_->libertyPort(pin);
       if (port) {
@@ -5278,10 +5278,10 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     }
   };
 
-  auto keepPinDriver = [&](Pin* pin) {
+  auto keepPinDriver = [&](sta::Pin* pin) {
     PinSet* drivers = network_->drivers(pin);
     if (drivers) {
-      for (const Pin* drvr_pin : *drivers) {
+      for (const sta::Pin* drvr_pin : *drivers) {
         if (auto inst = network_->instance(drvr_pin)) {
           keepInst(inst);
         }
@@ -5293,11 +5293,11 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   if (top_inst) {
     auto iter = network_->pinIterator(top_inst);
     while (iter->hasNext()) {
-      Pin* pin = iter->next();
+      sta::Pin* pin = iter->next();
       sta::Net* net = network_->net(network_->term(pin));
       PinSet* drivers = network_->drivers(net);
       if (drivers) {
-        for (const Pin* drvr_pin : *drivers) {
+        for (const sta::Pin* drvr_pin : *drivers) {
           if (auto inst = network_->instance(drvr_pin)) {
             keepInst(inst);
           }
@@ -5313,7 +5313,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     } else {
       auto iter = network_->pinIterator(inst);
       while (iter->hasNext()) {
-        Pin* pin = iter->next();
+        sta::Pin* pin = iter->next();
         sta::Net* net = network_->net(pin);
         if (net && dontTouch(net)) {
           keepInst(inst);
@@ -5388,7 +5388,7 @@ void Resizer::copyDontUseFromLiberty()
   }
 }
 
-void Resizer::fullyRebuffer(Pin* user_pin)
+void Resizer::fullyRebuffer(sta::Pin* user_pin)
 {
   resizePreamble();
   rebuffer_->fullyRebuffer(user_pin);
@@ -5451,7 +5451,7 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
   return result;
 }
 
-bool Resizer::okToBufferNet(const Pin* driver_pin) const
+bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 {
   if (isTristateDriver(driver_pin)) {
     return false;

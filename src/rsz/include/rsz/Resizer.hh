@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Pin;
 using sta::PinSeq;
 using sta::PinSet;
 using sta::Pvt;
@@ -265,7 +264,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   /// Wrapper for odb::dbNet::insertBufferBeforeLoad().
   /// - This accepts STA objects instead of db objects.
   ///
-  sta::Instance* insertBufferBeforeLoad(Pin* load_pin,
+  sta::Instance* insertBufferBeforeLoad(sta::Pin* load_pin,
                                         sta::LibertyCell* buffer_cell,
                                         const odb::Point* loc = nullptr,
                                         const char* new_buf_base_name
@@ -315,7 +314,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const char* new_net_base_name = kDefaultNetBaseName,
       const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
       bool loads_on_diff_nets = false);
-  bool dontTouch(const Pin* pin) const;
+  bool dontTouch(const sta::Pin* pin) const;
   void reportDontTouch();
 
   void reportFastBufferSizes();
@@ -336,7 +335,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void balanceRowUsage();
 
   // Resize drvr_pin instance to target slew.
-  void resizeDrvrToTargetSlew(const Pin* drvr_pin);
+  void resizeDrvrToTargetSlew(const sta::Pin* drvr_pin);
   // Accessor for debugging.
   Slew targetSlew(const RiseFall* rf);
   // Accessor for debugging.
@@ -360,12 +359,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
   // For testing.
-  void repairSetup(const Pin* end_pin);
+  void repairSetup(const sta::Pin* end_pin);
   // For testing.
   void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
-  void rebufferNet(const Pin* drvr_pin);
+  void rebufferNet(const sta::Pin* drvr_pin);
 
   ////////////////////////////////////////////////////////////////
 
@@ -378,7 +377,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   int max_iterations,
                   bool match_cell_footprint,
                   bool verbose);
-  void repairHold(const Pin* end_pin,
+  void repairHold(const sta::Pin* end_pin,
                   double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
@@ -413,7 +412,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                        double wire_length,  // meters
                        sta::Delay& delay,
                        Slew& slew);
-  void setDebugPin(const Pin* pin);
+  void setDebugPin(const sta::Pin* pin);
   void setWorstSlackNetsPercent(float);
   void annotateInputSlews(sta::Instance* inst,
                           const sta::DcalcAnalysisPt* dcalc_ap);
@@ -514,10 +513,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
-  void fullyRebuffer(Pin* pin);
+  void fullyRebuffer(sta::Pin* pin);
 
   bool hasFanout(Vertex* drvr);
-  bool hasFanout(Pin* drvr);
+  bool hasFanout(sta::Pin* drvr);
 
   est::EstimateParasitics* getEstimateParasitics()
   {
@@ -532,14 +531,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
-  sta::Instance* bufferInput(const Pin* top_pin,
+  sta::Instance* bufferInput(const sta::Pin* top_pin,
                              sta::LibertyCell* buffer_cell,
                              bool verbose);
-  void bufferOutput(const Pin* top_pin,
+  void bufferOutput(const sta::Pin* top_pin,
                     sta::LibertyCell* buffer_cell,
                     bool verbose);
   bool hasTristateOrDontTouchDriver(const sta::Net* net);
-  bool isTristateDriver(const Pin* pin) const;
+  bool isTristateDriver(const sta::Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
   bool bufferSizeOutmatched(sta::LibertyCell* worse,
@@ -596,17 +595,17 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const Pin* drvr_pin);
+  int resizeToTargetSlew(const sta::Pin* drvr_pin);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.
-  int resizeToCapRatio(const Pin* drvr_pin, bool upsize_only);
+  int resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only);
 
   ////////////////////////////////////////////////////////////////
 
   void findLongWires(VertexSeq& drvrs);
   int findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner);
-  float driveResistance(const Pin* drvr_pin);
+  float driveResistance(const sta::Pin* drvr_pin);
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
@@ -617,7 +616,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float portFanoutLoad(sta::LibertyPort* port) const;
   float portCapacitance(sta::LibertyPort* input,
                         const sta::Corner* corner) const;
-  float pinCapacitance(const Pin* pin,
+  float pinCapacitance(const sta::Pin* pin,
                        const sta::DcalcAnalysisPt* dcalc_ap) const;
   void swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,
@@ -671,8 +670,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      sta::Delay& delay,
                      Slew& slew);
   void makeWireParasitic(sta::Net* net,
-                         Pin* drvr_pin,
-                         Pin* load_pin,
+                         sta::Pin* drvr_pin,
+                         sta::Pin* load_pin,
                          double wire_length,  // meters
                          const sta::Corner* corner,
                          sta::Parasitics* parasitics);
@@ -697,21 +696,23 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findCellInstances(sta::LibertyCell* cell,
                          // Return value.
                          sta::InstanceSeq& insts);
-  void findLoads(Pin* drvr_pin, PinSeq& loads);
-  bool isFuncOneZero(const Pin* drvr_pin);
+  void findLoads(sta::Pin* drvr_pin, PinSeq& loads);
+  bool isFuncOneZero(const sta::Pin* drvr_pin);
   bool hasPins(sta::Net* net);
   void getPins(sta::Net* net, PinVector& pins) const;
   void getPins(sta::Instance* inst, PinVector& pins) const;
   void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
-  odb::Point tieLocation(const Pin* load, int separation);
+  odb::Point tieLocation(const sta::Pin* load, int separation);
   sta::InstanceSeq findClkInverters();
   void cloneClkInverter(sta::Instance* inv);
 
   void makePadParasitic(const sta::Net* net, SpefWriter* spef_writer);
   bool isPadNet(const sta::Net* net) const;
-  bool isPadPin(const Pin* pin) const;
+  bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;
-  void net2Pins(const sta::Net* net, const Pin*& pin1, const Pin*& pin2) const;
+  void net2Pins(const sta::Net* net,
+                const sta::Pin*& pin1,
+                const sta::Pin*& pin2) const;
   void parasiticNodeConnectPins(sta::Parasitic* parasitic,
                                 sta::ParasiticNode* node,
                                 est::SteinerTree* tree,
@@ -731,13 +732,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                               = odb::dbNameUniquifyType::ALWAYS);
   void deleteTieCellAndNet(const sta::Instance* tie_inst,
                            sta::LibertyPort* tie_port);
-  const Pin* findArithBoundaryPin(const Pin* load_pin);
-  sta::Instance* createNewTieCellForLoadPin(const Pin* load_pin,
+  const sta::Pin* findArithBoundaryPin(const sta::Pin* load_pin);
+  sta::Instance* createNewTieCellForLoadPin(const sta::Pin* load_pin,
                                             const char* new_inst_name,
                                             sta::Instance* parent,
                                             sta::LibertyPort* tie_port,
                                             int separation_dbu);
-  void getBufferPins(sta::Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
+  void getBufferPins(sta::Instance* buffer,
+                     sta::Pin*& ip_pin,
+                     sta::Pin*& op_pin);
 
   sta::Instance* makeBuffer(sta::LibertyCell* cell,
                             const char* name,
@@ -750,22 +753,22 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::LibertyCell* findTargetCell(sta::LibertyCell* cell,
                                    float load_cap,
                                    bool revisiting_inst);
-  BufferedNetPtr makeBufferedNet(const Pin* drvr_pin,
+  BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Corner* corner);
-  BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
+  BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,
                                         const sta::Corner* corner);
   BufferedNetPtr makeBufferedNetSteinerOverBnets(
       odb::Point root,
       const std::vector<BufferedNetPtr>& sinks,
       const sta::Corner* corner);
-  BufferedNetPtr makeBufferedNetGroute(const Pin* drvr_pin,
+  BufferedNetPtr makeBufferedNetGroute(const sta::Pin* drvr_pin,
                                        const sta::Corner* corner);
   float bufferSlew(sta::LibertyCell* buffer_cell,
                    float load_cap,
                    const sta::DcalcAnalysisPt* dcalc_ap);
   float maxInputSlew(const sta::LibertyPort* input,
                      const sta::Corner* corner) const;
-  void checkLoadSlews(const Pin* drvr_pin,
+  void checkLoadSlews(const sta::Pin* drvr_pin,
                       double slew_margin,
                       // Return values.
                       Slew& slew,
@@ -775,7 +778,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const sta::Instance* inst);
 
-  bool okToBufferNet(const Pin* driver_pin) const;
+  bool okToBufferNet(const sta::Pin* driver_pin) const;
   bool checkAndMarkVTSwappable(sta::Instance* inst,
                                std::unordered_set<sta::Instance*>& notSwappable,
                                sta::LibertyCell*& best_lib_cell);
@@ -817,7 +820,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   int dbu_ = 0;
-  const Pin* debug_pin_ = nullptr;
+  const sta::Pin* debug_pin_ = nullptr;
 
   odb::Rect core_;
   bool core_exists_ = false;

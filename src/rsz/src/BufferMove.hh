@@ -17,7 +17,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Pin;
 using sta::RiseFallBoth;
 using sta::Slack;
 using sta::Slew;
@@ -36,10 +35,10 @@ class BufferMove : public BaseMove
 
   const char* name() override { return "BufferMove"; }
 
-  void rebufferNet(const Pin* drvr_pin);
+  void rebufferNet(const sta::Pin* drvr_pin);
 
  private:
-  int rebuffer(const Pin* drvr_pin);
+  int rebuffer(const sta::Pin* drvr_pin);
 
   void debugCheckMultipleBuffers(sta::Path* path, sta::PathExpanded* expanded);
   bool hasTopLevelOutputPort(sta::Net* net);

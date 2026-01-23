@@ -31,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::Pin;
 using sta::PinSeq;
 using sta::Slew;
 using sta::StaState;
@@ -87,10 +86,12 @@ class RepairDesign : sta::dbStaState
  protected:
   void init();
 
-  bool getCin(const Pin* drvr_pin, float& cin);
-  bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
+  bool getCin(const sta::Pin* drvr_pin, float& cin);
+  bool getLargestSizeCin(const sta::Pin* drvr_pin, float& cin);
   void findBufferSizes();
-  bool performGainBuffering(sta::Net* net, const Pin* drvr_pin, int max_fanout);
+  bool performGainBuffering(sta::Net* net,
+                            const sta::Pin* drvr_pin,
+                            int max_fanout);
   void performEarlySizingRound(int& repaired_net_count);
 
   void checkDriverArcSlew(const sta::Corner* corner,
@@ -99,7 +100,7 @@ class RepairDesign : sta::dbStaState
                           float load_cap,
                           float limit,
                           float& violation);
-  bool repairDriverSlew(const sta::Corner* corner, const Pin* drvr_pin);
+  bool repairDriverSlew(const sta::Corner* corner, const sta::Pin* drvr_pin);
 
   void repairDriver(Vertex* drvr,
                     bool check_slew,
@@ -115,7 +116,7 @@ class RepairDesign : sta::dbStaState
                     int& length_violations);
 
   void repairNet(sta::Net* net,
-                 const Pin* drvr_pin,
+                 const sta::Pin* drvr_pin,
                  Vertex* drvr,
                  bool check_slew,
                  bool check_cap,
@@ -130,12 +131,12 @@ class RepairDesign : sta::dbStaState
                  int& cap_violations,
                  int& fanout_violations,
                  int& length_violations);
-  bool needRepairCap(const Pin* drvr_pin,
+  bool needRepairCap(const sta::Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
                      const sta::Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
-  void checkSlew(const Pin* drvr_pin,
+  void checkSlew(const sta::Pin* drvr_pin,
                  // Return values.
                  Slew& slew,
                  float& limit,
@@ -144,7 +145,7 @@ class RepairDesign : sta::dbStaState
   float bufferInputMaxSlew(sta::LibertyCell* buffer,
                            const sta::Corner* corner) const;
   void repairNet(const BufferedNetPtr& bnet,
-                 const Pin* drvr_pin,
+                 const sta::Pin* drvr_pin,
                  float max_cap,
                  int max_length,  // dbu
                  const sta::Corner* corner);
@@ -183,13 +184,13 @@ class RepairDesign : sta::dbStaState
                       double slew,
                       const sta::DcalcAnalysisPt* dcalc_ap);
   LoadRegion findLoadRegions(const sta::Net* net,
-                             const Pin* drvr_pin,
+                             const sta::Pin* drvr_pin,
                              int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
   void makeRegionRepeaters(LoadRegion& region,
                            int max_fanout,
                            int level,
-                           const Pin* drvr_pin,
+                           const sta::Pin* drvr_pin,
                            bool check_slew,
                            bool check_cap,
                            int max_length,
@@ -202,10 +203,10 @@ class RepairDesign : sta::dbStaState
                           bool check_cap,
                           int max_length,
                           bool resize_drvr);
-  PinSeq findLoads(const Pin* drvr_pin);
+  PinSeq findLoads(const sta::Pin* drvr_pin);
   odb::Rect findBbox(PinSeq& pins);
-  odb::Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
-  bool isRepeater(const Pin* load_pin);
+  odb::Point findClosedPinLoc(const sta::Pin* drvr_pin, PinSeq& pins);
+  bool isRepeater(const sta::Pin* load_pin);
   bool makeRepeater(const char* reason,
                     const odb::Point& loc,
                     sta::LibertyCell* buffer_cell,
@@ -228,8 +229,8 @@ class RepairDesign : sta::dbStaState
                     float& repeater_fanout,
                     float& repeater_max_slew,
                     sta::Net*& out_net,
-                    Pin*& repeater_in_pin,
-                    Pin*& repeater_out_pin);
+                    sta::Pin*& repeater_in_pin,
+                    sta::Pin*& repeater_out_pin);
   sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
   bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
@@ -255,7 +256,7 @@ class RepairDesign : sta::dbStaState
   std::vector<sta::LibertyCell*> buffer_sizes_;
 
   // Implicit arguments to repairNet bnet recursion.
-  const Pin* drvr_pin_ = nullptr;
+  const sta::Pin* drvr_pin_ = nullptr;
   float max_cap_ = 0;
   int max_length_ = 0;
   double slew_margin_ = 0;
