@@ -47,7 +47,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
@@ -158,7 +157,7 @@ class BaseMove : public sta::dbStaState
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
   TgtSlews tgt_slews_;
 
-  double area(Cell* cell);
+  double area(sta::Cell* cell);
   double area(odb::dbMaster* master);
   double dbuToMeters(int dist) const;
 

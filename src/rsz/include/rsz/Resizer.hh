@@ -66,7 +66,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
 using sta::dbNetworkObserver;
@@ -585,7 +584,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isSingleOutputCombinational(LibertyCell* cell) const;
   bool isCombinational(LibertyCell* cell) const;
   std::vector<sta::LibertyPort*> libraryOutputPins(LibertyCell* cell) const;
-  float maxLoad(Cell* cell);
+  float maxLoad(sta::Cell* cell);
   //==============================
   float findTargetLoad(LibertyCell* cell);
   float findTargetLoad(LibertyCell* cell,
@@ -696,7 +695,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool hasPort(const Net* net);
   odb::Point location(Instance* inst);
   double area(odb::dbMaster* master);
-  double area(Cell* cell);
+  double area(sta::Cell* cell);
   double splitWireDelayDiff(double wire_length,
                             LibertyCell* buffer_cell,
                             std::unique_ptr<dbSta>& sta);

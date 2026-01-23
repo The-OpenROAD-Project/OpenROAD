@@ -1452,7 +1452,7 @@ LibertyCell* Resizer::closestDriver(LibertyCell* cell,
   return closest;
 }
 
-float Resizer::maxLoad(Cell* cell)
+float Resizer::maxLoad(sta::Cell* cell)
 {
   LibertyCell* lib_cell = network_->libertyCell(cell);
   auto min_max = sta::MinMax::max();
@@ -1465,7 +1465,7 @@ float Resizer::maxLoad(Cell* cell)
       const sta::Corner* corner = sta_->cmdCorner();
       Sdc* sdc = sta_->sdc();
       // Default to top ("design") limit.
-      Cell* top_cell = network_->cell(network_->topInstance());
+      sta::Cell* top_cell = network_->cell(network_->topInstance());
       sdc->capacitanceLimit(top_cell, min_max, limit, exists);
       sdc->capacitanceLimit(cell, min_max, limit1, exists1);
 
@@ -2493,7 +2493,7 @@ bool Resizer::replaceCell(Instance* inst,
     dbInst* dinst = db_network_->staToDb(inst);
     dbMaster* master = dinst->getMaster();
     designAreaIncr(-area(master));
-    Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
+    sta::Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
     sta_->replaceCell(inst, replacement_cell1);
     designAreaIncr(area(replacement_master));
 
@@ -2768,7 +2768,7 @@ bool Resizer::isRegister(Vertex* vertex)
 
 ////////////////////////////////////////////////////////////////
 
-double Resizer::area(Cell* cell)
+double Resizer::area(sta::Cell* cell)
 {
   return area(db_network_->staToDb(cell));
 }
@@ -5473,7 +5473,7 @@ bool Resizer::checkAndMarkVTSwappable(
     notSwappable.insert(inst);
     return false;
   }
-  Cell* cell = network_->cell(inst);
+  sta::Cell* cell = network_->cell(inst);
   if (!cell) {
     notSwappable.insert(inst);
     return false;

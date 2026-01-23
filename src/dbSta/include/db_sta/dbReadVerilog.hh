@@ -21,7 +21,6 @@ namespace ord {
 
 class dbVerilogNetwork;
 
-using sta::Cell;
 using sta::ConcreteCell;
 using sta::ConcreteNetwork;
 using sta::dbNetwork;
@@ -34,7 +33,7 @@ class dbVerilogNetwork : public ConcreteNetwork
 {
  public:
   dbVerilogNetwork(sta::dbSta* sta);
-  Cell* findAnyCell(const char* name) override;
+  sta::Cell* findAnyCell(const char* name) override;
   bool isBlackBox(ConcreteCell* cell);
   dbNetwork* getDbNetwork() { return static_cast<dbNetwork*>(db_network_); }
 
