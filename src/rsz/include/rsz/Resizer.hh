@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Map;
 using sta::MinMax;
 using sta::Net;
 using sta::NetSeq;
@@ -128,7 +127,7 @@ class NetHash
   size_t operator()(const Net* net) const { return hashPtr(net); }
 };
 
-using CellTargetLoadMap = Map<sta::LibertyCell*, float>;
+using CellTargetLoadMap = sta::Map<sta::LibertyCell*, float>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
 enum class MoveType
@@ -872,7 +871,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // drive cell (because larger ones would give us a longer length).
   float max_wire_length_ = 0;
   float worst_slack_nets_percent_ = 10;
-  Map<const Net*, Slack> net_slack_map_;
+  sta::Map<const Net*, Slack> net_slack_map_;
 
   std::unordered_map<sta::LibertyCell*, std::optional<float>>
       cell_leakage_cache_;
