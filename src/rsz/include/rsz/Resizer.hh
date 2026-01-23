@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::GateTimingModel;
 using sta::Instance;
 using sta::InstanceSeq;
 using sta::InstanceSet;
@@ -587,7 +586,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                        Slew out_slew);
   Slew gateSlewDiff(LibertyCell* cell,
                     TimingArc* arc,
-                    GateTimingModel* model,
+                    sta::GateTimingModel* model,
                     Slew in_slew,
                     float load_cap,
                     Slew out_slew);

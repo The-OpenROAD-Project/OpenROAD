@@ -78,6 +78,7 @@
 #include "sta/SearchPred.hh"
 #include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
@@ -3038,7 +3039,8 @@ float Resizer::findTargetLoad(LibertyCell* cell,
                               Slew in_slew,
                               Slew out_slew)
 {
-  GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
+  sta::GateTimingModel* model
+      = dynamic_cast<sta::GateTimingModel*>(arc->model());
   if (model) {
     // load_cap1 lower bound
     // load_cap2 upper bound
@@ -3077,7 +3079,7 @@ float Resizer::findTargetLoad(LibertyCell* cell,
 // objective function
 Slew Resizer::gateSlewDiff(LibertyCell* cell,
                            TimingArc* arc,
-                           GateTimingModel* model,
+                           sta::GateTimingModel* model,
                            Slew in_slew,
                            float load_cap,
                            Slew out_slew)
@@ -3148,7 +3150,8 @@ void Resizer::findBufferTargetSlews(LibertyCell* buffer,
   buffer->bufferPorts(input, output);
   for (TimingArcSet* arc_set : buffer->timingArcSets(input, output)) {
     for (TimingArc* arc : arc_set->arcs()) {
-      GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
+      sta::GateTimingModel* model
+          = dynamic_cast<sta::GateTimingModel*>(arc->model());
       if (model != nullptr) {
         const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         const RiseFall* out_rf = arc->toEdge()->asRiseFall();

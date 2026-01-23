@@ -45,6 +45,7 @@
 #include "sta/SearchPred.hh"
 #include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
@@ -870,7 +871,8 @@ void RepairDesign::checkDriverArcSlew(const sta::Corner* corner,
 {
   const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
   const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-  GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
+  sta::GateTimingModel* model
+      = dynamic_cast<sta::GateTimingModel*>(arc->model());
   Pin* in_pin = network_->findPin(inst, arc->from()->name());
 
   if (model && in_pin) {
