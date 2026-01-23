@@ -902,8 +902,9 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
     return;
   }
 
+  // xs is empty if the fanout is a bterm
   if (isSink(driver) || driver->getInst()->isFixed()
-      || driver->getInst()->isPad()) {
+      || driver->getInst()->isPad() || xs.empty()) {
     return;
   }
 
