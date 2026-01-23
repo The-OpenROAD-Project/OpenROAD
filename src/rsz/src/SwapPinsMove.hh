@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::LibertyPort;
 using sta::LoadPinIndexMap;
 using sta::NetConnectedPinIterator;
 using sta::Path;
@@ -39,22 +38,24 @@ class SwapPinsMove : public BaseMove
   void reportSwappablePins();
 
  private:
-  using LibertyPortVec = std::vector<LibertyPort*>;
-  void swapPins(sta::Instance* inst, LibertyPort* port1, LibertyPort* port2);
+  using LibertyPortVec = std::vector<sta::LibertyPort*>;
+  void swapPins(sta::Instance* inst,
+                sta::LibertyPort* port1,
+                sta::LibertyPort* port2);
   void equivCellPins(const sta::LibertyCell* cell,
-                     LibertyPort* input_port,
+                     sta::LibertyPort* input_port,
                      LibertyPortVec& ports);
   void annotateInputSlews(sta::Instance* inst,
                           const sta::DcalcAnalysisPt* dcalc_ap);
-  void findSwapPinCandidate(LibertyPort* input_port,
-                            LibertyPort* drvr_port,
+  void findSwapPinCandidate(sta::LibertyPort* input_port,
+                            sta::LibertyPort* drvr_port,
                             const LibertyPortVec& equiv_ports,
                             float load_cap,
                             const sta::DcalcAnalysisPt* dcalc_ap,
-                            LibertyPort** swap_port);
+                            sta::LibertyPort** swap_port);
   void resetInputSlews();
 
-  sta::UnorderedMap<LibertyPort*, LibertyPortVec> equiv_pin_map_;
+  sta::UnorderedMap<sta::LibertyPort*, LibertyPortVec> equiv_pin_map_;
 };
 
 }  // namespace rsz

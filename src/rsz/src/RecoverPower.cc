@@ -300,7 +300,7 @@ Vertex* RecoverPower::recoverPower(const Path* path, const Slack path_slack)
         continue;
       }
       const Pin* drvr_pin = drvr_vertex->pin();
-      const LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+      const sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
       const sta::LibertyCell* drvr_cell
           = drvr_port ? drvr_port->libertyCell() : nullptr;
       const int fanout = this->fanout(drvr_vertex);
@@ -334,19 +334,20 @@ bool RecoverPower::downsizeDrvr(const Path* drvr_path,
   const int in_index = drvr_index - 1;
   const Path* in_path = expanded->path(in_index);
   const Pin* in_pin = in_path->pin(sta_);
-  const LibertyPort* in_port = network_->libertyPort(in_pin);
+  const sta::LibertyPort* in_port = network_->libertyPort(in_pin);
   if (!resizer_->dontTouch(drvr)) {
     float prev_drive = 0.0;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;
       const Path* prev_drvr_path = expanded->path(prev_drvr_index);
       const Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
-      const LibertyPort* prev_drvr_port = network_->libertyPort(prev_drvr_pin);
+      const sta::LibertyPort* prev_drvr_port
+          = network_->libertyPort(prev_drvr_pin);
       if (prev_drvr_port) {
         prev_drive = prev_drvr_port->driveResistance();
       }
     }
-    const LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+    const sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
     const sta::LibertyCell* downsize = downsizeCell(in_port,
                                                     drvr_port,
                                                     load_cap,
@@ -389,8 +390,8 @@ bool RecoverPower::meetsSizeCriteria(const sta::LibertyCell* cell,
 }
 
 sta::LibertyCell* RecoverPower::downsizeCell(
-    const LibertyPort* in_port,
-    const LibertyPort* drvr_port,
+    const sta::LibertyPort* in_port,
+    const sta::LibertyPort* drvr_port,
     const float load_cap,
     const float prev_drive,
     const sta::DcalcAnalysisPt* dcalc_ap,
@@ -408,9 +409,9 @@ sta::LibertyCell* RecoverPower::downsizeCell(
     sort(&swappable_cells,
          [=, this](const sta::LibertyCell* cell1,
                    const sta::LibertyCell* cell2) {
-           LibertyPort* port1
+           sta::LibertyPort* port1
                = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           const LibertyPort* port2
+           const sta::LibertyPort* port2
                = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            const float drive1 = port1->driveResistance();
            const float drive2 = port2->driveResistance();
@@ -426,9 +427,9 @@ sta::LibertyCell* RecoverPower::downsizeCell(
     sta::LibertyCell* best_cell = nullptr;
     for (sta::LibertyCell* swappable : swappable_cells) {
       const sta::LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
-      const LibertyPort* swappable_drvr
+      const sta::LibertyPort* swappable_drvr
           = swappable_corner->findLibertyPort(drvr_port_name);
-      const LibertyPort* swappable_input
+      const sta::LibertyPort* swappable_input
           = swappable_corner->findLibertyPort(in_port_name);
       const float current_drive = swappable_drvr->driveResistance();
       // Include delay of previous driver into swappable gate.

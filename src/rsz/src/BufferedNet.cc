@@ -94,7 +94,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   corner_ = corner;
 
   Network* network = resizer->network();
-  LibertyPort* load_port = network->libertyPort(load_pin);
+  sta::LibertyPort* load_port = network->libertyPort(load_pin);
   if (load_port) {
     cap_ = resizer->portCapacitance(load_port, corner);
     fanout_ = resizer->portFanoutLoad(load_port);
@@ -222,7 +222,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   ref_ = ref;
   corner_ = corner;
 
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   cap_ = resizer->portCapacitance(input, corner);
   fanout_ = resizer->portFanoutLoad(input);

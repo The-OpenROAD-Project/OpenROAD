@@ -48,7 +48,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::LibertyPort;
 using sta::LoadPinIndexMap;
 using sta::Net;
 using sta::NetConnectedPinIterator;
@@ -147,46 +146,47 @@ class BaseMove : public sta::dbStaState
   int accepted_count_ = 0;
 
   // Use actual input slews for accurate delay/slew estimation
-  sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
+  sta::UnorderedMap<sta::LibertyPort*, InputSlews> input_slew_map_;
   TgtSlews tgt_slews_;
 
   double area(sta::Cell* cell);
   double area(odb::dbMaster* master);
   double dbuToMeters(int dist) const;
 
-  void gateDelays(const LibertyPort* drvr_port,
+  void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
-  void gateDelays(const LibertyPort* drvr_port,
+  void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const Slew in_slews[RiseFall::index_count],
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew out_slews[RiseFall::index_count]);
-  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
-  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           const RiseFall* rf,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
 
   bool isPortEqiv(sta::FuncExpr* expr,
                   const sta::LibertyCell* cell,
-                  const LibertyPort* port_a,
-                  const LibertyPort* port_b);
+                  const sta::LibertyPort* port_a,
+                  const sta::LibertyPort* port_b);
 
-  bool simulateExpr(
-      sta::FuncExpr* expr,
-      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
-      size_t table_index);
+  bool simulateExpr(sta::FuncExpr* expr,
+                    sta::UnorderedMap<const sta::LibertyPort*,
+                                      std::vector<bool>>& port_stimulus,
+                    size_t table_index);
   std::vector<bool> simulateExpr(
       sta::FuncExpr* expr,
-      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
+      sta::UnorderedMap<const sta::LibertyPort*, std::vector<bool>>&
+          port_stimulus);
   sta::Instance* makeBuffer(sta::LibertyCell* cell,
                             const char* name,
                             sta::Instance* parent,
@@ -203,8 +203,8 @@ class BaseMove : public sta::dbStaState
   void getBufferPins(sta::Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 
-  sta::LibertyCell* upsizeCell(LibertyPort* in_port,
-                               LibertyPort* drvr_port,
+  sta::LibertyCell* upsizeCell(sta::LibertyPort* in_port,
+                               sta::LibertyPort* drvr_port,
                                float load_cap,
                                float prev_drive,
                                const sta::DcalcAnalysisPt* dcalc_ap);
@@ -215,20 +215,21 @@ class BaseMove : public sta::dbStaState
   bool checkMaxCapOK(const Pin* drvr_pin, float cap_delta);
 
   bool checkMaxCapViolation(const Pin* output_pin,
-                            LibertyPort* output_port,
+                            sta::LibertyPort* output_port,
                             float output_cap);
   bool checkMaxSlewViolation(const Pin* output_pin,
-                             LibertyPort* output_port,
+                             sta::LibertyPort* output_port,
                              float output_slew_factor,
                              float output_cap,
                              const sta::DcalcAnalysisPt* dcalc_ap);
   float computeElmoreSlewFactor(const Pin* output_pin,
-                                LibertyPort* output_port,
+                                sta::LibertyPort* output_port,
                                 float output_load_cap);
-  sta::ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
+  sta::ArcDelay getWorstIntrinsicDelay(const sta::LibertyPort* input_port);
   Slack getWorstInputSlack(sta::Instance* inst);
   Slack getWorstOutputSlack(sta::Instance* inst);
-  std::vector<const LibertyPort*> getOutputPorts(const sta::LibertyCell* cell);
+  std::vector<const sta::LibertyPort*> getOutputPorts(
+      const sta::LibertyCell* cell);
   std::vector<const Pin*> getOutputPins(const sta::Instance* inst);
   sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* base);
 

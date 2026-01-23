@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
 using sta::Path;
@@ -160,7 +159,7 @@ class RepairSetup : public sta::dbStaState
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
 
-  sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
+  sta::UnorderedMap<sta::LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int print_interval_ = 10;

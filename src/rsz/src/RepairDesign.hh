@@ -31,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
 using sta::Pin;
@@ -178,10 +177,10 @@ class RepairDesign : sta::dbStaState
                      int& wire_length,
                      PinSeq& load_pins);
   float maxSlewMargined(float max_slew);
-  double findSlewLoadCap(LibertyPort* drvr_port,
+  double findSlewLoadCap(sta::LibertyPort* drvr_port,
                          double slew,
                          const sta::Corner* corner);
-  double gateSlewDiff(LibertyPort* drvr_port,
+  double gateSlewDiff(sta::LibertyPort* drvr_port,
                       double load_cap,
                       double slew,
                       const sta::DcalcAnalysisPt* dcalc_ap);

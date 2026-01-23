@@ -337,7 +337,7 @@ void RepairDesign::repairDesign(
   for (auto vertex : load_vertices) {
     if (!vertex->slewAnnotated()) {
       sta_->findDelays(vertex);
-      LibertyPort* port = network_->libertyPort(vertex->pin());
+      sta::LibertyPort* port = network_->libertyPort(vertex->pin());
       if (port) {
         for (auto corner : *sta_->corners()) {
           const sta::DcalcAnalysisPt* dcalc_ap
@@ -594,7 +594,7 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
       sta::LibertyCellPortIterator port_iter(size);
       int nports = 0;
       while (port_iter.hasNext()) {
-        const LibertyPort* port = port_iter.next();
+        const sta::LibertyPort* port = port_iter.next();
         if (!port->isPwrGnd() && port->direction() == PortDirection::input()) {
           size_cin += port->capacitance();
           nports++;
@@ -621,7 +621,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
     sta::LibertyCellPortIterator port_iter(cell);
     int nports = 0;
     while (port_iter.hasNext()) {
-      const LibertyPort* port = port_iter.next();
+      const sta::LibertyPort* port = port_iter.next();
       if (!port->isPwrGnd() && port->direction() == PortDirection::input()) {
         cin += port->capacitance();
         nports++;
@@ -638,7 +638,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
 
 static float bufferCin(const sta::LibertyCell* cell)
 {
-  LibertyPort *a, *y;
+  sta::LibertyPort *a, *y;
   cell->bufferPorts(a, y);
   return a->capacitance();
 }
@@ -810,7 +810,7 @@ bool RepairDesign::performGainBuffering(Net* net,
       break;
     }
 
-    LibertyPort *size_in, *size_out;
+    sta::LibertyPort *size_in, *size_out;
     (*buf_cell)->bufferPorts(size_in, size_out);
     int max_level = 0;
     Pin* new_input_pin = nullptr;
@@ -924,7 +924,7 @@ bool RepairDesign::repairDriverSlew(const sta::Corner* corner,
       for (sta::LibertyCell* size_cell : equiv_cells) {
         float limit, violation = 0;
         bool limit_exists = false;
-        LibertyPort* port
+        sta::LibertyPort* port
             = size_cell->findLibertyPort(network_->portName(drvr_pin));
         sta_->findSlewLimit(port, corner, max_, limit, limit_exists);
 
@@ -1103,7 +1103,7 @@ void RepairDesign::repairNet(Net* net,
         // Slew violation persists after resizing the driver, derive
         // the max cap we need to apply to remove the slew violation
         if (slew_slack1 < 0.0f) {
-          LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+          sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
           if (drvr_port) {
             max_cap = findSlewLoadCap(drvr_port, max_slew1, corner1);
             corner = corner1;
@@ -1252,13 +1252,13 @@ void RepairDesign::checkSlew(const Pin* drvr_pin,
 float RepairDesign::bufferInputMaxSlew(sta::LibertyCell* buffer,
                                        const sta::Corner* corner) const
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
   return resizer_->maxInputSlew(input, corner);
 }
 
 // Find the output port load capacitance that results in slew.
-double RepairDesign::findSlewLoadCap(LibertyPort* drvr_port,
+double RepairDesign::findSlewLoadCap(sta::LibertyPort* drvr_port,
                                      double slew,
                                      const sta::Corner* corner)
 {
@@ -1294,7 +1294,7 @@ double RepairDesign::findSlewLoadCap(LibertyPort* drvr_port,
 }
 
 // objective function
-double RepairDesign::gateSlewDiff(LibertyPort* drvr_port,
+double RepairDesign::gateSlewDiff(sta::LibertyPort* drvr_port,
                                   double load_cap,
                                   double slew,
                                   const sta::DcalcAnalysisPt* dcalc_ap)
@@ -2178,8 +2178,8 @@ bool RepairDesign::makeRepeater(
     graphics_->makeBuffer(db_inst);
   }
 
-  LibertyPort* buffer_input_port;
-  LibertyPort* buffer_output_port;
+  sta::LibertyPort* buffer_input_port;
+  sta::LibertyPort* buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
 
   // Resize repeater as we back up by levels.

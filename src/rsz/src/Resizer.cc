@@ -451,9 +451,9 @@ void Resizer::unbufferNet(Net* net)
 
     while (pin_iter->hasNext()) {
       const Pin* pin = pin_iter->next();
-      const LibertyPort* port = network_->libertyPort(pin);
+      const sta::LibertyPort* port = network_->libertyPort(pin);
       if (port && port->libertyCell()->isBuffer()) {
-        LibertyPort *in, *out;
+        sta::LibertyPort *in, *out;
         port->libertyCell()->bufferPorts(in, out);
 
         if (port == in) {
@@ -598,8 +598,8 @@ void Resizer::balanceRowUsage()
 // Inspect the timing arcs on a buffer size to find the capacitance
 // points on the piecewise linear delay model
 static void populateBufferCapTestPoints(sta::LibertyCell* cell,
-                                        LibertyPort* in,
-                                        LibertyPort* out,
+                                        sta::LibertyPort* in,
+                                        sta::LibertyPort* out,
                                         std::vector<float>& points)
 {
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
@@ -630,7 +630,7 @@ bool Resizer::bufferSizeOutmatched(sta::LibertyCell* worse,
                                    sta::LibertyCell* better,
                                    const float max_drive_resist)
 {
-  LibertyPort *win, *wout, *bin, *bout;
+  sta::LibertyPort *win, *wout, *bin, *bout;
   worse->bufferPorts(win, wout);
   better->bufferPorts(bin, bout);
 
@@ -693,7 +693,7 @@ void Resizer::findFastBuffers()
   sizes_by_inp_cap = buffer_cells_;
   sort(sizes_by_inp_cap,
        [](const sta::LibertyCell* buffer1, const sta::LibertyCell* buffer2) {
-         LibertyPort *port1, *port2, *scratch;
+         sta::LibertyPort *port1, *port2, *scratch;
          buffer1->bufferPorts(port1, scratch);
          buffer2->bufferPorts(port2, scratch);
          return port1->capacitance() < port2->capacitance();
@@ -746,9 +746,9 @@ void Resizer::reportFastBufferSizes()
                                          buffer_fast_sizes_.end()};
   std::ranges::sort(
       buffers, [=](const sta::LibertyCell* a, const sta::LibertyCell* b) {
-        LibertyPort* scratch;
-        LibertyPort* in_a;
-        LibertyPort* in_b;
+        sta::LibertyPort* scratch;
+        sta::LibertyPort* in_a;
+        sta::LibertyPort* in_b;
 
         a->bufferPorts(in_a, scratch);
         b->bufferPorts(in_b, scratch);
@@ -769,7 +769,7 @@ void Resizer::reportFastBufferSizes()
   logger_->report("{:->80}", "");
 
   for (auto size : buffers) {
-    LibertyPort *in, *out;
+    sta::LibertyPort *in, *out;
     size->bufferPorts(in, out);
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>7.1f}",
                     size->name(),
@@ -900,7 +900,7 @@ void Resizer::findBuffers()
 
     for (int i = start_idx; i < end_idx && i < new_buffer_list.size(); i++) {
       sta::LibertyCell* buffer = new_buffer_list[i];
-      LibertyPort *input, *output;
+      sta::LibertyPort *input, *output;
       buffer->bufferPorts(input, output);
       float metric = bufferDriveResistance(buffer) * input->capacitance();
       bucket_buffers.emplace_back(buffer, metric);
@@ -1287,7 +1287,7 @@ bool Resizer::hasTristateOrDontTouchDriver(const Net* net)
 bool Resizer::isTristateDriver(const Pin* pin) const
 {
   // Note LEF macro PINs do not have a clue about tristates.
-  LibertyPort* port = network_->libertyPort(pin);
+  sta::LibertyPort* port = network_->libertyPort(pin);
   return port && port->direction()->isAnyTristate();
 }
 
@@ -1315,9 +1315,9 @@ float Resizer::driveResistance(const Pin* drvr_pin)
       for (auto min_max : MinMax::range()) {
         for (auto rf : RiseFall::range()) {
           const sta::LibertyCell* cell;
-          const LibertyPort* from_port;
+          const sta::LibertyPort* from_port;
           float* from_slews;
-          const LibertyPort* to_port;
+          const sta::LibertyPort* to_port;
           drive->driveCell(rf, min_max, cell, from_port, from_slews, to_port);
           if (to_port) {
             max_res = max(max_res, to_port->driveResistance());
@@ -1334,7 +1334,7 @@ float Resizer::driveResistance(const Pin* drvr_pin)
       return max_res;
     }
   } else {
-    LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+    sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
     if (drvr_port) {
       return drvr_port->driveResistance();
     }
@@ -1344,7 +1344,7 @@ float Resizer::driveResistance(const Pin* drvr_pin)
 
 float Resizer::bufferDriveResistance(const sta::LibertyCell* buffer) const
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
   return output->driveResistance();
 }
@@ -1464,7 +1464,7 @@ float Resizer::maxLoad(sta::Cell* cell)
   auto min_max = sta::MinMax::max();
   sta::LibertyCellPortIterator itr(lib_cell);
   while (itr.hasNext()) {
-    LibertyPort* port = itr.next();
+    sta::LibertyPort* port = itr.next();
     if (port->direction()->isOutput()) {
       float limit, limit1;
       bool exists, exists1;
@@ -1479,7 +1479,7 @@ float Resizer::maxLoad(sta::Cell* cell)
         limit = limit1;
         exists = true;
       }
-      LibertyPort* corner_port = port->cornerPort(corner, min_max);
+      sta::LibertyPort* corner_port = port->cornerPort(corner, min_max);
       corner_port->capacitanceLimit(min_max, limit1, exists1);
       if (!exists1 && port->direction()->isAnyOutput()) {
         corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
@@ -1776,7 +1776,7 @@ void Resizer::reportBuffers(bool filtered)
 
   for (sta::LibertyCell* buffer : buffer_list) {
     float drive_res = bufferDriveResistance(buffer);
-    LibertyPort *input, *output;
+    sta::LibertyPort *input, *output;
     buffer->bufferPorts(input, output);
     float c_in = input->capacitance();
     std::optional<float> cell_leak = cellLeakage(buffer);
@@ -1817,7 +1817,7 @@ void Resizer::reportBuffers(bool filtered)
 
     for (sta::LibertyCell* buffer : buffer_cells_) {
       float drive_res = bufferDriveResistance(buffer);
-      LibertyPort *input, *output;
+      sta::LibertyPort *input, *output;
       buffer->bufferPorts(input, output);
       float c_in = input->capacitance();
       std::optional<float> cell_leak = cellLeakage(buffer);
@@ -2356,7 +2356,7 @@ bool Resizer::getCin(const sta::LibertyCell* cell, float& cin)
   int nports = 0;
   cin = 0;
   while (port_iter.hasNext()) {
-    const LibertyPort* port = port_iter.next();
+    const sta::LibertyPort* port = port_iter.next();
     if (port->direction() == sta::PortDirection::input()) {
       cin += port->capacitance();
       nports++;
@@ -2734,7 +2734,7 @@ VertexSet Resizer::findFaninRoots(VertexSet& ends)
 
 bool Resizer::isRegOutput(Vertex* vertex)
 {
-  LibertyPort* port = network_->libertyPort(vertex->pin());
+  sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
     for (TimingArcSet* arc_set : cell->timingArcSets(nullptr, port)) {
@@ -2767,7 +2767,7 @@ VertexSet Resizer::findFanouts(VertexSet& reg_outs)
 
 bool Resizer::isRegister(Vertex* vertex)
 {
-  LibertyPort* port = network_->libertyPort(vertex->pin());
+  sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
     return cell && cell->hasSequentials();
@@ -3154,7 +3154,7 @@ void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
                                     Slew slews[],
                                     int counts[])
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
   for (TimingArcSet* arc_set : buffer->timingArcSets(input, output)) {
     for (TimingArc* arc : arc_set->arcs()) {
@@ -3180,7 +3180,7 @@ void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
 
 // Repair tie hi/low net driver fanout by duplicating the
 // tie hi/low instances for every pin connected to tie hi/low instances.
-void Resizer::repairTieFanout(LibertyPort* tie_port,
+void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
                               double separation,  // meters
                               bool verbose)
 {
@@ -3316,7 +3316,7 @@ const Pin* Resizer::findArithBoundaryPin(const Pin* load_pin)
 sta::Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
                                                    const char* new_inst_name,
                                                    sta::Instance* parent,
-                                                   LibertyPort* tie_port,
+                                                   sta::LibertyPort* tie_port,
                                                    int separation_dbu)
 {
   sta::LibertyCell* tie_cell = tie_port->libertyCell();
@@ -3397,7 +3397,7 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
 }
 
 void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
-                                  LibertyPort* tie_port)
+                                  sta::LibertyPort* tie_port)
 {
   // Get flat and hier nets.
   Pin* tie_pin = network_->findPin(tie_inst, tie_port);
@@ -3723,7 +3723,7 @@ NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
   return overdriven_nets;
 }
 
-float Resizer::portFanoutLoad(LibertyPort* port) const
+float Resizer::portFanoutLoad(sta::LibertyPort* port) const
 {
   float fanout_load;
   bool exists;
@@ -3743,7 +3743,7 @@ float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
                            float load_cap,
                            const sta::DcalcAnalysisPt* dcalc_ap)
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   sta::ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
@@ -3755,7 +3755,7 @@ float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
                            float load_cap,
                            const sta::DcalcAnalysisPt* dcalc_ap)
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   sta::ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
@@ -3771,14 +3771,14 @@ void Resizer::bufferDelays(sta::LibertyCell* buffer_cell,
                            sta::ArcDelay delays[RiseFall::index_count],
                            Slew slews[RiseFall::index_count])
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   gateDelays(output, load_cap, dcalc_ap, delays, slews);
 }
 
 // Rise/fall delays across all timing arcs into drvr_port.
 // Uses target slew for input slew.
-void Resizer::gateDelays(const LibertyPort* drvr_port,
+void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          const float load_cap,
                          const sta::DcalcAnalysisPt* dcalc_ap,
                          // Return values.
@@ -3796,7 +3796,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
         const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         // use annotated slews if available
-        LibertyPort* port = arc->from();
+        sta::LibertyPort* port = arc->from();
         float in_slew = 0.0;
         auto it = input_slew_map_.find(port);
         if (it != input_slew_map_.end()) {
@@ -3826,7 +3826,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
 
 // Rise/fall delays across all timing arcs into drvr_port.
 // Takes input slews and load cap
-void Resizer::gateDelays(const LibertyPort* drvr_port,
+void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          const float load_cap,
                          const Slew in_slews[RiseFall::index_count],
                          const sta::DcalcAnalysisPt* dcalc_ap,
@@ -3863,7 +3863,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
   }
 }
 
-sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
+sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const RiseFall* rf,
                                  const float load_cap,
                                  const sta::DcalcAnalysisPt* dcalc_ap)
@@ -3874,7 +3874,7 @@ sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
   return delays[rf->index()];
 }
 
-sta::ArcDelay Resizer::gateDelay(const LibertyPort* drvr_port,
+sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const float load_cap,
                                  const sta::DcalcAnalysisPt* dcalc_ap)
 {
@@ -3944,12 +3944,12 @@ double Resizer::findMaxWireLength(sta::LibertyCell* buffer_cell,
                                   const sta::Corner* corner)
 {
   initBlock();
-  LibertyPort *load_port, *drvr_port;
+  sta::LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
   return findMaxWireLength(drvr_port, corner);
 }
 
-double Resizer::findMaxWireLength(LibertyPort* drvr_port,
+double Resizer::findMaxWireLength(sta::LibertyPort* drvr_port,
                                   const sta::Corner* corner)
 {
   sta::LibertyCell* cell = drvr_port->libertyCell();
@@ -4024,7 +4024,7 @@ void Resizer::bufferWireDelay(sta::LibertyCell* buffer_cell,
                               sta::Delay& delay,
                               Slew& slew)
 {
-  LibertyPort *load_port, *drvr_port;
+  sta::LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
   cellWireDelay(drvr_port, load_port, wire_length, sta, delay, slew);
 }
@@ -4032,8 +4032,8 @@ void Resizer::bufferWireDelay(sta::LibertyCell* buffer_cell,
 // Cell delay plus wire delay.
 // Use target slew for input slew.
 // drvr_port and load_port do not have to be the same liberty cell.
-void Resizer::cellWireDelay(LibertyPort* drvr_port,
-                            LibertyPort* load_port,
+void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
+                            sta::LibertyPort* load_port,
                             double wire_length,  // meters
                             std::unique_ptr<dbSta>& sta,
                             // Return values.
@@ -4143,7 +4143,7 @@ void Resizer::initDesignArea()
 
 bool Resizer::isFuncOneZero(const Pin* drvr_pin)
 {
-  LibertyPort* port = network_->libertyPort(drvr_pin);
+  sta::LibertyPort* port = network_->libertyPort(drvr_pin);
   if (port) {
     FuncExpr* func = port->function();
     return func
@@ -4254,7 +4254,7 @@ sta::InstanceSeq Resizer::findClkInverters()
 void Resizer::cloneClkInverter(sta::Instance* inv)
 {
   sta::LibertyCell* inv_cell = network_->libertyCell(inv);
-  LibertyPort *in_port, *out_port;
+  sta::LibertyPort *in_port, *out_port;
   inv_cell->bufferPorts(in_port, out_port);
   Pin* in_pin = network_->findPin(inv, in_port);
   Pin* out_pin = network_->findPin(inv, out_port);
@@ -5121,12 +5121,12 @@ void Resizer::setLocation(dbInst* db_inst, const odb::Point& pt)
   db_inst->setLocation(x, y);
 }
 
-float Resizer::portCapacitance(LibertyPort* input,
+float Resizer::portCapacitance(sta::LibertyPort* input,
                                const sta::Corner* corner) const
 {
   const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
   int lib_ap = dcalc_ap->libertyIndex();
-  LibertyPort* corner_input = input->cornerPort(lib_ap);
+  sta::LibertyPort* corner_input = input->cornerPort(lib_ap);
   return corner_input->capacitance();
 }
 
@@ -5134,7 +5134,7 @@ float Resizer::bufferSlew(sta::LibertyCell* buffer_cell,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap)
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   sta::ArcDelay gate_delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
@@ -5142,7 +5142,7 @@ float Resizer::bufferSlew(sta::LibertyCell* buffer_cell,
   return max(slews[RiseFall::riseIndex()], slews[RiseFall::fallIndex()]);
 }
 
-float Resizer::maxInputSlew(const LibertyPort* input,
+float Resizer::maxInputSlew(const sta::LibertyPort* input,
                             const sta::Corner* corner) const
 {
   float limit;
@@ -5186,7 +5186,7 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
           pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
       if (!corner1) {
         // Fixup for nangate45: see comment in maxInputSlew
-        LibertyPort* port = network_->libertyPort(pin);
+        sta::LibertyPort* port = network_->libertyPort(pin);
         if (port) {
           bool exists;
           port->libertyLibrary()->defaultMaxSlew(limit1, exists);
@@ -5245,7 +5245,7 @@ void Resizer::annotateInputSlews(sta::Instance* inst,
   while (inst_pin_iter->hasNext()) {
     Pin* pin = inst_pin_iter->next();
     if (network_->direction(pin)->isInput()) {
-      LibertyPort* port = network_->libertyPort(pin);
+      sta::LibertyPort* port = network_->libertyPort(pin);
       if (port) {
         Vertex* vertex = graph_->pinDrvrVertex(pin);
         InputSlews slews;

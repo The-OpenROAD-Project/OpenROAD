@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::LibertyPort;
 using sta::Map;
 using sta::MinMax;
 using sta::Net;
@@ -92,7 +91,7 @@ using sta::Vertex;
 using sta::VertexSeq;
 using sta::VertexSet;
 
-using LibertyPortTuple = std::tuple<LibertyPort*, LibertyPort*>;
+using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
 using InstanceTuple = std::tuple<sta::Instance*, sta::Instance*>;
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 
@@ -415,7 +414,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   NetSeq* findFloatingNets();
   PinSet* findFloatingPins();
   NetSeq* findOverdrivenNets(bool include_parallel_driven);
-  void repairTieFanout(LibertyPort* tie_port,
+  void repairTieFanout(sta::LibertyPort* tie_port,
                        double separation,  // meters
                        bool verbose);
   void bufferWireDelay(sta::LibertyCell* buffer_cell,
@@ -470,7 +469,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double findMaxWireLength(bool issue_error = true);
   double findMaxWireLength(sta::LibertyCell* buffer_cell,
                            const sta::Corner* corner);
-  double findMaxWireLength(LibertyPort* drvr_port, const sta::Corner* corner);
+  double findMaxWireLength(sta::LibertyPort* drvr_port,
+                           const sta::Corner* corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net* net);
 
@@ -622,38 +622,39 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int maxLoadManhattenDistance(Vertex* drvr);
 
   double findMaxWireLength1(bool issue_error = true);
-  float portFanoutLoad(LibertyPort* port) const;
-  float portCapacitance(LibertyPort* input, const sta::Corner* corner) const;
+  float portFanoutLoad(sta::LibertyPort* port) const;
+  float portCapacitance(sta::LibertyPort* input,
+                        const sta::Corner* corner) const;
   float pinCapacitance(const Pin* pin,
                        const sta::DcalcAnalysisPt* dcalc_ap) const;
   void swapPins(sta::Instance* inst,
-                LibertyPort* port1,
-                LibertyPort* port2,
+                sta::LibertyPort* port1,
+                sta::LibertyPort* port2,
                 bool journal);
-  void findSwapPinCandidate(LibertyPort* input_port,
-                            LibertyPort* drvr_port,
+  void findSwapPinCandidate(sta::LibertyPort* input_port,
+                            sta::LibertyPort* drvr_port,
                             const sta::LibertyPortSet& equiv_ports,
                             float load_cap,
                             const sta::DcalcAnalysisPt* dcalc_ap,
                             // Return value
-                            LibertyPort** swap_port);
-  void gateDelays(const LibertyPort* drvr_port,
+                            sta::LibertyPort** swap_port);
+  void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew slews[RiseFall::index_count]);
-  void gateDelays(const LibertyPort* drvr_port,
+  void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const Slew in_slews[RiseFall::index_count],
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[RiseFall::index_count],
                   Slew out_slews[RiseFall::index_count]);
-  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
-  sta::ArcDelay gateDelay(const LibertyPort* drvr_port,
+  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           const RiseFall* rf,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
@@ -670,8 +671,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                     // Return values.
                     sta::ArcDelay delays[RiseFall::index_count],
                     Slew slews[RiseFall::index_count]);
-  void cellWireDelay(LibertyPort* drvr_port,
-                     LibertyPort* load_port,
+  void cellWireDelay(sta::LibertyPort* drvr_port,
+                     sta::LibertyPort* load_port,
                      double wire_length,  // meters
                      std::unique_ptr<sta::dbSta>& sta,
                      // Return values.
@@ -692,8 +693,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double splitWireDelayDiff(double wire_length,
                             sta::LibertyCell* buffer_cell,
                             std::unique_ptr<sta::dbSta>& sta);
-  double maxSlewWireDiff(LibertyPort* drvr_port,
-                         LibertyPort* load_port,
+  double maxSlewWireDiff(sta::LibertyPort* drvr_port,
+                         sta::LibertyPort* load_port,
                          double wire_length,
                          double max_slew);
   void bufferWireDelay(sta::LibertyCell* buffer_cell,
@@ -737,12 +738,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                               const odb::dbNameUniquifyType& uniquify
                               = odb::dbNameUniquifyType::ALWAYS);
   void deleteTieCellAndNet(const sta::Instance* tie_inst,
-                           LibertyPort* tie_port);
+                           sta::LibertyPort* tie_port);
   const Pin* findArithBoundaryPin(const Pin* load_pin);
   sta::Instance* createNewTieCellForLoadPin(const Pin* load_pin,
                                             const char* new_inst_name,
                                             sta::Instance* parent,
-                                            LibertyPort* tie_port,
+                                            sta::LibertyPort* tie_port,
                                             int separation_dbu);
   void getBufferPins(sta::Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
@@ -770,7 +771,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float bufferSlew(sta::LibertyCell* buffer_cell,
                    float load_cap,
                    const sta::DcalcAnalysisPt* dcalc_ap);
-  float maxInputSlew(const LibertyPort* input, const sta::Corner* corner) const;
+  float maxInputSlew(const sta::LibertyPort* input,
+                     const sta::Corner* corner) const;
   void checkLoadSlews(const Pin* drvr_pin,
                       double slew_margin,
                       // Return values.
@@ -885,7 +887,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   static constexpr float tgt_slew_load_cap_factor = 10.0;
 
   // Use actual input slews for accurate delay/slew estimation
-  sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
+  sta::UnorderedMap<sta::LibertyPort*, InputSlews> input_slew_map_;
 
   std::unique_ptr<OdbCallBack> db_cbk_;
 

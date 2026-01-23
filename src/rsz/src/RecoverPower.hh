@@ -32,7 +32,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
 using sta::Path;
@@ -68,8 +67,8 @@ class RecoverPower : public sta::dbStaState
                     bool only_same_size_swap,
                     Slack path_slack);
 
-  sta::LibertyCell* downsizeCell(const LibertyPort* in_port,
-                                 const LibertyPort* drvr_port,
+  sta::LibertyCell* downsizeCell(const sta::LibertyPort* in_port,
+                                 const sta::LibertyPort* drvr_port,
                                  float load_cap,
                                  float prev_drive,
                                  const sta::DcalcAnalysisPt* dcalc_ap,

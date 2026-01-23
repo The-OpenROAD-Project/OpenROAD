@@ -33,8 +33,8 @@ class SizeDownMove : public BaseMove
   const char* name() override { return "SizeDownMove"; }
 
  private:
-  sta::LibertyCell* downSizeGate(const LibertyPort* drvr_port,
-                                 const LibertyPort* load_port,
+  sta::LibertyCell* downSizeGate(const sta::LibertyPort* drvr_port,
+                                 const sta::LibertyPort* load_port,
                                  const Pin* load_pin,
                                  const sta::DcalcAnalysisPt* dcalc_ap,
                                  float slack_margin);

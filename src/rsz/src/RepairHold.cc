@@ -364,14 +364,15 @@ void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
                                   // Return values.
                                   sta::Delay delays[RiseFall::index_count])
 {
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
 
   for (int rf_index : RiseFall::rangeIndex()) {
     delays[rf_index] = MinMax::min()->initValue();
   }
   for (sta::Corner* corner : *sta_->corners()) {
-    LibertyPort* corner_port = input->cornerPort(corner->libertyIndex(max_));
+    sta::LibertyPort* corner_port
+        = input->cornerPort(corner->libertyIndex(max_));
     const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const float load_cap = corner_port->capacitance();
     sta::ArcDelay gate_delays[RiseFall::index_count];
@@ -581,7 +582,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                   loads_have_out_port = true;
                 }
               } else {
-                LibertyPort* load_port = network_->libertyPort(load_pin);
+                sta::LibertyPort* load_port = network_->libertyPort(load_pin);
                 if (load_port) {
                   excluded_cap += load_port->capacitance();
                 }

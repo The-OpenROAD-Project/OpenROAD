@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
 using sta::Path;
@@ -80,7 +79,8 @@ class Rebuffer : public sta::dbStaState
   float maxSlewMargined(float max_slew);
   float maxCapMargined(float max_cap);
 
-  bool loadSlewSatisfactory(LibertyPort* driver, const BufferedNetPtr& bnet);
+  bool loadSlewSatisfactory(sta::LibertyPort* driver,
+                            const BufferedNetPtr& bnet);
 
   FixedDelay bufferDelay(sta::LibertyCell* cell,
                          const RiseFallBoth* rf,
@@ -156,7 +156,7 @@ class Rebuffer : public sta::dbStaState
   float drvr_pin_max_slew_ = 0.0f;
   float drvr_load_high_water_mark_ = 0.0f;
   const sta::Corner* corner_ = nullptr;
-  LibertyPort* drvr_port_ = nullptr;
+  sta::LibertyPort* drvr_port_ = nullptr;
   Path* arrival_paths_[RiseFall::index_count] = {nullptr};
 
   int resizer_max_wire_length_ = 0;

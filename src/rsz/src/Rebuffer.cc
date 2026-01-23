@@ -295,7 +295,8 @@ std::tuple<sta::Delay, sta::Delay, Slew> Rebuffer::drvrPinTiming(
   return {delay, correction, slew};
 }
 
-bool Rebuffer::loadSlewSatisfactory(LibertyPort* driver, const BnetPtr& bnet)
+bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
+                                    const BnetPtr& bnet)
 {
   double wire_res, wire_cap;
   estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
@@ -412,7 +413,7 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
                                       int extra_wire_length)
 {
   double wire_res, wire_cap;
-  LibertyPort *inp, *outp;
+  sta::LibertyPort *inp, *outp;
   estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
   size.cell->bufferPorts(inp, outp);
 
@@ -432,7 +433,7 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
 
 int Rebuffer::wireLengthLimitImpliedByLoadSlew(sta::LibertyCell* cell)
 {
-  LibertyPort *in, *out;
+  sta::LibertyPort *in, *out;
   cell->bufferPorts(in, out);
 
   const float r_drvr = out->driveResistance();
@@ -476,7 +477,7 @@ int Rebuffer::wireLengthLimitImpliedByLoadSlew(sta::LibertyCell* cell)
 
 int Rebuffer::wireLengthLimitImpliedByMaxCap(sta::LibertyCell* cell)
 {
-  LibertyPort *in, *out;
+  sta::LibertyPort *in, *out;
   cell->bufferPorts(in, out);
 
   bool cap_limit_exists;
@@ -557,7 +558,7 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
       // crit2 stays being the critical branch; if none can be found
       // abort rewriting
       for (BufferSize size : buffer_sizes_) {
-        LibertyPort *in, *out;
+        sta::LibertyPort *in, *out;
         size.cell->bufferPorts(in, out);
 
         if (fuzzyGreaterEqual(in->capacitance() + in3->cap(), best_cap)
@@ -610,9 +611,9 @@ static std::optional<int> findWireLayer(BnetPtr node)
 BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                                   bool allow_topology_rewrite)
 {
-  LibertyPort* strong_driver;
+  sta::LibertyPort* strong_driver;
   {
-    LibertyPort* dummy;
+    sta::LibertyPort* dummy;
     buffer_sizes_.back().cell->bufferPorts(dummy, strong_driver);
   }
 
@@ -1142,7 +1143,7 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
           case BnetType::buffer: {
             int ret = recurse(bnet->ref());
             BnetPtr p = bnet->ref();
-            LibertyPort *in, *out;
+            sta::LibertyPort *in, *out;
             bnet->bufferCell()->bufferPorts(in, out);
             FixedDelay buffer_delay
                 = bufferDelay(bnet->bufferCell(),
@@ -1170,7 +1171,7 @@ FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
     for (auto rf1 : rf->range()) {
       const sta::DcalcAnalysisPt* dcalc_ap
           = arrival_paths_[rf1->index()]->dcalcAnalysisPt(sta_);
-      LibertyPort *input, *output;
+      sta::LibertyPort *input, *output;
       cell->bufferPorts(input, output);
       sta::ArcDelay gate_delays[RiseFall::index_count];
       Slew slews[RiseFall::index_count];
@@ -1289,7 +1290,7 @@ void Rebuffer::insertBufferOptions(
 
   for (BufferSize buffer_size : buffer_sizes_) {
     sta::LibertyCell* buffer_cell = buffer_size.cell;
-    LibertyPort *in, *out;
+    sta::LibertyPort *in, *out;
     buffer_cell->bufferPorts(in, out);
     pass_through(in->capacitance());
 
@@ -1360,7 +1361,7 @@ void Rebuffer::insertBufferOptions(
 
     if (exemplar && exemplar->type() == BnetType::buffer) {
       sta::LibertyCell* buffer_cell = exemplar->bufferCell();
-      LibertyPort *in, *out;
+      sta::LibertyPort *in, *out;
       buffer_cell->bufferPorts(in, out);
 
       float best_area = INF;
@@ -1423,7 +1424,7 @@ void Rebuffer::insertBufferOptions(
 
 static float bufferCin(const sta::LibertyCell* cell)
 {
-  LibertyPort *a, *y;
+  sta::LibertyPort *a, *y;
   cell->bufferPorts(a, y);
   return a->capacitance();
 }
@@ -1444,7 +1445,7 @@ void Rebuffer::init()
   buffer_sizes_.clear();
 
   for (auto cell : resizer_->buffer_fast_sizes_) {
-    LibertyPort *in, *out;
+    sta::LibertyPort *in, *out;
     cell->bufferPorts(in, out);
     buffer_sizes_.push_back(BufferSize{
         cell,
@@ -1476,7 +1477,7 @@ void Rebuffer::initOnCorner(sta::Corner* corner)
 
 float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
 {
-  LibertyPort *inp, *outp;
+  sta::LibertyPort *inp, *outp;
   cell->bufferPorts(inp, outp);
 
   float max_slew;
@@ -1543,7 +1544,7 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
 void Rebuffer::characterizeBufferLimits()
 {
   for (auto& size : buffer_sizes_) {
-    LibertyPort *in, *out;
+    sta::LibertyPort *in, *out;
     size.cell->bufferPorts(in, out);
 
     bool cap_limit_exists;
@@ -1622,7 +1623,7 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin,
               return node;
             }
 
-            LibertyPort *in_port, *out_port;
+            sta::LibertyPort *in_port, *out_port;
             cell->bufferPorts(in_port, out_port);
             auto buffer_drvr_pin
                 = network_->findPin(network_->instance(pin), out_port);
@@ -1720,9 +1721,9 @@ std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
 
     while (pin_iter->hasNext()) {
       const Pin* pin = pin_iter->next();
-      const LibertyPort* port = network_->libertyPort(pin);
+      const sta::LibertyPort* port = network_->libertyPort(pin);
       if (port && port->libertyCell()->isBuffer()) {
-        LibertyPort *in, *out;
+        sta::LibertyPort *in, *out;
         port->libertyCell()->bufferPorts(in, out);
 
         if (port == in && !imported_as_loads.contains(pin)) {
@@ -1847,7 +1848,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
           count++;
           resizer_->level_drvr_vertices_valid_ = false;
 
-          LibertyPort *input, *output;
+          sta::LibertyPort *input, *output;
           buffer_cell->bufferPorts(input, output);
 
           // 3. The input of this new buffer becomes the load for the parent
