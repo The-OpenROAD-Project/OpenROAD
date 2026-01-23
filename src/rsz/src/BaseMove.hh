@@ -30,6 +30,7 @@
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
@@ -48,7 +49,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Network;
 using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
@@ -122,7 +122,7 @@ class BaseMove : public sta::dbStaState
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
   utl::Logger* logger_;
-  Network* network_;
+  sta::Network* network_;
   sta::dbNetwork* db_network_;
   sta::dbSta* sta_;
   odb::dbDatabase* db_ = nullptr;

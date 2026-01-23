@@ -10,20 +10,20 @@
 
 namespace rsz {
 
-using sta::Network;
-
 class Resizer;
 
 class OdbCallBack : public odb::dbBlockCallBackObj
 {
  public:
-  OdbCallBack(Resizer* resizer, Network* network, sta::dbNetwork* db_network);
+  OdbCallBack(Resizer* resizer,
+              sta::Network* network,
+              sta::dbNetwork* db_network);
 
   void inDbNetDestroy(odb::dbNet* net) override;
 
  private:
   Resizer* resizer_;
-  Network* network_;
+  sta::Network* network_;
   sta::dbNetwork* db_network_;
 };
 

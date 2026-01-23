@@ -703,7 +703,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       return std::make_pair(required(sta), -level);
     }
 
-    float capacitance(const Network* network)
+    float capacitance(const sta::Network* network)
     {
       return network->libertyPort(pin)->capacitance();
     }
@@ -712,10 +712,10 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
   class PinRequiredHigher
   {
    private:
-    const Network* network_;
+    const sta::Network* network_;
 
    public:
-    PinRequiredHigher(const Network* network) : network_(network) {}
+    PinRequiredHigher(const sta::Network* network) : network_(network) {}
 
     bool operator()(const EnqueuedPin& a, const EnqueuedPin& b) const
     {

@@ -23,6 +23,7 @@
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/MinMax.hh"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Transition.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
@@ -95,7 +96,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   load_pin_ = load_pin;
   corner_ = corner;
 
-  Network* network = resizer->network();
+  sta::Network* network = resizer->network();
   sta::LibertyPort* load_port = network->libertyPort(load_pin);
   if (load_port) {
     cap_ = resizer->portCapacitance(load_port, corner);
@@ -258,7 +259,7 @@ void BufferedNet::reportTree(const int level, const Resizer* resizer) const
 
 std::string BufferedNet::to_string(const Resizer* resizer) const
 {
-  Network* sdc_network = resizer->sdcNetwork();
+  sta::Network* sdc_network = resizer->sdcNetwork();
   Units* units = resizer->units();
   Unit* dist_unit = units->distanceUnit();
   const char* x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 2);
@@ -515,7 +516,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
-    const Network* network)
+    const sta::Network* network)
 {
   BufferedNetPtr bnet = nullptr;
   const PinSeq* pins = tree->pins(to);
@@ -639,7 +640,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
-    const Network* network,
+    const sta::Network* network,
     std::map<odb::Point, std::vector<BufferedNetPtr>>& sink_map)
 {
   BufferedNetPtr bnet = nullptr;

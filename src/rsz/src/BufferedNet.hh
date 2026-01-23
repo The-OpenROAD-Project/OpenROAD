@@ -27,7 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Network;
 using sta::Path;
 using sta::Pin;
 using sta::Required;

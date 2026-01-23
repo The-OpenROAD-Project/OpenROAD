@@ -222,14 +222,15 @@ double Resizer::maxArea() const
 class VertexLevelLess
 {
  public:
-  VertexLevelLess(const Network* network);
+  VertexLevelLess(const sta::Network* network);
   bool operator()(const Vertex* vertex1, const Vertex* vertex2) const;
 
  protected:
-  const Network* network_;
+  const sta::Network* network_;
 };
 
-VertexLevelLess::VertexLevelLess(const Network* network) : network_(network)
+VertexLevelLess::VertexLevelLess(const sta::Network* network)
+    : network_(network)
 {
 }
 
@@ -4041,7 +4042,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
                             Slew& slew)
 {
   Parasitics* parasitics = sta->parasitics();
-  Network* network = sta->network();
+  sta::Network* network = sta->network();
   ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
   Corners* corners = sta->corners();
   corners->copy(sta_->corners());
