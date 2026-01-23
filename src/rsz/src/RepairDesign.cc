@@ -980,7 +980,7 @@ void RepairDesign::repairDriver(Vertex* drvr,
   if (!net) {
     return;
   }
-  dbNet* net_db = db_network_->staToDb(net);
+  odb::dbNet* net_db = db_network_->staToDb(net);
   bool debug = (drvr_pin == resizer_->debug_pin_);
   if (debug) {
     logger_->setDebugLevel(RSZ, "repair_net", 3);
@@ -1405,11 +1405,11 @@ void RepairDesign::repairNetWire(
   float max_load_slew = bnet->ref()->maxLoadSlew();
   float max_load_slew_margined = maxSlewMargined(max_load_slew);
 
-  Point to_loc = bnet->ref()->location();
+  odb::Point to_loc = bnet->ref()->location();
   int to_x = to_loc.getX();
   int to_y = to_loc.getY();
-  Point from_loc = bnet->location();
-  int length = Point::manhattanDistance(from_loc, to_loc);
+  odb::Point from_loc = bnet->location();
+  int length = odb::Point::manhattanDistance(from_loc, to_loc);
   wire_length = wire_length_ref + length;
   int from_x = from_loc.getX();
   int from_y = from_loc.getY();
@@ -1565,7 +1565,7 @@ void RepairDesign::repairNetWire(
       int buf_y = to_y + d * dy;
       float repeater_cap, repeater_fanout;
       if (!makeRepeater("wire",
-                        Point(buf_x, buf_y),
+                        odb::Point(buf_x, buf_y),
                         buffer_cell,
                         /* resize= */ true,
                         level,
@@ -1643,7 +1643,7 @@ void RepairDesign::repairNetJunc(
              "",
              level,
              bnet->to_string(resizer_));
-  Point loc = bnet->location();
+  odb::Point loc = bnet->location();
 
   BufferedNetPtr left = bnet->ref();
   int wire_length_left = 0;
@@ -1882,7 +1882,7 @@ void RepairDesign::subdivideRegion(LoadRegion& region, int max_fanout)
       cut = odb::Line{x_min, y_mid, x_max, y_mid};
     }
     for (const Pin* pin : region.pins_) {
-      Point loc = db_network_->location(pin);
+      odb::Point loc = db_network_->location(pin);
       int x = loc.x();
       int y = loc.y();
       if ((horz_partition && x <= x_mid) || (!horz_partition && y <= y_mid)) {
@@ -1985,7 +1985,7 @@ void RepairDesign::makeRegionRepeaters(LoadRegion& region,
 void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
                                       PinSeq& repeater_inputs,
                                       const odb::Rect& bbox,
-                                      const Point& loc,
+                                      const odb::Point& loc,
                                       bool check_slew,
                                       bool check_cap,
                                       int max_length,
@@ -2036,7 +2036,7 @@ odb::Rect RepairDesign::findBbox(PinSeq& pins)
   odb::Rect bbox;
   bbox.mergeInit();
   for (const Pin* pin : pins) {
-    Point loc = db_network_->location(pin);
+    odb::Point loc = db_network_->location(pin);
     odb::Rect r(loc.x(), loc.y(), loc.x(), loc.y());
     bbox.merge(r);
   }
@@ -2055,14 +2055,14 @@ PinSeq RepairDesign::findLoads(const Pin* drvr_pin)
   return loads;
 }
 
-Point RepairDesign::findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins)
+odb::Point RepairDesign::findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins)
 {
-  Point drvr_loc = db_network_->location(drvr_pin);
-  Point closest_pt = drvr_loc;
+  odb::Point drvr_loc = db_network_->location(drvr_pin);
+  odb::Point closest_pt = drvr_loc;
   int64_t closest_dist = std::numeric_limits<int64_t>::max();
   for (const Pin* pin : pins) {
-    Point loc = db_network_->location(pin);
-    int64_t dist = Point::manhattanDistance(loc, drvr_loc);
+    odb::Point loc = db_network_->location(pin);
+    int64_t dist = odb::Point::manhattanDistance(loc, drvr_loc);
     if (dist < closest_dist) {
       closest_pt = loc;
       closest_dist = dist;
@@ -2073,7 +2073,7 @@ Point RepairDesign::findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins)
 
 bool RepairDesign::isRepeater(const Pin* load_pin)
 {
-  dbInst* db_inst = db_network_->staToDb(network_->instance(load_pin));
+  odb::dbInst* db_inst = db_network_->staToDb(network_->instance(load_pin));
   odb::dbSourceType source = db_inst->getSourceType();
   return source == odb::dbSourceType::TIMING;
 }
@@ -2081,7 +2081,7 @@ bool RepairDesign::isRepeater(const Pin* load_pin)
 ////////////////////////////////////////////////////////////////
 
 bool RepairDesign::makeRepeater(const char* reason,
-                                const Point& loc,
+                                const odb::Point& loc,
                                 LibertyCell* buffer_cell,
                                 bool resize,
                                 int level,
@@ -2156,7 +2156,7 @@ bool RepairDesign::makeRepeater(
              units_->distanceUnit()->asString(dbuToMeters(y), 1));
 
   // Insert buffer
-  Point loc(x, y);
+  odb::Point loc(x, y);
   Instance* buffer = resizer_->insertBufferBeforeLoads(
       nullptr, &load_pins, buffer_cell, &loc, reason);
   if (!buffer) {
@@ -2169,7 +2169,7 @@ bool RepairDesign::makeRepeater(
   out_net = db_network_->dbToSta(new_buffer->getFirstOutput()->getNet());
 
   if (graphics_) {
-    dbInst* db_inst = db_network_->staToDb(buffer);
+    odb::dbInst* db_inst = db_network_->staToDb(buffer);
     graphics_->makeBuffer(db_inst);
   }
 

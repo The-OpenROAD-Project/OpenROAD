@@ -25,10 +25,6 @@ namespace rsz {
 
 class Resizer;
 
-using utl::Logger;
-
-using odb::Point;
-
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::Delay;
@@ -113,14 +109,14 @@ class RepairHold : public sta::dbStaState
                      PinSeq& load_pins,
                      bool loads_have_out_port,
                      LibertyCell* buffer_cell,
-                     const Point& loc);
+                     const odb::Point& loc);
   bool checkMaxSlewCap(const Pin* drvr_pin);
   void mergeInit(Slacks& slacks);
   void mergeInto(Slacks& from, Slacks& result);
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;

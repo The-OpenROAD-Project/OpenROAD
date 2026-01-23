@@ -43,13 +43,13 @@
 #include "VTSwapMove.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/Clock.hh"
@@ -151,8 +151,8 @@ using sta::CLOCK;
 using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
-Resizer::Resizer(Logger* logger,
-                 dbDatabase* db,
+Resizer::Resizer(utl::Logger* logger,
+                 odb::dbDatabase* db,
                  dbSta* sta,
                  SteinerTreeBuilder* stt_builder,
                  GlobalRouter* global_router,
@@ -579,7 +579,7 @@ void Resizer::balanceRowUsage()
       continue;
     }
 
-    const Point origin = inst->getOrigin();
+    const odb::Point origin = inst->getOrigin();
     const int x_bin = (origin.x() - core_.xMin()) / x_step;
     const int y_bin = (origin.y() - core_.yMin()) / y_step;
     grid[x_bin][y_bin].push_back(inst);
@@ -1110,11 +1110,11 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
     // in the iterm_from to the iterm_to.  We preferentially use
     // the modnet name, if present.
     //
-    dbNet* to_db_net = iterm_to->getNet();
+    odb::dbNet* to_db_net = iterm_to->getNet();
     odb::dbModNet* to_mod_net = iterm_to->getModNet();
 
     odb::dbModNet* from_mod_net = iterm_from->getModNet();
-    dbNet* from_db_net = iterm_from->getNet();
+    odb::dbNet* from_db_net = iterm_from->getNet();
 
     std::string required_name
         = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
@@ -1144,7 +1144,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin,
                                LibertyCell* buffer_cell,
                                bool verbose)
 {
-  dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
+  odb::dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
 
   // Filter to see if we need to do anything..
   bool has_non_buffer = false;
@@ -2256,7 +2256,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   size_t hash1 = 0;
   std::string new_layer_name;
   for (dbBox* bbox : obs) {
-    dbTechLayer* layer = bbox->getTechLayer();
+    odb::dbTechLayer* layer = bbox->getTechLayer();
     if (layer == nullptr || layer->getType() != odb::dbTechLayerType::IMPLANT) {
       continue;
     }
@@ -2635,7 +2635,7 @@ std::optional<Slack> Resizer::resizeNetSlack(const Net* net)
   return it->second;
 }
 
-std::optional<Slack> Resizer::resizeNetSlack(const dbNet* db_net)
+std::optional<Slack> Resizer::resizeNetSlack(const odb::dbNet* db_net)
 {
   const Net* net = db_network_->dbToSta(db_net);
   return resizeNetSlack(net);
@@ -2881,7 +2881,7 @@ bool Resizer::dontTouch(const Instance* inst) const
 
 void Resizer::setDontTouch(const Net* net, bool dont_touch)
 {
-  dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = db_network_->staToDb(net);
   db_net->setDoNotTouch(dont_touch);
 }
 
@@ -3192,7 +3192,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
       continue;
     }
 
-    dbNet* drvr_db_net = db_network_->flatNet(drvr_pin);
+    odb::dbNet* drvr_db_net = db_network_->flatNet(drvr_pin);
     if (!drvr_db_net) {
       continue;
     }
@@ -3311,7 +3311,7 @@ Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
   LibertyCell* tie_cell = tie_port->libertyCell();
 
   // Create the tie instance in the parent of the existing tie instance
-  Point new_tie_loc = tieLocation(load_pin, separation_dbu);
+  odb::Point new_tie_loc = tieLocation(load_pin, separation_dbu);
   Instance* new_tie_inst
       = makeInstance(tie_cell,
                      new_inst_name,
@@ -3323,7 +3323,7 @@ Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
   Instance* load_inst = network_->instance(load_pin);
   if (network_->isTopInstance(load_inst) == false) {
     dbInst* db_inst = nullptr;
-    dbModInst* db_mod_inst = nullptr;
+    odb::dbModInst* db_mod_inst = nullptr;
     odb::dbModule* module = nullptr;
     db_network_->staToDb(load_inst, db_inst, db_mod_inst);
     if (db_inst) {
@@ -3391,7 +3391,7 @@ void Resizer::deleteTieCellAndNet(const Instance* tie_inst,
   // Get flat and hier nets.
   Pin* tie_pin = network_->findPin(tie_inst, tie_port);
   odb::dbModNet* tie_hier_net;
-  dbNet* tie_flat_net;
+  odb::dbNet* tie_flat_net;
   db_network_->net(tie_pin, tie_flat_net, tie_hier_net);
 
   // Delete hier net if it is dangling.
@@ -3430,7 +3430,7 @@ void Resizer::findCellInstances(LibertyCell* cell,
                                 // Return value.
                                 InstanceSeq& insts)
 {
-  // TODO: iterating dbInsts in dbBlock might be better. try it
+  // TODO: iterating dbInsts in odb::dbBlock might be better. try it
   LeafInstanceIterator* inst_iter = network_->leafInstanceIterator();
   while (inst_iter->hasNext()) {
     Instance* inst = inst_iter->next();
@@ -3449,9 +3449,9 @@ void Resizer::findCellInstances(LibertyCell* cell,
 }
 
 // Place the tie instance on the side of the load pin.
-Point Resizer::tieLocation(const Pin* load, int separation)
+odb::Point Resizer::tieLocation(const Pin* load, int separation)
 {
-  Point load_loc = db_network_->location(load);
+  odb::Point load_loc = db_network_->location(load);
   int load_x = load_loc.getX();
   int load_y = load_loc.getY();
   int tie_x = load_x;
@@ -3482,7 +3482,7 @@ Point Resizer::tieLocation(const Pin* load, int separation)
       tie_y += separation;
     }
   }
-  return Point(tie_x, tie_y);
+  return odb::Point(tie_x, tie_y);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3577,13 +3577,13 @@ double Resizer::maxLoadManhattenDistance(const Net* net)
 int Resizer::maxLoadManhattenDistance(Vertex* drvr)
 {
   int max_dist = 0;
-  Point drvr_loc = db_network_->location(drvr->pin());
+  odb::Point drvr_loc = db_network_->location(drvr->pin());
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   while (edge_iter.hasNext()) {
     Edge* edge = edge_iter.next();
     Vertex* load = edge->to(graph_);
-    Point load_loc = db_network_->location(load->pin());
-    int dist = Point::manhattanDistance(drvr_loc, load_loc);
+    odb::Point load_loc = db_network_->location(load->pin());
+    int dist = odb::Point::manhattanDistance(drvr_loc, load_loc);
     max_dist = max(max_dist, dist);
   }
   return max_dist;
@@ -3944,7 +3944,7 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
     logger_->error(RSZ, 70, "no LEF cell for {}.", cell->name());
   }
   // Make a (hierarchical) block to use as a scratchpad.
-  dbBlock* block = dbBlock::create(block_, "wire_delay", '/');
+  odb::dbBlock* block = odb::dbBlock::create(block_, "wire_delay", '/');
   std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
 
   const double drvr_r = drvr_port->driveResistance();
@@ -3974,7 +3974,7 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
       }
     }
   }
-  dbBlock::destroy(block);
+  odb::dbBlock::destroy(block);
   return wire_length_low;
 }
 
@@ -3998,10 +3998,10 @@ void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
                               Slew& slew)
 {
   // Make a (hierarchical) block to use as a scratchpad.
-  dbBlock* block = dbBlock::create(block_, "wire_delay", '/');
+  odb::dbBlock* block = odb::dbBlock::create(block_, "wire_delay", '/');
   std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
   bufferWireDelay(buffer_cell, wire_length, sta, delay, slew);
-  dbBlock::destroy(block);
+  odb::dbBlock::destroy(block);
 }
 
 void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
@@ -4246,7 +4246,7 @@ void Resizer::cloneClkInverter(Instance* inv)
   Pin* in_pin = network_->findPin(inv, in_port);
   Pin* out_pin = network_->findPin(inv, out_port);
   Net* in_net = db_network_->findFlatNet(in_pin);
-  dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
+  odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
   Net* out_net = network_->isTopLevelPort(out_pin)
                      ? network_->net(network_->term(out_pin))
                      : network_->net(out_pin);
@@ -4257,7 +4257,7 @@ void Resizer::cloneClkInverter(Instance* inv)
     while (load_iter->hasNext()) {
       const Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        Point clone_loc = db_network_->location(load_pin);
+        odb::Point clone_loc = db_network_->location(load_pin);
         Instance* clone
             = makeInstance(inv_cell,
                            inv_name,
@@ -4267,7 +4267,7 @@ void Resizer::cloneClkInverter(Instance* inv)
         journalMakeBuffer(clone);
 
         Net* clone_out_net = db_network_->makeNet(top_inst);
-        dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
+        odb::dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
         clone_out_net_db->setSigType(in_net_db->getSigType());
 
         Instance* load = network_->instance(load_pin);
@@ -4716,7 +4716,7 @@ void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
 Instance* Resizer::makeBuffer(LibertyCell* cell,
                               const char* name,
                               Instance* parent,
-                              const Point& loc)
+                              const odb::Point& loc)
 {
   Instance* inst = makeInstance(cell, name, parent, loc);
   journalMakeBuffer(inst);
@@ -4726,7 +4726,7 @@ Instance* Resizer::makeBuffer(LibertyCell* cell,
 Instance* Resizer::insertBufferAfterDriver(
     Net* net,
     LibertyCell* buffer_cell,
-    const Point* loc,
+    const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const odb::dbNameUniquifyType& uniquify)
@@ -4744,10 +4744,11 @@ Instance* Resizer::insertBufferAfterDriver(
 
   odb::dbNet* db_net = db_network_->staToDb(net);
   if (!db_net) {
-    logger_->error(RSZ,
-                   3001,
-                   "insertBufferAfterDriver: Cannot convert net {} to dbNet",
-                   network_->pathName(net));
+    logger_->error(
+        RSZ,
+        3001,
+        "insertBufferAfterDriver: Cannot convert net {} to odb::dbNet",
+        network_->pathName(net));
     return nullptr;
   }
 
@@ -4763,7 +4764,7 @@ Instance* Resizer::insertBufferAfterDriver(
 odb::dbInst* Resizer::insertBufferAfterDriver(
     odb::dbNet* net,
     odb::dbMaster* buffer_cell,
-    const Point* loc,
+    const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const odb::dbNameUniquifyType& uniquify)
@@ -4819,7 +4820,7 @@ odb::dbInst* Resizer::insertBufferAfterDriver(
 Instance* Resizer::insertBufferBeforeLoad(
     Pin* load_pin,
     LibertyCell* buffer_cell,
-    const Point* loc,
+    const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const odb::dbNameUniquifyType& uniquify)
@@ -4859,13 +4860,13 @@ Instance* Resizer::insertBufferBeforeLoad(
 odb::dbInst* Resizer::insertBufferBeforeLoad(
     odb::dbObject* load_pin,
     odb::dbMaster* buffer_cell,
-    const Point* loc,
+    const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const odb::dbNameUniquifyType& uniquify)
 {
   // Find the flat net of the load_pin
-  dbNet* db_net = nullptr;
+  odb::dbNet* db_net = nullptr;
   if (load_pin->getObjectType() == odb::dbObjectType::dbITermObj) {
     odb::dbITerm* iterm = static_cast<odb::dbITerm*>(load_pin);
     db_net = iterm->getNet();
@@ -4909,7 +4910,7 @@ Instance* Resizer::insertBufferBeforeLoads(
     Net* net,
     PinSeq* loads,
     LibertyCell* buffer_cell,
-    const Point* loc,
+    const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const odb::dbNameUniquifyType& uniquify,
@@ -4935,7 +4936,7 @@ Instance* Resizer::insertBufferBeforeLoads(
     Net* net,
     PinSet* loads,
     LibertyCell* buffer_cell,
-    const Point* loc,
+    const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const odb::dbNameUniquifyType& uniquify,
@@ -4976,7 +4977,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     odb::dbNet* net,
     const std::set<odb::dbObject*>& loads,
     odb::dbMaster* buffer_cell,
-    const Point* loc,
+    const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
     const odb::dbNameUniquifyType& uniquify,
@@ -5027,13 +5028,13 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
 Instance* Resizer::makeInstance(LibertyCell* cell,
                                 const char* name,
                                 Instance* parent,
-                                const Point& loc,
+                                const odb::Point& loc,
                                 const odb::dbNameUniquifyType& uniquify)
 {
   debugPrint(logger_, RSZ, "make_instance", 1, "make instance {}", name);
 
   // make new instance name
-  dbModInst* parent_mod_inst = db_network_->getModInst(parent);
+  odb::dbModInst* parent_mod_inst = db_network_->getModInst(parent);
   std::string full_name
       = block_->makeNewInstName(parent_mod_inst, name, uniquify);
 
@@ -5075,7 +5076,7 @@ void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
   inserted_buffer_count_++;
 }
 
-void Resizer::setLocation(dbInst* db_inst, const Point& pt)
+void Resizer::setLocation(dbInst* db_inst, const odb::Point& pt)
 {
   int x = pt.x();
   int y = pt.y();
@@ -5328,7 +5329,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     for (auto it = nets.begin(); it != nets.end();) {
       if (!dontTouch(db_network_->dbToSta(*it)) && !it->isSpecial()
           && it->getITerms().empty() && it->getBTerms().empty()) {
-        it = dbNet::destroy(it);
+        it = odb::dbNet::destroy(it);
         remove_net_count++;
       } else {
         it++;
@@ -5449,7 +5450,7 @@ bool Resizer::okToBufferNet(const Pin* driver_pin) const
     return false;
   }
 
-  dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = db_network_->staToDb(net);
 
   if (db_net->isConnectedByAbutment() || db_net->isSpecial()) {
     return false;

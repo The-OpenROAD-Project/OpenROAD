@@ -29,18 +29,12 @@ class Pin;
 class PinSet;
 }  // namespace sta
 
-namespace utl {
-class Logger;
-}
-
 namespace rsz {
 
 class Resizer;
 
-using odb::dbModInst;
 using sta::Instance;
 using sta::Path;
-using utl::Logger;
 
 class SwapArithModules : public sta::dbStaState
 {
@@ -53,16 +47,17 @@ class SwapArithModules : public sta::dbStaState
                                    float slack_threshold)
       = 0;
   virtual void collectArithInstsOnPath(const Path* path,
-                                       std::set<dbModInst*>& arithInsts)
+                                       std::set<odb::dbModInst*>& arithInsts)
       = 0;
-  virtual bool isArithInstance(const Instance* inst, dbModInst*& mod_inst) = 0;
-  virtual bool hasArithOperatorProperty(const dbModInst* mod_inst) = 0;
+  virtual bool isArithInstance(const Instance* inst, odb::dbModInst*& mod_inst)
+      = 0;
+  virtual bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) = 0;
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
                                      float slack_threshold,
-                                     std::set<dbModInst*>& insts)
+                                     std::set<odb::dbModInst*>& insts)
       = 0;
-  virtual bool doSwapInstances(std::set<dbModInst*>& insts,
+  virtual bool doSwapInstances(std::set<odb::dbModInst*>& insts,
                                const std::string& target)
       = 0;
 
@@ -76,7 +71,7 @@ class SwapArithModules : public sta::dbStaState
   // Member variables
   Resizer* resizer_;
   dbNetwork* db_network_{nullptr};
-  Logger* logger_{nullptr};
+  utl::Logger* logger_{nullptr};
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
 };

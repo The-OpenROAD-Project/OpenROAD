@@ -15,10 +15,13 @@
 #include <utility>
 #include <vector>
 
+#include "est/SteinerTree.h"
 #include "grt/GRoute.h"
+#include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
+#include "sta/Transition.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include "spdlog/fmt/fmt.h"
 #include "sta/Fuzzy.hh"
@@ -75,7 +78,7 @@ FixedDelay::FixedDelay(sta::Delay float_value, Resizer* resizer)
 
 // load
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          const Pin* load_pin,
                          const Corner* corner,
                          const Resizer* resizer)
@@ -120,7 +123,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // junc
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          const BufferedNetPtr& ref,
                          const BufferedNetPtr& ref2,
                          const Resizer* resizer)
@@ -145,7 +148,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // wire
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          const int layer,
                          const BufferedNetPtr& ref,
                          const Corner* corner,
@@ -173,7 +176,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // via
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          const int layer,
                          const int ref_layer,
                          const BufferedNetPtr& ref,
@@ -200,7 +203,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // buffer
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          LibertyCell* buffer_cell,
                          const BufferedNetPtr& ref,
                          const Corner* corner,
@@ -496,7 +499,7 @@ BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
 
 using SteinerPtAdjacents = std::vector<std::vector<SteinerPt>>;
 using SteinerPtPinVisited
-    = std::unordered_set<Point, est::PointHash, est::PointEqual>;
+    = std::unordered_set<odb::Point, est::PointHash, est::PointEqual>;
 
 static BufferedNetPtr makeBufferedNetFromTree(
     const est::SteinerTree* tree,
@@ -508,12 +511,12 @@ static BufferedNetPtr makeBufferedNetFromTree(
     const Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
+    utl::Logger* logger,
     const Network* network)
 {
   BufferedNetPtr bnet = nullptr;
   const PinSeq* pins = tree->pins(to);
-  const Point to_loc = tree->location(to);
+  const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (pins && pins_visited.find(to_loc) == pins_visited.end()) {
@@ -632,12 +635,12 @@ static BufferedNetPtr makeBufferedNetFromTree2(
     const Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
+    utl::Logger* logger,
     const Network* network,
-    std::map<Point, std::vector<BufferedNetPtr>>& sink_map)
+    std::map<odb::Point, std::vector<BufferedNetPtr>>& sink_map)
 {
   BufferedNetPtr bnet = nullptr;
-  const Point to_loc = tree->location(to);
+  const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (sink_map.contains(to_loc)
@@ -698,13 +701,13 @@ static BufferedNetPtr makeBufferedNetFromTree2(
 // Make BufferedNet from Steiner tree. This is similar to
 // makeBufferedNetSteiner but supports sinks of type BufferedNetPtr
 BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
-    Point root,
+    odb::Point root,
     const std::vector<BufferedNetPtr>& sinks,
     const Corner* corner)
 {
   BufferedNetPtr bnet = nullptr;
-  std::vector<Point> sink_points;
-  std::map<Point, std::vector<BufferedNetPtr>> sink_map;
+  std::vector<odb::Point> sink_points;
+  std::map<odb::Point, std::vector<BufferedNetPtr>> sink_map;
   for (const auto& sink : sinks) {
     sink_points.push_back(sink->location());
     sink_map[sink->location()].push_back(sink);
@@ -969,7 +972,7 @@ static BufferedNetPtr makeBufferedNet(
     const Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
+    utl::Logger* logger,
     dbNetwork* db_network,
     RoutePtSet& visited)
 {
@@ -979,8 +982,8 @@ static BufferedNetPtr makeBufferedNet(
   }
   visited.insert(to);
 
-  Point from_pt(from.x(), from.y());
-  Point to_pt(to.x(), to.y());
+  odb::Point from_pt(from.x(), from.y());
+  odb::Point to_pt(to.x(), to.y());
 
   BufferedNetPtr bnet = nullptr;
   const PinSeq& pins = loc_pin_map[to];
@@ -1054,7 +1057,7 @@ static BufferedNetPtr makeBufferedNet(
 BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
                                               const Corner* corner)
 {
-  dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
   const Net* net = db_network_->dbToSta(db_net);
   assert(db_net != nullptr);
 
