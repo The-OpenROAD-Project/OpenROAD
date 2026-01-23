@@ -261,7 +261,7 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
 {
   sta::Network* sdc_network = resizer->sdcNetwork();
   Units* units = resizer->units();
-  Unit* dist_unit = units->distanceUnit();
+  sta::Unit* dist_unit = units->distanceUnit();
   const char* x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 2);
   const char* y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 2);
   const char* cap = units->capacitanceUnit()->asString(cap_);
