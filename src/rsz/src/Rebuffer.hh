@@ -21,6 +21,7 @@
 #include "sta/MinMax.hh"
 #include "sta/Path.hh"
 #include "sta/Transition.hh"
+#include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
@@ -28,9 +29,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using utl::Logger;
-
-using odb::Point;
 using sta::Corner;
 using sta::dbNetwork;
 using sta::Delay;
@@ -92,7 +90,7 @@ class Rebuffer : public sta::dbStaState
                          float load_cap);
 
   BufferedNetPtr addWire(const BufferedNetPtr& p,
-                         Point wire_end,
+                         odb::Point wire_end,
                          int wire_layer,
                          int level = -1);
 
@@ -147,7 +145,7 @@ class Rebuffer : public sta::dbStaState
   bool hasTopLevelOutputPort(Net* net);
   int rebufferPin(const Pin* drvr_pin);
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;

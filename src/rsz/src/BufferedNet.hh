@@ -18,6 +18,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/Transition.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 namespace est {
@@ -25,10 +26,6 @@ class EstimateParasitics;
 }
 
 namespace rsz {
-
-using utl::Logger;
-
-using odb::Point;
 
 using sta::Corner;
 using sta::DcalcAnalysisPt;
@@ -128,13 +125,13 @@ class BufferedNet
  public:
   // load
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               const Pin* load_pin,
               const Corner* corner,
               const Resizer* resizer);
   // wire
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               int layer,
               const BufferedNetPtr& ref,
               const Corner* corner,
@@ -142,7 +139,7 @@ class BufferedNet
               const est::EstimateParasitics* estimate_parasitics);
   // via
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               int layer,
               int ref_layer,
               const BufferedNetPtr& ref,
@@ -150,13 +147,13 @@ class BufferedNet
               const Resizer* resizer);
   // junc
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               const BufferedNetPtr& ref,
               const BufferedNetPtr& ref2,
               const Resizer* resizer);
   // buffer
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
               const Corner* corner,
@@ -170,7 +167,7 @@ class BufferedNet
   // wire     wire is from loc to location(ref_)
   // buffer   buffer driver pin location
   // load     load pin location
-  Point location() const { return location_; }
+  odb::Point location() const { return location_; }
   float cap() const { return cap_; }
   void setCapacitance(float cap);
   float fanout() const { return fanout_; }
@@ -276,7 +273,7 @@ class BufferedNet
 
  private:
   BufferedNetType type_;
-  Point location_;
+  odb::Point location_;
   // only used by load type
   const Pin* load_pin_{nullptr};
   // only used by buffer type

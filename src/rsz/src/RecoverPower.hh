@@ -30,8 +30,6 @@ namespace rsz {
 
 class Resizer;
 
-using utl::Logger;
-
 using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
@@ -94,7 +92,7 @@ class RecoverPower : public sta::dbStaState
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;

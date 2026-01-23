@@ -13,6 +13,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -375,8 +376,8 @@ bool RecoverPower::meetsSizeCriteria(const LibertyCell* cell,
   if (!match_size) {
     return true;
   }
-  const dbMaster* candidate_cell = db_network_->staToDb(candidate);
-  const dbMaster* curr_cell = db_network_->staToDb(cell);
+  const odb::dbMaster* candidate_cell = db_network_->staToDb(candidate);
+  const odb::dbMaster* curr_cell = db_network_->staToDb(cell);
   if (candidate_cell->getWidth() <= curr_cell->getWidth()
       && candidate_cell->getHeight() == curr_cell->getHeight()) {
     return true;
