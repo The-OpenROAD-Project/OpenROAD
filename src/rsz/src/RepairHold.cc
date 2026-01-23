@@ -88,7 +88,7 @@ bool RepairHold::repairHold(
   sta::LibertyCell* buffer_cell = findHoldBuffer();
 
   sta_->findRequireds();
-  VertexSet* ends = sta_->search()->endpoints();
+  sta::VertexSet* ends = sta_->search()->endpoints();
   sta::VertexSeq ends1;
   for (sta::Vertex* end : *ends) {
     ends1.push_back(end);

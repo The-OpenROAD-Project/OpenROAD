@@ -201,7 +201,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   logger_->info(RSZ, 100, repair_moves);
 
   // Sort failing endpoints by slack.
-  const VertexSet* endpoints = sta_->endpoints();
+  const sta::VertexSet* endpoints = sta_->endpoints();
   vector<pair<sta::Vertex*, sta::Slack>> violating_ends;
   // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
@@ -896,7 +896,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
   }
 
   // Sort remaining failing endpoints
-  const VertexSet* endpoints = sta_->endpoints();
+  const sta::VertexSet* endpoints = sta_->endpoints();
   vector<pair<sta::Vertex*, sta::Slack>> violating_ends;
   for (sta::Vertex* end : *endpoints) {
     const sta::Slack end_slack = sta_->vertexSlack(end, max_);
@@ -1060,7 +1060,7 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
   bool changed = false;
 
   // Start with sorted violating endpoints
-  const VertexSet* endpoints = sta_->endpoints();
+  const sta::VertexSet* endpoints = sta_->endpoints();
   vector<pair<sta::Vertex*, sta::Slack>> violating_ends;
   for (sta::Vertex* end : *endpoints) {
     const sta::Slack end_slack = sta_->vertexSlack(end, max_);

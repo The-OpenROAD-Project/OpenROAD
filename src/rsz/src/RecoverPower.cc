@@ -71,7 +71,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
-  VertexSet* endpoints = sta_->endpoints();
+  sta::VertexSet* endpoints = sta_->endpoints();
   sta::VertexSeq ends_with_slack;
   for (sta::Vertex* end : *endpoints) {
     const sta::Slack end_slack = sta_->vertexSlack(end, max_);

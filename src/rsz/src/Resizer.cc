@@ -2661,25 +2661,25 @@ sta::PinSet Resizer::findFaninFanouts(sta::PinSet& end_pins)
   sta_->ensureLevelized();
   graph_ = sta_->graph();
 
-  VertexSet ends(graph_);
+  sta::VertexSet ends(graph_);
   for (const sta::Pin* pin : end_pins) {
     sta::Vertex* end = graph_->pinLoadVertex(pin);
     ends.insert(end);
   }
   sta::PinSet fanin_fanout_pins(db_network_);
-  VertexSet fanin_fanouts = findFaninFanouts(ends);
+  sta::VertexSet fanin_fanouts = findFaninFanouts(ends);
   for (sta::Vertex* vertex : fanin_fanouts) {
     fanin_fanout_pins.insert(vertex->pin());
   }
   return fanin_fanout_pins;
 }
 
-VertexSet Resizer::findFaninFanouts(VertexSet& ends)
+sta::VertexSet Resizer::findFaninFanouts(sta::VertexSet& ends)
 {
   // Search backwards from ends to fanin register outputs and input ports.
-  VertexSet fanin_roots = findFaninRoots(ends);
+  sta::VertexSet fanin_roots = findFaninRoots(ends);
   // Search forward from register outputs.
-  VertexSet fanouts = findFanouts(fanin_roots);
+  sta::VertexSet fanouts = findFanouts(fanin_roots);
   return fanouts;
 }
 
@@ -2690,7 +2690,7 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
   sta_->ensureLevelized();
   graph_ = sta_->graph();
 
-  VertexSet ends(graph_);
+  sta::VertexSet ends(graph_);
   for (const sta::Pin* pin : end_pins) {
     sta::Vertex* end = graph_->pinLoadVertex(pin);
     ends.insert(end);
@@ -2715,7 +2715,7 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 }
 
 // Find roots for logic fanin of ends.
-VertexSet Resizer::findFaninRoots(VertexSet& ends)
+sta::VertexSet Resizer::findFaninRoots(sta::VertexSet& ends)
 {
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
@@ -2723,7 +2723,7 @@ VertexSet Resizer::findFaninRoots(VertexSet& ends)
     iter.enqueueAdjacentVertices(vertex);
   }
 
-  VertexSet roots(graph_);
+  sta::VertexSet roots(graph_);
   while (iter.hasNext()) {
     sta::Vertex* vertex = iter.next();
     if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
@@ -2749,9 +2749,9 @@ bool Resizer::isRegOutput(sta::Vertex* vertex)
   return false;
 }
 
-VertexSet Resizer::findFanouts(VertexSet& reg_outs)
+sta::VertexSet Resizer::findFanouts(sta::VertexSet& reg_outs)
 {
-  VertexSet fanouts(graph_);
+  sta::VertexSet fanouts(graph_);
   sta::SearchPredNonLatch2 pred(sta_);
   BfsFwdIterator iter(BfsIndex::other, &pred, this);
   for (sta::Vertex* reg_out : reg_outs) {

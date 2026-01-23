@@ -64,8 +64,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::VertexSet;
-
 using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
 using InstanceTuple = std::tuple<sta::Instance*, sta::Instance*>;
 using InputSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
@@ -777,9 +775,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
-  VertexSet findFaninFanouts(VertexSet& ends);
-  VertexSet findFaninRoots(VertexSet& ends);
-  VertexSet findFanouts(VertexSet& reg_outs);
+  sta::VertexSet findFaninFanouts(sta::VertexSet& ends);
+  sta::VertexSet findFaninRoots(sta::VertexSet& ends);
+  sta::VertexSet findFanouts(sta::VertexSet& reg_outs);
   bool isRegOutput(sta::Vertex* vertex);
   bool isRegister(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
