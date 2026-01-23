@@ -64,7 +64,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::TimingArc;
 using sta::UnorderedSet;
 using sta::Vector;
 using sta::Vertex;
@@ -560,11 +559,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //==============================
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,
-                       TimingArc* arc,
+                       sta::TimingArc* arc,
                        sta::Slew in_slew,
                        sta::Slew out_slew);
   sta::Slew gateSlewDiff(sta::LibertyCell* cell,
-                         TimingArc* arc,
+                         sta::TimingArc* arc,
                          sta::GateTimingModel* model,
                          sta::Slew in_slew,
                          float load_cap,

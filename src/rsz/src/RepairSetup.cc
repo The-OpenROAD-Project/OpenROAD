@@ -675,8 +675,8 @@ bool RepairSetup::repairPath(sta::Path* path,
       const sta::Pin* path_pin = path->pin(sta_);
       if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
-        const TimingArc* prev_arc = path->prevArc(sta_);
-        const TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);
+        const sta::TimingArc* prev_arc = path->prevArc(sta_);
+        const sta::TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);
         Edge* prev_edge = path->prevEdge(sta_);
         const sta::Delay load_delay
             = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())

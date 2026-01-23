@@ -20,6 +20,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
 namespace est {
@@ -93,7 +94,7 @@ class RepairDesign : sta::dbStaState
 
   void checkDriverArcSlew(const sta::Corner* corner,
                           const sta::Instance* inst,
-                          const TimingArc* arc,
+                          const sta::TimingArc* arc,
                           float load_cap,
                           float limit,
                           float& violation);

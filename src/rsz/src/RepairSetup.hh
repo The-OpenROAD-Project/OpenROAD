@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::TimingArc;
 using sta::Vertex;
 
 struct OptoParams

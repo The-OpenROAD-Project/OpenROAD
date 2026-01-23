@@ -609,7 +609,7 @@ static void populateBufferCapTestPoints(sta::LibertyCell* cell,
     const TimingRole* role = arc_set->role();
     if (role == TimingRole::combinational() && arc_set->from() == in
         && arc_set->to() == out) {
-      for (TimingArc* arc : arc_set->arcs()) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
         auto model = dynamic_cast<sta::GateTableModel*>(arc->model());
         if (model) {
           auto dm = model->delayModel();
@@ -3012,7 +3012,7 @@ float Resizer::findTargetLoad(sta::LibertyCell* cell)
         && role != TimingRole::tristateEnable()
         && role != TimingRole::clockTreePathMin()
         && role != TimingRole::clockTreePathMax()) {
-      for (TimingArc* arc : arc_set->arcs()) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
         int in_rf_index = arc->fromEdge()->asRiseFall()->index();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         float arc_target_load = findTargetLoad(
@@ -3046,7 +3046,7 @@ float Resizer::findTargetLoad(sta::LibertyCell* cell)
 // Find the load capacitance that will cause the output slew
 // to be equal to out_slew.
 float Resizer::findTargetLoad(sta::LibertyCell* cell,
-                              TimingArc* arc,
+                              sta::TimingArc* arc,
                               sta::Slew in_slew,
                               sta::Slew out_slew)
 {
@@ -3089,7 +3089,7 @@ float Resizer::findTargetLoad(sta::LibertyCell* cell,
 
 // objective function
 sta::Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
-                                TimingArc* arc,
+                                sta::TimingArc* arc,
                                 sta::GateTimingModel* model,
                                 sta::Slew in_slew,
                                 float load_cap,
@@ -3160,7 +3160,7 @@ void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
   sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
   for (TimingArcSet* arc_set : buffer->timingArcSets(input, output)) {
-    for (TimingArc* arc : arc_set->arcs()) {
+    for (sta::TimingArc* arc : arc_set->arcs()) {
       sta::GateTimingModel* model
           = dynamic_cast<sta::GateTimingModel*>(arc->model());
       if (model != nullptr) {
@@ -3795,7 +3795,7 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
   sta::LibertyCell* cell = drvr_port->libertyCell();
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
-      for (TimingArc* arc : arc_set->arcs()) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
         const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         // use annotated slews if available
@@ -3844,7 +3844,7 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
   sta::LibertyCell* cell = drvr_port->libertyCell();
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
-      for (TimingArc* arc : arc_set->arcs()) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
         const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         LoadPinIndexMap load_pin_index_map(network_);
@@ -4076,7 +4076,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
 
     for (TimingArcSet* arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
-        for (TimingArc* arc : arc_set->arcs()) {
+        for (sta::TimingArc* arc : arc_set->arcs()) {
           const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
           const sta::RiseFall* drvr_rf = arc->toEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
