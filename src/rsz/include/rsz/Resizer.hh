@@ -46,8 +46,6 @@
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
 #include "sta/UnorderedMap.hh"
-#include "sta/UnorderedSet.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace grt {

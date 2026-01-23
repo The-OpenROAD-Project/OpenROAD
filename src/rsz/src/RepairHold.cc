@@ -38,7 +38,6 @@
 #include "sta/SearchPred.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
-#include "sta/Units.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
 #include "utl/mem_stats.h"

@@ -18,7 +18,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 

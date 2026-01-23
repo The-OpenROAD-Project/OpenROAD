@@ -23,7 +23,6 @@
 #include "odb/geom.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
-#include "sta/Delay.hh"
 #include "sta/Hash.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"

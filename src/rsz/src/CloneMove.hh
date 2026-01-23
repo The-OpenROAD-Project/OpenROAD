@@ -6,7 +6,6 @@
 
 #include "BaseMove.hh"
 #include "odb/geom.h"
-#include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"

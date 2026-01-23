@@ -14,7 +14,6 @@
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/StaState.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 

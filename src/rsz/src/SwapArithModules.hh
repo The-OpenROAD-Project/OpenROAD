@@ -14,7 +14,6 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/StaState.hh"
 #include "utl/Logger.h"
 
 namespace odb {

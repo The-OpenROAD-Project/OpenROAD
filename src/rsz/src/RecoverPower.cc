@@ -26,13 +26,11 @@
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Parasitics.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
-#include "sta/Units.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
 

@@ -10,7 +10,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
@@ -18,9 +17,6 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/StaState.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Transition.hh"
 #include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
 
