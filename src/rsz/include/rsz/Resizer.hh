@@ -64,7 +64,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Vertex;
 using sta::VertexSeq;
 using sta::VertexSet;
 
@@ -501,7 +500,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(sta::Pin* pin);
 
-  bool hasFanout(Vertex* drvr);
+  bool hasFanout(sta::Vertex* drvr);
   bool hasFanout(sta::Pin* drvr);
 
   est::EstimateParasitics* getEstimateParasitics()
@@ -590,13 +589,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   ////////////////////////////////////////////////////////////////
 
   void findLongWires(VertexSeq& drvrs);
-  int findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner);
+  int findMaxSteinerDist(sta::Vertex* drvr, const sta::Corner* corner);
   float driveResistance(const sta::Pin* drvr_pin);
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
   // Max distance from driver to load (in dbu).
-  int maxLoadManhattenDistance(Vertex* drvr);
+  int maxLoadManhattenDistance(sta::Vertex* drvr);
 
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(sta::LibertyPort* port) const;
@@ -782,8 +781,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   VertexSet findFaninFanouts(VertexSet& ends);
   VertexSet findFaninRoots(VertexSet& ends);
   VertexSet findFanouts(VertexSet& reg_outs);
-  bool isRegOutput(Vertex* vertex);
-  bool isRegister(Vertex* vertex);
+  bool isRegOutput(sta::Vertex* vertex);
+  bool isRegister(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
 
   // Components

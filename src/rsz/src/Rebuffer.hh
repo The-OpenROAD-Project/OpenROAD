@@ -30,8 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Vertex;
-
 class Resizer;
 class BufferedNet;
 class RepairSetup;
@@ -49,7 +47,7 @@ class Rebuffer : public sta::dbStaState
   void init();
   void initOnCorner(sta::Corner* corner);
 
-  void annotateLoadSlacks(BufferedNetPtr& tree, Vertex* root_vertex);
+  void annotateLoadSlacks(BufferedNetPtr& tree, sta::Vertex* root_vertex);
   void annotateTiming(const BufferedNetPtr& tree);
   BufferedNetPtr stripTreeBuffers(const BufferedNetPtr& tree);
   BufferedNetPtr resteiner(const BufferedNetPtr& tree);
@@ -108,7 +106,7 @@ class Rebuffer : public sta::dbStaState
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
 
-  int fanout(Vertex* vertex) const;
+  int fanout(sta::Vertex* vertex) const;
   int wireLengthLimitImpliedByLoadSlew(sta::LibertyCell*);
   int wireLengthLimitImpliedByMaxCap(sta::LibertyCell*);
 

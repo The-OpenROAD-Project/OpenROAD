@@ -38,8 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Vertex;
-
 struct OptoParams
 {
   int iteration;
@@ -108,7 +106,7 @@ class RepairSetup : public sta::dbStaState
   bool repairPath(sta::Path* path,
                   sta::Slack path_slack,
                   float setup_slack_margin);
-  int fanout(Vertex* vertex);
+  int fanout(sta::Vertex* vertex);
   bool hasTopLevelOutputPort(sta::Net* net);
 
   void printProgress(int iteration,
@@ -126,9 +124,9 @@ class RepairSetup : public sta::dbStaState
                            int& num_viols,
                            int max_iterations);
   bool swapVTCritCells(const OptoParams& params, int& num_viols);
-  void traverseFaninCone(Vertex* endpoint,
+  void traverseFaninCone(sta::Vertex* endpoint,
                          std::unordered_map<sta::Instance*, float>& crit_insts,
-                         std::unordered_set<Vertex*>& visited,
+                         std::unordered_set<sta::Vertex*>& visited,
                          std::unordered_set<sta::Instance*>& notSwappable,
                          const OptoParams& params);
   sta::Slack getInstanceSlack(sta::Instance* inst);

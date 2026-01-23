@@ -225,7 +225,7 @@ class VertexLevelLess
 {
  public:
   VertexLevelLess(const sta::Network* network);
-  bool operator()(const Vertex* vertex1, const Vertex* vertex2) const;
+  bool operator()(const sta::Vertex* vertex1, const sta::Vertex* vertex2) const;
 
  protected:
   const sta::Network* network_;
@@ -236,8 +236,8 @@ VertexLevelLess::VertexLevelLess(const sta::Network* network)
 {
 }
 
-bool VertexLevelLess::operator()(const Vertex* vertex1,
-                                 const Vertex* vertex2) const
+bool VertexLevelLess::operator()(const sta::Vertex* vertex1,
+                                 const sta::Vertex* vertex2) const
 {
   Level level1 = vertex1->level();
   Level level2 = vertex2->level();
@@ -253,7 +253,7 @@ VertexSeq Resizer::orderedLoadPinVertices()
   VertexSeq loads;
   VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
-    Vertex* vertex = vertex_iter.next();
+    sta::Vertex* vertex = vertex_iter.next();
     PortDirection* dir = network_->direction(vertex->pin());
     bool top_level = network_->isTopLevelPort(vertex->pin());
     if (!top_level && dir->isAnyInput()) {
@@ -482,7 +482,7 @@ void Resizer::ensureLevelDrvrVertices()
     level_drvr_vertices_.clear();
     VertexIterator vertex_iter(graph_);
     while (vertex_iter.hasNext()) {
-      Vertex* vertex = vertex_iter.next();
+      sta::Vertex* vertex = vertex_iter.next();
       if (vertex->isDriver(network_)) {
         level_drvr_vertices_.emplace_back(vertex);
       }
@@ -1058,7 +1058,7 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
         network_->pinIterator(network_->topInstance()));
     while (port_iter->hasNext()) {
       sta::Pin* pin = port_iter->next();
-      Vertex* vertex = graph_->pinDrvrVertex(pin);
+      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
       sta::Net* net = network_->net(network_->term(pin));
 
       if (network_->direction(pin)->isInput() && !dontTouch(net)
@@ -1236,7 +1236,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
         network_->pinIterator(network_->topInstance()));
     while (port_iter->hasNext()) {
       sta::Pin* pin = port_iter->next();
-      Vertex* vertex = graph_->pinLoadVertex(pin);
+      sta::Vertex* vertex = graph_->pinLoadVertex(pin);
       sta::Net* net = network_->net(network_->term(pin));
       if (network_->direction(pin)->isOutput() && net
           && !dontTouch(net)
@@ -1501,7 +1501,7 @@ float Resizer::maxLoad(sta::Cell* cell)
 
 ////////////////////////////////////////////////////////////////
 
-bool Resizer::hasFanout(Vertex* drvr)
+bool Resizer::hasFanout(sta::Vertex* drvr)
 {
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   return edge_iter.hasNext();
@@ -1513,7 +1513,7 @@ bool Resizer::hasFanout(sta::Pin* drvr)
     return false;
   }
 
-  Vertex* vertex = graph_->pinDrvrVertex(drvr);
+  sta::Vertex* vertex = graph_->pinDrvrVertex(drvr);
   return hasFanout(vertex);
 }
 
@@ -2596,7 +2596,7 @@ void Resizer::findResizeSlacks1()
   // the net pins and min'ing the slack.
   net_slack_map_.clear();
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    Vertex* drvr = level_drvr_vertices_[i];
+    sta::Vertex* drvr = level_drvr_vertices_[i];
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
@@ -2663,12 +2663,12 @@ sta::PinSet Resizer::findFaninFanouts(sta::PinSet& end_pins)
 
   VertexSet ends(graph_);
   for (const sta::Pin* pin : end_pins) {
-    Vertex* end = graph_->pinLoadVertex(pin);
+    sta::Vertex* end = graph_->pinLoadVertex(pin);
     ends.insert(end);
   }
   sta::PinSet fanin_fanout_pins(db_network_);
   VertexSet fanin_fanouts = findFaninFanouts(ends);
-  for (Vertex* vertex : fanin_fanouts) {
+  for (sta::Vertex* vertex : fanin_fanouts) {
     fanin_fanout_pins.insert(vertex->pin());
   }
   return fanin_fanout_pins;
@@ -2692,19 +2692,19 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 
   VertexSet ends(graph_);
   for (const sta::Pin* pin : end_pins) {
-    Vertex* end = graph_->pinLoadVertex(pin);
+    sta::Vertex* end = graph_->pinLoadVertex(pin);
     ends.insert(end);
   }
 
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex* vertex : ends) {
+  for (sta::Vertex* vertex : ends) {
     iter.enqueueAdjacentVertices(vertex);
   }
 
   sta::PinSet fanins(db_network_);
   while (iter.hasNext()) {
-    Vertex* vertex = iter.next();
+    sta::Vertex* vertex = iter.next();
     if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
       continue;
     }
@@ -2719,13 +2719,13 @@ VertexSet Resizer::findFaninRoots(VertexSet& ends)
 {
   SearchPredNonReg2 pred(sta_);
   BfsBkwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex* vertex : ends) {
+  for (sta::Vertex* vertex : ends) {
     iter.enqueueAdjacentVertices(vertex);
   }
 
   VertexSet roots(graph_);
   while (iter.hasNext()) {
-    Vertex* vertex = iter.next();
+    sta::Vertex* vertex = iter.next();
     if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
       roots.insert(vertex);
     } else {
@@ -2735,7 +2735,7 @@ VertexSet Resizer::findFaninRoots(VertexSet& ends)
   return roots;
 }
 
-bool Resizer::isRegOutput(Vertex* vertex)
+bool Resizer::isRegOutput(sta::Vertex* vertex)
 {
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
@@ -2754,12 +2754,12 @@ VertexSet Resizer::findFanouts(VertexSet& reg_outs)
   VertexSet fanouts(graph_);
   sta::SearchPredNonLatch2 pred(sta_);
   BfsFwdIterator iter(BfsIndex::other, &pred, this);
-  for (Vertex* reg_out : reg_outs) {
+  for (sta::Vertex* reg_out : reg_outs) {
     iter.enqueueAdjacentVertices(reg_out);
   }
 
   while (iter.hasNext()) {
-    Vertex* vertex = iter.next();
+    sta::Vertex* vertex = iter.next();
     if (!isRegister(vertex)) {
       fanouts.insert(vertex);
       iter.enqueueAdjacentVertices(vertex);
@@ -2768,7 +2768,7 @@ VertexSet Resizer::findFanouts(VertexSet& reg_outs)
   return fanouts;
 }
 
-bool Resizer::isRegister(Vertex* vertex)
+bool Resizer::isRegister(sta::Vertex* vertex)
 {
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
@@ -3514,7 +3514,7 @@ void Resizer::reportLongWires(int count, int digits)
   double wire_res = estimate_parasitics_->wireSignalResistance(corner);
   double wire_cap = estimate_parasitics_->wireSignalCapacitance(corner);
   int i = 0;
-  for (Vertex* drvr : drvrs) {
+  for (sta::Vertex* drvr : drvrs) {
     sta::Pin* drvr_pin = drvr->pin();
     double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
     double steiner_length = dbuToMeters(findMaxSteinerDist(drvr, corner));
@@ -3531,14 +3531,14 @@ void Resizer::reportLongWires(int count, int digits)
   }
 }
 
-using DrvrDist = std::pair<Vertex*, int>;
+using DrvrDist = std::pair<sta::Vertex*, int>;
 
 void Resizer::findLongWires(VertexSeq& drvrs)
 {
   sta::Vector<DrvrDist> drvr_dists;
   VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
-    Vertex* vertex = vertex_iter.next();
+    sta::Vertex* vertex = vertex_iter.next();
     if (vertex->isDriver(network_)) {
       sta::Pin* pin = vertex->pin();
       // Hands off the clock nets.
@@ -3560,7 +3560,7 @@ void Resizer::findLongWires(VertexSeq& drvrs)
 
 // Find the maximum distance along steiner tree branches from
 // the driver to loads (in dbu).
-int Resizer::findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner)
+int Resizer::findMaxSteinerDist(sta::Vertex* drvr, const sta::Corner* corner)
 
 {
   sta::Pin* drvr_pin = drvr->pin();
@@ -3578,7 +3578,7 @@ double Resizer::maxLoadManhattenDistance(const sta::Net* net)
   while (pin_iter->hasNext()) {
     const sta::Pin* pin = pin_iter->next();
     if (network_->isDriver(pin)) {
-      Vertex* drvr = graph_->pinDrvrVertex(pin);
+      sta::Vertex* drvr = graph_->pinDrvrVertex(pin);
       if (drvr) {
         int dist = maxLoadManhattenDistance(drvr);
         max_dist = max(max_dist, dist);
@@ -3589,14 +3589,14 @@ double Resizer::maxLoadManhattenDistance(const sta::Net* net)
   return dbuToMeters(max_dist);
 }
 
-int Resizer::maxLoadManhattenDistance(Vertex* drvr)
+int Resizer::maxLoadManhattenDistance(sta::Vertex* drvr)
 {
   int max_dist = 0;
   odb::Point drvr_loc = db_network_->location(drvr->pin());
   VertexOutEdgeIterator edge_iter(drvr, graph_);
   while (edge_iter.hasNext()) {
     Edge* edge = edge_iter.next();
-    Vertex* load = edge->to(graph_);
+    sta::Vertex* load = edge->to(graph_);
     odb::Point load_loc = db_network_->location(load->pin());
     int dist = odb::Point::manhattanDistance(drvr_loc, load_loc);
     max_dist = max(max_dist, dist);
@@ -4230,12 +4230,12 @@ sta::InstanceSeq Resizer::findClkInverters()
   BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
   for (Clock* clk : sdc_->clks()) {
     for (const sta::Pin* pin : clk->leafPins()) {
-      Vertex* vertex = graph_->pinDrvrVertex(pin);
+      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
       bfs.enqueue(vertex);
     }
   }
   while (bfs.hasNext()) {
-    Vertex* vertex = bfs.next();
+    sta::Vertex* vertex = bfs.next();
     const sta::Pin* pin = vertex->pin();
     sta::Instance* inst = network_->instance(pin);
     sta::LibertyCell* lib_cell = network_->libertyCell(inst);
@@ -5202,7 +5202,7 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
             for (const sta::RiseFall* rf : sta::RiseFall::range()) {
               const sta::DcalcAnalysisPt* dcalc_ap
                   = corner1->findDcalcAnalysisPt(max_);
-              const Vertex* vertex = graph_->pinLoadVertex(pin);
+              const sta::Vertex* vertex = graph_->pinLoadVertex(pin);
               sta::Slew slew2
                   = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
               slew1 = std::max(slew1, slew2);
@@ -5253,7 +5253,7 @@ void Resizer::annotateInputSlews(sta::Instance* inst,
     if (network_->direction(pin)->isInput()) {
       sta::LibertyPort* port = network_->libertyPort(pin);
       if (port) {
-        Vertex* vertex = graph_->pinDrvrVertex(pin);
+        sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
         InputSlews slews;
         slews[sta::RiseFall::rise()->index()]
             = sta_->vertexSlew(vertex, sta::RiseFall::rise(), dcalc_ap);

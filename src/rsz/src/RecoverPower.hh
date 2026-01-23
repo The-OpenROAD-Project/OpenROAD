@@ -30,8 +30,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Vertex;
-
 class BufferedNet;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
@@ -43,11 +41,11 @@ class RecoverPower : public sta::dbStaState
   RecoverPower(Resizer* resizer);
   bool recoverPower(float recover_power_percent, bool verbose);
   // For testing.
-  Vertex* recoverPower(const sta::Pin* end_pin);
+  sta::Vertex* recoverPower(const sta::Pin* end_pin);
 
  private:
   void init();
-  Vertex* recoverPower(const sta::Path* path, sta::Slack path_slack);
+  sta::Vertex* recoverPower(const sta::Path* path, sta::Slack path_slack);
   bool meetsSizeCriteria(const sta::LibertyCell* cell,
                          const sta::LibertyCell* candidate,
                          bool match_size);
@@ -64,7 +62,7 @@ class RecoverPower : public sta::dbStaState
                                  const sta::DcalcAnalysisPt* dcalc_ap,
                                  bool match_size,
                                  sta::Slack path_slack);
-  int fanout(Vertex* vertex);
+  int fanout(sta::Vertex* vertex);
   bool hasTopLevelOutputPort(sta::Net* net);
 
   BufferedNetSeq addWireAndBuffer(BufferedNetSeq Z,

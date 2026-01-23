@@ -15,6 +15,7 @@
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
+#include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
@@ -31,8 +32,6 @@ namespace rsz {
 
 class Resizer;
 enum class ParasiticsSrc;
-
-using sta::Vertex;
 
 // Region for partioning fanout pins.
 class LoadRegion
@@ -100,7 +99,7 @@ class RepairDesign : sta::dbStaState
                           float& violation);
   bool repairDriverSlew(const sta::Corner* corner, const sta::Pin* drvr_pin);
 
-  void repairDriver(Vertex* drvr,
+  void repairDriver(sta::Vertex* drvr,
                     bool check_slew,
                     bool check_cap,
                     bool check_fanout,
@@ -115,7 +114,7 @@ class RepairDesign : sta::dbStaState
 
   void repairNet(sta::Net* net,
                  const sta::Pin* drvr_pin,
-                 Vertex* drvr,
+                 sta::Vertex* drvr,
                  bool check_slew,
                  bool check_cap,
                  bool check_fanout,

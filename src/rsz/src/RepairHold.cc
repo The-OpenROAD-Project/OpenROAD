@@ -90,7 +90,7 @@ bool RepairHold::repairHold(
   sta_->findRequireds();
   VertexSet* ends = sta_->search()->endpoints();
   VertexSeq ends1;
-  for (Vertex* end : *ends) {
+  for (sta::Vertex* end : *ends) {
     ends1.push_back(end);
   }
   sort(ends1, sta::VertexIdLess(graph_));
@@ -128,7 +128,7 @@ void RepairHold::repairHold(const sta::Pin* end_pin,
   sta_->checkCapacitanceLimitPreamble();
   sta::LibertyCell* buffer_cell = findHoldBuffer();
 
-  Vertex* end = graph_->pinLoadVertex(end_pin);
+  sta::Vertex* end = graph_->pinLoadVertex(end_pin);
   VertexSeq ends;
   ends.push_back(end);
 
@@ -482,7 +482,7 @@ void RepairHold::findHoldViolations(VertexSeq& ends,
   worst_slack = INF;
   hold_violations.clear();
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
-  for (Vertex* end : ends) {
+  for (sta::Vertex* end : ends) {
     const sta::Slack slack = sta_->vertexSlack(end, min_);
     if (!sta_->isClock(end->pin()) && slack < hold_margin) {
       debugPrint(logger_,
@@ -509,10 +509,10 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 int& pass)
 {
   estimate_parasitics_->updateParasitics();
-  sort(hold_failures, [=, this](Vertex* end1, Vertex* end2) {
+  sort(hold_failures, [=, this](sta::Vertex* end1, sta::Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
-  for (Vertex* end_vertex : hold_failures) {
+  for (sta::Vertex* end_vertex : hold_failures) {
     if (verbose) {
       printProgress(pass, false, false);
     }
@@ -530,7 +530,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
   }
 }
 
-void RepairHold::repairEndHold(Vertex* end_vertex,
+void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                sta::LibertyCell* buffer_cell,
                                const double setup_margin,
                                const double hold_margin,
@@ -558,7 +558,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
       }
       // Stop one short of the end so we can get the load.
       for (int i = 0; i < path_vertices.size() - 1; i++) {
-        Vertex* path_vertex = path_vertices[i];
+        sta::Vertex* path_vertex = path_vertices[i];
         sta::Pin* path_pin = path_vertex->pin();
 
         if (path_vertex->isDriver(network_)
@@ -571,7 +571,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
           VertexOutEdgeIterator edge_iter(path_vertex, graph_);
           while (edge_iter.hasNext()) {
             Edge* edge = edge_iter.next();
-            Vertex* fanout = edge->to(graph_);
+            sta::Vertex* fanout = edge->to(graph_);
             if (pred.searchTo(fanout) && pred.searchThru(edge)) {
               sta::Slack fanout_hold_slack = sta_->vertexSlack(fanout, min_);
               sta::Pin* load_pin = fanout->pin();
@@ -625,7 +625,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                            > buffer_delays[rise_index_]
                     && (slacks[fall_index_][max_index_] - setup_margin)
                            > buffer_delays[fall_index_])) {
-              Vertex* path_load = path_vertices[i + 1];
+              sta::Vertex* path_load = path_vertices[i + 1];
               odb::Point path_load_loc
                   = db_network_->location(path_load->pin());
               odb::Point drvr_loc = db_network_->location(path_vertex->pin());
@@ -686,7 +686,7 @@ void RepairHold::mergeInto(Slacks& from, Slacks& result)
       = max(result[fall_index_][max_index_], from[fall_index_][max_index_]);
 }
 
-void RepairHold::makeHoldDelay(Vertex* drvr,
+void RepairHold::makeHoldDelay(sta::Vertex* drvr,
                                sta::PinSeq& load_pins,
                                bool loads_have_out_port,  // top level port
                                sta::LibertyCell* buffer_cell,
@@ -738,7 +738,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   inserted_buffer_count_++;
 
   // Update RC and delay. Resize if necessary
-  Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
+  sta::Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   estimate_parasitics_->updateParasitics();
   // Sta::checkMaxSlewCap does not force dcalc update so do it explicitly.
   sta_->findDelays(buffer_out_vertex);
@@ -791,7 +791,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
 
   if (iteration % print_interval_ == 0 || force || end) {
     sta::Slack wns;
-    Vertex* worst_vertex;
+    sta::Vertex* worst_vertex;
     sta_->worstSlack(min_, wns, worst_vertex);
     const sta::Slack tns = sta_->totalNegativeSlack(min_);
 

@@ -182,11 +182,11 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 {
   debugPrint(logger_, RSZ, "early_sizing", 1, "Performing early sizing round.");
   // keep track of user annotations so we don't remove them
-  std::set<std::pair<Vertex*, int>> slew_user_annotated;
+  std::set<std::pair<sta::Vertex*, int>> slew_user_annotated;
 
   // We need to override slews in order to get good required time estimates.
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    Vertex* drvr = resizer_->level_drvr_vertices_[i];
+    sta::Vertex* drvr = resizer_->level_drvr_vertices_[i];
     debugPrint(logger_,
                RSZ,
                "early_sizing",
@@ -211,7 +211,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
   search_->findAllArrivals();
 
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    Vertex* drvr = resizer_->level_drvr_vertices_[i];
+    sta::Vertex* drvr = resizer_->level_drvr_vertices_[i];
     sta::Pin* drvr_pin = drvr->pin();
     debugPrint(logger_,
                RSZ,
@@ -327,8 +327,8 @@ void RepairDesign::repairDesign(
   }
 
   // keep track of annotations which were added by us
-  std::set<Vertex*> annotations_to_clean_up;
-  std::map<Vertex*, sta::Corner*> drvr_with_load_slew_viol;
+  std::set<sta::Vertex*> annotations_to_clean_up;
+  std::map<sta::Vertex*, sta::Corner*> drvr_with_load_slew_viol;
   VertexSeq load_vertices = resizer_->orderedLoadPinVertices();
 
   // Forward pass: whenever we see violating input pin slew we override
@@ -405,7 +405,7 @@ void RepairDesign::repairDesign(
       if (verbose || (print_iteration == 1)) {
         printProgress(print_iteration, false, false, repaired_net_count);
       }
-      Vertex* drvr = resizer_->level_drvr_vertices_[i];
+      sta::Vertex* drvr = resizer_->level_drvr_vertices_[i];
       repairDriver(drvr,
                    true /* check_slew */,
                    true /* check_cap */,
@@ -488,7 +488,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
                          : db_network_->dbToSta(db_network_->flatNet(clk_pin));
           // clang-format on
           if (net && network_->isDriver(clk_pin)) {
-            Vertex* drvr = graph_->pinDrvrVertex(clk_pin);
+            sta::Vertex* drvr = graph_->pinDrvrVertex(clk_pin);
             // Do not resize clock tree gates.
             repairNet(net,
                       clk_pin,
@@ -557,7 +557,7 @@ void RepairDesign::repairNet(sta::Net* net,
     if (drivers && !drivers->empty()) {
       sta::PinSet::Iterator drvr_iter(drivers);
       const sta::Pin* drvr_pin = drvr_iter.next();
-      Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
+      sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
       repairNet(net,
                 drvr_pin,
                 drvr,
@@ -743,7 +743,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
         && network_->libertyPort(pin)) {
       sta::Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
-        Vertex* vertex = graph_->pinLoadVertex(pin);
+        sta::Vertex* vertex = graph_->pinLoadVertex(pin);
         sta::Path* req_path
             = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
         sinks.push_back({const_cast<sta::Pin*>(pin), req_path, 0.0, 0});
@@ -760,7 +760,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
   // Keep track of the vertices at the boundary of the tree so we know where
   // to ask for delays to be recomputed
-  std::vector<Vertex*> tree_boundary;
+  std::vector<sta::Vertex*> tree_boundary;
 
   const float max_buf_load
       = bufferCin(buffer_sizes_.back()) * resizer_->buffer_sizing_cap_ratio_;
@@ -972,7 +972,7 @@ bool RepairDesign::repairDriverSlew(const sta::Corner* corner,
   return false;
 }
 
-void RepairDesign::repairDriver(Vertex* drvr,
+void RepairDesign::repairDriver(sta::Vertex* drvr,
                                 bool check_slew,
                                 bool check_cap,
                                 bool check_fanout,
@@ -1024,7 +1024,7 @@ void RepairDesign::repairDriver(Vertex* drvr,
 
 void RepairDesign::repairNet(sta::Net* net,
                              const sta::Pin* drvr_pin,
-                             Vertex* drvr,
+                             sta::Vertex* drvr,
                              bool check_slew,
                              bool check_cap,
                              bool check_fanout,
@@ -2017,7 +2017,7 @@ void RepairDesign::makeFanoutRepeater(sta::PinSeq& repeater_loads,
                     repeater_out_pin)) {
     return;
   }
-  Vertex* repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
+  sta::Vertex* repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
   int repaired_net_count = 0, slew_violations = 0, cap_violations = 0;
   int fanout_violations = 0, length_violations = 0;
 

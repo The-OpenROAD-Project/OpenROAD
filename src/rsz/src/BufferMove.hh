@@ -17,8 +17,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Vertex;
-
 class BufferMove : public BaseMove
 {
  public:

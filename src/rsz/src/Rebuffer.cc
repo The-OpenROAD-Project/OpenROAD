@@ -107,7 +107,7 @@ Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
 }
 
-void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
+void Rebuffer::annotateLoadSlacks(BnetPtr& tree, sta::Vertex* root_vertex)
 {
   for (auto rf_index : sta::RiseFall::rangeIndex()) {
     arrival_paths_[rf_index] = nullptr;
@@ -124,7 +124,7 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, Vertex* root_vertex)
             return recurse(node->ref()) + recurse(node->ref2());
           case BnetType::load: {
             const sta::Pin* load_pin = node->loadPin();
-            Vertex* vertex = graph_->pinLoadVertex(load_pin);
+            sta::Vertex* vertex = graph_->pinLoadVertex(load_pin);
             sta::Path* req_path
                 = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
             sta::Path* arrival_path = req_path;
@@ -1636,7 +1636,7 @@ BnetPtr Rebuffer::importBufferTree(const sta::Pin* drvr_pin,
             }
 
             auto inner_bnet = importBufferTree(buffer_drvr_pin, corner);
-            Vertex* buffer_drvr = graph_->pinDrvrVertex(buffer_drvr_pin);
+            sta::Vertex* buffer_drvr = graph_->pinDrvrVertex(buffer_drvr_pin);
 
             if (!inner_bnet) {
               if (fanout(buffer_drvr) != 0) {
@@ -1940,7 +1940,7 @@ void Rebuffer::printProgress(int iteration,
   }
 }
 
-int Rebuffer::fanout(Vertex* vertex) const
+int Rebuffer::fanout(sta::Vertex* vertex) const
 {
   int fanout = 0;
   VertexOutEdgeIterator edge_iter(vertex, graph_);
@@ -2055,7 +2055,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       db_net = db_network_->flatNet(drvr_pin);
     }
 
-    Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
+    sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
     {
       utl::DebugScopedTimer timer(sta_runtime);
@@ -2312,7 +2312,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
                "driver {}",
                sdc_network_->pathName(drvr_pin));
 
-    Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
+    sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
     sta_->findRequireds();
     annotateLoadSlacks(bnet, drvr);

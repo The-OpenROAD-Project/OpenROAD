@@ -49,8 +49,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Vertex;
-
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
 using InputSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
@@ -193,7 +191,7 @@ class BaseMove : public sta::dbStaState
       SlackEstimatorParams params,
       bool accept_if_slack_improves);
   void getBufferPins(sta::Instance* buffer, sta::Pin*& ip, sta::Pin*& op);
-  int fanout(Vertex* vertex);
+  int fanout(sta::Vertex* vertex);
 
   sta::LibertyCell* upsizeCell(sta::LibertyPort* in_port,
                                sta::LibertyPort* drvr_port,
