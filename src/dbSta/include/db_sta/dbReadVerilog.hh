@@ -4,6 +4,7 @@
 #pragma once
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/VerilogReader.hh"
@@ -21,7 +22,6 @@ namespace ord {
 
 class dbVerilogNetwork;
 
-using sta::ConcreteCell;
 using sta::ConcreteNetwork;
 using sta::dbNetwork;
 using sta::VerilogReader;
@@ -34,7 +34,7 @@ class dbVerilogNetwork : public ConcreteNetwork
  public:
   dbVerilogNetwork(sta::dbSta* sta);
   sta::Cell* findAnyCell(const char* name) override;
-  bool isBlackBox(ConcreteCell* cell);
+  bool isBlackBox(sta::ConcreteCell* cell);
   dbNetwork* getDbNetwork() { return static_cast<dbNetwork*>(db_network_); }
 
  private:
