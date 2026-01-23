@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::PathExpanded;
 using sta::Pin;
 using sta::Slack;
 using sta::Slew;
@@ -29,7 +28,7 @@ class CloneMove : public BaseMove
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
-              PathExpanded* expanded,
+              sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 
   const char* name() override { return "CloneMove"; }
@@ -42,7 +41,7 @@ class CloneMove : public BaseMove
   bool cloneDriver(const sta::Path* drvr_path,
                    int drvr_index,
                    Slack drvr_slack,
-                   PathExpanded* expanded);
+                   sta::PathExpanded* expanded);
 };
 
 }  // namespace rsz

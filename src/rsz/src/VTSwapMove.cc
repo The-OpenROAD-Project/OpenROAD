@@ -13,6 +13,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -33,7 +34,7 @@ using sta::Slew;
 bool VTSwapSpeedMove::doMove(const Path* drvr_path,
                              int drvr_index,
                              Slack drvr_slack,
-                             PathExpanded* expanded,
+                             sta::PathExpanded* expanded,
                              float setup_slack_margin)
 {
   Pin* drvr_pin;

@@ -8,6 +8,7 @@
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 
 namespace rsz {
 
@@ -19,7 +20,7 @@ class VTSwapSpeedMove : public BaseMove
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
-              PathExpanded* expanded,
+              sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 
   bool doMove(sta::Instance* drvr,

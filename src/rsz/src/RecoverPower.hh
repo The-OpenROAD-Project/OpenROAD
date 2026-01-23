@@ -17,6 +17,7 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
@@ -25,15 +26,10 @@ namespace est {
 class EstimateParasitics;
 }
 
-namespace sta {
-class PathExpanded;
-}
-
 namespace rsz {
 
 class Resizer;
 
-using sta::PathExpanded;
 using sta::Pin;
 using sta::Slack;
 using sta::StaState;
@@ -61,7 +57,7 @@ class RecoverPower : public sta::dbStaState
                          bool match_size);
   bool downsizeDrvr(const sta::Path* drvr_path,
                     int drvr_index,
-                    PathExpanded* expanded,
+                    sta::PathExpanded* expanded,
                     bool only_same_size_swap,
                     Slack path_slack);
 

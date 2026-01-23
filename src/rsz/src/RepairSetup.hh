@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::PathExpanded;
 using sta::Pin;
 using sta::RiseFall;
 using sta::RiseFallBoth;

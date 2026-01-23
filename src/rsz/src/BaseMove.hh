@@ -49,7 +49,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::PathExpanded;
 using sta::Pin;
 using sta::RiseFall;
 using sta::Slack;
@@ -88,7 +87,7 @@ class BaseMove : public sta::dbStaState
   virtual bool doMove(const sta::Path* drvr_path,
                       int drvr_index,
                       Slack drvr_slack,
-                      PathExpanded* expanded,
+                      sta::PathExpanded* expanded,
                       float setup_slack_margin)
   {
     return false;

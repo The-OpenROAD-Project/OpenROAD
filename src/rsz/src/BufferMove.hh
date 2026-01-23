@@ -17,7 +17,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::PathExpanded;
 using sta::Pin;
 using sta::RiseFallBoth;
 using sta::Slack;
@@ -32,7 +31,7 @@ class BufferMove : public BaseMove
   bool doMove(const sta::Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
-              PathExpanded* expanded,
+              sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 
   const char* name() override { return "BufferMove"; }
@@ -42,7 +41,7 @@ class BufferMove : public BaseMove
  private:
   int rebuffer(const Pin* drvr_pin);
 
-  void debugCheckMultipleBuffers(sta::Path* path, PathExpanded* expanded);
+  void debugCheckMultipleBuffers(sta::Path* path, sta::PathExpanded* expanded);
   bool hasTopLevelOutputPort(sta::Net* net);
 };
 
