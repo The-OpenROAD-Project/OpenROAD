@@ -114,7 +114,7 @@ std::unique_ptr<Cell> RamGen::makeCellBit(const std::string& prefix,
 }
 
 void RamGen::makeCellByte(Grid& ram_grid,
-                          const int byte_number,
+                          const int byte_idx,
                           const std::string& prefix,
                           const int read_ports,
                           dbNet* clock,
@@ -131,20 +131,19 @@ void RamGen::makeCellByte(Grid& ram_grid,
   auto gclock_net = makeNet(prefix, "gclock");
   auto we0_net = makeNet(prefix, "we0");
 
-  int first_byte = byte_number * 9;
-  for (int bit = first_byte; bit < first_byte + 8; ++bit) {
-    int local_bit = bit - first_byte;
-    auto name = fmt::format("{}.bit{}", prefix, bit);
+  int bit_idx = byte_idx * 9;
+  for (int local_bit = 0; local_bit < 8; ++local_bit) {
+    const int global_bit_idx = bit_idx + local_bit;
+    auto name = fmt::format("{}.bit{}", prefix, global_bit_idx);
     vector<dbNet*> outs;
     outs.reserve(read_ports);
     for (int read_port = 0; read_port < read_ports; ++read_port) {
       outs.push_back(data_output[read_port][local_bit]->getNet());
     }
-
     ram_grid.addCell(
         makeCellBit(
             name, read_ports, gclock_net, select_b_nets, data_input[local_bit], outs),
-        bit);
+        global_bit_idx);
   }
 
   auto sel_cell = std::make_unique<Cell>();
@@ -173,7 +172,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
                  {{"A", selects[i]}, {"Y", select_b_nets[i]}});
   }
 
-  ram_grid.addCell(std::move(sel_cell), (byte_number * 9) + 8);
+  ram_grid.addCell(std::move(sel_cell), (byte_idx * 9) + 8);
 }
 
 std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
@@ -424,7 +423,7 @@ void RamGen::generate(const int bytes_per_word,
   // cell for WE AND gate/inverter
   // extra column is for decoder cells
   int col_cell_count = bytes_per_word * 9;
-  Grid ram_grid(odb::horizontal, col_cell_count + bytes_per_word);
+  Grid ram_grid(odb::horizontal, col_cell_count + 1);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
 
@@ -464,8 +463,33 @@ void RamGen::generate(const int bytes_per_word,
     }
   }
 
-  vector<dbNet*> decoder_output_nets;
+ //word decoder signals to have one deccoder per word, shared between all bytes of a word
+  vector<vector<dbNet*>> word_decoder_nets(word_count);
 
+  for (int row = 0; row < word_count; ++row) {
+    auto decoder_name = fmt::format("decoder_{}", row);
+  
+    if (word_count == 2) {
+      dbNet* addr_net = (row == 0 ? inv_addr[0] : addr[0]->getNet());
+      for (int i = 0; i < read_ports; ++i) {
+        word_decoder_nets[row].push_back(addr_net);
+      }
+    } else {
+      word_decoder_nets[row] = selectNets(decoder_name, read_ports);
+    
+      auto decoder_and_cell = makeDecoder(
+          decoder_name,
+          word_count,
+          read_ports,
+          word_decoder_nets[row],
+          decoder_input_nets[row]
+      );
+      
+      ram_grid.addCell(std::move(decoder_and_cell), col_cell_count);
+    }
+  }
+
+  //create bytes within a word, shared decoder net for each word
   for (int col = 0; col < bytes_per_word; ++col) {
     array<dbBTerm*, 8> D_bTerms;  // array for b-term for external inputs
     array<dbNet*, 8> D_nets;      // net for buffers
@@ -497,33 +521,16 @@ void RamGen::generate(const int bytes_per_word,
 
     for (int row = 0; row < word_count; ++row) {
       auto cell_name = fmt::format("storage_{}_{}", row, col);
-      if (word_count == 2) {
-        decoder_output_nets.clear();
-        dbNet* addr_net = (row == 0 ? inv_addr[0] : addr[0]->getNet());
-        for (int i = 0; i < read_ports; ++i) {
-          decoder_output_nets.push_back(addr_net);
-        }
-      } else {
-        decoder_output_nets = selectNets(cell_name, read_ports);
-      }
-
+      
       makeCellByte(ram_grid,
                    col,
                    cell_name,
                    read_ports,
                    clock->getNet(),
                    write_enable[col]->getNet(),
-                   decoder_output_nets,
+                   word_decoder_nets[row],
                    D_nets,
                    Q);
-      auto decoder_name = fmt::format("decoder_{}_{}", row, col);
-      auto decoder_and_cell = makeDecoder(decoder_name,
-                                          word_count,
-                                          read_ports,
-                                          decoder_output_nets,
-                                          decoder_input_nets[row]);
-
-      ram_grid.addCell(std::move(decoder_and_cell), (bytes_per_word * 9) + col);
     }
 
     for (int bit = 0; bit < 8; ++bit) {
