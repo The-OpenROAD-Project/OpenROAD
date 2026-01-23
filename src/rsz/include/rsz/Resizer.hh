@@ -64,7 +64,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Vector;
 using sta::Vertex;
 using sta::VertexSeq;
 using sta::VertexSet;

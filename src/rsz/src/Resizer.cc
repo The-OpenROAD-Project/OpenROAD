@@ -3535,7 +3535,7 @@ using DrvrDist = std::pair<Vertex*, int>;
 
 void Resizer::findLongWires(VertexSeq& drvrs)
 {
-  Vector<DrvrDist> drvr_dists;
+  sta::Vector<DrvrDist> drvr_dists;
   VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     Vertex* vertex = vertex_iter.next();
