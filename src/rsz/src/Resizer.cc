@@ -2172,7 +2172,7 @@ void Resizer::checkLibertyForAllCorners()
 
 void Resizer::makeEquivCells()
 {
-  LibertyLibrarySeq libs;
+  sta::LibertyLibrarySeq libs;
   LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
