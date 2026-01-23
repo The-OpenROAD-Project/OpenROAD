@@ -8,6 +8,8 @@
 
 #include "SwapArithModules.hh"
 #include "odb/db.h"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 
 namespace rsz {
 
@@ -22,9 +24,9 @@ class ConcreteSwapArithModules : public SwapArithModules
   bool replaceArithModules(int path_count,
                            const std::string& target,
                            float slack_threshold) override;
-  void collectArithInstsOnPath(const Path* path,
+  void collectArithInstsOnPath(const sta::Path* path,
                                std::set<odb::dbModInst*>& arithInsts) override;
-  bool isArithInstance(const Instance* inst,
+  bool isArithInstance(const sta::Instance* inst,
                        odb::dbModInst*& mod_inst) override;
   bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) override;
   void findCriticalInstances(int path_count,

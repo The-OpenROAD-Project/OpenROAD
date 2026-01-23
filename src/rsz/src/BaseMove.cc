@@ -17,12 +17,14 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
@@ -635,7 +637,7 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell* cell = drvr_port->libertyCell();
-  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
@@ -730,7 +732,7 @@ bool BaseMove::checkMaxCapViolation(Instance* inst,
     if (!network_->direction(pin)->isAnyInput()) {
       continue;
     }
-    PinSet* drivers = network_->drivers(pin);
+    sta::PinSet* drivers = network_->drivers(pin);
     if (drivers) {
       // Calculate capacitance delta (new - old)
       float old_cap = getInputPinCapacitance(pin, current_cell);
@@ -782,7 +784,7 @@ float BaseMove::getInputPinCapacitance(Pin* pin, const LibertyCell* cell)
 bool BaseMove::checkMaxCapOK(const Pin* drvr_pin, float cap_delta)
 {
   float cap, max_cap, cap_slack;
-  const Corner* corner;
+  const sta::Corner* corner;
   const RiseFall* tr;
   sta_->checkCapacitance(drvr_pin,
                          nullptr /* corner */,
@@ -982,14 +984,14 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
 
 ////////////////////////////////////////////////////////////////
 
-LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
+sta::LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
 {
   if (base->isBuffer()) {
     if (!resizer_->buffer_fast_sizes_.contains(base)) {
-      return LibertyCellSeq();
+      return sta::LibertyCellSeq();
     }
 
-    LibertyCellSeq buffer_sizes;
+    sta::LibertyCellSeq buffer_sizes;
     buffer_sizes.reserve(resizer_->buffer_fast_sizes_.size());
     for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
       buffer_sizes.push_back(buffer);

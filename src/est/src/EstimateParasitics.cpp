@@ -37,6 +37,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Report.hh"
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
@@ -635,11 +636,11 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
 {
   const sta::ParasiticAnalysisPt* parasitics_ap
       = corner->findParasiticAnalysisPt(max_);
-  Parasitic* parasitic
+  sta::Parasitic* parasitic
       = parasitics->makeParasiticNetwork(net, false, parasitics_ap);
-  ParasiticNode* n1
+  sta::ParasiticNode* n1
       = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
-  ParasiticNode* n2
+  sta::ParasiticNode* n2
       = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
@@ -677,11 +678,11 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
   for (sta::Corner* corner : *sta_->corners()) {
     const sta::ParasiticAnalysisPt* parasitics_ap
         = corner->findParasiticAnalysisPt(max_);
-    Parasitic* parasitic
+    sta::Parasitic* parasitic
         = sta_->makeParasiticNetwork(net, false, parasitics_ap);
-    ParasiticNode* n1
+    sta::ParasiticNode* n1
         = parasitics_->ensureParasiticNode(parasitic, pin1, network_);
-    ParasiticNode* n2
+    sta::ParasiticNode* n2
         = parasitics_->ensureParasiticNode(parasitic, pin2, network_);
 
     // Use a small resistor to keep the connectivity intact.
@@ -712,7 +713,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(
       std::set<const sta::Pin*> connected_pins;
       const sta::ParasiticAnalysisPt* parasitics_ap
           = corner->findParasiticAnalysisPt(max_);
-      Parasitic* parasitic
+      sta::Parasitic* parasitic
           = sta_->makeParasiticNetwork(net, false, parasitics_ap);
       bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
       double wire_cap = 0.0;
@@ -747,9 +748,9 @@ void EstimateParasitics::estimateWireParasiticSteiner(
           wire_res = is_clk ? wireClkResistance(corner)
                             : wireSignalResistance(corner);
         }
-        ParasiticNode* n1 = parasitics_->ensureParasiticNode(
+        sta::ParasiticNode* n1 = parasitics_->ensureParasiticNode(
             parasitic, net, steiner_pt1, network_);
-        ParasiticNode* n2 = parasitics_->ensureParasiticNode(
+        sta::ParasiticNode* n2 = parasitics_->ensureParasiticNode(
             parasitic, net, steiner_pt2, network_);
         if (wire_length_dbu == 0) {
           // Use a small resistor to keep the connectivity intact.
@@ -892,8 +893,8 @@ double EstimateParasitics::computeAverageCutResistance(sta::Corner* corner)
 }
 
 void EstimateParasitics::parasiticNodeConnectPins(
-    Parasitic* parasitic,
-    ParasiticNode* node,
+    sta::Parasitic* parasitic,
+    sta::ParasiticNode* node,
     SteinerTree* tree,
     SteinerPt pt,
     size_t& resistor_id,
@@ -911,7 +912,7 @@ void EstimateParasitics::parasiticNodeConnectPins(
     }
 
     for (const sta::Pin* pin : *pins) {
-      ParasiticNode* pin_node
+      sta::ParasiticNode* pin_node
           = parasitics_->ensureParasiticNode(parasitic, pin, network_);
       if (connected_pins.find(pin) != connected_pins.end()) {
         // If pin was already connected with via resistances, use a small
