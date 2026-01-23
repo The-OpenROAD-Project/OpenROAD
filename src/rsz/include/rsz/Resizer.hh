@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::ParasiticAnalysisPt;
 using sta::ParasiticNode;
 using sta::Parasitics;
 using sta::Pin;
