@@ -15,6 +15,7 @@
 #include "Clustering.h"
 #include "SinkClustering.h"
 #include "TechChar.h"
+#include "TreeBuilder.h"
 #include "Util.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
@@ -23,6 +24,14 @@
 namespace cts {
 
 using utl::CTS;
+
+Point<double> HTreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
+                                              const std::string& bufferName)
+{
+  Point<double> legalLoc
+      = TreeBuilder::legalizeOneBuffer(bufferLoc, bufferName);
+  return resolveLocationCollision(legalLoc);
+}
 
 void HTreeBuilder::preSinkClustering(
     const std::vector<std::pair<float, float>>& sinks,
@@ -192,23 +201,27 @@ void HTreeBuilder::preSinkClustering(
           = (xSum / (float) pointCounter);  // geometric center of cluster
       const float normCenterY = (ySum / (float) pointCounter);
       Point<double> center((double) normCenterX, (double) normCenterY);
-      Point<double> legalCenter
+      Point<double> rootBufLoc
           = legalizeOneBuffer(center, options_->getSinkBuffer());
-      commitMoveLoc(center, legalCenter);
+      commitMoveLoc(center, rootBufLoc);
+
       const char* baseName = secondLevel ? "clkbuf_leaf2_" : "clkbuf_leaf_";
       ClockInst& rootBuffer
           = clock_.addClockBuffer(baseName + std::to_string(clusterCount),
                                   options_->getSinkBuffer(),
-                                  legalCenter.getX() * wireSegmentUnit_,
-                                  legalCenter.getY() * wireSegmentUnit_);
-      // clang-format off
-      if (center != legalCenter) {
-	debugPrint(logger_, CTS, "legalizer", 2,
-		   "preSinkClustering legalizeOneBuffer {}: {} => {}",
-		   baseName + std::to_string(clusterCount),
-		   center, legalCenter);
+                                  rootBufLoc.getX() * wireSegmentUnit_,
+                                  rootBufLoc.getY() * wireSegmentUnit_);
+      if (center != rootBufLoc) {
+        debugPrint(logger_,
+                   CTS,
+                   "legalizer",
+                   2,
+                   "preSinkClustering legalizeOneBuffer {}: {} => {}",
+                   baseName + std::to_string(clusterCount),
+                   center,
+                   rootBufLoc);
       }
-      // clang-format on
+
       if (!secondLevel) {
         addFirstLevelSinkDriver(&rootBuffer);
       } else {
@@ -226,10 +239,14 @@ void HTreeBuilder::preSinkClustering(
       if (!secondLevel) {
         clockSubNet.setLeafLevel(true);
       }
-      const Point<double> newSinkPos(normCenterX, normCenterY);
-      const std::pair<float, float> point(normCenterX, normCenterY);
+
+      const std::pair<float, float> point(rootBufLoc.getX(), rootBufLoc.getY());
       newSinkLocations.emplace_back(point);
-      mapLocationToSink_[newSinkPos] = &rootBuffer;
+
+      // Simulate the float conversion to ensure consistent map keys
+      Point<double> mapKey(point.first, point.second);
+
+      mapLocationToSink_[mapKey] = &rootBuffer;
     }
     clusterCount++;
   }
@@ -242,6 +259,43 @@ void HTreeBuilder::preSinkClustering(
                 19,
                 " Total number of sinks after clustering: {}.",
                 topLevelSinksClustered_.size());
+}
+
+Point<double> HTreeBuilder::resolveLocationCollision(
+    const Point<double>& legalCenter) const
+{
+  Point<double> resolvedLocation = legalCenter;
+
+  // Collision check and jittering to ensure unique coordinates
+  unsigned jitterCount = 0;
+  while (true) {
+    // Simulate the float conversion that happens when storing in
+    // newSinkLocations. This is needed because the existing logic uses the
+    // double->float conversion for the center location.
+    Point<double> checkKey((float) resolvedLocation.getX(),
+                           (float) resolvedLocation.getY());
+    if (mapLocationToSink_.find(checkKey) == mapLocationToSink_.end()) {
+      break;
+    }
+    jitterCount++;
+    double offset = (double) jitterCount / wireSegmentUnit_;
+    resolvedLocation.setX(legalCenter.getX() + offset);
+  }
+
+  if (jitterCount > 0) {
+    debugPrint(
+        logger_,
+        utl::CTS,
+        "clustering",
+        1,
+        "Resolved collision via jittering ({} times): ({}, {}) -> ({}, {})",
+        jitterCount,
+        legalCenter.getX(),
+        legalCenter.getY(),
+        resolvedLocation.getX(),
+        resolvedLocation.getY());
+  }
+  return resolvedLocation;
 }
 
 void HTreeBuilder::initSinkRegion()
