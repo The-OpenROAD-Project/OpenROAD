@@ -745,9 +745,9 @@ BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
 
 ////////////////////////////////////////////////////////////////
 
-BufferedNetPtr Resizer::stitchTrees(BufferedNetPtr outer_tree,
+BufferedNetPtr Resizer::stitchTrees(const BufferedNetPtr& outer_tree,
                                     Pin* stitching_load,
-                                    BufferedNetPtr inner_tree)
+                                    const BufferedNetPtr& inner_tree)
 {
   using BnetType = BufferedNetType;
   using BnetPtr = BufferedNetPtr;
@@ -818,10 +818,11 @@ BufferedNetPtr Resizer::stitchTrees(BufferedNetPtr outer_tree,
 
               // Check if we need to add connection
               if (buffer_in_loc == buffer_out_loc
-                         && buffer_in_layer == buffer_out_layer) {
+                  && buffer_in_layer == buffer_out_layer) {
                 // Same location and layer - just splice in inner_tree
                 return inner_tree;
-              } else if (buffer_in_layer == buffer_out_layer) {
+              }
+              if (buffer_in_layer == buffer_out_layer) {
                 // Same layer but different location - add wire segment
                 debugPrint(logger_,
                            RSZ,
@@ -842,82 +843,73 @@ BufferedNetPtr Resizer::stitchTrees(BufferedNetPtr outer_tree,
                                                      node->corner(),
                                                      this,
                                                      estimate_parasitics_);
-              } else {
-                // Different layers - need via(s) + wire
+              }
+              // Different layers - need via(s) + wire
+              debugPrint(logger_,
+                         RSZ,
+                         "buffer_removal",
+                         2,
+                         "Adding via+wire from buffer input ({}, {}, layer "
+                         "{}) to output ({}, {}, layer {})",
+                         buffer_in_loc.getX(),
+                         buffer_in_loc.getY(),
+                         buffer_in_layer,
+                         buffer_out_loc.getX(),
+                         buffer_out_loc.getY(),
+                         buffer_out_layer);
+
+              // Validate layer range
+              if (buffer_in_layer < 1 || buffer_out_layer < 1) {
+                // layer assignment is incomplete
+                return inner_tree;
+              }
+
+              // Build connection: start from inner_tree and work backwards
+              BnetPtr current = inner_tree;
+
+              // Add via stack from buffer_out_layer to buffer_in_layer
+              int layer_step = (buffer_in_layer > buffer_out_layer) ? 1 : -1;
+              Point current_loc = buffer_out_loc;
+
+              debugPrint(
+                  logger_,
+                  RSZ,
+                  "buffer_removal",
+                  1,
+                  "Creating via stack: from_layer={} to_layer={} step={}",
+                  buffer_out_layer,
+                  buffer_in_layer,
+                  layer_step);
+              for (int layer = buffer_out_layer; layer != buffer_in_layer;
+                   layer += layer_step) {
+                int next_layer = layer + layer_step;
                 debugPrint(logger_,
                            RSZ,
                            "buffer_removal",
                            2,
-                           "Adding via+wire from buffer input ({}, {}, layer "
-                           "{}) to output ({}, {}, layer {})",
-                           buffer_in_loc.getX(),
-                           buffer_in_loc.getY(),
-                           buffer_in_layer,
-                           buffer_out_loc.getX(),
-                           buffer_out_loc.getY(),
-                           buffer_out_layer);
-
-                // Validate layer range
-                odb::dbTech* tech = db_->getTech();
-                int max_routing_layer = 0;
-                for (auto layer : tech->getLayers()) {
-                  if (layer->getRoutingLevel() > max_routing_layer) {
-                    max_routing_layer = layer->getRoutingLevel();
-                  }
-                }
-                if (buffer_in_layer < 1 || buffer_in_layer > max_routing_layer ||
-                    buffer_out_layer < 1 || buffer_out_layer > max_routing_layer) {
-                  // layer assignment is incomplete
-                  return inner_tree;
-                }
-
-                // Build connection: start from inner_tree and work backwards
-                BnetPtr current = inner_tree;
-
-                // Add via stack from buffer_out_layer to buffer_in_layer
-                int layer_step = (buffer_in_layer > buffer_out_layer) ? 1 : -1;
-                Point current_loc = buffer_out_loc;
-
-                debugPrint(
-                    logger_,
-                    RSZ,
-                    "buffer_removal",
-                    1,
-                    "Creating via stack: from_layer={} to_layer={} step={}",
-                    buffer_out_layer,
-                    buffer_in_layer,
-                    layer_step);
-                for (int layer = buffer_out_layer; layer != buffer_in_layer;
-                     layer += layer_step) {
-                  int next_layer = layer + layer_step;
-                  debugPrint(logger_,
-                             RSZ,
-                             "buffer_removal",
-                             2,
-                             "Creating via from layer {} to layer {}",
-                             layer,
-                             next_layer);
-                  current = std::make_shared<BufferedNet>(BnetType::via,
-                                                          current_loc,
-                                                          layer,
-                                                          next_layer,
-                                                          current,
-                                                          node->corner(),
-                                                          this);
-                }
-                // Add wire if locations differ
-                if (buffer_in_loc != buffer_out_loc) {
-                  current = std::make_shared<BufferedNet>(BnetType::wire,
-                                                          buffer_in_loc,
-                                                          buffer_in_layer,
-                                                          current,
-                                                          node->corner(),
-                                                          this,
-                                                          estimate_parasitics_);
-                }
-
-                return current;
+                           "Creating via from layer {} to layer {}",
+                           layer,
+                           next_layer);
+                current = std::make_shared<BufferedNet>(BnetType::via,
+                                                        current_loc,
+                                                        layer,
+                                                        next_layer,
+                                                        current,
+                                                        node->corner(),
+                                                        this);
               }
+              // Add wire if locations differ
+              if (buffer_in_loc != buffer_out_loc) {
+                current = std::make_shared<BufferedNet>(BnetType::wire,
+                                                        buffer_in_loc,
+                                                        buffer_in_layer,
+                                                        current,
+                                                        node->corner(),
+                                                        this,
+                                                        estimate_parasitics_);
+              }
+
+              return current;
             } else {
               // Not the stitching load, return as-is
               return node;

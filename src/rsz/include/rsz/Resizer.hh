@@ -578,7 +578,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
       std::map<const Pin*, float>& load_pin_slew);
   bool estimateSlewsInTree(Pin* drvr_pin,
                            Slew drvr_slew,
-                           BufferedNetPtr tree,
+                           const BufferedNetPtr& tree,
                            const Corner* corner,
                            std::map<const Pin*, float>& load_pin_slew);
 
@@ -827,9 +827,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
                                std::unordered_set<Instance*>& notSwappable,
                                LibertyCell*& best_lib_cell);
 
-  BufferedNetPtr stitchTrees(BufferedNetPtr outer_tree,
+  BufferedNetPtr stitchTrees(const BufferedNetPtr& outer_tree,
                              Pin* stitching_load,
-                             BufferedNetPtr inner_tree);
+                             const BufferedNetPtr& inner_tree);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes

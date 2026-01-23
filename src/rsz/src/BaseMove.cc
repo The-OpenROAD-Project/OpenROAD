@@ -5,7 +5,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstddef>
+#include <cstdlib>
+#include <map>
 #include <memory>
 #include <string>
 #include <tuple>

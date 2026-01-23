@@ -5771,7 +5771,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
 
   LibertyCell* cell = network_->libertyCell(buffer_instance);
   if (!cell->isBuffer()) {
-    logger_->report("The given instance is not a buffer\n");
     return false;
   }
   LibertyPort *in_port, *out_port;
@@ -5789,8 +5788,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
   BnetPtr stitched_tree = stitchTrees(tree1, buffer_load_pin, tree2);
 
   if (stitched_tree == tree1) {
-    logger_->report(
-        "The given buffer instance is not a fanout of the given pin\n");
     return false;
   }
 
@@ -5853,8 +5850,7 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
         = std::max(sta_->vertexSlew(load_vertex, RiseFall::rise(), dcalc_ap),
                    sta_->vertexSlew(load_vertex, RiseFall::fall(), dcalc_ap));
     float out_calib_factor = actual_buf2load_slew / estimated_buf2load_slew;
-    out_calib_factors[load_pin]
-        = std::max(1.0f, std::max(in_calib_factor, out_calib_factor));
+    out_calib_factors[load_pin] = in_calib_factor * out_calib_factor;
 
     debugPrint(logger_,
                RSZ,
@@ -5896,7 +5892,7 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
 
 bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
                                   Slew drvr_slew,
-                                  BufferedNetPtr tree,
+                                  const BufferedNetPtr& tree,
                                   const Corner* corner,
                                   std::map<const Pin*, float>& load_pin_slew)
 {
@@ -5924,7 +5920,6 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
 
   using BnetType = BufferedNetType;
   using BnetPtr = BufferedNetPtr;
-  int current_via_stack = 0;
 
   // Propagate slew through the tree - inline the visitor
   visitTree(
@@ -5936,14 +5931,10 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
 
         switch (node->type()) {
           case BnetType::via: {
-            current_via_stack++;
             double r_via
                 = node->viaResistance(corner, this, estimate_parasitics_);
             double t_via = r_via * node->ref()->cap()
                            * repair_design_->slew_rc_factor_.value();
-            // Model via stack delays with additional 10% delay at each stack
-            double via_stack_penalty = 1.0 + 0.10 * (current_via_stack - 1);
-            t_via *= via_stack_penalty;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",
@@ -5956,7 +5947,6 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
             return 0;
           }
           case BnetType::wire: {
-            current_via_stack = 0;
             Point from_loc = node->location();
             Point to_loc = node->ref()->location();
             double length

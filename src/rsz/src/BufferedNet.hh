@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "odb/geom.h"
 #include "spdlog/fmt/fmt.h"

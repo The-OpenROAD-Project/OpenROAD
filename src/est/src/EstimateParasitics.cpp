@@ -450,7 +450,7 @@ void EstimateParasitics::updateParasitics(bool save_guides)
     case ParasiticsSrc::detailed_routing: {
       // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes(save_guides);
-      for (const Net* net : parasitics_invalid_) {
+      for (const sta::Net* net : parasitics_invalid_) {
         debugPrint(logger_,
                    EST,
                    "estimate_parasitics",
@@ -471,7 +471,7 @@ void EstimateParasitics::updateParasitics(bool save_guides)
   // invalidate those delays. Do it in bulk instead of interleaving with each
   // groute call.
   if (parasitics_src_ != ParasiticsSrc::none) {
-    for (const Net* net : parasitics_invalid_) {
+    for (const sta::Net* net : parasitics_invalid_) {
       debugPrint(logger_,
                  EST,
                  "estimate_parasitics",
