@@ -47,17 +47,9 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using std::vector;
-
-using odb::dbMaster;
-
-using odb::dbMaster;
-using odb::Point;
-
 using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
-using sta::dbDatabase;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
@@ -146,7 +138,7 @@ class BaseMove : public sta::dbStaState
   Network* network_;
   dbNetwork* db_network_;
   dbSta* sta_;
-  dbDatabase* db_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
   int dbu_ = 0;
   dpl::Opendp* opendp_ = nullptr;
   const Corner* corner_ = nullptr;
@@ -168,7 +160,7 @@ class BaseMove : public sta::dbStaState
   TgtSlews tgt_slews_;
 
   double area(Cell* cell);
-  double area(dbMaster* master);
+  double area(odb::dbMaster* master);
   double dbuToMeters(int dist) const;
 
   void gateDelays(const LibertyPort* drvr_port,
@@ -207,7 +199,7 @@ class BaseMove : public sta::dbStaState
   Instance* makeBuffer(LibertyCell* cell,
                        const char* name,
                        Instance* parent,
-                       const Point& loc);
+                       const odb::Point& loc);
   bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool estimateInputSlewImpact(Instance* instance,
                                const DcalcAnalysisPt* dcalc_ap,
@@ -244,8 +236,8 @@ class BaseMove : public sta::dbStaState
   ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
   Slack getWorstInputSlack(Instance* inst);
   Slack getWorstOutputSlack(Instance* inst);
-  vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);
-  vector<const Pin*> getOutputPins(const Instance* inst);
+  std::vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);
+  std::vector<const Pin*> getOutputPins(const Instance* inst);
   LibertyCellSeq getSwappableCells(LibertyCell* base);
 
   static constexpr int size_down_max_fanout_ = 10;

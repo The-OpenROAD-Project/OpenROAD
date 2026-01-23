@@ -34,13 +34,16 @@
 #include "sta/Hash.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/Map.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
+#include "sta/UnorderedMap.hh"
 #include "sta/UnorderedSet.hh"
 #include "sta/Vector.hh"
 #include "utl/Logger.h"
@@ -58,14 +61,6 @@ class SpefWriter;
 }
 
 namespace rsz {
-
-using odb::dbBlock;
-using odb::dbDatabase;
-using odb::dbInst;
-using odb::dbMaster;
-using odb::dbNet;
-using odb::dbTechLayer;
-using odb::Point;
 
 using stt::SteinerTreeBuilder;
 
@@ -243,7 +238,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
   Resizer(utl::Logger* logger,
-          dbDatabase* db,
+          odb::dbDatabase* db,
           dbSta* sta,
           SteinerTreeBuilder* stt_builder,
           GlobalRouter* global_router,
@@ -270,12 +265,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool dontTouch(const Net* net) const;
 
   ///
-  /// Wrapper for dbNet::insertBufferAfterDriver().
+  /// Wrapper for odb::dbNet::insertBufferAfterDriver().
   /// - This accepts STA objects instead of db objects.
   ///
   Instance* insertBufferAfterDriver(Net* net,
                                     LibertyCell* buffer_cell,
-                                    const Point* loc = nullptr,
+                                    const odb::Point* loc = nullptr,
                                     const char* new_buf_base_name
                                     = kDefaultBufBaseName,
                                     const char* new_net_base_name
@@ -284,7 +279,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                                     = odb::dbNameUniquifyType::ALWAYS);
   odb::dbInst* insertBufferAfterDriver(odb::dbNet* net,
                                        odb::dbMaster* buffer_cell,
-                                       const Point* loc = nullptr,
+                                       const odb::Point* loc = nullptr,
                                        const char* new_buf_base_name
                                        = kDefaultBufBaseName,
                                        const char* new_net_base_name
@@ -293,12 +288,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
                                        = odb::dbNameUniquifyType::ALWAYS);
 
   ///
-  /// Wrapper for dbNet::insertBufferBeforeLoad().
+  /// Wrapper for odb::dbNet::insertBufferBeforeLoad().
   /// - This accepts STA objects instead of db objects.
   ///
   Instance* insertBufferBeforeLoad(Pin* load_pin,
                                    LibertyCell* buffer_cell,
-                                   const Point* loc = nullptr,
+                                   const odb::Point* loc = nullptr,
                                    const char* new_buf_base_name
                                    = kDefaultBufBaseName,
                                    const char* new_net_base_name
@@ -307,7 +302,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                                    = odb::dbNameUniquifyType::ALWAYS);
   odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_pin,
                                       odb::dbMaster* buffer_cell,
-                                      const Point* loc = nullptr,
+                                      const odb::Point* loc = nullptr,
                                       const char* new_buf_base_name
                                       = kDefaultBufBaseName,
                                       const char* new_net_base_name
@@ -316,14 +311,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
                                       = odb::dbNameUniquifyType::ALWAYS);
 
   ///
-  /// Wrapper for dbNet::insertBufferBeforeLoads().
+  /// Wrapper for odb::dbNet::insertBufferBeforeLoads().
   /// - This accepts STA objects instead of db objects.
   ///
   Instance* insertBufferBeforeLoads(
       Net* net,
       PinSeq* loads,
       LibertyCell* buffer_cell,
-      const Point* loc = nullptr,
+      const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
       const char* new_net_base_name = kDefaultNetBaseName,
       const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
@@ -332,7 +327,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
       Net* net,
       PinSet* loads,
       LibertyCell* buffer_cell,
-      const Point* loc = nullptr,
+      const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
       const char* new_net_base_name = kDefaultNetBaseName,
       const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
@@ -341,7 +336,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
       odb::dbNet* net,
       const std::set<odb::dbObject*>& loads,
       odb::dbMaster* buffer_cell,
-      const Point* loc = nullptr,
+      const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
       const char* new_net_base_name = kDefaultNetBaseName,
       const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
@@ -507,7 +502,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
   std::optional<Slack> resizeNetSlack(const Net* net);
-  std::optional<Slack> resizeNetSlack(const dbNet* db_net);
+  std::optional<Slack> resizeNetSlack(const odb::dbNet* db_net);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
@@ -516,11 +511,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   ////////////////////////////////////////////////////////////////
   dbNetwork* getDbNetwork() { return db_network_; }
-  dbBlock* getDbBlock() { return block_; }
+  odb::dbBlock* getDbBlock() { return block_; }
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
-  VTCategory cellVTType(dbMaster* master);
+  VTCategory cellVTType(odb::dbMaster* master);
 
   ////////////////////////////////////////////////////////////////
   void initBlock();
@@ -700,8 +695,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool overMaxArea();
   bool bufferBetweenPorts(Instance* buffer);
   bool hasPort(const Net* net);
-  Point location(Instance* inst);
-  double area(dbMaster* master);
+  odb::Point location(Instance* inst);
+  double area(odb::dbMaster* master);
   double area(Cell* cell);
   double splitWireDelayDiff(double wire_length,
                             LibertyCell* buffer_cell,
@@ -724,7 +719,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void getPins(Net* net, PinVector& pins) const;
   void getPins(Instance* inst, PinVector& pins) const;
   void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
-  Point tieLocation(const Pin* load, int separation);
+  odb::Point tieLocation(const Pin* load, int separation);
   InstanceSeq findClkInverters();
   void cloneClkInverter(Instance* inv);
 
@@ -747,7 +742,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
-                         const Point& loc,
+                         const odb::Point& loc,
                          const odb::dbNameUniquifyType& uniquify
                          = odb::dbNameUniquifyType::ALWAYS);
   void deleteTieCellAndNet(const Instance* tie_inst, LibertyPort* tie_port);
@@ -762,11 +757,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Instance* makeBuffer(LibertyCell* cell,
                        const char* name,
                        Instance* parent,
-                       const Point& loc);
+                       const odb::Point& loc);
 
-  void insertBufferPostProcess(dbInst* buffer_inst);
+  void insertBufferPostProcess(odb::dbInst* buffer_inst);
 
-  void setLocation(dbInst* db_inst, const Point& pt);
+  void setLocation(odb::dbInst* db_inst, const odb::Point& pt);
   LibertyCell* findTargetCell(LibertyCell* cell,
                               float load_cap,
                               bool revisiting_inst);
@@ -774,7 +769,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
                                         const Corner* corner);
   BufferedNetPtr makeBufferedNetSteinerOverBnets(
-      Point root,
+      odb::Point root,
       const std::vector<BufferedNetPtr>& sinks,
       const Corner* corner);
   BufferedNetPtr makeBufferedNetGroute(const Pin* drvr_pin,
@@ -832,8 +827,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
   dbNetwork* db_network_ = nullptr;
-  dbDatabase* db_ = nullptr;
-  dbBlock* block_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
+  odb::dbBlock* block_ = nullptr;
   int dbu_ = 0;
   const Pin* debug_pin_ = nullptr;
 
@@ -915,7 +910,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double buffer_sizing_cap_ratio_{default_buffer_sizing_cap_ratio_};
 
   // VT layer hash
-  std::unordered_map<dbMaster*, VTCategory> vt_map_;
+  std::unordered_map<odb::dbMaster*, VTCategory> vt_map_;
   std::unordered_map<size_t, int>
       vt_hash_map_;  // maps hash value to unique int
 

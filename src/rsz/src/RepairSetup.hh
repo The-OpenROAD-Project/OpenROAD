@@ -13,8 +13,14 @@
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Path.hh"
 #include "sta/StaState.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
+#include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -30,8 +36,6 @@ namespace rsz {
 class Resizer;
 class RemoveBuffer;
 class BaseMove;
-
-using odb::Point;
 
 using sta::Corner;
 using sta::dbNetwork;

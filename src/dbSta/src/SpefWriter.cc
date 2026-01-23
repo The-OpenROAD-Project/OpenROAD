@@ -17,6 +17,7 @@
 #include "sta/Corner.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 

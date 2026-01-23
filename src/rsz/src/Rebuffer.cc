@@ -26,6 +26,7 @@
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -382,7 +383,7 @@ static const RiseFallBoth* combinedTransition(const RiseFallBoth* a,
 static BufferedNetPtr createBnetJunction(Resizer* resizer,
                                          const BufferedNetPtr& p,
                                          const BufferedNetPtr& q,
-                                         Point location)
+                                         odb::Point location)
 {
   BufferedNetPtr junc = make_shared<BufferedNet>(
       BufferedNetType::junction, location, p, q, resizer);
@@ -622,11 +623,11 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               layer = wire_layer.value();
             }
             BnetSeq opts = recurse(stripWiresAndBuffersOnBnet(node->ref()));
-            Point location
+            odb::Point location
                 = stripWiresAndBuffersOnBnet(node->ref())->location();
 
             const int full_wl
-                = Point::manhattanDistance(node->location(), location);
+                = odb::Point::manhattanDistance(node->location(), location);
             if (full_wl > wire_length_step_ / 2) {
               debugPrint(logger_,
                          RSZ,
@@ -700,7 +701,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               location.addY(dy);
 
               const int remaining_wl
-                  = Point::manhattanDistance(node->location(), location);
+                  = odb::Point::manhattanDistance(node->location(), location);
 
               for (BnetPtr& opt : opts) {
                 opt = addWire(opt, location, layer, level);
@@ -1179,7 +1180,7 @@ FixedDelay Rebuffer::bufferDelay(LibertyCell* cell,
 }
 
 BnetPtr Rebuffer::addWire(const BnetPtr& p,
-                          Point wire_end,
+                          odb::Point wire_end,
                           int wire_layer,
                           int level)
 {
@@ -1554,8 +1555,8 @@ void Rebuffer::characterizeBufferLimits()
 static bool isPortBuffer(dbNetwork* network, Instance* inst)
 {
   if (network->libertyCell(inst) && network->libertyCell(inst)->isBuffer()) {
-    dbInst* db_inst = network->staToDb(inst);
-    for (dbITerm* iterm : db_inst->getITerms()) {
+    odb::dbInst* db_inst = network->staToDb(inst);
+    for (odb::dbITerm* iterm : db_inst->getITerms()) {
       if (iterm->getNet() && iterm->getNet()->getITerms().size() == 1
           && !iterm->getNet()->getBTerms().empty()) {
         return true;
@@ -1747,7 +1748,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   // to insert buffers while handling hierarchical connections properly.
   //
   // The algorithm works as follows:
-  // 1. For leaf nodes (load), collect the physical terminal (dbITerm/dbBTerm)
+  // 1. For leaf nodes (load), collect the physical terminal
+  // (odb::dbITerm/dbBTerm)
   //    and return it as a load to the parent.
   // 2. For wire/junction nodes, recursively process children and propagate
   //    their loads upward.
@@ -1763,7 +1765,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   // input then becomes a load for the next level up, creating a chain of
   // buffers and hierarchical connections as specified by the BufferedNet tree.
   //
-  // Return: A set of dbObjects (dbITerm, dbBTerm, or dbModITerm) representing
+  // Return: A set of dbObjects (odb::dbITerm, dbBTerm, or dbModITerm)
+  // representing
   //         the terminals that this subtree drives (i.e., the "loads" seen
   //         from the parent's perspective).
   std::function<void(const BufferedNetPtr&, PinSet&, int&)> insertBuffers;
@@ -1824,7 +1827,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
         // In this rebuffer logic, target loads can be on different dbNets.
         // So we pass 'true' to 'loads_on_diff_nets' argument.
-        Point buffer_loc = node->location();
+        odb::Point buffer_loc = node->location();
         odb::dbInst* buf_inst = db_network_->staToDb(
             resizer_->insertBufferBeforeLoads(net,
                                               &child_loads,
@@ -1982,7 +1985,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   for (auto drvr : resizer_->level_drvr_vertices_) {
     Pin* drvr_pin = drvr->pin();
     Net* net = nullptr;
-    dbNet* net_db = nullptr;
+    odb::dbNet* net_db = nullptr;
 
     // Get the flat net safely
     if (network_->isTopLevelPort(drvr_pin)) {

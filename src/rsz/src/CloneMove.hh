@@ -15,8 +15,6 @@
 
 namespace rsz {
 
-using odb::Point;
-
 using sta::InstancePinIterator;
 using sta::LoadPinIndexMap;
 using sta::NetConnectedPinIterator;
@@ -41,7 +39,7 @@ class CloneMove : public BaseMove
   const char* name() override { return "CloneMove"; }
 
  private:
-  Point computeCloneGateLocation(
+  odb::Point computeCloneGateLocation(
       const Pin* drvr_pin,
       const std::vector<std::pair<Vertex*, Slack>>& fanout_slacks);
 

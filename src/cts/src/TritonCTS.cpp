@@ -46,6 +46,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
@@ -901,8 +902,9 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
     return;
   }
 
+  // xs is empty if the fanout is a bterm
   if (isSink(driver) || driver->getInst()->isFixed()
-      || driver->getInst()->isPad()) {
+      || driver->getInst()->isPad() || xs.empty()) {
     return;
   }
 

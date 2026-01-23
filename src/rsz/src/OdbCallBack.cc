@@ -16,6 +16,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "est/EstimateParasitics.h"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
@@ -37,7 +38,7 @@ OdbCallBack::OdbCallBack(Resizer* resizer,
 {
 }
 
-void OdbCallBack::inDbNetDestroy(dbNet* net)
+void OdbCallBack::inDbNetDestroy(odb::dbNet* net)
 {
   debugPrint(resizer_->logger(),
              utl::RSZ,

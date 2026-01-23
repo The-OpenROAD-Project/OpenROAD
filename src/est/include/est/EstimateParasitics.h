@@ -28,6 +28,7 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"

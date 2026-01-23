@@ -693,7 +693,7 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
     return false;
   }
 
-  dbInst* dinst = db_network_->staToDb(inst);
+  odb::dbInst* dinst = db_network_->staToDb(inst);
   dbMaster* master = dinst->getMaster();
   resizer_->designAreaIncr(-area(master));
   Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);

@@ -3,16 +3,13 @@
 
 #pragma once
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/VerilogReader.hh"
 
 namespace utl {
 class Logger;
-}
-
-namespace odb {
-class dbDatabase;
 }
 
 namespace sta {
@@ -23,8 +20,6 @@ class NetworkReader;
 namespace ord {
 
 class dbVerilogNetwork;
-
-using odb::dbDatabase;
 
 using sta::Cell;
 using sta::ConcreteCell;
@@ -56,7 +51,7 @@ void setDbNetworkLinkFunc(dbVerilogNetwork* network,
 // network.
 bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
-                  dbDatabase* db,
+                  odb::dbDatabase* db,
                   utl::Logger* logger,
                   bool hierarchy,
                   bool omit_filename_prop = false);
