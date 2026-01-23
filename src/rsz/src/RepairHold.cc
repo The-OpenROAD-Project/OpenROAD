@@ -702,7 +702,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     drvr_dbnet = static_cast<odb::dbITerm*>(drvr_db_pin)->getNet();
   }
 
-  Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
+  sta::Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
 
   // PinSeq -> PinSet
   PinSet load_pins_set(network_);

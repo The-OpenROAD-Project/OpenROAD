@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Net;
 using sta::Path;
 using sta::Pin;
 using sta::RiseFall;
@@ -108,7 +107,7 @@ class Rebuffer : public sta::dbStaState
       Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
   int exportBufferTree(const BufferedNetPtr& choice,
-                       Net* net,  // output of buffer.
+                       sta::Net* net,  // output of buffer.
                        int level,
                        sta::Instance* parent_in,
                        const char* instance_base_name);
@@ -139,7 +138,7 @@ class Rebuffer : public sta::dbStaState
                               const BufferedNetPtr& bnet,
                               int extra_wire_length = 0);
 
-  bool hasTopLevelOutputPort(Net* net);
+  bool hasTopLevelOutputPort(sta::Net* net);
   int rebufferPin(const Pin* drvr_pin);
 
   utl::Logger* logger_ = nullptr;

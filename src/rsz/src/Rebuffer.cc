@@ -1708,14 +1708,14 @@ std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
       imported_tree);
 
   std::vector<sta::Instance*> insts;
-  Net* net = network_->net(drvr_pin);
+  sta::Net* net = network_->net(drvr_pin);
   if (!net) {
     return {};
   }
-  std::vector<Net*> queue = {net};
+  std::vector<sta::Net*> queue = {net};
 
   while (!queue.empty()) {
-    Net* net_ = queue.back();
+    sta::Net* net_ = queue.back();
     sta::NetConnectedPinIterator* pin_iter
         = network_->connectedPinIterator(net_);
     queue.pop_back();
@@ -1744,7 +1744,7 @@ std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
 }
 
 int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
-                               Net* net,  // Original Driver Net (flat)
+                               sta::Net* net,  // Original Driver Net (flat)
                                int level,
                                sta::Instance* parent_in,
                                const char* instance_base_name)
@@ -1991,7 +1991,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   std::vector<Pin*> filtered_pins;
   for (auto drvr : resizer_->level_drvr_vertices_) {
     Pin* drvr_pin = drvr->pin();
-    Net* net = nullptr;
+    sta::Net* net = nullptr;
     odb::dbNet* net_db = nullptr;
 
     // Get the flat net safely
@@ -2256,7 +2256,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
   debugPrint(logger_, RSZ, "rebuffer", 1, "Recover area {:.2f}", ra_runtime);
 }
 
-bool Rebuffer::hasTopLevelOutputPort(Net* net)
+bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
 {
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
@@ -2280,7 +2280,7 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
     return 0;
   }
 
-  Net* const net = network_->net(drvr_pin);
+  sta::Net* const net = network_->net(drvr_pin);
   odb::dbNet* const db_net = db_network_->flatNet(drvr_pin);
 
   drvr_port_ = network_->libertyPort(drvr_pin);

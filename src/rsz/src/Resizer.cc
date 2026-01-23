@@ -438,13 +438,13 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
 
-void Resizer::unbufferNet(Net* net)
+void Resizer::unbufferNet(sta::Net* net)
 {
   sta::InstanceSeq insts;
-  std::vector<Net*> queue = {net};
+  std::vector<sta::Net*> queue = {net};
 
   while (!queue.empty()) {
-    Net* net_ = queue.back();
+    sta::Net* net_ = queue.back();
     sta::NetConnectedPinIterator* pin_iter
         = network_->connectedPinIterator(net_);
     queue.pop_back();
@@ -1056,7 +1056,7 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
     while (port_iter->hasNext()) {
       Pin* pin = port_iter->next();
       Vertex* vertex = graph_->pinDrvrVertex(pin);
-      Net* net = network_->net(network_->term(pin));
+      sta::Net* net = network_->net(network_->term(pin));
 
       if (network_->direction(pin)->isInput() && !dontTouch(net)
           && !vertex->isConstant()
@@ -1080,7 +1080,7 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
   }
 }
 
-bool Resizer::hasPins(Net* net)
+bool Resizer::hasPins(sta::Net* net)
 {
   NetPinIterator* pin_iter = db_network_->pinIterator(net);
   bool has_pins = pin_iter->hasNext();
@@ -1088,7 +1088,7 @@ bool Resizer::hasPins(Net* net)
   return has_pins;
 }
 
-void Resizer::getPins(Net* net, PinVector& pins) const
+void Resizer::getPins(sta::Net* net, PinVector& pins) const
 {
   auto pin_iter = network_->pinIterator(net);
   while (pin_iter->hasNext()) {
@@ -1205,7 +1205,7 @@ sta::Instance* Resizer::bufferInput(const Pin* top_pin,
   }
 
   sta::Instance* buffer = nullptr;
-  Net* target_net = db_network_->dbToSta(top_pin_flat_net);
+  sta::Net* target_net = db_network_->dbToSta(top_pin_flat_net);
   buffer = insertBufferAfterDriver(target_net, buffer_cell, nullptr, "input");
 
   return buffer;
@@ -1234,7 +1234,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
     while (port_iter->hasNext()) {
       Pin* pin = port_iter->next();
       Vertex* vertex = graph_->pinLoadVertex(pin);
-      Net* net = network_->net(network_->term(pin));
+      sta::Net* net = network_->net(network_->term(pin));
       if (network_->direction(pin)->isOutput() && net
           && !dontTouch(net)
           // Hands off special nets.
@@ -1259,7 +1259,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
   }
 }
 
-bool Resizer::hasTristateOrDontTouchDriver(const Net* net)
+bool Resizer::hasTristateOrDontTouchDriver(const sta::Net* net)
 {
   PinSet* drivers = network_->drivers(net);
   if (drivers) {
@@ -2595,7 +2595,7 @@ void Resizer::findResizeSlacks1()
   for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
     Vertex* drvr = level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
-    Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+    sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
         && !drvr->isConstant()
         // Hands off special nets.
@@ -2614,7 +2614,7 @@ NetSeq Resizer::resizeWorstSlackNets()
   }
   // We are manually breaking ties to enforce stability, so use std::sort since
   // there is no need to pay the cost for stable sorting here
-  std::ranges::sort(nets, [this](const Net* net1, const Net* net2) {
+  std::ranges::sort(nets, [this](const sta::Net* net1, const sta::Net* net2) {
     auto slack1 = resizeNetSlack(net1);
     auto slack2 = resizeNetSlack(net2);
     if (slack1 != slack2) {
@@ -2634,7 +2634,7 @@ NetSeq Resizer::resizeWorstSlackNets()
   return nets;
 }
 
-std::optional<Slack> Resizer::resizeNetSlack(const Net* net)
+std::optional<Slack> Resizer::resizeNetSlack(const sta::Net* net)
 {
   auto it = net_slack_map_.find(net);
   if (it == net_slack_map_.end()) {
@@ -2645,7 +2645,7 @@ std::optional<Slack> Resizer::resizeNetSlack(const Net* net)
 
 std::optional<Slack> Resizer::resizeNetSlack(const odb::dbNet* db_net)
 {
-  const Net* net = db_network_->dbToSta(db_net);
+  const sta::Net* net = db_network_->dbToSta(db_net);
   return resizeNetSlack(net);
 }
 
@@ -2888,13 +2888,13 @@ bool Resizer::dontTouch(const sta::Instance* inst) const
   return db_inst->isDoNotTouch();
 }
 
-void Resizer::setDontTouch(const Net* net, bool dont_touch)
+void Resizer::setDontTouch(const sta::Net* net, bool dont_touch)
 {
   odb::dbNet* db_net = db_network_->staToDb(net);
   db_net->setDoNotTouch(dont_touch);
 }
 
-bool Resizer::dontTouch(const Net* net) const
+bool Resizer::dontTouch(const sta::Net* net) const
 {
   odb::dbNet* db_net = nullptr;
   odb::dbModNet* db_mod_net = nullptr;
@@ -3208,7 +3208,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
       continue;
     }
 
-    Net* drvr_net = db_network_->dbToSta(drvr_db_net);
+    sta::Net* drvr_net = db_network_->dbToSta(drvr_db_net);
     if (drvr_net == nullptr || dontTouch(drvr_net)) {
       continue;
     }
@@ -3384,7 +3384,7 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
   if (load_bterm) {
     // Create a new net and connect both the tie cell output and the top-level
     // port to it.
-    Net* new_net = db_network_->makeNet(
+    sta::Net* new_net = db_network_->makeNet(
         connection_name.c_str(), parent, odb::dbNameUniquifyType::IF_NEEDED);
     new_tie_iterm->connect(db_network_->staToDb(new_net));
     load_bterm->connect(db_network_->staToDb(new_net));
@@ -3411,7 +3411,7 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   }
 
   // Delete inst output net.
-  Net* tie_net = db_network_->dbToSta(tie_flat_net);
+  sta::Net* tie_net = db_network_->dbToSta(tie_flat_net);
   sta_->deleteNet(tie_net);
   estimate_parasitics_->removeNetFromParasiticsInvalid(tie_net);
 
@@ -3425,7 +3425,7 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
     Pin* pin = inst_pin_iter->next();
     if (pin != drvr_pin) {
       // hier fix
-      Net* net = db_network_->dbToSta(db_network_->flatNet(pin));
+      sta::Net* net = db_network_->dbToSta(db_network_->flatNet(pin));
       if (net && !network_->isPower(net) && !network_->isGround(net)) {
         has_other_fanout = true;
         break;
@@ -3568,7 +3568,7 @@ int Resizer::findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner)
   return 0;
 }
 
-double Resizer::maxLoadManhattenDistance(const Net* net)
+double Resizer::maxLoadManhattenDistance(const sta::Net* net)
 {
   NetPinIterator* pin_iter = network_->pinIterator(net);
   int max_dist = 0;
@@ -3608,7 +3608,7 @@ NetSeq* Resizer::findFloatingNets()
   NetSeq* floating_nets = new NetSeq;
   NetIterator* net_iter = network_->netIterator(network_->topInstance());
   while (net_iter->hasNext()) {
-    Net* net = net_iter->next();
+    sta::Net* net = net_iter->next();
     PinSeq loads;
     PinSeq drvrs;
     PinSet visited_drvrs(db_network_);
@@ -3655,7 +3655,7 @@ NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
   std::unique_ptr<NetIterator> net_iter(
       network_->netIterator(network_->topInstance()));
   while (net_iter->hasNext()) {
-    Net* net = net_iter->next();
+    sta::Net* net = net_iter->next();
     PinSeq loads;
     PinSeq drvrs;
     PinSet visited_drvrs(db_network_);
@@ -4049,7 +4049,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
 
   sta::Instance* top_inst = network->topInstance();
   // Tmp net for parasitics to live on.
-  Net* net = sta->makeNet("wire", top_inst);
+  sta::Net* net = sta->makeNet("wire", top_inst);
   sta::LibertyCell* drvr_cell = drvr_port->libertyCell();
   sta::LibertyCell* load_cell = load_port->libertyCell();
   sta::Instance* drvr = sta->makeInstance("drvr", drvr_cell, top_inst);
@@ -4180,7 +4180,7 @@ int Resizer::repairDesignBufferCount() const
   return repair_design_->insertedBufferCount();
 }
 
-void Resizer::repairNet(Net* net,
+void Resizer::repairNet(sta::Net* net,
                         double max_wire_length,
                         double slew_margin,
                         double cap_margin)
@@ -4258,11 +4258,11 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   inv_cell->bufferPorts(in_port, out_port);
   Pin* in_pin = network_->findPin(inv, in_port);
   Pin* out_pin = network_->findPin(inv, out_port);
-  Net* in_net = db_network_->findFlatNet(in_pin);
+  sta::Net* in_net = db_network_->findFlatNet(in_pin);
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
-  Net* out_net = network_->isTopLevelPort(out_pin)
-                     ? network_->net(network_->term(out_pin))
-                     : network_->net(out_pin);
+  sta::Net* out_net = network_->isTopLevelPort(out_pin)
+                          ? network_->net(network_->term(out_pin))
+                          : network_->net(out_pin);
   if (out_net) {
     const char* inv_name = network_->name(inv);
     sta::Instance* top_inst = network_->topInstance();
@@ -4279,7 +4279,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
                            odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
         journalMakeBuffer(clone);
 
-        Net* clone_out_net = db_network_->makeNet(top_inst);
+        sta::Net* clone_out_net = db_network_->makeNet(top_inst);
         odb::dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
         clone_out_net_db->setSigType(in_net_db->getSigType());
 
@@ -4737,7 +4737,7 @@ sta::Instance* Resizer::makeBuffer(sta::LibertyCell* cell,
 }
 
 sta::Instance* Resizer::insertBufferAfterDriver(
-    Net* net,
+    sta::Net* net,
     sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
@@ -4920,7 +4920,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(
 }
 
 sta::Instance* Resizer::insertBufferBeforeLoads(
-    Net* net,
+    sta::Net* net,
     PinSeq* loads,
     sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
@@ -4946,7 +4946,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
 }
 
 sta::Instance* Resizer::insertBufferBeforeLoads(
-    Net* net,
+    sta::Net* net,
     PinSet* loads,
     sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
@@ -5292,7 +5292,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     auto iter = network_->pinIterator(top_inst);
     while (iter->hasNext()) {
       Pin* pin = iter->next();
-      Net* net = network_->net(network_->term(pin));
+      sta::Net* net = network_->net(network_->term(pin));
       PinSet* drivers = network_->drivers(net);
       if (drivers) {
         for (const Pin* drvr_pin : *drivers) {
@@ -5312,7 +5312,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
       auto iter = network_->pinIterator(inst);
       while (iter->hasNext()) {
         Pin* pin = iter->next();
-        Net* net = network_->net(pin);
+        sta::Net* net = network_->net(pin);
         if (net && dontTouch(net)) {
           keepInst(inst);
         }
@@ -5455,7 +5455,7 @@ bool Resizer::okToBufferNet(const Pin* driver_pin) const
     return false;
   }
 
-  const Net* net = db_network_->dbToSta(db_network_->flatNet(driver_pin));
+  const sta::Net* net = db_network_->dbToSta(db_network_->flatNet(driver_pin));
 
   if (!net) {
     return false;

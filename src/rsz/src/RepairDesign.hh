@@ -31,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
 using sta::Slew;
@@ -71,7 +70,7 @@ class RepairDesign : sta::dbStaState
                     int& fanout_violations,
                     int& length_violations);
   int insertedBufferCount() const { return inserted_buffer_count_; }
-  void repairNet(Net* net,
+  void repairNet(sta::Net* net,
                  double max_wire_length,
                  double slew_margin,
                  double cap_margin);
@@ -91,7 +90,7 @@ class RepairDesign : sta::dbStaState
   bool getCin(const Pin* drvr_pin, float& cin);
   bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
-  bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
+  bool performGainBuffering(sta::Net* net, const Pin* drvr_pin, int max_fanout);
   void performEarlySizingRound(int& repaired_net_count);
 
   void checkDriverArcSlew(const sta::Corner* corner,
@@ -115,7 +114,7 @@ class RepairDesign : sta::dbStaState
                     int& fanout_violations,
                     int& length_violations);
 
-  void repairNet(Net* net,
+  void repairNet(sta::Net* net,
                  const Pin* drvr_pin,
                  Vertex* drvr,
                  bool check_slew,
@@ -183,7 +182,7 @@ class RepairDesign : sta::dbStaState
                       double load_cap,
                       double slew,
                       const sta::DcalcAnalysisPt* dcalc_ap);
-  LoadRegion findLoadRegions(const Net* net,
+  LoadRegion findLoadRegions(const sta::Net* net,
                              const Pin* drvr_pin,
                              int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
@@ -228,11 +227,11 @@ class RepairDesign : sta::dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew,
-                    Net*& out_net,
+                    sta::Net*& out_net,
                     Pin*& repeater_in_pin,
                     Pin*& repeater_out_pin);
   sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
-  bool hasInputPort(const Net* net);
+  bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 

@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Net;
 using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
@@ -117,7 +116,7 @@ class RepairSetup : public sta::dbStaState
   void init();
   bool repairPath(Path* path, Slack path_slack, float setup_slack_margin);
   int fanout(Vertex* vertex);
-  bool hasTopLevelOutputPort(Net* net);
+  bool hasTopLevelOutputPort(sta::Net* net);
 
   void printProgress(int iteration,
                      bool force,

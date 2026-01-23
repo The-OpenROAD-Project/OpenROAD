@@ -23,6 +23,7 @@
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Transition.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include "spdlog/fmt/fmt.h"
@@ -881,7 +882,7 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
                                               const sta::Corner* corner)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
-  const Net* net = db_network_->dbToSta(db_net);
+  const sta::Net* net = db_network_->dbToSta(db_net);
   assert(db_net != nullptr);
 
   std::vector<grt::PinGridLocation> pin_grid_locs

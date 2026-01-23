@@ -15,6 +15,7 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
@@ -32,7 +33,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Net;
 using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
@@ -74,7 +74,7 @@ class RecoverPower : public sta::dbStaState
                                  bool match_size,
                                  Slack path_slack);
   int fanout(Vertex* vertex);
-  bool hasTopLevelOutputPort(Net* net);
+  bool hasTopLevelOutputPort(sta::Net* net);
 
   BufferedNetSeq addWireAndBuffer(BufferedNetSeq Z,
                                   BufferedNetPtr bnet_wire,

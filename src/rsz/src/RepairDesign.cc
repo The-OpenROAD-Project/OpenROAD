@@ -219,9 +219,9 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                "Processing driver {}",
                network_->pathName(drvr_pin));
     // Always get the flat net for the top level port.
-    Net* net = network_->isTopLevelPort(drvr_pin)
-                   ? network_->net(network_->term(drvr_pin))
-                   : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+    sta::Net* net = network_->isTopLevelPort(drvr_pin)
+                        ? network_->net(network_->term(drvr_pin))
+                        : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (!net) {
       continue;
     }
@@ -481,7 +481,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
       if (clk_pins) {
         for (const Pin* clk_pin : *clk_pins) {
           // clang-format off
-          Net* net = network_->isTopLevelPort(clk_pin)
+          sta::Net* net = network_->isTopLevelPort(clk_pin)
                          ? db_network_->dbToSta(
                              db_network_->flatNet(network_->term(clk_pin)))
                          : db_network_->dbToSta(db_network_->flatNet(clk_pin));
@@ -526,7 +526,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
 }
 
 // Repair one net (for debugging)
-void RepairDesign::repairNet(Net* net,
+void RepairDesign::repairNet(sta::Net* net,
                              double max_wire_length,  // meters
                              double slew_margin,
                              double cap_margin)
@@ -679,7 +679,7 @@ void RepairDesign::findBufferSizes()
 ///   does not change. So required times is a more stable metric for bottom-up
 ///   construction and critical path isolation.
 ///
-bool RepairDesign::performGainBuffering(Net* net,
+bool RepairDesign::performGainBuffering(sta::Net* net,
                                         const Pin* drvr_pin,
                                         int max_fanout)
 {
@@ -984,7 +984,7 @@ void RepairDesign::repairDriver(Vertex* drvr,
                                 int& length_violations)
 {
   Pin* drvr_pin = drvr->pin();
-  Net* net = db_network_->findFlatNet(drvr_pin);
+  sta::Net* net = db_network_->findFlatNet(drvr_pin);
   if (!net) {
     return;
   }
@@ -1020,7 +1020,7 @@ void RepairDesign::repairDriver(Vertex* drvr,
   }
 }
 
-void RepairDesign::repairNet(Net* net,
+void RepairDesign::repairNet(sta::Net* net,
                              const Pin* drvr_pin,
                              Vertex* drvr,
                              bool check_slew,
@@ -1321,7 +1321,7 @@ void RepairDesign::repairNet(const BufferedNetPtr& bnet,
   corner_ = corner;
 
   if (graphics_) {
-    Net* net = db_network_->net(drvr_pin);
+    sta::Net* net = db_network_->net(drvr_pin);
     odb::dbNet* db_net = db_network_->staToDb(net);
     graphics_->repairNetStart(bnet, db_net);
   }
@@ -1844,7 +1844,7 @@ LoadRegion::LoadRegion(PinSeq& pins, odb::Rect& bbox) : pins_(pins), bbox_(bbox)
 {
 }
 
-LoadRegion RepairDesign::findLoadRegions(const Net* net,
+LoadRegion RepairDesign::findLoadRegions(const sta::Net* net,
                                          const Pin* drvr_pin,
                                          int max_fanout)
 {
@@ -1997,7 +1997,7 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
                                       bool resize_drvr)
 {
   float ignore2, ignore3, ignore4;
-  Net* out_net;
+  sta::Net* out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
   if (!makeRepeater("fanout",
                     loc.x(),
@@ -2096,7 +2096,7 @@ bool RepairDesign::makeRepeater(const char* reason,
                                 float& repeater_fanout,
                                 float& repeater_max_slew)
 {
-  Net* out_net;
+  sta::Net* out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
   return makeRepeater(reason,
                       loc.getX(),
@@ -2115,7 +2115,7 @@ bool RepairDesign::makeRepeater(const char* reason,
 
 ////////////////////////////////////////////////////////////////
 
-bool RepairDesign::hasInputPort(const Net* net)
+bool RepairDesign::hasInputPort(const sta::Net* net)
 {
   bool has_top_level_port = false;
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
@@ -2143,7 +2143,7 @@ bool RepairDesign::makeRepeater(
     float& repeater_cap,
     float& repeater_fanout,
     float& repeater_max_slew,
-    Net*& out_net,
+    sta::Net*& out_net,
     Pin*& repeater_in_pin,
     Pin*& repeater_out_pin)
 {

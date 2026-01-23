@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Net;
 using sta::NetSeq;
 using sta::Parasitic;
 using sta::ParasiticAnalysisPt;
@@ -123,7 +122,7 @@ class RegisterOdbCallbackGuard;
 class NetHash
 {
  public:
-  size_t operator()(const Net* net) const { return hashPtr(net); }
+  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
 };
 
 using CellTargetLoadMap = sta::Map<sta::LibertyCell*, float>;
@@ -241,14 +240,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void reportDontUse() const;
   void setDontTouch(const sta::Instance* inst, bool dont_touch);
   bool dontTouch(const sta::Instance* inst) const;
-  void setDontTouch(const Net* net, bool dont_touch);
-  bool dontTouch(const Net* net) const;
+  void setDontTouch(const sta::Net* net, bool dont_touch);
+  bool dontTouch(const sta::Net* net) const;
 
   ///
   /// Wrapper for odb::dbNet::insertBufferAfterDriver().
   /// - This accepts STA objects instead of db objects.
   ///
-  sta::Instance* insertBufferAfterDriver(Net* net,
+  sta::Instance* insertBufferAfterDriver(sta::Net* net,
                                          sta::LibertyCell* buffer_cell,
                                          const odb::Point* loc = nullptr,
                                          const char* new_buf_base_name
@@ -295,7 +294,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   /// - This accepts STA objects instead of db objects.
   ///
   sta::Instance* insertBufferBeforeLoads(
-      Net* net,
+      sta::Net* net,
       PinSeq* loads,
       sta::LibertyCell* buffer_cell,
       const odb::Point* loc = nullptr,
@@ -304,7 +303,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
       bool loads_on_diff_nets = false);
   sta::Instance* insertBufferBeforeLoads(
-      Net* net,
+      sta::Net* net,
       PinSet* loads,
       sta::LibertyCell* buffer_cell,
       const odb::Point* loc = nullptr,
@@ -329,7 +328,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
   void removeBuffers(sta::InstanceSeq insts);
-  void unbufferNet(Net* net);
+  void unbufferNet(sta::Net* net);
   void bufferInputs(sta::LibertyCell* buffer_cell = nullptr,
                     bool verbose = false);
   void bufferOutputs(sta::LibertyCell* buffer_cell = nullptr,
@@ -437,7 +436,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       bool verbose);
   int repairDesignBufferCount() const;
   // for debugging
-  void repairNet(Net* net,
+  void repairNet(sta::Net* net,
                  double max_wire_length,  // meters
                  double slew_margin,
                  double cap_margin);
@@ -470,7 +469,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double findMaxWireLength(sta::LibertyPort* drvr_port,
                            const sta::Corner* corner);
   // Longest driver to load wire (in meters).
-  double maxLoadManhattenDistance(const Net* net);
+  double maxLoadManhattenDistance(const sta::Net* net);
 
   ////////////////////////////////////////////////////////////////
   // API for timing driven placement.
@@ -486,7 +485,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Return nets with worst slack.
   NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
-  std::optional<Slack> resizeNetSlack(const Net* net);
+  std::optional<Slack> resizeNetSlack(const sta::Net* net);
   std::optional<Slack> resizeNetSlack(const odb::dbNet* db_net);
 
   ////////////////////////////////////////////////////////////////
@@ -544,7 +543,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void bufferOutput(const Pin* top_pin,
                     sta::LibertyCell* buffer_cell,
                     bool verbose);
-  bool hasTristateOrDontTouchDriver(const Net* net);
+  bool hasTristateOrDontTouchDriver(const sta::Net* net);
   bool isTristateDriver(const Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
@@ -676,7 +675,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      // Return values.
                      sta::Delay& delay,
                      Slew& slew);
-  void makeWireParasitic(Net* net,
+  void makeWireParasitic(sta::Net* net,
                          Pin* drvr_pin,
                          Pin* load_pin,
                          double wire_length,  // meters
@@ -684,7 +683,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                          Parasitics* parasitics);
   bool overMaxArea();
   bool bufferBetweenPorts(sta::Instance* buffer);
-  bool hasPort(const Net* net);
+  bool hasPort(const sta::Net* net);
   odb::Point location(sta::Instance* inst);
   double area(odb::dbMaster* master);
   double area(sta::Cell* cell);
@@ -705,19 +704,19 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                          sta::InstanceSeq& insts);
   void findLoads(Pin* drvr_pin, PinSeq& loads);
   bool isFuncOneZero(const Pin* drvr_pin);
-  bool hasPins(Net* net);
-  void getPins(Net* net, PinVector& pins) const;
+  bool hasPins(sta::Net* net);
+  void getPins(sta::Net* net, PinVector& pins) const;
   void getPins(sta::Instance* inst, PinVector& pins) const;
   void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   odb::Point tieLocation(const Pin* load, int separation);
   sta::InstanceSeq findClkInverters();
   void cloneClkInverter(sta::Instance* inv);
 
-  void makePadParasitic(const Net* net, SpefWriter* spef_writer);
-  bool isPadNet(const Net* net) const;
+  void makePadParasitic(const sta::Net* net, SpefWriter* spef_writer);
+  bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;
-  void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
+  void net2Pins(const sta::Net* net, const Pin*& pin1, const Pin*& pin2) const;
   void parasiticNodeConnectPins(Parasitic* parasitic,
                                 ParasiticNode* node,
                                 est::SteinerTree* tree,
@@ -870,7 +869,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // drive cell (because larger ones would give us a longer length).
   float max_wire_length_ = 0;
   float worst_slack_nets_percent_ = 10;
-  sta::Map<const Net*, Slack> net_slack_map_;
+  sta::Map<const sta::Net*, Slack> net_slack_map_;
 
   std::unordered_map<sta::LibertyCell*, std::optional<float>>
       cell_leakage_cache_;

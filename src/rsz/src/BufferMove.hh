@@ -17,7 +17,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Path;
 using sta::PathExpanded;
@@ -46,7 +45,7 @@ class BufferMove : public BaseMove
   int rebuffer(const Pin* drvr_pin);
 
   void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
-  bool hasTopLevelOutputPort(Net* net);
+  bool hasTopLevelOutputPort(sta::Net* net);
 };
 
 }  // namespace rsz
