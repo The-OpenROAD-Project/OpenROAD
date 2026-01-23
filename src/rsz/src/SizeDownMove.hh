@@ -5,6 +5,7 @@
 #include "sta/ArcDelayCalc.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
@@ -32,11 +33,11 @@ class SizeDownMove : public BaseMove
   const char* name() override { return "SizeDownMove"; }
 
  private:
-  LibertyCell* downSizeGate(const LibertyPort* drvr_port,
-                            const LibertyPort* load_port,
-                            const Pin* load_pin,
-                            const sta::DcalcAnalysisPt* dcalc_ap,
-                            float slack_margin);
+  sta::LibertyCell* downSizeGate(const LibertyPort* drvr_port,
+                                 const LibertyPort* load_port,
+                                 const Pin* load_pin,
+                                 const sta::DcalcAnalysisPt* dcalc_ap,
+                                 float slack_margin);
 };
 
 }  // namespace rsz

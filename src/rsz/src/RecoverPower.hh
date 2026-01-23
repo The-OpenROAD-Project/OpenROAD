@@ -32,7 +32,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
@@ -60,8 +59,8 @@ class RecoverPower : public sta::dbStaState
  private:
   void init();
   Vertex* recoverPower(const Path* path, Slack path_slack);
-  bool meetsSizeCriteria(const LibertyCell* cell,
-                         const LibertyCell* candidate,
+  bool meetsSizeCriteria(const sta::LibertyCell* cell,
+                         const sta::LibertyCell* candidate,
                          bool match_size);
   bool downsizeDrvr(const Path* drvr_path,
                     int drvr_index,
@@ -69,13 +68,13 @@ class RecoverPower : public sta::dbStaState
                     bool only_same_size_swap,
                     Slack path_slack);
 
-  LibertyCell* downsizeCell(const LibertyPort* in_port,
-                            const LibertyPort* drvr_port,
-                            float load_cap,
-                            float prev_drive,
-                            const sta::DcalcAnalysisPt* dcalc_ap,
-                            bool match_size,
-                            Slack path_slack);
+  sta::LibertyCell* downsizeCell(const LibertyPort* in_port,
+                                 const LibertyPort* drvr_port,
+                                 float load_cap,
+                                 float prev_drive,
+                                 const sta::DcalcAnalysisPt* dcalc_ap,
+                                 bool match_size,
+                                 Slack path_slack);
   int fanout(Vertex* vertex);
   bool hasTopLevelOutputPort(Net* net);
 
@@ -83,7 +82,7 @@ class RecoverPower : public sta::dbStaState
                                   BufferedNetPtr bnet_wire,
                                   int level);
   float pinCapacitance(const Pin* pin, const sta::DcalcAnalysisPt* dcalc_ap);
-  float bufferInputCapacitance(LibertyCell* buffer_cell,
+  float bufferInputCapacitance(sta::LibertyCell* buffer_cell,
                                const sta::DcalcAnalysisPt* dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);
   Slack slackPenalized(BufferedNetPtr bnet, int index);

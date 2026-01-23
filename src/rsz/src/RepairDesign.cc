@@ -584,7 +584,7 @@ void RepairDesign::repairNet(Net* net,
 bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
-  LibertyCell* cell = network_->libertyCell(inst);
+  sta::LibertyCell* cell = network_->libertyCell(inst);
   cin = 0;
   if (!network_->isTopLevelPort(drvr_pin) && cell != nullptr
       && resizer_->isLogicStdCell(inst)) {
@@ -613,7 +613,7 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
 bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
-  LibertyCell* cell = network_->libertyCell(inst);
+  sta::LibertyCell* cell = network_->libertyCell(inst);
   cin = 0;
   if (!network_->isTopLevelPort(drvr_pin) && cell != nullptr
       && resizer_->isLogicStdCell(inst)) {
@@ -635,7 +635,7 @@ bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
   return false;
 }
 
-static float bufferCin(const LibertyCell* cell)
+static float bufferCin(const sta::LibertyCell* cell)
 {
   LibertyPort *a, *y;
   cell->bufferPorts(a, y);
@@ -648,9 +648,10 @@ void RepairDesign::findBufferSizes()
   buffer_sizes_.clear();
   buffer_sizes_ = {resizer_->buffer_fast_sizes_.begin(),
                    resizer_->buffer_fast_sizes_.end()};
-  std::ranges::sort(buffer_sizes_, [=](LibertyCell* a, LibertyCell* b) {
-    return bufferCin(a) < bufferCin(b);
-  });
+  std::ranges::sort(buffer_sizes_,
+                    [=](sta::LibertyCell* a, sta::LibertyCell* b) {
+                      return bufferCin(a) < bufferCin(b);
+                    });
 }
 
 /// Gain buffering: Make a buffer tree to satisfy fanout and cap constraints
@@ -904,7 +905,7 @@ bool RepairDesign::repairDriverSlew(const sta::Corner* corner,
                                     const Pin* drvr_pin)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
-  LibertyCell* cell = network_->libertyCell(inst);
+  sta::LibertyCell* cell = network_->libertyCell(inst);
 
   float load_cap;
   estimate_parasitics_->ensureWireParasitic(drvr_pin);
@@ -916,10 +917,10 @@ bool RepairDesign::repairDriverSlew(const sta::Corner* corner,
     LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
-      using SizeCandidate = std::pair<float, LibertyCell*>;
+      using SizeCandidate = std::pair<float, sta::LibertyCell*>;
       std::vector<SizeCandidate> sizes;
 
-      for (LibertyCell* size_cell : equiv_cells) {
+      for (sta::LibertyCell* size_cell : equiv_cells) {
         float limit, violation = 0;
         bool limit_exists = false;
         LibertyPort* port
@@ -958,7 +959,7 @@ bool RepairDesign::repairDriverSlew(const sta::Corner* corner,
         return a.first < b.first;
       });
 
-      LibertyCell* selected_size = sizes.front().second;
+      sta::LibertyCell* selected_size = sizes.front().second;
       if (selected_size != cell) {
         return resizer_->replaceCell(inst, selected_size, true);
       }
@@ -1247,7 +1248,7 @@ void RepairDesign::checkSlew(const Pin* drvr_pin,
   }
 }
 
-float RepairDesign::bufferInputMaxSlew(LibertyCell* buffer,
+float RepairDesign::bufferInputMaxSlew(sta::LibertyCell* buffer,
                                        const sta::Corner* corner) const
 {
   LibertyPort *input, *output;
@@ -1467,7 +1468,7 @@ void RepairDesign::repairNetWire(
              bnet->layer(),
              wire_res);
 
-  LibertyCell* buffer_cell = resizer_->findTargetCell(
+  sta::LibertyCell* buffer_cell = resizer_->findTargetCell(
       resizer_->buffer_lowest_drive_, load_cap, false);
 
   bnet->setCapacitance(load_cap);
@@ -1690,7 +1691,7 @@ void RepairDesign::repairNetJunc(
   float load_cap = cap_left + cap_right;
   float max_load_slew = min(max_load_slew_left, max_load_slew_right);
   float max_load_slew_margined = maxSlewMargined(max_load_slew);
-  LibertyCell* buffer_cell = resizer_->findTargetCell(
+  sta::LibertyCell* buffer_cell = resizer_->findTargetCell(
       resizer_->buffer_lowest_drive_, load_cap, false);
 
   // Check for violations when the left/right branches are combined.
@@ -2085,7 +2086,7 @@ bool RepairDesign::isRepeater(const Pin* load_pin)
 
 bool RepairDesign::makeRepeater(const char* reason,
                                 const odb::Point& loc,
-                                LibertyCell* buffer_cell,
+                                sta::LibertyCell* buffer_cell,
                                 bool resize,
                                 int level,
                                 // Return values.
@@ -2133,7 +2134,7 @@ bool RepairDesign::makeRepeater(
     const char* reason,
     int x,
     int y,
-    LibertyCell* buffer_cell,
+    sta::LibertyCell* buffer_cell,
     bool resize,
     int level,
     // Return values.
@@ -2200,19 +2201,21 @@ bool RepairDesign::makeRepeater(
   return true;
 }
 
-LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
+sta::LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew,
+                                                    float load_cap)
 {
-  LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
+  sta::LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
   float min_slew = INF;
   LibertyCellSeq swappable_cells
       = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
   if (!swappable_cells.empty()) {
     sort(swappable_cells,
-         [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+         [this](const sta::LibertyCell* buffer1,
+                const sta::LibertyCell* buffer2) {
            return resizer_->bufferDriveResistance(buffer1)
                   > resizer_->bufferDriveResistance(buffer2);
          });
-    for (LibertyCell* buffer : swappable_cells) {
+    for (sta::LibertyCell* buffer : swappable_cells) {
       float slew = resizer_->bufferSlew(
           buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
       debugPrint(logger_,

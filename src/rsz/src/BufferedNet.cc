@@ -205,7 +205,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 // buffer
 BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
-                         LibertyCell* buffer_cell,
+                         sta::LibertyCell* buffer_cell,
                          const BufferedNetPtr& ref,
                          const sta::Corner* corner,
                          const Resizer* resizer,

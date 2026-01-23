@@ -82,7 +82,7 @@ bool RepairHold::repairHold(
   init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
-  LibertyCell* buffer_cell = findHoldBuffer();
+  sta::LibertyCell* buffer_cell = findHoldBuffer();
 
   sta_->findRequireds();
   VertexSet* ends = sta_->search()->endpoints();
@@ -123,7 +123,7 @@ void RepairHold::repairHold(const Pin* end_pin,
   init();
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
-  LibertyCell* buffer_cell = findHoldBuffer();
+  sta::LibertyCell* buffer_cell = findHoldBuffer();
 
   Vertex* end = graph_->pinLoadVertex(end_pin);
   VertexSeq ends;
@@ -147,20 +147,20 @@ void RepairHold::repairHold(const Pin* end_pin,
   }
 }
 
-LibertyCell* RepairHold::reportHoldBuffer()
+sta::LibertyCell* RepairHold::reportHoldBuffer()
 {
   init();
   return findHoldBuffer();
 }
 
 // Find a good hold buffer using delay/area as the metric.
-LibertyCell* RepairHold::findHoldBuffer()
+sta::LibertyCell* RepairHold::findHoldBuffer()
 {
   // Build a vector of buffers sorted by the metric
   struct MetricBuffer
   {
     float metric;
-    LibertyCell* cell;
+    sta::LibertyCell* cell;
   };
   std::vector<MetricBuffer> buffers;
   LibertyCellSeq* hold_buffers = nullptr;
@@ -172,7 +172,7 @@ LibertyCell* RepairHold::findHoldBuffer()
     hold_buffers = &buffer_list;
   }
 
-  for (LibertyCell* buffer : *hold_buffers) {
+  for (sta::LibertyCell* buffer : *hold_buffers) {
     const float buffer_area = buffer->area();
     if (buffer_area != 0.0) {
       const float buffer_cost = bufferHoldDelay(buffer) / buffer_area;
@@ -315,7 +315,7 @@ bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
                                     bool match_footprint)
 {
   bool hold_buffer_found = false;
-  for (LibertyCell* buffer : buffer_list) {
+  for (sta::LibertyCell* buffer : buffer_list) {
     odb::dbMaster* master = db_network_->staToDb(buffer);
 
     bool site_matches = true;
@@ -351,7 +351,7 @@ bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
   return hold_buffer_found;
 }
 
-float RepairHold::bufferHoldDelay(LibertyCell* buffer)
+float RepairHold::bufferHoldDelay(sta::LibertyCell* buffer)
 {
   sta::Delay delays[RiseFall::index_count];
   bufferHoldDelays(buffer, delays);
@@ -359,7 +359,7 @@ float RepairHold::bufferHoldDelay(LibertyCell* buffer)
 }
 
 // Min self delay across corners; buffer -> buffer
-void RepairHold::bufferHoldDelays(LibertyCell* buffer,
+void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
                                   // Return values.
                                   sta::Delay delays[RiseFall::index_count])
 {
@@ -383,7 +383,7 @@ void RepairHold::bufferHoldDelays(LibertyCell* buffer,
 }
 
 bool RepairHold::repairHold(VertexSeq& ends,
-                            LibertyCell* buffer_cell,
+                            sta::LibertyCell* buffer_cell,
                             const double setup_margin,
                             const double hold_margin,
                             const bool allow_setup_violations,
@@ -495,7 +495,7 @@ void RepairHold::findHoldViolations(VertexSeq& ends,
 }
 
 void RepairHold::repairHoldPass(VertexSeq& hold_failures,
-                                LibertyCell* buffer_cell,
+                                sta::LibertyCell* buffer_cell,
                                 const double setup_margin,
                                 const double hold_margin,
                                 const bool allow_setup_violations,
@@ -526,7 +526,7 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
 }
 
 void RepairHold::repairEndHold(Vertex* end_vertex,
-                               LibertyCell* buffer_cell,
+                               sta::LibertyCell* buffer_cell,
                                const double setup_margin,
                                const double hold_margin,
                                const bool allow_setup_violations)
@@ -684,7 +684,7 @@ void RepairHold::mergeInto(Slacks& from, Slacks& result)
 void RepairHold::makeHoldDelay(Vertex* drvr,
                                PinSeq& load_pins,
                                bool loads_have_out_port,  // top level port
-                               LibertyCell* buffer_cell,
+                               sta::LibertyCell* buffer_cell,
                                const odb::Point& loc)
 {
   sta::Instance* buffer = nullptr;

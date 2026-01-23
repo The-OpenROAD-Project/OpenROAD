@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::LibertyCell;
 using sta::LibertyCellSeq;
 using sta::LibertyCellSet;
 using sta::LibertyLibrary;
@@ -134,7 +133,7 @@ class NetHash
   size_t operator()(const Net* net) const { return hashPtr(net); }
 };
 
-using CellTargetLoadMap = Map<LibertyCell*, float>;
+using CellTargetLoadMap = Map<sta::LibertyCell*, float>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
 enum class MoveType
@@ -243,9 +242,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   VertexSeq orderedLoadPinVertices();
 
-  void setDontUse(LibertyCell* cell, bool dont_use);
+  void setDontUse(sta::LibertyCell* cell, bool dont_use);
   void resetDontUse();
-  bool dontUse(const LibertyCell* cell);
+  bool dontUse(const sta::LibertyCell* cell);
   void reportDontUse() const;
   void setDontTouch(const sta::Instance* inst, bool dont_touch);
   bool dontTouch(const sta::Instance* inst) const;
@@ -257,7 +256,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   /// - This accepts STA objects instead of db objects.
   ///
   sta::Instance* insertBufferAfterDriver(Net* net,
-                                         LibertyCell* buffer_cell,
+                                         sta::LibertyCell* buffer_cell,
                                          const odb::Point* loc = nullptr,
                                          const char* new_buf_base_name
                                          = kDefaultBufBaseName,
@@ -280,7 +279,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   /// - This accepts STA objects instead of db objects.
   ///
   sta::Instance* insertBufferBeforeLoad(Pin* load_pin,
-                                        LibertyCell* buffer_cell,
+                                        sta::LibertyCell* buffer_cell,
                                         const odb::Point* loc = nullptr,
                                         const char* new_buf_base_name
                                         = kDefaultBufBaseName,
@@ -305,7 +304,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::Instance* insertBufferBeforeLoads(
       Net* net,
       PinSeq* loads,
-      LibertyCell* buffer_cell,
+      sta::LibertyCell* buffer_cell,
       const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
       const char* new_net_base_name = kDefaultNetBaseName,
@@ -314,7 +313,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::Instance* insertBufferBeforeLoads(
       Net* net,
       PinSet* loads,
-      LibertyCell* buffer_cell,
+      sta::LibertyCell* buffer_cell,
       const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
       const char* new_net_base_name = kDefaultNetBaseName,
@@ -338,8 +337,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Remove all or selected buffers from the netlist.
   void removeBuffers(sta::InstanceSeq insts);
   void unbufferNet(Net* net);
-  void bufferInputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
-  void bufferOutputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
+  void bufferInputs(sta::LibertyCell* buffer_cell = nullptr,
+                    bool verbose = false);
+  void bufferOutputs(sta::LibertyCell* buffer_cell = nullptr,
+                     bool verbose = false);
 
   // from sta::dbNetworkObserver callbacks
   void postReadLiberty() override;
@@ -352,7 +353,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Accessor for debugging.
   Slew targetSlew(const RiseFall* rf);
   // Accessor for debugging.
-  float targetLoadCap(LibertyCell* cell);
+  float targetLoadCap(sta::LibertyCell* cell);
 
   ////////////////////////////////////////////////////////////////
   bool repairSetup(double setup_margin,
@@ -421,7 +422,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void repairTieFanout(LibertyPort* tie_port,
                        double separation,  // meters
                        bool verbose);
-  void bufferWireDelay(LibertyCell* buffer_cell,
+  void bufferWireDelay(sta::LibertyCell* buffer_cell,
                        double wire_length,  // meters
                        sta::Delay& delay,
                        Slew& slew);
@@ -471,7 +472,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Find the max wire length before it is faster to split the wire
   // in half with a buffer (in meters).
   double findMaxWireLength(bool issue_error = true);
-  double findMaxWireLength(LibertyCell* buffer_cell, const sta::Corner* corner);
+  double findMaxWireLength(sta::LibertyCell* buffer_cell,
+                           const sta::Corner* corner);
   double findMaxWireLength(LibertyPort* drvr_port, const sta::Corner* corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const Net* net);
@@ -512,9 +514,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void journalRestoreTest();
   utl::Logger* logger() const { return logger_; }
   void eliminateDeadLogic(bool clean_nets);
-  std::optional<float> cellLeakage(LibertyCell* cell);
+  std::optional<float> cellLeakage(sta::LibertyCell* cell);
   // For debugging - calls getSwappableCells
-  void reportEquivalentCells(LibertyCell* base_cell,
+  void reportEquivalentCells(sta::LibertyCell* base_cell,
                              bool match_cell_footprint,
                              bool report_all_cells,
                              bool report_vt_equiv);
@@ -543,53 +545,56 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void initDesignArea();
   void ensureLevelDrvrVertices();
   sta::Instance* bufferInput(const Pin* top_pin,
-                             LibertyCell* buffer_cell,
+                             sta::LibertyCell* buffer_cell,
                              bool verbose);
-  void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell, bool verbose);
+  void bufferOutput(const Pin* top_pin,
+                    sta::LibertyCell* buffer_cell,
+                    bool verbose);
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin) const;
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
-  bool bufferSizeOutmatched(LibertyCell* worse,
-                            LibertyCell* better,
+  bool bufferSizeOutmatched(sta::LibertyCell* worse,
+                            sta::LibertyCell* better,
                             float max_drive_resist);
   void findBuffers();
   void findBuffersNoPruning();
   void findFastBuffers();
-  LibertyCell* selectBufferCell(LibertyCell* buffer_cell = nullptr);
-  bool isLinkCell(LibertyCell* cell) const;
+  sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
+  bool isLinkCell(sta::LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);
 
   //==============================
   // APIs for gate cloning
-  LibertyCell* halfDrivingPowerCell(sta::Instance* inst);
-  LibertyCell* halfDrivingPowerCell(LibertyCell* cell);
-  LibertyCell* closestDriver(LibertyCell* cell,
-                             const LibertyCellSeq& candidates,
-                             float scale);
+  sta::LibertyCell* halfDrivingPowerCell(sta::Instance* inst);
+  sta::LibertyCell* halfDrivingPowerCell(sta::LibertyCell* cell);
+  sta::LibertyCell* closestDriver(sta::LibertyCell* cell,
+                                  const LibertyCellSeq& candidates,
+                                  float scale);
   std::vector<sta::LibertyPort*> libraryPins(sta::Instance* inst) const;
-  std::vector<sta::LibertyPort*> libraryPins(LibertyCell* cell) const;
+  std::vector<sta::LibertyPort*> libraryPins(sta::LibertyCell* cell) const;
   bool isSingleOutputCombinational(sta::Instance* inst) const;
-  bool isSingleOutputCombinational(LibertyCell* cell) const;
-  bool isCombinational(LibertyCell* cell) const;
-  std::vector<sta::LibertyPort*> libraryOutputPins(LibertyCell* cell) const;
+  bool isSingleOutputCombinational(sta::LibertyCell* cell) const;
+  bool isCombinational(sta::LibertyCell* cell) const;
+  std::vector<sta::LibertyPort*> libraryOutputPins(
+      sta::LibertyCell* cell) const;
   float maxLoad(sta::Cell* cell);
   //==============================
-  float findTargetLoad(LibertyCell* cell);
-  float findTargetLoad(LibertyCell* cell,
+  float findTargetLoad(sta::LibertyCell* cell);
+  float findTargetLoad(sta::LibertyCell* cell,
                        TimingArc* arc,
                        Slew in_slew,
                        Slew out_slew);
-  Slew gateSlewDiff(LibertyCell* cell,
+  Slew gateSlewDiff(sta::LibertyCell* cell,
                     TimingArc* arc,
                     sta::GateTimingModel* model,
                     Slew in_slew,
                     float load_cap,
                     Slew out_slew);
   void findBufferTargetSlews();
-  void findBufferTargetSlews(LibertyCell* buffer,
+  void findBufferTargetSlews(sta::LibertyCell* buffer,
                              const Pvt* pvt,
                              // Return values.
                              Slew slews[],
@@ -597,10 +602,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool hasMultipleOutputs(const sta::Instance* inst);
 
   void resizePreamble();
-  LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
-  LibertyCellSeq getVTEquivCells(LibertyCell* source_cell);
+  LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
+  LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
 
-  bool getCin(const LibertyCell* cell, float& cin);
+  bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin* drvr_pin);
@@ -614,8 +619,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findLongWires(VertexSeq& drvrs);
   int findMaxSteinerDist(Vertex* drvr, const sta::Corner* corner);
   float driveResistance(const Pin* drvr_pin);
-  float bufferDriveResistance(const LibertyCell* buffer) const;
-  float cellDriveResistance(const LibertyCell* cell) const;
+  float bufferDriveResistance(const sta::LibertyCell* buffer) const;
+  float cellDriveResistance(const sta::LibertyCell* cell) const;
 
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex* drvr);
@@ -656,14 +661,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                           const RiseFall* rf,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
-  float bufferDelay(LibertyCell* buffer_cell,
+  float bufferDelay(sta::LibertyCell* buffer_cell,
                     float load_cap,
                     const sta::DcalcAnalysisPt* dcalc_ap);
-  float bufferDelay(LibertyCell* buffer_cell,
+  float bufferDelay(sta::LibertyCell* buffer_cell,
                     const RiseFall* rf,
                     float load_cap,
                     const sta::DcalcAnalysisPt* dcalc_ap);
-  void bufferDelays(LibertyCell* buffer_cell,
+  void bufferDelays(sta::LibertyCell* buffer_cell,
                     float load_cap,
                     const sta::DcalcAnalysisPt* dcalc_ap,
                     // Return values.
@@ -689,18 +694,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double area(odb::dbMaster* master);
   double area(sta::Cell* cell);
   double splitWireDelayDiff(double wire_length,
-                            LibertyCell* buffer_cell,
+                            sta::LibertyCell* buffer_cell,
                             std::unique_ptr<sta::dbSta>& sta);
   double maxSlewWireDiff(LibertyPort* drvr_port,
                          LibertyPort* load_port,
                          double wire_length,
                          double max_slew);
-  void bufferWireDelay(LibertyCell* buffer_cell,
+  void bufferWireDelay(sta::LibertyCell* buffer_cell,
                        double wire_length,  // meters
                        std::unique_ptr<sta::dbSta>& sta,
                        sta::Delay& delay,
                        Slew& slew);
-  void findCellInstances(LibertyCell* cell,
+  void findCellInstances(sta::LibertyCell* cell,
                          // Return value.
                          sta::InstanceSeq& insts);
   void findLoads(Pin* drvr_pin, PinSeq& loads);
@@ -725,11 +730,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                 size_t& resistor_id);
 
   bool replaceCell(sta::Instance* inst,
-                   const LibertyCell* replacement,
+                   const sta::LibertyCell* replacement,
                    bool journal);
 
   void findResizeSlacks1();
-  sta::Instance* makeInstance(LibertyCell* cell,
+  sta::Instance* makeInstance(sta::LibertyCell* cell,
                               const char* name,
                               sta::Instance* parent,
                               const odb::Point& loc,
@@ -745,7 +750,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                             int separation_dbu);
   void getBufferPins(sta::Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
-  sta::Instance* makeBuffer(LibertyCell* cell,
+  sta::Instance* makeBuffer(sta::LibertyCell* cell,
                             const char* name,
                             sta::Instance* parent,
                             const odb::Point& loc);
@@ -753,9 +758,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void insertBufferPostProcess(odb::dbInst* buffer_inst);
 
   void setLocation(odb::dbInst* db_inst, const odb::Point& pt);
-  LibertyCell* findTargetCell(LibertyCell* cell,
-                              float load_cap,
-                              bool revisiting_inst);
+  sta::LibertyCell* findTargetCell(sta::LibertyCell* cell,
+                                   float load_cap,
+                                   bool revisiting_inst);
   BufferedNetPtr makeBufferedNet(const Pin* drvr_pin,
                                  const sta::Corner* corner);
   BufferedNetPtr makeBufferedNetSteiner(const Pin* drvr_pin,
@@ -766,7 +771,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const sta::Corner* corner);
   BufferedNetPtr makeBufferedNetGroute(const Pin* drvr_pin,
                                        const sta::Corner* corner);
-  float bufferSlew(LibertyCell* buffer_cell,
+  float bufferSlew(sta::LibertyCell* buffer_cell,
                    float load_cap,
                    const sta::DcalcAnalysisPt* dcalc_ap);
   float maxInputSlew(const LibertyPort* input, const sta::Corner* corner) const;
@@ -783,7 +788,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool okToBufferNet(const Pin* driver_pin) const;
   bool checkAndMarkVTSwappable(sta::Instance* inst,
                                std::unordered_set<sta::Instance*>& notSwappable,
-                               LibertyCell*& best_lib_cell);
+                               sta::LibertyCell*& best_lib_cell);
 
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
@@ -831,20 +836,20 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
-  LibertyCell* buffer_lowest_drive_ = nullptr;
-  std::unordered_set<LibertyCell*> buffer_fast_sizes_;
+  sta::LibertyCell* buffer_lowest_drive_ = nullptr;
+  std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
 
   // Cache results of getSwappableCells() as this is expensive for large PDKs.
-  std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+  std::unordered_map<sta::LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
   // Cache VT equivalent cells for each cell, equivalent cells are sorted in
   // increasing order of leakage
   // BUF_X1_RVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
   // BUF_X1_LVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
   // ...
-  std::unordered_map<LibertyCell*, LibertyCellSeq> vt_equiv_cells_cache_;
+  std::unordered_map<sta::LibertyCell*, LibertyCellSeq> vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
   VertexSeq level_drvr_vertices_;
@@ -869,7 +874,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float worst_slack_nets_percent_ = 10;
   Map<const Net*, Slack> net_slack_map_;
 
-  std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
+  std::unordered_map<sta::LibertyCell*, std::optional<float>>
+      cell_leakage_cache_;
 
   sta::InstanceSet inserted_buffer_set_;
   sta::InstanceSet all_inserted_buffer_set_;

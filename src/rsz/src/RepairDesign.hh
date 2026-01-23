@@ -16,6 +16,7 @@
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/GraphClass.hh"
+#include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
@@ -30,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
@@ -144,7 +144,7 @@ class RepairDesign : sta::dbStaState
                  float& limit,
                  float& slack,
                  const sta::Corner*& corner);
-  float bufferInputMaxSlew(LibertyCell* buffer,
+  float bufferInputMaxSlew(sta::LibertyCell* buffer,
                            const sta::Corner* corner) const;
   void repairNet(const BufferedNetPtr& bnet,
                  const Pin* drvr_pin,
@@ -211,7 +211,7 @@ class RepairDesign : sta::dbStaState
   bool isRepeater(const Pin* load_pin);
   bool makeRepeater(const char* reason,
                     const odb::Point& loc,
-                    LibertyCell* buffer_cell,
+                    sta::LibertyCell* buffer_cell,
                     bool resize,
                     int level,
                     // Return values.
@@ -222,7 +222,7 @@ class RepairDesign : sta::dbStaState
   bool makeRepeater(const char* reason,
                     int x,
                     int y,
-                    LibertyCell* buffer_cell,
+                    sta::LibertyCell* buffer_cell,
                     bool resize,
                     int level,
                     // Return values.
@@ -233,7 +233,7 @@ class RepairDesign : sta::dbStaState
                     Net*& out_net,
                     Pin*& repeater_in_pin,
                     Pin*& repeater_out_pin);
-  LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
+  sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
   bool hasInputPort(const Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -255,7 +255,7 @@ class RepairDesign : sta::dbStaState
   est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::none;
 
   // Gain buffering
-  std::vector<LibertyCell*> buffer_sizes_;
+  std::vector<sta::LibertyCell*> buffer_sizes_;
 
   // Implicit arguments to repairNet bnet recursion.
   const Pin* drvr_pin_ = nullptr;

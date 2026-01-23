@@ -300,7 +300,7 @@ Vertex* RecoverPower::recoverPower(const Path* path, const Slack path_slack)
       }
       const Pin* drvr_pin = drvr_vertex->pin();
       const LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-      const LibertyCell* drvr_cell
+      const sta::LibertyCell* drvr_cell
           = drvr_port ? drvr_port->libertyCell() : nullptr;
       const int fanout = this->fanout(drvr_vertex);
       debugPrint(logger_,
@@ -346,13 +346,13 @@ bool RecoverPower::downsizeDrvr(const Path* drvr_path,
       }
     }
     const LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    const LibertyCell* downsize = downsizeCell(in_port,
-                                               drvr_port,
-                                               load_cap,
-                                               prev_drive,
-                                               dcalc_ap,
-                                               only_same_size_swap,
-                                               path_slack);
+    const sta::LibertyCell* downsize = downsizeCell(in_port,
+                                                    drvr_port,
+                                                    load_cap,
+                                                    prev_drive,
+                                                    dcalc_ap,
+                                                    only_same_size_swap,
+                                                    path_slack);
     if (downsize != nullptr) {
       debugPrint(logger_,
                  RSZ,
@@ -371,8 +371,8 @@ bool RecoverPower::downsizeDrvr(const Path* drvr_path,
   return false;
 }
 
-bool RecoverPower::meetsSizeCriteria(const LibertyCell* cell,
-                                     const LibertyCell* candidate,
+bool RecoverPower::meetsSizeCriteria(const sta::LibertyCell* cell,
+                                     const sta::LibertyCell* candidate,
                                      const bool match_size)
 {
   if (!match_size) {
@@ -387,16 +387,17 @@ bool RecoverPower::meetsSizeCriteria(const LibertyCell* cell,
   return false;
 }
 
-LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
-                                        const LibertyPort* drvr_port,
-                                        const float load_cap,
-                                        const float prev_drive,
-                                        const sta::DcalcAnalysisPt* dcalc_ap,
-                                        const bool match_size,
-                                        const Slack path_slack)
+sta::LibertyCell* RecoverPower::downsizeCell(
+    const LibertyPort* in_port,
+    const LibertyPort* drvr_port,
+    const float load_cap,
+    const float prev_drive,
+    const sta::DcalcAnalysisPt* dcalc_ap,
+    const bool match_size,
+    const Slack path_slack)
 {
   const int lib_ap = dcalc_ap->libertyIndex();
-  LibertyCell* cell = drvr_port->libertyCell();
+  sta::LibertyCell* cell = drvr_port->libertyCell();
   LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
@@ -404,7 +405,8 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
     sort(&swappable_cells,
-         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
+         [=, this](const sta::LibertyCell* cell1,
+                   const sta::LibertyCell* cell2) {
            LibertyPort* port1
                = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
            const LibertyPort* port2
@@ -420,9 +422,9 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
         = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
           + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
 
-    LibertyCell* best_cell = nullptr;
-    for (LibertyCell* swappable : swappable_cells) {
-      const LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
+    sta::LibertyCell* best_cell = nullptr;
+    for (sta::LibertyCell* swappable : swappable_cells) {
+      const sta::LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
       const LibertyPort* swappable_drvr
           = swappable_corner->findLibertyPort(drvr_port_name);
       const LibertyPort* swappable_input

@@ -523,10 +523,10 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
         continue;
       }
       sta::Instance* sta_inst = db_network_->dbToSta(inst);
-      LibertyCell* cell = network_->libertyCell(sta_inst);
+      sta::LibertyCell* cell = network_->libertyCell(sta_inst);
       dbMaster* master = db_network_->staToDb(cell);
       LibertyCellSeq swappable_cells = getSwappableCells(cell);
-      for (LibertyCell* target_cell : swappable_cells) {
+      for (sta::LibertyCell* target_cell : swappable_cells) {
         dbMaster* target_master = db_network_->staToDb(target_cell);
         // Pick a cell that has the matching site, the same VT type
         // and equal or less drive resistance.  swappable_cells are
@@ -597,7 +597,7 @@ void Resizer::balanceRowUsage()
 
 // Inspect the timing arcs on a buffer size to find the capacitance
 // points on the piecewise linear delay model
-static void populateBufferCapTestPoints(LibertyCell* cell,
+static void populateBufferCapTestPoints(sta::LibertyCell* cell,
                                         LibertyPort* in,
                                         LibertyPort* out,
                                         std::vector<float>& points)
@@ -626,8 +626,8 @@ static void populateBufferCapTestPoints(LibertyCell* cell,
   }
 }
 
-bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
-                                   LibertyCell* better,
+bool Resizer::bufferSizeOutmatched(sta::LibertyCell* worse,
+                                   sta::LibertyCell* better,
                                    const float max_drive_resist)
 {
   LibertyPort *win, *wout, *bin, *bout;
@@ -692,7 +692,7 @@ void Resizer::findFastBuffers()
   LibertyCellSeq sizes_by_inp_cap;
   sizes_by_inp_cap = buffer_cells_;
   sort(sizes_by_inp_cap,
-       [](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+       [](const sta::LibertyCell* buffer1, const sta::LibertyCell* buffer2) {
          LibertyPort *port1, *port2, *scratch;
          buffer1->bufferPorts(port1, scratch);
          buffer2->bufferPorts(port2, scratch);
@@ -742,19 +742,21 @@ void Resizer::reportFastBufferSizes()
   resizePreamble();
 
   // Sort fast buffers by capacitance and then by name.
-  std::vector<LibertyCell*> buffers{buffer_fast_sizes_.begin(),
-                                    buffer_fast_sizes_.end()};
-  std::ranges::sort(buffers, [=](const LibertyCell* a, const LibertyCell* b) {
-    LibertyPort* scratch;
-    LibertyPort* in_a;
-    LibertyPort* in_b;
+  std::vector<sta::LibertyCell*> buffers{buffer_fast_sizes_.begin(),
+                                         buffer_fast_sizes_.end()};
+  std::ranges::sort(
+      buffers, [=](const sta::LibertyCell* a, const sta::LibertyCell* b) {
+        LibertyPort* scratch;
+        LibertyPort* in_a;
+        LibertyPort* in_b;
 
-    a->bufferPorts(in_a, scratch);
-    b->bufferPorts(in_b, scratch);
+        a->bufferPorts(in_a, scratch);
+        b->bufferPorts(in_b, scratch);
 
-    return std::make_pair(in_a->capacitance(), std::string_view(a->name()))
-           < std::make_pair(in_b->capacitance(), std::string_view(b->name()));
-  });
+        return std::make_pair(in_a->capacitance(), std::string_view(a->name()))
+               < std::make_pair(in_b->capacitance(),
+                                std::string_view(b->name()));
+      });
 
   logger_->report("\nFast Buffer Report:");
   logger_->report("There are {} fast buffers", buffers.size());
@@ -851,7 +853,7 @@ void Resizer::findBuffers()
   }
 
   LibertyCellSeq new_buffer_list;
-  for (LibertyCell* buffer : buffer_list) {
+  for (sta::LibertyCell* buffer : buffer_list) {
     const char* footprint = buffer->footprint();
     odb::dbMaster* master = db_network_->staToDb(buffer);
     auto vt_type = cellVTType(master);
@@ -893,11 +895,11 @@ void Resizer::findBuffers()
     int end_idx = start_idx + bucket_size + (bucket < remainder ? 1 : 0);
 
     // Create a vector for this bucket with drive_res * input_cap values
-    std::vector<std::pair<LibertyCell*, float>> bucket_buffers;
+    std::vector<std::pair<sta::LibertyCell*, float>> bucket_buffers;
     bucket_buffers.reserve(bucket_size);
 
     for (int i = start_idx; i < end_idx && i < new_buffer_list.size(); i++) {
-      LibertyCell* buffer = new_buffer_list[i];
+      sta::LibertyCell* buffer = new_buffer_list[i];
       LibertyPort *input, *output;
       buffer->bufferPorts(input, output);
       float metric = bufferDriveResistance(buffer) * input->capacitance();
@@ -973,7 +975,7 @@ void Resizer::findBuffersNoPruning()
     while (lib_iter->hasNext()) {
       LibertyLibrary* lib = lib_iter->next();
 
-      for (LibertyCell* buffer : *lib->buffers()) {
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
         if (exclude_clock_buffers_) {
           BufferUse buffer_use = sta_->getBufferUse(buffer);
 
@@ -994,7 +996,8 @@ void Resizer::findBuffersNoPruning()
       logger_->error(RSZ, 52, "no buffers found.");
     } else {
       sort(buffer_cells_,
-           [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+           [this](const sta::LibertyCell* buffer1,
+                  const sta::LibertyCell* buffer2) {
              return bufferDriveResistance(buffer1)
                     > bufferDriveResistance(buffer2);
            });
@@ -1004,7 +1007,7 @@ void Resizer::findBuffersNoPruning()
   }
 }
 
-LibertyCell* Resizer::selectBufferCell(LibertyCell* user_buffer_cell)
+sta::LibertyCell* Resizer::selectBufferCell(sta::LibertyCell* user_buffer_cell)
 {
   // Prefer user-specified buffer cell if provided.
   if (user_buffer_cell) {
@@ -1022,19 +1025,19 @@ LibertyCell* Resizer::selectBufferCell(LibertyCell* user_buffer_cell)
   return buffer_lowest_drive_;
 }
 
-bool Resizer::isLinkCell(LibertyCell* cell) const
+bool Resizer::isLinkCell(sta::LibertyCell* cell) const
 {
   return network_->findLibertyCell(cell->name()) == cell;
 }
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::bufferInputs(LibertyCell* buffer_cell, bool verbose)
+void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
 {
   init();
 
   // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
-  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  sta::LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
   if (verbose) {
     logger_->info(RSZ,
                   29,
@@ -1142,7 +1145,7 @@ Make sure all the top pins are buffered
 */
 
 sta::Instance* Resizer::bufferInput(const Pin* top_pin,
-                                    LibertyCell* buffer_cell,
+                                    sta::LibertyCell* buffer_cell,
                                     bool verbose)
 {
   odb::dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
@@ -1208,12 +1211,12 @@ sta::Instance* Resizer::bufferInput(const Pin* top_pin,
   return buffer;
 }
 
-void Resizer::bufferOutputs(LibertyCell* buffer_cell, bool verbose)
+void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
 {
   init();
 
   // Use buffer_cell. If it is null, find the buffer w/ lowest drive resistance.
-  LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
+  sta::LibertyCell* selected_buffer_cell = selectBufferCell(buffer_cell);
   if (verbose) {
     logger_->info(RSZ,
                   31,
@@ -1289,7 +1292,7 @@ bool Resizer::isTristateDriver(const Pin* pin) const
 }
 
 void Resizer::bufferOutput(const Pin* top_pin,
-                           LibertyCell* buffer_cell,
+                           sta::LibertyCell* buffer_cell,
                            bool verbose)
 {
   if (verbose) {
@@ -1311,7 +1314,7 @@ float Resizer::driveResistance(const Pin* drvr_pin)
       float max_res = 0;
       for (auto min_max : MinMax::range()) {
         for (auto rf : RiseFall::range()) {
-          const LibertyCell* cell;
+          const sta::LibertyCell* cell;
           const LibertyPort* from_port;
           float* from_slews;
           const LibertyPort* to_port;
@@ -1339,7 +1342,7 @@ float Resizer::driveResistance(const Pin* drvr_pin)
   return 0.0;
 }
 
-float Resizer::bufferDriveResistance(const LibertyCell* buffer) const
+float Resizer::bufferDriveResistance(const sta::LibertyCell* buffer) const
 {
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
@@ -1347,7 +1350,7 @@ float Resizer::bufferDriveResistance(const LibertyCell* buffer) const
 }
 
 // This should be exported by STA
-float Resizer::cellDriveResistance(const LibertyCell* cell) const
+float Resizer::cellDriveResistance(const sta::LibertyCell* cell) const
 {
   sta::LibertyCellPortBitIterator port_iter(cell);
   while (port_iter.hasNext()) {
@@ -1359,11 +1362,11 @@ float Resizer::cellDriveResistance(const LibertyCell* cell) const
   return 0.0;
 }
 
-LibertyCell* Resizer::halfDrivingPowerCell(sta::Instance* inst)
+sta::LibertyCell* Resizer::halfDrivingPowerCell(sta::Instance* inst)
 {
   return halfDrivingPowerCell(network_->libertyCell(inst));
 }
-LibertyCell* Resizer::halfDrivingPowerCell(LibertyCell* cell)
+sta::LibertyCell* Resizer::halfDrivingPowerCell(sta::LibertyCell* cell)
 {
   return closestDriver(cell, getSwappableCells(cell), 0.5);
 }
@@ -1377,7 +1380,7 @@ bool Resizer::isSingleOutputCombinational(sta::Instance* inst) const
   return isSingleOutputCombinational(network_->libertyCell(inst));
 }
 
-bool Resizer::isSingleOutputCombinational(LibertyCell* cell) const
+bool Resizer::isSingleOutputCombinational(sta::LibertyCell* cell) const
 {
   if (!cell) {
     return false;
@@ -1386,7 +1389,7 @@ bool Resizer::isSingleOutputCombinational(LibertyCell* cell) const
   return (output_pins.size() == 1 && isCombinational(cell));
 }
 
-bool Resizer::isCombinational(LibertyCell* cell) const
+bool Resizer::isCombinational(sta::LibertyCell* cell) const
 {
   if (!cell) {
     return false;
@@ -1396,7 +1399,7 @@ bool Resizer::isCombinational(LibertyCell* cell) const
 }
 
 std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
-    LibertyCell* cell) const
+    sta::LibertyCell* cell) const
 {
   auto pins = libraryPins(cell);
   for (auto it = pins.begin(); it != pins.end(); it++) {
@@ -1413,7 +1416,8 @@ std::vector<sta::LibertyPort*> Resizer::libraryPins(sta::Instance* inst) const
   return libraryPins(network_->libertyCell(inst));
 }
 
-std::vector<sta::LibertyPort*> Resizer::libraryPins(LibertyCell* cell) const
+std::vector<sta::LibertyPort*> Resizer::libraryPins(
+    sta::LibertyCell* cell) const
 {
   std::vector<sta::LibertyPort*> pins;
   sta::LibertyCellPortIterator itr(cell);
@@ -1426,11 +1430,11 @@ std::vector<sta::LibertyPort*> Resizer::libraryPins(LibertyCell* cell) const
   return pins;
 }
 
-LibertyCell* Resizer::closestDriver(LibertyCell* cell,
-                                    const LibertyCellSeq& candidates,
-                                    float scale)
+sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
+                                         const LibertyCellSeq& candidates,
+                                         float scale)
 {
-  LibertyCell* closest = nullptr;
+  sta::LibertyCell* closest = nullptr;
   if (candidates.empty() || !isSingleOutputCombinational(cell)) {
     return nullptr;
   }
@@ -1456,7 +1460,7 @@ LibertyCell* Resizer::closestDriver(LibertyCell* cell,
 
 float Resizer::maxLoad(sta::Cell* cell)
 {
-  LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   auto min_max = sta::MinMax::max();
   sta::LibertyCellPortIterator itr(lib_cell);
   while (itr.hasNext()) {
@@ -1539,7 +1543,7 @@ void Resizer::resizePreamble()
 // For state-dependent leakage, compute the average
 // across all the power states.  Cache the leakage for
 // runtime.
-std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
+std::optional<float> Resizer::cellLeakage(sta::LibertyCell* cell)
 {
   auto it = cell_leakage_cache_.find(cell);
   if (it != cell_leakage_cache_.end()) {
@@ -1571,7 +1575,7 @@ std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
 }
 
 // For debugging
-void Resizer::reportEquivalentCells(LibertyCell* base_cell,
+void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
                                     bool match_cell_footprint,
                                     bool report_all_cells,
                                     bool report_vt_equiv)
@@ -1600,14 +1604,14 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   }
 
   // Identify cells that are excluded due to restrictions or cell_footprints
-  std::unordered_set<LibertyCell*> excluded_cells;
+  std::unordered_set<sta::LibertyCell*> excluded_cells;
   if (report_all_cells) {
     // All SetAndRestore variables are out of scope, so original restrictions
     // are in play
     LibertyCellSeq real_equiv_cells = getSwappableCells(base_cell);
-    std::unordered_set<LibertyCell*> real_equiv_cells_set(
+    std::unordered_set<sta::LibertyCell*> real_equiv_cells_set(
         real_equiv_cells.begin(), real_equiv_cells.end());
-    for (LibertyCell* cell : equiv_cells) {
+    for (sta::LibertyCell* cell : equiv_cells) {
       if (real_equiv_cells_set.find(cell) == real_equiv_cells_set.end()) {
         excluded_cells.insert(cell);
       }
@@ -1616,24 +1620,25 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
 
   // Sort equiv cells by ascending area and leakage
   // STA sorts them by drive resistance
-  std::ranges::stable_sort(equiv_cells, [this](LibertyCell* a, LibertyCell* b) {
-    dbMaster* master_a = this->getDbNetwork()->staToDb(a);
-    dbMaster* master_b = this->getDbNetwork()->staToDb(b);
-    if (master_a && master_b) {
-      if (master_a->getArea() != master_b->getArea()) {
-        return master_a->getArea() < master_b->getArea();
-      }
-    }
-    std::optional<float> leakage_a = this->cellLeakage(a);
-    std::optional<float> leakage_b = this->cellLeakage(b);
-    // Compare leakages only if they are defined
-    if (leakage_a && leakage_b) {
-      return *leakage_a < *leakage_b;
-    }
-    // Cell 'a' has a priority as it has lower
-    // drive resistance than 'b' after STA sort
-    return leakage_a.has_value() && !leakage_b.has_value();
-  });
+  std::ranges::stable_sort(
+      equiv_cells, [this](sta::LibertyCell* a, sta::LibertyCell* b) {
+        dbMaster* master_a = this->getDbNetwork()->staToDb(a);
+        dbMaster* master_b = this->getDbNetwork()->staToDb(b);
+        if (master_a && master_b) {
+          if (master_a->getArea() != master_b->getArea()) {
+            return master_a->getArea() < master_b->getArea();
+          }
+        }
+        std::optional<float> leakage_a = this->cellLeakage(a);
+        std::optional<float> leakage_b = this->cellLeakage(b);
+        // Compare leakages only if they are defined
+        if (leakage_a && leakage_b) {
+          return *leakage_a < *leakage_b;
+        }
+        // Cell 'a' has a priority as it has lower
+        // drive resistance than 'b' after STA sort
+        return leakage_a.has_value() && !leakage_b.has_value();
+      });
 
   logger_->report(
       "The following {} cells are equivalent to {}{}",
@@ -1656,7 +1661,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     logger_->report(
         "======================================================================"
         "=======");
-    for (LibertyCell* equiv_cell : equiv_cells) {
+    for (sta::LibertyCell* equiv_cell : equiv_cells) {
       std::string cell_name = equiv_cell->name();
       if (excluded_cells.find(equiv_cell) != excluded_cells.end()) {
         cell_name.insert(cell_name.begin(), '*');
@@ -1692,7 +1697,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
         "                                           (um^2)  Ratio  Type");
     logger_->report(
         "==============================================================");
-    for (LibertyCell* equiv_cell : equiv_cells) {
+    for (sta::LibertyCell* equiv_cell : equiv_cells) {
       std::string cell_name = equiv_cell->name();
       if (excluded_cells.find(equiv_cell) != excluded_cells.end()) {
         cell_name.insert(cell_name.begin(), '*');
@@ -1769,7 +1774,7 @@ void Resizer::reportBuffers(bool filtered)
       "   Ht Footpt Type");
   logger_->report("{:->80}", "");
 
-  for (LibertyCell* buffer : buffer_list) {
+  for (sta::LibertyCell* buffer : buffer_list) {
     float drive_res = bufferDriveResistance(buffer);
     LibertyPort *input, *output;
     buffer->bufferPorts(input, output);
@@ -1810,7 +1815,7 @@ void Resizer::reportBuffers(bool filtered)
         "   Ht Footpt Type");
     logger_->report("{:->80}", "");
 
-    for (LibertyCell* buffer : buffer_cells_) {
+    for (sta::LibertyCell* buffer : buffer_cells_) {
       float drive_res = bufferDriveResistance(buffer);
       LibertyPort *input, *output;
       buffer->bufferPorts(input, output);
@@ -1829,7 +1834,7 @@ void Resizer::reportBuffers(bool filtered)
     }
   }
 
-  LibertyCell* hold_buffer = repair_hold_->reportHoldBuffer();
+  sta::LibertyCell* hold_buffer = repair_hold_->reportHoldBuffer();
   logger_->report("\nHold Buffer Report:");
   logger_->report("{} is the buffer chosen for hold fixing",
                   (hold_buffer ? hold_buffer->name() : "-"));
@@ -1850,7 +1855,7 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
   LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     LibertyLibrary* lib = lib_iter->next();
-    for (LibertyCell* buffer : *lib->buffers()) {
+    for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (exclude_clock_buffers_) {
         BufferUse buffer_use = sta_->getBufferUse(buffer);
         if (buffer_use == CLOCK) {
@@ -1885,7 +1890,8 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
   if (!buffer_list.empty()) {
     // Sort buffer list by VT type, then by drive resistance
     sort(buffer_list,
-         [this](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+         [this](const sta::LibertyCell* buffer1,
+                const sta::LibertyCell* buffer2) {
            odb::dbMaster* master1 = db_network_->staToDb(buffer1);
            odb::dbMaster* master2 = db_network_->staToDb(buffer2);
            auto vt_type1 = cellVTType(master1);
@@ -1911,7 +1917,7 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
 //   replacement.
 // - Link Cell: Only link cells are considered for replacement.
 // This function is cached for performance and reset if more cells are read.
-LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
+LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
 {
   if (swappable_cells_cache_.find(source_cell)
       != swappable_cells_cache_.end()) {
@@ -1933,7 +1939,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
     if (sizing_leakage_limit_) {
       source_cell_leakage = cellLeakage(source_cell);
     }
-    for (LibertyCell* equiv_cell : *equiv_cells) {
+    for (sta::LibertyCell* equiv_cell : *equiv_cells) {
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
       }
@@ -2017,7 +2023,7 @@ size_t getCommonLength(const std::string& string1, const std::string& string2)
 // BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
 // If there are multiple cells in a VT category,
 // keep only one cell that most closely matches the source cell name
-LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
+LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
 {
   auto cache_it = vt_equiv_cells_cache_.find(source_cell);
   if (cache_it != vt_equiv_cells_cache_.end()) {
@@ -2048,7 +2054,7 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
 
   // VT equiv cell should have the same area, footprint, site and function class
   // but different VT type
-  for (LibertyCell* equiv_cell : *equiv_cells) {
+  for (sta::LibertyCell* equiv_cell : *equiv_cells) {
     if (equiv_cell == source_cell) {
       vt_equiv_cells.emplace_back(equiv_cell);
       continue;
@@ -2090,7 +2096,7 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
 
   // Sort the list in ascending order of leakage
   std::ranges::stable_sort(
-      vt_equiv_cells, [this](LibertyCell* cell1, LibertyCell* cell2) {
+      vt_equiv_cells, [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
         std::optional<float> leak1 = this->cellLeakage(cell1);
         std::optional<float> leak2 = this->cellLeakage(cell2);
         // Treat missing leakage as 0
@@ -2101,8 +2107,8 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
   const std::string source_name = source_cell->name();
   for (auto it = vt_equiv_cells.begin(); it != vt_equiv_cells.end();) {
     if (std::next(it) != vt_equiv_cells.end()) {
-      LibertyCell* curr_cell = *it;
-      LibertyCell* next_cell = *std::next(it);
+      sta::LibertyCell* curr_cell = *it;
+      sta::LibertyCell* next_cell = *std::next(it);
       dbMaster* curr_master = db_network_->staToDb(curr_cell);
       dbMaster* next_master = db_network_->staToDb(next_cell);
       if (cellVTType(curr_master) == cellVTType(next_master)) {
@@ -2129,7 +2135,7 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
   // BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
   vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
   const LibertyCellSeq& vt_equiv_cells_new = vt_equiv_cells_cache_[source_cell];
-  for (LibertyCell* equiv_cell : vt_equiv_cells_new) {
+  for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
     vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
   }
   return vt_equiv_cells_cache_[source_cell];
@@ -2144,9 +2150,9 @@ void Resizer::checkLibertyForAllCorners()
       LibertyLibrary* lib = lib_iter->next();
       LibertyCellIterator cell_iter(lib);
       while (cell_iter.hasNext()) {
-        LibertyCell* cell = cell_iter.next();
+        sta::LibertyCell* cell = cell_iter.next();
         if (isLinkCell(cell) && !dontUse(cell)) {
-          LibertyCell* corner_cell = cell->cornerCell(lib_ap_index);
+          sta::LibertyCell* corner_cell = cell->cornerCell(lib_ap_index);
           if (!corner_cell) {
             logger_->warn(RSZ,
                           96,
@@ -2172,7 +2178,7 @@ void Resizer::makeEquivCells()
     // massive kludge until makeEquivCells is fixed to only incldue link cells
     LibertyCellIterator cell_iter(lib);
     if (cell_iter.hasNext()) {
-      LibertyCell* cell = cell_iter.next();
+      sta::LibertyCell* cell = cell_iter.next();
       if (isLinkCell(cell)) {
         libs.emplace_back(lib);
       }
@@ -2305,7 +2311,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
-  LibertyCell* cell = network_->libertyCell(inst);
+  sta::LibertyCell* cell = network_->libertyCell(inst);
   if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && cell
       && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
@@ -2323,7 +2329,7 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
     // Includes net parasitic capacitance.
     float load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
     if (load_cap > 0.0) {
-      LibertyCell* target_cell
+      sta::LibertyCell* target_cell
           = findTargetCell(cell, load_cap, revisiting_inst);
       if (target_cell != cell) {
         debugPrint(logger_,
@@ -2343,7 +2349,7 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
   return 0;
 }
 
-bool Resizer::getCin(const LibertyCell* cell, float& cin)
+bool Resizer::getCin(const sta::LibertyCell* cell, float& cin)
 {
   sta::LibertyCellPortIterator port_iter(cell);
   int nports = 0;
@@ -2365,7 +2371,7 @@ bool Resizer::getCin(const LibertyCell* cell, float& cin)
 int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
-  LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
+  sta::LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
   if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
       && isLogicStdCell(inst)) {
     float cin, load_cap;
@@ -2378,9 +2384,9 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
           = cell->isBuffer() ? buffer_sizing_cap_ratio_ : sizing_cap_ratio_;
 
       LibertyCellSeq equiv_cells = getSwappableCells(cell);
-      LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
+      sta::LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
       float highest_cin = 0;
-      for (LibertyCell* size : equiv_cells) {
+      for (sta::LibertyCell* size : equiv_cells) {
         float size_cin;
         if ((!cell->isBuffer() || buffer_fast_sizes_.contains(size))
             && getCin(size, size_cin)) {
@@ -2424,11 +2430,11 @@ bool Resizer::isLogicStdCell(const sta::Instance* inst)
                 == odb::dbMasterType::CORE;
 }
 
-LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
-                                     float load_cap,
-                                     bool revisiting_inst)
+sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
+                                          float load_cap,
+                                          bool revisiting_inst)
 {
-  LibertyCell* best_cell = cell;
+  sta::LibertyCell* best_cell = cell;
   LibertyCellSeq swappable_cells = getSwappableCells(cell);
   if (!swappable_cells.empty()) {
     bool is_buf_inv = cell->isBuffer() || cell->isInverter();
@@ -2446,7 +2452,7 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
                units_->capacitanceUnit()->asString(load_cap),
                best_dist,
                delayAsString(best_delay, sta_, 3));
-    for (LibertyCell* target_cell : swappable_cells) {
+    for (sta::LibertyCell* target_cell : swappable_cells) {
       float target_load = (*target_load_map_)[target_cell];
       float delay = 0.0;
       if (is_buf_inv) {
@@ -2485,7 +2491,7 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
 
 // Replace LEF with LEF so ports stay aligned in instance.
 bool Resizer::replaceCell(sta::Instance* inst,
-                          const LibertyCell* replacement,
+                          const sta::LibertyCell* replacement,
                           const bool journal)
 {
   const char* replacement_name = replacement->name();
@@ -2729,7 +2735,7 @@ bool Resizer::isRegOutput(Vertex* vertex)
 {
   LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
-    LibertyCell* cell = port->libertyCell();
+    sta::LibertyCell* cell = port->libertyCell();
     for (TimingArcSet* arc_set : cell->timingArcSets(nullptr, port)) {
       if (arc_set->role()->genericRole() == TimingRole::regClkToQ()) {
         return true;
@@ -2762,7 +2768,7 @@ bool Resizer::isRegister(Vertex* vertex)
 {
   LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
-    LibertyCell* cell = port->libertyCell();
+    sta::LibertyCell* cell = port->libertyCell();
     return cell && cell->hasSequentials();
   }
   return false;
@@ -2811,7 +2817,7 @@ bool Resizer::overMaxArea()
   return max_area_ && fuzzyGreaterEqual(design_area_, max_area_);
 }
 
-void Resizer::setDontUse(LibertyCell* cell, bool dont_use)
+void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
 {
   if (dont_use) {
     dont_use_.insert(cell);
@@ -2840,9 +2846,9 @@ void Resizer::resetDontUse()
   copyDontUseFromLiberty();
 }
 
-bool Resizer::dontUse(const LibertyCell* cell)
+bool Resizer::dontUse(const sta::LibertyCell* cell)
 {
-  return dont_use_.hasKey(const_cast<LibertyCell*>(cell));
+  return dont_use_.hasKey(const_cast<sta::LibertyCell*>(cell));
 }
 
 void Resizer::reportDontUse() const
@@ -2852,7 +2858,8 @@ void Resizer::reportDontUse() const
   if (dont_use_.empty()) {
     logger_->report("  none");
   } else {
-    std::vector<LibertyCell*> sorted_cells(dont_use_.begin(), dont_use_.end());
+    std::vector<sta::LibertyCell*> sorted_cells(dont_use_.begin(),
+                                                dont_use_.end());
     std::ranges::sort(sorted_cells, utl::natural_compare, [](auto* cell) {
       return std::string_view(cell->name());
     });
@@ -2959,9 +2966,9 @@ void Resizer::findTargetLoads()
       LibertyLibrary* lib = lib_iter->next();
       LibertyCellIterator cell_iter(lib);
       while (cell_iter.hasNext()) {
-        LibertyCell* cell = cell_iter.next();
+        sta::LibertyCell* cell = cell_iter.next();
         if (isLinkCell(cell) && !dontUse(cell)) {
-          LibertyCell* corner_cell = cell->cornerCell(lib_ap_index);
+          sta::LibertyCell* corner_cell = cell->cornerCell(lib_ap_index);
           float tgt_load;
           bool exists;
           target_load_map_->findKey(corner_cell, tgt_load, exists);
@@ -2980,7 +2987,7 @@ void Resizer::findTargetLoads()
   }
 }
 
-float Resizer::targetLoadCap(LibertyCell* cell)
+float Resizer::targetLoadCap(sta::LibertyCell* cell)
 {
   float load_cap = 0.0;
   bool exists;
@@ -2991,7 +2998,7 @@ float Resizer::targetLoadCap(LibertyCell* cell)
   return load_cap;
 }
 
-float Resizer::findTargetLoad(LibertyCell* cell)
+float Resizer::findTargetLoad(sta::LibertyCell* cell)
 {
   float target_load_sum = 0.0;
   int arc_count = 0;
@@ -3034,7 +3041,7 @@ float Resizer::findTargetLoad(LibertyCell* cell)
 
 // Find the load capacitance that will cause the output slew
 // to be equal to out_slew.
-float Resizer::findTargetLoad(LibertyCell* cell,
+float Resizer::findTargetLoad(sta::LibertyCell* cell,
                               TimingArc* arc,
                               Slew in_slew,
                               Slew out_slew)
@@ -3077,7 +3084,7 @@ float Resizer::findTargetLoad(LibertyCell* cell,
 }
 
 // objective function
-Slew Resizer::gateSlewDiff(LibertyCell* cell,
+Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
                            TimingArc* arc,
                            sta::GateTimingModel* model,
                            Slew in_slew,
@@ -3112,8 +3119,8 @@ void Resizer::findBufferTargetSlews()
     // Average slews across buffers at corner.
     Slew slews[RiseFall::index_count]{0.0};
     int counts[RiseFall::index_count]{0};
-    for (LibertyCell* buffer : buffer_cells_) {
-      LibertyCell* corner_buffer = buffer->cornerCell(lib_ap_index);
+    for (sta::LibertyCell* buffer : buffer_cells_) {
+      sta::LibertyCell* corner_buffer = buffer->cornerCell(lib_ap_index);
       findBufferTargetSlews(corner_buffer, pvt, slews, counts);
     }
     Slew slew_rise
@@ -3140,7 +3147,7 @@ void Resizer::findBufferTargetSlews()
              delayAsString(tgt_slews_[RiseFall::fallIndex()], sta_, 3));
 }
 
-void Resizer::findBufferTargetSlews(LibertyCell* buffer,
+void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
                                     const Pvt* pvt,
                                     // Return values.
                                     Slew slews[],
@@ -3178,7 +3185,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 {
   int tie_count = 0;
   int separation_dbu = metersToDbu(separation);
-  LibertyCell* tie_cell = tie_port->libertyCell();
+  sta::LibertyCell* tie_cell = tie_port->libertyCell();
 
   initDesignArea();
 
@@ -3311,7 +3318,7 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const Pin* load_pin,
                                                    LibertyPort* tie_port,
                                                    int separation_dbu)
 {
-  LibertyCell* tie_cell = tie_port->libertyCell();
+  sta::LibertyCell* tie_cell = tie_port->libertyCell();
 
   // Create the tie instance in the parent of the existing tie instance
   odb::Point new_tie_loc = tieLocation(load_pin, separation_dbu);
@@ -3429,7 +3436,7 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   }
 }
 
-void Resizer::findCellInstances(LibertyCell* cell,
+void Resizer::findCellInstances(sta::LibertyCell* cell,
                                 // Return value.
                                 sta::InstanceSeq& insts)
 {
@@ -3673,7 +3680,7 @@ NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
 
         for (const Pin* drvr : drvrs) {
           const sta::Instance* inst = network_->instance(drvr);
-          const LibertyCell* cell = network_->libertyCell(inst);
+          const sta::LibertyCell* cell = network_->libertyCell(inst);
           if (cell == nullptr) {
             allowed = false;
             break;
@@ -3730,7 +3737,7 @@ float Resizer::portFanoutLoad(LibertyPort* port) const
   return 0.0;
 }
 
-float Resizer::bufferDelay(LibertyCell* buffer_cell,
+float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
                            const RiseFall* rf,
                            float load_cap,
                            const sta::DcalcAnalysisPt* dcalc_ap)
@@ -3743,7 +3750,7 @@ float Resizer::bufferDelay(LibertyCell* buffer_cell,
   return gate_delays[rf->index()];
 }
 
-float Resizer::bufferDelay(LibertyCell* buffer_cell,
+float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
                            float load_cap,
                            const sta::DcalcAnalysisPt* dcalc_ap)
 {
@@ -3756,7 +3763,7 @@ float Resizer::bufferDelay(LibertyCell* buffer_cell,
              gate_delays[RiseFall::fallIndex()]);
 }
 
-void Resizer::bufferDelays(LibertyCell* buffer_cell,
+void Resizer::bufferDelays(sta::LibertyCell* buffer_cell,
                            float load_cap,
                            const sta::DcalcAnalysisPt* dcalc_ap,
                            // Return values.
@@ -3781,7 +3788,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
     delays[rf_index] = -INF;
     slews[rf_index] = -INF;
   }
-  LibertyCell* cell = drvr_port->libertyCell();
+  sta::LibertyCell* cell = drvr_port->libertyCell();
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
@@ -3830,7 +3837,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
     delays[rf_index] = -INF;
     out_slews[rf_index] = -INF;
   }
-  LibertyCell* cell = drvr_port->libertyCell();
+  sta::LibertyCell* cell = drvr_port->libertyCell();
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
@@ -3902,7 +3909,7 @@ double Resizer::findMaxWireLength1(bool issue_error)
     }
 
     // buffer_cells_ is required to be non-empty.
-    for (LibertyCell* buffer_cell : buffer_cells_) {
+    for (sta::LibertyCell* buffer_cell : buffer_cells_) {
       const double buffer_length = findMaxWireLength(buffer_cell, corner);
       max_length = min(max_length.value_or(INF), buffer_length);
       debugPrint(logger_,
@@ -3932,7 +3939,7 @@ double Resizer::findMaxWireLength1(bool issue_error)
 
 // Find the max wire length before it is faster to split the wire
 // in half with a buffer (in meters).
-double Resizer::findMaxWireLength(LibertyCell* buffer_cell,
+double Resizer::findMaxWireLength(sta::LibertyCell* buffer_cell,
                                   const sta::Corner* corner)
 {
   initBlock();
@@ -3944,7 +3951,7 @@ double Resizer::findMaxWireLength(LibertyCell* buffer_cell,
 double Resizer::findMaxWireLength(LibertyPort* drvr_port,
                                   const sta::Corner* corner)
 {
-  LibertyCell* cell = drvr_port->libertyCell();
+  sta::LibertyCell* cell = drvr_port->libertyCell();
   if (db_network_->staToDb(cell) == nullptr) {
     logger_->error(RSZ, 70, "no LEF cell for {}.", cell->name());
   }
@@ -3985,7 +3992,7 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port,
 
 // objective function
 double Resizer::splitWireDelayDiff(double wire_length,
-                                   LibertyCell* buffer_cell,
+                                   sta::LibertyCell* buffer_cell,
                                    std::unique_ptr<dbSta>& sta)
 {
   sta::Delay delay1, delay2;
@@ -3996,7 +4003,7 @@ double Resizer::splitWireDelayDiff(double wire_length,
 }
 
 // For tcl accessor.
-void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
+void Resizer::bufferWireDelay(sta::LibertyCell* buffer_cell,
                               double wire_length,  // meters
                               // Return values.
                               sta::Delay& delay,
@@ -4009,7 +4016,7 @@ void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
   odb::dbBlock::destroy(block);
 }
 
-void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
+void Resizer::bufferWireDelay(sta::LibertyCell* buffer_cell,
                               double wire_length,  // meters
                               std::unique_ptr<dbSta>& sta,
                               // Return values.
@@ -4042,8 +4049,8 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
   sta::Instance* top_inst = network->topInstance();
   // Tmp net for parasitics to live on.
   Net* net = sta->makeNet("wire", top_inst);
-  LibertyCell* drvr_cell = drvr_port->libertyCell();
-  LibertyCell* load_cell = load_port->libertyCell();
+  sta::LibertyCell* drvr_cell = drvr_port->libertyCell();
+  sta::LibertyCell* load_cell = load_port->libertyCell();
   sta::Instance* drvr = sta->makeInstance("drvr", drvr_cell, top_inst);
   sta::Instance* load = sta->makeInstance("load", load_cell, top_inst);
   sta->connectPin(drvr, drvr_port, net);
@@ -4226,7 +4233,7 @@ sta::InstanceSeq Resizer::findClkInverters()
     Vertex* vertex = bfs.next();
     const Pin* pin = vertex->pin();
     sta::Instance* inst = network_->instance(pin);
-    LibertyCell* lib_cell = network_->libertyCell(inst);
+    sta::LibertyCell* lib_cell = network_->libertyCell(inst);
     if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
       clk_inverters.emplace_back(inst);
       debugPrint(logger_,
@@ -4245,7 +4252,7 @@ sta::InstanceSeq Resizer::findClkInverters()
 
 void Resizer::cloneClkInverter(sta::Instance* inv)
 {
-  LibertyCell* inv_cell = network_->libertyCell(inv);
+  sta::LibertyCell* inv_cell = network_->libertyCell(inv);
   LibertyPort *in_port, *out_port;
   inv_cell->bufferPorts(in_port, out_port);
   Pin* in_pin = network_->findPin(inv, in_port);
@@ -4718,7 +4725,7 @@ void Resizer::getBufferPins(sta::Instance* buffer, Pin*& ip, Pin*& op)
 }
 
 ////////////////////////////////////////////////////////////////
-sta::Instance* Resizer::makeBuffer(LibertyCell* cell,
+sta::Instance* Resizer::makeBuffer(sta::LibertyCell* cell,
                                    const char* name,
                                    sta::Instance* parent,
                                    const odb::Point& loc)
@@ -4730,7 +4737,7 @@ sta::Instance* Resizer::makeBuffer(LibertyCell* cell,
 
 sta::Instance* Resizer::insertBufferAfterDriver(
     Net* net,
-    LibertyCell* buffer_cell,
+    sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
@@ -4824,7 +4831,7 @@ odb::dbInst* Resizer::insertBufferAfterDriver(
 
 sta::Instance* Resizer::insertBufferBeforeLoad(
     Pin* load_pin,
-    LibertyCell* buffer_cell,
+    sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
@@ -4914,7 +4921,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoad(
 sta::Instance* Resizer::insertBufferBeforeLoads(
     Net* net,
     PinSeq* loads,
-    LibertyCell* buffer_cell,
+    sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
@@ -4940,7 +4947,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
 sta::Instance* Resizer::insertBufferBeforeLoads(
     Net* net,
     PinSet* loads,
-    LibertyCell* buffer_cell,
+    sta::LibertyCell* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
     const char* new_net_base_name,
@@ -5030,7 +5037,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
   return buffer_inst;
 }
 
-sta::Instance* Resizer::makeInstance(LibertyCell* cell,
+sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
                                      const char* name,
                                      sta::Instance* parent,
                                      const odb::Point& loc,
@@ -5122,7 +5129,7 @@ float Resizer::portCapacitance(LibertyPort* input,
   return corner_input->capacitance();
 }
 
-float Resizer::bufferSlew(LibertyCell* buffer_cell,
+float Resizer::bufferSlew(sta::LibertyCell* buffer_cell,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap)
 {
@@ -5366,7 +5373,7 @@ void Resizer::copyDontUseFromLiberty()
     std::unique_ptr<ConcreteLibraryCellIterator> cells(lib->cellIterator());
 
     while (cells->hasNext()) {
-      LibertyCell* lib_cell = cells->next()->libertyCell();
+      sta::LibertyCell* lib_cell = cells->next()->libertyCell();
       if (lib_cell == nullptr) {
         continue;
       }
@@ -5471,7 +5478,7 @@ bool Resizer::okToBufferNet(const Pin* driver_pin) const
 bool Resizer::checkAndMarkVTSwappable(
     sta::Instance* inst,
     std::unordered_set<sta::Instance*>& notSwappable,
-    LibertyCell*& best_lib_cell)
+    sta::LibertyCell*& best_lib_cell)
 {
   best_lib_cell = nullptr;
   if (notSwappable.find(inst) != notSwappable.end()) {
@@ -5486,7 +5493,7 @@ bool Resizer::checkAndMarkVTSwappable(
     notSwappable.insert(inst);
     return false;
   }
-  LibertyCell* curr_lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* curr_lib_cell = network_->libertyCell(cell);
   if (!curr_lib_cell) {
     notSwappable.insert(inst);
     return false;

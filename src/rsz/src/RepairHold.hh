@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::LibertyCell;
 using sta::LibertyCellSeq;
 using sta::MinMax;
 using sta::Pin;
@@ -58,11 +57,11 @@ class RepairHold : public sta::dbStaState
                   float max_buffer_percent,
                   int max_passes);
   int holdBufferCount() const { return inserted_buffer_count_; }
-  LibertyCell* reportHoldBuffer();
+  sta::LibertyCell* reportHoldBuffer();
 
  private:
   void init();
-  LibertyCell* findHoldBuffer();
+  sta::LibertyCell* findHoldBuffer();
   void filterHoldBuffers(LibertyCellSeq& hold_buffers);
   bool addMatchingBuffers(const LibertyCellSeq& buffer_list,
                           LibertyCellSeq& hold_buffers,
@@ -72,8 +71,8 @@ class RepairHold : public sta::dbStaState
                           bool match_site,
                           bool match_vt,
                           bool match_footprint);
-  float bufferHoldDelay(LibertyCell* buffer);
-  void bufferHoldDelays(LibertyCell* buffer,
+  float bufferHoldDelay(sta::LibertyCell* buffer);
+  void bufferHoldDelays(sta::LibertyCell* buffer,
                         // Return values.
                         sta::Delay delays[RiseFall::index_count]);
   void findHoldViolations(VertexSeq& ends,
@@ -82,7 +81,7 @@ class RepairHold : public sta::dbStaState
                           Slack& worst_slack,
                           VertexSeq& hold_violations);
   bool repairHold(VertexSeq& ends,
-                  LibertyCell* buffer_cell,
+                  sta::LibertyCell* buffer_cell,
                   double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
@@ -91,7 +90,7 @@ class RepairHold : public sta::dbStaState
                   int max_iterations,
                   bool verbose);
   void repairHoldPass(VertexSeq& hold_failures,
-                      LibertyCell* buffer_cell,
+                      sta::LibertyCell* buffer_cell,
                       double setup_margin,
                       double hold_margin,
                       bool allow_setup_violations,
@@ -99,14 +98,14 @@ class RepairHold : public sta::dbStaState
                       bool verbose,
                       int& pass);
   void repairEndHold(Vertex* end_vertex,
-                     LibertyCell* buffer_cell,
+                     sta::LibertyCell* buffer_cell,
                      double setup_margin,
                      double hold_margin,
                      bool allow_setup_violations);
   void makeHoldDelay(Vertex* drvr,
                      PinSeq& load_pins,
                      bool loads_have_out_port,
-                     LibertyCell* buffer_cell,
+                     sta::LibertyCell* buffer_cell,
                      const odb::Point& loc);
   bool checkMaxSlewCap(const Pin* drvr_pin);
   void mergeInit(Slacks& slacks);

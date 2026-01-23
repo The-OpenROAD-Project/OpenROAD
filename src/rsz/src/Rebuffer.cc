@@ -430,7 +430,7 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
   return load_slew_satisfied && max_cap_satisfied;
 }
 
-int Rebuffer::wireLengthLimitImpliedByLoadSlew(LibertyCell* cell)
+int Rebuffer::wireLengthLimitImpliedByLoadSlew(sta::LibertyCell* cell)
 {
   LibertyPort *in, *out;
   cell->bufferPorts(in, out);
@@ -474,7 +474,7 @@ int Rebuffer::wireLengthLimitImpliedByLoadSlew(LibertyCell* cell)
   return resizer_->metersToDbu(meters);
 }
 
-int Rebuffer::wireLengthLimitImpliedByMaxCap(LibertyCell* cell)
+int Rebuffer::wireLengthLimitImpliedByMaxCap(sta::LibertyCell* cell)
 {
   LibertyPort *in, *out;
   cell->bufferPorts(in, out);
@@ -1160,7 +1160,7 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
       tree);
 }
 
-FixedDelay Rebuffer::bufferDelay(LibertyCell* cell,
+FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
                                  const RiseFallBoth* rf,
                                  float load_cap)
 {
@@ -1288,7 +1288,7 @@ void Rebuffer::insertBufferOptions(
   };
 
   for (BufferSize buffer_size : buffer_sizes_) {
-    LibertyCell* buffer_cell = buffer_size.cell;
+    sta::LibertyCell* buffer_cell = buffer_size.cell;
     LibertyPort *in, *out;
     buffer_cell->bufferPorts(in, out);
     pass_through(in->capacitance());
@@ -1359,7 +1359,7 @@ void Rebuffer::insertBufferOptions(
     assert(exemplar != nullptr);
 
     if (exemplar && exemplar->type() == BnetType::buffer) {
-      LibertyCell* buffer_cell = exemplar->bufferCell();
+      sta::LibertyCell* buffer_cell = exemplar->bufferCell();
       LibertyPort *in, *out;
       buffer_cell->bufferPorts(in, out);
 
@@ -1421,7 +1421,7 @@ void Rebuffer::insertBufferOptions(
   new_opts.swap(opts);
 }
 
-static float bufferCin(const LibertyCell* cell)
+static float bufferCin(const sta::LibertyCell* cell)
 {
   LibertyPort *a, *y;
   cell->bufferPorts(a, y);
@@ -1474,7 +1474,7 @@ void Rebuffer::initOnCorner(sta::Corner* corner)
   characterizeBufferLimits();
 }
 
-float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(LibertyCell* cell)
+float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
 {
   LibertyPort *inp, *outp;
   cell->bufferPorts(inp, outp);
@@ -1828,7 +1828,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
         // as we build bottom-up, the 'input' of the subtree we just processed
         // is attached to the original driver net until this buffer intercepts
         // it.
-        LibertyCell* buffer_cell = node->bufferCell();
+        sta::LibertyCell* buffer_cell = node->bufferCell();
 
         // In this rebuffer logic, target loads can be on different dbNets.
         // So we pass 'true' to 'loads_on_diff_nets' argument.

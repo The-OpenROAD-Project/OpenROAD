@@ -27,7 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::LibertyCell;
 using sta::Network;
 using sta::Path;
 using sta::Pin;
@@ -151,7 +150,7 @@ class BufferedNet
   // buffer
   BufferedNet(BufferedNetType type,
               const odb::Point& location,
-              LibertyCell* buffer_cell,
+              sta::LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
               const sta::Corner* corner,
               const Resizer* resizer,
@@ -190,7 +189,7 @@ class BufferedNet
   // via
   int refLayer() const { return ref_layer_; }
   // buffer
-  LibertyCell* bufferCell() const { return buffer_cell_; }
+  sta::LibertyCell* bufferCell() const { return buffer_cell_; }
   // junction  left
   // buffer    wire
   // wire      end of wire
@@ -274,7 +273,7 @@ class BufferedNet
   // only used by load type
   const Pin* load_pin_{nullptr};
   // only used by buffer type
-  LibertyCell* buffer_cell_{nullptr};
+  sta::LibertyCell* buffer_cell_{nullptr};
   // only used by wire and via type
   int layer_{null_layer};
   // only used by via type

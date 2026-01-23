@@ -5,6 +5,7 @@
 #include <unordered_set>
 
 #include "BaseMove.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 
 namespace rsz {
@@ -29,8 +30,8 @@ class VTSwapSpeedMove : public BaseMove
   bool isSwappable(const Path*& drvr_path,
                    Pin*& drvr_pin,
                    sta::Instance*& drvr,
-                   LibertyCell*& drvr_cell,
-                   LibertyCell*& best_cell);
+                   sta::LibertyCell*& drvr_cell,
+                   sta::LibertyCell*& best_cell);
 };
 
 }  // namespace rsz

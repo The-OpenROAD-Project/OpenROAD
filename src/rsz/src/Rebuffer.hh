@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
@@ -83,7 +82,7 @@ class Rebuffer : public sta::dbStaState
 
   bool loadSlewSatisfactory(LibertyPort* driver, const BufferedNetPtr& bnet);
 
-  FixedDelay bufferDelay(LibertyCell* cell,
+  FixedDelay bufferDelay(sta::LibertyCell* cell,
                          const RiseFallBoth* rf,
                          float load_cap);
 
@@ -118,20 +117,20 @@ class Rebuffer : public sta::dbStaState
   void printProgress(int iteration, bool force, bool end, int remaining) const;
 
   int fanout(Vertex* vertex) const;
-  int wireLengthLimitImpliedByLoadSlew(LibertyCell*);
-  int wireLengthLimitImpliedByMaxCap(LibertyCell*);
+  int wireLengthLimitImpliedByLoadSlew(sta::LibertyCell*);
+  int wireLengthLimitImpliedByMaxCap(sta::LibertyCell*);
 
   BufferedNetPtr attemptTopologyRewrite(const BufferedNetPtr& node,
                                         const BufferedNetPtr& left,
                                         const BufferedNetPtr& right,
                                         float best_cap);
 
-  float findBufferLoadLimitImpliedByDriverSlew(LibertyCell* cell);
+  float findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell);
   void characterizeBufferLimits();
 
   struct BufferSize
   {
-    LibertyCell* cell;
+    sta::LibertyCell* cell;
     FixedDelay intrinsic_delay;
     float margined_max_cap;
     float driver_resistance;
@@ -150,7 +149,7 @@ class Rebuffer : public sta::dbStaState
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
 
   std::vector<BufferSize> buffer_sizes_;
-  std::map<LibertyCell*, BufferSize*> buffer_sizes_index_;
+  std::map<sta::LibertyCell*, BufferSize*> buffer_sizes_index_;
 
   Pin* pin_ = nullptr;
   float fanout_limit_ = 0.0f;

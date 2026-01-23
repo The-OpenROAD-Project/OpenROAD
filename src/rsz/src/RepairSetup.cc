@@ -726,7 +726,8 @@ bool RepairSetup::repairPath(Path* path,
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
       const Pin* drvr_pin = drvr_vertex->pin();
       LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-      LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
+      sta::LibertyCell* drvr_cell
+          = drvr_port ? drvr_port->libertyCell() : nullptr;
       const int fanout = this->fanout(drvr_vertex);
       debugPrint(logger_,
                  RSZ,
@@ -1142,7 +1143,7 @@ void RepairSetup::traverseFaninCone(
   std::queue<Vertex*> queue;
   queue.push(endpoint);
   int endpoint_insts = 0;
-  LibertyCell* best_lib_cell;
+  sta::LibertyCell* best_lib_cell;
 
   while (!queue.empty() && endpoint_insts < max_instances) {
     Vertex* current = queue.front();

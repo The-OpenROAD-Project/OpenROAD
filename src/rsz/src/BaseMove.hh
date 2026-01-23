@@ -48,7 +48,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
 using sta::Net;
@@ -80,7 +79,7 @@ struct SlackEstimatorParams
   sta::Instance* driver{nullptr};
   const Path* driver_path{nullptr};
   const Path* prev_driver_path{nullptr};
-  LibertyCell* driver_cell{nullptr};
+  sta::LibertyCell* driver_cell{nullptr};
   const float setup_slack_margin;
   const sta::Corner* corner;
 };
@@ -177,7 +176,7 @@ class BaseMove : public sta::dbStaState
                           const sta::DcalcAnalysisPt* dcalc_ap);
 
   bool isPortEqiv(sta::FuncExpr* expr,
-                  const LibertyCell* cell,
+                  const sta::LibertyCell* cell,
                   const LibertyPort* port_a,
                   const LibertyPort* port_b);
 
@@ -188,7 +187,7 @@ class BaseMove : public sta::dbStaState
   std::vector<bool> simulateExpr(
       sta::FuncExpr* expr,
       sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
-  sta::Instance* makeBuffer(LibertyCell* cell,
+  sta::Instance* makeBuffer(sta::LibertyCell* cell,
                             const char* name,
                             sta::Instance* parent,
                             const odb::Point& loc);
@@ -204,15 +203,15 @@ class BaseMove : public sta::dbStaState
   void getBufferPins(sta::Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 
-  LibertyCell* upsizeCell(LibertyPort* in_port,
-                          LibertyPort* drvr_port,
-                          float load_cap,
-                          float prev_drive,
-                          const sta::DcalcAnalysisPt* dcalc_ap);
-  bool replaceCell(sta::Instance* inst, const LibertyCell* replacement);
+  sta::LibertyCell* upsizeCell(LibertyPort* in_port,
+                               LibertyPort* drvr_port,
+                               float load_cap,
+                               float prev_drive,
+                               const sta::DcalcAnalysisPt* dcalc_ap);
+  bool replaceCell(sta::Instance* inst, const sta::LibertyCell* replacement);
   bool checkMaxCapViolation(sta::Instance* inst,
-                            const LibertyCell* replacement);
-  float getInputPinCapacitance(Pin* pin, const LibertyCell* cell);
+                            const sta::LibertyCell* replacement);
+  float getInputPinCapacitance(Pin* pin, const sta::LibertyCell* cell);
   bool checkMaxCapOK(const Pin* drvr_pin, float cap_delta);
 
   bool checkMaxCapViolation(const Pin* output_pin,
@@ -229,9 +228,9 @@ class BaseMove : public sta::dbStaState
   sta::ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
   Slack getWorstInputSlack(sta::Instance* inst);
   Slack getWorstOutputSlack(sta::Instance* inst);
-  std::vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);
+  std::vector<const LibertyPort*> getOutputPorts(const sta::LibertyCell* cell);
   std::vector<const Pin*> getOutputPins(const sta::Instance* inst);
-  LibertyCellSeq getSwappableCells(LibertyCell* base);
+  LibertyCellSeq getSwappableCells(sta::LibertyCell* base);
 
   static constexpr int size_down_max_fanout_ = 10;
   static constexpr int rebuffer_max_fanout_ = 20;
