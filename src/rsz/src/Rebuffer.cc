@@ -2258,7 +2258,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
 bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
 {
-  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
+  sta::NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (network_->isTopLevelPort(pin) && network_->direction(pin)->isOutput()) {
