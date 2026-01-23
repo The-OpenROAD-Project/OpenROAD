@@ -245,7 +245,14 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   replace_ = new gpl::Replace(db_, sta_, resizer_, global_router_, logger_);
   pdnsim_ = new psm::PDNSim(logger_, db_, sta_, estimate_parasitics_, opendp_);
   pdngen_ = new pdn::PdnGen(db_, logger_);
-  ram_gen_ = new ram::RamGen(getDbNetwork(), db_, logger_, pdngen_, ioPlacer_, opendp_, global_router_, detailed_router_);
+  ram_gen_ = new ram::RamGen(getDbNetwork(),
+                           db_,
+                           logger_,
+                           pdngen_,
+                           ioPlacer_,
+                           opendp_,
+                           global_router_,
+                           detailed_router_);
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
