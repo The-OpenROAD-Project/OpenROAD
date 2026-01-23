@@ -22,8 +22,6 @@ namespace ord {
 
 class dbVerilogNetwork;
 
-using sta::VerilogReader;
-
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
 // It is NOT part of an Sta.
@@ -43,7 +41,7 @@ class dbVerilogNetwork : public sta::ConcreteNetwork
 };
 
 void setDbNetworkLinkFunc(dbVerilogNetwork* network,
-                          VerilogReader* verilog_reader);
+                          sta::VerilogReader* verilog_reader);
 
 // Read a hierarchical Verilog netlist into a OpenSTA concrete network
 // objects. The hierarchical network is elaborated/flattened by the
