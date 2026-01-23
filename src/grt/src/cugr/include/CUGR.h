@@ -106,7 +106,9 @@ class CUGR
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
+  std::vector<int> net_indices_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
+  std::vector<CugrStTree> sttrees_;
   std::map<odb::dbNet*, GRNet*> db_net_map_;
 
   odb::dbDatabase* db_;
@@ -114,6 +116,8 @@ class CUGR
   utl::CallBackHandler* callback_handler_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;
+  NetRouteMap partial_routes_;
+  NetRouteMap routes_;
 
   Constants constants_;
 

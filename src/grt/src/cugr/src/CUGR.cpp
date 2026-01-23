@@ -67,6 +67,7 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
+// TODO: CUGR partial route calculation
 NetRouteMap CUGR::getPartialRoutes()
 {
   NetRouteMap net_routes;
@@ -100,10 +101,9 @@ float CUGR::CalculatePartialSlack()
 
   // Set the non critical nets slack as the lowest float, so they can be
   // ordered by overflow (and ordered first than the critical nets)
-  // TODO: Add net_id_ to CUGR for net identification
-  for (const auto& net : gr_nets_) {
-    if (net->getSlack() > slack_th) {
-      net->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
+  for (const int& netIndex : net_indices_) {
+    if (gr_nets_[netIndex]->getSlack() > slack_th) {
+      gr_nets_[netIndex]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
     }
   }
 
@@ -219,7 +219,7 @@ void CUGR::route()
     netIndices.push_back(net->getIndex());
   }
 
-  updateSlacks();
+  CalculatePartialSlack();
 
   patternRoute(netIndices);
 
