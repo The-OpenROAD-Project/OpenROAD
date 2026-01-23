@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::InstanceSeq;
 using sta::InstanceSet;
 using sta::LibertyCell;
 using sta::LibertyCellSeq;
@@ -338,7 +337,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
-  void removeBuffers(InstanceSeq insts);
+  void removeBuffers(sta::InstanceSeq insts);
   void unbufferNet(Net* net);
   void bufferInputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
   void bufferOutputs(LibertyCell* buffer_cell = nullptr, bool verbose = false);
@@ -704,7 +703,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                        Slew& slew);
   void findCellInstances(LibertyCell* cell,
                          // Return value.
-                         InstanceSeq& insts);
+                         sta::InstanceSeq& insts);
   void findLoads(Pin* drvr_pin, PinSeq& loads);
   bool isFuncOneZero(const Pin* drvr_pin);
   bool hasPins(Net* net);
@@ -712,7 +711,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void getPins(sta::Instance* inst, PinVector& pins) const;
   void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   odb::Point tieLocation(const Pin* load, int separation);
-  InstanceSeq findClkInverters();
+  sta::InstanceSeq findClkInverters();
   void cloneClkInverter(sta::Instance* inv);
 
   void makePadParasitic(const Net* net, SpefWriter* spef_writer);

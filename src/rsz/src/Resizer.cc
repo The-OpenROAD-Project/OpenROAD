@@ -417,7 +417,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     }
   } else {
     // remove only select buffers specified by user
-    InstanceSeq::Iterator inst_iter(insts);
+    sta::InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       sta::Instance* buffer = const_cast<sta::Instance*>(inst_iter.next());
       if (unbuffer_move_->removeBufferIfPossible(
@@ -3182,7 +3182,7 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
   initDesignArea();
 
-  InstanceSeq insts;
+  sta::InstanceSeq insts;
   findCellInstances(tie_cell, insts);
 
   for (const sta::Instance* tie_inst : insts) {
@@ -3431,7 +3431,7 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
 
 void Resizer::findCellInstances(LibertyCell* cell,
                                 // Return value.
-                                InstanceSeq& insts)
+                                sta::InstanceSeq& insts)
 {
   // TODO: iterating dbInsts in odb::dbBlock might be better. try it
   LeafInstanceIterator* inst_iter = network_->leafInstanceIterator();
@@ -4211,9 +4211,9 @@ void Resizer::repairClkInverters()
   }
 }
 
-InstanceSeq Resizer::findClkInverters()
+sta::InstanceSeq Resizer::findClkInverters()
 {
-  InstanceSeq clk_inverters;
+  sta::InstanceSeq clk_inverters;
   ClkArrivalSearchPred srch_pred(this);
   BfsFwdIterator bfs(BfsIndex::other, &srch_pred, this);
   for (Clock* clk : sdc_->clks()) {
