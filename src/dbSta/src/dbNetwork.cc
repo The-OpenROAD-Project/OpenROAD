@@ -4210,6 +4210,14 @@ void PinModDbNetConnection::operator()(const Pin* pin)
                 ->getOwningInstanceParent(const_cast<Pin*>(pin));
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
+        // Dump net connectivity
+        logger_->warn(ORD,
+                      2031,
+                      "Flat net logical inconsistency found. Dump "
+                      "connections of the relevant flat nets.");
+        dbnet_->dump(true);
+        candidate_flat_net->dump(true);
+
         logger_->error(
             ORD,
             2030,
