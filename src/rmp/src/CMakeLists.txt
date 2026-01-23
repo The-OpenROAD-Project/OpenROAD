@@ -16,6 +16,9 @@ add_library(rmp_lib
     Restructure.cpp
     annealing_strategy.cpp
     delay_optimization_strategy.cpp
+    genetic_strategy.cpp
+    gia.cpp
+    slack_tuning_strategy.cpp
     utils.cpp
     zero_slack_strategy.cpp
 )
@@ -48,6 +51,8 @@ target_include_directories(rmp
 target_include_directories(rmp_lib
   PUBLIC
     ../include
+  PRIVATE
+    .
 )
 
 target_link_libraries(rmp_lib
@@ -59,6 +64,7 @@ target_link_libraries(rmp_lib
     utl_lib
     cut
     ${ABC_LIBRARY}
+    absl_hash
 )
 
 target_link_libraries(rmp
