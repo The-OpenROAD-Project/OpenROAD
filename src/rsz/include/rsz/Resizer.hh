@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::MinMax;
 using sta::Net;
 using sta::NetSeq;
 using sta::Parasitic;
@@ -830,8 +829,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool core_exists_ = false;
 
   double design_area_ = 0.0;
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
   sta::LibertyCellSeq buffer_cells_;
   sta::LibertyCell* buffer_lowest_drive_ = nullptr;
   std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;

@@ -32,7 +32,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::MinMax;
 using sta::Net;
 using sta::Path;
 using sta::PathExpanded;
@@ -94,7 +93,7 @@ class RecoverPower : public sta::dbStaState
   est::EstimateParasitics* estimate_parasitics_;
   const sta::Corner* corner_ = nullptr;
   int resize_count_ = 0;
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
   // Paths with slack more than this would be considered for power recovery
   static constexpr float setup_slack_margin_ = 1e-11;

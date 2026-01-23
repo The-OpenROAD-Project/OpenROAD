@@ -73,8 +73,8 @@ class SwapArithModules : public sta::dbStaState
   Resizer* resizer_;
   sta::dbNetwork* db_network_{nullptr};
   utl::Logger* logger_{nullptr};
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 };
 
 }  // namespace rsz

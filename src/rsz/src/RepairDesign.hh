@@ -31,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::MinMax;
 using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
@@ -266,8 +265,8 @@ class RepairDesign : sta::dbStaState
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
   int print_interval_ = 0;
   std::shared_ptr<ResizerObserver> graphics_;

@@ -30,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::MinMax;
 using sta::Net;
 using sta::Path;
 using sta::Pin;
@@ -171,8 +170,8 @@ class Rebuffer : public sta::dbStaState
   float slew_margin_ = 20.0f;
   float cap_margin_ = 20.0f;
 
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;

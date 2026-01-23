@@ -22,6 +22,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
+#include "sta/MinMax.hh"
 #include "sta/Transition.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include "spdlog/fmt/fmt.h"
@@ -108,7 +109,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
       resizer->sdc_->portExtCap(port,
                                 rf,
                                 corner,
-                                MinMax::max(),
+                                sta::MinMax::max(),
                                 pin_cap,
                                 has_pin_cap,
                                 wire_cap,

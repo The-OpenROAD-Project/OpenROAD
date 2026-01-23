@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::MinMax;
 using sta::Net;
 using sta::Path;
 using sta::PathExpanded;
@@ -156,8 +155,8 @@ class RepairSetup : public sta::dbStaState
 
   std::vector<BaseMove*> move_sequence_;
 
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
   sta::UnorderedMap<sta::LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 

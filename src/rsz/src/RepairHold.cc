@@ -368,7 +368,7 @@ void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
   buffer->bufferPorts(input, output);
 
   for (int rf_index : RiseFall::rangeIndex()) {
-    delays[rf_index] = MinMax::min()->initValue();
+    delays[rf_index] = sta::MinMax::min()->initValue();
   }
   for (sta::Corner* corner : *sta_->corners()) {
     sta::LibertyPort* corner_port

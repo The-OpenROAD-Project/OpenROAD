@@ -1312,7 +1312,7 @@ float Resizer::driveResistance(const Pin* drvr_pin)
     InputDrive* drive = sdc_->findInputDrive(network_->port(drvr_pin));
     if (drive) {
       float max_res = 0;
-      for (auto min_max : MinMax::range()) {
+      for (auto min_max : sta::MinMax::range()) {
         for (auto rf : RiseFall::range()) {
           const sta::LibertyCell* cell;
           const sta::LibertyPort* from_port;
@@ -5147,7 +5147,7 @@ float Resizer::maxInputSlew(const sta::LibertyPort* input,
 {
   float limit;
   bool exists;
-  sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
+  sta_->findSlewLimit(input, corner, sta::MinMax::max(), limit, exists);
   if (!exists || limit == 0.0) {
     // Fixup for nangate45: This library doesn't specify any max transition on
     // input pins which indirectly causes issues for the resizer when

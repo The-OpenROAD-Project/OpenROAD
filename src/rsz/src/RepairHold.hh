@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::MinMax;
 using sta::Pin;
 using sta::PinSeq;
 using sta::RiseFall;
@@ -35,7 +34,7 @@ using sta::StaState;
 using sta::Vertex;
 using sta::VertexSeq;
 
-using Slacks = Slack[RiseFall::index_count][MinMax::index_count];
+using Slacks = Slack[RiseFall::index_count][sta::MinMax::index_count];
 
 class RepairHold : public sta::dbStaState
 {
@@ -123,10 +122,10 @@ class RepairHold : public sta::dbStaState
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
   double initial_design_area_ = 0;
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
-  const int min_index_ = MinMax::minIndex();
-  const int max_index_ = MinMax::maxIndex();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
+  const int min_index_ = sta::MinMax::minIndex();
+  const int max_index_ = sta::MinMax::maxIndex();
   const int rise_index_ = RiseFall::riseIndex();
   const int fall_index_ = RiseFall::fallIndex();
 

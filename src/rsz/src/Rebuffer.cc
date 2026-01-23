@@ -1482,7 +1482,8 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
 
   float max_slew;
   bool max_slew_exists = false;
-  sta_->findSlewLimit(outp, corner_, MinMax::max(), max_slew, max_slew_exists);
+  sta_->findSlewLimit(
+      outp, corner_, sta::MinMax::max(), max_slew, max_slew_exists);
   max_slew = maxSlewMargined(max_slew);
   float in_slew = maxSlewMargined(resizer_->maxInputSlew(inp, corner_));
 
@@ -1970,7 +1971,7 @@ void Rebuffer::setPin(Pin* drvr_pin)
     float max_slew;
     bool max_slew_exists = false;
     sta_->findSlewLimit(
-        drvr_port_, corner_, MinMax::max(), max_slew, max_slew_exists);
+        drvr_port_, corner_, sta::MinMax::max(), max_slew, max_slew_exists);
     if (max_slew_exists) {
       drvr_pin_max_slew_ = maxSlewMargined(max_slew);
     } else {
