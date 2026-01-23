@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::InstanceSet;
 using sta::LibertyCell;
 using sta::LibertyCellSeq;
 using sta::LibertyCellSet;
@@ -854,7 +853,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::Corner* tgt_slew_corner_ = nullptr;
   const sta::DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
   // Instances with multiple output ports that have been resized.
-  InstanceSet resized_multi_output_insts_;
+  sta::InstanceSet resized_multi_output_insts_;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
@@ -872,9 +871,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
-  InstanceSet inserted_buffer_set_;
-  InstanceSet all_inserted_buffer_set_;
-  InstanceSet removed_buffer_set_;
+  sta::InstanceSet inserted_buffer_set_;
+  sta::InstanceSet all_inserted_buffer_set_;
+  sta::InstanceSet removed_buffer_set_;
 
   dpl::Opendp* opendp_ = nullptr;
 

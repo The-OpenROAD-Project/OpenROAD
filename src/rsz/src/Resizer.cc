@@ -171,7 +171,7 @@ Resizer::Resizer(utl::Logger* logger,
   global_router_ = global_router;
   estimate_parasitics_ = estimate_parasitics;
   db_network_ = sta->getDbNetwork();
-  resized_multi_output_insts_ = InstanceSet(db_network_);
+  resized_multi_output_insts_ = sta::InstanceSet(db_network_);
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
 
   db_network_->addObserver(this);

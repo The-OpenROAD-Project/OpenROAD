@@ -48,7 +48,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::InstanceSet;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
@@ -140,9 +139,9 @@ class BaseMove : public sta::dbStaState
   // This can result in long run-time.
   // These are all of the optimized insts of this type .
   // Some may not have been accepted, but this replicates the prior behavior.
-  InstanceSet all_inst_set_;
+  sta::InstanceSet all_inst_set_;
   // This is just the set of the pending moves.
-  InstanceSet pending_inst_set_;
+  sta::InstanceSet pending_inst_set_;
   int pending_count_ = 0;
   int all_count_ = 0;
   int rejected_count_ = 0;
