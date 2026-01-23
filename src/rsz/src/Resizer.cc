@@ -71,6 +71,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
@@ -4077,7 +4078,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
           const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
           const RiseFall* drvr_rf = arc->toEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
-          Parasitic* drvr_parasitic
+          sta::Parasitic* drvr_parasitic
               = arc_delay_calc->findParasitic(drvr_pin, drvr_rf, dcalc_ap);
           float load_cap = parasitics_->capacitance(drvr_parasitic);
           ArcDcalcResult dcalc_result

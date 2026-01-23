@@ -45,7 +45,6 @@ namespace est {
 
 using stt::SteinerTreeBuilder;
 
-using sta::Parasitic;
 using sta::ParasiticNode;
 
 using SteinerPt = int;
@@ -224,7 +223,7 @@ class EstimateParasitics : public sta::dbStaState
                        const sta::DcalcAnalysisPt* dcalc_ap) const;
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
   double computeAverageCutResistance(sta::Corner* corner);
-  void parasiticNodeConnectPins(Parasitic* parasitic,
+  void parasiticNodeConnectPins(sta::Parasitic* parasitic,
                                 ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,

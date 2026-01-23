@@ -37,6 +37,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Report.hh"
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
@@ -635,7 +636,7 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
 {
   const sta::ParasiticAnalysisPt* parasitics_ap
       = corner->findParasiticAnalysisPt(max_);
-  Parasitic* parasitic
+  sta::Parasitic* parasitic
       = parasitics->makeParasiticNetwork(net, false, parasitics_ap);
   ParasiticNode* n1
       = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
@@ -677,7 +678,7 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
   for (sta::Corner* corner : *sta_->corners()) {
     const sta::ParasiticAnalysisPt* parasitics_ap
         = corner->findParasiticAnalysisPt(max_);
-    Parasitic* parasitic
+    sta::Parasitic* parasitic
         = sta_->makeParasiticNetwork(net, false, parasitics_ap);
     ParasiticNode* n1
         = parasitics_->ensureParasiticNode(parasitic, pin1, network_);
@@ -712,7 +713,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(
       std::set<const sta::Pin*> connected_pins;
       const sta::ParasiticAnalysisPt* parasitics_ap
           = corner->findParasiticAnalysisPt(max_);
-      Parasitic* parasitic
+      sta::Parasitic* parasitic
           = sta_->makeParasiticNetwork(net, false, parasitics_ap);
       bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
       double wire_cap = 0.0;
@@ -892,7 +893,7 @@ double EstimateParasitics::computeAverageCutResistance(sta::Corner* corner)
 }
 
 void EstimateParasitics::parasiticNodeConnectPins(
-    Parasitic* parasitic,
+    sta::Parasitic* parasitic,
     ParasiticNode* node,
     SteinerTree* tree,
     SteinerPt pt,
