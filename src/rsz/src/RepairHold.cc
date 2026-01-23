@@ -26,6 +26,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
@@ -163,8 +164,8 @@ sta::LibertyCell* RepairHold::findHoldBuffer()
     sta::LibertyCell* cell;
   };
   std::vector<MetricBuffer> buffers;
-  LibertyCellSeq* hold_buffers = nullptr;
-  LibertyCellSeq buffer_list;
+  sta::LibertyCellSeq* hold_buffers = nullptr;
+  sta::LibertyCellSeq buffer_list;
   if (resizer_->disable_buffer_pruning_) {
     hold_buffers = &resizer_->buffer_cells_;
   } else {
@@ -223,9 +224,9 @@ static bool isDelayCell(const std::string& cell_name)
               || cell_name.find("dlygate") != std::string::npos));
 }
 
-void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
+void RepairHold::filterHoldBuffers(sta::LibertyCellSeq& hold_buffers)
 {
-  LibertyCellSeq buffer_list;
+  sta::LibertyCellSeq buffer_list;
   resizer_->getBufferList(buffer_list);
 
   // Pick the least leaky VT for multiple VTs
@@ -305,8 +306,8 @@ void RepairHold::filterHoldBuffers(LibertyCellSeq& hold_buffers)
   }
 }
 
-bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
-                                    LibertyCellSeq& hold_buffers,
+bool RepairHold::addMatchingBuffers(const sta::LibertyCellSeq& buffer_list,
+                                    sta::LibertyCellSeq& hold_buffers,
                                     int best_vt_index,
                                     odb::dbSite* best_site,
                                     bool lib_has_footprints,

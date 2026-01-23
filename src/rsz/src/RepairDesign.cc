@@ -34,6 +34,7 @@
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
@@ -914,7 +915,7 @@ bool RepairDesign::repairDriverSlew(const sta::Corner* corner,
 
   if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst) && cell
       && resizer_->isLogicStdCell(inst)) {
-    LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
+    sta::LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
       using SizeCandidate = std::pair<float, sta::LibertyCell*>;
@@ -2206,7 +2207,7 @@ sta::LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew,
 {
   sta::LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
   float min_slew = INF;
-  LibertyCellSeq swappable_cells
+  sta::LibertyCellSeq swappable_cells
       = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
   if (!swappable_cells.empty()) {
     sort(swappable_cells,

@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::LibertyCellSeq;
 using sta::MinMax;
 using sta::Pin;
 using sta::PinSeq;
@@ -62,9 +61,9 @@ class RepairHold : public sta::dbStaState
  private:
   void init();
   sta::LibertyCell* findHoldBuffer();
-  void filterHoldBuffers(LibertyCellSeq& hold_buffers);
-  bool addMatchingBuffers(const LibertyCellSeq& buffer_list,
-                          LibertyCellSeq& hold_buffers,
+  void filterHoldBuffers(sta::LibertyCellSeq& hold_buffers);
+  bool addMatchingBuffers(const sta::LibertyCellSeq& buffer_list,
+                          sta::LibertyCellSeq& hold_buffers,
                           int best_vt_index,
                           odb::dbSite* best_site,
                           bool lib_has_footprints,

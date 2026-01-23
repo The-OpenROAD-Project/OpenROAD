@@ -10,6 +10,7 @@
 #include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "utl/Logger.h"
@@ -142,7 +143,7 @@ bool VTSwapSpeedMove::isSwappable(const Path*& drvr_path,
     return false;
   }
 
-  LibertyCellSeq equiv_cells = resizer_->getVTEquivCells(drvr_cell);
+  sta::LibertyCellSeq equiv_cells = resizer_->getVTEquivCells(drvr_cell);
   best_cell = equiv_cells.empty() ? nullptr : equiv_cells.back();
   if (best_cell == drvr_cell) {
     best_cell = nullptr;

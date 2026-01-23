@@ -525,7 +525,7 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
       sta::Instance* sta_inst = db_network_->dbToSta(inst);
       sta::LibertyCell* cell = network_->libertyCell(sta_inst);
       dbMaster* master = db_network_->staToDb(cell);
-      LibertyCellSeq swappable_cells = getSwappableCells(cell);
+      sta::LibertyCellSeq swappable_cells = getSwappableCells(cell);
       for (sta::LibertyCell* target_cell : swappable_cells) {
         dbMaster* target_master = db_network_->staToDb(target_cell);
         // Pick a cell that has the matching site, the same VT type
@@ -689,7 +689,7 @@ void Resizer::findFastBuffers()
   }
 
   float R_max = bufferDriveResistance(buffer_lowest_drive_);
-  LibertyCellSeq sizes_by_inp_cap;
+  sta::LibertyCellSeq sizes_by_inp_cap;
   sizes_by_inp_cap = buffer_cells_;
   sort(sizes_by_inp_cap,
        [](const sta::LibertyCell* buffer1, const sta::LibertyCell* buffer2) {
@@ -699,7 +699,7 @@ void Resizer::findFastBuffers()
          return port1->capacitance() < port2->capacitance();
        });
 
-  LibertyCellSeq fast_buffers;
+  sta::LibertyCellSeq fast_buffers;
   for (auto size : sizes_by_inp_cap) {
     if (fast_buffers.empty()) {
       fast_buffers.push_back(size);
@@ -798,7 +798,7 @@ void Resizer::findBuffers()
     return;
   }
 
-  LibertyCellSeq buffer_list;
+  sta::LibertyCellSeq buffer_list;
   getBufferList(buffer_list);
 
   // Pick the right cell footprint to avoid delay cells
@@ -852,7 +852,7 @@ void Resizer::findBuffers()
                   site_list[i].first->getName());
   }
 
-  LibertyCellSeq new_buffer_list;
+  sta::LibertyCellSeq new_buffer_list;
   for (sta::LibertyCell* buffer : buffer_list) {
     const char* footprint = buffer->footprint();
     odb::dbMaster* master = db_network_->staToDb(buffer);
@@ -888,7 +888,7 @@ void Resizer::findBuffers()
   const int bucket_size = new_buffer_list.size() / num_buckets;
   const int remainder = new_buffer_list.size() % num_buckets;
 
-  LibertyCellSeq final_buffer_list;
+  sta::LibertyCellSeq final_buffer_list;
   for (int bucket = 0; bucket < num_buckets; bucket++) {
     // Calculate bucket boundaries
     int start_idx = bucket * bucket_size + std::min(bucket, remainder);
@@ -1431,7 +1431,7 @@ std::vector<sta::LibertyPort*> Resizer::libraryPins(
 }
 
 sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
-                                         const LibertyCellSeq& candidates,
+                                         const sta::LibertyCellSeq& candidates,
                                          float scale)
 {
   sta::LibertyCell* closest = nullptr;
@@ -1583,7 +1583,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  LibertyCellSeq equiv_cells;
+  sta::LibertyCellSeq equiv_cells;
 
   if (report_all_cells) {
     swappable_cells_cache_.clear();
@@ -1608,7 +1608,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
   if (report_all_cells) {
     // All SetAndRestore variables are out of scope, so original restrictions
     // are in play
-    LibertyCellSeq real_equiv_cells = getSwappableCells(base_cell);
+    sta::LibertyCellSeq real_equiv_cells = getSwappableCells(base_cell);
     std::unordered_set<sta::LibertyCell*> real_equiv_cells_set(
         real_equiv_cells.begin(), real_equiv_cells.end());
     for (sta::LibertyCell* cell : equiv_cells) {
@@ -1719,7 +1719,7 @@ void Resizer::reportBuffers(bool filtered)
 {
   resizePreamble();
 
-  LibertyCellSeq buffer_list;
+  sta::LibertyCellSeq buffer_list;
 
   getBufferList(buffer_list);
   if (buffer_list.empty()) {
@@ -1841,7 +1841,7 @@ void Resizer::reportBuffers(bool filtered)
   logger_->report("{:*>80}", "");
 }
 
-void Resizer::getBufferList(LibertyCellSeq& buffer_list)
+void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
 {
   if (!lib_data_) {
     lib_data_ = std::make_unique<LibraryAnalysisData>();
@@ -1917,7 +1917,7 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
 //   replacement.
 // - Link Cell: Only link cells are considered for replacement.
 // This function is cached for performance and reset if more cells are read.
-LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
+sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
 {
   if (swappable_cells_cache_.find(source_cell)
       != swappable_cells_cache_.end()) {
@@ -1930,8 +1930,8 @@ LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     return {};
   }
 
-  LibertyCellSeq swappable_cells;
-  LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq swappable_cells;
+  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
 
   if (equiv_cells) {
     int64_t source_cell_area = master->getArea();
@@ -2023,7 +2023,7 @@ size_t getCommonLength(const std::string& string1, const std::string& string2)
 // BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
 // If there are multiple cells in a VT category,
 // keep only one cell that most closely matches the source cell name
-LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
+sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
 {
   auto cache_it = vt_equiv_cells_cache_.find(source_cell);
   if (cache_it != vt_equiv_cells_cache_.end()) {
@@ -2031,24 +2031,24 @@ LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   }
 
   if (!lib_data_) {
-    LibertyCellSeq buffer_list;
+    sta::LibertyCellSeq buffer_list;
     getBufferList(buffer_list);
     // We just need library data
     (void) buffer_list;
   }
 
   if (lib_data_->sorted_vt_categories.size() < 2) {
-    vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
+    vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
 
-  LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
   if (equiv_cells == nullptr) {
-    vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
+    vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
 
-  LibertyCellSeq vt_equiv_cells;
+  sta::LibertyCellSeq vt_equiv_cells;
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   int64_t source_cell_area = source_cell_master->getArea();
 
@@ -2134,7 +2134,8 @@ LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   // BUF_X1_LVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
   // BUF_X1_SLVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
   vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
-  const LibertyCellSeq& vt_equiv_cells_new = vt_equiv_cells_cache_[source_cell];
+  const sta::LibertyCellSeq& vt_equiv_cells_new
+      = vt_equiv_cells_cache_[source_cell];
   for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
     vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
   }
@@ -2383,7 +2384,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
       float cap_ratio
           = cell->isBuffer() ? buffer_sizing_cap_ratio_ : sizing_cap_ratio_;
 
-      LibertyCellSeq equiv_cells = getSwappableCells(cell);
+      sta::LibertyCellSeq equiv_cells = getSwappableCells(cell);
       sta::LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
       float highest_cin = 0;
       for (sta::LibertyCell* size : equiv_cells) {
@@ -2435,7 +2436,7 @@ sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
                                           bool revisiting_inst)
 {
   sta::LibertyCell* best_cell = cell;
-  LibertyCellSeq swappable_cells = getSwappableCells(cell);
+  sta::LibertyCellSeq swappable_cells = getSwappableCells(cell);
   if (!swappable_cells.empty()) {
     bool is_buf_inv = cell->isBuffer() || cell->isInverter();
     float target_load = (*target_load_map_)[cell];
@@ -4398,7 +4399,7 @@ bool Resizer::repairHold(
   // Obs: We need to clear the buffer list for the preamble to select
   // buffers again excluding the clock ones.
   utl::SetAndRestore set_exclude_clk_buffers(exclude_clock_buffers_, false);
-  utl::SetAndRestore set_buffers(buffer_cells_, LibertyCellSeq());
+  utl::SetAndRestore set_buffers(buffer_cells_, sta::LibertyCellSeq());
 
   resizePreamble();
   if (estimate_parasitics_->getParasiticsSrc()
@@ -4425,7 +4426,7 @@ void Resizer::repairHold(const Pin* end_pin,
 {
   // See comment on the method above.
   utl::SetAndRestore set_exclude_clk_buffers(exclude_clock_buffers_, false);
-  utl::SetAndRestore set_buffers(buffer_cells_, LibertyCellSeq());
+  utl::SetAndRestore set_buffers(buffer_cells_, sta::LibertyCellSeq());
 
   resizePreamble();
   repair_hold_->repairHold(end_pin,
@@ -5498,7 +5499,7 @@ bool Resizer::checkAndMarkVTSwappable(
     notSwappable.insert(inst);
     return false;
   }
-  LibertyCellSeq equiv_cells = getVTEquivCells(curr_lib_cell);
+  sta::LibertyCellSeq equiv_cells = getVTEquivCells(curr_lib_cell);
   if (equiv_cells.empty()) {
     notSwappable.insert(inst);
     return false;

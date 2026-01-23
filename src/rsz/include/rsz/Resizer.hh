@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::LibertyCellSeq;
 using sta::LibertyCellSet;
 using sta::LibertyLibrary;
 using sta::LibertyLibrarySeq;
@@ -455,7 +454,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Use max_wire_length zero for none (meters)
   void repairClkNets(
       double max_wire_length);  // max_wire_length zero for none (meters)
-  void setClockBuffersList(const LibertyCellSeq& clk_buffers)
+  void setClockBuffersList(const sta::LibertyCellSeq& clk_buffers)
   {
     clk_buffers_ = clk_buffers;
   }
@@ -521,7 +520,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool report_all_cells,
                              bool report_vt_equiv);
   void reportBuffers(bool filtered);
-  void getBufferList(LibertyCellSeq& buffer_list);
+  void getBufferList(sta::LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static MoveType parseMove(const std::string& s);
@@ -571,7 +570,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::LibertyCell* halfDrivingPowerCell(sta::Instance* inst);
   sta::LibertyCell* halfDrivingPowerCell(sta::LibertyCell* cell);
   sta::LibertyCell* closestDriver(sta::LibertyCell* cell,
-                                  const LibertyCellSeq& candidates,
+                                  const sta::LibertyCellSeq& candidates,
                                   float scale);
   std::vector<sta::LibertyPort*> libraryPins(sta::Instance* inst) const;
   std::vector<sta::LibertyPort*> libraryPins(sta::LibertyCell* cell) const;
@@ -602,8 +601,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool hasMultipleOutputs(const sta::Instance* inst);
 
   void resizePreamble();
-  LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
-  LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
+  sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
+  sta::LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
 
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
@@ -835,21 +834,23 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double design_area_ = 0.0;
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
-  LibertyCellSeq buffer_cells_;
+  sta::LibertyCellSeq buffer_cells_;
   sta::LibertyCell* buffer_lowest_drive_ = nullptr;
   std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
-  LibertyCellSeq clk_buffers_;
+  sta::LibertyCellSeq clk_buffers_;
 
   // Cache results of getSwappableCells() as this is expensive for large PDKs.
-  std::unordered_map<sta::LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+  std::unordered_map<sta::LibertyCell*, sta::LibertyCellSeq>
+      swappable_cells_cache_;
   // Cache VT equivalent cells for each cell, equivalent cells are sorted in
   // increasing order of leakage
   // BUF_X1_RVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
   // BUF_X1_LVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
   // ...
-  std::unordered_map<sta::LibertyCell*, LibertyCellSeq> vt_equiv_cells_cache_;
+  std::unordered_map<sta::LibertyCell*, sta::LibertyCellSeq>
+      vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
   VertexSeq level_drvr_vertices_;

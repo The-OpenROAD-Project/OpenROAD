@@ -230,7 +230,7 @@ class BaseMove : public sta::dbStaState
   Slack getWorstOutputSlack(sta::Instance* inst);
   std::vector<const LibertyPort*> getOutputPorts(const sta::LibertyCell* cell);
   std::vector<const Pin*> getOutputPins(const sta::Instance* inst);
-  LibertyCellSeq getSwappableCells(sta::LibertyCell* base);
+  sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* base);
 
   static constexpr int size_down_max_fanout_ = 10;
   static constexpr int rebuffer_max_fanout_ = 20;

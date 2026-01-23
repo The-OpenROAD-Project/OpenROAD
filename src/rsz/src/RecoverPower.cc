@@ -23,6 +23,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PathExpanded.hh"
@@ -398,7 +399,7 @@ sta::LibertyCell* RecoverPower::downsizeCell(
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   sta::LibertyCell* cell = drvr_port->libertyCell();
-  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
   if (!swappable_cells.empty()) {
