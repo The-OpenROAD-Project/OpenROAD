@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Pvt;
 using sta::Required;
 using sta::RiseFall;
 using sta::Slack;
@@ -580,7 +579,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                     Slew out_slew);
   void findBufferTargetSlews();
   void findBufferTargetSlews(sta::LibertyCell* buffer,
-                             const Pvt* pvt,
+                             const sta::Pvt* pvt,
                              // Return values.
                              Slew slews[],
                              int counts[]);

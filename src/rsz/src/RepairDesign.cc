@@ -889,7 +889,7 @@ void RepairDesign::checkDriverArcSlew(const sta::Corner* corner,
                     in_pin, in_rf, dcalc_ap->slewMinMax())
               : graph_->slew(
                     graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap->index());
-    const Pvt* pvt = dcalc_ap->operatingConditions();
+    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
 
     sta::ArcDelay arc_delay;
     Slew arc_slew;

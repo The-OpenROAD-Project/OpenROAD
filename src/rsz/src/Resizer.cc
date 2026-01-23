@@ -3095,7 +3095,7 @@ Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
                            Slew out_slew)
 
 {
-  const Pvt* pvt = tgt_slew_dcalc_ap_->operatingConditions();
+  const sta::Pvt* pvt = tgt_slew_dcalc_ap_->operatingConditions();
   sta::ArcDelay arc_delay;
   Slew arc_slew;
   model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
@@ -3118,7 +3118,7 @@ void Resizer::findBufferTargetSlews()
   for (sta::Corner* corner : *sta_->corners()) {
     int lib_ap_index = corner->libertyIndex(max_);
     const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
-    const Pvt* pvt = dcalc_ap->operatingConditions();
+    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
     // Average slews across buffers at corner.
     Slew slews[RiseFall::index_count]{0.0};
     int counts[RiseFall::index_count]{0};
@@ -3151,7 +3151,7 @@ void Resizer::findBufferTargetSlews()
 }
 
 void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
-                                    const Pvt* pvt,
+                                    const sta::Pvt* pvt,
                                     // Return values.
                                     Slew slews[],
                                     int counts[])
