@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::NetSeq;
 using sta::Parasitic;
 using sta::ParasiticAnalysisPt;
 using sta::ParasiticNode;
@@ -408,9 +407,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Increment design_area
   void designAreaIncr(float delta);
   // Caller owns return value.
-  NetSeq* findFloatingNets();
+  sta::NetSeq* findFloatingNets();
   PinSet* findFloatingPins();
-  NetSeq* findOverdrivenNets(bool include_parallel_driven);
+  sta::NetSeq* findOverdrivenNets(bool include_parallel_driven);
   void repairTieFanout(sta::LibertyPort* tie_port,
                        double separation,  // meters
                        bool verbose);
@@ -483,7 +482,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void resizeSlackPreamble();
   void findResizeSlacks(bool run_journal_restore);
   // Return nets with worst slack.
-  NetSeq resizeWorstSlackNets();
+  sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
   std::optional<Slack> resizeNetSlack(const sta::Net* net);
   std::optional<Slack> resizeNetSlack(const odb::dbNet* db_net);

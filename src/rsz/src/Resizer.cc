@@ -2605,10 +2605,10 @@ void Resizer::findResizeSlacks1()
   }
 }
 
-NetSeq Resizer::resizeWorstSlackNets()
+sta::NetSeq Resizer::resizeWorstSlackNets()
 {
   // Find the nets with the worst slack.
-  NetSeq nets;
+  sta::NetSeq nets;
   for (auto pair : net_slack_map_) {
     nets.push_back(pair.first);
   }
@@ -3603,9 +3603,9 @@ int Resizer::maxLoadManhattenDistance(Vertex* drvr)
 
 ////////////////////////////////////////////////////////////////
 
-NetSeq* Resizer::findFloatingNets()
+sta::NetSeq* Resizer::findFloatingNets()
 {
-  NetSeq* floating_nets = new NetSeq;
+  sta::NetSeq* floating_nets = new sta::NetSeq;
   NetIterator* net_iter = network_->netIterator(network_->topInstance());
   while (net_iter->hasNext()) {
     sta::Net* net = net_iter->next();
@@ -3649,9 +3649,9 @@ PinSet* Resizer::findFloatingPins()
   return floating_pins;
 }
 
-NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
+sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
 {
-  NetSeq* overdriven_nets = new NetSeq;
+  sta::NetSeq* overdriven_nets = new sta::NetSeq;
   std::unique_ptr<NetIterator> net_iter(
       network_->netIterator(network_->topInstance()));
   while (net_iter->hasNext()) {
