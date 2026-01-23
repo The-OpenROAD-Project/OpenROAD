@@ -740,7 +740,7 @@ _install_or_tools() {
 
     # Remove conflicting Boost configuration files included in OR-Tools
     if [[ -d "${OR_TOOLS_PATH}/lib/cmake" ]]; then
-        find "${OR_TOOLS_PATH}/lib/cmake" -maxdepth 1 -type d -name "Boost-*" -exec rm -rf {} +
+        find "${OR_TOOLS_PATH}/lib/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
     fi
 
     INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=installed")
