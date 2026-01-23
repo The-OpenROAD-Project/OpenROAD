@@ -712,8 +712,7 @@ void NesterovPlace::runRoutability(int iter,
                                    const float route_snapshot_WlCoefX,
                                    const float route_snapshot_WlCoefY,
                                    int& routability_driven_revert_count,
-                                   float& curA,
-                                   int64_t& end_routability_area)
+                                   float& curA)
 {
   // check routability using RUDY or GR
   if (npVars_.routability_driven_mode && is_routability_need_
@@ -823,9 +822,6 @@ void NesterovPlace::runRoutability(int iter,
           && routability_gif_key_ != -1) {
         graphics_->gifEnd(routability_gif_key_);
         routability_gif_key_ = -1;
-      }
-      for (auto& nb : nbVec_) {
-        end_routability_area += nb->getNesterovInstsArea();
       }
     }
   }
@@ -943,7 +939,6 @@ void NesterovPlace::doBackTracking(const float coeff)
 
 void NesterovPlace::reportResults(int nesterov_iter,
                                   int64_t original_area,
-                                  int64_t end_routability_area,
                                   int64_t td_accumulated_delta_area)
 {
   auto block = pbc_->db()->getChip()->getBlock();
@@ -981,12 +976,13 @@ void NesterovPlace::reportResults(int nesterov_iter,
   }
 
   if (npVars_.routability_driven_mode) {
+    const int64_t routability_inflation_area = rb_->getTotalInflation();
     const float routability_diff
-        = 100.0 * (end_routability_area - original_area) / original_area;
+        = 100.0 * routability_inflation_area / original_area;
     log_->info(GPL,
                1012,
                "Total routability artificial inflation: {:.2f} ({:+.2f}%)",
-               block->dbuAreaToMicrons(end_routability_area - original_area),
+               block->dbuAreaToMicrons(routability_inflation_area),
                routability_diff);
   }
 
@@ -1039,7 +1035,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool final_routability_image_saved = false;
   int64_t original_area = 0;
   int64_t td_accumulated_delta_area = 0;
-  int64_t end_routability_area = 0;
 
   if (graphics_ && graphics_->enabled() && npVars_.debug
       && npVars_.debug_start_iter == start_iter) {
@@ -1051,10 +1046,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     nb->setMaxPhiCoefChanged(false);
     nb->resetMinSumOverflow();
     original_area += nb->getNesterovInstsArea();
-  }
-
-  if (!npVars_.routability_driven_mode) {
-    end_routability_area = original_area;
   }
 
   const std::string reports_dir = getReportsDir();
@@ -1143,18 +1134,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                    route_snapshot_WlCoefX,
                    route_snapshot_WlCoefY,
                    routability_driven_revert_count,
-                   curA,
-                   end_routability_area);
+                   curA);
 
     if (isConverged(nesterov_iter, routability_gpl_iter_count_)) {
       break;
     }
   }
 
-  reportResults(nesterov_iter,
-                original_area,
-                end_routability_area,
-                td_accumulated_delta_area);
+  reportResults(nesterov_iter, original_area, td_accumulated_delta_area);
 
   // In all case, including divergence, the db should be updated.
   updateDb();
