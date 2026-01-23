@@ -45,8 +45,6 @@ namespace est {
 
 using stt::SteinerTreeBuilder;
 
-using sta::ParasiticNode;
-
 using SteinerPt = int;
 
 class NetHash
@@ -224,7 +222,7 @@ class EstimateParasitics : public sta::dbStaState
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
   double computeAverageCutResistance(sta::Corner* corner);
   void parasiticNodeConnectPins(sta::Parasitic* parasitic,
-                                ParasiticNode* node,
+                                sta::ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id,

@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::ParasiticNode;
 using sta::Parasitics;
 using sta::Pin;
 using sta::PinSeq;
@@ -715,7 +714,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isPad(const sta::Instance* inst) const;
   void net2Pins(const sta::Net* net, const Pin*& pin1, const Pin*& pin2) const;
   void parasiticNodeConnectPins(sta::Parasitic* parasitic,
-                                ParasiticNode* node,
+                                sta::ParasiticNode* node,
                                 est::SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id);
