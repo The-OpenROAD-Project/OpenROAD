@@ -201,17 +201,17 @@ class RepairDesign : dbStaState
   void makeFanoutRepeater(PinSeq& repeater_loads,
                           PinSeq& repeater_inputs,
                           const odb::Rect& bbox,
-                          const Point& loc,
+                          const odb::Point& loc,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
                           bool resize_drvr);
   PinSeq findLoads(const Pin* drvr_pin);
   odb::Rect findBbox(PinSeq& pins);
-  Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
+  odb::Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
   bool makeRepeater(const char* reason,
-                    const Point& loc,
+                    const odb::Point& loc,
                     LibertyCell* buffer_cell,
                     bool resize,
                     int level,

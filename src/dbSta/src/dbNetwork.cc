@@ -65,6 +65,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/dbUtil.h"
+#include "odb/geom.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/Liberty.hh"
@@ -178,7 +179,7 @@ PinInfo getPinInfo(const dbNetwork* network, const Pin* pin)
 //--------------------------------------
 //
 // The database assigns a number to each object. These numbers
-// are scoped based on the type. Eg dbModInst 1..N or dbInst 1..N.
+// are scoped based on the type. Eg odb::dbModInst 1..N or dbInst 1..N.
 // The timer requires a unique id for each object for its visit
 // pattern, so we uniquify the numbers by suffixing a discriminating
 // address pattern to the lower bits and shifting.
@@ -303,8 +304,8 @@ class DbInstanceChildIterator : public InstanceChildIterator
   bool top_;
   dbSet<dbInst>::iterator dbinst_iter_;
   dbSet<dbInst>::iterator dbinst_end_;
-  dbSet<dbModInst>::iterator modinst_iter_;
-  dbSet<dbModInst>::iterator modinst_end_;
+  dbSet<odb::dbModInst>::iterator modinst_iter_;
+  dbSet<odb::dbModInst>::iterator modinst_end_;
 };
 
 DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
@@ -332,7 +333,7 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
       top_ = false;
       // need to get module for instance
       dbInst* db_inst = nullptr;
-      dbModInst* mod_inst = nullptr;
+      odb::dbModInst* mod_inst = nullptr;
       network->staToDb(instance, db_inst, mod_inst);
       if (mod_inst) {
         module = mod_inst->getMaster();
@@ -360,7 +361,7 @@ Instance* DbInstanceChildIterator::next()
     dbinst_iter_++;
     ret = network_->dbToSta(child);
   } else if (modinst_iter_ != modinst_end_) {
-    dbModInst* child = *modinst_iter_;
+    odb::dbModInst* child = *modinst_iter_;
     modinst_iter_++;
     ret = network_->dbToSta(child);
   }
@@ -378,8 +379,8 @@ class DbInstanceNetIterator : public InstanceNetIterator
   const dbNetwork* network_;
   dbSet<dbNet>::iterator iter_;
   dbSet<dbNet>::iterator end_;
-  dbSet<dbModNet>::iterator mod_net_iter_;
-  dbSet<dbModNet>::iterator mod_net_end_;
+  dbSet<odb::dbModNet>::iterator mod_net_iter_;
+  dbSet<odb::dbModNet>::iterator mod_net_end_;
   std::vector<dbNet*> flat_nets_vec_;
   size_t flat_net_idx_ = 0;
 };
@@ -403,7 +404,7 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
       module = network->block()->getTopModule();
     } else {
       dbInst* db_inst;
-      dbModInst* mod_inst;
+      odb::dbModInst* mod_inst;
       network_->staToDb(instance, db_inst, mod_inst);
       if (mod_inst) {
         module = mod_inst->getMaster();
@@ -412,14 +413,14 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
 
     if (module) {
       // Get dbModNets
-      dbSet<dbModNet> mod_nets = module->getModNets();
+      dbSet<odb::dbModNet> mod_nets = module->getModNets();
       mod_net_iter_ = mod_nets.begin();
       mod_net_end_ = mod_nets.end();
 
       // Keep track of flat nets that are already represented by a mod_net
       // to avoid returning both.
       std::unordered_set<dbNet*> handled_flat_nets;
-      for (dbModNet* mod_net : mod_nets) {
+      for (odb::dbModNet* mod_net : mod_nets) {
         dbNet* flat_net = network_->findRelatedDbNet(mod_net);
         if (flat_net) {
           handled_flat_nets.insert(flat_net);
@@ -481,7 +482,7 @@ Net* DbInstanceNetIterator::next()
 {
   if (network_->hasHierarchy()) {
     if (mod_net_iter_ != mod_net_end_) {
-      dbModNet* net = *mod_net_iter_;
+      odb::dbModNet* net = *mod_net_iter_;
       mod_net_iter_++;
       return network_->dbToSta(net);
     }
@@ -515,7 +516,7 @@ class DbInstancePinIterator : public InstancePinIterator
   dbSet<dbModITerm>::iterator mi_itr_end_;
   Pin* next_ = nullptr;
   dbInst* db_inst_;
-  dbModInst* mod_inst_;
+  odb::dbModInst* mod_inst_;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
@@ -536,7 +537,7 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
     }
   } else {
     dbInst* db_inst;
-    dbModInst* mod_inst;
+    odb::dbModInst* mod_inst;
     network_->staToDb(inst, db_inst, mod_inst);
     if (db_inst) {
       iitr_ = db_inst->getITerms().begin();
@@ -610,7 +611,7 @@ class DbNetPinIterator : public NetPinIterator
 DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
 {
   dbNet* dnet = nullptr;
-  dbModNet* modnet = nullptr;
+  odb::dbModNet* modnet = nullptr;
   network_ = network;
   network->staToDb(net, dnet, modnet);
   next_ = nullptr;
@@ -670,7 +671,7 @@ class DbNetTermIterator : public NetTermIterator
 DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
     : network_(network)
 {
-  dbModNet* modnet = nullptr;
+  odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   network_->staToDb(net, dnet, modnet);
   if (dnet && !modnet) {
@@ -880,7 +881,7 @@ const char* dbNetwork::name(const Instance* instance) const
   }
 
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   std::string name;
   if (db_inst) {
@@ -1052,7 +1053,7 @@ Cell* dbNetwork::cell(const Instance* instance) const
     return reinterpret_cast<Cell*>(top_cell_);
   }
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   if (db_inst) {
     dbMaster* master = db_inst->getMaster();
@@ -1071,12 +1072,12 @@ Instance* dbNetwork::parent(const Instance* instance) const
     return nullptr;
   }
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   if (mod_inst) {
     dbModule* parent_module = mod_inst->getParent();
     if (parent_module) {
-      dbModInst* parent_inst = parent_module->getModInst();
+      odb::dbModInst* parent_inst = parent_module->getModInst();
       if (parent_inst) {
         return dbToSta(parent_inst);
       }
@@ -1088,7 +1089,7 @@ Instance* dbNetwork::parent(const Instance* instance) const
     }
     dbModule* parent_module = db_inst->getModule();
     if (parent_module) {
-      dbModInst* parent_inst = parent_module->getModInst();
+      odb::dbModInst* parent_inst = parent_module->getModInst();
       if (parent_inst) {
         return dbToSta(parent_inst);
       }
@@ -1145,7 +1146,7 @@ Instance* dbNetwork::findInstance(const char* path_name) const
 {
   if (hasHierarchy()) {  // are we in hierarchical mode ?
     // find a hierarchical module instance first
-    dbModInst* mod_inst = block()->findModInst(path_name);
+    odb::dbModInst* mod_inst = block()->findModInst(path_name);
     if (mod_inst) {
       return dbToSta(mod_inst);
     }
@@ -1158,7 +1159,7 @@ Instance* dbNetwork::findInstance(const char* path_name) const
       // get the parent name, which is the hierarchical prefix in the string
       std::string parent_name_str = path_name_str.substr(0, last_idx);
       // get the module instance from the block
-      dbModInst* parent_mod_inst
+      odb::dbModInst* parent_mod_inst
           = block()->findModInst(parent_name_str.c_str());
       if (parent_mod_inst) {
         // get the module definition
@@ -1191,19 +1192,19 @@ Instance* dbNetwork::findChild(const Instance* parent, const char* name) const
     dbInst* inst = block_->findInst(name);
     if (!inst) {
       dbModule* top_module = block_->getTopModule();
-      dbModInst* mod_inst = top_module->findModInst(name);
+      odb::dbModInst* mod_inst = top_module->findModInst(name);
       return dbToSta(mod_inst);
     }
     return dbToSta(inst);
   }
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(parent, db_inst, mod_inst);
   if (!mod_inst) {
     return nullptr;
   }
   dbModule* master_module = mod_inst->getMaster();
-  dbModInst* child_inst = master_module->findModInst(name);
+  odb::dbModInst* child_inst = master_module->findModInst(name);
   if (child_inst) {
     return dbToSta(child_inst);
   }
@@ -1222,7 +1223,7 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
     return dbToSta(bterm);
   }
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   if (db_inst) {
     dbITerm* iterm = db_inst->findITerm(port_name);
@@ -1259,7 +1260,7 @@ Net* dbNetwork::findNetAllScopes(const char* net_name) const
     if (dnet) {
       return dbToSta(dnet);
     }
-    dbModNet* modnet = dbm->getModNet(net_name);
+    odb::dbModNet* modnet = dbm->getModNet(net_name);
     if (modnet) {
       return dbToSta(modnet);
     }
@@ -1277,7 +1278,7 @@ Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
     if (dnet) {
       return dbToSta(dnet);
     }
-    dbModNet* modnet = scope->getModNet(net_name);
+    odb::dbModNet* modnet = scope->getModNet(net_name);
     if (modnet) {
       return dbToSta(modnet);
     }
@@ -1285,7 +1286,7 @@ Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
   }
 
   dbInst* db_inst = nullptr;
-  dbModInst* mod_inst = nullptr;
+  odb::dbModInst* mod_inst = nullptr;
   staToDb(instance, db_inst, mod_inst);
 
   // check to see if net is in flat space
@@ -1298,7 +1299,7 @@ Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
 
   if (mod_inst) {
     scope = mod_inst->getMaster();
-    dbModNet* modnet = scope->getModNet(net_name);
+    odb::dbModNet* modnet = scope->getModNet(net_name);
     if (modnet) {
       return dbToSta(modnet);
     }
@@ -1346,7 +1347,7 @@ std::string dbNetwork::getAttribute(const Instance* inst,
                                     const std::string& key) const
 {
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(inst, db_inst, mod_inst);
   odb::dbObject* obj;
   if (db_inst) {
@@ -1369,7 +1370,7 @@ void dbNetwork::setAttribute(Instance* instance,
                              const std::string& value)
 {
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   odb::dbObject* obj;
   if (db_inst) {
@@ -1433,7 +1434,7 @@ Instance* dbNetwork::instance(const Pin* pin) const
     return top_instance_;
   }
   if (moditerm) {
-    dbModInst* mod_inst = moditerm->getParent();
+    odb::dbModInst* mod_inst = moditerm->getParent();
     return dbToSta(mod_inst);
   }
   return nullptr;
@@ -1456,7 +1457,7 @@ Net* dbNetwork::net(const Pin* pin) const
     // that we have both a mod net and a dbinst net.
     // In the case of writing out a hierachical network we always
     // choose the mnet.
-    if (dbModNet* mnet = iterm->getModNet()) {
+    if (odb::dbModNet* mnet = iterm->getModNet()) {
       return dbToSta(mnet);
     }
     if (dbNet* dnet = iterm->getNet()) {
@@ -1470,7 +1471,7 @@ Net* dbNetwork::net(const Pin* pin) const
     ;
   }
   if (moditerm) {
-    if (dbModNet* mnet = moditerm->getModNet()) {
+    if (odb::dbModNet* mnet = moditerm->getModNet()) {
       return dbToSta(mnet);
     }
   }
@@ -1485,15 +1486,15 @@ Get the db net (flat net) for the pin
 dbNet* dbNetwork::flatNet(const Pin* pin) const
 {
   dbNet* db_net;
-  dbModNet* db_modnet;
+  odb::dbModNet* db_modnet;
   net(pin, db_net, db_modnet);
   return db_net;
 }
 
-dbModNet* dbNetwork::hierNet(const Pin* pin) const
+odb::dbModNet* dbNetwork::hierNet(const Pin* pin) const
 {
   dbNet* db_net;
-  dbModNet* db_modnet;
+  odb::dbModNet* db_modnet;
   net(pin, db_net, db_modnet);
   return db_modnet;
 }
@@ -1503,7 +1504,9 @@ Get the dbnet or the moddbnet for a pin
 Sometimes a pin can be hooked to both and we want to expose them
 both, so we add this api
  */
-void dbNetwork::net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const
+void dbNetwork::net(const Pin* pin,
+                    dbNet*& db_net,
+                    odb::dbModNet*& db_modnet) const
 {
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
@@ -1572,7 +1575,7 @@ Port* dbNetwork::port(const Pin* pin) const
   } else if (moditerm) {
     std::string port_name_str = moditerm->getName();
     const char* port_name = port_name_str.c_str();
-    dbModInst* mod_inst = moditerm->getParent();
+    odb::dbModInst* mod_inst = moditerm->getParent();
     dbModule* module = mod_inst->getMaster();
     dbModBTerm* mod_port = module->findModBTerm(port_name);
     if (mod_port) {
@@ -1626,7 +1629,7 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
   if (moditerm) {
     // get the direction of the modbterm
     std::string pin_name = moditerm->getName();
-    dbModInst* mod_inst = moditerm->getParent();
+    odb::dbModInst* mod_inst = moditerm->getParent();
     dbModule* module = mod_inst->getMaster();
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
     assert(modbterm_local != nullptr);
@@ -1685,7 +1688,7 @@ dbModITerm* dbNetwork::findInputModITermInParent(const Pin* input_pin) const
   staToDb(input_pin, iterm, bterm, mod_iterm);
 
   // Get mod net
-  dbModNet* mod_net = nullptr;
+  odb::dbModNet* mod_net = nullptr;
   if (iterm) {
     assert(iterm->getIoType().getValue() != dbIoType::OUTPUT);
     mod_net = iterm->getModNet();
@@ -1725,7 +1728,7 @@ void dbNetwork::location(const Pin* pin,
                          bool& exists) const
 {
   if (isPlaced(pin)) {
-    Point pt = location(pin);
+    odb::Point pt = location(pin);
     x = dbuToMeters(pt.getX());
     y = dbuToMeters(pt.getY());
     exists = true;
@@ -1736,7 +1739,7 @@ void dbNetwork::location(const Pin* pin,
   }
 }
 
-Point dbNetwork::location(const Pin* pin) const
+odb::Point dbNetwork::location(const Pin* pin) const
 {
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
@@ -1746,17 +1749,17 @@ Point dbNetwork::location(const Pin* pin) const
   if (iterm) {
     int x, y;
     if (iterm->getAvgXY(&x, &y)) {
-      return Point(x, y);
+      return odb::Point(x, y);
     }
     return iterm->getInst()->getOrigin();
   }
   if (bterm) {
     int x, y;
     if (bterm->getFirstPinLocation(x, y)) {
-      return Point(x, y);
+      return odb::Point(x, y);
     }
   }
-  return Point(0, 0);
+  return odb::Point(0, 0);
 }
 
 bool dbNetwork::isPlaced(const Pin* pin) const
@@ -1781,7 +1784,7 @@ bool dbNetwork::isPlaced(const Pin* pin) const
 
 ObjectId dbNetwork::id(const Net* net) const
 {
-  dbModNet* modnet = nullptr;
+  odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
   if (hasHierarchy()) {
@@ -1810,7 +1813,7 @@ const char* dbNetwork::pathName(const Net* net) const
   // its full name, ditto hierarchical mode.
   // For a modnet in hierarchy mode things are a bit more interesting.
 
-  dbModNet* modnet = nullptr;
+  odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
 
   staToDb(net, dnet, modnet);
@@ -1853,7 +1856,7 @@ const char* dbNetwork::pathName(const Net* net) const
 
 const char* dbNetwork::name(const Net* net) const
 {
-  dbModNet* modnet = nullptr;
+  odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
   std::string name;
@@ -1922,7 +1925,7 @@ Instance* dbNetwork::instance(const Net*) const
 bool dbNetwork::isPower(const Net* net) const
 {
   dbNet* db_net;
-  dbModNet* db_modnet;
+  odb::dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
   if (db_net) {
     return (db_net->getSigType() == dbSigType::POWER);
@@ -1940,7 +1943,7 @@ bool dbNetwork::isPower(const Net* net) const
 bool dbNetwork::isGround(const Net* net) const
 {
   dbNet* db_net;
-  dbModNet* db_modnet;
+  odb::dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
   if (db_net) {
     return (db_net->getSigType() == dbSigType::GROUND);
@@ -1970,7 +1973,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
                                    PinVisitor& visitor,
                                    NetSet& visited_nets) const
 {
-  dbModNet* mod_net = nullptr;
+  odb::dbModNet* mod_net = nullptr;
   dbNet* db_net = nullptr;
 
   if (visited_nets.hasKey(net)) {
@@ -1997,7 +2000,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
 
     // visit below nets
     for (dbModITerm* moditerm : mod_net->getModITerms()) {
-      dbModInst* mod_inst = moditerm->getParent();
+      odb::dbModInst* mod_inst = moditerm->getParent();
       // note we are dealing with a uniquified hierarchy
       // so one master per instance..
       dbModule* module = mod_inst->getMaster();
@@ -2017,7 +2020,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
       if (db_module == nullptr) {
         continue;
       }
-      dbModInst* mod_inst = db_module->getModInst();
+      odb::dbModInst* mod_inst = db_module->getModInst();
       if (mod_inst == nullptr) {
         continue;
       }
@@ -2079,7 +2082,7 @@ Pin* dbNetwork::pin(const Term* term) const
   if (modbterm) {
     // get the moditerm
     dbModule* cur_module = modbterm->getParent();
-    dbModInst* cur_mod_inst = cur_module->getModInst();
+    odb::dbModInst* cur_mod_inst = cur_module->getModInst();
     std::string pin_name = modbterm->getName();
     dbModITerm* parent_moditerm = cur_mod_inst->findModITerm(pin_name.c_str());
     if (parent_moditerm) {
@@ -2123,7 +2126,7 @@ Net* dbNetwork::net(const Term* term) const
     return dbToSta(modbterm->getModNet());
   }
   if (bterm) {
-    dbModNet* mod_net = bterm->getModNet();
+    odb::dbModNet* mod_net = bterm->getModNet();
     dbNet* dnet = bterm->getNet();
 
     // TODO: revert this logic so that we always
@@ -2462,7 +2465,7 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
     }
   } else {
     dbInst* db_inst = nullptr;
-    dbModInst* mod_inst = nullptr;
+    odb::dbModInst* mod_inst = nullptr;
     staToDb(parent, db_inst, mod_inst);
     if (mod_inst) {
       dbMaster* master = db_->findMaster(cell_name);
@@ -2496,7 +2499,7 @@ void dbNetwork::replaceCell(Instance* inst, Cell* cell)
 {
   dbMaster* master = staToDb(cell);
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(inst, db_inst, mod_inst);
   if (db_inst) {
     db_inst->swapMaster(master);
@@ -2506,12 +2509,12 @@ void dbNetwork::replaceCell(Instance* inst, Cell* cell)
 void dbNetwork::deleteInstance(Instance* inst)
 {
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(inst, db_inst, mod_inst);
   if (db_inst) {
     dbInst::destroy(db_inst);
   } else {
-    dbModInst::destroy(mod_inst);
+    odb::dbModInst::destroy(mod_inst);
   }
 }
 
@@ -2537,7 +2540,7 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
 
   // get the type of the net
   dbNet* flat_net_db = nullptr;
-  dbModNet* hier_net_db = nullptr;
+  odb::dbModNet* hier_net_db = nullptr;
 
   // connect the flat net first
   if (flat_net) {
@@ -2610,7 +2613,7 @@ void dbNetwork::connectPin(Pin* pin, Net* net)
 
   // get the type of the net
   dbNet* dnet = nullptr;
-  dbModNet* mod_net = nullptr;
+  odb::dbModNet* mod_net = nullptr;
   staToDb(net, dnet, mod_net);
 
   if (iterm && dnet) {
@@ -2656,7 +2659,7 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
     pin = dbToSta(bterm);
   } else {
     dbInst* db_inst;
-    dbModInst* mod_inst;
+    odb::dbModInst* mod_inst;
     staToDb(inst, db_inst, mod_inst);
     if (db_inst) {
       dbMTerm* dterm = staToDb(port);
@@ -2702,7 +2705,7 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
     pin = dbToSta(bterm);
   } else {
     dbInst* db_inst;
-    dbModInst* mod_inst;
+    odb::dbModInst* mod_inst;
     staToDb(inst, db_inst, mod_inst);
     if (db_inst) {
       dbMaster* master = db_inst->getMaster();
@@ -2722,7 +2725,7 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
 //
 void dbNetwork::disconnectPin(Pin* pin, Net* net)
 {
-  dbModNet* mod_net = nullptr;
+  odb::dbModNet* mod_net = nullptr;
   dbNet* db_net = nullptr;
   staToDb(net, db_net, mod_net);
 
@@ -2775,11 +2778,11 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
   // 1. If load pin, nop because it is not managed by the driver cache
   // 2. If hierarchical pin:
   //    Find the associated physical net (dbNet) and all hierarchical nets
-  //    (dbModNet) and remove the driver information from the cache.
+  //    (odb::dbModNet) and remove the driver information from the cache.
   // 3. If driver pin:
-  //    Find the dbNet and dbModNet driven by this pin and remove the cache.
-  //    Also, clean up the cache for all dbModNets associated with the dbNet
-  //    to maintain cache consistency between multiple hierarchical nets
+  //    Find the dbNet and odb::dbModNet driven by this pin and remove the
+  //    cache. Also, clean up the cache for all dbModNets associated with the
+  //    dbNet to maintain cache consistency between multiple hierarchical nets
   //    corresponding to a single physical net.
 
   // 1. Load pin case
@@ -2797,7 +2800,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
       return;
     }
 
-    dbModNet* modnet = moditerm->getModNet();
+    odb::dbModNet* modnet = moditerm->getModNet();
     if (modnet == nullptr) {
       return;
     }
@@ -2811,9 +2814,9 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     removeDriverFromCache(dbToSta(db_net));
 
     // Remove all related hier nets from cache
-    std::set<dbModNet*> modnet_set;
+    std::set<odb::dbModNet*> modnet_set;
     db_net->findRelatedModNets(modnet_set);
-    for (dbModNet* modnet : modnet_set) {
+    for (odb::dbModNet* modnet : modnet_set) {
       removeDriverFromCache(dbToSta(modnet));
     }
     return;
@@ -2821,10 +2824,10 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
 
   // 3. Driver pin case
 
-  // Get all the related dbNet & dbModNet with the pin.
+  // Get all the related dbNet & odb::dbModNet with the pin.
   // Incrementally update the net-drvr cache.
   dbNet* db_net;
-  dbModNet* mod_net;
+  odb::dbModNet* mod_net;
   net(pin, db_net, mod_net);
 
   if (db_net) {
@@ -2832,7 +2835,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     // We need to update the cache for all of them.
     std::set<odb::dbModNet*> related_mod_nets;
     db_net->findRelatedModNets(related_mod_nets);
-    for (dbModNet* related_mod_net : related_mod_nets) {
+    for (odb::dbModNet* related_mod_net : related_mod_nets) {
       removeDriverFromCache(dbToSta(related_mod_net), pin);
     }
 
@@ -2946,7 +2949,7 @@ bool dbNetwork::isSpecial(Net* net)
 dbInst* dbNetwork::staToDb(const Instance* instance) const
 {
   dbInst* db_inst;
-  dbModInst* mod_inst;
+  odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   return db_inst;
 }
@@ -2954,7 +2957,7 @@ dbInst* dbNetwork::staToDb(const Instance* instance) const
 void dbNetwork::staToDb(const Instance* instance,
                         // Return values.
                         dbInst*& db_inst,
-                        dbModInst*& mod_inst) const
+                        odb::dbModInst*& mod_inst) const
 {
   if (instance && instance != top_instance_) {
     dbObject* obj
@@ -2965,9 +2968,9 @@ void dbNetwork::staToDb(const Instance* instance,
       mod_inst = nullptr;
     } else if (type == dbModInstObj) {
       db_inst = nullptr;
-      mod_inst = static_cast<dbModInst*>(obj);
+      mod_inst = static_cast<odb::dbModInst*>(obj);
     } else {
-      logger_->error(ORD, 2016, "Instance is not dbInst or dbModInst");
+      logger_->error(ORD, 2016, "Instance is not dbInst or odb::dbModInst");
     }
   } else {
     db_inst = nullptr;
@@ -2994,7 +2997,9 @@ dbNet* dbNetwork::flatNet(const Net* net) const
   return nullptr;
 }
 
-void dbNetwork::staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const
+void dbNetwork::staToDb(const Net* net,
+                        dbNet*& dnet,
+                        odb::dbModNet*& modnet) const
 {
   dnet = nullptr;
   modnet = nullptr;
@@ -3004,9 +3009,9 @@ void dbNetwork::staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const
     if (type == odb::dbNetObj) {
       dnet = static_cast<dbNet*>(obj);
     } else if (type == odb::dbModNetObj) {
-      modnet = static_cast<dbModNet*>(obj);
+      modnet = static_cast<odb::dbModNet*>(obj);
     } else {
-      logger_->error(ORD, 2034, "Net is not dbNet or dbModNet");
+      logger_->error(ORD, 2034, "Net is not dbNet or odb::dbModNet");
     }
   }
 }
@@ -3063,7 +3068,7 @@ dbBlock* dbNetwork::getBlockOf(const Pin* pin) const
   } else if (bterm) {
     block = bterm->getBlock();
   } else if (moditerm) {
-    // moditerm->parent is dbModInst
+    // moditerm->parent is odb::dbModInst
     // moditerm->parent->parent is dbModule
     // dbModule->owner is dbBlock
     block = moditerm->getParent()->getParent()->getOwner();
@@ -3284,7 +3289,7 @@ void dbNetwork::staToDb(PortDirection* dir,
 
 ////////////////////////////////////////////////////////////////
 
-Instance* dbNetwork::dbToSta(dbModInst* inst) const
+Instance* dbNetwork::dbToSta(odb::dbModInst* inst) const
 {
   return reinterpret_cast<Instance*>(inst);
 }
@@ -3300,7 +3305,7 @@ Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
       + static_cast<std::uintptr_t>(PinPointerTags::kDbModIterm));
 }
 
-Net* dbNetwork::dbToSta(dbModNet* net) const
+Net* dbNetwork::dbToSta(odb::dbModNet* net) const
 {
   return reinterpret_cast<Net*>(net);
 }
@@ -3335,7 +3340,7 @@ const Net* dbNetwork::dbToSta(const dbNet* net) const
   return reinterpret_cast<const Net*>(net);
 }
 
-const Net* dbNetwork::dbToSta(const dbModNet* net) const
+const Net* dbNetwork::dbToSta(const odb::dbModNet* net) const
 {
   return reinterpret_cast<const Net*>(net);
 }
@@ -3463,7 +3468,7 @@ LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
   const Instance* cur_instance = instance(pin);
   dbInst* db_inst = nullptr;
-  dbModInst* mod_inst = nullptr;
+  odb::dbModInst* mod_inst = nullptr;
   staToDb(cur_instance, db_inst, mod_inst);
   if (db_inst) {
     LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
@@ -3756,7 +3761,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
 {
   if (hasHierarchy()) {
     dbNet* dnet;
-    dbModNet* modnet;
+    odb::dbModNet* modnet;
     staToDb(net, dnet, modnet);
     if (dnet) {
       //
@@ -3846,7 +3851,7 @@ bool PinConnections::connected(const Pin* pin) const
 
 void dbNetwork::removeUnusedPortsAndPinsOnModuleInstances()
 {
-  for (dbModInst* mi : block()->getModInsts()) {
+  for (odb::dbModInst* mi : block()->getModInsts()) {
     mi->removeUnusedPortsAndPins();
   }
 }
@@ -3879,7 +3884,7 @@ bool dbNetwork::isConnected(const Pin* source_pin, const Pin* dest_pin) const
 bool dbNetwork::isConnected(const Net* net, const Pin* pin) const
 {
   dbNet* dbnet;
-  dbModNet* modnet;
+  odb::dbModNet* modnet;
   staToDb(net, dbnet, modnet);
 
   dbNet* pin_dbnet = findFlatDbNet(pin);
@@ -3999,16 +4004,16 @@ connected dbNets).
 class DbModNetAssociation : public PinVisitor
 {
  public:
-  DbModNetAssociation(dbNetwork* nwk, dbModNet* mod_net);
+  DbModNetAssociation(dbNetwork* nwk, odb::dbModNet* mod_net);
   void operator()(const Pin* pin) override;
 
  private:
   dbNetwork* db_network_;
-  dbModNet* mod_net_;
+  odb::dbModNet* mod_net_;
   dbModule* owning_module_;
 };
 
-DbModNetAssociation::DbModNetAssociation(dbNetwork* nwk, dbModNet* mod_net)
+DbModNetAssociation::DbModNetAssociation(dbNetwork* nwk, odb::dbModNet* mod_net)
     : db_network_(nwk), mod_net_(mod_net), owning_module_(mod_net->getParent())
 {
 }
@@ -4037,7 +4042,7 @@ void DbModNetAssociation::operator()(const Pin* pin)
     dbInst* owning_inst = iterm->getInst();
     dbModule* parent_module = owning_inst->getModule();
     if (parent_module == owning_module_) {
-      dbModNet* existing_mod_net = db_network_->hierNet(pin);
+      odb::dbModNet* existing_mod_net = db_network_->hierNet(pin);
       if (existing_mod_net) {
         if (existing_mod_net == mod_net_) {
           return;
@@ -4059,7 +4064,7 @@ of one modnet having only one flat net associated with it.
 If the flat net is connected to a primary i/o then prefer than name.
 
 */
-void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
+void dbNetwork::reassociateHierFlatNet(odb::dbModNet* mod_net,
                                        dbNet* new_flat_net,
                                        dbNet* orig_flat_net)
 {
@@ -4101,7 +4106,8 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   visitConnectedPins(dbToSta(new_flat_net), visitordb, visited_dbnets);
 }
 
-void dbNetwork::reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net)
+void dbNetwork::reassociateFromDbNetView(dbNet* flat_net,
+                                         odb::dbModNet* mod_net)
 {
   if (flat_net == nullptr || mod_net == nullptr) {
     return;
@@ -4115,9 +4121,9 @@ void dbNetwork::reassociateFromDbNetView(dbNet* flat_net, dbModNet* mod_net)
 void dbNetwork::reassociatePinConnection(Pin* pin)
 {
   // Ensure that a pin is consistently connected to both its hierarchical
-  // (dbModNet) and flat (dbNet) representations. This is often needed after
-  // complex hierarchical edits.
-  dbModNet* mod_net = hierNet(pin);
+  // (odb::dbModNet) and flat (dbNet) representations. This is often needed
+  // after complex hierarchical edits.
+  odb::dbModNet* mod_net = hierNet(pin);
   if (mod_net) {
     dbNet* flat_net = this->flatNet(pin);
     // Disconnect both flat and hierarchical nets before reconnecting
@@ -4127,7 +4133,7 @@ void dbNetwork::reassociatePinConnection(Pin* pin)
   }
 }
 
-void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
+void dbNetwork::replaceHierModule(odb::dbModInst* mod_inst, dbModule* module)
 {
   (void) mod_inst->swapMaster(module);
 }
@@ -4162,7 +4168,7 @@ PinModDbNetConnection::PinModDbNetConnection(const dbNetwork* nwk,
   logger_ = logger;
   // figure out type of search
   dbNet* db_net;
-  dbModNet* db_modnet;
+  odb::dbModNet* db_modnet;
   nwk->staToDb(net_to_search, db_net, db_modnet);
   db_net_search_ = (db_net != nullptr);  // searching from a db_net. else
                                          // modnet.
@@ -4195,7 +4201,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
 
     if (db_net_search_ == false) {
       dbNet* db_net;
-      dbModNet* db_modnet;
+      odb::dbModNet* db_modnet;
       db_network_->staToDb(search_net_, db_net, db_modnet);
       Network* sta_nwk = (Network*) db_network_;
       (void) sta_nwk;
@@ -4223,7 +4229,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
 /*
 A modnet can have only one equivalent dbNet.
 */
-dbNet* dbNetwork::findRelatedDbNet(const dbModNet* net) const
+dbNet* dbNetwork::findRelatedDbNet(const odb::dbModNet* net) const
 {
   // we pass in the net and decode it for axiom checking.
 
@@ -4248,11 +4254,11 @@ class ModNetForPin : public PinVisitor
   ModNetForPin(dbNetwork* nwk) : db_network_(nwk) {}
 
   void operator()(const Pin* pin) override;
-  dbModNet* modnet() const { return modnet_; }
+  odb::dbModNet* modnet() const { return modnet_; }
 
  private:
   dbNetwork* db_network_;
-  dbModNet* modnet_{nullptr};
+  odb::dbModNet* modnet_{nullptr};
 };
 
 void ModNetForPin::operator()(const Pin* pin)
@@ -4274,7 +4280,7 @@ void ModNetForPin::operator()(const Pin* pin)
 Given a driving pin, go through all the nets at the hierarhical
 level of the driving pin and return the modnet.
 */
-dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
+odb::dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
 {
   // get all modnets associated with pin at this level
   dbNet* flat_net = flatNet(drvr_pin);
@@ -4363,8 +4369,8 @@ int dbNetwork::checkAxioms(odb::dbObject* obj) const
 
 // Given a net that may be hierarchical, find the corresponding flat net.
 // If the net is already a flat net, it is returned as is.
-// If the net is a hierarchical net (dbModNet), find the associated dbNet and
-// return it as Net*.
+// If the net is a hierarchical net (odb::dbModNet), find the associated dbNet
+// and return it as Net*.
 Net* dbNetwork::findFlatNet(const Net* net) const
 {
   return dbToSta(findFlatDbNet(net));
@@ -4372,7 +4378,7 @@ Net* dbNetwork::findFlatNet(const Net* net) const
 
 // Given a net that may be hierarchical, find the corresponding flat dbNet.
 // If the net is already a flat net (dbNet), it is returned as is.
-// If the net is a hierarchical net (dbModNet), find the associated dbNet.
+// If the net is a hierarchical net (odb::dbModNet), find the associated dbNet.
 dbNet* dbNetwork::findFlatDbNet(const Net* net) const
 {
   if (!net) {
@@ -4380,7 +4386,7 @@ dbNet* dbNetwork::findFlatDbNet(const Net* net) const
   }
   // Convert net to a flat net, if not already
   dbNet* db_net = nullptr;
-  dbModNet* db_mod_net = nullptr;
+  odb::dbModNet* db_mod_net = nullptr;
   staToDb(net, db_net, db_mod_net);
 
   if (db_net) {
@@ -4416,14 +4422,14 @@ dbNet* dbNetwork::findFlatDbNet(const Pin* pin) const
   return findFlatDbNet(sta_net);
 }
 
-dbModInst* dbNetwork::getModInst(Instance* inst) const
+odb::dbModInst* dbNetwork::getModInst(Instance* inst) const
 {
   if (!inst) {
     return nullptr;
   }
 
   dbInst* db_inst = nullptr;
-  dbModInst* db_mod_inst = nullptr;
+  odb::dbModInst* db_mod_inst = nullptr;
   staToDb(inst, db_inst, db_mod_inst);
   return db_mod_inst;
 }
@@ -4435,7 +4441,7 @@ bool dbNetwork::hasPort(const Net* net) const
   }
 
   dbNet* db_net = nullptr;
-  dbModNet* db_mod_net = nullptr;
+  odb::dbModNet* db_mod_net = nullptr;
   staToDb(net, db_net, db_mod_net);
   if (db_net) {
     return !db_net->getBTerms().empty();
@@ -4744,8 +4750,8 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   //
 
   // Check for hier net and flat net connectivity
-  dbSet<dbModNet> mod_nets = block()->getModNets();
-  for (dbModNet* mod_net : mod_nets) {
+  dbSet<odb::dbModNet> mod_nets = block()->getModNets();
+  for (odb::dbModNet* mod_net : mod_nets) {
     mod_net->checkSanity();
     findRelatedDbNet(mod_net);
   }
@@ -4921,7 +4927,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
   // For each cache element
   for (const auto& [net, cached_drivers_ptr] : net_drvr_pin_map_) {
     dbNet* dbnet = nullptr;
-    dbModNet* modnet = nullptr;
+    odb::dbModNet* modnet = nullptr;
     staToDb(net, dbnet, modnet);
 
     if (dbnet == nullptr && modnet == nullptr) {
@@ -5078,10 +5084,10 @@ PinSet* dbNetwork::drivers(const Pin* pin)
     }
   }
 
-  // If pin is connected to a dbModNet only, use it to find the driver
+  // If pin is connected to a odb::dbModNet only, use it to find the driver
 
-  // pin is dbModITerm or pin is connected to dbModNet
-  Net* net = this->net(pin);  // net() returns a dbModNet
+  // pin is dbModITerm or pin is connected to odb::dbModNet
+  Net* net = this->net(pin);  // net() returns a odb::dbModNet
   if (net) {
     return drivers(net);
   }
@@ -5167,7 +5173,7 @@ Net* dbNetwork::highestNetAbove(Net* net) const
   }
 
   dbNet* dbnet;
-  dbModNet* modnet;
+  odb::dbModNet* modnet;
   staToDb(net, dbnet, modnet);
 
   if (dbnet) {
@@ -5183,7 +5189,8 @@ Net* dbNetwork::highestNetAbove(Net* net) const
 
   if (modnet) {
     if (dbNet* related_dbnet = modnet->findRelatedNet()) {
-      if (dbModNet* highest_modnet = related_dbnet->findModNetInHighestHier()) {
+      if (odb::dbModNet* highest_modnet
+          = related_dbnet->findModNetInHighestHier()) {
         return dbToSta(highest_modnet);  // Found the highest modnet
       }
     }

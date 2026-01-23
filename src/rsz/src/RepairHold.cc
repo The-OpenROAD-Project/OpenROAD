@@ -15,6 +15,7 @@
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -619,10 +620,11 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                     && (slacks[fall_index_][max_index_] - setup_margin)
                            > buffer_delays[fall_index_])) {
               Vertex* path_load = path_vertices[i + 1];
-              Point path_load_loc = db_network_->location(path_load->pin());
-              Point drvr_loc = db_network_->location(path_vertex->pin());
-              Point buffer_loc((drvr_loc.x() + path_load_loc.x()) / 2,
-                               (drvr_loc.y() + path_load_loc.y()) / 2);
+              odb::Point path_load_loc
+                  = db_network_->location(path_load->pin());
+              odb::Point drvr_loc = db_network_->location(path_vertex->pin());
+              odb::Point buffer_loc((drvr_loc.x() + path_load_loc.x()) / 2,
+                                    (drvr_loc.y() + path_load_loc.y()) / 2);
               // Despite checking for setup slack to insert the bufffer,
               // increased slews downstream can increase delays and
               // reduce setup slack in ways that are too expensive to
@@ -682,7 +684,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
                                PinSeq& load_pins,
                                bool loads_have_out_port,  // top level port
                                LibertyCell* buffer_cell,
-                               const Point& loc)
+                               const odb::Point& loc)
 {
   Instance* buffer = nullptr;
   Pin* buffer_out_pin = nullptr;
@@ -690,7 +692,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   // New insert buffer behavior
   Pin* drvr_pin = drvr->pin();
   odb::dbObject* drvr_db_pin = db_network_->staToDb(drvr_pin);
-  dbNet* drvr_dbnet = nullptr;
+  odb::dbNet* drvr_dbnet = nullptr;
   if (drvr_db_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
     drvr_dbnet = static_cast<odb::dbBTerm*>(drvr_db_pin)->getNet();
   } else {
@@ -721,7 +723,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     return;
   }
 
-  dbInst* new_buffer = db_network_->staToDb(buffer);
+  odb::dbInst* new_buffer = db_network_->staToDb(buffer);
   debugPrint(
       logger_, RSZ, "repair_hold", 3, " insert {}", new_buffer->getName());
 

@@ -29,7 +29,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using odb::Point;
 using sta::Corner;
 using sta::dbNetwork;
 using sta::Delay;
@@ -91,7 +90,7 @@ class Rebuffer : public sta::dbStaState
                          float load_cap);
 
   BufferedNetPtr addWire(const BufferedNetPtr& p,
-                         Point wire_end,
+                         odb::Point wire_end,
                          int wire_layer,
                          int level = -1);
 
