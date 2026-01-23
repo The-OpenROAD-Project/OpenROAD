@@ -883,7 +883,7 @@ void RepairDesign::checkDriverArcSlew(const sta::Corner* corner,
     const bool use_ideal_clk_slew
         = arc->set()->role()->genericRole() == TimingRole::regClkToQ()
           && clk_network_->isIdealClock(in_pin);
-    Slew in_slew
+    sta::Slew in_slew
         = use_ideal_clk_slew
               ? clk_network_->idealClkSlew(
                     in_pin, in_rf, dcalc_ap->slewMinMax())
@@ -892,7 +892,7 @@ void RepairDesign::checkDriverArcSlew(const sta::Corner* corner,
     const sta::Pvt* pvt = dcalc_ap->operatingConditions();
 
     sta::ArcDelay arc_delay;
-    Slew arc_slew;
+    sta::Slew arc_slew;
     model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
 
     if (arc_slew > limit) {
@@ -1224,7 +1224,7 @@ bool RepairDesign::needRepairWire(const int max_length,
 
 void RepairDesign::checkSlew(const sta::Pin* drvr_pin,
                              // Return values.
-                             Slew& slew,
+                             sta::Slew& slew,
                              float& limit,
                              float& slack,
                              const sta::Corner*& corner)
@@ -1235,7 +1235,7 @@ void RepairDesign::checkSlew(const sta::Pin* drvr_pin,
 
   const sta::Corner* corner1;
   const sta::RiseFall* tr1;
-  Slew slew1;
+  sta::Slew slew1;
   float limit1, slack1;
   sta_->checkSlew(
       drvr_pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
@@ -1302,10 +1302,10 @@ double RepairDesign::gateSlewDiff(sta::LibertyPort* drvr_port,
                                   const sta::DcalcAnalysisPt* dcalc_ap)
 {
   sta::ArcDelay delays[sta::RiseFall::index_count];
-  Slew slews[sta::RiseFall::index_count];
+  sta::Slew slews[sta::RiseFall::index_count];
   resizer_->gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
-  Slew gate_slew = max(slews[sta::RiseFall::riseIndex()],
-                       slews[sta::RiseFall::fallIndex()]);
+  sta::Slew gate_slew = max(slews[sta::RiseFall::riseIndex()],
+                            slews[sta::RiseFall::fallIndex()]);
   return gate_slew - slew;
 }
 

@@ -379,7 +379,7 @@ void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
     const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const float load_cap = corner_port->capacitance();
     sta::ArcDelay gate_delays[sta::RiseFall::index_count];
-    Slew slews[sta::RiseFall::index_count];
+    sta::Slew slews[sta::RiseFall::index_count];
     resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
     for (int rf_index : sta::RiseFall::rangeIndex()) {
       delays[rf_index] = min(delays[rf_index], gate_delays[rf_index]);
@@ -610,7 +610,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                 = graph_delay_calc_->loadCap(end_vertex->pin(), dcalc_ap)
                   - excluded_cap;
             sta::ArcDelay buffer_delays[sta::RiseFall::index_count];
-            Slew buffer_slews[sta::RiseFall::index_count];
+            sta::Slew buffer_slews[sta::RiseFall::index_count];
             resizer_->bufferDelays(
                 buffer_cell, load_cap, dcalc_ap, buffer_delays, buffer_slews);
             // setup_slack > -hold_slack
@@ -638,13 +638,13 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
               // the hold buffer blows through the setup margin.
               resizer_->journalBegin();
               sta::Slack setup_slack_before = sta_->worstSlack(max_);
-              Slew slew_before = sta_->vertexSlew(path_vertex, max_);
+              sta::Slew slew_before = sta_->vertexSlew(path_vertex, max_);
               makeHoldDelay(path_vertex,
                             load_pins,
                             loads_have_out_port,
                             buffer_cell,
                             buffer_loc);
-              Slew slew_after = sta_->vertexSlew(path_vertex, max_);
+              sta::Slew slew_after = sta_->vertexSlew(path_vertex, max_);
               sta::Slack setup_slack_after = sta_->worstSlack(max_);
               float slew_factor
                   = (slew_before > 0) ? slew_after / slew_before : 1.0;
@@ -761,7 +761,7 @@ bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
     return false;
   }
 
-  Slew slew;
+  sta::Slew slew;
   sta_->checkSlew(
       drvr_pin, nullptr, max_, false, corner, tr, slew, limit, slack);
   slack_limit_ratio = slack / limit;

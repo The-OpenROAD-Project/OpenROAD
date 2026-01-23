@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::Slew;
 using sta::Vertex;
 
 class CloneMove : public BaseMove

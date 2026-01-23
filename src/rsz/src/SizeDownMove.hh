@@ -12,8 +12,6 @@
 
 namespace rsz {
 
-using sta::Slew;
-
 class SizeDownMove : public BaseMove
 {
  public:

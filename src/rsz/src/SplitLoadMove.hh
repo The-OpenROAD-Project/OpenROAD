@@ -10,8 +10,6 @@
 
 namespace rsz {
 
-using sta::Slew;
-
 class SplitLoadMove : public BaseMove
 {
  public:

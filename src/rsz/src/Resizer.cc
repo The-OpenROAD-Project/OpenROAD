@@ -3047,8 +3047,8 @@ float Resizer::findTargetLoad(sta::LibertyCell* cell)
 // to be equal to out_slew.
 float Resizer::findTargetLoad(sta::LibertyCell* cell,
                               TimingArc* arc,
-                              Slew in_slew,
-                              Slew out_slew)
+                              sta::Slew in_slew,
+                              sta::Slew out_slew)
 {
   sta::GateTimingModel* model
       = dynamic_cast<sta::GateTimingModel*>(arc->model());
@@ -3088,24 +3088,24 @@ float Resizer::findTargetLoad(sta::LibertyCell* cell,
 }
 
 // objective function
-Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
-                           TimingArc* arc,
-                           sta::GateTimingModel* model,
-                           Slew in_slew,
-                           float load_cap,
-                           Slew out_slew)
+sta::Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
+                                TimingArc* arc,
+                                sta::GateTimingModel* model,
+                                sta::Slew in_slew,
+                                float load_cap,
+                                sta::Slew out_slew)
 
 {
   const sta::Pvt* pvt = tgt_slew_dcalc_ap_->operatingConditions();
   sta::ArcDelay arc_delay;
-  Slew arc_slew;
+  sta::Slew arc_slew;
   model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
   return arc_slew - out_slew;
 }
 
 ////////////////////////////////////////////////////////////////
 
-Slew Resizer::targetSlew(const sta::RiseFall* rf)
+sta::Slew Resizer::targetSlew(const sta::RiseFall* rf)
 {
   return tgt_slews_[rf->index()];
 }
@@ -3121,16 +3121,16 @@ void Resizer::findBufferTargetSlews()
     const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
     const sta::Pvt* pvt = dcalc_ap->operatingConditions();
     // Average slews across buffers at corner.
-    Slew slews[sta::RiseFall::index_count]{0.0};
+    sta::Slew slews[sta::RiseFall::index_count]{0.0};
     int counts[sta::RiseFall::index_count]{0};
     for (sta::LibertyCell* buffer : buffer_cells_) {
       sta::LibertyCell* corner_buffer = buffer->cornerCell(lib_ap_index);
       findBufferTargetSlews(corner_buffer, pvt, slews, counts);
     }
-    Slew slew_rise = slews[sta::RiseFall::riseIndex()]
-                     / counts[sta::RiseFall::riseIndex()];
-    Slew slew_fall = slews[sta::RiseFall::fallIndex()]
-                     / counts[sta::RiseFall::fallIndex()];
+    sta::Slew slew_rise = slews[sta::RiseFall::riseIndex()]
+                          / counts[sta::RiseFall::riseIndex()];
+    sta::Slew slew_fall = slews[sta::RiseFall::fallIndex()]
+                          / counts[sta::RiseFall::fallIndex()];
     // Use the target slews from the slowest corner,
     // and resize using that corner.
     if (slew_rise > tgt_slews_[sta::RiseFall::riseIndex()]) {
@@ -3154,7 +3154,7 @@ void Resizer::findBufferTargetSlews()
 void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
                                     const sta::Pvt* pvt,
                                     // Return values.
-                                    Slew slews[],
+                                    sta::Slew slews[],
                                     int counts[])
 {
   sta::LibertyPort *input, *output;
@@ -3169,7 +3169,7 @@ void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
         float in_cap = input->capacitance(in_rf, max_);
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         sta::ArcDelay arc_delay;
-        Slew arc_slew;
+        sta::Slew arc_slew;
         model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
         model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
         slews[out_rf->index()] += arc_slew;
@@ -3749,7 +3749,7 @@ float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
   sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   sta::ArcDelay gate_delays[sta::RiseFall::index_count];
-  Slew slews[sta::RiseFall::index_count];
+  sta::Slew slews[sta::RiseFall::index_count];
   gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return gate_delays[rf->index()];
 }
@@ -3761,7 +3761,7 @@ float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
   sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   sta::ArcDelay gate_delays[sta::RiseFall::index_count];
-  Slew slews[sta::RiseFall::index_count];
+  sta::Slew slews[sta::RiseFall::index_count];
   gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return max(gate_delays[sta::RiseFall::riseIndex()],
              gate_delays[sta::RiseFall::fallIndex()]);
@@ -3772,7 +3772,7 @@ void Resizer::bufferDelays(sta::LibertyCell* buffer_cell,
                            const sta::DcalcAnalysisPt* dcalc_ap,
                            // Return values.
                            sta::ArcDelay delays[sta::RiseFall::index_count],
-                           Slew slews[sta::RiseFall::index_count])
+                           sta::Slew slews[sta::RiseFall::index_count])
 {
   sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -3786,7 +3786,7 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          const sta::DcalcAnalysisPt* dcalc_ap,
                          // Return values.
                          sta::ArcDelay delays[sta::RiseFall::index_count],
-                         Slew slews[sta::RiseFall::index_count])
+                         sta::Slew slews[sta::RiseFall::index_count])
 {
   for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = -INF;
@@ -3819,7 +3819,7 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                                          dcalc_ap);
 
         const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
-        const Slew& drvr_slew = dcalc_result.drvrSlew();
+        const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
         delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
         slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
       }
@@ -3831,11 +3831,11 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
 // Takes input slews and load cap
 void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          const float load_cap,
-                         const Slew in_slews[sta::RiseFall::index_count],
+                         const sta::Slew in_slews[sta::RiseFall::index_count],
                          const sta::DcalcAnalysisPt* dcalc_ap,
                          // Return values.
                          sta::ArcDelay delays[sta::RiseFall::index_count],
-                         Slew out_slews[sta::RiseFall::index_count])
+                         sta::Slew out_slews[sta::RiseFall::index_count])
 {
   for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = -INF;
@@ -3858,7 +3858,7 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                                          dcalc_ap);
 
         const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
-        const Slew& drvr_slew = dcalc_result.drvrSlew();
+        const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
         delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
         out_slews[out_rf_index] = max(out_slews[out_rf_index], drvr_slew);
       }
@@ -3872,7 +3872,7 @@ sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const sta::DcalcAnalysisPt* dcalc_ap)
 {
   sta::ArcDelay delays[sta::RiseFall::index_count];
-  Slew slews[sta::RiseFall::index_count];
+  sta::Slew slews[sta::RiseFall::index_count];
   gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
   return delays[rf->index()];
 }
@@ -3882,7 +3882,7 @@ sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const sta::DcalcAnalysisPt* dcalc_ap)
 {
   sta::ArcDelay delays[sta::RiseFall::index_count];
-  Slew slews[sta::RiseFall::index_count];
+  sta::Slew slews[sta::RiseFall::index_count];
   gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
   return max(delays[sta::RiseFall::riseIndex()],
              delays[sta::RiseFall::fallIndex()]);
@@ -4001,7 +4001,7 @@ double Resizer::splitWireDelayDiff(double wire_length,
                                    std::unique_ptr<dbSta>& sta)
 {
   sta::Delay delay1, delay2;
-  Slew slew1, slew2;
+  sta::Slew slew1, slew2;
   bufferWireDelay(buffer_cell, wire_length, sta, delay1, slew1);
   bufferWireDelay(buffer_cell, wire_length / 2, sta, delay2, slew2);
   return delay1 - delay2 * 2;
@@ -4012,7 +4012,7 @@ void Resizer::bufferWireDelay(sta::LibertyCell* buffer_cell,
                               double wire_length,  // meters
                               // Return values.
                               sta::Delay& delay,
-                              Slew& slew)
+                              sta::Slew& slew)
 {
   // Make a (hierarchical) block to use as a scratchpad.
   odb::dbBlock* block = odb::dbBlock::create(block_, "wire_delay", '/');
@@ -4026,7 +4026,7 @@ void Resizer::bufferWireDelay(sta::LibertyCell* buffer_cell,
                               std::unique_ptr<dbSta>& sta,
                               // Return values.
                               sta::Delay& delay,
-                              Slew& slew)
+                              sta::Slew& slew)
 {
   sta::LibertyPort *load_port, *drvr_port;
   buffer_cell->bufferPorts(load_port, drvr_port);
@@ -4042,7 +4042,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
                             std::unique_ptr<dbSta>& sta,
                             // Return values.
                             sta::Delay& delay,
-                            Slew& slew)
+                            sta::Slew& slew)
 {
   sta::Parasitics* parasitics = sta->parasitics();
   sta::Network* network = sta->network();
@@ -5141,7 +5141,7 @@ float Resizer::bufferSlew(sta::LibertyCell* buffer_cell,
   sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   sta::ArcDelay gate_delays[sta::RiseFall::index_count];
-  Slew slews[sta::RiseFall::index_count];
+  sta::Slew slews[sta::RiseFall::index_count];
   gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
   return max(slews[sta::RiseFall::riseIndex()],
              slews[sta::RiseFall::fallIndex()]);
@@ -5172,7 +5172,7 @@ float Resizer::maxInputSlew(const sta::LibertyPort* input,
 void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
                              double slew_margin,
                              // Return values.
-                             Slew& slew,
+                             sta::Slew& slew,
                              float& limit,
                              float& slack,
                              const sta::Corner*& corner)
@@ -5185,7 +5185,7 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
     if (pin != drvr_pin) {
       const sta::Corner* corner1;
       const sta::RiseFall* tr1;
-      Slew slew1;
+      sta::Slew slew1;
       float limit1, slack1;
       sta_->checkSlew(
           pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
@@ -5203,7 +5203,8 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
               const sta::DcalcAnalysisPt* dcalc_ap
                   = corner1->findDcalcAnalysisPt(max_);
               const Vertex* vertex = graph_->pinLoadVertex(pin);
-              Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
+              sta::Slew slew2
+                  = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
               slew1 = std::max(slew1, slew2);
             }
           }

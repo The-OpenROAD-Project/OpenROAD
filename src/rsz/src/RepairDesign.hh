@@ -31,7 +31,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::Slew;
 using sta::StaState;
 using sta::Vertex;
 
@@ -137,7 +136,7 @@ class RepairDesign : sta::dbStaState
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
   void checkSlew(const sta::Pin* drvr_pin,
                  // Return values.
-                 Slew& slew,
+                 sta::Slew& slew,
                  float& limit,
                  float& slack,
                  const sta::Corner*& corner);

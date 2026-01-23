@@ -15,8 +15,6 @@
 
 namespace rsz {
 
-using sta::Slew;
-
 class SwapPinsMove : public BaseMove
 {
  public:

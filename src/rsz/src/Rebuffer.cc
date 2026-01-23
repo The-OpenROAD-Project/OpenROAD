@@ -239,7 +239,7 @@ BnetPtr Rebuffer::resteiner(const BnetPtr& tree)
 
 // Returns: (gate delay, slack correction to account for changed gate pin load,
 // gate pin slew)
-std::tuple<sta::Delay, sta::Delay, Slew> Rebuffer::drvrPinTiming(
+std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
     const BnetPtr& bnet)
 {
   if (bnet->slackTransition() == nullptr) {
@@ -247,7 +247,7 @@ std::tuple<sta::Delay, sta::Delay, Slew> Rebuffer::drvrPinTiming(
   }
 
   sta::Delay delay = 0, correction = INF;
-  Slew slew = 0;
+  sta::Slew slew = 0;
   for (auto rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
     const sta::Path* driver_path = arrival_path->prevPath();
@@ -255,13 +255,13 @@ std::tuple<sta::Delay, sta::Delay, Slew> Rebuffer::drvrPinTiming(
     const Edge* driver_edge = arrival_path->prevEdge(resizer_);
 
     sta::Delay rf_delay, rf_correction;
-    Slew rf_slew = 0;
+    sta::Slew rf_slew = 0;
 
     if (driver_path) {
       const sta::DcalcAnalysisPt* dcalc_ap
           = arrival_path->dcalcAnalysisPt(sta_);
       sta::LoadPinIndexMap load_pin_index_map(network_);
-      Slew slew = graph_delay_calc_->edgeFromSlew(
+      sta::Slew slew = graph_delay_calc_->edgeFromSlew(
           driver_path->vertex(sta_),
           driver_arc->fromEdge()->asRiseFall(),
           driver_edge,
@@ -321,7 +321,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
                                                    int index)
 {
   sta::Delay correction;
-  Slew slew;
+  sta::Slew slew;
   std::tie(std::ignore, correction, slew) = drvrPinTiming(option);
   FixedDelay slack = option->slack() + FixedDelay(correction, resizer_);
 
@@ -1175,7 +1175,7 @@ FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
       sta::LibertyPort *input, *output;
       cell->bufferPorts(input, output);
       sta::ArcDelay gate_delays[sta::RiseFall::index_count];
-      Slew slews[sta::RiseFall::index_count];
+      sta::Slew slews[sta::RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
       delay = std::max<FixedDelay>(
           delay, FixedDelay(gate_delays[rf1->index()], resizer_));
@@ -1490,7 +1490,7 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
 
   const sta::DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(max_);
   auto objective = [&](float load_cap) {
-    Slew slew = -INF;
+    sta::Slew slew = -INF;
     for (TimingArcSet* arc_set : cell->timingArcSets()) {
       if (!arc_set->role()->isTimingCheck()) {
         for (TimingArc* arc : arc_set->arcs()) {
@@ -1503,7 +1503,7 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
                                            nullptr,
                                            load_pin_index_map,
                                            dcalc_ap);
-          const Slew& drvr_slew = dcalc_result.drvrSlew();
+          const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
           slew = std::max(slew, drvr_slew);
         }
       }

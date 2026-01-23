@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Slew;
 using sta::SpefWriter;
 using sta::TimingArc;
 using sta::UnorderedSet;
@@ -78,7 +77,7 @@ using sta::VertexSet;
 
 using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
 using InstanceTuple = std::tuple<sta::Instance*, sta::Instance*>;
-using InputSlews = std::array<Slew, sta::RiseFall::index_count>;
+using InputSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 
 using SteinerPt = int;
 
@@ -114,7 +113,7 @@ class NetHash
 };
 
 using CellTargetLoadMap = sta::Map<sta::LibertyCell*, float>;
-using TgtSlews = std::array<Slew, sta::RiseFall::index_count>;
+using TgtSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 
 enum class MoveType
 {
@@ -331,7 +330,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Resize drvr_pin instance to target slew.
   void resizeDrvrToTargetSlew(const sta::Pin* drvr_pin);
   // Accessor for debugging.
-  Slew targetSlew(const sta::RiseFall* rf);
+  sta::Slew targetSlew(const sta::RiseFall* rf);
   // Accessor for debugging.
   float targetLoadCap(sta::LibertyCell* cell);
 
@@ -405,7 +404,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void bufferWireDelay(sta::LibertyCell* buffer_cell,
                        double wire_length,  // meters
                        sta::Delay& delay,
-                       Slew& slew);
+                       sta::Slew& slew);
   void setDebugPin(const sta::Pin* pin);
   void setWorstSlackNetsPercent(float);
   void annotateInputSlews(sta::Instance* inst,
@@ -566,19 +565,19 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,
                        TimingArc* arc,
-                       Slew in_slew,
-                       Slew out_slew);
-  Slew gateSlewDiff(sta::LibertyCell* cell,
-                    TimingArc* arc,
-                    sta::GateTimingModel* model,
-                    Slew in_slew,
-                    float load_cap,
-                    Slew out_slew);
+                       sta::Slew in_slew,
+                       sta::Slew out_slew);
+  sta::Slew gateSlewDiff(sta::LibertyCell* cell,
+                         TimingArc* arc,
+                         sta::GateTimingModel* model,
+                         sta::Slew in_slew,
+                         float load_cap,
+                         sta::Slew out_slew);
   void findBufferTargetSlews();
   void findBufferTargetSlews(sta::LibertyCell* buffer,
                              const sta::Pvt* pvt,
                              // Return values.
-                             Slew slews[],
+                             sta::Slew slews[],
                              int counts[]);
   bool hasMultipleOutputs(const sta::Instance* inst);
 
@@ -628,14 +627,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
-                  Slew slews[sta::RiseFall::index_count]);
+                  sta::Slew slews[sta::RiseFall::index_count]);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
-                  const Slew in_slews[sta::RiseFall::index_count],
+                  const sta::Slew in_slews[sta::RiseFall::index_count],
                   const sta::DcalcAnalysisPt* dcalc_ap,
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
-                  Slew out_slews[sta::RiseFall::index_count]);
+                  sta::Slew out_slews[sta::RiseFall::index_count]);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           float load_cap,
                           const sta::DcalcAnalysisPt* dcalc_ap);
@@ -655,14 +654,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                     const sta::DcalcAnalysisPt* dcalc_ap,
                     // Return values.
                     sta::ArcDelay delays[sta::RiseFall::index_count],
-                    Slew slews[sta::RiseFall::index_count]);
+                    sta::Slew slews[sta::RiseFall::index_count]);
   void cellWireDelay(sta::LibertyPort* drvr_port,
                      sta::LibertyPort* load_port,
                      double wire_length,  // meters
                      std::unique_ptr<sta::dbSta>& sta,
                      // Return values.
                      sta::Delay& delay,
-                     Slew& slew);
+                     sta::Slew& slew);
   void makeWireParasitic(sta::Net* net,
                          sta::Pin* drvr_pin,
                          sta::Pin* load_pin,
@@ -686,7 +685,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                        double wire_length,  // meters
                        std::unique_ptr<sta::dbSta>& sta,
                        sta::Delay& delay,
-                       Slew& slew);
+                       sta::Slew& slew);
   void findCellInstances(sta::LibertyCell* cell,
                          // Return value.
                          sta::InstanceSeq& insts);
@@ -765,7 +764,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void checkLoadSlews(const sta::Pin* drvr_pin,
                       double slew_margin,
                       // Return values.
-                      Slew& slew,
+                      sta::Slew& slew,
                       float& limit,
                       float& slack,
                       const sta::Corner*& corner);

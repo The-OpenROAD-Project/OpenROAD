@@ -38,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Slew;
 using sta::StaState;
 using sta::TimingArc;
 using sta::Vertex;
