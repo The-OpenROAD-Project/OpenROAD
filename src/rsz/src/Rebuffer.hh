@@ -19,6 +19,7 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
@@ -29,7 +30,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -106,13 +106,13 @@ class Rebuffer : public sta::dbStaState
                            BufferedNetPtr assured_opt,
                            int level);
 
-  std::vector<Instance*> collectImportedTreeBufferInstances(
+  std::vector<sta::Instance*> collectImportedTreeBufferInstances(
       Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
   int exportBufferTree(const BufferedNetPtr& choice,
                        Net* net,  // output of buffer.
                        int level,
-                       Instance* parent_in,
+                       sta::Instance* parent_in,
                        const char* instance_base_name);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;

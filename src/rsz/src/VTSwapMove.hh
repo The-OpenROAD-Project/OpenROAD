@@ -5,6 +5,7 @@
 #include <unordered_set>
 
 #include "BaseMove.hh"
+#include "sta/NetworkClass.hh"
 
 namespace rsz {
 
@@ -19,14 +20,15 @@ class VTSwapSpeedMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  bool doMove(Instance* drvr, std::unordered_set<Instance*>& notSwappable);
+  bool doMove(sta::Instance* drvr,
+              std::unordered_set<sta::Instance*>& notSwappable);
 
   const char* name() override { return "VTSwapSpeed"; }
 
  private:
   bool isSwappable(const Path*& drvr_path,
                    Pin*& drvr_pin,
-                   Instance*& drvr,
+                   sta::Instance*& drvr,
                    LibertyCell*& drvr_cell,
                    LibertyCell*& best_cell);
 };

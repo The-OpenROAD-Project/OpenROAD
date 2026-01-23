@@ -10,7 +10,6 @@
 
 namespace rsz {
 
-using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LoadPinIndexMap;
 using sta::NetConnectedPinIterator;
@@ -32,12 +31,12 @@ class UnbufferMove : public BaseMove
 
   const char* name() override { return "UnbufferMove"; }
 
-  bool removeBufferIfPossible(Instance* buffer, bool honorDontTouchFixed);
-  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed);
-  bool removeBuffer(Instance* buffer);
+  bool removeBufferIfPossible(sta::Instance* buffer, bool honorDontTouchFixed);
+  bool canRemoveBuffer(sta::Instance* buffer, bool honorDontTouchFixed);
+  bool removeBuffer(sta::Instance* buffer);
 
  private:
-  bool bufferBetweenPorts(Instance* buffer);
+  bool bufferBetweenPorts(sta::Instance* buffer);
 
   static constexpr int buffer_removal_max_fanout_ = 10;
 };

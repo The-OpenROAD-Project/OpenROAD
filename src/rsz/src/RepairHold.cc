@@ -27,6 +27,7 @@
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
@@ -686,7 +687,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
                                LibertyCell* buffer_cell,
                                const odb::Point& loc)
 {
-  Instance* buffer = nullptr;
+  sta::Instance* buffer = nullptr;
   Pin* buffer_out_pin = nullptr;
 
   // New insert buffer behavior

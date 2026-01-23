@@ -97,7 +97,7 @@ class RepairDesign : sta::dbStaState
   void performEarlySizingRound(int& repaired_net_count);
 
   void checkDriverArcSlew(const sta::Corner* corner,
-                          const Instance* inst,
+                          const sta::Instance* inst,
                           const TimingArc* arc,
                           float load_cap,
                           float limit,

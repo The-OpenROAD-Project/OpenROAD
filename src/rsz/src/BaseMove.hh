@@ -48,7 +48,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Instance;
 using sta::InstancePinIterator;
 using sta::InstanceSet;
 using sta::LibertyCell;
@@ -80,7 +79,7 @@ struct SlackEstimatorParams
   Pin* driver_pin{nullptr};
   Pin* prev_driver_pin{nullptr};
   Pin* driver_input_pin{nullptr};
-  Instance* driver{nullptr};
+  sta::Instance* driver{nullptr};
   const Path* driver_path{nullptr};
   const Path* prev_driver_path{nullptr};
   LibertyCell* driver_cell{nullptr};
@@ -114,17 +113,17 @@ class BaseMove : public sta::dbStaState
   // Total pending optimizations (since last checkpoint)
   int numPendingMoves() const;
   // Whether this optimization is pending
-  int hasPendingMoves(Instance* inst) const;
+  int hasPendingMoves(sta::Instance* inst) const;
   // Total optimizations
   int numCommittedMoves() const;
   // Total rejected count
   int numRejectedMoves() const;
   // Whether this optimization is committed or pending
-  int hasMoves(Instance* inst) const;
+  int hasMoves(sta::Instance* inst) const;
   // Total accepted and pending optimizations
   int numMoves() const;
   // Add a new pending optimization
-  void addMove(Instance* inst, int count = 1);
+  void addMove(sta::Instance* inst, int count = 1);
 
  protected:
   Resizer* resizer_;
@@ -191,12 +190,12 @@ class BaseMove : public sta::dbStaState
   std::vector<bool> simulateExpr(
       sta::FuncExpr* expr,
       sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
-  Instance* makeBuffer(LibertyCell* cell,
-                       const char* name,
-                       Instance* parent,
-                       const odb::Point& loc);
+  sta::Instance* makeBuffer(LibertyCell* cell,
+                            const char* name,
+                            sta::Instance* parent,
+                            const odb::Point& loc);
   bool estimatedSlackOK(const SlackEstimatorParams& params);
-  bool estimateInputSlewImpact(Instance* instance,
+  bool estimateInputSlewImpact(sta::Instance* instance,
                                const sta::DcalcAnalysisPt* dcalc_ap,
                                Slew old_in_slew[RiseFall::index_count],
                                Slew new_in_slew[RiseFall::index_count],
@@ -204,7 +203,7 @@ class BaseMove : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
+  void getBufferPins(sta::Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 
   LibertyCell* upsizeCell(LibertyPort* in_port,
@@ -212,8 +211,9 @@ class BaseMove : public sta::dbStaState
                           float load_cap,
                           float prev_drive,
                           const sta::DcalcAnalysisPt* dcalc_ap);
-  bool replaceCell(Instance* inst, const LibertyCell* replacement);
-  bool checkMaxCapViolation(Instance* inst, const LibertyCell* replacement);
+  bool replaceCell(sta::Instance* inst, const LibertyCell* replacement);
+  bool checkMaxCapViolation(sta::Instance* inst,
+                            const LibertyCell* replacement);
   float getInputPinCapacitance(Pin* pin, const LibertyCell* cell);
   bool checkMaxCapOK(const Pin* drvr_pin, float cap_delta);
 
@@ -229,10 +229,10 @@ class BaseMove : public sta::dbStaState
                                 LibertyPort* output_port,
                                 float output_load_cap);
   sta::ArcDelay getWorstIntrinsicDelay(const LibertyPort* input_port);
-  Slack getWorstInputSlack(Instance* inst);
-  Slack getWorstOutputSlack(Instance* inst);
+  Slack getWorstInputSlack(sta::Instance* inst);
+  Slack getWorstOutputSlack(sta::Instance* inst);
   std::vector<const LibertyPort*> getOutputPorts(const LibertyCell* cell);
-  std::vector<const Pin*> getOutputPins(const Instance* inst);
+  std::vector<const Pin*> getOutputPins(const sta::Instance* inst);
   LibertyCellSeq getSwappableCells(LibertyCell* base);
 
   static constexpr int size_down_max_fanout_ = 10;

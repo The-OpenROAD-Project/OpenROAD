@@ -12,6 +12,7 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
@@ -33,7 +34,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Instance;
 using sta::Path;
 
 class SwapArithModules : public sta::dbStaState
@@ -49,7 +49,8 @@ class SwapArithModules : public sta::dbStaState
   virtual void collectArithInstsOnPath(const Path* path,
                                        std::set<odb::dbModInst*>& arithInsts)
       = 0;
-  virtual bool isArithInstance(const Instance* inst, odb::dbModInst*& mod_inst)
+  virtual bool isArithInstance(const sta::Instance* inst,
+                               odb::dbModInst*& mod_inst)
       = 0;
   virtual bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) = 0;
   virtual void findCriticalInstances(int path_count,

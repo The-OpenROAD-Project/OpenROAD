@@ -1077,9 +1077,9 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
   if (violating_ends.size() > max_endpoints) {
     violating_ends.resize(max_endpoints);
   }
-  std::unordered_map<Instance*, float> crit_insts;
+  std::unordered_map<sta::Instance*, float> crit_insts;
   std::unordered_set<Vertex*> visited;
-  std::unordered_set<Instance*> notSwappable;
+  std::unordered_set<sta::Instance*> notSwappable;
   for (const auto& [endpoint, slack] : violating_ends) {
     traverseFaninCone(endpoint, crit_insts, visited, notSwappable, params);
   }
@@ -1126,9 +1126,9 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
 // This avoids exponential path enumeration in findPathEnds.
 void RepairSetup::traverseFaninCone(
     Vertex* endpoint,
-    std::unordered_map<Instance*, float>& crit_insts,
+    std::unordered_map<sta::Instance*, float>& crit_insts,
     std::unordered_set<Vertex*>& visited,
-    std::unordered_set<Instance*>& notSwappable,
+    std::unordered_set<sta::Instance*>& notSwappable,
     const OptoParams& params)
 
 {
@@ -1149,7 +1149,7 @@ void RepairSetup::traverseFaninCone(
     queue.pop();
 
     // Get the instance associated with this vertex
-    Instance* inst = nullptr;
+    sta::Instance* inst = nullptr;
     Pin* pin = current->pin();
     if (pin) {
       inst = network_->instance(pin);
@@ -1213,7 +1213,7 @@ void RepairSetup::traverseFaninCone(
   }
 }
 
-Slack RepairSetup::getInstanceSlack(Instance* inst)
+Slack RepairSetup::getInstanceSlack(sta::Instance* inst)
 {
   Slack worst_slack = std::numeric_limits<float>::max();
 

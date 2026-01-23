@@ -16,6 +16,7 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
@@ -37,7 +38,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -138,11 +138,11 @@ class RepairSetup : public sta::dbStaState
                            int max_iterations);
   bool swapVTCritCells(const OptoParams& params, int& num_viols);
   void traverseFaninCone(Vertex* endpoint,
-                         std::unordered_map<Instance*, float>& crit_insts,
+                         std::unordered_map<sta::Instance*, float>& crit_insts,
                          std::unordered_set<Vertex*>& visited,
-                         std::unordered_set<Instance*>& notSwappable,
+                         std::unordered_set<sta::Instance*>& notSwappable,
                          const OptoParams& params);
-  Slack getInstanceSlack(Instance* inst);
+  Slack getInstanceSlack(sta::Instance* inst);
 
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;

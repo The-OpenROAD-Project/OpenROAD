@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Instance;
 using sta::InstanceSeq;
 using sta::InstanceSet;
 using sta::LibertyCell;
@@ -101,7 +100,7 @@ using sta::VertexSeq;
 using sta::VertexSet;
 
 using LibertyPortTuple = std::tuple<LibertyPort*, LibertyPort*>;
-using InstanceTuple = std::tuple<Instance*, Instance*>;
+using InstanceTuple = std::tuple<sta::Instance*, sta::Instance*>;
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 
 using SteinerPt = int;
@@ -250,8 +249,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void resetDontUse();
   bool dontUse(const LibertyCell* cell);
   void reportDontUse() const;
-  void setDontTouch(const Instance* inst, bool dont_touch);
-  bool dontTouch(const Instance* inst) const;
+  void setDontTouch(const sta::Instance* inst, bool dont_touch);
+  bool dontTouch(const sta::Instance* inst) const;
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net) const;
 
@@ -259,15 +258,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   /// Wrapper for odb::dbNet::insertBufferAfterDriver().
   /// - This accepts STA objects instead of db objects.
   ///
-  Instance* insertBufferAfterDriver(Net* net,
-                                    LibertyCell* buffer_cell,
-                                    const odb::Point* loc = nullptr,
-                                    const char* new_buf_base_name
-                                    = kDefaultBufBaseName,
-                                    const char* new_net_base_name
-                                    = kDefaultNetBaseName,
-                                    const odb::dbNameUniquifyType& uniquify
-                                    = odb::dbNameUniquifyType::ALWAYS);
+  sta::Instance* insertBufferAfterDriver(Net* net,
+                                         LibertyCell* buffer_cell,
+                                         const odb::Point* loc = nullptr,
+                                         const char* new_buf_base_name
+                                         = kDefaultBufBaseName,
+                                         const char* new_net_base_name
+                                         = kDefaultNetBaseName,
+                                         const odb::dbNameUniquifyType& uniquify
+                                         = odb::dbNameUniquifyType::ALWAYS);
   odb::dbInst* insertBufferAfterDriver(odb::dbNet* net,
                                        odb::dbMaster* buffer_cell,
                                        const odb::Point* loc = nullptr,
@@ -282,15 +281,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   /// Wrapper for odb::dbNet::insertBufferBeforeLoad().
   /// - This accepts STA objects instead of db objects.
   ///
-  Instance* insertBufferBeforeLoad(Pin* load_pin,
-                                   LibertyCell* buffer_cell,
-                                   const odb::Point* loc = nullptr,
-                                   const char* new_buf_base_name
-                                   = kDefaultBufBaseName,
-                                   const char* new_net_base_name
-                                   = kDefaultNetBaseName,
-                                   const odb::dbNameUniquifyType& uniquify
-                                   = odb::dbNameUniquifyType::ALWAYS);
+  sta::Instance* insertBufferBeforeLoad(Pin* load_pin,
+                                        LibertyCell* buffer_cell,
+                                        const odb::Point* loc = nullptr,
+                                        const char* new_buf_base_name
+                                        = kDefaultBufBaseName,
+                                        const char* new_net_base_name
+                                        = kDefaultNetBaseName,
+                                        const odb::dbNameUniquifyType& uniquify
+                                        = odb::dbNameUniquifyType::ALWAYS);
   odb::dbInst* insertBufferBeforeLoad(odb::dbObject* load_pin,
                                       odb::dbMaster* buffer_cell,
                                       const odb::Point* loc = nullptr,
@@ -305,7 +304,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   /// Wrapper for odb::dbNet::insertBufferBeforeLoads().
   /// - This accepts STA objects instead of db objects.
   ///
-  Instance* insertBufferBeforeLoads(
+  sta::Instance* insertBufferBeforeLoads(
       Net* net,
       PinSeq* loads,
       LibertyCell* buffer_cell,
@@ -314,7 +313,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const char* new_net_base_name = kDefaultNetBaseName,
       const odb::dbNameUniquifyType& uniquify = odb::dbNameUniquifyType::ALWAYS,
       bool loads_on_diff_nets = false);
-  Instance* insertBufferBeforeLoads(
+  sta::Instance* insertBufferBeforeLoads(
       Net* net,
       PinSet* loads,
       LibertyCell* buffer_cell,
@@ -430,7 +429,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                        Slew& slew);
   void setDebugPin(const Pin* pin);
   void setWorstSlackNetsPercent(float);
-  void annotateInputSlews(Instance* inst, const sta::DcalcAnalysisPt* dcalc_ap);
+  void annotateInputSlews(sta::Instance* inst,
+                          const sta::DcalcAnalysisPt* dcalc_ap);
   void resetInputSlews();
 
   ////////////////////////////////////////////////////////////////
@@ -544,9 +544,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
-  Instance* bufferInput(const Pin* top_pin,
-                        LibertyCell* buffer_cell,
-                        bool verbose);
+  sta::Instance* bufferInput(const Pin* top_pin,
+                             LibertyCell* buffer_cell,
+                             bool verbose);
   void bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell, bool verbose);
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin) const;
@@ -566,14 +566,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   //==============================
   // APIs for gate cloning
-  LibertyCell* halfDrivingPowerCell(Instance* inst);
+  LibertyCell* halfDrivingPowerCell(sta::Instance* inst);
   LibertyCell* halfDrivingPowerCell(LibertyCell* cell);
   LibertyCell* closestDriver(LibertyCell* cell,
                              const LibertyCellSeq& candidates,
                              float scale);
-  std::vector<sta::LibertyPort*> libraryPins(Instance* inst) const;
+  std::vector<sta::LibertyPort*> libraryPins(sta::Instance* inst) const;
   std::vector<sta::LibertyPort*> libraryPins(LibertyCell* cell) const;
-  bool isSingleOutputCombinational(Instance* inst) const;
+  bool isSingleOutputCombinational(sta::Instance* inst) const;
   bool isSingleOutputCombinational(LibertyCell* cell) const;
   bool isCombinational(LibertyCell* cell) const;
   std::vector<sta::LibertyPort*> libraryOutputPins(LibertyCell* cell) const;
@@ -596,7 +596,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              // Return values.
                              Slew slews[],
                              int counts[]);
-  bool hasMultipleOutputs(const Instance* inst);
+  bool hasMultipleOutputs(const sta::Instance* inst);
 
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
@@ -627,7 +627,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float portCapacitance(LibertyPort* input, const sta::Corner* corner) const;
   float pinCapacitance(const Pin* pin,
                        const sta::DcalcAnalysisPt* dcalc_ap) const;
-  void swapPins(Instance* inst,
+  void swapPins(sta::Instance* inst,
                 LibertyPort* port1,
                 LibertyPort* port2,
                 bool journal);
@@ -685,9 +685,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                          const sta::Corner* corner,
                          Parasitics* parasitics);
   bool overMaxArea();
-  bool bufferBetweenPorts(Instance* buffer);
+  bool bufferBetweenPorts(sta::Instance* buffer);
   bool hasPort(const Net* net);
-  odb::Point location(Instance* inst);
+  odb::Point location(sta::Instance* inst);
   double area(odb::dbMaster* master);
   double area(sta::Cell* cell);
   double splitWireDelayDiff(double wire_length,
@@ -709,16 +709,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isFuncOneZero(const Pin* drvr_pin);
   bool hasPins(Net* net);
   void getPins(Net* net, PinVector& pins) const;
-  void getPins(Instance* inst, PinVector& pins) const;
+  void getPins(sta::Instance* inst, PinVector& pins) const;
   void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   odb::Point tieLocation(const Pin* load, int separation);
   InstanceSeq findClkInverters();
-  void cloneClkInverter(Instance* inv);
+  void cloneClkInverter(sta::Instance* inv);
 
   void makePadParasitic(const Net* net, SpefWriter* spef_writer);
   bool isPadNet(const Net* net) const;
   bool isPadPin(const Pin* pin) const;
-  bool isPad(const Instance* inst) const;
+  bool isPad(const sta::Instance* inst) const;
   void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
   void parasiticNodeConnectPins(Parasitic* parasitic,
                                 ParasiticNode* node,
@@ -726,30 +726,31 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                 SteinerPt pt,
                                 size_t& resistor_id);
 
-  bool replaceCell(Instance* inst,
+  bool replaceCell(sta::Instance* inst,
                    const LibertyCell* replacement,
                    bool journal);
 
   void findResizeSlacks1();
-  Instance* makeInstance(LibertyCell* cell,
-                         const char* name,
-                         Instance* parent,
-                         const odb::Point& loc,
-                         const odb::dbNameUniquifyType& uniquify
-                         = odb::dbNameUniquifyType::ALWAYS);
-  void deleteTieCellAndNet(const Instance* tie_inst, LibertyPort* tie_port);
+  sta::Instance* makeInstance(LibertyCell* cell,
+                              const char* name,
+                              sta::Instance* parent,
+                              const odb::Point& loc,
+                              const odb::dbNameUniquifyType& uniquify
+                              = odb::dbNameUniquifyType::ALWAYS);
+  void deleteTieCellAndNet(const sta::Instance* tie_inst,
+                           LibertyPort* tie_port);
   const Pin* findArithBoundaryPin(const Pin* load_pin);
-  Instance* createNewTieCellForLoadPin(const Pin* load_pin,
-                                       const char* new_inst_name,
-                                       Instance* parent,
-                                       LibertyPort* tie_port,
-                                       int separation_dbu);
-  void getBufferPins(Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
+  sta::Instance* createNewTieCellForLoadPin(const Pin* load_pin,
+                                            const char* new_inst_name,
+                                            sta::Instance* parent,
+                                            LibertyPort* tie_port,
+                                            int separation_dbu);
+  void getBufferPins(sta::Instance* buffer, Pin*& ip_pin, Pin*& op_pin);
 
-  Instance* makeBuffer(LibertyCell* cell,
-                       const char* name,
-                       Instance* parent,
-                       const odb::Point& loc);
+  sta::Instance* makeBuffer(LibertyCell* cell,
+                            const char* name,
+                            sta::Instance* parent,
+                            const odb::Point& loc);
 
   void insertBufferPostProcess(odb::dbInst* buffer_inst);
 
@@ -779,11 +780,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                       float& slack,
                       const sta::Corner*& corner);
   void warnBufferMovedIntoCore();
-  bool isLogicStdCell(const Instance* inst);
+  bool isLogicStdCell(const sta::Instance* inst);
 
   bool okToBufferNet(const Pin* driver_pin) const;
-  bool checkAndMarkVTSwappable(Instance* inst,
-                               std::unordered_set<Instance*>& notSwappable,
+  bool checkAndMarkVTSwappable(sta::Instance* inst,
+                               std::unordered_set<sta::Instance*>& notSwappable,
                                LibertyCell*& best_lib_cell);
 
   ////////////////////////////////////////////////////////////////
@@ -792,7 +793,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void journalBegin();
   void journalEnd();
   void journalRestore();
-  void journalMakeBuffer(Instance* buffer);
+  void journalMakeBuffer(sta::Instance* buffer);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis

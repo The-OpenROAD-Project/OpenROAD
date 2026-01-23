@@ -23,6 +23,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
@@ -326,7 +327,7 @@ bool RecoverPower::downsizeDrvr(const Path* drvr_path,
                                 const Slack path_slack)
 {
   const Pin* drvr_pin = drvr_path->pin(this);
-  Instance* drvr = network_->instance(drvr_pin);
+  sta::Instance* drvr = network_->instance(drvr_pin);
   const sta::DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
   const int in_index = drvr_index - 1;

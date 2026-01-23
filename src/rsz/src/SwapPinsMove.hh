@@ -15,7 +15,6 @@
 
 namespace rsz {
 
-using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
 using sta::LibertyPort;
@@ -43,11 +42,12 @@ class SwapPinsMove : public BaseMove
 
  private:
   using LibertyPortVec = std::vector<LibertyPort*>;
-  void swapPins(Instance* inst, LibertyPort* port1, LibertyPort* port2);
+  void swapPins(sta::Instance* inst, LibertyPort* port1, LibertyPort* port2);
   void equivCellPins(const LibertyCell* cell,
                      LibertyPort* input_port,
                      LibertyPortVec& ports);
-  void annotateInputSlews(Instance* inst, const sta::DcalcAnalysisPt* dcalc_ap);
+  void annotateInputSlews(sta::Instance* inst,
+                          const sta::DcalcAnalysisPt* dcalc_ap);
   void findSwapPinCandidate(LibertyPort* input_port,
                             LibertyPort* drvr_port,
                             const LibertyPortVec& equiv_ports,

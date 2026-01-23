@@ -583,7 +583,7 @@ void RepairDesign::repairNet(Net* net,
 
 bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
 {
-  Instance* inst = network_->instance(drvr_pin);
+  sta::Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = network_->libertyCell(inst);
   cin = 0;
   if (!network_->isTopLevelPort(drvr_pin) && cell != nullptr
@@ -612,7 +612,7 @@ bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
 
 bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
 {
-  Instance* inst = network_->instance(drvr_pin);
+  sta::Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = network_->libertyCell(inst);
   cin = 0;
   if (!network_->isTopLevelPort(drvr_pin) && cell != nullptr
@@ -738,7 +738,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     if (pin != drvr_pin && !network_->isTopLevelPort(pin)
         && network_->direction(pin) == PortDirection::input()
         && network_->libertyPort(pin)) {
-      Instance* inst = network_->instance(pin);
+      sta::Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
         Vertex* vertex = graph_->pinLoadVertex(pin);
         Path* req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
@@ -823,7 +823,7 @@ bool RepairDesign::performGainBuffering(Net* net,
       }
     }
 
-    Instance* inst = resizer_->insertBufferBeforeLoads(
+    sta::Instance* inst = resizer_->insertBufferBeforeLoads(
         net, &group_set, *buf_cell, nullptr, "gain");
     if (inst) {
       repaired_net = true;
@@ -863,7 +863,7 @@ bool RepairDesign::performGainBuffering(Net* net,
 }
 
 void RepairDesign::checkDriverArcSlew(const sta::Corner* corner,
-                                      const Instance* inst,
+                                      const sta::Instance* inst,
                                       const TimingArc* arc,
                                       float load_cap,
                                       float limit,
@@ -903,7 +903,7 @@ void RepairDesign::checkDriverArcSlew(const sta::Corner* corner,
 bool RepairDesign::repairDriverSlew(const sta::Corner* corner,
                                     const Pin* drvr_pin)
 {
-  Instance* inst = network_->instance(drvr_pin);
+  sta::Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = network_->libertyCell(inst);
 
   float load_cap;
@@ -2160,7 +2160,7 @@ bool RepairDesign::makeRepeater(
 
   // Insert buffer
   odb::Point loc(x, y);
-  Instance* buffer = resizer_->insertBufferBeforeLoads(
+  sta::Instance* buffer = resizer_->insertBufferBeforeLoads(
       nullptr, &load_pins, buffer_cell, &loc, reason);
   if (!buffer) {
     return false;

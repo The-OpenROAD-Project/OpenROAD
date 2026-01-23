@@ -1556,7 +1556,7 @@ void Rebuffer::characterizeBufferLimits()
   }
 }
 
-static bool isPortBuffer(sta::dbNetwork* network, Instance* inst)
+static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst)
 {
   if (network->libertyCell(inst) && network->libertyCell(inst)->isBuffer()) {
     odb::dbInst* db_inst = network->staToDb(inst);
@@ -1615,7 +1615,7 @@ BnetPtr Rebuffer::importBufferTree(const Pin* drvr_pin,
               return node;
             }
 
-            Instance* inst = network_->instance(pin);
+            sta::Instance* inst = network_->instance(pin);
             if (!resizer_->isLogicStdCell(inst)
                 || isPortBuffer(db_network_, inst)
                 || !resizer_->unbuffer_move_->canRemoveBuffer(inst, true)) {
@@ -1683,7 +1683,7 @@ static FixedDelay criticalPathDelay(utl::Logger* logger, const BnetPtr& root)
   return worst_load_slack - root->slack();
 }
 
-std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
+std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
     Pin* drvr_pin,
     const BnetPtr& imported_tree)
 {
@@ -1705,7 +1705,7 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
       },
       imported_tree);
 
-  std::vector<Instance*> insts;
+  std::vector<sta::Instance*> insts;
   Net* net = network_->net(drvr_pin);
   if (!net) {
     return {};
@@ -1726,7 +1726,7 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
         port->libertyCell()->bufferPorts(in, out);
 
         if (port == in && !imported_as_loads.contains(pin)) {
-          Instance* inst = network_->instance(pin);
+          sta::Instance* inst = network_->instance(pin);
           insts.push_back(inst);
           const Pin* out_pin = network_->findPin(inst, out);
           if (out_pin) {
@@ -1744,7 +1744,7 @@ std::vector<Instance*> Rebuffer::collectImportedTreeBufferInstances(
 int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                Net* net,  // Original Driver Net (flat)
                                int level,
-                               Instance* parent_in,
+                               sta::Instance* parent_in,
                                const char* instance_base_name)
 {
   // Algorithm: Bottom-Up Buffer Tree Insertion
@@ -2007,7 +2007,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
         && !sta_->isClockSrc(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant() && !resizer_->isTristateDriver(drvr_pin)) {
-      Instance* inst = network_->instance(drvr_pin);
+      sta::Instance* inst = network_->instance(drvr_pin);
 
       if (inst && network_->libertyCell(inst)
           && (!network_->libertyCell(inst)->isBuffer()
@@ -2183,7 +2183,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       break;
     }
 
-    Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
+    sta::Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
     odb::dbITerm* drvr_op_iterm = nullptr;
     odb::dbBTerm* drvr_op_bterm = nullptr;
     odb::dbModITerm* drvr_op_moditerm = nullptr;
@@ -2353,7 +2353,7 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
       return 0;
     }
 
-    Instance* parent
+    sta::Instance* parent
         = db_network_->getOwningInstanceParent(const_cast<Pin*>(drvr_pin));
     odb::dbITerm* drvr_op_iterm = nullptr;
     odb::dbBTerm* drvr_op_bterm = nullptr;
