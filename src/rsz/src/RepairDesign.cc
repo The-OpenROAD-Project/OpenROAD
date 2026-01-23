@@ -684,7 +684,7 @@ bool RepairDesign::performGainBuffering(Net* net,
   {
     Pin* pin;
     Path* required_path;
-    Delay required_delay;
+    sta::Delay required_delay;
     int level;
 
     Required required(const StaState*) const
@@ -832,7 +832,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     }
 
     // 4. New buffer input pin is enqueued as a new sink
-    Delay buffer_delay = resizer_->bufferDelay(
+    sta::Delay buffer_delay = resizer_->bufferDelay(
         *buf_cell, load_acc, resizer_->tgt_slew_dcalc_ap_);
 
     auto new_pin = EnqueuedPin{new_input_pin,

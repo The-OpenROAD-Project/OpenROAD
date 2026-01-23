@@ -67,7 +67,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::Delay;
 using sta::GateTimingModel;
 using sta::Instance;
 using sta::InstanceSeq;
@@ -428,7 +427,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                        bool verbose);
   void bufferWireDelay(LibertyCell* buffer_cell,
                        double wire_length,  // meters
-                       Delay& delay,
+                       sta::Delay& delay,
                        Slew& slew);
   void setDebugPin(const Pin* pin);
   void setWorstSlackNetsPercent(float);
@@ -678,7 +677,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      double wire_length,  // meters
                      std::unique_ptr<sta::dbSta>& sta,
                      // Return values.
-                     Delay& delay,
+                     sta::Delay& delay,
                      Slew& slew);
   void makeWireParasitic(Net* net,
                          Pin* drvr_pin,
@@ -702,7 +701,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void bufferWireDelay(LibertyCell* buffer_cell,
                        double wire_length,  // meters
                        std::unique_ptr<sta::dbSta>& sta,
-                       Delay& delay,
+                       sta::Delay& delay,
                        Slew& slew);
   void findCellInstances(LibertyCell* cell,
                          // Return value.

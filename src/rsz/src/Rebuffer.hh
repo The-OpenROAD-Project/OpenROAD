@@ -29,7 +29,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Delay;
 using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
@@ -72,7 +71,8 @@ class Rebuffer : public sta::dbStaState
 
   void setPin(Pin* drvr_pin);
 
-  std::tuple<Delay, Delay, Slew> drvrPinTiming(const BufferedNetPtr& bnet);
+  std::tuple<sta::Delay, sta::Delay, Slew> drvrPinTiming(
+      const BufferedNetPtr& bnet);
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
   std::optional<FixedDelay> evaluateOption(const BufferedNetPtr& option,
                                            // Only used for debug print.

@@ -27,7 +27,6 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::Delay;
 using sta::LibertyCell;
 using sta::Network;
 using sta::Path;

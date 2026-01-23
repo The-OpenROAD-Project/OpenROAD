@@ -26,7 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Delay;
 using sta::LibertyCell;
 using sta::LibertyCellSeq;
 using sta::MinMax;
@@ -76,7 +75,7 @@ class RepairHold : public sta::dbStaState
   float bufferHoldDelay(LibertyCell* buffer);
   void bufferHoldDelays(LibertyCell* buffer,
                         // Return values.
-                        Delay delays[RiseFall::index_count]);
+                        sta::Delay delays[RiseFall::index_count]);
   void findHoldViolations(VertexSeq& ends,
                           double hold_margin,
                           // Return values.

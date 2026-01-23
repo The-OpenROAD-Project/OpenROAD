@@ -238,13 +238,14 @@ BnetPtr Rebuffer::resteiner(const BnetPtr& tree)
 
 // Returns: (gate delay, slack correction to account for changed gate pin load,
 // gate pin slew)
-std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
+std::tuple<sta::Delay, sta::Delay, Slew> Rebuffer::drvrPinTiming(
+    const BnetPtr& bnet)
 {
   if (bnet->slackTransition() == nullptr) {
     return {0, 0, 0};
   }
 
-  Delay delay = 0, correction = INF;
+  sta::Delay delay = 0, correction = INF;
   Slew slew = 0;
   for (auto rf : bnet->slackTransition()->range()) {
     const Path* arrival_path = arrival_paths_[rf->index()];
@@ -252,7 +253,7 @@ std::tuple<Delay, Delay, Slew> Rebuffer::drvrPinTiming(const BnetPtr& bnet)
     const TimingArc* driver_arc = arrival_path->prevArc(resizer_);
     const Edge* driver_edge = arrival_path->prevEdge(resizer_);
 
-    Delay rf_delay, rf_correction;
+    sta::Delay rf_delay, rf_correction;
     Slew rf_slew = 0;
 
     if (driver_path) {
@@ -308,7 +309,7 @@ bool Rebuffer::loadSlewSatisfactory(LibertyPort* driver, const BnetPtr& bnet)
 
 FixedDelay Rebuffer::slackAtDriverPin(const BufferedNetPtr& bnet)
 {
-  Delay correction;
+  sta::Delay correction;
   std::tie(std::ignore, correction, std::ignore) = drvrPinTiming(bnet);
   return bnet->slack() + FixedDelay(correction, resizer_);
 }
@@ -317,7 +318,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
                                                    // Only used for debug print.
                                                    int index)
 {
-  Delay correction;
+  sta::Delay correction;
   Slew slew;
   std::tie(std::ignore, correction, slew) = drvrPinTiming(option);
   FixedDelay slack = option->slack() + FixedDelay(correction, resizer_);
@@ -907,7 +908,7 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
                                      FixedDelay slack_target,
                                      float alpha)
 {
-  Delay slack_correction;
+  sta::Delay slack_correction;
   std::tie(std::ignore, slack_correction, std::ignore) = drvrPinTiming(root);
 
   if (!root->slackTransition()) {
@@ -2096,7 +2097,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     // The slack estimation error as observed on the original tree: we have both
     // the full STA figure and our timing model estimate and we can compare
-    Delay original_tree_slack_error = slack - sta_slack;
+    sta::Delay original_tree_slack_error = slack - sta_slack;
 
     BnetPtr unbuffered_tree = resteiner(stripTreeBuffers(original_tree));
     BnetPtr timing_tree = unbuffered_tree;
@@ -2122,7 +2123,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
       continue;
     }
 
-    Delay drvr_gate_delay;
+    sta::Delay drvr_gate_delay;
     std::tie(drvr_gate_delay, std::ignore, std::ignore)
         = drvrPinTiming(timing_tree);
 
@@ -2155,7 +2156,7 @@ void Rebuffer::fullyRebuffer(Pin* user_pin)
 
     // Check the tree isn't fully unconstrained
     if (timing_tree->slackTransition() != nullptr) {
-      Delay relaxation
+      sta::Delay relaxation
           = std::max<float>(0.0f,
                             ((slackAtDriverPin(timing_tree).toSeconds())
                              - std::min(original_tree_slack_error, 0.0f)))
@@ -2334,11 +2335,11 @@ int Rebuffer::rebufferPin(const Pin* drvr_pin)
       return 0;
     }
 
-    Delay drvr_gate_delay;
+    sta::Delay drvr_gate_delay;
     std::tie(drvr_gate_delay, std::ignore, std::ignore) = drvrPinTiming(bnet);
-    Delay relaxation = (std::max(drvr_gate_delay, 0.0f)
-                        + criticalPathDelay(logger_, bnet).toSeconds())
-                       * relaxation_factor_;
+    sta::Delay relaxation = (std::max(drvr_gate_delay, 0.0f)
+                             + criticalPathDelay(logger_, bnet).toSeconds())
+                            * relaxation_factor_;
 
     FixedDelay target
         = slackAtDriverPin(bnet) - FixedDelay(relaxation, resizer_);

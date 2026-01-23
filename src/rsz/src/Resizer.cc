@@ -3984,7 +3984,7 @@ double Resizer::splitWireDelayDiff(double wire_length,
                                    LibertyCell* buffer_cell,
                                    std::unique_ptr<dbSta>& sta)
 {
-  Delay delay1, delay2;
+  sta::Delay delay1, delay2;
   Slew slew1, slew2;
   bufferWireDelay(buffer_cell, wire_length, sta, delay1, slew1);
   bufferWireDelay(buffer_cell, wire_length / 2, sta, delay2, slew2);
@@ -3995,7 +3995,7 @@ double Resizer::splitWireDelayDiff(double wire_length,
 void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
                               double wire_length,  // meters
                               // Return values.
-                              Delay& delay,
+                              sta::Delay& delay,
                               Slew& slew)
 {
   // Make a (hierarchical) block to use as a scratchpad.
@@ -4009,7 +4009,7 @@ void Resizer::bufferWireDelay(LibertyCell* buffer_cell,
                               double wire_length,  // meters
                               std::unique_ptr<dbSta>& sta,
                               // Return values.
-                              Delay& delay,
+                              sta::Delay& delay,
                               Slew& slew)
 {
   LibertyPort *load_port, *drvr_port;
@@ -4025,7 +4025,7 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
                             double wire_length,  // meters
                             std::unique_ptr<dbSta>& sta,
                             // Return values.
-                            Delay& delay,
+                            sta::Delay& delay,
                             Slew& slew)
 {
   Parasitics* parasitics = sta->parasitics();

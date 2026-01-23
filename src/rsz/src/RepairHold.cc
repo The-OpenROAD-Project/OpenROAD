@@ -352,7 +352,7 @@ bool RepairHold::addMatchingBuffers(const LibertyCellSeq& buffer_list,
 
 float RepairHold::bufferHoldDelay(LibertyCell* buffer)
 {
-  Delay delays[RiseFall::index_count];
+  sta::Delay delays[RiseFall::index_count];
   bufferHoldDelays(buffer, delays);
   return min(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
 }
@@ -360,7 +360,7 @@ float RepairHold::bufferHoldDelay(LibertyCell* buffer)
 // Min self delay across corners; buffer -> buffer
 void RepairHold::bufferHoldDelays(LibertyCell* buffer,
                                   // Return values.
-                                  Delay delays[RiseFall::index_count])
+                                  sta::Delay delays[RiseFall::index_count])
 {
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);

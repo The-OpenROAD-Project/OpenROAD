@@ -37,7 +37,6 @@ class Resizer;
 class RemoveBuffer;
 class BaseMove;
 
-using sta::Delay;
 using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;

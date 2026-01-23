@@ -663,7 +663,7 @@ bool RepairSetup::repairPath(Path* path,
 
   if (expanded.size() > 1) {
     const int path_length = expanded.size();
-    vector<pair<int, Delay>> load_delays;
+    vector<pair<int, sta::Delay>> load_delays;
     const int start_index = expanded.startIndex();
     const sta::DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
     const int lib_ap = dcalc_ap->libertyIndex();
@@ -677,7 +677,7 @@ bool RepairSetup::repairPath(Path* path,
         const TimingArc* prev_arc = path->prevArc(sta_);
         const TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);
         Edge* prev_edge = path->prevEdge(sta_);
-        const Delay load_delay
+        const sta::Delay load_delay
             = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())
               // Remove intrinsic delay to find load dependent delay.
               - corner_arc->intrinsicDelay();
@@ -696,7 +696,7 @@ bool RepairSetup::repairPath(Path* path,
     std::ranges::sort(
         load_delays,
 
-        [](pair<int, Delay> pair1, pair<int, Delay> pair2) {
+        [](pair<int, sta::Delay> pair1, pair<int, sta::Delay> pair2) {
           return pair1.second > pair2.second
                  || (pair1.second == pair2.second && pair1.first > pair2.first);
         });
