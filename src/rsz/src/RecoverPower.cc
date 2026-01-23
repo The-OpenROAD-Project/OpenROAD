@@ -20,6 +20,7 @@
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
@@ -71,7 +72,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 
   // Sort failing endpoints by slack.
   VertexSet* endpoints = sta_->endpoints();
-  VertexSeq ends_with_slack;
+  sta::VertexSeq ends_with_slack;
   for (sta::Vertex* end : *endpoints) {
     const sta::Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack > setup_slack_margin_

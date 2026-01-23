@@ -26,8 +26,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::VertexSeq;
-
 using Slacks = sta::Slack[sta::RiseFall::index_count][sta::MinMax::index_count];
 
 class RepairHold : public sta::dbStaState
@@ -67,12 +65,12 @@ class RepairHold : public sta::dbStaState
   void bufferHoldDelays(sta::LibertyCell* buffer,
                         // Return values.
                         sta::Delay delays[sta::RiseFall::index_count]);
-  void findHoldViolations(VertexSeq& ends,
+  void findHoldViolations(sta::VertexSeq& ends,
                           double hold_margin,
                           // Return values.
                           sta::Slack& worst_slack,
-                          VertexSeq& hold_violations);
-  bool repairHold(VertexSeq& ends,
+                          sta::VertexSeq& hold_violations);
+  bool repairHold(sta::VertexSeq& ends,
                   sta::LibertyCell* buffer_cell,
                   double setup_margin,
                   double hold_margin,
@@ -81,7 +79,7 @@ class RepairHold : public sta::dbStaState
                   int max_passes,
                   int max_iterations,
                   bool verbose);
-  void repairHoldPass(VertexSeq& hold_failures,
+  void repairHoldPass(sta::VertexSeq& hold_failures,
                       sta::LibertyCell* buffer_cell,
                       double setup_margin,
                       double hold_margin,

@@ -248,9 +248,9 @@ bool VertexLevelLess::operator()(const sta::Vertex* vertex1,
                            network_->pathName(vertex2->pin())));
 }
 
-VertexSeq Resizer::orderedLoadPinVertices()
+sta::VertexSeq Resizer::orderedLoadPinVertices()
 {
-  VertexSeq loads;
+  sta::VertexSeq loads;
   VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     sta::Vertex* vertex = vertex_iter.next();
@@ -3507,7 +3507,7 @@ void Resizer::reportLongWires(int count, int digits)
   initBlock();
   graph_ = sta_->ensureGraph();
   sta_->ensureClkNetwork();
-  VertexSeq drvrs;
+  sta::VertexSeq drvrs;
   findLongWires(drvrs);
   logger_->report("Driver    length delay");
   const sta::Corner* corner = sta_->cmdCorner();
@@ -3533,7 +3533,7 @@ void Resizer::reportLongWires(int count, int digits)
 
 using DrvrDist = std::pair<sta::Vertex*, int>;
 
-void Resizer::findLongWires(VertexSeq& drvrs)
+void Resizer::findLongWires(sta::VertexSeq& drvrs)
 {
   sta::Vector<DrvrDist> drvr_dists;
   VertexIterator vertex_iter(graph_);

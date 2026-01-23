@@ -89,7 +89,7 @@ bool RepairHold::repairHold(
 
   sta_->findRequireds();
   VertexSet* ends = sta_->search()->endpoints();
-  VertexSeq ends1;
+  sta::VertexSeq ends1;
   for (sta::Vertex* end : *ends) {
     ends1.push_back(end);
   }
@@ -129,7 +129,7 @@ void RepairHold::repairHold(const sta::Pin* end_pin,
   sta::LibertyCell* buffer_cell = findHoldBuffer();
 
   sta::Vertex* end = graph_->pinLoadVertex(end_pin);
-  VertexSeq ends;
+  sta::VertexSeq ends;
   ends.push_back(end);
 
   sta_->findRequireds();
@@ -387,7 +387,7 @@ void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
   }
 }
 
-bool RepairHold::repairHold(VertexSeq& ends,
+bool RepairHold::repairHold(sta::VertexSeq& ends,
                             sta::LibertyCell* buffer_cell,
                             const double setup_margin,
                             const double hold_margin,
@@ -399,7 +399,7 @@ bool RepairHold::repairHold(VertexSeq& ends,
 {
   bool repaired = false;
   // Find endpoints with hold violations.
-  VertexSeq hold_failures;
+  sta::VertexSeq hold_failures;
   sta::Slack worst_slack;
   findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
   inserted_buffer_count_ = 0;
@@ -473,11 +473,11 @@ bool RepairHold::repairHold(VertexSeq& ends,
   return repaired;
 }
 
-void RepairHold::findHoldViolations(VertexSeq& ends,
+void RepairHold::findHoldViolations(sta::VertexSeq& ends,
                                     const double hold_margin,
                                     // Return values.
                                     sta::Slack& worst_slack,
-                                    VertexSeq& hold_violations)
+                                    sta::VertexSeq& hold_violations)
 {
   worst_slack = INF;
   hold_violations.clear();
@@ -499,7 +499,7 @@ void RepairHold::findHoldViolations(VertexSeq& ends,
   }
 }
 
-void RepairHold::repairHoldPass(VertexSeq& hold_failures,
+void RepairHold::repairHoldPass(sta::VertexSeq& hold_failures,
                                 sta::LibertyCell* buffer_cell,
                                 const double setup_margin,
                                 const double hold_margin,

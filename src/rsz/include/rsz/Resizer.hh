@@ -64,7 +64,6 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 
-using sta::VertexSeq;
 using sta::VertexSet;
 
 using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
@@ -211,7 +210,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
 
-  VertexSeq orderedLoadPinVertices();
+  sta::VertexSeq orderedLoadPinVertices();
 
   void setDontUse(sta::LibertyCell* cell, bool dont_use);
   void resetDontUse();
@@ -588,7 +587,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   ////////////////////////////////////////////////////////////////
 
-  void findLongWires(VertexSeq& drvrs);
+  void findLongWires(sta::VertexSeq& drvrs);
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Corner* corner);
   float driveResistance(const sta::Pin* drvr_pin);
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
@@ -832,7 +831,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
-  VertexSeq level_drvr_vertices_;
+  sta::VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;
   TgtSlews tgt_slews_;
   sta::Corner* tgt_slew_corner_ = nullptr;

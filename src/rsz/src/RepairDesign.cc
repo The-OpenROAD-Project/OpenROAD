@@ -329,7 +329,7 @@ void RepairDesign::repairDesign(
   // keep track of annotations which were added by us
   std::set<sta::Vertex*> annotations_to_clean_up;
   std::map<sta::Vertex*, sta::Corner*> drvr_with_load_slew_viol;
-  VertexSeq load_vertices = resizer_->orderedLoadPinVertices();
+  sta::VertexSeq load_vertices = resizer_->orderedLoadPinVertices();
 
   // Forward pass: whenever we see violating input pin slew we override
   // it in the graph. This is in order to prevent second order upsizing.
