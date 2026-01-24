@@ -560,10 +560,14 @@ void PdnGen::makeRing(Grid* grid,
                       const std::vector<odb::dbNet*>& nets,
                       bool allow_out_of_die)
 {
-  auto ring
-      = std::make_unique<Rings>(grid,
-                                Rings::Layer{layer0, width0, spacing0, snap0},
-                                Rings::Layer{layer1, width1, spacing1, snap1});
+  auto ring = std::make_unique<Rings>(
+      grid,
+      Rings::Layer{
+          .layer = layer0, .width = width0, .spacing = spacing0, .snap = snap0},
+      Rings::Layer{.layer = layer1,
+                   .width = width1,
+                   .spacing = spacing1,
+                   .snap = snap1});
   ring->setOffset(offset);
   if (std::ranges::any_of(pad_offset, [](int o) { return o != 0; })) {
     ring->setPadOffset(pad_offset);
