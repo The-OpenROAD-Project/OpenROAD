@@ -120,6 +120,7 @@ class NesterovPlace
   void reportResults(int nesterov_iter,
                      int64_t original_area,
                      int64_t td_accumulated_delta_area);
+  bool shouldResetMomentumTerm(int nesterov_iter);
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
