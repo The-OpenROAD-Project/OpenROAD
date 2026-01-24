@@ -49,6 +49,7 @@
 #include "gc/FlexGC.h"
 #include "io/io.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "omp.h"
 #include "serialization.h"
 #include "utl/Logger.h"
@@ -337,7 +338,7 @@ void FlexDR::initFromTA()
           auto [bp, ep] = static_cast<frPathSeg*>(ps.get())->getPoints();
 
           // skip TA dummy segment
-          if (Point::manhattanDistance(ep, bp) != 1) {
+          if (odb::Point::manhattanDistance(ep, bp) != 1) {
             net->addShape(std::move(ps));
           }
         } else {
@@ -356,10 +357,10 @@ void FlexDR::initGCell2BoundaryPin()
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   auto tmpVec = std::vector<
-      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>>(
+      frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>>(
       (int) ygp.getCount());
   gcell2BoundaryPin_ = std::vector<std::vector<
-      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>>>(
+      frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>>>(
       (int) xgp.getCount(), tmpVec);
   for (auto& net : topBlock->getNets()) {
     auto netPtr = net.get();
@@ -370,12 +371,12 @@ void FlexDR::initGCell2BoundaryPin()
           auto [bp, ep] = ps->getPoints();
           frLayerNum layerNum = ps->getLayerNum();
           // skip TA dummy segment
-          auto mdist = Point::manhattanDistance(ep, bp);
+          auto mdist = odb::Point::manhattanDistance(ep, bp);
           if (mdist == 1 || mdist == 0) {
             continue;
           }
-          Point idx1 = design_->getTopBlock()->getGCellIdx(bp);
-          Point idx2 = design_->getTopBlock()->getGCellIdx(ep);
+          odb::Point idx1 = design_->getTopBlock()->getGCellIdx(bp);
+          odb::Point idx2 = design_->getTopBlock()->getGCellIdx(ep);
 
           // update gcell2BoundaryPin
           // horizontal
@@ -384,17 +385,17 @@ void FlexDR::initGCell2BoundaryPin()
             int x2 = idx2.x();
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
-              odb::Rect gcellBox = topBlock->getGCellBox(Point(x, y));
+              odb::Rect gcellBox = topBlock->getGCellBox(odb::Point(x, y));
               frCoord leftBound = gcellBox.xMin();
               frCoord rightBound = gcellBox.xMax();
               const bool hasLeftBound = bp.x() < leftBound;
               const bool hasRightBound = ep.x() >= rightBound;
               if (hasLeftBound) {
-                Point boundaryPt(leftBound, bp.y());
+                odb::Point boundaryPt(leftBound, bp.y());
                 gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
               if (hasRightBound) {
-                Point boundaryPt(rightBound, ep.y());
+                odb::Point boundaryPt(rightBound, ep.y());
                 gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
             }
@@ -403,17 +404,17 @@ void FlexDR::initGCell2BoundaryPin()
             int y1 = idx1.y();
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
-              odb::Rect gcellBox = topBlock->getGCellBox(Point(x, y));
+              odb::Rect gcellBox = topBlock->getGCellBox(odb::Point(x, y));
               frCoord bottomBound = gcellBox.yMin();
               frCoord topBound = gcellBox.yMax();
               const bool hasBottomBound = bp.y() < bottomBound;
               const bool hasTopBound = ep.y() >= topBound;
               if (hasBottomBound) {
-                Point boundaryPt(bp.x(), bottomBound);
+                odb::Point boundaryPt(bp.x(), bottomBound);
                 gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
               if (hasTopBound) {
-                Point boundaryPt(ep.x(), topBound);
+                odb::Point boundaryPt(ep.x(), topBound);
                 gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
             }
@@ -525,13 +526,13 @@ void FlexDR::removeGCell2BoundaryPin()
   gcell2BoundaryPin_.shrink_to_fit();
 }
 
-frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>
+frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
                                 const odb::Rect& routeBox) const
 {
-  frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>> bp;
+  frOrderedIdMap<frNet*, std::set<std::pair<odb::Point, frLayerNum>>> bp;
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -569,13 +570,13 @@ std::unique_ptr<FlexDRWorker> FlexDR::createWorker(const int x_offset,
     auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
     auto& xgp = gCellPatterns.at(0);
     auto& ygp = gCellPatterns.at(1);
-    odb::Rect routeBox1
-        = getDesign()->getTopBlock()->getGCellBox(Point(x_offset, y_offset));
+    odb::Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(
+        odb::Point(x_offset, y_offset));
     const int max_i
         = std::min((int) xgp.getCount() - 1, x_offset + args.size - 1);
     const int max_j = std::min((int) ygp.getCount(), y_offset + args.size - 1);
     odb::Rect routeBox2
-        = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
+        = getDesign()->getTopBlock()->getGCellBox(odb::Point(max_i, max_j));
     route_box.init(
         routeBox1.xMin(), routeBox1.yMin(), routeBox2.xMax(), routeBox2.yMax());
   }
@@ -1436,7 +1437,7 @@ void FlexDR::end(bool done)
         auto obj = static_cast<frPathSeg*>(shape.get());
         auto [bp, ep] = obj->getPoints();
         auto lNum = obj->getLayerNum();
-        frCoord psLen = Point::manhattanDistance(ep, bp);
+        frCoord psLen = odb::Point::manhattanDistance(ep, bp);
         wlen[lNum] += psLen;
       }
     }
@@ -1901,7 +1902,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
     return lonely_vias;
   }
   auto vias = getRegionQuery()->getVias(layer->getLayerNum());
-  std::vector<Point> via_positions;
+  std::vector<odb::Point> via_positions;
   via_positions.reserve(vias.size());
   for (auto [obj, box] : vias) {
     via_positions.emplace_back(box.xCenter(), box.yCenter());
@@ -2131,7 +2132,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
     while (sz--) {
       frBlockObject* obj;
       serializeBlockObject(ar, obj);
-      std::set<std::pair<Point, frLayerNum>> val;
+      std::set<std::pair<odb::Point, frLayerNum>> val;
       (ar) & val;
       boundaryPin_[(frNet*) obj] = std::move(val);
     }

@@ -159,6 +159,8 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
+  Point<double> legalizeOneBuffer(Point<double> bufferLoc,
+                                  const std::string& bufferName) override;
   void findLegalLocations(const Point<double>& parentPoint,
                           const Point<double>& branchPoint,
                           double x1,
@@ -367,6 +369,8 @@ class HTreeBuilder : public TreeBuilder
                               const Point<double>& parLoc);
   std::vector<unsigned> clusterDiameters() const { return clusterDiameters_; }
   std::vector<unsigned> clusterSizes() const { return clusterSizes_; }
+  Point<double> resolveLocationCollision(
+      const Point<double>& legalCenter) const;
 
  private:
   Box<double> sinkRegion_;
