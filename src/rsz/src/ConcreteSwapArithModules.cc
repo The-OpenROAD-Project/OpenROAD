@@ -4,6 +4,11 @@
 #include "ConcreteSwapArithModules.hh"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstring>
+#include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
@@ -11,7 +16,6 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
-#include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"

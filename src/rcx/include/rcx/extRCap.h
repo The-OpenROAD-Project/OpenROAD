@@ -31,18 +31,13 @@
 #include "rcx/ext_options.h"
 #include "rcx/extprocess.h"
 #include "rcx/util.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace rcx {
 
 class extMeasure;
 class extMeasureRC;
 struct SEQ;
-
-using utl::Logger;
 
 class extSpef;
 class GridTable;
@@ -66,29 +61,29 @@ class extDistRC
 
   // -----------------------------------------------------------
 
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
   void printDebug(const char*,
                   const char*,
                   uint32_t,
                   uint32_t,
                   extDistRC* rcUnit = nullptr);
   void printDebugRC_values(const char* msg);
-  void printDebugRC(const char*, Logger* logger);
+  void printDebugRC(const char*, utl::Logger* logger);
   void printDebugRC(int met,
                     int overMet,
                     int underMet,
                     int width,
                     int dist,
                     int dbUnit,
-                    Logger* logger);
-  void printDebugRC_sum(int len, int dbUnit, Logger* logger);
+                    utl::Logger* logger);
+  void printDebugRC_sum(int len, int dbUnit, utl::Logger* logger);
   void printDebugRC_diag(int met,
                          int overMet,
                          int underMet,
                          int width,
                          int dist,
                          int dbUnit,
-                         Logger* logger);
+                         utl::Logger* logger);
   double GetDBcoords(int x, int db_factor);
   void set(uint32_t d, double cc, double fr, double a, double r);
   void readRC(Parser* parser, double dbFactor = 1.0);
@@ -117,7 +112,7 @@ class extDistRC
   double fringeW_;
   double diag_;
   double res_;
-  Logger* logger_;
+  utl::Logger* logger_;
 
   friend class extDistRCTable;
   friend class extDistWidthRCTable;
@@ -204,7 +199,7 @@ class extDistRCTable
   int maxDist_;
   uint32_t distCnt_;
   uint32_t unit_;
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 class extDistWidthRCTable
@@ -398,7 +393,7 @@ class extMetRCTable
   // ----------------------------------------------------------------------------------------
   extMetRCTable(uint32_t layerCnt,
                 AthPool<extDistRC>* rcPool,
-                Logger* logger_,
+                utl::Logger* logger_,
                 bool OUREVERSEORDER);
   ~extMetRCTable();
 
@@ -467,7 +462,7 @@ class extMetRCTable
 
   AthPool<extDistRC>* _rcPoolPtr;
   double _rate;
-  Logger* logger_;
+  utl::Logger* logger_;
 
   // dkf 092024
   Array1D<extViaModel*> _viaModel;
@@ -704,8 +699,8 @@ class extRCModel
   int getDiagModel() { return _diagModel; };
   bool getVerticalDiagFlag() { return _verticalDiag; };
   void setDiagModel(uint32_t i) { _diagModel = i; }
-  extRCModel(uint32_t layerCnt, const char* name, Logger* logger);
-  extRCModel(const char* name, Logger* logger);
+  extRCModel(uint32_t layerCnt, const char* name, utl::Logger* logger);
+  extRCModel(const char* name, utl::Logger* logger);
   extProcess* getProcess();
   uint32_t findBiggestDatarateIndex(double d);
   ~extRCModel();
@@ -962,7 +957,7 @@ class extRCModel
   bool OUReverseOrder_{false};
 
  protected:
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 class extLenOU  // assume cross-section on the z-direction
@@ -1557,7 +1552,7 @@ class extMeasure
   int _dbunit;
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
 };
 
 class extMainOptions
@@ -1896,7 +1891,7 @@ class extMain
                     bool win);
   uint32_t readProcess(const char* name, const char* filename);
 
-  void init(odb::dbDatabase* db, Logger* logger);
+  void init(odb::dbDatabase* db, utl::Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,
                              const char* filterNet,
                              uint32_t corner);
@@ -2266,7 +2261,7 @@ class extMain
   void addDummyCorners(uint32_t cornerCnt);
   static void addDummyCorners(odb::dbBlock* block,
                               uint32_t cnt,
-                              Logger* logger);
+                              utl::Logger* logger);
   char* addRCCorner(const char* name, int model, int userDefined = 1);
   char* addRCCornerScaled(const char* name,
                           uint32_t model,
@@ -2338,7 +2333,7 @@ class extMain
 
   static odb::dbRSeg* getRseg(odb::dbNet* net,
                               uint32_t shapeId,
-                              Logger* logger);
+                              utl::Logger* logger);
 
   void write_spef_nets(bool flatten, bool parallel);
   extSpef* getSpef();
@@ -2673,10 +2668,10 @@ class extMain
   void setMinRC(uint32_t ii, uint32_t jj, extDistRC* rc);
   void setMaxRC(uint32_t ii, uint32_t jj, extDistRC* rc);
 
-  Logger* getLogger() { return logger_; }
+  utl::Logger* getLogger() { return logger_; }
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
 
   bool _batchScaleExt = true;
   Array1D<extCorner*>* _processCornerTable = nullptr;

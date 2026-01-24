@@ -34,7 +34,6 @@
 #include "RoutingTracks.h"
 #include "boost/icl/interval.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -52,7 +51,6 @@
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/Parasitics.hh"
 #include "sta/Set.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
@@ -819,11 +817,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
-    net->destroyPins();
-    // update pin positions
-    makeItermPins(net, db_net, grid_->getGridArea());
-    makeBtermPins(net, db_net, grid_->getGridArea());
-    findPins(net);
+    updateNetPins(net);
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
@@ -4212,9 +4206,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
       delete db_net_map_[db_net];
     }
     db_net_map_[db_net] = net;
-    makeItermPins(net, db_net, grid_->getGridArea());
-    makeBtermPins(net, db_net, grid_->getGridArea());
-    findPins(net);
+    updateNetPins(net);
     return net;
   }
   return nullptr;
@@ -4232,6 +4224,15 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);
   routes_.erase(db_net);
+}
+
+void GlobalRouter::updateNetPins(Net* net)
+{
+  odb::dbNet* db_net = net->getDbNet();
+  net->destroyPins();
+  makeItermPins(net, db_net, grid_->getGridArea());
+  makeBtermPins(net, db_net, grid_->getGridArea());
+  findPins(net);
 }
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)
@@ -4909,22 +4910,29 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
-  // Do not merge the routing if the survivor net is already dirty.
-  if (!net1->isDirtyNet()) {
-    connectRouting(db_net1, db_net2);
+  // Try to connect the routing of the two nets
+  if (connectRouting(db_net1, db_net2)) {
     net1->setIsMergedNet(true);
     net1->setMergedNet(db_net2);
+    net1->setDirtyNet(false);
     net2->setIsMergedNet(true);
     net2->setMergedNet(db_net1);
+  } else {
+    // After failing to connect the routing, the survivor net still have
+    // uncovered pins and needs to be re-routed
+    net1->setDirtyNet(true);
   }
 }
 
-void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
+bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
 
-  // find the pin positions in the buffer that connects the two nets
+  // Find the pin positions in the buffer that connects the two nets.
+  // At the time this function is called, the buffer information still preserved
+  // on GRT data structures, allowing us to use it to define the connection
+  // position.
   odb::Point pin_pos1;
   odb::Point pin_pos2;
   findBufferPinPostions(net1, net2, pin_pos1, pin_pos2);
@@ -4941,6 +4949,10 @@ void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   } else {
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   }
+
+  updateNetPins(net1);
+  std::string dump;
+  return netIsCovered(db_net1, dump);
 }
 
 void GlobalRouter::findBufferPinPostions(Net* net1,
@@ -5806,8 +5818,8 @@ void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
   grouter_->removeNet(net);
 }
 
-void GRouteDbCbk::inDbNetPreMerge(odb::dbNet* preserved_net,
-                                  odb::dbNet* removed_net)
+void GRouteDbCbk::inDbNetPostMerge(odb::dbNet* preserved_net,
+                                   odb::dbNet* removed_net)
 {
   grouter_->mergeNetsRouting(preserved_net, removed_net);
 }
@@ -5816,9 +5828,7 @@ void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
   odb::dbNet* db_net = iterm->getNet();
   if (db_net != nullptr && !db_net->isSpecial()) {
-    Net* net = grouter_->getNet(db_net);
     grouter_->addDirtyNet(iterm->getNet());
-    net->destroyITermPin(iterm);
   }
 }
 
@@ -5852,9 +5862,7 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
   odb::dbNet* db_net = bterm->getNet();
   if (db_net != nullptr && !db_net->isSpecial()) {
-    Net* net = grouter_->getNet(db_net);
     grouter_->addDirtyNet(bterm->getNet());
-    net->destroyBTermPin(bterm);
   }
 }
 

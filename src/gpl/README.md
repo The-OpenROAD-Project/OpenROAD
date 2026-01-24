@@ -97,6 +97,7 @@ global_placement
     [-timing_driven_nets_percentage]
     [-keep_resize_below_overflow]
     [-disable_revert_if_diverge]
+    [-disable_pin_density_adjust]
     [-enable_routing_congestion]
 ```
 
@@ -122,6 +123,7 @@ global_placement
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
+| `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
 
 #### Routability-Driven Arguments

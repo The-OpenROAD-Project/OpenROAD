@@ -34,13 +34,11 @@
 #include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
-#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Sequential.hh"
-#include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 

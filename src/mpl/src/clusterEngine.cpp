@@ -51,7 +51,10 @@ void ClusteringEngine::run()
   createRoot();
   setBaseThresholds();
 
-  createDataFlow();
+  if (data_flow_driven_) {
+    createDataFlow();
+  }
+
   createIOClusters();
 
   if (design_metrics_->getNumStdCell() == 0) {
@@ -1468,13 +1471,14 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
 
   parent->addChildren(std::move(children_clusters));
 
-  // When breaking large flat clusters, the children will
-  // be modified, so, we need to iterate them using indexes.
-  const UniqueClusterVector& new_children = parent->getChildren();
-  for (const auto& child : new_children) {
-    child->setParent(parent);
-    if (isLargeFlatCluster(child.get())) {
-      breakLargeFlatCluster(child.get());
+  // Note that use a copy of the current children's list in order to be
+  // able to use a range-based loop. That is needed, because the parent's
+  // children will change if a child of the list is broken.
+  std::vector<Cluster*> new_children = parent->getRawChildren();
+  for (Cluster* new_child : new_children) {
+    new_child->setParent(parent);
+    if (isLargeFlatCluster(new_child)) {
+      breakLargeFlatCluster(new_child);
     }
   }
 }

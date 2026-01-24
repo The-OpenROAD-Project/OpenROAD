@@ -144,6 +144,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
+  void setDataFlowDriven() { data_flow_driven_ = true; };
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -310,12 +311,13 @@ class ClusteringEngine
   int max_std_cell_{0};
   int min_std_cell_{0};
 
-  // Variables for data flow
+  // Variables for data flow:
   DataFlow data_connections_;
-
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
-  const int max_num_of_hops_ = 5;
+  const int max_num_of_hops_{5};
+  bool data_flow_driven_{false};
+
   const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};

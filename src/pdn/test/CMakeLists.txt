@@ -32,6 +32,7 @@ or_integration_tests(
     core_grid_cut_pitch
     core_grid_dual_followpins
     core_grid_dual_followpins_error
+    core_grid_existing_ports
     core_grid_extend_to_boundary
     core_grid_extend_to_boundary_no_pins
     core_grid_failed_via_report
