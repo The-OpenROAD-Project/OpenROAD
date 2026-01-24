@@ -1380,6 +1380,7 @@ void RepairDesign::repairNetVia(const BufferedNetPtr& bnet,
   bnet->setCapacitance(bnet->ref()->cap());
   bnet->setFanout(bnet->ref()->fanout());
   float r_via = bnet->viaResistance(corner_, resizer_, estimate_parasitics_);
+  assert(slew_rc_factor_.has_value());
   bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
                        - (r_via * bnet->ref()->cap() * (*slew_rc_factor_)));
 }
@@ -1441,6 +1442,7 @@ void RepairDesign::repairNetWire(
   double r_wire = length1 * wire_res;
   double c_wire = length1 * wire_cap;
 
+  assert(slew_rc_factor_.has_value());
   double load_slew
       = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap + r_wire * c_wire / 2)
         * (*slew_rc_factor_);
@@ -1698,6 +1700,7 @@ void RepairDesign::repairNetJunc(
 
   // Calculate estimated slew based on RC
   float r_drvr = resizer_->driveResistance(drvr_pin_);
+  assert(slew_rc_factor_.has_value());
   float load_slew = r_drvr * load_cap * (*slew_rc_factor_);
   bool load_slew_violation = load_slew > max_load_slew_margined;
 
@@ -2333,6 +2336,7 @@ float RepairDesign::getSlewRCFactor()
   if (!slew_rc_factor_.has_value()) {
     init();
   }
+  assert(slew_rc_factor_.has_value());
   return *slew_rc_factor_;
 }
 

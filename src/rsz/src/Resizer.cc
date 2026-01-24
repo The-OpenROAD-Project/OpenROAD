@@ -5948,10 +5948,10 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
             return 0;
           }
           case BnetType::wire: {
-            Point from_loc = node->location();
-            Point to_loc = node->ref()->location();
+            odb::Point from_loc = node->location();
+            odb::Point to_loc = node->ref()->location();
             double length
-                = dbuToMeters(Point::manhattanDistance(from_loc, to_loc));
+                = dbuToMeters(odb::Point::manhattanDistance(from_loc, to_loc));
             double unit_res, unit_cap;
             node->wireRC(
                 corner, this, estimate_parasitics_, unit_res, unit_cap);

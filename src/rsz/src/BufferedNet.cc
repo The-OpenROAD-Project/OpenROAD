@@ -814,9 +814,9 @@ BufferedNetPtr Resizer::stitchTrees(const BufferedNetPtr& outer_tree,
               // This is the buffer input pin we want to replace
               // Connect buffer input location to buffer output location with
               // wire
-              Point buffer_in_loc = node->location();
+              odb::Point buffer_in_loc = node->location();
               int buffer_in_layer = node->layer();
-              Point buffer_out_loc = inner_tree->location();
+              odb::Point buffer_out_loc = inner_tree->location();
               int buffer_out_layer = inner_tree->layer();
 
               // Check if we need to add connection
@@ -872,7 +872,7 @@ BufferedNetPtr Resizer::stitchTrees(const BufferedNetPtr& outer_tree,
 
               // Add via stack from buffer_out_layer to buffer_in_layer
               int layer_step = (buffer_in_layer > buffer_out_layer) ? 1 : -1;
-              Point current_loc = buffer_out_loc;
+              odb::Point current_loc = buffer_out_loc;
 
               debugPrint(
                   logger_,
@@ -913,10 +913,9 @@ BufferedNetPtr Resizer::stitchTrees(const BufferedNetPtr& outer_tree,
               }
 
               return current;
-            } else {
-              // Not the stitching load, return as-is
-              return node;
             }
+            // Not the stitching load, return as-is
+            return node;
           }
           default:
             logger_->critical(RSZ, 130, "unhandled BufferedNet type");
