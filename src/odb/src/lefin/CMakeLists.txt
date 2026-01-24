@@ -25,6 +25,7 @@ add_library(lefin
     lefMacroClassParser.cpp
     lefMacroEdgeTypeParser.cpp
     CellEdgeSpacingTableParser.cpp
+    AntennaGateParser.cpp
     ArraySpacingParser.cpp
     WidthTableParser.cpp
     MinCutParser.cpp
