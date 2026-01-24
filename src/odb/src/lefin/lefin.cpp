@@ -705,6 +705,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF57_ANTENNAGATEPLUSDIFF")) {
         AntennaGatePlusDiffParser parser(layer, this);
         parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_VOLTAGESPACING")) {
+        lefTechLayerVoltageSpacing parser(l, this);
+        parser.parse(layer->propValue(iii));
       } else {
         supported = false;
       }

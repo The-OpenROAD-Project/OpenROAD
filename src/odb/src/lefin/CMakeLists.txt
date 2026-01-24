@@ -22,6 +22,7 @@ add_library(lefin
     lefTechLayerPitchRuleParser.cpp
     lefTechLayerForbiddenSpacingRuleParser.cpp
     lefTechLayerTwoWiresForbiddenSpcRuleParser.cpp
+    lefTechLayerVoltageSpacing.cpp
     lefMacroClassParser.cpp
     lefMacroEdgeTypeParser.cpp
     CellEdgeSpacingTableParser.cpp
