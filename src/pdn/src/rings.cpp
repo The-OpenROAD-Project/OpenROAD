@@ -21,6 +21,12 @@ namespace pdn {
 Rings::Rings(Grid* grid, const Layer& layer0, const Layer& layer1)
     : GridComponent(grid), layer0_(layer0), layer1_(layer1)
 {
+  if (layer0_.layer->isRightWayOnGridOnly()) {
+    layer0_.snap = true;
+  }
+  if (layer1_.layer->isRightWayOnGridOnly()) {
+    layer1_.snap = true;
+  }
 }
 
 void Rings::checkLayerSpecifications() const
@@ -226,8 +232,11 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   bool processed_horizontal = false;
   for (const auto& [layer_def, layer_other] : build_layers) {
     auto* layer = layer_def->layer;
+    const bool snap = layer_def->snap;
     const int width = layer_def->width;
     const int pitch = layer_def->spacing + width;
+    const int width0 = width / 2;
+    TechLayer techlayer(layer);
 
     const int other_width = layer_other->width;
     const int other_pitch = layer_other->spacing + other_width;
@@ -235,6 +244,10 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         || (!single_layer_ring
             && layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)) {
       processed_horizontal = true;
+
+      if (snap) {
+        techlayer.populateGrid(getBlock(), odb::dbTechLayerDir::HORIZONTAL);
+      }
 
       // bottom
       int x_start = core.xMin() - other_width;
@@ -244,19 +257,21 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         x_end = boundary.xMax();
       }
       int y_start = core.yMin() - width;
-      int y_end = core.yMin();
       for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
+        const int y_center = techlayer.snapToGrid(
+            y_start + width0, std::numeric_limits<int>::min());
+        const int use_y_start = y_center - width0;
+        const int use_y_end = use_y_start + width;
+        addShape(std::make_unique<Shape>(
+            layer,
+            net,
+            odb::Rect(x_start, use_y_start, x_end, use_y_end),
+            odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
           x_start -= other_pitch;
           x_end += other_pitch;
         }
         y_start -= pitch;
-        y_end -= pitch;
       }
       // top
       if (!extend_to_boundary_) {
@@ -264,24 +279,29 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         x_end = core.xMax() + other_width;
       }
       y_start = core.yMax();
-      y_end = y_start + width;
       for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
+        const int y_center = techlayer.snapToGrid(
+            y_start + width0, std::numeric_limits<int>::min());
+        const int use_y_start = y_center - width0;
+        const int use_y_end = use_y_start + width;
+        addShape(std::make_unique<Shape>(
+            layer,
+            net,
+            odb::Rect(x_start, use_y_start, x_end, use_y_end),
+            odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
           x_start -= other_pitch;
           x_end += other_pitch;
         }
         y_start += pitch;
-        y_end += pitch;
       }
     } else {
+      if (snap) {
+        techlayer.populateGrid(getBlock(), odb::dbTechLayerDir::VERTICAL);
+      }
+
       // left
       int x_start = core.xMin() - width;
-      int x_end = core.xMin();
       int y_start = core.yMin() - other_width;
       int y_end = core.yMax() + other_width;
       if (extend_to_boundary_) {
@@ -289,13 +309,16 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
         y_end = boundary.yMax();
       }
       for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
+        const int x_center = techlayer.snapToGrid(
+            x_start + width0, std::numeric_limits<int>::min());
+        const int use_x_start = x_center - width0;
+        const int use_x_end = use_x_start + width;
+        addShape(std::make_unique<Shape>(
+            layer,
+            net,
+            odb::Rect(use_x_start, y_start, use_x_end, y_end),
+            odb::dbWireShapeType::RING));
         x_start -= pitch;
-        x_end -= pitch;
         if (!extend_to_boundary_) {
           y_start -= other_pitch;
           y_end += other_pitch;
@@ -303,19 +326,21 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
       }
       // right
       x_start = core.xMax();
-      x_end = x_start + width;
       if (!extend_to_boundary_) {
         y_start = core.yMin() - other_width;
         y_end = core.yMax() + other_width;
       }
       for (auto net : nets) {
-        addShape(
-            std::make_unique<Shape>(layer,
-                                    net,
-                                    odb::Rect(x_start, y_start, x_end, y_end),
-                                    odb::dbWireShapeType::RING));
+        const int x_center = techlayer.snapToGrid(
+            x_start + width0, std::numeric_limits<int>::min());
+        const int use_x_start = x_center - width0;
+        const int use_x_end = use_x_start + width;
+        addShape(std::make_unique<Shape>(
+            layer,
+            net,
+            odb::Rect(use_x_start, y_start, use_x_end, y_end),
+            odb::dbWireShapeType::RING));
         x_start += pitch;
-        x_end += pitch;
         if (!extend_to_boundary_) {
           y_start -= other_pitch;
           y_end += other_pitch;
@@ -359,6 +384,9 @@ void Rings::report() const
     logger->report("  Layer: {}", layer.layer->getName());
     logger->report("    Width: {:.4f}", layer.width / dbu_per_micron);
     logger->report("    Spacing: {:.4f}", layer.spacing / dbu_per_micron);
+    if (layer.snap) {
+      logger->report("    Snapped to routing tracks");
+    }
   }
 }
 

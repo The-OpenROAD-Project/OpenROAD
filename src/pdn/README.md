@@ -303,6 +303,7 @@ add_pdn_ring
     -layers layer_name
     -spacings spacing_value|list_of_2_values
     -widths width_value|list_of_2_values
+    [-snap_to_grid snap_value|list_of_2_values]
     [-add_connect]
     [-connect_to_pad_layers layers]
     [-connect_to_pads]
@@ -323,6 +324,7 @@ add_pdn_ring
 | `-layers` | Specifies the name of the layer for these stripes. |
 | `-spacings` | Optional specification of the spacing between power/ground pairs within a single pitch. (Default: pitch / 2). |
 | `-widths` | Value for the width of the stdcell rail. |
+| `-spap_to_grid` | Flag to indicate of the ring layer should be snapped to grid. |
 | `[-add_connect]` | Automatically add a connection between the two layers. |
 | `[-connect_to_pad_layers]` | Restrict the pad pins layers to this list. |
 | `[-connect_to_pads]` | The core side of the pad pins will be connected to the ring. |
