@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 482 components and 2074 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[INFO PDN-0001] Inserting grid: Core
+[ERROR PDN-0214] BTerm VSS already exists for a different net (_000_)
+Error: core_grid_existing_ports.tcl, 26 PDN-0214

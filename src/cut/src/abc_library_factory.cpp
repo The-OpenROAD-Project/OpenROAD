@@ -10,10 +10,8 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
-#include "sta/TimingModel.hh"
 #include "utl/Logger.h"
 // Poor include definitions in ABC
 // clang-format off
@@ -30,7 +28,6 @@
 #include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "sta/TableModel.hh"
-#include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/SuppressStdout.h"
 #include "utl/deleter.h"

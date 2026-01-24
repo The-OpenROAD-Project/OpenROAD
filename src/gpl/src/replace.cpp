@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
 #include "initialPlace.h"

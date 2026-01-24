@@ -24,7 +24,6 @@
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "sta/StringUtil.hh"
-#include "sta/Vector.hh"
 #include "upf/upf.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"

@@ -21,28 +21,28 @@
 [INFO CTS-0204] A clustering solution was found from clustering size of 4 and clustering diameter of 600.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 122.
-[INFO CTS-0024]  Normalized sink region: [(1.43857, 44.2757), (661.439, 680.704)].
+[INFO CTS-0024]  Normalized sink region: [(1.23857, 44.2857), (661.239, 680.704)].
 [INFO CTS-0025]     Width:  660.0000.
-[INFO CTS-0026]     Height: 636.4286.
+[INFO CTS-0026]     Height: 636.4186.
  Level 1
     Direction: Horizontal
     Sinks per sub-region: 61
-    Sub-region size: 330.0000 X 636.4286
+    Sub-region size: 330.0000 X 636.4186
 [INFO CTS-0034]     Segment length (rounded): 166.
  Level 2
     Direction: Vertical
     Sinks per sub-region: 31
-    Sub-region size: 330.0000 X 318.2143
+    Sub-region size: 330.0000 X 318.2093
 [INFO CTS-0034]     Segment length (rounded): 160.
  Level 3
     Direction: Horizontal
     Sinks per sub-region: 16
-    Sub-region size: 165.0000 X 318.2143
+    Sub-region size: 165.0000 X 318.2093
 [INFO CTS-0034]     Segment length (rounded): 82.
  Level 4
     Direction: Vertical
     Sinks per sub-region: 8
-    Sub-region size: 165.0000 X 159.1071
+    Sub-region size: 165.0000 X 159.1046
 [INFO CTS-0034]     Segment length (rounded): 80.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 122.
@@ -100,7 +100,7 @@
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 225
 [INFO CTS-0100]  Leaf buffers 103
-[INFO CTS-0101]  Average sink wire length 9415.86 um
+[INFO CTS-0101]  Average sink wire length 9413.40 um
 [INFO CTS-0102]  Path depth 16 - 17
 [INFO CTS-0207]  Dummy loads inserted 0
 [INFO CTS-0098] Clock net "clk_regs"
@@ -114,20 +114,20 @@
 [INFO CTS-0037] Total number of delay buffers: 4
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 42 long wires.
-[INFO RSZ-0048] Inserted 93 buffers in 42 nets.
+[INFO RSZ-0048] Inserted 92 buffers in 42 nets.
 Placement Analysis
 ---------------------------------
-total displacement       3848.2 u
+total displacement       3754.4 u
 average displacement        1.2 u
 max displacement          141.1 u
-original HPWL          193578.0 u
-legalized HPWL         194590.6 u
-delta HPWL                    1 %
+original HPWL          193681.5 u
+legalized HPWL         194510.2 u
+delta HPWL                    0 %
 
 Clock clk
-   1.24 source latency inst_3_13/clk ^
-  -1.12 target latency inst_5_13/clk ^
+   1.01 source latency inst_10_5/clk ^
+  -1.14 target latency inst_11_5/clk ^
    0.00 CRPR
 --------------
-   0.12 setup skew
+  -0.13 setup skew
 

@@ -129,7 +129,9 @@ static constexpr ConfigValues kConfig = {
     .file_exclude_re
     = "src/sta/"  // Don't check 3rd-party submodule
       "|codeGenerator/templates/"
-      "|build/",  // Don't check generated code
+      "|build/"                             // Don't check generated code
+      "|def/(cdef|defrw|defwrite|defdiff)"  // unused code
+      "|lef/(clef|lefrw|lefwrite|lefdiff)",
     .revisit_brokenfiles_if_build_config_newer = false,
 };
 // --------------------------------------------------------------
@@ -272,9 +274,12 @@ class ContentAddressedStore
 class ClangTidyRunner
 {
  public:
-  ClangTidyRunner(const std::string& cache_prefix, int argc, char** argv)
+  ClangTidyRunner(const std::string& cache_prefix,
+                  std::string_view compilation_db,
+                  int argc,
+                  char** argv)
       : clang_tidy_(EnvWithFallback("CLANG_TIDY", "clang-tidy")),
-        clang_tidy_args_(AssembleArgs(argc, argv))
+        clang_tidy_args_(AssembleArgs(compilation_db, argc, argv))
   {
     project_cache_dir_ = AssembleProjectCacheDir(cache_prefix);
   }
@@ -284,8 +289,7 @@ class ClangTidyRunner
   // Given a work-queue in/out-file, process it. Using system() for portability.
   // Empties work_queue.
   void RunClangTidyOn(ContentAddressedStore& output_store,
-                      std::list<filepath_contenthash_t>* work_queue,
-                      std::string_view compile_json_str)
+                      std::list<filepath_contenthash_t>* work_queue)
   {
     if (work_queue->empty()) {
       return;
@@ -322,10 +326,9 @@ class ClangTidyRunner
         const std::string tmp_out = final_out.string() + uniquifier + ".tmp";
         // Putting the file to clang-tidy early in the command line so that
         // it is easy to find with `ps` or `top`.
-        const std::string command
-            = clang_tidy_ + " -p " + std::string(compile_json_str) + " '"
-              + work.first.string() + "'" + clang_tidy_args_ + "> '" + tmp_out
-              + "' 2>/dev/null";
+        const std::string command = clang_tidy_ + " '" + work.first.string()
+                                    + "'" + clang_tidy_args_ + "> '" + tmp_out
+                                    + "' 2>/dev/null";
         const int r = system(command.c_str());
 #ifdef WIFSIGNALED
         // NOLINTBEGIN
@@ -369,9 +372,12 @@ class ClangTidyRunner
     return fs::path{EnvWithFallback("TMPDIR", "/tmp")};
   }
 
-  static std::string AssembleArgs(int argc, char** argv)
+  static std::string AssembleArgs(std::string_view compilation_db,
+                                  int argc,
+                                  char** argv)
   {
     std::string result = " --quiet";
+    result.append(" -p '").append(compilation_db).append("'");
     result.append(" '--config-file=").append(GetClangTidyConfig()).append("'");
     for (const std::string_view arg : kExtraArgs) {
       result.append(" --extra-arg='").append(arg).append("'");
@@ -633,14 +639,15 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  std::string_view compile_json_str
+  std::string_view compile_db_file
       = EnvWithFallback("COMPILE_JSON", "build/compile_commands.json");
-  auto compdb_ts = fs::last_write_time(compile_json_str, ec);
+  auto compdb_ts = fs::last_write_time(compile_db_file, ec);
   if (ec.value() != 0) {
-    compdb_ts = fs::last_write_time("compile_flags.txt", ec);
+    compile_db_file = "compile_flags.txt";
+    compdb_ts = fs::last_write_time(compile_db_file, ec);
   }
   if (ec.value() != 0) {
-    std::cerr << "No compilation db " << compile_json_str
+    std::cerr << "No compilation db " << compile_db_file
               << " found; create that first.\n";
     return EXIT_FAILURE;
   }
@@ -652,7 +659,7 @@ int main(int argc, char* argv[])
     // Cache prefix not set, choose name of directory
     cache_prefix = fs::current_path().filename().string() + "_";
   }
-  ClangTidyRunner runner(cache_prefix, argc, argv);
+  ClangTidyRunner runner(cache_prefix, compile_db_file, argc, argv);
   ContentAddressedStore store(runner.project_cache_dir());
   std::cerr << "Cache dir " << runner.project_cache_dir() << "\n";
 
@@ -660,7 +667,7 @@ int main(int argc, char* argv[])
   auto work_list = cc_file_gatherer.BuildWorkList(build_env_latest_change);
 
   // Now the expensive part...
-  runner.RunClangTidyOn(store, &work_list, compile_json_str);
+  runner.RunClangTidyOn(store, &work_list);
 
   const std::string detailed_report = cache_prefix + "clang-tidy.out";
   const std::string summary = cache_prefix + "clang-tidy.summary";

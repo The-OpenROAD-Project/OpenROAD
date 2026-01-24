@@ -43,6 +43,7 @@
 #include "options.h"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
