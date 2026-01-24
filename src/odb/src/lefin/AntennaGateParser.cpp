@@ -4,14 +4,16 @@
 #include <string>
 
 #include "boost/bind/bind.hpp"
+#include "boost/spirit/home/qi/detail/parse_auto.hpp"
+#include "boost/spirit/home/qi/nonterminal/rule.hpp"
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
 #include "lefiLayer.hpp"
-#include "odb/db.h"
 #include "odb/lefin.h"
 
 namespace odb {
 
+namespace {
 void setDiff(LefParser::lefiLayer* layer, double param)
 {
   if (layer->numAntennaModel() == 0) {
@@ -22,6 +24,7 @@ void setDiff(LefParser::lefiLayer* layer, double param)
     layer->antennaModel(i)->setAntennaGatePlusDiff(param);
   }
 }
+}  // namespace
 
 void AntennaGatePlusDiffParser::parse(const std::string& s)
 {
