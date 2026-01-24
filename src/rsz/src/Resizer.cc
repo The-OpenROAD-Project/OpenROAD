@@ -45,6 +45,7 @@
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -159,7 +160,7 @@ Resizer::Resizer(utl::Logger* logger,
                  odb::dbDatabase* db,
                  dbSta* sta,
                  stt::SteinerTreeBuilder* stt_builder,
-                 GlobalRouter* global_router,
+                 grt::GlobalRouter* global_router,
                  dpl::Opendp* opendp,
                  est::EstimateParasitics* estimate_parasitics)
     : swap_arith_modules_(std::make_unique<ConcreteSwapArithModules>(this)),
