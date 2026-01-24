@@ -56,6 +56,22 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
+namespace sta {
+class Pin;
+class Instance;
+class Corner;
+typedef float Slew;
+typedef float ArcDelay;
+class RiseFall;
+}  // namespace sta
+
+using sta::ArcDelay;
+using sta::Corner;
+using sta::Instance;
+using sta::Pin;
+using sta::RiseFall;
+using sta::Slew;
+
 namespace rsz {
 
 using stt::SteinerTreeBuilder;
