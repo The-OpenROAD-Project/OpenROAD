@@ -12,8 +12,8 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/StaState.hh"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -33,9 +33,6 @@ namespace rsz {
 
 class Resizer;
 
-using sta::Instance;
-using sta::Path;
-
 class SwapArithModules : public sta::dbStaState
 {
  public:
@@ -46,10 +43,11 @@ class SwapArithModules : public sta::dbStaState
                                    const std::string& target,
                                    float slack_threshold)
       = 0;
-  virtual void collectArithInstsOnPath(const Path* path,
+  virtual void collectArithInstsOnPath(const sta::Path* path,
                                        std::set<odb::dbModInst*>& arithInsts)
       = 0;
-  virtual bool isArithInstance(const Instance* inst, odb::dbModInst*& mod_inst)
+  virtual bool isArithInstance(const sta::Instance* inst,
+                               odb::dbModInst*& mod_inst)
       = 0;
   virtual bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) = 0;
   virtual void findCriticalInstances(int path_count,
@@ -70,10 +68,10 @@ class SwapArithModules : public sta::dbStaState
 
   // Member variables
   Resizer* resizer_;
-  dbNetwork* db_network_{nullptr};
+  sta::dbNetwork* db_network_{nullptr};
   utl::Logger* logger_{nullptr};
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 };
 
 }  // namespace rsz

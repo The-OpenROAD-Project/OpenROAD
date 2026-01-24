@@ -172,6 +172,7 @@ class RouteBase
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
   std::vector<int64_t> inflatedAreaDelta() const;
+  int64_t getTotalInflation() const;
   int getRevertCount() const;
 
  private:
@@ -186,6 +187,8 @@ class RouteBase
   std::unique_ptr<TileGrid> tg_;
 
   std::vector<int64_t> inflatedAreaDelta_;
+  std::vector<int64_t> minRcInflatedAreaDelta_;
+  std::vector<int64_t> accumulatedInflatedAreaDelta_;
 
   int revert_count_ = 0;
   float final_average_rc_ = 0.0;

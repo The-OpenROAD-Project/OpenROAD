@@ -23,7 +23,6 @@
 #include "odb/geom.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
-#include "sta/Delay.hh"
 #include "sta/Hash.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
@@ -44,9 +43,6 @@ class CallBackHandler;
 namespace est {
 
 using stt::SteinerTreeBuilder;
-
-using sta::Parasitic;
-using sta::ParasiticNode;
 
 using SteinerPt = int;
 
@@ -224,8 +220,8 @@ class EstimateParasitics : public sta::dbStaState
                        const sta::DcalcAnalysisPt* dcalc_ap) const;
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
   double computeAverageCutResistance(sta::Corner* corner);
-  void parasiticNodeConnectPins(Parasitic* parasitic,
-                                ParasiticNode* node,
+  void parasiticNodeConnectPins(sta::Parasitic* parasitic,
+                                sta::ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id,
