@@ -166,15 +166,15 @@ void InitialPlace::placeInstsInitialPositions()
     }
   }
 
-  debugPrint(log_,
-             utl::GPL,
-             "init",
-             1,
-             "[InitialPlace] origin position counters: region center = {}, db "
-             "location = {}, core center = {}",
-             count_region_center,
+  log_->info(utl::GPL,
+             35,
+             "Source of initial instance position counters:\n"
+             "\tOdb location = {}"
+             "\tCore center = {}"
+             "\tRegion center = {}",
              count_db_location,
-             count_core_center);
+             count_core_center,
+             count_region_center);
 }
 
 void InitialPlace::setPlaceInstExtId()
