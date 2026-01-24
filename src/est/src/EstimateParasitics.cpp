@@ -63,7 +63,7 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
                                        utl::CallBackHandler* callback_handler,
                                        odb::dbDatabase* db,
                                        sta::dbSta* sta,
-                                       SteinerTreeBuilder* stt_builder,
+                                       stt::SteinerTreeBuilder* stt_builder,
                                        grt::GlobalRouter* global_router)
     : logger_(logger),
       estimate_parasitics_cbk_(

@@ -84,6 +84,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "sta/Vector.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 #include "utl/scope.h"
@@ -157,7 +158,7 @@ using sta::LeakagePowerSeq;
 Resizer::Resizer(utl::Logger* logger,
                  odb::dbDatabase* db,
                  dbSta* sta,
-                 SteinerTreeBuilder* stt_builder,
+                 stt::SteinerTreeBuilder* stt_builder,
                  GlobalRouter* global_router,
                  dpl::Opendp* opendp,
                  est::EstimateParasitics* estimate_parasitics)
