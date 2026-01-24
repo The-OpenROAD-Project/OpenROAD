@@ -49,6 +49,7 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
 
 void InitialPlace::doBicgstabPlace(int threads)
 {
+  log_->info(utl::GPL, 5, "---- Execute Conjugate Gradient Initial Placement.");
   ResidualError error;
 
   // Initial place only uses graphics if debug is enabled
