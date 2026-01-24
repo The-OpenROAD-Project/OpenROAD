@@ -43,10 +43,12 @@
 
 namespace sta {
 class Port;
-}
+class Pin;
+}  // namespace sta
 
 namespace rsz {
 
+using sta::Pin;
 using sta::Port;
 using std::make_shared;
 using std::max;

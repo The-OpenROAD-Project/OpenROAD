@@ -56,22 +56,6 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
-namespace sta {
-class Pin;
-class Instance;
-class Corner;
-typedef float Slew;
-typedef float ArcDelay;
-class RiseFall;
-}  // namespace sta
-
-using sta::ArcDelay;
-using sta::Corner;
-using sta::Instance;
-using sta::Pin;
-using sta::RiseFall;
-using sta::Slew;
-
 namespace rsz {
 
 using stt::SteinerTreeBuilder;
@@ -525,29 +509,32 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Compute slew RC factor based on library slew thresholds
   float getSlewRCFactor() const;
 
-  Slew findDriverSlewForLoad(Pin* drvr_pin, float load, const Corner* corner);
-  bool computeNewDelaysSlews(Pin* driver_pin,
-                             Instance* buffer,
-                             const Corner* corner,
-                             // return values
-                             ArcDelay old_delay[RiseFall::index_count],
-                             ArcDelay new_delay[RiseFall::index_count],
-                             Slew old_drvr_slew[RiseFall::index_count],
-                             Slew new_drvr_slew[RiseFall::index_count],
-                             // caps seen by driver_pin
-                             float& old_load_cap,
-                             float& new_load_cap);
+  sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
+                                  float load,
+                                  const sta::Corner* corner);
+  bool computeNewDelaysSlews(
+      sta::Pin* driver_pin,
+      sta::Instance* buffer,
+      const sta::Corner* corner,
+      // return values
+      sta::ArcDelay old_delay[sta::RiseFall::index_count],
+      sta::ArcDelay new_delay[sta::RiseFall::index_count],
+      sta::Slew old_drvr_slew[sta::RiseFall::index_count],
+      sta::Slew new_drvr_slew[sta::RiseFall::index_count],
+      // caps seen by driver_pin
+      float& old_load_cap,
+      float& new_load_cap);
   bool estimateSlewsAfterBufferRemoval(
-      Pin* drvr_pin,
-      Instance* buffer_instance,
-      Slew drvr_slew,
-      const Corner* corner,
-      std::map<const Pin*, float>& load_pin_slew);
-  bool estimateSlewsInTree(Pin* drvr_pin,
-                           Slew drvr_slew,
+      sta::Pin* drvr_pin,
+      sta::Instance* buffer_instance,
+      sta::Slew drvr_slew,
+      const sta::Corner* corner,
+      std::map<const sta::Pin*, float>& load_pin_slew);
+  bool estimateSlewsInTree(sta::Pin* drvr_pin,
+                           sta::Slew drvr_slew,
                            const BufferedNetPtr& tree,
-                           const Corner* corner,
-                           std::map<const Pin*, float>& load_pin_slew);
+                           const sta::Corner* corner,
+                           std::map<const sta::Pin*, float>& load_pin_slew);
 
  protected:
   void init();
@@ -807,7 +794,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                sta::LibertyCell*& best_lib_cell);
 
   BufferedNetPtr stitchTrees(const BufferedNetPtr& outer_tree,
-                             Pin* stitching_load,
+                             sta::Pin* stitching_load,
                              const BufferedNetPtr& inner_tree);
 
   ////////////////////////////////////////////////////////////////

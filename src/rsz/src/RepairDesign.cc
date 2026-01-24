@@ -4,6 +4,7 @@
 #include "RepairDesign.hh"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -69,6 +70,7 @@ using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
+using sta::Pin;
 using sta::PortDirection;
 using sta::RiseFallBoth;
 using sta::TimingArc;
