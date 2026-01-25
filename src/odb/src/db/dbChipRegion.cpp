@@ -7,9 +7,9 @@
 #include <string>
 
 #include "dbChipBump.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"

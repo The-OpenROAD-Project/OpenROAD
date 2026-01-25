@@ -8,7 +8,6 @@
 
 #include "dbGroup.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 // User Code Begin Includes
 #include "dbRegion.h"
 // User Code End Includes

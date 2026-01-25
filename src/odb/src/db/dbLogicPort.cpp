@@ -8,13 +8,13 @@
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbModInst.h"
 #include "dbPowerSwitch.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes

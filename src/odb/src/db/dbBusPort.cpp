@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbModBTerm.h"
@@ -15,7 +16,6 @@
 #include "dbModule.h"
 #include "dbModuleBusPortModBTermItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
 namespace odb {

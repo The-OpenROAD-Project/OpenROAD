@@ -36,6 +36,7 @@ cc_library(
         "src/db/*.cpp",
         "src/db/*.h",
         "src/db/*.hpp",
+        "src/db/*.inc",
         "src/zutil/*.cpp",
         "src/defout/*.cpp",
         "src/defout/*.h",
