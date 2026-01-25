@@ -50,14 +50,13 @@ cc_library(
         "src/3dblox/*.cpp",
         "src/3dblox/*.h",
         "include/odb/dbCompare.inc",
+        "include/odb/dbMap.inc",
     ] + [
         "src/swig/common/swig_common.cpp",
     ]),
     hdrs = glob(
         include = [
             "include/odb/*.h",
-            "include/odb/*.hpp",
-            "include/odb/*.inc",
         ],
         exclude = ["include/odb/MakeOdb.h"],
     ) + ["src/swig/common/swig_common.h"],
