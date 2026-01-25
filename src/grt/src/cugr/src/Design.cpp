@@ -1,7 +1,6 @@
 #include "Design.h"
 
 #include <cstdint>
-#include <iostream>
 #include <set>
 #include <vector>
 

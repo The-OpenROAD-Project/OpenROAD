@@ -10,7 +10,6 @@
 #include <QSize>
 #include <QWidget>
 #include <algorithm>
-#include <any>
 #include <exception>
 #include <limits>
 #include <memory>

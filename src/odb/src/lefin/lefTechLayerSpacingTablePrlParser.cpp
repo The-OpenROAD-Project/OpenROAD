@@ -2,7 +2,6 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "boost/bind/bind.hpp"

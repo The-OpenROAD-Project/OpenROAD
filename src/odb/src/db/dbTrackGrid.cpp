@@ -3,7 +3,6 @@
 
 #include "dbTrackGrid.h"
 
-#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdint>

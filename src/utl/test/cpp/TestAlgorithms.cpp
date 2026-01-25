@@ -2,9 +2,6 @@
 // Copyright (c) 2024, The OpenROAD Authors
 
 #include <cstdio>
-#include <fstream>
-#include <iterator>
-#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"

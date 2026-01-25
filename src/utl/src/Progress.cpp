@@ -5,7 +5,6 @@
 
 #include <signal.h>  // NOLINT(modernize-deprecated-headers): for sigaction
 
-#include <algorithm>
 #include <csignal>
 #include <ctime>
 #include <memory>
