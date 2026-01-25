@@ -24,19 +24,20 @@ void addEntry(odb::dbTechLayerVoltageSpacing* table,
   table->addEntry(at_c<0>(params), lefin->dbdist(at_c<1>(params)));
 }
 
-void setFlags(odb::dbTechLayerVoltageSpacing* table,
-              const boost::optional<std::string>& param)
+void setFlagsAll(odb::dbTechLayerVoltageSpacing* table)
 {
-  if (param.is_initialized()) {
-    if (param.value() == "ABOVE") {
-      table->setTocutAbove(true);
-    } else if (param.value() == "BELOW") {
-      table->setTocutBelow(true);
-    }
-  } else {
-    table->setTocutAbove(true);
-    table->setTocutBelow(true);
-  }
+  table->setTocutAbove(true);
+  table->setTocutBelow(true);
+}
+
+void setFlagsAboveOnly(odb::dbTechLayerVoltageSpacing* table)
+{
+  table->setTocutBelow(false);
+}
+
+void setFlagsBelowOnly(odb::dbTechLayerVoltageSpacing* table)
+{
+  table->setTocutAbove(false);
 }
 
 template <typename Iterator>
@@ -52,7 +53,9 @@ bool parseRule(Iterator first,
       = (double_ >> double_)[boost::bind(&addEntry, table, lefinReader, _1)];
   qi::rule<std::string::const_iterator, space_type> VOLTAGESPACING
       = lit("VOLTAGESPACING")
-        >> -(lit("TOCUT") >> -_string)[boost::bind(&setFlags, table, _1)]
+        >> -((lit("TOCUT"))[boost::bind(&setFlagsAll, table)]
+             >> -((lit("ABOVE"))[boost::bind(&setFlagsAboveOnly, table)]
+                  | lit("BELOW")[boost::bind(&setFlagsBelowOnly, table)]))
         >> +ENTRY >> lit(";");
   bool valid = qi::phrase_parse(first, last, VOLTAGESPACING, space);
 
