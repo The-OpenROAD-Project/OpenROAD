@@ -164,16 +164,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
   //
 
   auto* dbMaster = ndi->getDbInst()->getMaster();
-  unsigned masterSym = 0;
-  if (dbMaster->getSymmetryX()) {
-    masterSym |= Symmetry_X;
-  }
-  if (dbMaster->getSymmetryY()) {
-    masterSym |= Symmetry_Y;
-  }
-  if (dbMaster->getSymmetryR90()) {
-    masterSym |= Symmetry_ROT90;
-  }
+  unsigned masterSym = getMasterSymmetry(dbMaster);
 
   bool flip = false;
   if (arch_->powerCompatible(ndi, arch_->getRow(row), flip)) {
@@ -239,16 +230,7 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   const unsigned cellOri = ndi->getOrient();
 
   auto* dbMaster = ndi->getDbInst()->getMaster();
-  unsigned masterSym = 0;
-  if (dbMaster->getSymmetryX()) {
-    masterSym |= Symmetry_X;
-  }
-  if (dbMaster->getSymmetryY()) {
-    masterSym |= Symmetry_Y;
-  }
-  if (dbMaster->getSymmetryR90()) {
-    masterSym |= Symmetry_ROT90;
-  }
+  unsigned masterSym = getMasterSymmetry(dbMaster);
 
   using odb::dbOrientType;
 
@@ -514,6 +496,21 @@ bool DetailedOrient::isLegalSym(unsigned siteSym, unsigned cellOri)
   }
 
   return legalSym;
+}
+
+unsigned DetailedOrient::getMasterSymmetry(odb::dbMaster* master)
+{
+  unsigned masterSym = 0;
+  if (master->getSymmetryX()) {
+    masterSym |= Symmetry_X;
+  }
+  if (master->getSymmetryY()) {
+    masterSym |= Symmetry_Y;
+  }
+  if (master->getSymmetryR90()) {
+    masterSym |= Symmetry_ROT90;
+  }
+  return masterSym;
 }
 
 }  // namespace dpl

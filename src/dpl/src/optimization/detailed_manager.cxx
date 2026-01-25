@@ -39,16 +39,7 @@ static bool checkMasterSymmetry(Architecture* arch, const Node* nd, int rowId)
   const unsigned rowOri = rowPtr->getOrient();
 
   auto* dbMaster = nd->getDbInst()->getMaster();
-  unsigned masterSym = 0;
-  if (dbMaster->getSymmetryX()) {
-    masterSym |= Symmetry_X;
-  }
-  if (dbMaster->getSymmetryY()) {
-    masterSym |= Symmetry_Y;
-  }
-  if (dbMaster->getSymmetryR90()) {
-    masterSym |= Symmetry_ROT90;
-  }
+  unsigned masterSym = DetailedOrient::getMasterSymmetry(dbMaster);
 
   using odb::dbOrientType;
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {

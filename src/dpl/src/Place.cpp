@@ -31,6 +31,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "optimization/detailed_orient.h"
 #include "util/journal.h"
 #include "util/symmetry.h"
 #include "utl/Logger.h"
@@ -953,16 +954,7 @@ bool Opendp::checkPixels(const Node* cell,
 
   // Check for symmetry
   auto* dbMaster = cell->getDbInst()->getMaster();
-  unsigned masterSym = 0;
-  if (dbMaster->getSymmetryX()) {
-    masterSym |= Symmetry_X;
-  }
-  if (dbMaster->getSymmetryY()) {
-    masterSym |= Symmetry_Y;
-  }
-  if (dbMaster->getSymmetryR90()) {
-    masterSym |= Symmetry_ROT90;
-  }
+  unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
   if (!checkMasterSym(masterSym, orient)) {
     return false;
   }
