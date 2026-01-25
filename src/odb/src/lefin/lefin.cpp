@@ -702,6 +702,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
                          "LEF58_TWOWIRESFORBIDDENSPACING")) {
         lefTechLayerTwoWiresForbiddenSpcRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF57_ANTENNAGATEPLUSDIFF")) {
+        AntennaGatePlusDiffParser parser(layer, this);
+        parser.parse(layer->propValue(iii));
       } else {
         supported = false;
       }
@@ -732,12 +735,22 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_MAXSPACING")) {
         MaxSpacingParser parser(l, this);
         parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF57_ANTENNAGATEPLUSDIFF")) {
+        AntennaGatePlusDiffParser parser(layer, this);
+        parser.parse(layer->propValue(iii));
       } else {
         supported = false;
       }
     } else if (type.getValue() == dbTechLayerType::MASTERSLICE) {
       if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
+      } else {
+        supported = false;
+      }
+    } else if (type.getValue() == dbTechLayerType::IMPLANT) {
+      if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
+        lefTechLayerAreaRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l, incomplete_props_);
       } else {
         supported = false;
       }

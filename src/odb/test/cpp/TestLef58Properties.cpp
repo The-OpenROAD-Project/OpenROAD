@@ -543,5 +543,13 @@ TEST_F(Fixture, test_default)
   EXPECT_TRUE(!edge_spc->isExact() && !edge_spc->isExceptAbutted()
               && !edge_spc->isExceptNonFillerInBetween()
               && !edge_spc->isOptional() && !edge_spc->isSoft());
+
+  layer = dbTech->findLayer("via1");
+  EXPECT_TRUE(layer->hasDefaultAntennaRule());
+  EXPECT_EQ(layer->getDefaultAntennaRule()->getGatePlusDiffFactor(), 2.0);
+
+  layer = dbTech->findLayer("metal2");
+  EXPECT_TRUE(layer->hasDefaultAntennaRule());
+  EXPECT_EQ(layer->getDefaultAntennaRule()->getGatePlusDiffFactor(), 4.0);
 }
 }  // namespace odb

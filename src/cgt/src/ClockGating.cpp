@@ -3,6 +3,8 @@
 
 #include "cgt/ClockGating.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
