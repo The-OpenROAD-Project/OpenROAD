@@ -747,6 +747,13 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else {
         supported = false;
       }
+    } else if (type.getValue() == dbTechLayerType::IMPLANT) {
+      if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
+        lefTechLayerAreaRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l, incomplete_props_);
+      } else {
+        supported = false;
+      }
     } else {
       supported = false;
     }
