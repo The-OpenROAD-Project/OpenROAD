@@ -8,11 +8,13 @@
 #include <cstring>
 #include <map>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+
 namespace odb {
 template class dbTable<_dbTechLayerVoltageSpacing>;
 
@@ -25,6 +27,9 @@ bool _dbTechLayerVoltageSpacing::operator==(
   if (flags_.tocut_below != rhs.flags_.tocut_below) {
     return false;
   }
+  if (table_ != rhs.table_) {
+    return false;
+  }
 
   return true;
 }
@@ -32,6 +37,16 @@ bool _dbTechLayerVoltageSpacing::operator==(
 bool _dbTechLayerVoltageSpacing::operator<(
     const _dbTechLayerVoltageSpacing& rhs) const
 {
+  if (flags_.tocut_above != rhs.flags_.tocut_above) {
+    return flags_.tocut_above < rhs.flags_.tocut_above;
+  }
+  if (flags_.tocut_below != rhs.flags_.tocut_below) {
+    return flags_.tocut_below < rhs.flags_.tocut_below;
+  }
+  if (table_ != rhs.table_) {
+    return table_ < rhs.table_;
+  }
+
   return true;
 }
 

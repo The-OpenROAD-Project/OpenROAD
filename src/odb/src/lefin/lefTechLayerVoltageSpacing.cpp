@@ -4,6 +4,8 @@
 #include <string>
 
 #include "boost/bind/bind.hpp"
+#include "boost/fusion/container/vector/vector.hpp"
+#include "boost/optional/optional.hpp"
 #include "boost/spirit/home/qi/detail/parse_auto.hpp"
 #include "boost/spirit/home/qi/nonterminal/rule.hpp"
 #include "boostParser.h"
