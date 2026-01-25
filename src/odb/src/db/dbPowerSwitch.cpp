@@ -7,8 +7,10 @@
 #include <cstdlib>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMTerm.h"
@@ -17,6 +19,7 @@
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbVector.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 // User Code Begin Includes

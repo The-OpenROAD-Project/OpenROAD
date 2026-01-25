@@ -10,6 +10,7 @@
 
 #include "dbCore.h"
 #include "odb/dbId.h"
+#include "odb/dbObject.h"
 #include "odb/geom.h"
 // User Code Begin Includes
 #include <list>

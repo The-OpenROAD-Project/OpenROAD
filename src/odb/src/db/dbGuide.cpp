@@ -4,12 +4,16 @@
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include <cstdint>
 

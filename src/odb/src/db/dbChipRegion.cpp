@@ -4,14 +4,17 @@
 // Generator Code Begin Cpp
 #include "dbChipRegion.h"
 
+#include <cstdint>
 #include <string>
 
 #include "dbChipBump.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include "dbChip.h"

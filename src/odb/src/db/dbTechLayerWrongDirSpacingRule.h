@@ -7,6 +7,7 @@
 #include <cstdint>
 
 #include "dbCore.h"
+#include "odb/dbId.h"
 
 namespace odb {
 class dbIStream;

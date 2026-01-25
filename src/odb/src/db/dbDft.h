@@ -8,6 +8,7 @@
 
 #include "dbBlock.h"
 #include "dbCore.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 class dbIStream;

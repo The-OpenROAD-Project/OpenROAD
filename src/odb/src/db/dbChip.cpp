@@ -19,6 +19,7 @@
 #include "dbChipNetItr.h"
 #include "dbChipRegion.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMarkerCategory.h"
 #include "dbNameCache.h"
@@ -31,7 +32,9 @@
 #include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
+#include "odb/dbStream.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 // User Code Begin Includes
 #include <list>
 // User Code End Includes

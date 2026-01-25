@@ -5,6 +5,7 @@
 #include "dbModNet.h"
 
 #include <cstdlib>
+#include <functional>
 
 #include "dbBlock.h"
 #include "dbDatabase.h"

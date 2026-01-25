@@ -11,7 +11,9 @@
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "dbVector.h"
+#include "odb/dbId.h"
 #include "odb/dbMatrix.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 
 namespace odb {

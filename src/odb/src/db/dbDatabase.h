@@ -9,6 +9,7 @@
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "odb/dbId.h"
+#include "odb/dbObject.h"
 // User Code Begin Includes
 #include <iostream>
 #include <set>

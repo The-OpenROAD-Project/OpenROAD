@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 
 #include "dbCore.h"

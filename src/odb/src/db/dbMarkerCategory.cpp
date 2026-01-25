@@ -5,15 +5,19 @@
 #include "dbMarkerCategory.h"
 
 #include <cstdlib>
+#include <set>
+#include <stdexcept>
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMarker.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "utl/Logger.h"
 // User Code Begin Includes
 #include <fstream>
 #include <regex>

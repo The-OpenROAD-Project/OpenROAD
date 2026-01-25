@@ -6,6 +6,7 @@
 
 #include <array>
 #include <tuple>
+#include <utility>
 
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -14,6 +15,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 // User Code Begin Includes
 #include <algorithm>
 #include <cstdint>

@@ -9,6 +9,7 @@
 
 #include "dbCore.h"
 #include "dbScanPin.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 class dbIStream;
