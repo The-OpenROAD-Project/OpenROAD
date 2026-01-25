@@ -6,11 +6,14 @@
 
 #include <cstdint>
 #include <string>
+#include <variant>
 
 #include "dbCore.h"
 #include "dbScanPin.h"
 #include "dbVector.h"
+#include "odb/db.h"
 #include "odb/dbId.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 class dbIStream;

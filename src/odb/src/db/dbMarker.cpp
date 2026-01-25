@@ -6,7 +6,11 @@
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
+#include <set>
 #include <string>
+#include <variant>
+#include <vector>
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -22,6 +26,8 @@
 #include "dbTechLayer.h"
 #include "dbVector.h"
 #include "odb/db.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 // User Code Begin Includes
 #include "dbChip.h"
 #include "dbCore.h"

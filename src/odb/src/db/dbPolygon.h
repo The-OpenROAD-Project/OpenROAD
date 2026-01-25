@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 #include "dbCore.h"
 #include "odb/dbId.h"

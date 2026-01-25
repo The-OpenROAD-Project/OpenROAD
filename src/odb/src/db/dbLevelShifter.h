@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 
 #include "dbCore.h"
 #include "dbVector.h"

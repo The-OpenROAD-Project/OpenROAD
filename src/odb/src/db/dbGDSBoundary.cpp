@@ -9,11 +9,14 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbGDSStructure.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 namespace odb {
 template class dbTable<_dbGDSBoundary>;
 

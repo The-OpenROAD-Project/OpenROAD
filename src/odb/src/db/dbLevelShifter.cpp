@@ -6,8 +6,11 @@
 
 #include <cstdlib>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"

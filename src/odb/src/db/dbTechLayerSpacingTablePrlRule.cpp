@@ -4,14 +4,22 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerSpacingTablePrlRule.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <iterator>
+#include <map>
+#include <ranges>
 #include <tuple>
+#include <utility>
+#include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
+#include "dbVector.h"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerSpacingTablePrlRule>;

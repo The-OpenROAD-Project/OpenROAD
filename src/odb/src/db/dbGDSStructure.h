@@ -11,6 +11,7 @@
 #include "dbVector.h"
 #include "odb/db.h"
 #include "odb/dbId.h"
+#include "odb/dbObject.h"
 
 namespace odb {
 class dbIStream;

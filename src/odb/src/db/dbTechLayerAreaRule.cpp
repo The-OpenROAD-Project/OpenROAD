@@ -8,6 +8,7 @@
 #include <cstring>
 #include <utility>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

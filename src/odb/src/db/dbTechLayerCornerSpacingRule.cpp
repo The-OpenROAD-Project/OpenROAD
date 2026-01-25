@@ -7,7 +7,9 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
+#include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

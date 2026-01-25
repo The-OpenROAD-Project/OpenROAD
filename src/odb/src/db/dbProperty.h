@@ -10,6 +10,7 @@
 
 #include "dbCore.h"
 #include "odb/dbId.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 
 namespace odb {
