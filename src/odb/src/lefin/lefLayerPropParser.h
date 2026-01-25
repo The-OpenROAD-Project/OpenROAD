@@ -398,4 +398,18 @@ class AntennaGatePlusDiffParser
   lefinReader* lefin_;
 };
 
+class MinWidthParser
+{
+ public:
+  MinWidthParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
 }  // namespace odb
