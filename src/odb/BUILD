@@ -55,7 +55,7 @@ cc_library(
     hdrs = glob(
         include = [
             "include/odb/*.h",
-            "include/odb/*.hpp",
+            "include/odb/*.inc",
         ],
         exclude = ["include/odb/MakeOdb.h"],
     ) + ["src/swig/common/swig_common.h"],
