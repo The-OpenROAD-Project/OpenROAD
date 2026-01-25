@@ -9,7 +9,6 @@
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 

@@ -18,7 +18,6 @@
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerAntennaRule.h"
 #include "dbTechLayerItr.h"

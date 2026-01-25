@@ -26,7 +26,6 @@
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
 #include "odb/dbChipCallBackObj.h"

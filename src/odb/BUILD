@@ -36,6 +36,7 @@ cc_library(
         "src/db/*.cpp",
         "src/db/*.h",
         "src/db/*.hpp",
+        "src/db/*.inc",
         "src/zutil/*.cpp",
         "src/defout/*.cpp",
         "src/defout/*.h",
@@ -56,6 +57,7 @@ cc_library(
         include = [
             "include/odb/*.h",
             "include/odb/*.hpp",
+            "include/odb/*.inc",
         ],
         exclude = ["include/odb/MakeOdb.h"],
     ) + ["src/swig/common/swig_common.h"],
