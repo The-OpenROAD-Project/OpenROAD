@@ -44,6 +44,7 @@
 #include "dbTechLayerAntennaRule.h"
 #include "dbTechLayerSpacingRule.h"
 #include "dbTechMinCutOrAreaRule.h"
+#include "odb/dbObject.h"
 #include "odb/lefout.h"
 #include "spdlog/fmt/ostr.h"
 #include "utl/Logger.h"
