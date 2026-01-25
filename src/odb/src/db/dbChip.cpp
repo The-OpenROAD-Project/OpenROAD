@@ -19,6 +19,7 @@
 #include "dbChipNetItr.h"
 #include "dbChipRegion.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMarkerCategory.h"
 #include "dbNameCache.h"
