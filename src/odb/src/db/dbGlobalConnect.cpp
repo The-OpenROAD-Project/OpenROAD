@@ -7,9 +7,9 @@
 #include <regex>
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <utility>

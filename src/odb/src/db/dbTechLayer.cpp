@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerAreaRule.h"
 #include "dbTechLayerArraySpacingRule.h"
 #include "dbTechLayerCornerSpacingRule.h"
@@ -38,6 +38,7 @@
 // User Code Begin Includes
 #include <cstdlib>
 
+#include "dbCommon.h"
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
