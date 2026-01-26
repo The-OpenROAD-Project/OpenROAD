@@ -18,6 +18,3 @@ or_integration_tests(
     gc_test
 )
 
-# Skipped
-#drt_man_tcl_check
-#drt_readme_msgs_check
