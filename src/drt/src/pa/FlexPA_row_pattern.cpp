@@ -242,6 +242,8 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
   genInstRowPatternCommit(nodes, insts);
 }
 
+#define LAYER_NUM(str) (design_->getTech()->getLayer(str)->getLayerNum())
+
 // init dp node array for valid access patterns
 void FlexPA::genInstRowPatternInit(
     std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
@@ -268,13 +270,217 @@ void FlexPA::genInstRowPatternInit(
     auto& inst = insts[inst_idx];
     auto unique_class = unique_insts_.getUniqueClass(inst);
     auto& inst_patterns = unique_inst_patterns_[unique_class];
+
+    // Calculating center of route guides of this inst 
+    
+    std::map<frInstTerm*, odb::Point> term_guide_centers; 
+
+    if (router_cfg_->PA_RTGUIDE_MODE != 0) {
+      for (auto& inst_term : inst->getInstTerms()) {
+        if(isSkipInstTerm(inst_term.get()) || !inst_term->hasNet())
+          continue;
+        
+        frNet* net = inst_term->getNet();
+        std::vector<std::pair<odb::Rect, int>> guide_boxes; 
+
+        for (auto& guide : net->getGuides()) {
+          odb::Rect guide_box = guide->getBBox();
+          int weight = 0; 
+
+          std::map<int, int> weights{{LAYER_NUM("M1"), 10},
+                                      {LAYER_NUM("M2"), 10},
+                                      {LAYER_NUM("M3"), 8},
+                                      {LAYER_NUM("M4"), 4},
+                                      {LAYER_NUM("M5"), 2}};
+
+          if (weights.find(guide->getBeginLayerNum()) != weights.end()) {
+            weight = weights[guide->getBeginLayerNum()];
+          } else {
+            weight = 0;
+          }
+          guide_boxes.emplace_back(guide_box, weight);
+        }
+
+        std::sort(guide_boxes.begin(), guide_boxes.end(), [&inst_term](auto a, auto b) {
+          return odb::Point::manhattanDistance(a.first.center(),
+                                               inst_term->getBBox().center())
+                 < odb::Point::manhattanDistance(b.first.center(),
+                                                 inst_term->getBBox().center());
+        });
+
+        int xAvg = 0, yAvg = 0; 
+        // --------------------------------------------------------
+        // Mode 1: Center of all RTGuides
+        // --------------------------------------------------------
+        if (router_cfg_->PA_RTGUIDE_MODE == 1) {
+          for (auto [bbox, weight] : guide_boxes) {
+            xAvg += bbox.center().x();
+            yAvg += bbox.center().y();
+          }
+  
+          if (guide_boxes.empty()) {
+            logger_->warn(DRT,
+                          138,
+                          "PA RTGuide Mode 1: No routeguide on {}",
+                          net->getName());
+            xAvg = inst_term->getBBox().center().x();
+            yAvg = inst_term->getBBox().center().y();
+          } else {
+            xAvg /= static_cast<int>(guide_boxes.size());
+            yAvg /= static_cast<int>(guide_boxes.size());
+          }
+        }
+
+        // --------------------------------------------------------
+        // Mode 2: Center of all RTGuides, weighted by layer.
+        // --------------------------------------------------------
+        else if (router_cfg_->PA_RTGUIDE_MODE == 2) {
+          int sumWeight = 0;
+          for (auto [bbox, weight] : guide_boxes) {
+            xAvg += bbox.center().x() * weight;
+            yAvg += bbox.center().y() * weight;
+            sumWeight += weight;
+          }
+  
+          if (sumWeight == 0) {
+            xAvg = inst_term->getBBox().center().x();
+            yAvg = inst_term->getBBox().center().y();
+            logger_->warn(DRT,
+                          145,
+                          "PA RTGuide Mode 2: No routeguide or no in-range "
+                          "routeguide on {}",
+                          net->getName());
+          } else {
+            xAvg /= sumWeight;
+            yAvg /= sumWeight;
+          }
+        } 
+        
+        // --------------------------------------------------------
+        // Mode 3: Center of incident RTGuide
+        // --------------------------------------------------------
+        else if (router_cfg_->PA_RTGUIDE_MODE == 3) {
+          if (guide_boxes.size() >= 1) {
+            auto box = guide_boxes[0].first;
+            xAvg = box.xCenter();
+            yAvg = box.yCenter();
+          } else {
+            logger_->warn(DRT,
+                          121,
+                          "PA RTGuide Mode 3: No routeguide on {}",
+                          net->getName());
+            xAvg = inst_term->getBBox().center().x();
+            yAvg = inst_term->getBBox().center().y();
+          }
+        } 
+
+        // --------------------------------------------------------
+        // Mode 4: Center of incident non-via RTGuide
+        // --------------------------------------------------------
+        else if (router_cfg_->PA_RTGUIDE_MODE == 4) {
+          if (guide_boxes.size() >= 1) {
+            odb::Rect firstNonVia = guide_boxes[0].first;
+            for (auto [bbox, weight] : guide_boxes) {
+              // An up-via is a square (1x1 gcell) guide segment that connects
+              // from pin layer to the layer above. To estimate the first
+              // non-up-via segment, we sort segments (see above) and then search
+              // for the first non-square via is centered closest to the ITerm's
+              // bbox
+              if (bbox.dx() != bbox.dy()) {
+                firstNonVia = bbox;
+                break;
+              }
+            }
+  
+            xAvg = firstNonVia.xCenter();
+            yAvg = firstNonVia.yCenter();
+          } else {
+            logger_->warn(DRT,
+                          209,
+                          "PA RTGuide Mode 4: No routeguide on {}",
+                          net->getName());
+            xAvg = inst_term->getBBox().center().x();
+            yAvg = inst_term->getBBox().center().y();
+          }
+        } else if (router_cfg_->PA_RTGUIDE_MODE != 0) {
+          logger_->warn(DRT,
+                        111,
+                        "PA RTGuide Usage Mode: {}",
+                        router_cfg_->PA_RTGUIDE_MODE);
+          throw std::out_of_range("Hacky: Invalid PA RTGuide Usage Mode.");
+        }
+        term_guide_centers[inst_term.get()] = odb::Point(xAvg, yAvg);
+      }
+    }
+
+    // Find closest guide distance to normalize penalty
+
+    std::map<frInstTerm*, double> term_min_dists;
+
+    for (auto& inst_term : inst->getInstTerms()){ 
+      if (isSkipInstTerm(inst_term.get()) || !term_guide_centers.count(inst_term.get())) continue; 
+
+      odb::Point target = term_guide_centers[inst_term.get()]; 
+      double min_d = std::numeric_limits<double>::max(); 
+
+      for (auto& pin : inst_term->getTerm()->getPins()){ 
+        uint pin_access_idx = inst->getPinAccessIdx(); 
+        auto* pa = pin->getPinAccess(pin_access_idx); 
+        for (auto& ap : pa->getAccessPoints()){ 
+          double d = odb::Point::manhattanDistance(ap->getPoint(), target); 
+          if (d < min_d) min_d = d; 
+        }
+      }
+
+      term_min_dists[inst_term.get()] = std::max(min_d, 1.0); 
+    }
+
+
+    
     nodes[inst_idx]
         = std::vector<std::unique_ptr<FlexDPNode>>(inst_patterns.size());
+
     for (int acc_pattern_idx = 0; acc_pattern_idx < (int) inst_patterns.size();
          acc_pattern_idx++) {
       nodes[inst_idx][acc_pattern_idx] = std::make_unique<FlexDPNode>();
       auto access_pattern = inst_patterns[acc_pattern_idx].get();
-      nodes[inst_idx][acc_pattern_idx]->setNodeCost(access_pattern->getCost());
+
+      int access_pattern_cost = access_pattern ->getCost(); 
+
+      const auto& access_points = access_pattern->getPattern(); 
+      int ap_idx = 0; 
+
+      for (auto& inst_term : inst->getInstTerms()) { 
+        if (isSkipInstTerm(inst_term.get())) continue; 
+
+        for (int pin_idx = 0; pin_idx < (int) inst_term->getTerm()->getPins().size(); pin_idx++){ 
+          frAccessPoint* ap = access_points[ap_idx]; 
+          ap_idx++; 
+
+          if (!ap) continue; 
+
+          // Cache lookups to avoid repeated map operations
+          auto guide_center_it = term_guide_centers.find(inst_term.get());
+          if (guide_center_it != term_guide_centers.end()){
+            const odb::Point& guide_center = guide_center_it->second;
+            odb::Point ap_loc = ap->getPoint(); 
+
+            double dist = odb::Point::manhattanDistance(ap_loc, guide_center);
+            auto min_dist_it = term_min_dists.find(inst_term.get());
+            if (min_dist_it != term_min_dists.end()) {
+              double min_dist = min_dist_it->second;
+              // Penalty is proportional to how much further the AP is from the guide
+              // compared to the minimum distance. Cap the ratio to avoid very large
+              // penalties when min_dist is very small.
+              double ratio = std::min(dist / min_dist, 10.0); // Cap at 10x
+              double penalty = 5.0 * std::max(0.0, ratio - 1.0);
+
+              access_pattern_cost += static_cast<int>(penalty);
+            }
+          }
+        }
+      }
+      nodes[inst_idx][acc_pattern_idx]->setNodeCost(access_pattern_cost);
       nodes[inst_idx][acc_pattern_idx]->setIdx({inst_idx, acc_pattern_idx});
     }
   }
