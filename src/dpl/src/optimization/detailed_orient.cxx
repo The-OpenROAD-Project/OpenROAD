@@ -16,6 +16,7 @@
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "odb/dbTypes.h"
+#include "odb/db.h"
 #include "util/symmetry.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
