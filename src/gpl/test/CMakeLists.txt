@@ -38,9 +38,6 @@ or_integration_tests(
     region01
 )
 
-# Skipped
-#gpl_man_tcl_check
-#gpl_readme_msgs_check
 
 add_executable(fft_test fft_test.cc)
 
