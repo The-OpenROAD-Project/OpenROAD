@@ -9070,6 +9070,10 @@ class dbTechLayer : public dbObject
 
   uint32_t getWrongWayWidth() const;
 
+  void setWrongWayMinWidth(uint32_t wrong_way_min_width);
+
+  uint32_t getWrongWayMinWidth() const;
+
   void setLayerAdjustment(float layer_adjustment);
 
   float getLayerAdjustment() const;
