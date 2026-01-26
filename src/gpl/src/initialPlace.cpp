@@ -169,7 +169,7 @@ void InitialPlace::placeInstsInitialPositions()
   }
 
   log_->info(utl::GPL,
-             35,
+             51,
              "Source of initial instance position counters:\n"
              "\tOdb location = {}"
              "\tCore center = {}"
