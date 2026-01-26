@@ -1120,7 +1120,7 @@ Divergence occured in 2 regions.
 [WARNING GPL-0998] Divergence detected, reverting to snapshot with min hpwl.
 [WARNING GPL-0999] Revert to iter: 1239 overflow: 0.193 HPWL: 1914069648
 [INFO GPL-1011] Original area (um^2): 419910.99
-[INFO GPL-1012] Total routability artificial inflation: -26432.51 (-6.29%)
+[INFO GPL-1012] Total routability artificial inflation: 6798.17 (+1.62%)
 [INFO GPL-1013] Total timing-driven delta area: -27509.56 (-6.55%)
 [INFO GPL-1014] Final placement area: 399199.60 (-4.93%)
 Placement Analysis
