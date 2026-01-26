@@ -27,7 +27,9 @@
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -39,7 +41,11 @@ CUGR::CUGR(odb::dbDatabase* db,
            utl::CallBackHandler* callback_handler,
            stt::SteinerTreeBuilder* stt_builder,
            sta::dbSta* sta)
-    : db_(db), logger_(log), callback_handler_(callback_handler), stt_builder_(stt_builder), sta_(sta)
+    : db_(db),
+      logger_(log),
+      callback_handler_(callback_handler),
+      stt_builder_(stt_builder),
+      sta_(sta)
 {
 }
 
@@ -51,7 +57,7 @@ void CUGR::init(const int min_routing_layer,
 {
   design_ = std::make_unique<Design>(db_,
                                      logger_,
-                                     callback_handler_,
+
                                      sta_,
                                      constants_,
                                      min_routing_layer,
@@ -61,23 +67,19 @@ void CUGR::init(const int min_routing_layer,
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& baseNets = design_->getAllNets();
   gr_nets_.reserve(baseNets.size());
+  int index = 0;
   for (const CUGRNet& baseNet : baseNets) {
     gr_nets_.push_back(std::make_unique<GRNet>(baseNet, grid_graph_.get()));
+    net_indices_.push_back(index);
     db_net_map_[baseNet.getDbNet()] = gr_nets_.back().get();
+    index++;
   }
 }
 
-// TODO: CUGR partial route calculation
-NetRouteMap CUGR::getPartialRoutes()
+NetRouteMap CUGR::getPlanarRoutes()
 {
-  NetRouteMap net_routes;
-  partial_routes_.clear();
-  if (routes_.empty()) {
-    // TODO: CUGR planar route
-    net_routes = partial_routes_;
-  }
-
-  return net_routes;
+  NetRouteMap temp;
+  return temp;
 }
 
 float CUGR::CalculatePartialSlack()
@@ -103,7 +105,8 @@ float CUGR::CalculatePartialSlack()
   // ordered by overflow (and ordered first than the critical nets)
   for (const int& netIndex : net_indices_) {
     if (gr_nets_[netIndex]->getSlack() > slack_th) {
-      gr_nets_[netIndex]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
+      gr_nets_[netIndex]->setSlack(
+          std::ceil(std::numeric_limits<float>::lowest()));
     }
   }
 
@@ -218,8 +221,6 @@ void CUGR::route()
   for (const auto& net : gr_nets_) {
     netIndices.push_back(net->getIndex());
   }
-
-  CalculatePartialSlack();
 
   patternRoute(netIndices);
 
