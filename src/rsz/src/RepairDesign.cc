@@ -70,7 +70,7 @@ using sta::InstancePinIterator;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetPinIterator;
-gusing sta::PortDirection;
+using sta::PortDirection;
 using sta::RiseFallBoth;
 using sta::TimingArc;
 using sta::TimingArcSet;
