@@ -70,7 +70,11 @@ print(
 )
 
 for tool_dir in help_dict:
-    h, p, r = help_dict[tool_dir], proc_dict.get(tool_dir, 0), readme_dict.get(tool_dir, 0)
+    h, p, r = (
+        help_dict[tool_dir],
+        proc_dict.get(tool_dir, 0),
+        readme_dict.get(tool_dir, 0),
+    )
     print(tool_dir.ljust(20), str(h).ljust(15), str(p).ljust(15), str(r))
     if h == p == r:
         print("Command counts match.")
