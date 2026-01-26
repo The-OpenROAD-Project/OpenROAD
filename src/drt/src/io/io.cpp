@@ -1701,6 +1701,14 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       getTech()->addUConstraint(std::move(ucon));
     }
   }
+  if (layer->getWrongWayMinWidth() != 0
+      && layer->getWrongWayMinWidth() != layer->getMinWidth()) {
+    logger_->warn(utl::DRT,
+                  625,
+                  "LEF58_MINWIDTH rule with WRONGDIRECTION is not supported "
+                  "for layer {}.",
+                  layer->getName());
+  }
 }
 
 void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
