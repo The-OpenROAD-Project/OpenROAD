@@ -3,7 +3,6 @@
 
 #include <cassert>
 
-#include "odb/ZException.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -11,29 +10,29 @@
 
 namespace odb {
 
-inline bool isFiltered(unsigned filter, unsigned mask)
+static bool isFiltered(unsigned filter, unsigned mask)
 {
   return (filter & mask) == mask;
 }
 
 dbHierInstShapeItr::dbHierInstShapeItr(dbShapeItrCallback* callback)
 {
-  _callback = callback;
+  callback_ = callback;
   assert(callback);
 }
 
 void dbHierInstShapeItr::iterate(dbInst* inst, unsigned filter)
 {
-  _transforms.clear();
-  _transforms.push_back(dbTransform());
+  transforms_.clear();
+  transforms_.emplace_back();
   iterate_inst(inst, filter, 0);
 }
 
-void dbHierInstShapeItr::push_transform(dbTransform t)
+void dbHierInstShapeItr::push_transform(const dbTransform& t)
 {
-  dbTransform top = _transforms.back();
+  dbTransform top = transforms_.back();
   top.concat(t);
-  _transforms.push_back(top);
+  transforms_.push_back(top);
 }
 
 bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
@@ -42,13 +41,13 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
     return true;
   }
 
-  _callback->beginInst(inst, level);
+  callback_->beginInst(inst, level);
 
   push_transform(inst->getTransform());
   dbMaster* master = inst->getMaster();
 
   if (!isFiltered(filter, INST_OBS | INST_VIA)) {
-    _callback->beginObstructions(master);
+    callback_->beginObstructions(master);
     const bool filter_via = isFiltered(filter, INST_VIA);
     const bool filter_obs = isFiltered(filter, INST_OBS);
 
@@ -59,10 +58,10 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
         if (!filter_via) {
           getShape(box, s);
 
-          if (!_callback->nextBoxShape(box, s)) {
-            _transforms.pop_back();
-            _callback->endObstructions();
-            _callback->endInst();
+          if (!callback_->nextBoxShape(box, s)) {
+            transforms_.pop_back();
+            callback_->endObstructions();
+            callback_->endInst();
             return false;
           }
         }
@@ -71,45 +70,45 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
         if (!filter_obs) {
           getShape(box, s);
 
-          if (!_callback->nextBoxShape(box, s)) {
-            _transforms.pop_back();
-            _callback->endObstructions();
-            _callback->endInst();
+          if (!callback_->nextBoxShape(box, s)) {
+            transforms_.pop_back();
+            callback_->endObstructions();
+            callback_->endInst();
             return false;
           }
         }
       }
     }
 
-    _callback->endObstructions();
+    callback_->endObstructions();
   }
 
   if (!isFiltered(filter, INST_PIN)) {
     dbShape s;
 
     for (dbMTerm* mterm : master->getMTerms()) {
-      _callback->beginMTerm(mterm);
+      callback_->beginMTerm(mterm);
       for (dbMPin* pin : mterm->getMPins()) {
-        _callback->beginMPin(pin);
+        callback_->beginMPin(pin);
         for (dbBox* box : pin->getGeometry()) {
           getShape(box, s);
 
-          if (!_callback->nextBoxShape(box, s)) {
-            _transforms.pop_back();
-            _callback->endMPin();
-            _callback->endMTerm();
-            _callback->endInst();
+          if (!callback_->nextBoxShape(box, s)) {
+            transforms_.pop_back();
+            callback_->endMPin();
+            callback_->endMTerm();
+            callback_->endInst();
             return false;
           }
         }
-        _callback->endMPin();
+        callback_->endMPin();
       }
-      _callback->endMTerm();
+      callback_->endMTerm();
     }
   }
 
-  _transforms.pop_back();
-  _callback->endInst();
+  transforms_.pop_back();
+  callback_->endInst();
   return true;
 }
 
@@ -119,7 +118,7 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
     return iterate_leaf(inst, filter, level);
   }
 
-  _callback->beginInst(inst, level);
+  callback_->beginInst(inst, level);
 
   push_transform(inst->getTransform());
   dbBlock* child = inst->getChild();
@@ -128,19 +127,19 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
   if (!isFiltered(filter, BLOCK_PIN)) {
     for (dbBTerm* bterm : child->getBTerms()) {
       for (dbBPin* pin : bterm->getBPins()) {
-        _callback->beginBPin(pin);
+        callback_->beginBPin(pin);
 
         for (dbBox* box : pin->getBoxes()) {
           getShape(box, shape);
-          if (!_callback->nextBoxShape(box, shape)) {
-            _transforms.pop_back();
-            _callback->endBPin();
-            _callback->endInst();
+          if (!callback_->nextBoxShape(box, shape)) {
+            transforms_.pop_back();
+            callback_->endBPin();
+            callback_->endInst();
             return false;
           }
         }
 
-        _callback->endBPin();
+        callback_->endBPin();
       }
     }
   }
@@ -149,28 +148,28 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
     for (dbObstruction* obs : child->getObstructions()) {
       dbBox* box = obs->getBBox();
       getShape(box, shape);
-      _callback->beginObstruction(obs);
+      callback_->beginObstruction(obs);
 
-      if (!_callback->nextBoxShape(box, shape)) {
-        _transforms.pop_back();
-        _callback->endObstruction();
-        _callback->endInst();
+      if (!callback_->nextBoxShape(box, shape)) {
+        transforms_.pop_back();
+        callback_->endObstruction();
+        callback_->endInst();
         return false;
       }
 
-      _callback->endObstruction();
+      callback_->endObstruction();
     }
   }
 
   for (dbInst* inst : child->getInsts()) {
     if (!iterate_inst(inst, filter, ++level)) {
-      _transforms.pop_back();
+      transforms_.pop_back();
       return false;
     }
   }
 
   for (dbNet* net : child->getNets()) {
-    _callback->beginNet(net);
+    callback_->beginNet(net);
 
     bool draw_segments;
     bool draw_vias;
@@ -181,27 +180,27 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
 
     if (!isFiltered(filter, NET_SWIRE)) {
       if (!iterate_swires(filter, net, draw_vias, draw_segments)) {
-        _transforms.pop_back();
-        _callback->endNet();
-        _callback->endInst();
+        transforms_.pop_back();
+        callback_->endNet();
+        callback_->endInst();
         return false;
       }
     }
 
     if (!isFiltered(filter, NET_WIRE)) {
       if (!iterate_wire(filter, net, draw_vias, draw_segments)) {
-        _transforms.pop_back();
-        _callback->endNet();
-        _callback->endInst();
+        transforms_.pop_back();
+        callback_->endNet();
+        callback_->endInst();
         return false;
       }
     }
 
-    _callback->endNet();
+    callback_->endNet();
   }
 
-  _transforms.pop_back();
-  _callback->endInst();
+  transforms_.pop_back();
+  callback_->endInst();
   return true;
 }
 
@@ -308,10 +307,10 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
                                        bool draw_vias,
                                        bool draw_segments)
 {
-  _callback->beginSWire(swire);
+  callback_->beginSWire(swire);
 
   if (isFiltered(filter, NET_SBOX)) {
-    _callback->endSWire();
+    callback_->endSWire();
     return true;
   }
 
@@ -322,8 +321,8 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
       if (draw_vias == true) {
         getShape(box, shape);
 
-        if (!_callback->nextBoxShape(box, shape)) {
-          _callback->endSWire();
+        if (!callback_->nextBoxShape(box, shape)) {
+          callback_->endSWire();
           return false;
         }
       }
@@ -331,15 +330,15 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
       if (draw_segments == true) {
         getShape(box, shape);
 
-        if (!_callback->nextBoxShape(box, shape)) {
-          _callback->endSWire();
+        if (!callback_->nextBoxShape(box, shape)) {
+          callback_->endSWire();
           return false;
         }
       }
     }
   }
 
-  _callback->endSWire();
+  callback_->endSWire();
   return true;
 }
 
@@ -354,10 +353,10 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
     return true;
   }
 
-  _callback->beginWire(wire);
+  callback_->beginWire(wire);
 
   if (isFiltered(filter, NET_WIRE_SHAPE)) {
-    _callback->endWire();
+    callback_->endWire();
     return true;
   }
 
@@ -369,8 +368,8 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
       if (draw_vias == true) {
         transform(shape);
 
-        if (!_callback->nextWireShape(wire, itr.getShapeId(), shape)) {
-          _callback->endWire();
+        if (!callback_->nextWireShape(wire, itr.getShapeId(), shape)) {
+          callback_->endWire();
           return false;
         }
       }
@@ -378,28 +377,28 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
       if (draw_segments == true) {
         transform(shape);
 
-        if (!_callback->nextWireShape(wire, itr.getShapeId(), shape)) {
-          _callback->endWire();
+        if (!callback_->nextWireShape(wire, itr.getShapeId(), shape)) {
+          callback_->endWire();
           return false;
         }
       }
     }
   }
 
-  _callback->endWire();
+  callback_->endWire();
   return true;
 }
 
 void dbHierInstShapeItr::transform(dbShape& shape)
 {
-  dbTransform& t = _transforms.back();
-  t.apply(shape._rect);
+  dbTransform& t = transforms_.back();
+  t.apply(shape.rect_);
 }
 
 void dbHierInstShapeItr::getShape(dbBox* box, dbShape& shape)
 {
   Rect r = box->getBox();
-  dbTransform& t = _transforms.back();
+  dbTransform& t = transforms_.back();
   t.apply(r);
 
   if (!box->isVia()) {

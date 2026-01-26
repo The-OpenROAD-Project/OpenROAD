@@ -3,8 +3,7 @@
 
 #include "par/MakePartitionMgr.h"
 
-#include <tcl.h>
-
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

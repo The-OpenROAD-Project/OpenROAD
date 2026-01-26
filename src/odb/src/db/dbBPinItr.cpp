@@ -3,11 +3,12 @@
 
 #include "dbBPinItr.h"
 
+#include <cstdint>
+
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 
 namespace odb {
@@ -21,12 +22,12 @@ namespace odb {
 //
 // BPins are ordered by io-type and cannot be reversed.
 //
-bool dbBPinItr::reversible()
+bool dbBPinItr::reversible() const
 {
   return true;
 }
 
-bool dbBPinItr::orderReversed()
+bool dbBPinItr::orderReversed() const
 {
   return true;
 }
@@ -34,29 +35,29 @@ bool dbBPinItr::orderReversed()
 void dbBPinItr::reverse(dbObject* parent)
 {
   _dbBTerm* bterm = (_dbBTerm*) parent;
-  uint id = bterm->_bpins;
-  uint list = 0;
+  uint32_t id = bterm->bpins_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbBPin* bpin = _bpin_tbl->getPtr(id);
-    uint n = bpin->_next_bpin;
-    bpin->_next_bpin = list;
+    _dbBPin* bpin = bpin_tbl_->getPtr(id);
+    uint32_t n = bpin->next_bpin_;
+    bpin->next_bpin_ = list;
     list = id;
     id = n;
   }
 
-  bterm->_bpins = list;
+  bterm->bpins_ = list;
 }
 
-uint dbBPinItr::sequential()
+uint32_t dbBPinItr::sequential() const
 {
   return 0;
 }
 
-uint dbBPinItr::size(dbObject* parent)
+uint32_t dbBPinItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbBPinItr::begin(parent); id != dbBPinItr::end(parent);
        id = dbBPinItr::next(id)) {
@@ -66,26 +67,26 @@ uint dbBPinItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbBPinItr::begin(dbObject* parent)
+uint32_t dbBPinItr::begin(dbObject* parent) const
 {
   _dbBTerm* bterm = (_dbBTerm*) parent;
-  return bterm->_bpins;
+  return bterm->bpins_;
 }
 
-uint dbBPinItr::end(dbObject* /* unused: parent */)
+uint32_t dbBPinItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbBPinItr::next(uint id, ...)
+uint32_t dbBPinItr::next(uint32_t id, ...) const
 {
-  _dbBPin* bpin = _bpin_tbl->getPtr(id);
-  return bpin->_next_bpin;
+  _dbBPin* bpin = bpin_tbl_->getPtr(id);
+  return bpin->next_bpin_;
 }
 
-dbObject* dbBPinItr::getObject(uint id, ...)
+dbObject* dbBPinItr::getObject(uint32_t id, ...)
 {
-  return _bpin_tbl->getPtr(id);
+  return bpin_tbl_->getPtr(id);
 }
 
 }  // namespace odb

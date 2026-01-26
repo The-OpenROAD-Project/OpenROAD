@@ -7,12 +7,21 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 
+#include "db_sta/dbSta.hh"
+#include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/lefin.h"
+#include "sta/Corner.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Sta.hh"
+#include "tcl.h"  // IWYU pragma: keep (clang-tidy, you're drunk)
 
 namespace tst {
 

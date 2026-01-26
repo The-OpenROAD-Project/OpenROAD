@@ -76,8 +76,8 @@ TEST_F(Fixture, reader)
   auto text0 = *texts_iter++;
   EXPECT_EQ(text0->getLayer(), 67);
   EXPECT_EQ(text0->getText(), "Y");
-  EXPECT_EQ(text0->getTransform()._mag, 0.17);
-  EXPECT_EQ(text0->getTransform()._angle, 0);
+  EXPECT_EQ(text0->getTransform().mag_, 0.17);
+  EXPECT_EQ(text0->getTransform().angle_, 0);
 }
 
 TEST_F(Fixture, writer)
@@ -142,8 +142,8 @@ TEST_F(Fixture, writer)
   auto text0 = *texts_iter++;
   EXPECT_EQ(text0->getLayer(), 67);
   EXPECT_EQ(text0->getText(), "Y");
-  EXPECT_EQ(text0->getTransform()._mag, 0.17);
-  EXPECT_EQ(text0->getTransform()._angle, 0);
+  EXPECT_EQ(text0->getTransform().mag_, 0.17);
+  EXPECT_EQ(text0->getTransform().angle_, 0);
 }
 
 TEST_F(Fixture, edit)
@@ -196,8 +196,8 @@ TEST_F(Fixture, edit)
 
   dbGDSSRef* sref_read = *str3_read->getGDSSRefs().begin();
   EXPECT_STREQ(sref_read->getStructure()->getName(), "str1");
-  EXPECT_EQ(sref_read->getTransform()._mag, 2.0);
-  EXPECT_EQ(sref_read->getTransform()._angle, 90);
+  EXPECT_EQ(sref_read->getTransform().mag_, 2.0);
+  EXPECT_EQ(sref_read->getTransform().angle_, 90);
 
   dbGDSStructure* ref_str = sref_read->getStructure();
   EXPECT_NE(ref_str, nullptr);

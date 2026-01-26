@@ -8,6 +8,7 @@
 #include <string>
 
 #include "BaseMove.hh"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -27,7 +28,6 @@ using sta::ArcDelay;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LoadPinIndexMap;
-using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Path;
 using sta::PathExpanded;

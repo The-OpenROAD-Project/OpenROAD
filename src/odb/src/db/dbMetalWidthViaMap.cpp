@@ -6,12 +6,14 @@
 
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbTech.h"
 // User Code End Includes
 namespace odb {
@@ -94,7 +96,7 @@ void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["via_name"].add(via_name_);
+  info.children["via_name"].add(via_name_);
   // User Code End collectMemInfo
 }
 
@@ -214,7 +216,7 @@ dbTechLayer* dbMetalWidthViaMap::getCutLayer() const
 dbMetalWidthViaMap* dbMetalWidthViaMap::create(dbTech* tech)
 {
   _dbTech* _tech = (_dbTech*) tech;
-  _dbMetalWidthViaMap* via_map = _tech->_metal_width_via_map_tbl->create();
+  _dbMetalWidthViaMap* via_map = _tech->metal_width_via_map_tbl_->create();
   return (dbMetalWidthViaMap*) via_map;
 }
 
@@ -222,14 +224,14 @@ void dbMetalWidthViaMap::destroy(dbMetalWidthViaMap* via_map)
 {
   _dbTech* tech = (_dbTech*) via_map->getImpl()->getOwner();
   dbProperty::destroyProperties(via_map);
-  tech->_metal_width_via_map_tbl->destroy((_dbMetalWidthViaMap*) via_map);
+  tech->metal_width_via_map_tbl_->destroy((_dbMetalWidthViaMap*) via_map);
 }
 
 dbMetalWidthViaMap* dbMetalWidthViaMap::getMetalWidthViaMap(dbTech* tech,
-                                                            uint dbid)
+                                                            uint32_t dbid)
 {
   _dbTech* _tech = (_dbTech*) tech;
-  return (dbMetalWidthViaMap*) _tech->_metal_width_via_map_tbl->getPtr(dbid);
+  return (dbMetalWidthViaMap*) _tech->metal_width_via_map_tbl_->getPtr(dbid);
 }
 
 // User Code End dbMetalWidthViaMapPublicMethods

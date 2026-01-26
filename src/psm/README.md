@@ -145,6 +145,7 @@ set_pdnsim_source_settings
     [-bump_size size]
     [-bump_interval interval]
     [-strap_track_pitch pitch]
+    [-external_resistance resistance]
 ```
 
 #### Options
@@ -154,7 +155,8 @@ set_pdnsim_source_settings
 | `-bump_dx`,`-bump_dy` | Set the bump pitch to decide the voltage source location. The default bump pitch is 140um. |
 | `-bump_size` | Set the bump size. The default bump size is 70um. |
 | `-bump_interval` | Set the bump population interval, this is used to depopulate the bump grid to emulate signals and other power connections. The default bump pitch is 3. |
-| `-strap_track_pitch` | Sets the track pitck to use for moduling voltage sources as straps. The default is 10x. |
+| `-strap_track_pitch` | Sets the track pitch to use for modeling voltage sources as straps. The default is 10x. |
+| `-external_resistance` | Set to model the resistance of the package or power network outside the chip/block. The default value is 0.0. |
 
 ### Insert Decap Cells
 The `insert_decap` command inserts decap cells in the areas with the highest
@@ -187,6 +189,18 @@ The image below illustrate how they can be modeled, the red elements are the sou
 | - | - | - | - |
 | ![Image 1](doc/top_grid_bumps_2x.png) | ![Image 2](doc/top_grid_bumps_3x.png) | ![Image 1](doc/top_grid_straps.png) | ![Image 2](doc/top_grid_full.png) |
 
+### Selectively disconnecting sources
+
+If you need to be able to disconnect some of the terminals in the design, such as in the case of "what-if" analysis or different chip packaging options.
+This can be done by assigning `PSM_DISCONNECT` to a terminal or shape in a terminal will cause PDNSim to leave that object disconnected from the analysis.
+
+```tcl
+# Assumes bpin is the block pin to be disconnected
+odb::dbBoolProperty_create $bpin PSM_DISCONNECT 1
+
+# Assumes box the box shape in the bpin to be disconnected
+odb::dbBoolProperty_create $box PSM_DISCONNECT 1
+```
 
 ## Useful Developer Commands
 

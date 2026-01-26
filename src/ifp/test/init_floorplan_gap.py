@@ -23,9 +23,33 @@ ifph.create_voltage_domain(design, "TEMP_ANALOG", (l, l, u, u))
 floorplan = design.getFloorplan()
 site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")
 additional_site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O_DoubleHeight")
+
+# Test non positive gap
+try:
+    floorplan.initFloorplan(
+        die, core, site, [additional_site], "NONE", [], design.micronToDBU(-1)
+    )
+except Exception:
+    pass
+try:
+    floorplan.initFloorplan(
+        die, core, site, [additional_site], "NONE", [], design.micronToDBU(0)
+    )
+except Exception:
+    pass
+try:
+    floorplan.makeRows(core, site, [], "NONE", [], design.micronToDBU(-1))
+except Exception:
+    pass
+try:
+    floorplan.makeRows(core, site, [], "NONE", [], design.micronToDBU(0))
+except Exception:
+    pass
+
 floorplan.initFloorplan(
     die, core, site, [additional_site], "NONE", [], design.micronToDBU(2)
 )
+
 def_file = helpers.make_result_file("init_floorplan_gap.def")
 design.writeDef(def_file)
 helpers.diff_files("init_floorplan_gap.defok", def_file)

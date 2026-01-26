@@ -6,23 +6,15 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace pdn {
-
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbDatabase;
-using odb::dbGlobalConnect;
-using odb::dbInst;
-using odb::dbMaster;
-using odb::dbMTerm;
-using odb::dbNet;
-using odb::dbRegion;
-
-using utl::Logger;
 
 enum ExtensionMode
 {
@@ -54,7 +46,7 @@ class SRoute;
 class PdnGen
 {
  public:
-  PdnGen(dbDatabase* db, Logger* logger);
+  PdnGen(odb::dbDatabase* db, utl::Logger* logger);
   ~PdnGen();
 
   void reset();
@@ -98,7 +90,8 @@ class PdnGen
                     const std::vector<odb::dbTechLayer*>& generate_obstructions,
                     PowerCell* powercell,
                     odb::dbNet* powercontrol,
-                    const char* powercontrolnetwork);
+                    const char* powercontrolnetwork,
+                    const std::vector<odb::dbTechLayer*>& pad_pin_layers);
   void makeInstanceGrid(
       VoltageDomain* domain,
       const std::string& name,
@@ -142,7 +135,8 @@ class PdnGen
                  bool snap,
                  StartsWith starts_with,
                  ExtensionMode extend,
-                 const std::vector<odb::dbNet*>& nets);
+                 const std::vector<odb::dbNet*>& nets,
+                 bool allow_out_of_core);
   void makeConnect(
       Grid* grid,
       odb::dbTechLayer* layer0,
@@ -180,8 +174,8 @@ class PdnGen
                          int max_rows,
                          int max_columns,
                          const std::vector<odb::dbTechLayer*>& ongrid,
-                         std::vector<int> metalWidths,
-                         std::vector<int> metalspaces,
+                         const std::vector<int>& metalWidths,
+                         const std::vector<int>& metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
   PDNRenderer* getDebugRenderer() const { return debug_renderer_.get(); }

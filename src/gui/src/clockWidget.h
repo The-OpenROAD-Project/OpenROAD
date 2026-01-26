@@ -30,9 +30,11 @@
 #include <variant>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"
+#include "sta/NetworkClass.hh"
 #include "staGuiInterface.h"
 
 namespace sta {
@@ -120,9 +122,7 @@ class ClockNetGraphicsViewItem : public QGraphicsItem
   void buildTrunkJunction(const std::vector<ClockNodeGraphicsViewItem*>& nodes,
                           bool top_anchor,
                           const QPointF& trunk_junction);
-  void addLeafPath(const QPointF& start,
-                   const qreal y_trunk,
-                   const QPointF& end);
+  void addLeafPath(const QPointF& start, qreal y_trunk, const QPointF& end);
 
   void setNetInformation();
 };
@@ -186,7 +186,7 @@ class ClockNodeGraphicsViewItem : public QGraphicsObject
   void updateView();
 
  protected:
-  void addDelayFin(QPainterPath& path, const qreal delay) const;
+  void addDelayFin(QPainterPath& path, qreal delay) const;
   void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
 
  private:

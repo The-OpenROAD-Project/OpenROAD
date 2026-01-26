@@ -22,7 +22,6 @@ cmakeOptions=""
 isNinja=no
 cleanBefore=no
 depsPrefixesFile=""
-keepLog=no
 compiler=gcc
 
 _help() {
@@ -117,11 +116,11 @@ while [ "$#" -gt 0 ]; do
         -dir=* )
             buildDir="${1#*=}"
             ;;
-        -keep-log )
-            keepLog=yes
-            ;;
         -threads=* )
-            numThreads="${1#*=}"
+            temp="${1#*=}"
+            if [[ "${temp}" != "NotSet" ]]; then
+                numThreads=${temp}
+            fi
             ;;
         -deps-prefixes-file=*)
             file="${1#-deps-prefixes-file=}"

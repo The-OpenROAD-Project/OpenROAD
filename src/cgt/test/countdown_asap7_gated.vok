@@ -53,6 +53,21 @@ module countdown (clk,
  INVx1_ASAP7_75t_R _22_ (.A(rst),
     .Y(_08_));
  TIEHIx1_ASAP7_75t_R _23_ (.H(_11_));
+ ICGx1_ASAP7_75t_R clk_gate_0 (.ENA(clk_gate_cond_net_4),
+    .GCLK(gated_clk_5),
+    .CLK(clk));
+ OR2x6_ASAP7_75t_R clk_gate_cond_0 (.A(_05_),
+    .B(_02_),
+    .Y(clk_gate_cond_net_1));
+ OR2x6_ASAP7_75t_R clk_gate_cond_1 (.A(clk_gate_cond_net_1),
+    .B(_01_),
+    .Y(clk_gate_cond_net_2));
+ OR2x6_ASAP7_75t_R clk_gate_cond_2 (.A(clk_gate_cond_net_2),
+    .B(_10_),
+    .Y(clk_gate_cond_net_3));
+ OR2x6_ASAP7_75t_R clk_gate_cond_3 (.A(clk_gate_cond_net_3),
+    .B(_03_),
+    .Y(clk_gate_cond_net_4));
  DFFASRHQNx1_ASAP7_75t_R \val[0]$_DFF_PP1_  (.CLK(gated_clk_5),
     .D(_00_),
     .QN(_05_),
@@ -68,19 +83,4 @@ module countdown (clk,
     .QN(_03_),
     .RESETN(_11_),
     .SETN(_08_));
- OR2x6_ASAP7_75t_R clk_gate_cond_0 (.A(_05_),
-    .B(_02_),
-    .Y(clk_gate_cond_net_1));
- OR2x6_ASAP7_75t_R clk_gate_cond_1 (.A(clk_gate_cond_net_1),
-    .B(_01_),
-    .Y(clk_gate_cond_net_2));
- OR2x6_ASAP7_75t_R clk_gate_cond_2 (.A(clk_gate_cond_net_2),
-    .B(_10_),
-    .Y(clk_gate_cond_net_3));
- OR2x6_ASAP7_75t_R clk_gate_cond_3 (.A(clk_gate_cond_net_3),
-    .B(_03_),
-    .Y(clk_gate_cond_net_4));
- ICGx1_ASAP7_75t_R clk_gate_0 (.ENA(clk_gate_cond_net_4),
-    .GCLK(gated_clk_5),
-    .CLK(clk));
 endmodule

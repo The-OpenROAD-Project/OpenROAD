@@ -10,6 +10,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"

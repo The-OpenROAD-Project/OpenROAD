@@ -4,11 +4,11 @@
 #include "dbTechSameNetRule.h"
 
 #include <cassert>
+#include <cstdint>
 
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
@@ -20,19 +20,19 @@ template class dbTable<_dbTechSameNetRule>;
 
 bool _dbTechSameNetRule::operator==(const _dbTechSameNetRule& rhs) const
 {
-  if (_flags._stack != rhs._flags._stack) {
+  if (flags_.stack != rhs.flags_.stack) {
     return false;
   }
 
-  if (_spacing != rhs._spacing) {
+  if (spacing_ != rhs.spacing_) {
     return false;
   }
 
-  if (_layer_1 != rhs._layer_1) {
+  if (layer_1_ != rhs.layer_1_) {
     return false;
   }
 
-  if (_layer_2 != rhs._layer_2) {
+  if (layer_2_ != rhs.layer_2_) {
     return false;
   }
 
@@ -49,26 +49,26 @@ dbTechLayer* dbTechSameNetRule::getLayer1()
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
   _dbTech* tech = (_dbTech*) rule->getOwner();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer_1);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(rule->layer_1_);
 }
 
 dbTechLayer* dbTechSameNetRule::getLayer2()
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
   _dbTech* tech = (_dbTech*) rule->getOwner();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer_2);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(rule->layer_2_);
 }
 
 int dbTechSameNetRule::getSpacing()
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
-  return rule->_spacing;
+  return rule->spacing_;
 }
 
 void dbTechSameNetRule::setSpacing(int spacing)
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
-  rule->_spacing = spacing;
+  rule->spacing_ = spacing;
 }
 
 void dbTechSameNetRule::setAllowStackedVias(bool value)
@@ -76,16 +76,16 @@ void dbTechSameNetRule::setAllowStackedVias(bool value)
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
 
   if (value) {
-    rule->_flags._stack = 1;
+    rule->flags_.stack = 1;
   } else {
-    rule->_flags._stack = 0;
+    rule->flags_.stack = 0;
   }
 }
 
 bool dbTechSameNetRule::getAllowStackedVias()
 {
   _dbTechSameNetRule* rule = (_dbTechSameNetRule*) this;
-  return rule->_flags._stack == 1;
+  return rule->flags_.stack == 1;
 }
 
 dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,
@@ -97,19 +97,19 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,
   _dbTech* tech = (_dbTech*) tech_;
   assert(tech_ == (dbTech*) layer2->getOwner());
 
-  if (tech->_samenet_rules.empty()) {
-    tech->_samenet_matrix.resize(tech->_layer_cnt, tech->_layer_cnt);
+  if (tech->samenet_rules_.empty()) {
+    tech->samenet_matrix_.resize(tech->layer_cnt_, tech->layer_cnt_);
 
   } else if (tech_->findSameNetRule(layer1_, layer2_)) {
     return nullptr;
   }
 
-  _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
-  rule->_layer_1 = layer1->getOID();
-  rule->_layer_2 = layer2->getOID();
-  tech->_samenet_matrix(layer1->_number, layer2->_number) = rule->getOID();
-  tech->_samenet_matrix(layer2->_number, layer1->_number) = rule->getOID();
-  tech->_samenet_rules.push_back(rule->getOID());
+  _dbTechSameNetRule* rule = tech->samenet_rule_tbl_->create();
+  rule->layer_1_ = layer1->getOID();
+  rule->layer_2_ = layer2->getOID();
+  tech->samenet_matrix_(layer1->number_, layer2->number_) = rule->getOID();
+  tech->samenet_matrix_(layer2->number_, layer1->number_) = rule->getOID();
+  tech->samenet_rules_.push_back(rule->getOID());
   return (dbTechSameNetRule*) rule;
 }
 
@@ -125,27 +125,27 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechNonDefaultRule* ndrule_,
   assert(tech_ == (dbTech*) layer2->getOwner());
   assert(tech_ == (dbTech*) ndrule->getOwner());
 
-  if (ndrule->_samenet_rules.empty()) {
-    ndrule->_samenet_matrix.resize(tech->_layer_cnt, tech->_layer_cnt);
+  if (ndrule->samenet_rules_.empty()) {
+    ndrule->samenet_matrix_.resize(tech->layer_cnt_, tech->layer_cnt_);
 
   } else if (ndrule_->findSameNetRule(layer1_, layer2_)) {
     return nullptr;
   }
 
-  _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
-  rule->_layer_1 = layer1->getOID();
-  rule->_layer_2 = layer2->getOID();
-  ndrule->_samenet_matrix(layer1->_number, layer2->_number) = rule->getOID();
-  ndrule->_samenet_matrix(layer2->_number, layer1->_number) = rule->getOID();
-  ndrule->_samenet_rules.push_back(rule->getOID());
+  _dbTechSameNetRule* rule = tech->samenet_rule_tbl_->create();
+  rule->layer_1_ = layer1->getOID();
+  rule->layer_2_ = layer2->getOID();
+  ndrule->samenet_matrix_(layer1->number_, layer2->number_) = rule->getOID();
+  ndrule->samenet_matrix_(layer2->number_, layer1->number_) = rule->getOID();
+  ndrule->samenet_rules_.push_back(rule->getOID());
   return (dbTechSameNetRule*) rule;
 }
 
 dbTechSameNetRule* dbTechSameNetRule::getTechSameNetRule(dbTech* tech_,
-                                                         uint dbid_)
+                                                         uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
-  return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(dbid_);
+  return (dbTechSameNetRule*) tech->samenet_rule_tbl_->getPtr(dbid_);
 }
 
 void _dbTechSameNetRule::collectMemInfo(MemInfo& info)

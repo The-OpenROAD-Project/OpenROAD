@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-#include "cgt/NetworkBuilder.h"
+#include "NetworkBuilder.h"
 
 #include <cassert>
 
@@ -47,7 +47,8 @@ InstanceBuilder& InstanceBuilder::connectPort(sta::LibertyPort* const port,
   return *this;
 }
 
-void NetworkBuilder::init(Logger* const logger, sta::dbNetwork* const network)
+void NetworkBuilder::init(utl::Logger* const logger,
+                          sta::dbNetwork* const network)
 {
   logger_ = logger;
   network_ = network;

@@ -4,9 +4,10 @@
 // Generator Code Begin Cpp
 #include "dbGuideItr.h"
 
+#include <cstdint>
+
 #include "dbGuide.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 // User Code Begin Includes
 #include "dbNet.h"
 // User Code End Includes
@@ -19,12 +20,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbGuideItr::reversible()
+bool dbGuideItr::reversible() const
 {
   return true;
 }
 
-bool dbGuideItr::orderReversed()
+bool dbGuideItr::orderReversed() const
 {
   return true;
 }
@@ -33,12 +34,12 @@ void dbGuideItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbNet* _parent = (_dbNet*) parent;
-  uint id = _parent->guides_;
-  uint list = 0;
+  uint32_t id = _parent->guides_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbGuide* _child = _guide_tbl->getPtr(id);
-    uint n = _child->guide_next_;
+    _dbGuide* _child = guide_tbl_->getPtr(id);
+    uint32_t n = _child->guide_next_;
     _child->guide_next_ = list;
     list = id;
     id = n;
@@ -47,15 +48,15 @@ void dbGuideItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbGuideItr::sequential()
+uint32_t dbGuideItr::sequential() const
 {
   return 0;
 }
 
-uint dbGuideItr::size(dbObject* parent)
+uint32_t dbGuideItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbGuideItr::begin(parent); id != dbGuideItr::end(parent);
        id = dbGuideItr::next(id)) {
@@ -65,7 +66,7 @@ uint dbGuideItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbGuideItr::begin(dbObject* parent)
+uint32_t dbGuideItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbNet* _parent = (_dbNet*) parent;
@@ -73,22 +74,22 @@ uint dbGuideItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbGuideItr::end(dbObject* /* unused: parent */)
+uint32_t dbGuideItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbGuideItr::next(uint id, ...)
+uint32_t dbGuideItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
-  _dbGuide* _guide = _guide_tbl->getPtr(id);
+  _dbGuide* _guide = guide_tbl_->getPtr(id);
   return _guide->guide_next_;
   // User Code End next
 }
 
-dbObject* dbGuideItr::getObject(uint id, ...)
+dbObject* dbGuideItr::getObject(uint32_t id, ...)
 {
-  return _guide_tbl->getPtr(id);
+  return guide_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

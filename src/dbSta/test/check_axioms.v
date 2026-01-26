@@ -1,5 +1,4 @@
 // A standard cell definition for the test.
-// Defined as a blackbox to prevent yosys from optimizing it away.
 module and2 (input A, input B, output Z);
 endmodule
 
@@ -19,18 +18,19 @@ module top (
     output out_unconnected // For ORD-2040
 );
 
-    // For ORD-2038: An instance of a module that has no instances inside.
+    // [WARNING ORD-2038] SanityCheck: Module 'i_empty' has no instances.
     empty_module i_empty();
 
-    // For ORD-2041: non-output ITerm not connected.
+    // [ODB-0050] SanityCheck: 'w2' has no driver.
+    // [ODB-0051] SanityCheck: 'w2' has less than 2 connections
     wire w1, w2;
     and2 u1 (.A(w1), .B(), .Z(w2));
 
-    // For ORD-2039: Net with < 2 connections.
+    // [ODB-0051] SanityCheck: 'single_conn_wire' has less than 2 connections
     wire single_conn_wire;
     and2 u2 (.A(single_conn_wire), .B(top_in), .Z());
 
-    wire dangling_wire; // another case for ORD-2039
+    wire dangling_wire;
 
     // Normal connection to make the design valid for linking.
     assign top_out = w2;

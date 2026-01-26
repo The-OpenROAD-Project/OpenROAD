@@ -11,6 +11,7 @@
 #include "hier_rtlmp.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -41,13 +42,9 @@ bool MacroPlacer::place(const int num_threads,
                         const int max_num_level,
                         const float coarsening_ratio,
                         const int large_net_threshold,
-                        const int signature_net_threshold,
-                        const float halo_width,
-                        const float halo_height,
-                        const float fence_lx,
-                        const float fence_ly,
-                        const float fence_ux,
-                        const float fence_uy,
+                        const int halo_width,
+                        const int halo_height,
+                        const odb::Rect global_fence,
                         const float area_weight,
                         const float outline_weight,
                         const float wirelength_weight,
@@ -57,21 +54,21 @@ bool MacroPlacer::place(const int num_threads,
                         const float notch_weight,
                         const float macro_blockage_weight,
                         const float target_util,
-                        const float target_dead_space,
                         const float min_ar,
                         const char* report_directory,
-                        const bool keep_clustering_data)
+                        const bool keep_clustering_data,
+                        const bool data_flow_driven)
 {
+  hier_rtlmp_->init();
   hier_rtlmp_->setClusterSize(
       max_num_macro, min_num_macro, max_num_inst, min_num_inst);
   hier_rtlmp_->setClusterSizeTolerance(tolerance);
   hier_rtlmp_->setMaxNumLevel(max_num_level);
   hier_rtlmp_->setClusterSizeRatioPerLevel(coarsening_ratio);
   hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
-  hier_rtlmp_->setSignatureNetThreshold(signature_net_threshold);
   hier_rtlmp_->setHaloWidth(halo_width);
   hier_rtlmp_->setHaloHeight(halo_height);
-  hier_rtlmp_->setGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
+  hier_rtlmp_->setGlobalFence(global_fence);
   hier_rtlmp_->setAreaWeight(area_weight);
   hier_rtlmp_->setOutlineWeight(outline_weight);
   hier_rtlmp_->setWirelengthWeight(wirelength_weight);
@@ -81,15 +78,15 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setNotchWeight(notch_weight);
   hier_rtlmp_->setMacroBlockageWeight(macro_blockage_weight);
   hier_rtlmp_->setTargetUtil(target_util);
-  hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
-
+  if (data_flow_driven) {
+    hier_rtlmp_->setDataFlowDriven();
+  }
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
-  hier_rtlmp_->init();
   hier_rtlmp_->run();
 
   return true;
@@ -196,16 +193,12 @@ std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
   return overlapped_macros;
 }
 
-void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, const Rect& region)
+void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const odb::Rect& core = block->getCoreArea();
-  const odb::Rect dbu_region(block->micronsToDbu(region.xMin()),
-                             block->micronsToDbu(region.yMin()),
-                             block->micronsToDbu(region.xMax()),
-                             block->micronsToDbu(region.yMax()));
 
-  if (!core.contains(dbu_region)) {
+  if (!core.contains(region)) {
     logger_->error(MPL,
                    42,
                    "Specified guidance region ({}, {}) ({}, {}) for the macro "

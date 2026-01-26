@@ -5,41 +5,35 @@
   "do_not_generate_compare" : "true",
   "fields": [
     {
-      "name": "_type",
-      "type": "uint",
+      "name": "type",
+      "type": "PropTypeEnum",
       "bits": 4,
       "flags": ["private"]
     },
     {
-      "name": "_owner_type",
-      "type": "uint", 
+      "name": "owner_type",
+      "type": "uint32_t",
       "bits": 8,
       "flags": ["private"]
     },
-          {
-        "name": "_spare_bits",
-        "type": "uint",
-        "bits": 20,
-        "flags": ["private", "no-cmp"]
-      },
     {
-      "name": "_name",
-      "type": "uint",
+      "name": "name_",
+      "type": "uint32_t",
       "flags": ["private", "no-destruct"]
     },
     {
-      "name": "_next",
+      "name": "next_",
       "type": "dbId<_dbProperty>",
       "flags": ["private", "no-get"]
     },
     {
-      "name": "_owner",
-      "type": "uint",
+      "name": "owner_",
+      "type": "uint32_t",
       "default": "0",
       "flags": ["private", "no-cmp"]
     },
     {
-      "name": "_value",
+      "name": "value_",
       "type": "std::variant<std::string, bool, int, double>",
       "flags": ["private","no-template", "no-serial"]
     }

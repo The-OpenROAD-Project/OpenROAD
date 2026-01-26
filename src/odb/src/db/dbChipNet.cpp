@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChipNet.h"
 
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>
@@ -12,9 +13,9 @@
 #include "dbChipBumpInst.h"
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbChipNet>;
@@ -87,13 +88,13 @@ dbChip* dbChipNet::getChip() const
   return (dbChip*) db->chip_tbl_->getPtr(obj->chip_);
 }
 
-uint dbChipNet::getNumBumpInsts() const
+uint32_t dbChipNet::getNumBumpInsts() const
 {
   _dbChipNet* obj = (_dbChipNet*) this;
   return obj->bump_insts_paths_.size();
 }
 
-dbChipBumpInst* dbChipNet::getBumpInst(uint index,
+dbChipBumpInst* dbChipNet::getBumpInst(uint32_t index,
                                        std::vector<dbChipInst*>& path) const
 {
   _dbChipNet* obj = (_dbChipNet*) this;

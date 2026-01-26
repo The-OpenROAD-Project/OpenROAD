@@ -3,15 +3,14 @@
 
 #pragma once
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/VerilogReader.hh"
 
 namespace utl {
 class Logger;
-}
-
-namespace odb {
-class dbDatabase;
 }
 
 namespace sta {
@@ -23,31 +22,26 @@ namespace ord {
 
 class dbVerilogNetwork;
 
-using odb::dbDatabase;
-
-using sta::Cell;
-using sta::ConcreteCell;
-using sta::ConcreteNetwork;
-using sta::dbNetwork;
-using sta::VerilogReader;
-
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
 // It is NOT part of an Sta.
-class dbVerilogNetwork : public ConcreteNetwork
+class dbVerilogNetwork : public sta::ConcreteNetwork
 {
  public:
   dbVerilogNetwork(sta::dbSta* sta);
-  Cell* findAnyCell(const char* name) override;
-  bool isBlackBox(ConcreteCell* cell);
-  dbNetwork* getDbNetwork() { return static_cast<dbNetwork*>(db_network_); }
+  sta::Cell* findAnyCell(const char* name) override;
+  bool isBlackBox(sta::ConcreteCell* cell);
+  sta::dbNetwork* getDbNetwork()
+  {
+    return static_cast<sta::dbNetwork*>(db_network_);
+  }
 
  private:
   NetworkReader* db_network_ = nullptr;
 };
 
 void setDbNetworkLinkFunc(dbVerilogNetwork* network,
-                          VerilogReader* verilog_reader);
+                          sta::VerilogReader* verilog_reader);
 
 // Read a hierarchical Verilog netlist into a OpenSTA concrete network
 // objects. The hierarchical network is elaborated/flattened by the
@@ -55,7 +49,7 @@ void setDbNetworkLinkFunc(dbVerilogNetwork* network,
 // network.
 bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
-                  dbDatabase* db,
+                  odb::dbDatabase* db,
                   utl::Logger* logger,
                   bool hierarchy,
                   bool omit_filename_prop = false);

@@ -20,22 +20,6 @@
 
 namespace dpl {
 
-struct compareRowBottom
-{
-  bool operator()(Architecture::Row* p, Architecture::Row* q) const
-  {
-    return p->getBottom() < q->getBottom();
-  }
-  bool operator()(Architecture::Row*& s, DbuY i) const
-  {
-    return s->getBottom() < i;
-  }
-  bool operator()(DbuY i, Architecture::Row*& s) const
-  {
-    return i < s->getBottom();
-  }
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::~Architecture()
@@ -126,7 +110,7 @@ void Architecture::postProcess(Network* network)
   ymax_ = std::numeric_limits<DbuY>::lowest();
 
   // Sort rows.
-  std::stable_sort(rows_.begin(), rows_.end(), compareRowBottom());
+  std::ranges::stable_sort(rows_, std::less{}, &Architecture::Row::getBottom);
 
   // Determine a box surrounding all the rows.
   for (auto row : rows_) {
@@ -155,7 +139,7 @@ void Architecture::postProcess(Network* network)
       const DbuX rx = subrow->getRight();
       intervals.emplace_back(lx, rx);
     }
-    std::sort(intervals.begin(), intervals.end());
+    std::ranges::sort(intervals);
 
     std::stack<std::pair<DbuX, DbuX>> s;
     s.push(intervals[0]);
@@ -178,7 +162,7 @@ void Architecture::postProcess(Network* network)
       s.pop();
     }
     // Get intervals left to right.
-    std::sort(intervals.begin(), intervals.end());
+    std::ranges::sort(intervals);
 
     // If more than one subrow, convert to a single row
     // and delete the unnecessary subrows.
@@ -224,7 +208,7 @@ void Architecture::postProcess(Network* network)
   // Replace original rows with new rows.
   rows_ = std::move(rows);
   // Sort rows (to be safe).
-  std::stable_sort(rows_.begin(), rows_.end(), compareRowBottom());
+  std::ranges::stable_sort(rows_, std::less{}, &Architecture::Row::getBottom);
   // Assign row ids.
   for (int r = 0; r < rows_.size(); r++) {
     rows_[r]->setId(r);
@@ -239,8 +223,8 @@ int Architecture::find_closest_row(const DbuY y)
   // find its closest row.
   int r = 0;
   if (y > rows_[0]->getBottom()) {
-    auto row_l
-        = std::lower_bound(rows_.begin(), rows_.end(), y, compareRowBottom());
+    auto row_l = std::ranges::lower_bound(
+        rows_, y, std::less{}, &Architecture::Row::getBottom);
     if (row_l == rows_.end() || (*row_l)->getBottom() > y) {
       --row_l;
     }

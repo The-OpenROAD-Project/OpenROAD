@@ -4,44 +4,48 @@
 // Generator Code Begin Cpp
 #include "dbIsolation.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbIsolation>;
 
 bool _dbIsolation::operator==(const _dbIsolation& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_applies_to != rhs._applies_to) {
+  if (applies_to_ != rhs.applies_to_) {
     return false;
   }
-  if (_clamp_value != rhs._clamp_value) {
+  if (clamp_value_ != rhs.clamp_value_) {
     return false;
   }
-  if (_isolation_signal != rhs._isolation_signal) {
+  if (isolation_signal_ != rhs.isolation_signal_) {
     return false;
   }
-  if (_isolation_sense != rhs._isolation_sense) {
+  if (isolation_sense_ != rhs.isolation_sense_) {
     return false;
   }
-  if (_location != rhs._location) {
+  if (location_ != rhs.location_) {
     return false;
   }
-  if (_power_domain != rhs._power_domain) {
+  if (power_domain_ != rhs.power_domain_) {
     return false;
   }
 
@@ -55,34 +59,34 @@ bool _dbIsolation::operator<(const _dbIsolation& rhs) const
 
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
-  stream >> obj._applies_to;
-  stream >> obj._clamp_value;
-  stream >> obj._isolation_signal;
-  stream >> obj._isolation_sense;
-  stream >> obj._location;
-  stream >> obj._isolation_cells;
-  stream >> obj._power_domain;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
+  stream >> obj.applies_to_;
+  stream >> obj.clamp_value_;
+  stream >> obj.isolation_signal_;
+  stream >> obj.isolation_sense_;
+  stream >> obj.location_;
+  stream >> obj.isolation_cells_;
+  stream >> obj.power_domain_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
-  stream << obj._applies_to;
-  stream << obj._clamp_value;
-  stream << obj._isolation_signal;
-  stream << obj._isolation_sense;
-  stream << obj._location;
-  stream << obj._isolation_cells;
-  stream << obj._power_domain;
+  stream << obj.name_;
+  stream << obj.next_entry_;
+  stream << obj.applies_to_;
+  stream << obj.clamp_value_;
+  stream << obj.isolation_signal_;
+  stream << obj.isolation_sense_;
+  stream << obj.location_;
+  stream << obj.isolation_cells_;
+  stream << obj.power_domain_;
   return stream;
 }
 
@@ -92,20 +96,20 @@ void _dbIsolation::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
-  info.children_["applies_to"].add(_applies_to);
-  info.children_["clamp_value"].add(_clamp_value);
-  info.children_["isolation_signal"].add(_isolation_signal);
-  info.children_["isolation_sense"].add(_isolation_sense);
-  info.children_["location"].add(_location);
-  info.children_["isolation_cells"].add(_isolation_cells);
+  info.children["name"].add(name_);
+  info.children["applies_to"].add(applies_to_);
+  info.children["clamp_value"].add(clamp_value_);
+  info.children["isolation_signal"].add(isolation_signal_);
+  info.children["isolation_sense"].add(isolation_sense_);
+  info.children["location"].add(location_);
+  info.children["isolation_cells"].add(isolation_cells_);
   // User Code End collectMemInfo
 }
 
 _dbIsolation::~_dbIsolation()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -118,67 +122,67 @@ _dbIsolation::~_dbIsolation()
 const char* dbIsolation::getName() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 std::string dbIsolation::getAppliesTo() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  return obj->_applies_to;
+  return obj->applies_to_;
 }
 
 std::string dbIsolation::getClampValue() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  return obj->_clamp_value;
+  return obj->clamp_value_;
 }
 
 std::string dbIsolation::getIsolationSignal() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  return obj->_isolation_signal;
+  return obj->isolation_signal_;
 }
 
 std::string dbIsolation::getIsolationSense() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  return obj->_isolation_sense;
+  return obj->isolation_sense_;
 }
 
 std::string dbIsolation::getLocation() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  return obj->_location;
+  return obj->location_;
 }
 
 void dbIsolation::setPowerDomain(dbPowerDomain* power_domain)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
 
-  obj->_power_domain = power_domain->getImpl()->getOID();
+  obj->power_domain_ = power_domain->getImpl()->getOID();
 }
 
 dbPowerDomain* dbIsolation::getPowerDomain() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  if (obj->_power_domain == 0) {
+  if (obj->power_domain_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
+  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->power_domain_);
 }
 
 // User Code Begin dbIsolationPublicMethods
 dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_isolation_hash.hasMember(name)) {
+  if (_block->isolation_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbIsolation* iso = _block->_isolation_tbl->create();
-  iso->_name = safe_strdup(name);
+  _dbIsolation* iso = _block->isolation_tbl_->create();
+  iso->name_ = safe_strdup(name);
 
-  _block->_isolation_hash.insert(iso);
+  _block->isolation_hash_.insert(iso);
   return (dbIsolation*) iso;
 }
 
@@ -190,37 +194,37 @@ void dbIsolation::destroy(dbIsolation* iso)
 void dbIsolation::setAppliesTo(const std::string& applies_to)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_applies_to = applies_to;
+  obj->applies_to_ = applies_to;
 }
 
 void dbIsolation::setClampValue(const std::string& clamp_value)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_clamp_value = clamp_value;
+  obj->clamp_value_ = clamp_value;
 }
 
 void dbIsolation::setIsolationSignal(const std::string& isolation_signal)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_isolation_signal = isolation_signal;
+  obj->isolation_signal_ = isolation_signal;
 }
 
 void dbIsolation::setIsolationSense(const std::string& isolation_sense)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_isolation_sense = isolation_sense;
+  obj->isolation_sense_ = isolation_sense;
 }
 
 void dbIsolation::setLocation(const std::string& location)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_location = location;
+  obj->location_ = location;
 }
 
 void dbIsolation::addIsolationCell(const std::string& master)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  obj->_isolation_cells.push_back(master);
+  obj->isolation_cells_.push_back(master);
 }
 
 std::vector<dbMaster*> dbIsolation::getIsolationCells()
@@ -228,7 +232,7 @@ std::vector<dbMaster*> dbIsolation::getIsolationCells()
   _dbIsolation* obj = (_dbIsolation*) this;
   std::vector<dbMaster*> masters;
 
-  for (const auto& cell : obj->_isolation_cells) {
+  for (const auto& cell : obj->isolation_cells_) {
     masters.push_back(obj->getDb()->findMaster(cell.c_str()));
   }
 
@@ -240,11 +244,11 @@ bool dbIsolation::appliesTo(const dbIoType& io)
   _dbIsolation* obj = (_dbIsolation*) this;
 
   if (io == dbIoType::OUTPUT) {
-    if (obj->_applies_to == "inputs") {
+    if (obj->applies_to_ == "inputs") {
       return false;
     }
   } else if (io == dbIoType::INPUT) {
-    if (obj->_applies_to == "outputs") {
+    if (obj->applies_to_ == "outputs") {
       return false;
     }
   }

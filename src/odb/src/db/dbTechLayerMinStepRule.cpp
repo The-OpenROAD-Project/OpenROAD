@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 namespace odb {
@@ -18,35 +18,34 @@ template class dbTable<_dbTechLayerMinStepRule>;
 bool _dbTechLayerMinStepRule::operator==(
     const _dbTechLayerMinStepRule& rhs) const
 {
-  if (flags_.max_edges_valid_ != rhs.flags_.max_edges_valid_) {
+  if (flags_.max_edges_valid != rhs.flags_.max_edges_valid) {
     return false;
   }
-  if (flags_.min_adj_length1_valid_ != rhs.flags_.min_adj_length1_valid_) {
+  if (flags_.min_adj_length1_valid != rhs.flags_.min_adj_length1_valid) {
     return false;
   }
-  if (flags_.no_between_eol_ != rhs.flags_.no_between_eol_) {
+  if (flags_.no_between_eol != rhs.flags_.no_between_eol) {
     return false;
   }
-  if (flags_.min_adj_length2_valid_ != rhs.flags_.min_adj_length2_valid_) {
+  if (flags_.min_adj_length2_valid != rhs.flags_.min_adj_length2_valid) {
     return false;
   }
-  if (flags_.convex_corner_ != rhs.flags_.convex_corner_) {
+  if (flags_.convex_corner != rhs.flags_.convex_corner) {
     return false;
   }
-  if (flags_.min_between_length_valid_
-      != rhs.flags_.min_between_length_valid_) {
+  if (flags_.min_between_length_valid != rhs.flags_.min_between_length_valid) {
     return false;
   }
-  if (flags_.except_same_corners_ != rhs.flags_.except_same_corners_) {
+  if (flags_.except_same_corners != rhs.flags_.except_same_corners) {
     return false;
   }
-  if (flags_.concave_corner_ != rhs.flags_.concave_corner_) {
+  if (flags_.concave_corner != rhs.flags_.concave_corner) {
     return false;
   }
-  if (flags_.except_rectangle_ != rhs.flags_.except_rectangle_) {
+  if (flags_.except_rectangle != rhs.flags_.except_rectangle) {
     return false;
   }
-  if (flags_.no_adjacent_eol_ != rhs.flags_.no_adjacent_eol_) {
+  if (flags_.no_adjacent_eol != rhs.flags_.no_adjacent_eol) {
     return false;
   }
   if (min_step_length_ != rhs.min_step_length_) {
@@ -143,14 +142,14 @@ int dbTechLayerMinStepRule::getMinStepLength() const
   return obj->min_step_length_;
 }
 
-void dbTechLayerMinStepRule::setMaxEdges(uint max_edges)
+void dbTechLayerMinStepRule::setMaxEdges(uint32_t max_edges)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
   obj->max_edges_ = max_edges;
 }
 
-uint dbTechLayerMinStepRule::getMaxEdges() const
+uint32_t dbTechLayerMinStepRule::getMaxEdges() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
   return obj->max_edges_;
@@ -212,70 +211,70 @@ void dbTechLayerMinStepRule::setMaxEdgesValid(bool max_edges_valid)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.max_edges_valid_ = max_edges_valid;
+  obj->flags_.max_edges_valid = max_edges_valid;
 }
 
 bool dbTechLayerMinStepRule::isMaxEdgesValid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.max_edges_valid_;
+  return obj->flags_.max_edges_valid;
 }
 
 void dbTechLayerMinStepRule::setMinAdjLength1Valid(bool min_adj_length1_valid)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.min_adj_length1_valid_ = min_adj_length1_valid;
+  obj->flags_.min_adj_length1_valid = min_adj_length1_valid;
 }
 
 bool dbTechLayerMinStepRule::isMinAdjLength1Valid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.min_adj_length1_valid_;
+  return obj->flags_.min_adj_length1_valid;
 }
 
 void dbTechLayerMinStepRule::setNoBetweenEol(bool no_between_eol)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.no_between_eol_ = no_between_eol;
+  obj->flags_.no_between_eol = no_between_eol;
 }
 
 bool dbTechLayerMinStepRule::isNoBetweenEol() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.no_between_eol_;
+  return obj->flags_.no_between_eol;
 }
 
 void dbTechLayerMinStepRule::setMinAdjLength2Valid(bool min_adj_length2_valid)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.min_adj_length2_valid_ = min_adj_length2_valid;
+  obj->flags_.min_adj_length2_valid = min_adj_length2_valid;
 }
 
 bool dbTechLayerMinStepRule::isMinAdjLength2Valid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.min_adj_length2_valid_;
+  return obj->flags_.min_adj_length2_valid;
 }
 
 void dbTechLayerMinStepRule::setConvexCorner(bool convex_corner)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.convex_corner_ = convex_corner;
+  obj->flags_.convex_corner = convex_corner;
 }
 
 bool dbTechLayerMinStepRule::isConvexCorner() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.convex_corner_;
+  return obj->flags_.convex_corner;
 }
 
 void dbTechLayerMinStepRule::setMinBetweenLengthValid(
@@ -283,70 +282,70 @@ void dbTechLayerMinStepRule::setMinBetweenLengthValid(
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.min_between_length_valid_ = min_between_length_valid;
+  obj->flags_.min_between_length_valid = min_between_length_valid;
 }
 
 bool dbTechLayerMinStepRule::isMinBetweenLengthValid() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.min_between_length_valid_;
+  return obj->flags_.min_between_length_valid;
 }
 
 void dbTechLayerMinStepRule::setExceptSameCorners(bool except_same_corners)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.except_same_corners_ = except_same_corners;
+  obj->flags_.except_same_corners = except_same_corners;
 }
 
 bool dbTechLayerMinStepRule::isExceptSameCorners() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.except_same_corners_;
+  return obj->flags_.except_same_corners;
 }
 
 void dbTechLayerMinStepRule::setConcaveCorner(bool concave_corner)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.concave_corner_ = concave_corner;
+  obj->flags_.concave_corner = concave_corner;
 }
 
 bool dbTechLayerMinStepRule::isConcaveCorner() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.concave_corner_;
+  return obj->flags_.concave_corner;
 }
 
 void dbTechLayerMinStepRule::setExceptRectangle(bool except_rectangle)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.except_rectangle_ = except_rectangle;
+  obj->flags_.except_rectangle = except_rectangle;
 }
 
 bool dbTechLayerMinStepRule::isExceptRectangle() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.except_rectangle_;
+  return obj->flags_.except_rectangle;
 }
 
 void dbTechLayerMinStepRule::setNoAdjacentEol(bool no_adjacent_eol)
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  obj->flags_.no_adjacent_eol_ = no_adjacent_eol;
+  obj->flags_.no_adjacent_eol = no_adjacent_eol;
 }
 
 bool dbTechLayerMinStepRule::isNoAdjacentEol() const
 {
   _dbTechLayerMinStepRule* obj = (_dbTechLayerMinStepRule*) this;
 
-  return obj->flags_.no_adjacent_eol_;
+  return obj->flags_.no_adjacent_eol;
 }
 
 // User Code Begin dbTechLayerMinStepRulePublicMethods
@@ -359,7 +358,7 @@ dbTechLayerMinStepRule* dbTechLayerMinStepRule::create(dbTechLayer* _layer)
 
 dbTechLayerMinStepRule* dbTechLayerMinStepRule::getTechLayerMinStepRule(
     dbTechLayer* inly,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerMinStepRule*) layer->minstep_rules_tbl_->getPtr(dbid);

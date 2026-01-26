@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -18,11 +19,11 @@ class dbOStream;
 
 struct _dbRSegFlags
 {
-  uint _path_dir : 1;       // 0 == low to hi coord
-  uint _allocated_cap : 1;  // 0, cap points to target node cap
-                            // 1, cap is allocated
-  uint _update_cap : 1;
-  uint _spare_bits_29 : 29;
+  uint32_t path_dir : 1;       // 0 == low to hi coord
+  uint32_t allocated_cap : 1;  // 0, cap points to target node cap
+                               // 1, cap is allocated
+  uint32_t update_cap : 1;
+  uint32_t spare_bits_29 : 29;
 };
 
 class _dbRSeg : public _dbObject
@@ -30,27 +31,18 @@ class _dbRSeg : public _dbObject
  public:
   enum Field  // dbJournal field names
   {
-    FLAGS,
-    SOURCE,
-    TARGET,
-    RESISTANCE,
-    CAPACITANCE,
-    COORDINATES,
-    ADDRSEGCAPACITANCE,
-    ADDRSEGRESISTANCE
+    kFlags,
+    kSource,
+    kTarget,
+    kResistance,
+    kCapacitance,
+    kCoordinates,
+    kAddRSegCapacitance,
+    kAddRSegResistance
   };
-
-  // PERSISTANT-MEMBERS
-  _dbRSegFlags _flags;
-  uint _source;  // rc-network node-id
-  uint _target;  // rc-network node-id
-  int _xcoord;
-  int _ycoord;
-  dbId<_dbRSeg> _next;
 
   _dbRSeg(_dbDatabase*, const _dbRSeg& s);
   _dbRSeg(_dbDatabase*);
-  ~_dbRSeg();
 
   bool operator==(const _dbRSeg& rhs) const;
   bool operator!=(const _dbRSeg& rhs) const { return !operator==(rhs); }
@@ -61,63 +53,60 @@ class _dbRSeg : public _dbObject
     _dbRSeg* o2 = (_dbRSeg*) &rhs;
     return o1->getOID() < o2->getOID();
   }
+
+  // PERSISTANT-MEMBERS
+  _dbRSegFlags flags_;
+  uint32_t source_;  // rc-network node-id
+  uint32_t target_;  // rc-network node-id
+  int xcoord_;
+  int ycoord_;
+  dbId<_dbRSeg> next_;
 };
 
 inline _dbRSeg::_dbRSeg(_dbDatabase*, const _dbRSeg& s)
-    : _flags(s._flags),
-      _source(s._source),
-      _target(s._target),
-      _xcoord(s._xcoord),
-      _ycoord(s._ycoord),
-      _next(s._next)
+    : flags_(s.flags_),
+      source_(s.source_),
+      target_(s.target_),
+      xcoord_(s.xcoord_),
+      ycoord_(s.ycoord_),
+      next_(s.next_)
 {
 }
 
 inline _dbRSeg::_dbRSeg(_dbDatabase*)
 {
-  _flags._spare_bits_29 = 0;
-  _flags._update_cap = 0;
-  _flags._path_dir = 0;
-  _flags._allocated_cap = 0;
+  flags_.spare_bits_29 = 0;
+  flags_.update_cap = 0;
+  flags_.path_dir = 0;
+  flags_.allocated_cap = 0;
 
-  _source = 0;
-  _target = 0;
-  _xcoord = 0;
-  _ycoord = 0;
-}
-
-inline _dbRSeg::~_dbRSeg()
-{
-  /*
-  if ( _res )
-      free( (void *) _res );
-
-  if (( _cap ) && (_flags._allocated_cap>0))
-      free( (void *) _cap );
-  */
+  source_ = 0;
+  target_ = 0;
+  xcoord_ = 0;
+  ycoord_ = 0;
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbRSeg& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream << *bit_field;
-  stream << seg._source;
-  stream << seg._target;
-  stream << seg._xcoord;
-  stream << seg._ycoord;
-  stream << seg._next;
+  stream << seg.source_;
+  stream << seg.target_;
+  stream << seg.xcoord_;
+  stream << seg.ycoord_;
+  stream << seg.next_;
   return stream;
 }
 
 inline dbIStream& operator>>(dbIStream& stream, _dbRSeg& seg)
 {
-  uint* bit_field = (uint*) &seg._flags;
+  uint32_t* bit_field = (uint32_t*) &seg.flags_;
   stream >> *bit_field;
-  stream >> seg._source;
-  stream >> seg._target;
-  stream >> seg._xcoord;
-  stream >> seg._ycoord;
-  stream >> seg._next;
+  stream >> seg.source_;
+  stream >> seg.target_;
+  stream >> seg.xcoord_;
+  stream >> seg.ycoord_;
+  stream >> seg.next_;
   return stream;
 }
 

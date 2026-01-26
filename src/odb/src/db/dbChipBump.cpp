@@ -5,10 +5,10 @@
 #include "dbChipBump.h"
 
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbBTerm.h"
@@ -103,9 +103,8 @@ dbInst* dbChipBump::getInst() const
   if (obj->inst_ == 0) {
     return nullptr;
   }
-  dbChip* chip = (dbChip*) getChip();
-  _dbBlock* block = (_dbBlock*) chip->getBlock();
-  return (dbInst*) block->_inst_tbl->getPtr(obj->inst_);
+  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
+  return (dbInst*) block->inst_tbl_->getPtr(obj->inst_);
 }
 
 dbNet* dbChipBump::getNet() const
@@ -114,9 +113,8 @@ dbNet* dbChipBump::getNet() const
   if (obj->net_ == 0) {
     return nullptr;
   }
-  dbChip* chip = (dbChip*) getChip();
-  _dbBlock* block = (_dbBlock*) chip->getBlock();
-  return (dbNet*) block->_net_tbl->getPtr(obj->net_);
+  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
+  return (dbNet*) block->net_tbl_->getPtr(obj->net_);
 }
 
 dbBTerm* dbChipBump::getBTerm() const
@@ -125,9 +123,8 @@ dbBTerm* dbChipBump::getBTerm() const
   if (obj->bterm_ == 0) {
     return nullptr;
   }
-  dbChip* chip = (dbChip*) getChip();
-  _dbBlock* block = (_dbBlock*) chip->getBlock();
-  return (dbBTerm*) block->_bterm_tbl->getPtr(obj->bterm_);
+  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
+  return (dbBTerm*) block->bterm_tbl_->getPtr(obj->bterm_);
 }
 
 void dbChipBump::setNet(dbNet* net)

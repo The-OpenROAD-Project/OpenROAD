@@ -4,6 +4,7 @@
 #include "utl/Logger.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -21,6 +22,7 @@
 #else
 #include "spdlog/pattern_formatter.h"
 #endif
+#include "spdlog/common.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -58,6 +60,12 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
     }
   }
 
+  for (auto& levels : message_levels_) {
+    for (auto& level : levels) {
+      level.store(spdlog::level::off, std::memory_order_relaxed);
+    }
+  }
+
   prometheus_registry_ = std::make_shared<PrometheusRegistry>();
 }
 
@@ -68,13 +76,12 @@ Logger::~Logger()
 
 void Logger::addMetricsSink(const char* metrics_filename)
 {
-  metrics_sinks_.push_back(metrics_filename);
+  metrics_sinks_.emplace_back(metrics_filename);
 }
 
 void Logger::removeMetricsSink(const char* metrics_filename)
 {
-  auto metrics_file = std::find(
-      metrics_sinks_.begin(), metrics_sinks_.end(), metrics_filename);
+  auto metrics_file = std::ranges::find(metrics_sinks_, metrics_filename);
   if (metrics_file == metrics_sinks_.end()) {
     this->error(UTL, 11, "{} is not a metrics file", metrics_filename);
   }
@@ -102,9 +109,10 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
     auto it = groups.find(group);
     if (it != groups.end()) {
       groups.erase(it);
-      debug_on_ = std::any_of(debug_group_level_.begin(),
-                              debug_group_level_.end(),
-                              [](auto& group) { return !group.empty(); });
+      debug_on_
+          = std::ranges::any_of(debug_group_level_,
+
+                                [](auto& group) { return !group.empty(); });
     }
   } else {
     debug_on_ = true;
@@ -115,20 +123,20 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
 void Logger::addSink(spdlog::sink_ptr sink)
 {
   sinks_.push_back(sink);
-  logger_->sinks().push_back(sink);
+  logger_->sinks().emplace_back(std::move(sink));
   setFormatter();  // updates the new sink
 }
 
-void Logger::removeSink(spdlog::sink_ptr sink)
+void Logger::removeSink(const spdlog::sink_ptr& sink)
 {
   // remove from local list of sinks_
-  auto sinks_find = std::find(sinks_.begin(), sinks_.end(), sink);
+  auto sinks_find = std::ranges::find(sinks_, sink);
   if (sinks_find != sinks_.end()) {
     sinks_.erase(sinks_find);
   }
   // remove from spdlog list of sinks
   auto& logger_sinks = logger_->sinks();
-  auto logger_find = std::find(logger_sinks.begin(), logger_sinks.end(), sink);
+  auto logger_find = std::ranges::find(logger_sinks, sink);
   if (logger_find != logger_sinks.end()) {
     logger_sinks.erase(logger_find);
   }
@@ -137,7 +145,7 @@ void Logger::removeSink(spdlog::sink_ptr sink)
 void Logger::setMetricsStage(std::string_view format)
 {
   if (metrics_stages_.empty()) {
-    metrics_stages_.push(std::string(format));
+    metrics_stages_.emplace(format);
   } else {
     metrics_stages_.top() = format;
   }
@@ -151,7 +159,7 @@ void Logger::clearMetricsStage()
 
 void Logger::pushMetricsStage(std::string_view format)
 {
-  metrics_stages_.push(std::string(format));
+  metrics_stages_.emplace(format);
 }
 
 std::string Logger::popMetricsStage()
@@ -178,10 +186,33 @@ void Logger::flushMetrics()
   }
 }
 
+void Logger::addWarningMetrics()
+{
+  // Add metrics for non-zero warnings
+  int warning_type_cnt = 0;
+  for (int i = 0; i < ToolId::SIZE; ++i) {
+    for (int j = 0; j <= max_message_id; ++j) {
+      if (message_counters_[i][j] > 0
+          && message_levels_[i][j] == spdlog::level::warn) {
+        warning_type_cnt++;
+        log_metric(
+            // NOLINTNEXTLINE(misc-include-cleaner)
+            fmt::format("flow__warnings__count:{}-{:04}", tool_names_[i], j),
+            std::to_string(message_counters_[i][j]));
+      }
+    }
+  }
+
+  // Add a metric to report the number of unique warning types
+  log_metric("flow__warnings__type_count", std::to_string(warning_type_cnt));
+}
+
 void Logger::finalizeMetrics()
 {
   log_metric("flow__warnings__count", std::to_string(warning_count_));
   log_metric("flow__errors__count", std::to_string(error_count_));
+
+  addWarningMetrics();
 
   for (MetricsPolicy policy : metrics_policies_) {
     policy.applyPolicy(metrics_entries_);

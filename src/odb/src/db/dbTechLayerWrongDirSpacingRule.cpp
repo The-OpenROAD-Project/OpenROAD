@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 namespace odb {
@@ -18,10 +18,10 @@ template class dbTable<_dbTechLayerWrongDirSpacingRule>;
 bool _dbTechLayerWrongDirSpacingRule::operator==(
     const _dbTechLayerWrongDirSpacingRule& rhs) const
 {
-  if (flags_.noneol_valid_ != rhs.flags_.noneol_valid_) {
+  if (flags_.noneol_valid != rhs.flags_.noneol_valid) {
     return false;
   }
-  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
+  if (flags_.length_valid != rhs.flags_.length_valid) {
     return false;
   }
   if (wrongdir_space_ != rhs.wrongdir_space_) {
@@ -160,7 +160,7 @@ void dbTechLayerWrongDirSpacingRule::setNoneolValid(bool noneol_valid)
   _dbTechLayerWrongDirSpacingRule* obj
       = (_dbTechLayerWrongDirSpacingRule*) this;
 
-  obj->flags_.noneol_valid_ = noneol_valid;
+  obj->flags_.noneol_valid = noneol_valid;
 }
 
 bool dbTechLayerWrongDirSpacingRule::isNoneolValid() const
@@ -168,7 +168,7 @@ bool dbTechLayerWrongDirSpacingRule::isNoneolValid() const
   _dbTechLayerWrongDirSpacingRule* obj
       = (_dbTechLayerWrongDirSpacingRule*) this;
 
-  return obj->flags_.noneol_valid_;
+  return obj->flags_.noneol_valid;
 }
 
 void dbTechLayerWrongDirSpacingRule::setLengthValid(bool length_valid)
@@ -176,7 +176,7 @@ void dbTechLayerWrongDirSpacingRule::setLengthValid(bool length_valid)
   _dbTechLayerWrongDirSpacingRule* obj
       = (_dbTechLayerWrongDirSpacingRule*) this;
 
-  obj->flags_.length_valid_ = length_valid;
+  obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerWrongDirSpacingRule::isLengthValid() const
@@ -184,7 +184,7 @@ bool dbTechLayerWrongDirSpacingRule::isLengthValid() const
   _dbTechLayerWrongDirSpacingRule* obj
       = (_dbTechLayerWrongDirSpacingRule*) this;
 
-  return obj->flags_.length_valid_;
+  return obj->flags_.length_valid;
 }
 
 // User Code Begin dbTechLayerWrongDirSpacingRulePublicMethods
@@ -194,7 +194,7 @@ dbTechLayerWrongDirSpacingRule* dbTechLayerWrongDirSpacingRule::create(
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerWrongDirSpacingRule* newrule
       = layer->wrongdir_spacing_rules_tbl_->create();
-  newrule->_layer = _layer->getImpl()->getOID();
+  newrule->layer_ = _layer->getImpl()->getOID();
 
   return ((dbTechLayerWrongDirSpacingRule*) newrule);
 }
@@ -202,7 +202,7 @@ dbTechLayerWrongDirSpacingRule* dbTechLayerWrongDirSpacingRule::create(
 dbTechLayerWrongDirSpacingRule*
 dbTechLayerWrongDirSpacingRule::getTechLayerWrongDirSpacingRule(
     dbTechLayer* inly,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerWrongDirSpacingRule*)

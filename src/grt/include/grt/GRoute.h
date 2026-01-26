@@ -26,10 +26,13 @@ struct GSegment
   int final_y;
   int final_layer;
   bool is_jumper;
+  bool is_3d_route = false;
   GSegment() = default;
   GSegment(int x0, int y0, int l0, int x1, int y1, int l1, bool jumper = false);
   bool isVia() const { return (init_x == final_x && init_y == final_y); }
   bool isJumper() const { return is_jumper; }
+  bool is3DRoute() const { return is_3d_route; }
+  void setIs3DRoute(bool is_3d) { is_3d_route = is_3d; }
   int length() const
   {
     return std::abs(init_x - final_x) + std::abs(init_y - final_y);

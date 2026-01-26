@@ -46,7 +46,7 @@ struct MasterInfo
 
 class Cluster;
 using SharedClusterVector = std::vector<std::shared_ptr<Cluster>>;
-class ModuleMgr;
+struct ModuleMgr;
 class TritonPart;
 
 struct CompareInstancePtr

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "odb/dbId.h"
@@ -21,105 +23,105 @@ inline unsigned int hash_string(const char* str)
   return hash;
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 dbHashTable<T, page_size>::dbHashTable()
 {
-  _obj_tbl = nullptr;
-  _num_entries = 0;
+  obj_tbl_ = nullptr;
+  num_entries_ = 0;
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 dbHashTable<T, page_size>::dbHashTable(const dbHashTable<T, page_size>& t)
-    : _hash_tbl(t._hash_tbl), _num_entries(t._num_entries), _obj_tbl(t._obj_tbl)
+    : hash_tbl_(t.hash_tbl_), num_entries_(t.num_entries_), obj_tbl_(t.obj_tbl_)
 {
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 bool dbHashTable<T, page_size>::operator==(
     const dbHashTable<T, page_size>& rhs) const
 {
-  if (_num_entries != rhs._num_entries) {
+  if (num_entries_ != rhs.num_entries_) {
     return false;
   }
 
-  if (_hash_tbl != rhs._hash_tbl) {
+  if (hash_tbl_ != rhs.hash_tbl_) {
     return false;
   }
 
   return true;
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 void dbHashTable<T, page_size>::growTable()
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
   dbId<T> entries;
-  uint i;
+  uint32_t i;
 
   for (i = 0; i < sz; ++i) {
-    dbId<T> cur = _hash_tbl[i];
+    dbId<T> cur = hash_tbl_[i];
 
     while (cur != 0) {
-      T* entry = _obj_tbl->getPtr(cur);
-      dbId<T> next = entry->_next_entry;
-      entry->_next_entry = entries;
+      T* entry = obj_tbl_->getPtr(cur);
+      dbId<T> next = entry->next_entry_;
+      entry->next_entry_ = entries;
       entries = entry->getOID();
       cur = next;
     }
 
-    _hash_tbl[i] = 0;
+    hash_tbl_[i] = 0;
   }
 
   // double the size of the hash-table
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
-    _hash_tbl.push_back(nullId);
+    hash_tbl_.push_back(nullId);
   }
 
   // reinsert the entries
-  sz = _hash_tbl.size() - 1;
+  sz = hash_tbl_.size() - 1;
   dbId<T> cur = entries;
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
-    dbId<T> next = entry->_next_entry;
-    uint hid = hash_string(entry->_name) & sz;
-    dbId<T>& e = _hash_tbl[hid];
-    entry->_next_entry = e;
+    T* entry = obj_tbl_->getPtr(cur);
+    dbId<T> next = entry->next_entry_;
+    uint32_t hid = hash_string(entry->name_) & sz;
+    dbId<T>& e = hash_tbl_[hid];
+    entry->next_entry_ = e;
     e = entry->getOID();
     cur = next;
   }
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 void dbHashTable<T, page_size>::shrinkTable()
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
   dbId<T> entries;
-  uint i;
+  uint32_t i;
 
   for (i = 0; i < sz; ++i) {
-    dbId<T> cur = _hash_tbl[i];
+    dbId<T> cur = hash_tbl_[i];
 
     while (cur != 0) {
-      T* entry = _obj_tbl->getPtr(cur);
-      dbId<T> next = entry->_next_entry;
-      entry->_next_entry = entries;
+      T* entry = obj_tbl_->getPtr(cur);
+      dbId<T> next = entry->next_entry_;
+      entry->next_entry_ = entries;
       entries = entry->getOID();
       cur = next;
     }
 
-    _hash_tbl[i] = 0;
+    hash_tbl_[i] = 0;
   }
 
   // TODO: add method to dbPagedVector to resize the table
-  _hash_tbl.clear();
+  hash_tbl_.clear();
   sz >>= 1;
 
   // halve the size of the hash-table
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
-    _hash_tbl.push_back(nullId);
+    hash_tbl_.push_back(nullId);
   }
 
   sz -= 1;
@@ -127,115 +129,115 @@ void dbHashTable<T, page_size>::shrinkTable()
   dbId<T> cur = entries;
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
-    dbId<T> next = entry->_next_entry;
-    uint hid = hash_string(entry->_name) & sz;
-    dbId<T>& e = _hash_tbl[hid];
-    entry->_next_entry = e;
+    T* entry = obj_tbl_->getPtr(cur);
+    dbId<T> next = entry->next_entry_;
+    uint32_t hid = hash_string(entry->name_) & sz;
+    dbId<T>& e = hash_tbl_[hid];
+    entry->next_entry_ = e;
     e = entry->getOID();
     cur = next;
   }
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 void dbHashTable<T, page_size>::insert(T* object)
 {
-  ++_num_entries;
-  uint sz = _hash_tbl.size();
+  ++num_entries_;
+  uint32_t sz = hash_tbl_.size();
 
   if (sz == 0) {
     dbId<T> nullId;
-    _hash_tbl.push_back(nullId);
+    hash_tbl_.push_back(nullId);
     sz = 1;
   } else {
-    uint r = _num_entries / sz;
+    uint32_t r = num_entries_ / sz;
 
-    if (r > CHAIN_LENGTH) {
+    if (r > kChainLength) {
       growTable();
-      sz = _hash_tbl.size();
+      sz = hash_tbl_.size();
     }
   }
 
-  uint hid = hash_string(object->_name) & (sz - 1);
-  dbId<T>& e = _hash_tbl[hid];
-  object->_next_entry = e;
+  uint32_t hid = hash_string(object->name_) & (sz - 1);
+  dbId<T>& e = hash_tbl_[hid];
+  object->next_entry_ = e;
   e = object->getOID();
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 T* dbHashTable<T, page_size>::find(const char* name)
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
 
   if (sz == 0) {
     return nullptr;
   }
 
-  uint hid = hash_string(name) & (sz - 1);
-  dbId<T> cur = _hash_tbl[hid];
+  uint32_t hid = hash_string(name) & (sz - 1);
+  dbId<T> cur = hash_tbl_[hid];
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
+    T* entry = obj_tbl_->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0) {
+    if (strcmp(entry->name_, name) == 0) {
       return entry;
     }
 
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 
   return nullptr;
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 int dbHashTable<T, page_size>::hasMember(const char* name)
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
 
   if (sz == 0) {
     return false;
   }
 
-  uint hid = hash_string(name) & (sz - 1);
-  dbId<T> cur = _hash_tbl[hid];
+  uint32_t hid = hash_string(name) & (sz - 1);
+  dbId<T> cur = hash_tbl_[hid];
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
+    T* entry = obj_tbl_->getPtr(cur);
 
-    if (strcmp(entry->_name, name) == 0) {
+    if (strcmp(entry->name_, name) == 0) {
       return true;
     }
 
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 
   return false;
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 void dbHashTable<T, page_size>::remove(T* object)
 {
-  uint sz = _hash_tbl.size();
-  uint hid = hash_string(object->_name) & (sz - 1);
-  dbId<T> cur = _hash_tbl[hid];
+  uint32_t sz = hash_tbl_.size();
+  uint32_t hid = hash_string(object->name_) & (sz - 1);
+  dbId<T> cur = hash_tbl_[hid];
   dbId<T> prev;
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
+    T* entry = obj_tbl_->getPtr(cur);
 
     if (entry == object) {
       if (prev == 0) {
-        _hash_tbl[hid] = entry->_next_entry;
+        hash_tbl_[hid] = entry->next_entry_;
       } else {
-        T* p = _obj_tbl->getPtr(prev);
-        p->_next_entry = entry->_next_entry;
+        T* p = obj_tbl_->getPtr(prev);
+        p->next_entry_ = entry->next_entry_;
       }
 
-      --_num_entries;
+      --num_entries_;
 
-      uint r = (_num_entries + _num_entries / 10) / sz;
+      uint32_t r = (num_entries_ + num_entries_ / 10) / sz;
 
-      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
+      if ((r < (kChainLength >> 1)) && (sz > 1)) {
         shrinkTable();
       }
 
@@ -243,23 +245,23 @@ void dbHashTable<T, page_size>::remove(T* object)
     }
 
     prev = cur;
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 dbOStream& operator<<(dbOStream& stream, const dbHashTable<T, page_size>& table)
 {
-  stream << table._hash_tbl;
-  stream << table._num_entries;
+  stream << table.hash_tbl_;
+  stream << table.num_entries_;
   return stream;
 }
 
-template <class T, uint page_size>
+template <class T, uint32_t page_size>
 dbIStream& operator>>(dbIStream& stream, dbHashTable<T, page_size>& table)
 {
-  stream >> table._hash_tbl;
-  stream >> table._num_entries;
+  stream >> table.hash_tbl_;
+  stream >> table.num_entries_;
   return stream;
 }
 

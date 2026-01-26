@@ -66,10 +66,8 @@ class TimingPathNode
         delay_(delay),
         slew_(slew),
         load_(load),
-        path_slack_(0.0),
         fanout_(fanout),
-        paired_nodes_({}),
-        instance_node_(nullptr)
+        paired_nodes_({})
   {
   }
 
@@ -136,11 +134,11 @@ class TimingPathNode
   float delay_;
   float slew_;
   float load_;
-  float path_slack_;
+  float path_slack_{0.0};
   int fanout_;
 
   std::set<const TimingPathNode*> paired_nodes_;
-  const TimingPathNode* instance_node_;
+  const TimingPathNode* instance_node_{nullptr};
 };
 
 class TimingPath

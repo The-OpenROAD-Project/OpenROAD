@@ -890,7 +890,9 @@ sta::PathEndVisitor* PathGroupSlackEndVisitor::copy() const
 void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
 {
   sta::Search* search = sta_->search();
-  if (search->pathGroup(path_end) == path_group_) {
+  const sta::PathGroupSeq path_groups = search->pathGroups(path_end);
+  const auto iter = std::ranges::find(path_groups, path_group_);
+  if (iter != path_groups.end()) {
     if (clk_ != nullptr) {
       sta::Path* path = path_end->path();
       if (path->clock(sta_) != clk_) {
@@ -966,6 +968,7 @@ void STAGuiInterface::updatePathGroups()
   search->makePathGroups(1,         /* group count */
                          1,         /* endpoint count*/
                          false,     /* unique pins */
+                         false,     /* unique edges */
                          -sta::INF, /* min slack */
                          sta::INF,  /* max slack*/
                          nullptr,   /* group names */
@@ -1095,6 +1098,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
     }
   }
+
   sta::ExceptionTo* e_to = nullptr;
   if (!to.empty()) {
     sta::PinSet* pins = new sta::PinSet(getNetwork());
@@ -1131,7 +1135,8 @@ TimingPathList STAGuiInterface::getTimingPaths(
           // group_count, endpoint_count, unique_pins
           max_path_count_,
           one_path_per_endpoint_ ? 1 : max_path_count_,
-          true,
+          true,  // unique pins
+          true,  // unique edges
           -sta::INF,
           sta::INF,  // slack_min, slack_max,
           true,      // sort_by_slack
@@ -1342,7 +1347,7 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
 
   for (const auto& [level, pin_list] : map) {
     int next_level = level + 1;
-    if (map.count(next_level) == 0) {
+    if (!map.contains(next_level)) {
       break;
     }
 
@@ -1411,11 +1416,12 @@ void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
 
   for (const auto& path : paths) {
     for (const auto& node : path->getPathNodes()) {
-      auto pin_find = std::find_if(pin_order.begin(),
-                                   pin_order.end(),
-                                   [&node](const TimingPathNode* other) {
-                                     return node->getPin() == other->getPin();
-                                   });
+      auto pin_find
+          = std::ranges::find_if(pin_order,
+
+                                 [&node](const TimingPathNode* other) {
+                                   return node->getPin() == other->getPin();
+                                 });
 
       if (pin_find != pin_order.end()) {
         TimingPathNode* pin_node = *pin_find;
@@ -1429,10 +1435,9 @@ void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
   }
 
   for (auto& [level, pin_list] : map) {
-    std::sort(
-        pin_list.begin(), pin_list.end(), [](const auto& l, const auto& r) {
-          return l->getPathSlack() > r->getPathSlack();
-        });
+    std::ranges::sort(pin_list, [](const auto& l, const auto& r) {
+      return l->getPathSlack() > r->getPathSlack();
+    });
   }
 }
 

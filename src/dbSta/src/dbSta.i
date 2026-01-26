@@ -63,8 +63,8 @@ find_all_clk_nets()
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets = sta->findClkNets();
-  std::vector<dbNet*> clk_nets1(clk_nets.begin(), clk_nets.end());
+  std::set<odb::dbNet*> clk_nets = sta->findClkNets();
+  std::vector<odb::dbNet*> clk_nets1(clk_nets.begin(), clk_nets.end());
   return clk_nets1;
 }
 
@@ -73,8 +73,8 @@ find_clk_nets(const Clock *clk)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  std::set<dbNet*> clk_nets = sta->findClkNets(clk);
-  std::vector<dbNet*> clk_nets1(clk_nets.begin(), clk_nets.end());
+  std::set<odb::dbNet*> clk_nets = sta->findClkNets(clk);
+  std::vector<odb::dbNet*> clk_nets1(clk_nets.begin(), clk_nets.end());
   return clk_nets1;
 }
 
@@ -83,8 +83,8 @@ sta_to_db_inst(Instance *inst)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  dbInst *db_inst;
-  dbModInst* mod_inst;
+  odb::dbInst *db_inst;
+  odb::dbModInst* mod_inst;
   db_network->staToDb(inst, db_inst, mod_inst);
   if (db_inst) {
     return db_inst;
@@ -106,9 +106,9 @@ sta_to_db_port(Port *port)
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   Pin *pin = db_network->findPin(db_network->topInstance(), port);
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  dbModITerm *moditerm;
+  odb::dbITerm *iterm;
+  odb::dbBTerm *bterm;
+  odb::dbModITerm *moditerm;
   db_network->staToDb(pin, iterm, bterm, moditerm);
   return bterm;
 }
@@ -118,9 +118,9 @@ sta_to_db_pin(Pin *pin)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  dbITerm *iterm;
-  dbBTerm *bterm;
-  dbModITerm *moditerm;
+  odb::dbITerm *iterm;
+  odb::dbBTerm *bterm;
+  odb::dbModITerm *moditerm;
   db_network->staToDb(pin, iterm, bterm, moditerm);
   return iterm;
 }
@@ -195,7 +195,6 @@ report_logic_depth_histogram_cmd(int num_bins, bool exclude_buffers,
 // that is in the same file.
 void
 write_verilog_cmd(const char *filename,
-		  bool sort,
 		  bool include_pwr_gnd,
 		  CellSeq *remove_cells)
 {
@@ -204,7 +203,7 @@ write_verilog_cmd(const char *filename,
   ord::OpenRoad *openroad = ord::getOpenRoad();  
   sta::dbSta *sta = openroad->getSta();
   Network *network = sta->network();
-  sta::writeVerilog(filename, sort, include_pwr_gnd, remove_cells, network);
+  sta::writeVerilog(filename, include_pwr_gnd, remove_cells, network);
   delete remove_cells;
 }
 
@@ -225,6 +224,7 @@ void check_axioms_cmd()
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
   sta->getDbNetwork()->checkAxioms();
+  sta->checkSanity();
 }
 
 } // namespace sta

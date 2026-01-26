@@ -3,15 +3,21 @@
 
 #pragma once
 
+#include <map>
+#include <set>
+#include <vector>
+
+#include "AntennaCheckerImpl.hh"
 #include "PinType.hh"
 #include "ant/AntennaChecker.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/db.h"
+#include "odb/geom.h"
 
 namespace ant {
 
 namespace gtl = boost::polygon;
-using namespace gtl::operators;
 
 using Polygon = gtl::polygon_90_data<int>;
 using PolygonSet = std::vector<Polygon>;

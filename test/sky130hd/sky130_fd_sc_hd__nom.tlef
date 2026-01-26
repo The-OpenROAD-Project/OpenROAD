@@ -1,0 +1,797 @@
+# Copyright 2020 The SkyWater PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+VERSION 5.7 ;
+
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  TIME NANOSECONDS 1 ;
+  CAPACITANCE PICOFARADS 1 ;
+  RESISTANCE OHMS 1 ;
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+USEMINSPACING OBS OFF ;
+
+PROPERTYDEFINITIONS
+  LAYER LEF58_TYPE STRING ;
+END PROPERTYDEFINITIONS
+
+# High density, single height
+SITE unithd
+  SYMMETRY Y ;
+  CLASS CORE ;
+  SIZE 0.46 BY 2.72 ;
+END unithd
+
+# High density, double height
+SITE unithddbl
+  SYMMETRY Y ;
+  CLASS CORE ;
+  SIZE 0.46 BY 5.44 ;
+END unithddbl
+
+LAYER nwell
+  TYPE MASTERSLICE ;
+  PROPERTY LEF58_TYPE "TYPE NWELL ;" ;
+END nwell
+
+LAYER pwell
+  TYPE MASTERSLICE ;
+  PROPERTY LEF58_TYPE "TYPE PWELL ;" ;
+END pwell
+
+LAYER li1
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+
+  PITCH 0.46 0.34 ;
+  OFFSET 0.23 0.17 ;
+
+  WIDTH 0.17 ;          # LI 1
+  # SPACING  0.17 ;     # LI 2
+  SPACINGTABLE
+     PARALLELRUNLENGTH 0
+     WIDTH 0 0.17 ;
+  AREA 0.0561 ;         # LI 6
+  THICKNESS 0.1 ;
+  EDGECAPACITANCE 40.697E-6 ;
+  CAPACITANCE CPERSQDIST 36.9866E-6 ;
+  RESISTANCE RPERSQ 12.8 ;
+
+  ANTENNAMODEL OXIDE1 ;
+  ANTENNADIFFSIDEAREARATIO PWL ( ( 0 75 ) ( 0.0125 75 ) ( 0.0225 85.125 ) ( 22.5 10200 ) ) ;
+END li1
+
+LAYER mcon
+  TYPE CUT ;
+
+  WIDTH 0.17 ;                # Mcon 1
+  SPACING 0.19 ;              # Mcon 2
+  ENCLOSURE BELOW 0 0 ;       # Mcon 4
+  ENCLOSURE ABOVE 0.03 0.06 ; # Met1 4 / Met1 5
+  RESISTANCE 9.30 ;
+
+  ANTENNADIFFAREARATIO PWL ( ( 0 3 ) ( 0.0125 3 ) ( 0.0225 3.405 ) ( 22.5 408 ) ) ;
+  DCCURRENTDENSITY AVERAGE 0.36 ; # mA per via Iavg_max at Tj = 90oC
+
+END mcon
+
+LAYER met1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+
+  PITCH 0.34 ;
+  OFFSET 0.17 ;
+
+  WIDTH 0.14 ;                     # Met1 1
+  # SPACING 0.14 ;                 # Met1 2
+  # SPACING 0.28 RANGE 3.001 100 ; # Met1 3b
+  SPACINGTABLE
+     PARALLELRUNLENGTH 0
+     WIDTH 0 0.14
+     WIDTH 3 0.28 ;
+  AREA 0.083 ;                     # Met1 6
+  THICKNESS 0.35 ;
+  MINENCLOSEDAREA 0.14 ;
+
+  ANTENNAMODEL OXIDE1 ;
+  ANTENNADIFFSIDEAREARATIO PWL ( ( 0 400 ) ( 0.0125 400 ) ( 0.0225 2609 ) ( 22.5 11600 ) ) ;
+
+  EDGECAPACITANCE 40.567E-6 ;
+  CAPACITANCE CPERSQDIST 25.7784E-6 ;
+  DCCURRENTDENSITY AVERAGE 2.8 ; # mA/um Iavg_max at Tj = 90oC
+  ACCURRENTDENSITY RMS 6.1 ; # mA/um Irms_max at Tj = 90oC
+  MAXIMUMDENSITY 70 ;
+  DENSITYCHECKWINDOW 700 700 ;
+  DENSITYCHECKSTEP 70 ;
+
+  RESISTANCE RPERSQ 0.125 ;
+END met1
+
+LAYER via
+  TYPE CUT ;
+  WIDTH 0.15 ;                  # Via 1a
+  SPACING 0.17 ;                # Via 2
+  ENCLOSURE BELOW 0.055 0.085 ; # Via 4a / Via 5a
+  ENCLOSURE ABOVE 0.055 0.085 ; # Met2 4 / Met2 5
+  RESISTANCE 4.50 ;
+
+  ANTENNADIFFAREARATIO PWL ( ( 0 6 ) ( 0.0125 6 ) ( 0.0225 6.81 ) ( 22.5 816 ) ) ;
+  DCCURRENTDENSITY AVERAGE 0.29 ; # mA per via Iavg_max at Tj = 90oC
+END via
+
+LAYER met2
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+
+  PITCH 0.46 ;
+  OFFSET 0.23 ;
+
+  WIDTH 0.14 ;                        # Met2 1
+  # SPACING  0.14 ;                   # Met2 2
+  # SPACING  0.28 RANGE 3.001 100 ;   # Met2 3b
+  SPACINGTABLE
+     PARALLELRUNLENGTH 0
+     WIDTH 0 0.14
+     WIDTH 3 0.28 ;
+  AREA 0.0676 ;                       # Met2 6
+  THICKNESS 0.35 ;
+  MINENCLOSEDAREA 0.14 ;
+
+  EDGECAPACITANCE 37.759E-6 ;
+  CAPACITANCE CPERSQDIST 16.9423E-6 ;
+  RESISTANCE RPERSQ 0.125 ;
+  DCCURRENTDENSITY AVERAGE 2.8 ; # mA/um Iavg_max at Tj = 90oC
+  ACCURRENTDENSITY RMS 6.1 ; # mA/um Irms_max at Tj = 90oC
+
+  ANTENNAMODEL OXIDE1 ;
+  ANTENNADIFFSIDEAREARATIO PWL ( ( 0 400 ) ( 0.0125 400 ) ( 0.0225 2609 ) ( 22.5 11600 ) ) ;
+
+  MAXIMUMDENSITY 70 ;
+  DENSITYCHECKWINDOW 700 700 ;
+  DENSITYCHECKSTEP 70 ;
+END met2
+
+# ******** Layer via2, type routing, number 44 **************
+LAYER via2
+  TYPE CUT ;
+  WIDTH 0.2 ;                   # Via2 1
+  SPACING 0.2 ;                 # Via2 2
+  ENCLOSURE BELOW 0.04 0.085 ;  # Via2 4
+  ENCLOSURE ABOVE 0.065 0.065 ; # Met3 4
+  RESISTANCE 3.41 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 6 ) ( 0.0125 6 ) ( 0.0225 6.81 ) ( 22.5 816 ) ) ;
+  DCCURRENTDENSITY AVERAGE 0.48 ; # mA per via Iavg_max at Tj = 90oC
+END via2
+
+LAYER met3
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+
+  PITCH 0.68 ;
+  OFFSET 0.34 ;
+
+  WIDTH 0.3 ;              # Met3 1
+  # SPACING 0.3 ;          # Met3 2
+  SPACINGTABLE
+     PARALLELRUNLENGTH 0
+     WIDTH 0 0.3
+     WIDTH 3 0.4 ;
+  AREA 0.24 ;              # Met3 6
+  THICKNESS 0.8 ;
+
+  EDGECAPACITANCE 40.989E-6 ;
+  CAPACITANCE CPERSQDIST 12.3729E-6 ;
+  RESISTANCE RPERSQ 0.047 ;
+  DCCURRENTDENSITY AVERAGE 6.8 ; # mA/um Iavg_max at Tj = 90oC
+  ACCURRENTDENSITY RMS 14.9 ; # mA/um Irms_max at Tj = 90oC
+
+  ANTENNAMODEL OXIDE1 ;
+  ANTENNADIFFSIDEAREARATIO PWL ( ( 0 400 ) ( 0.0125 400 ) ( 0.0225 2609 ) ( 22.5 11600 ) ) ;
+
+  MAXIMUMDENSITY 70 ;
+  DENSITYCHECKWINDOW 700 700 ;
+  DENSITYCHECKSTEP 70 ;
+END met3
+
+LAYER via3
+  TYPE CUT ;
+  WIDTH 0.2 ;                   # Via3 1
+  SPACING 0.2 ;                 # Via3 2
+  ENCLOSURE BELOW 0.06 0.09 ;   # Via3 4 / Via3 5
+  ENCLOSURE ABOVE 0.065 0.065 ; # Met4 3
+  RESISTANCE 3.41 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 6 ) ( 0.0125 6 ) ( 0.0225 6.81 ) ( 22.5 816 ) ) ;
+  DCCURRENTDENSITY AVERAGE 0.48 ; # mA per via Iavg_max at Tj = 90oC
+END via3
+
+LAYER met4
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+
+  PITCH 0.92 ;
+  OFFSET 0.46 ;
+
+  WIDTH 0.3 ;             # Met4 1
+  # SPACING  0.3 ;             # Met4 2
+  SPACINGTABLE
+     PARALLELRUNLENGTH 0
+     WIDTH 0 0.3
+     WIDTH 3 0.4 ;
+  AREA 0.24 ;            # Met4 4a
+
+  THICKNESS 0.8 ;
+
+  EDGECAPACITANCE 36.676E-6 ;
+  CAPACITANCE CPERSQDIST 8.41537E-6 ;
+  RESISTANCE RPERSQ 0.047 ;
+  DCCURRENTDENSITY AVERAGE 6.8 ; # mA/um Iavg_max at Tj = 90oC
+  ACCURRENTDENSITY RMS 14.9 ; # mA/um Irms_max at Tj = 90oC
+
+  ANTENNAMODEL OXIDE1 ;
+  ANTENNADIFFSIDEAREARATIO PWL ( ( 0 400 ) ( 0.0125 400 ) ( 0.0225 2609 ) ( 22.5 11600 ) ) ;
+
+  MAXIMUMDENSITY 70 ;
+  DENSITYCHECKWINDOW 700 700 ;
+  DENSITYCHECKSTEP 70 ;
+END met4
+
+LAYER via4
+  TYPE CUT ;
+
+  WIDTH 0.8 ;                 # Via4 1
+  SPACING 0.8 ;               # Via4 2
+  ENCLOSURE BELOW 0.19 0.19 ; # Via4 4
+  ENCLOSURE ABOVE 0.31 0.31 ; # Met5 3
+  RESISTANCE 0.38 ;
+  ANTENNADIFFAREARATIO PWL ( ( 0 6 ) ( 0.0125 6 ) ( 0.0225 6.81 ) ( 22.5 816 ) ) ;
+  DCCURRENTDENSITY AVERAGE 2.49 ; # mA per via Iavg_max at Tj = 90oC
+END via4
+
+LAYER met5
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+
+  PITCH 3.4 ;
+  OFFSET 1.7 ;
+
+  WIDTH 1.6 ;            # Met5 1
+  #SPACING  1.6 ;        # Met5 2
+  SPACINGTABLE
+     PARALLELRUNLENGTH 0
+     WIDTH 0 1.6 ;
+  AREA 4 ;               # Met5 4
+
+  THICKNESS 1.2 ;
+
+  EDGECAPACITANCE 38.851E-6 ;
+  CAPACITANCE CPERSQDIST 6.32063E-6 ;
+  RESISTANCE RPERSQ 0.0285 ;
+  DCCURRENTDENSITY AVERAGE 10.17 ; # mA/um Iavg_max at Tj = 90oC
+  ACCURRENTDENSITY RMS 22.34 ; # mA/um Irms_max at Tj = 90oC
+
+  ANTENNAMODEL OXIDE1 ;
+  ANTENNADIFFSIDEAREARATIO PWL ( ( 0 400 ) ( 0.0125 400 ) ( 0.0225 2609 ) ( 22.5 11600 ) ) ;
+END met5
+
+
+### Routing via cells section   ###
+# Plus via rule, metals are along the prefered direction
+VIA L1M1_PR DEFAULT
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER li1 ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER met1 ;
+  RECT -0.145 -0.115 0.145 0.115 ;
+END L1M1_PR
+
+VIARULE L1M1_PR GENERATE
+  LAYER li1 ;
+  ENCLOSURE 0 0 ;
+  LAYER met1 ;
+  ENCLOSURE 0.06 0.03 ;
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  SPACING 0.36 BY 0.36 ;
+END L1M1_PR
+
+# Plus via rule, metals are along the non prefered direction
+VIA L1M1_PR_R DEFAULT
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER li1 ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER met1 ;
+  RECT -0.115 -0.145 0.115 0.145 ;
+END L1M1_PR_R
+
+VIARULE L1M1_PR_R GENERATE
+  LAYER li1 ;
+  ENCLOSURE 0 0 ;
+  LAYER met1 ;
+  ENCLOSURE 0.03 0.06 ;
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  SPACING 0.36 BY 0.36 ;
+END L1M1_PR_R
+
+# Minus via rule, lower layer metal is along prefered direction
+VIA L1M1_PR_M DEFAULT
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER li1 ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER met1 ;
+  RECT -0.115 -0.145 0.115 0.145 ;
+END L1M1_PR_M
+
+VIARULE L1M1_PR_M GENERATE
+  LAYER li1 ;
+  ENCLOSURE 0 0 ;
+  LAYER met1 ;
+  ENCLOSURE 0.03 0.06 ;
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  SPACING 0.36 BY 0.36 ;
+END L1M1_PR_M
+
+# Minus via rule, upper layer metal is along prefered direction
+VIA L1M1_PR_MR DEFAULT
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER li1 ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER met1 ;
+  RECT -0.145 -0.115 0.145 0.115 ;
+END L1M1_PR_MR
+
+VIARULE L1M1_PR_MR GENERATE
+  LAYER li1 ;
+  ENCLOSURE 0 0 ;
+  LAYER met1 ;
+  ENCLOSURE 0.06 0.03 ;
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  SPACING 0.36 BY 0.36 ;
+END L1M1_PR_MR
+
+# Centered via rule, we really do not want to use it
+VIA L1M1_PR_C DEFAULT
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER li1 ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  LAYER met1 ;
+  RECT -0.145 -0.145 0.145 0.145 ;
+END L1M1_PR_C
+
+VIARULE L1M1_PR_C GENERATE
+  LAYER li1 ;
+  ENCLOSURE 0 0 ;
+  LAYER met1 ;
+  ENCLOSURE 0.06 0.06 ;
+  LAYER mcon ;
+  RECT -0.085 -0.085 0.085 0.085 ;
+  SPACING 0.36 BY 0.36 ;
+END L1M1_PR_C
+
+# Plus via rule, metals are along the prefered direction
+VIA M1M2_PR DEFAULT
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  LAYER met1 ;
+  RECT -0.16 -0.13 0.16 0.13 ;
+  LAYER met2 ;
+  RECT -0.13 -0.16 0.13 0.16 ;
+END M1M2_PR
+
+VIARULE M1M2_PR GENERATE
+  LAYER met1 ;
+  ENCLOSURE 0.085 0.055 ;
+  LAYER met2 ;
+  ENCLOSURE 0.055 0.085 ;
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  SPACING 0.32 BY 0.32 ;
+END M1M2_PR
+
+# Plus via rule, metals are along the non prefered direction
+VIA M1M2_PR_R DEFAULT
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  LAYER met1 ;
+  RECT -0.13 -0.16 0.13 0.16 ;
+  LAYER met2 ;
+  RECT -0.16 -0.13 0.16 0.13 ;
+END M1M2_PR_R
+
+VIARULE M1M2_PR_R GENERATE
+  LAYER met1 ;
+  ENCLOSURE 0.055 0.085 ;
+  LAYER met2 ;
+  ENCLOSURE 0.085 0.055 ;
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  SPACING 0.32 BY 0.32 ;
+END M1M2_PR_R
+
+# Minus via rule, lower layer metal is along prefered direction
+VIA M1M2_PR_M DEFAULT
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  LAYER met1 ;
+  RECT -0.16 -0.13 0.16 0.13 ;
+  LAYER met2 ;
+  RECT -0.16 -0.13 0.16 0.13 ;
+END M1M2_PR_M
+
+VIARULE M1M2_PR_M GENERATE
+  LAYER met1 ;
+  ENCLOSURE 0.085 0.055 ;
+  LAYER met2 ;
+  ENCLOSURE 0.085 0.055 ;
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  SPACING 0.32 BY 0.32 ;
+END M1M2_PR_M
+
+# Minus via rule, upper layer metal is along prefered direction
+VIA M1M2_PR_MR DEFAULT
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  LAYER met1 ;
+  RECT -0.13 -0.16 0.13 0.16 ;
+  LAYER met2 ;
+  RECT -0.13 -0.16 0.13 0.16 ;
+END M1M2_PR_MR
+
+VIARULE M1M2_PR_MR GENERATE
+  LAYER met1 ;
+  ENCLOSURE 0.055 0.085 ;
+  LAYER met2 ;
+  ENCLOSURE 0.055 0.085 ;
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  SPACING 0.32 BY 0.32 ;
+END M1M2_PR_MR
+
+# Centered via rule, we really do not want to use it
+VIA M1M2_PR_C DEFAULT
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  LAYER met1 ;
+  RECT -0.16 -0.16 0.16 0.16 ;
+  LAYER met2 ;
+  RECT -0.16 -0.16 0.16 0.16 ;
+END M1M2_PR_C
+
+VIARULE M1M2_PR_C GENERATE
+  LAYER met1 ;
+  ENCLOSURE 0.085 0.085 ;
+  LAYER met2 ;
+  ENCLOSURE 0.085 0.085 ;
+  LAYER via ;
+  RECT -0.075 -0.075 0.075 0.075 ;
+  SPACING 0.32 BY 0.32 ;
+END M1M2_PR_C
+
+# Plus via rule, metals are along the prefered direction
+VIA M2M3_PR DEFAULT
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met2 ;
+  RECT -0.14 -0.185 0.14 0.185 ;
+  LAYER met3 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M2M3_PR
+
+VIARULE M2M3_PR GENERATE
+  LAYER met2 ;
+  ENCLOSURE 0.04 0.085 ;
+  LAYER met3 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M2M3_PR
+
+# Plus via rule, metals are along the non prefered direction
+VIA M2M3_PR_R DEFAULT
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met2 ;
+  RECT -0.185 -0.14 0.185 0.14 ;
+  LAYER met3 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M2M3_PR_R
+
+VIARULE M2M3_PR_R GENERATE
+  LAYER met2 ;
+  ENCLOSURE 0.085 0.04 ;
+  LAYER met3 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M2M3_PR_R
+
+# Minus via rule, lower layer metal is along prefered direction
+VIA M2M3_PR_M DEFAULT
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met2 ;
+  RECT -0.14 -0.185 0.14 0.185 ;
+  LAYER met3 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M2M3_PR_M
+
+VIARULE M2M3_PR_M GENERATE
+  LAYER met2 ;
+  ENCLOSURE 0.04 0.085 ;
+  LAYER met3 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M2M3_PR_M
+
+# Minus via rule, upper layer metal is along prefered direction
+VIA M2M3_PR_MR DEFAULT
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met2 ;
+  RECT -0.185 -0.14 0.185 0.14 ;
+  LAYER met3 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M2M3_PR_MR
+
+VIARULE M2M3_PR_MR GENERATE
+  LAYER met2 ;
+  ENCLOSURE 0.085 0.04 ;
+  LAYER met3 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M2M3_PR_MR
+
+# Centered via rule, we really do not want to use it
+VIA M2M3_PR_C DEFAULT
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met2 ;
+  RECT -0.185 -0.185 0.185 0.185 ;
+  LAYER met3 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M2M3_PR_C
+
+VIARULE M2M3_PR_C GENERATE
+  LAYER met2 ;
+  ENCLOSURE 0.085 0.085 ;
+  LAYER met3 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via2 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M2M3_PR_C
+
+# Plus via rule, metals are along the prefered direction
+VIA M3M4_PR DEFAULT
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met3 ;
+  RECT -0.19 -0.16 0.19 0.16 ;
+  LAYER met4 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M3M4_PR
+
+VIARULE M3M4_PR GENERATE
+  LAYER met3 ;
+  ENCLOSURE 0.09 0.06 ;
+  LAYER met4 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M3M4_PR
+
+# Plus via rule, metals are along the non prefered direction
+VIA M3M4_PR_R DEFAULT
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met3 ;
+  RECT -0.16 -0.19 0.16 0.19 ;
+  LAYER met4 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M3M4_PR_R
+
+VIARULE M3M4_PR_R GENERATE
+  LAYER met3 ;
+  ENCLOSURE 0.06 0.09 ;
+  LAYER met4 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M3M4_PR_R
+
+# Minus via rule, lower layer metal is along prefered direction
+VIA M3M4_PR_M DEFAULT
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met3 ;
+  RECT -0.19 -0.16 0.19 0.16 ;
+  LAYER met4 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M3M4_PR_M
+
+VIARULE M3M4_PR_M GENERATE
+  LAYER met3 ;
+  ENCLOSURE 0.09 0.06 ;
+  LAYER met4 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M3M4_PR_M
+
+# Minus via rule, upper layer metal is along prefered direction
+VIA M3M4_PR_MR DEFAULT
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met3 ;
+  RECT -0.16 -0.19 0.16 0.19 ;
+  LAYER met4 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M3M4_PR_MR
+
+VIARULE M3M4_PR_MR GENERATE
+  LAYER met3 ;
+  ENCLOSURE 0.06 0.09 ;
+  LAYER met4 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M3M4_PR_MR
+
+# Centered via rule, we really do not want to use it
+VIA M3M4_PR_C DEFAULT
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  LAYER met3 ;
+  RECT -0.19 -0.19 0.19 0.19 ;
+  LAYER met4 ;
+  RECT -0.165 -0.165 0.165 0.165 ;
+END M3M4_PR_C
+
+VIARULE M3M4_PR_C GENERATE
+  LAYER met3 ;
+  ENCLOSURE 0.09 0.09 ;
+  LAYER met4 ;
+  ENCLOSURE 0.065 0.065 ;
+  LAYER via3 ;
+  RECT -0.1 -0.1 0.1 0.1 ;
+  SPACING 0.4 BY 0.4 ;
+END M3M4_PR_C
+
+# Plus via rule, metals are along the prefered direction
+VIA M4M5_PR DEFAULT
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  LAYER met4 ;
+  RECT -0.59 -0.59 0.59 0.59 ;
+  LAYER met5 ;
+  RECT -0.71 -0.71 0.71 0.71 ;
+END M4M5_PR
+
+VIARULE M4M5_PR GENERATE
+  LAYER met4 ;
+  ENCLOSURE 0.19 0.19 ;
+  LAYER met5 ;
+  ENCLOSURE 0.31 0.31 ;
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  SPACING 1.6 BY 1.6 ;
+END M4M5_PR
+
+# Plus via rule, metals are along the non prefered direction
+VIA M4M5_PR_R DEFAULT
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  LAYER met4 ;
+  RECT -0.59 -0.59 0.59 0.59 ;
+  LAYER met5 ;
+  RECT -0.71 -0.71 0.71 0.71 ;
+END M4M5_PR_R
+
+VIARULE M4M5_PR_R GENERATE
+  LAYER met4 ;
+  ENCLOSURE 0.19 0.19 ;
+  LAYER met5 ;
+  ENCLOSURE 0.31 0.31 ;
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  SPACING 1.6 BY 1.6 ;
+END M4M5_PR_R
+
+# Minus via rule, lower layer metal is along prefered direction
+VIA M4M5_PR_M DEFAULT
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  LAYER met4 ;
+  RECT -0.59 -0.59 0.59 0.59 ;
+  LAYER met5 ;
+  RECT -0.71 -0.71 0.71 0.71 ;
+END M4M5_PR_M
+
+VIARULE M4M5_PR_M GENERATE
+  LAYER met4 ;
+  ENCLOSURE 0.19 0.19 ;
+  LAYER met5 ;
+  ENCLOSURE 0.31 0.31 ;
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  SPACING 1.6 BY 1.6 ;
+END M4M5_PR_M
+
+# Minus via rule, upper layer metal is along prefered direction
+VIA M4M5_PR_MR DEFAULT
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  LAYER met4 ;
+  RECT -0.59 -0.59 0.59 0.59 ;
+  LAYER met5 ;
+  RECT -0.71 -0.71 0.71 0.71 ;
+END M4M5_PR_MR
+
+VIARULE M4M5_PR_MR GENERATE
+  LAYER met4 ;
+  ENCLOSURE 0.19 0.19 ;
+  LAYER met5 ;
+  ENCLOSURE 0.31 0.31 ;
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  SPACING 1.6 BY 1.6 ;
+END M4M5_PR_MR
+
+# Centered via rule, we really do not want to use it
+VIA M4M5_PR_C DEFAULT
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  LAYER met4 ;
+  RECT -0.59 -0.59 0.59 0.59 ;
+  LAYER met5 ;
+  RECT -0.71 -0.71 0.71 0.71 ;
+END M4M5_PR_C
+
+VIARULE M4M5_PR_C GENERATE
+  LAYER met4 ;
+  ENCLOSURE 0.19 0.19 ;
+  LAYER met5 ;
+  ENCLOSURE 0.31 0.31 ;
+  LAYER via4 ;
+  RECT -0.4 -0.4 0.4 0.4 ;
+  SPACING 1.6 BY 1.6 ;
+END M4M5_PR_C
+###  end of single via cells   ###
+
+END LIBRARY

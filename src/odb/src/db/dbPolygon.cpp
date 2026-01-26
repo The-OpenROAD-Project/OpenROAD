@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbBoxItr.h"
@@ -25,10 +25,10 @@ template class dbTable<_dbPolygon>;
 
 bool _dbPolygon::operator==(const _dbPolygon& rhs) const
 {
-  if (flags_.owner_type_ != rhs.flags_.owner_type_) {
+  if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
-  if (flags_.layer_id_ != rhs.flags_.layer_id_) {
+  if (flags_.layer_id != rhs.flags_.layer_id) {
     return false;
   }
   if (polygon_ != rhs.polygon_) {
@@ -99,7 +99,7 @@ void _dbPolygon::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["polygon"].add(polygon_.getPoints());
+  info.children["polygon"].add(polygon_.getPoints());
   // User Code End collectMemInfo
 }
 
@@ -128,7 +128,7 @@ dbTechLayer* dbPolygon::getTechLayer()
   _dbMaster* master = (_dbMaster*) getImpl()->getOwner();
   _dbLib* lib = (_dbLib*) master->getOwner();
   _dbTech* tech = lib->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(box->flags_.layer_id_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(box->flags_.layer_id);
 }
 
 dbPolygon* dbPolygon::create(dbMaster* master_,
@@ -141,17 +141,17 @@ dbPolygon* dbPolygon::create(dbMaster* master_,
   }
 
   _dbMaster* master = (_dbMaster*) master_;
-  _dbPolygon* box = master->_poly_box_tbl->create();
+  _dbPolygon* box = master->poly_box_tbl_->create();
 
-  box->flags_.owner_type_ = dbBoxOwner::MASTER;
+  box->flags_.owner_type = dbBoxOwner::MASTER;
   box->owner_ = master->getOID();
 
-  box->flags_.layer_id_ = layer_->getImpl()->getOID();
+  box->flags_.layer_id = layer_->getImpl()->getOID();
   box->polygon_ = poly;
 
   // link box to master
-  box->next_pbox_ = master->_poly_obstructions;
-  master->_poly_obstructions = box->getOID();
+  box->next_pbox_ = master->poly_obstructions_;
+  master->poly_obstructions_ = box->getOID();
 
   // decompose polygon
   box->decompose();
@@ -170,17 +170,17 @@ dbPolygon* dbPolygon::create(dbMPin* pin_,
 
   _dbMPin* pin = (_dbMPin*) pin_;
   _dbMaster* master = (_dbMaster*) pin->getOwner();
-  _dbPolygon* box = master->_poly_box_tbl->create();
+  _dbPolygon* box = master->poly_box_tbl_->create();
 
-  box->flags_.owner_type_ = dbBoxOwner::MPIN;
+  box->flags_.owner_type = dbBoxOwner::MPIN;
   box->owner_ = pin->getOID();
 
-  box->flags_.layer_id_ = layer_->getImpl()->getOID();
+  box->flags_.layer_id = layer_->getImpl()->getOID();
   box->polygon_ = poly;
 
   // link box to box
-  box->next_pbox_ = pin->_poly_geoms;
-  pin->_poly_geoms = box->getOID();
+  box->next_pbox_ = pin->poly_geoms_;
+  pin->poly_geoms_ = box->getOID();
 
   // decompose polygon
   box->decompose();
@@ -188,7 +188,7 @@ dbPolygon* dbPolygon::create(dbMPin* pin_,
   return (dbPolygon*) box;
 }
 
-Polygon _dbPolygon::checkPolygon(std::vector<Point> polygon)
+Polygon _dbPolygon::checkPolygon(const std::vector<Point>& polygon)
 {
   if (polygon.size() < 4) {
     return {};
@@ -219,7 +219,7 @@ dbSet<dbBox> dbPolygon::getGeometry()
 {
   _dbPolygon* pbox = (_dbPolygon*) this;
   _dbMaster* master = (_dbMaster*) pbox->getOwner();
-  return dbSet<dbBox>(pbox, master->_pbox_box_itr);
+  return dbSet<dbBox>(pbox, master->pbox_box_itr_);
 }
 
 void dbPolygon::setDesignRuleWidth(int design_rule_width)

@@ -49151,6 +49151,141 @@ module ibex_core (alert_major_bus_o,
     .X(rf_waddr_wb_o[3]));
  sky130_fd_sc_hd__buf_4 _20460_ (.A(\id_stage_i.controller_i.instr_i[11] ),
     .X(rf_waddr_wb_o[4]));
+ sky130_fd_sc_hd__dlclkp_1 clk_gate_0 (.GATE(clk_gate_cond_net_5),
+    .GCLK(gated_clk_i_6),
+    .CLK(clk_i));
+ sky130_fd_sc_hd__dlclkp_1 clk_gate_1 (.GATE(clk_gate_cond_net_12),
+    .GCLK(gated_clk_i_13),
+    .CLK(clk_i));
+ sky130_fd_sc_hd__dlclkp_1 clk_gate_2 (.GATE(clk_gate_cond_net_21),
+    .GCLK(gated_clk_i_22),
+    .CLK(clk_i));
+ sky130_fd_sc_hd__dlclkp_1 clk_gate_3 (.GATE(clk_gate_cond_net_27),
+    .GCLK(gated_clk_i_28),
+    .CLK(clk_i));
+ sky130_fd_sc_hd__dlclkp_1 clk_gate_4 (.GATE(clk_gate_cond_net_35),
+    .GCLK(gated_clk_i_36),
+    .CLK(clk_i));
+ sky130_fd_sc_hd__dlclkp_1 clk_gate_5 (.GATE(clk_gate_cond_net_44),
+    .GCLK(gated_clk_i_45),
+    .CLK(clk_i));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_0 (.A(\ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q[5] ),
+    .B(_03749_),
+    .X(clk_gate_cond_net_1));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_1 (.A(clk_gate_cond_net_1),
+    .B(_03000_),
+    .X(clk_gate_cond_net_2));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_10 (.A(clk_gate_cond_net_11),
+    .B(_04221_),
+    .X(clk_gate_cond_net_12));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_11 (.A(\cs_registers_i.priv_mode_id_o[0] ),
+    .B(_05701_),
+    .X(clk_gate_cond_net_14));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_12 (.A(clk_gate_cond_net_14),
+    .B(_05615_),
+    .X(clk_gate_cond_net_15));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_13 (.A(clk_gate_cond_net_15),
+    .B(_05886_),
+    .X(clk_gate_cond_net_16));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_14 (.A(clk_gate_cond_net_16),
+    .B(_05832_),
+    .X(clk_gate_cond_net_17));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_15 (.A(clk_gate_cond_net_17),
+    .B(_03109_),
+    .X(clk_gate_cond_net_18));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_16 (.A(clk_gate_cond_net_18),
+    .B(_04166_),
+    .X(clk_gate_cond_net_19));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_17 (.A(clk_gate_cond_net_19),
+    .B(_05831_),
+    .X(clk_gate_cond_net_20));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_18 (.A(clk_gate_cond_net_20),
+    .B(_03034_),
+    .X(clk_gate_cond_net_21));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_19 (.A(\id_stage_i.controller_i.ctrl_fsm_cs[0] ),
+    .B(_04129_),
+    .X(clk_gate_cond_net_23));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_2 (.A(clk_gate_cond_net_2),
+    .B(_04094_),
+    .X(clk_gate_cond_net_3));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_20 (.A(clk_gate_cond_net_23),
+    .B(_03958_),
+    .X(clk_gate_cond_net_24));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_21 (.A(clk_gate_cond_net_24),
+    .B(_02972_),
+    .X(clk_gate_cond_net_25));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_22 (.A(clk_gate_cond_net_25),
+    .B(_03082_),
+    .X(clk_gate_cond_net_26));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_23 (.A(clk_gate_cond_net_26),
+    .B(\id_stage_i.controller_i.id_wb_pending ),
+    .X(clk_gate_cond_net_27));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_24 (.A(\if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.rdata_q[0] ),
+    .B(_01591_),
+    .X(clk_gate_cond_net_29));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_25 (.A(clk_gate_cond_net_29),
+    .B(_01587_),
+    .X(clk_gate_cond_net_30));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_26 (.A(clk_gate_cond_net_30),
+    .B(_10021_),
+    .X(clk_gate_cond_net_31));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_27 (.A(clk_gate_cond_net_31),
+    .B(_01432_),
+    .X(clk_gate_cond_net_32));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_28 (.A(clk_gate_cond_net_32),
+    .B(_01412_),
+    .X(clk_gate_cond_net_33));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_29 (.A(clk_gate_cond_net_33),
+    .B(_09983_),
+    .X(clk_gate_cond_net_34));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_3 (.A(clk_gate_cond_net_3),
+    .B(_03636_),
+    .X(clk_gate_cond_net_4));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_30 (.A(clk_gate_cond_net_34),
+    .B(_05669_),
+    .X(clk_gate_cond_net_35));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_31 (.A(\load_store_unit_i.rdata_q[0] ),
+    .B(_02225_),
+    .X(clk_gate_cond_net_37));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_32 (.A(clk_gate_cond_net_37),
+    .B(_02217_),
+    .X(clk_gate_cond_net_38));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_33 (.A(clk_gate_cond_net_38),
+    .B(_02224_),
+    .X(clk_gate_cond_net_39));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_34 (.A(clk_gate_cond_net_39),
+    .B(_01359_),
+    .X(clk_gate_cond_net_40));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_35 (.A(clk_gate_cond_net_40),
+    .B(_01364_),
+    .X(clk_gate_cond_net_41));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_36 (.A(clk_gate_cond_net_41),
+    .B(_01345_),
+    .X(clk_gate_cond_net_42));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_37 (.A(clk_gate_cond_net_42),
+    .B(_02210_),
+    .X(clk_gate_cond_net_43));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_38 (.A(clk_gate_cond_net_43),
+    .B(_03111_),
+    .X(clk_gate_cond_net_44));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_4 (.A(clk_gate_cond_net_4),
+    .B(_04093_),
+    .X(clk_gate_cond_net_5));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_5 (.A(\cs_registers_i.mcycle_counter_i.counter_val_o[10] ),
+    .B(_04468_),
+    .X(clk_gate_cond_net_7));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_6 (.A(clk_gate_cond_net_7),
+    .B(_04455_),
+    .X(clk_gate_cond_net_8));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_7 (.A(clk_gate_cond_net_8),
+    .B(_04454_),
+    .X(clk_gate_cond_net_9));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_8 (.A(clk_gate_cond_net_9),
+    .B(_03183_),
+    .X(clk_gate_cond_net_10));
+ sky130_fd_sc_hd__or2_4 clk_gate_cond_9 (.A(clk_gate_cond_net_10),
+    .B(_04428_),
+    .X(clk_gate_cond_net_11));
  sky130_fd_sc_hd__dfrtp_1 \cs_registers_i.mcountinhibit_q[0]$_DFFE_PN0P_  (.D(_00013_),
     .Q(\cs_registers_i.mcountinhibit_q[0] ),
     .RESET_B(rst_ni),
@@ -52915,139 +53050,4 @@ module ibex_core (alert_major_bus_o,
     .Q(\load_store_unit_i.rdata_q[9] ),
     .RESET_B(rst_ni),
     .CLK(gated_clk_i_45));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_0 (.A(\ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q[5] ),
-    .B(_03749_),
-    .X(clk_gate_cond_net_1));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_1 (.A(clk_gate_cond_net_1),
-    .B(_03000_),
-    .X(clk_gate_cond_net_2));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_2 (.A(clk_gate_cond_net_2),
-    .B(_04094_),
-    .X(clk_gate_cond_net_3));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_3 (.A(clk_gate_cond_net_3),
-    .B(_03636_),
-    .X(clk_gate_cond_net_4));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_4 (.A(clk_gate_cond_net_4),
-    .B(_04093_),
-    .X(clk_gate_cond_net_5));
- sky130_fd_sc_hd__dlclkp_1 clk_gate_0 (.GATE(clk_gate_cond_net_5),
-    .GCLK(gated_clk_i_6),
-    .CLK(clk_i));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_5 (.A(\cs_registers_i.mcycle_counter_i.counter_val_o[10] ),
-    .B(_04468_),
-    .X(clk_gate_cond_net_7));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_6 (.A(clk_gate_cond_net_7),
-    .B(_04455_),
-    .X(clk_gate_cond_net_8));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_7 (.A(clk_gate_cond_net_8),
-    .B(_04454_),
-    .X(clk_gate_cond_net_9));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_8 (.A(clk_gate_cond_net_9),
-    .B(_03183_),
-    .X(clk_gate_cond_net_10));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_9 (.A(clk_gate_cond_net_10),
-    .B(_04428_),
-    .X(clk_gate_cond_net_11));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_10 (.A(clk_gate_cond_net_11),
-    .B(_04221_),
-    .X(clk_gate_cond_net_12));
- sky130_fd_sc_hd__dlclkp_1 clk_gate_1 (.GATE(clk_gate_cond_net_12),
-    .GCLK(gated_clk_i_13),
-    .CLK(clk_i));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_11 (.A(\cs_registers_i.priv_mode_id_o[0] ),
-    .B(_05701_),
-    .X(clk_gate_cond_net_14));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_12 (.A(clk_gate_cond_net_14),
-    .B(_05615_),
-    .X(clk_gate_cond_net_15));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_13 (.A(clk_gate_cond_net_15),
-    .B(_05886_),
-    .X(clk_gate_cond_net_16));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_14 (.A(clk_gate_cond_net_16),
-    .B(_05832_),
-    .X(clk_gate_cond_net_17));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_15 (.A(clk_gate_cond_net_17),
-    .B(_03109_),
-    .X(clk_gate_cond_net_18));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_16 (.A(clk_gate_cond_net_18),
-    .B(_04166_),
-    .X(clk_gate_cond_net_19));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_17 (.A(clk_gate_cond_net_19),
-    .B(_05831_),
-    .X(clk_gate_cond_net_20));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_18 (.A(clk_gate_cond_net_20),
-    .B(_03034_),
-    .X(clk_gate_cond_net_21));
- sky130_fd_sc_hd__dlclkp_1 clk_gate_2 (.GATE(clk_gate_cond_net_21),
-    .GCLK(gated_clk_i_22),
-    .CLK(clk_i));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_19 (.A(\id_stage_i.controller_i.ctrl_fsm_cs[0] ),
-    .B(_04129_),
-    .X(clk_gate_cond_net_23));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_20 (.A(clk_gate_cond_net_23),
-    .B(_03958_),
-    .X(clk_gate_cond_net_24));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_21 (.A(clk_gate_cond_net_24),
-    .B(_02972_),
-    .X(clk_gate_cond_net_25));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_22 (.A(clk_gate_cond_net_25),
-    .B(_03082_),
-    .X(clk_gate_cond_net_26));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_23 (.A(clk_gate_cond_net_26),
-    .B(\id_stage_i.controller_i.id_wb_pending ),
-    .X(clk_gate_cond_net_27));
- sky130_fd_sc_hd__dlclkp_1 clk_gate_3 (.GATE(clk_gate_cond_net_27),
-    .GCLK(gated_clk_i_28),
-    .CLK(clk_i));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_24 (.A(\if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.rdata_q[0] ),
-    .B(_01591_),
-    .X(clk_gate_cond_net_29));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_25 (.A(clk_gate_cond_net_29),
-    .B(_01587_),
-    .X(clk_gate_cond_net_30));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_26 (.A(clk_gate_cond_net_30),
-    .B(_10021_),
-    .X(clk_gate_cond_net_31));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_27 (.A(clk_gate_cond_net_31),
-    .B(_01432_),
-    .X(clk_gate_cond_net_32));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_28 (.A(clk_gate_cond_net_32),
-    .B(_01412_),
-    .X(clk_gate_cond_net_33));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_29 (.A(clk_gate_cond_net_33),
-    .B(_09983_),
-    .X(clk_gate_cond_net_34));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_30 (.A(clk_gate_cond_net_34),
-    .B(_05669_),
-    .X(clk_gate_cond_net_35));
- sky130_fd_sc_hd__dlclkp_1 clk_gate_4 (.GATE(clk_gate_cond_net_35),
-    .GCLK(gated_clk_i_36),
-    .CLK(clk_i));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_31 (.A(\load_store_unit_i.rdata_q[0] ),
-    .B(_02225_),
-    .X(clk_gate_cond_net_37));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_32 (.A(clk_gate_cond_net_37),
-    .B(_02217_),
-    .X(clk_gate_cond_net_38));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_33 (.A(clk_gate_cond_net_38),
-    .B(_02224_),
-    .X(clk_gate_cond_net_39));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_34 (.A(clk_gate_cond_net_39),
-    .B(_01359_),
-    .X(clk_gate_cond_net_40));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_35 (.A(clk_gate_cond_net_40),
-    .B(_01364_),
-    .X(clk_gate_cond_net_41));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_36 (.A(clk_gate_cond_net_41),
-    .B(_01345_),
-    .X(clk_gate_cond_net_42));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_37 (.A(clk_gate_cond_net_42),
-    .B(_02210_),
-    .X(clk_gate_cond_net_43));
- sky130_fd_sc_hd__or2_4 clk_gate_cond_38 (.A(clk_gate_cond_net_43),
-    .B(_03111_),
-    .X(clk_gate_cond_net_44));
- sky130_fd_sc_hd__dlclkp_1 clk_gate_5 (.GATE(clk_gate_cond_net_44),
-    .GCLK(gated_clk_i_45),
-    .CLK(clk_i));
 endmodule

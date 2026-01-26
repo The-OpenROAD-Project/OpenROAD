@@ -17,10 +17,6 @@ definPinProps::definPinProps() : _cur_obj(nullptr)
 {
 }
 
-definPinProps::~definPinProps()
-{
-}
-
 void definPinProps::begin(const char* instance, const char* terminal)
 {
   _cur_obj = nullptr;

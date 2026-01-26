@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 namespace odb {
@@ -18,10 +18,10 @@ template class dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>;
 bool _dbTechLayerTwoWiresForbiddenSpcRule::operator==(
     const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
 {
-  if (flags_.min_exact_span_length_ != rhs.flags_.min_exact_span_length_) {
+  if (flags_.min_exact_span_length != rhs.flags_.min_exact_span_length) {
     return false;
   }
-  if (flags_.max_exact_span_length_ != rhs.flags_.max_exact_span_length_) {
+  if (flags_.max_exact_span_length != rhs.flags_.max_exact_span_length) {
     return false;
   }
   if (min_spacing_ != rhs.min_spacing_) {
@@ -183,7 +183,7 @@ void dbTechLayerTwoWiresForbiddenSpcRule::setMinExactSpanLength(
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
       = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
 
-  obj->flags_.min_exact_span_length_ = min_exact_span_length;
+  obj->flags_.min_exact_span_length = min_exact_span_length;
 }
 
 bool dbTechLayerTwoWiresForbiddenSpcRule::isMinExactSpanLength() const
@@ -191,7 +191,7 @@ bool dbTechLayerTwoWiresForbiddenSpcRule::isMinExactSpanLength() const
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
       = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
 
-  return obj->flags_.min_exact_span_length_;
+  return obj->flags_.min_exact_span_length;
 }
 
 void dbTechLayerTwoWiresForbiddenSpcRule::setMaxExactSpanLength(
@@ -200,7 +200,7 @@ void dbTechLayerTwoWiresForbiddenSpcRule::setMaxExactSpanLength(
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
       = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
 
-  obj->flags_.max_exact_span_length_ = max_exact_span_length;
+  obj->flags_.max_exact_span_length = max_exact_span_length;
 }
 
 bool dbTechLayerTwoWiresForbiddenSpcRule::isMaxExactSpanLength() const
@@ -208,7 +208,7 @@ bool dbTechLayerTwoWiresForbiddenSpcRule::isMaxExactSpanLength() const
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
       = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
 
-  return obj->flags_.max_exact_span_length_;
+  return obj->flags_.max_exact_span_length;
 }
 
 // User Code Begin dbTechLayerTwoWiresForbiddenSpcRulePublicMethods

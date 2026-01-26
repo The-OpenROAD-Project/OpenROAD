@@ -3,7 +3,7 @@
 
 #include "delay_optimization_strategy.h"
 
-#include <string.h>
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
 #include <cstring>
 #include <mutex>

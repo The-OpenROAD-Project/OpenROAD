@@ -7,10 +7,10 @@
 #include <variant>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 namespace {
@@ -84,10 +84,10 @@ std::variant<dbBTerm*, dbITerm*> dbScanPin::getPin() const
         using T = std::decay_t<decltype(pin)>;
         if constexpr (std::is_same_v<T, dbId<_dbBTerm>>) {
           return std::variant<dbBTerm*, dbITerm*>(
-              (dbBTerm*) block->_bterm_tbl->getPtr(pin));
+              (dbBTerm*) block->bterm_tbl_->getPtr(pin));
         } else if constexpr (std::is_same_v<T, dbId<_dbITerm>>) {
           return std::variant<dbBTerm*, dbITerm*>(
-              (dbITerm*) block->_iterm_tbl->getPtr(pin));
+              (dbITerm*) block->iterm_tbl_->getPtr(pin));
         } else {
           static_assert(always_false_v<T>, "non-exhaustive visitor!");
         }

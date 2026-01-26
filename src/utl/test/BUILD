@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "tee",
     "tee_fails",
     "test_error",
+    "test_error_exception",
     "test_info",
     "test_metrics",
     "test_suppress_message",
@@ -21,7 +22,6 @@ COMPULSORY_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
-    "test_error_exception",
     "utl_man_tcl_check",
     "utl_readme_msgs_check",
 ]
@@ -82,6 +82,40 @@ cc_test(
         "//src/utl",
         "@boost.asio",
         "@boost.beast",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestMetrics",
+    srcs = [
+        "cpp/TestMetrics.cpp",
+    ],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestAlgorithms",
+    srcs = [
+        "cpp/TestAlgorithms.cpp",
+    ],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSuppressStdout",
+    srcs = ["cpp/TestSuppressStdout.cpp"],
+    deps = [
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

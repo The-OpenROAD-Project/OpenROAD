@@ -15,6 +15,7 @@ COMPULSORY_TESTS = [
     "boundary_macros_separate2",
     "boundary_macros_tapcell",
     "cut_rows",
+    "cut_rows_halo",
     "cut_rows_min_width",
     "cut_rows_with_endcaps",
     "disallow_one_site_gaps",
@@ -23,6 +24,7 @@ COMPULSORY_TESTS = [
     "endcap_autoselection_error2",
     "endcap_autoselection_error3",
     "endcap_autoselection_error4",
+    "endcap_corners",
     "gcd_asap7",
     "gcd_fakeram",
     "gcd_nangate45",
@@ -34,6 +36,7 @@ COMPULSORY_TESTS = [
     "jpeg_gf180",
     "multiple_calls",
     "no_endcap",
+    "overlap_cover",
     "region1",
     "symmetry",
 ]
@@ -148,6 +151,7 @@ filegroup(
             ],
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
+            "overlap_cover": ["sky130hs_data/cover.lef"],
         }.get(
             test_name,
             ["boundary_macros.def"],

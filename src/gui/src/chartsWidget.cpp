@@ -610,7 +610,8 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
     const QString number_of_pins
         = QString("Number of Endpoints: %1\n").arg(num);
 
-    QString scaled_suffix = sta_->getSTA()->units()->timeUnit()->scaledSuffix();
+    QString scaled_suffix = QString::fromStdString(
+        sta_->getSTA()->units()->timeUnit()->scaleAbbrevSuffix());
 
     const auto& [lower, upper] = histogram_->getBinRange(bar_index);
 
@@ -875,10 +876,10 @@ void HistogramView::emitEndPointsInBucket(const int bar_index)
     return;
   }
 
-  auto compare_slack = [=](const sta::Pin* a, const sta::Pin* b) {
+  auto compare_slack = [this](const sta::Pin* a, const sta::Pin* b) {
     return sta_->getPinSlack(a) < sta_->getPinSlack(b);
   };
-  std::sort(end_points.begin(), end_points.end(), compare_slack);
+  std::ranges::sort(end_points, compare_slack);
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.
@@ -904,7 +905,8 @@ void HistogramView::setXAxisTitle()
 
   sta::Unit* time_units = sta_->getSTA()->units()->timeUnit();
 
-  const QString scaled_suffix = time_units->scaledSuffix();
+  const QString scaled_suffix
+      = QString::fromStdString(time_units->scaleAbbrevSuffix());
   const QString end_title = "], Clocks: ";
 
   QString axis_x_title = start_title + scaled_suffix + end_title;

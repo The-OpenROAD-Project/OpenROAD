@@ -34,8 +34,9 @@ class Point3D : public odb::Point
   bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
   bool operator<(const Point3D& rhs) const
   {
-    if (odb::Point::operator!=(rhs)) {
-      return odb::Point::operator<(rhs);
+    const odb::Point* pt2d = static_cast<const Point*>(this);
+    if (*pt2d != rhs) {
+      return *pt2d < rhs;
     }
     return z_ < rhs.z_;
   }

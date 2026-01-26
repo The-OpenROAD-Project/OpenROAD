@@ -4,11 +4,11 @@
 #include "dbTechMinCutOrAreaRule.h"
 
 #include <cassert>
+#include <cstdint>
 
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -33,31 +33,31 @@ void _dbTechMinEncRule::collectMemInfo(MemInfo& info)
 
 bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
 {
-  if (_flags._rule != rhs._flags._rule) {
+  if (flags_.rule != rhs.flags_.rule) {
     return false;
   }
 
-  if (_flags._cuts_length != rhs._flags._cuts_length) {
+  if (flags_.cuts_length != rhs.flags_.cuts_length) {
     return false;
   }
 
-  if (_num_cuts != rhs._num_cuts) {
+  if (num_cuts_ != rhs.num_cuts_) {
     return false;
   }
 
-  if (_width != rhs._width) {
+  if (width_ != rhs.width_) {
     return false;
   }
 
-  if (_cut_distance != rhs._cut_distance) {
+  if (cut_distance_ != rhs.cut_distance_) {
     return false;
   }
 
-  if (_length != rhs._length) {
+  if (length_ != rhs.length_) {
     return false;
   }
 
-  if (_distance != rhs._distance) {
+  if (distance_ != rhs.distance_) {
     return false;
   }
 
@@ -66,15 +66,15 @@ bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
 
 bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
 {
-  if (_flags._has_width != rhs._flags._has_width) {
+  if (flags_.has_width != rhs.flags_.has_width) {
     return false;
   }
 
-  if (_area != rhs._area) {
+  if (area_ != rhs.area_) {
     return false;
   }
 
-  if (_width != rhs._width) {
+  if (width_ != rhs.width_) {
     return false;
   }
 
@@ -89,25 +89,25 @@ bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechMinCutRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream << *bit_field;
-  stream << rule._num_cuts;
-  stream << rule._width;
-  stream << rule._cut_distance;
-  stream << rule._length;
-  stream << rule._distance;
+  stream << rule.num_cuts_;
+  stream << rule.width_;
+  stream << rule.cut_distance_;
+  stream << rule.length_;
+  stream << rule.distance_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechMinCutRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream >> *bit_field;
-  stream >> rule._num_cuts;
-  stream >> rule._width;
-  stream >> rule._cut_distance;
-  stream >> rule._length;
-  stream >> rule._distance;
+  stream >> rule.num_cuts_;
+  stream >> rule.width_;
+  stream >> rule.cut_distance_;
+  stream >> rule.length_;
+  stream >> rule.distance_;
   return stream;
 }
 
@@ -119,19 +119,19 @@ dbIStream& operator>>(dbIStream& stream, _dbTechMinCutRule& rule)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechMinEncRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream << *bit_field;
-  stream << rule._area;
-  stream << rule._width;
+  stream << rule.area_;
+  stream << rule.width_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechMinEncRule& rule)
 {
-  uint* bit_field = (uint*) &rule._flags;
+  uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream >> *bit_field;
-  stream >> rule._area;
-  stream >> rule._width;
+  stream >> rule.area_;
+  stream >> rule.width_;
   return stream;
 }
 
@@ -141,28 +141,28 @@ dbIStream& operator>>(dbIStream& stream, _dbTechMinEncRule& rule)
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbTechMinCutRule::getMinimumCuts(uint& numcuts, uint& width) const
+bool dbTechMinCutRule::getMinimumCuts(uint32_t& numcuts, uint32_t& width) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  if (_lsm->_flags._rule == _dbTechMinCutRule::NONE) {
+  if (_lsm->flags_.rule == _dbTechMinCutRule::kNone) {
     return false;
   }
 
-  numcuts = _lsm->_num_cuts;
-  width = _lsm->_width;
+  numcuts = _lsm->num_cuts_;
+  width = _lsm->width_;
   return true;
 }
 
-void dbTechMinCutRule::setMinimumCuts(uint numcuts,
-                                      uint width,
+void dbTechMinCutRule::setMinimumCuts(uint32_t numcuts,
+                                      uint32_t width,
                                       bool above_only,
                                       bool below_only)
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  _lsm->_num_cuts = numcuts;
-  _lsm->_width = width;
+  _lsm->num_cuts_ = numcuts;
+  _lsm->width_ = width;
 
   if (above_only && below_only) {  // For default encoding, rule applies from
                                    // both above and below
@@ -171,84 +171,85 @@ void dbTechMinCutRule::setMinimumCuts(uint numcuts,
   }
 
   if (above_only) {
-    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_ABOVE;
+    _lsm->flags_.rule = _dbTechMinCutRule::kMinimumCutAbove;
   } else if (below_only) {
-    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT_BELOW;
+    _lsm->flags_.rule = _dbTechMinCutRule::kMinimumCutBelow;
   } else {
-    _lsm->_flags._rule = _dbTechMinCutRule::MINIMUM_CUT;
+    _lsm->flags_.rule = _dbTechMinCutRule::kMinimumCut;
   }
 }
 
 bool dbTechMinCutRule::isAboveOnly() const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  return (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_ABOVE);
+  return (_lsm->flags_.rule == _dbTechMinCutRule::kMinimumCutAbove);
 }
 
 bool dbTechMinCutRule::isBelowOnly() const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  return (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_BELOW);
+  return (_lsm->flags_.rule == _dbTechMinCutRule::kMinimumCutBelow);
 }
 
-bool dbTechMinCutRule::getLengthForCuts(uint& length, uint& distance) const
+bool dbTechMinCutRule::getLengthForCuts(uint32_t& length,
+                                        uint32_t& distance) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  if ((_lsm->_flags._rule == _dbTechMinCutRule::NONE)
-      || !(_lsm->_flags._cuts_length)) {
+  if ((_lsm->flags_.rule == _dbTechMinCutRule::kNone)
+      || !(_lsm->flags_.cuts_length)) {
     return false;
   }
 
-  length = _lsm->_length;
-  distance = _lsm->_distance;
+  length = _lsm->length_;
+  distance = _lsm->distance_;
   return true;
 }
 
-bool dbTechMinCutRule::getCutDistance(uint& cut_distance) const
+bool dbTechMinCutRule::getCutDistance(uint32_t& cut_distance) const
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  if (_lsm->_cut_distance < 0) {
+  if (_lsm->cut_distance_ < 0) {
     return false;
   }
 
-  cut_distance = _lsm->_cut_distance;
+  cut_distance = _lsm->cut_distance_;
   return true;
 }
 
-void dbTechMinCutRule::setCutDistance(uint cut_distance)
+void dbTechMinCutRule::setCutDistance(uint32_t cut_distance)
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
-  _lsm->_cut_distance = cut_distance;
+  _lsm->cut_distance_ = cut_distance;
 }
 
 //
 //  NOTE: Assumes that the rule type has already been set.
 //
-void dbTechMinCutRule::setLengthForCuts(uint length, uint distance)
+void dbTechMinCutRule::setLengthForCuts(uint32_t length, uint32_t distance)
 {
   _dbTechMinCutRule* _lsm = (_dbTechMinCutRule*) this;
 
-  assert((_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT)
-         || (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_ABOVE)
-         || (_lsm->_flags._rule == _dbTechMinCutRule::MINIMUM_CUT_BELOW));
+  assert((_lsm->flags_.rule == _dbTechMinCutRule::kMinimumCut)
+         || (_lsm->flags_.rule == _dbTechMinCutRule::kMinimumCutAbove)
+         || (_lsm->flags_.rule == _dbTechMinCutRule::kMinimumCutBelow));
 
-  _lsm->_flags._cuts_length = 1;
-  _lsm->_length = length;
-  _lsm->_distance = distance;
+  _lsm->flags_.cuts_length = 1;
+  _lsm->length_ = length;
+  _lsm->distance_ = distance;
 }
 
 void dbTechMinCutRule::writeLef(lefout& writer) const
 {
-  uint numcuts = 0;
-  uint cut_width = 0;
+  uint32_t numcuts = 0;
+  uint32_t cut_width = 0;
   getMinimumCuts(numcuts, cut_width);
   fmt::print(writer.out(),
              "    MINIMUMCUT {}  WIDTH {:g} ",
              numcuts,
              writer.lefdist(cut_width));
 
-  uint cut_distance;
+  uint32_t cut_distance;
   if (getCutDistance(cut_distance)) {
     fmt::print(writer.out(), "WITHIN {:g} ", writer.lefdist(cut_distance));
   }
@@ -259,7 +260,7 @@ void dbTechMinCutRule::writeLef(lefout& writer) const
     fmt::print(writer.out(), "{}", "FROMBELOW ");
   }
 
-  uint length, distance;
+  uint32_t length, distance;
   if (getLengthForCuts(length, distance)) {
     fmt::print(writer.out(),
                "LENGTH {:g}  WITHIN {:g} ",
@@ -272,14 +273,15 @@ void dbTechMinCutRule::writeLef(lefout& writer) const
 dbTechMinCutRule* dbTechMinCutRule::create(dbTechLayer* inly)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
-  _dbTechMinCutRule* newrule = layer->_min_cut_rules_tbl->create();
+  _dbTechMinCutRule* newrule = layer->min_cut_rules_tbl_->create();
   return ((dbTechMinCutRule*) newrule);
 }
 
-dbTechMinCutRule* dbTechMinCutRule::getMinCutRule(dbTechLayer* inly, uint dbid)
+dbTechMinCutRule* dbTechMinCutRule::getMinCutRule(dbTechLayer* inly,
+                                                  uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
-  return (dbTechMinCutRule*) layer->_min_cut_rules_tbl->getPtr(dbid);
+  return (dbTechMinCutRule*) layer->min_cut_rules_tbl_->getPtr(dbid);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -288,44 +290,44 @@ dbTechMinCutRule* dbTechMinCutRule::getMinCutRule(dbTechLayer* inly, uint dbid)
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbTechMinEncRule::getEnclosure(uint& area) const
+bool dbTechMinEncRule::getEnclosure(uint32_t& area) const
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  area = _lsm->_area;
+  area = _lsm->area_;
   return true;
 }
 
-void dbTechMinEncRule::setEnclosure(uint area)
+void dbTechMinEncRule::setEnclosure(uint32_t area)
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  _lsm->_area = area;
+  _lsm->area_ = area;
 }
 
-bool dbTechMinEncRule::getEnclosureWidth(uint& width) const
+bool dbTechMinEncRule::getEnclosureWidth(uint32_t& width) const
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  if (!(_lsm->_flags._has_width)) {
+  if (!(_lsm->flags_.has_width)) {
     return false;
   }
 
-  width = _lsm->_width;
+  width = _lsm->width_;
   return true;
 }
 
-void dbTechMinEncRule::setEnclosureWidth(uint width)
+void dbTechMinEncRule::setEnclosureWidth(uint32_t width)
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
-  _lsm->_flags._has_width = 1;
-  _lsm->_width = width;
+  _lsm->flags_.has_width = 1;
+  _lsm->width_ = width;
 }
 
 void dbTechMinEncRule::writeLef(lefout& writer) const
 {
-  uint enc_area, enc_width;
+  uint32_t enc_area, enc_width;
   getEnclosure(enc_area);
   fmt::print(
       writer.out(), "    MINENCLOSEDAREA {:g} ", writer.lefarea(enc_area));
@@ -338,14 +340,15 @@ void dbTechMinEncRule::writeLef(lefout& writer) const
 dbTechMinEncRule* dbTechMinEncRule::create(dbTechLayer* inly)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
-  _dbTechMinEncRule* newrule = layer->_min_enc_rules_tbl->create();
+  _dbTechMinEncRule* newrule = layer->min_enc_rules_tbl_->create();
   return ((dbTechMinEncRule*) newrule);
 }
 
-dbTechMinEncRule* dbTechMinEncRule::getMinEncRule(dbTechLayer* inly, uint dbid)
+dbTechMinEncRule* dbTechMinEncRule::getMinEncRule(dbTechLayer* inly,
+                                                  uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
-  return (dbTechMinEncRule*) layer->_min_enc_rules_tbl->getPtr(dbid);
+  return (dbTechMinEncRule*) layer->min_enc_rules_tbl_->getPtr(dbid);
 }
 
 }  // namespace odb

@@ -5,10 +5,12 @@
 #include "dbGroup.h"
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #include "dbBlock.h"
 #include "dbBox.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroupInstItr.h"
 #include "dbGroupItr.h"
@@ -18,9 +20,9 @@
 #include "dbModInst.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "dbCommon.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
 #include "dbRegion.h"
@@ -30,28 +32,28 @@ template class dbTable<_dbGroup>;
 
 bool _dbGroup::operator==(const _dbGroup& rhs) const
 {
-  if (flags_._type != rhs.flags_._type) {
+  if (flags_.type != rhs.flags_.type) {
     return false;
   }
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_group_next != rhs._group_next) {
+  if (group_next_ != rhs.group_next_) {
     return false;
   }
-  if (_parent_group != rhs._parent_group) {
+  if (parent_group_ != rhs.parent_group_) {
     return false;
   }
-  if (_insts != rhs._insts) {
+  if (insts_ != rhs.insts_) {
     return false;
   }
-  if (_modinsts != rhs._modinsts) {
+  if (modinsts_ != rhs.modinsts_) {
     return false;
   }
-  if (_groups != rhs._groups) {
+  if (groups_ != rhs.groups_) {
     return false;
   }
   if (region_next_ != rhs.region_next_) {
@@ -65,11 +67,11 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   }
 
   // User Code Begin ==
-  if (_power_nets != rhs._power_nets) {
+  if (power_nets_ != rhs.power_nets_) {
     return false;
   }
 
-  if (_ground_nets != rhs._ground_nets) {
+  if (ground_nets_ != rhs.ground_nets_) {
     return false;
   }
   // User Code End ==
@@ -79,10 +81,10 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
 bool _dbGroup::operator<(const _dbGroup& rhs) const
 {
   // User Code Begin <
-  if (strcmp(_name, rhs._name) >= 0) {
+  if (strcmp(name_, rhs.name_) >= 0) {
     return false;
   }
-  if (flags_._type >= rhs.flags_._type) {
+  if (flags_.type >= rhs.flags_.type) {
     return false;
   }
   // User Code End <
@@ -92,7 +94,7 @@ bool _dbGroup::operator<(const _dbGroup& rhs) const
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
   flags_ = {};
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
@@ -101,15 +103,15 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj._name;
-  stream >> obj._next_entry;
-  stream >> obj._group_next;
-  stream >> obj._parent_group;
-  stream >> obj._insts;
-  stream >> obj._modinsts;
-  stream >> obj._groups;
-  stream >> obj._power_nets;
-  stream >> obj._ground_nets;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
+  stream >> obj.group_next_;
+  stream >> obj.parent_group_;
+  stream >> obj.insts_;
+  stream >> obj.modinsts_;
+  stream >> obj.groups_;
+  stream >> obj.power_nets_;
+  stream >> obj.ground_nets_;
   stream >> obj.region_next_;
   stream >> obj.region_prev_;
   stream >> obj.region_;
@@ -122,15 +124,15 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
-  stream << obj._name;
-  stream << obj._next_entry;
-  stream << obj._group_next;
-  stream << obj._parent_group;
-  stream << obj._insts;
-  stream << obj._modinsts;
-  stream << obj._groups;
-  stream << obj._power_nets;
-  stream << obj._ground_nets;
+  stream << obj.name_;
+  stream << obj.next_entry_;
+  stream << obj.group_next_;
+  stream << obj.parent_group_;
+  stream << obj.insts_;
+  stream << obj.modinsts_;
+  stream << obj.groups_;
+  stream << obj.power_nets_;
+  stream << obj.ground_nets_;
   stream << obj.region_next_;
   stream << obj.region_prev_;
   stream << obj.region_;
@@ -143,16 +145,16 @@ void _dbGroup::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
-  info.children_["power_nets"].add(_power_nets);
-  info.children_["ground_nets"].add(_ground_nets);
+  info.children["name"].add(name_);
+  info.children["power_nets"].add(power_nets_);
+  info.children["ground_nets"].add(ground_nets_);
   // User Code End collectMemInfo
 }
 
 _dbGroup::~_dbGroup()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -165,17 +167,17 @@ _dbGroup::~_dbGroup()
 const char* dbGroup::getName() const
 {
   _dbGroup* obj = (_dbGroup*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbGroup* dbGroup::getParentGroup() const
 {
   _dbGroup* obj = (_dbGroup*) this;
-  if (obj->_parent_group == 0) {
+  if (obj->parent_group_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbGroup*) par->_group_tbl->getPtr(obj->_parent_group);
+  return (dbGroup*) par->group_tbl_->getPtr(obj->parent_group_);
 }
 
 dbRegion* dbGroup::getRegion() const
@@ -185,7 +187,7 @@ dbRegion* dbGroup::getRegion() const
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
+  return (dbRegion*) par->region_tbl_->getPtr(obj->region_);
 }
 
 // User Code Begin dbGroupPublicMethods
@@ -193,179 +195,179 @@ void dbGroup::setType(dbGroupType type)
 {
   _dbGroup* obj = (_dbGroup*) this;
 
-  obj->flags_._type = (uint) type;
+  obj->flags_.type = (uint32_t) type;
 }
 
 dbGroupType dbGroup::getType() const
 {
   _dbGroup* obj = (_dbGroup*) this;
 
-  return (dbGroupType::Value) obj->flags_._type;
+  return (dbGroupType::Value) obj->flags_.type;
 }
 
 void dbGroup::addModInst(dbModInst* modinst)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbModInst* _modinst = (_dbModInst*) modinst;
-  if (_modinst->_group != 0) {
+  if (_modinst->group_ != 0) {
     modinst->getGroup()->removeModInst(modinst);
   }
-  _modinst->_group = _group->getOID();
-  _modinst->_group_next = _group->_modinsts;
-  _group->_modinsts = _modinst->getOID();
+  _modinst->group_ = _group->getOID();
+  _modinst->group_next_ = _group->modinsts_;
+  _group->modinsts_ = _modinst->getOID();
 }
 
 void dbGroup::removeModInst(dbModInst* modinst)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbModInst* _modinst = (_dbModInst*) modinst;
-  if (_modinst->_group != _group->getOID()) {
+  if (_modinst->group_ != _group->getOID()) {
     return;
   }
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  uint id = _modinst->getOID();
+  uint32_t id = _modinst->getOID();
   _dbModInst* prev = nullptr;
-  uint cur = _group->_modinsts;
+  uint32_t cur = _group->modinsts_;
   while (cur) {
-    _dbModInst* c = _block->_modinst_tbl->getPtr(cur);
+    _dbModInst* c = _block->modinst_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
-        _group->_modinsts = _modinst->_group_next;
+        _group->modinsts_ = _modinst->group_next_;
       } else {
-        prev->_group_next = _modinst->_group_next;
+        prev->group_next_ = _modinst->group_next_;
       }
       break;
     }
     prev = c;
-    cur = c->_group_next;
+    cur = c->group_next_;
   }
-  _modinst->_group = 0;
-  _modinst->_group_next = 0;
+  _modinst->group_ = 0;
+  _modinst->group_next_ = 0;
 }
 
 dbSet<dbModInst> dbGroup::getModInsts()
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
-  return dbSet<dbModInst>(_group, block->_group_modinst_itr);
+  return dbSet<dbModInst>(_group, block->group_modinst_itr_);
 }
 
 void dbGroup::addInst(dbInst* inst)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbInst* _inst = (_dbInst*) inst;
-  if (_inst->_group != 0) {
+  if (_inst->group_ != 0) {
     inst->getGroup()->removeInst(inst);
   }
-  _inst->_group = _group->getOID();
-  _inst->_group_next = _group->_insts;
-  _group->_insts = _inst->getOID();
+  _inst->group_ = _group->getOID();
+  _inst->group_next_ = _group->insts_;
+  _group->insts_ = _inst->getOID();
 }
 
 void dbGroup::removeInst(dbInst* inst)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbInst* _inst = (_dbInst*) inst;
-  if (_inst->_group != _group->getOID()) {
+  if (_inst->group_ != _group->getOID()) {
     return;
   }
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  uint id = _inst->getOID();
+  uint32_t id = _inst->getOID();
   _dbInst* prev = nullptr;
-  uint cur = _group->_insts;
+  uint32_t cur = _group->insts_;
   while (cur) {
-    _dbInst* c = _block->_inst_tbl->getPtr(cur);
+    _dbInst* c = _block->inst_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
-        _group->_insts = _inst->_group_next;
+        _group->insts_ = _inst->group_next_;
       } else {
-        prev->_group_next = _inst->_group_next;
+        prev->group_next_ = _inst->group_next_;
       }
       break;
     }
     prev = c;
-    cur = c->_group_next;
+    cur = c->group_next_;
   }
-  _inst->_group = 0;
-  _inst->_group_next = 0;
+  _inst->group_ = 0;
+  _inst->group_next_ = 0;
 }
 
 dbSet<dbInst> dbGroup::getInsts()
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
-  return dbSet<dbInst>(_group, block->_group_inst_itr);
+  return dbSet<dbInst>(_group, block->group_inst_itr_);
 }
 
 void dbGroup::addGroup(dbGroup* child)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbGroup* _child = (_dbGroup*) child;
-  if (_child->_parent_group != 0) {
+  if (_child->parent_group_ != 0) {
     child->getParentGroup()->removeGroup(child);
   }
-  _child->_parent_group = _group->getOID();
-  _child->_group_next = _group->_groups;
-  _group->_groups = _child->getOID();
+  _child->parent_group_ = _group->getOID();
+  _child->group_next_ = _group->groups_;
+  _group->groups_ = _child->getOID();
 }
 
 void dbGroup::removeGroup(dbGroup* child)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbGroup* _child = (_dbGroup*) child;
-  if (_child->_parent_group != _group->getOID()) {
+  if (_child->parent_group_ != _group->getOID()) {
     return;
   }
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  uint id = _child->getOID();
+  uint32_t id = _child->getOID();
   _dbGroup* prev = nullptr;
-  uint cur = _group->_groups;
+  uint32_t cur = _group->groups_;
   while (cur) {
-    _dbGroup* c = _block->_group_tbl->getPtr(cur);
+    _dbGroup* c = _block->group_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
-        _group->_groups = _child->_group_next;
+        _group->groups_ = _child->group_next_;
       } else {
-        prev->_group_next = _child->_group_next;
+        prev->group_next_ = _child->group_next_;
       }
       break;
     }
     prev = c;
-    cur = c->_group_next;
+    cur = c->group_next_;
   }
-  _child->_parent_group = 0;
-  _child->_group_next = 0;
+  _child->parent_group_ = 0;
+  _child->group_next_ = 0;
 }
 
 dbSet<dbGroup> dbGroup::getGroups()
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
-  return dbSet<dbGroup>(_group, block->_group_itr);
+  return dbSet<dbGroup>(_group, block->group_itr_);
 }
 
 void dbGroup::addPowerNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
-  for (const dbId<_dbNet>& _child : _group->_power_nets) {
+  for (const dbId<_dbNet>& _child : _group->power_nets_) {
     if (_child == _net->getOID()) {
       return;
     }
   }
   bool found = false;
   dbVector<dbId<_dbNet>>::iterator it;
-  for (it = _group->_ground_nets.begin();
-       it != _group->_ground_nets.end() && !found;
+  for (it = _group->ground_nets_.begin();
+       it != _group->ground_nets_.end() && !found;
        it++) {
     if (*it == _net->getOID()) {
-      _group->_ground_nets.erase(it--);
+      _group->ground_nets_.erase(it--);
       found = true;
     }
   }
-  _group->_power_nets.push_back(_net->getOID());
+  _group->power_nets_.push_back(_net->getOID());
   if (!found) {
-    _net->_groups.push_back(_group->getOID());
+    _net->groups_.push_back(_group->getOID());
   }
 }
 
@@ -373,24 +375,24 @@ void dbGroup::addGroundNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
-  for (const dbId<_dbNet>& _child : _group->_ground_nets) {
+  for (const dbId<_dbNet>& _child : _group->ground_nets_) {
     if (_child == _net->getOID()) {
       return;
     }
   }
   bool found = false;
   dbVector<dbId<_dbNet>>::iterator it;
-  for (it = _group->_power_nets.begin();
-       it != _group->_power_nets.end() && !found;
+  for (it = _group->power_nets_.begin();
+       it != _group->power_nets_.end() && !found;
        it++) {
     if (*it == _net->getOID()) {
-      _group->_power_nets.erase(it--);
+      _group->power_nets_.erase(it--);
       found = true;
     }
   }
-  _group->_ground_nets.push_back(_net->getOID());
+  _group->ground_nets_.push_back(_net->getOID());
   if (!found) {
-    _net->_groups.push_back(_group->getOID());
+    _net->groups_.push_back(_group->getOID());
   }
 }
 
@@ -400,28 +402,28 @@ void dbGroup::removeNet(dbNet* net)
   _dbNet* _net = (_dbNet*) net;
   bool found = false;
   dbVector<dbId<_dbNet>>::iterator net_itr;
-  for (net_itr = _group->_power_nets.begin();
-       net_itr != _group->_power_nets.end() && !found;
+  for (net_itr = _group->power_nets_.begin();
+       net_itr != _group->power_nets_.end() && !found;
        net_itr++) {
     if (*net_itr == _net->getOID()) {
-      _group->_power_nets.erase(net_itr--);
+      _group->power_nets_.erase(net_itr--);
       found = true;
     }
   }
-  for (net_itr = _group->_ground_nets.begin();
-       net_itr != _group->_ground_nets.end() && !found;
+  for (net_itr = _group->ground_nets_.begin();
+       net_itr != _group->ground_nets_.end() && !found;
        net_itr++) {
     if (*net_itr == _net->getOID()) {
-      _group->_ground_nets.erase(net_itr--);
+      _group->ground_nets_.erase(net_itr--);
       found = true;
     }
   }
   if (found) {
     dbVector<dbId<_dbGroup>>::iterator group_itr;
-    for (group_itr = _net->_groups.begin(); group_itr != _net->_groups.end();
+    for (group_itr = _net->groups_.begin(); group_itr != _net->groups_.end();
          group_itr++) {
       if (*group_itr == _group->getOID()) {
-        _net->_groups.erase(group_itr--);
+        _net->groups_.erase(group_itr--);
         return;
       }
     }
@@ -432,26 +434,26 @@ dbSet<dbNet> dbGroup::getPowerNets()
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  return dbSet<dbNet>(_group, _block->_group_power_net_itr);
+  return dbSet<dbNet>(_group, _block->group_power_net_itr_);
 }
 
 dbSet<dbNet> dbGroup::getGroundNets()
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  return dbSet<dbNet>(_group, _block->_group_ground_net_itr);
+  return dbSet<dbNet>(_group, _block->group_ground_net_itr_);
 }
 
 dbGroup* dbGroup::create(dbBlock* block, const char* name)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_group_hash.hasMember(name)) {
+  if (_block->group_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = safe_strdup(name);
-  _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
-  _block->_group_hash.insert(_group);
+  _dbGroup* _group = _block->group_tbl_->create();
+  _group->name_ = safe_strdup(name);
+  _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
+  _block->group_hash_.insert(_group);
   return (dbGroup*) _group;
 }
 
@@ -459,13 +461,13 @@ dbGroup* dbGroup::create(dbGroup* parent, const char* name)
 {
   _dbGroup* _parent = (_dbGroup*) parent;
   _dbBlock* _block = (_dbBlock*) _parent->getOwner();
-  if (_block->_group_hash.hasMember(name)) {
+  if (_block->group_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = safe_strdup(name);
-  _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
-  _block->_group_hash.insert(_group);
+  _dbGroup* _group = _block->group_tbl_->create();
+  _group->name_ = safe_strdup(name);
+  _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
+  _block->group_hash_.insert(_group);
   parent->addGroup((dbGroup*) _group);
   return (dbGroup*) _group;
 }
@@ -474,13 +476,13 @@ dbGroup* dbGroup::create(dbRegion* region, const char* name)
 {
   _dbRegion* _region = (_dbRegion*) region;
   _dbBlock* _block = (_dbBlock*) _region->getOwner();
-  if (_block->_group_hash.hasMember(name)) {
+  if (_block->group_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbGroup* _group = _block->_group_tbl->create();
-  _group->_name = safe_strdup(name);
-  _group->flags_._type = dbGroupType::PHYSICAL_CLUSTER;
-  _block->_group_hash.insert(_group);
+  _dbGroup* _group = _block->group_tbl_->create();
+  _group->name_ = safe_strdup(name);
+  _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
+  _block->group_hash_.insert(_group);
   region->addGroup((dbGroup*) _group);
   return (dbGroup*) _group;
 }
@@ -501,18 +503,18 @@ void dbGroup::destroy(dbGroup* group)
   while (!group->getGroups().empty()) {
     group->removeGroup(*group->getGroups().begin());
   }
-  if (_group->_parent_group.isValid()) {
+  if (_group->parent_group_.isValid()) {
     group->getParentGroup()->removeGroup(group);
   }
   dbProperty::destroyProperties(_group);
-  block->_group_hash.remove(_group);
-  block->_group_tbl->destroy(_group);
+  block->group_hash_.remove(_group);
+  block->group_tbl_->destroy(_group);
 }
 
-dbGroup* dbGroup::getGroup(dbBlock* block_, uint dbid_)
+dbGroup* dbGroup::getGroup(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbGroup*) block->_group_tbl->getPtr(dbid_);
+  return (dbGroup*) block->group_tbl_->getPtr(dbid_);
 }
 
 // User Code End dbGroupPublicMethods

@@ -4,10 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbChipNetItr.h"
 
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 
@@ -17,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbChipNetItr::reversible()
+bool dbChipNetItr::reversible() const
 {
   return true;
 }
 
-bool dbChipNetItr::orderReversed()
+bool dbChipNetItr::orderReversed() const
 {
   return true;
 }
@@ -31,12 +32,12 @@ void dbChipNetItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbChip* chip = (_dbChip*) parent;
-  uint id = chip->nets_;
-  uint list = 0;
+  uint32_t id = chip->nets_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbChipNet* chipnet = _chip_net_tbl->getPtr(id);
-    uint n = chipnet->chip_net_next_;
+    _dbChipNet* chipnet = chip_net_tbl_->getPtr(id);
+    uint32_t n = chipnet->chip_net_next_;
     chipnet->chip_net_next_ = list;
     list = id;
     id = n;
@@ -45,15 +46,15 @@ void dbChipNetItr::reverse(dbObject* parent)
   // User Code End reverse
 }
 
-uint dbChipNetItr::sequential()
+uint32_t dbChipNetItr::sequential() const
 {
   return 0;
 }
 
-uint dbChipNetItr::size(dbObject* parent)
+uint32_t dbChipNetItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbChipNetItr::begin(parent); id != dbChipNetItr::end(parent);
        id = dbChipNetItr::next(id)) {
@@ -63,7 +64,7 @@ uint dbChipNetItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbChipNetItr::begin(dbObject* parent)
+uint32_t dbChipNetItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbChip* chip = (_dbChip*) parent;
@@ -71,22 +72,22 @@ uint dbChipNetItr::begin(dbObject* parent)
   // User Code End begin
 }
 
-uint dbChipNetItr::end(dbObject* /* unused: parent */)
+uint32_t dbChipNetItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbChipNetItr::next(uint id, ...)
+uint32_t dbChipNetItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
-  _dbChipNet* chipnet = _chip_net_tbl->getPtr(id);
+  _dbChipNet* chipnet = chip_net_tbl_->getPtr(id);
   return chipnet->chip_net_next_;
   // User Code End next
 }
 
-dbObject* dbChipNetItr::getObject(uint id, ...)
+dbObject* dbChipNetItr::getObject(uint32_t id, ...)
 {
-  return _chip_net_tbl->getPtr(id);
+  return chip_net_tbl_->getPtr(id);
 }
 }  // namespace odb
 // Generator Code End Cpp
