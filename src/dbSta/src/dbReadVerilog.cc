@@ -103,7 +103,7 @@ void setDbNetworkLinkFunc(dbVerilogNetwork* network,
 // there isn't one in the verilog network.
 Cell* dbVerilogNetwork::findAnyCell(const char* name)
 {
-  Cell* cell = ConcreteNetwork::findAnyCell(name);
+  Cell* cell = sta::ConcreteNetwork::findAnyCell(name);
   if (cell == nullptr) {
     cell = db_network_->findAnyCell(name);
   }
@@ -1206,7 +1206,7 @@ void Verilog2db::makeUnusedDbNetlist()
 void Verilog2db::restoreTopBlock(const char* orig_top_cell_name)
 {
   Instance* top_inst = network_->findInstance(orig_top_cell_name);
-  ConcreteNetwork* cnetwork = static_cast<ConcreteNetwork*>(network_);
+  sta::ConcreteNetwork* cnetwork = static_cast<sta::ConcreteNetwork*>(network_);
   cnetwork->setTopInstance(top_inst);
   block_ = top_block_;
 }

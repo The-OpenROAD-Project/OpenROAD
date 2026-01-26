@@ -29,6 +29,7 @@ cc_library(
         "//src/dft/src/config",
         "//src/dft/src/replace",
         "//src/dft/src/stitch",
+        "//src/dft/src/utils",
         "//src/odb",
         "//src/utl",
         "@boost.property_tree",

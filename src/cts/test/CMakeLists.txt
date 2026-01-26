@@ -40,6 +40,7 @@ or_integration_tests(
     simple_test_clustered
     simple_test_clustered_max_cap
     simple_test_hier
+    sink_clustering_collision
     skip_nets
     twice
 )

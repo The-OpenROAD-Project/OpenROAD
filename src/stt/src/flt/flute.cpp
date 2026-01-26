@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "boost/multi_array.hpp"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/decode.h"
 
 namespace stt::flt {

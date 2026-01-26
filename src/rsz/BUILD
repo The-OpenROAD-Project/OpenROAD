@@ -61,6 +61,7 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/est",

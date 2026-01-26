@@ -12,6 +12,7 @@
 #include "DataType.h"
 #include "FastRoute.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -58,7 +59,7 @@ static int mapxy(const int nx,
   return -1;
 }
 
-void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
+void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
 {
   const int d = rsmt.deg;
   const int numnodes = rsmt.branchCount();
@@ -148,7 +149,7 @@ void FastRouteCore::fluteNormal(const int netID,
                                 const std::vector<int>& y,
                                 const int acc,
                                 const float coeffV,
-                                Tree& t)
+                                stt::Tree& t)
 {
   const int d = x.size();
 
@@ -310,7 +311,7 @@ void FastRouteCore::fluteCongest(const int netID,
                                  const std::vector<int>& y,
                                  const int acc,
                                  const float coeffV,
-                                 Tree& t)
+                                 stt::Tree& t)
 {
   const float coeffH = 1;
   const int d = x.size();
@@ -594,7 +595,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
                                  const bool newType,
                                  const bool noADJ)
 {
-  Tree rsmt;
+  stt::Tree rsmt;
   int numShift = 0;
 
   int wl = 0;

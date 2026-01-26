@@ -31,7 +31,9 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "optimization/detailed_orient.h"
 #include "util/journal.h"
+#include "util/symmetry.h"
 #include "utl/Logger.h"
 // #define ODP_DEBUG
 
@@ -55,6 +57,7 @@ std::string Opendp::printBgBox(
                      queryBox.max_corner().x(),
                      queryBox.max_corner().y());
 }
+
 void Opendp::detailedPlacement()
 {
   if (debug_observer_) {
@@ -1011,7 +1014,39 @@ bool Opendp::checkPixels(const Node* cell,
   }
 
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
+
+  // Check for symmetry
+  auto* dbMaster = cell->getDbInst()->getMaster();
+  unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
+  if (!checkMasterSym(masterSym, orient)) {
+    return false;
+  }
+
   return drc_engine_->checkDRC(cell, x, y, orient);
+}
+
+bool Opendp::checkMasterSym(unsigned masterSym, unsigned cellOri) const
+{
+  using odb::dbOrientType;
+  switch (cellOri) {
+    case dbOrientType::R0:
+      return true;
+    case dbOrientType::MX:
+      return (masterSym & Symmetry_X) != 0;
+    case dbOrientType::MY:
+      return (masterSym & Symmetry_Y) != 0;
+    case dbOrientType::R180:
+      return (masterSym & Symmetry_X) && (masterSym & Symmetry_Y);
+    case dbOrientType::R90:
+    case dbOrientType::R270:
+      return (masterSym & Symmetry_ROT90) != 0;
+    case dbOrientType::MXR90:
+    case dbOrientType::MYR90:
+      return (masterSym & Symmetry_ROT90) && (masterSym & Symmetry_X)
+             && (masterSym & Symmetry_Y);
+    default:
+      return false;
+  }
 }
 
 ////////////////////////////////////////////////////////////////

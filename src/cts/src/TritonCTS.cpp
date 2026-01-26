@@ -34,6 +34,7 @@
 #include "TreeBuilder.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -46,10 +47,9 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
-#include "sta/Path.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Sdc.hh"
 #include "sta/Vector.hh"
@@ -901,8 +901,9 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
     return;
   }
 
+  // xs is empty if the fanout is a bterm
   if (isSink(driver) || driver->getInst()->isFixed()
-      || driver->getInst()->isPad()) {
+      || driver->getInst()->isPad() || xs.empty()) {
     return;
   }
 

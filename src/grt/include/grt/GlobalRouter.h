@@ -21,7 +21,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
 

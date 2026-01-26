@@ -14,6 +14,7 @@
 #include "ScanArchitect.hh"
 #include "ScanCell.hh"
 #include "ScanCellFactory.hh"
+#include "ScanPin.hh"
 #include "ScanReplace.hh"
 #include "ScanStitch.hh"
 #include "boost/property_tree/json_parser.hpp"

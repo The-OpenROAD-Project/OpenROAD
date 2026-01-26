@@ -111,7 +111,6 @@
 #include "dbScanInst.h"
 #include "dbScanListScanInstItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechLayerRule.h"

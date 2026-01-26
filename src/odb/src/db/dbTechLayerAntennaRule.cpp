@@ -12,7 +12,6 @@
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbVector.h"

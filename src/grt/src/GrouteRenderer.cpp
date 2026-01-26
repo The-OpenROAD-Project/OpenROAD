@@ -5,6 +5,7 @@
 
 #include "Net.h"
 #include "grt/GRoute.h"
+#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"

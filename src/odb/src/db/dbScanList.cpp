@@ -6,13 +6,13 @@
 
 #include <cstdint>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
 #include "dbScanListScanInstItr.h"
 #include "dbScanPartition.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbScanList>;

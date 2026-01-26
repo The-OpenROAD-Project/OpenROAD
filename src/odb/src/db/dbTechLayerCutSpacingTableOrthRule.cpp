@@ -4,9 +4,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
 #include "odb/db.h"
 // User Code Begin Includes

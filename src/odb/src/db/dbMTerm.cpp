@@ -19,7 +19,6 @@
 #include "dbMPinItr.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"

@@ -22,7 +22,6 @@
 #include "MazeRoute.h"
 #include "Netlist.h"
 #include "PatternRoute.h"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "geo.h"
 #include "grt/GRoute.h"

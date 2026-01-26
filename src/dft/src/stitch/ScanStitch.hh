@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "ScanChain.hh"
+#include "ScanPin.hh"
 #include "ScanStitchConfig.hh"
 #include "Utils.hh"
 #include "odb/db.h"

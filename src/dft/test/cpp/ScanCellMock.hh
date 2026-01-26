@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ScanCell.hh"
+#include "ScanPin.hh"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 

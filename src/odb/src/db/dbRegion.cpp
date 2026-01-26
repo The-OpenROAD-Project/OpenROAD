@@ -21,7 +21,6 @@
 #include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"

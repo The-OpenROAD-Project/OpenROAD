@@ -13,6 +13,7 @@
 #include "DataType.h"
 #include "FastRoute.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -989,7 +990,7 @@ void FastRouteCore::reInitTree(const int netID)
   sttrees_[netID].nodes.clear();
   sttrees_[netID].edges.clear();
 
-  Tree rsmt;
+  stt::Tree rsmt;
   const float net_alpha = stt_builder_->getAlpha(nets_[netID]->getDbNet());
   // if failing tree was created with pd, fall back to flute with fluteNormal
   // first so the structs necessary for fluteCongest are filled

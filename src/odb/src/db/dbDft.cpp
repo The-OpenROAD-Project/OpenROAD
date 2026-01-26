@@ -4,11 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbDft.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbScanChain.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 namespace odb {

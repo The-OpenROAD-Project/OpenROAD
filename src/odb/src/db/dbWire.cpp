@@ -12,7 +12,6 @@
 #include "dbCore.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerRule.h"
 #include "dbVia.h"
 #include "dbWireOpcode.h"

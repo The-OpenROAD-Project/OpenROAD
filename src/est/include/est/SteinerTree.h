@@ -23,8 +23,6 @@ const int SteinerNull = -1;
 
 namespace est {
 
-using stt::SteinerTreeBuilder;
-
 class PointHash
 {
  public:

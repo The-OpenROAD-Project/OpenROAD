@@ -10,6 +10,7 @@
 
 #include "dbBlock.h"
 #include "dbBox.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroupInstItr.h"
 #include "dbGroupItr.h"
@@ -19,7 +20,6 @@
 #include "dbModInst.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbCommon.h"

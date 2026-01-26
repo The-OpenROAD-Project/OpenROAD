@@ -10,8 +10,10 @@
 #include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -32,7 +34,7 @@ using sta::Slew;
 bool VTSwapSpeedMove::doMove(const Path* drvr_path,
                              int drvr_index,
                              Slack drvr_slack,
-                             PathExpanded* expanded,
+                             sta::PathExpanded* expanded,
                              float setup_slack_margin)
 {
   Pin* drvr_pin;
@@ -142,7 +144,7 @@ bool VTSwapSpeedMove::isSwappable(const Path*& drvr_path,
     return false;
   }
 
-  LibertyCellSeq equiv_cells = resizer_->getVTEquivCells(drvr_cell);
+  sta::LibertyCellSeq equiv_cells = resizer_->getVTEquivCells(drvr_cell);
   best_cell = equiv_cells.empty() ? nullptr : equiv_cells.back();
   if (best_cell == drvr_cell) {
     best_cell = nullptr;

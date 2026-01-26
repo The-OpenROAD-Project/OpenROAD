@@ -4,13 +4,14 @@
 #pragma once
 
 #include <random>
+#include <vector>
 
 #include "base/abc/abc.h"
 #include "db_sta/dbSta.hh"
 #include "resynthesis_strategy.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
+#include "sta/Graph.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 

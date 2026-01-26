@@ -23,6 +23,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -2319,7 +2320,7 @@ void FastRouteCore::freeRR()
   }
 }
 
-int FastRouteCore::edgeShift(Tree& t, const int net)
+int FastRouteCore::edgeShift(stt::Tree& t, const int net)
 {
   // TODO: check this size
   const int sizeV = 2 * nets_[net]->getNumPins();
@@ -2669,7 +2670,7 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
 }
 
 // exchange Steiner nodes at the same position, then call edgeShift()
-int FastRouteCore::edgeShiftNew(Tree& t, const int net)
+int FastRouteCore::edgeShiftNew(stt::Tree& t, const int net)
 {
   int numShift = edgeShift(t, net);
   const int deg = t.deg;

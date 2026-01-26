@@ -16,18 +16,6 @@
 
 namespace pdn {
 
-using odb::dbBlock;
-using odb::dbBox;
-using odb::dbDatabase;
-using odb::dbGlobalConnect;
-using odb::dbInst;
-using odb::dbMaster;
-using odb::dbMTerm;
-using odb::dbNet;
-using odb::dbRegion;
-
-using utl::Logger;
-
 enum ExtensionMode
 {
   CORE,
@@ -58,7 +46,7 @@ class SRoute;
 class PdnGen
 {
  public:
-  PdnGen(dbDatabase* db, Logger* logger);
+  PdnGen(odb::dbDatabase* db, utl::Logger* logger);
   ~PdnGen();
 
   void reset();

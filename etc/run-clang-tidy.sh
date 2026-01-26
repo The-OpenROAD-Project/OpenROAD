@@ -8,7 +8,7 @@
 
 set -eu
 
-BAZEL=${BAZEL:-bazelisk}
+BAZEL="${BAZEL:-bazelisk}"
 if ! command -v "${BAZEL}">/dev/null ; then
   BAZEL=bazel
 fi
@@ -22,5 +22,10 @@ export CLANG_TIDY="${CLANG_TIDY:-$("${BAZEL}" run -c opt --run_under='echo' @llv
 if [ MODULE.bazel -nt compile_flags.txt -o BUILD.bazel -nt compile_flags.txt ] ; then
    "$(dirname "$0")/bazel-make-compilation-db.sh"
 fi
+
+# We don't want to accidentally load a compile_commands.json which
+# is slow and might come from the other build system.
+# Still allow user to override
+export COMPILE_JSON="${COMPILE_JSON:-compile_flags.txt}"
 
 "$(dirname "$0")/run-clang-tidy-cached.cc" "$@"

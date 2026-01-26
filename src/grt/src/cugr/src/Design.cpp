@@ -8,7 +8,6 @@
 #include "CUGR.h"
 #include "GeoTypes.h"
 #include "Netlist.h"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbShape.h"

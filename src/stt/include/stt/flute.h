@@ -11,8 +11,6 @@
 
 namespace stt::flt {
 
-using stt::Tree;
-
 class Flute
 {
  public:
