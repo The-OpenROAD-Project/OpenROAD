@@ -8,6 +8,9 @@ def _regression_test_impl(ctx):
     # Declare the test script output
     test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
 
+    # Determine test type based on file extension
+    test_type = "python" if ctx.file.test_file.path.endswith(".py") else "tcl"
+
     # Generate the test script
     ctx.actions.write(
         output = test_script,
@@ -16,6 +19,7 @@ def _regression_test_impl(ctx):
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
+export TEST_TYPE={TEST_TYPE}
 export OPENROAD_EXE={OPENROAD_EXE}
 export REGRESSION_TEST={REGRESSION_TEST}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
@@ -25,6 +29,7 @@ exec "{bazel_test_sh}" "$@"
             bazel_test_sh = ctx.file.bazel_test_sh.short_path,
             TEST_NAME_BAZEL = ctx.attr.test_name,
             TEST_FILE = ctx.file.test_file.short_path,
+            TEST_TYPE = test_type,
             OPENROAD_EXE = ctx.executable.openroad.short_path,
             REGRESSION_TEST = ctx.file.regression_test.short_path,
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
@@ -122,8 +127,7 @@ def regression_test(
     # name = "foo-tcl", test_file = "foo.tcl" to this regression test macro.
     test_files = native.glob(
         [name + "." + ext for ext in [
-            # TODO once Python is supported, add the .py files to the
-            # "py",
+            "py",
             "tcl",
         ]],
         allow_empty = True,  # Allow to be empty; see also TODO above.
