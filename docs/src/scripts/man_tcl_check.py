@@ -28,7 +28,7 @@ for path in glob.glob("./src/*/src/*tcl") + include:
         continue
     if "odb" in tool_dir:
         tool_dir = "./src/odb"
-    if not os.path.exists(f"{tool_dir}/README.md"):
+    if not os.path.exists(os.path.join(tool_dir, "README.md")):
         continue
     if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
         continue
@@ -37,7 +37,7 @@ for path in glob.glob("./src/*/src/*tcl") + include:
     if "ICeWall" in path or "PdnGen" in path:
         continue
 
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         # Help patterns
         content = f.read()
         matches = extract_help(content)
@@ -57,7 +57,8 @@ for path in glob.glob("./src/*/README.md"):
     tool_dir = os.path.dirname(path)
 
     # for gui, filter out the gui:: for separate processing
-    results = [x for x in extract_tcl_code(open(path).read()) if "gui::" not in x]
+    with open(path, encoding="utf-8") as f:
+        results = [x for x in extract_tcl_code(f.read()) if "gui::" not in x]
     readme_dict[tool_dir] = len(results)
 
     # for pad, remove `make_fake_io_site` because it is a hidden cmd arg
@@ -68,9 +69,9 @@ print(
     "Tool Dir".ljust(20), "Help count".ljust(15), "Proc count".ljust(15), "Readme count"
 )
 
-for path in help_dict:
-    h, p, r = help_dict[path], proc_dict[path], readme_dict[path]
-    print(path.ljust(20), str(h).ljust(15), str(p).ljust(15), str(r))
+for tool_dir in help_dict:
+    h, p, r = help_dict[tool_dir], proc_dict.get(tool_dir, 0), readme_dict.get(tool_dir, 0)
+    print(tool_dir.ljust(20), str(h).ljust(15), str(p).ljust(15), str(r))
     if h == p == r:
         print("Command counts match.")
     else:
