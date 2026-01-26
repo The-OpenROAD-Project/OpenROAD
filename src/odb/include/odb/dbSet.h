@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 
 #include "odb/dbIterator.h"
@@ -20,13 +21,6 @@ class dbSet;
 template <class T>
 class dbSetIterator
 {
-  friend class dbSet<T>;
-
-  dbIterator* _itr;
-  uint _cur;
-
-  dbSetIterator(dbIterator* itr, uint id);
-
  public:
   using value_type = T*;
   using difference_type = std::ptrdiff_t;
@@ -34,16 +28,24 @@ class dbSetIterator
   using reference = T*&;
   using iterator_category = std::input_iterator_tag;
 
-  dbSetIterator();
+  dbSetIterator() = default;
   dbSetIterator(const dbSetIterator& it) = default;
 
-  bool operator==(const dbSetIterator<T>& it);
-  bool operator!=(const dbSetIterator<T>& it);
+  bool operator==(const dbSetIterator<T>& it) const;
+  bool operator!=(const dbSetIterator<T>& it) const;
 
-  T* operator*();
-  T* operator->();
+  T* operator*() const;
+  T* operator->() const;
   dbSetIterator<T>& operator++();
   dbSetIterator<T> operator++(int);
+
+ private:
+  dbSetIterator(dbIterator* itr, uint32_t id);
+
+  dbIterator* itr_{nullptr};
+  uint32_t cur_{0};
+
+  friend class dbSet<T>;
 };
 
 ///
@@ -71,44 +73,33 @@ class dbSetIterator
 template <class T>
 class dbSet
 {
-  dbIterator* _itr;
-  dbObject* _parent;
-
  public:
   using iterator = dbSetIterator<T>;
 
-  dbSet()
-  {
-    _itr = nullptr;
-    _parent = nullptr;
-  }
+  dbSet() = default;
 
   dbSet(dbObject* parent, dbIterator* itr)
   {
-    _parent = parent;
-    _itr = itr;
+    parent_ = parent;
+    itr_ = itr;
   }
 
-  dbSet(const dbSet<T>& c)
-  {
-    _itr = c._itr;
-    _parent = c._parent;
-  }
+  dbSet(const dbSet<T>& c) = default;
 
   ///
   /// Returns the number of items in this set.
   ///
-  uint size() { return _itr->size(_parent); }
+  uint32_t size() const { return itr_->size(parent_); }
 
   ///
   /// Return a begin() iterator.
   ///
-  iterator begin() { return iterator(_itr, _itr->begin(_parent)); }
+  iterator begin() const { return iterator(itr_, itr_->begin(parent_)); }
 
   ///
   /// Return an end() iterator.
   ///
-  iterator end() { return iterator(_itr, _itr->end(_parent)); }
+  iterator end() const { return iterator(itr_, itr_->end(parent_)); }
 
   ///
   /// If this set is sequential, this function will return the database
@@ -119,72 +110,69 @@ class dbSet
   ///
   /// If this set is non-sequential then it returns 0.
   ///
-  uint sequential() { return _itr->sequential(); }
+  uint32_t sequential() const { return itr_->sequential(); }
 
   ///
   /// Returns true if this set is reversible.
   ///
-  bool reversible() { return _itr->reversible(); }
+  bool reversible() const { return itr_->reversible(); }
 
   ///
   /// Returns true if the is iterated in the reverse order that
   /// it was created.
   ///
-  bool orderReversed() { return _itr->orderReversed(); }
+  bool orderReversed() const { return itr_->orderReversed(); }
 
   ///
   /// Reverse the order of this set.
   ///
-  void reverse() { _itr->reverse(_parent); }
+  void reverse() { itr_->reverse(parent_); }
 
   ///
   /// Returns true if set is empty
   ///
-  bool empty() { return begin() == end(); }
+  bool empty() const { return begin() == end(); }
+
+ private:
+  dbIterator* itr_{nullptr};
+  dbObject* parent_{nullptr};
 };
 
 template <class T>
-inline dbSetIterator<T>::dbSetIterator()
+inline dbSetIterator<T>::dbSetIterator(dbIterator* itr, uint32_t id)
 {
-  _itr = nullptr;
-  _cur = 0;
+  itr_ = itr;
+  cur_ = id;
 }
 
 template <class T>
-inline dbSetIterator<T>::dbSetIterator(dbIterator* itr, uint id)
+inline bool dbSetIterator<T>::operator==(const dbSetIterator& it) const
 {
-  _itr = itr;
-  _cur = id;
+  return (itr_ == it.itr_) && (cur_ == it.cur_);
 }
 
 template <class T>
-inline bool dbSetIterator<T>::operator==(const dbSetIterator& it)
+inline bool dbSetIterator<T>::operator!=(const dbSetIterator& it) const
 {
-  return (_itr == it._itr) && (_cur == it._cur);
+  return !(*this == it);
 }
 
 template <class T>
-inline bool dbSetIterator<T>::operator!=(const dbSetIterator& it)
+inline T* dbSetIterator<T>::operator*() const
 {
-  return (_itr != it._itr) || (_cur != it._cur);
+  return (T*) itr_->getObject(cur_);
 }
 
 template <class T>
-inline T* dbSetIterator<T>::operator*()
+inline T* dbSetIterator<T>::operator->() const
 {
-  return (T*) _itr->getObject(_cur);
-}
-
-template <class T>
-inline T* dbSetIterator<T>::operator->()
-{
-  return (T*) _itr->getObject(_cur);
+  return (T*) itr_->getObject(cur_);
 }
 
 template <class T>
 inline dbSetIterator<T>& dbSetIterator<T>::operator++()
 {
-  _cur = _itr->next(_cur);
+  cur_ = itr_->next(cur_);
   return *this;
 }
 
@@ -192,7 +180,7 @@ template <class T>
 inline dbSetIterator<T> dbSetIterator<T>::operator++(int)
 {
   dbSetIterator it(*this);
-  _cur = _itr->next(_cur);
+  cur_ = itr_->next(cur_);
   return it;
 }
 

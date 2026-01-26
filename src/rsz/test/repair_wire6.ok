@@ -31,16 +31,16 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         3
-    final |   +283.3% |       0 |       3 |             1 |         0
+    final |   +233.3% |       0 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 Driver    length delay
 wire1/Z manhtn 569.8 steiner 569.8 0.04
-wire3/Z manhtn 487.9 steiner 487.9 0.03
-wire2/Z manhtn 441.4 steiner 441.4 0.03
-u2/Z manhtn 0.7 steiner 0.7 0.00
+u2/Z manhtn 488.7 steiner 488.7 0.03
+wire2/Z manhtn 441.2 steiner 441.2 0.03
+in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained
@@ -53,15 +53,13 @@ Path Type: max
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    1.008    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
-   1.477    0.007    0.020    0.036 ^ u2/Z (BUF_X1)
-            0.007    0.000    0.036 ^ wire3/A (CLKBUF_X3)
-  38.090    0.025    0.048    0.085 ^ wire3/Z (CLKBUF_X3)
-            0.043    0.030    0.114 ^ wire2/A (CLKBUF_X3)
-  36.574    0.025    0.061    0.175 ^ wire2/Z (CLKBUF_X3)
-            0.040    0.027    0.202 ^ wire1/A (BUF_X4)
-  42.829    0.020    0.041    0.243 ^ wire1/Z (BUF_X4)
-            0.047    0.036    0.279 ^ out1 (out)
-                              0.279   data arrival time
+  40.130    0.084    0.098    0.115 ^ u2/Z (BUF_X1)
+            0.094    0.036    0.151 ^ wire2/A (BUF_X4)
+  36.564    0.019    0.042    0.193 ^ wire2/Z (BUF_X4)
+            0.036    0.026    0.219 ^ wire1/A (BUF_X4)
+  42.829    0.020    0.040    0.259 ^ wire1/Z (BUF_X4)
+            0.047    0.036    0.295 ^ out1 (out)
+                              0.295   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

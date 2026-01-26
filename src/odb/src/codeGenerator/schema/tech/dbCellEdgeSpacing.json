@@ -4,23 +4,23 @@
   "fields": [
     {
       "type": "bit",
-      "name": "except_abutted_"
+      "name": "except_abutted"
     },
     {
       "type": "bit",
-      "name": "except_non_filler_in_between_"
+      "name": "except_non_filler_in_between"
     },
     {
       "type": "bit",
-      "name": "optional_"
+      "name": "optional"
     },
     {
       "type": "bit",
-      "name": "soft_"
+      "name": "soft"
     },
     {
       "type": "bit",
-      "name": "exact_"
+      "name": "exact"
     },
     {
       "type": "std::string",
@@ -32,7 +32,7 @@
     },
     {
       "type": "int",
-      "name": "spacing",
+      "name": "spacing_",
       "default" : -1
     }
   ],

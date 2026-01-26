@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -15,8 +16,8 @@ class _dbDatabase;
 
 struct dbTechLayerEolExtensionRuleFlags
 {
-  bool parallel_only_ : 1;
-  uint spare_bits_ : 31;
+  bool parallel_only : 1;
+  uint32_t spare_bits : 31;
 };
 
 class _dbTechLayerEolExtensionRule : public _dbObject

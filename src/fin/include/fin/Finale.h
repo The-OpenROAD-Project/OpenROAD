@@ -5,21 +5,16 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace fin {
-
-using utl::Logger;
 
 ////////////////////////////////////////////////////////////////
 
 class Finale
 {
  public:
-  Finale(odb::dbDatabase* db, Logger* logger);
+  Finale(odb::dbDatabase* db, utl::Logger* logger);
 
   void densityFill(const char* rules_filename, const odb::Rect& fill_area);
 
@@ -27,7 +22,7 @@ class Finale
 
  private:
   odb::dbDatabase* db_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   bool debug_ = false;
 };
 

@@ -8,7 +8,7 @@
 
 %template(vector_str) std::vector<std::string>;
 
-%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) uint {
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) uint, uint32_t {
    $1 = PyInt_Check($input) ? 1 : 0;
 }
 

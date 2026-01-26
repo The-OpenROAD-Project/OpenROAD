@@ -5,8 +5,8 @@
 
 %{
 
+#include "drt/TritonRoute.h"
 #include "ord/OpenRoad.hh"
-#include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 %}
 
@@ -20,5 +20,4 @@
 %template(RectVec) std::vector<odb::Rect>;
 
 %include "../../Exception-py.i"
-%include "triton_route/TritonRoute.h"
-
+%include "drt/TritonRoute.h"

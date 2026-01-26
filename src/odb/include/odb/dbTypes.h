@@ -9,7 +9,6 @@
 
 #include "odb/dbStream.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -53,7 +52,7 @@ class dbOrientType
   ///
   /// Create a dbOrientType instance with an explicit orientation.
   ///
-  dbOrientType(Value orient) : _value(orient) {}
+  dbOrientType(Value orient) : value_(orient) {}
 
   ///
   /// Create a dbOrientType instance with orientation "R0".
@@ -68,7 +67,7 @@ class dbOrientType
   ///
   /// Returns the orientation
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the orientation as a string
@@ -78,7 +77,7 @@ class dbOrientType
   ///
   /// Cast operator
   ///
-  operator Value() const { return _value; }
+  operator Value() const { return value_; }
 
   ///
   /// Returns the orientation after flipping about the x-axis
@@ -96,7 +95,7 @@ class dbOrientType
   bool isRightAngleRotation() const;
 
  private:
-  Value _value = DEFAULT;
+  Value value_ = DEFAULT;
 };
 
 class dbOrientType3D
@@ -138,10 +137,6 @@ class dbOrientType3D
 class dbGDSSTrans
 {
  public:
-  bool _flipX = false;
-  double _mag = 1.0;
-  double _angle = 0.0;
-
   dbGDSSTrans() = default;
 
   dbGDSSTrans(bool flipX, double mag, double angle);
@@ -151,6 +146,10 @@ class dbGDSSTrans
   std::string to_string() const;
 
   bool identity() const;
+
+  bool flipX_ = false;
+  double mag_ = 1.0;
+  double angle_ = 0.0;
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t);
@@ -172,9 +171,6 @@ class dbGDSTextPres
     RIGHT = 2
   };
 
-  VPres _vPres = VPres::TOP;
-  HPres _hPres = HPres::LEFT;
-
   dbGDSTextPres() = default;
 
   dbGDSTextPres(VPres vPres, HPres hPres);
@@ -184,6 +180,9 @@ class dbGDSTextPres
   bool identity() const;
 
   std::string to_string() const;
+
+  VPres v_pres_ = VPres::TOP;
+  HPres h_pres_ = HPres::LEFT;
 };
 
 dbIStream& operator>>(dbIStream& stream, dbGDSTextPres& t);
@@ -213,7 +212,7 @@ class dbGroupType
   ///
   /// Create a dbGroupType instance with an explicit type.
   ///
-  dbGroupType(Value type) : _value(type) {}
+  dbGroupType(Value type) : value_(type) {}
 
   ///
   /// Create a dbGroupType instance with type "PHYSICAL_CLUSTER".
@@ -228,7 +227,7 @@ class dbGroupType
   ///
   /// Returns the orientation
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the orientation as a string
@@ -238,10 +237,10 @@ class dbGroupType
   ///
   /// Cast operator
   ///
-  operator Value() const { return _value; }
+  operator Value() const { return value_; }
 
  private:
-  Value _value = Value::PHYSICAL_CLUSTER;
+  Value value_ = Value::PHYSICAL_CLUSTER;
 };
 
 ///
@@ -272,7 +271,7 @@ class dbSigType
   ///
   /// Create a dbSigType instance with an explicit signal value.
   ///
-  dbSigType(Value value) : _value(value) {}
+  dbSigType(Value value) : value_(value) {}
 
   ///
   /// Create a dbSigType instance with value "signal".
@@ -287,7 +286,7 @@ class dbSigType
   ///
   /// Returns the signal-value
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the signal-value as a string.
@@ -302,13 +301,13 @@ class dbSigType
   ///
   /// Comparison operators for type safe dbSigType
   ///
-  bool operator==(const dbSigType& v) const { return _value == v._value; };
-  bool operator!=(const dbSigType& v) const { return _value != v._value; };
-  bool operator==(const Value v) const { return _value == v; };
-  bool operator!=(const Value v) const { return _value != v; };
+  bool operator==(const dbSigType& v) const { return value_ == v.value_; };
+  bool operator!=(const dbSigType& v) const { return value_ != v.value_; };
+  bool operator==(const Value v) const { return value_ == v; };
+  bool operator!=(const Value v) const { return value_ != v; };
 
  private:
-  Value _value = Value::SIGNAL;
+  Value value_ = Value::SIGNAL;
 };
 
 ///
@@ -335,7 +334,7 @@ class dbIoType
   ///
   /// Create a dbIoType instance with an explicit IO direction.
   ///
-  dbIoType(Value value) : _value(value) {}
+  dbIoType(Value value) : value_(value) {}
 
   ///
   /// Create a dbIoType instance with value "input".
@@ -350,7 +349,7 @@ class dbIoType
   ///
   /// Returns the direction of IO of an element.
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the direction of IO of an element as a string.
@@ -360,13 +359,13 @@ class dbIoType
   ///
   /// Comparison operators for type safe dbIoType
   ///
-  bool operator==(const dbIoType& v) const { return _value == v._value; };
-  bool operator!=(const dbIoType& v) const { return _value != v._value; };
-  bool operator==(const Value v) const { return _value == v; };
-  bool operator!=(const Value v) const { return _value != v; };
+  bool operator==(const dbIoType& v) const { return value_ == v.value_; };
+  bool operator!=(const dbIoType& v) const { return value_ != v.value_; };
+  bool operator==(const Value v) const { return value_ == v; };
+  bool operator!=(const Value v) const { return value_ != v; };
 
  private:
-  Value _value = Value::INPUT;
+  Value value_ = Value::INPUT;
 };
 
 ///
@@ -397,7 +396,7 @@ class dbPlacementStatus
   ///
   /// Create a dbPlacementStatus instance with an explicit status.
   ///
-  dbPlacementStatus(Value value) : _value(value) {}
+  dbPlacementStatus(Value value) : value_(value) {}
 
   ///
   /// Create a dbPlacementStatus instance with status = "none".
@@ -412,7 +411,7 @@ class dbPlacementStatus
   ///
   /// Returns the placement status.
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the placement status as a string.
@@ -422,7 +421,7 @@ class dbPlacementStatus
   ///
   /// Cast operator
   ///
-  operator Value() const { return _value; }
+  operator Value() const { return value_; }
 
   ///
   ///  True if value corresponds to a PLACED, LOCKED, FIRM, or COVER
@@ -435,7 +434,7 @@ class dbPlacementStatus
   bool isFixed() const;
 
  private:
-  Value _value = Value::NONE;
+  Value value_ = Value::NONE;
 };
 
 ///
@@ -505,7 +504,7 @@ class dbMasterType
   ///
   /// Create a dbMasterType instance with an explicit value.
   ///
-  dbMasterType(Value value) : _value(value) {}
+  dbMasterType(Value value) : value_(value) {}
 
   ///
   /// Create a dbMasterType instance with value = "none".
@@ -520,7 +519,7 @@ class dbMasterType
   ///
   /// Returns the master-value.
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the master-value as a string.
@@ -530,7 +529,7 @@ class dbMasterType
   ///
   /// Cast operator
   ///
-  operator Value() const { return _value; }
+  operator Value() const { return value_; }
 
   ///
   /// Is the type BLOCK or any of its subtypes
@@ -558,7 +557,7 @@ class dbMasterType
   bool isCover() const;
 
  private:
-  Value _value = Value::CORE;
+  Value value_ = Value::CORE;
 };
 
 ///
@@ -591,7 +590,7 @@ class dbTechLayerType
   ///
   /// Create a dbTechLayerType instance with an explicit value.
   ///
-  dbTechLayerType(Value value) : _value(value) {}
+  dbTechLayerType(Value value) : value_(value) {}
 
   ///
   /// Create a dbTechLayerType instance with value = "routing".
@@ -606,7 +605,7 @@ class dbTechLayerType
   ///
   /// Returns the layer-value.
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the layer-value as a string.
@@ -616,10 +615,10 @@ class dbTechLayerType
   ///
   /// Cast operator
   ///
-  operator Value() const { return _value; }
+  operator Value() const { return value_; }
 
  private:
-  Value _value = DEFAULT;
+  Value value_ = DEFAULT;
 };
 
 ///
@@ -645,7 +644,7 @@ class dbTechLayerDir
   ///
   /// Create a dbTechLayerDir instance with an explicit direction.
   ///
-  dbTechLayerDir(Value value) : _value(value) {}
+  dbTechLayerDir(Value value) : value_(value) {}
 
   ///
   /// Create a dbTechLayerDir instance with direction = "none".
@@ -660,7 +659,7 @@ class dbTechLayerDir
   ///
   /// Returns the layer-direction.
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the layer-direction as a string.
@@ -670,10 +669,10 @@ class dbTechLayerDir
   ///
   /// Cast operator
   ///
-  operator Value() const { return _value; }
+  operator Value() const { return value_; }
 
  private:
-  Value _value = Value::NONE;
+  Value value_ = Value::NONE;
 };
 
 ///
@@ -699,7 +698,7 @@ class dbTechLayerMinStepType
   ///
   /// Create a dbTechLayerMinStepType instance with an explicit type.
   ///
-  dbTechLayerMinStepType(Value value) : _value(value) {}
+  dbTechLayerMinStepType(Value value) : value_(value) {}
 
   ///
   /// Create a dbTechLayerMinStepType instance with value = "OUTSIDE_CORNER".
@@ -714,7 +713,7 @@ class dbTechLayerMinStepType
   ///
   /// Returns the layer-direction.
   ///
-  Value getValue() const { return _value; }
+  Value getValue() const { return value_; }
 
   ///
   /// Returns the layer-direction as a string.
@@ -724,10 +723,10 @@ class dbTechLayerMinStepType
   ///
   /// Cast operator
   ///
-  operator Value() const { return _value; }
+  operator Value() const { return value_; }
 
  private:
-  Value _value = Value::OUTSIDE_CORNER;
+  Value value_ = Value::OUTSIDE_CORNER;
 };
 
 ///
@@ -1291,8 +1290,8 @@ class dbSourceType
 // TODO: shouldn't these come from <climits> ?
 inline constexpr uint64_t MAX_UINT64 = 0xffffffffffffffffLL;
 inline constexpr uint64_t MIN_UINT64 = 0;
-inline constexpr uint MAX_UINT = 0xffffffff;
-inline constexpr uint MIN_UINT = 0;
+inline constexpr uint32_t MAX_UINT = 0xffffffff;
+inline constexpr uint32_t MIN_UINT = 0;
 
 inline constexpr int64_t MAX_INT64 = 0x7fffffffffffffffLL;
 inline constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
@@ -1438,6 +1437,32 @@ class dbNameUniquifyType
 
  private:
   Value _value = Value::ALWAYS;
+};
+
+//
+//  Class to denote hierarchical search direction
+//
+class dbHierSearchDir
+{
+ public:
+  enum Value
+  {
+    FANIN,
+    FANOUT
+  };
+
+  ///
+  /// Construction may take a type value, or default ("FANOUT")
+  ///
+  dbHierSearchDir(Value inval) : _value(inval) {}
+  dbHierSearchDir(const dbHierSearchDir& value) = default;
+  dbHierSearchDir() = default;
+  Value getValue() const { return _value; }
+  const char* getString() const;
+  operator Value() const { return _value; }
+
+ private:
+  Value _value = Value::FANOUT;
 };
 
 }  // namespace odb

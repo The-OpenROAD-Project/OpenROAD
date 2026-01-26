@@ -23,3 +23,33 @@ gtest_discover_tests(TestHconn
 
 add_dependencies(build_and_test TestHconn
 )
+
+
+add_executable(TestDbSta TestDbSta.cc)
+target_link_libraries(TestDbSta
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestDbSta
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/dbSta/src
+)
+
+gtest_discover_tests(TestDbSta
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestDbSta
+)

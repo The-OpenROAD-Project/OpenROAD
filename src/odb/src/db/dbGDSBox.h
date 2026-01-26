@@ -11,7 +11,6 @@
 
 #include "dbCore.h"
 #include "dbGDSStructure.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -28,10 +27,10 @@ class _dbGDSBox : public _dbObject
   bool operator<(const _dbGDSBox& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  int16_t _layer;
-  int16_t _datatype;
-  Rect _bounds;
-  std::vector<std::pair<std::int16_t, std::string>> _propattr;
+  int16_t layer_;
+  int16_t datatype_;
+  Rect bounds_;
+  std::vector<std::pair<std::int16_t, std::string>> propattr_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj);

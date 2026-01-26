@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "heatMap.h"
@@ -205,6 +204,9 @@ void PDNSim::setGeneratedSourceSettings(const GeneratedSourceSettings& settings)
   if (settings.strap_track_pitch > 0) {
     generated_source_settings_.strap_track_pitch = settings.strap_track_pitch;
   }
+  if (settings.resistance > 0) {
+    generated_source_settings_.resistance = settings.resistance;
+  }
 }
 
 void PDNSim::clearSolvers()
@@ -228,6 +230,21 @@ void PDNSim::inDbBTermPostConnect(odb::dbBTerm*)
 }
 
 void PDNSim::inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinCreate(odb::dbBPin*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinAddBox(odb::dbBox*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinRemoveBox(odb::dbBox*)
 {
   clearSolvers();
 }

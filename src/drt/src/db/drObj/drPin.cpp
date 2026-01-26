@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "distributed/frArchive.h"
+#include "dr/FlexMazeTypes.h"
 
 namespace drt {
 

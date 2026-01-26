@@ -25,7 +25,6 @@
 #include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -44,107 +43,107 @@ template class dbTable<_dbMaster>;
 
 bool _dbMaster::operator==(const _dbMaster& rhs) const
 {
-  if (_flags._frozen != rhs._flags._frozen) {
+  if (flags_.frozen != rhs.flags_.frozen) {
     return false;
   }
 
-  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
+  if (flags_.x_symmetry != rhs.flags_.x_symmetry) {
     return false;
   }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
+  if (flags_.y_symmetry != rhs.flags_.y_symmetry) {
     return false;
   }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
+  if (flags_.R90_symmetry != rhs.flags_.R90_symmetry) {
     return false;
   }
 
-  if (_flags._type != rhs._flags._type) {
+  if (flags_.type != rhs.flags_.type) {
     return false;
   }
 
-  if (_x != rhs._x) {
+  if (x_ != rhs.x_) {
     return false;
   }
 
-  if (_y != rhs._y) {
+  if (y_ != rhs.y_) {
     return false;
   }
 
-  if (_height != rhs._height) {
+  if (height_ != rhs.height_) {
     return false;
   }
 
-  if (_width != rhs._width) {
+  if (width_ != rhs.width_) {
     return false;
   }
 
-  if (_mterm_cnt != rhs._mterm_cnt) {
+  if (mterm_cnt_ != rhs.mterm_cnt_) {
     return false;
   }
 
-  if (_id != rhs._id) {
+  if (id_ != rhs.id_) {
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
-  if (_leq != rhs._leq) {
+  if (leq_ != rhs.leq_) {
     return false;
   }
 
-  if (_eeq != rhs._eeq) {
+  if (eeq_ != rhs.eeq_) {
     return false;
   }
 
-  if (_obstructions != rhs._obstructions) {
+  if (obstructions_ != rhs.obstructions_) {
     return false;
   }
 
-  if (_poly_obstructions != rhs._poly_obstructions) {
+  if (poly_obstructions_ != rhs.poly_obstructions_) {
     return false;
   }
 
-  if (_lib_for_site != rhs._lib_for_site) {
+  if (lib_for_site_ != rhs.lib_for_site_) {
     return false;
   }
 
-  if (_site != rhs._site) {
+  if (site_ != rhs.site_) {
     return false;
   }
 
-  if (_mterm_hash != rhs._mterm_hash) {
+  if (mterm_hash_ != rhs.mterm_hash_) {
     return false;
   }
 
-  if (*_mterm_tbl != *rhs._mterm_tbl) {
+  if (*mterm_tbl_ != *rhs.mterm_tbl_) {
     return false;
   }
 
-  if (*_mpin_tbl != *rhs._mpin_tbl) {
+  if (*mpin_tbl_ != *rhs.mpin_tbl_) {
     return false;
   }
 
-  if (*_box_tbl != *rhs._box_tbl) {
+  if (*box_tbl_ != *rhs.box_tbl_) {
     return false;
   }
 
-  if (*_poly_box_tbl != *rhs._poly_box_tbl) {
+  if (*poly_box_tbl_ != *rhs.poly_box_tbl_) {
     return false;
   }
 
-  if (*_antenna_pin_model_tbl != *rhs._antenna_pin_model_tbl) {
+  if (*antenna_pin_model_tbl_ != *rhs.antenna_pin_model_tbl_) {
     return false;
   }
 
@@ -162,37 +161,37 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
 ////////////////////////////////////////////////////////////////////
 _dbMaster::_dbMaster(_dbDatabase* db)
 {
-  _flags._x_symmetry = 0;
-  _flags._y_symmetry = 0;
-  _flags._R90_symmetry = 0;
-  _flags._type = dbMasterType::CORE;
-  _flags._frozen = 0;
-  _flags._mark = 0;
-  _flags._special_power = 0;
-  _flags._sequential = 0;
-  _flags._spare_bits_19 = 0;
+  flags_.x_symmetry = 0;
+  flags_.y_symmetry = 0;
+  flags_.R90_symmetry = 0;
+  flags_.type = dbMasterType::CORE;
+  flags_.frozen = 0;
+  flags_.mark = 0;
+  flags_.special_power = 0;
+  flags_.sequential = 0;
+  flags_.spare_bits_19 = 0;
 
-  _x = 0;
-  _y = 0;
-  _height = 0;
-  _width = 0;
-  _mterm_cnt = 0;
-  _id = 0;
-  _name = nullptr;
+  x_ = 0;
+  y_ = 0;
+  height_ = 0;
+  width_ = 0;
+  mterm_cnt_ = 0;
+  id_ = 0;
+  name_ = nullptr;
 
-  _mterm_tbl = new dbTable<_dbMTerm, 4>(
+  mterm_tbl_ = new dbTable<_dbMTerm, 4>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMTermObj);
 
-  _mpin_tbl = new dbTable<_dbMPin, 4>(
+  mpin_tbl_ = new dbTable<_dbMPin, 4>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMPinObj);
 
-  _box_tbl = new dbTable<_dbBox, 8>(
+  box_tbl_ = new dbTable<_dbBox, 8>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbBoxObj);
 
-  _poly_box_tbl = new dbTable<_dbPolygon, 8>(
+  poly_box_tbl_ = new dbTable<_dbPolygon, 8>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbPolygonObj);
 
-  _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel, 8>(
+  antenna_pin_model_tbl_ = new dbTable<_dbTechAntennaPinModel, 8>(
       db,
       this,
       (GetObjTbl_t) &_dbMaster::getObjectTable,
@@ -200,61 +199,61 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   edge_types_tbl_ = new dbTable<_dbMasterEdgeType, 8>(
       db, this, (GetObjTbl_t) &_dbMaster::getObjectTable, dbMasterEdgeTypeObj);
 
-  _box_itr = new dbBoxItr<8>(_box_tbl, _poly_box_tbl, true);
+  box_itr_ = new dbBoxItr<8>(box_tbl_, poly_box_tbl_, true);
 
-  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
+  pbox_itr_ = new dbPolygonItr(poly_box_tbl_);
 
-  _pbox_box_itr = new dbBoxItr<8>(_box_tbl, _poly_box_tbl, false);
+  pbox_box_itr_ = new dbBoxItr<8>(box_tbl_, poly_box_tbl_, false);
 
-  _mpin_itr = new dbMPinItr(_mpin_tbl);
+  mpin_itr_ = new dbMPinItr(mpin_tbl_);
 
-  _mterm_hash.setTable(_mterm_tbl);
+  mterm_hash_.setTable(mterm_tbl_);
 
-  _sta_cell = nullptr;
+  sta_cell_ = nullptr;
 }
 
 _dbMaster::~_dbMaster()
 {
-  delete _mterm_tbl;
-  delete _mpin_tbl;
-  delete _box_tbl;
-  delete _poly_box_tbl;
-  delete _antenna_pin_model_tbl;
+  delete mterm_tbl_;
+  delete mpin_tbl_;
+  delete box_tbl_;
+  delete poly_box_tbl_;
+  delete antenna_pin_model_tbl_;
   delete edge_types_tbl_;
-  delete _box_itr;
-  delete _pbox_itr;
-  delete _pbox_box_itr;
-  delete _mpin_itr;
+  delete box_itr_;
+  delete pbox_itr_;
+  delete pbox_box_itr_;
+  delete mpin_itr_;
 
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
 {
-  uint* bit_field = (uint*) &master._flags;
+  uint32_t* bit_field = (uint32_t*) &master.flags_;
   stream << *bit_field;
-  stream << master._x;
-  stream << master._y;
-  stream << master._height;
-  stream << master._width;
-  stream << master._mterm_cnt;
-  stream << master._id;
-  stream << master._name;
-  stream << master._next_entry;
-  stream << master._leq;
-  stream << master._eeq;
-  stream << master._obstructions;
-  stream << master._poly_obstructions;
-  stream << master._lib_for_site;
-  stream << master._site;
-  stream << master._mterm_hash;
-  stream << *master._mterm_tbl;
-  stream << *master._mpin_tbl;
-  stream << *master._box_tbl;
-  stream << *master._poly_box_tbl;
-  stream << *master._antenna_pin_model_tbl;
+  stream << master.x_;
+  stream << master.y_;
+  stream << master.height_;
+  stream << master.width_;
+  stream << master.mterm_cnt_;
+  stream << master.id_;
+  stream << master.name_;
+  stream << master.next_entry_;
+  stream << master.leq_;
+  stream << master.eeq_;
+  stream << master.obstructions_;
+  stream << master.poly_obstructions_;
+  stream << master.lib_for_site_;
+  stream << master.site_;
+  stream << master.mterm_hash_;
+  stream << *master.mterm_tbl_;
+  stream << *master.mpin_tbl_;
+  stream << *master.box_tbl_;
+  stream << *master.poly_box_tbl_;
+  stream << *master.antenna_pin_model_tbl_;
   stream << *master.edge_types_tbl_;
   return stream;
 }
@@ -262,43 +261,43 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
 dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
 {
   _dbDatabase* db = master.getImpl()->getDatabase();
-  uint* bit_field = (uint*) &master._flags;
+  uint32_t* bit_field = (uint32_t*) &master.flags_;
   stream >> *bit_field;
-  stream >> master._x;
-  stream >> master._y;
-  stream >> master._height;
-  stream >> master._width;
-  stream >> master._mterm_cnt;
-  stream >> master._id;
-  stream >> master._name;
-  stream >> master._next_entry;
-  stream >> master._leq;
-  stream >> master._eeq;
-  stream >> master._obstructions;
-  if (db->isSchema(db_schema_polygon)) {
-    stream >> master._poly_obstructions;
+  stream >> master.x_;
+  stream >> master.y_;
+  stream >> master.height_;
+  stream >> master.width_;
+  stream >> master.mterm_cnt_;
+  stream >> master.id_;
+  stream >> master.name_;
+  stream >> master.next_entry_;
+  stream >> master.leq_;
+  stream >> master.eeq_;
+  stream >> master.obstructions_;
+  if (db->isSchema(kSchemaPolygon)) {
+    stream >> master.poly_obstructions_;
   }
-  if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
-    stream >> master._lib_for_site;
+  if (db->isSchema(kSchemaDbmasterLibForSite)) {
+    stream >> master.lib_for_site_;
   } else {
     // The site was copied into the same dbLib previously
-    master._lib_for_site = master.getOwner()->getId();
+    master.lib_for_site_ = master.getOwner()->getId();
   }
-  stream >> master._site;
-  stream >> master._mterm_hash;
-  stream >> *master._mterm_tbl;
-  stream >> *master._mpin_tbl;
-  if (!db->isSchema(db_rm_target)) {
+  stream >> master.site_;
+  stream >> master.mterm_hash_;
+  stream >> *master.mterm_tbl_;
+  stream >> *master.mpin_tbl_;
+  if (!db->isSchema(kSchemaRmTarget)) {
     // obsolete table is always unpopulated so type/values unimportant
     dbTable<_dbMaster, 4> dummy(nullptr, nullptr, nullptr, dbDatabaseObj);
     stream >> dummy;
   }
-  stream >> *master._box_tbl;
-  if (db->isSchema(db_schema_polygon)) {
-    stream >> *master._poly_box_tbl;
+  stream >> *master.box_tbl_;
+  if (db->isSchema(kSchemaPolygon)) {
+    stream >> *master.poly_box_tbl_;
   }
-  stream >> *master._antenna_pin_model_tbl;
-  if (db->isSchema(db_schema_master_edge_type)) {
+  stream >> *master.antenna_pin_model_tbl_;
+  if (db->isSchema(kSchemaMasterEdgeType)) {
     stream >> *master.edge_types_tbl_;
   }
   return stream;
@@ -308,15 +307,15 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
 {
   switch (type) {
     case dbMTermObj:
-      return _mterm_tbl;
+      return mterm_tbl_;
     case dbMPinObj:
-      return _mpin_tbl;
+      return mpin_tbl_;
     case dbBoxObj:
-      return _box_tbl;
+      return box_tbl_;
     case dbPolygonObj:
-      return _poly_box_tbl;
+      return poly_box_tbl_;
     case dbTechAntennaPinModelObj:
-      return _antenna_pin_model_tbl;
+      return antenna_pin_model_tbl_;
     case dbMasterEdgeTypeObj:
       return edge_types_tbl_;
     default:
@@ -334,63 +333,63 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
 
 std::string dbMaster::getName() const
 {
-  _dbMaster* master = (_dbMaster*) this;
-  return master->_name;
+  const _dbMaster* master = (const _dbMaster*) this;
+  return master->name_;
 }
 
-const char* dbMaster::getConstName()
+const char* dbMaster::getConstName() const
 {
-  _dbMaster* master = (_dbMaster*) this;
-  return master->_name;
+  const _dbMaster* master = (const _dbMaster*) this;
+  return master->name_;
 }
 
 Point dbMaster::getOrigin()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return {master->_x, master->_y};
+  return {master->x_, master->y_};
 }
 
 void dbMaster::setOrigin(int x, int y)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_x = x;
-  master->_y = y;
+  master->x_ = x;
+  master->y_ = y;
 }
 
 void* dbMaster::staCell()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_sta_cell;
+  return master->sta_cell_;
 }
 
 void dbMaster::staSetCell(void* cell)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_sta_cell = cell;
+  master->sta_cell_ = cell;
 }
 
-uint dbMaster::getWidth() const
+uint32_t dbMaster::getWidth() const
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_width;
+  return master->width_;
 }
 
-void dbMaster::setWidth(uint w)
+void dbMaster::setWidth(uint32_t w)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_width = w;
+  master->width_ = w;
 }
 
-uint dbMaster::getHeight() const
+uint32_t dbMaster::getHeight() const
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_height;
+  return master->height_;
 }
 
-void dbMaster::setHeight(uint h)
+void dbMaster::setHeight(uint32_t h)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_height = h;
+  master->height_ = h;
 }
 
 int64_t dbMaster::getArea() const
@@ -401,55 +400,55 @@ int64_t dbMaster::getArea() const
 dbMasterType dbMaster::getType() const
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbMasterType(master->_flags._type);
+  return dbMasterType(master->flags_.type);
 }
 
 void dbMaster::setType(dbMasterType type)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._type = type.getValue();
+  master->flags_.type = type.getValue();
 }
 
 dbMaster* dbMaster::getLEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_leq == 0) {
+  if (master->leq_ == 0) {
     return nullptr;
   }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
-  return (dbMaster*) lib->_master_tbl->getPtr(master->_leq);
+  return (dbMaster*) lib->master_tbl_->getPtr(master->leq_);
 }
 
 void dbMaster::setLEQ(dbMaster* leq)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_leq = leq->getImpl()->getOID();
+  master->leq_ = leq->getImpl()->getOID();
 }
 
 dbMaster* dbMaster::getEEQ()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_eeq == 0) {
+  if (master->eeq_ == 0) {
     return nullptr;
   }
 
   _dbLib* lib = (_dbLib*) master->getOwner();
-  return (dbMaster*) lib->_master_tbl->getPtr(master->_eeq);
+  return (dbMaster*) lib->master_tbl_->getPtr(master->eeq_);
 }
 
 void dbMaster::setEEQ(dbMaster* eeq)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_eeq = eeq->getImpl()->getOID();
+  master->eeq_ = eeq->getImpl()->getOID();
 }
 
 dbSet<dbMTerm> dbMaster::getMTerms()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbMTerm>(master, master->_mterm_tbl);
+  return dbSet<dbMTerm>(master, master->mterm_tbl_);
 }
 
 dbSet<dbMasterEdgeType> dbMaster::getEdgeTypes()
@@ -458,10 +457,19 @@ dbSet<dbMasterEdgeType> dbMaster::getEdgeTypes()
   return dbSet<dbMasterEdgeType>(master, master->edge_types_tbl_);
 }
 
+void dbMaster::clearPinAccess(int pin_access_idx)
+{
+  for (auto mterm : getMTerms()) {
+    for (auto pin : mterm->getMPins()) {
+      pin->clearPinAccess(pin_access_idx);
+    }
+  }
+}
+
 dbMTerm* dbMaster::findMTerm(const char* name)
 {
   _dbMaster* master = (_dbMaster*) this;
-  return (dbMTerm*) master->_mterm_hash.find(name);
+  return (dbMTerm*) master->mterm_hash_.find(name);
 }
 
 dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
@@ -481,7 +489,7 @@ dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
     return mterm;
   }
 
-  uint ii = 0;
+  uint32_t ii = 0;
   std::string ttname(name);
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
@@ -507,157 +515,157 @@ dbSet<dbBox> dbMaster::getObstructions(bool include_decomposed_polygons)
 {
   _dbMaster* master = (_dbMaster*) this;
   if (include_decomposed_polygons) {
-    return dbSet<dbBox>(master, master->_box_itr);
+    return dbSet<dbBox>(master, master->box_itr_);
   }
-  return dbSet<dbBox>(master, master->_pbox_box_itr);
+  return dbSet<dbBox>(master, master->pbox_box_itr_);
 }
 
 dbSet<dbPolygon> dbMaster::getPolygonObstructions()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return dbSet<dbPolygon>(master, master->_pbox_itr);
+  return dbSet<dbPolygon>(master, master->pbox_itr_);
 }
 
 bool dbMaster::isFrozen()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._frozen != 0;
+  return master->flags_.frozen != 0;
 }
 
 int dbMaster::getMTermCount()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_mterm_cnt;
+  return master->mterm_cnt_;
 }
 
 void dbMaster::setSite(dbSite* site)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_lib_for_site = site->getLib()->getImpl()->getOID();
-  master->_site = site->getImpl()->getOID();
+  master->lib_for_site_ = site->getLib()->getImpl()->getOID();
+  master->site_ = site->getImpl()->getOID();
 }
 
 dbSite* dbMaster::getSite()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_site == 0) {
+  if (master->site_ == 0) {
     return nullptr;
   }
 
   _dbDatabase* db = (_dbDatabase*) getDb();
-  _dbLib* lib = (_dbLib*) db->_lib_tbl->getPtr(master->_lib_for_site);
+  _dbLib* lib = (_dbLib*) db->lib_tbl_->getPtr(master->lib_for_site_);
 
-  return (dbSite*) lib->_site_tbl->getPtr(master->_site);
+  return (dbSite*) lib->site_tbl_->getPtr(master->site_);
 }
 
 void dbMaster::setSymmetryX()
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._x_symmetry = 1;
+  master->flags_.x_symmetry = 1;
 }
 
 bool dbMaster::getSymmetryX()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._x_symmetry != 0;
+  return master->flags_.x_symmetry != 0;
 }
 
 void dbMaster::setSymmetryY()
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._y_symmetry = 1;
+  master->flags_.y_symmetry = 1;
 }
 
 bool dbMaster::getSymmetryY()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._y_symmetry != 0;
+  return master->flags_.y_symmetry != 0;
 }
 
 void dbMaster::setSymmetryR90()
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._R90_symmetry = 1;
+  master->flags_.R90_symmetry = 1;
 }
 
 bool dbMaster::getSymmetryR90()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._R90_symmetry != 0;
+  return master->flags_.R90_symmetry != 0;
 }
 
 void dbMaster::setFrozen()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  if (master->_flags._frozen == 1) {
+  if (master->flags_.frozen == 1) {
     return;
   }
 
-  master->_flags._frozen = 1;
+  master->flags_.frozen = 1;
 
   // set the order id on the mterm.
   // this id is used to index mterms on a inst-hdr
   int i = 0;
   for (dbMTerm* mterm : getMTerms()) {
-    ((_dbMTerm*) mterm)->_order_id = i++;
+    ((_dbMTerm*) mterm)->order_id_ = i++;
   }
 }
 
 void dbMaster::setSequential(bool v)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._sequential = v;
+  master->flags_.sequential = v;
 }
 
 bool dbMaster::isSequential()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._sequential;
+  return master->flags_.sequential;
 }
-void dbMaster::setMark(uint mark)
+void dbMaster::setMark(uint32_t mark)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._mark = mark;
+  master->flags_.mark = mark;
 }
 
-uint dbMaster::isMarked()
+uint32_t dbMaster::isMarked()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._mark;
+  return master->flags_.mark;
 }
 
 void dbMaster::setSpecialPower(bool value)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->_flags._special_power = (value == true) ? 1 : 0;
+  master->flags_.special_power = (value == true) ? 1 : 0;
 }
 
 bool dbMaster::isSpecialPower()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_flags._special_power == 1;
+  return master->flags_.special_power == 1;
 }
 
 void dbMaster::getPlacementBoundary(Rect& r)
 {
   _dbMaster* master = (_dbMaster*) this;
-  r = Rect(0, 0, master->_width, master->_height);
-  dbTransform t(Point(-master->_x, -master->_y));
+  r = Rect(0, 0, master->width_, master->height_);
+  dbTransform t(Point(-master->x_, -master->y_));
   t.apply(r);
 }
 
 void dbMaster::transform(dbTransform& t)
 {
   for (dbBox* box : getObstructions()) {
-    t.apply(((_dbBox*) box)->_shape._rect);
+    t.apply(((_dbBox*) box)->shape_.rect);
   }
 
   for (dbMTerm* mterm : getMTerms()) {
     for (dbMPin* mpin : mterm->getMPins()) {
       for (dbBox* box : mpin->getGeometry()) {
-        t.apply(((_dbBox*) box)->_shape._rect);
+        t.apply(((_dbBox*) box)->shape_.rect);
       }
     }
   }
@@ -666,7 +674,7 @@ void dbMaster::transform(dbTransform& t)
 int dbMaster::getMasterId()
 {
   _dbMaster* master = (_dbMaster*) this;
-  return master->_id;
+  return master->id_;
 }
 
 dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
@@ -677,10 +685,10 @@ dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();
-  _dbMaster* master = lib->_master_tbl->create();
-  master->_name = safe_strdup(name_);
-  master->_id = db->_master_id++;
-  lib->_master_hash.insert(master);
+  _dbMaster* master = lib->master_tbl_->create();
+  master->name_ = safe_strdup(name_);
+  master->id_ = db->master_id_++;
+  lib->master_hash_.insert(master);
   return (dbMaster*) master;
 }
 
@@ -690,7 +698,7 @@ void dbMaster::destroy(dbMaster* master)
   _dbMaster* master_impl = (_dbMaster*) master;
   if (db->getChip() && db->getChip()->getBlock()) {
     _dbBlock* block = (_dbBlock*) db->getChip()->getBlock();
-    _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master_impl->_id);
+    _dbInstHdr* inst_hdr = block->inst_hdr_hash_.find(master_impl->id_);
     if (inst_hdr) {
       master->getImpl()->getLogger()->error(
           utl::ODB,
@@ -701,21 +709,21 @@ void dbMaster::destroy(dbMaster* master)
   }
 
   _dbLib* lib = (_dbLib*) master->getLib();
-  lib->_master_hash.remove(master_impl);
-  lib->_master_tbl->destroy(master_impl);
+  lib->master_hash_.remove(master_impl);
+  lib->master_tbl_->destroy(master_impl);
 }
 
-dbMaster* dbMaster::getMaster(dbLib* lib_, uint dbid_)
+dbMaster* dbMaster::getMaster(dbLib* lib_, uint32_t dbid_)
 {
   _dbLib* lib = (_dbLib*) lib_;
-  return (dbMaster*) lib->_master_tbl->getPtr(dbid_);
+  return (dbMaster*) lib->master_tbl_->getPtr(dbid_);
 }
 
 bool dbMaster::isFiller()
 {
   _dbMaster* master = (_dbMaster*) this;
 
-  switch (master->_flags._type) {
+  switch (master->flags_.type) {
     case dbMasterType::CORE_SPACER:
       return true;
     case dbMasterType::CORE:
@@ -765,7 +773,7 @@ bool dbMaster::isFiller()
 bool dbMaster::isCoreAutoPlaceable()
 {
   // Use switch so if new types are added we get a compiler warning.
-  switch (getType()) {
+  switch (getType().getValue()) {
     case dbMasterType::CORE:
     case dbMasterType::CORE_FEEDTHRU:
     case dbMasterType::CORE_TIEHIGH:
@@ -818,14 +826,14 @@ void _dbMaster::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
-  info.children_["mterm_hash"].add(_mterm_hash);
-  _mterm_tbl->collectMemInfo(info.children_["mterm"]);
-  _mpin_tbl->collectMemInfo(info.children_["mpin"]);
-  _box_tbl->collectMemInfo(info.children_["box"]);
-  _poly_box_tbl->collectMemInfo(info.children_["poly_box"]);
-  _antenna_pin_model_tbl->collectMemInfo(info.children_["antenna_pin_model"]);
-  edge_types_tbl_->collectMemInfo(info.children_["edge_types"]);
+  info.children["name"].add(name_);
+  info.children["mterm_hash"].add(mterm_hash_);
+  mterm_tbl_->collectMemInfo(info.children["mterm"]);
+  mpin_tbl_->collectMemInfo(info.children["mpin"]);
+  box_tbl_->collectMemInfo(info.children["box"]);
+  poly_box_tbl_->collectMemInfo(info.children["poly_box"]);
+  antenna_pin_model_tbl_->collectMemInfo(info.children["antenna_pin_model"]);
+  edge_types_tbl_->collectMemInfo(info.children["edge_types"]);
 }
 
 }  // namespace odb

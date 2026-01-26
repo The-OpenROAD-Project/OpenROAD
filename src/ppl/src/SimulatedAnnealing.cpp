@@ -31,7 +31,7 @@ SimulatedAnnealing::SimulatedAnnealing(
     Core* core,
     std::vector<Slot>& slots,
     const std::vector<Constraint>& constraints,
-    Logger* logger,
+    utl::Logger* logger,
     odb::dbDatabase* db)
     : netlist_(netlist),
       core_(core),
@@ -117,7 +117,7 @@ void SimulatedAnnealing::run(float init_temperature,
       for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
         std::vector<ppl::InstancePin> pin_sinks;
         netlist_->getSinksOfIO(pin_idx, pin_sinks);
-        all_sinks.push_back(pin_sinks);
+        all_sinks.push_back(std::move(pin_sinks));
       }
 
       annealingStateVisualization(pins, all_sinks, iter);
@@ -682,7 +682,7 @@ int SimulatedAnnealing::rearrangeConstrainedGroups(int constraint_idx)
       groups_cnt++;
     }
 
-    std::sort(group_limits_list.begin(), group_limits_list.end());
+    std::ranges::sort(group_limits_list);
     utl::shuffle(aux_indices.begin(), aux_indices.end(), generator_);
 
     int cnt = 0;

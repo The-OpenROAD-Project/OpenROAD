@@ -19,6 +19,7 @@ add_library(db
     dbMPinItr.cpp 
     dbMTerm.cpp 
     dbMaster.cpp 
+    dbInsertBuffer.cpp
     dbNet.cpp 
     dbTech.cpp  
     dbTechLayerSpacingRule.cpp 
@@ -61,6 +62,7 @@ add_library(db
     dbJournal.cpp 
     dbJournalLog.cpp 
     dbBlockCallBackObj.cpp 
+    dbChipCallBackObj.cpp 
     dbRegion.cpp 
     dbRegionInstItr.cpp 
     dbExtControl.cpp 
@@ -149,6 +151,7 @@ add_library(db
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
     dbTechLayerTwoWiresForbiddenSpcRule.cpp
+    dbTechLayerVoltageSpacing.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
     dbChipBumpInstItr.cpp

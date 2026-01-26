@@ -4,27 +4,31 @@
 // Generator Code Begin Cpp
 #include "dbLogicPort.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbModInst.h"
 #include "dbPowerSwitch.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbLogicPort>;
 
 bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (direction != rhs.direction) {
@@ -41,21 +45,21 @@ bool _dbLogicPort::operator<(const _dbLogicPort& rhs) const
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> obj.direction;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << obj.direction;
   return stream;
 }
@@ -66,15 +70,15 @@ void _dbLogicPort::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
-  info.children_["direction"].add(direction);
+  info.children["name"].add(name_);
+  info.children["direction"].add(direction);
   // User Code End collectMemInfo
 }
 
 _dbLogicPort::~_dbLogicPort()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -87,7 +91,7 @@ _dbLogicPort::~_dbLogicPort()
 const char* dbLogicPort::getName() const
 {
   _dbLogicPort* obj = (_dbLogicPort*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 std::string dbLogicPort::getDirection() const
@@ -103,11 +107,11 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
                                  const std::string& direction)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_logicport_hash.hasMember(name)) {
+  if (_block->logicport_hash_.hasMember(name)) {
     return nullptr;
   }
-  _dbLogicPort* lp = _block->_logicport_tbl->create();
-  lp->_name = safe_strdup(name);
+  _dbLogicPort* lp = _block->logicport_tbl_->create();
+  lp->name_ = safe_strdup(name);
 
   if (direction.empty()) {
     lp->direction = "in";
@@ -115,7 +119,7 @@ dbLogicPort* dbLogicPort::create(dbBlock* block,
     lp->direction = direction;
   }
 
-  _block->_logicport_hash.insert(lp);
+  _block->logicport_hash_.insert(lp);
   return (dbLogicPort*) lp;
 }
 

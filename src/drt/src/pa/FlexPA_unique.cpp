@@ -25,13 +25,14 @@ namespace drt {
 UniqueClass::UniqueClass(const UniqueClassKey& key) : key_(key)
 {
   for (const auto& term : key_.master->getTerms()) {
-    skip_term_[term.get()] = false;
+    skip_term_[term.get()] = true;
   }
 }
 
 void UniqueClass::addInst(frInst* inst)
 {
   insts_.insert(inst);
+  inst->setPinAccessIdx(pin_access_idx_);
 }
 
 void UniqueClass::removeInst(frInst* inst)
@@ -56,7 +57,12 @@ bool UniqueClass::isSkipTerm(frMTerm* term) const
 
 void UniqueClass::setSkipTerm(frMTerm* term, bool skip)
 {
-  skip_term_[term] = skip;
+  auto it = skip_term_.find(term);
+  if (it == skip_term_.end()) {
+    skip_term_[term] = skip;
+  } else {
+    it->second &= skip;
+  }
 }
 
 UniqueInsts::UniqueInsts(frDesign* design,
@@ -191,7 +197,14 @@ UniqueClassKey UniqueInsts::computeUniqueClassKey(frInst* inst) const
   if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(inst)) {
     ndr_inst = inst;
   }
-  return UniqueClassKey(inst->getMaster(), orient, offset, ndr_inst);
+  std::set<frTerm*> stubborn_terms;
+  for (auto& term : inst->getInstTerms()) {
+    if (term->isStubborn()) {
+      stubborn_terms.insert(term->getTerm());
+    }
+  }
+  return UniqueClassKey(
+      inst->getMaster(), orient, offset, ndr_inst, stubborn_terms);
 }
 
 UniqueClass* UniqueInsts::computeUniqueClass(frInst* inst)
@@ -281,6 +294,9 @@ void UniqueInsts::initUniqueInstPinAccess(UniqueClass* unique_class)
       pin->addPinAccess(std::make_unique<frPinAccess>());
     }
   }
+#pragma omp critical
+  unique_class->getMaster()->setHasPinAccessUpdate(
+      unique_class->getPinAccessIdx());
   for (frInst* inst : unique_class->getInsts()) {
     inst->setPinAccessIdx(unique_class->getPinAccessIdx());
   }
@@ -343,10 +359,9 @@ void UniqueInsts::deleteInst(frInst* inst)
 void UniqueInsts::deleteUniqueClass(UniqueClass* unique_class)
 {
   unique_class_by_key_.erase(unique_class->key());
-  unique_classes_.erase(std::find_if(
-      unique_classes_.begin(),
-      unique_classes_.end(),
-      [unique_class](const auto& u) { return u.get() == unique_class; }));
+  std::erase_if(unique_classes_, [unique_class](const auto& u) {
+    return u.get() == unique_class;
+  });
 }
 
 const std::vector<std::unique_ptr<UniqueClass>>& UniqueInsts::getUniqueClasses()

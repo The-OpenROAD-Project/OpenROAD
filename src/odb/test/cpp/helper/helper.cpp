@@ -3,14 +3,16 @@
 
 #include "helper.h"
 
+#include <cstdint>
+
 #include "odb/db.h"
 
 namespace odb {
 
 dbMaster* SimpleDbFixture::createMaster2X1(dbLib* lib,
                                            const char* name,
-                                           uint width,
-                                           uint height,
+                                           uint32_t width,
+                                           uint32_t height,
                                            const char* in1,
                                            const char* in2,
                                            const char* out)
@@ -28,8 +30,8 @@ dbMaster* SimpleDbFixture::createMaster2X1(dbLib* lib,
 
 dbMaster* SimpleDbFixture::createMaster1X1(dbLib* lib,
                                            const char* name,
-                                           uint width,
-                                           uint height,
+                                           uint32_t width,
+                                           uint32_t height,
                                            const char* in1,
                                            const char* out)
 {

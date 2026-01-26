@@ -611,6 +611,16 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       drawSource(*node_itr, painter);
     }
   }
+
+  gui::DiscreteLegend legend;
+  legend.addLegendKey(shape_color_, "Shape");
+  legend.addLegendKey(node_color_, "Node");
+  legend.addLegendKey(iterm_node_color_, "ITerm Node");
+  legend.addLegendKey(bpin_node_color_, "BPin Node");
+  legend.addLegendKey(connection_color_, "Connection");
+  legend.addLegendKey(term_connection_color_, "Terminal Connection");
+  legend.addLegendKey(src_node_color_, "Source Node/Shape");
+  legend.draw(painter);
 }
 
 gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,
@@ -696,8 +706,7 @@ bool DebugGui::isSelected(const Connection* connection) const
   return selected_connections_.find(connection) != selected_connections_.end();
 }
 
-void DebugGui::setSources(
-    const std::vector<std::unique_ptr<SourceNode>>& sources)
+void DebugGui::setSources(const SourceNodes& sources)
 {
   sources_.clear();
 

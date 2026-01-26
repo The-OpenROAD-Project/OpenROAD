@@ -4,6 +4,8 @@
 #include "placerBase.h"
 
 #include <algorithm>
+#include <climits>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -54,19 +56,19 @@ static int64_t getOverlapWithCoreArea(Die& die, Instance& inst);
 Instance::Instance() = default;
 
 // for movable real instances
-Instance::Instance(odb::dbInst* inst,
+Instance::Instance(odb::dbInst* db_inst,
                    PlacerBaseCommon* pbc,
                    utl::Logger* logger)
     : Instance()
 {
-  inst_ = inst;
+  inst_ = db_inst;
   copyDbLocation(pbc);
 
   // Masters more than row_limit rows tall are treated as macros
   constexpr int row_limit = 6;
-  dbBox* bbox = inst->getBBox();
+  dbBox* bbox = db_inst->getBBox();
 
-  if (inst->getMaster()->getType().isBlock()) {
+  if (db_inst->getMaster()->getType().isBlock()) {
     is_macro_ = true;
   } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
     is_macro_ = true;
@@ -74,7 +76,7 @@ Instance::Instance(odb::dbInst* inst,
                  134,
                  "Master {} is not marked as a BLOCK in LEF but is more "
                  "than {} rows tall.  It will be treated as a macro.",
-                 inst->getMaster()->getName(),
+                 db_inst->getMaster()->getName(),
                  row_limit);
   }
 }
@@ -231,7 +233,7 @@ int Instance::dy() const
   return (uy_ - ly_);
 }
 
-int64_t Instance::area() const
+int64_t Instance::getArea() const
 {
   return static_cast<int64_t>(dx()) * dy();
 }
@@ -282,6 +284,26 @@ void Instance::snapOutward(const odb::Point& origin, int step_x, int step_y)
   ly_ = snapDown(ly_, origin.y(), step_y);
   ux_ = snapUp(ux_, origin.x(), step_x);
   uy_ = snapUp(uy_, origin.y(), step_y);
+}
+
+int64_t Instance::extendSizeByScale(double scale, utl::Logger* logger)
+{
+  int64_t old_area = getArea();
+  if (old_area == 0) {
+    return 0;
+  }
+
+  int center_x = cx();
+  int center_y = cy();
+  int new_dx = static_cast<int>((ux_ - lx_) * scale);
+  int new_dy = static_cast<int>((uy_ - ly_) * scale);
+
+  lx_ = center_x - new_dx / 2;
+  ux_ = center_x + new_dx / 2;
+  ly_ = center_y - new_dy / 2;
+  uy_ = center_y + new_dy / 2;
+
+  return getArea() - old_area;
 }
 
 ////////////////////////////////////////////////////////
@@ -701,30 +723,24 @@ int64_t Die::coreArea() const
   return static_cast<int64_t>(coreDx()) * static_cast<int64_t>(coreDy());
 }
 
-PlacerBaseVars::PlacerBaseVars()
+PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
+    : padLeft(options.padLeft),
+      padRight(options.padRight),
+      skipIoMode(options.skipIoMode),
+      disablePinDensityAdjust(options.disablePinDensityAdjust)
 {
-  reset();
-}
-
-void PlacerBaseVars::reset()
-{
-  padLeft = padRight = 0;
-  skipIoMode = false;
 }
 
 ////////////////////////////////////////////////////////
 // PlacerBaseCommon
 
-PlacerBaseCommon::PlacerBaseCommon() = default;
-
 PlacerBaseCommon::PlacerBaseCommon(odb::dbDatabase* db,
                                    PlacerBaseVars pbVars,
                                    utl::Logger* log)
-    : PlacerBaseCommon()
+    : pbVars_(pbVars)
 {
   db_ = db;
   log_ = log;
-  pbVars_ = pbVars;
   init();
 }
 
@@ -813,10 +829,91 @@ void PlacerBaseCommon::init()
     instStor_.push_back(temp_inst);
 
     if (temp_inst.dy() > siteSizeY_ * 6) {
-      macroInstsArea_ += temp_inst.area();
+      macroInstsArea_ += temp_inst.getArea();
     }
   }
 
+  // Extending instances by average pin density.
+  auto count_signal_pins = [](const Instance& inst) -> int {
+    return std::ranges::count_if(
+        inst.dbInst()->getITerms(),
+        [](odb::dbITerm* iterm) { return !iterm->getSigType().isSupply(); });
+  };
+
+  int total_signal_pins = 0;
+  int64_t movable_area = 0;
+  int64_t total_area = 0;
+  for (const auto& inst : instStor_) {
+    if (inst.isInstance()) {
+      total_area += inst.getArea();
+      if (!inst.isFixed()) {
+        total_signal_pins += count_signal_pins(inst);
+        movable_area += inst.getArea();
+      }
+    }
+  }
+
+  log_->info(GPL,
+             36,
+             format_label_um2,
+             "Movable instances area:",
+             block->dbuAreaToMicrons(movable_area));
+  log_->info(GPL,
+             37,
+             format_label_um2,
+             "Total instances area:",
+             block->dbuAreaToMicrons(total_area));
+
+  double avg_density
+      = (movable_area > 0)
+            ? static_cast<double>(total_signal_pins) / movable_area
+            : 0.0;
+  if (log_->debugCheck(GPL, "extendPinDensity", 1)) {
+    double avg_density_micron = block->dbuToMicrons(avg_density);
+    double avg_area_per_pin_dbu
+        = (total_signal_pins > 0)
+              ? static_cast<double>(movable_area) / total_signal_pins
+              : 0.0;
+    double avg_area_per_pin_micron
+        = block->dbuAreaToMicrons(avg_area_per_pin_dbu);
+    log_->report("Average pin density: {:.6f} pins per DBU^2", avg_density);
+    log_->report("Average pin density: {:.6f} pins per micron^2",
+                 avg_density_micron);
+    log_->report("Average area per pin: {:.2f} DBU^2 ({:.6f} micron^2)",
+                 avg_area_per_pin_dbu,
+                 avg_area_per_pin_micron);
+  }
+
+  // Adjust each movable instance to match the average density
+  int64_t total_adjustment_area = 0;
+  if (!pbVars_.disablePinDensityAdjust) {
+    for (auto& inst : instStor_) {
+      if (!inst.isFixed() && inst.isInstance()) {
+        int pin_count = count_signal_pins(inst);
+        if (pin_count > 2 && avg_density > 0.0) {
+          double target_area = static_cast<double>(pin_count) / avg_density;
+          double scale
+              = std::sqrt(target_area / static_cast<double>(inst.getArea()));
+          // Cap scaling, avoid later excessive routability inflation
+          if (scale > 1.2) {
+            scale = 1.2;
+          } else if (scale < 0.95) {
+            scale = 0.95;
+          }
+          total_adjustment_area += inst.extendSizeByScale(scale, log_);
+        }
+      }
+    }
+  }
+
+  log_->info(GPL,
+             35,
+             format_label_um2,
+             "Pin density area adjust:",
+             block->dbuAreaToMicrons(total_adjustment_area));
+
+  instMap_.reserve(instStor_.size());
+  insts_.reserve(instStor_.size());
   for (auto& pb_inst : instStor_) {
     instMap_[pb_inst.dbInst()] = &pb_inst;
     insts_.push_back(&pb_inst);
@@ -860,6 +957,7 @@ void PlacerBaseCommon::init()
 
   // pinMap_ and pins_ update
   pins_.reserve(pinStor_.size());
+  pinMap_.reserve(pinStor_.size());
   for (auto& pb_pin : pinStor_) {
     if (pb_pin.isITerm()) {
       pinMap_[pb_pin.getDbITerm()] = &pb_pin;
@@ -904,7 +1002,6 @@ void PlacerBaseCommon::init()
 void PlacerBaseCommon::reset()
 {
   db_ = nullptr;
-  pbVars_.reset();
 
   instStor_.clear();
   pinStor_.clear();
@@ -979,6 +1076,10 @@ PlacerBase::PlacerBase(odb::dbDatabase* db,
   log_ = log;
   pbCommon_ = std::move(pbCommon);
   group_ = group;
+  log_->info(GPL,
+             32,
+             "Initializing region: {}",
+             (group_ == nullptr) ? "Top-level" : group_->getName());
   init();
 }
 
@@ -990,6 +1091,25 @@ PlacerBase::~PlacerBase()
 void PlacerBase::init()
 {
   die_ = pbCommon_->getDie();
+  if (group_ != nullptr) {
+    auto boundaries = group_->getRegion()->getBoundaries();
+
+    if (!boundaries.empty()) {
+      region_bbox_.mergeInit();
+      for (auto boundary : boundaries) {
+        region_bbox_.merge(boundary->getBox());
+      }
+      region_area_ = region_bbox_.area();
+    } else {
+      region_bbox_ = odb::Rect(
+          die_.coreLx(), die_.coreLy(), die_.coreUx(), die_.coreUy());
+      region_area_ = die_.coreArea();
+    }
+  } else {
+    region_bbox_
+        = odb::Rect(die_.coreLx(), die_.coreLy(), die_.coreUx(), die_.coreUy());
+    region_area_ = die_.coreArea();
+  }
 
   // siteSize update
   siteSizeX_ = pbCommon_->siteSizeX();
@@ -1030,7 +1150,7 @@ void PlacerBase::init()
       }
     } else {
       placeInsts_.push_back(inst);
-      int64_t instArea = inst->area();
+      int64_t instArea = inst->getArea();
       placeInstsArea_ += instArea;
       // macro cells should be
       // macroInstsArea_
@@ -1044,7 +1164,7 @@ void PlacerBase::init()
       }
     }
 
-    insts_.push_back(inst);
+    pb_insts_.push_back(inst);
   }
 
   // insts fill with fake instances (fragmented row or blockage)
@@ -1055,9 +1175,9 @@ void PlacerBase::init()
     if (inst.isDummy()) {
       dummyInsts_.push_back(&inst);
       nonPlaceInsts_.push_back(&inst);
-      nonPlaceInstsArea_ += inst.area();
+      nonPlaceInstsArea_ += inst.getArea();
     }
-    insts_.push_back(&inst);
+    pb_insts_.push_back(&inst);
   }
 
   printInfo();
@@ -1072,41 +1192,26 @@ void PlacerBase::initInstsForUnusableSites()
   int64_t siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
   int64_t siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
 
-  enum PlaceInfo
+  enum SiteInfo
   {
-    Empty,
-    Row,
-    FixedInst
+    Blocked,   // site representation of dummy instances
+    Row,       // placable site
+    FixedInst  // site taken by fixed instance
   };
 
   //
-  // Initialize siteGrid as empty
+  // Initialize siteGrid as Row.
+  // All sites placeable so we avoid dummies creation due to regions
   //
-  std::vector<PlaceInfo> siteGrid(siteCountX * siteCountY, PlaceInfo::Empty);
+  std::vector<SiteInfo> siteGrid(siteCountX * siteCountY, SiteInfo::Row);
 
-  // check if this belongs to a group
-  // if there is a group, only mark the sites that belong to the group as Row
-  // if there is no group, then mark all as Row, and then for each power
-  // domain, mark the sites that belong to the power domain as Empty
+  // If we have no group (top-level), check which sites are NOT covered by
+  // actual rows Create dummy instances for unusable sites (test simple02.tcl
+  // has an example on bottom right)
+  if (group_ == nullptr) {
+    std::ranges::fill(siteGrid, SiteInfo::Blocked);
 
-  if (group_ != nullptr) {
-    for (auto boundary : group_->getRegion()->getBoundaries()) {
-      Rect rect = boundary->getBox();
-
-      std::pair<int, int> pairX = getMinMaxIdx(
-          rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
-
-      std::pair<int, int> pairY = getMinMaxIdx(
-          rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
-
-      for (int i = pairX.first; i < pairX.second; i++) {
-        for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[j * siteCountX + i] = Row;
-        }
-      }
-    }
-  } else {
-    // fill in rows' bbox
+    // Mark only sites covered by actual rows as Row
     for (dbRow* row : rows) {
       Rect rect = row->getBBox();
 
@@ -1118,13 +1223,43 @@ void PlacerBase::initInstsForUnusableSites()
 
       for (int i = pairX.first; i < pairX.second; i++) {
         for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[j * siteCountX + i] = Row;
+          siteGrid[(j * siteCountX) + i] = Row;
+        }
+      }
+    }
+
+    // Mark sites intersecting with any region as Blocked
+    for (auto* group : db_->getChip()->getBlock()->getGroups()) {
+      if (group->getRegion()) {
+        auto boundaries = group->getRegion()->getBoundaries();
+        for (auto boundary : boundaries) {
+          Rect rect = boundary->getBox();
+
+          std::pair<int, int> pairX = getMinMaxIdx(rect.xMin(),
+                                                   rect.xMax(),
+                                                   die_.coreLx(),
+                                                   siteSizeX_,
+                                                   0,
+                                                   siteCountX);
+
+          std::pair<int, int> pairY = getMinMaxIdx(rect.yMin(),
+                                                   rect.yMax(),
+                                                   die_.coreLy(),
+                                                   siteSizeY_,
+                                                   0,
+                                                   siteCountY);
+
+          for (int i = pairX.first; i < pairX.second; i++) {
+            for (int j = pairY.first; j < pairY.second; j++) {
+              siteGrid[(j * siteCountX) + i] = Blocked;
+            }
+          }
         }
       }
     }
   }
 
-  // Mark blockage areas as empty so that their sites will be blocked.
+  // Mark blockage areas as Blocked so that their sites will be blocked.
   for (dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
     dbInst* inst = blockage->getInstance();
     if (inst && !inst->isFixed()) {
@@ -1149,32 +1284,17 @@ void PlacerBase::initInstsForUnusableSites()
     for (int j = pairY.first; j < pairY.second; j++) {
       for (int i = pairX.first; i < pairX.second; i++) {
         if (cells == 0 || filled / (float) cells <= filler_density) {
-          siteGrid[j * siteCountX + i] = Empty;
+          siteGrid[(j * siteCountX) + i] = Blocked;
+          debugPrint(log_,
+                     GPL,
+                     "dummies",
+                     1,
+                     "Blocking site at ({}, {}) due to blockage.",
+                     i,
+                     j);
           ++filled;
         }
         ++cells;
-      }
-    }
-  }
-
-  // In the case of top level power domain i.e no group,
-  // mark all other power domains as empty
-  if (group_ == nullptr) {
-    for (auto region : db_->getChip()->getBlock()->getRegions()) {
-      for (auto boundary : region->getBoundaries()) {
-        Rect rect = boundary->getBox();
-
-        std::pair<int, int> pairX = getMinMaxIdx(
-            rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
-
-        std::pair<int, int> pairY = getMinMaxIdx(
-            rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
-
-        for (int i = pairX.first; i < pairX.second; i++) {
-          for (int j = pairY.first; j < pairY.second; j++) {
-            siteGrid[j * siteCountX + i] = Empty;
-          }
-        }
       }
     }
   }
@@ -1201,37 +1321,44 @@ void PlacerBase::initInstsForUnusableSites()
         continue;
       }
     }
+
     std::pair<int, int> pairX = getMinMaxIdx(
         inst->lx(), inst->ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);
     std::pair<int, int> pairY = getMinMaxIdx(
         inst->ly(), inst->uy(), die_.coreLy(), siteSizeY_, 0, siteCountY);
-
     for (int i = pairX.first; i < pairX.second; i++) {
       for (int j = pairY.first; j < pairY.second; j++) {
-        siteGrid[j * siteCountX + i] = FixedInst;
+        siteGrid[(j * siteCountX) + i] = FixedInst;
+        debugPrint(log_,
+                   GPL,
+                   "dummies",
+                   1,
+                   "Blocking site at ({}, {}) due to fixed instance {}.",
+                   i,
+                   j,
+                   db_inst->getName());
       }
     }
   }
 
   //
-  // Search the "Empty" coordinates on site-grid
+  // Search the "Blocked" coordinates on site-grid
   // --> These sites need to be dummyInstance
   //
   for (int j = 0; j < siteCountY; j++) {
     for (int i = 0; i < siteCountX; i++) {
-      // if empty spot found
-      if (siteGrid[j * siteCountX + i] == Empty) {
+      if (siteGrid[(j * siteCountX) + i] == Blocked) {
         int startX = i;
         // find end points
-        while (i < siteCountX && siteGrid[j * siteCountX + i] == Empty) {
+        while (i < siteCountX && siteGrid[(j * siteCountX) + i] == Blocked) {
           i++;
         }
         int endX = i;
-        Instance myInst(die_.coreLx() + siteSizeX_ * startX,
-                        die_.coreLy() + siteSizeY_ * j,
-                        die_.coreLx() + siteSizeX_ * endX,
-                        die_.coreLy() + siteSizeY_ * (j + 1));
-        instStor_.push_back(myInst);
+        Instance dummy_gcell(die_.coreLx() + (siteSizeX_ * startX),
+                             die_.coreLy() + (siteSizeY_ * j),
+                             die_.coreLx() + (siteSizeX_ * endX),
+                             die_.coreLy() + (siteSizeY_ * (j + 1)));
+        instStor_.push_back(dummy_gcell);
       }
     }
   }
@@ -1241,7 +1368,7 @@ void PlacerBase::reset()
 {
   db_ = nullptr;
   instStor_.clear();
-  insts_.clear();
+  pb_insts_.clear();
   placeInsts_.clear();
   fixedInsts_.clear();
   nonPlaceInsts_.clear();
@@ -1287,15 +1414,23 @@ void PlacerBase::printInfo() const
              block->dbuToMicrons(die_.coreUx()),
              block->dbuToMicrons(die_.coreUy()));
 
-  const int64_t coreArea = die_.coreArea();
   float util = static_cast<float>(placeInstsArea_)
-               / (coreArea - nonPlaceInstsArea_) * 100;
+               / (region_area_ - nonPlaceInstsArea_) * 100;
 
   log_->info(GPL,
              16,
              format_label_um2,
              "Core area:",
-             block->dbuAreaToMicrons(coreArea));
+             block->dbuAreaToMicrons(die_.coreArea()));
+  log_->info(GPL,
+             14,
+             "Region name: {}.",
+             (group_ != nullptr) ? group_->getName() : "top-level");
+  log_->info(GPL,
+             15,
+             format_label_um2,
+             "Region area:",
+             block->dbuAreaToMicrons(region_area_));
   log_->info(GPL,
              17,
              format_label_um2,
@@ -1328,7 +1463,7 @@ void PlacerBase::printInfo() const
 
 void PlacerBase::unlockAll()
 {
-  for (auto inst : insts_) {
+  for (auto inst : pb_insts_) {
     inst->unlock();
   }
 }

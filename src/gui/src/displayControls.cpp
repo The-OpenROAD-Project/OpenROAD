@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <utility>
 #include <variant>
@@ -37,9 +38,9 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
@@ -185,10 +186,8 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
 
           auto add_prop
               = [&props](const std::string& prop, QString& info) -> bool {
-            auto prop_find = std::find_if(
-                props.begin(), props.end(), [prop](const auto& p) {
-                  return p.name == prop;
-                });
+            auto prop_find = std::ranges::find_if(
+                props, [prop](const auto& p) { return p.name == prop; });
             if (prop_find == props.end()) {
               return false;
             }
@@ -462,7 +461,7 @@ DisplayControls::DisplayControls(QWidget* parent)
                "Vias",
                shape_types_srouting,
                Qt::Checked);
-  makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
+  makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked, true);
   makeLeafItem(shape_types_.pin_names, "Pin Names", shape_types, Qt::Checked);
   shape_types_.pins.visible->setData(
       QVariant::fromValue(&shape_types_.pin_names), kDisableRowItemIdx);
@@ -1084,7 +1083,8 @@ std::pair<QColor*, Qt::BrushStyle*> DisplayControls::lookupColor(
     QColor* item_color = &layer_color_[tech_layer];
     Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
     return {item_color, item_pattern};
-  } else if (site != nullptr) {
+  }
+  if (site != nullptr) {
     return {&site_color_[site], nullptr};
   }
 
@@ -1884,6 +1884,11 @@ bool DisplayControls::areIOPinsVisible() const
   return isModelRowVisible(&shape_types_.pins);
 }
 
+bool DisplayControls::areIOPinsSelectable() const
+{
+  return isModelRowSelectable(&shape_types_.pins);
+}
+
 bool DisplayControls::areIOPinNamesVisible() const
 {
   return isModelRowVisible(&shape_types_.pin_names);
@@ -1921,7 +1926,7 @@ QFont DisplayControls::ioPinMarkersFont() const
 
 void DisplayControls::registerRenderer(Renderer* renderer)
 {
-  if (custom_controls_.count(renderer) != 0) {
+  if (custom_controls_.contains(renderer)) {
     // already registered
     return;
   }
@@ -2007,12 +2012,11 @@ void DisplayControls::registerRenderer(Renderer* renderer)
     custom_controls.push_back(
         model_->takeRow(model_->invisibleRootItem()->rowCount() - 1));
   }
-  std::stable_sort(custom_controls.begin(),
-                   custom_controls.end(),
-                   [](const QList<QStandardItem*>& list0,
-                      const QList<QStandardItem*>& list1) {
-                     return list0[kName]->text() < list1[kName]->text();
-                   });
+  std::ranges::stable_sort(custom_controls,
+                           [](const QList<QStandardItem*>& list0,
+                              const QList<QStandardItem*>& list1) {
+                             return list0[kName]->text() < list1[kName]->text();
+                           });
   for (const auto& row : custom_controls) {
     model_->appendRow(row);
   }
@@ -2022,16 +2026,16 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
 {
   saveRendererState(renderer);
 
-  if (custom_controls_.count(renderer) == 0) {
+  if (!custom_controls_.contains(renderer)) {
     return;
   }
 
   const auto& rows = custom_controls_[renderer];
 
   const QModelIndex& parent_idx = rows[0].name->index().parent();
-  for (auto itr = rows.rbegin(); itr != rows.rend(); itr++) {
+  for (const auto& row : std::ranges::reverse_view(rows)) {
     // remove from Display controls
-    auto index = model_->indexFromItem(itr->name);
+    auto index = model_->indexFromItem(row.name);
     model_->removeRow(index.row(), index.parent());
   }
   if (!model_->hasChildren(parent_idx)) {
@@ -2157,18 +2161,34 @@ void DisplayControls::blockLoaded(odb::dbBlock* block)
   addTech(block->getTech());
 }
 
-void DisplayControls::setCurrentBlock(odb::dbBlock* block)
+void DisplayControls::setCurrentChip(odb::dbChip* chip)
 {
-  if (!block) {
+  if (!chip) {
     return;
   }
-  auto tech = block->getTech();
-  addTech(tech);
 
-  std::set<odb::dbTech*> visible_techs{tech};
-  for (auto child : block->getChildren()) {
-    visible_techs.insert(child->getTech());
-  }
+  std::set<odb::dbTech*> visible_techs;
+
+  std::function<void(odb::dbChip*)> collect_techs = [&](odb::dbChip* chip) {
+    auto tech = chip->getTech();
+    if (tech) {
+      addTech(tech);
+      visible_techs.insert(tech);
+    }
+
+    odb::dbBlock* block = chip->getBlock();
+    if (block) {
+      for (auto child : block->getChildren()) {
+        visible_techs.insert(child->getTech());
+      }
+    }
+
+    for (auto* inst : chip->getChipInsts()) {
+      collect_techs(inst->getMasterChip());
+    }
+  };
+
+  collect_techs(chip);
 
   for (auto& [layer, row] : layer_controls_) {
     const bool visible
@@ -2287,7 +2307,7 @@ void DisplayControls::setOnlyVisibleLayers(
   }
 
   for (auto* layer : layers) {
-    if (layer_controls_.count(layer) != 0) {
+    if (layer_controls_.contains(layer)) {
       layer_controls_[layer].visible->setCheckState(Qt::Checked);
     }
   }

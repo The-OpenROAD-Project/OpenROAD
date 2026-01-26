@@ -263,8 +263,15 @@ add_global_connection -net VSS -pin_pattern {^VSSE$}
 The `global_connect` command is used to connect power and ground pins on design instances to the appropriate supplies.
 
 ```
-global_connect
+global_connect [-force] [-verbose]
 ```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-force` | If specified, global connections will overwrite existing connections |
+| `-verbose` | If specified, report the number of connections made and skipped. |
 
 #### Clear global connection rules
 
@@ -334,6 +341,20 @@ report_logic_depth_histogram [-num_bins num_bins] [-exclude_buffers] [-exclude_i
 | `-num_bins` | Number of histogram bins to display (default is 10). |
 | `-exclude_buffers` | Exclude buffers when counting critical path length. |
 | `-exclude_inverters` | Exclude inverters when counting critical path length. |
+
+#### 3D Blox
+
+The `read_3dblox_bmap` command will read the bump map and place the bumps into the current design.
+
+```tcl
+read_3dblox_bmap filename
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `filename` | Path to the bump map. |
 
 ## TCL functions
 

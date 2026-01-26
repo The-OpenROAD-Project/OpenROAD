@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,35 +18,27 @@ class _dbSBox;
 
 struct _dbSWireFlags
 {
-  dbWireType::Value _wire_type : 6;
-  uint _spare_bits : 26;
+  dbWireType::Value wire_type : 6;
+  uint32_t spare_bits : 26;
 };
 
 class _dbSWire : public _dbObject
 {
  public:
-  _dbSWireFlags _flags;
-  dbId<_dbNet> _net;
-  dbId<_dbNet> _shield;
-  dbId<_dbSBox> _wires;
-  dbId<_dbSWire> _next_swire;
-
   _dbSWire(_dbDatabase*)
   {
-    _flags._wire_type = dbWireType::NONE;
-    _flags._spare_bits = 0;
+    flags_.wire_type = dbWireType::NONE;
+    flags_.spare_bits = 0;
   }
 
   _dbSWire(_dbDatabase*, const _dbSWire& s)
-      : _flags(s._flags),
-        _net(s._net),
-        _shield(s._shield),
-        _wires(s._wires),
-        _next_swire(s._next_swire)
+      : flags_(s.flags_),
+        net_(s.net_),
+        shield_(s.shield_),
+        wires_(s.wires_),
+        next_swire_(s.next_swire_)
   {
   }
-
-  ~_dbSWire() {}
 
   void addSBox(_dbSBox* box);
   void removeSBox(_dbSBox* box);
@@ -55,28 +48,34 @@ class _dbSWire : public _dbObject
   bool operator<(const _dbSWire& rhs) const;
 
   void collectMemInfo(MemInfo& info);
+
+  _dbSWireFlags flags_;
+  dbId<_dbNet> net_;
+  dbId<_dbNet> shield_;
+  dbId<_dbSBox> wires_;
+  dbId<_dbSWire> next_swire_;
 };
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbSWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream << *bit_field;
-  stream << wire._net;
-  stream << wire._shield;
-  stream << wire._wires;
-  stream << wire._next_swire;
+  stream << wire.net_;
+  stream << wire.shield_;
+  stream << wire.wires_;
+  stream << wire.next_swire_;
 
   return stream;
 }
 
 inline dbIStream& operator>>(dbIStream& stream, _dbSWire& wire)
 {
-  uint* bit_field = (uint*) &wire._flags;
+  uint32_t* bit_field = (uint32_t*) &wire.flags_;
   stream >> *bit_field;
-  stream >> wire._net;
-  stream >> wire._shield;
-  stream >> wire._wires;
-  stream >> wire._next_swire;
+  stream >> wire.net_;
+  stream >> wire.shield_;
+  stream >> wire.wires_;
+  stream >> wire.next_swire_;
 
   return stream;
 }

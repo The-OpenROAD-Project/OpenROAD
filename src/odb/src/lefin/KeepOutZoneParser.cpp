@@ -12,7 +12,7 @@
 #include "odb/lefin.h"
 #include "parserUtils.h"
 
-using namespace odb;
+namespace odb {
 
 void KeepOutZoneParser::setInt(
     double val,
@@ -112,3 +112,5 @@ bool KeepOutZoneParser::parseSubRule(const std::string& s)
   }
   return valid;
 }
+
+}  // namespace odb

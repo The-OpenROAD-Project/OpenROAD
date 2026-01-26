@@ -105,7 +105,7 @@ void frRegionQuery::Impl::add(frShape* shape,
 {
   if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
     odb::Rect frb = shape->getBBox();
-    allShapes.at(shape->getLayerNum()).push_back(std::make_pair(frb, shape));
+    allShapes.at(shape->getLayerNum()).emplace_back(frb, shape);
   } else {
     logger->error(DRT, 5, "Unsupported region query add.");
   }
@@ -134,7 +134,7 @@ void frRegionQuery::Impl::addDRObj(frShape* shape,
   if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect
       || shape->typeId() == frcPatchWire) {
     odb::Rect frb = shape->getBBox();
-    allShapes.at(shape->getLayerNum()).push_back(std::make_pair(frb, shape));
+    allShapes.at(shape->getLayerNum()).emplace_back(frb, shape);
   } else {
     logger->error(DRT, 7, "Unsupported region query add.");
   }
@@ -331,8 +331,7 @@ void frRegionQuery::Impl::addGRObj(grVia* via,
                                    ObjectsByLayer<grBlockObject>& allShapes)
 {
   odb::Rect frb = via->getBBox();
-  allShapes.at(via->getViaDef()->getCutLayerNum())
-      .push_back(std::make_pair(frb, via));
+  allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
 }
 
 void frRegionQuery::removeGRObj(grVia* via)
@@ -347,7 +346,7 @@ void frRegionQuery::Impl::addGRObj(grShape* shape,
 {
   if (shape->typeId() == grcPathSeg) {
     odb::Rect frb = shape->getBBox();
-    allShapes.at(shape->getLayerNum()).push_back(std::make_pair(frb, shape));
+    allShapes.at(shape->getLayerNum()).emplace_back(frb, shape);
   } else {
     logger->error(DRT, 9, "Unsupported region query add.");
   }
@@ -378,8 +377,7 @@ void frRegionQuery::Impl::add(frVia* via,
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
       xform.apply(frb);
-      allShapes.at(via->getViaDef()->getLayer1Num())
-          .push_back(std::make_pair(frb, via));
+      allShapes.at(via->getViaDef()->getLayer1Num()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 11, "Unsupported region query add.");
     }
@@ -389,8 +387,7 @@ void frRegionQuery::Impl::add(frVia* via,
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
       xform.apply(frb);
-      allShapes.at(via->getViaDef()->getLayer2Num())
-          .push_back(std::make_pair(frb, via));
+      allShapes.at(via->getViaDef()->getLayer2Num()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 12, "Unsupported region query add.");
     }
@@ -400,8 +397,7 @@ void frRegionQuery::Impl::add(frVia* via,
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
       xform.apply(frb);
-      allShapes.at(via->getViaDef()->getCutLayerNum())
-          .push_back(std::make_pair(frb, via));
+      allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 13, "Unsupported region query add.");
     }
@@ -419,8 +415,7 @@ void frRegionQuery::Impl::addDRObj(frVia* via,
                                    ObjectsByLayer<frBlockObject>& allShapes)
 {
   odb::Rect frb = via->getBBox();
-  allShapes.at(via->getViaDef()->getCutLayerNum())
-      .push_back(std::make_pair(frb, via));
+  allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
 }
 
 void frRegionQuery::removeDRObj(frVia* via)
@@ -449,7 +444,7 @@ void frRegionQuery::Impl::add(frInstTerm* instTerm,
         odb::Rect frb = shape->getBBox();
         xform.apply(frb);
         allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
-            .push_back(std::make_pair(frb, instTerm));
+            .emplace_back(frb, instTerm);
       } else {
         logger->error(DRT, 14, "Unsupported region query add.");
       }
@@ -466,7 +461,7 @@ void frRegionQuery::Impl::add(frBTerm* term,
       if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
         odb::Rect frb = shape->getBBox();
         allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
-            .push_back(std::make_pair(frb, term));
+            .emplace_back(frb, term);
       } else {
         logger->error(DRT, 15, "Unsupported region query add.");
       }
@@ -486,7 +481,7 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
       odb::Rect frb = shape->getBBox();
       xform.apply(frb);
       allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
-          .push_back(std::make_pair(frb, instBlk));
+          .emplace_back(frb, instBlk);
     } else if (shape->typeId() == frcPolygon) {
       // Decompose the polygon to rectangles and store those
       // Convert the frPolygon to a Boost polygon
@@ -510,7 +505,7 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
       for (auto& rect : rects) {
         odb::Rect box(xl(rect), yl(rect), xh(rect), yh(rect));
         allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
-            .push_back(std::make_pair(box, instBlk));
+            .emplace_back(box, instBlk);
       }
     } else {
       logger->error(DRT,
@@ -530,7 +525,7 @@ void frRegionQuery::Impl::add(frBlockage* blk,
     if (shape->typeId() == frcPathSeg || shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
       allShapes.at(static_cast<frShape*>(shape)->getLayerNum())
-          .push_back(std::make_pair(frb, blk));
+          .emplace_back(frb, blk);
     } else {
       logger->error(DRT, 17, "Unsupported region query add.");
     }
@@ -542,7 +537,7 @@ void frRegionQuery::Impl::addGuide(frGuide* guide,
 {
   odb::Rect frb = guide->getBBox();
   for (int i = guide->getBeginLayerNum(); i <= guide->getEndLayerNum(); i++) {
-    allShapes.at(i).push_back(std::make_pair(frb, guide));
+    allShapes.at(i).emplace_back(frb, guide);
   }
 }
 
@@ -551,7 +546,7 @@ void frRegionQuery::Impl::addRPin(frRPin* rpin,
 {
   frLayerNum layerNum = rpin->getLayerNum();
   odb::Rect frb = rpin->getBBox();
-  allRPins.at(layerNum).push_back(std::make_pair(frb, rpin));
+  allRPins.at(layerNum).emplace_back(frb, rpin);
 }
 
 void frRegionQuery::Impl::addOrigGuide(frNet* net,
@@ -559,7 +554,7 @@ void frRegionQuery::Impl::addOrigGuide(frNet* net,
                                        ObjectsByLayer<frNet>& allShapes)
 {
   odb::Rect frb = rect.getBBox();
-  allShapes.at(rect.getLayerNum()).push_back(std::make_pair(frb, net));
+  allShapes.at(rect.getLayerNum()).emplace_back(frb, net);
 }
 
 void frRegionQuery::query(const box_t& boostb,
@@ -597,9 +592,8 @@ void frRegionQuery::queryGuide(const odb::Rect& box,
 {
   Objects<frGuide> temp;
   queryGuide(box, layerNum, temp);
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryGuide(const odb::Rect& box,
@@ -609,9 +603,8 @@ void frRegionQuery::queryGuide(const odb::Rect& box,
   for (auto& m : impl_->guides) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryOrigGuide(const odb::Rect& box,
@@ -627,9 +620,8 @@ void frRegionQuery::queryGRPin(const odb::Rect& box,
 {
   Objects<frBlockObject> temp;
   impl_->grPins.query(bgi::intersects(box), back_inserter(temp));
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryDRObj(const box_t& boostb,
@@ -653,9 +645,8 @@ void frRegionQuery::queryDRObj(const odb::Rect& box,
 {
   Objects<frBlockObject> temp;
   impl_->drObjs.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryDRObj(const odb::Rect& box,
@@ -665,9 +656,8 @@ void frRegionQuery::queryDRObj(const odb::Rect& box,
   for (auto& m : impl_->drObjs) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryGRObj(const odb::Rect& box,
@@ -677,9 +667,8 @@ void frRegionQuery::queryGRObj(const odb::Rect& box,
   for (auto& m : impl_->grObjs) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryMarker(const odb::Rect& box,
@@ -688,9 +677,8 @@ void frRegionQuery::queryMarker(const odb::Rect& box,
 {
   Objects<frMarker> temp;
   impl_->markers.at(layerNum).query(bgi::intersects(box), back_inserter(temp));
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::queryMarker(const odb::Rect& box,
@@ -700,9 +688,8 @@ void frRegionQuery::queryMarker(const odb::Rect& box,
   for (auto& m : impl_->markers) {
     m.query(bgi::intersects(box), back_inserter(temp));
   }
-  transform(temp.begin(), temp.end(), back_inserter(result), [](auto& kv) {
-    return kv.second;
-  });
+  std::ranges::transform(
+      temp, back_inserter(result), [](auto& kv) { return kv.second; });
 }
 
 void frRegionQuery::init()
@@ -896,7 +883,7 @@ void frRegionQuery::Impl::initGRPin(
   Objects<frBlockObject> allGRPins;
   for (auto& [obj, pt] : in) {
     odb::Rect frb(pt.x(), pt.y(), pt.x(), pt.y());
-    allGRPins.push_back(std::make_pair(frb, obj));
+    allGRPins.emplace_back(frb, obj);
   }
   in.clear();
   in.shrink_to_fit();

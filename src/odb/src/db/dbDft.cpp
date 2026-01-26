@@ -4,11 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbDft.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbScanChain.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 namespace odb {
@@ -76,9 +76,9 @@ void _dbDft::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  scan_pins_->collectMemInfo(info.children_["scan_pins_"]);
+  scan_pins_->collectMemInfo(info.children["scan_pins_"]);
 
-  scan_chains_->collectMemInfo(info.children_["scan_chains_"]);
+  scan_chains_->collectMemInfo(info.children["scan_chains_"]);
 }
 
 _dbDft::~_dbDft()

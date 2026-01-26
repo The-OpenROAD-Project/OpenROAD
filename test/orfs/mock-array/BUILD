@@ -1,10 +1,13 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
+load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
 package(
     features = ["-layering_check"],  # TODO: enable
 )
+
+exports_files(["write_verilog.tcl"])
 
 chisel_binary(
     name = "generate_verilog",
@@ -80,6 +83,23 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
     config = config,
 ) for name, config in CONFIGS.items()]
 
+test_suite(
+    name = "eqy_tests",
+    tags = ["manual"],
+    tests = ["Element_eqy_{variant}".format(variant = name) for name in CONFIGS] +
+            [
+                "MockArray_eqy_{name}_{variant}".format(
+                    name = name,
+                    variant = variant,
+                )
+                for name in CONFIGS
+                for variant in [
+                    "flat",
+                    "base",
+                ]
+            ],
+)
+
 orfs_run(
     name = "write_macro_placement",
     src = ":MockArray_4x4_base_floorplan",
@@ -99,3 +119,23 @@ orfs_run(
     script = ":write_pin_placement.tcl",
     tags = ["manual"],
 )
+
+[
+    orfs_run(
+        name = "{}_floorplan_verilog".format(module),
+        src = ":{}_base_floorplan".format(module),
+        outs = [
+            "{}_floorplan.v".format(module),
+        ],
+        arguments = {
+            "ASAP7_REMOVE_CELLS": " ".join(ASAP7_REMOVE_CELLS),
+            "OUTPUT": "$(location :{}_floorplan.v)".format(module),
+        },
+        script = ":write_verilog.tcl",
+        tags = ["manual"],
+    )
+    for module in [
+        "MockArray_4x4",
+        "Element_4x4",
+    ]
+]

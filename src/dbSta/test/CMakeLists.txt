@@ -5,6 +5,8 @@ or_integration_tests(
     check_axioms
     clock_pin
     constant1
+    escape_slash
+    escape_slash_hier
     find_clks1
     find_clks2
     get_ports1
@@ -17,6 +19,7 @@ or_integration_tests(
     network_edit1
     power1
     read_liberty1
+    read_vcd
     read_verilog1
     read_verilog2
     read_verilog3

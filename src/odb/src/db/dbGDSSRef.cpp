@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 // User Code Begin Includes
@@ -22,10 +22,10 @@ template class dbTable<_dbGDSSRef>;
 
 bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
 {
-  if (_origin != rhs._origin) {
+  if (origin_ != rhs.origin_) {
     return false;
   }
-  if (_structure != rhs._structure) {
+  if (structure_ != rhs.structure_) {
     return false;
   }
 
@@ -43,19 +43,19 @@ _dbGDSSRef::_dbGDSSRef(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj)
 {
-  stream >> obj._origin;
-  stream >> obj._propattr;
-  stream >> obj._transform;
-  stream >> obj._structure;
+  stream >> obj.origin_;
+  stream >> obj.propattr_;
+  stream >> obj.transform_;
+  stream >> obj.structure_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj)
 {
-  stream << obj._origin;
-  stream << obj._propattr;
-  stream << obj._transform;
-  stream << obj._structure;
+  stream << obj.origin_;
+  stream << obj.propattr_;
+  stream << obj.transform_;
+  stream << obj.structure_;
   return stream;
 }
 
@@ -65,9 +65,9 @@ void _dbGDSSRef::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["propattr"].add(_propattr);
-  for (auto& [i, s] : _propattr) {
-    info.children_["propattr"].add(s);
+  info.children["propattr"].add(propattr_);
+  for (auto& [i, s] : propattr_) {
+    info.children["propattr"].add(s);
   }
   // User Code End collectMemInfo
 }
@@ -82,26 +82,26 @@ void dbGDSSRef::setOrigin(Point origin)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 
-  obj->_origin = origin;
+  obj->origin_ = origin;
 }
 
 Point dbGDSSRef::getOrigin() const
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  return obj->_origin;
+  return obj->origin_;
 }
 
 void dbGDSSRef::setTransform(dbGDSSTrans transform)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 
-  obj->_transform = transform;
+  obj->transform_ = transform;
 }
 
 dbGDSSTrans dbGDSSRef::getTransform() const
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  return obj->_transform;
+  return obj->transform_;
 }
 
 // User Code Begin dbGDSSRefPublicMethods
@@ -109,25 +109,25 @@ dbGDSSTrans dbGDSSRef::getTransform() const
 dbGDSStructure* dbGDSSRef::getStructure() const
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
-  if (obj->_structure == 0) {
+  if (obj->structure_ == 0) {
     return nullptr;
   }
   _dbGDSStructure* parent = (_dbGDSStructure*) obj->getOwner();
   _dbGDSLib* lib = (_dbGDSLib*) parent->getOwner();
-  return (dbGDSStructure*) lib->_gdsstructure_tbl->getPtr(obj->_structure);
+  return (dbGDSStructure*) lib->gdsstructure_tbl_->getPtr(obj->structure_);
 }
 
 std::vector<std::pair<std::int16_t, std::string>>& dbGDSSRef::getPropattr()
 {
   auto* obj = (_dbGDSSRef*) this;
-  return obj->_propattr;
+  return obj->propattr_;
 }
 
 dbGDSSRef* dbGDSSRef::create(dbGDSStructure* parent, dbGDSStructure* child)
 {
   auto* obj = (_dbGDSStructure*) parent;
   _dbGDSSRef* sref = obj->srefs_->create();
-  sref->_structure = child->getImpl()->getOID();
+  sref->structure_ = child->getImpl()->getOID();
   return (dbGDSSRef*) sref;
 }
 

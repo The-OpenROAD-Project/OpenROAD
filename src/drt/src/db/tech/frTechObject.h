@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <map>
@@ -58,10 +59,6 @@ class frTechObject
       const
   {
     return viaRuleGenerates_;
-  }
-  bool hasUnidirectionalLayer(odb::dbTechLayer* dbLayer) const
-  {
-    return unidirectional_layers_.find(dbLayer) != unidirectional_layers_.end();
   }
   bool hasMaxSpacingConstraints() const
   {
@@ -125,10 +122,6 @@ class frTechObject
       return uConstraints_[idx].get();
     }
     return nullptr;
-  }
-  void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
-  {
-    unidirectional_layers_.insert(dbLayer);
   }
 
   // forbidden length table related
@@ -218,9 +211,7 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getSpacing(z) > spc) {
-        spc = nd->getSpacing(z);
-      }
+      spc = std::max(nd->getSpacing(z), spc);
     }
     return spc;
   }
@@ -229,9 +220,7 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getWidth(z) > spc) {
-        spc = nd->getWidth(z);
-      }
+      spc = std::max(nd->getWidth(z), spc);
     }
     return spc;
   }
@@ -406,8 +395,6 @@ class frTechObject
   ByLayer<std::array<bool, 4>> viaForbiddenThrough_;
   bool hasVia2viaMinStep_ = false;
   bool hasCornerSpacingConstraint_ = false;
-  // unidirectional layers
-  std::set<odb::dbTechLayer*> unidirectional_layers_;
 
   friend class FlexRP;
 };

@@ -13,13 +13,13 @@ jobs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Install Dependencies
         run: |
           python3 -m venv venv
-          venv/bin/pip install tclint==0.6.1
+          venv/bin/pip install tclint==0.7.0
 
       - name: Lint
         run: |

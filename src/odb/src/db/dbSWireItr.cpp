@@ -3,11 +3,12 @@
 
 #include "dbSWireItr.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbNet.h"
 #include "dbSWire.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 
 namespace odb {
@@ -21,12 +22,12 @@ namespace odb {
 //
 // BTerms are ordered by io-type and cannot be reversed.
 //
-bool dbSWireItr::reversible()
+bool dbSWireItr::reversible() const
 {
   return true;
 }
 
-bool dbSWireItr::orderReversed()
+bool dbSWireItr::orderReversed() const
 {
   return true;
 }
@@ -34,29 +35,29 @@ bool dbSWireItr::orderReversed()
 void dbSWireItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->_swires;
-  uint list = 0;
+  uint32_t id = net->swires_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbSWire* swire = _swire_tbl->getPtr(id);
-    uint n = swire->_next_swire;
-    swire->_next_swire = list;
+    _dbSWire* swire = swire_tbl_->getPtr(id);
+    uint32_t n = swire->next_swire_;
+    swire->next_swire_ = list;
     list = id;
     id = n;
   }
 
-  net->_swires = list;
+  net->swires_ = list;
 }
 
-uint dbSWireItr::sequential()
+uint32_t dbSWireItr::sequential() const
 {
   return 0;
 }
 
-uint dbSWireItr::size(dbObject* parent)
+uint32_t dbSWireItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbSWireItr::begin(parent); id != dbSWireItr::end(parent);
        id = dbSWireItr::next(id)) {
@@ -66,26 +67,26 @@ uint dbSWireItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbSWireItr::begin(dbObject* parent)
+uint32_t dbSWireItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
-  return net->_swires;
+  return net->swires_;
 }
 
-uint dbSWireItr::end(dbObject* /* unused: parent */)
+uint32_t dbSWireItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbSWireItr::next(uint id, ...)
+uint32_t dbSWireItr::next(uint32_t id, ...) const
 {
-  _dbSWire* swire = _swire_tbl->getPtr(id);
-  return swire->_next_swire;
+  _dbSWire* swire = swire_tbl_->getPtr(id);
+  return swire->next_swire_;
 }
 
-dbObject* dbSWireItr::getObject(uint id, ...)
+dbObject* dbSWireItr::getObject(uint32_t id, ...)
 {
-  return _swire_tbl->getPtr(id);
+  return swire_tbl_->getPtr(id);
 }
 
 }  // namespace odb

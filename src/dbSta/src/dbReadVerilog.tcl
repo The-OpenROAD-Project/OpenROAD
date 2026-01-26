@@ -34,13 +34,15 @@ sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
 proc write_verilog { args } {
   sta::parse_key_args "write_verilog" args keys {-remove_cells} \
     flags {-sort -include_pwr_gnd}
+  if { [info exists flags(-sort)] } {
+    utl::warn STA 2065 "The -sort flag is ignored."
+  }
   set remove_cells {}
   if { [info exists keys(-remove_cells)] } {
     set remove_cells [sta::parse_cell_arg $keys(-remove_cells)]
   }
-  set sort [info exists flags(-sort)]
   set include_pwr_gnd [info exists flags(-include_pwr_gnd)]
   sta::check_argc_eq1 "write_verilog" $args
   set filename [file nativename [lindex $args 0]]
-  sta::write_verilog_cmd $filename $sort $include_pwr_gnd $remove_cells
+  sta::write_verilog_cmd $filename $include_pwr_gnd $remove_cells
 }

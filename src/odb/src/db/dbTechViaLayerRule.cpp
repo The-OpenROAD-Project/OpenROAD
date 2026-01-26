@@ -3,10 +3,11 @@
 
 #include "dbTechViaLayerRule.h"
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
@@ -28,79 +29,79 @@ template class dbTable<_dbTechViaLayerRule>;
 
 bool _dbTechViaLayerRule::operator==(const _dbTechViaLayerRule& rhs) const
 {
-  if (_flags._direction != rhs._flags._direction) {
+  if (flags_.direction != rhs.flags_.direction) {
     return false;
   }
 
-  if (_flags._has_enclosure != rhs._flags._has_enclosure) {
+  if (flags_.has_enclosure != rhs.flags_.has_enclosure) {
     return false;
   }
 
-  if (_flags._has_width != rhs._flags._has_width) {
+  if (flags_.has_width != rhs.flags_.has_width) {
     return false;
   }
 
-  if (_flags._has_overhang != rhs._flags._has_overhang) {
+  if (flags_.has_overhang != rhs.flags_.has_overhang) {
     return false;
   }
 
-  if (_flags._has_metal_overhang != rhs._flags._has_metal_overhang) {
+  if (flags_.has_metal_overhang != rhs.flags_.has_metal_overhang) {
     return false;
   }
 
-  if (_flags._has_resistance != rhs._flags._has_resistance) {
+  if (flags_.has_resistance != rhs.flags_.has_resistance) {
     return false;
   }
 
-  if (_flags._has_spacing != rhs._flags._has_spacing) {
+  if (flags_.has_spacing != rhs.flags_.has_spacing) {
     return false;
   }
 
-  if (_flags._has_rect != rhs._flags._has_rect) {
+  if (flags_.has_rect != rhs.flags_.has_rect) {
     return false;
   }
 
-  if (_overhang1 != rhs._overhang1) {
+  if (overhang1_ != rhs.overhang1_) {
     return false;
   }
 
-  if (_overhang2 != rhs._overhang2) {
+  if (overhang2_ != rhs.overhang2_) {
     return false;
   }
 
-  if (_min_width != rhs._min_width) {
+  if (min_width_ != rhs.min_width_) {
     return false;
   }
 
-  if (_max_width != rhs._max_width) {
+  if (max_width_ != rhs.max_width_) {
     return false;
   }
 
-  if (_overhang != rhs._overhang) {
+  if (overhang_ != rhs.overhang_) {
     return false;
   }
 
-  if (_metal_overhang != rhs._metal_overhang) {
+  if (metal_overhang_ != rhs.metal_overhang_) {
     return false;
   }
 
-  if (_spacing_x != rhs._spacing_x) {
+  if (spacing_x_ != rhs.spacing_x_) {
     return false;
   }
 
-  if (_spacing_y != rhs._spacing_y) {
+  if (spacing_y_ != rhs.spacing_y_) {
     return false;
   }
 
-  if (_resistance != rhs._resistance) {
+  if (resistance_ != rhs.resistance_) {
     return false;
   }
 
-  if (_rect != rhs._rect) {
+  if (rect_ != rhs.rect_) {
     return false;
   }
 
-  if (_layer != rhs._layer) {
+  if (layer_ != rhs.layer_) {
     return false;
   }
 
@@ -109,80 +110,76 @@ bool _dbTechViaLayerRule::operator==(const _dbTechViaLayerRule& rhs) const
 
 _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*,
                                          const _dbTechViaLayerRule& v)
-    : _flags(v._flags),
-      _overhang1(v._overhang1),
-      _overhang2(v._overhang2),
-      _min_width(v._min_width),
-      _max_width(v._max_width),
-      _overhang(v._overhang),
-      _metal_overhang(v._metal_overhang),
-      _spacing_x(v._spacing_x),
-      _spacing_y(v._spacing_y),
-      _resistance(v._resistance),
-      _rect(v._rect),
-      _layer(v._layer)
+    : flags_(v.flags_),
+      overhang1_(v.overhang1_),
+      overhang2_(v.overhang2_),
+      min_width_(v.min_width_),
+      max_width_(v.max_width_),
+      overhang_(v.overhang_),
+      metal_overhang_(v.metal_overhang_),
+      spacing_x_(v.spacing_x_),
+      spacing_y_(v.spacing_y_),
+      resistance_(v.resistance_),
+      rect_(v.rect_),
+      layer_(v.layer_)
 {
 }
 
 _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*)
 {
-  _flags._direction = 0;
-  _flags._has_enclosure = 0;
-  _flags._has_width = 0;
-  _flags._has_overhang = 0;
-  _flags._has_metal_overhang = 0;
-  _flags._has_resistance = 0;
-  _flags._has_spacing = 0;
-  _flags._has_rect = 0;
-  _flags._spare_bits = 0;
-  _overhang1 = 0;
-  _overhang2 = 0;
-  _min_width = 0;
-  _max_width = 0;
-  _overhang = 0;
-  _metal_overhang = 0;
-  _spacing_x = 0;
-  _spacing_y = 0;
-  _resistance = 0.0;
-}
-
-_dbTechViaLayerRule::~_dbTechViaLayerRule()
-{
+  flags_.direction = 0;
+  flags_.has_enclosure = 0;
+  flags_.has_width = 0;
+  flags_.has_overhang = 0;
+  flags_.has_metal_overhang = 0;
+  flags_.has_resistance = 0;
+  flags_.has_spacing = 0;
+  flags_.has_rect = 0;
+  flags_.spare_bits = 0;
+  overhang1_ = 0;
+  overhang2_ = 0;
+  min_width_ = 0;
+  max_width_ = 0;
+  overhang_ = 0;
+  metal_overhang_ = 0;
+  spacing_x_ = 0;
+  spacing_y_ = 0;
+  resistance_ = 0.0;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaLayerRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream << *bit_field;
-  stream << v._overhang1;
-  stream << v._overhang2;
-  stream << v._min_width;
-  stream << v._max_width;
-  stream << v._overhang;
-  stream << v._metal_overhang;
-  stream << v._spacing_x;
-  stream << v._spacing_y;
-  stream << v._resistance;
-  stream << v._rect;
-  stream << v._layer;
+  stream << v.overhang1_;
+  stream << v.overhang2_;
+  stream << v.min_width_;
+  stream << v.max_width_;
+  stream << v.overhang_;
+  stream << v.metal_overhang_;
+  stream << v.spacing_x_;
+  stream << v.spacing_y_;
+  stream << v.resistance_;
+  stream << v.rect_;
+  stream << v.layer_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechViaLayerRule& v)
 {
-  uint* bit_field = (uint*) &v._flags;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream >> *bit_field;
-  stream >> v._overhang1;
-  stream >> v._overhang2;
-  stream >> v._min_width;
-  stream >> v._max_width;
-  stream >> v._overhang;
-  stream >> v._metal_overhang;
-  stream >> v._spacing_x;
-  stream >> v._spacing_y;
-  stream >> v._resistance;
-  stream >> v._rect;
-  stream >> v._layer;
+  stream >> v.overhang1_;
+  stream >> v.overhang2_;
+  stream >> v.min_width_;
+  stream >> v.max_width_;
+  stream >> v.overhang_;
+  stream >> v.metal_overhang_;
+  stream >> v.spacing_x_;
+  stream >> v.spacing_y_;
+  stream >> v.resistance_;
+  stream >> v.rect_;
+  stream >> v.layer_;
   return stream;
 }
 
@@ -196,164 +193,164 @@ dbTechLayer* dbTechViaLayerRule::getLayer()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
 
-  if (rule->_layer == 0) {
+  if (rule->layer_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) rule->getOwner();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(rule->layer_);
 }
 
 dbTechLayerDir dbTechViaLayerRule::getDirection()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  dbTechLayerDir d((dbTechLayerDir::Value) rule->_flags._direction);
+  dbTechLayerDir d((dbTechLayerDir::Value) rule->flags_.direction);
   return d;
 }
 
 void dbTechViaLayerRule::setDirection(dbTechLayerDir dir)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._direction = dir.getValue();
+  rule->flags_.direction = dir.getValue();
 }
 
 bool dbTechViaLayerRule::hasWidth()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_flags._has_width == 1;
+  return rule->flags_.has_width == 1;
 }
 
 void dbTechViaLayerRule::getWidth(int& minWidth, int& maxWidth)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  minWidth = rule->_min_width;
-  maxWidth = rule->_max_width;
+  minWidth = rule->min_width_;
+  maxWidth = rule->max_width_;
 }
 
 void dbTechViaLayerRule::setWidth(int minWidth, int maxWidth)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._has_width = 1;
-  rule->_min_width = minWidth;
-  rule->_max_width = maxWidth;
+  rule->flags_.has_width = 1;
+  rule->min_width_ = minWidth;
+  rule->max_width_ = maxWidth;
 }
 
 bool dbTechViaLayerRule::hasEnclosure()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_flags._has_enclosure == 1;
+  return rule->flags_.has_enclosure == 1;
 }
 
 void dbTechViaLayerRule::getEnclosure(int& overhang1, int& overhang2)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  overhang1 = rule->_overhang1;
-  overhang2 = rule->_overhang2;
+  overhang1 = rule->overhang1_;
+  overhang2 = rule->overhang2_;
 }
 
 void dbTechViaLayerRule::setEnclosure(int overhang1, int overhang2)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._has_enclosure = 1;
-  rule->_overhang1 = overhang1;
-  rule->_overhang2 = overhang2;
+  rule->flags_.has_enclosure = 1;
+  rule->overhang1_ = overhang1;
+  rule->overhang2_ = overhang2;
 }
 
 bool dbTechViaLayerRule::hasOverhang()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_flags._has_overhang == 1;
+  return rule->flags_.has_overhang == 1;
 }
 
 int dbTechViaLayerRule::getOverhang()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_overhang;
+  return rule->overhang_;
 }
 
 void dbTechViaLayerRule::setOverhang(int overhang)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._has_overhang = 1;
-  rule->_overhang = overhang;
+  rule->flags_.has_overhang = 1;
+  rule->overhang_ = overhang;
 }
 
 bool dbTechViaLayerRule::hasMetalOverhang()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_flags._has_metal_overhang == 1;
+  return rule->flags_.has_metal_overhang == 1;
 }
 
 int dbTechViaLayerRule::getMetalOverhang()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_metal_overhang;
+  return rule->metal_overhang_;
 }
 
 void dbTechViaLayerRule::setMetalOverhang(int overhang)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._has_metal_overhang = 1;
-  rule->_metal_overhang = overhang;
+  rule->flags_.has_metal_overhang = 1;
+  rule->metal_overhang_ = overhang;
 }
 
 bool dbTechViaLayerRule::hasSpacing()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_flags._has_spacing == 1;
+  return rule->flags_.has_spacing == 1;
 }
 
 void dbTechViaLayerRule::getSpacing(int& spacing_x, int& spacing_y)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  spacing_x = rule->_spacing_x;
-  spacing_y = rule->_spacing_y;
+  spacing_x = rule->spacing_x_;
+  spacing_y = rule->spacing_y_;
 }
 
 void dbTechViaLayerRule::setSpacing(int spacing_x, int spacing_y)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._has_spacing = 1;
-  rule->_spacing_x = spacing_x;
-  rule->_spacing_y = spacing_y;
+  rule->flags_.has_spacing = 1;
+  rule->spacing_x_ = spacing_x;
+  rule->spacing_y_ = spacing_y;
 }
 
 bool dbTechViaLayerRule::hasRect()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_flags._has_rect == 1;
+  return rule->flags_.has_rect == 1;
 }
 
 void dbTechViaLayerRule::getRect(Rect& r)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  r = rule->_rect;
+  r = rule->rect_;
 }
 
 void dbTechViaLayerRule::setRect(const Rect& r)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._has_rect = 1;
-  rule->_rect = r;
+  rule->flags_.has_rect = 1;
+  rule->rect_ = r;
 }
 
 bool dbTechViaLayerRule::hasResistance()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_flags._has_resistance == 1;
+  return rule->flags_.has_resistance == 1;
 }
 
 void dbTechViaLayerRule::setResistance(double r)
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  rule->_flags._has_resistance = 1;
-  rule->_resistance = r;
+  rule->flags_.has_resistance = 1;
+  rule->resistance_ = r;
 }
 
 double dbTechViaLayerRule::getResistance()
 {
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
-  return rule->_resistance;
+  return rule->resistance_;
 }
 
 dbTechViaLayerRule* dbTechViaLayerRule::create(dbTech* tech_,
@@ -362,9 +359,9 @@ dbTechViaLayerRule* dbTechViaLayerRule::create(dbTech* tech_,
 {
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaRule* rule = (_dbTechViaRule*) rule_;
-  _dbTechViaLayerRule* layrule = tech->_via_layer_rule_tbl->create();
-  layrule->_layer = layer->getImpl()->getOID();
-  rule->_layer_rules.push_back(layrule->getImpl()->getOID());
+  _dbTechViaLayerRule* layrule = tech->via_layer_rule_tbl_->create();
+  layrule->layer_ = layer->getImpl()->getOID();
+  rule->layer_rules_.push_back(layrule->getImpl()->getOID());
   return (dbTechViaLayerRule*) layrule;
 }
 
@@ -374,17 +371,17 @@ dbTechViaLayerRule* dbTechViaLayerRule::create(dbTech* tech_,
 {
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) rule_;
-  _dbTechViaLayerRule* layrule = tech->_via_layer_rule_tbl->create();
-  layrule->_layer = layer->getImpl()->getOID();
-  rule->_layer_rules.push_back(layrule->getImpl()->getOID());
+  _dbTechViaLayerRule* layrule = tech->via_layer_rule_tbl_->create();
+  layrule->layer_ = layer->getImpl()->getOID();
+  rule->layer_rules_.push_back(layrule->getImpl()->getOID());
   return (dbTechViaLayerRule*) layrule;
 }
 
 dbTechViaLayerRule* dbTechViaLayerRule::getTechViaLayerRule(dbTech* tech_,
-                                                            uint dbid_)
+                                                            uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
-  return (dbTechViaLayerRule*) tech->_via_layer_rule_tbl->getPtr(dbid_);
+  return (dbTechViaLayerRule*) tech->via_layer_rule_tbl_->getPtr(dbid_);
 }
 
 void _dbTechViaLayerRule::collectMemInfo(MemInfo& info)

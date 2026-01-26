@@ -17,6 +17,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 #include "via.h"
@@ -61,7 +62,24 @@ std::string GridComponent::typeToString(Type type)
   return "Unknown";
 }
 
-ShapePtr GridComponent::addShape(Shape* shape)
+bool GridComponent::make(Shape::ShapeTreeMap& shapes,
+                         Shape::ObstructionTreeMap& obstructions)
+{
+  const int shape_count = getShapeCount();
+
+  // make initial shapes
+  makeShapes(shapes);
+  // cut shapes to avoid obstructions
+  cutShapes(obstructions);
+  // add shapes and obstructions to they are accounted for in future
+  // components
+  getObstructions(obstructions);
+  getShapes(shapes);
+
+  return shape_count != getShapeCount();
+}
+
+ShapePtr GridComponent::addShape(std::unique_ptr<Shape> shape)
 {
   debugPrint(getLogger(),
              utl::PDN,
@@ -69,12 +87,12 @@ ShapePtr GridComponent::addShape(Shape* shape)
              3,
              "Adding shape {}.",
              shape->getReportText());
-  auto shape_ptr = std::shared_ptr<Shape>(shape);
-  if (!shape_ptr->isValid()) {
+  if (!shape->isValid()) {
     // do not add invalid shapes
     return nullptr;
   }
 
+  auto shape_ptr = std::shared_ptr<Shape>(shape.release());
   shape_ptr->setGridComponent(this);
   const odb::Rect& shape_rect = shape_ptr->getRect();
 
@@ -179,6 +197,12 @@ ShapePtr GridComponent::addShape(Shape* shape)
 
 void GridComponent::removeShape(Shape* shape)
 {
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Shape",
+             3,
+             "Removing shape {}.",
+             shape->getReportText());
   for (const auto& via : shape->getVias()) {
     via->removeShape(shape);
   }
@@ -193,14 +217,23 @@ void GridComponent::removeShape(Shape* shape)
 }
 
 void GridComponent::replaceShape(Shape* shape,
-                                 const std::vector<Shape*>& replacements)
+                                 std::unique_ptr<Shape> replacement)
+{
+  std::vector<std::unique_ptr<Shape>> replacements;
+  replacements.push_back(std::move(replacement));
+  replaceShape(shape, replacements);
+}
+
+void GridComponent::replaceShape(
+    Shape* shape,
+    std::vector<std::unique_ptr<Shape>>& replacements)
 {
   auto vias = shape->getVias();
 
   removeShape(shape);
 
-  for (auto* new_shape : replacements) {
-    const auto& new_shape_ptr = addShape(new_shape);
+  for (auto& new_shape : replacements) {
+    const auto& new_shape_ptr = addShape(std::move(new_shape));
 
     if (new_shape_ptr == nullptr) {
       continue;
@@ -217,6 +250,8 @@ void GridComponent::replaceShape(Shape* shape,
       }
     }
   }
+
+  replacements.clear();
 }
 
 void GridComponent::getObstructions(
@@ -279,13 +314,13 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
              getShapeCount());
 
   for (const auto& [layer, shapes] : shapes_) {
-    if (obstructions.count(layer) == 0) {
+    if (!obstructions.contains(layer)) {
       continue;
     }
     const auto& obs = obstructions.at(layer);
-    std::map<Shape*, std::vector<Shape*>> replacement_shapes;
+    std::map<Shape*, std::vector<std::unique_ptr<Shape>>> replacement_shapes;
     for (const auto& shape : shapes) {
-      std::vector<Shape*> replacements;
+      std::vector<std::unique_ptr<Shape>> replacements;
       if (!shape->cut(obs, getGrid(), replacements)) {
         continue;
       }
@@ -293,7 +328,7 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
       replacement_shapes[shape.get()] = std::move(replacements);
     }
 
-    for (const auto& [shape, replacement] : replacement_shapes) {
+    for (auto& [shape, replacement] : replacement_shapes) {
       replaceShape(shape, replacement);
     }
   }
@@ -321,16 +356,14 @@ std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
   std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
 
   // sort shapes so they get written to db in the same order
-  std::sort(
-      all_shapes.begin(), all_shapes.end(), [](const auto& l, const auto& r) {
-        auto* l_layer = l->getLayer();
-        int l_level = l_layer->getNumber();
-        auto* r_layer = l->getLayer();
-        int r_level = r_layer->getNumber();
+  std::ranges::sort(all_shapes, [](const auto& l, const auto& r) {
+    auto* l_layer = l->getLayer();
+    int l_level = l_layer->getNumber();
+    auto* r_layer = r->getLayer();
+    int r_level = r_layer->getNumber();
 
-        return std::tie(l_level, l->getRect())
-               < std::tie(r_level, r->getRect());
-      });
+    return std::tie(l_level, l->getRect()) < std::tie(r_level, r->getRect());
+  });
 
   for (const auto& shape : all_shapes) {
     auto net = net_map.find(shape->getNet());
@@ -488,7 +521,7 @@ void GridComponent::setNets(const std::vector<odb::dbNet*>& nets)
 {
   const auto grid_nets = grid_->getNets();
   for (auto* net : nets) {
-    if (std::find(grid_nets.begin(), grid_nets.end(), net) == grid_nets.end()) {
+    if (std::ranges::find(grid_nets, net) == grid_nets.end()) {
       getLogger()->error(utl::PDN,
                          224,
                          "{} is not a net in {}.",

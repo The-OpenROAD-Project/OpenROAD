@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -30,7 +31,6 @@ namespace mpl {
 
 class HierRTLMP;
 class MplObserver;
-struct Rect;
 
 class MacroPlacer
 {
@@ -51,13 +51,9 @@ class MacroPlacer
              int max_num_level,
              float coarsening_ratio,
              int large_net_threshold,
-             int signature_net_threshold,
-             float halo_width,
-             float halo_height,
-             float fence_lx,
-             float fence_ly,
-             float fence_ux,
-             float fence_uy,
+             int halo_width,
+             int halo_height,
+             odb::Rect global_fence,
              float area_weight,
              float outline_weight,
              float wirelength_weight,
@@ -67,10 +63,10 @@ class MacroPlacer
              float notch_weight,
              float macro_blockage_weight,
              float target_util,
-             float target_dead_space,
              float min_ar,
              const char* report_directory,
-             bool keep_clustering_data);
+             bool keep_clustering_data,
+             bool data_flow_driven);
 
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
@@ -81,7 +77,7 @@ class MacroPlacer
   std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void setMacroPlacementFile(const std::string& file_name);
-  void addGuidanceRegion(odb::dbInst* macro, const Rect& region);
+  void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -95,7 +91,7 @@ class MacroPlacer
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
 
-  std::map<odb::dbInst*, Rect> guidance_regions_;
+  std::map<odb::dbInst*, odb::Rect> guidance_regions_;
 };
 
 }  // namespace mpl

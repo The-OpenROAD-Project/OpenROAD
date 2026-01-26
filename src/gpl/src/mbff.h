@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include <fstream>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,24 +34,12 @@ namespace gpl {
 struct Point;
 struct Tray;
 struct Flop;
-class Graphics;
-enum PortName
-{
-  d,
-  si,
-  se,
-  preset,
-  clear,
-  q,
-  qn,
-  vss,
-  vdd,
-  func,
-  ifunc
-};
+class AbstractGraphics;
 
 class MBFF
 {
+  friend class MBFFTestPeer;
+
  public:
   MBFF(odb::dbDatabase* db,
        sta::dbSta* sta,
@@ -62,11 +48,28 @@ class MBFF
        int threads,
        int multistart,
        int num_paths,
-       bool debug_graphics = false);
+       bool debug_graphics,
+       std::unique_ptr<AbstractGraphics> graphics);
+
   ~MBFF();
   void Run(int mx_sz, float alpha, float beta);
 
  private:
+  enum PortName
+  {
+    d,
+    si,
+    se,
+    preset,
+    clear,
+    q,
+    qn,
+    vss,
+    vdd,
+    func,
+    ifunc
+  };
+
   // get the respective q/qn pins for a d pin
   struct FlopOutputs
   {
@@ -93,7 +96,6 @@ class MBFF
   const sta::LibertyCell* getLibertyCell(const sta::Cell* cell);
   float GetDist(const Point& a, const Point& b);
   float GetDistAR(const Point& a, const Point& b, float AR);
-  int GetRows(int slot_cnt, const Mask& array_mask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
 
@@ -144,8 +146,7 @@ class MBFF
   Point GetTrayCenter(const Mask& array_mask, int idx);
   // get slots w.r.t. tray center
   void GetSlots(const Point& tray,
-                int rows,
-                int cols,
+                int bit_cnt,
                 std::vector<Point>& slots,
                 const Mask& array_mask);
 
@@ -233,9 +234,9 @@ class MBFF
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   sta::Corner* corner_;
+  std::unique_ptr<AbstractGraphics> graphics_;
   utl::Logger* log_;
   rsz::Resizer* resizer_;
-  std::unique_ptr<Graphics> graphics_;
   int num_threads_;
   int multistart_;
   int num_paths_;
@@ -278,4 +279,5 @@ class MBFF
   // all MBFF next_states
   std::vector<std::pair<const sta::FuncExpr*, odb::dbInst*>> funcs_;
 };
+
 }  // namespace gpl

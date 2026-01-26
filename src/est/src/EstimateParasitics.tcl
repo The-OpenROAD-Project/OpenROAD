@@ -53,7 +53,7 @@ proc set_layer_rc { args } {
     flags {}
 
   if { [info exists keys(-layer)] && [info exists keys(-via)] } {
-    utl::error "ORD" 201 "Use -layer or -via but not both."
+    utl::error "EST" 201 "Use -layer or -via but not both."
   }
 
   set corners [sta::parse_corner_or_all keys]
@@ -62,15 +62,15 @@ proc set_layer_rc { args } {
     set layer_name $keys(-layer)
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "ORD" 202 "layer $layer_name not found."
+      utl::error "EST" 202 "layer $layer_name not found."
     }
 
     if { [$layer getRoutingLevel] == 0 } {
-      utl::error "ORD" 203 "$layer_name is not a routing layer."
+      utl::error "EST" 203 "$layer_name is not a routing layer."
     }
 
     if { ![info exists keys(-capacitance)] && ![info exists keys(-resistance)] } {
-      utl::error "ORD" 204 "missing -capacitance or -resistance argument."
+      utl::error "EST" 204 "missing -capacitance or -resistance argument."
     }
 
     set cap 0.0
@@ -102,11 +102,11 @@ proc set_layer_rc { args } {
     set layer_name $keys(-via)
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "ORD" 205 "via $layer_name not found."
+      utl::error "EST" 205 "via $layer_name not found."
     }
 
     if { [info exists keys(-capacitance)] } {
-      utl::warn "ORD" 206 "-capacitance not supported for vias."
+      utl::warn "EST" 206 "-capacitance not supported for vias."
     }
 
     if { [info exists keys(-resistance)] } {
@@ -124,10 +124,10 @@ proc set_layer_rc { args } {
         est::set_layer_rc_cmd $layer $corner $res 0.0
       }
     } else {
-      utl::error "ORD" 208 "no -resistance specified for via."
+      utl::error "EST" 208 "no -resistance specified for via."
     }
   } else {
-    utl::error "ORD" 209 "missing -layer or -via argument."
+    utl::error "EST" 209 "missing -layer or -via argument."
   }
 }
 
@@ -141,8 +141,10 @@ proc report_layer_rc { args } {
   set tech [est::get_db_tech_checked]
   set no_routing_layers [$tech getRoutingLayerCount]
   ord::ensure_units_initialized
-  set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
-  set cap_unit "[sta::unit_scaled_suffix "capacitance"]/[sta::unit_scaled_suffix "distance"]"
+  set res_unit \
+    "[sta::unit_scale_abbrev_suffix "resistance"]/[sta::unit_scale_abbrev_suffix "distance"]"
+  set cap_unit \
+    "[sta::unit_scale_abbrev_suffix "capacitance"]/[sta::unit_scale_abbrev_suffix "distance"]"
   set res_convert [expr [sta::resistance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
   set cap_convert [expr [sta::capacitance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
 
@@ -163,7 +165,7 @@ proc report_layer_rc { args } {
   }
   puts "------------------------------------------------"
 
-  set res_unit "[sta::unit_scaled_suffix "resistance"]"
+  set res_unit "[sta::unit_scale_abbrev_suffix "resistance"]"
   set res_convert [sta::resistance_sta_ui 1.0]
   puts ""
   puts "   Layer   | Via Resistance "

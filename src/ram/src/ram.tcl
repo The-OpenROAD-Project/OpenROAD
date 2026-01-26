@@ -6,12 +6,14 @@ sta::define_cmd_args "generate_ram_netlist" {-bytes_per_word bits
                                              [-storage_cell name]
                                              [-tristate_cell name]
                                              [-inv_cell name]
-                                             [-read_ports count]}
+                                             [-read_ports count]
+                                             [-tapcell name]
+                                             [-max_tap_dist value]}
 
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
-    keys {-bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell
-      -read_ports } flags {}
+    keys { -bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell
+      -read_ports -tapcell -max_tap_dist } flags {}
 
   if { [info exists keys(-bytes_per_word)] } {
     set bytes_per_word $keys(-bytes_per_word)
@@ -45,6 +47,168 @@ proc generate_ram_netlist { args } {
     set read_ports $keys(-read_ports)
   }
 
+  set tapcell ""
+  set max_tap_dist 0
+  if { [info exists keys(-tapcell)] } {
+    if { [info exists keys(-max_tap_dist)] } {
+      set max_tap_dist $keys(-max_tap_dist)
+      set max_tap_dist [ord::microns_to_dbu $max_tap_dist]
+    } else {
+      utl::error RAM 21 "The -max_tap_dist argument must be specified with tapcell."
+    }
+    set tapcell $keys(-tapcell)
+  } else {
+    utl::warn RAM 22 "No tapcell is specified.
+        The generated layout may not pass Design Rule Checks."
+  }
+
   ram::generate_ram_netlist_cmd $bytes_per_word $word_count $storage_cell \
-    $tristate_cell $inv_cell $read_ports
+    $tristate_cell $inv_cell $read_ports $tapcell $max_tap_dist
+}
+
+sta::define_cmd_args "generate_ram" {-bytes_per_word bits
+                                     -word_count words
+                                     [-read_ports count]
+                                     [-storage_cell name]
+                                     [-tristate_cell name]
+                                     [-inv_cell name]
+                                     -power_pin name
+                                     -ground_pin name
+                                     -routing_layer config
+                                     -ver_layer config
+                                     -hor_layer config
+                                     -filler_cells fillers
+                                     [-tapcell name]
+                                     [-max_tap_dist value]}
+
+# user arguments for generate ram arguments
+proc generate_ram { args } {
+  sta::parse_key_args "generate_ram" args \
+    keys { -bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell -read_ports
+      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
+        -tapcell -max_tap_dist} flags {}
+
+  sta::check_argc_eq0 "generate_ram" $args
+
+  # Check for valid design
+  if { [ord::get_db_block] != "NULL" } {
+    utl::error RAM 20 "A design is already loaded. Cannot generate RAM"
+  }
+
+  set ram_netlist_args [list \
+    -bytes_per_word $keys(-bytes_per_word) \
+    -word_count $keys(-word_count)]
+
+  if { [info exists keys(-read_ports)] } {
+    lappend ram_netlist_args -read_ports $keys(-read_ports)
+  }
+
+  if { [info exists keys(-storage_cell)] } {
+    lappend ram_netlist_args -storage_cell $keys(-storage_cell)
+  }
+
+  if { [info exists keys(-tristate_cell)] } {
+    lappend ram_netlist_args -tristate_cell $keys(-tristate_cell)
+  }
+
+  if { [info exists keys(-inv_cell)] } {
+    lappend ram_netlist_args -inv_cell $keys(-inv_cell)
+  }
+
+  if { [info exists keys(-tapcell)] } {
+    lappend ram_netlist_args -tapcell $keys(-tapcell)
+  }
+
+  if { [info exists keys(-max_tap_dist)] } {
+    lappend ram_netlist_args -max_tap_dist $keys(-max_tap_dist)
+  }
+
+  generate_ram_netlist {*}$ram_netlist_args
+
+  ord::design_created
+
+  if { [info exists keys(-power_pin)] } {
+    set power_net $keys(-power_pin)
+  } else {
+    utl::error RAM 5 "The -power_pin argument must be specified."
+  }
+
+  if { [info exists keys(-ground_pin)] } {
+    set ground_net $keys(-ground_pin)
+  } else {
+    utl::error RAM 6 "The -ground_pin argument must be specified."
+  }
+
+  if { [info exists keys(-routing_layer)] } {
+    set routing_layer $keys(-routing_layer)
+  } else {
+    utl::error RAM 9 "The -routing_layer argument must be specified."
+  }
+
+  if { [llength $routing_layer] != 2 } {
+    utl::error RAM 12 "-routing_layer is not a list of 2 values"
+  } else {
+    lassign $routing_layer route_name route_width
+  }
+
+  if { [info exists keys(-ver_layer)] } {
+    set ver_layer $keys(-ver_layer)
+  } else {
+    utl::error RAM 13 "The -ver_layer argument must be specified."
+  }
+
+  if { [llength $ver_layer] != 3 } {
+    utl::error RAM 14 "-ver_layer is not a list of 2 values"
+  } else {
+    lassign $ver_layer ver_name ver_width ver_pitch
+  }
+
+  if { [info exists keys(-hor_layer)] } {
+    set hor_layer $keys(-hor_layer)
+  } else {
+    utl::error RAM 15 "The -hor_layer argument must be specified."
+  }
+
+  if { [llength $hor_layer] != 3 } {
+    utl::error RAM 17 "-hor_layer is not a list of 2 values"
+  } else {
+    lassign $hor_layer hor_name hor_width hor_pitch
+  }
+
+  if { [info exists keys(-filler_cells)] } {
+    set filler_cells $keys(-filler_cells)
+  } else {
+    utl::error RAM 18 "The -filler_cells argument must be specified."
+  }
+
+  add_global_connection -net VDD -pin_pattern $power_net -power
+  add_global_connection -net VSS -pin_pattern $ground_net -ground
+
+  global_connect
+
+  set_voltage_domain -power VDD -ground VSS
+  define_pdn_grid -name ram_grid -voltage_domains {CORE}
+
+  add_pdn_stripe -grid ram_grid -layer $route_name \
+    -width $route_width -followpins -extend_to_boundary
+  add_pdn_stripe -grid ram_grid -layer $ver_name \
+    -width $ver_width -pitch $ver_pitch -extend_to_boundary
+  add_pdn_stripe -grid ram_grid -layer $hor_name \
+    -width $hor_width -pitch $hor_pitch -extend_to_boundary
+
+  add_pdn_connect -layers [list $route_name $ver_name]
+  add_pdn_connect -layers [list $ver_name $hor_name]
+
+  pdngen
+
+  make_tracks -x_offset 0 -y_offset 0
+  set_io_pin_constraint -direction output -region top:*
+  set_io_pin_constraint -pin_names {D[*]} -region top:*
+
+  place_pins -hor_layers $hor_name -ver_layers $ver_name
+
+  filler_placement $filler_cells
+
+  global_route
+  detailed_route -verbose 0
 }

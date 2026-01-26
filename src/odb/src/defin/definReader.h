@@ -27,7 +27,6 @@
 #include "defrReader.hpp"
 #include "odb/db.h"
 #include "odb/defin.h"
-#include "odb/odb.h"
 
 namespace utl {
 class Logger;
@@ -72,7 +71,8 @@ class definReader : public definBase
 
   void readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
-                dbChip* chip);
+                dbChip* chip,
+                bool issue_callback);
 
  private:
   void init();

@@ -3,8 +3,8 @@
   "type": "dbObject",
   "fields": [
     {
-      "name": "num_masks_",
-      "type": "uint",
+      "name": "num_masks",
+      "type": "uint32_t",
       "flags": [
         "no-set",
         "no-get"
@@ -12,7 +12,7 @@
       "bits": 2
     },
     {
-      "name": "type_",
+      "name": "type",
       "type": "dbTechLayerType::Value",
       "flags": [
         "no-set",
@@ -21,7 +21,7 @@
       "bits": 4
     },
     {
-      "name": "direction_",
+      "name": "direction",
       "type": "dbTechLayerDir::Value",
       "flags": [
         "no-set",
@@ -30,7 +30,7 @@
       "bits": 4
     },
     {
-      "name": "minstep_type_",
+      "name": "minstep_type",
       "type": "dbTechLayerMinStepType::Value",
       "flags": [
         "no-set",
@@ -39,7 +39,7 @@
       "bits": 2
     },
     {
-      "name": "has_max_width_",
+      "name": "has_max_width",
       "type": "bit",
       "flags": [
         "no-set",
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "name": "has_thickness_",
+      "name": "has_thickness",
       "type": "bit",
       "flags": [
         "no-set",
@@ -55,7 +55,7 @@
       ]
     },
     {
-      "name": "has_area_",
+      "name": "has_area",
       "type": "bit",
       "flags": [
         "no-set",
@@ -63,7 +63,7 @@
       ]
     },
     {
-      "name": "has_protrusion_",
+      "name": "has_protrusion",
       "type": "bit",
       "flags": [
         "no-set",
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "name": "has_alias_",
+      "name": "has_alias",
       "type": "bit",
       "flags": [
         "no-set",
@@ -79,7 +79,7 @@
       ]
     },
     {
-      "name": "has_xy_pitch_",
+      "name": "has_xy_pitch",
       "type": "bit",
       "flags": [
         "no-set",
@@ -87,7 +87,7 @@
       ]
     },
     {
-      "name": "has_xy_offset_",
+      "name": "has_xy_offset",
       "type": "bit",
       "flags": [
         "no-set",
@@ -95,28 +95,28 @@
       ]
     },
     {
-      "name": "rect_only_",
+      "name": "rect_only",
       "type": "bit",
       "flags": []
     },
     {
-      "name": "right_way_on_grid_only_",
+      "name": "right_way_on_grid_only",
       "type": "bit",
       "flags": []
     },
     {
-      "name": "right_way_on_grid_only_check_mask_",
+      "name": "right_way_on_grid_only_check_mask",
       "type": "bit",
       "flags": []
     },
     {
       "type": "bit",
-      "name": "rect_only_except_non_core_pins_",
+      "name": "rect_only_except_non_core_pins",
       "flags": []
     },
     {
-      "type": "uint",
-      "name": "lef58_type_",
+      "type": "uint32_t",
+      "name": "lef58_type",
       "bits": 5,
       "flags": [
         "no-set",
@@ -124,12 +124,18 @@
       ]
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "name": "wrong_way_width_",
       "flags":[
         "no-serial"
       ]
+    },
+    {
+      "type": "uint32_t",
+      "default": "0",
+      "name": "wrong_way_min_width_",
+      "schema" : "kSchemaTechLayerMinWidthWrongway"
     },
     {
       "name":"layer_adjustment_",
@@ -142,7 +148,7 @@
     {
       "name" : "orth_spacing_tbl_",
       "type":"std::vector<std::pair<int, int>>",
-      "schema" : "db_schema_orth_spc_tbl",
+      "schema" : "kSchemaOrthSpcTbl",
       "flags":[
         "no-template",
         "no-set"

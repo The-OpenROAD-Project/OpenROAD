@@ -9,6 +9,7 @@
 ########## IR report #################
 Net              : VDD
 Corner           : min
+Total power      : 2.41e-04 W
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 8.74e-01 V
 Average voltage  : 8.90e-01 V
@@ -21,6 +22,7 @@ Percentage drop  : 20.52 %
 ########## IR report #################
 Net              : VDD
 Corner           : max
+Total power      : 3.02e-04 W
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 2.51e-01 V
 Average voltage  : 5.86e-01 V

@@ -45,6 +45,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "globalConnectDialog.h"
+#include "gotoDialog.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "helpWidget.h"
@@ -139,9 +140,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   // Hook up all the signals/slots
   connect(viewers_,
-          &LayoutTabs::setCurrentBlock,
+          &LayoutTabs::setCurrentChip,
           controls_,
-          &DisplayControls::setCurrentBlock);
+          &DisplayControls::setCurrentChip);
   connect(script_, &ScriptWidget::exiting, this, &MainWindow::exit);
   connect(script_,
           &ScriptWidget::commandExecuted,
@@ -151,7 +152,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &ScriptWidget::commandAboutToExecute,
           viewers_,
           &LayoutTabs::commandAboutToExecute);
-  connect(this, &MainWindow::blockLoaded, viewers_, &LayoutTabs::blockLoaded);
+  connect(this, &MainWindow::chipLoaded, viewers_, &LayoutTabs::chipLoaded);
   connect(this, &MainWindow::redraw, viewers_, &LayoutTabs::fullRepaint);
   connect(
       this, &MainWindow::blockLoaded, controls_, &DisplayControls::blockLoaded);
@@ -210,9 +211,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(this, &MainWindow::rulersChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(this, &MainWindow::labelsChanged, viewers_, &LayoutTabs::fullRepaint);
 
-  connect(controls_, &DisplayControls::selected, [=](const Selected& selected) {
-    setSelected(selected);
-  });
+  connect(controls_,
+          &DisplayControls::selected,
+          [this](const Selected& selected) { setSelected(selected); });
 
   connect(inspector_,
           &Inspector::selected,
@@ -250,12 +251,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &Inspector::loadActions);
   connect(inspector_,
           &Inspector::removeHighlight,
-          [=](const QList<const Selected*>& selected) {
+          [this](const QList<const Selected*>& selected) {
             removeFromHighlighted(selected);
           });
   connect(inspector_,
           &Inspector::addHighlight,
-          [=](const SelectionSet& selected) { addHighlighted(selected); });
+          [this](const SelectionSet& selected) { addHighlighted(selected); });
   connect(
       inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
   connect(script_,
@@ -269,14 +270,14 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
-          [=](const SelectionSet& selected) { setSelected(selected); });
+          [this](const SelectionSet& selected) { setSelected(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeSelect,
           this,
           &MainWindow::removeSelected);
   connect(hierarchy_widget_,
           &BrowserWidget::highlight,
-          [=](const SelectionSet& selected) { addHighlighted(selected); });
+          [this](const SelectionSet& selected) { addHighlighted(selected); });
   connect(hierarchy_widget_,
           &BrowserWidget::removeHighlight,
           this,
@@ -337,13 +338,13 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearHighlightedItems,
-          [=](const QList<const Selected*>& selected) {
+          [this](const QList<const Selected*>& selected) {
             removeFromHighlighted(selected);
           });
 
   connect(selection_browser_,
           &SelectHighlightWindow::highlightSelectedItemsSig,
-          [=](const QList<const Selected*>& items) {
+          [this](const QList<const Selected*>& items) {
             updateHighlightedSet(items);
           });
 
@@ -362,7 +363,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::reportSlackHistogramPaths);
 
   connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
-  connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
+  connect(this, &MainWindow::chipLoaded, drc_viewer_, &DRCWidget::setChip);
   connect(
       this, &MainWindow::blockLoaded, clock_viewer_, &ClockWidget::setBlock);
   connect(drc_viewer_,
@@ -374,11 +375,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
             odb::Rect bbox;
             selected.getBBox(bbox);
 
-            auto* block = getBlock();
             int zoomout_dist = std::numeric_limits<int>::max();
-            if (block != nullptr) {
+            if (db_ != nullptr) {
               // 10 microns
-              zoomout_dist = 10 * block->getDbUnitsPerMicron();
+              zoomout_dist = 10 * db_->getDbuPerMicron();
             }
             // twice the largest dimension of bounding box
             const int zoomout_box = 2 * std::max(bbox.dx(), bbox.dy());
@@ -395,10 +395,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       drc_viewer_->updateSelection(*selected_.begin());
     }
   });
-  connect(this,
-          &MainWindow::displayUnitsChanged,
+  connect(viewers_,
+          &LayoutTabs::viewUpdated,
           goto_dialog_,
-          &GotoLocationDialog::updateUnits);
+          &GotoLocationDialog::updateLocation);
   connect(selection_timer_.get(), &QTimer::timeout, [this]() {
     emit selectionChanged();
   });
@@ -530,6 +530,11 @@ void MainWindow::updateTitle()
   }
 }
 
+const SelectionSet& MainWindow::selection()
+{
+  return selected_;
+}
+
 void MainWindow::setBlock(odb::dbBlock* block)
 {
   updateTitle();
@@ -569,6 +574,8 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
                           viewers_->getFocusNets(),
                           viewers_->getRouteGuides(),
                           viewers_->getNetTracks()));
+  gui->registerDescriptor<odb::dbWire*>(new DbWireDescriptor(db_));
+  gui->registerDescriptor<odb::dbSWire*>(new DbSWireDescriptor(db_));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(
       db_, [this]() -> bool { return show_poly_decomp_view_->isChecked(); }));
   gui->registerDescriptor<odb::dbMTerm*>(new DbMTermDescriptor(
@@ -585,6 +592,10 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbGroup*>(new DbGroupDescriptor(db_));
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbModBTerm*>(new DbModBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbModITerm*>(new DbModITermDescriptor(db_));
+  gui->registerDescriptor<odb::dbModInst*>(new DbModInstDescriptor(db_));
+  gui->registerDescriptor<odb::dbModNet*>(new DbModNetDescriptor(db_));
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaRule*>(
       new DbTechViaRuleDescriptor(db_));
@@ -617,6 +628,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbScanPartitionDescriptor(db_));
   gui->registerDescriptor<odb::dbScanChain*>(new DbScanChainDescriptor(db_));
   gui->registerDescriptor<odb::dbBox*>(new DbBoxDescriptor(db_));
+  gui->registerDescriptor<odb::dbSBox*>(new DbSBoxDescriptor(db_));
   gui->registerDescriptor<DbBoxDescriptor::BoxWithTransform>(
       new DbBoxDescriptor(db_));
   gui->registerDescriptor<odb::dbMasterEdgeType*>(
@@ -629,8 +641,6 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new LibertyLibraryDescriptor(sta));
   gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
   gui->registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));
-  gui->registerDescriptor<sta::LibertyPgPort*>(
-      new LibertyPgPortDescriptor(sta));
   gui->registerDescriptor<sta::Instance*>(new StaInstanceDescriptor(sta));
   gui->registerDescriptor<sta::Clock*>(new ClockDescriptor(sta));
 
@@ -804,9 +814,8 @@ void MainWindow::setUseDBU(bool use_dbu)
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setUseDBU(use_dbu);
   }
-  auto* block = getBlock();
-  if (block != nullptr) {
-    emit displayUnitsChanged(block->getDbUnitsPerMicron(), use_dbu);
+  if (db_) {
+    emit displayUnitsChanged(db_->getDbuPerMicron(), use_dbu);
   }
 }
 
@@ -914,9 +923,9 @@ std::string MainWindow::addToolbarButton(const std::string& name,
       // default to "buttonX" naming
       key = "button" + std::to_string(key_idx);
       key_idx++;
-    } while (buttons_.count(key) != 0);
+    } while (buttons_.contains(key));
   } else {
-    if (buttons_.count(name) != 0) {
+    if (buttons_.contains(name)) {
       logger_->error(utl::GUI, 22, "Button {} already defined.", name);
     }
     key = name;
@@ -941,7 +950,7 @@ std::string MainWindow::addToolbarButton(const std::string& name,
 
 void MainWindow::removeToolbarButton(const std::string& name)
 {
-  if (buttons_.count(name) == 0) {
+  if (!buttons_.contains(name)) {
     return;
   }
 
@@ -1010,9 +1019,9 @@ std::string MainWindow::addMenuItem(const std::string& name,
       // default to "actionX" naming
       key = "action" + std::to_string(key_idx);
       key_idx++;
-    } while (menu_actions_.count(key) != 0);
+    } while (menu_actions_.contains(key));
   } else {
-    if (menu_actions_.count(name) != 0) {
+    if (menu_actions_.contains(name)) {
       logger_->error(utl::GUI, 25, "Menu action {} already defined.", name);
     }
     key = name;
@@ -1071,7 +1080,7 @@ void MainWindow::removeMenu(QMenu* menu)
 
 void MainWindow::removeMenuItem(const std::string& name)
 {
-  if (menu_actions_.count(name) == 0) {
+  if (!menu_actions_.contains(name)) {
     return;
   }
 
@@ -1124,7 +1133,7 @@ void MainWindow::addSelected(const Selected& selection, bool find_in_cts)
 
 void MainWindow::removeSelected(const Selected& selection)
 {
-  auto itr = std::find(selected_.begin(), selected_.end(), selection);
+  auto itr = std::ranges::find(selected_, selection);
   if (itr != selected_.end()) {
     selected_.erase(itr);
     emit selectionChanged();
@@ -1134,7 +1143,7 @@ void MainWindow::removeSelected(const Selected& selection)
 void MainWindow::removeHighlighted(const Selected& selection)
 {
   for (auto& group : highlighted_) {
-    auto itr = std::find(group.begin(), group.end(), selection);
+    auto itr = std::ranges::find(group, selection);
     if (itr != group.end()) {
       group.erase(itr);
       emit highlightChanged();
@@ -1251,10 +1260,8 @@ std::string MainWindow::addLabel(int x,
 
 void MainWindow::deleteLabel(const std::string& name)
 {
-  auto label_find
-      = std::find_if(labels_.begin(), labels_.end(), [name](const auto& l) {
-          return l->getName() == name;
-        });
+  auto label_find = std::ranges::find_if(
+      labels_, [name](const auto& l) { return l->getName() == name; });
   if (label_find != labels_.end()) {
     // remove from selected set
     auto remove_selected = Gui::get()->makeSelected(label_find->get());
@@ -1296,10 +1303,8 @@ std::string MainWindow::addRuler(int x0,
 
 void MainWindow::deleteRuler(const std::string& name)
 {
-  auto ruler_find
-      = std::find_if(rulers_.begin(), rulers_.end(), [name](const auto& l) {
-          return l->getName() == name;
-        });
+  auto ruler_find = std::ranges::find_if(
+      rulers_, [name](const auto& l) { return l->getName() == name; });
   if (ruler_find != rulers_.end()) {
     // remove from selected set
     auto remove_selected = Gui::get()->makeSelected(ruler_find->get());
@@ -1425,6 +1430,11 @@ void MainWindow::zoomTo(const odb::Rect& rect_dbu)
   viewers_->zoomTo(rect_dbu);
 }
 
+void MainWindow::zoomTo(const odb::Point& focus, int diameter)
+{
+  viewers_->zoomTo(focus, diameter);
+}
+
 void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
   if (items.empty()) {
@@ -1465,7 +1475,7 @@ void MainWindow::showGotoDialog()
     return;
   }
 
-  goto_dialog_->show_init();
+  goto_dialog_->showInit();
 }
 
 void MainWindow::showHelp()
@@ -1627,12 +1637,13 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
+  emit chipLoaded(block->getChip());
   emit blockLoaded(block);
 }
 
 void MainWindow::postRead3Dbx(odb::dbChip* chip)
 {
-  // TODO: we are not ready to display chiplets yet
+  emit chipLoaded(chip);
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)
@@ -1643,13 +1654,14 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
   }
   auto block = chip->getBlock();
   if (block == nullptr) {
+    // It is a top chip
+    emit chipLoaded(chip);
     return;
   }
 
+  // Only create a tab for the top block
+  emit chipLoaded(block->getChip());
   emit blockLoaded(block);
-  for (auto child : block->getChildren()) {
-    emit blockLoaded(child);
-  }
 }
 
 void MainWindow::setLogger(utl::Logger* logger)
@@ -1737,9 +1749,10 @@ std::vector<std::string> MainWindow::getRestoreTclCommands()
 {
   std::vector<std::string> cmds;
   // Save rulers
-  for (const auto& ruler : rulers_) {
-    cmds.push_back(ruler->getTclCommand(
-        db_->getChip()->getBlock()->getDbUnitsPerMicron()));
+  if (db_) {
+    for (const auto& ruler : rulers_) {
+      cmds.push_back(ruler->getTclCommand(db_->getDbuPerMicron()));
+    }
   }
   // Save buttons
   for (const auto& action : view_tool_bar_->actions()) {
@@ -1767,11 +1780,10 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
   if (show_dbu_->isChecked()) {
     return std::to_string(value);
   }
-  auto* block = getBlock();
-  if (block == nullptr) {
+  if (db_ == nullptr) {
     return std::to_string(value);
   }
-  const double dbu_per_micron = block->getDbUnitsPerMicron();
+  const double dbu_per_micron = db_->getDbuPerMicron();
 
   const int precision = std::ceil(std::log10(dbu_per_micron));
   const double micron_value = value / dbu_per_micron;
@@ -1800,11 +1812,10 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
   if (show_dbu_->isChecked()) {
     return new_value.toInt(ok);
   }
-  auto* block = getBlock();
-  if (block == nullptr) {
+  if (db_ == nullptr) {
     return new_value.toInt(ok);
   }
-  const int dbu_per_micron = block->getDbUnitsPerMicron();
+  const int dbu_per_micron = db_->getDbuPerMicron();
 
   return new_value.toDouble(ok) * dbu_per_micron;
 }
@@ -1865,7 +1876,17 @@ void MainWindow::showGlobalConnect()
 
 void MainWindow::openDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz", ".db", ".db.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getOpenFileName(
       this, "Open Design", QString(), filefilter);
 
@@ -1874,16 +1895,22 @@ void MainWindow::openDesign()
   }
 
   try {
-    if (file.endsWith(".odb", Qt::CaseInsensitive)) {
-      open_->setEnabled(false);
-      ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
-      logger_->warn(utl::GUI,
-                    77,
-                    "Timing data is not stored in {} and must be loaded "
-                    "separately, if needed.",
-                    file.toStdString());
-    } else {
-      logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
+    bool found = false;
+    for (const auto& ext : exts) {
+      if (file.endsWith(ext, Qt::CaseInsensitive)) {
+        open_->setEnabled(false);
+        ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
+        logger_->warn(utl::GUI,
+                      109,
+                      "Timing data is not stored in {} and must be loaded "
+                      "separately, if needed.",
+                      file.toStdString());
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      logger_->error(utl::GUI, 108, "Unknown filetype: {}", file.toStdString());
     }
   } catch (const std::exception&) {
     // restore option
@@ -1893,7 +1920,17 @@ void MainWindow::openDesign()
 
 void MainWindow::saveDesign()
 {
-  const QString filefilter = "OpenDB (*.odb *.ODB)";
+  const std::vector<QString> exts{".odb", ".odb.gz"};
+
+  QString filefilter = "OpenDB (";
+  for (const auto& ext : exts) {
+    if (filefilter.length() != 8) {
+      filefilter += " ";
+    }
+    filefilter += "*" + ext;
+    filefilter += " *" + ext.toUpper();
+  }
+  filefilter += ")";
   const QString file = QFileDialog::getSaveFileName(
       this, "Save Design", QString(), filefilter);
 
@@ -1903,7 +1940,9 @@ void MainWindow::saveDesign()
 
   try {
     ord::OpenRoad::openRoad()->writeDb(file.toStdString().c_str());
-  } catch (const std::exception&) {
+  } catch (const std::exception& e) {
+    QMessageBox::warning(
+        this, "Save Error", QString("Db save failed: %1").arg(e.what()));
   }
 }
 

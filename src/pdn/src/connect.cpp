@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <regex>
@@ -18,6 +19,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -301,14 +303,14 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
   for (auto* rule : generate_via_rules_) {
     bool use = false;
     int rule_max_enclosure = 0;
-    for (uint i = 0; i < rule->getViaLayerRuleCount(); i++) {
+    for (uint32_t i = 0; i < rule->getViaLayerRuleCount(); i++) {
       auto layer_rule = rule->getViaLayerRule(i);
       use |= layer_rule->getLayer() == layer;
 
       if (layer_rule->hasEnclosure()) {
         int enc0, enc1;
         layer_rule->getEnclosure(enc0, enc1);
-        rule_max_enclosure = std::max(rule_max_enclosure, std::max(enc0, enc1));
+        rule_max_enclosure = std::max({rule_max_enclosure, enc0, enc1});
       }
     }
 
@@ -320,15 +322,23 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
   for (auto* rule : tech_vias_) {
     bool use = false;
     int max_size = 0;
+    int max_via_size = 0;
+    int cnt_vias = 0;
     for (auto* box : rule->getBoxes()) {
-      use |= box->getTechLayer() == layer;
-
       odb::Rect rect = box->getBox();
-      max_size = std::max(max_size, static_cast<int>(rect.maxDXDY()));
+
+      if (box->getTechLayer() == layer) {
+        use = true;
+        cnt_vias += 1;
+        max_via_size = std::max(max_via_size, rect.maxDXDY());
+      }
+
+      max_size = std::max(max_size, rect.maxDXDY());
     }
 
-    if (use) {
-      max_enclosure = std::max(max_enclosure, (max_size - min_width) / 2);
+    if (use && cnt_vias == 1) {
+      max_enclosure
+          = std::max(max_enclosure, (max_size - max_via_size - min_width) / 2);
     }
   }
 
@@ -337,8 +347,7 @@ int Connect::getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer,
 
 bool Connect::containsIntermediateLayer(odb::dbTechLayer* layer) const
 {
-  return std::find(
-             intermediate_layers_.begin(), intermediate_layers_.end(), layer)
+  return std::ranges::find(intermediate_layers_, layer)
          != intermediate_layers_.end();
 }
 
@@ -460,13 +469,14 @@ void Connect::makeVia(odb::dbSWire* wire,
         TechLayer::snapToManufacturingGrid(
             tech, intersection.yMax(), false, 2));
     if (intersection != new_intersection) {
-      debugPrint(grid_->getLogger(),
-                 utl::PDN,
-                 "Via",
-                 2,
-                 "intersection changed: {} -> {}",
-                 Shape::getRectText(intersection, tech->getLefUnits()),
-                 Shape::getRectText(new_intersection, tech->getLefUnits()));
+      debugPrint(
+          grid_->getLogger(),
+          utl::PDN,
+          "Via",
+          2,
+          "intersection changed: {} -> {}",
+          Shape::getRectText(intersection, tech->getDbUnitsPerMicron()),
+          Shape::getRectText(new_intersection, tech->getDbUnitsPerMicron()));
       intersection = new_intersection;
     }
   }
@@ -484,10 +494,10 @@ void Connect::makeVia(odb::dbSWire* wire,
         layer1_,
         true,
         fmt::format("({:.4f}, {:.4f}) is off manufacturing grid of {:.4f}",
-                    x / static_cast<double>(tech->getLefUnits()),
-                    y / static_cast<double>(tech->getLefUnits()),
+                    x / static_cast<double>(tech->getDbUnitsPerMicron()),
+                    y / static_cast<double>(tech->getDbUnitsPerMicron()),
                     tech->getManufacturingGrid()
-                        / static_cast<double>(tech->getLefUnits())));
+                        / static_cast<double>(tech->getDbUnitsPerMicron())));
     dummy_via.generate(
         wire->getBlock(), wire, type, 0, 0, ongrid_, grid_->getLogger());
     return;
@@ -526,8 +536,8 @@ void Connect::makeVia(odb::dbSWire* wire,
                  "Tapered via required between {} and {} at ({:.4f}, {:.4f}).",
                  getLowerLayer()->getName(),
                  getUpperLayer()->getName(),
-                 x / static_cast<double>(tech->getLefUnits()),
-                 y / static_cast<double>(tech->getLefUnits()));
+                 x / static_cast<double>(tech->getDbUnitsPerMicron()),
+                 y / static_cast<double>(tech->getDbUnitsPerMicron()));
 
       stack_rects = generateComplexStackedViaRects(lower_rect, upper_rect);
     } else {
@@ -683,12 +693,11 @@ DbVia* Connect::generateDbVia(
     return nullptr;
   }
 
-  std::stable_sort(vias.begin(),
-                   vias.end(),
-                   [](const std::shared_ptr<ViaGenerator>& lhs,
-                      const std::shared_ptr<ViaGenerator>& rhs) {
-                     return lhs->isPreferredOver(rhs.get());
-                   });
+  std::ranges::stable_sort(vias,
+                           [](const std::shared_ptr<ViaGenerator>& lhs,
+                              const std::shared_ptr<ViaGenerator>& rhs) {
+                             return lhs->isPreferredOver(rhs.get());
+                           });
 
   std::shared_ptr<ViaGenerator> best_rule = *vias.begin();
   DbVia* built_via = best_rule->generate(block);
@@ -880,12 +889,12 @@ bool Connect::generateRuleContains(odb::dbTechViaGenerateRule* rule,
                                    odb::dbTechLayer* lower,
                                    odb::dbTechLayer* upper) const
 {
-  const uint layer_count = rule->getViaLayerRuleCount();
+  const uint32_t layer_count = rule->getViaLayerRuleCount();
   if (layer_count != 3) {
     return false;
   }
   std::set<odb::dbTechLayer*> rule_layers;
-  for (uint l = 0; l < layer_count; l++) {
+  for (uint32_t l = 0; l < layer_count; l++) {
     rule_layers.insert(rule->getViaLayerRule(l)->getLayer());
   }
   if (rule_layers.find(lower) != rule_layers.end()
@@ -923,19 +932,13 @@ void Connect::filterVias(const std::string& filter)
 
   std::regex filt(filter);
 
-  generate_via_rules_.erase(
-      std::remove_if(
-          generate_via_rules_.begin(),
-          generate_via_rules_.end(),
-          [&](auto* rule) { return std::regex_search(rule->getName(), filt); }),
-      generate_via_rules_.end());
+  std::erase_if(generate_via_rules_, [&](auto* rule) {
+    return std::regex_search(rule->getName(), filt);
+  });
 
-  tech_vias_.erase(
-      std::remove_if(
-          tech_vias_.begin(),
-          tech_vias_.end(),
-          [&](auto* rule) { return std::regex_search(rule->getName(), filt); }),
-      tech_vias_.end());
+  std::erase_if(tech_vias_, [&](auto* rule) {
+    return std::regex_search(rule->getName(), filt);
+  });
 }
 
 void Connect::printViaReport() const

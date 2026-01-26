@@ -39,6 +39,7 @@ add_library(drt_lib
   src/dr/FlexDR_conn.cpp
   src/dr/FlexDR_init.cpp
   src/dr/FlexDR.cpp
+  src/dr/FlexDRFlow.cpp
   src/db/drObj/drNet.cpp
   src/dr/FlexDR_maze.cpp
   src/dr/FlexGridGraph_maze.cpp
@@ -113,7 +114,7 @@ target_link_libraries(drt_lib
   PUBLIC
     stt_lib
     utl_lib
-    dst
+    dst_lib
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}

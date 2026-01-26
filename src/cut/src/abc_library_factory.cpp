@@ -3,16 +3,18 @@
 
 #include "cut/abc_library_factory.h"
 
-#include <string.h>
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
 #include <cmath>
+#include <cstring>
 #include <optional>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "rsz/Resizer.hh"
+#include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "utl/Logger.h"
 // Poor include definitions in ABC
@@ -30,8 +32,8 @@
 #include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "sta/TableModel.hh"
-#include "sta/TimingArc.hh"
 #include "sta/Units.hh"
+#include "utl/SuppressStdout.h"
 #include "utl/deleter.h"
 
 namespace abc {
@@ -42,10 +44,24 @@ void Abc_Stop();
 
 namespace cut {
 
-AbcLibrary::AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library)
-    : abc_library_(std::move(abc_library))
+AbcLibrary::AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library,
+                       utl::Logger* logger)
+    : abc_library_(std::move(abc_library)), logger_(logger)
 {
-  mio_library_ = abc::Abc_SclDeriveGenlibSimple(abc_library_.get());
+  mio_library_ = utl::UniquePtrWithDeleter<abc::Mio_Library_t>(
+      abc::Abc_SclDeriveGenlibSimple(abc_library_.get()),
+      [](abc::Mio_Library_t* lib) { abc::Mio_LibraryDelete(lib); });
+}
+
+abc::Mio_Library_t* AbcLibrary::mio_library()
+{
+  if (mio_library_ == nullptr) {
+    utl::SuppressStdout nostdout(logger_);
+    mio_library_ = utl::UniquePtrWithDeleter<abc::Mio_Library_t>(
+        abc::Abc_SclDeriveGenlibSimple(abc_library_.get()),
+        [](abc::Mio_Library_t* lib) { abc::Mio_LibraryDelete(lib); });
+  }
+  return mio_library_.release();
 }
 
 static bool IsCombinational(sta::LibertyCell* cell)
@@ -81,6 +97,9 @@ static bool HasNonInputOutputPorts(sta::LibertyCell* cell)
       continue;
     }
     if (port->direction()->isInput()) {
+      continue;
+    }
+    if (port->isPwrGnd()) {
       continue;
     }
 
@@ -381,8 +400,10 @@ AbcLibrary AbcLibraryFactory::Build()
   abc::Abc_SclHashCells(abc_library);
   abc::Abc_SclLinkCells(abc_library);
 
-  return AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib>(
-      abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }));
+  return AbcLibrary(
+      utl::UniquePtrWithDeleter<abc::SC_Lib>(
+          abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }),
+      logger_);
 }
 
 std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromCorner(

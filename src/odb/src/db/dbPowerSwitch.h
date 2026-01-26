@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 
@@ -12,7 +13,6 @@
 #include "odb/db.h"
 #include "odb/dbId.h"
 #include "odb/dbSet.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -35,17 +35,17 @@ class _dbPowerSwitch : public _dbObject
   bool operator<(const _dbPowerSwitch& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbPowerSwitch> _next_entry;
-  dbVector<dbPowerSwitch::UPFIOSupplyPort> _in_supply_port;
-  dbPowerSwitch::UPFIOSupplyPort _out_supply_port;
-  dbVector<dbPowerSwitch::UPFControlPort> _control_port;
-  dbVector<dbPowerSwitch::UPFAcknowledgePort> _acknowledge_port;
-  dbVector<dbPowerSwitch::UPFOnState> _on_state;
-  dbId<_dbMaster> _lib_cell;
-  dbId<_dbLib> _lib;
-  std::map<std::string, dbId<_dbMTerm>> _port_map;
-  dbId<_dbPowerDomain> _power_domain;
+  char* name_;
+  dbId<_dbPowerSwitch> next_entry_;
+  dbVector<dbPowerSwitch::UPFIOSupplyPort> in_supply_port_;
+  dbPowerSwitch::UPFIOSupplyPort out_supply_port_;
+  dbVector<dbPowerSwitch::UPFControlPort> control_port_;
+  dbVector<dbPowerSwitch::UPFAcknowledgePort> acknowledge_port_;
+  dbVector<dbPowerSwitch::UPFOnState> on_state_;
+  dbId<_dbMaster> lib_cell_;
+  dbId<_dbLib> lib_;
+  std::map<std::string, dbId<_dbMTerm>> port_map_;
+  dbId<_dbPowerDomain> power_domain_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj);

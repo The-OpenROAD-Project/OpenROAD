@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -29,7 +30,7 @@ using std::string;
 
 template <class T>
 SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
-                                                  const Rect& outline,
+                                                  const odb::Rect& outline,
                                                   const std::vector<T>& macros,
                                                   const SACoreWeights& weights,
                                                   float pos_swap_prob,
@@ -74,11 +75,10 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
+void SimulatedAnnealingCore<T>::setDieArea(const odb::Rect& die_area)
 {
   die_area_ = die_area;
-  die_area_.moveHor(-outline_.xMin());
-  die_area_.moveVer(-outline_.yMin());
+  die_area_.moveDelta(-outline_.xMin(), -outline_.yMin());
 }
 
 template <class T>
@@ -88,8 +88,8 @@ void SimulatedAnnealingCore<T>::setAvailableRegionsForUnconstrainedPins(
   available_regions_for_unconstrained_pins_ = regions;
 
   for (BoundaryRegion& region : available_regions_for_unconstrained_pins_) {
-    region.line.addX(-block_->micronsToDbu(outline_.xMin()));
-    region.line.addY(-block_->micronsToDbu(outline_.yMin()));
+    region.line.addX(-outline_.xMin());
+    region.line.addY(-outline_.yMin());
   }
 }
 
@@ -118,19 +118,21 @@ void SimulatedAnnealingCore<T>::initSequencePair()
 
 // access functions
 template <class T>
-void SimulatedAnnealingCore<T>::setNets(const std::vector<BundledNet>& nets)
+void SimulatedAnnealingCore<T>::setNets(const BundledNetList& nets)
 {
   nets_ = nets;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setFences(const std::map<int, Rect>& fences)
+void SimulatedAnnealingCore<T>::setFences(
+    const std::map<int, odb::Rect>& fences)
 {
   fences_ = fences;
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
+void SimulatedAnnealingCore<T>::setGuides(
+    const std::map<int, odb::Rect>& guides)
 {
   guides_ = guides;
 }
@@ -157,10 +159,9 @@ bool SimulatedAnnealingCore<T>::isValid() const
 }
 
 template <class T>
-bool SimulatedAnnealingCore<T>::fitsIn(const Rect& outline) const
+bool SimulatedAnnealingCore<T>::fitsIn(const odb::Rect& outline) const
 {
-  return (width_ <= std::ceil(outline.getWidth()))
-         && (height_ <= std::ceil(outline.getHeight()));
+  return (width_ <= outline.dx()) && (height_ <= outline.dy());
 }
 
 template <class T>
@@ -170,22 +171,28 @@ float SimulatedAnnealingCore<T>::getNormCost() const
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::getWidth() const
+int SimulatedAnnealingCore<T>::getWidth() const
 {
   return width_;
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::getHeight() const
+int SimulatedAnnealingCore<T>::getHeight() const
 {
   return height_;
 }
 
 template <class T>
+int64_t SimulatedAnnealingCore<T>::getArea() const
+{
+  return width_ * static_cast<int64_t>(height_);
+}
+
+template <class T>
 float SimulatedAnnealingCore<T>::getAreaPenalty() const
 {
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  return (width_ * height_) / outline_area;
+  return block_->dbuAreaToMicrons(getArea())
+         / block_->dbuAreaToMicrons(outline_.area());
 }
 
 template <class T>
@@ -246,12 +253,12 @@ std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 template <class T>
 void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
-  const float max_width = std::max(outline_.getWidth(), width_);
-  const float max_height = std::max(outline_.getHeight(), height_);
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  outline_penalty_ = max_width * max_height - outline_area;
+  const int max_width = std::max(outline_.dx(), width_);
+  const int max_height = std::max(outline_.dy(), height_);
+  outline_penalty_
+      = (max_width * static_cast<int64_t>(max_height)) - outline_.area();
   // normalization
-  outline_penalty_ = outline_penalty_ / (outline_area);
+  outline_penalty_ = outline_penalty_ / outline_.area();
   if (graphics_) {
     graphics_->setOutlinePenalty({"Outline",
                                   core_weights_.outline,
@@ -263,67 +270,72 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::calWirelength()
 {
-  // Initialization
-  wirelength_ = 0.0;
   if (core_weights_.wirelength <= 0.0) {
     return;
   }
 
-  // calculate the total net weight
-  float tot_net_weight = 0.0;
-  for (const auto& net : nets_) {
-    tot_net_weight += net.weight;
-  }
-
-  if (tot_net_weight <= 0.0) {
-    return;
-  }
-
-  for (const auto& net : nets_) {
-    T& source = macros_[net.terminals.first];
-    T& target = macros_[net.terminals.second];
-
-    if (target.isClusterOfUnplacedIOPins()) {
-      computeWLForClusterOfUnplacedIOPins(source, target, net.weight);
-      continue;
-    }
-
-    const float x1 = source.getPinX();
-    const float y1 = source.getPinY();
-    const float x2 = target.getPinX();
-    const float y2 = target.getPinY();
-    wirelength_ += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
-  }
-
-  // normalization
-  wirelength_ = wirelength_ / tot_net_weight
-                / (outline_.getHeight() + outline_.getWidth());
+  wirelength_ = computeNetsWireLength(nets_);
 
   if (graphics_) {
-    graphics_->setWirelengthPenalty({"Wire Length",
-                                     core_weights_.wirelength,
-                                     wirelength_,
-                                     norm_wirelength_});
+    graphics_->setWirelengthPenalty({.name = "Wire Length",
+                                     .weight = core_weights_.wirelength,
+                                     .value = wirelength_,
+                                     .normalization_factor = norm_wirelength_});
   }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
-    const T& macro,
-    const T& unplaced_ios,
-    const float net_weight)
+float SimulatedAnnealingCore<T>::computeNetsWireLength(
+    const BundledNetList& nets) const
 {
-  // To generate maximum cost.
-  const float max_dist = die_area_.getPerimeter() / 2;
+  float nets_wire_length = 0.0;
+  float nets_weight_sum = 0.0;
 
-  if (isOutsideTheOutline(macro)) {
-    wirelength_ += net_weight * max_dist;
-    return;
+  for (const auto& net : nets_) {
+    nets_weight_sum += net.weight;
   }
 
-  const odb::Point macro_location(block_->micronsToDbu(macro.getPinX()),
-                                  block_->micronsToDbu(macro.getPinY()));
-  double smallest_distance;
+  if (nets_weight_sum != 0.0) {
+    for (const auto& net : nets) {
+      const T& source = macros_[net.terminals.first];
+      const T& target = macros_[net.terminals.second];
+
+      if (target.isClusterOfUnplacedIOPins()) {
+        nets_wire_length
+            += computeWLForClusterOfUnplacedIOPins(source, target, net.weight);
+      } else {
+        const int x1 = source.getPinX();
+        const int y1 = source.getPinY();
+        const int x2 = target.getPinX();
+        const int y2 = target.getPinY();
+
+        nets_wire_length
+            += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
+      }
+    }
+
+    nets_wire_length
+        = nets_wire_length / nets_weight_sum / (outline_.dx() + outline_.dy());
+  }
+
+  return nets_wire_length;
+}
+
+template <class T>
+int64_t SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
+    const T& macro,
+    const T& unplaced_ios,
+    const float net_weight) const
+{
+  // To generate maximum cost.
+  const int max_dist = die_area_.margin() / 2;
+
+  if (isOutsideTheOutline(macro)) {
+    return net_weight * max_dist;
+  }
+
+  const odb::Point macro_location(macro.getPinX(), macro.getPinY());
+  int64_t smallest_distance;
   if (unplaced_ios.getCluster()->isClusterOfUnconstrainedIOPins()) {
     if (available_regions_for_unconstrained_pins_.empty()) {
       logger_->critical(
@@ -341,7 +353,7 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
         = computeDistToNearestRegion(macro_location, {constraint}, nullptr);
   }
 
-  wirelength_ += net_weight * block_->dbuToMicrons(smallest_distance);
+  return net_weight * smallest_distance;
 }
 
 // We consider the macro outside the outline based on the location of
@@ -349,8 +361,7 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
 template <class T>
 bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
 {
-  return macro.getPinX() > outline_.getWidth()
-         || macro.getPinY() > outline_.getHeight();
+  return macro.getPinX() > outline_.dx() || macro.getPinY() > outline_.dy();
 }
 
 template <class T>
@@ -363,12 +374,12 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   }
 
   for (const auto& [id, bbox] : fences_) {
-    const float lx = macros_[id].getX();
-    const float ly = macros_[id].getY();
-    const float ux = lx + macros_[id].getWidth();
-    const float uy = ly + macros_[id].getHeight();
+    const int lx = macros_[id].getX();
+    const int ly = macros_[id].getY();
+    const int ux = lx + macros_[id].getWidth();
+    const int uy = ly + macros_[id].getHeight();
     // check if the macro is valid
-    if (macros_[id].getWidth() * macros_[id].getHeight() <= 1e-4) {
+    if (macros_[id].getWidth() * macros_[id].getHeight() == 0) {
       continue;
     }
     // check if the fence is valid
@@ -377,18 +388,17 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
       continue;
     }
     // check how much the macro is far from no fence violation
-    const float max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2.0;
-    const float max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2.0;
-    const float x_dist
-        = std::abs((bbox.xMin() + bbox.xMax()) / 2.0 - (lx + ux) / 2.0);
-    const float y_dist
-        = std::abs((bbox.yMin() + bbox.yMax()) / 2.0 - (ly + uy) / 2.0);
+    const int max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2;
+    const int max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2;
+    const int x_dist = std::abs(bbox.xCenter() - ((lx + ux) / 2));
+    const int y_dist = std::abs(bbox.yCenter() - ((ly + uy) / 2));
     // calculate x and y direction independently
-    float width = x_dist <= max_x_dist ? 0.0 : (x_dist - max_x_dist);
-    float height = y_dist <= max_y_dist ? 0.0 : (y_dist - max_y_dist);
-    width = width / outline_.getWidth();
-    height = height / outline_.getHeight();
-    fence_penalty_ += width * width + height * height;
+    const int width = x_dist <= max_x_dist ? 0 : (x_dist - max_x_dist);
+    const int height = y_dist <= max_y_dist ? 0 : (y_dist - max_y_dist);
+    const float width_ratio = width / static_cast<float>(outline_.dx());
+    const float height_ratio = height / static_cast<float>(outline_.dy());
+    fence_penalty_
+        += (width_ratio * width_ratio) + (height_ratio * height_ratio);
   }
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();
@@ -408,26 +418,20 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
 
   for (const auto& [id, guide] : guides_) {
-    const float macro_x_min = macros_[id].getX();
-    const float macro_y_min = macros_[id].getY();
-    const float macro_x_max = macro_x_min + macros_[id].getWidth();
-    const float macro_y_max = macro_y_min + macros_[id].getHeight();
-
-    const float overlap_width = std::min(guide.xMax(), macro_x_max)
-                                - std::max(guide.xMin(), macro_x_min);
-    const float overlap_height = std::min(guide.yMax(), macro_y_max)
-                                 - std::max(guide.yMin(), macro_y_min);
+    odb::Rect overlap;
+    macros_[id].getBBox().intersection(guide, overlap);
 
     // maximum overlap area
-    float penalty = std::min(macros_[id].getWidth(), guide.getWidth())
-                    * std::min(macros_[id].getHeight(), guide.getHeight());
+    int64_t penalty
+        = std::min(macros_[id].getWidth(), guide.dx())
+          * static_cast<int64_t>(std::min(macros_[id].getHeight(), guide.dy()));
 
     // subtract overlap
-    if (overlap_width > 0 && overlap_height > 0) {
-      penalty -= (overlap_width * overlap_height);
+    if (overlap.dx() > 0 && overlap.dy() > 0) {
+      penalty -= (overlap.area());
     }
 
-    guidance_penalty_ += penalty;
+    guidance_penalty_ += block_->dbuAreaToMicrons(penalty);
   }
 
   guidance_penalty_ = guidance_penalty_ / guides_.size();
@@ -454,17 +458,17 @@ void SimulatedAnnealingCore<T>::packFloorplan()
     sequence_pair_pos[neg_seq_[i]].second = i;
   }
 
-  std::vector<float> accumulated_length(pos_seq_.size(), 0.0);
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    const int macro_id = pos_seq_[i];
+  std::vector<int> accumulated_length(pos_seq_.size(), 0);
+  for (int macro_id : pos_seq_) {
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+
     T& macro = macros_[macro_id];
 
     if (!macro.isFixed()) {
       macro.setX(accumulated_length[neg_seq_pos]);
     }
 
-    const float current_length = macro.getX() + macro.getWidth();
+    const int current_length = macro.getX() + macro.getWidth();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_length > accumulated_length[j]) {
@@ -489,7 +493,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
 
     // This is actually the accumulated height, but we use the same vector
     // to avoid more allocation.
-    accumulated_length[i] = 0.0;
+    accumulated_length[i] = 0;
   }
 
   for (int i = 0; i < pos_seq_.size(); i++) {
@@ -501,7 +505,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
       macro.setY(accumulated_length[neg_seq_pos]);
     }
 
-    const float current_height = macro.getY() + macro.getHeight();
+    const int current_height = macro.getY() + macro.getHeight();
 
     for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
       if (current_height > accumulated_length[j]) {
@@ -725,8 +729,13 @@ void SimulatedAnnealingCore<T>::fastSA()
       cost = calNormCost();
 
       const bool is_valid = isValid();
-      const bool improved = cost < pre_cost || best_result_.empty();
-      if ((!is_best_result_valid_ || is_valid) && improved) {
+      if (!invalid_states_allowed_ && !is_valid) {
+        restoreState();
+        continue;
+      }
+
+      const bool found_new_best_result = cost < best_result_.cost;
+      if ((!is_best_result_valid_ || is_valid) && found_new_best_result) {
         updateBestResult(cost);
         is_best_result_valid_ = is_valid;
       }
@@ -761,9 +770,8 @@ void SimulatedAnnealingCore<T>::fastSA()
   calPenalty();
   cost = calNormCost();
 
-  const bool is_valid = isValid();
-  const bool improved = cost < best_result_.cost || best_result_.empty();
-  if ((is_best_result_valid_ && !is_valid) || !improved) {
+  const bool found_new_best_result = cost < best_result_.cost;
+  if ((is_best_result_valid_ && !isValid()) || !found_new_best_result) {
     useBestResult();
   }
 }
@@ -771,8 +779,7 @@ void SimulatedAnnealingCore<T>::fastSA()
 template <class T>
 bool SimulatedAnnealingCore<T>::resultFitsInOutline() const
 {
-  return (width_ <= std::ceil(outline_.getWidth()))
-         && (height_ <= std::ceil(outline_.getHeight()));
+  return (width_ <= outline_.dx()) && (height_ <= outline_.dy());
 }
 
 template <class T>
@@ -800,11 +807,11 @@ void SimulatedAnnealingCore<T>::useBestResult()
   if constexpr (std::is_same_v<T, SoftMacro>) {
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      const float valid_result_width
+      const int valid_result_width
           = best_result_.macro_id_to_width.at(macro_id);
 
       if (macro.isMacroCluster()) {
-        const float valid_result_height = macro.getArea() / valid_result_width;
+        const int valid_result_height = macro.getArea() / valid_result_width;
         macro.setShapeF(valid_result_width, valid_result_height);
       } else {
         macro.setWidth(valid_result_width);
@@ -825,7 +832,7 @@ void SimulatedAnnealingCore<T>::writeCostFile(
 {
   std::ofstream file(file_name);
   for (auto i = 0; i < cost_list_.size(); i++) {
-    file << T_list_[i] << "  " << cost_list_[i] << std::endl;
+    file << T_list_[i] << "  " << cost_list_[i] << '\n';
   }
 }
 

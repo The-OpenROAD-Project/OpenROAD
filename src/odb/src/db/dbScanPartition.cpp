@@ -6,13 +6,13 @@
 
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
 #include "dbScanList.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 namespace odb {
@@ -70,7 +70,7 @@ void _dbScanPartition::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  scan_lists_->collectMemInfo(info.children_["scan_lists_"]);
+  scan_lists_->collectMemInfo(info.children["scan_lists_"]);
 }
 
 _dbScanPartition::~_dbScanPartition()

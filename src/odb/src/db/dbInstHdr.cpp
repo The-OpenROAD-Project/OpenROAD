@@ -12,7 +12,6 @@
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 
 namespace odb {
@@ -21,31 +20,31 @@ template class dbTable<_dbInstHdr>;
 
 bool _dbInstHdr::operator==(const _dbInstHdr& rhs) const
 {
-  if (_mterm_cnt != rhs._mterm_cnt) {
+  if (mterm_cnt_ != rhs.mterm_cnt_) {
     return false;
   }
 
-  if (_id != rhs._id) {
+  if (id_ != rhs.id_) {
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
-  if (_lib != rhs._lib) {
+  if (lib_ != rhs.lib_) {
     return false;
   }
 
-  if (_master != rhs._master) {
+  if (master_ != rhs.master_) {
     return false;
   }
 
-  if (_mterms != rhs._mterms) {
+  if (mterms_ != rhs.mterms_) {
     return false;
   }
 
-  if (_inst_cnt != rhs._inst_cnt) {
+  if (inst_cnt_ != rhs.inst_cnt_) {
     return false;
   }
 
@@ -60,47 +59,43 @@ bool _dbInstHdr::operator==(const _dbInstHdr& rhs) const
 
 _dbInstHdr::_dbInstHdr(_dbDatabase*)
 {
-  _id = 0;
-  _mterm_cnt = 0;
-  _inst_cnt = 0;
+  id_ = 0;
+  mterm_cnt_ = 0;
+  inst_cnt_ = 0;
 }
 
 _dbInstHdr::_dbInstHdr(_dbDatabase*, const _dbInstHdr& i)
-    : _mterm_cnt(i._mterm_cnt),
-      _id(i._id),
-      _next_entry(i._next_entry),
-      _lib(i._lib),
-      _master(i._master),
-      _mterms(i._mterms),
-      _inst_cnt(i._inst_cnt)
-{
-}
-
-_dbInstHdr::~_dbInstHdr()
+    : mterm_cnt_(i.mterm_cnt_),
+      id_(i.id_),
+      next_entry_(i.next_entry_),
+      lib_(i.lib_),
+      master_(i.master_),
+      mterms_(i.mterms_),
+      inst_cnt_(i.inst_cnt_)
 {
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbInstHdr& inst_hdr)
 {
-  stream << inst_hdr._mterm_cnt;
-  stream << inst_hdr._id;
-  stream << inst_hdr._next_entry;
-  stream << inst_hdr._lib;
-  stream << inst_hdr._master;
-  stream << inst_hdr._mterms;
-  stream << inst_hdr._inst_cnt;
+  stream << inst_hdr.mterm_cnt_;
+  stream << inst_hdr.id_;
+  stream << inst_hdr.next_entry_;
+  stream << inst_hdr.lib_;
+  stream << inst_hdr.master_;
+  stream << inst_hdr.mterms_;
+  stream << inst_hdr.inst_cnt_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbInstHdr& inst_hdr)
 {
-  stream >> inst_hdr._mterm_cnt;
-  stream >> inst_hdr._id;
-  stream >> inst_hdr._next_entry;
-  stream >> inst_hdr._lib;
-  stream >> inst_hdr._master;
-  stream >> inst_hdr._mterms;
-  stream >> inst_hdr._inst_cnt;
+  stream >> inst_hdr.mterm_cnt_;
+  stream >> inst_hdr.id_;
+  stream >> inst_hdr.next_entry_;
+  stream >> inst_hdr.lib_;
+  stream >> inst_hdr.master_;
+  stream >> inst_hdr.mterms_;
+  stream >> inst_hdr.inst_cnt_;
   return stream;
 }
 
@@ -119,15 +114,15 @@ dbLib* dbInstHdr::getLib()
 {
   _dbInstHdr* inst_hdr = (_dbInstHdr*) this;
   _dbDatabase* db = getDatabase();
-  return (dbLib*) db->_lib_tbl->getPtr(inst_hdr->_lib);
+  return (dbLib*) db->lib_tbl_->getPtr(inst_hdr->lib_);
 }
 
 dbMaster* dbInstHdr::getMaster()
 {
   _dbInstHdr* inst_hdr = (_dbInstHdr*) this;
   _dbDatabase* db = getDatabase();
-  _dbLib* lib = db->_lib_tbl->getPtr(inst_hdr->_lib);
-  return (dbMaster*) lib->_master_tbl->getPtr(inst_hdr->_master);
+  _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->lib_);
+  return (dbMaster*) lib->master_tbl_->getPtr(inst_hdr->master_);
 }
 
 dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
@@ -136,24 +131,24 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   _dbMaster* master = (_dbMaster*) master_;
   _dbLib* lib = (_dbLib*) master->getOwner();
 
-  if (!master->_flags._frozen) {
+  if (!master->flags_.frozen) {
     return nullptr;
   }
 
-  if (block->_inst_hdr_hash.hasMember(master->_id)) {
+  if (block->inst_hdr_hash_.hasMember(master->id_)) {
     return nullptr;
   }
 
   _dbInstHdr* inst_hdr;
   // initialize the inst_hdr structure
-  inst_hdr = block->_inst_hdr_tbl->create();
-  inst_hdr->_mterm_cnt = master->_mterm_cnt;
-  inst_hdr->_id = master->_id;
-  inst_hdr->_lib = lib->getOID();
-  inst_hdr->_master = master->getOID();
+  inst_hdr = block->inst_hdr_tbl_->create();
+  inst_hdr->mterm_cnt_ = master->mterm_cnt_;
+  inst_hdr->id_ = master->id_;
+  inst_hdr->lib_ = lib->getOID();
+  inst_hdr->master_ = master->getOID();
 
   // insert the inst_hdr into the block inst_hdr hash table.
-  block->_inst_hdr_hash.insert(inst_hdr);
+  block->inst_hdr_hash_.insert(inst_hdr);
 
   //
   // Each ITerm of and instances points back the MTerm the ITerm
@@ -168,12 +163,12 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   // Consequently, you would need to buffer the data of a master, i.e., a LEF
   // MACRO until the complete MACRO is parsed...
   //
-  inst_hdr->_mterms.resize(master->_mterm_cnt);
+  inst_hdr->mterms_.resize(master->mterm_cnt_);
 
   // mterms, this set is ordered: {output, inout, input}
   int i = 0;
   for (dbMTerm* mterm : master_->getMTerms()) {
-    inst_hdr->_mterms[i++] = mterm->getImpl()->getOID();
+    inst_hdr->mterms_[i++] = mterm->getImpl()->getOID();
   }
 
   return (dbInstHdr*) inst_hdr;
@@ -184,9 +179,9 @@ void dbInstHdr::destroy(dbInstHdr* inst_hdr_)
   _dbInstHdr* inst_hdr = (_dbInstHdr*) inst_hdr_;
   _dbBlock* block = (_dbBlock*) inst_hdr->getOwner();
 
-  assert(inst_hdr->_inst_cnt == 0);
-  block->_inst_hdr_hash.remove(inst_hdr);
-  block->_inst_hdr_tbl->destroy(inst_hdr);
+  assert(inst_hdr->inst_cnt_ == 0);
+  block->inst_hdr_hash_.remove(inst_hdr);
+  block->inst_hdr_tbl_->destroy(inst_hdr);
 }
 
 void _dbInstHdr::collectMemInfo(MemInfo& info)
@@ -194,7 +189,7 @@ void _dbInstHdr::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["mterms"].add(_mterms);
+  info.children["mterms"].add(mterms_);
 }
 
 }  // namespace odb

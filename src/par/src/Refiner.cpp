@@ -3,6 +3,7 @@
 
 #include "Refiner.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <set>
@@ -190,9 +191,7 @@ float Refiner::CalculatePathCost(int path_id,
   // get the snaking factor of the path (maximum repetition of block_id - 1)
   int snaking_factor = 0;
   for (auto [block_id, count] : block_counter) {
-    if (count > snaking_factor) {
-      snaking_factor = count;
-    }
+    snaking_factor = std::max(count, snaking_factor);
   }
   cost += snaking_wt_factor_ * static_cast<float>(snaking_factor - 1);
   return cost;

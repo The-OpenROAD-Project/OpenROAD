@@ -12,64 +12,65 @@
 namespace odb {
 
 // Protects the DefParser namespace that has static variables
-std::mutex defin::_def_mutex;
+std::mutex defin::def_mutex_;
 
 defin::defin(dbDatabase* db, utl::Logger* logger, MODE mode)
 {
-  _reader = new definReader(db, logger, mode);
+  reader_ = new definReader(db, logger, mode);
 }
 
 defin::~defin()
 {
-  delete _reader;
+  delete reader_;
 }
 
 void defin::skipConnections()
 {
-  _reader->skipConnections();
+  reader_->skipConnections();
 }
 
 void defin::skipWires()
 {
-  _reader->skipWires();
+  reader_->skipWires();
 }
 
 void defin::skipSpecialWires()
 {
-  _reader->skipSpecialWires();
+  reader_->skipSpecialWires();
 }
 
 void defin::skipShields()
 {
-  _reader->skipShields();
+  reader_->skipShields();
 }
 
 void defin::skipBlockWires()
 {
-  _reader->skipBlockWires();
+  reader_->skipBlockWires();
 }
 
 void defin::skipFillWires()
 {
-  _reader->skipFillWires();
+  reader_->skipFillWires();
 }
 
 void defin::continueOnErrors()
 {
-  _reader->continueOnErrors();
+  reader_->continueOnErrors();
 }
 
 void defin::useBlockName(const char* name)
 {
-  _reader->useBlockName(name);
+  reader_->useBlockName(name);
 }
 
 void defin::readChip(std::vector<dbLib*>& libs,
                      const char* def_file,
-                     dbChip* chip)
+                     dbChip* chip,
+                     const bool issue_callback)
 {
-  std::lock_guard<std::mutex> lock(_def_mutex);
-  _reader->readChip(libs, def_file, chip);
+  std::lock_guard<std::mutex> lock(def_mutex_);
+  reader_->readChip(libs, def_file, chip, issue_callback);
 }
 
 }  // namespace odb

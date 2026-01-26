@@ -4,10 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbGroupInstItr.h"
 
+#include <cstdint>
+
 #include "dbGroup.h"
 #include "dbInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 
@@ -17,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbGroupInstItr::reversible()
+bool dbGroupInstItr::reversible() const
 {
   return true;
 }
 
-bool dbGroupInstItr::orderReversed()
+bool dbGroupInstItr::orderReversed() const
 {
   return true;
 }
@@ -31,29 +32,29 @@ void dbGroupInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
   _dbGroup* _parent = (_dbGroup*) parent;
-  uint id = _parent->_insts;
-  uint list = 0;
+  uint32_t id = _parent->insts_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbInst* inst = _inst_tbl->getPtr(id);
-    uint n = inst->_group_next;
-    inst->_group_next = list;
+    _dbInst* inst = inst_tbl_->getPtr(id);
+    uint32_t n = inst->group_next_;
+    inst->group_next_ = list;
     list = id;
     id = n;
   }
-  _parent->_insts = list;
+  _parent->insts_ = list;
   // User Code End reverse
 }
 
-uint dbGroupInstItr::sequential()
+uint32_t dbGroupInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbGroupInstItr::size(dbObject* parent)
+uint32_t dbGroupInstItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbGroupInstItr::begin(parent); id != dbGroupInstItr::end(parent);
        id = dbGroupInstItr::next(id)) {
@@ -63,30 +64,30 @@ uint dbGroupInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbGroupInstItr::begin(dbObject* parent)
+uint32_t dbGroupInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbGroup* _parent = (_dbGroup*) parent;
-  return _parent->_insts;
+  return _parent->insts_;
   // User Code End begin
 }
 
-uint dbGroupInstItr::end(dbObject* /* unused: parent */)
+uint32_t dbGroupInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbGroupInstItr::next(uint id, ...)
+uint32_t dbGroupInstItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
-  _dbInst* inst = _inst_tbl->getPtr(id);
-  return inst->_group_next;
+  _dbInst* inst = inst_tbl_->getPtr(id);
+  return inst->group_next_;
   // User Code End next
 }
 
-dbObject* dbGroupInstItr::getObject(uint id, ...)
+dbObject* dbGroupInstItr::getObject(uint32_t id, ...)
 {
-  return _inst_tbl->getPtr(id);
+  return inst_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

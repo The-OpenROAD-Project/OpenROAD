@@ -275,11 +275,8 @@ void VoltageDomain::determinePowerGroundNets()
 
 void VoltageDomain::removeGrid(Grid* grid)
 {
-  grids_.erase(
-      std::remove_if(grids_.begin(),
-                     grids_.end(),
-                     [grid](const auto& other) { return other.get() == grid; }),
-      grids_.end());
+  std::erase_if(grids_,
+                [grid](const auto& other) { return other.get() == grid; });
 }
 
 void VoltageDomain::checkSetup() const
