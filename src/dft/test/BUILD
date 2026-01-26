@@ -29,62 +29,11 @@ ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
 
 filegroup(
     name = "regression_resources",
-    # Dependencies could be specified more narrowly per test case,
-    # but at least it is not a glob of everything and there are
-    # per test glob patterns below.
     srcs = [
-        "Nangate45/Nangate45.lef",
-        "Nangate45/Nangate45.pdn.tcl",
-        "Nangate45/Nangate45.rc",
-        "Nangate45/Nangate45.rcx_rules",
-        "Nangate45/Nangate45.tracks",
-        "Nangate45/Nangate45.vars",
-        "Nangate45/Nangate45_fast.lib",
-        "Nangate45/Nangate45_lvt.lef",
-        "Nangate45/Nangate45_lvt.lib",
-        "Nangate45/Nangate45_slow.lib",
-        "Nangate45/Nangate45_stdcell.lef",
-        "Nangate45/Nangate45_tech.lef",
-        "Nangate45/Nangate45_typ.lib",
-        "Nangate45/fake_macros.lef",
-        "Nangate45/fake_macros.lib",
-        "Nangate45/fakeram45.cfg",
-        "Nangate45/fakeram45_1024x32.lef",
-        "Nangate45/fakeram45_1024x32.lib",
-        "Nangate45/fakeram45_256x16.lef",
-        "Nangate45/fakeram45_256x16.lib",
-        "Nangate45/fakeram45_512x64.lef",
-        "Nangate45/fakeram45_512x64.lib",
-        "Nangate45/fakeram45_64x32.lef",
-        "Nangate45/fakeram45_64x32.lib",
-        "Nangate45/fakeram45_64x7.lef",
-        "Nangate45/fakeram45_64x7.lib",
-        "Nangate45/fakeram45_64x96.lef",
-        "Nangate45/fakeram45_64x96.lib",
-        "Nangate45/work_around_yosys/cells.v",
         "helpers.tcl",
-        "register_bank_cores.lef",
-        "register_bank_top.v",
-        "scan_architect_sky130.v",
-        "scan_inserted_design_sky130.scandef",
-        "scan_inserted_design_sky130.v",
-        "scan_inserted_register_bank.v",
-        "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
-        "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
         "sky130hd/sky130_fd_sc_hd_merged.lef",
-        "sky130hd/sky130hd.pdn.tcl",
-        "sky130hd/sky130hd.rc",
-        "sky130hd/sky130hd.rcx_rules",
         "sky130hd/sky130hd.tlef",
-        "sky130hd/sky130hd.tracks",
-        "sky130hd/sky130hd.vars",
-        "sky130hd/sky130hd_multi_patterned.tlef",
-        "sky130hd/sky130hd_std_cell.lef",
-        "sky130hd/sky130hd_std_cell_vt.lef",
-        "sky130hd/sky130hd_tt.lib",
-        "sky130hd/sky130hd_vt.tlef",
-        "sky130hd/work_around_yosys/formal_pdk.v",
     ],
 )
 
@@ -95,7 +44,25 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ),
+        ) + {
+            "scan_architect_clock_mix_sky130": [
+                "scan_architect_sky130.v",
+            ],
+            "scan_architect_no_mix_sky130": [
+                "scan_architect_sky130.v",
+            ],
+            "scan_architect_register_bank_no_clock_mix_sky130": [
+                "register_bank_top.v",
+            ],
+            "scandef_core_sky130": [
+                "register_bank_cores.lef",
+                "scan_inserted_register_bank.v",
+            ],
+            "scandef_sky130": [
+                "scan_inserted_design_sky130.scandef",
+                "scan_inserted_design_sky130.v",
+            ],
+        }.get(test_name, []),
     )
     for test_name in ALL_TESTS
 ]
@@ -131,6 +98,7 @@ cc_test(
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft",
+        "//src/dft/src/utils",
         "//src/odb",
         "//src/utl",
         "@googletest//:gtest",

@@ -18,11 +18,13 @@
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
+#include "infrastructure/DecapObjects.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
@@ -46,7 +48,8 @@ bool Opendp::isMultiRow(const Node* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-Opendp::Opendp(odb::dbDatabase* db, Logger* logger) : logger_(logger), db_(db)
+Opendp::Opendp(odb::dbDatabase* db, utl::Logger* logger)
+    : logger_(logger), db_(db)
 {
   dummy_cell_ = std::make_unique<Node>();
   dummy_cell_->setPlaced(true);
@@ -77,6 +80,16 @@ void Opendp::setPadding(odb::dbMaster* master, const int left, const int right)
 void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 {
   debug_observer_ = std::move(observer);
+}
+
+void Opendp::setJumpMoves(const int jump_moves)
+{
+  jump_moves_ = jump_moves;
+}
+
+void Opendp::setIterativePlacement(const bool iterative)
+{
+  iterative_placement_ = iterative;
 }
 
 void Opendp::setJournal(Journal* journal)
@@ -202,9 +215,7 @@ void Opendp::findDisplacementStats()
     }
     const int displacement = disp(cell.get());
     displacement_sum_ += displacement;
-    if (displacement > displacement_max_) {
-      displacement_max_ = displacement;
-    }
+    displacement_max_ = std::max<int64_t>(displacement, displacement_max_);
   }
   if (network_->getNumCells() != 0) {
     displacement_avg_ = displacement_sum_ / network_->getNumCells();
@@ -390,7 +401,7 @@ std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
     left_inst = getAdjacentInstance(left_inst, left);
   }
 
-  std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
+  std::ranges::reverse(adj_inst_cluster);
   adj_inst_cluster.push_back(inst);
 
   odb::dbInst* right_inst = getAdjacentInstance(inst, right);
@@ -483,6 +494,19 @@ void Opendp::groupInitPixels()
       }
     }
   }
+}
+
+odb::Point Opendp::getOdbLocation(const Node* cell) const
+{
+  odb::dbBox* odb_bbox = cell->getDbInst()->getBBox();
+  return {odb_bbox->xMin(), odb_bbox->yMin()};
+}
+
+odb::Point Opendp::getDplLocation(const Node* cell) const
+{
+  DbuX final_x{core_.xMin() + cell->getLeft()};
+  DbuY final_y{core_.yMin() + cell->getBottom()};
+  return {final_x.v, final_y.v};
 }
 
 int divRound(const int dividend, const int divisor)

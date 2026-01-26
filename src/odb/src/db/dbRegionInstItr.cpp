@@ -3,11 +3,12 @@
 
 #include "dbRegionInstItr.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbInst.h"
 #include "dbRegion.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 
 namespace odb {
@@ -18,12 +19,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////
 
-bool dbRegionInstItr::reversible()
+bool dbRegionInstItr::reversible() const
 {
   return true;
 }
 
-bool dbRegionInstItr::orderReversed()
+bool dbRegionInstItr::orderReversed() const
 {
   return true;
 }
@@ -31,39 +32,39 @@ bool dbRegionInstItr::orderReversed()
 void dbRegionInstItr::reverse(dbObject* parent)
 {
   _dbRegion* region = (_dbRegion*) parent;
-  uint id = region->_insts;
-  uint list = 0;
+  uint32_t id = region->insts_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbInst* inst = _inst_tbl->getPtr(id);
-    uint n = inst->_region_next;
-    inst->_region_next = list;
+    _dbInst* inst = inst_tbl_->getPtr(id);
+    uint32_t n = inst->region_next_;
+    inst->region_next_ = list;
     list = id;
     id = n;
   }
 
-  uint prev = 0;
+  uint32_t prev = 0;
   id = list;
 
   while (id != 0) {
-    _dbInst* inst = _inst_tbl->getPtr(id);
-    inst->_region_prev = prev;
+    _dbInst* inst = inst_tbl_->getPtr(id);
+    inst->region_prev_ = prev;
     prev = id;
-    id = inst->_region_next;
+    id = inst->region_next_;
   }
 
-  region->_insts = list;
+  region->insts_ = list;
 }
 
-uint dbRegionInstItr::sequential()
+uint32_t dbRegionInstItr::sequential() const
 {
   return 0;
 }
 
-uint dbRegionInstItr::size(dbObject* parent)
+uint32_t dbRegionInstItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbRegionInstItr::begin(parent); id != dbRegionInstItr::end(parent);
        id = dbRegionInstItr::next(id)) {
@@ -73,26 +74,26 @@ uint dbRegionInstItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbRegionInstItr::begin(dbObject* parent)
+uint32_t dbRegionInstItr::begin(dbObject* parent) const
 {
   _dbRegion* region = (_dbRegion*) parent;
-  return (uint) region->_insts;
+  return (uint32_t) region->insts_;
 }
 
-uint dbRegionInstItr::end(dbObject* /* unused: parent */)
+uint32_t dbRegionInstItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbRegionInstItr::next(uint id, ...)
+uint32_t dbRegionInstItr::next(uint32_t id, ...) const
 {
-  _dbInst* inst = _inst_tbl->getPtr(id);
-  return inst->_region_next;
+  _dbInst* inst = inst_tbl_->getPtr(id);
+  return inst->region_next_;
 }
 
-dbObject* dbRegionInstItr::getObject(uint id, ...)
+dbObject* dbRegionInstItr::getObject(uint32_t id, ...)
 {
-  return _inst_tbl->getPtr(id);
+  return inst_tbl_->getPtr(id);
 }
 
 }  // namespace odb

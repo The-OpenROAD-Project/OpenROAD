@@ -68,9 +68,16 @@ DebugScopedTimer::DebugScopedTimer(double& aggregate,
 {
 }
 
+DebugScopedTimer::DebugScopedTimer(double& aggregate)
+    : Timer(), logger_(nullptr), aggregate_(&aggregate)
+{
+}
+
 DebugScopedTimer::~DebugScopedTimer()
 {
-  debugPrint(logger_, tool_, group_, level_, msg_, *this);
+  if (logger_) {
+    debugPrint(logger_, tool_, group_, level_, msg_, *this);
+  }
   if (aggregate_) {
     *aggregate_ += elapsed();
   }

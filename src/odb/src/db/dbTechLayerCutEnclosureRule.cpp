@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
 #include "odb/db.h"
@@ -19,76 +19,76 @@ template class dbTable<_dbTechLayerCutEnclosureRule>;
 bool _dbTechLayerCutEnclosureRule::operator==(
     const _dbTechLayerCutEnclosureRule& rhs) const
 {
-  if (flags_.type_ != rhs.flags_.type_) {
+  if (flags_.type != rhs.flags_.type) {
     return false;
   }
-  if (flags_.cut_class_valid_ != rhs.flags_.cut_class_valid_) {
+  if (flags_.cut_class_valid != rhs.flags_.cut_class_valid) {
     return false;
   }
-  if (flags_.above_ != rhs.flags_.above_) {
+  if (flags_.above != rhs.flags_.above) {
     return false;
   }
-  if (flags_.below_ != rhs.flags_.below_) {
+  if (flags_.below != rhs.flags_.below) {
     return false;
   }
-  if (flags_.eol_min_length_valid_ != rhs.flags_.eol_min_length_valid_) {
+  if (flags_.eol_min_length_valid != rhs.flags_.eol_min_length_valid) {
     return false;
   }
-  if (flags_.eol_only_ != rhs.flags_.eol_only_) {
+  if (flags_.eol_only != rhs.flags_.eol_only) {
     return false;
   }
-  if (flags_.short_edge_on_eol_ != rhs.flags_.short_edge_on_eol_) {
+  if (flags_.short_edge_on_eol != rhs.flags_.short_edge_on_eol) {
     return false;
   }
-  if (flags_.side_spacing_valid_ != rhs.flags_.side_spacing_valid_) {
+  if (flags_.side_spacing_valid != rhs.flags_.side_spacing_valid) {
     return false;
   }
-  if (flags_.end_spacing_valid_ != rhs.flags_.end_spacing_valid_) {
+  if (flags_.end_spacing_valid != rhs.flags_.end_spacing_valid) {
     return false;
   }
-  if (flags_.off_center_line_ != rhs.flags_.off_center_line_) {
+  if (flags_.off_center_line != rhs.flags_.off_center_line) {
     return false;
   }
-  if (flags_.width_valid_ != rhs.flags_.width_valid_) {
+  if (flags_.width_valid != rhs.flags_.width_valid) {
     return false;
   }
-  if (flags_.include_abutted_ != rhs.flags_.include_abutted_) {
+  if (flags_.include_abutted != rhs.flags_.include_abutted) {
     return false;
   }
-  if (flags_.except_extra_cut_ != rhs.flags_.except_extra_cut_) {
+  if (flags_.except_extra_cut != rhs.flags_.except_extra_cut) {
     return false;
   }
-  if (flags_.prl_ != rhs.flags_.prl_) {
+  if (flags_.prl != rhs.flags_.prl) {
     return false;
   }
-  if (flags_.no_shared_edge_ != rhs.flags_.no_shared_edge_) {
+  if (flags_.no_shared_edge != rhs.flags_.no_shared_edge) {
     return false;
   }
-  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
+  if (flags_.length_valid != rhs.flags_.length_valid) {
     return false;
   }
-  if (flags_.extra_cut_valid_ != rhs.flags_.extra_cut_valid_) {
+  if (flags_.extra_cut_valid != rhs.flags_.extra_cut_valid) {
     return false;
   }
   if (flags_.extra_only != rhs.flags_.extra_only) {
     return false;
   }
-  if (flags_.redundant_cut_valid_ != rhs.flags_.redundant_cut_valid_) {
+  if (flags_.redundant_cut_valid != rhs.flags_.redundant_cut_valid) {
     return false;
   }
-  if (flags_.parallel_valid_ != rhs.flags_.parallel_valid_) {
+  if (flags_.parallel_valid != rhs.flags_.parallel_valid) {
     return false;
   }
   if (flags_.second_parallel_valid != rhs.flags_.second_parallel_valid) {
     return false;
   }
-  if (flags_.second_par_within_valid_ != rhs.flags_.second_par_within_valid_) {
+  if (flags_.second_par_within_valid != rhs.flags_.second_par_within_valid) {
     return false;
   }
-  if (flags_.below_enclosure_valid_ != rhs.flags_.below_enclosure_valid_) {
+  if (flags_.below_enclosure_valid != rhs.flags_.below_enclosure_valid) {
     return false;
   }
-  if (flags_.concave_corners_valid_ != rhs.flags_.concave_corners_valid_) {
+  if (flags_.concave_corners_valid != rhs.flags_.concave_corners_valid) {
     return false;
   }
   if (cut_class_ != rhs.cut_class_) {
@@ -471,14 +471,14 @@ int dbTechLayerCutEnclosureRule::getBelowEnclosure() const
   return obj->below_enclosure_;
 }
 
-void dbTechLayerCutEnclosureRule::setNumCorners(uint num_corners)
+void dbTechLayerCutEnclosureRule::setNumCorners(uint32_t num_corners)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
   obj->num_corners_ = num_corners;
 }
 
-uint dbTechLayerCutEnclosureRule::getNumCorners() const
+uint32_t dbTechLayerCutEnclosureRule::getNumCorners() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
   return obj->num_corners_;
@@ -488,42 +488,42 @@ void dbTechLayerCutEnclosureRule::setCutClassValid(bool cut_class_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.cut_class_valid_ = cut_class_valid;
+  obj->flags_.cut_class_valid = cut_class_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isCutClassValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.cut_class_valid_;
+  return obj->flags_.cut_class_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setAbove(bool above)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.above_ = above;
+  obj->flags_.above = above;
 }
 
 bool dbTechLayerCutEnclosureRule::isAbove() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.above_;
+  return obj->flags_.above;
 }
 
 void dbTechLayerCutEnclosureRule::setBelow(bool below)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.below_ = below;
+  obj->flags_.below = below;
 }
 
 bool dbTechLayerCutEnclosureRule::isBelow() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.below_;
+  return obj->flags_.below;
 }
 
 void dbTechLayerCutEnclosureRule::setEolMinLengthValid(
@@ -531,182 +531,182 @@ void dbTechLayerCutEnclosureRule::setEolMinLengthValid(
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.eol_min_length_valid_ = eol_min_length_valid;
+  obj->flags_.eol_min_length_valid = eol_min_length_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isEolMinLengthValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.eol_min_length_valid_;
+  return obj->flags_.eol_min_length_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setEolOnly(bool eol_only)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.eol_only_ = eol_only;
+  obj->flags_.eol_only = eol_only;
 }
 
 bool dbTechLayerCutEnclosureRule::isEolOnly() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.eol_only_;
+  return obj->flags_.eol_only;
 }
 
 void dbTechLayerCutEnclosureRule::setShortEdgeOnEol(bool short_edge_on_eol)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.short_edge_on_eol_ = short_edge_on_eol;
+  obj->flags_.short_edge_on_eol = short_edge_on_eol;
 }
 
 bool dbTechLayerCutEnclosureRule::isShortEdgeOnEol() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.short_edge_on_eol_;
+  return obj->flags_.short_edge_on_eol;
 }
 
 void dbTechLayerCutEnclosureRule::setSideSpacingValid(bool side_spacing_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.side_spacing_valid_ = side_spacing_valid;
+  obj->flags_.side_spacing_valid = side_spacing_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isSideSpacingValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.side_spacing_valid_;
+  return obj->flags_.side_spacing_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setEndSpacingValid(bool end_spacing_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.end_spacing_valid_ = end_spacing_valid;
+  obj->flags_.end_spacing_valid = end_spacing_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isEndSpacingValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.end_spacing_valid_;
+  return obj->flags_.end_spacing_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setOffCenterLine(bool off_center_line)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.off_center_line_ = off_center_line;
+  obj->flags_.off_center_line = off_center_line;
 }
 
 bool dbTechLayerCutEnclosureRule::isOffCenterLine() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.off_center_line_;
+  return obj->flags_.off_center_line;
 }
 
 void dbTechLayerCutEnclosureRule::setWidthValid(bool width_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.width_valid_ = width_valid;
+  obj->flags_.width_valid = width_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isWidthValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.width_valid_;
+  return obj->flags_.width_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setIncludeAbutted(bool include_abutted)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.include_abutted_ = include_abutted;
+  obj->flags_.include_abutted = include_abutted;
 }
 
 bool dbTechLayerCutEnclosureRule::isIncludeAbutted() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.include_abutted_;
+  return obj->flags_.include_abutted;
 }
 
 void dbTechLayerCutEnclosureRule::setExceptExtraCut(bool except_extra_cut)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.except_extra_cut_ = except_extra_cut;
+  obj->flags_.except_extra_cut = except_extra_cut;
 }
 
 bool dbTechLayerCutEnclosureRule::isExceptExtraCut() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.except_extra_cut_;
+  return obj->flags_.except_extra_cut;
 }
 
 void dbTechLayerCutEnclosureRule::setPrl(bool prl)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.prl_ = prl;
+  obj->flags_.prl = prl;
 }
 
 bool dbTechLayerCutEnclosureRule::isPrl() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.prl_;
+  return obj->flags_.prl;
 }
 
 void dbTechLayerCutEnclosureRule::setNoSharedEdge(bool no_shared_edge)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.no_shared_edge_ = no_shared_edge;
+  obj->flags_.no_shared_edge = no_shared_edge;
 }
 
 bool dbTechLayerCutEnclosureRule::isNoSharedEdge() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.no_shared_edge_;
+  return obj->flags_.no_shared_edge;
 }
 
 void dbTechLayerCutEnclosureRule::setLengthValid(bool length_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.length_valid_ = length_valid;
+  obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isLengthValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.length_valid_;
+  return obj->flags_.length_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setExtraCutValid(bool extra_cut_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.extra_cut_valid_ = extra_cut_valid;
+  obj->flags_.extra_cut_valid = extra_cut_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isExtraCutValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.extra_cut_valid_;
+  return obj->flags_.extra_cut_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setExtraOnly(bool extra_only)
@@ -727,28 +727,28 @@ void dbTechLayerCutEnclosureRule::setRedundantCutValid(bool redundant_cut_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.redundant_cut_valid_ = redundant_cut_valid;
+  obj->flags_.redundant_cut_valid = redundant_cut_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isRedundantCutValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.redundant_cut_valid_;
+  return obj->flags_.redundant_cut_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setParallelValid(bool parallel_valid)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.parallel_valid_ = parallel_valid;
+  obj->flags_.parallel_valid = parallel_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isParallelValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.parallel_valid_;
+  return obj->flags_.parallel_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setSecondParallelValid(
@@ -771,14 +771,14 @@ void dbTechLayerCutEnclosureRule::setSecondParWithinValid(
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.second_par_within_valid_ = second_par_within_valid;
+  obj->flags_.second_par_within_valid = second_par_within_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isSecondParWithinValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.second_par_within_valid_;
+  return obj->flags_.second_par_within_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setBelowEnclosureValid(
@@ -786,14 +786,14 @@ void dbTechLayerCutEnclosureRule::setBelowEnclosureValid(
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.below_enclosure_valid_ = below_enclosure_valid;
+  obj->flags_.below_enclosure_valid = below_enclosure_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isBelowEnclosureValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.below_enclosure_valid_;
+  return obj->flags_.below_enclosure_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setConcaveCornersValid(
@@ -801,14 +801,14 @@ void dbTechLayerCutEnclosureRule::setConcaveCornersValid(
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.concave_corners_valid_ = concave_corners_valid;
+  obj->flags_.concave_corners_valid = concave_corners_valid;
 }
 
 bool dbTechLayerCutEnclosureRule::isConcaveCornersValid() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return obj->flags_.concave_corners_valid_;
+  return obj->flags_.concave_corners_valid;
 }
 
 // User Code Begin dbTechLayerCutEnclosureRulePublicMethods
@@ -816,7 +816,7 @@ void dbTechLayerCutEnclosureRule::setType(ENC_TYPE type)
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  obj->flags_.type_ = (uint) type;
+  obj->flags_.type = (uint32_t) type;
 }
 
 dbTechLayerCutEnclosureRule::ENC_TYPE dbTechLayerCutEnclosureRule::getType()
@@ -824,7 +824,7 @@ dbTechLayerCutEnclosureRule::ENC_TYPE dbTechLayerCutEnclosureRule::getType()
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
 
-  return (dbTechLayerCutEnclosureRule::ENC_TYPE) obj->flags_.type_;
+  return (dbTechLayerCutEnclosureRule::ENC_TYPE) obj->flags_.type;
 }
 
 dbTechLayerCutEnclosureRule* dbTechLayerCutEnclosureRule::create(
@@ -837,7 +837,7 @@ dbTechLayerCutEnclosureRule* dbTechLayerCutEnclosureRule::create(
 
 dbTechLayerCutEnclosureRule*
 dbTechLayerCutEnclosureRule::getTechLayerCutEnclosureRule(dbTechLayer* inly,
-                                                          uint dbid)
+                                                          uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCutEnclosureRule*) layer->cut_enc_rules_tbl_->getPtr(dbid);

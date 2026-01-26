@@ -143,6 +143,8 @@ cc_library(
 
 tcl_encode(
     name = "tcl",
+    # Encode sta:tcl_scripts before dbSta.tcl, as dbSta.tcl will
+    # override sta_error and sta_warn.
     srcs = ["//src/sta:tcl_scripts"] + [
         "src/dbReadVerilog.tcl",
         "src/dbSta.tcl",

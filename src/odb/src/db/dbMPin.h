@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -21,24 +22,22 @@ class _dbAccessPoint;
 class _dbMPin : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  dbId<_dbMTerm> _mterm;
-  dbId<_dbBox> _geoms;
-  dbId<_dbPolygon> _poly_geoms;
-  dbId<_dbMPin> _next_mpin;
-  dbVector<dbVector<dbId<_dbAccessPoint>>>
-      aps_;  // A vector of access points for each unique instance(master,
-             // orient, origin relevant to track). The outer index is the
-             // pin-access/unique-instance idx.
-
   _dbMPin(_dbDatabase*, const _dbMPin& p);
   _dbMPin(_dbDatabase*);
-  ~_dbMPin();
 
   bool operator==(const _dbMPin& rhs) const;
   bool operator!=(const _dbMPin& rhs) const { return !operator==(rhs); }
   void collectMemInfo(MemInfo& info);
-  void addAccessPoint(uint idx, _dbAccessPoint* ap);
+  void addAccessPoint(uint32_t idx, _dbAccessPoint* ap);
+
+  // PERSISTANT-MEMBERS
+  dbId<_dbMTerm> mterm_;
+  dbId<_dbBox> geoms_;
+  dbId<_dbPolygon> poly_geoms_;
+  dbId<_dbMPin> next_mpin_;
+  // A vector of access points for each unique instance(master, orient, origin
+  // relevant to track). The outer index is the pin-access/unique-instance idx.
+  dbVector<dbVector<dbId<_dbAccessPoint>>> aps_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbMPin& mpin);

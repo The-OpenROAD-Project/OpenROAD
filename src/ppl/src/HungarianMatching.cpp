@@ -23,7 +23,7 @@ HungarianMatching::HungarianMatching(const Section& section,
                                      Netlist* netlist,
                                      Core* core,
                                      std::vector<Slot>& slots,
-                                     Logger* logger,
+                                     utl::Logger* logger,
                                      odb::dbDatabase* db)
     : netlist_(netlist),
       core_(core),
@@ -91,11 +91,6 @@ void HungarianMatching::createMatrix()
       pin_index++;
     }
   }
-}
-
-inline bool samePos(odb::Point& a, odb::Point& b)
-{
-  return (a.x() == b.x() && a.y() == b.y());
 }
 
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
@@ -199,7 +194,7 @@ void HungarianMatching::createMatrixForGroups()
     group_sizes.push_back(pins.size());
   }
 
-  std::sort(group_sizes.begin(), group_sizes.end(), std::greater<int>());
+  std::ranges::sort(group_sizes, std::greater<int>());
 
   if (!group_sizes.empty()) {
     valid_starting_slots_.clear();

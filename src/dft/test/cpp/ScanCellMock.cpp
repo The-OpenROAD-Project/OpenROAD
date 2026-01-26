@@ -6,6 +6,8 @@
 #include <utility>
 
 #include "ClockDomain.hh"
+#include "ScanCell.hh"
+#include "ScanPin.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

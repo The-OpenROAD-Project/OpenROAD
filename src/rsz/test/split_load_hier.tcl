@@ -28,10 +28,11 @@ estimate_parasitics -placement
 report_worst_slack -max
 report_tns -digits 3
 
-
 repair_timing -setup -skip_last_gasp -skip_pin_swap -skip_gate_cloning \
   -skip_buffer_removal -max_passes 10
 
 set verilog_file [make_result_file split_load_hier_out.v]
 write_verilog $verilog_file
 diff_files $verilog_file split_load_hier_out.vok
+
+sta::check_axioms

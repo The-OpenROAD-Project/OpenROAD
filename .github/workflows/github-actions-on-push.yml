@@ -11,6 +11,6 @@ jobs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: run security_scan_on_push
         uses: The-OpenROAD-Project/actions/security_scan_on_push@main

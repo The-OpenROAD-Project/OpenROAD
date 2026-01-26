@@ -27,10 +27,6 @@ TclCmdHighlighter::TclCmdHighlighter(
   init(or_cmds, command_start, command_end);
 }
 
-TclCmdHighlighter::~TclCmdHighlighter()
-{
-}
-
 void TclCmdHighlighter::initFormats()
 {
   // color of green ring from OpenRoad logo

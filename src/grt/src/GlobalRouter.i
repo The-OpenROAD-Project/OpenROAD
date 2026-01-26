@@ -147,6 +147,12 @@ set_use_cugr(bool use_cugr)
 }
 
 void
+set_skip_large_fanout(int skip_large_fanout)
+{
+  getGlobalRouter()->setSkipLargeFanoutNets(skip_large_fanout);
+}
+
+void
 global_route(bool start_incremental, bool end_incremental)
 {
   getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
@@ -159,10 +165,10 @@ route_layer_lengths(odb::dbNet* db_net)
 }
 
 int
-repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
+repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin, bool jumper_only, bool diode_only)
 {
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  return getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, num_threads);
+  return getGlobalRouter()->repairAntennas(diode_mterm, iterations, ratio_margin, jumper_only, diode_only, num_threads);
 }
 
 void
@@ -172,7 +178,7 @@ add_net_to_route(odb::dbNet* net)
 }
 
 void
-highlight_net_route(odb::dbNet *net, bool show_segments, bool show_pin_locations)
+highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
   if (!gui::Gui::enabled()) {
     return;
@@ -183,7 +189,7 @@ highlight_net_route(odb::dbNet *net, bool show_segments, bool show_pin_locations
     router->setRenderer(std::make_unique<GrouteRenderer>(router, router->db()->getTech()));
   }
 
-  router->getRenderer()->highlightRoute(net, show_segments, show_pin_locations);
+  router->getRenderer()->highlightRoute(net, show_pin_locations);
 }
 
 void
@@ -261,6 +267,33 @@ void read_segments(const char* file_name)
 void write_pin_locations(const char* file_name)
 {
   getGlobalRouter()->writePinLocations(file_name);
+}
+
+odb::dbObject* iterm_to_object(odb::dbITerm* iterm)
+{
+  return (odb::dbObject*) iterm;
+}
+
+odb::dbObject* bterm_to_object(odb::dbBTerm* bterm)
+{
+  return (odb::dbObject*) bterm;
+}
+
+float estimate_path_resistance(odb::dbObject* pin1,
+                                 odb::dbObject* pin2,
+                                 bool verbose = false)
+{
+  return getGlobalRouter()->estimatePathResistance(pin1, pin2, verbose);
+}
+
+float estimate_path_resistance(odb::dbObject* pin1,
+				 odb::dbObject* pin2,
+				 odb::dbTechLayer* layer1,
+				 odb::dbTechLayer* layer2,
+				 bool verbose = false)
+{
+  return getGlobalRouter()->estimatePathResistance(
+    pin1, pin2, layer1, layer2, verbose);
 }
 
 } // namespace

@@ -9,7 +9,7 @@
     },
     {
       "type": "bit",
-      "name": "noneol_valid_"
+      "name": "noneol_valid"
     },
     {
       "type": "int",
@@ -18,7 +18,7 @@
     },
     {
       "type": "bit",
-      "name": "length_valid_"
+      "name": "length_valid"
     },
     {
       "type": "int",

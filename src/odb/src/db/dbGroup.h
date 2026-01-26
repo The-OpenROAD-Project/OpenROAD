@@ -4,13 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
-// User Code Begin Includes
-#include "dbVector.h"
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -23,8 +21,8 @@ class _dbRegion;
 
 struct dbGroupFlags
 {
-  uint _type : 2;
-  uint spare_bits_ : 30;
+  uint32_t type : 2;
+  uint32_t spare_bits : 30;
 };
 
 class _dbGroup : public _dbObject
@@ -40,15 +38,15 @@ class _dbGroup : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbGroupFlags flags_;
-  char* _name;
-  dbId<_dbGroup> _next_entry;
-  dbId<_dbGroup> _group_next;
-  dbId<_dbGroup> _parent_group;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbGroup> _groups;
-  dbVector<dbId<_dbNet>> _power_nets;
-  dbVector<dbId<_dbNet>> _ground_nets;
+  char* name_;
+  dbId<_dbGroup> next_entry_;
+  dbId<_dbGroup> group_next_;
+  dbId<_dbGroup> parent_group_;
+  dbId<_dbInst> insts_;
+  dbId<_dbModInst> modinsts_;
+  dbId<_dbGroup> groups_;
+  dbVector<dbId<_dbNet>> power_nets_;
+  dbVector<dbId<_dbNet>> ground_nets_;
   dbId<_dbGroup> region_next_;
   dbId<_dbGroup> region_prev_;
   dbId<_dbRegion> region_;

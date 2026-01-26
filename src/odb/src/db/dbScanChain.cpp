@@ -7,13 +7,13 @@
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanInst.h"
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 namespace odb {
@@ -99,7 +99,7 @@ void _dbScanChain::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  scan_partitions_->collectMemInfo(info.children_["scan_partitions_"]);
+  scan_partitions_->collectMemInfo(info.children["scan_partitions_"]);
 }
 
 _dbScanChain::~_dbScanChain()

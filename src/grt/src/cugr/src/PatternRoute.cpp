@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <cstdint>
 #include <cstdio>
 #include <functional>
 #include <limits>
@@ -421,7 +420,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
       IntervalT trunk;
       std::vector<int> stems;
       getTrunkAndStems(scaffold, trunk, stems, direction, true);
-      std::sort(stems.begin(), stems.end());
+      std::ranges::sort(stems);
       int trunkPos = (*scaffold->children[0]->node)[1 - direction];
       int originalLength = getTotalStemLength(stems, trunkPos);
       IntervalT shiftInterval(trunkPos);
@@ -546,8 +545,11 @@ void PatternRoute::calculateRoutingCosts(
         if (grid_graph_->getLayerDirection(layerIndex) != direction) {
           continue;
         }
-        CostT cost = path->getCosts()[layerIndex]
-                     + grid_graph_->getWireCost(layerIndex, *node, *path);
+        CostT cost
+            = net_->isInsideLayerRange(layerIndex)
+                  ? path->getCosts()[layerIndex]
+                        + grid_graph_->getWireCost(layerIndex, *node, *path)
+                  : std::numeric_limits<CostT>::max();
         if (cost < costs[layerIndex].first) {
           costs[layerIndex] = std::make_pair(cost, pathIndex);
         }
@@ -574,8 +576,7 @@ void PatternRoute::calculateRoutingCosts(
                            + grid_graph_->getViaCost(layerIndex - 1, *node);
   }
   IntervalT fixedLayers(node->getFixedLayers());
-  fixedLayers.Set(std::min(fixedLayers.low(),
-                           static_cast<int>(grid_graph_->getNumLayers()) - 1),
+  fixedLayers.Set(std::min(fixedLayers.low(), grid_graph_->getNumLayers() - 1),
                   std::max(fixedLayers.high(), constants_.min_routing_layer));
 
   for (int lowLayerIndex = 0; lowLayerIndex <= fixedLayers.low();
@@ -637,6 +638,12 @@ std::shared_ptr<GRTreeNode> PatternRoute::getRoutingTree(
     }
   }
   assert(parentLayerIndex >= 0);
+  if (parentLayerIndex < 0) {
+    logger_->error(utl::GRT,
+                   286,
+                   "Failed to determine parent layer index on net {}.",
+                   net_->getName());
+  }
   std::shared_ptr<GRTreeNode> routingNode
       = std::make_shared<GRTreeNode>(parentLayerIndex, node->x(), node->y());
   std::shared_ptr<GRTreeNode> lowestRoutingNode = routingNode;

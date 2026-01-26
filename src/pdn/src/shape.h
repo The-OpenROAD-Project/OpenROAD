@@ -175,18 +175,19 @@ class Shape
   int getNumberOfConnectionsBelow() const;
   int getNumberOfConnectionsAbove() const;
 
-  Shape* extendTo(
+  std::unique_ptr<Shape> extendTo(
       const odb::Rect& rect,
       const ObstructionTree& obstructions,
+      Shape* orig_shape,
       const std::function<bool(const ShapePtr&)>& obs_filter
       = [](const ShapePtr&) { return true; }) const;
 
   virtual bool cut(const ObstructionTree& obstructions,
                    const Grid* ignore_grid,
-                   std::vector<Shape*>& replacements) const;
+                   std::vector<std::unique_ptr<Shape>>& replacements) const;
 
   // return a copy of the shape
-  virtual Shape* copy() const;
+  virtual std::unique_ptr<Shape> copy() const;
   // merge this shape with another
   virtual void merge(Shape* shape);
 
@@ -223,7 +224,7 @@ class Shape
 
  protected:
   bool cut(const ObstructionTree& obstructions,
-           std::vector<Shape*>& replacements,
+           std::vector<std::unique_ptr<Shape>>& replacements,
            const std::function<bool(const ShapePtr&)>& obs_filter) const;
 
  private:
@@ -261,7 +262,7 @@ class FollowPinShape : public Shape
   void addRow(odb::dbRow* row) { rows_.insert(row); }
 
   odb::Rect getMinimumRect() const override;
-  Shape* copy() const override;
+  std::unique_ptr<Shape> copy() const override;
   void merge(Shape* shape) override;
   void updateTermConnections() override;
 
@@ -274,7 +275,7 @@ class FollowPinShape : public Shape
 
   bool cut(const ObstructionTree& obstructions,
            const Grid* ignore_grid,
-           std::vector<Shape*>& replacements) const override;
+           std::vector<std::unique_ptr<Shape>>& replacements) const override;
 
  private:
   std::set<odb::dbRow*> rows_;

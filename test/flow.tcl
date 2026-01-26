@@ -225,7 +225,7 @@ utl::metric "GRT::ANT::errors" [ant::antenna_violation_count]
 # Detailed routing
 
 # Run pin access again after inserting diodes and moving cells
-pin_access
+# pin_access
 
 detailed_route -output_drc [make_result_file "${design}_${platform}_route_drc.rpt"] \
   -output_maze [make_result_file "${design}_${platform}_maze.log"] \
@@ -254,6 +254,7 @@ while { [check_antennas] && $repair_antennas_iters < 5 } {
 
   detailed_route -output_drc [make_result_file "${design}_${platform}_ant_fix_drc.rpt"] \
     -output_maze [make_result_file "${design}_${platform}_ant_fix_maze.log"] \
+    -no_pin_access \
     -verbose 0
 
   incr repair_antennas_iters

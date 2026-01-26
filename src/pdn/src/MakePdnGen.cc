@@ -3,8 +3,7 @@
 
 #include "pdn/MakePdnGen.hh"
 
-#include <tcl.h>
-
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

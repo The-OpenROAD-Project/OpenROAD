@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 [WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
-[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
@@ -19,7 +19,7 @@
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
@@ -28,86 +28,19 @@ lib DBU:             2000
 die region (in DBU): [x: (0, 200260), y: (0, 201600)]
 num of nets :        579
 num of special nets: 0
-gcell grid:          47 x 47 x 10
+gcell grid:          35 x 35 x 10
 stage 1: pattern routing
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-441 / 579 nets have overflow.
+331 / 579 nets have overflow.
 stage 2: pattern routing with possible detours
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-427 / 579 nets have overflow.
+318 / 579 nets have overflow.
 stage 3: maze routing on sparsified routing graph
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-[WARNING GRT-0274] pin is hard to access.
-432 / 579 nets have overflow.
+315 / 579 nets have overflow.
 routing statistics
-wire length (metric):  37808
-total via count:       3630
-total wire overflow:   1031
-min resource: -3.899999737739563
-bottleneck:   (1, 19, 17)
-[INFO GRT-0018] Total wirelength: 10111 um
+wire length (metric):  38197
+total via count:       4674
+total wire overflow:   480
+min resource: -2.999999761581421
+bottleneck:   (5, 14, 13)
+[INFO GRT-0018] Total wirelength: 10815 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

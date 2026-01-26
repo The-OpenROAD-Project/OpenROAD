@@ -145,8 +145,10 @@ COMPULSORY_TESTS = [
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
+    "check_3dblox",
     "check_routing_tracks",
     "create_blockage",
+    "create_obstruction",
     "create_sboxes",
     "def_dup_net",
     "def_parser",
@@ -189,6 +191,8 @@ COMPULSORY_TESTS = [
     "replace_hier_mod3",
     "replace_hier_mod4",
     "replace_hier_mod5",
+    "replace_hier_mod6",
+    "replace_hier_mod_report_checks",
     "rounding",
     "row_settings",
     "sky130hd_multi_patterned",
@@ -196,6 +200,8 @@ COMPULSORY_TESTS = [
     "transform",
     "wire_encoder",
     "write_cdl",
+    "write_3dbv",
+    "write_3dbx",
     "write_def58",
     "write_def58_gzip",
     "write_lef_and_def",
@@ -224,8 +230,6 @@ MANUAL_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "dump_netlists",
-    "dump_netlists_withfill",
     "replace_hier_mod1",
 ]
 
@@ -250,6 +254,7 @@ filegroup(
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fake_bumps.lef",
         "Nangate45/fake_macros.lef",
         "Nangate45/fake_macros.lib",
         "Nangate45/fakeram45.cfg",
@@ -275,6 +280,10 @@ filegroup(
         "data/design58.def",
         "data/example.3dbv",
         "data/example.3dbx",
+        "data/example.bmap",
+        "data/example1.bmap",
+        "data/example2.bmap",
+        "data/example3.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
@@ -304,6 +313,8 @@ filegroup(
         "gcd_adder5.v",
         "helper.tcl",
         "helpers.tcl",
+        "replace_hier_mod1.v",
+        "replace_hier_mod6.v",
         "replace_hier_mod_undo.tcl",
         "replace_hier_mod_undo2.tcl",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
@@ -342,6 +353,9 @@ filegroup(
             ],
             "all_pins_placed2": [
                 "design_is_routed1.def",
+            ],
+            "create_obstruction": [
+                "create_blockage.def",
             ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",

@@ -61,10 +61,12 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/est",
         "//src/grt",
+        "//src/grt:groute",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",

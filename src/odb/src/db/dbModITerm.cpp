@@ -4,7 +4,10 @@
 // Generator Code Begin Cpp
 #include "dbModITerm.h"
 
+#include <cstdlib>
+
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
@@ -12,38 +15,44 @@
 #include "dbModInst.h"
 #include "dbModNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdint>
+#include <cstring>
+#include <string>
+
+#include "dbCommon.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModITerm>;
 
 bool _dbModITerm::operator==(const _dbModITerm& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_parent != rhs._parent) {
+  if (parent_ != rhs.parent_) {
     return false;
   }
-  if (_child_modbterm != rhs._child_modbterm) {
+  if (child_modbterm_ != rhs.child_modbterm_) {
     return false;
   }
-  if (_mod_net != rhs._mod_net) {
+  if (mod_net_ != rhs.mod_net_) {
     return false;
   }
-  if (_next_net_moditerm != rhs._next_net_moditerm) {
+  if (next_net_moditerm_ != rhs.next_net_moditerm_) {
     return false;
   }
-  if (_prev_net_moditerm != rhs._prev_net_moditerm) {
+  if (prev_net_moditerm_ != rhs.prev_net_moditerm_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_prev_entry != rhs._prev_entry) {
+  if (prev_entry_ != rhs.prev_entry_) {
     return false;
   }
 
@@ -59,42 +68,42 @@ _dbModITerm::_dbModITerm(_dbDatabase* db)
 {
   // For pointer tagging the bottom log_2(8) bits.
   static_assert(alignof(_dbModITerm) % 8 == 0);
-  _name = nullptr;
+  name_ = nullptr;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._name;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.name_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._parent;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.parent_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._child_modbterm;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.child_modbterm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._mod_net;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.mod_net_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._next_net_moditerm;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.next_net_moditerm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._prev_net_moditerm;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.prev_net_moditerm_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
-    stream >> obj._next_entry;
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
+    stream >> obj.next_entry_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_hier_port_removal)) {
-    stream >> obj._prev_entry;
+  if (obj.getDatabase()->isSchema(kSchemaHierPortRemoval)) {
+    stream >> obj.prev_entry_;
   }
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
+  if (obj.getDatabase()->isSchema(kSchemaDbRemoveHash)) {
     dbDatabase* db = reinterpret_cast<dbDatabase*>(obj.getDatabase());
     _dbBlock* block = reinterpret_cast<_dbBlock*>(db->getChip()->getBlock());
-    _dbModInst* mod_inst = block->_modinst_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      mod_inst->_moditerm_hash[obj._name] = dbId<_dbModITerm>(obj.getId());
+    _dbModInst* mod_inst = block->modinst_tbl_->getPtr(obj.parent_);
+    if (obj.name_) {
+      mod_inst->moditerm_hash_[obj.name_] = dbId<_dbModITerm>(obj.getId());
     }
   }
   // User Code End >>
@@ -103,14 +112,14 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
 {
-  stream << obj._name;
-  stream << obj._parent;
-  stream << obj._child_modbterm;
-  stream << obj._mod_net;
-  stream << obj._next_net_moditerm;
-  stream << obj._prev_net_moditerm;
-  stream << obj._next_entry;
-  stream << obj._prev_entry;
+  stream << obj.name_;
+  stream << obj.parent_;
+  stream << obj.child_modbterm_;
+  stream << obj.mod_net_;
+  stream << obj.next_net_moditerm_;
+  stream << obj.prev_net_moditerm_;
+  stream << obj.next_entry_;
+  stream << obj.prev_entry_;
   return stream;
 }
 
@@ -120,14 +129,14 @@ void _dbModITerm::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 
 _dbModITerm::~_dbModITerm()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -140,53 +149,75 @@ _dbModITerm::~_dbModITerm()
 const char* dbModITerm::getName() const
 {
   _dbModITerm* obj = (_dbModITerm*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbModInst* dbModITerm::getParent() const
 {
   _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_parent == 0) {
+  if (obj->parent_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModInst*) par->_modinst_tbl->getPtr(obj->_parent);
+  return (dbModInst*) par->modinst_tbl_->getPtr(obj->parent_);
 }
 
 // User Code Begin dbModITermPublicMethods
+std::string dbModITerm::getHierarchicalName() const
+{
+  dbModInst* modinst = getParent();
+  if (modinst == nullptr) {
+    return getName();
+  }
+
+  dbModule* module = modinst->getParent();
+  if (module == nullptr) {
+    return getName();
+  }
+
+  dbBlock* block = module->getOwner();
+  if (module == block->getTopModule()) {
+    return getName();
+  }
+
+  return fmt::format("{}{}{}",  // NOLINT(misc-include-cleaner)
+                     modinst->getHierarchicalName(),
+                     block->getHierarchyDelimiter(),
+                     getName());
+}
 
 void dbModITerm::setModNet(dbModNet* modNet)
 {
   _dbModITerm* obj = reinterpret_cast<_dbModITerm*>(this);
 
-  obj->_mod_net = modNet->getImpl()->getOID();
+  obj->mod_net_ = modNet->getImpl()->getOID();
 }
 
 dbModNet* dbModITerm::getModNet() const
 {
   const _dbModITerm* obj = reinterpret_cast<const _dbModITerm*>(this);
-  if (obj->_mod_net == 0) {
+  if (obj->mod_net_ == 0) {
     return nullptr;
   }
   _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
-  return reinterpret_cast<dbModNet*>(par->_modnet_tbl->getPtr(obj->_mod_net));
+  return reinterpret_cast<dbModNet*>(par->modnet_tbl_->getPtr(obj->mod_net_));
 }
 
 void dbModITerm::setChildModBTerm(dbModBTerm* child_port)
 {
   _dbModITerm* obj = reinterpret_cast<_dbModITerm*>(this);
-  obj->_child_modbterm = child_port->getImpl()->getOID();
+  obj->child_modbterm_ = child_port->getImpl()->getOID();
 }
 
 dbModBTerm* dbModITerm::getChildModBTerm() const
 {
   const _dbModITerm* obj = reinterpret_cast<const _dbModITerm*>(this);
-  if (obj->_child_modbterm == 0) {
+  if (obj->child_modbterm_ == 0) {
     return nullptr;
   }
   _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
   return reinterpret_cast<dbModBTerm*>(
-      par->_modbterm_tbl->getPtr(obj->_child_modbterm));
+      par->modbterm_tbl_->getPtr(obj->child_modbterm_));
 }
 
 dbModITerm* dbModITerm::create(dbModInst* parentInstance,
@@ -197,37 +228,44 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
 
   _dbModInst* parent = reinterpret_cast<_dbModInst*>(parentInstance);
   _dbBlock* block = static_cast<_dbBlock*>(parent->getOwner());
-  assert(strchr(name, block->_hier_delimiter) == nullptr);
-  _dbModITerm* moditerm = block->_moditerm_tbl->create();
+  assert(strchr(name, block->hier_delimiter_) == nullptr);
+  _dbModITerm* moditerm = block->moditerm_tbl_->create();
 
   // defaults
-  moditerm->_mod_net = 0;
-  moditerm->_next_net_moditerm = 0;
-  moditerm->_prev_net_moditerm = 0;
+  moditerm->mod_net_ = 0;
+  moditerm->next_net_moditerm_ = 0;
+  moditerm->prev_net_moditerm_ = 0;
 
-  moditerm->_name = safe_strdup(name);
-  moditerm->_parent = parent->getOID();
-  moditerm->_next_entry = parent->_moditerms;
-  moditerm->_prev_entry = 0;
-  if (parent->_moditerms != 0) {
-    _dbModITerm* new_next = block->_moditerm_tbl->getPtr(parent->_moditerms);
-    new_next->_prev_entry = moditerm->getOID();
+  moditerm->name_ = safe_strdup(name);
+  moditerm->parent_ = parent->getOID();
+  moditerm->next_entry_ = parent->moditerms_;
+  moditerm->prev_entry_ = 0;
+  if (parent->moditerms_ != 0) {
+    _dbModITerm* new_next = block->moditerm_tbl_->getPtr(parent->moditerms_);
+    new_next->prev_entry_ = moditerm->getOID();
   }
-  parent->_moditerms = moditerm->getOID();
-  parent->_moditerm_hash[name] = dbId<_dbModITerm>(moditerm->getOID());
+  parent->moditerms_ = moditerm->getOID();
+  parent->moditerm_hash_[name] = dbId<_dbModITerm>(moditerm->getOID());
 
-  if (block->_journal) {
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
-    block->_journal->pushParam(dbModITermObj);
-    block->_journal->pushParam(name);
-    block->_journal->pushParam(moditerm->getId());
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: create {}",
+             moditerm->getDebugName());
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kCreateObject);
+    block->journal_->pushParam(dbModITermObj);
+    block->journal_->pushParam(name);
+    block->journal_->pushParam(moditerm->getId());
     if (modbterm) {
-      block->_journal->pushParam(modbterm->getId());
+      block->journal_->pushParam(modbterm->getId());
     } else {
-      block->_journal->pushParam(0U);
+      block->journal_->pushParam(0U);
     }
-    block->_journal->pushParam(parent->getId());
-    block->_journal->endAction();
+    block->journal_->pushParam(parent->getId());
+    block->journal_->endAction();
   }
 
   if (modbterm) {
@@ -235,7 +273,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
     modbterm->setParentModITerm(reinterpret_cast<dbModITerm*>(moditerm));
   }
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbModITermCreate(reinterpret_cast<dbModITerm*>(moditerm));
   }
 
@@ -248,34 +286,49 @@ void dbModITerm::connect(dbModNet* net)
   _dbModNet* _modnet = reinterpret_cast<_dbModNet*>(net);
   _dbBlock* _block = static_cast<_dbBlock*>(_moditerm->getOwner());
   // already connected.
-  if (_moditerm->_mod_net == _modnet->getId()) {
+  if (_moditerm->mod_net_ == _modnet->getId()) {
     return;
   }
-  for (auto callback : _block->_callbacks) {
+
+  // If the moditerm is already connected to a different modnet, disconnect it
+  // first.
+  if (_moditerm->mod_net_ != 0) {
+    disconnect();
+  }
+
+  for (auto callback : _block->callbacks_) {
     callback->inDbModITermPreConnect(this, net);
   }
-  _moditerm->_mod_net = _modnet->getId();
+  _moditerm->mod_net_ = _modnet->getId();
   // append to net moditerms
-  if (_modnet->_moditerms != 0) {
-    _dbModITerm* head = _block->_moditerm_tbl->getPtr(_modnet->_moditerms);
+  if (_modnet->moditerms_ != 0) {
+    _dbModITerm* head = _block->moditerm_tbl_->getPtr(_modnet->moditerms_);
     // next is old head
-    _moditerm->_next_net_moditerm = _modnet->_moditerms;
-    head->_prev_net_moditerm = getId();
+    _moditerm->next_net_moditerm_ = _modnet->moditerms_;
+    head->prev_net_moditerm_ = getId();
   } else {
-    _moditerm->_next_net_moditerm = 0;
+    _moditerm->next_net_moditerm_ = 0;
   }
   // set up new head
-  _moditerm->_prev_net_moditerm = 0;
-  _modnet->_moditerms = getId();
+  _moditerm->prev_net_moditerm_ = 0;
+  _modnet->moditerms_ = getId();
 
-  if (_block->_journal) {
-    _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
-    _block->_journal->pushParam(dbModITermObj);
-    _block->_journal->pushParam(getId());
-    _block->_journal->pushParam(_modnet->getId());
-    _block->_journal->endAction();
+  debugPrint(_block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: connect {} to {}",
+             _moditerm->getDebugName(),
+             _modnet->getDebugName());
+
+  if (_block->journal_) {
+    _block->journal_->beginAction(dbJournal::kConnectObject);
+    _block->journal_->pushParam(dbModITermObj);
+    _block->journal_->pushParam(getId());
+    _block->journal_->pushParam(_modnet->getId());
+    _block->journal_->endAction();
   }
-  for (auto callback : _block->_callbacks) {
+  for (auto callback : _block->callbacks_) {
     callback->inDbModITermPostConnect(this);
   }
 }
@@ -284,92 +337,117 @@ void dbModITerm::disconnect()
 {
   _dbModITerm* _moditerm = reinterpret_cast<_dbModITerm*>(this);
   _dbBlock* _block = static_cast<_dbBlock*>(_moditerm->getOwner());
-  if (_moditerm->_mod_net == 0) {
+  if (_moditerm->mod_net_ == 0) {
     return;
   }
-  for (auto callback : _block->_callbacks) {
+  for (auto callback : _block->callbacks_) {
     callback->inDbModITermPreDisconnect(this);
   }
-  _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_mod_net);
+  _dbModNet* _modnet = _block->modnet_tbl_->getPtr(_moditerm->mod_net_);
 
-  if (_block->_journal) {
-    _block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
-    _block->_journal->pushParam(dbModITermObj);
-    _block->_journal->pushParam(_moditerm->getId());
-    _block->_journal->pushParam(_moditerm->_mod_net);
-    _block->_journal->endAction();
+  debugPrint(_block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: disconnect {} from {}",
+             _moditerm->getDebugName(),
+             _modnet->getDebugName());
+
+  if (_block->journal_) {
+    _block->journal_->beginAction(dbJournal::kDisconnectObject);
+    _block->journal_->pushParam(dbModITermObj);
+    _block->journal_->pushParam(_moditerm->getId());
+    _block->journal_->pushParam(_moditerm->mod_net_);
+    _block->journal_->endAction();
   }
 
-  _moditerm->_mod_net = 0;
   _dbModITerm* next_moditerm
-      = (_moditerm->_next_net_moditerm != 0)
-            ? _block->_moditerm_tbl->getPtr(_moditerm->_next_net_moditerm)
+      = (_moditerm->next_net_moditerm_ != 0)
+            ? _block->moditerm_tbl_->getPtr(_moditerm->next_net_moditerm_)
             : nullptr;
   _dbModITerm* prior_moditerm
-      = (_moditerm->_prev_net_moditerm != 0)
-            ? _block->_moditerm_tbl->getPtr(_moditerm->_prev_net_moditerm)
+      = (_moditerm->prev_net_moditerm_ != 0)
+            ? _block->moditerm_tbl_->getPtr(_moditerm->prev_net_moditerm_)
             : nullptr;
   if (prior_moditerm) {
-    prior_moditerm->_next_net_moditerm = _moditerm->_next_net_moditerm;
+    prior_moditerm->next_net_moditerm_ = _moditerm->next_net_moditerm_;
   } else {
-    _modnet->_moditerms = _moditerm->_next_net_moditerm;
+    _modnet->moditerms_ = _moditerm->next_net_moditerm_;
   }
   if (next_moditerm) {
-    next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
+    next_moditerm->prev_net_moditerm_ = _moditerm->prev_net_moditerm_;
   }
-  _moditerm->_mod_net = 0;
 
-  for (auto callback : _block->_callbacks) {
+  _moditerm->next_net_moditerm_ = 0;
+  _moditerm->prev_net_moditerm_ = 0;
+  _moditerm->mod_net_ = 0;
+
+  for (auto callback : _block->callbacks_) {
     callback->inDbModITermPostDisconnect(this,
                                          reinterpret_cast<dbModNet*>(_modnet));
   }
 }
 
-dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
+dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint32_t dbid)
 {
   _dbBlock* owner = reinterpret_cast<_dbBlock*>(block);
-  return reinterpret_cast<dbModITerm*>(owner->_moditerm_tbl->getPtr(dbid));
+  return reinterpret_cast<dbModITerm*>(owner->moditerm_tbl_->getPtr(dbid));
 }
 
 void dbModITerm::destroy(dbModITerm* val)
 {
   _dbModITerm* _moditerm = reinterpret_cast<_dbModITerm*>(val);
   _dbBlock* block = static_cast<_dbBlock*>(_moditerm->getOwner());
-  _dbModInst* mod_inst = block->_modinst_tbl->getPtr(_moditerm->_parent);
+  _dbModInst* mod_inst = block->modinst_tbl_->getPtr(_moditerm->parent_);
 
-  if (block->_journal) {
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    block->_journal->pushParam(dbModITermObj);
-    block->_journal->pushParam(val->getName());
-    block->_journal->pushParam(val->getId());
-    block->_journal->pushParam(_moditerm->_child_modbterm);
-    block->_journal->pushParam(_moditerm->_parent);
-    block->_journal->endAction();
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             1,
+             "EDIT: delete {}",
+             _moditerm->getDebugName());
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kDeleteObject);
+    block->journal_->pushParam(dbModITermObj);
+    block->journal_->pushParam(val->getName());
+    block->journal_->pushParam(val->getId());
+    block->journal_->pushParam(_moditerm->child_modbterm_);
+    block->journal_->pushParam(_moditerm->parent_);
+    block->journal_->endAction();
   }
 
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbModITermDestroy(val);
   }
 
+  // Clear the parent moditerm from the child modbterm
+  if (_moditerm->child_modbterm_ != 0) {
+    if (_dbModBTerm* child_modbterm
+        = block->modbterm_tbl_->getPtr(_moditerm->child_modbterm_)) {
+      child_modbterm->parent_moditerm_ = 0;
+    }
+  }
+
   // snip out the mod iterm, from doubly linked list
-  uint prev = _moditerm->_prev_entry;
-  uint next = _moditerm->_next_entry;
+  uint32_t prev = _moditerm->prev_entry_;
+  uint32_t next = _moditerm->next_entry_;
   if (prev == 0) {
     // head of list
-    mod_inst->_moditerms = next;
+    mod_inst->moditerms_ = next;
   } else {
-    _dbModITerm* prev_moditerm = block->_moditerm_tbl->getPtr(prev);
-    prev_moditerm->_next_entry = next;
+    _dbModITerm* prev_moditerm = block->moditerm_tbl_->getPtr(prev);
+    prev_moditerm->next_entry_ = next;
   }
 
   if (next != 0) {
-    _dbModITerm* next_moditerm = block->_moditerm_tbl->getPtr(next);
-    next_moditerm->_prev_entry = prev;
+    _dbModITerm* next_moditerm = block->moditerm_tbl_->getPtr(next);
+    next_moditerm->prev_entry_ = prev;
   }
-  _moditerm->_prev_entry = 0;
-  _moditerm->_next_entry = 0;
-  mod_inst->_moditerm_hash.erase(val->getName());
-  block->_moditerm_tbl->destroy(_moditerm);
+  _moditerm->prev_entry_ = 0;
+  _moditerm->next_entry_ = 0;
+  mod_inst->moditerm_hash_.erase(val->getName());
+  block->moditerm_tbl_->destroy(_moditerm);
 }
 
 dbSet<dbModITerm>::iterator dbModITerm::destroy(

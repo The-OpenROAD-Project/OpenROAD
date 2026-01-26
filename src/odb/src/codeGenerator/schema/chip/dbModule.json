@@ -3,44 +3,44 @@
     "needs_non_default_destructor" : "true",
     "fields":[
 	{
-	    "name":"_name",
+	    "name":"name_",
 	    "type":"char *",
 	    "flags":["no-set"]
 	},
 	{
-	    "name":"_next_entry",
+	    "name":"next_entry_",
 	    "type":"dbId<_dbModule>",
 	    "flags":["no-set","no-get"]
 	},
 	{
-	    "name":"_insts",
+	    "name":"insts_",
 	    "type":"dbId<_dbInst>",
 	    "flags":["no-set","no-get"],
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_mod_inst",
+	    "name":"mod_inst_",
 	    "type":"dbId<_dbModInst>",
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_modinsts",
+	    "name":"modinsts_",
 	    "type":"dbId<_dbModInst>",
 	    "flags":["no-set","no-get"],
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_modnets",
+	    "name":"modnets_",
 	    "type":"dbId<_dbModNet>",
 	    "flags":["no-set","no-get"],
-	    "schema":"db_schema_update_hierarchy",	    	
+	    "schema":"kSchemaUpdateHierarchy",
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_modbterms",
+	    "name":"modbterms_",
 	    "type":"dbId<_dbModBTerm>",
 	    "flags":["no-set","no-get"],
-	    "schema":"db_schema_update_hierarchy"	    	    	
+	    "schema":"kSchemaUpdateHierarchy"
 	}
     ],
     "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h", "dbModulePortItr.h","dbJournal.h", "dbCommon.h"],
@@ -49,5 +49,3 @@
 	"odb/dbSet.h"
     ]
 }
-
-

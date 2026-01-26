@@ -41,6 +41,7 @@ add_library(utl_lib
   src/Metrics.cpp
   src/CFileUtils.cpp
   src/ScopedTemporaryFile.cpp
+  src/SuppressStdout.cpp
   src/Logger.cpp
   src/Progress.cpp
   src/CommandLineProgress.cpp
@@ -49,6 +50,7 @@ add_library(utl_lib
   src/decode.cpp
   src/prometheus/metrics_server.cpp
   src/histogram.cpp
+  src/unionFind.cpp
 )
 
 target_include_directories(utl_lib

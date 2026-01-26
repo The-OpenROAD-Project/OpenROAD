@@ -4,12 +4,16 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+#include <utility>
+#include <vector>
+
 #include "dbTechLayer.h"
 // User Code End Includes
 namespace odb {
@@ -52,7 +56,7 @@ void _dbTechLayerCutSpacingTableOrthRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["spacing_tbl"].add(spacing_tbl_);
+  info.children["spacing_tbl"].add(spacing_tbl_);
   // User Code End collectMemInfo
 }
 
@@ -72,7 +76,7 @@ void dbTechLayerCutSpacingTableOrthRule::getSpacingTable(
 
 // User Code Begin dbTechLayerCutSpacingTableOrthRulePublicMethods
 void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(
-    std::vector<std::pair<int, int>> tbl)
+    const std::vector<std::pair<int, int>>& tbl)
 {
   _dbTechLayerCutSpacingTableOrthRule* obj
       = (_dbTechLayerCutSpacingTableOrthRule*) this;
@@ -91,7 +95,7 @@ dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
 dbTechLayerCutSpacingTableOrthRule*
 dbTechLayerCutSpacingTableOrthRule::getTechLayerCutSpacingTableOrthSubRule(
     dbTechLayer* parent,
-    uint dbid)
+    uint32_t dbid)
 {
   _dbTechLayer* _parent = (_dbTechLayer*) parent;
   return (dbTechLayerCutSpacingTableOrthRule*)

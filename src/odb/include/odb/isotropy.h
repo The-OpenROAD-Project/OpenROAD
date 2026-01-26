@@ -87,6 +87,7 @@ class Orientation2D
   Orientation2D& operator=(const Orientation2D& other) = default;
 
   constexpr operator Value() const { return static_cast<Value>(value_); }
+  Value value() const { return static_cast<Value>(value_); }  // for swig
 
   // [Horizontal -> Vertical] [Vertical -> Horizontal]
   Orientation2D turn_90() const { return Value(value_ ^ 1); }
@@ -289,6 +290,8 @@ inline constexpr Direction2D north{Direction2D::North};
 inline constexpr Direction3D down{Direction3D::Down};
 inline constexpr Direction3D up{Direction3D::Up};
 
+#ifndef SWIG
 using utl::format_as;
+#endif
 
 }  // namespace odb

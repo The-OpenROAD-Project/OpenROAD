@@ -3,6 +3,7 @@
 
 #include "dbNameCache.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -12,7 +13,6 @@
 #include "dbHashTable.hpp"
 #include "dbName.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 
@@ -25,37 +25,37 @@ template class dbTable<_dbName>;
 // _dbName
 /////////////////
 _dbName::_dbName(_dbDatabase*, const _dbName& n)
-    : _name(nullptr), _next_entry(n._next_entry), _ref_cnt(n._ref_cnt)
+    : name_(nullptr), next_entry_(n.next_entry_), ref_cnt_(n.ref_cnt_)
 {
-  if (n._name) {
-    _name = safe_strdup(n._name);
+  if (n.name_) {
+    name_ = safe_strdup(n.name_);
   }
 }
 
 _dbName::_dbName(_dbDatabase*)
 {
-  _name = nullptr;
-  _ref_cnt = 0;
+  name_ = nullptr;
+  ref_cnt_ = 0;
 }
 
 _dbName::~_dbName()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 bool _dbName::operator==(const _dbName& rhs) const
 {
-  if (strcmp(_name, rhs._name) != 0) {
+  if (strcmp(name_, rhs.name_) != 0) {
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
-  if (_ref_cnt != rhs._ref_cnt) {
+  if (ref_cnt_ != rhs.ref_cnt_) {
     return false;
   }
 
@@ -64,7 +64,7 @@ bool _dbName::operator==(const _dbName& rhs) const
 
 bool _dbName::operator<(const _dbName& rhs) const
 {
-  return strcmp(_name, rhs._name) < 0;
+  return strcmp(name_, rhs.name_) < 0;
 }
 
 void _dbName::collectMemInfo(MemInfo& info)
@@ -72,22 +72,22 @@ void _dbName::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
+  info.children["name"].add(name_);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbName& name)
 {
-  stream << name._name;
-  stream << name._next_entry;
-  stream << name._ref_cnt;
+  stream << name.name_;
+  stream << name.next_entry_;
+  stream << name.ref_cnt_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbName& name)
 {
-  stream >> name._name;
-  stream >> name._next_entry;
-  stream >> name._ref_cnt;
+  stream >> name.name_;
+  stream >> name.next_entry_;
+  stream >> name.ref_cnt_;
   return stream;
 }
 
@@ -99,32 +99,32 @@ _dbNameCache::_dbNameCache(_dbDatabase* db,
                            dbObject* owner,
                            dbObjectTable* (dbObject::*m)(dbObjectType))
 {
-  _name_tbl = new dbTable<_dbName>(db, owner, m, dbNameObj);
+  name_tbl_ = new dbTable<_dbName>(db, owner, m, dbNameObj);
 
-  _name_hash.setTable(_name_tbl);
+  name_hash_.setTable(name_tbl_);
 }
 
 _dbNameCache::~_dbNameCache()
 {
-  delete _name_tbl;
+  delete name_tbl_;
 }
 
 bool _dbNameCache::operator==(const _dbNameCache& rhs) const
 {
-  if (_name_hash != rhs._name_hash) {
+  if (name_hash_ != rhs.name_hash_) {
     return false;
   }
 
-  if (*_name_tbl != *rhs._name_tbl) {
+  if (*name_tbl_ != *rhs.name_tbl_) {
     return false;
   }
 
   return true;
 }
 
-uint _dbNameCache::findName(const char* name)
+uint32_t _dbNameCache::findName(const char* name)
 {
-  _dbName* n = _name_hash.find(name);
+  _dbName* n = name_hash_.find(name);
 
   if (n) {
     return n->getOID();
@@ -133,48 +133,48 @@ uint _dbNameCache::findName(const char* name)
   return 0U;
 }
 
-uint _dbNameCache::addName(const char* name)
+uint32_t _dbNameCache::addName(const char* name)
 {
-  _dbName* n = _name_hash.find(name);
+  _dbName* n = name_hash_.find(name);
 
   if (n == nullptr) {
-    n = _name_tbl->create();
-    n->_name = safe_strdup(name);
-    _name_hash.insert(n);
+    n = name_tbl_->create();
+    n->name_ = safe_strdup(name);
+    name_hash_.insert(n);
   }
 
-  ++n->_ref_cnt;
+  ++n->ref_cnt_;
   return n->getOID();
 }
 
-void _dbNameCache::removeName(uint id)
+void _dbNameCache::removeName(uint32_t id)
 {
-  _dbName* n = _name_tbl->getPtr(id);
-  --n->_ref_cnt;
+  _dbName* n = name_tbl_->getPtr(id);
+  --n->ref_cnt_;
 
-  if (n->_ref_cnt == 0) {
-    _name_hash.remove(n);
-    _name_tbl->destroy(n);
+  if (n->ref_cnt_ == 0) {
+    name_hash_.remove(n);
+    name_tbl_->destroy(n);
   }
 }
 
-const char* _dbNameCache::getName(uint id)
+const char* _dbNameCache::getName(uint32_t id)
 {
-  _dbName* n = _name_tbl->getPtr(id);
-  return n->_name;
+  _dbName* n = name_tbl_->getPtr(id);
+  return n->name_;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbNameCache& cache)
 {
-  stream << cache._name_hash;
-  stream << *cache._name_tbl;
+  stream << cache.name_hash_;
+  stream << *cache.name_tbl_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbNameCache& cache)
 {
-  stream >> cache._name_hash;
-  stream >> *cache._name_tbl;
+  stream >> cache.name_hash_;
+  stream >> *cache.name_tbl_;
   return stream;
 }
 
@@ -183,8 +183,8 @@ void _dbNameCache::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  _name_tbl->collectMemInfo(info.children_["name_tbl"]);
-  info.children_["name_hash"].add(_name_hash);
+  name_tbl_->collectMemInfo(info.children["name_tbl"]);
+  info.children["name_hash"].add(name_hash_);
 }
 
 }  // namespace odb

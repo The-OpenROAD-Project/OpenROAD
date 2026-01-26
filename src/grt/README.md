@@ -24,6 +24,7 @@ global_route
     [-congestion_report_iter_step steps]
     [-grid_origin {x y}]
     [-critical_nets_percentage percent]
+    [-skip_large_fanout_nets fanout]
     [-allow_congestion]
     [-verbose]
     [-start_incremental]
@@ -42,6 +43,7 @@ global_route
 | `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
 | `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-skip_large_fanout_nets` | Skips routing for nets with a fanout higher than the specified limit. Nets above this pin count threshold are ignored by the global router and will not have routing guides, meaning they will also be skipped during detailed routing. This option is useful in debugging or estimation flows where high-fanout nets (such as pre-CTS clock nets) can be ignored. The default value is 0, indicating no fanout limit. The default value is `MAX_INT`. The allowed values are integers `[0, MAX_INT]`. |
 | `-allow_congestion` | Allow global routing results to be generated with remaining congestion. The default is false. |
 | `-verbose` | This flag enables the full reporting of the global routing. |
 | `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
@@ -111,6 +113,9 @@ for all layers at once using `*`, e.g., `set_global_routing_layer_adjustment * 0
 also set resource adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment
 Metal4-Metal8 0.3` reduces the routing resources of routing layers  `Metal4`,
 `Metal5`, `Metal6`, `Metal7` and `Metal8` by 30%.
+
+Negative adjustment values can be used to increase the capacity of a given metal layer. For example,
+`set_global_routing_layer_adjustment Metal5 -0.5` will increase the total capacity of `Metal5` by 50%.
 
 ```tcl
 set_global_routing_layer_adjustment layer adjustment
@@ -353,6 +358,24 @@ read_global_route_segments file_name
 | Switch Name | Description |
 | ----- | ----- |
 | `file_name` | Path to global routing segments file. | 
+
+### Estimate Path Resistance Between Two Pins
+
+This command calculates the path resistance between two pins considering the 
+vias and wires connecting them. The two pins need to be connected by the same
+wire.
+
+```tcl
+estimate_path_resistance pin_name_1 pin_name_2 [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `pin_name_1` | Pin name 1 (e.g., `_437_/Y`). | 
+| `pin_name_2` | Pin name 1 (e.g., `_438_/A`). |
+| `-verbose` | Print path details. |
 
 ## Example scripts
 

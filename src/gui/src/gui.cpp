@@ -97,14 +97,14 @@ static void message_handler(QtMsgType type,
       debugPrint(logger, utl::GUI, "qt", 1, print_msg);
       break;
     case QtInfoMsg:
-      logger->info(utl::GUI, 75, print_msg);
+      logger->info(utl::GUI, 75, "{}", print_msg);
       break;
     case QtWarningMsg:
-      logger->warn(utl::GUI, 76, print_msg);
+      logger->warn(utl::GUI, 76, "{}", print_msg);
       break;
     case QtCriticalMsg:
     case QtFatalMsg:
-      logger->error(utl::GUI, 77, print_msg);
+      logger->error(utl::GUI, 77, "{}", print_msg);
       break;
   }
 }
@@ -208,15 +208,11 @@ static void resetConversions()
       = [](const std::string& value, bool*) { return 0; };
 }
 
-Gui* Gui::singleton_ = nullptr;
-
 Gui* Gui::get()
 {
-  if (singleton_ == nullptr) {
-    singleton_ = new Gui();
-  }
+  static Gui* singleton = new Gui();
 
-  return singleton_;
+  return singleton;
 }
 
 Gui::Gui()
@@ -246,7 +242,7 @@ void Gui::registerRenderer(Renderer* renderer)
 
 void Gui::unregisterRenderer(Renderer* renderer)
 {
-  if (renderers_.count(renderer) == 0) {
+  if (!renderers_.contains(renderer)) {
     return;
   }
 
@@ -332,6 +328,11 @@ void Gui::addSelectedInst(const char* name)
   }
 
   main_window->addSelected(makeSelected(inst));
+}
+
+const SelectionSet& Gui::selection()
+{
+  return main_window->selection();
 }
 
 bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
@@ -568,7 +569,7 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
       if (auto props_selected_set
           = std::any_cast<SelectionSet>(&property.value)) {
         if (Descriptor::Property::toString(value) == "CONNECTED"
-            && (*props_selected_set).size() != 0) {
+            && !props_selected_set->empty()) {
           return true;
         }
         for (const auto& selected : *props_selected_set) {
@@ -706,6 +707,11 @@ void Gui::zoomTo(const odb::Rect& rect_dbu)
   main_window->zoomTo(rect_dbu);
 }
 
+void Gui::zoomTo(const odb::Point& focus, int diameter)
+{
+  main_window->zoomTo(focus, diameter);
+}
+
 void Gui::zoomIn()
 {
   main_window->getLayoutViewer()->zoomIn();
@@ -778,9 +784,10 @@ void Gui::saveImage(const std::string& filename,
     if (tech == nullptr) {
       logger_->error(utl::GUI, 16, "No design loaded.");
     }
-    const double dbu_per_micron = tech->getLefUnits();
+    const double dbu_per_micron = tech->getDbUnitsPerMicron();
 
     std::string save_cmds;
+
     // build display control commands
     save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
     for (const auto& [control, value] : display_settings) {
@@ -860,6 +867,22 @@ void Gui::saveHistogramImage(const std::string& filename,
       = main_window->getChartsWidget()->modeFromString(mode);
   main_window->getChartsWidget()->saveImage(
       filename, chart_mode, width, height);
+}
+
+void Gui::showWorstTimingPath(bool setup)
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->showWorstTimingPath(setup);
+}
+
+void Gui::clearTimingPath()
+{
+  if (!enabled()) {
+    return;
+  }
+  main_window->getTimingWidget()->clearSelection();
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name,
@@ -943,7 +966,7 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
 
 void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
 {
-  if (heat_maps_.count(heatmap) == 0) {
+  if (!heat_maps_.contains(heatmap)) {
     return;
   }
 
@@ -993,7 +1016,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   } else {
     auto settings = source->getSettings();
 
-    if (settings.count(option) == 0) {
+    if (!settings.contains(option)) {
       QStringList options;
       options.append(QString::fromStdString(rebuild_map_option));
       for (const auto& [key, kv] : settings) {
@@ -1064,7 +1087,7 @@ Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
 
   auto settings = source->getSettings();
 
-  if (settings.count(option) == 0) {
+  if (!settings.contains(option)) {
     QStringList options;
     for (const auto& [key, kv] : settings) {
       options.append(QString::fromStdString(key));
@@ -1160,6 +1183,8 @@ void Renderer::setSettings(const Renderer::Settings& settings)
   }
 }
 
+//////////////////////////////////////////////////////////////////
+
 SpectrumGenerator::SpectrumGenerator(double max_value) : scale_(1.0 / max_value)
 {
 }
@@ -1187,6 +1212,40 @@ void SpectrumGenerator::drawLegend(
     Painter& painter,
     const std::vector<std::pair<int, std::string>>& legend_key) const
 {
+  const int color_count = getColorCount();
+  std::vector<Painter::Color> colors;
+  colors.reserve(color_count);
+  for (int i = 0; i < color_count; i += kLegendColorIncrement) {
+    const double color_idx = (color_count - 1 - i) / scale_;
+    colors.push_back(getColor(color_idx / color_count));
+  }
+  std::vector<std::pair<Painter::Color, std::string>> legend_key_colors;
+  for (const auto& [legend_value, legend_text] : legend_key) {
+    const int idx = std::clamp(legend_value / kLegendColorIncrement,
+                               0,
+                               static_cast<int>(colors.size()) - 1);
+    legend_key_colors.push_back({colors[idx], legend_text});
+  }
+  LinearLegend legend(colors);
+  legend.setLegendKey(legend_key_colors);
+  legend.draw(painter);
+}
+
+/////////////////////////////////////////////////
+
+LinearLegend::LinearLegend(const std::vector<Painter::Color>& colors)
+    : colors_(colors)
+{
+}
+
+void LinearLegend::setLegendKey(
+    const std::vector<std::pair<Painter::Color, std::string>>& legend_key)
+{
+  legend_key_ = legend_key;
+}
+
+void LinearLegend::draw(Painter& painter) const
+{
   const odb::Rect& bounds = painter.getBounds();
   const double pixel_per_dbu = painter.getPixelsPerDBU();
   const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
@@ -1201,14 +1260,20 @@ void SpectrumGenerator::drawLegend(
   odb::Rect legend_bounds(
       legend_left, legend_top, legend_right + text_offset, legend_top);
 
-  const int color_count = getColorCount();
-  const int color_incr = 2;
+  const int color_count = colors_.size();
 
   std::vector<std::pair<odb::Point, std::string>> legend_key_points;
-  for (const auto& [legend_value, legend_text] : legend_key) {
+  for (const auto& [legend_color, legend_text] : legend_key_) {
+    const auto find_color = std::ranges::find(colors_, legend_color);
+    if (find_color == colors_.end()) {
+      continue;
+    }
+    const int legend_value
+        = std::distance(colors_.begin(), find_color);  // index in colors_
+
     const int text_right = legend_left - text_offset;
     const int box_top
-        = legend_top - ((color_count - legend_value) * box_height) / color_incr;
+        = legend_top - ((color_count - legend_value) * box_height);
 
     legend_key_points.push_back({{text_right, box_top}, legend_text});
     const odb::Rect text_bounds = painter.stringBoundaries(
@@ -1224,10 +1289,8 @@ void SpectrumGenerator::drawLegend(
 
   // draw color map
   double box_top = legend_top;
-  for (int i = 0; i < color_count; i += color_incr) {
-    const double color_idx = (color_count - 1 - i) / scale_;
-
-    painter.setPen(getColor(color_idx / color_count), true);
+  for (int i = 0; i < color_count; i++) {
+    painter.setPen(colors_[i], true);
     painter.drawLine(odb::Point(legend_left, box_top),
                      odb::Point(legend_right, box_top));
     box_top -= box_height;
@@ -1241,6 +1304,71 @@ void SpectrumGenerator::drawLegend(
   }
   painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
 }
+
+/////////////////////////////////////////////////
+
+void DiscreteLegend::addLegendKey(const Painter::Color& color,
+                                  const std::string& text)
+{
+  color_key_.emplace_back(color, text);
+}
+
+void DiscreteLegend::draw(Painter& painter) const
+{
+  const odb::Rect& bounds = painter.getBounds();
+  const double pixel_per_dbu = painter.getPixelsPerDBU();
+  const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
+  const int legend_width = 20 / pixel_per_dbu;   // 20 pixels
+  const int text_offset = 2 / pixel_per_dbu;
+  const int color_offset = 2 * text_offset;
+  const int legend_top = bounds.yMax() - legend_offset;
+  const int legend_right = bounds.xMax() - legend_offset;
+  const int legend_left = legend_right - legend_width;
+
+  odb::Rect legend_bounds(
+      legend_left, legend_top, legend_right + text_offset, legend_top);
+
+  std::vector<std::pair<odb::Rect, std::string>> legend_key_rects;
+  std::vector<std::pair<odb::Rect, Painter::Color>> legend_color_rects;
+  int last_text_top = legend_top;
+  for (const auto& [legend_color, legend_text] : color_key_) {
+    const int text_right = legend_left - text_offset;
+
+    const odb::Rect key_rect = painter.stringBoundaries(
+        text_right, last_text_top, Painter::Anchor::kTopRight, legend_text);
+
+    last_text_top = key_rect.yMin();
+
+    legend_key_rects.push_back({key_rect, legend_text});
+    legend_color_rects.push_back({{legend_left + color_offset,
+                                   key_rect.yMin() + color_offset,
+                                   legend_right - color_offset,
+                                   key_rect.yMax() - color_offset},
+                                  legend_color});
+    legend_bounds.merge(key_rect);
+  }
+
+  // draw background
+  painter.setPen(Painter::kDarkGray, true);
+  painter.setBrush(Painter::kDarkGray);
+  painter.drawRect(legend_bounds, 10, 10);
+
+  // draw color map
+  painter.setPen(Painter::kBlack, true);
+  for (const auto& [rect, color] : legend_color_rects) {
+    painter.setBrush(color);
+    painter.drawRect(rect);
+  }
+
+  // draw key values
+  painter.setBrush(Painter::kTransparent);
+  for (const auto& [rect, text] : legend_key_rects) {
+    painter.drawString(
+        rect.xMax(), rect.yCenter(), Painter::Anchor::kRightCenter, text);
+  }
+}
+
+/////////////////////////////////////////////////
 
 void Gui::fit()
 {
@@ -1444,23 +1572,32 @@ bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
 #endif
 }
 
-void Gui::gifStart(const std::string& filename)
+int Gui::gifStart(const std::string& filename)
 {
   if (!enabled()) {
     logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
   }
 
-  gif_ = std::make_unique<GIF>();
-  gif_->filename = filename;
-  gif_->writer = nullptr;
+  if (filename.empty()) {
+    logger_->error(utl::GUI, 81, "Filename is required to save a GIF.");
+  }
+
+  auto gif = std::make_unique<GIF>();
+  gif->filename = filename;
+  gifs_.emplace_back(std::move(gif));
+  return gifs_.size() - 1;
 }
 
-void Gui::gifAddFrame(const odb::Rect& region,
+void Gui::gifAddFrame(std::optional<int> key,
+                      const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
                       std::optional<int> delay)
 {
-  if (gif_ == nullptr) {
+  if (!key.has_value()) {
+    key = gifs_.size() - 1;
+  }
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 51, "GIF not active");
     return;
   }
@@ -1468,6 +1605,9 @@ void Gui::gifAddFrame(const odb::Rect& region,
   if (db_ == nullptr) {
     logger_->error(utl::GUI, 50, "No design loaded.");
   }
+
+  auto& gif = gifs_[*key];
+
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
   const bool is_offscreen
@@ -1499,32 +1639,32 @@ void Gui::gifAddFrame(const odb::Rect& region,
   QImage img = main_window->getLayoutViewer()->createImage(
       save_region, width_px, dbu_per_pixel);
 
-  if (gif_->writer == nullptr) {
-    gif_->writer = std::make_unique<GifWriter>();
-    gif_->width = img.width();
-    gif_->height = img.height();
-    GifBegin(gif_->writer.get(),
-             gif_->filename.c_str(),
-             gif_->width,
-             gif_->height,
+  if (gif->writer == nullptr) {
+    gif->writer = std::make_unique<GifWriter>();
+    gif->width = img.width();
+    gif->height = img.height();
+    GifBegin(gif->writer.get(),
+             gif->filename.c_str(),
+             gif->width,
+             gif->height,
              delay.value_or(kDefaultGifDelay));
   } else {
     // scale IMG if not matched
-    img = img.scaled(gif_->width, gif_->height, Qt::KeepAspectRatio);
+    img = img.scaled(gif->width, gif->height, Qt::KeepAspectRatio);
   }
 
-  std::vector<uint8_t> frame(gif_->width * gif_->height * 4, 0);
+  std::vector<uint8_t> frame(gif->width * gif->height * 4, 0);
   for (int x = 0; x < img.width(); x++) {
-    if (x >= gif_->width) {
+    if (x >= gif->width) {
       continue;
     }
     for (int y = 0; y < img.height(); y++) {
-      if (y >= gif_->height) {
+      if (y >= gif->height) {
         continue;
       }
 
       const QRgb pixel = img.pixel(x, y);
-      const int frame_offset = (y * gif_->width + x) * 4;
+      const int frame_offset = (y * gif->width + x) * 4;
       frame[frame_offset + 0] = qRed(pixel);
       frame[frame_offset + 1] = qGreen(pixel);
       frame[frame_offset + 2] = qBlue(pixel);
@@ -1532,22 +1672,35 @@ void Gui::gifAddFrame(const odb::Rect& region,
     }
   }
 
-  GifWriteFrame(gif_->writer.get(),
+  GifWriteFrame(gif->writer.get(),
                 frame.data(),
-                gif_->width,
-                gif_->height,
+                gif->width,
+                gif->height,
                 delay.value_or(kDefaultGifDelay));
 }
 
-void Gui::gifEnd()
+void Gui::gifEnd(std::optional<int> key)
 {
-  if (gif_ == nullptr) {
+  if (!key.has_value()) {
+    key = gifs_.size() - 1;
+  }
+  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
     logger_->warn(utl::GUI, 58, "GIF not active");
     return;
   }
 
-  GifEnd(gif_->writer.get());
-  gif_ = nullptr;
+  auto& gif = gifs_[*key];
+  if (gif->writer == nullptr) {
+    logger_->warn(utl::GUI,
+                  107,
+                  "Nothing to save to {}. No frames added to gif.",
+                  gif->filename);
+    gif = nullptr;
+    return;
+  }
+
+  GifEnd(gif->writer.get());
+  gifs_[*key] = nullptr;
 }
 
 class SafeApplication : public QApplication

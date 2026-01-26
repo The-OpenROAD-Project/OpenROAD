@@ -37,9 +37,8 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
-        "@edu_berkeley_abc//:abc-lib",
+        "//third-party/abc:abc-lib",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tk_tcl//:tcl",
     ],
 )

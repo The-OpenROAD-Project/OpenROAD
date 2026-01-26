@@ -4,12 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -29,30 +29,30 @@ class _dbLevelShifter : public _dbObject
   bool operator<(const _dbLevelShifter& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbLevelShifter> _next_entry;
-  dbId<_dbPowerDomain> _domain;
-  dbVector<std::string> _elements;
-  dbVector<std::string> _exclude_elements;
-  std::string _source;
-  std::string _sink;
-  bool _use_functional_equivalence;
-  std::string _applies_to;
-  std::string _applies_to_boundary;
-  std::string _rule;
-  float _threshold;
-  bool _no_shift;
-  bool _force_shift;
-  std::string _location;
-  std::string _input_supply;
-  std::string _output_supply;
-  std::string _internal_supply;
-  std::string _name_prefix;
-  std::string _name_suffix;
-  dbVector<std::pair<std::string, std::string>> _instances;
-  std::string _cell_name;
-  std::string _cell_input;
-  std::string _cell_output;
+  char* name_;
+  dbId<_dbLevelShifter> next_entry_;
+  dbId<_dbPowerDomain> domain_;
+  dbVector<std::string> elements_;
+  dbVector<std::string> exclude_elements_;
+  std::string source_;
+  std::string sink_;
+  bool use_functional_equivalence_;
+  std::string applies_to_;
+  std::string applies_to_boundary_;
+  std::string rule_;
+  float threshold_;
+  bool no_shift_;
+  bool force_shift_;
+  std::string location_;
+  std::string input_supply_;
+  std::string output_supply_;
+  std::string internal_supply_;
+  std::string name_prefix_;
+  std::string name_suffix_;
+  dbVector<std::pair<std::string, std::string>> instances_;
+  std::string cell_name_;
+  std::string cell_input_;
+  std::string cell_output_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj);

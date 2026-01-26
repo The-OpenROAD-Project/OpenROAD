@@ -3,15 +3,17 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbIntHashTable.h"
 #include "odb/dbId.h"
 
 namespace odb {
 
-inline uint hash_int(uint id)
+inline uint32_t hash_int(uint32_t id)
 {
-  uint key = id;
+  uint32_t key = id;
   key += ~(key << 15);
   key ^= (key >> 10);
   key += (key << 3);
@@ -24,29 +26,24 @@ inline uint hash_int(uint id)
 template <class T>
 dbIntHashTable<T>::dbIntHashTable()
 {
-  _obj_tbl = nullptr;
-  _num_entries = 0;
+  obj_tbl_ = nullptr;
+  num_entries_ = 0;
 }
 
 template <class T>
 dbIntHashTable<T>::dbIntHashTable(const dbIntHashTable<T>& t)
-    : _hash_tbl(t._hash_tbl), _num_entries(t._num_entries), _obj_tbl(t._obj_tbl)
-{
-}
-
-template <class T>
-dbIntHashTable<T>::~dbIntHashTable()
+    : hash_tbl_(t.hash_tbl_), num_entries_(t.num_entries_), obj_tbl_(t.obj_tbl_)
 {
 }
 
 template <class T>
 bool dbIntHashTable<T>::operator==(const dbIntHashTable<T>& rhs) const
 {
-  if (_num_entries != rhs._num_entries) {
+  if (num_entries_ != rhs.num_entries_) {
     return false;
   }
 
-  if (_hash_tbl != rhs._hash_tbl) {
+  if (hash_tbl_ != rhs.hash_tbl_) {
     return false;
   }
 
@@ -56,40 +53,40 @@ bool dbIntHashTable<T>::operator==(const dbIntHashTable<T>& rhs) const
 template <class T>
 void dbIntHashTable<T>::growTable()
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
   dbId<T> entries;
-  uint i;
+  uint32_t i;
 
   for (i = 0; i < sz; ++i) {
-    dbId<T> cur = _hash_tbl[i];
+    dbId<T> cur = hash_tbl_[i];
 
     while (cur != 0) {
-      T* entry = _obj_tbl->getPtr(cur);
-      dbId<T> next = entry->_next_entry;
-      entry->_next_entry = entries;
+      T* entry = obj_tbl_->getPtr(cur);
+      dbId<T> next = entry->next_entry_;
+      entry->next_entry_ = entries;
       entries = entry->getOID();
       cur = next;
     }
 
-    _hash_tbl[i] = 0;
+    hash_tbl_[i] = 0;
   }
 
   // double the size of the hash-table
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
-    _hash_tbl.push_back(nullId);
+    hash_tbl_.push_back(nullId);
   }
 
   // reinsert the entries
-  sz = _hash_tbl.size() - 1;
+  sz = hash_tbl_.size() - 1;
   dbId<T> cur = entries;
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
-    dbId<T> next = entry->_next_entry;
-    uint hid = hash_int(entry->_id) & sz;
-    dbId<T>& e = _hash_tbl[hid];
-    entry->_next_entry = e;
+    T* entry = obj_tbl_->getPtr(cur);
+    dbId<T> next = entry->next_entry_;
+    uint32_t hid = hash_int(entry->id_) & sz;
+    dbId<T>& e = hash_tbl_[hid];
+    entry->next_entry_ = e;
     e = entry->getOID();
     cur = next;
   }
@@ -98,32 +95,32 @@ void dbIntHashTable<T>::growTable()
 template <class T>
 void dbIntHashTable<T>::shrinkTable()
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
   dbId<T> entries;
-  uint i;
+  uint32_t i;
 
   for (i = 0; i < sz; ++i) {
-    dbId<T> cur = _hash_tbl[i];
+    dbId<T> cur = hash_tbl_[i];
 
     while (cur != 0) {
-      T* entry = _obj_tbl->getPtr(cur);
-      dbId<T> next = entry->_next_entry;
-      entry->_next_entry = entries;
+      T* entry = obj_tbl_->getPtr(cur);
+      dbId<T> next = entry->next_entry_;
+      entry->next_entry_ = entries;
       entries = entry->getOID();
       cur = next;
     }
 
-    _hash_tbl[i] = 0;
+    hash_tbl_[i] = 0;
   }
 
   // TODO: add method to dbPagedVector to resize the table
-  _hash_tbl.clear();
+  hash_tbl_.clear();
   sz >>= 1;
 
   // halve the size of the hash-table
   dbId<T> nullId;
   for (i = 0; i < sz; ++i) {
-    _hash_tbl.push_back(nullId);
+    hash_tbl_.push_back(nullId);
   }
 
   sz -= 1;
@@ -131,11 +128,11 @@ void dbIntHashTable<T>::shrinkTable()
   dbId<T> cur = entries;
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
-    dbId<T> next = entry->_next_entry;
-    uint hid = hash_int(entry->_id) & sz;
-    dbId<T>& e = _hash_tbl[hid];
-    entry->_next_entry = e;
+    T* entry = obj_tbl_->getPtr(cur);
+    dbId<T> next = entry->next_entry_;
+    uint32_t hid = hash_int(entry->id_) & sz;
+    dbId<T>& e = hash_tbl_[hid];
+    entry->next_entry_ = e;
     e = entry->getOID();
     cur = next;
   }
@@ -144,73 +141,73 @@ void dbIntHashTable<T>::shrinkTable()
 template <class T>
 void dbIntHashTable<T>::insert(T* object)
 {
-  ++_num_entries;
-  uint sz = _hash_tbl.size();
+  ++num_entries_;
+  uint32_t sz = hash_tbl_.size();
 
   if (sz == 0) {
     dbId<T> nullId;
-    _hash_tbl.push_back(nullId);
+    hash_tbl_.push_back(nullId);
     sz = 1;
   } else {
-    uint r = _num_entries / sz;
+    uint32_t r = num_entries_ / sz;
 
-    if (r > CHAIN_LENGTH) {
+    if (r > kChainLength) {
       growTable();
-      sz = _hash_tbl.size();
+      sz = hash_tbl_.size();
     }
   }
 
-  uint hid = hash_int(object->_id) & (sz - 1);
-  dbId<T>& e = _hash_tbl[hid];
-  object->_next_entry = e;
+  uint32_t hid = hash_int(object->id_) & (sz - 1);
+  dbId<T>& e = hash_tbl_[hid];
+  object->next_entry_ = e;
   e = object->getOID();
 }
 
 template <class T>
-T* dbIntHashTable<T>::find(uint id)
+T* dbIntHashTable<T>::find(uint32_t id)
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
 
   if (sz == 0) {
     return nullptr;
   }
 
-  uint hid = hash_int(id) & (sz - 1);
-  dbId<T> cur = _hash_tbl[hid];
+  uint32_t hid = hash_int(id) & (sz - 1);
+  dbId<T> cur = hash_tbl_[hid];
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
+    T* entry = obj_tbl_->getPtr(cur);
 
-    if (entry->_id == id) {
+    if (entry->id_ == id) {
       return entry;
     }
 
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 
   return nullptr;
 }
 
 template <class T>
-int dbIntHashTable<T>::hasMember(uint id)
+int dbIntHashTable<T>::hasMember(uint32_t id)
 {
-  uint sz = _hash_tbl.size();
+  uint32_t sz = hash_tbl_.size();
 
   if (sz == 0) {
     return false;
   }
 
-  uint hid = hash_int(id) & (sz - 1);
-  dbId<T> cur = _hash_tbl[hid];
+  uint32_t hid = hash_int(id) & (sz - 1);
+  dbId<T> cur = hash_tbl_[hid];
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
+    T* entry = obj_tbl_->getPtr(cur);
 
-    if (entry->_id == id) {
+    if (entry->id_ == id) {
       return true;
     }
 
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 
   return false;
@@ -219,27 +216,27 @@ int dbIntHashTable<T>::hasMember(uint id)
 template <class T>
 void dbIntHashTable<T>::remove(T* object)
 {
-  uint sz = _hash_tbl.size();
-  uint hid = hash_int(object->_id) & (sz - 1);
-  dbId<T> cur = _hash_tbl[hid];
+  uint32_t sz = hash_tbl_.size();
+  uint32_t hid = hash_int(object->id_) & (sz - 1);
+  dbId<T> cur = hash_tbl_[hid];
   dbId<T> prev;
 
   while (cur != 0) {
-    T* entry = _obj_tbl->getPtr(cur);
+    T* entry = obj_tbl_->getPtr(cur);
 
     if (entry == object) {
       if (prev == 0) {
-        _hash_tbl[hid] = entry->_next_entry;
+        hash_tbl_[hid] = entry->next_entry_;
       } else {
-        T* p = _obj_tbl->getPtr(prev);
-        p->_next_entry = entry->_next_entry;
+        T* p = obj_tbl_->getPtr(prev);
+        p->next_entry_ = entry->next_entry_;
       }
 
-      --_num_entries;
+      --num_entries_;
 
-      uint r = (_num_entries + _num_entries / 10) / sz;
+      uint32_t r = (num_entries_ + num_entries_ / 10) / sz;
 
-      if ((r < (CHAIN_LENGTH >> 1)) && (sz > 1)) {
+      if ((r < (kChainLength >> 1)) && (sz > 1)) {
         shrinkTable();
       }
 
@@ -247,23 +244,23 @@ void dbIntHashTable<T>::remove(T* object)
     }
 
     prev = cur;
-    cur = entry->_next_entry;
+    cur = entry->next_entry_;
   }
 }
 
 template <class T>
 dbOStream& operator<<(dbOStream& stream, const dbIntHashTable<T>& table)
 {
-  stream << table._hash_tbl;
-  stream << table._num_entries;
+  stream << table.hash_tbl_;
+  stream << table.num_entries_;
   return stream;
 }
 
 template <class T>
 dbIStream& operator>>(dbIStream& stream, dbIntHashTable<T>& table)
 {
-  stream >> table._hash_tbl;
-  stream >> table._num_entries;
+  stream >> table.hash_tbl_;
+  stream >> table.num_entries_;
   return stream;
 }
 

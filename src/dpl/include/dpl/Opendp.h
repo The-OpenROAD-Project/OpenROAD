@@ -15,19 +15,19 @@
 #include <utility>  // pair
 #include <vector>
 
+#include "boost/geometry/core/cs.hpp"
+#include "boost/geometry/geometries/box.hpp"
+#include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "utl/Logger.h"
+// NOLINTNEXTLINE
+#include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
-namespace utl {
-class Logger;
-}
-
 namespace dpl {
-
-using utl::Logger;
 
 class Node;
 class Group;
@@ -79,7 +79,7 @@ struct IRDrop;
 class Opendp
 {
  public:
-  Opendp(odb::dbDatabase* db, Logger* logger);
+  Opendp(odb::dbDatabase* db, utl::Logger* logger);
   ~Opendp();
 
   Opendp(const Opendp&) = delete;
@@ -99,6 +99,8 @@ class Opendp
   void setPadding(odb::dbMaster* master, int left, int right);
   void setPadding(odb::dbInst* inst, int left, int right);
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
+  void setJumpMoves(int jump_moves);
+  void setIterativePlacement(bool iterative);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -132,6 +134,9 @@ class Opendp
   Journal* getJournal() const;
   void setJournal(Journal* journal);
 
+  odb::Point getOdbLocation(const Node* cell) const;
+  odb::Point getDplLocation(const Node* cell) const;
+
  private:
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,
@@ -147,7 +152,7 @@ class Opendp
 
   using MasterByImplant = std::map<odb::dbTechLayer*, dbMasterSeq>;
 
-  using YCoordToGap = std::map<DbuY, std::vector<GapInfo*>>;
+  using YCoordToGap = std::map<DbuY, std::vector<std::unique_ptr<GapInfo>>>;
 
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
@@ -193,6 +198,7 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
+  bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
   bool shiftMove(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);
@@ -290,7 +296,7 @@ class Opendp
   void insertDecapInPos(odb::dbMaster* master,
                         const DbuX& pos_x,
                         const DbuY& pos_y);
-  void insertDecapInRow(const std::vector<GapInfo*>& gaps,
+  void insertDecapInRow(const std::vector<std::unique_ptr<GapInfo>>& gaps,
                         DbuY gap_y,
                         DbuX irdrop_x,
                         DbuY irdrop_y,
@@ -305,7 +311,7 @@ class Opendp
   void unplaceCell(Node* cell);
   void setGridLoc(Node* cell, GridX x, GridY y);
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   odb::Rect core_;
@@ -333,7 +339,7 @@ class Opendp
   bool have_fillers_ = false;
 
   // Decap placement.
-  std::vector<DecapCell*> decap_masters_;
+  std::vector<std::unique_ptr<DecapCell>> decap_masters_;
   int decap_count_ = 0;
   YCoordToGap gaps_;
 
@@ -345,6 +351,8 @@ class Opendp
 
   std::unique_ptr<DplObserver> debug_observer_;
   std::unique_ptr<Node> dummy_cell_;
+  int jump_moves_ = 0;
+  bool iterative_placement_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

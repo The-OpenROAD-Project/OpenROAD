@@ -624,8 +624,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     }
 
     // fill in missing ports in bus
-    const auto [min_idx, max_idx]
-        = std::minmax_element(port_idx.begin(), port_idx.end());
+    const auto [min_idx, max_idx] = std::ranges::minmax_element(port_idx);
     for (int idx = *min_idx; idx <= *max_idx; idx++) {
       if (port_idx.find(idx) == port_idx.end()) {
         // build missing port
@@ -804,7 +803,7 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
 
   reinterpret_cast<ConcreteNetwork*>(network)->setTopInstance(top_inst);
 
-  writeVerilog(file_name, true, false, {}, network);
+  writeVerilog(file_name, false, {}, network);
 
   delete network;
 }

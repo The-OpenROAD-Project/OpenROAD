@@ -4,7 +4,6 @@
 #pragma once
 
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -16,34 +15,33 @@ class dbOStream;
 class _dbViaParams
 {
  public:
-  int _x_cut_size;
-  int _y_cut_size;
-  int _x_cut_spacing;
-  int _y_cut_spacing;
-  int _x_top_enclosure;
-  int _y_top_enclosure;
-  int _x_bot_enclosure;
-  int _y_bot_enclosure;
-  int _num_cut_rows;
-  int _num_cut_cols;
-  int _x_origin;
-  int _y_origin;
-  int _x_top_offset;
-  int _y_top_offset;
-  int _x_bot_offset;
-  int _y_bot_offset;
-  dbId<_dbTechLayer> _top_layer;
-  dbId<_dbTechLayer> _cut_layer;
-  dbId<_dbTechLayer> _bot_layer;
-
-  _dbViaParams(const _dbViaParams& v);
-  _dbViaParams();
-  ~_dbViaParams();
+  _dbViaParams(const _dbViaParams& v) = default;
+  _dbViaParams() = default;
 
   bool operator==(const _dbViaParams& rhs) const;
   bool operator!=(const _dbViaParams& rhs) const { return !operator==(rhs); }
   friend dbOStream& operator<<(dbOStream& stream, const _dbViaParams& v);
   friend dbIStream& operator>>(dbIStream& stream, _dbViaParams& v);
+
+  int x_cut_size_{0};
+  int y_cut_size_{0};
+  int x_cut_spacing_{0};
+  int y_cut_spacing_{0};
+  int x_top_enclosure_{0};
+  int y_top_enclosure_{0};
+  int x_bot_enclosure_{0};
+  int y_bot_enclosure_{0};
+  int num_cut_rows_{1};
+  int num_cut_cols_{1};
+  int x_origin_{0};
+  int y_origin_{0};
+  int x_top_offset_{0};
+  int y_top_offset_{0};
+  int x_bot_offset_{0};
+  int y_bot_offset_{0};
+  dbId<_dbTechLayer> top_layer_;
+  dbId<_dbTechLayer> cut_layer_;
+  dbId<_dbTechLayer> bot_layer_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbViaParams& v);

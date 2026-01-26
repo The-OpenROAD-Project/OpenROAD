@@ -39,7 +39,7 @@ proc detailed_placement { args } {
     utl::warn DPL 3 "-disallow_one_site_gaps is deprecated"
   }
 
-  if { [ord::db_has_rows] } {
+  if { [ord::db_has_core_rows] } {
     set site [dpl::get_row_site]
     # Convert displacement from microns to sites.
     set max_displacement_x [expr [ord::microns_to_dbu $max_displacement_x] \
@@ -204,13 +204,19 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-    keys {-instance -min_displacement}
+    keys {-instance -min_displacement -jump_moves} flags {-iterative}
 
 
   if { [info exists keys(-min_displacement)] } {
     set min_displacement $keys(-min_displacement)
   } else {
     set min_displacement 0
+  }
+
+  set jump_moves 0
+  if { [info exists keys(-jump_moves)] } {
+    set jump_moves $keys(-jump_moves)
+    sta::check_positive_integer "-jump_moves" $jump_moves
   }
 
   if { [info exists keys(-instance)] } {
@@ -224,7 +230,7 @@ proc detailed_placement_debug { args } {
     set debug_instance "NULL"
   }
 
-  dpl::set_debug_cmd $min_displacement $debug_instance
+  dpl::set_debug_cmd $min_displacement $debug_instance $jump_moves [info exists flags(-iterative)]
 }
 
 proc get_masters_arg { arg_name arg } {

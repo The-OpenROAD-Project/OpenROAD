@@ -4,83 +4,87 @@
 // Generator Code Begin Cpp
 #include "dbLevelShifter.h"
 
+#include <cstdlib>
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbLevelShifter>;
 
 bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-  if (_domain != rhs._domain) {
+  if (domain_ != rhs.domain_) {
     return false;
   }
-  if (_source != rhs._source) {
+  if (source_ != rhs.source_) {
     return false;
   }
-  if (_sink != rhs._sink) {
+  if (sink_ != rhs.sink_) {
     return false;
   }
-  if (_use_functional_equivalence != rhs._use_functional_equivalence) {
+  if (use_functional_equivalence_ != rhs.use_functional_equivalence_) {
     return false;
   }
-  if (_applies_to != rhs._applies_to) {
+  if (applies_to_ != rhs.applies_to_) {
     return false;
   }
-  if (_applies_to_boundary != rhs._applies_to_boundary) {
+  if (applies_to_boundary_ != rhs.applies_to_boundary_) {
     return false;
   }
-  if (_rule != rhs._rule) {
+  if (rule_ != rhs.rule_) {
     return false;
   }
-  if (_threshold != rhs._threshold) {
+  if (threshold_ != rhs.threshold_) {
     return false;
   }
-  if (_no_shift != rhs._no_shift) {
+  if (no_shift_ != rhs.no_shift_) {
     return false;
   }
-  if (_force_shift != rhs._force_shift) {
+  if (force_shift_ != rhs.force_shift_) {
     return false;
   }
-  if (_location != rhs._location) {
+  if (location_ != rhs.location_) {
     return false;
   }
-  if (_input_supply != rhs._input_supply) {
+  if (input_supply_ != rhs.input_supply_) {
     return false;
   }
-  if (_output_supply != rhs._output_supply) {
+  if (output_supply_ != rhs.output_supply_) {
     return false;
   }
-  if (_internal_supply != rhs._internal_supply) {
+  if (internal_supply_ != rhs.internal_supply_) {
     return false;
   }
-  if (_name_prefix != rhs._name_prefix) {
+  if (name_prefix_ != rhs.name_prefix_) {
     return false;
   }
-  if (_name_suffix != rhs._name_suffix) {
+  if (name_suffix_ != rhs.name_suffix_) {
     return false;
   }
-  if (_cell_name != rhs._cell_name) {
+  if (cell_name_ != rhs.cell_name_) {
     return false;
   }
-  if (_cell_input != rhs._cell_input) {
+  if (cell_input_ != rhs.cell_input_) {
     return false;
   }
-  if (_cell_output != rhs._cell_output) {
+  if (cell_output_ != rhs.cell_output_) {
     return false;
   }
 
@@ -94,41 +98,41 @@ bool _dbLevelShifter::operator<(const _dbLevelShifter& rhs) const
 
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
 {
-  _name = nullptr;
-  _use_functional_equivalence = false;
-  _threshold = 0;
-  _no_shift = false;
-  _force_shift = false;
+  name_ = nullptr;
+  use_functional_equivalence_ = false;
+  threshold_ = 0;
+  no_shift_ = false;
+  force_shift_ = false;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
-  stream >> obj._domain;
-  stream >> obj._elements;
-  stream >> obj._exclude_elements;
-  stream >> obj._source;
-  stream >> obj._sink;
-  stream >> obj._use_functional_equivalence;
-  stream >> obj._applies_to;
-  stream >> obj._applies_to_boundary;
-  stream >> obj._rule;
-  stream >> obj._threshold;
-  stream >> obj._no_shift;
-  stream >> obj._force_shift;
-  stream >> obj._location;
-  stream >> obj._input_supply;
-  stream >> obj._output_supply;
-  stream >> obj._internal_supply;
-  stream >> obj._name_prefix;
-  stream >> obj._name_suffix;
-  stream >> obj._instances;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
+  stream >> obj.domain_;
+  stream >> obj.elements_;
+  stream >> obj.exclude_elements_;
+  stream >> obj.source_;
+  stream >> obj.sink_;
+  stream >> obj.use_functional_equivalence_;
+  stream >> obj.applies_to_;
+  stream >> obj.applies_to_boundary_;
+  stream >> obj.rule_;
+  stream >> obj.threshold_;
+  stream >> obj.no_shift_;
+  stream >> obj.force_shift_;
+  stream >> obj.location_;
+  stream >> obj.input_supply_;
+  stream >> obj.output_supply_;
+  stream >> obj.internal_supply_;
+  stream >> obj.name_prefix_;
+  stream >> obj.name_suffix_;
+  stream >> obj.instances_;
   // User Code Begin >>
-  if (stream.getDatabase()->isSchema(db_schema_level_shifter_cell)) {
-    stream >> obj._cell_name;
-    stream >> obj._cell_input;
-    stream >> obj._cell_output;
+  if (stream.getDatabase()->isSchema(kSchemaLevelShifterCell)) {
+    stream >> obj.cell_name_;
+    stream >> obj.cell_input_;
+    stream >> obj.cell_output_;
   }
   // User Code End >>
   return stream;
@@ -136,31 +140,31 @@ dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
-  stream << obj._domain;
-  stream << obj._elements;
-  stream << obj._exclude_elements;
-  stream << obj._source;
-  stream << obj._sink;
-  stream << obj._use_functional_equivalence;
-  stream << obj._applies_to;
-  stream << obj._applies_to_boundary;
-  stream << obj._rule;
-  stream << obj._threshold;
-  stream << obj._no_shift;
-  stream << obj._force_shift;
-  stream << obj._location;
-  stream << obj._input_supply;
-  stream << obj._output_supply;
-  stream << obj._internal_supply;
-  stream << obj._name_prefix;
-  stream << obj._name_suffix;
-  stream << obj._instances;
+  stream << obj.name_;
+  stream << obj.next_entry_;
+  stream << obj.domain_;
+  stream << obj.elements_;
+  stream << obj.exclude_elements_;
+  stream << obj.source_;
+  stream << obj.sink_;
+  stream << obj.use_functional_equivalence_;
+  stream << obj.applies_to_;
+  stream << obj.applies_to_boundary_;
+  stream << obj.rule_;
+  stream << obj.threshold_;
+  stream << obj.no_shift_;
+  stream << obj.force_shift_;
+  stream << obj.location_;
+  stream << obj.input_supply_;
+  stream << obj.output_supply_;
+  stream << obj.internal_supply_;
+  stream << obj.name_prefix_;
+  stream << obj.name_suffix_;
+  stream << obj.instances_;
   // User Code Begin <<
-  stream << obj._cell_name;
-  stream << obj._cell_input;
-  stream << obj._cell_output;
+  stream << obj.cell_name_;
+  stream << obj.cell_input_;
+  stream << obj.cell_output_;
   // User Code End <<
   return stream;
 }
@@ -171,31 +175,31 @@ void _dbLevelShifter::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
-  info.children_["_elements"].add(_elements);
-  info.children_["_exclude_elements"].add(_exclude_elements);
-  info.children_["_source"].add(_source);
-  info.children_["_sink"].add(_sink);
-  info.children_["_applies_to"].add(_applies_to);
-  info.children_["_applies_to_boundary"].add(_applies_to_boundary);
-  info.children_["_rule"].add(_rule);
-  info.children_["_location"].add(_location);
-  info.children_["_input_supply"].add(_input_supply);
-  info.children_["_output_supply"].add(_output_supply);
-  info.children_["_internal_supply"].add(_internal_supply);
-  info.children_["_name_prefix"].add(_name_prefix);
-  info.children_["_name_suffix"].add(_name_suffix);
-  info.children_["_instances"].add(_instances);
-  info.children_["_cell_name"].add(_cell_name);
-  info.children_["_cell_input"].add(_cell_input);
-  info.children_["_cell_output"].add(_cell_output);
+  info.children["name"].add(name_);
+  info.children["_elements"].add(elements_);
+  info.children["_exclude_elements"].add(exclude_elements_);
+  info.children["_source"].add(source_);
+  info.children["_sink"].add(sink_);
+  info.children["_applies_to"].add(applies_to_);
+  info.children["_applies_to_boundary"].add(applies_to_boundary_);
+  info.children["_rule"].add(rule_);
+  info.children["_location"].add(location_);
+  info.children["_input_supply"].add(input_supply_);
+  info.children["_output_supply"].add(output_supply_);
+  info.children["_internal_supply"].add(internal_supply_);
+  info.children["_name_prefix"].add(name_prefix_);
+  info.children["_name_suffix"].add(name_suffix_);
+  info.children["_instances"].add(instances_);
+  info.children["_cell_name"].add(cell_name_);
+  info.children["_cell_input"].add(cell_input_);
+  info.children["_cell_output"].add(cell_output_);
   // User Code End collectMemInfo
 }
 
 _dbLevelShifter::~_dbLevelShifter()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
@@ -208,43 +212,43 @@ _dbLevelShifter::~_dbLevelShifter()
 const char* dbLevelShifter::getName() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbPowerDomain* dbLevelShifter::getDomain() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  if (obj->_domain == 0) {
+  if (obj->domain_ == 0) {
     return nullptr;
   }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_domain);
+  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->domain_);
 }
 
 void dbLevelShifter::setSource(const std::string& source)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_source = source;
+  obj->source_ = source;
 }
 
 std::string dbLevelShifter::getSource() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_source;
+  return obj->source_;
 }
 
 void dbLevelShifter::setSink(const std::string& sink)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_sink = sink;
+  obj->sink_ = sink;
 }
 
 std::string dbLevelShifter::getSink() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_sink;
+  return obj->sink_;
 }
 
 void dbLevelShifter::setUseFunctionalEquivalence(
@@ -252,26 +256,26 @@ void dbLevelShifter::setUseFunctionalEquivalence(
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_use_functional_equivalence = use_functional_equivalence;
+  obj->use_functional_equivalence_ = use_functional_equivalence;
 }
 
 bool dbLevelShifter::isUseFunctionalEquivalence() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_use_functional_equivalence;
+  return obj->use_functional_equivalence_;
 }
 
 void dbLevelShifter::setAppliesTo(const std::string& applies_to)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_applies_to = applies_to;
+  obj->applies_to_ = applies_to;
 }
 
 std::string dbLevelShifter::getAppliesTo() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_applies_to;
+  return obj->applies_to_;
 }
 
 void dbLevelShifter::setAppliesToBoundary(
@@ -279,182 +283,182 @@ void dbLevelShifter::setAppliesToBoundary(
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_applies_to_boundary = applies_to_boundary;
+  obj->applies_to_boundary_ = applies_to_boundary;
 }
 
 std::string dbLevelShifter::getAppliesToBoundary() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_applies_to_boundary;
+  return obj->applies_to_boundary_;
 }
 
 void dbLevelShifter::setRule(const std::string& rule)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_rule = rule;
+  obj->rule_ = rule;
 }
 
 std::string dbLevelShifter::getRule() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_rule;
+  return obj->rule_;
 }
 
 void dbLevelShifter::setThreshold(float threshold)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_threshold = threshold;
+  obj->threshold_ = threshold;
 }
 
 float dbLevelShifter::getThreshold() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_threshold;
+  return obj->threshold_;
 }
 
 void dbLevelShifter::setNoShift(bool no_shift)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_no_shift = no_shift;
+  obj->no_shift_ = no_shift;
 }
 
 bool dbLevelShifter::isNoShift() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_no_shift;
+  return obj->no_shift_;
 }
 
 void dbLevelShifter::setForceShift(bool force_shift)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_force_shift = force_shift;
+  obj->force_shift_ = force_shift;
 }
 
 bool dbLevelShifter::isForceShift() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_force_shift;
+  return obj->force_shift_;
 }
 
 void dbLevelShifter::setLocation(const std::string& location)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_location = location;
+  obj->location_ = location;
 }
 
 std::string dbLevelShifter::getLocation() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_location;
+  return obj->location_;
 }
 
 void dbLevelShifter::setInputSupply(const std::string& input_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_input_supply = input_supply;
+  obj->input_supply_ = input_supply;
 }
 
 std::string dbLevelShifter::getInputSupply() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_input_supply;
+  return obj->input_supply_;
 }
 
 void dbLevelShifter::setOutputSupply(const std::string& output_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_output_supply = output_supply;
+  obj->output_supply_ = output_supply;
 }
 
 std::string dbLevelShifter::getOutputSupply() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_output_supply;
+  return obj->output_supply_;
 }
 
 void dbLevelShifter::setInternalSupply(const std::string& internal_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_internal_supply = internal_supply;
+  obj->internal_supply_ = internal_supply;
 }
 
 std::string dbLevelShifter::getInternalSupply() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_internal_supply;
+  return obj->internal_supply_;
 }
 
 void dbLevelShifter::setNamePrefix(const std::string& name_prefix)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_name_prefix = name_prefix;
+  obj->name_prefix_ = name_prefix;
 }
 
 std::string dbLevelShifter::getNamePrefix() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_name_prefix;
+  return obj->name_prefix_;
 }
 
 void dbLevelShifter::setNameSuffix(const std::string& name_suffix)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_name_suffix = name_suffix;
+  obj->name_suffix_ = name_suffix;
 }
 
 std::string dbLevelShifter::getNameSuffix() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_name_suffix;
+  return obj->name_suffix_;
 }
 
 void dbLevelShifter::setCellName(const std::string& cell_name)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_name = cell_name;
+  obj->cell_name_ = cell_name;
 }
 
 std::string dbLevelShifter::getCellName() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_cell_name;
+  return obj->cell_name_;
 }
 
 void dbLevelShifter::setCellInput(const std::string& cell_input)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_input = cell_input;
+  obj->cell_input_ = cell_input;
 }
 
 std::string dbLevelShifter::getCellInput() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_cell_input;
+  return obj->cell_input_;
 }
 
 void dbLevelShifter::setCellOutput(const std::string& cell_output)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_output = cell_output;
+  obj->cell_output_ = cell_output;
 }
 
 std::string dbLevelShifter::getCellOutput() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_cell_output;
+  return obj->cell_output_;
 }
 
 // User Code Begin dbLevelShifterPublicMethods
@@ -464,7 +468,7 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
                                        dbPowerDomain* domain)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_levelshifter_hash.hasMember(name)) {
+  if (_block->levelshifter_hash_.hasMember(name)) {
     return nullptr;
   }
 
@@ -472,12 +476,12 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
     return nullptr;
   }
 
-  _dbLevelShifter* shifter = _block->_levelshifter_tbl->create();
-  shifter->_name = safe_strdup(name);
+  _dbLevelShifter* shifter = _block->levelshifter_tbl_->create();
+  shifter->name_ = safe_strdup(name);
 
-  shifter->_domain = domain->getImpl()->getOID();
+  shifter->domain_ = domain->getImpl()->getOID();
 
-  _block->_levelshifter_hash.insert(shifter);
+  _block->levelshifter_hash_.insert(shifter);
 
   domain->addLevelShifter((dbLevelShifter*) shifter);
 
@@ -489,45 +493,45 @@ void dbLevelShifter::destroy(dbLevelShifter* shifter)
   _dbLevelShifter* _shifter = (_dbLevelShifter*) shifter;
   _dbBlock* block = (_dbBlock*) _shifter->getOwner();
 
-  if (block->_levelshifter_hash.hasMember(_shifter->_name)) {
-    block->_levelshifter_hash.remove(_shifter);
+  if (block->levelshifter_hash_.hasMember(_shifter->name_)) {
+    block->levelshifter_hash_.remove(_shifter);
   }
 
-  block->_levelshifter_tbl->destroy(_shifter);
+  block->levelshifter_tbl_->destroy(_shifter);
 }
 
 void dbLevelShifter::addElement(const std::string& element)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  obj->_elements.push_back(element);
+  obj->elements_.push_back(element);
 }
 void dbLevelShifter::addExcludeElement(const std::string& element)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  obj->_exclude_elements.push_back(element);
+  obj->exclude_elements_.push_back(element);
 }
 void dbLevelShifter::addInstance(const std::string& instance,
                                  const std::string& port)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  obj->_instances.push_back(std::make_pair(instance, port));
+  obj->instances_.push_back(std::make_pair(instance, port));
 }
 
 std::vector<std::string> dbLevelShifter::getElements() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_elements;
+  return obj->elements_;
 }
 std::vector<std::string> dbLevelShifter::getExcludeElements() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_exclude_elements;
+  return obj->exclude_elements_;
 }
 std::vector<std::pair<std::string, std::string>> dbLevelShifter::getInstances()
     const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_instances;
+  return obj->instances_;
 }
 
 // User Code End dbLevelShifterPublicMethods

@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -20,16 +20,16 @@ template class dbTable<_dbGDSPath>;
 
 bool _dbGDSPath::operator==(const _dbGDSPath& rhs) const
 {
-  if (_layer != rhs._layer) {
+  if (layer_ != rhs.layer_) {
     return false;
   }
-  if (_datatype != rhs._datatype) {
+  if (datatype_ != rhs.datatype_) {
     return false;
   }
-  if (_width != rhs._width) {
+  if (width_ != rhs.width_) {
     return false;
   }
-  if (_path_type != rhs._path_type) {
+  if (path_type_ != rhs.path_type_) {
     return false;
   }
 
@@ -43,31 +43,31 @@ bool _dbGDSPath::operator<(const _dbGDSPath& rhs) const
 
 _dbGDSPath::_dbGDSPath(_dbDatabase* db)
 {
-  _layer = 0;
-  _datatype = 0;
-  _width = 0;
-  _path_type = 0;
+  layer_ = 0;
+  datatype_ = 0;
+  width_ = 0;
+  path_type_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSPath& obj)
 {
-  stream >> obj._layer;
-  stream >> obj._datatype;
-  stream >> obj._xy;
-  stream >> obj._propattr;
-  stream >> obj._width;
-  stream >> obj._path_type;
+  stream >> obj.layer_;
+  stream >> obj.datatype_;
+  stream >> obj.xy_;
+  stream >> obj.propattr_;
+  stream >> obj.width_;
+  stream >> obj.path_type_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSPath& obj)
 {
-  stream << obj._layer;
-  stream << obj._datatype;
-  stream << obj._xy;
-  stream << obj._propattr;
-  stream << obj._width;
-  stream << obj._path_type;
+  stream << obj.layer_;
+  stream << obj.datatype_;
+  stream << obj.xy_;
+  stream << obj.propattr_;
+  stream << obj.width_;
+  stream << obj.path_type_;
   return stream;
 }
 
@@ -77,10 +77,10 @@ void _dbGDSPath::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["xy"].add(_xy);
-  info.children_["propattr"].add(_propattr);
-  for (auto& [i, s] : _propattr) {
-    info.children_["propattr"].add(s);
+  info.children["xy"].add(xy_);
+  info.children["propattr"].add(propattr_);
+  for (auto& [i, s] : propattr_) {
+    info.children["propattr"].add(s);
   }
   // User Code End collectMemInfo
 }
@@ -95,78 +95,78 @@ void dbGDSPath::setLayer(int16_t layer)
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
 
-  obj->_layer = layer;
+  obj->layer_ = layer;
 }
 
 int16_t dbGDSPath::getLayer() const
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
-  return obj->_layer;
+  return obj->layer_;
 }
 
 void dbGDSPath::setDatatype(int16_t datatype)
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
 
-  obj->_datatype = datatype;
+  obj->datatype_ = datatype;
 }
 
 int16_t dbGDSPath::getDatatype() const
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
-  return obj->_datatype;
+  return obj->datatype_;
 }
 
 void dbGDSPath::setXy(const std::vector<Point>& xy)
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
 
-  obj->_xy = xy;
+  obj->xy_ = xy;
 }
 
 void dbGDSPath::getXy(std::vector<Point>& tbl) const
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
-  tbl = obj->_xy;
+  tbl = obj->xy_;
 }
 
 void dbGDSPath::setWidth(int width)
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
 
-  obj->_width = width;
+  obj->width_ = width;
 }
 
 int dbGDSPath::getWidth() const
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
-  return obj->_width;
+  return obj->width_;
 }
 
 void dbGDSPath::setPathType(int16_t path_type)
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
 
-  obj->_path_type = path_type;
+  obj->path_type_ = path_type;
 }
 
 int16_t dbGDSPath::getPathType() const
 {
   _dbGDSPath* obj = (_dbGDSPath*) this;
-  return obj->_path_type;
+  return obj->path_type_;
 }
 
 // User Code Begin dbGDSPathPublicMethods
 std::vector<std::pair<std::int16_t, std::string>>& dbGDSPath::getPropattr()
 {
   auto* obj = (_dbGDSPath*) this;
-  return obj->_propattr;
+  return obj->propattr_;
 }
 
 const std::vector<Point>& dbGDSPath::getXY()
 {
   auto obj = (_dbGDSPath*) this;
-  return obj->_xy;
+  return obj->xy_;
 }
 
 dbGDSPath* dbGDSPath::create(dbGDSStructure* structure)

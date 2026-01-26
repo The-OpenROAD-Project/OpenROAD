@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -20,21 +21,14 @@ class dbOStream;
 
 struct _dbRegionFlags
 {
-  dbRegionType::Value _type : 4;
-  uint _invalid : 1;
-  uint _spare_bits : 27;
+  dbRegionType::Value type : 4;
+  uint32_t invalid : 1;
+  uint32_t spare_bits : 27;
 };
 
 class _dbRegion : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  _dbRegionFlags _flags;
-  char* _name;
-  dbId<_dbInst> _insts;
-  dbId<_dbBox> _boxes;
-  dbId<_dbGroup> groups_;
-
   _dbRegion(_dbDatabase*);
   _dbRegion(_dbDatabase*, const _dbRegion& b);
   ~_dbRegion();
@@ -44,6 +38,13 @@ class _dbRegion : public _dbObject
   bool operator<(const _dbRegion& rhs) const;
 
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  _dbRegionFlags flags_;
+  char* name_;
+  dbId<_dbInst> insts_;
+  dbId<_dbBox> boxes_;
+  dbId<_dbGroup> groups_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r);

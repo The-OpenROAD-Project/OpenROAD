@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "boost/token_functions.hpp"
+#include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "dpl/Opendp.h"
@@ -131,7 +133,7 @@ void DetailedVerticalSwap::verticalSwap()
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
-  std::fill(edgeMask_.begin(), edgeMask_.end(), 0);
+  std::ranges::fill(edgeMask_, 0);
 
   mgr_->resortSegments();
 
@@ -229,8 +231,8 @@ bool DetailedVerticalSwap::getRange(Node* nd, odb::Rect& nodeBbox)
   // Get the median values.
   const unsigned mid = t / 2;
 
-  std::sort(xpts_.begin(), xpts_.end());
-  std::sort(ypts_.begin(), ypts_.end());
+  std::ranges::sort(xpts_);
+  std::ranges::sort(ypts_);
 
   nodeBbox.set_xlo(xpts_[mid - 1]);
   nodeBbox.set_xhi(xpts_[mid]);
@@ -360,7 +362,7 @@ void DetailedVerticalSwap::init(DetailedMgr* mgr)
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
-  std::fill(edgeMask_.begin(), edgeMask_.end(), 0);
+  std::ranges::fill(edgeMask_, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

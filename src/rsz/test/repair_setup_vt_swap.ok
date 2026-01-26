@@ -97,8 +97,8 @@ Path Type: max
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |      10 |        0 |      0 |     0 |    +0.0% |   -0.032 |       -0.0 |      1 | r2/D
-    final |       0 |      10 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |      0 | r2/D
+        0 |       0 |       2 |        0 |      0 |     0 |    +0.0% |   -0.032 |       -0.0 |      1 | r2/D
+    final |       0 |       2 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |      0 | r2/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 10 instances: 8 up, 2 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 2 instances: 0 up, 2 up match, 0 down, 0 VT

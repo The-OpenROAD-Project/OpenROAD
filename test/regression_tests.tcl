@@ -4,6 +4,7 @@ record_flow_tests {
   gcd_nangate45
   gcd_sky130hd
   gcd_sky130hs
+  gcd_asap7
 
   ibex_sky130hd
   ibex_sky130hs
@@ -11,6 +12,7 @@ record_flow_tests {
   aes_nangate45
   aes_sky130hd
   aes_sky130hs
+  aes_asap7
 
   tinyRocket_nangate45
 

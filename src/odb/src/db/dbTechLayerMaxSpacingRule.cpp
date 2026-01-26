@@ -6,9 +6,9 @@
 
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 namespace odb {
@@ -58,7 +58,7 @@ void _dbTechLayerMaxSpacingRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["cut_class"].add(cut_class_);
+  info.children["cut_class"].add(cut_class_);
   // User Code End collectMemInfo
 }
 

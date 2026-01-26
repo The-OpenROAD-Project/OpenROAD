@@ -330,7 +330,7 @@ IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 
   for (auto* bterm : net_->getBTerms()) {
     for (auto* bpin : bterm->getBPins()) {
-      for (auto* geom : bpin->getBoxes()) {
+      for (odb::dbBox* geom : bpin->getBoxes()) {
         for (const auto& [layer, shapes] :
              generatePolygonsFromBox(geom, odb::dbTransform())) {
           shapes_by_layer[layer] += shapes;
@@ -345,7 +345,7 @@ IRNetwork::generatePolygonsFromBTerms(std::vector<TerminalNode*>& terminals)
 
         // create bpin nodes
         auto term = std::make_unique<TerminalNode>(pin_shape, layer);
-        auto pin_node = std::make_unique<BPinNode>(bpin, pin_shape, layer);
+        auto pin_node = std::make_unique<BPinNode>(bpin, geom, layer);
 
         connections_.push_back(
             std::make_unique<TermConnection>(term.get(), pin_node.get()));
@@ -554,18 +554,14 @@ void IRNetwork::generateCutNodesForSBox(
     odb::dbSBox* box,
     bool single_via,
     std::vector<std::unique_ptr<Node>>& new_nodes,
-    std::vector<std::unique_ptr<Connection>>& new_connections)
+    Connections& new_connections)
 {
   // handle as via
   std::vector<odb::dbShape> via_shapes;
   box->getViaBoxes(via_shapes);
-  via_shapes.erase(
-      std::remove_if(via_shapes.begin(),
-                     via_shapes.end(),
-                     [](const auto& shape) {
-                       return shape.getTechLayer()->getRoutingLevel() != 0;
-                     }),
-      via_shapes.end());
+  std::erase_if(via_shapes, [](const auto& shape) {
+    return shape.getTechLayer()->getRoutingLevel() != 0;
+  });
 
   odb::dbTechLayer* bottom = nullptr;
   odb::dbTechLayer* top = nullptr;
@@ -581,7 +577,8 @@ void IRNetwork::generateCutNodesForSBox(
   }
 
   const int min_pitch = std::min(min_node_pitch_[bottom], min_node_pitch_[top]);
-  const bool use_single_via = box->getBox().maxDXDY() < min_pitch;
+  const bool use_single_via
+      = floorplanning_ || box->getBox().maxDXDY() < min_pitch;
 
   if (single_via || use_single_via) {
     const odb::Point via_center = box->getViaXY();
@@ -654,7 +651,7 @@ void IRNetwork::generateCutLayerNodes()
   }
 
   std::vector<std::unique_ptr<Node>> loop_via_nodes;
-  std::vector<std::unique_ptr<Connection>> loop_via_connections;
+  Connections loop_via_connections;
   for (odb::dbSBox* box : boxes) {
     generateCutNodesForSBox(
         box, use_single_via, loop_via_nodes, loop_via_connections);
@@ -682,6 +679,11 @@ void IRNetwork::generateCutLayerNodes()
 
 void IRNetwork::generateTopLayerFillerNodes()
 {
+  if (floorplanning_) {
+    // these are only needed if running for IR drop.
+    return;
+  }
+
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate top layer filler nodes: {}");
   // needed in case of vsrc
@@ -740,7 +742,9 @@ void IRNetwork::mergeNodes(NodePtrMap<Connection>& connection_map)
 
     const auto node_trees = getNodeTree(layer);
     for (const auto& shape : shapes) {
-      const int min_distance = min_node_pitch_[shape->getLayer()];
+      const int min_distance = floorplanning_
+                                   ? (2 * shape->getShape().maxDXDY())
+                                   : min_node_pitch_[shape->getLayer()];
       const auto shape_remove = shape->cleanupNodes(
           min_distance,
           node_trees,
@@ -787,10 +791,9 @@ void IRNetwork::sortShapes()
   for (auto& [layer, shapes] : shapes_) {
     shapes.shrink_to_fit();
 
-    std::stable_sort(
-        shapes.begin(), shapes.end(), [](const auto& lhs, const auto& rhs) {
-          return lhs->getShape() < rhs->getShape();
-        });
+    std::ranges::stable_sort(shapes, [](const auto& lhs, const auto& rhs) {
+      return lhs->getShape() < rhs->getShape();
+    });
   }
 }
 
@@ -800,10 +803,9 @@ void IRNetwork::sortNodes()
       logger_, utl::PSM, "timer", 1, "Sorting nodes: {}");
 
   for (auto& [layer, nodes] : nodes_) {
-    std::stable_sort(
-        nodes.begin(), nodes.end(), [](const auto& lhs, const auto& rhs) {
-          return lhs->compare(rhs);
-        });
+    std::ranges::stable_sort(nodes, [](const auto& lhs, const auto& rhs) {
+      return lhs->compare(rhs);
+    });
   }
 }
 
@@ -811,9 +813,9 @@ void IRNetwork::sortConnections()
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Sorting connections: {}");
-  std::stable_sort(
-      connections_.begin(),
-      connections_.end(),
+  std::ranges::stable_sort(
+      connections_,
+
       [](const auto& lhs, const auto& rhs) { return lhs->compare(rhs); });
 }
 
@@ -904,13 +906,6 @@ void IRNetwork::cleanupNodes()
 
   auto node_connection_map = getConnectionMap();
 
-  std::map<Node*, bool> marked_deleted;
-  for (const auto& [layer, nodes] : nodes_) {
-    for (const auto& node : nodes) {
-      marked_deleted[node.get()] = false;
-    }
-  }
-
   cleanupOverlappingNodes(node_connection_map);
 
   mergeNodes(node_connection_map);
@@ -955,13 +950,9 @@ void IRNetwork::removeNodes(std::set<Node*>& removes,
   }
   nodes.clear();
 
-  cleanup.erase(std::remove_if(cleanup.begin(),
-                               cleanup.end(),
-                               [&](const auto& other) {
-                                 return removes.find(other.get())
-                                        != removes.end();
-                               }),
-                cleanup.end());
+  std::erase_if(cleanup, [&](const auto& other) {
+    return removes.find(other.get()) != removes.end();
+  });
 
   for (auto& node : cleanup) {
     nodes.emplace_back(std::move(node));
@@ -1000,13 +991,9 @@ void IRNetwork::removeConnections(std::set<Connection*>& removes)
   }
   connections_.clear();
 
-  cleanup.erase(std::remove_if(cleanup.begin(),
-                               cleanup.end(),
-                               [&](const auto& other) {
-                                 return removes.find(other.get())
-                                        != removes.end();
-                               }),
-                cleanup.end());
+  std::erase_if(cleanup, [&](const auto& other) {
+    return removes.find(other.get()) != removes.end();
+  });
 
   for (auto& conn : cleanup) {
     conn->ensureNodeOrder();
@@ -1235,24 +1222,23 @@ void IRNetwork::dumpNodes(const std::string& name) const
 bool IRNetwork::belongsTo(Node* node) const
 {
   for (const auto& [layer, nodes] : nodes_) {
-    if (std::find_if(nodes.begin(),
-                     nodes.end(),
-                     [node](const auto& other) { return other.get() == node; })
+    if (std::ranges::find_if(
+            nodes, [node](const auto& other) { return other.get() == node; })
         != nodes.end()) {
       return true;
     }
   }
 
-  if (std::find_if(iterm_nodes_.begin(),
-                   iterm_nodes_.end(),
-                   [node](const auto& other) { return other.get() == node; })
+  if (std::ranges::find_if(
+          iterm_nodes_,
+          [node](const auto& other) { return other.get() == node; })
       != iterm_nodes_.end()) {
     return true;
   }
 
-  if (std::find_if(bpin_nodes_.begin(),
-                   bpin_nodes_.end(),
-                   [node](const auto& other) { return other.get() == node; })
+  if (std::ranges::find_if(
+          bpin_nodes_,
+          [node](const auto& other) { return other.get() == node; })
       != bpin_nodes_.end()) {
     return true;
   }
@@ -1262,11 +1248,10 @@ bool IRNetwork::belongsTo(Node* node) const
 
 bool IRNetwork::belongsTo(Connection* connection) const
 {
-  return std::find_if(connections_.begin(),
-                      connections_.end(),
-                      [connection](const auto& other) {
-                        return other.get() == connection;
-                      })
+  return std::ranges::find_if(connections_,
+                              [connection](const auto& other) {
+                                return other.get() == connection;
+                              })
          != connections_.end();
 }
 
@@ -1292,7 +1277,9 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
 
   std::map<odb::dbTechLayer*, std::set<odb::Rect>> nodes;
   for (const auto& bpin : bpin_nodes_) {
-    nodes[bpin->getLayer()].insert(bpin->getShape());
+    if (bpin->shouldConnect()) {
+      nodes[bpin->getLayer()].insert(bpin->getShape());
+    }
   }
 
   Node::NodeSet pin_nodes;

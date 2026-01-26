@@ -34,7 +34,6 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const int max_num_level,
                           const float coarsening_ratio,
                           const int large_net_threshold,
-                          const int signature_net_threshold,
                           const float halo_width,
                           const float halo_height,
                           const float fence_lx,
@@ -50,13 +49,18 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float notch_weight,
                           const float macro_blockage_weight,
                           const float target_util,
-                          const float target_dead_space,
                           const float min_ar,
                           const char* report_directory,
-                          const bool keep_clustering_data) {
+                          const bool keep_clustering_data,
+                          const bool data_flow_driven) {
 
   auto macro_placer = getMacroPlacer();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  odb::Rect global_fence = odb::Rect(block->micronsToDbu(fence_lx),
+                                    block->micronsToDbu(fence_ly),
+                                    block->micronsToDbu(fence_ux),
+                                    block->micronsToDbu(fence_uy));
   return macro_placer->place(num_threads,
                              max_num_macro,
                              min_num_macro,
@@ -66,13 +70,9 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              max_num_level,
                              coarsening_ratio,
                              large_net_threshold,
-                             signature_net_threshold,
-                             halo_width,
-                             halo_height,
-                             fence_lx,
-                             fence_ly,
-                             fence_ux,
-                             fence_uy,
+                             block->micronsToDbu(halo_width),
+                             block->micronsToDbu(halo_height),
+                             global_fence,
                              area_weight,
                              outline_weight,
                              wirelength_weight,
@@ -82,10 +82,10 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              notch_weight,
                              macro_blockage_weight,
                              target_util,
-                             target_dead_space,
                              min_ar,
                              report_directory,
-                             keep_clustering_data);
+                             keep_clustering_data,
+                             data_flow_driven);
 }
 
 void set_debug_cmd(odb::dbBlock* block,
@@ -129,7 +129,12 @@ add_guidance_region(odb::dbInst* macro,
                     float x2,
                     float y2)
 {
-  getMacroPlacer()->addGuidanceRegion(macro, Rect(x1, y1, x2, y2));
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  odb::Rect region = odb::Rect(block->micronsToDbu(x1),
+                              block->micronsToDbu(y1),
+                              block->micronsToDbu(x2),
+                              block->micronsToDbu(y2));
+  getMacroPlacer()->addGuidanceRegion(macro, region);
 }
 
 

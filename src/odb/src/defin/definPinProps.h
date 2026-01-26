@@ -6,7 +6,6 @@
 #include "definBase.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -15,18 +14,17 @@ class dbBTerm;
 
 class definPinProps : public definBase
 {
- private:
-  dbObject* _cur_obj;
-
  public:
+  definPinProps();
+
   virtual void begin(const char* inst, const char* term);
   virtual void property(const char* name, const char* value);
   virtual void property(const char* name, int value);
   virtual void property(const char* name, double value);
   virtual void end();
 
-  definPinProps();
-  ~definPinProps() override;
+ private:
+  dbObject* _cur_obj;
 };
 
 }  // namespace odb

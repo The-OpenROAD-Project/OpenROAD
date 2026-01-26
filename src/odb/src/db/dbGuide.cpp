@@ -4,15 +4,18 @@
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbBlock.h"
 #include "dbJournal.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGuide>;
@@ -64,17 +67,17 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.net_;
   stream >> obj.box_;
   stream >> obj.layer_;
-  if (obj.getDatabase()->isSchema(db_schema_db_guide_via_layer)) {
+  if (obj.getDatabase()->isSchema(kSchemaDbGuideViaLayer)) {
     stream >> obj.via_layer_;
   }
   stream >> obj.guide_next_;
-  if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
+  if (obj.getDatabase()->isSchema(kSchemaDbGuideCongested)) {
     stream >> obj.is_congested_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
+  if (obj.getDatabase()->isSchema(kSchemaHasJumpers)) {
     stream >> obj.is_jumper_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_guide_connected_to_term)) {
+  if (obj.getDatabase()->isSchema(kSchemaGuideConnectedToTerm)) {
     stream >> obj.is_connect_to_term_;
   }
   return stream;
@@ -137,7 +140,7 @@ dbNet* dbGuide::getNet() const
 {
   _dbGuide* obj = (_dbGuide*) this;
   _dbBlock* block = (_dbBlock*) obj->getOwner();
-  return (dbNet*) block->_net_tbl->getPtr(obj->net_);
+  return (dbNet*) block->net_tbl_->getPtr(obj->net_);
 }
 
 dbGuide* dbGuide::create(dbNet* net,
@@ -148,20 +151,22 @@ dbGuide* dbGuide::create(dbNet* net,
 {
   _dbNet* owner = (_dbNet*) net;
   _dbBlock* block = (_dbBlock*) owner->getOwner();
-  _dbGuide* guide = block->_guide_tbl->create();
+  _dbGuide* guide = block->guide_tbl_->create();
 
-  if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: create guide, layer {} box {}",
-               layer->getName(),
-               box);
-    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
-    block->_journal->pushParam(dbGuideObj);
-    block->_journal->pushParam(guide->getOID());
-    block->_journal->endAction();
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: create dbGuide at id {}, in layer {} box {}",
+             guide->getOID(),
+             layer->getName(),
+             box);
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kCreateObject);
+    block->journal_->pushParam(dbGuideObj);
+    block->journal_->pushParam(guide->getOID());
+    block->journal_->endAction();
   }
 
   guide->layer_ = layer->getImpl()->getOID();
@@ -175,10 +180,10 @@ dbGuide* dbGuide::create(dbNet* net,
   return (dbGuide*) guide;
 }
 
-dbGuide* dbGuide::getGuide(dbBlock* block, uint dbid)
+dbGuide* dbGuide::getGuide(dbBlock* block, uint32_t dbid)
 {
   _dbBlock* owner = (_dbBlock*) block;
-  return (dbGuide*) owner->_guide_tbl->getPtr(dbid);
+  return (dbGuide*) owner->guide_tbl_->getPtr(dbid);
 }
 
 void dbGuide::destroy(dbGuide* guide)
@@ -187,31 +192,34 @@ void dbGuide::destroy(dbGuide* guide)
   _dbNet* net = (_dbNet*) guide->getNet();
   _dbGuide* _guide = (_dbGuide*) guide;
 
-  if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: destroy guide, id: {}",
-               guide->getId());
-    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    block->_journal->pushParam(dbGuideObj);
-    block->_journal->pushParam(net->getOID());
-    block->_journal->pushParam(_guide->box_.xMin());
-    block->_journal->pushParam(_guide->box_.yMin());
-    block->_journal->pushParam(_guide->box_.xMax());
-    block->_journal->pushParam(_guide->box_.yMax());
-    block->_journal->pushParam(_guide->layer_);
-    block->_journal->pushParam(_guide->via_layer_);
-    block->_journal->pushParam(_guide->is_congested_);
-    block->_journal->endAction();
+  debugPrint(block->getImpl()->getLogger(),
+             utl::ODB,
+             "DB_EDIT",
+             2,
+             "EDIT: delete dbGuide at id {}, in layer {} box {}",
+             guide->getId(),
+             guide->getLayer()->getName(),
+             guide->getBox());
+
+  if (block->journal_) {
+    block->journal_->beginAction(dbJournal::kDeleteObject);
+    block->journal_->pushParam(dbGuideObj);
+    block->journal_->pushParam(net->getOID());
+    block->journal_->pushParam(_guide->box_.xMin());
+    block->journal_->pushParam(_guide->box_.yMin());
+    block->journal_->pushParam(_guide->box_.xMax());
+    block->journal_->pushParam(_guide->box_.yMax());
+    block->journal_->pushParam(_guide->layer_);
+    block->journal_->pushParam(_guide->via_layer_);
+    block->journal_->pushParam(_guide->is_congested_);
+    block->journal_->endAction();
   }
 
-  uint id = _guide->getOID();
+  uint32_t id = _guide->getOID();
   _dbGuide* prev = nullptr;
-  uint cur = net->guides_;
+  uint32_t cur = net->guides_;
   while (cur) {
-    _dbGuide* c = block->_guide_tbl->getPtr(cur);
+    _dbGuide* c = block->guide_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
         net->guides_ = _guide->guide_next_;
@@ -225,7 +233,7 @@ void dbGuide::destroy(dbGuide* guide)
   }
 
   dbProperty::destroyProperties(guide);
-  block->_guide_tbl->destroy((_dbGuide*) guide);
+  block->guide_tbl_->destroy((_dbGuide*) guide);
 }
 
 dbSet<dbGuide>::iterator dbGuide::destroy(dbSet<dbGuide>::iterator& itr)
@@ -241,7 +249,7 @@ bool dbGuide::isJumper() const
   bool is_jumper = false;
   _dbGuide* guide = (_dbGuide*) this;
   _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
+  if (db->isSchema(kSchemaHasJumpers)) {
     is_jumper = guide->is_jumper_;
   }
   return is_jumper;
@@ -251,7 +259,7 @@ void dbGuide::setIsJumper(bool jumper)
 {
   _dbGuide* guide = (_dbGuide*) this;
   _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(db_schema_has_jumpers)) {
+  if (db->isSchema(kSchemaHasJumpers)) {
     guide->is_jumper_ = jumper;
   }
 }

@@ -51,68 +51,68 @@ module top (clk,
  wire [6:0] sram0_rd_out;
  wire [6:0] sram1_rd_out;
 
- BUF_X1 input31 (.A(sram1_we_in),
-    .Z(net31));
- BUF_X1 input30 (.A(sram1_w_mask_in[6]),
-    .Z(net30));
- BUF_X1 input29 (.A(sram1_w_mask_in[5]),
-    .Z(net29));
- BUF_X1 input28 (.A(sram1_w_mask_in[4]),
-    .Z(net28));
- BUF_X1 input27 (.A(sram1_w_mask_in[3]),
-    .Z(net27));
- BUF_X1 input26 (.A(sram1_w_mask_in[2]),
-    .Z(net26));
- BUF_X1 input25 (.A(sram1_w_mask_in[1]),
-    .Z(net25));
- BUF_X1 input24 (.A(sram1_w_mask_in[0]),
-    .Z(net24));
- BUF_X1 input23 (.A(sram1_ce_in),
-    .Z(net23));
- BUF_X1 input22 (.A(sram1_addr_in[5]),
-    .Z(net22));
- BUF_X1 input21 (.A(sram1_addr_in[4]),
-    .Z(net21));
- BUF_X1 input20 (.A(sram1_addr_in[3]),
-    .Z(net20));
- BUF_X1 input19 (.A(sram1_addr_in[2]),
-    .Z(net19));
- BUF_X1 input18 (.A(sram1_addr_in[1]),
-    .Z(net18));
- BUF_X1 input17 (.A(sram1_addr_in[0]),
-    .Z(net17));
- BUF_X1 input16 (.A(sram0_we_in),
-    .Z(net16));
- BUF_X1 input15 (.A(sram0_w_mask_in[6]),
-    .Z(net15));
- BUF_X1 input14 (.A(sram0_w_mask_in[5]),
-    .Z(net14));
- BUF_X1 input13 (.A(sram0_w_mask_in[4]),
-    .Z(net13));
- BUF_X1 input12 (.A(sram0_w_mask_in[3]),
-    .Z(net12));
- BUF_X1 input11 (.A(sram0_w_mask_in[2]),
-    .Z(net11));
- BUF_X1 input10 (.A(sram0_w_mask_in[1]),
-    .Z(net10));
- BUF_X1 input9 (.A(sram0_w_mask_in[0]),
-    .Z(net9));
- BUF_X1 input8 (.A(sram0_ce_in),
-    .Z(net8));
- BUF_X1 input7 (.A(sram0_addr_in[5]),
-    .Z(net7));
- BUF_X1 input6 (.A(sram0_addr_in[4]),
-    .Z(net6));
- BUF_X1 input5 (.A(sram0_addr_in[3]),
-    .Z(net5));
- BUF_X1 input4 (.A(sram0_addr_in[2]),
-    .Z(net4));
- BUF_X1 input3 (.A(sram0_addr_in[1]),
-    .Z(net3));
- BUF_X1 input2 (.A(sram0_addr_in[0]),
-    .Z(net2));
  BUF_X1 input1 (.A(clk),
     .Z(net1));
+ BUF_X1 input10 (.A(sram0_w_mask_in[1]),
+    .Z(net10));
+ BUF_X1 input11 (.A(sram0_w_mask_in[2]),
+    .Z(net11));
+ BUF_X1 input12 (.A(sram0_w_mask_in[3]),
+    .Z(net12));
+ BUF_X1 input13 (.A(sram0_w_mask_in[4]),
+    .Z(net13));
+ BUF_X1 input14 (.A(sram0_w_mask_in[5]),
+    .Z(net14));
+ BUF_X1 input15 (.A(sram0_w_mask_in[6]),
+    .Z(net15));
+ BUF_X1 input16 (.A(sram0_we_in),
+    .Z(net16));
+ BUF_X1 input17 (.A(sram1_addr_in[0]),
+    .Z(net17));
+ BUF_X1 input18 (.A(sram1_addr_in[1]),
+    .Z(net18));
+ BUF_X1 input19 (.A(sram1_addr_in[2]),
+    .Z(net19));
+ BUF_X1 input2 (.A(sram0_addr_in[0]),
+    .Z(net2));
+ BUF_X1 input20 (.A(sram1_addr_in[3]),
+    .Z(net20));
+ BUF_X1 input21 (.A(sram1_addr_in[4]),
+    .Z(net21));
+ BUF_X1 input22 (.A(sram1_addr_in[5]),
+    .Z(net22));
+ BUF_X1 input23 (.A(sram1_ce_in),
+    .Z(net23));
+ BUF_X1 input24 (.A(sram1_w_mask_in[0]),
+    .Z(net24));
+ BUF_X1 input25 (.A(sram1_w_mask_in[1]),
+    .Z(net25));
+ BUF_X1 input26 (.A(sram1_w_mask_in[2]),
+    .Z(net26));
+ BUF_X1 input27 (.A(sram1_w_mask_in[3]),
+    .Z(net27));
+ BUF_X1 input28 (.A(sram1_w_mask_in[4]),
+    .Z(net28));
+ BUF_X1 input29 (.A(sram1_w_mask_in[5]),
+    .Z(net29));
+ BUF_X1 input3 (.A(sram0_addr_in[1]),
+    .Z(net3));
+ BUF_X1 input30 (.A(sram1_w_mask_in[6]),
+    .Z(net30));
+ BUF_X1 input31 (.A(sram1_we_in),
+    .Z(net31));
+ BUF_X1 input4 (.A(sram0_addr_in[2]),
+    .Z(net4));
+ BUF_X1 input5 (.A(sram0_addr_in[3]),
+    .Z(net5));
+ BUF_X1 input6 (.A(sram0_addr_in[4]),
+    .Z(net6));
+ BUF_X1 input7 (.A(sram0_addr_in[5]),
+    .Z(net7));
+ BUF_X1 input8 (.A(sram0_ce_in),
+    .Z(net8));
+ BUF_X1 input9 (.A(sram0_w_mask_in[0]),
+    .Z(net9));
  fakeram45_64x7 sram0 (.we_in(net16),
     .ce_in(net8),
     .clk(net1),

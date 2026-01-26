@@ -2,8 +2,10 @@ or_integration_tests(
   "psm"
   TESTS
     aes_asap7_vdd
+    aes_test_bterms_source_resistance
     aes_test_bterms
     aes_test_multiple_bterms
+    aes_test_multiple_bterms_skipped
     aes_test_vdd
     aes_test_vss
     check_power_grid
@@ -16,6 +18,7 @@ or_integration_tests(
     check_power_grid_require_bterms_pass
     corners
     corners_assign_power
+    gcd_all_vss_source_res
     gcd_all_vss
     gcd_em_test_vdd
     gcd_no_vsrc
@@ -37,6 +40,3 @@ or_integration_tests(
     zerosoc_pads_check_only_disconnected
 )
 
-# Skipped
-#psm_man_tcl_check
-#psm_readme_msgs_check

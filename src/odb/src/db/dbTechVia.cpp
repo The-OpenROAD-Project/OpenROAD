@@ -3,8 +3,9 @@
 
 #include "dbTechVia.h"
 
-#include <string.h>
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -16,7 +17,6 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
@@ -33,63 +33,63 @@ static void create_via_boxes(_dbTechVia* via, const dbViaParams& P);
 
 bool _dbTechVia::operator==(const _dbTechVia& rhs) const
 {
-  if (_flags._default_via != rhs._flags._default_via) {
+  if (flags_.default_via != rhs.flags_.default_via) {
     return false;
   }
 
-  if (_flags._top_of_stack != rhs._flags._top_of_stack) {
+  if (flags_.top_of_stack != rhs.flags_.top_of_stack) {
     return false;
   }
 
-  if (_resistance != rhs._resistance) {
+  if (resistance_ != rhs.resistance_) {
     return false;
   }
 
-  if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0) {
+  if (name_ && rhs.name_) {
+    if (strcmp(name_, rhs.name_) != 0) {
       return false;
     }
-  } else if (_name || rhs._name) {
+  } else if (name_ || rhs.name_) {
     return false;
   }
 
-  if (_pattern && rhs._pattern) {
-    if (strcmp(_pattern, rhs._pattern) != 0) {
+  if (pattern_ && rhs.pattern_) {
+    if (strcmp(pattern_, rhs.pattern_) != 0) {
       return false;
     }
-  } else if (_pattern || rhs._pattern) {
+  } else if (pattern_ || rhs.pattern_) {
     return false;
   }
 
-  if (_bbox != rhs._bbox) {
+  if (bbox_ != rhs.bbox_) {
     return false;
   }
 
-  if (_boxes != rhs._boxes) {
+  if (boxes_ != rhs.boxes_) {
     return false;
   }
 
-  if (_top != rhs._top) {
+  if (top_ != rhs.top_) {
     return false;
   }
 
-  if (_bottom != rhs._bottom) {
+  if (bottom_ != rhs.bottom_) {
     return false;
   }
 
-  if (_non_default_rule != rhs._non_default_rule) {
+  if (non_default_rule_ != rhs.non_default_rule_) {
     return false;
   }
 
-  if (_generate_rule != rhs._generate_rule) {
+  if (generate_rule_ != rhs.generate_rule_) {
     return false;
   }
 
-  if (_via_params != rhs._via_params) {
+  if (via_params_ != rhs.via_params_) {
     return false;
   }
 
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
 
@@ -103,83 +103,83 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
 ////////////////////////////////////////////////////////////////////
 
 _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
-    : _flags(v._flags),
-      _resistance(v._resistance),
-      _name(nullptr),
-      _pattern(nullptr),
-      _bbox(v._bbox),
-      _boxes(v._boxes),
-      _top(v._top),
-      _bottom(v._bottom),
-      _non_default_rule(v._non_default_rule),
-      _generate_rule(v._generate_rule),
-      _via_params(v._via_params),
-      _next_entry(v._next_entry)
+    : flags_(v.flags_),
+      resistance_(v.resistance_),
+      name_(nullptr),
+      pattern_(nullptr),
+      bbox_(v.bbox_),
+      boxes_(v.boxes_),
+      top_(v.top_),
+      bottom_(v.bottom_),
+      non_default_rule_(v.non_default_rule_),
+      generate_rule_(v.generate_rule_),
+      via_params_(v.via_params_),
+      next_entry_(v.next_entry_)
 {
-  if (v._name) {
-    _name = safe_strdup(v._name);
+  if (v.name_) {
+    name_ = safe_strdup(v.name_);
   }
 
-  if (v._pattern) {
-    _pattern = safe_strdup(v._pattern);
+  if (v.pattern_) {
+    pattern_ = safe_strdup(v.pattern_);
   }
 }
 
 _dbTechVia::_dbTechVia(_dbDatabase*)
 {
-  _flags._default_via = 0;
-  _flags._top_of_stack = 0;
-  _flags._has_params = 0;
-  _flags._spare_bits = 0;
-  _resistance = 0.0;
-  _name = nullptr;
-  _pattern = nullptr;
+  flags_.default_via = 0;
+  flags_.top_of_stack = 0;
+  flags_.has_params = 0;
+  flags_.spare_bits = 0;
+  resistance_ = 0.0;
+  name_ = nullptr;
+  pattern_ = nullptr;
 }
 
 _dbTechVia::~_dbTechVia()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 
-  if (_pattern) {
-    free((void*) _pattern);
+  if (pattern_) {
+    free((void*) pattern_);
   }
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechVia& via)
 {
-  uint* bit_field = (uint*) &via._flags;
+  uint32_t* bit_field = (uint32_t*) &via.flags_;
   stream << *bit_field;
-  stream << via._resistance;
-  stream << via._name;
-  stream << via._bbox;
-  stream << via._boxes;
-  stream << via._top;
-  stream << via._bottom;
-  stream << via._non_default_rule;
-  stream << via._generate_rule;
-  stream << via._via_params;
-  stream << via._pattern;
-  stream << via._next_entry;
+  stream << via.resistance_;
+  stream << via.name_;
+  stream << via.bbox_;
+  stream << via.boxes_;
+  stream << via.top_;
+  stream << via.bottom_;
+  stream << via.non_default_rule_;
+  stream << via.generate_rule_;
+  stream << via.via_params_;
+  stream << via.pattern_;
+  stream << via.next_entry_;
   return stream;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechVia& via)
 {
-  uint* bit_field = (uint*) &via._flags;
+  uint32_t* bit_field = (uint32_t*) &via.flags_;
   stream >> *bit_field;
-  stream >> via._resistance;
-  stream >> via._name;
-  stream >> via._bbox;
-  stream >> via._boxes;
-  stream >> via._top;
-  stream >> via._bottom;
-  stream >> via._non_default_rule;
-  stream >> via._generate_rule;
-  stream >> via._via_params;
-  stream >> via._pattern;
-  stream >> via._next_entry;
+  stream >> via.resistance_;
+  stream >> via.name_;
+  stream >> via.bbox_;
+  stream >> via.boxes_;
+  stream >> via.top_;
+  stream >> via.bottom_;
+  stream >> via.non_default_rule_;
+  stream >> via.generate_rule_;
+  stream >> via.via_params_;
+  stream >> via.pattern_;
+  stream >> via.next_entry_;
 
   return stream;
 }
@@ -193,49 +193,49 @@ dbIStream& operator>>(dbIStream& stream, _dbTechVia& via)
 std::string dbTechVia::getName()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_name;
+  return via->name_;
 }
 
 const char* dbTechVia::getConstName()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_name;
+  return via->name_;
 }
 
 bool dbTechVia::isDefault()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_flags._default_via == 1;
+  return via->flags_.default_via == 1;
 }
 
 void dbTechVia::setDefault()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  via->_flags._default_via = 1;
+  via->flags_.default_via = 1;
 }
 
 bool dbTechVia::isTopOfStack()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_flags._top_of_stack == 1;
+  return via->flags_.top_of_stack == 1;
 }
 
 void dbTechVia::setTopOfStack()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  via->_flags._top_of_stack = 1;
+  via->flags_.top_of_stack = 1;
 }
 
 double dbTechVia::getResistance()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_resistance;
+  return via->resistance_;
 }
 
 void dbTechVia::setResistance(double resistance)
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  via->_resistance = resistance;
+  via->resistance_ = resistance;
 }
 
 dbTech* dbTechVia::getTech()
@@ -247,81 +247,81 @@ dbBox* dbTechVia::getBBox()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_bbox == 0) {
+  if (via->bbox_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
-  return (dbBox*) tech->_box_tbl->getPtr(via->_bbox);
+  return (dbBox*) tech->box_tbl_->getPtr(via->bbox_);
 }
 
 dbSet<dbBox> dbTechVia::getBoxes()
 {
   _dbTechVia* via = (_dbTechVia*) this;
   _dbTech* tech = (_dbTech*) via->getOwner();
-  return dbSet<dbBox>(via, tech->_box_itr);
+  return dbSet<dbBox>(via, tech->box_itr_);
 }
 
 dbTechLayer* dbTechVia::getTopLayer()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_top == 0) {
+  if (via->top_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_top);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(via->top_);
 }
 
 dbTechLayer* dbTechVia::getBottomLayer()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_bottom == 0) {
+  if (via->bottom_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_bottom);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(via->bottom_);
 }
 
 dbTechNonDefaultRule* dbTechVia::getNonDefaultRule()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_non_default_rule == 0) {
+  if (via->non_default_rule_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
-  return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(
-      via->_non_default_rule);
+  return (dbTechNonDefaultRule*) tech->non_default_rule_tbl_->getPtr(
+      via->non_default_rule_);
 }
 
 bool dbTechVia::hasParams()
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  return via->_flags._has_params == 1;
+  return via->flags_.has_params == 1;
 }
 
 void dbTechVia::setViaGenerateRule(dbTechViaGenerateRule* rule)
 {
   _dbTechVia* via = (_dbTechVia*) this;
-  via->_generate_rule = rule->getImpl()->getOID();
+  via->generate_rule_ = rule->getImpl()->getOID();
 }
 
 dbTechViaGenerateRule* dbTechVia::getViaGenerateRule()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_generate_rule == 0) {
+  if (via->generate_rule_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbTechViaGenerateRule* rule
-      = tech->_via_generate_rule_tbl->getPtr(via->_generate_rule);
+      = tech->via_generate_rule_tbl_->getPtr(via->generate_rule_);
   return (dbTechViaGenerateRule*) rule;
 }
 
@@ -329,29 +329,29 @@ std::string dbTechVia::getPattern()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_pattern == nullptr) {
+  if (via->pattern_ == nullptr) {
     return "";
   }
 
-  return via->_pattern;
+  return via->pattern_;
 }
 
 void dbTechVia::setPattern(const char* pattern)
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_pattern) {
-    free((void*) via->_pattern);
+  if (via->pattern_) {
+    free((void*) via->pattern_);
   }
 
-  via->_pattern = strdup(pattern);
+  via->pattern_ = strdup(pattern);
 }
 
 void dbTechVia::setViaParams(const dbViaParams& params)
 {
   _dbTechVia* via = (_dbTechVia*) this;
   _dbTech* tech = (_dbTech*) via->getOwner();
-  via->_flags._has_params = 1;
+  via->flags_.has_params = 1;
 
   // Clear previous boxes
   dbSet<dbBox> boxes = getBoxes();
@@ -361,13 +361,13 @@ void dbTechVia::setViaParams(const dbViaParams& params)
     dbSet<dbBox>::iterator cur = itr++;
     _dbBox* box = (_dbBox*) *cur;
     dbProperty::destroyProperties(box);
-    tech->_box_tbl->destroy(box);
+    tech->box_tbl_->destroy(box);
   }
 
-  via->_boxes = 0U;
-  via->_via_params = params;
-  via->_top = params._top_layer;
-  via->_bottom = params._bot_layer;
+  via->boxes_ = 0U;
+  via->via_params_ = params;
+  via->top_ = params.top_layer_;
+  via->bottom_ = params.bot_layer_;
   create_via_boxes(via, params);
 }
 
@@ -376,10 +376,10 @@ dbViaParams dbTechVia::getViaParams()
   _dbTechVia* via = (_dbTechVia*) this;
 
   dbViaParams params;
-  if (via->_flags._has_params == 0) {
+  if (via->flags_.has_params == 0) {
     params = dbViaParams();
   } else {
-    params = via->_via_params;
+    params = via->via_params_;
     _dbTech* tech = (_dbTech*) via->getOwner();
     params._tech = (dbTech*) tech;
   }
@@ -393,10 +393,10 @@ dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)
   }
 
   _dbTech* tech = (_dbTech*) tech_;
-  _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = safe_strdup(name_);
-  tech->_via_hash.insert(via);
-  tech->_via_cnt++;
+  _dbTechVia* via = tech->via_tbl_->create();
+  via->name_ = safe_strdup(name_);
+  tech->via_hash_.insert(via);
+  tech->via_cnt_++;
   return (dbTechVia*) via;
 }
 
@@ -414,24 +414,24 @@ dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
   }
 
   _dbTech* tech = (_dbTech*) tech_;
-  _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = safe_strdup(new_name);
+  _dbTechVia* via = tech->via_tbl_->create();
+  via->name_ = safe_strdup(new_name);
 
-  via->_flags = _invia->_flags;
-  via->_resistance = _invia->_resistance;
-  via->_bbox = _invia->_bbox;
-  via->_boxes = _invia->_boxes;
-  via->_top = _invia->_top;
-  via->_bottom = _invia->_bottom;
-  via->_non_default_rule = (rule) ? rule->getOID() : 0;
+  via->flags_ = _invia->flags_;
+  via->resistance_ = _invia->resistance_;
+  via->bbox_ = _invia->bbox_;
+  via->boxes_ = _invia->boxes_;
+  via->top_ = _invia->top_;
+  via->bottom_ = _invia->bottom_;
+  via->non_default_rule_ = (rule) ? rule->getOID() : 0;
   if (rule) {
-    via->_flags._default_via
+    via->flags_.default_via
         = 0;  // DEFAULT via not allowed for non-default rule
   }
 
-  tech->_via_cnt++;
-  tech->_via_hash.insert(via);
-  rule->_vias.push_back(via->getOID());
+  tech->via_cnt_++;
+  tech->via_hash_.insert(via);
+  rule->vias_.push_back(via->getOID());
   return (dbTechVia*) via;
 }
 
@@ -446,19 +446,19 @@ dbTechVia* dbTechVia::create(dbTechNonDefaultRule* rule_, const char* name_)
   }
 
   _dbTech* tech = (_dbTech*) tech_;
-  _dbTechVia* via = tech->_via_tbl->create();
-  via->_name = safe_strdup(name_);
-  tech->_via_cnt++;
-  via->_non_default_rule = rule->getOID();
-  tech->_via_hash.insert(via);
-  rule->_vias.push_back(via->getOID());
+  _dbTechVia* via = tech->via_tbl_->create();
+  via->name_ = safe_strdup(name_);
+  tech->via_cnt_++;
+  via->non_default_rule_ = rule->getOID();
+  tech->via_hash_.insert(via);
+  rule->vias_.push_back(via->getOID());
   return (dbTechVia*) via;
 }
 
-dbTechVia* dbTechVia::getTechVia(dbTech* tech_, uint dbid_)
+dbTechVia* dbTechVia::getTechVia(dbTech* tech_, uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
-  return (dbTechVia*) tech->_via_tbl->getPtr(dbid_);
+  return (dbTechVia*) tech->via_tbl_->getPtr(dbid_);
 }
 
 void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
@@ -539,8 +539,8 @@ void _dbTechVia::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["name"].add(_name);
-  info.children_["pattern"].add(_pattern);
+  info.children["name"].add(name_);
+  info.children["pattern"].add(pattern_);
 }
 
 }  // namespace odb

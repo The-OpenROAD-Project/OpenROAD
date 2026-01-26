@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -16,31 +17,31 @@ class _dbTechLayerCutClassRule;
 
 struct dbTechLayerCutEnclosureRuleFlags
 {
-  uint type_ : 2;
-  bool cut_class_valid_ : 1;
-  bool above_ : 1;
-  bool below_ : 1;
-  bool eol_min_length_valid_ : 1;
-  bool eol_only_ : 1;
-  bool short_edge_on_eol_ : 1;
-  bool side_spacing_valid_ : 1;
-  bool end_spacing_valid_ : 1;
-  bool off_center_line_ : 1;
-  bool width_valid_ : 1;
-  bool include_abutted_ : 1;
-  bool except_extra_cut_ : 1;
-  bool prl_ : 1;
-  bool no_shared_edge_ : 1;
-  bool length_valid_ : 1;
-  bool extra_cut_valid_ : 1;
+  uint32_t type : 2;
+  bool cut_class_valid : 1;
+  bool above : 1;
+  bool below : 1;
+  bool eol_min_length_valid : 1;
+  bool eol_only : 1;
+  bool short_edge_on_eol : 1;
+  bool side_spacing_valid : 1;
+  bool end_spacing_valid : 1;
+  bool off_center_line : 1;
+  bool width_valid : 1;
+  bool include_abutted : 1;
+  bool except_extra_cut : 1;
+  bool prl : 1;
+  bool no_shared_edge : 1;
+  bool length_valid : 1;
+  bool extra_cut_valid : 1;
   bool extra_only : 1;
-  bool redundant_cut_valid_ : 1;
-  bool parallel_valid_ : 1;
+  bool redundant_cut_valid : 1;
+  bool parallel_valid : 1;
   bool second_parallel_valid : 1;
-  bool second_par_within_valid_ : 1;
-  bool below_enclosure_valid_ : 1;
-  bool concave_corners_valid_ : 1;
-  uint spare_bits_ : 7;
+  bool second_par_within_valid : 1;
+  bool below_enclosure_valid : 1;
+  bool concave_corners_valid : 1;
+  uint32_t spare_bits : 7;
 };
 
 class _dbTechLayerCutEnclosureRule : public _dbObject
@@ -74,7 +75,7 @@ class _dbTechLayerCutEnclosureRule : public _dbObject
   int par_within_;
   int second_par_within_;
   int below_enclosure_;
-  uint num_corners_;
+  uint32_t num_corners_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj);
 dbOStream& operator<<(dbOStream& stream,

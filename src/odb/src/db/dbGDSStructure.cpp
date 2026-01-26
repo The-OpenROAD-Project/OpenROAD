@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbGDSStructure.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGDSARef.h"
 #include "dbGDSBoundary.h"
@@ -14,19 +15,21 @@
 #include "dbGDSText.h"
 #include "dbHashTable.hpp"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbCommon.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSStructure>;
 
 bool _dbGDSStructure::operator==(const _dbGDSStructure& rhs) const
 {
-  if (_name != rhs._name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (_next_entry != rhs._next_entry) {
+  if (next_entry_ != rhs.next_entry_) {
     return false;
   }
   if (*boundaries_ != *rhs.boundaries_) {
@@ -58,7 +61,7 @@ bool _dbGDSStructure::operator<(const _dbGDSStructure& rhs) const
 
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 {
-  _name = nullptr;
+  name_ = nullptr;
   boundaries_ = new dbTable<_dbGDSBoundary>(
       db,
       this,
@@ -78,8 +81,8 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
-  stream >> obj._name;
-  stream >> obj._next_entry;
+  stream >> obj.name_;
+  stream >> obj.next_entry_;
   stream >> *obj.boundaries_;
   stream >> *obj.boxes_;
   stream >> *obj.paths_;
@@ -91,8 +94,8 @@ dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSStructure& obj)
 {
-  stream << obj._name;
-  stream << obj._next_entry;
+  stream << obj.name_;
+  stream << obj.next_entry_;
   stream << *obj.boundaries_;
   stream << *obj.boxes_;
   stream << *obj.paths_;
@@ -127,28 +130,25 @@ void _dbGDSStructure::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  boundaries_->collectMemInfo(info.children_["boundaries_"]);
+  boundaries_->collectMemInfo(info.children["boundaries_"]);
 
-  boxes_->collectMemInfo(info.children_["boxes_"]);
+  boxes_->collectMemInfo(info.children["boxes_"]);
 
-  paths_->collectMemInfo(info.children_["paths_"]);
+  paths_->collectMemInfo(info.children["paths_"]);
 
-  srefs_->collectMemInfo(info.children_["srefs_"]);
+  srefs_->collectMemInfo(info.children["srefs_"]);
 
-  arefs_->collectMemInfo(info.children_["arefs_"]);
+  arefs_->collectMemInfo(info.children["arefs_"]);
 
-  texts_->collectMemInfo(info.children_["texts_"]);
+  texts_->collectMemInfo(info.children["texts_"]);
 
   // User Code Begin collectMemInfo
-  info.children_["name"].add(_name);
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 
 _dbGDSStructure::~_dbGDSStructure()
 {
-  if (_name) {
-    free((void*) _name);
-  }
   delete boundaries_;
   delete boxes_;
   delete paths_;
@@ -166,7 +166,7 @@ _dbGDSStructure::~_dbGDSStructure()
 char* dbGDSStructure::getName() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
-  return obj->_name;
+  return obj->name_;
 }
 
 dbSet<dbGDSBoundary> dbGDSStructure::getGDSBoundaries() const
@@ -214,12 +214,12 @@ dbGDSStructure* dbGDSStructure::create(dbGDSLib* lib_, const char* name_)
   }
 
   _dbGDSLib* lib = (_dbGDSLib*) lib_;
-  _dbGDSStructure* structure = lib->_gdsstructure_tbl->create();
-  structure->_name = safe_strdup(name_);
+  _dbGDSStructure* structure = lib->gdsstructure_tbl_->create();
+  structure->name_ = safe_strdup(name_);
 
   // TODO: ID for structure
 
-  lib->_gdsstructure_hash.insert(structure);
+  lib->gdsstructure_hash_.insert(structure);
   return (dbGDSStructure*) structure;
 }
 
@@ -227,8 +227,8 @@ void dbGDSStructure::destroy(dbGDSStructure* structure)
 {
   _dbGDSStructure* str_impl = (_dbGDSStructure*) structure;
   _dbGDSLib* lib = (_dbGDSLib*) structure->getGDSLib();
-  lib->_gdsstructure_hash.remove(str_impl);
-  lib->_gdsstructure_tbl->destroy(str_impl);
+  lib->gdsstructure_hash_.remove(str_impl);
+  lib->gdsstructure_tbl_->destroy(str_impl);
 }
 
 dbGDSLib* dbGDSStructure::getGDSLib()

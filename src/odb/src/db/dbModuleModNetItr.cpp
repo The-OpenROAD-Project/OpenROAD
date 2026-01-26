@@ -4,10 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbModuleModNetItr.h"
 
+#include <cstdint>
+
 #include "dbModNet.h"
 #include "dbModule.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 
@@ -17,12 +18,12 @@ namespace odb {
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbModuleModNetItr::reversible()
+bool dbModuleModNetItr::reversible() const
 {
   return true;
 }
 
-bool dbModuleModNetItr::orderReversed()
+bool dbModuleModNetItr::orderReversed() const
 {
   return true;
 }
@@ -31,15 +32,15 @@ void dbModuleModNetItr::reverse(dbObject* parent)
 {
 }
 
-uint dbModuleModNetItr::sequential()
+uint32_t dbModuleModNetItr::sequential() const
 {
   return 0;
 }
 
-uint dbModuleModNetItr::size(dbObject* parent)
+uint32_t dbModuleModNetItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbModuleModNetItr::begin(parent);
        id != dbModuleModNetItr::end(parent);
@@ -50,30 +51,30 @@ uint dbModuleModNetItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbModuleModNetItr::begin(dbObject* parent)
+uint32_t dbModuleModNetItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
   _dbModule* module = (_dbModule*) parent;
-  return module->_modnets;
+  return module->modnets_;
   // User Code End begin
 }
 
-uint dbModuleModNetItr::end(dbObject* /* unused: parent */)
+uint32_t dbModuleModNetItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbModuleModNetItr::next(uint id, ...)
+uint32_t dbModuleModNetItr::next(uint32_t id, ...) const
 {
   // User Code Begin next
-  _dbModNet* modnet = _modnet_tbl->getPtr(id);
-  return modnet->_next_entry;
+  _dbModNet* modnet = modnet_tbl_->getPtr(id);
+  return modnet->next_entry_;
   // User Code End next
 }
 
-dbObject* dbModuleModNetItr::getObject(uint id, ...)
+dbObject* dbModuleModNetItr::getObject(uint32_t id, ...)
 {
-  return _modnet_tbl->getPtr(id);
+  return modnet_tbl_->getPtr(id);
 }
 }  // namespace odb
    // Generator Code End Cpp

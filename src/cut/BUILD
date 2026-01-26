@@ -37,6 +37,7 @@ cc_library(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party/abc:abc-lib",
         "@boost.bind",
         "@boost.config",
         "@boost.fusion",
@@ -44,6 +45,5 @@ cc_library(
         "@boost.optional",
         "@boost.phoenix",
         "@boost.spirit",
-        "@edu_berkeley_abc//:abc-lib",
     ],
 )

@@ -18,6 +18,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sta.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -26,11 +27,12 @@ namespace cut {
 class AbcLibrary
 {
  public:
-  AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library);
+  AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library,
+             utl::Logger* logger);
   AbcLibrary(AbcLibrary&&) = default;
   ~AbcLibrary() = default;
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
-  abc::Mio_Library_t* mio_library() { return mio_library_; }
+  abc::Mio_Library_t* mio_library();
   bool IsSupportedCell(const std::string& cell_name);
   bool IsConst0Cell(const std::string& cell_name);
   bool IsConst1Cell(const std::string& cell_name);
@@ -42,7 +44,8 @@ class AbcLibrary
   void InitializeConstGates();
 
   utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library_;
-  abc::Mio_Library_t* mio_library_;
+  utl::UniquePtrWithDeleter<abc::Mio_Library_t> mio_library_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   std::set<std::string> supported_cells_;
   std::unordered_set<std::string> const1_gates_;
   std::unordered_set<std::string> const0_gates_;
