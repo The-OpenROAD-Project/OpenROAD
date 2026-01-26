@@ -545,8 +545,10 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     float new_slack = old_slack - delay_degrad - params.setup_slack_margin;
     if (new_slack < 0) {
       float slack_degrad = old_slack - new_slack;
+      const float kSlackDegradRatioLimit = 0.1;
       if (old_slack >= 0
-          || (old_slack < 0 && slack_degrad > 0.1 * abs(old_slack))) {
+          || (old_slack < 0
+              && slack_degrad > kSlackDegradRatioLimit * abs(old_slack))) {
         // clang-format off
         debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                    "because side input pin {} will have a violating slack of {}:"

@@ -1545,7 +1545,17 @@ void RepairDesign::repairNetWire(
       float b = (r_drvr * wire_cap) + (wire_res * ref_cap);
       float c
           = (r_drvr * ref_cap) - (max_load_slew_margined / (*slew_rc_factor_));
-      float l = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
+      float l = 0.0;
+      if (a > 1e-12) {  // Quadratic case
+        const float discriminant = b * b - 4 * a * c;
+        if (discriminant >= 0.0) {
+          l = (-b + sqrt(discriminant)) / (2 * a);
+        }
+      } else if (b > 1e-12) {
+        // a * l^2 + b * l + c = 0 becomes
+        // b * l + c = 0 when a is very small
+        l = -c / b;
+      }
       if (l >= 0.0) {
         split_length = min(split_length, metersToDbu(l));
       } else {

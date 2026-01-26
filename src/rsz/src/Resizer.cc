@@ -5851,7 +5851,9 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
   float actual_drv2buf_slew
       = std::max(sta_->vertexSlew(buf_load_vertex, RiseFall::rise(), dcalc_ap),
                  sta_->vertexSlew(buf_load_vertex, RiseFall::fall(), dcalc_ap));
-  float in_calib_factor = actual_drv2buf_slew / estimated_drv2buf_slew;
+  float in_calib_factor = !sta::fuzzyZero(estimated_drv2buf_slew)
+                              ? (actual_drv2buf_slew / estimated_drv2buf_slew)
+                              : 1.0f;
   debugPrint(logger_,
              RSZ,
              "slew_check",
@@ -5883,7 +5885,10 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     float actual_buf2load_slew
         = std::max(sta_->vertexSlew(load_vertex, RiseFall::rise(), dcalc_ap),
                    sta_->vertexSlew(load_vertex, RiseFall::fall(), dcalc_ap));
-    float out_calib_factor = actual_buf2load_slew / estimated_buf2load_slew;
+    float out_calib_factor
+        = !sta::fuzzyZero(estimated_buf2load_slew)
+              ? (actual_buf2load_slew / estimated_buf2load_slew)
+              : 1.0f;
     out_calib_factors[load_pin] = in_calib_factor * out_calib_factor;
 
     debugPrint(logger_,
