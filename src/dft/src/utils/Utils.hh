@@ -10,6 +10,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 

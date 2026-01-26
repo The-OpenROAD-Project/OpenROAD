@@ -34,7 +34,6 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
-#include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -48,7 +47,7 @@ TechChar::TechChar(CtsOptions* options,
                    rsz::Resizer* resizer,
                    est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
-                   Logger* logger)
+                   utl::Logger* logger)
     : options_(options),
       db_(db),
       resizer_(resizer),

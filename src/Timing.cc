@@ -20,6 +20,7 @@
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Search.hh"

@@ -9,7 +9,6 @@
 #include "dbChip.h"
 #include "dbChipConn.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 

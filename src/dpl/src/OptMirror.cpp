@@ -48,7 +48,7 @@ void NetBox::restoreBox()
 
 ////////////////////////////////////////////////////////////////
 
-OptimizeMirroring::OptimizeMirroring(Logger* logger, odb::dbDatabase* db)
+OptimizeMirroring::OptimizeMirroring(utl::Logger* logger, odb::dbDatabase* db)
     : logger_(logger), db_(db), block_(db_->getChip()->getBlock())
 {
 }

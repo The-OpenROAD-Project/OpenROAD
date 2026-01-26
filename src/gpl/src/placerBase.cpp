@@ -286,10 +286,11 @@ void Instance::snapOutward(const odb::Point& origin, int step_x, int step_y)
   uy_ = snapUp(uy_, origin.y(), step_y);
 }
 
-void Instance::extendSizeByScale(double scale, utl::Logger* logger)
+int64_t Instance::extendSizeByScale(double scale, utl::Logger* logger)
 {
-  if (getArea() == 0) {
-    return;
+  int64_t old_area = getArea();
+  if (old_area == 0) {
+    return 0;
   }
 
   int center_x = cx();
@@ -301,6 +302,8 @@ void Instance::extendSizeByScale(double scale, utl::Logger* logger)
   ux_ = center_x + new_dx / 2;
   ly_ = center_y - new_dy / 2;
   uy_ = center_y + new_dy / 2;
+
+  return getArea() - old_area;
 }
 
 ////////////////////////////////////////////////////////
@@ -723,7 +726,8 @@ int64_t Die::coreArea() const
 PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
     : padLeft(options.padLeft),
       padRight(options.padRight),
-      skipIoMode(options.skipIoMode)
+      skipIoMode(options.skipIoMode),
+      disablePinDensityAdjust(options.disablePinDensityAdjust)
 {
 }
 
@@ -837,23 +841,38 @@ void PlacerBaseCommon::init()
   };
 
   int total_signal_pins = 0;
+  int64_t movable_area = 0;
   int64_t total_area = 0;
-  for (auto& inst : instStor_) {
-    if (!inst.isFixed() && inst.isInstance()) {
-      int pin_count = count_signal_pins(inst);
-      total_signal_pins += pin_count;
+  for (const auto& inst : instStor_) {
+    if (inst.isInstance()) {
       total_area += inst.getArea();
+      if (!inst.isFixed()) {
+        total_signal_pins += count_signal_pins(inst);
+        movable_area += inst.getArea();
+      }
     }
   }
 
-  double avg_density = (total_area > 0)
-                           ? static_cast<double>(total_signal_pins) / total_area
-                           : 0.0;
+  log_->info(GPL,
+             36,
+             format_label_um2,
+             "Movable instances area:",
+             block->dbuAreaToMicrons(movable_area));
+  log_->info(GPL,
+             37,
+             format_label_um2,
+             "Total instances area:",
+             block->dbuAreaToMicrons(total_area));
+
+  double avg_density
+      = (movable_area > 0)
+            ? static_cast<double>(total_signal_pins) / movable_area
+            : 0.0;
   if (log_->debugCheck(GPL, "extendPinDensity", 1)) {
     double avg_density_micron = block->dbuToMicrons(avg_density);
     double avg_area_per_pin_dbu
         = (total_signal_pins > 0)
-              ? static_cast<double>(total_area) / total_signal_pins
+              ? static_cast<double>(movable_area) / total_signal_pins
               : 0.0;
     double avg_area_per_pin_micron
         = block->dbuAreaToMicrons(avg_area_per_pin_dbu);
@@ -866,23 +885,32 @@ void PlacerBaseCommon::init()
   }
 
   // Adjust each movable instance to match the average density
-  for (auto& inst : instStor_) {
-    if (!inst.isFixed() && inst.isInstance()) {
-      int pin_count = count_signal_pins(inst);
-      if (pin_count > 2 && avg_density > 0.0) {
-        double target_area = static_cast<double>(pin_count) / avg_density;
-        double scale
-            = std::sqrt(target_area / static_cast<double>(inst.getArea()));
-        // Cap scaling, avoid later excessive routability inflation
-        if (scale > 1.2) {
-          scale = 1.2;
-        } else if (scale < 0.95) {
-          scale = 0.95;
+  int64_t total_adjustment_area = 0;
+  if (!pbVars_.disablePinDensityAdjust) {
+    for (auto& inst : instStor_) {
+      if (!inst.isFixed() && inst.isInstance()) {
+        int pin_count = count_signal_pins(inst);
+        if (pin_count > 2 && avg_density > 0.0) {
+          double target_area = static_cast<double>(pin_count) / avg_density;
+          double scale
+              = std::sqrt(target_area / static_cast<double>(inst.getArea()));
+          // Cap scaling, avoid later excessive routability inflation
+          if (scale > 1.2) {
+            scale = 1.2;
+          } else if (scale < 0.95) {
+            scale = 0.95;
+          }
+          total_adjustment_area += inst.extendSizeByScale(scale, log_);
         }
-        inst.extendSizeByScale(scale, log_);
       }
     }
   }
+
+  log_->info(GPL,
+             35,
+             format_label_um2,
+             "Pin density area adjust:",
+             block->dbuAreaToMicrons(total_adjustment_area));
 
   instMap_.reserve(instStor_.size());
   insts_.reserve(instStor_.size());
@@ -1136,7 +1164,7 @@ void PlacerBase::init()
       }
     }
 
-    insts_.push_back(inst);
+    pb_insts_.push_back(inst);
   }
 
   // insts fill with fake instances (fragmented row or blockage)
@@ -1149,7 +1177,7 @@ void PlacerBase::init()
       nonPlaceInsts_.push_back(&inst);
       nonPlaceInstsArea_ += inst.getArea();
     }
-    insts_.push_back(&inst);
+    pb_insts_.push_back(&inst);
   }
 
   printInfo();
@@ -1340,7 +1368,7 @@ void PlacerBase::reset()
 {
   db_ = nullptr;
   instStor_.clear();
-  insts_.clear();
+  pb_insts_.clear();
   placeInsts_.clear();
   fixedInsts_.clear();
   nonPlaceInsts_.clear();
@@ -1435,7 +1463,7 @@ void PlacerBase::printInfo() const
 
 void PlacerBase::unlockAll()
 {
-  for (auto inst : insts_) {
+  for (auto inst : pb_insts_) {
     inst->unlock();
   }
 }

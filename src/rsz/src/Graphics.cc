@@ -107,7 +107,7 @@ void Graphics::drawBNet(const BufferedNetPtr& bnet, gui::Painter& painter)
       drawBNet(bnet->ref2(), painter);
       break;
     case BufferedNetType::load: {
-      Point loc = bnet->location();
+      odb::Point loc = bnet->location();
       painter.drawCircle(loc.x(), loc.y(), 1000);
       break;
     }

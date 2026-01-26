@@ -18,8 +18,6 @@ class Logger;
 
 namespace rcx {
 
-using utl::Logger;
-
 class extViaModel
 {
  public:

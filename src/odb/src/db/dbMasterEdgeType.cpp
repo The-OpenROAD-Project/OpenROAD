@@ -7,10 +7,10 @@
 #include <cstdint>
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbMasterEdgeType>;

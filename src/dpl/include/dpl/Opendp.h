@@ -20,19 +20,14 @@
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "utl/Logger.h"
 // NOLINTNEXTLINE
 #include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
-namespace utl {
-class Logger;
-}
-
 namespace dpl {
-
-using utl::Logger;
 
 class Node;
 class Group;
@@ -84,7 +79,7 @@ struct IRDrop;
 class Opendp
 {
  public:
-  Opendp(odb::dbDatabase* db, Logger* logger);
+  Opendp(odb::dbDatabase* db, utl::Logger* logger);
   ~Opendp();
 
   Opendp(const Opendp&) = delete;
@@ -203,6 +198,7 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
+  bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
   bool shiftMove(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);
@@ -315,7 +311,7 @@ class Opendp
   void unplaceCell(Node* cell);
   void setGridLoc(Node* cell, GridX x, GridY y);
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   odb::Rect core_;
