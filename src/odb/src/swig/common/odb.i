@@ -32,6 +32,7 @@ using namespace odb;
 %include <std_string.i>
 %include <std_vector.i>
 %include <std_pair.i>
+%include <std_map.i>
 
 %typemap(in) (uint) = (int);
 %typemap(out) (uint) = (int);
