@@ -2082,10 +2082,10 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return vt_equiv_cells_cache_[source_cell];
   }
 
-  LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   if (equiv_cells == nullptr || source_cell_master == nullptr) {
-    vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
+    vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
 
