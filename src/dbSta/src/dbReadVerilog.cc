@@ -164,8 +164,8 @@ class Verilog2db
   void recordBusPortsOrder();
   void makeDbNets(const Instance* inst, PinSet& visited_pins);
 
-  void makeVModNets(const Instance* inst, dbModInst* mod_inst);
-  void makeVModNets(InstPairs& inst_pairs);
+  void makeModNetsForSubmodule(const Instance* inst, dbModInst* mod_inst);
+  void makeModNetsForSubmodules(InstPairs& inst_pairs);
   dbModNet* constructModNet(Net* inst_pin_net, dbModule* module);
 
   bool hasTerminals(Net* net) const;
@@ -275,7 +275,7 @@ void Verilog2db::makeDbNetlist()
   PinSet visited_pins(network_);
   makeDbNets(network_->topInstance(), visited_pins);
   if (hierarchy_) {
-    makeVModNets(inst_pairs);
+    makeModNetsForSubmodules(inst_pairs);
   }
   for (auto inst : dont_touch_insts_) {
     inst->setDoNotTouch(true);
@@ -799,14 +799,15 @@ void Verilog2db::makeDbNets(const Instance* inst, PinSet& visited_pins)
   }
 }
 
-void Verilog2db::makeVModNets(InstPairs& inst_pairs)
+void Verilog2db::makeModNetsForSubmodules(InstPairs& inst_pairs)
 {
   for (auto& [inst, modinst] : inst_pairs) {
-    makeVModNets(inst, modinst);
+    makeModNetsForSubmodule(inst, modinst);
   }
 }
 
-void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
+void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
+                                         dbModInst* mod_inst)
 {
   // Given a hierarchical instance, get the pins on the outside
   // and the inside of the instance and construct the modnets
@@ -1211,7 +1212,7 @@ void Verilog2db::makeUnusedDbNetlist()
   makeDbNets(inst, visited_pins);
   makeModNets(inst);
   if (hierarchy_) {
-    makeVModNets(inst_pairs);
+    makeModNetsForSubmodules(inst_pairs);
   }
   for (auto inst : dont_touch_insts_) {
     inst->setDoNotTouch(true);
