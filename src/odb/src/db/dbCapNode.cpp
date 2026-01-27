@@ -16,7 +16,6 @@
 #include "dbJournal.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"

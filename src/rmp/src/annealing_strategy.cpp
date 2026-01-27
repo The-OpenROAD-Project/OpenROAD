@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdio>
+#include <utility>
 #include <vector>
 
 #include "aig/gia/gia.h"

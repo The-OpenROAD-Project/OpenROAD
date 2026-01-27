@@ -11,13 +11,13 @@
 
 #include "dbBlock.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbName.h"
 #include "dbNameCache.h"
 #include "dbPropertyItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
 // User Code Begin Includes

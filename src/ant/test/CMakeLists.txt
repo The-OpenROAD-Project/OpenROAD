@@ -8,6 +8,3 @@ or_integration_tests(
     check_grt1
 )
 
-# Skipped
-#ant_man_tcl_check
-#ant_readme_msgs_check

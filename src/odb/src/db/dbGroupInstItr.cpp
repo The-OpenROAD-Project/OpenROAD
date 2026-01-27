@@ -9,7 +9,6 @@
 #include "dbGroup.h"
 #include "dbInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 

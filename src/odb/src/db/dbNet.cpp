@@ -46,7 +46,6 @@
 #include "dbSWire.h"
 #include "dbSWireItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
