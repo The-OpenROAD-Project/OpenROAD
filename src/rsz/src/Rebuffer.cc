@@ -647,101 +647,123 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
             if (auto wire_layer = findWireLayer(node)) {
               layer = wire_layer.value();
             }
-            BnetSeq opts = recurse(stripWiresAndBuffersOnBnet(node->ref()));
-            odb::Point location
-                = stripWiresAndBuffersOnBnet(node->ref())->location();
+            BnetPtr ref = stripWiresAndBuffersOnBnet(node->ref());
+            Point ref_location = ref->location();
+            Point target_location = node->location();
 
-            const int full_wl
-                = odb::Point::manhattanDistance(node->location(), location);
-            if (full_wl > wire_length_step_ / 2) {
-              debugPrint(logger_,
-                         RSZ,
-                         "rebuffer",
-                         4,
-                         "{:{}s}inserting prebuffers",
-                         "",
-                         level);
-              // This is a long wire, allow for insertion of buffers at the
-              // farther end
-              insertBufferOptions(
-                  opts, level, std::min(full_wl, wire_length_step_));
-            } else {
-              BnetSeq opts1 = opts;
-              for (BnetPtr& opt : opts1) {
-                opt = addWire(opt, node->location(), layer, level);
+            BnetSeq opts = recurse(ref);
+            BnetSeq wired_opts;
+            wired_opts.reserve(opts.size());
+
+            const int segment_wl
+                = Point::manhattanDistance(target_location, ref_location);
+
+            for (BnetPtr& opt : opts) {
+              BufferSize& strong_driver = buffer_sizes_.back();
+              if (bufferSizeCanDriveLoad(strong_driver, opt, segment_wl)) {
+                wired_opts.push_back(addWire(opt, target_location, layer));
               }
-              insertBufferOptions(opts1, level, 0);
-              if (opts1.empty()) {
-                // if generated options empty, start again but allow for
-                // insertion of buffers at the farther end
-                opts1 = opts;
-                insertBufferOptions(opts1, level, full_wl);
-                for (BnetPtr& opt : opts1) {
-                  opt = addWire(opt, node->location(), layer, level);
+            }
+
+            double wire_res, wire_cap;
+            estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
+
+            for (auto& size : buffer_sizes_) {
+              // Pick the best downstream choice
+              float target_load
+                  = size.input_cap + size.long_wire_spacing * wire_cap;
+              float best_appraisal = -std::numeric_limits<float>::infinity();
+              BnetPtr head;
+              for (auto& opt : opts) {
+                float appraisal = opt->slack().toSeconds()
+                                  - size.long_wire_delay_per_farad * opt->cap();
+                if (appraisal > best_appraisal && opt->cap() < target_load) {
+                  head = opt;
+                  best_appraisal = appraisal;
                 }
-                insertBufferOptions(opts1, level, 0);
               }
-              if (opts1.empty()) {
-                // if generated options still empty, this is an internal error
-                // of the algorithm (wire_length_step_ should have been chosen
-                // to always allow a minimal size buffer to drive itself without
-                // ERC)
-                logger_->critical(RSZ,
-                                  2008,
-                                  "buffering pin {}: wire step options empty",
-                                  network_->name(pin_));
+
+              if (head) {
+                bool inserted_buffer = false;
+
+                while (true) {
+                  int remaining_wl = Point::manhattanDistance(target_location,
+                                                              head->location());
+                  int step_wl = resizer_->metersToDbu(
+                      (target_load - head->cap()) / wire_cap);
+
+                  if (step_wl >= remaining_wl) {
+                    break;
+                  }
+
+                  // move `head->location()` towards `target_location` by
+                  // `step_wl`
+                  int dx = target_location.x() - head->location().x();
+                  int dy = target_location.y() - head->location().y();
+
+                  if (abs(dx) + abs(dy) >= step_wl) {
+                    const float ratio
+                        = (float) abs(dx) / (float) (abs(dx) + abs(dy));
+                    const int dx_abs
+                        = std::min((int) (ratio * step_wl), step_wl);
+                    const int dy_abs = step_wl - dx_abs;
+                    dx = dx > 0 ? dx_abs : -dx_abs;
+                    dy = dy > 0 ? dy_abs : -dy_abs;
+                  }
+
+                  Point next_location = head->location();
+                  next_location.addX(dx);
+                  next_location.addY(dy);
+
+                  // Fetch the true buffer_delay as it depends on
+                  // head->slackTransition()
+                  BnetPtr wire_head = addWire(head, next_location, layer);
+                  FixedDelay buffer_delay
+                      = bufferDelay(size.cell,
+                                    wire_head->slackTransition(),
+                                    wire_head->cap());
+
+                  if (!bufferSizeCanDriveLoad(size, wire_head, 0)) {
+                    inserted_buffer = false;
+                    break;
+                  }
+
+                  BnetPtr buffer
+                      = make_shared<BufferedNet>(BnetType::buffer,
+                                                 next_location,
+                                                 size.cell,
+                                                 wire_head,
+                                                 corner_,
+                                                 resizer_,
+                                                 estimate_parasitics_);
+                  buffer->setSlack(wire_head->slack() - buffer_delay);
+                  buffer->setSlackTransition(wire_head->slackTransition());
+                  buffer->setDelay(buffer_delay);
+
+                  head = buffer;
+                  inserted_buffer = true;
+                }
+
+                if (inserted_buffer) {
+                  int remaining_wl = Point::manhattanDistance(target_location,
+                                                              head->location());
+                  BufferSize& strong_driver = buffer_sizes_.back();
+                  if (bufferSizeCanDriveLoad(
+                          strong_driver, head, remaining_wl)) {
+                    head = addWire(head, target_location, layer);
+                    auto it = std::find_if(wired_opts.begin(),
+                                           wired_opts.end(),
+                                           [&](const BnetPtr& opt) {
+                                             return opt->cap() >= head->cap();
+                                           });
+                    wired_opts.insert(it, std::move(head));
+                  }
+                }
               }
-              return opts1;
             }
 
-            utl::DebugScopedTimer timer(long_wire_stepping_runtime_);
-            int round = 0;
-            while (location != node->location()) {
-              debugPrint(logger_,
-                         RSZ,
-                         "rebuffer",
-                         4,
-                         "{:{}s}round {} no of options {}",
-                         "",
-                         level,
-                         round,
-                         opts.size());
-
-              const int step = wire_length_step_;
-
-              // move `location` towards `node->location()` by `step`
-              int dx = node->location().x() - location.x();
-              int dy = node->location().y() - location.y();
-
-              if (abs(dx) + abs(dy) >= step) {
-                const float ratio
-                    = (float) abs(dx) / (float) (abs(dx) + abs(dy));
-                const int dx_abs = std::min((int) (ratio * step), step);
-                const int dy_abs = step - dx_abs;
-                dx = dx > 0 ? dx_abs : -dx_abs;
-                dy = dy > 0 ? dy_abs : -dy_abs;
-              }
-
-              location.addX(dx);
-              location.addY(dy);
-
-              const int remaining_wl
-                  = odb::Point::manhattanDistance(node->location(), location);
-
-              for (BnetPtr& opt : opts) {
-                opt = addWire(opt, location, layer, level);
-              }
-              insertBufferOptions(opts, level, std::min(remaining_wl, step));
-
-              if (opts.empty()) {
-                logger_->critical(RSZ,
-                                  2007,
-                                  "buffering pin {}: wire step options empty",
-                                  network_->name(pin_));
-              }
-              round++;
-            }
-            return opts;
+            insertBufferOptions(wired_opts, level, 0);
+            return wired_opts;
           }
 
           case BnetType::junction: {
@@ -1491,7 +1513,7 @@ void Rebuffer::initOnCorner(sta::Corner* corner)
       = std::min({resizer_max_wire_length_,
                   wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
                   wireLengthLimitImpliedByMaxCap(buffer_sizes_.front().cell)});
-  characterizeBufferLimits();
+  characterizeBuffers();
 }
 
 float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
@@ -1560,8 +1582,79 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
   return cap1;
 }
 
+Delay Rebuffer::characterizationDelay(BufferSize& size, float load_cap)
+{
+  const DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(MinMax::max());
+  LibertyPort *input, *output;
+  ArcDelay gate_delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  size.cell->bufferPorts(input, output);
+  resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
+  return std::max(gate_delays[RiseFall::rise()->index()],
+                  gate_delays[RiseFall::fall()->index()]);
+}
+
+void Rebuffer::findLongWireOptimum(Rebuffer::BufferSize& size)
+{
+  double wire_res, wire_cap;
+  estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
+
+  float length = 0;
+  float buffer_delay;
+
+  LibertyPort *in, *out;
+  size.cell->bufferPorts(in, out);
+
+  for (int i = 0; i < 3; i++) {
+    const float buffer_load
+        = wire_cap * length
+          + in->cornerPort(corner_, MinMax::max())->capacitance();
+    const float eps = 0.01;
+
+    buffer_delay = characterizationDelay(size, buffer_load);
+    const float buffer_delay_slope
+        = (characterizationDelay(size, buffer_load * (1 + eps)) - buffer_delay)
+          / (buffer_load * eps) * wire_cap;
+    const float intrinsic_delay
+        = std::max(buffer_delay - buffer_delay_slope * length, 0.0f);
+    const float new_length = sqrt(2 * intrinsic_delay / (wire_res * wire_cap));
+    length = new_length;
+
+    debugPrint(logger_,
+               RSZ,
+               "bufchar",
+               2,
+               "{}: iteration {}: length={:.2e} intrinsic_delay={:.2e} "
+               "delay={:.2e} slope={:.2e} new length={}",
+               size.cell->name(),
+               i,
+               length,
+               intrinsic_delay,
+               buffer_delay,
+               buffer_delay_slope,
+               new_length);
+  }
+
+  const float wire_delay = wire_res * wire_cap / 2 * length * length;
+  debugPrint(logger_,
+             RSZ,
+             "bufchar",
+             1,
+             "{:<41} {:>3.2e} {:>3.2e} {:>3.2e} {:>3.2e}",
+             size.cell->name(),
+             length,
+             size.cell->area() / length,
+             (buffer_delay + wire_delay) / length,
+             (buffer_delay + wire_delay) / (length * wire_cap));
+
+  size.long_wire_spacing = length;
+  size.long_wire_delay_per_meter = (buffer_delay + wire_delay) / length;
+  size.long_wire_delay_per_farad = size.long_wire_delay_per_meter / wire_cap;
+  size.input_cap = in->cornerPort(corner_, MinMax::max())->capacitance();
+}
+
 // Needs to be called when the margins (slew_margin_, cap_margin_) change
-void Rebuffer::characterizeBufferLimits()
+void Rebuffer::characterizeBuffers()
 {
   for (auto& size : buffer_sizes_) {
     sta::LibertyPort *in, *out;
@@ -1574,6 +1667,8 @@ void Rebuffer::characterizeBufferLimits()
     size.margined_max_cap
         = std::min(cap_limit_exists ? maxCapMargined(cap_limit) : INF,
                    findBufferLoadLimitImpliedByDriverSlew(size.cell));
+
+    findLongWireOptimum(size);
   }
 }
 

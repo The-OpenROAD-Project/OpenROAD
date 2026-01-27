@@ -116,7 +116,7 @@ class Rebuffer : public sta::dbStaState
                                         float best_cap);
 
   float findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell);
-  void characterizeBufferLimits();
+  void characterizeBuffers();
 
   struct BufferSize
   {
@@ -124,7 +124,14 @@ class Rebuffer : public sta::dbStaState
     FixedDelay intrinsic_delay;
     float margined_max_cap;
     float driver_resistance;
+    float long_wire_spacing;
+    float long_wire_delay_per_meter;
+    float long_wire_delay_per_farad;
+    float input_cap;
   };
+
+  Delay characterizationDelay(BufferSize& size, float load_cap);
+  void findLongWireOptimum(Rebuffer::BufferSize& size);
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,
                               const BufferedNetPtr& bnet,
