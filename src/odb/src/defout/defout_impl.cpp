@@ -1286,6 +1286,14 @@ void DefOut::Impl::writeNets(dbBlock* block)
 
   auto sorted_nets = sortedSet(nets);
 
+  // Build map of mterm names and associated nets
+  std::map<std::string, std::set<dbNet*>> snet_term_map;
+  for (auto* inst : block->getInsts()) {
+    for (auto* iterm : inst->getITerms()) {
+      snet_term_map[iterm->getMTerm()->getName()].insert(iterm->getNet());
+    }
+  }
+
   for (dbNet* net : sorted_nets) {
     if (_select_net_map) {
       if (!(*_select_net_map)[net]) {
@@ -1319,7 +1327,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
         continue;
       }
       if (net->isSpecial()) {
-        writeSNet(net);
+        writeSNet(net, snet_term_map);
       }
     }
 
@@ -1341,7 +1349,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
   *_out << "END NETS\n";
 }
 
-void DefOut::Impl::writeSNet(dbNet* net)
+void DefOut::Impl::writeSNet(dbNet* net, const std::map<std::string, std::set<dbNet*>>& snet_term_map)
 {
   std::string nname = net->getName();
   *_out << "    - " << nname;
@@ -1365,7 +1373,13 @@ void DefOut::Impl::writeSNet(dbNet* net)
     dbInst* inst = iterm->getInst();
     dbMTerm* mterm = iterm->getMTerm();
     char* mtname = mterm->getName(inst, &ttname[0]);
-    if (net->isWildConnected()) {
+    bool iswildcard = false;
+    const auto snet_term_map_itr = snet_term_map.find(mterm->getName());
+    if (snet_term_map_itr != snet_term_map.end() && snet_term_map_itr->second.size() == 1) {
+      // mterm is unique to this net, so we can use wildcard
+      iswildcard = true;
+    }
+    if (iswildcard) {
       if (wild_names.find(mtname) == wild_names.end()) {
         *_out << " ( * " << mtname << " )";
         ++i;

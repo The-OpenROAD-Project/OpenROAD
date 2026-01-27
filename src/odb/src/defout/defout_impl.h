@@ -84,7 +84,7 @@ class DefOut::Impl
   void writeFills(dbBlock* block);
   void writeNets(dbBlock* block);
   void writeNet(dbNet* net);
-  void writeSNet(dbNet* net);
+  void writeSNet(dbNet* net, const std::map<std::string, std::set<dbNet*>>& snet_term_map);
   void writeWire(dbWire* wire);
   void writeSWire(dbSWire* wire);
   void writeSpecialPath(dbSBox* box);
