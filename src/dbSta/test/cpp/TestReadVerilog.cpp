@@ -5,6 +5,7 @@
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "tst/IntegratedFixture.h"
 
 namespace sta {
