@@ -218,7 +218,7 @@ filegroup(
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
-                ]
+                ],
             }.get(test_name, []),
         ),
     )
