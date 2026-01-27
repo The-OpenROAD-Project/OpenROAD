@@ -1857,16 +1857,20 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
       }
       if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
-        buffer_list.emplace_back(buffer);
+        odb::dbMaster* master = db_network_->staToDb(buffer);
+	if (!master) {
+	  logger_->warn(RSZ, 170, "Buffer cell {} is missing LEF data and will not be used",
+			buffer->name());
+	  continue;
+	}
+
+        // Track site distribution
+        lib_data_->cells_by_site[master->getSite()]++;
 
         // Track cell footprint distribution
         if (buffer->footprint()) {
           lib_data_->cells_by_footprint[buffer->footprint()]++;
         }
-
-        // Track site distribution
-        odb::dbMaster* master = db_network_->staToDb(buffer);
-        lib_data_->cells_by_site[master->getSite()]++;
 
         // Track VT category leakage data
         VTCategory vt_category = cellVTType(master);
@@ -1875,6 +1879,8 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
         VTLeakageStats& vt_stats
             = lib_data_->vt_leakage_by_category[vt_category];
         vt_stats.add_cell_leakage(cellLeakage(buffer));
+
+        buffer_list.emplace_back(buffer);
       }
     }
   }
@@ -2948,6 +2954,10 @@ void Resizer::findTargetLoads()
   if (target_load_map_ == nullptr) {
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews();
+
+    if (tgt_slew_corner_ == nullptr) {
+      return;
+    }
 
     target_load_map_ = std::make_unique<CellTargetLoadMap>();
     // Find target loads at the tgt_slew_corner.
