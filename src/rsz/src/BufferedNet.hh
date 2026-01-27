@@ -9,14 +9,12 @@
 #include <string>
 
 #include "odb/geom.h"
-#include "spdlog/fmt/fmt.h"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Transition.hh"
-#include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
@@ -240,7 +238,10 @@ class BufferedNet
 
   Metrics metrics() const
   {
-    return Metrics{slack(), cap(), maxLoadSlew(), fanout()};
+    return Metrics{.slack = slack(),
+                   .cap = cap(),
+                   .max_load_slew = maxLoadSlew(),
+                   .fanout = fanout()};
   }
 
   bool fitsEnvelope(Metrics target);

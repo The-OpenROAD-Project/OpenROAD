@@ -15,7 +15,6 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -495,7 +494,7 @@ int Rebuffer::wireLengthLimitImpliedByMaxCap(sta::LibertyCell* cell)
   return std::numeric_limits<int>::max();
 }
 
-int middleValue(int a, int b, int c)
+static int middleValue(int a, int b, int c)
 {
   if (b < a) {
     std::swap(a, b);
@@ -503,11 +502,11 @@ int middleValue(int a, int b, int c)
 
   if (c > b) {
     return b;
-  } else if (c > a) {
-    return c;
-  } else {
-    return a;
   }
+  if (c > a) {
+    return c;
+  }
+  return a;
 }
 
 BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
@@ -1490,10 +1489,10 @@ void Rebuffer::init()
     sta::LibertyPort *in, *out;
     cell->bufferPorts(in, out);
     buffer_sizes_.push_back(BufferSize{
-        cell,
-        FixedDelay(out->intrinsicDelay(sta_), resizer_),
-        /*margined_max_cap=*/0.0f,
-        out->driveResistance(),
+        .cell = cell,
+        .intrinsic_delay = FixedDelay(out->intrinsicDelay(sta_), resizer_),
+        .margined_max_cap = 0.0f,
+        .driver_resistance = out->driveResistance(),
     });
   }
 
