@@ -15,6 +15,7 @@
 
 #include "MplObserver.h"
 #include "boost/polygon/polygon.hpp"
+#include "boost/polygon/polygon_90_set_data.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
