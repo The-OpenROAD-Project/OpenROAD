@@ -8,8 +8,11 @@ def _regression_test_impl(ctx):
     # Declare the test script output
     test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
 
-    # Determine test type based on file extension
-    test_type = "python" if ctx.file.test_file.path.endswith(".py") else "tcl"
+    # Determine test type: use explicit type if provided, otherwise infer from extension
+    if ctx.attr.test_type:
+        test_type = ctx.attr.test_type
+    else:
+        test_type = "python" if ctx.file.test_file.path.endswith(".py") else "tcl"
 
     # Generate the test script
     ctx.actions.write(
@@ -97,6 +100,10 @@ regression_rule_test = rule(
             doc = "The name of the test.",
             mandatory = True,
         ),
+        "test_type": attr.string(
+            doc = "Test type: 'tcl', 'python' (via openroad), or 'standalone_python'. Auto-detected if not specified.",
+            default = "",
+        ),
     },
     executable = True,
     test = True,
@@ -134,12 +141,14 @@ def regression_test(
     )
     data = _pop(kwargs, "data", [])
     size = _pop(kwargs, "size", "small")
+    test_type = _pop(kwargs, "test_type", "")
     for test_file in test_files:
         ext = test_file.split(".")[-1]
         regression_rule_test(
             name = name + "-" + ext + "_test",
             test_file = test_file,
             test_name = name,
+            test_type = test_type,
             data = [
                 "//test:regression_resources",
             ] + test_files + data,
