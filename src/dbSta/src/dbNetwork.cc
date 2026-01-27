@@ -2393,7 +2393,7 @@ void dbNetwork::checkLibertyCellsWithoutLef() const
       LibertyCell* cell = cell_iter.next();
       odb::dbMaster* master = staToDb(cell);
       if (!master) {
-        cells_without_lef.push_back(cell->name());
+        cells_without_lef.emplace_back(cell->name());
         cell->setDontUse(true);
       }
     }
@@ -2405,7 +2405,7 @@ void dbNetwork::checkLibertyCellsWithoutLef() const
                   "The following {} liberty cell(s) do not have LEF masters "
                   "and will be marked as dont-use:",
                   cells_without_lef.size());
-    for (auto cell : cells_without_lef) {
+    for (const auto& cell : cells_without_lef) {
       logger_->report("  {}", cell);
     }
   }
