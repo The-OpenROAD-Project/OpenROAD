@@ -38,6 +38,53 @@ class GridGraph;
 class GRNet;
 class BoxT;
 
+struct CugrGPoint3D
+{
+  int16_t x = 0;
+  int16_t y = 0;
+  int16_t layer = 0;
+};
+
+struct CugrRoute
+{
+  std::vector<CugrGPoint3D> grids;
+  int routelen = 0;
+};
+
+struct CugrTreeNode
+{
+  int16_t botL = -1;
+  int16_t topL = -1;
+  static constexpr int max_connections = 10;
+  int16_t heights[max_connections] = {0};
+  int eID[max_connections] = {0};
+
+  int16_t x, y;
+  int hID = -1;
+  int lID = -1;
+};
+
+struct CugrTreeEdge
+{
+  int len = 0;
+  int n1{0};
+  int n1a{0};
+  int n2{0};
+  int n2a{0};
+  CugrRoute route;
+};
+
+struct CugrStTree
+{
+  int num_terminals = 0;
+  std::vector<CugrTreeNode> nodes;
+  std::vector<CugrTreeEdge> edges;
+  std::map<int, int> node_to_pin_idx;
+
+  int num_edges() const { return edges.size(); }
+  int num_nodes() const { return nodes.size(); }
+};
+
 struct Constants
 {
   double weight_wire_length = 0.5;
@@ -103,6 +150,13 @@ class CUGR
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
+  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
+  void getViaStackRange(int net_id,
+                        int node_alias,
+                        int16_t& botL,
+                        int16_t& topL);
+  void convertGRTreeToStTree(const GRNet* net, CugrStTree& st_tree);
+  void get3DRoute(odb::dbNet* db_net, GRoute& route);
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
@@ -110,6 +164,7 @@ class CUGR
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
   std::map<odb::dbNet*, GRNet*> db_net_map_;
 
+  std::vector<CugrStTree> sttrees_;
   odb::dbDatabase* db_;
   utl::Logger* logger_;
   utl::CallBackHandler* callback_handler_;
