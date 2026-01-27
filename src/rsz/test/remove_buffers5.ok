@@ -15,6 +15,8 @@
 [WARNING ORD-2013] instance dmem/dmem1 LEF master fakeram7_256x32 not found.
 [WARNING ORD-2013] instance dmem/dmem2 LEF master fakeram7_256x32 not found.
 [WARNING ORD-2013] instance dmem/dmem3 LEF master fakeram7_256x32 not found.
+[WARNING ORD-2056] The following 1 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  fakeram7_256x32
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: riscv.dp.pcreg.q[31]$_DFF_PP0_
             (rising edge-triggered flip-flop clocked by clk)
