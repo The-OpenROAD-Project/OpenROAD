@@ -26,10 +26,12 @@ using utl::GPL;
 TimingBase::TimingBase() = default;
 
 TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
+                       grt::GlobalRouter* grt,
                        rsz::Resizer* rs,
                        utl::Logger* log)
     : TimingBase()
 {
+  grt_ = grt;
   rs_ = rs;
   nbc_ = std::move(nbc);
   log_ = log;

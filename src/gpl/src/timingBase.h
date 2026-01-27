@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 
+#include "grt/GlobalRouter.h"
 #include "rsz/Resizer.hh"
 
 namespace rsz {
@@ -27,6 +28,7 @@ class TimingBase
  public:
   TimingBase();
   TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
+             grt::GlobalRouter* grt,
              rsz::Resizer* rs,
              utl::Logger* log);
 
@@ -46,6 +48,7 @@ class TimingBase
   bool executeTimingDriven(bool run_journal_restore);
 
  private:
+  grt::GlobalRouter* grt_ = nullptr;
   rsz::Resizer* rs_ = nullptr;
   utl::Logger* log_ = nullptr;
   std::shared_ptr<NesterovBaseCommon> nbc_;
