@@ -393,8 +393,8 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
             const unsigned delay = seg.getDelay();
             const unsigned inputCap = seg.getInputCap();
             const unsigned inputSlew = seg.getInputSlew();
-            const unsigned wl2FirstBuffer = seg.getWl2FirstBuffer();
-            const unsigned lastWl = seg.getLastWl();
+            const int wl2FirstBuffer = seg.getWl2FirstBuffer();
+            const int lastWl = seg.getLastWl();
 
             WireSegment& fakeSeg = createWireSegment(
                 fakeLength, load, outSlew, power, delay, inputCap, inputSlew);
