@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"

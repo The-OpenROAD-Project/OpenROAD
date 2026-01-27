@@ -7,8 +7,9 @@
 #include <memory>
 #include <vector>
 
-#include "grt/GlobalRouter.h"
-#include "rsz/Resizer.hh"
+namespace grt {
+class GlobalRouter;
+}
 
 namespace rsz {
 class Resizer;
