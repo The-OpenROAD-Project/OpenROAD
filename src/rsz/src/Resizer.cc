@@ -2561,7 +2561,10 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     journalBegin();
   }
   ensureLevelDrvrVertices();
-  estimate_parasitics_->estimateWireParasitics();
+  est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
+                                          ? est::ParasiticsSrc::global_routing
+                                          : est::ParasiticsSrc::placement;
+  estimate_parasitics_->estimateParasitics(parasitics_src);
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repair_design_->repairDesign(max_wire_length_,
