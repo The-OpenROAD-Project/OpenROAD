@@ -126,6 +126,7 @@ class HierRTLMP
   using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
   using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
 
+  bool macroPlacementIsFeasible() const;
   void runMultilevelAutoclustering();
   void runHierarchicalMacroPlacement();
 

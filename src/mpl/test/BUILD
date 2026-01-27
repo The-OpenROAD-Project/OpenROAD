@@ -38,6 +38,7 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "unfixed_cells_dont_fit_in_core",
 ]
 
 # Disabled in CMakeLists.txt
@@ -214,6 +215,10 @@ filegroup(
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "unfixed_cells_dont_fit_in_core": [
+                    "testcases/macro_only.lef",
+                    "testcases/unfixed_cells_dont_fit_in_core.def",
+                ]
             }.get(test_name, []),
         ),
     )
