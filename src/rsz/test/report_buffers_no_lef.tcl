@@ -21,4 +21,3 @@ rsz::report_fast_buffer_sizes
 report_equiv_cells -vt BUFx2_ASAP7_75t_R
 report_equiv_cells -vt BUFx2_ASAP7_75t_L
 report_equiv_cells -vt BUFx2_ASAP7_75t_SL
-
