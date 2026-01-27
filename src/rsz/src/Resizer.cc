@@ -2568,6 +2568,17 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
   estimate_parasitics_->estimateParasitics(parasitics_src);
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
+
+  // Start incremental global routing if global routing parasitics are being
+  // used.
+  if (parasitics_src == est::ParasiticsSrc::global_routing) {
+    const bool save_guides = false;
+    const bool start_incremental = true;
+    const bool end_incremental = false;
+    global_router_->globalRoute(
+        save_guides, start_incremental, end_incremental);
+  }
+
   repair_design_->repairDesign(max_wire_length_,
                                0.0,
                                0.0,
@@ -2584,7 +2595,20 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           fanout_violations,
                                           length_violations,
                                           repaired_net_count);
-  fullyRebuffer(nullptr);
+
+  // End incremental global routing if global routing parasitics were used.
+  if (parasitics_src == est::ParasiticsSrc::global_routing) {
+    const bool save_guides = false;
+    const bool start_incremental = false;
+    const bool end_incremental = true;
+    global_router_->globalRoute(
+        save_guides, start_incremental, end_incremental);
+  } else {
+    // Fully rebuffer doesn't work with global routing parasitics.
+    // TODO: fix the function to understand the parasitics from the global
+    // routing.
+    fullyRebuffer(nullptr);
+  }
   ensureLevelDrvrVertices();
 
   findResizeSlacks1();
