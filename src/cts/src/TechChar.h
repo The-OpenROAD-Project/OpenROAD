@@ -173,7 +173,7 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
-  sta::ArcDelay computeBufferDelay(odb::dbMaster* bufferMaster, double extra_out_cap);
+  sta::ArcDelay computeBufferDelay(const std::string& buffer, double extra_out_cap);
 
  private:
   // SolutionData represents the various different structures of the
@@ -253,9 +253,12 @@ class TechChar
   // Characterization attributes
 
   void initCharacterization();
+  void createDelayBufList();
   void finalizeRootSinkBuffers();
   void trimSortBufferList(std::vector<std::string>& buffers);
   float getMaxCapLimit(const std::string& buf);
+  float getDrvrResistance(const std::string& buf);
+  float getinternalDelay(const std::string& buf);
   void collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
                                       sta::LibertyPort* input,
                                       sta::LibertyPort* output,
