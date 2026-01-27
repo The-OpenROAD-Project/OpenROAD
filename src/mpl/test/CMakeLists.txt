@@ -33,8 +33,5 @@ or_integration_tests(
     macros_without_pins1
 )
 
-# Skipped
-#mpl_man_tcl_check
-#mpl_readme_msgs_check
 
 add_subdirectory(cpp)

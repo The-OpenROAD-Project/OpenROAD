@@ -57,6 +57,3 @@ or_integration_tests(
     skywater130_overlapping_filler
 )
 
-# Skipped
-#pad_man_tcl_check
-#pad_readme_msgs_check

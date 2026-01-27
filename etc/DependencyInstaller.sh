@@ -53,9 +53,9 @@ PCRE_VERSION="10.42"
 PCRE_CHECKSUM="37d2f77cfd411a3ddf1c64e1d72e43f7"
 SWIG_VERSION="4.3.0"
 SWIG_CHECKSUM="9f74c7f402aa28d9f75e67d1990ee6fb"
-BOOST_VERSION_BIG="1.86"
+BOOST_VERSION_BIG="1.89"
 BOOST_VERSION_SMALL="${BOOST_VERSION_BIG}.0"
-BOOST_CHECKSUM="ac857d73bb754b718a039830b07b9624"
+BOOST_CHECKSUM="187b577ce9f485314fcf17bcba2fb542"
 EIGEN_VERSION="3.4"
 CUDD_VERSION="3.0.0"
 LEMON_VERSION="1.3.1"
@@ -70,8 +70,8 @@ FLEX_VERSION="2.6.4"
 FLEX_CHECKSUM="2882e3179748cc9f9c23ec593d6adc8d"
 NINJA_VERSION="1.10.2"
 NINJA_CHECKSUM="817e12e06e2463aeb5cb4e1d19ced606"
-OR_TOOLS_VERSION_BIG="9.11"
-OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.4210"
+OR_TOOLS_VERSION_BIG="9.14"
+OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
 # ... configuration variables will be added here ...
 
@@ -707,6 +707,14 @@ _install_or_tools() {
             if [[ "${or_tools_installed_version}" == "${OR_TOOLS_VERSION_SMALL}" ]]; then
                 CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=${or_tools_install_dir} "
                 OR_TOOLS_PATH=${or_tools_install_dir}
+
+                # Remove conflicting Boost configuration files included in OR-Tools
+                for lib_dir in "lib" "lib64"; do
+                    if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
+                        find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
+                    fi
+                done
+
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=skipped")
                 return
             else
@@ -737,6 +745,14 @@ _install_or_tools() {
             _execute "Extracting or-tools..." tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
         )
     fi
+
+    # Remove conflicting Boost configuration files included in OR-Tools
+    for lib_dir in "lib" "lib64"; do
+        if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
+            find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
+        fi
+    done
+
     INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=installed")
 
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=$(realpath "${OR_TOOLS_PATH}") "
@@ -818,7 +834,7 @@ _install_ubuntu_packages() {
     _execute "Updating package lists..." apt-get -y update
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
-        debhelper devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev \
+        debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
         libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
         pkg-config python3-dev python3-click qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
@@ -858,7 +874,7 @@ _install_rhel_packages() {
     _execute "Installing EPEL release..." yum -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_version}.noarch.rpm"
     _execute "Installing base packages..." yum -y install \
         autoconf automake clang clang-devel gcc gcc-c++ gdb git glibc-devel \
-        libffi-devel libtool llvm llvm-devel llvm-libs make \
+        bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip python3-click qt5-qtbase-devel qt5-qtcharts-devel \
         qt5-qtimageformats readline tcl-devel tcl-tclreadline \
@@ -896,7 +912,7 @@ _install_opensuse_packages() {
     _execute "Updating packages..." zypper -n update
     _execute "Installing development pattern..." zypper -n install -t pattern devel_basis
     _execute "Installing base packages..." zypper -n install \
-        binutils clang gcc gcc11-c++ git groff gzip lcov libffi-devel \
+        binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
         pcre2-devel pkg-config python3-devel python3-pip python3-click qimgv readline-devel tcl \
@@ -925,7 +941,7 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pkg-config pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff libomp or-tools pandoc pkg-config pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
     _execute "Installing Python click..." pip3 install click
     _execute "Linking libomp..." brew link --force libomp
     _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
@@ -945,7 +961,7 @@ _install_debian_packages() {
     fi
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
-        devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev libgomp1 \
+        devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
         libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
         pandoc pkg-config python3-dev python3-click qt5-image-formats-plugins tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
