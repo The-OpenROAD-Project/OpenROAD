@@ -30,13 +30,13 @@ Path Type: max
            0.00    0.00    0.00 ^ u1/A (BUF_X1)
    1.01    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
-  40.52    0.08    0.10    0.11 ^ u2/Z (BUF_X1)
-           0.09    0.04    0.15 ^ wire3/A (BUF_X8)
-  42.96    0.01    0.03    0.18 ^ wire3/Z (BUF_X8)
+  40.85    0.08    0.10    0.11 ^ u2/Z (BUF_X1)
+           0.10    0.04    0.15 ^ wire3/A (BUF_X8)
+  43.26    0.01    0.03    0.19 ^ wire3/Z (BUF_X8)
            0.04    0.03    0.22 ^ wire2/A (BUF_X16)
-  55.02    0.01    0.03    0.24 ^ wire2/Z (BUF_X16)
+  54.39    0.01    0.03    0.25 ^ wire2/Z (BUF_X16)
            0.06    0.05    0.29 ^ wire1/A (BUF_X16)
-  43.61    0.01    0.03    0.32 ^ wire1/Z (BUF_X16)
+  43.61    0.01    0.03    0.33 ^ wire1/Z (BUF_X16)
            0.04    0.03    0.36 ^ u3/A (BUF_X1)
    0.10    0.01    0.03    0.38 ^ u3/Z (BUF_X1)
            0.01    0.00    0.38 ^ out1 (out)
@@ -48,8 +48,8 @@ Path Type: max
 
 # Check new buffer locations.
 Instance: u2, Location (unit: DBU): 0 0
-Instance: wire3, Location (unit: DBU): 902584 1383
-Instance: wire2, Location (unit: DBU): 1718366 1341
+Instance: wire3, Location (unit: DBU): 911438 1382
+Instance: wire2, Location (unit: DBU): 1735231 1340
 Instance: wire1, Location (unit: DBU): 2858308 1283
 Instance: u3, Location (unit: DBU): 3998000 0
 
@@ -65,13 +65,13 @@ Path Type: max
            0.00    0.00    0.00 ^ u1/A (BUF_X1)
    1.01    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
            0.01    0.00    0.02 ^ u2/A (BUF_X1)
-  40.52    0.08    0.10    0.11 ^ u2/Z (BUF_X1)
-           0.09    0.04    0.15 ^ wire3/A (BUF_X8)
-  42.96    0.01    0.03    0.18 ^ wire3/Z (BUF_X8)
+  40.85    0.08    0.10    0.11 ^ u2/Z (BUF_X1)
+           0.10    0.04    0.15 ^ wire3/A (BUF_X8)
+  43.26    0.01    0.03    0.19 ^ wire3/Z (BUF_X8)
            0.04    0.03    0.22 ^ wire2/A (BUF_X16)
-  55.02    0.01    0.03    0.24 ^ wire2/Z (BUF_X16)
+  54.39    0.01    0.03    0.25 ^ wire2/Z (BUF_X16)
            0.06    0.05    0.29 ^ wire1/A (BUF_X16)
-  43.61    0.01    0.03    0.32 ^ wire1/Z (BUF_X16)
+  43.61    0.01    0.03    0.33 ^ wire1/Z (BUF_X16)
            0.04    0.03    0.36 ^ u3/A (BUF_X1)
    0.10    0.01    0.03    0.38 ^ u3/Z (BUF_X1)
            0.01    0.00    0.38 ^ out1 (out)
