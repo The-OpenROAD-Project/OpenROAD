@@ -3,6 +3,8 @@
 
 #include "cut/abc_library_factory.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cmath>
 #include <cstring>
 #include <optional>
@@ -10,9 +12,9 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "utl/Logger.h"
 // Poor include definitions in ABC
@@ -30,7 +32,6 @@
 #include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "sta/TableModel.hh"
-#include "sta/TimingArc.hh"
 #include "sta/Units.hh"
 #include "utl/SuppressStdout.h"
 #include "utl/deleter.h"

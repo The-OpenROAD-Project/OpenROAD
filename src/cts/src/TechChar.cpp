@@ -34,7 +34,6 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
-#include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 

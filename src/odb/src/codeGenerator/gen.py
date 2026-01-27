@@ -312,7 +312,7 @@ def preprocess_klass(klass: Class) -> None:
     klass.h_sys_includes.insert(1, "cstdint")
 
     name = klass.name
-    klass.cpp_includes.extend(["dbTable.h", "dbTable.hpp", "odb/db.h", f"{name}.h"])
+    klass.cpp_includes.extend(["dbTable.h", "dbCore.h", "odb/db.h", f"{name}.h"])
 
     if klass.hasBitFields:
         klass.cpp_sys_includes.extend(["cstdint", "cstring"])

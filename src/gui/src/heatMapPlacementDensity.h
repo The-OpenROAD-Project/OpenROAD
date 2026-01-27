@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include "db_sta/dbSta.hh"
 #include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "sta/Corner.hh"
 
 namespace gui {
 

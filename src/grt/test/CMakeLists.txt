@@ -98,6 +98,3 @@ or_integration_tests(
     write_segments2
 )
 
-# Skipped
-#grt_man_tcl_check
-#grt_readme_msgs_check

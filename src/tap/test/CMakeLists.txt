@@ -36,6 +36,3 @@ or_integration_tests(
     symmetry
 )
 
-# Skipped
-#tap_man_tcl_check
-#tap_readme_msgs_check

@@ -3,8 +3,6 @@
 
 #include "dbvWriter.h"
 
-#include <yaml-cpp/yaml.h>
-
 #include <filesystem>
 #include <string>
 #include <unordered_set>
@@ -13,6 +11,7 @@
 #include "odb/db.h"
 #include "odb/defout.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 namespace odb {
 
 DbvWriter::DbvWriter(utl::Logger* logger, odb::dbDatabase* db)

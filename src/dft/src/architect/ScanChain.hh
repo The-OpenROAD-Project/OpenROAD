@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "ScanCell.hh"
+#include "ScanPin.hh"
 #include "utl/Logger.h"
 
 namespace dft {
