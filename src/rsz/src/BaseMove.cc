@@ -174,12 +174,8 @@ double BaseMove::area(dbMaster* master)
   if (!master->isCoreAutoPlaceable()) {
     return 0;
   }
-  return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
-}
-
-double BaseMove::dbuToMeters(int dist) const
-{
-  return dist / (resizer_->dbu_ * 1e+6);
+  return resizer_->dbuToMeters(master->getWidth())
+         * resizer_->dbuToMeters(master->getHeight());
 }
 
 // Rise/fall delays across all timing arcs into drvr_port.
