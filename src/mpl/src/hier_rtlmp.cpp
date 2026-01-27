@@ -205,10 +205,6 @@ void HierRTLMP::setDataFlowDriven()
 //      Attempts macro flipping to improve WR.
 void HierRTLMP::run()
 {
-  if (!macroPlacementIsFeasible()) {
-    logger_->error(MPL, 65, "Unfixed cells don't fit in the core!");
-  }
-
   runMultilevelAutoclustering();
   if (skip_macro_placement_) {
     logger_->info(MPL, 13, "Skipping macro placement.");
@@ -266,40 +262,6 @@ void HierRTLMP::init()
 ////////////////////////////////////////////////////////////////////////
 // Private functions
 ////////////////////////////////////////////////////////////////////////
-
-bool HierRTLMP::macroPlacementIsFeasible() const
-{
-  const odb::Rect& core = block_->getCoreArea();
-
-  int64_t occupied_area = 0;
-  for (odb::dbInst* inst : block_->getInsts()) {
-    const odb::Rect bbox = inst->getBBox()->getBox();
-
-    if (inst->isFixed()) {
-      // Note that we can handle fixed cells outside the macro placement area.
-      // Also, it may exist macros such as physical markers that can be
-      // partially inside the core so we need to compute the intersection.
-      odb::Rect intersection;
-      bbox.intersection(core, intersection);
-      occupied_area += intersection.area();
-      continue;
-    }
-
-    if (inst->isBlock()) {
-      const int width = bbox.dx() + 2 * tree_->halo_width;
-      const int height = bbox.dy() + 2 * tree_->halo_height;
-      occupied_area += width * static_cast<int64_t>(height);
-    } else {
-      occupied_area += bbox.area();
-    }
-  }
-
-  for (odb::dbBlockage* blockage : block_->getBlockages()) {
-    occupied_area += blockage->getBBox()->getBox().area();
-  }
-
-  return occupied_area <= core.area();
-}
 
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
