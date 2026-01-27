@@ -1493,7 +1493,10 @@ void Rebuffer::init()
         .intrinsic_delay = FixedDelay(out->intrinsicDelay(sta_), resizer_),
         .margined_max_cap = 0.0f,
         .driver_resistance = out->driveResistance(),
-    });
+        .long_wire_spacing = 0,
+        .long_wire_delay_per_meter = 0,
+        .long_wire_delay_per_farad = 0,
+        .input_cap = 0});
   }
 
   std::ranges::sort(buffer_sizes_, [=](BufferSize a, BufferSize b) {
