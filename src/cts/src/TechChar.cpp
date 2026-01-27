@@ -23,7 +23,6 @@
 #include "odb/dbSet.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
@@ -37,6 +36,7 @@
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -460,6 +460,7 @@ void TechChar::initCharacterization()
     logger_->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
 
+  createDelayBufList();
   // Announce root and sink buffers
   finalizeRootSinkBuffers();
 
@@ -669,6 +670,85 @@ void TechChar::initCharacterization()
   }
 }
 
+sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer, double extra_out_cap)
+{
+  sta::ArcDelay max_rise_delay = 0;
+
+  odb::dbMaster* bufferMaster = db_->findMaster(buffer.c_str());
+  sta::Cell* bufferMasterCell = db_network_->dbToSta(bufferMaster);
+  sta::LibertyCell* libertyMasterCell = db_network_->libertyCell(bufferMasterCell);
+  sta::LibertyPort *input, *output;
+  libertyMasterCell->bufferPorts(input, output);
+  for (sta::Corner* corner : *openSta_->corners()) {
+    const sta::DcalcAnalysisPt* dcalc_ap
+        = corner->findDcalcAnalysisPt(sta::MinMax::max());
+    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+
+    for (sta::TimingArcSet* arc_set :
+         libertyMasterCell->timingArcSets(input, output)) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
+        sta::GateTimingModel* model
+            = dynamic_cast<sta::GateTimingModel*>(arc->model());
+        const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
+        // Only look at rise-rise arcs
+        if (model != nullptr && in_rf == sta::RiseFall::rise()
+            && out_rf == sta::RiseFall::rise()) {
+          double in_cap = input->capacitance(in_rf, sta::MinMax::max());
+          double load_cap = in_cap + extra_out_cap;
+          sta::ArcDelay arc_delay;
+          sta::Slew arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          // Cycle the arc_slew through the gate delay calculator once more
+          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          // and once more
+          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+
+          max_rise_delay = std::max(arc_delay, max_rise_delay);
+        }
+      }
+    }
+  }
+
+  return max_rise_delay;
+}
+
+void TechChar::createDelayBufList()
+{
+  std::vector<std::string> delay_buffers;
+  float prevDrvrRes = -1;
+  std::vector<std::string> buffers = options_->getBufferList();
+  // Sort buffers in ascending order of max cap limit
+  std::ranges::sort(
+      buffers, [this](const std::string& buf1, const std::string& buf2) {
+        return (this->getDrvrResistance(buf1) < this->getDrvrResistance(buf2));
+      });
+  logger_->report("Buffer list = [");
+  for (std::string buffer : buffers) {
+    float drvrRes;
+    sta::ArcDelay delay;
+    drvrRes = getDrvrResistance(buffer);
+    delay = computeBufferDelay(buffer, 0);
+    float intrinsicDelay = getinternalDelay(buffer);
+    logger_->report("{}, driveRes = {}, delay = {}, intrinsic delay: {}", buffer, drvrRes, delay, intrinsicDelay);
+    logger_->report("prevDrvrRes: {}, {}",prevDrvrRes, ((prevDrvrRes - drvrRes) / drvrRes));
+    if (prevDrvrRes == -1) {
+      prevDrvrRes = drvrRes;
+      delay_buffers.push_back(buffer);
+    } else if ((drvrRes - prevDrvrRes) / drvrRes > 0.1) {
+      delay_buffers.push_back(buffer);
+      prevDrvrRes = drvrRes;
+    }
+  }
+  logger_->report("]");
+
+  logger_->report("Delay Buffer list = [");
+  for (std::string buffer : delay_buffers) {
+    logger_->report("{}, ", buffer);
+  }
+  logger_->report("]");
+}
+
 void TechChar::finalizeRootSinkBuffers()
 {
   // Sink info is not available yet, so defer adjustment till later
@@ -768,46 +848,24 @@ float TechChar::getMaxCapLimit(const std::string& buf)
   return maxCap;
 }
 
-sta::ArcDelay TechChar::computeBufferDelay(odb::dbMaster* bufferMaster, double extra_out_cap)
+float TechChar::getDrvrResistance(const std::string& buf)
 {
-  sta::Cell* bufferMasterCell = db_network_->dbToSta(bufferMaster);
-  sta::LibertyCell* buffer_cell = db_network_->libertyCell(bufferMasterCell);
-  sta::ArcDelay max_rise_delay = 0;
+  odb::dbMaster* master = db_->findMaster(buf.c_str());
+  sta::Cell* masterCell = db_network_->dbToSta(master);
+  sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  sta::LibertyPort *in, *out;
+  libCell->bufferPorts(in, out);
+  return out->driveResistance();
+}
 
-  sta::LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  for (sta::Corner* corner : *openSta_->corners()) {
-    const sta::DcalcAnalysisPt* dcalc_ap
-        = corner->findDcalcAnalysisPt(sta::MinMax::max());
-    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
-
-    for (sta::TimingArcSet* arc_set :
-         buffer_cell->timingArcSets(input, output)) {
-      for (sta::TimingArc* arc : arc_set->arcs()) {
-        sta::GateTimingModel* model
-            = dynamic_cast<sta::GateTimingModel*>(arc->model());
-        const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
-        // Only look at rise-rise arcs
-        if (model != nullptr && in_rf == sta::RiseFall::rise()
-            && out_rf == sta::RiseFall::rise()) {
-          double in_cap = input->capacitance(in_rf, sta::MinMax::max());
-          double load_cap = in_cap + extra_out_cap;
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
-          // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
-          // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
-
-          max_rise_delay = std::max(arc_delay, max_rise_delay);
-        }
-      }
-    }
-  }
-
-  return max_rise_delay;
+float TechChar::getinternalDelay(const std::string& buf)
+{
+  odb::dbMaster* master = db_->findMaster(buf.c_str());
+  sta::Cell* masterCell = db_network_->dbToSta(master);
+  sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  sta::LibertyPort *in, *out;
+  libCell->bufferPorts(in, out);
+  return out->intrinsicDelay(openSta_);
 }
 
 void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
