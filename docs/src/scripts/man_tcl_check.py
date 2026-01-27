@@ -33,10 +33,6 @@ for path in glob.glob("./src/*/src/*tcl") + include:
     if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
         continue
 
-    # special handling for pad, since it has 3 Tcls.
-    if "ICeWall" in path or "PdnGen" in path:
-        continue
-
     with open(path, encoding="utf-8") as f:
         # Help patterns
         content = f.read()
