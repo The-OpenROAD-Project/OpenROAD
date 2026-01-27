@@ -562,11 +562,11 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
       aux2 = stripWiresAndBuffersOnBnet(aux2);
       crit2 = stripWiresAndBuffersOnBnet(crit2);
 
-      Point p1 = aux1->location();
-      Point p2 = aux2->location();
-      Point p3 = crit2->location();
-      Point junction_point = {middleValue(p1.x(), p2.x(), p3.x()),
-                              middleValue(p1.y(), p2.y(), p3.y())};
+      odb::Point p1 = aux1->location();
+      odb::Point p2 = aux2->location();
+      odb::Point p3 = crit2->location();
+      odb::Point junction_point = {middleValue(p1.x(), p2.x(), p3.x()),
+                                   middleValue(p1.y(), p2.y(), p3.y())};
 
       const BnetPtr in1 = addWire(aux1, junction_point, -1);
       const BnetPtr in2 = addWire(aux2, junction_point, -1);
@@ -648,15 +648,15 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               layer = wire_layer.value();
             }
             BnetPtr ref = stripWiresAndBuffersOnBnet(node->ref());
-            Point ref_location = ref->location();
-            Point target_location = node->location();
+            odb::Point ref_location = ref->location();
+            odb::Point target_location = node->location();
 
             BnetSeq opts = recurse(ref);
             BnetSeq wired_opts;
             wired_opts.reserve(opts.size());
 
             const int segment_wl
-                = Point::manhattanDistance(target_location, ref_location);
+                = odb::Point::manhattanDistance(target_location, ref_location);
 
             for (BnetPtr& opt : opts) {
               BufferSize& strong_driver = buffer_sizes_.back();
@@ -687,8 +687,8 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 bool inserted_buffer = false;
 
                 while (true) {
-                  int remaining_wl = Point::manhattanDistance(target_location,
-                                                              head->location());
+                  int remaining_wl = odb::Point::manhattanDistance(
+                      target_location, head->location());
                   int step_wl = resizer_->metersToDbu(
                       (target_load - head->cap()) / wire_cap);
 
@@ -711,7 +711,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                     dy = dy > 0 ? dy_abs : -dy_abs;
                   }
 
-                  Point next_location = head->location();
+                  odb::Point next_location = head->location();
                   next_location.addX(dx);
                   next_location.addY(dy);
 
@@ -745,8 +745,8 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 }
 
                 if (inserted_buffer) {
-                  int remaining_wl = Point::manhattanDistance(target_location,
-                                                              head->location());
+                  int remaining_wl = odb::Point::manhattanDistance(
+                      target_location, head->location());
                   BufferSize& strong_driver = buffer_sizes_.back();
                   if (bufferSizeCanDriveLoad(
                           strong_driver, head, remaining_wl)) {
@@ -1583,16 +1583,17 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
   return cap1;
 }
 
-Delay Rebuffer::characterizationDelay(BufferSize& size, float load_cap)
+sta::Delay Rebuffer::characterizationDelay(BufferSize& size, float load_cap)
 {
-  const DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(MinMax::max());
-  LibertyPort *input, *output;
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
+  const sta::DcalcAnalysisPt* dcalc_ap
+      = corner_->findDcalcAnalysisPt(sta::MinMax::max());
+  sta::LibertyPort *input, *output;
+  sta::ArcDelay gate_delays[sta::RiseFall::index_count];
+  sta::Slew slews[sta::RiseFall::index_count];
   size.cell->bufferPorts(input, output);
   resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-  return std::max(gate_delays[RiseFall::rise()->index()],
-                  gate_delays[RiseFall::fall()->index()]);
+  return std::max(gate_delays[sta::RiseFall::rise()->index()],
+                  gate_delays[sta::RiseFall::fall()->index()]);
 }
 
 void Rebuffer::findLongWireOptimum(Rebuffer::BufferSize& size)
@@ -1603,13 +1604,13 @@ void Rebuffer::findLongWireOptimum(Rebuffer::BufferSize& size)
   float length = 0;
   float buffer_delay;
 
-  LibertyPort *in, *out;
+  sta::LibertyPort *in, *out;
   size.cell->bufferPorts(in, out);
 
   for (int i = 0; i < 3; i++) {
     const float buffer_load
         = wire_cap * length
-          + in->cornerPort(corner_, MinMax::max())->capacitance();
+          + in->cornerPort(corner_, sta::MinMax::max())->capacitance();
     const float eps = 0.01;
 
     buffer_delay = characterizationDelay(size, buffer_load);
@@ -1653,7 +1654,7 @@ void Rebuffer::findLongWireOptimum(Rebuffer::BufferSize& size)
   size.long_wire_spacing = length;
   size.long_wire_delay_per_meter = (buffer_delay + wire_delay) / length;
   size.long_wire_delay_per_farad = size.long_wire_delay_per_meter / wire_cap;
-  size.input_cap = in->cornerPort(corner_, MinMax::max())->capacitance();
+  size.input_cap = in->cornerPort(corner_, sta::MinMax::max())->capacitance();
 }
 
 // Needs to be called when the margins (slew_margin_, cap_margin_) change

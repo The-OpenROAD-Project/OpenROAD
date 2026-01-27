@@ -130,7 +130,7 @@ class Rebuffer : public sta::dbStaState
     float input_cap;
   };
 
-  Delay characterizationDelay(BufferSize& size, float load_cap);
+  sta::Delay characterizationDelay(BufferSize& size, float load_cap);
   void findLongWireOptimum(Rebuffer::BufferSize& size);
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,
