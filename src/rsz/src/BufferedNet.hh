@@ -239,8 +239,7 @@ class BufferedNet
 
   Metrics metrics() const
   {
-    return Metrics{.max_load_wl = maxLoadWireLength(),
-                   .slack = slack(),
+    return Metrics{.slack = slack(),
                    .cap = cap(),
                    .max_load_slew = maxLoadSlew(),
                    .fanout = fanout()};

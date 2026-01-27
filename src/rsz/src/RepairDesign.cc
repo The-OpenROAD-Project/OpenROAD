@@ -1625,21 +1625,17 @@ void RepairDesign::repairNetWire(
       // reflecting the latest makeRepeater.
       if (zero_advance && ref_cap >= prev_ref_cap) {
         if (++zero_progress_iters >= 2) {
-          // slew_rc_factor_ is asserted engaged at the top of repairNetWire;
-          // re-check locally so clang-tidy's CFG-only analysis is satisfied.
-          if (slew_rc_factor_) {
-            logger_->warn(
-                RSZ,
-                170,
-                "Cannot repair slew on net {} driven by {}: driver resistance "
-                "x repeater pin capacitance ({:.3g}) already meets or exceeds "
-                "the slew budget ({:.3g}). Net left unrepaired on this "
-                "segment.",
-                network_->pathName(network_->net(drvr_pin_)),
-                network_->pathName(drvr_pin_),
-                r_drvr * ref_cap,
-                max_load_slew_margined / *slew_rc_factor_);
-          }
+          logger_->warn(
+              RSZ,
+              170,
+              "Cannot repair slew on net {} driven by {}: driver resistance "
+              "x repeater pin capacitance ({:.3g}) already meets or exceeds "
+              "the slew budget ({:.3g}). Net left unrepaired on this "
+              "segment.",
+              network_->pathName(network_->net(drvr_pin_)),
+              network_->pathName(drvr_pin_),
+              r_drvr * ref_cap,
+              max_load_slew_margined / resizer_->slew_shape_factor_);
           break;
         }
       } else {
