@@ -630,38 +630,44 @@
 [WARNING ORD-2013] instance _181_ LEF master OR4x1_ASAP7_75t_R not found.
 [WARNING ORD-2013] instance _182_ LEF master OA211x2_ASAP7_75t_R not found.
 [WARNING ORD-2013] instance _183_ LEF master XOR2x2_ASAP7_75t_R not found.
-[WARNING RSZ-0170] Buffer cell BUFx10_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx16f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx24_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx2_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx3_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx5_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx6f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx8_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB1xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB2xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB3xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB4xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx10_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx16f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx24_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx2_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx3_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx5_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx6f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx8_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB1xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB2xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB3xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB4xp67_ASAP7_75t_R is missing LEF data and will not be used
+[WARNING ORD-2056] The following 37 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  BUFx10_ASAP7_75t_R
+  BUFx12_ASAP7_75t_R
+  BUFx12f_ASAP7_75t_R
+  BUFx16f_ASAP7_75t_R
+  BUFx24_ASAP7_75t_R
+  BUFx2_ASAP7_75t_R
+  BUFx3_ASAP7_75t_R
+  BUFx4_ASAP7_75t_R
+  BUFx4f_ASAP7_75t_R
+  BUFx5_ASAP7_75t_R
+  BUFx6f_ASAP7_75t_R
+  BUFx8_ASAP7_75t_R
+  CKINVDCx10_ASAP7_75t_R
+  CKINVDCx11_ASAP7_75t_R
+  CKINVDCx12_ASAP7_75t_R
+  CKINVDCx14_ASAP7_75t_R
+  CKINVDCx16_ASAP7_75t_R
+  CKINVDCx20_ASAP7_75t_R
+  CKINVDCx5p33_ASAP7_75t_R
+  CKINVDCx6p67_ASAP7_75t_R
+  CKINVDCx8_ASAP7_75t_R
+  CKINVDCx9p33_ASAP7_75t_R
+  HB1xp67_ASAP7_75t_R
+  HB2xp67_ASAP7_75t_R
+  HB3xp67_ASAP7_75t_R
+  HB4xp67_ASAP7_75t_R
+  INVx11_ASAP7_75t_R
+  INVx13_ASAP7_75t_R
+  INVx1_ASAP7_75t_R
+  INVx2_ASAP7_75t_R
+  INVx3_ASAP7_75t_R
+  INVx4_ASAP7_75t_R
+  INVx5_ASAP7_75t_R
+  INVx6_ASAP7_75t_R
+  INVx8_ASAP7_75t_R
+  INVxp33_ASAP7_75t_R
+  INVxp67_ASAP7_75t_R
 ********************************************************************************
 Buffer Report:
 There are 32 buffers that are not marked as dont-use, multi-voltage
@@ -730,22 +736,6 @@ BUFx3_ASAP7_75t_L                          2546.9 1.7e-12 1.0e-09 270 N/A     L
 BUFx2_ASAP7_75t_L                          3769.6 2.1e-12 6.7e-10 270 N/A     L
 HB2xp67_ASAP7_75t_L                       11222.2 5.6e-12 2.0e-10 270 N/A     L
 HB3xp67_ASAP7_75t_L                       11261.0 7.1e-12 1.9e-10 270 N/A     L
-[WARNING RSZ-0170] Buffer cell BUFx10_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx16f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx24_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx2_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx3_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx5_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx6f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx8_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB1xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB2xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB3xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB4xp67_ASAP7_75t_R is missing LEF data and will not be used
 
 Hold Buffer Report:
 HB4xp67_ASAP7_75t_L is the buffer chosen for hold fixing
@@ -763,22 +753,6 @@ BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
 BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
 --------------------------------------------------------------------------------
 [INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
-[WARNING RSZ-0170] Buffer cell BUFx10_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx12f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx16f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx24_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx2_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx3_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx4f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx5_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx6f_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell BUFx8_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB1xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB2xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB3xp67_ASAP7_75t_R is missing LEF data and will not be used
-[WARNING RSZ-0170] Buffer cell HB4xp67_ASAP7_75t_R is missing LEF data and will not be used
 ********************************************************************************
 Buffer Report:
 There are 32 buffers that are not marked as dont-use, multi-voltage
@@ -831,7 +805,7 @@ HB3xp67_ASAP7_75t_SL                      10054.6 6.6e-12 1.9e-09 270 N/A     SL
 HB4xp67_ASAP7_75t_SL                      10112.8 8.1e-12 1.8e-09 270 N/A     SL
 
 Filtered Buffer Report:
-All 48 buffers are available because buffer pruning has been disabled
+All 32 buffers are available because buffer pruning has been disabled
 --------------------------------------------------------------------------------
 Cell                                        Drive Drive    Leak   Site Cell   VT
                                             Res   Res*Cin          Ht Footpt Type
@@ -870,7 +844,7 @@ BUFx24_ASAP7_75t_L                          507.0 1.2e-12 7.0e-09 270 N/A     L
 BUFx24_ASAP7_75t_SL                         477.7 1.2e-12 7.1e-08 270 N/A     SL
 
 Hold Buffer Report:
-HB4xp67_ASAP7_75t_R is the buffer chosen for hold fixing
+HB4xp67_ASAP7_75t_L is the buffer chosen for hold fixing
 ********************************************************************************
 
 Fast Buffer Report:

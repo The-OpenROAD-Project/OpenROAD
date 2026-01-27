@@ -1897,11 +1897,6 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         odb::dbMaster* master = db_network_->staToDb(buffer);
         if (!master) {
-          logger_->warn(
-              RSZ,
-              170,
-              "Buffer cell {} is missing LEF data and will not be used",
-              buffer->name());
           continue;
         }
 
