@@ -257,7 +257,8 @@ bool GlobalRouter::haveDetailedRoutes()
   return false;
 }
 
-bool GlobalRouter::haveDbGuides() {
+bool GlobalRouter::haveDbGuides()
+{
   for (odb::dbNet* net : block_->getNets()) {
     // check term count due to 1-pin nets in multiple designs.
     if (!net->isSpecial() && net->getGuides().empty() && net->getTermCount() > 1
