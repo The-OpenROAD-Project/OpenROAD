@@ -4245,7 +4245,15 @@ void PinModDbNetConnection::operator()(const Pin* pin)
                       2031,
                       "Flat net logical inconsistency found. Dump "
                       "connections of the relevant flat nets.");
+
+        logger_->report("\n===============================================");
+        logger_->report("Connectivity of the first dbNet '{}'",
+                        dbnet_->getName());
         dbnet_->dump(true);
+
+        logger_->report("\n===============================================");
+        logger_->report("Connectivity of the second dbNet '{}'",
+                        candidate_flat_net->getName());
         candidate_flat_net->dump(true);
 
         logger_->error(
