@@ -21,6 +21,7 @@ class dbBTerm;
 
 namespace sta {
 class dbSta;
+class dbNetwork;
 }  // namespace sta
 
 namespace stt {
