@@ -37,8 +37,6 @@
 
 namespace grt {
 
-using utl::GRT;
-
 CUGR::CUGR(odb::dbDatabase* db,
            utl::Logger* log,
            utl::CallBackHandler* callback_handler,
