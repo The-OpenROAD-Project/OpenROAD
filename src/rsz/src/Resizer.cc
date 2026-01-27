@@ -495,8 +495,10 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
   uint64_t total_width = 0;
   for (auto inst : bin) {
     auto master = inst->getMaster();
-    sites[master->getSite()] += master->getWidth();
-    total_width += master->getWidth();
+    if (master) {
+      sites[master->getSite()] += master->getWidth();
+      total_width += master->getWidth();
+    }
   }
 
   // Add empty base_sites
@@ -523,9 +525,15 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
       Instance* sta_inst = db_network_->dbToSta(inst);
       LibertyCell* cell = network_->libertyCell(sta_inst);
       dbMaster* master = db_network_->staToDb(cell);
+      if (master == nullptr) {
+        continue;
+      }
       LibertyCellSeq swappable_cells = getSwappableCells(cell);
       for (LibertyCell* target_cell : swappable_cells) {
         dbMaster* target_master = db_network_->staToDb(target_cell);
+        if (target_master == nullptr) {
+          continue;
+        }
         // Pick a cell that has the matching site, the same VT type
         // and equal or less drive resistance.  swappable_cells are
         // sorted in decreasing order of drive resistance.
@@ -852,6 +860,9 @@ void Resizer::findBuffers()
   for (LibertyCell* buffer : buffer_list) {
     const char* footprint = buffer->footprint();
     odb::dbMaster* master = db_network_->staToDb(buffer);
+    if (master == nullptr) {
+      continue;
+    }
     auto vt_type = cellVTType(master);
     bool footprint_matches
         = best_footprint.empty() || (footprint && best_footprint == footprint);
@@ -1639,7 +1650,10 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
       base_cell->name(),
       (match_cell_footprint ? " with matching cell_footprint:" : ":"));
   odb::dbMaster* master = db_network_->staToDb(base_cell);
-  double base_area = block_->dbuAreaToMicrons(master->getArea());
+  double base_area = 0.0;
+  if (master) {
+    base_area = block_->dbuAreaToMicrons(master->getArea());
+  }
   std::optional<float> base_leakage = cellLeakage(base_cell);
   if (base_leakage) {
     logger_->report(
@@ -1660,6 +1674,9 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      if (equiv_master == nullptr) {
+        continue;
+      }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
       if (equiv_cell_leakage) {
@@ -1696,6 +1713,9 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      if (equiv_master == nullptr) {
+        continue;
+      }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                       cell_name,
@@ -1774,6 +1794,9 @@ void Resizer::reportBuffers(bool filtered)
     float c_in = input->capacitance();
     std::optional<float> cell_leak = cellLeakage(buffer);
     odb::dbMaster* master = db_network_->staToDb(buffer);
+    if (master == nullptr) {
+      continue;
+    }
 
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                     buffer->name(),
@@ -1815,6 +1838,9 @@ void Resizer::reportBuffers(bool filtered)
       float c_in = input->capacitance();
       std::optional<float> cell_leak = cellLeakage(buffer);
       odb::dbMaster* master = db_network_->staToDb(buffer);
+      if (master == nullptr) {
+        continue;
+      }
 
       logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                       buffer->name(),
@@ -1858,11 +1884,14 @@ void Resizer::getBufferList(LibertyCellSeq& buffer_list)
       if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         odb::dbMaster* master = db_network_->staToDb(buffer);
-	if (!master) {
-	  logger_->warn(RSZ, 170, "Buffer cell {} is missing LEF data and will not be used",
-			buffer->name());
-	  continue;
-	}
+        if (!master) {
+          logger_->warn(
+              RSZ,
+              170,
+              "Buffer cell {} is missing LEF data and will not be used",
+              buffer->name());
+          continue;
+        }
 
         // Track site distribution
         lib_data_->cells_by_site[master->getSite()]++;
@@ -2041,13 +2070,13 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
   }
 
   LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
-  if (equiv_cells == nullptr) {
+  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
+  if (equiv_cells == nullptr || source_cell_master == nullptr) {
     vt_equiv_cells_cache_[source_cell] = LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
 
   LibertyCellSeq vt_equiv_cells;
-  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   int64_t source_cell_area = source_cell_master->getArea();
 
   // VT equiv cell should have the same area, footprint, site and function class
@@ -2109,7 +2138,8 @@ LibertyCellSeq Resizer::getVTEquivCells(LibertyCell* source_cell)
       LibertyCell* next_cell = *std::next(it);
       dbMaster* curr_master = db_network_->staToDb(curr_cell);
       dbMaster* next_master = db_network_->staToDb(next_cell);
-      if (cellVTType(curr_master) == cellVTType(next_master)) {
+      if (curr_master && next_master
+          && (cellVTType(curr_master) == cellVTType(next_master))) {
         const std::string curr_name = curr_cell->name();
         const std::string next_name = next_cell->name();
         size_t curr_common_len = getCommonLength(curr_name, source_name);
@@ -2498,6 +2528,9 @@ bool Resizer::replaceCell(Instance* inst,
   if (replacement_master) {
     dbInst* dinst = db_network_->staToDb(inst);
     dbMaster* master = dinst->getMaster();
+    if (master == nullptr) {
+      return false;
+    }
     designAreaIncr(-area(master));
     Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
     sta_->replaceCell(inst, replacement_cell1);
@@ -5091,6 +5124,9 @@ void Resizer::setLocation(dbInst* db_inst, const Point& pt)
   // Stay inside the lines.
   if (core_exists_) {
     dbMaster* master = db_inst->getMaster();
+    if (master == nullptr) {
+      return;
+    }
     int width = master->getWidth();
     if (x < core_.xMin()) {
       x = core_.xMin();
