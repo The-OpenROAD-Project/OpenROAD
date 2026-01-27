@@ -2556,14 +2556,15 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 {
   initBlock();
 
+  est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
+                                          ? est::ParasiticsSrc::global_routing
+                                          : est::ParasiticsSrc::placement;
+  estimate_parasitics_->setParasiticsSrc(parasitics_src);
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
   }
   ensureLevelDrvrVertices();
-  est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
-                                          ? est::ParasiticsSrc::global_routing
-                                          : est::ParasiticsSrc::placement;
   estimate_parasitics_->estimateParasitics(parasitics_src);
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
