@@ -1,6 +1,7 @@
 #pragma once
 
 #include <csignal>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -152,9 +153,9 @@ class CUGR
   void printStatistics() const;
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void getViaStackRange(int net_id,
-                        int node_alias,
-                        int16_t& botL,
-                        int16_t& topL);
+                        int node_id,
+                        int16_t& bot_pin_l,
+                        int16_t& top_pin_l);
   void convertGRTreeToStTree(const GRNet* net, CugrStTree& st_tree);
   void get3DRoute(odb::dbNet* db_net, GRoute& route);
 

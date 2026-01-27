@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdint>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -27,6 +28,7 @@
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "robin_hood.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
@@ -76,7 +78,7 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-NetRouteMap CUGR::getPlanarRoutes() 
+NetRouteMap CUGR::getPlanarRoutes()
 {
   NetRouteMap routes;
   sttrees_.clear();
@@ -102,7 +104,7 @@ void CUGR::get3DRoute(odb::dbNet* db_net, GRoute& route)
     return;
   }
 
-  std::unordered_set<GSegment, GSegmentHash> net_segs;
+  robin_hood::unordered_set<GSegment, GSegmentHash> net_segs;
 
   const auto& treeedges = sttrees_[netID].edges;
   const int num_edges = sttrees_[netID].num_edges();
@@ -237,25 +239,21 @@ void CUGR::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
   exists = true;
 }
 
-void CUGR::getViaStackRange(int netID,
-                            int nodeID,
+void CUGR::getViaStackRange(int net_id,
+                            int node_id,
                             int16_t& bot_pin_l,
                             int16_t& top_pin_l)
 {
-  const CugrStTree& stree = sttrees_[netID];
-  int pinIdx = stree.node_to_pin_idx.at(nodeID);
-  GRNet* net = gr_nets_[netID].get();
+  const CugrStTree& stree = sttrees_[net_id];
+  int pinIdx = stree.node_to_pin_idx.at(node_id);
+  GRNet* net = gr_nets_[net_id].get();
   const auto& aps = net->getPinAccessPoints()[pinIdx];
   bot_pin_l = std::numeric_limits<int16_t>::max();
   top_pin_l = std::numeric_limits<int16_t>::min();
 
   for (const auto& ap : aps) {
-    if (ap.getLayerIdx() < bot_pin_l) {
-      bot_pin_l = ap.getLayerIdx();
-    }
-    if (ap.getLayerIdx() > top_pin_l) {
-      top_pin_l = ap.getLayerIdx();
-    }
+    bot_pin_l = std::min<int16_t>(bot_pin_l, ap.getLayerIdx());
+    top_pin_l = std::max<int16_t>(top_pin_l, ap.getLayerIdx());
   }
 }
 
@@ -278,7 +276,7 @@ void CUGR::convertGRTreeToStTree(const GRNet* net, CugrStTree& st_tree)
     st_tree.node_to_pin_idx[i] = i;
   }
 
-  std::shared_ptr<GRTreeNode> root = net->getRoutingTree();
+  const std::shared_ptr<GRTreeNode>& root = net->getRoutingTree();
   if (!root) {
     return;
   }
