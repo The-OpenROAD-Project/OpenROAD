@@ -86,6 +86,12 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
+void ClusteringEngine::setHalos(
+    std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+{
+  macro_to_halo_ = macro_to_halo;
+}
+
 // Check if macro placement is both needed and feasible.
 // Also report some design data relevant for the user and
 // initialize the tree with data from the design.
@@ -93,6 +99,8 @@ void ClusteringEngine::init()
 {
   setDieArea();
   setFloorplanShape();
+
+  createHardMacros();
 
   design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
@@ -2427,8 +2435,7 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
 }
 
 // Creates the hard macros objects and inserts them in the tree map
-void ClusteringEngine::createHardMacros(
-    std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
 
@@ -2452,8 +2459,9 @@ void ClusteringEngine::createHardMacros(
       tree_->has_fixed_macros = true;
     }
 
-    HardMacro::Halo halo = macro_to_halo.contains(inst) ? macro_to_halo.at(inst)
-                                                        : tree_->default_halo;
+    HardMacro::Halo halo = macro_to_halo_.contains(inst)
+                               ? macro_to_halo_.at(inst)
+                               : tree_->default_halo;
 
     auto macro = std::make_unique<HardMacro>(inst, halo);
 

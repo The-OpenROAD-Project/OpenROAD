@@ -143,6 +143,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
+  void setHalos(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
   void setDataFlowDriven() { data_flow_driven_ = true; };
 
   // Methods to update the tree as the hierarchical
@@ -155,7 +156,6 @@ class ClusteringEngine
 
   std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
                                                   const odb::Rect& core) const;
-  void createHardMacros(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
   void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                std::vector<HardMacro>& sa_macros,
                                UniqueClusterVector& macro_clusters,
@@ -182,6 +182,7 @@ class ClusteringEngine
   void addIgnorableMacro(odb::dbInst* inst);
   void setDieArea();
   void setFloorplanShape();
+  void createHardMacros();
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
@@ -325,6 +326,7 @@ class ClusteringEngine
   IOBundleSpans io_bundle_spans_;
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
+  std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
 };
 
 }  // namespace mpl
