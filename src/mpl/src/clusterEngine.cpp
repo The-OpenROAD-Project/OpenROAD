@@ -14,12 +14,15 @@
 #include <vector>
 
 #include "MplObserver.h"
+#include "boost/polygon/polygon.hpp"
+#include "boost/polygon/polygon_90_set_data.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -93,6 +96,11 @@ void ClusteringEngine::init()
   setDieArea();
   setFloorplanShape();
 
+  if (!movableCellsFitInMacroPlacementArea()) {
+    logger_->error(
+        MPL, 65, "The movable cells do not fit in the macro placement area.");
+  }
+
   design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
@@ -118,6 +126,55 @@ void ClusteringEngine::init()
   tree_->io_pads = getIOPads();
 
   reportDesignData();
+}
+
+bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
+{
+  const odb::Rect& macro_placement_area = tree_->floorplan_shape;
+
+  int64_t occupied_area = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    const odb::Rect bbox = inst->getBBox()->getBox();
+
+    if (inst->isFixed()) {
+      // Note that we can handle fixed cells outside the macro placement area.
+      // Also, it may exist macros such as physical markers that can be
+      // partially inside the core so we need to compute the intersection.
+      odb::Rect intersection;
+      bbox.intersection(macro_placement_area, intersection);
+      occupied_area += intersection.area();
+      continue;
+    }
+
+    if (inst->isBlock()) {
+      const int width = bbox.dx() + 2 * tree_->halo_width;
+      const int height = bbox.dy() + 2 * tree_->halo_height;
+      occupied_area += width * static_cast<int64_t>(height);
+    } else {
+      occupied_area += bbox.area();
+    }
+  }
+
+  namespace gtl = boost::polygon;
+  using gtl::operators::operator+=;
+  using PolygonSet = gtl::polygon_90_set_data<int>;
+
+  PolygonSet polygons;
+  for (odb::dbBlockage* blockage : block_->getBlockages()) {
+    const odb::Rect bbox = blockage->getBBox()->getBox();
+    odb::Rect intersection;
+    bbox.intersection(macro_placement_area, intersection);
+    polygons += intersection;
+  }
+
+  std::vector<odb::Rect> blockages_without_overlap;
+  polygons.get_rectangles(blockages_without_overlap);
+
+  for (const odb::Rect& blockage : blockages_without_overlap) {
+    occupied_area += blockage.area();
+  }
+
+  return occupied_area <= macro_placement_area.area();
 }
 
 // Note: The die area's dimensions will be used inside
