@@ -1,3 +1,7 @@
+OpenROAD v2.0-28091-gcf83490576 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [INFO RAM-0003] Generating RAM8x8
@@ -56,7 +60,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] li1 guide region query size = 477.
 [INFO DRT-0036] mcon guide region query size = 0.
-[INFO DRT-0036] met1 guide region query size = 355.
+[INFO DRT-0036] met1 guide region query size = 354.
 [INFO DRT-0036] via guide region query size = 0.
 [INFO DRT-0036] met2 guide region query size = 107.
 [INFO DRT-0036] via2 guide region query size = 0.
@@ -68,3 +72,5 @@ Using 2 tracks default min distance between IO pins.
 [INFO DRT-0179] Init gr pin query.
 No differences found.
 No differences found.
+[?2004hopenroad> exit
+[?2004l
