@@ -79,7 +79,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       grid_(new Grid),
-      is_incremental_(false),
+      infinite_capacity_(false),
       adjustment_(0.0),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
@@ -98,7 +98,8 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       heatmap_(nullptr),
       heatmap_rudy_(nullptr),
       congestion_file_name_(nullptr),
-      grouter_cbk_(nullptr)
+      grouter_cbk_(nullptr),
+      is_incremental_(false)
 {
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
