@@ -1416,7 +1416,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
   if (!best_sa) {
     logger_->error(MPL,
                    40,
-                   "Cluster placement failed!\nId: {}\nName: {}",
+                   "Annealing engine failed to find a valid solution.\nCluster "
+                   "Id: {}\n Cluster Name: {}",
                    parent->getId(),
                    parent->getName());
   }
