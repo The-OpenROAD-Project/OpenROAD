@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <string>
 #include <utility>
@@ -133,7 +134,8 @@ int64_t ClusteringEngine::computeMacroWithHaloArea(
 {
   int64_t macro_with_halo_area = 0;
   for (odb::dbInst* unfixed_macro : unfixed_macros) {
-    macro_with_halo_area += tree_->maps.inst_to_hard[unfixed_macro]->getArea();
+    macro_with_halo_area
+        += tree_->maps.inst_to_hard.at(unfixed_macro)->getArea();
   }
   return macro_with_halo_area;
 }
@@ -2404,6 +2406,67 @@ void ClusteringEngine::replaceByStdCellCluster(
   setClusterMetrics(mixed_leaf);
 
   virtual_conn_clusters.push_back(mixed_leaf->getId());
+}
+
+std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
+    const HardMacro* hard_macro,
+    const odb::Rect& core) const
+{
+  std::string table;
+
+  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
+  table += fmt::format("\n-----------------------------------------");
+  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
+                       block_->dbuToMicrons(hard_macro->getWidth()),
+                       block_->dbuToMicrons(core.dx()));
+  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
+                       block_->dbuToMicrons(hard_macro->getHeight()),
+                       block_->dbuToMicrons(core.dy()));
+
+  return table;
+}
+
+// Creates the hard macros objects and inserts them in the tree map
+void ClusteringEngine::createHardMacros(
+    std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+{
+  const odb::Rect& core = block_->getCoreArea();
+
+  auto macro_insts
+      = block_->getInsts() | std::ranges::views::filter(&odb::dbInst::isBlock);
+
+  for (odb::dbInst* inst : macro_insts) {
+    if (inst->isFixed()) {
+      logger_->info(MPL, 62, "Found fixed macro {}.", inst->getName());
+
+      if (!inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
+        addIgnorableMacro(inst);
+        logger_->info(MPL,
+                      63,
+                      "{} is outside the macro placement area and will be "
+                      "ignored.",
+                      inst->getName());
+        continue;
+      }
+
+      tree_->has_fixed_macros = true;
+    }
+
+    HardMacro::Halo halo = macro_to_halo.contains(inst) ? macro_to_halo.at(inst)
+                                                        : tree_->default_halo;
+
+    auto macro = std::make_unique<HardMacro>(inst, halo);
+
+    if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
+      logger_->error(MPL,
+                     6,
+                     "Found macro that does not fit in the core.\nName: {}\n{}",
+                     inst->getName(),
+                     generateMacroAndCoreDimensionsTable(macro.get(), core));
+    }
+
+    tree_->maps.inst_to_hard[inst] = std::move(macro);
+  }
 }
 
 // When placing the HardMacros of a macro cluster, we create temporary

@@ -126,9 +126,6 @@ class HierRTLMP
   using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
   using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
 
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                                  const odb::Rect& core) const;
-  void createHardMacros(odb::dbModule* module);
   void runMultilevelAutoclustering();
   void runHierarchicalMacroPlacement();
 

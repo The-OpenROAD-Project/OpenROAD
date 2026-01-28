@@ -153,6 +153,9 @@ class ClusteringEngine
                                   int cluster_id,
                                   bool include_macro);
 
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
+  void createHardMacros(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
   void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                std::vector<HardMacro>& sa_macros,
                                UniqueClusterVector& macro_clusters,
@@ -162,7 +165,6 @@ class ClusteringEngine
 
   int getNumberOfIOs(Cluster* target) const;
 
-  void addIgnorableMacro(odb::dbInst* inst);
   bool isIgnoredInst(odb::dbInst* inst);
 
  private:
@@ -177,6 +179,7 @@ class ClusteringEngine
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void addIgnorableMacro(odb::dbInst* inst);
   void setDieArea();
   void setFloorplanShape();
   int64_t computeMacroWithHaloArea(
