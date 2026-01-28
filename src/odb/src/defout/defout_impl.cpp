@@ -19,6 +19,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -1287,7 +1288,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
   auto sorted_nets = sortedSet(nets);
 
   // Build map of mterm names and associated nets
-  std::map<std::string, std::set<dbNet*>> snet_term_map;
+  std::unordered_map<std::string, std::set<dbNet*>> snet_term_map;
   for (auto* inst : block->getInsts()) {
     for (auto* iterm : inst->getITerms()) {
       snet_term_map[iterm->getMTerm()->getName()].insert(iterm->getNet());
@@ -1349,7 +1350,9 @@ void DefOut::Impl::writeNets(dbBlock* block)
   *_out << "END NETS\n";
 }
 
-void DefOut::Impl::writeSNet(dbNet* net, const std::map<std::string, std::set<dbNet*>>& snet_term_map)
+void DefOut::Impl::writeSNet(
+    dbNet* net,
+    const std::unordered_map<std::string, std::set<dbNet*>>& snet_term_map)
 {
   std::string nname = net->getName();
   *_out << "    - " << nname;
@@ -1375,7 +1378,8 @@ void DefOut::Impl::writeSNet(dbNet* net, const std::map<std::string, std::set<db
     char* mtname = mterm->getName(inst, &ttname[0]);
     bool iswildcard = false;
     const auto snet_term_map_itr = snet_term_map.find(mterm->getName());
-    if (snet_term_map_itr != snet_term_map.end() && snet_term_map_itr->second.size() == 1) {
+    if (snet_term_map_itr != snet_term_map.end()
+        && snet_term_map_itr->second.size() == 1) {
       // mterm is unique to this net, so we can use wildcard
       iswildcard = true;
     }
