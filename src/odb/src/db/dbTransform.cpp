@@ -236,11 +236,11 @@ void dbTransform::apply(Rect& r) const
 
 void dbTransform::apply(Cuboid& c) const
 {
-  Point3D p1 = c.lll();
-  Point3D p2 = c.uur();
-  apply(p1);
-  apply(p2);
-  c.init(p1.x(), p1.y(), p1.z(), p2.x(), p2.y(), p2.z());
+  Point3D lll = c.lll();
+  Point3D uur = c.uur();
+  apply(lll);
+  apply(uur);
+  c.init(lll.x(), lll.y(), lll.z(), uur.x(), uur.y(), uur.z());
 }
 
 void dbTransform::apply(Polygon& p) const

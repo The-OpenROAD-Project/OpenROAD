@@ -245,7 +245,7 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
     // However, since we don't have base path info readily available without API
     // change, we use absolute() as a best-effort de-duplication key.
     std::string full_path = std::filesystem::absolute(include).string();
-    if (read_files_.find(full_path) != read_files_.end()) {
+    if (read_files_.contains(full_path)) {
       continue;
     }
     read_files_.insert(full_path);
@@ -261,21 +261,17 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
 static dbChip::ChipType getChipType(const std::string& type,
                                     utl::Logger* logger)
 {
-  if (type == "die") {
-    return dbChip::ChipType::DIE;
+  static const std::map<std::string, dbChip::ChipType> type_map
+      = {{"die", dbChip::ChipType::DIE},
+         {"rdl", dbChip::ChipType::RDL},
+         {"ip", dbChip::ChipType::IP},
+         {"substrate", dbChip::ChipType::SUBSTRATE},
+         {"hier", dbChip::ChipType::HIER}};
+
+  if (type_map.contains(type)) {
+    return type_map.at(type);
   }
-  if (type == "rdl") {
-    return dbChip::ChipType::RDL;
-  }
-  if (type == "ip") {
-    return dbChip::ChipType::IP;
-  }
-  if (type == "substrate") {
-    return dbChip::ChipType::SUBSTRATE;
-  }
-  if (type == "hier") {
-    return dbChip::ChipType::HIER;
-  }
+
   logger->error(
       utl::ODB, 527, "3DBV Parser Error: Invalid chip type: {}", type);
 }
@@ -326,8 +322,9 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   }
   // Check if chiplet already exists
   auto chip = db_->findChip(chiplet.name.c_str());
+  auto chip_type = getChipType(chiplet.type, logger_);
   if (chip != nullptr) {
-    if (chip->getChipType() != getChipType(chiplet.type, logger_)
+    if (chip->getChipType() != chip_type
         || chip->getChipType() != dbChip::ChipType::HIER) {
       logger_->error(utl::ODB,
                      530,
@@ -336,8 +333,10 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     }
     // chiplet already exists, update it
   } else {
-    chip = dbChip::create(
-        db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
+    chip = dbChip::create(db_, tech, chiplet.name, chip_type);
+  }
+  if (tech != nullptr) {
+    odb::dbStringProperty::create(chip, "3dblox_tech", tech->getName().c_str());
   }
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
@@ -382,7 +381,8 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   chip->setOffset(Point(chiplet.offset.x * db_->getDbuPerMicron(),
                         chiplet.offset.y * db_->getDbuPerMicron()));
-  if (chip->getBlock() == nullptr) {
+  if (chip->getChipType() != dbChip::ChipType::HIER
+      && chip->getBlock() == nullptr) {
     // blackbox stage, create block
     auto block = odb::dbBlock::create(chip, chiplet.name.c_str());
     const int x_min = chip->getScribeLineWest() + chip->getSealRingWest();
@@ -400,18 +400,16 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 static dbChipRegion::Side getChipRegionSide(const std::string& side,
                                             utl::Logger* logger)
 {
-  if (side == "front") {
-    return dbChipRegion::Side::FRONT;
+  static const std::map<std::string, dbChipRegion::Side> side_map
+      = {{"front", dbChipRegion::Side::FRONT},
+         {"back", dbChipRegion::Side::BACK},
+         {"internal", dbChipRegion::Side::INTERNAL},
+         {"internal_ext", dbChipRegion::Side::INTERNAL_EXT}};
+
+  if (side_map.contains(side)) {
+    return side_map.at(side);
   }
-  if (side == "back") {
-    return dbChipRegion::Side::BACK;
-  }
-  if (side == "internal") {
-    return dbChipRegion::Side::INTERNAL;
-  }
-  if (side == "internal_ext") {
-    return dbChipRegion::Side::INTERNAL_EXT;
-  }
+
   logger->error(
       utl::ODB, 528, "3DBV Parser Error: Invalid chip region side: {}", side);
 }
@@ -423,18 +421,17 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
     if (tech) {
       layer = tech->findLayer(region.layer.c_str());
     }
-    if (!layer) {
-      logger_->warn(utl::ODB,
-                    563,
-                    "3DBV Parser: Layer {} not found in tech.",
-                    region.layer);
-    }
-  } else {
-    logger_->warn(
-        utl::ODB, 206, "Region {} has no layer specified.", region.name);
   }
-  dbChipRegion* chip_region = dbChipRegion::create(
-      chip, region.name, getChipRegionSide(region.side, logger_), layer);
+  dbTechLayer* layer_to_pass = (chip->getBlock() != nullptr) ? layer : nullptr;
+  dbChipRegion* chip_region
+      = dbChipRegion::create(chip,
+                             region.name,
+                             getChipRegionSide(region.side, logger_),
+                             layer_to_pass);
+  if (layer != nullptr && layer_to_pass == nullptr) {
+    odb::dbStringProperty::create(
+        chip_region, "3dblox_layer", layer->getName().c_str());
+  }
   Rect box;
   box.mergeInit();
   for (const auto& coord : region.coords) {
@@ -482,14 +479,6 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
   }
   auto bump = dbChipBump::create(chip_region, inst);
 
-  if (entry.port_name != "-" && !entry.port_name.empty()) {
-    odb::dbStringProperty::create(
-        bump, "logical_port", entry.port_name.c_str());
-  }
-  if (entry.net_name != "-" && !entry.net_name.empty()) {
-    odb::dbStringProperty::create(bump, "logical_net", entry.net_name.c_str());
-  }
-
   Rect bbox;
   inst->getMaster()->getPlacementBoundary(bbox);
   int x = (entry.x * db_->getDbuPerMicron()) - bbox.xCenter()
@@ -505,11 +494,13 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     net = block->findNet(entry.net_name.c_str());
     if (net == nullptr) {
       net = dbNet::create(block, entry.net_name.c_str());
-      logger_->info(utl::ODB,
-                    534,
-                    "Creating missing net {} for bump {}",
-                    entry.net_name,
-                    entry.bump_inst_name);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "3dblox",
+                 1,
+                 "Creating missing net {} for bump {}",
+                 entry.net_name,
+                 entry.bump_inst_name);
     }
     bump->setNet(net);
     if (!inst->getITerms().empty()) {
@@ -521,11 +512,13 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     if (bterm == nullptr) {
       if (net != nullptr) {
         bterm = dbBTerm::create(net, entry.port_name.c_str());
-        logger_->info(utl::ODB,
-                      533,
-                      "Creating missing port {} for bump {}",
-                      entry.port_name,
-                      entry.bump_inst_name);
+        debugPrint(logger_,
+                   utl::ODB,
+                   "3dblox",
+                   1,
+                   "Creating missing port {} for bump {}",
+                   entry.port_name,
+                   entry.bump_inst_name);
       } else {
         logger_->warn(utl::ODB,
                       545,
@@ -547,15 +540,16 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
 dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
   dbChip* chip = db_->findChip(design.name.c_str());
-  if (chip == nullptr) {
+  if (!chip) {
     chip = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
   }
-  if (!design.external.verilog_file.empty()) {
-    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
-      odb::dbStringProperty::create(
-          chip, "verilog_file", design.external.verilog_file.c_str());
-    }
+
+  if (!design.external.verilog_file.empty()
+      && !odb::dbProperty::find(chip, "verilog_file")) {
+    odb::dbStringProperty::create(
+        chip, "verilog_file", design.external.verilog_file.c_str());
   }
+
   db_->setTopChip(chip);
   return chip;
 }
@@ -585,9 +579,23 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
                    chip_inst.name);
   }
   inst->setOrient(orient.value());
-  inst->setLoc(Point3D(chip_inst.loc.x * db_->getDbuPerMicron(),
-                       chip_inst.loc.y * db_->getDbuPerMicron(),
-                       chip_inst.z * db_->getDbuPerMicron()));
+  dbChip* master = inst->getMasterChip();
+  Cuboid master_cuboid = master->getCuboid();
+  dbTransform t(inst->getOrient());
+  t.apply(master_cuboid);
+
+  // XY should be origin-based for hierarchical designs.
+  // Z should be "low-point" based (starts at loc.z) to avoid overlap in
+  // stacking.
+  Point3D adjustment(master_cuboid.lll().x(),
+                     master_cuboid.lll().y(),
+                     master_cuboid.lll().z());
+  Point3D adjusted_loc(
+      chip_inst.loc.x * db_->getDbuPerMicron() + adjustment.x(),
+      chip_inst.loc.y * db_->getDbuPerMicron() + adjustment.y(),
+      chip_inst.z * db_->getDbuPerMicron());
+  inst->setLoc(adjusted_loc);
+
   if (!chip_inst.external.verilog_file.empty()) {
     if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
       std::string verilog_file = chip_inst.external.verilog_file;
@@ -748,7 +756,8 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
         top_shape_ptr = &(*top_shapes.begin());
       }
 
-      bpininfo.emplace(master, BPinInfo{max_layer, *top_shape_ptr});
+      bpininfo.emplace(master,
+                       BPinInfo{.layer = max_layer, .rect = *top_shape_ptr});
     }
   }
 
