@@ -142,8 +142,15 @@ def regression_test(
     data = _pop(kwargs, "data", [])
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
+    tags = _pop(kwargs, "tags", [])
     for test_file in test_files:
         ext = test_file.split(".")[-1]
+
+        # Python tests that need openroad -python are disabled because
+        # the Bazel build doesn't include Python embedding support.
+        # Tests with test_type="standalone_python" can still run.
+        is_openroad_python_test = ext == "py" and test_type != "standalone_python"
+        test_tags = tags + (["manual"] if is_openroad_python_test else [])
         regression_rule_test(
             name = name + "-" + ext + "_test",
             test_file = test_file,
@@ -161,5 +168,6 @@ def regression_test(
             #
             # https://bazel.build/reference/be/common-definitions#test.size
             size = size,
+            tags = test_tags,
             **kwargs
         )
