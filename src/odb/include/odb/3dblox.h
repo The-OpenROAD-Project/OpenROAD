@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -65,5 +66,6 @@ class ThreeDBlox
   sta::Sta* sta_ = nullptr;
   std::unordered_set<odb::dbTech*> written_techs_;
   std::unordered_set<odb::dbLib*> written_libs_;
+  std::set<std::string> read_files_;
 };
 }  // namespace odb

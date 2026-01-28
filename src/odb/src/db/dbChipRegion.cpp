@@ -14,10 +14,13 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <algorithm>
+
 #include "dbChip.h"
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
 #include "dbTech.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -141,16 +144,61 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 Cuboid dbChipRegion::getCuboid() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
-  Rect box = obj->box_;
-  int z = 0;
-  if (getSide() == dbChipRegion::Side::FRONT) {
-    z = getChip()->getThickness();
-  } else if (getSide() == dbChipRegion::Side::BACK) {
-    z = 0;
+  dbTechLayer* layer = getLayer();
+  const int chip_thick = getChip()->getThickness();
+
+  int z_bot = 0;
+  int z_top = 0;
+
+  if (layer) {
+    dbTech* tech = layer->getTech();
+    int total_tech_thick = 0;
+    int layer_z = 0;
+    uint32_t target_thick = 0;
+
+    if (tech) {
+      for (dbTechLayer* l : tech->getLayers()) {
+        uint32_t thick = 0;
+        if (!l->getThickness(thick)) {
+          continue;
+        }
+
+        total_tech_thick += thick;
+        if (l == layer) {
+          target_thick = thick;
+          layer_z = total_tech_thick;
+        }
+      }
+    }
+
+    const auto side = getSide();
+    if (side == Side::BACK) {
+      z_top = layer_z;
+      z_bot = layer_z - target_thick;
+    } else if (side == Side::FRONT || side == Side::INTERNAL
+               || side == Side::INTERNAL_EXT) {
+      z_top = std::max(0, chip_thick - (total_tech_thick - layer_z));
+      z_bot = z_top - target_thick;
+    } else {
+      z_bot = z_top = chip_thick / 2;
+    }
   } else {
-    z = getChip()->getThickness() / 2;
+    const auto side = getSide();
+    if (side == Side::FRONT) {
+      z_bot = z_top = chip_thick;
+    } else if (side == Side::BACK) {
+      z_bot = z_top = 0;
+    } else {
+      z_bot = z_top = chip_thick / 2;
+    }
   }
-  return Cuboid(box.xMin(), box.yMin(), z, box.xMax(), box.yMax(), z);
+
+  return Cuboid(obj->box_.xMin(),
+                obj->box_.yMin(),
+                z_bot,
+                obj->box_.xMax(),
+                obj->box_.yMax(),
+                z_top);
 }
 
 dbChip* dbChipRegion::getChip() const
@@ -169,13 +217,23 @@ dbTechLayer* dbChipRegion::getLayer() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
   dbChip* chip = (dbChip*) obj->getOwner();
-  if (chip->getBlock() == nullptr || chip->getBlock()->getTech() == nullptr
-      || obj->layer_ == 0) {
+
+  dbTech* tech
+      = chip->getBlock() ? chip->getBlock()->getTech() : chip->getTech();
+  if (!tech) {
     return nullptr;
   }
 
-  _dbTech* tech = (_dbTech*) chip->getBlock()->getTech();
-  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
+  if (obj->layer_ != 0) {
+    return (dbTechLayer*) ((_dbTech*) tech)->layer_tbl_->getPtr(obj->layer_);
+  }
+
+  if (auto* prop
+      = dbStringProperty::find((dbChipRegion*) this, "3dblox_layer")) {
+    return tech->findLayer(prop->getValue().c_str());
+  }
+
+  return nullptr;
 }
 
 dbChipRegion* dbChipRegion::create(dbChip* chip,
