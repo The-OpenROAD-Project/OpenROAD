@@ -502,10 +502,8 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
   uint64_t total_width = 0;
   for (auto inst : bin) {
     auto master = inst->getMaster();
-    if (master) {
-      sites[master->getSite()] += master->getWidth();
-      total_width += master->getWidth();
-    }
+    sites[master->getSite()] += master->getWidth();
+    total_width += master->getWidth();
   }
 
   // Add empty base_sites
@@ -2537,9 +2535,6 @@ bool Resizer::replaceCell(sta::Instance* inst,
   if (replacement_master) {
     dbInst* dinst = db_network_->staToDb(inst);
     dbMaster* master = dinst->getMaster();
-    if (master == nullptr) {
-      return false;
-    }
     designAreaIncr(-area(master));
     sta::Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
     sta_->replaceCell(inst, replacement_cell1);
@@ -5141,9 +5136,6 @@ void Resizer::setLocation(dbInst* db_inst, const odb::Point& pt)
   // Stay inside the lines.
   if (core_exists_) {
     dbMaster* master = db_inst->getMaster();
-    if (master == nullptr) {
-      return;
-    }
     int width = master->getWidth();
     if (x < core_.xMin()) {
       x = core_.xMin();
