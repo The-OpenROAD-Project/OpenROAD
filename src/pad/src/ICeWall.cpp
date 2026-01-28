@@ -1419,7 +1419,7 @@ std::vector<odb::dbInst*> ICeWall::getPadInstsInRow(odb::dbRow* row) const
   const odb::Rect row_bbox = row->getBBox();
 
   for (auto* inst : block->getInsts()) {
-    if (!inst->isPlaced()) {
+    if (!inst->isFixed()) {
       continue;
     }
 

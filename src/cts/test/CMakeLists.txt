@@ -40,13 +40,11 @@ or_integration_tests(
     simple_test_clustered
     simple_test_clustered_max_cap
     simple_test_hier
+    sink_clustering_collision
     skip_nets
     twice
 )
 
-# Skipped
-#cts_man_tcl_check
-#cts_readme_msgs_check
 add_executable(cts_unittest cts_unittest.cc)
 target_include_directories(cts_unittest
   PUBLIC

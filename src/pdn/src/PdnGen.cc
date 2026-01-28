@@ -33,7 +33,7 @@ namespace pdn {
 
 using utl::Logger;
 
-PdnGen::PdnGen(dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
+PdnGen::PdnGen(odb::dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
 {
   sroute_ = std::make_unique<SRoute>(this, db, logger_);
 }

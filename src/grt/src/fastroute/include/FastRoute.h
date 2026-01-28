@@ -66,8 +66,6 @@ struct DebugSetting
   bool isOn() const { return renderer != nullptr; }
 };
 
-using stt::Tree;
-
 struct parent3D
 {
   int16_t layer;
@@ -434,7 +432,7 @@ class FastRouteCore
                           int edge_C1C2);
 
   // rsmt functions
-  void copyStTree(int ind, const Tree& rsmt);
+  void copyStTree(int ind, const stt::Tree& rsmt);
   void gen_brk_RSMT(bool congestionDriven,
                     bool reRoute,
                     bool genTree,
@@ -445,13 +443,13 @@ class FastRouteCore
                    const std::vector<int>& y,
                    int acc,
                    float coeffV,
-                   Tree& t);
+                   stt::Tree& t);
   void fluteCongest(int netID,
                     const std::vector<int>& x,
                     const std::vector<int>& y,
                     int acc,
                     float coeffV,
-                    Tree& t);
+                    stt::Tree& t);
   float coeffADJ(int netID);
   bool HTreeSuite(int netID);
   bool VTreeSuite(int netID);
@@ -599,8 +597,8 @@ class FastRouteCore
   void copyBR();
   void copyRS();
   void freeRR();
-  int edgeShift(Tree& t, int net);
-  int edgeShiftNew(Tree& t, int net);
+  int edgeShift(stt::Tree& t, int net);
+  int edgeShiftNew(stt::Tree& t, int net);
 
   void steinerTreeVisualization(const stt::Tree& stree, FrNet* net);
   void StTreeVisualization(const StTree& stree,

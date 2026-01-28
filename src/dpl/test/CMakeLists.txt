@@ -85,9 +85,6 @@ or_integration_tests(
     regions2-opt
 )
 
-# Skipped
-#dpl_man_tcl_check
-#dpl_readme_msgs_check
 add_executable(dpl_test dpl_test.cc)
 
 target_link_libraries(dpl_test

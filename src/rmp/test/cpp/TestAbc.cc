@@ -30,7 +30,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
-#include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
 #include "tst/fixture.h"
 #include "utl/Logger.h"

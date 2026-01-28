@@ -23,29 +23,21 @@
 #include "odb/geom.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
-#include "sta/Delay.hh"
 #include "sta/Hash.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
-
-namespace stt {
-class SteinerTreeBuilder;
-}  // namespace stt
 
 namespace utl {
 class CallBackHandler;
 }  // namespace utl
 
 namespace est {
-
-using stt::SteinerTreeBuilder;
-
-using sta::Parasitic;
-using sta::ParasiticNode;
 
 using SteinerPt = int;
 
@@ -86,7 +78,7 @@ class EstimateParasitics : public sta::dbStaState
                      utl::CallBackHandler* callback_handler,
                      odb::dbDatabase* db,
                      sta::dbSta* sta,
-                     SteinerTreeBuilder* stt_builder,
+                     stt::SteinerTreeBuilder* stt_builder,
                      grt::GlobalRouter* global_router);
   ~EstimateParasitics() override;
   void initSteinerRenderer(
@@ -223,8 +215,8 @@ class EstimateParasitics : public sta::dbStaState
                        const sta::DcalcAnalysisPt* dcalc_ap) const;
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
   double computeAverageCutResistance(sta::Corner* corner);
-  void parasiticNodeConnectPins(Parasitic* parasitic,
-                                ParasiticNode* node,
+  void parasiticNodeConnectPins(sta::Parasitic* parasitic,
+                                sta::ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id,
@@ -238,7 +230,7 @@ class EstimateParasitics : public sta::dbStaState
 
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
-  SteinerTreeBuilder* stt_builder_ = nullptr;
+  stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   grt::IncrementalGRoute* incr_groute_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;

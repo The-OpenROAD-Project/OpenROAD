@@ -21,7 +21,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
 
@@ -224,6 +223,7 @@ class GlobalRouter
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
+  bool haveDbGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);

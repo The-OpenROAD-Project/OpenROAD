@@ -134,3 +134,5 @@ dbOStream& operator<<(dbOStream& stream,
                       const NamedTable<T, page_size>& named_table);
 
 }  // namespace odb
+
+#include "dbTable.inc"  // IWYU pragma: export

@@ -21,8 +21,13 @@
 #include <algorithm>
 #include <any>
 #include <cmath>
+#include <iterator>
+#include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "gui/gui.h"
 #include "gui_utils.h"

@@ -191,9 +191,6 @@ or_integration_tests(
     cpp_tests
 )
 
-# Skipped
-#rsz_man_tcl_check
-#rsz_readme_msgs_check
 #repair_setup2
 
 add_subdirectory(cpp)

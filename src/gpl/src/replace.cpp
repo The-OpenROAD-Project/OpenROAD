@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
 #include "initialPlace.h"
@@ -256,7 +255,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options, const int threads)
   }
 
   if (!tb_) {
-    tb_ = std::make_shared<TimingBase>(nbc_, rs_, log_);
+    tb_ = std::make_shared<TimingBase>(nbc_, fr_, rs_, log_);
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
     tb_->setTimingNetWeightMax(options.timingNetWeightMax);
   }

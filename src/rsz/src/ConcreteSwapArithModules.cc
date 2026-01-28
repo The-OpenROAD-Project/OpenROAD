@@ -16,7 +16,6 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
-#include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"

@@ -64,6 +64,7 @@ struct PlaceOptions
   float keepResizeBelowOverflow = 1.0;
   bool routabilityUseRudy = true;
   bool disableRevertIfDiverge = false;
+  bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
