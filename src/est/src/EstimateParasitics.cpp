@@ -63,7 +63,7 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
                                        utl::CallBackHandler* callback_handler,
                                        odb::dbDatabase* db,
                                        sta::dbSta* sta,
-                                       SteinerTreeBuilder* stt_builder,
+                                       stt::SteinerTreeBuilder* stt_builder,
                                        grt::GlobalRouter* global_router)
     : logger_(logger),
       estimate_parasitics_cbk_(
@@ -389,6 +389,7 @@ void EstimateParasitics::estimateParasitics(
   switch (src) {
     case ParasiticsSrc::placement:
       estimateWireParasitics(spef_writer.get());
+      parasitics_src_ = ParasiticsSrc::placement;
       break;
     case ParasiticsSrc::global_routing:
       estimateGlobalRouteRC(spef_writer.get());

@@ -46,21 +46,10 @@
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
 #include "sta/UnorderedMap.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
-namespace grt {
-class GlobalRouter;
-}  // namespace grt
-
-namespace stt {
-class SteinerTreeBuilder;
-}
-
 namespace rsz {
-
-using stt::SteinerTreeBuilder;
-
-using grt::GlobalRouter;
 
 using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
 using InstanceTuple = std::tuple<sta::Instance*, sta::Instance*>;
@@ -193,8 +182,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   Resizer(utl::Logger* logger,
           odb::dbDatabase* db,
           sta::dbSta* sta,
-          SteinerTreeBuilder* stt_builder,
-          GlobalRouter* global_router,
+          stt::SteinerTreeBuilder* stt_builder,
+          grt::GlobalRouter* global_router,
           dpl::Opendp* opendp,
           est::EstimateParasitics* estimate_parasitics);
   ~Resizer() override;
@@ -828,8 +817,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   utl::Logger* logger_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
-  SteinerTreeBuilder* stt_builder_ = nullptr;
-  GlobalRouter* global_router_ = nullptr;
+  stt::SteinerTreeBuilder* stt_builder_ = nullptr;
+  grt::GlobalRouter* global_router_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;

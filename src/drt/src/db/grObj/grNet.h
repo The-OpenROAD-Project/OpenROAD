@@ -14,6 +14,7 @@
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frNode.h"
 #include "frBaseTypes.h"
 #include "odb/geom.h"
 

@@ -49,8 +49,16 @@ done >> compile_flags.txt
 # Qt include files check for this
 echo '-fPIC' >> compile_flags.txt
 
-# Main.cc attemps to access this one.
-echo '-DBUILD_TYPE="opt"' >> compile_flags.txt
+# Since we don't do per-file define extraction in compile_flag.txt,
+# add them here globally
+cat >> compile_flags.txt <<EOF
+-DABC_USE_STDINT_H=1
+-DABC_NAMESPACE=abc
+-DGPU=false
+-DBUILD_TYPE="opt"
+-DBUILD_PYTHON=false
+-DBUILD_GUI=true
+EOF
 
 # If there are two styles of comp-dbs, tools might have issues. Warn user.
 if [ -r compile_commands.json ]; then

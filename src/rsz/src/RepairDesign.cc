@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "BufferedNet.hh"
+#include "PreChecks.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -27,6 +28,7 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
+#include "sta/Clock.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"

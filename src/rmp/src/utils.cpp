@@ -14,6 +14,8 @@
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
 #include "utl/deleter.h"
 

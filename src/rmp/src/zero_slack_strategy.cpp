@@ -12,6 +12,7 @@
 #include "db_sta/dbSta.hh"
 #include "delay_optimization_strategy.h"
 #include "rsz/Resizer.hh"
+#include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Search.hh"
 #include "utils.h"
