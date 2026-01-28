@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/drObj/drFig.h"
 #include "db/drObj/drNet.h"
 #include "db/gcObj/gcShape.h"
 #include "db/obj/frBTerm.h"
