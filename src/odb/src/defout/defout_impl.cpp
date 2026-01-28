@@ -1377,9 +1377,7 @@ void DefOut::Impl::writeSNet(
     dbMTerm* mterm = iterm->getMTerm();
     char* mtname = mterm->getName(inst, &ttname[0]);
     bool iswildcard = false;
-    const auto snet_term_map_itr = snet_term_map.find(mterm->getName());
-    if (snet_term_map_itr != snet_term_map.end()
-        && snet_term_map_itr->second.size() == 1) {
+    if (snet_term_map.at(mterm->getName()).size() == 1) {
       // mterm is unique to this net, so we can use wildcard
       iswildcard = true;
     }
