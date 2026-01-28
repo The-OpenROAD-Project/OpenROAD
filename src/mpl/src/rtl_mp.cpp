@@ -221,11 +221,11 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
   guidance_regions_[macro] = region;
 }
 
-void MacroPlacer::addMacroHalo(odb::dbInst* macro,
+void MacroPlacer::setMacroHalo(odb::dbInst* macro,
                                int halo_width,
                                int halo_height)
 {
-  hier_rtlmp_->addMacroHalo(macro, halo_width, halo_height);
+  hier_rtlmp_->setMacroHalo(macro, halo_width, halo_height);
 }
 
 void MacroPlacer::setMacroPlacementFile(const std::string& file_name)

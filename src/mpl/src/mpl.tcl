@@ -312,7 +312,7 @@ proc set_macro_halo { args } {
   set width $width
   set height $height
 
-  mpl::add_macro_halo $macro $width $height
+  mpl::set_macro_halo $macro $width $height
 }
 
 namespace eval mpl {

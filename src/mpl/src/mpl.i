@@ -138,7 +138,7 @@ add_guidance_region(odb::dbInst* macro,
 }
 
 void
-add_macro_halo(odb::dbInst* macro, 
+set_macro_halo(odb::dbInst* macro, 
                float width, 
                float height) 
 {
@@ -146,7 +146,7 @@ add_macro_halo(odb::dbInst* macro,
   int width_dbu = block->micronsToDbu(width);
   int height_dbu = block->micronsToDbu(height);
 
-  getMacroPlacer()->addMacroHalo(macro, width_dbu, height_dbu);
+  getMacroPlacer()->setMacroHalo(macro, width_dbu, height_dbu);
 }
 
 void

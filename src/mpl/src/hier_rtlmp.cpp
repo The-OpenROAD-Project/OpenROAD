@@ -122,11 +122,11 @@ void HierRTLMP::setGuidanceRegions(
   guides_ = guidance_regions;
 }
 
-void HierRTLMP::addMacroHalo(odb::dbInst* macro,
+void HierRTLMP::setMacroHalo(odb::dbInst* macro,
                              int halo_width,
                              int halo_height)
 {
-  halos_[macro] = {.width = halo_width, .height = halo_height};
+  macro_to_halo_[macro] = {.width = halo_width, .height = halo_height};
 }
 
 // Options related to clustering
@@ -306,8 +306,9 @@ void HierRTLMP::createHardMacros(odb::dbModule* module)
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo
-          = halos_.contains(inst) ? halos_[inst] : tree_->default_halo;
+      HardMacro::Halo halo = macro_to_halo_.contains(inst)
+                                 ? macro_to_halo_[inst]
+                                 : tree_->default_halo;
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
