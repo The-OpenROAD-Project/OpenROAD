@@ -5,6 +5,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -390,4 +391,11 @@ filegroup(
         "src/options.i",
     ],
     visibility = ["@//:__subpackages__"],
+)
+
+sh_binary(
+    name = "install",
+    srcs = ["//bazel:install.sh"],
+    args = [],
+    data = [":openroad"],
 )
