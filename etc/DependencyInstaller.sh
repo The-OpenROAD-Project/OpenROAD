@@ -719,13 +719,6 @@ _install_or_tools() {
                 CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=${or_tools_install_dir} "
                 OR_TOOLS_PATH=${or_tools_install_dir}
 
-                # Remove conflicting Boost configuration files included in OR-Tools
-                for lib_dir in "lib" "lib64"; do
-                    if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
-                        find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-                    fi
-                done
-
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=skipped")
                 return
             else
@@ -756,13 +749,6 @@ _install_or_tools() {
             _execute "Extracting or-tools..." tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
         )
     fi
-
-    # Remove conflicting Boost configuration files included in OR-Tools
-    for lib_dir in "lib" "lib64"; do
-        if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
-            find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-        fi
-    done
 
     INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=installed")
 
