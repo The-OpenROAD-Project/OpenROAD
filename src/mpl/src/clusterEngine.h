@@ -183,6 +183,7 @@ class ClusteringEngine
   void setDieArea();
   void setFloorplanShape();
   void createHardMacros();
+  bool movableCellsFitInMacroPlacementArea() const;
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
