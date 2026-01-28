@@ -530,7 +530,7 @@ class FlexGCWorker::Impl
   void checkMinimumCut_marker(gcRect* wideRect,
                               gcRect* viaRect,
                               frMinimumcutConstraint* con);
-  void checkMinimumCut_main(gcRect* rect);
+  void checkMinimumCut_main(gcRect* rect, const std::vector<std::unique_ptr<gcRect>>& pin_rects);
   void checkMinimumCut();
   void checkMetalShape_lef58Area(gcPin* pin);
   bool checkMetalShape_lef58Area_exceptRectangle(

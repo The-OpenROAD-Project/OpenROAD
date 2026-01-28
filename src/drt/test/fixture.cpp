@@ -710,6 +710,7 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
 }
 
 void Fixture::makeMinimumCut(frLayerNum layerNum,
+							 int numCut,
                              frCoord width,
                              frCoord length,
                              frCoord distance,
@@ -718,6 +719,7 @@ void Fixture::makeMinimumCut(frLayerNum layerNum,
   auto con = std::make_unique<frMinimumcutConstraint>();
   auto layer = design->getTech()->getLayer(layerNum);
   auto rptr = con.get();
+  con->setNumCuts(numCut);
   con->setWidth(width);
   con->setLength(length, distance);
   con->setConnection(connection);
