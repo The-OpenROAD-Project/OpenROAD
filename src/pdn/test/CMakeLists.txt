@@ -8,6 +8,7 @@ or_integration_tests(
     asap7_no_via_generate
     asap7_no_via_generate_v1_snapped
     asap7_offcenter_via
+    asap7_rings
     asap7_taper
     asap7_vias
     asap7_vias_arrayspacing
@@ -60,6 +61,7 @@ or_integration_tests(
     core_grid_with_rings_different_width2
     core_grid_with_rings_outside_die
     core_grid_with_rings_outside_die_allowed
+    core_grid_with_rings_snapped
     core_grid_with_rings_with_limit_straps
     core_grid_with_rings_with_straps
     core_grid_with_rings_with_straps_rings_over_core

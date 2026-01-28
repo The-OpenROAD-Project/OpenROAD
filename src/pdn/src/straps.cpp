@@ -53,6 +53,7 @@ Straps::Straps(Grid* grid,
   }
   if (layer_ != nullptr) {
     direction_ = layer_->getDirection();
+    snap_ = layer_->isRightWayOnGridOnly();
   }
 }
 

@@ -24,6 +24,7 @@ class Rings : public GridComponent
     odb::dbTechLayer* layer = nullptr;
     int width = 0;
     int spacing = 0;
+    bool snap = false;
   };
 
   Rings(Grid* grid, const Layer& layer0, const Layer& layer1);

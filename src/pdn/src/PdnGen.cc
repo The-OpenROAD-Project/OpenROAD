@@ -547,9 +547,11 @@ void PdnGen::makeRing(Grid* grid,
                       odb::dbTechLayer* layer0,
                       int width0,
                       int spacing0,
+                      bool snap0,
                       odb::dbTechLayer* layer1,
                       int width1,
                       int spacing1,
+                      bool snap1,
                       StartsWith starts_with,
                       const std::array<int, 4>& offset,
                       const std::array<int, 4>& pad_offset,
@@ -558,9 +560,14 @@ void PdnGen::makeRing(Grid* grid,
                       const std::vector<odb::dbNet*>& nets,
                       bool allow_out_of_die)
 {
-  auto ring = std::make_unique<Rings>(grid,
-                                      Rings::Layer{layer0, width0, spacing0},
-                                      Rings::Layer{layer1, width1, spacing1});
+  auto ring = std::make_unique<Rings>(
+      grid,
+      Rings::Layer{
+          .layer = layer0, .width = width0, .spacing = spacing0, .snap = snap0},
+      Rings::Layer{.layer = layer1,
+                   .width = width1,
+                   .spacing = spacing1,
+                   .snap = snap1});
   ring->setOffset(offset);
   if (std::ranges::any_of(pad_offset, [](int o) { return o != 0; })) {
     ring->setPadOffset(pad_offset);
@@ -615,7 +622,9 @@ void PdnGen::makeStrap(Grid* grid,
       grid, layer, width, pitch, spacing, number_of_straps);
   strap->setExtend(extend);
   strap->setOffset(offset);
-  strap->setSnapToGrid(snap);
+  if (snap) {
+    strap->setSnapToGrid(snap);
+  }
   if (starts_with != GRID) {
     strap->setStartWithPower(starts_with == POWER);
   }

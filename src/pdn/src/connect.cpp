@@ -62,6 +62,11 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
 
     if (layer->getRoutingLevel() != 0) {
       intermediate_routing_layers_.push_back(layer);
+
+      // Check if snap is required
+      if (layer->isRightWayOnGridOnly()) {
+        ongrid_.insert(layer);
+      }
     }
   }
 

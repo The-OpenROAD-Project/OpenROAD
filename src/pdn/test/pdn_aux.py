@@ -607,6 +607,7 @@ def add_pdn_ring(
     layers=[],  # list of size 2
     widths=[],  # list of size 2
     spacings=[],  # list of size 2
+    snap_to_grid=[False, False],  # list of size 2 of booleans
     grid="",
     pad_offsets=[],  # array of size 4
     core_offsets=[],  # array of size 4
@@ -706,9 +707,11 @@ def add_pdn_ring(
             l0,
             widths[0],
             spacings[0],
+            snap_to_grid[0],
             l1,
             widths[1],
             spacings[1],
+            snap_to_grid[1],
             starts_with,
             core_offsets,
             pad_offsets,

@@ -387,6 +387,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-layers list_of_2_layer_names] \
                                      [-widths (width_value|list_of_width_values)] \
                                      [-spacings (spacing_value|list_of_spacing_values)] \
+                                     [-snap_to_grid (snap_value|list_of_snap_values)] \
                                      [-core_offsets (offset_value|list_of_offset_values)] \
                                      [-pad_offsets (offset_value|list_of_offset_values)] \
                                      [-connect_to_pad_layers layers] \
@@ -403,7 +404,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \
     keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers \
-      -power_pads -ground_pads -nets -starts_with} \
+      -power_pads -ground_pads -nets -starts_with -snap_to_grid} \
     flags {-add_connect -extend_to_boundary -connect_to_pads -allow_out_of_die}
 
   sta::check_argc_eq0 "add_pdn_ring" $args
@@ -441,6 +442,11 @@ proc add_pdn_ring { args } {
     utl::error PDN 1014 "The -spacings argument is required."
   } else {
     set spacings [pdn::get_one_to_two "-spacings" $keys(-spacings)]
+  }
+
+  set snap [list false false]
+  if { [info exists keys(-snap_to_grid)] } {
+    set snap [pdn::get_one_to_two "-snap_to_grid" $keys(-snap_to_grid)]
   }
 
   if { [info exists keys(-core_offsets)] && [info exists keys(-pad_offsets)] } {
@@ -524,9 +530,11 @@ proc add_pdn_ring { args } {
     $l0 \
     [lindex $widths 0] \
     [lindex $spacings 0] \
+    [lindex $snap 0] \
     $l1 \
     [lindex $widths 1] \
     [lindex $spacings 1] \
+    [lindex $snap 1] \
     $use_grid_power_order \
     $start_with_power \
     {*}$core_offsets \
