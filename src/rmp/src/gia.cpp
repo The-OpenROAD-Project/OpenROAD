@@ -158,12 +158,6 @@ std::vector<GiaOp> GiaOps(utl::Logger* logger)
       step(
           "Starting &b - d",
           [](auto& g) { return Gia_ManBalance(g.get(), false, false, false); }),
-      // &false
-      [logger](auto& gia) {
-        debugPrint(logger, RMP, "gia", 1, "Starting false path elimination");
-        utl::SuppressStdout nostdout(logger);
-        replaceGia(gia, Gia_ManCheckFalse(gia.get(), 0, 0, false, false));
-      },
       // &reduce
       [logger](auto& g) {
         if (!g->pReprs) {
