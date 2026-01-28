@@ -71,6 +71,11 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void enableEnhancements() { enhancements_on_ = true; };
 
+  void setIsSingleArraySingleStdCellCluster(bool value)
+  {
+    is_single_array_single_std_cell_cluster = value;
+  }
+
  private:
   // Used to calculate notches
   struct Neighbors
@@ -160,6 +165,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;
+  bool is_single_array_single_std_cell_cluster = false;
 };
 
 }  // namespace mpl
