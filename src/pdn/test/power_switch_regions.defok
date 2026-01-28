@@ -686,7 +686,7 @@ PINS 35 ;
         + PLACED ( 145590 146637 ) N ;
 END PINS
 SPECIALNETS 5 ;
-    - VDD ( temp_analog_1.a_lc_0 VPB ) ( temp_analog_1.a_lc_0 VPWR ) ( temp_analog_1.a_header_6 VPWR ) ( temp_analog_1.a_header_5 VPWR ) ( temp_analog_1.a_header_4 VPWR ) ( temp_analog_1.a_header_3 VPWR ) ( temp_analog_1.a_header_2 VPWR )
+    - VDD ( * VPB ) ( temp_analog_1.a_lc_0 VPWR ) ( temp_analog_1.a_header_6 VPWR ) ( temp_analog_1.a_header_5 VPWR ) ( temp_analog_1.a_header_4 VPWR ) ( temp_analog_1.a_header_3 VPWR ) ( temp_analog_1.a_header_2 VPWR )
       ( temp_analog_1.a_header_1 VPWR ) ( temp_analog_1.a_header_0 VPWR ) ( _211_ VPWR ) ( _210_ VPWR ) ( _209_ VPWR ) ( _208_ VPWR ) ( _207_ VPWR ) ( _206_ VPWR )
       ( _205_ VPWR ) ( _204_ VPWR ) ( _203_ VPWR ) ( _202_ VPWR ) ( _201_ VPWR ) ( _200_ VPWR ) ( _199_ VPWR ) ( _198_ VPWR )
       ( _197_ VPWR ) ( _196_ VPWR ) ( _195_ VPWR ) ( _194_ VPWR ) ( _193_ VPWR ) ( _192_ VPWR ) ( _191_ VPWR ) ( _190_ VPWR )
