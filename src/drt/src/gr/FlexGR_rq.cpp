@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "db/grObj/grVia.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gr/FlexGR.h"

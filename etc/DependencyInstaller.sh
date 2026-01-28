@@ -450,6 +450,17 @@ _install_boost() {
     else
         INSTALL_SUMMARY+=("Boost: system=${boost_installed_version}, required=${required_version}, status=skipped")
     fi
+
+    local boost_cmake_dir=""
+    if [[ -d "${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
+        boost_cmake_dir="${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}"
+    elif [[ -d "${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
+        boost_cmake_dir="${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}"
+    fi
+
+    if [[ -n "${boost_cmake_dir}" ]]; then
+        CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_DIR=$(realpath "${boost_cmake_dir}") "
+    fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath "${boost_prefix}") "
 }
 
@@ -708,13 +719,6 @@ _install_or_tools() {
                 CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=${or_tools_install_dir} "
                 OR_TOOLS_PATH=${or_tools_install_dir}
 
-                # Remove conflicting Boost configuration files included in OR-Tools
-                for lib_dir in "lib" "lib64"; do
-                    if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
-                        find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-                    fi
-                done
-
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=skipped")
                 return
             else
@@ -745,13 +749,6 @@ _install_or_tools() {
             _execute "Extracting or-tools..." tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
         )
     fi
-
-    # Remove conflicting Boost configuration files included in OR-Tools
-    for lib_dir in "lib" "lib64"; do
-        if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
-            find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-        fi
-    done
 
     INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=installed")
 

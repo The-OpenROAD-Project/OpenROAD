@@ -743,23 +743,6 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 
   for (auto& [net, swire] : net_map) {
     net->setSpecial();
-
-    // determine if unique and set WildConnected
-    bool appear_in_all_grids = true;
-    for (auto* domain : domains) {
-      for (const auto& grid : domain->getGrids()) {
-        const auto nets = grid->getNets();
-        if (std::ranges::find(nets, net) == nets.end()) {
-          appear_in_all_grids = false;
-        }
-      }
-    }
-
-    if (appear_in_all_grids) {
-      // should this be based on the global connect?
-      net->setWildConnected();
-    }
-
     swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 

@@ -10,6 +10,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "db/obj/frBlockObject.h"
+#include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"

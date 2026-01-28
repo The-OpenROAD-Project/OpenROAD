@@ -20,6 +20,7 @@
 #include "db/drObj/drPin.h"
 #include "db/infra/frBox.h"
 #include "db/obj/frTrackPattern.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"

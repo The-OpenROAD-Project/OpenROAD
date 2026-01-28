@@ -1,6 +1,7 @@
 or_integration_tests(
   "drt"
   TESTS
+    down_access_term
     drc_test
     ispd18_sample
     ispd18_sample_incr

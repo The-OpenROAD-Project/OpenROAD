@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "../gc/FlexGC.h"
+#include "db/drObj/drFig.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
