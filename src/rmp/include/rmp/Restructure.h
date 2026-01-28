@@ -14,10 +14,10 @@
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
 #include "utl/Logger.h"
 #include "utl/unique_name.h"
 
@@ -64,8 +64,8 @@ class Restructure
   ~Restructure();
 
   void reset();
-  void resynth(sta::Corner* corner);
-  void resynthAnnealing(sta::Corner* corner);
+  void resynth(sta::Scene* corner);
+  void resynthAnnealing(sta::Scene* corner);
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,

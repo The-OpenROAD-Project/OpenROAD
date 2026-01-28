@@ -56,6 +56,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -255,38 +256,6 @@ enum class PinPointerTags : std::uintptr_t
   kDbBterm = 2U,
   kDbModIterm = 3U,
 };
-
-class DbLibraryIterator1 : public Iterator<Library*>
-{
- public:
-  explicit DbLibraryIterator1(ConcreteLibraryIterator* iter);
-  ~DbLibraryIterator1() override;
-  bool hasNext() override;
-  Library* next() override;
-
- private:
-  ConcreteLibraryIterator* iter_;
-};
-
-DbLibraryIterator1::DbLibraryIterator1(ConcreteLibraryIterator* iter)
-    : iter_(iter)
-{
-}
-
-DbLibraryIterator1::~DbLibraryIterator1()
-{
-  delete iter_;
-}
-
-bool DbLibraryIterator1::hasNext()
-{
-  return iter_->hasNext();
-}
-
-Library* DbLibraryIterator1::next()
-{
-  return reinterpret_cast<Library*>(iter_->next());
-}
 
 //
 // check the leaves accessible from the network
@@ -1979,7 +1948,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
   odb::dbModNet* mod_net = nullptr;
   dbNet* db_net = nullptr;
 
-  if (visited_nets.hasKey(net)) {
+  if (visited_nets.contains(net)) {
     return;
   }
 
@@ -2310,7 +2279,7 @@ void dbNetwork::readDbNetlistAfter()
 {
   makeTopCell();
   findConstantNets();
-  checkLibertyCorners();
+  checkLibertyScenes();
   checkLibertyCellsWithoutLef();
 }
 
@@ -2955,9 +2924,11 @@ void dbNetwork::deleteNet(Net* net)
 
 void dbNetwork::deleteNetBefore(const Net* net)
 {
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  delete drvrs;
-  net_drvr_pin_map_.erase(net);
+  auto entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    delete entry->second;
+    net_drvr_pin_map_.erase(entry);
+  }
 }
 
 void dbNetwork::mergeInto(Net*, Net*)
@@ -3802,8 +3773,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
       //
       PinSet* drivers = this->drivers(net);
       if (drivers && !drivers->empty()) {
-        PinSet::Iterator drvr_iter(drivers);
-        const Pin* drvr_pin = drvr_iter.next();
+        const Pin* drvr_pin = *drivers->begin();
         driver_pin = const_cast<Pin*>(drvr_pin);
         odb::dbITerm* iterm;
         odb::dbBTerm* bterm;
@@ -3853,8 +3823,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
   if (net) {
     PinSet* drivers = this->drivers(net);
     if (drivers && !drivers->empty()) {
-      PinSet::Iterator drvr_iter(drivers);
-      const Pin* drvr_pin = drvr_iter.next();
+      const Pin* drvr_pin = *drivers->begin();
       driver_pin = const_cast<Pin*>(drvr_pin);
     }
   }
@@ -5151,11 +5120,13 @@ PinSet* dbNetwork::drivers(const Net* net)
   }
 
   // Get or create drvrs pin set
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  if (drvrs == nullptr) {
-    drvrs = new PinSet(this);
-    net_drvr_pin_map_[net] = drvrs;
+  auto drvrs_entry = net_drvr_pin_map_.find(net);
+  if (drvrs_entry == net_drvr_pin_map_.end()) {
+    std::tie(drvrs_entry, std::ignore)
+        = net_drvr_pin_map_.insert({net, new PinSet(this)});
   }
+
+  PinSet* drvrs = drvrs_entry->second;
 
   // Insert the driver pin of the net
   dbNet* db_net = findFlatDbNet(net);
@@ -5173,18 +5144,18 @@ PinSet* dbNetwork::drivers(const Net* net)
 
 void dbNetwork::removeDriverFromCache(const Net* net)
 {
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  if (drvrs) {
-    delete drvrs;
-    net_drvr_pin_map_.erase(net);
+  auto entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    delete entry->second;
+    net_drvr_pin_map_.erase(entry);
   }
 }
 
 void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
 {
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  if (drvrs) {
-    drvrs->erase(drvr);
+  auto entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    entry->second->erase(drvr);
   }
 }
 

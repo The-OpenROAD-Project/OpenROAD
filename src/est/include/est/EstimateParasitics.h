@@ -21,15 +21,13 @@
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Hash.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
-#include "sta/UnorderedSet.hh"
+#include "sta/Scene.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -84,11 +82,11 @@ class EstimateParasitics : public sta::dbStaState
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(odb::dbTechLayer* layer,
-                  const sta::Corner* corner,
+                  const sta::Scene* corner,
                   double res,
                   double cap);
   void layerRC(odb::dbTechLayer* layer,
-               const sta::Corner* corner,
+               const sta::Scene* corner,
                // Return values.
                double& res,
                double& cap) const;
@@ -97,43 +95,43 @@ class EstimateParasitics : public sta::dbStaState
   void sortClkAndSignalLayers();
   // Set the resistance and capacitance used for horizontal parasitics on signal
   // nets.
-  void setHWireSignalRC(const sta::Corner* corner,
+  void setHWireSignalRC(const sta::Scene* scene,
                         double res,   // ohms/meter
                         double cap);  // farads/meter
   // Set the resistance and capacitance used for vertical wires parasitics on
   // signal nets.
-  void setVWireSignalRC(const sta::Corner* corner,
+  void setVWireSignalRC(const sta::Scene* scene,
                         double res,   // ohms/meter
                         double cap);  // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setHWireClkRC(const sta::Corner* corner,
+  void setHWireClkRC(const sta::Scene* scene,
                      double res,
                      double cap);  // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setVWireClkRC(const sta::Corner* corner,
+  void setVWireClkRC(const sta::Scene* scene,
                      double res,
                      double cap);  // farads/meter
   // ohms/meter, farads/meter
-  void wireSignalRC(const sta::Corner* corner,
+  void wireSignalRC(const sta::Scene* scene,
                     // Return values.
                     double& res,
                     double& cap) const;
-  double wireSignalResistance(const sta::Corner* corner) const;
-  double wireSignalHResistance(const sta::Corner* corner) const;
-  double wireSignalVResistance(const sta::Corner* corner) const;
-  double wireClkResistance(const sta::Corner* corner) const;
-  double wireClkHResistance(const sta::Corner* corner) const;
-  double wireClkVResistance(const sta::Corner* corner) const;
+  double wireSignalResistance(const sta::Scene* scene) const;
+  double wireSignalHResistance(const sta::Scene* scene) const;
+  double wireSignalVResistance(const sta::Scene* scene) const;
+  double wireClkResistance(const sta::Scene* scene) const;
+  double wireClkHResistance(const sta::Scene* scene) const;
+  double wireClkVResistance(const sta::Scene* scene) const;
   // farads/meter
-  double wireSignalCapacitance(const sta::Corner* corner) const;
-  double wireSignalHCapacitance(const sta::Corner* corner) const;
-  double wireSignalVCapacitance(const sta::Corner* corner) const;
-  double wireClkCapacitance(const sta::Corner* corner) const;
-  double wireClkHCapacitance(const sta::Corner* corner) const;
-  double wireClkVCapacitance(const sta::Corner* corner) const;
+  double wireSignalCapacitance(const sta::Scene* scene) const;
+  double wireSignalHCapacitance(const sta::Scene* scene) const;
+  double wireSignalVCapacitance(const sta::Scene* scene) const;
+  double wireClkCapacitance(const sta::Scene* scene) const;
+  double wireClkHCapacitance(const sta::Scene* scene) const;
+  double wireClkVCapacitance(const sta::Scene* scene) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
-                          std::map<sta::Corner*, std::ostream*>& spef_streams_);
+                          std::map<sta::Scene*, std::ostream*>& spef_streams_);
   void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr);
@@ -144,8 +142,7 @@ class EstimateParasitics : public sta::dbStaState
                          sta::Pin* drvr_pin,
                          sta::Pin* load_pin,
                          double wire_length,  // meters
-                         const sta::Corner* corner,
-                         sta::Parasitics* parasitics);
+                         const sta::Scene* corner);
   bool haveEstimatedParasitics() const;
   void parasiticsInvalid(const sta::Net* net);
   void parasiticsInvalid(const odb::dbNet* net);
@@ -211,16 +208,15 @@ class EstimateParasitics : public sta::dbStaState
   bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;
-  float pinCapacitance(const sta::Pin* pin,
-                       const sta::DcalcAnalysisPt* dcalc_ap) const;
   odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
-  double computeAverageCutResistance(sta::Corner* corner);
-  void parasiticNodeConnectPins(sta::Parasitic* parasitic,
+  double computeAverageCutResistance(sta::Scene* scene);
+  void parasiticNodeConnectPins(sta::Parasitics* parasitics,
+                                sta::Parasitic* parasitic,
                                 sta::ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id,
-                                sta::Corner* corner,
+                                sta::Scene* scene,
                                 std::set<const sta::Pin*>& connected_pins,
                                 bool is_clk);
   void net2Pins(const sta::Net* net,
@@ -251,9 +247,8 @@ class EstimateParasitics : public sta::dbStaState
   std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
-  const sta::DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
 
-  sta::UnorderedSet<const sta::Net*, NetHash> parasitics_invalid_;
+  std::unordered_set<const sta::Net*, NetHash> parasitics_invalid_;
 
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 

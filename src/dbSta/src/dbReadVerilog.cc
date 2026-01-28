@@ -3,6 +3,7 @@
 
 #include "db_sta/dbReadVerilog.hh"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <fstream>
@@ -23,7 +24,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
-#include "sta/Vector.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 
@@ -735,7 +735,7 @@ void Verilog2db::makeDbNets(const Instance* inst, PinSet& visited_pins)
     }
 
     // Sort connected pins for regression stability
-    sort(net_pins, PinPathNameLess(network_));
+    std::ranges::sort(net_pins, PinPathNameLess(network_));
 
     // Connect pins to the new flat net
     for (const Pin* pin : net_pins) {

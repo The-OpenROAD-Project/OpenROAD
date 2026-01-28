@@ -18,13 +18,14 @@
 #include "ord/Tech.h"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
-#include "sta/Corner.hh"
 #include "sta/DelayFloat.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/PowerClass.hh"
+#include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/TimingArc.hh"
@@ -79,15 +80,8 @@ bool Timing::isEndpoint(sta::Pin* sta_pin)
 float Timing::slewAllCorners(sta::Vertex* vertex, const sta::MinMax* minmax)
 {
   auto sta = getSta();
-  bool max = (minmax == sta::MinMax::max());
-  float slew = (max) ? -sta::INF : sta::INF;
-  float slew_corner;
-  for (auto corner : getCorners()) {
-    slew_corner = sta::delayAsFloat(
-        sta->vertexSlew(vertex, sta::RiseFall::rise(), corner, minmax));
-    slew = (max) ? std::max(slew, slew_corner) : std::min(slew, slew_corner);
-  }
-  return slew;
+  return sta::delayAsFloat(
+      sta->slew(vertex, sta::RiseFallBoth::riseFall(), sta->scenes(), minmax));
 }
 
 float Timing::getPinSlew(odb::dbITerm* db_pin, MinMax minmax)
@@ -145,24 +139,6 @@ std::array<sta::Vertex*, 2> Timing::vertices(const sta::Pin* pin)
   return vertices;
 }
 
-std::vector<float> Timing::arrivalsClk(const sta::RiseFall* rf,
-                                       sta::Clock* clk,
-                                       const sta::RiseFall* clk_rf,
-                                       sta::Vertex* vertex)
-{
-  auto sta = getSta();
-  std::vector<float> arrivals;
-  const sta::ClockEdge* clk_edge = nullptr;
-  if (clk) {
-    clk_edge = clk->edge(clk_rf);
-  }
-  for (auto path_ap : sta->corners()->pathAnalysisPts()) {
-    arrivals.push_back(sta::delayAsFloat(
-        sta->vertexArrival(vertex, rf, clk_edge, path_ap, nullptr)));
-  }
-  return arrivals;
-}
-
 bool Timing::isTimeInf(float time)
 {
   return (time > 1e+10 || time < -1e+10);
@@ -171,16 +147,15 @@ bool Timing::isTimeInf(float time)
 float Timing::getPinArrivalTime(sta::Clock* clk,
                                 const sta::RiseFall* clk_rf,
                                 sta::Vertex* vertex,
-                                const sta::RiseFall* arrive_hold)
+                                const sta::RiseFall* rf)
 {
-  std::vector<float> times = arrivalsClk(arrive_hold, clk, clk_rf, vertex);
-  float delay = -sta::INF;
-  for (float delay_time : times) {
-    if (!isTimeInf(delay_time)) {
-      delay = std::max(delay, delay_time);
-    }
+  sta::dbSta* sta = getSta();
+  if (clk) {
+    return sta::delayAsFloat(sta->arrival(
+        vertex, rf, clk->edge(clk_rf), sta->scenes(), sta::MinMax::max()));
   }
-  return delay;
+  return sta::delayAsFloat(sta->arrival(
+      vertex, rf->asRiseFallBoth(), sta->scenes(), sta::MinMax::max()));
 }
 
 sta::ClockSeq Timing::findClocksMatching(const char* pattern,
@@ -190,7 +165,7 @@ sta::ClockSeq Timing::findClocksMatching(const char* pattern,
   auto sta = getSta();
   cmdLinkedNetwork();
   sta::PatternMatch matcher(pattern, regexp, nocase, sta->tclInterp());
-  return sta->sdc()->findClocksMatching(&matcher);
+  return sta->cmdMode()->sdc()->findClocksMatching(&matcher);
 }
 
 float Timing::getPinArrival(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
@@ -212,7 +187,8 @@ float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
   auto vertex_array = vertices(sta_pin);
   float delay = (minmax == Max) ? -sta::INF : sta::INF;
   float d1, d2;
-  sta::Clock* default_arrival_clock = getSta()->sdc()->defaultArrivalClock();
+  sta::Clock* default_arrival_clock
+      = getSta()->cmdMode()->sdc()->defaultArrivalClock();
   for (auto vertex : vertex_array) {
     if (vertex == nullptr) {
       continue;
@@ -234,21 +210,21 @@ float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
   return delay;
 }
 
-std::vector<sta::Corner*> Timing::getCorners()
+std::vector<sta::Scene*> Timing::getCorners()
 {
-  sta::Corners* corners = getSta()->corners();
-  return {corners->begin(), corners->end()};
+  auto& corners = getSta()->scenes();
+  return {corners.begin(), corners.end()};
 }
 
-sta::Corner* Timing::cmdCorner()
+sta::Scene* Timing::cmdCorner()
 {
-  return getSta()->cmdCorner();
+  return getSta()->cmdScene();
 }
 
-sta::Corner* Timing::findCorner(const char* name)
+sta::Scene* Timing::findCorner(const char* name)
 {
   for (auto* corner : getCorners()) {
-    if (strcmp(corner->name(), name) == 0) {
+    if (strcmp(corner->name().c_str(), name) == 0) {
       return corner;
     }
   }
@@ -274,7 +250,8 @@ float Timing::getPinSlack(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   auto sta_rf = (rf == Rise) ? sta::RiseFall::rise() : sta::RiseFall::fall();
-  return sta->pinSlack(sta_pin, sta_rf, getMinMax(minmax));
+  return sta->slack(
+      sta_pin, sta_rf->asRiseFallBoth(), sta->scenes(), getMinMax(minmax));
 }
 
 // I'd like to return a std::set but swig gave me way too much grief
@@ -319,7 +296,7 @@ const sta::MinMax* Timing::getMinMax(MinMax type)
   return type == Max ? sta::MinMax::max() : sta::MinMax::min();
 }
 
-float Timing::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
+float Timing::getNetCap(odb::dbNet* net, sta::Scene* corner, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Net* sta_net = sta->getDbNetwork()->dbToSta(net);
@@ -330,7 +307,7 @@ float Timing::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
   return pin_cap + wire_cap;
 }
 
-float Timing::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
+float Timing::getPortCap(odb::dbITerm* pin, sta::Scene* corner, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
@@ -375,7 +352,7 @@ float Timing::getMaxSlewLimit(odb::dbMTerm* pin)
   return max_slew;
 }
 
-float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
+float Timing::staticPower(odb::dbInst* inst, sta::Scene* corner)
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
@@ -388,7 +365,7 @@ float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
   return power.leakage();
 }
 
-float Timing::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
+float Timing::dynamicPower(odb::dbInst* inst, sta::Scene* corner)
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();

@@ -33,7 +33,7 @@ std::vector<sta::Vertex*> GetEndpoints(sta::dbSta* sta,
   std::vector<sta::Vertex*> result;
 
   sta::dbNetwork* network = sta->getDbNetwork();
-  for (sta::Vertex* vertex : *sta->endpoints()) {
+  for (sta::Vertex* vertex : sta->endpoints()) {
     sta::Pin* pin = vertex->pin();
     sta::PortDirection* direction = network->direction(vertex->pin());
     if (!direction->isInput()) {
@@ -47,7 +47,7 @@ std::vector<sta::Vertex*> GetEndpoints(sta::dbSta* sta,
       }
     }
 
-    const sta::Slack slack = sta->vertexSlack(vertex, sta::MinMax::max());
+    const sta::Slack slack = sta->slack(vertex, sta::MinMax::max());
 
     if (slack < slack_threshold) {
       result.push_back(vertex);

@@ -11,7 +11,7 @@
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Network.hh"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -42,7 +42,7 @@ using TmpPinSet = PinSet;
 using ord::getResizer;
 using ord::ensureLinked;
 
-using sta::Corner;
+using sta::Scene;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
@@ -110,11 +110,11 @@ void
 report_net_parasitic(Net *net)
 {
   Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  Scene *corner = sta::Sta::sta()->cmdScene();
+  auto parasitics = corner->parasitics(sta::MinMax::max());
+  auto parasitic = parasitics->findParasiticNetwork(net);
   if (parasitic) {
-    resizer->parasitics()->report(parasitic);
+    parasitics->report(parasitic);
   }
 }
 
@@ -122,13 +122,13 @@ float
 sum_parasitic_network_resist(Net *net)
 {
   Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  Scene *corner = sta::Sta::sta()->cmdScene();
+  auto parasitics = corner->parasitics(sta::MinMax::max());
+  auto parasitic = parasitics->findParasiticNetwork(net);
   if (parasitic) {
     float ret = 0.0;
-    for (auto resist : resizer->parasitics()->resistors(parasitic)) {
-      ret += resizer->parasitics()->value(resist);
+    for (auto resist : parasitics->resistors(parasitic)) {
+      ret += parasitics->value(resist);
     }
     return ret;
   } else {
@@ -534,7 +534,7 @@ find_max_wire_length()
 
 double
 find_buffer_max_wire_length(LibertyCell *buffer_cell,
-                            const Corner *corner)
+                            const Scene *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -794,7 +794,7 @@ get_clock_buffer_footprint_cmd()
   return resizer->getClockBufferFootprint().c_str();
 }
 
-void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const Corner *corner)
+void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const Scene *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();

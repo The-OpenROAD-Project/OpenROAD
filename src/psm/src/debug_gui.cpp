@@ -21,7 +21,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shape.h"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
 
 namespace psm {
 
@@ -85,7 +85,7 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(
     return props;
   }
 
-  std::vector<sta::Corner*> corners;
+  std::vector<sta::Scene*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
     props.push_back({"Net", gui->makeSelected(solver->getNet())});
@@ -297,7 +297,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
     return props;
   }
 
-  std::vector<sta::Corner*> corners;
+  std::vector<sta::Scene*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
     props.push_back({"Net", gui->makeSelected(solver->getNet())});

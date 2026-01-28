@@ -84,7 +84,7 @@ proc analyze_power_grid { args } {
 
   psm::analyze_power_grid_cmd \
     [psm::find_net $keys(-net)] \
-    [sta::parse_corner_or_default keys] \
+    [sta::parse_scene_or_default keys] \
     $source_type \
     $error_file \
     [info exists flags(-allow_reuse)] \
@@ -178,7 +178,7 @@ proc write_pg_spice { args } {
 
   psm::write_spice_file_cmd \
     [psm::find_net $keys(-net)] \
-    [sta::parse_corner_or_default keys] \
+    [sta::parse_scene_or_default keys] \
     $source_type \
     [lindex $args 0] \
     $voltage_source_file
@@ -195,7 +195,7 @@ proc set_pdnsim_net_voltage { args } {
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
     set net [psm::find_net $keys(-net)]
     set voltage $keys(-voltage)
-    set corner [sta::parse_corner_or_all keys]
+    set corner [sta::parse_scene_or_default keys]
     psm::set_net_voltage_cmd $net $corner $voltage
   } else {
     utl::error PSM 62 "Argument -net or -voltage not specified.\
@@ -214,7 +214,7 @@ proc set_pdnsim_inst_power { args } {
   if { [info exists keys(-inst)] && [info exists keys(-power)] } {
     set inst [psm::find_inst $keys(-inst)]
     set power $keys(-power)
-    set corner [sta::parse_corner_or_all keys]
+    set corner [sta::parse_scene_or_default keys]
     psm::set_inst_power $inst $corner $power
   } else {
     utl::error PSM 63 "Argument -inst or -power not specified.\

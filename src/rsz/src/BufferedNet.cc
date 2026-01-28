@@ -21,11 +21,11 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
 #include "sta/Transition.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include "spdlog/fmt/fmt.h"
@@ -49,8 +49,10 @@ class Pin;
 
 namespace rsz {
 
+using sta::MinMax;
 using sta::Pin;
 using sta::Port;
+using sta::Scene;
 using std::make_shared;
 using std::max;
 using std::min;
@@ -87,7 +89,7 @@ FixedDelay::FixedDelay(sta::Delay float_value, Resizer* resizer)
 BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
                          const sta::Pin* load_pin,
-                         const sta::Corner* corner,
+                         const sta::Scene* corner,
                          const Resizer* resizer)
 {
   if (type != BufferedNetType::load) {
@@ -111,10 +113,9 @@ BufferedNet::BufferedNet(const BufferedNetType type,
       float pin_cap, wire_cap;
       int fanout;
       bool has_pin_cap, has_wire_cap, has_fanout;
-      resizer->sdc_->portExtCap(port,
+      corner->sdc()->portExtCap(port,
                                 rf,
-                                corner,
-                                sta::MinMax::max(),
+                                MinMax::max(),
                                 pin_cap,
                                 has_pin_cap,
                                 wire_cap,
@@ -158,7 +159,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
                          const int layer,
                          const BufferedNetPtr& ref,
-                         const sta::Corner* corner,
+                         const sta::Scene* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics)
 {
@@ -187,7 +188,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
                          const int layer,
                          const int ref_layer,
                          const BufferedNetPtr& ref,
-                         const sta::Corner* corner,
+                         const Scene* corner,
                          const Resizer* resizer)
 {
   if (type != BufferedNetType::via) {
@@ -213,7 +214,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
                          const odb::Point& location,
                          sta::LibertyCell* buffer_cell,
                          const BufferedNetPtr& ref,
-                         const sta::Corner* corner,
+                         const sta::Scene* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics)
 {
@@ -403,7 +404,7 @@ int BufferedNet::maxLoadWireLength() const
   return 0;
 }
 
-void BufferedNet::wireRC(const sta::Corner* corner,
+void BufferedNet::wireRC(const sta::Scene* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics,
                          // Return values.
@@ -437,7 +438,7 @@ void BufferedNet::wireRC(const sta::Corner* corner,
 }
 
 double BufferedNet::viaResistance(
-    const sta::Corner* corner,
+    const Scene* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics)
 {
@@ -490,7 +491,7 @@ static const char* to_string(const BufferedNetType type)
 ////////////////////////////////////////////////////////////////
 
 BufferedNetPtr Resizer::makeBufferedNet(const sta::Pin* drvr_pin,
-                                        const sta::Corner* corner)
+                                        const sta::Scene* corner)
 {
   switch (estimate_parasitics_->getParasiticsSrc()) {
     case est::ParasiticsSrc::placement:
@@ -515,7 +516,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     const SteinerPtAdjacents& adjacents,
     const int level,
     SteinerPtPinVisited& pins_visited,
-    const sta::Corner* corner,
+    const sta::Scene* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
@@ -596,7 +597,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
 
 // Make BufferedNet from steiner tree.
 BufferedNetPtr Resizer::makeBufferedNetSteiner(const sta::Pin* drvr_pin,
-                                               const sta::Corner* corner)
+                                               const sta::Scene* corner)
 {
   BufferedNetPtr bnet;
   est::SteinerTree* tree = estimate_parasitics_->makeSteinerTree(drvr_pin);
@@ -639,7 +640,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
     const SteinerPtAdjacents& adjacents,
     const int level,
     SteinerPtPinVisited& pins_visited,
-    const sta::Corner* corner,
+    const sta::Scene* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
@@ -710,7 +711,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
 BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
     odb::Point root,
     const std::vector<BufferedNetPtr>& sinks,
-    const sta::Corner* corner)
+    const sta::Scene* corner)
 {
   BufferedNetPtr bnet = nullptr;
   std::vector<odb::Point> sink_points;
@@ -975,7 +976,7 @@ static BufferedNetPtr makeBufferedNet(
     GRoutePtAdjacents& adjacents,
     RoutePtPinMap& loc_pin_map,
     int level,
-    const sta::Corner* corner,
+    const sta::Scene* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
     utl::Logger* logger,
@@ -1061,7 +1062,7 @@ static BufferedNetPtr makeBufferedNet(
 }
 
 BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
-                                              const sta::Corner* corner)
+                                              const sta::Scene* corner)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
   const sta::Net* net = db_network_->dbToSta(db_net);

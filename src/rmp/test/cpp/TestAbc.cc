@@ -105,7 +105,8 @@ class AbcTest : public tst::Fixture
                     /*add_to_pins=*/false,
                     /*period=*/period,
                     waveform,
-                    /*comment=*/nullptr);
+                    /*comment=*/nullptr,
+                    /*mode=*/sta_->cmdMode());
 
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -136,7 +137,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
+  for (sta::Vertex* vertex : sta_->endpoints()) {
     if (std::string(vertex->name(network)) == "_33122_/D") {
       flop_input_vertex = vertex;
     }

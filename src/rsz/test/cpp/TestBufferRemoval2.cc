@@ -17,7 +17,6 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/VerilogWriter.hh"

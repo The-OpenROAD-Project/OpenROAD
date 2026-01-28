@@ -41,8 +41,8 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
@@ -1536,7 +1536,7 @@ void TritonPart::BuildTimingPaths()
   //              ExceptionThruSeq *thrus,
   //              ExceptionTo *to,
   //              bool unconstrained,
-  //              const Corner *corner,
+  //              const Scene *corner,
   //              const MinMaxAll *min_max,
   //              int group_count,
   //              int endpoint_count,
@@ -1553,6 +1553,7 @@ void TritonPart::BuildTimingPaths()
   //              bool clk_gating_hold);
   // PathEnds represent search endpoints that are either unconstrained or
   // constrained by a timing check, output delay, data check, or path delay.
+  sta::StdStringSeq group_names_empty;
   sta::PathEndSeq path_ends = sta_->search()->findPathEnds(  // from, thrus, to,
                                                              // unconstrained
       e_from,   // return paths from a list of clocks/instances/ports/register
@@ -1561,7 +1562,7 @@ void TritonPart::BuildTimingPaths()
       e_to,     // return paths to a list of clocks/instances/ports or pins
       include_unconstrained,  // return unconstrained paths
       // corner, min_max,
-      sta_->cmdCorner(),  // return paths for a process corner
+      sta_->cmdMode()->scenes(),  // return paths for a process corner
       get_max ? sta::MinMaxAll::max()
               : sta::MinMaxAll::min(),  // return max/min paths checks
       // group_count, endpoint_count, unique_pins
@@ -1570,9 +1571,9 @@ void TritonPart::BuildTimingPaths()
       true,            // unique pins
       true,            // unique edges
       -sta::INF,
-      sta::INF,  // slack_min, slack_max,
-      true,      // sort_by_slack
-      nullptr,   // group_names
+      sta::INF,           // slack_min, slack_max,
+      true,               // sort_by_slack
+      group_names_empty,  // group_names
       // setup, hold, recovery, removal,
       get_max,
       !get_max,
@@ -1690,7 +1691,7 @@ void TritonPart::BuildTimingPaths()
       continue;  // this net is not used
     }
     sta::Net* net = network_->dbToSta(db_net);
-    const float slack = sta_->netSlack(net, sta::MinMax::max());
+    const float slack = sta_->slack(net, sta::MinMax::max());
     // set the slack of unconstrained net to max_clock_period_
     if (slack > maximum_clock_period_) {
       num_unconstrained_hyperedges++;
