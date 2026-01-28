@@ -3096,6 +3096,8 @@ void Snapper::attemptSnapToExtraPatterns(
     }
   }
 
+  snapPinToPosition(snap_pin, positions[best_index], target_direction);
+
   if (best_snapped_pins != total_pins) {
     totalAlignedPins(layers_data_list, target_direction, true);
 
@@ -3107,8 +3109,6 @@ void Snapper::attemptSnapToExtraPatterns(
                   best_snapped_pins,
                   total_pins);
   }
-
-  snapPinToPosition(snap_pin, positions[best_index], target_direction);
 }
 
 int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
