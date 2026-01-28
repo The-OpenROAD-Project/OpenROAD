@@ -4,6 +4,7 @@
 #include "dbVia.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -17,7 +18,6 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
@@ -26,7 +26,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -160,7 +159,7 @@ _dbTech* _dbVia::getTech()
 
 dbOStream& operator<<(dbOStream& stream, const _dbVia& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream << *bit_field;
   stream << v.name_;
   stream << v.pattern_;
@@ -176,7 +175,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbVia& v)
 
 dbIStream& operator>>(dbIStream& stream, _dbVia& v)
 {
-  uint* bit_field = (uint*) &v.flags_;
+  uint32_t* bit_field = (uint32_t*) &v.flags_;
   stream >> *bit_field;
   stream >> v.name_;
   stream >> v.pattern_;
@@ -535,7 +534,7 @@ bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
   return true;
 }
 
-dbVia* dbVia::getVia(dbBlock* block_, uint dbid_)
+dbVia* dbVia::getVia(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbVia*) block->via_tbl_->getPtr(dbid_);

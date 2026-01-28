@@ -3,14 +3,13 @@
 
 #include "dbxWriter.h"
 
-#include <yaml-cpp/yaml.h>
-
 #include <string>
 #include <vector>
 
 #include "baseWriter.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 
 namespace odb {
 
@@ -107,7 +106,7 @@ void DbxWriter::writeConnection(YAML::Node& connection_node,
       = buildPath(conn->getTopRegionPath(), conn->getTopRegion());
   connection_node["bot"]
       = buildPath(conn->getBottomRegionPath(), conn->getBottomRegion());
-  connection_node["thicness"] = conn->getThickness() / u;
+  connection_node["thickness"] = conn->getThickness() / u;
 }
 
 std::string DbxWriter::buildPath(const std::vector<dbChipInst*>& path_insts,

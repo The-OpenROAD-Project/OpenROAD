@@ -3,6 +3,7 @@
 
 #include "dbSite.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -14,7 +15,6 @@
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 
@@ -282,7 +282,7 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
   return (dbSite*) site;
 }
 
-dbSite* dbSite::getSite(dbLib* lib, uint oid)
+dbSite* dbSite::getSite(dbLib* lib, uint32_t oid)
 {
   _dbLib* lib_impl = (_dbLib*) lib;
   return (dbSite*) lib_impl->site_tbl_->getPtr(oid);
@@ -299,7 +299,7 @@ void _dbSite::collectMemInfo(MemInfo& info)
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 {
-  uint* bit_field = (uint*) &site.flags_;
+  uint32_t* bit_field = (uint32_t*) &site.flags_;
   stream << *bit_field;
   stream << site.name_;
   stream << site.height_;
@@ -311,14 +311,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
 
 dbIStream& operator>>(dbIStream& stream, _dbSite& site)
 {
-  uint* bit_field = (uint*) &site.flags_;
+  uint32_t* bit_field = (uint32_t*) &site.flags_;
   stream >> *bit_field;
   stream >> site.name_;
   stream >> site.height_;
   stream >> site.width_;
   stream >> site.next_entry_;
   _dbDatabase* db = site.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_site_row_pattern)) {
+  if (db->isSchema(kSchemaSiteRowPattern)) {
     stream >> site.row_pattern_;
   }
   return stream;

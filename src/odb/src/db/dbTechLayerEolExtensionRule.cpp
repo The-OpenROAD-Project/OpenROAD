@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 namespace odb {
@@ -136,7 +136,7 @@ dbTechLayerEolExtensionRule* dbTechLayerEolExtensionRule::create(
 
 dbTechLayerEolExtensionRule*
 dbTechLayerEolExtensionRule::getTechLayerEolExtensionRule(dbTechLayer* inly,
-                                                          uint dbid)
+                                                          uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerEolExtensionRule*) layer->eol_ext_rules_tbl_->getPtr(dbid);

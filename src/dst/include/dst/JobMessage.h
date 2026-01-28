@@ -19,8 +19,7 @@ class BalancerConnection;
 class JobDescription
 {
  public:
-  JobDescription() {}
-  virtual ~JobDescription() {}
+  virtual ~JobDescription() = default;
 
  private:
   template <class Archive>
@@ -82,7 +81,7 @@ class JobMessage
       = "\r\nENDOFPACKET\r\n";  // ENDOFPACKET SEQUENCE
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 
   friend class boost::serialization::access;
 

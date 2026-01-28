@@ -203,6 +203,7 @@ class Cluster
   UniqueClusterVector releaseChildren();
   Cluster* getParent() const;
   const UniqueClusterVector& getChildren() const;
+  std::vector<Cluster*> getRawChildren() const;
 
   bool isLeaf() const;
   std::string getIsLeafString() const;
@@ -384,7 +385,7 @@ class SoftMacro
             Cluster* cluster);
   SoftMacro(utl::Logger* logger,
             const HardMacro* hard_macro,
-            const odb::Point* offset = nullptr);
+            const odb::Rect* outline = nullptr);
 
   const std::string& getName() const;
 
@@ -431,6 +432,9 @@ class SoftMacro
   Cluster* getCluster() const;
   // calculate macro utilization
   float getMacroUtil() const;
+
+  // Debug
+  void reportShapeCurve(utl::Logger* logger) const;
 
  private:
   int findIntervalIndex(const IntervalList& interval_list,

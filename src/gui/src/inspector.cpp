@@ -18,10 +18,16 @@
 #include <QTextDocument>
 #include <QVariant>
 #include <QWidget>
+#include <algorithm>
 #include <any>
 #include <cmath>
+#include <iterator>
+#include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -888,7 +894,7 @@ void Inspector::inspect(const Selected& object)
   }
 
   // check if object is part of history, otherwise delete history
-  if (std::find(navigation_history_.begin(), navigation_history_.end(), object)
+  if (std::ranges::find(navigation_history_, object)
       == navigation_history_.end()) {
     navigation_history_.clear();
   }
@@ -905,7 +911,7 @@ void Inspector::inspect(const Selected& object)
   reload();
 
   // update iterator
-  selected_itr_ = std::find(selected_.begin(), selected_.end(), selection_);
+  selected_itr_ = std::ranges::find(selected_, selection_);
   selected_itr_label_->setText(
       QString::number(getSelectedIteratorPosition() + 1) + "/"
       + QString::number(selected_.size()));
@@ -995,7 +1001,8 @@ void Inspector::makeAction(const Descriptor::Action& action)
       {"Add to highlight", ":/highlight_on.png"},
       {"Focus", ":/focus.png"},
       {"De-focus", ":/defocus.png"},
-      {"Navigate back", ":/undo.png"}};
+      {"Navigate back", ":/undo.png"},
+      {"Insert Buffer", ":/buffer.png"}};
   std::vector<std::pair<std::string, QString>> symbol_replacements{
       {"Fanin Cone", "▷"}, {"Fanout Cone", "◁"}};
 

@@ -11,10 +11,12 @@
 #include <utility>
 #include <vector>
 
+#include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -25,10 +27,12 @@ using utl::GPL;
 TimingBase::TimingBase() = default;
 
 TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
+                       grt::GlobalRouter* grt,
                        rsz::Resizer* rs,
                        utl::Logger* log)
     : TimingBase()
 {
+  grt_ = grt;
   rs_ = rs;
   nbc_ = std::move(nbc);
   log_ = log;
@@ -65,9 +69,8 @@ bool TimingBase::isTimingNetWeightOverflow(float overflow)
 
 void TimingBase::addTimingNetWeightOverflow(int overflow)
 {
-  std::vector<int>::iterator it = std::find(timingNetWeightOverflow_.begin(),
-                                            timingNetWeightOverflow_.end(),
-                                            overflow);
+  std::vector<int>::iterator it
+      = std::ranges::find(timingNetWeightOverflow_, overflow);
 
   // only push overflow when the overflow is not in vector.
   if (it == timingNetWeightOverflow_.end()) {
@@ -75,9 +78,7 @@ void TimingBase::addTimingNetWeightOverflow(int overflow)
   }
 
   // do sort in reverse order
-  std::sort(timingNetWeightOverflow_.begin(),
-            timingNetWeightOverflow_.end(),
-            std::greater<int>());
+  std::ranges::sort(timingNetWeightOverflow_, std::greater<int>());
 }
 
 void TimingBase::setTimingNetWeightOverflows(const std::vector<int>& overflows)
@@ -93,9 +94,8 @@ void TimingBase::setTimingNetWeightOverflows(const std::vector<int>& overflows)
 
 void TimingBase::deleteTimingNetWeightOverflow(int overflow)
 {
-  std::vector<int>::iterator it = std::find(timingNetWeightOverflow_.begin(),
-                                            timingNetWeightOverflow_.end(),
-                                            overflow);
+  std::vector<int>::iterator it
+      = std::ranges::find(timingNetWeightOverflow_, overflow);
   // only erase overflow when the overflow is in vector.
   if (it != timingNetWeightOverflow_.end()) {
     timingNetWeightOverflow_.erase(it);

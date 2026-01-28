@@ -18,6 +18,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -101,15 +102,14 @@ bool SizeDownMove::doMove(const Path* drvr_path,
   }
 
   // Sort fanouts by slack margin, so we can try the most margin first.
-  sort(fanout_slacks.begin(),
-       fanout_slacks.end(),
-       [this](const pair<Vertex*, Slack>& pair1,
-              const pair<Vertex*, Slack>& pair2) {
-         return (pair1.second > pair2.second
-                 || (pair1.second == pair2.second
-                     && network_->pathNameLess(pair1.first->pin(),
-                                               pair2.first->pin())));
-       });
+  std::ranges::sort(fanout_slacks,
+                    [this](const pair<Vertex*, Slack>& pair1,
+                           const pair<Vertex*, Slack>& pair2) {
+                      return (pair1.second > pair2.second
+                              || (pair1.second == pair2.second
+                                  && network_->pathNameLess(
+                                      pair1.first->pin(), pair2.first->pin())));
+                    });
 
   for (auto& fanout_slack : fanout_slacks) {
     debugPrint(logger_,
@@ -196,7 +196,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
   LibertyCell* load_cell = load_port->libertyCell();
   const char* load_port_name = load_port->name();
 
-  LibertyCellSeq swappable_cells = BaseMove::getSwappableCells(load_cell);
+  sta::LibertyCellSeq swappable_cells = BaseMove::getSwappableCells(load_cell);
   LibertyCell* best_cell = nullptr;
 
   if (swappable_cells.size() > 1) {

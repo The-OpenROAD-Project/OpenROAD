@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -21,9 +22,9 @@ class dbOStream;
 struct _dbBPinFlags
 {
   dbPlacementStatus::Value status : 4;
-  uint has_min_spacing : 1;
-  uint has_effective_width : 1;
-  uint spare_bits : 26;
+  uint32_t has_min_spacing : 1;
+  uint32_t has_effective_width : 1;
+  uint32_t spare_bits : 26;
 };
 
 class _dbBPin : public _dbObject
@@ -42,8 +43,8 @@ class _dbBPin : public _dbObject
   dbId<_dbBTerm> bterm_;
   dbId<_dbBox> boxes_;
   dbId<_dbBPin> next_bpin_;
-  uint min_spacing_;      // 5.6 DEF
-  uint effective_width_;  // 5.6 DEF
+  uint32_t min_spacing_;      // 5.6 DEF
+  uint32_t effective_width_;  // 5.6 DEF
   dbVector<dbId<_dbAccessPoint>> aps_;
 };
 

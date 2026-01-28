@@ -6,6 +6,7 @@
 #include <dst/JobMessage.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <memory>
 #include <mutex>
@@ -26,10 +27,10 @@
 #include "dst/Distributed.h"
 #include "utl/Logger.h"
 
-using namespace dst;
-
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
 BOOST_CLASS_EXPORT(dst::BroadcastJobDescription)
+
+namespace dst {
 
 BalancerConnection::BalancerConnection(asio::io_context& service,
                                        LoadBalancer* owner,
@@ -154,7 +155,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         asio::thread_pool pool(owner_->workers_.size());
         auto workers_copy = owner_->workers_;
         std::mutex broadcast_failure_mutex;
-        std::vector<std::pair<ip::address, unsigned short>> failed_workers;
+        std::vector<std::pair<ip::address, uint16_t>> failed_workers;
         while (!workers_copy.empty()) {
           auto worker = workers_copy.top();
           workers_copy.pop();
@@ -182,7 +183,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         pool.join();
         JobMessage result(JobMessage::kSuccess);
         std::string msg_str;
-        unsigned short success_broadcast
+        uint16_t success_broadcast
             = owner_->workers_.size() - failed_workers.size();
         if (!failed_workers.empty()) {
           for (const auto& worker : failed_workers) {
@@ -217,6 +218,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
     sock_.close();
   }
 }
+
+}  // namespace dst
 
 #if !SWIG && FMT_VERSION >= 100000
 namespace boost::asio::ip {

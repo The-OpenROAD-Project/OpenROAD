@@ -53,6 +53,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbBTerm*);
@@ -808,8 +809,7 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
 
   sta::Unit* unit = sta_->getSTA()->units()->timeUnit();
   unit_scale_ = unit->scale();
-  unit_suffix_ = unit->scaleAbbreviation();
-  unit_suffix_ += unit->suffix();
+  unit_suffix_ = QString::fromStdString(unit->scaleAbbrevSuffix());
 
   build();
 
@@ -1163,8 +1163,7 @@ QString ClockTreeView::convertDelayToString(sta::Delay delay) const
   const sta::Unit* unit = tree_->getNetwork()->units()->timeUnit();
   std::string sdelay = unit->asString(delay, 3);
   sdelay += " ";
-  sdelay += unit->scaleAbbreviation();
-  sdelay += unit->suffix();
+  sdelay += unit->scaleAbbrevSuffix();
   return QString::fromStdString(sdelay);
 }
 

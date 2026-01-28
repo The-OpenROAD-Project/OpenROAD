@@ -10,6 +10,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -248,6 +249,8 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   nbVec_ = std::move(nbVec);
   minRcTargetDensity_.resize(nbVec_.size(), 0);
   inflatedAreaDelta_.resize(nbVec_.size(), 0);
+  accumulatedInflatedAreaDelta_.resize(nbVec_.size(), 0);
+  minRcInflatedAreaDelta_.resize(nbVec_.size(), 0);
   init();
 }
 
@@ -283,6 +286,7 @@ void RouteBase::revertToMinCongestion()
     nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
     nbVec_[j]->restoreRemovedFillers();
     nbVec_[j]->updateDensitySize();
+    accumulatedInflatedAreaDelta_[j] = minRcInflatedAreaDelta_[j];
   }
   resetRoutabilityResources();
 }
@@ -325,6 +329,15 @@ void RouteBase::loadGrt()
 std::vector<int64_t> RouteBase::inflatedAreaDelta() const
 {
   return inflatedAreaDelta_;
+}
+
+int64_t RouteBase::getTotalInflation() const
+{
+  int64_t totalInflation = 0;
+  for (auto inflation : accumulatedInflatedAreaDelta_) {
+    totalInflation += inflation;
+  }
+  return totalInflation;
 }
 
 int RouteBase::getRevertCount() const
@@ -580,7 +593,7 @@ std::pair<bool, bool> RouteBase::routability(
 
     // save cell size info
     nbc_->updateMinRcCellSize();
-
+    minRcInflatedAreaDelta_ = accumulatedInflatedAreaDelta_;
   } else {
     is_min_rc_ = false;
     min_RC_violated_cnt_++;
@@ -660,6 +673,7 @@ std::pair<bool, bool> RouteBase::routability(
       // both of original and density size will be changed
       inflatedAreaDelta_[i] += newCellArea - prevCellArea;
     }
+    accumulatedInflatedAreaDelta_[i] += inflatedAreaDelta_[i];
 
     float inflated_area_delta_microns
         = block->dbuAreaToMicrons(inflatedAreaDelta_[i]);
@@ -928,8 +942,8 @@ float RouteBase::getGrtRC() const
   int horArraySize = horEdgeCongArray.size();
   int verArraySize = verEdgeCongArray.size();
 
-  std::sort(horEdgeCongArray.rbegin(), horEdgeCongArray.rend());
-  std::sort(verEdgeCongArray.rbegin(), verEdgeCongArray.rend());
+  std::ranges::sort(std::ranges::reverse_view(horEdgeCongArray));
+  std::ranges::sort(std::ranges::reverse_view(verEdgeCongArray));
 
   double horAvg005RC = 0;
   double horAvg010RC = 0;

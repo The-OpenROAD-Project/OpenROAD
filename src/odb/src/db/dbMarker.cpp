@@ -10,6 +10,7 @@
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbITerm.h"
 #include "dbInst.h"
@@ -17,7 +18,6 @@
 #include "dbNet.h"
 #include "dbObstruction.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbVector.h"
@@ -102,7 +102,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
   for (std::size_t i = 0; i < item_count; i++) {
     std::string db_type;
     stream >> db_type;
-    uint db_id;
+    uint32_t db_id;
     stream >> db_id;
 
     obj.sources_.emplace(dbObject::getType(db_type.c_str(), obj.getLogger()),
@@ -118,25 +118,25 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
       case _dbMarker::ShapeType::kPoint: {
         Point pt;
         stream >> pt;
-        obj.shapes_.push_back(pt);
+        obj.shapes_.emplace_back(pt);
         break;
       }
       case _dbMarker::ShapeType::kLine: {
         Line l;
         stream >> l;
-        obj.shapes_.push_back(l);
+        obj.shapes_.emplace_back(l);
         break;
       }
       case _dbMarker::ShapeType::kRect: {
         Rect r;
         stream >> r;
-        obj.shapes_.push_back(r);
+        obj.shapes_.emplace_back(r);
         break;
       }
       case _dbMarker::ShapeType::kPolygon: {
         Polygon p;
         stream >> p;
-        obj.shapes_.push_back(p);
+        obj.shapes_.emplace_back(p);
         break;
       }
     }
@@ -219,7 +219,7 @@ void _dbMarker::writeTR(std::ofstream& report) const
 
   dbMarker* marker = (dbMarker*) this;
 
-  report << "violation type: " << marker->getCategory()->getName() << std::endl;
+  report << "violation type: " << marker->getCategory()->getName() << '\n';
   report << "\tsrcs:";
   for (dbObject* src : marker->getSources()) {
     switch (src->getObjectType()) {
@@ -243,10 +243,10 @@ void _dbMarker::writeTR(std::ofstream& report) const
             utl::ODB, 295, "Unsupported object type: {}", src->getTypeName());
     }
   }
-  report << std::endl;
+  report << '\n';
 
   if (!marker->getComment().empty()) {
-    report << "\tcomment: " << marker->getComment() << std::endl;
+    report << "\tcomment: " << marker->getComment() << '\n';
   }
 
   const Rect bbox = marker->getBBox();
@@ -260,7 +260,7 @@ void _dbMarker::writeTR(std::ofstream& report) const
   } else {
     report << "-";
   }
-  report << std::endl;
+  report << '\n';
 }
 
 void _dbMarker::populatePTree(_dbMarkerCategory::PropertyTree& tree) const
@@ -667,25 +667,25 @@ std::vector<dbMarker::MarkerShape> dbMarker::getShapes() const
 void dbMarker::addShape(const Point& pt)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(pt);
+  marker->shapes_.emplace_back(pt);
 }
 
 void dbMarker::addShape(const Line& line)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(line);
+  marker->shapes_.emplace_back(line);
 }
 
 void dbMarker::addShape(const Rect& rect)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(rect);
+  marker->shapes_.emplace_back(rect);
 }
 
 void dbMarker::addShape(const Polygon& polygon)
 {
   _dbMarker* marker = (_dbMarker*) this;
-  marker->shapes_.push_back(polygon);
+  marker->shapes_.emplace_back(polygon);
 }
 
 void dbMarker::setTechLayer(dbTechLayer* layer)

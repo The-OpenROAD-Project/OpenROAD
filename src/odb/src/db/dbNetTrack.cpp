@@ -4,13 +4,15 @@
 // Generator Code Begin Cpp
 #include "dbNetTrack.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbBlock.h"
 // User Code End Includes
 namespace odb {
@@ -108,7 +110,7 @@ dbNetTrack* dbNetTrack::create(dbNet* net, dbTechLayer* layer, Rect box)
   return (dbNetTrack*) track;
 }
 
-dbNetTrack* dbNetTrack::getNetTrack(dbBlock* block, uint dbid)
+dbNetTrack* dbNetTrack::getNetTrack(dbBlock* block, uint32_t dbid)
 {
   _dbBlock* owner = (_dbBlock*) block;
   return (dbNetTrack*) owner->net_tracks_tbl_->getPtr(dbid);
@@ -120,9 +122,9 @@ void dbNetTrack::destroy(dbNetTrack* track)
   _dbNet* net = (_dbNet*) track->getNet();
   _dbNetTrack* _track = (_dbNetTrack*) track;
 
-  uint id = _track->getOID();
+  uint32_t id = _track->getOID();
   _dbNetTrack* prev = nullptr;
-  uint cur = net->tracks_;
+  uint32_t cur = net->tracks_;
   while (cur) {
     _dbNetTrack* c = block->net_tracks_tbl_->getPtr(cur);
     if (cur == id) {

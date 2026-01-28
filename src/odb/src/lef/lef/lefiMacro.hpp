@@ -164,11 +164,8 @@ class lefiPin
   void setFallSatcur(double current);
   void setCurrentSource(const char* name);
   void setTables(const char* highName, const char* lowName);
-  void setProperty(const char* name, const char* value, const char type);
-  void setNumProperty(const char* name,
-                      double d,
-                      const char* value,
-                      const char type);
+  void setProperty(const char* name, const char* value, char type);
+  void setNumProperty(const char* name, double d, const char* value, char type);
   void addAntennaModel(int oxide);  // 5.5
   void addAntennaSize(double value, const char* layer);
   void addAntennaMetalArea(double value, const char* layer);
@@ -518,11 +515,8 @@ class lefiMacro
   void setEEQ(const char* name);
   void setLEQ(const char* name);
   void setClockType(const char* name);
-  void setProperty(const char* name, const char* value, const char type);
-  void setNumProperty(const char* name,
-                      double d,
-                      const char* value,
-                      const char type);
+  void setProperty(const char* name, const char* value, char type);
+  void setNumProperty(const char* name, double d, const char* value, char type);
   void bumpProps();
 
   // orient=-1 means no orient was specified.

@@ -4,6 +4,7 @@
 #include "dbTech.h"
 
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <vector>
 
@@ -17,7 +18,6 @@
 #include "dbProperty.h"
 #include "dbPropertyItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerAntennaRule.h"
 #include "dbTechLayerItr.h"
@@ -33,7 +33,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -305,7 +304,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << tech.lef_units_;
   stream << tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech.flags_;
+  uint32_t* bit_field = (uint32_t*) &tech.flags_;
   stream << *bit_field;
 
   stream << tech.getLefVersion();
@@ -336,7 +335,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 {
   _dbDatabase* db = tech.getImpl()->getDatabase();
-  if (db->isSchema(db_schema_block_tech)) {
+  if (db->isSchema(kSchemaBlockTech)) {
     stream >> tech.name_;
   } else {
     tech.name_ = "";
@@ -345,14 +344,14 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> tech.layer_cnt_;
   stream >> tech.rlayer_cnt_;
   stream >> tech.lef_units_;
-  if (db->isLessThanSchema(db_schema_remove_dbu_per_micron)) {
+  if (db->isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
     int dbu_per_micron;
     stream >> dbu_per_micron;
     db->dbu_per_micron_ = dbu_per_micron;
   }
   stream >> tech.manufacturing_grid_;
 
-  uint* bit_field = (uint*) &tech.flags_;
+  uint32_t* bit_field = (uint32_t*) &tech.flags_;
   stream >> *bit_field;
 
   double lef_version;
@@ -376,7 +375,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> *tech.via_generate_rule_tbl_;
   stream >> *tech.prop_tbl_;
   stream >> *tech.metal_width_via_map_tbl_;
-  if (tech.getDatabase()->isSchema(db_schema_cell_edge_spc_tbl)) {
+  if (tech.getDatabase()->isSchema(kSchemaCellEdgeSpcTbl)) {
     stream >> *tech.cell_edge_spacing_tbl_;
   }
   stream >> *tech.name_cache_;
@@ -833,7 +832,7 @@ dbTech* dbTech::create(dbDatabase* db_, const char* name)
   return (dbTech*) tech;
 }
 
-dbTech* dbTech::getTech(dbDatabase* db_, uint dbid_)
+dbTech* dbTech::getTech(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbTech*) db->tech_tbl_->getPtr(dbid_);

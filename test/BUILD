@@ -18,6 +18,8 @@ filegroup(
     srcs = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fakeram45_64x7.lef",
+        "Nangate45/fakeram45_64x7.lib",
     ],
     visibility = ["//visibility:public"],
 )
@@ -51,6 +53,7 @@ PASSFAIL_TESTS = [
 COMPULSORY_TESTS = [
     "error1",
     "get_core_die_areas",
+    "ord_tclsh_completion",
     "place_inst",
     "upf_test",
     "upf_aes",

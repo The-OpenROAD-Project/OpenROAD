@@ -4,13 +4,15 @@
 // Generator Code Begin Cpp
 #include "dbScanList.h"
 
+#include <cstdint>
+
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
 #include "dbScanListScanInstItr.h"
 #include "dbScanPartition.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbScanList>;
@@ -39,10 +41,10 @@ _dbScanList::_dbScanList(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> obj.unused_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> obj.first_scan_inst_;
   }
   return stream;

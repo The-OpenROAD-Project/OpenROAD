@@ -245,11 +245,14 @@ proc global_route { args } {
 
 sta::define_cmd_args "repair_antennas" { diode_cell \
                                          [-iterations iterations] \
-                                         [-ratio_margin ratio_margin]}
+                                         [-ratio_margin ratio_margin] \
+                                         [-jumper_only] \
+                                         [-diode_only] \
+                                         [-allow_congestion]}
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-    keys {-iterations -ratio_margin} flags {}
+    keys {-iterations -ratio_margin} flags {-jumper_only -diode_only -allow_congestion}
   if { [ord::get_db_block] == "NULL" } {
     utl::error GRT 104 "No design block found."
   }
@@ -289,6 +292,16 @@ proc repair_antennas { args } {
       sta::check_positive_integer "-iterations" $iterations
     }
 
+    set allow_congestion [info exists flags(-allow_congestion)]
+    grt::set_allow_congestion $allow_congestion
+
+    set jumper_only [info exists flags(-jumper_only)]
+    set diode_only [info exists flags(-diode_only)]
+
+    if { $jumper_only && $diode_only } {
+      utl::error GRT 294 "Only use either -jumper_only or -diode_only flag"
+    }
+
     set ratio_margin 0
     if { [info exists keys(-ratio_margin)] } {
       set ratio_margin $keys(-ratio_margin)
@@ -297,7 +310,7 @@ proc repair_antennas { args } {
       }
     }
 
-    return [grt::repair_antennas $diode_mterm $iterations $ratio_margin]
+    return [grt::repair_antennas $diode_mterm $iterations $ratio_margin $jumper_only $diode_only]
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
   }
@@ -334,15 +347,14 @@ proc read_guides { args } {
   grt::read_guides $file_name
 }
 
-sta::define_cmd_args "draw_route_guides" { net_names \
-                                           [-show_segments]
+sta::define_cmd_args "draw_route_segments" { net_names \
                                            [-show_pin_locations] }
 
-proc draw_route_guides { args } {
-  sta::parse_key_args "draw_route_guides" args \
+proc draw_route_segments { args } {
+  sta::parse_key_args "draw_route_segments" args \
     keys {} \
-    flags {-show_pin_locations -show_segments}
-  sta::check_argc_eq1 "draw_route_guides" $args
+    flags {-show_pin_locations}
+  sta::check_argc_eq1 "draw_route_segments" $args
   set net_names [lindex $args 0]
   set block [ord::get_db_block]
   if { $block == "NULL" } {
@@ -351,10 +363,9 @@ proc draw_route_guides { args } {
 
   grt::clear_route_guides
   set show_pins [info exists flags(-show_pin_locations)]
-  set show_segments [info exists flags(-show_segments)]
   foreach net [get_nets $net_names] {
     if { $net != "NULL" } {
-      grt::highlight_net_route [sta::sta_to_db_net $net] $show_segments $show_pins
+      grt::highlight_net_route [sta::sta_to_db_net $net] $show_pins
     }
   }
 }

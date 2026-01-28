@@ -14,6 +14,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0036] Movable instances area:          6.916 um^2
+[INFO GPL-0037] Total instances area:            6.916 um^2
+[INFO GPL-0035] Pin density area adjust:         1.522 um^2
 [INFO GPL-0032] Initializing region: Top-level
 [INFO GPL-0006] Number of instances:                 4
 [INFO GPL-0007] Movable instances:                   4
@@ -59,11 +62,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.0 |      2 | y2
        10 |       0 |       6 |        1 |      0 |     2 |   +84.6% |   -0.015 |       -0.0 |      2 | y2
-       12 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-       13 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-      14* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-      15* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
-    final |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.008 |       -0.0 |      2 | y2
+       12 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+       13 |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+      14* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+      15* |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
+    final |       0 |       7 |        1 |      0 |     3 |   +96.2% |   -0.009 |       -0.0 |      2 | y2
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 1 buffers.
 [INFO RSZ-0051] Resized 7 instances: 7 up, 0 up match, 0 down, 0 VT

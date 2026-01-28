@@ -18,14 +18,11 @@
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "utl/Logger.h"
 #include "utl/unique_name.h"
 
 namespace abc {
 }  // namespace abc
-
-namespace utl {
-class Logger;
-}
 
 namespace odb {
 class dbDatabase;
@@ -44,8 +41,6 @@ class dbSta;
 }  // namespace sta
 
 namespace rmp {
-
-using utl::Logger;
 
 enum class Mode
 {
@@ -98,16 +93,18 @@ class Restructure
   void getBlob(unsigned max_depth);
   void runABC();
   void postABC(float worst_slack);
-  bool writeAbcScript(std::string file_name);
+  bool writeAbcScript(const std::string& file_name);
   void writeOptCommands(std::ofstream& script);
   void initDB();
   void getEndPoints(sta::PinSet& ends, bool area_mode, unsigned max_depth);
   int countConsts(odb::dbBlock* top_block);
   void removeConstCells();
   void removeConstCell(odb::dbInst* inst);
-  bool readAbcLog(std::string abc_file_name, int& level_gain, float& delay_val);
+  bool readAbcLog(const std::string& abc_file_name,
+                  int& level_gain,
+                  float& delay_val);
 
-  Logger* logger_;
+  utl::Logger* logger_;
   utl::UniqueName name_generator_;
   std::string logfile_;
   std::string locell_;

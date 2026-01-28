@@ -3,6 +3,7 @@
 
 #include "dbBlock.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 #include <unistd.h>
 
 #include <algorithm>
@@ -25,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -109,7 +111,6 @@
 #include "dbScanInst.h"
 #include "dbScanListScanInstItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechLayerRule.h"
@@ -144,16 +145,6 @@ struct OldTransform
   int sizeY;
 };
 
-dbIStream& operator>>(dbIStream& stream, OldTransform& t)
-{
-  stream >> t.orient;
-  stream >> t.originX;
-  stream >> t.originY;
-  stream >> t.sizeX;
-  stream >> t.sizeY;
-  return stream;
-}
-
 static void unlink_child_from_parent(_dbBlock* child, _dbBlock* parent);
 
 // TODO: Bounding box updates...
@@ -183,7 +174,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   max_cap_node_id_ = 0;
   max_rseg_id_ = 0;
   max_cc_seg_id_ = 0;
-  min_routing_layer_ = 1;
+  min_routing_layer_ = 2;
   max_routing_layer_ = -1;
   min_layer_for_clock_ = -1;
   max_layer_for_clock_ = -2;
@@ -869,6 +860,43 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   return stream;
 }
 
+/**
+ * @brief Rebuilds the name-to-ID hash maps for hierarchical objects within
+ * their respective modules.
+ *
+ * This function is used during database loading (operator>>) to restore the
+ * fast-lookup hashes that were stored in the ODB.
+ *
+ * @tparam T The public ODB object type (e.g., dbInst, dbModNet).
+ * @tparam T_impl The internal implementation type (e.g., _dbInst, _dbModNet).
+ * @param block The database block containing the objects.
+ * @param table The internal database table storing the object implementations.
+ * @param module_field Member pointer to the field storing the parent module ID
+ *                     (e.g., &_dbInst::module_ or &_dbModInst::parent_).
+ * @param hash_field Member pointer to the hash map member in _dbModule where
+ *                   the object ID should be stored.
+ */
+template <typename T, typename T_impl>
+static void rebuildModuleHash(
+    _dbBlock& block,
+    dbTable<T_impl>* table,
+    dbId<_dbModule> T_impl::*module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
+{
+  dbSet<T> items((dbBlock*) &block, table);
+  for (T* obj : items) {
+    T_impl* _obj = (T_impl*) obj;
+    dbId<_dbModule> mid = _obj->*module_field;
+    if (mid == 0) {
+      mid = block.top_module_;
+    }
+    _dbModule* module = block.module_tbl_->getPtr(mid);
+    if (module && _obj->name_) {
+      (module->*hash_field)[_obj->name_] = _obj->getId();
+    }
+  }
+}
+
 dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
 {
   _dbDatabase* db = block.getImpl()->getDatabase();
@@ -882,24 +910,23 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.corners_per_block_;
   stream >> block.corner_name_list_;
   stream >> block.name_;
-  if (db->isSchema(db_schema_die_area_is_polygon)) {
+  if (db->isSchema(kSchemaDieAreaIsPolygon)) {
     stream >> block.die_area_;
   } else {
     Rect rect;
     stream >> rect;
     block.die_area_ = rect;
   }
-  if (db->isSchema(db_schema_core_area_is_polygon)) {
+  if (db->isSchema(kSchemaCoreAreaIsPolygon)) {
     stream >> block.core_area_;
   }
-  if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
+  if (db->isSchema(kSchemaDbBlockBlockedRegionsForPins)) {
     stream >> block.blocked_regions_for_pins_;
   }
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
   dbId<_dbTech> old_db_tech;
-  if (db->isSchema(db_schema_block_tech)
-      && !db->isSchema(db_schema_chip_tech)) {
+  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
     stream >> old_db_tech;
   }
   stream >> block.chip_;
@@ -914,8 +941,8 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.inst_hash_;
   stream >> block.module_hash_;
   stream >> block.modinst_hash_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
-    if (!db->isSchema(db_schema_db_remove_hash)) {
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
+    if (!db->isSchema(kSchemaDbRemoveHash)) {
       dbHashTable<_dbModBTerm> unused_modbterm_hash;
       dbHashTable<_dbModITerm> unused_moditerm_hash;
       dbHashTable<_dbModNet> unused_modnet_hash;
@@ -930,7 +957,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.logicport_hash_;
   stream >> block.powerswitch_hash_;
   stream >> block.isolation_hash_;
-  if (db->isSchema(db_schema_level_shifter)) {
+  if (db->isSchema(kSchemaLevelShifter)) {
     stream >> block.levelshifter_hash_;
   }
   stream >> block.group_hash_;
@@ -939,14 +966,14 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block.max_cap_node_id_;
   stream >> block.max_rseg_id_;
   stream >> block.max_cc_seg_id_;
-  if (!db->isSchema(db_schema_block_ext_model_index)) {
+  if (!db->isSchema(kSchemaBlockExtModelIndex)) {
     int ignore_minExtModelIndex;
     int ignore_maxExtModelIndex;
     stream >> ignore_minExtModelIndex;
     stream >> ignore_maxExtModelIndex;
   }
   stream >> block.children_;
-  if (db->isSchema(db_schema_block_component_mask_shift)) {
+  if (db->isSchema(kSchemaBlockComponentMaskShift)) {
     stream >> block.component_mask_shift_;
   }
   stream >> block.currentCcAdjOrder_;
@@ -954,39 +981,65 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.iterm_tbl_;
   stream >> *block.net_tbl_;
   stream >> *block.inst_hdr_tbl_;
-  if (db->isSchema(db_schema_db_remove_hash)) {
+  if (db->isSchema(kSchemaDbRemoveHash)) {
     stream >> *block.module_tbl_;
     stream >> *block.inst_tbl_;
   } else {
     stream >> *block.inst_tbl_;
     stream >> *block.module_tbl_;
   }
-  if (db->isSchema(db_schema_block_owns_scan_insts)) {
+  if (db->isSchema(kSchemaDbRemoveHash)) {
+    // Construct dbinst_hash_
+    rebuildModuleHash<dbInst>(
+        block, block.inst_tbl_, &_dbInst::module_, &_dbModule::dbinst_hash_);
+  }
+  if (db->isSchema(kSchemaBlockOwnsScanInsts)) {
     stream >> *block.scan_inst_tbl_;
   }
   stream >> *block.modinst_tbl_;
-  if (db->isSchema(db_schema_update_hierarchy)) {
+  if (db->isSchema(kSchemaDbRemoveHash)) {
+    // Construct modinst_hash_
+    rebuildModuleHash<dbModInst>(block,
+                                 block.modinst_tbl_,
+                                 &_dbModInst::parent_,
+                                 &_dbModule::modinst_hash_);
+  }
+  if (db->isSchema(kSchemaUpdateHierarchy)) {
     stream >> *block.modbterm_tbl_;
-    if (db->isSchema(db_schema_db_remove_hash)) {
+    if (db->isSchema(kSchemaDbRemoveHash)) {
+      // Construct modbterm_hash_
+      rebuildModuleHash<dbModBTerm>(block,
+                                    block.modbterm_tbl_,
+                                    &_dbModBTerm::parent_,
+                                    &_dbModule::modbterm_hash_);
+    }
+    if (db->isSchema(kSchemaDbRemoveHash)) {
       stream >> *block.busport_tbl_;
     }
     stream >> *block.moditerm_tbl_;
     stream >> *block.modnet_tbl_;
+    if (db->isSchema(kSchemaDbRemoveHash)) {
+      // Construct modnet_hash_
+      rebuildModuleHash<dbModNet>(block,
+                                  block.modnet_tbl_,
+                                  &_dbModNet::parent_,
+                                  &_dbModule::modnet_hash_);
+    }
   }
   stream >> *block.powerdomain_tbl_;
   stream >> *block.logicport_tbl_;
   stream >> *block.powerswitch_tbl_;
   stream >> *block.isolation_tbl_;
-  if (db->isSchema(db_schema_level_shifter)) {
+  if (db->isSchema(kSchemaLevelShifter)) {
     stream >> *block.levelshifter_tbl_;
   }
   stream >> *block.group_tbl_;
   stream >> *block.ap_tbl_;
-  if (db->isSchema(db_schema_add_global_connect)) {
+  if (db->isSchema(kSchemaAddGlobalConnect)) {
     stream >> *block.global_connect_tbl_;
   }
   stream >> *block.guide_tbl_;
-  if (db->isSchema(db_schema_net_tracks)) {
+  if (db->isSchema(kSchemaNetTracks)) {
     stream >> *block.net_tracks_tbl_;
   }
   stream >> *block.box_tbl_;
@@ -1014,33 +1067,33 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.r_seg_tbl_;     // DKF
   stream >> *block.cc_seg_tbl_;
   stream >> *block.ext_control_;
-  if (db->isSchema(db_schema_add_scan)) {
+  if (db->isSchema(kSchemaAddScan)) {
     stream >> block.dft_;
     stream >> *block.dft_tbl_;
   }
-  if (db->isSchema(db_schema_dbmarkergroup)
-      && db->isLessThanSchema(db_schema_chip_marker_categories)) {
+  if (db->isSchema(kSchemaDbMarkerGroup)
+      && db->isLessThanSchema(kSchemaChipMarkerCategories)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
     stream >> *chip->marker_categories_tbl_;
     dbHashTable<_dbMarkerCategory> tmp_hash;
     stream >> tmp_hash;
   }
-  if (db->isSchema(db_schema_dbblock_layers_ranges)) {
+  if (db->isSchema(kSchemaDbBlockLayersRanges)) {
     stream >> block.min_routing_layer_;
     stream >> block.max_routing_layer_;
     stream >> block.min_layer_for_clock_;
     stream >> block.max_layer_for_clock_;
   }
-  if (db->isSchema(db_schema_block_pin_groups)) {
+  if (db->isSchema(kSchemaBlockPinGroups)) {
     stream >> block.bterm_groups_;
   }
-  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
+  if (db->isSchema(kSchemaBtermTopLayerGrid)) {
     stream >> block.bterm_top_layer_grid_;
   }
-  if (db->isSchema(db_schema_map_insts_to_scan_insts)) {
+  if (db->isSchema(kSchemaMapInstsToScanInsts)) {
     stream >> block.inst_scan_inst_map_;
   }
-  if (db->isSchema(db_schema_unique_indices)) {
+  if (db->isSchema(kSchemaUniqueIndices)) {
     stream >> block.unique_net_index_;
     stream >> block.unique_inst_index_;
   }
@@ -1061,13 +1114,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   // TOM
   //-------------------------------------------------------------------------------
 
-  if (db->isSchema(db_schema_block_tech)
-      && !db->isSchema(db_schema_chip_tech)) {
+  if (db->isSchema(kSchemaBlockTech) && !db->isSchema(kSchemaChipTech)) {
     _dbChip* chip = db->chip_tbl_->getPtr(block.chip_);
     chip->tech_ = old_db_tech;
   }
 
-  if (!db->isSchema(db_schema_core_area_is_polygon)) {
+  if (!db->isSchema(kSchemaCoreAreaIsPolygon)) {
     // Wait for rows to be available
     dbBlock* blk = (dbBlock*) (&block);
     block.core_area_ = blk->computeCoreArea();
@@ -1947,17 +1999,18 @@ dbLevelShifter* dbBlock::findLevelShifter(const char* name)
 
 dbModInst* dbBlock::findModInst(const char* path)
 {
+  char hier_delimiter[2] = {getHierarchyDelimiter(), '\0'};
   char* _path = strdup(path);
   dbModule* cur_mod = getTopModule();
   dbModInst* cur_inst = nullptr;
-  char* token = strtok(_path, "/");
+  char* token = strtok(_path, hier_delimiter);
   while (token != nullptr) {
     cur_inst = cur_mod->findModInst(token);
     if (cur_inst == nullptr) {
       break;
     }
     cur_mod = cur_inst->getMaster();
-    token = strtok(nullptr, "/");
+    token = strtok(nullptr, hier_delimiter);
   }
   free((void*) _path);
   return cur_inst;
@@ -2497,9 +2550,9 @@ void dbBlock::getExtCornerNames(std::list<std::string>& ecl)
 {
   _dbBlock* block = (_dbBlock*) this;
   if (block->corner_name_list_) {
-    ecl.push_back(block->corner_name_list_);
+    ecl.emplace_back(block->corner_name_list_);
   } else {
-    ecl.push_back("");
+    ecl.emplace_back();
   }
 }
 
@@ -2519,7 +2572,7 @@ dbTechNonDefaultRule* dbBlock::findNonDefaultRule(const char* name)
 {
   for (dbTechNonDefaultRule* r : getNonDefaultRules()) {
     if (strcmp(r->getConstName(), name) == 0) {
-      return (dbTechNonDefaultRule*) r;
+      return r;
     }
   }
 
@@ -2532,15 +2585,15 @@ dbSet<dbTechNonDefaultRule> dbBlock::getNonDefaultRules()
   return dbSet<dbTechNonDefaultRule>(block, block->non_default_rule_tbl_);
 }
 
-void dbBlock::copyExtDb(uint fr,
-                        uint to,
-                        uint extDbCnt,
+void dbBlock::copyExtDb(uint32_t fr,
+                        uint32_t to,
+                        uint32_t extDbCnt,
                         double resFactor,
                         double ccFactor,
                         double gndcFactor)
 {
   _dbBlock* block = (_dbBlock*) this;
-  uint j;
+  uint32_t j;
   if (resFactor != 1.0) {
     for (j = 1; j < block->r_val_tbl_->size(); j += extDbCnt) {
       (*block->r_val_tbl_)[j + to] = (*block->r_val_tbl_)[j + fr] * resFactor;
@@ -2578,7 +2631,7 @@ bool dbBlock::adjustCC(float adjFactor,
   bool adjusted = false;
   _dbBlock* block = (_dbBlock*) this;
   std::vector<dbCCSeg*> adjustedCC;
-  const uint adjustOrder = block->currentCcAdjOrder_ + 1;
+  const uint32_t adjustOrder = block->currentCcAdjOrder_ + 1;
   for (dbNet* net : nets) {
     adjusted |= net->adjustCC(
         adjustOrder, adjFactor, ccThreshHold, adjustedCC, halonets);
@@ -2622,7 +2675,7 @@ void dbBlock::undoAdjustedCC(std::vector<dbNet*>& nets,
 void dbBlock::adjustRC(double resFactor, double ccFactor, double gndcFactor)
 {
   _dbBlock* block = (_dbBlock*) this;
-  uint j;
+  uint32_t j;
   if (resFactor != 1.0) {
     for (j = 1; j < block->r_val_tbl_->size(); j++) {
       (*block->r_val_tbl_)[j] *= resFactor;
@@ -2812,7 +2865,7 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
     block->corner_name_list_ = strdup((char*) name_list);
   }
 }
-dbBlock* dbBlock::getExtCornerBlock(uint corner)
+dbBlock* dbBlock::getExtCornerBlock(uint32_t corner)
 {
   dbBlock* block = findExtCornerBlock(corner);
   if (!block) {
@@ -2821,14 +2874,14 @@ dbBlock* dbBlock::getExtCornerBlock(uint corner)
   return block;
 }
 
-dbBlock* dbBlock::findExtCornerBlock(uint corner)
+dbBlock* dbBlock::findExtCornerBlock(uint32_t corner)
 {
   char cornerName[64];
   sprintf(cornerName, "extCornerBlock__%d", corner);
   return findChild(cornerName);
 }
 
-dbBlock* dbBlock::createExtCornerBlock(uint corner)
+dbBlock* dbBlock::createExtCornerBlock(uint32_t corner)
 {
   char cornerName[64];
   sprintf(cornerName, "extCornerBlock__%d", corner);
@@ -2877,34 +2930,31 @@ void dbBlock::setCornerNameList(const char* name_list)
 
   block->corner_name_list_ = strdup(name_list);
 }
-void dbBlock::getExtCornerName(int corner, char* cName)
+std::string dbBlock::getExtCornerName(const int corner)
 {
-  cName[0] = '\0';
   _dbBlock* block = (_dbBlock*) this;
   if (block->num_ext_corners_ == 0) {
-    return;
+    return "";
   }
   assert((corner >= 0) && (corner < block->num_ext_corners_));
 
   if (block->corner_name_list_ == nullptr) {
-    return;
+    return "";
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
-
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
   int ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (ii == corner) {
-      strcpy(cName, word);
-      return;
-    }
 
-    word = strtok(nullptr, " ");
+  while (ss >> word) {
+    if (ii == corner) {
+      return word;
+    }
     ii++;
   }
+  return "";
 }
+
 int dbBlock::getExtCornerIndex(const char* cornerName)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2913,21 +2963,19 @@ int dbBlock::getExtCornerIndex(const char* cornerName)
     return -1;
   }
 
-  char buff[1024];
-  strcpy(buff, block->corner_name_list_);
+  std::stringstream ss(block->corner_name_list_);
+  std::string word;
+  int ii = 0;
 
-  uint ii = 0;
-  char* word = strtok(buff, " ");
-  while (word != nullptr) {
-    if (strcmp(cornerName, word) == 0) {
+  while (ss >> word) {
+    if (cornerName == word) {
       return ii;
     }
-
-    word = strtok(nullptr, " ");
     ii++;
   }
   return -1;
 }
+
 void dbBlock::setCornerCount(int cnt)
 {
   setCornerCount(cnt, cnt, nullptr);
@@ -2964,13 +3012,13 @@ dbBlock* dbBlock::create(dbBlock* parent_,
   return (dbBlock*) child;
 }
 
-dbBlock* dbBlock::getBlock(dbChip* chip_, uint dbid_)
+dbBlock* dbBlock::getBlock(dbChip* chip_, uint32_t dbid_)
 {
   _dbChip* chip = (_dbChip*) chip_;
   return (dbBlock*) chip->block_tbl_->getPtr(dbid_);
 }
 
-dbBlock* dbBlock::getBlock(dbBlock* block_, uint dbid_)
+dbBlock* dbBlock::getBlock(dbBlock* block_, uint32_t dbid_)
 {
   _dbChip* chip = (_dbChip*) block_->getImpl()->getOwner();
   return (dbBlock*) chip->block_tbl_->getPtr(dbid_);
@@ -3000,7 +3048,7 @@ void dbBlock::destroy(dbBlock* block_)
 
 void unlink_child_from_parent(_dbBlock* child, _dbBlock* parent)
 {
-  uint id = child->getOID();
+  uint32_t id = child->getOID();
 
   auto& children = parent->children_;
   for (auto citr = children.begin(); citr != children.end(); ++citr) {
@@ -3070,7 +3118,7 @@ void dbBlock::destroyCNs(std::vector<dbNet*>& nets, bool cleanExtid)
 void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
 {
   std::vector<dbNet*> cnets;
-  uint jj;
+  uint32_t jj;
   for (jj = 0; jj < nets.size(); jj++) {
     dbNet* net = dbNet::getNet(this, nets[jj]->getId());
     cnets.push_back(net);
@@ -3097,7 +3145,7 @@ void dbBlock::destroyParasitics(std::vector<dbNet*>& nets)
 void dbBlock::getCcHaloNets(std::vector<dbNet*>& changedNets,
                             std::vector<dbNet*>& ccHaloNets)
 {
-  uint jj;
+  uint32_t jj;
   dbNet* ccNet;
   for (jj = 0; jj < changedNets.size(); jj++) {
     changedNets[jj]->setMark(true);
@@ -3188,7 +3236,7 @@ void dbBlock::writeGuides(const char* filename) const
       nets.push_back(net);
     }
   }
-  std::sort(nets.begin(), nets.end(), [](odb::dbNet* net1, odb::dbNet* net2) {
+  std::ranges::sort(nets, [](odb::dbNet* net1, odb::dbNet* net2) {
     return strcmp(net1->getConstName(), net2->getConstName()) < 0;
   });
   for (auto net : nets) {
@@ -3282,18 +3330,18 @@ void dbBlock::setDrivingItermsforNets()
       continue;
     }
 
-    net->setDrivingITerm(0);
+    net->setDrivingITerm(nullptr);
 
     for (dbITerm* tr : net->getITerms()) {
       if (tr->getIoType() == dbIoType::OUTPUT) {
-        net->setDrivingITerm(tr->getId());
+        net->setDrivingITerm(tr);
         break;
       }
     }
   }
 }
 
-void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
+void dbBlock::preExttreeMergeRC(double max_cap, uint32_t corner)
 {
   if (!getExtControl()->_exttreePreMerg) {
     return;
@@ -3320,7 +3368,7 @@ bool dbBlock::designIsRouted(bool verbose)
 
     const int pin_count = net->getBTermCount() + net->getITerms().size();
 
-    odb::uint wire_cnt = 0, via_cnt = 0;
+    uint32_t wire_cnt = 0, via_cnt = 0;
     net->getWireCount(wire_cnt, via_cnt);
     bool has_wires = wire_cnt != 0 || via_cnt != 0;
 
@@ -3465,13 +3513,10 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
         remove_insts.insert(inst);
       }
     }
-    insts.erase(std::remove_if(insts.begin(),
-                               insts.end(),
-                               [&](dbInst* inst) {
-                                 return remove_insts.find(inst)
-                                        != remove_insts.end();
-                               }),
-                insts.end());
+    auto [first, last] = std::ranges::remove_if(insts, [&](dbInst* inst) {
+      return remove_insts.find(inst) != remove_insts.end();
+    });
+    insts.erase(first, last);
 
     inst_map[inst_pattern] = std::move(insts);
 
@@ -3608,7 +3653,7 @@ void dbBlock::debugPrintContent(std::ostream& str_db)
     }
     str_db << fmt::format("\tModule {} {}\n",
                           (cur_obj == getTopModule()) ? "(Top Module)" : "",
-                          ((dbModule*) cur_obj)->getName());
+                          cur_obj->getName());
     // in case of top level, care as the bterms double up as pins
     if (cur_obj == getTopModule()) {
       for (auto bterm : getBTerms()) {
@@ -3818,7 +3863,7 @@ std::string _dbBlock::makeNewName(
     dbModInst* parent,
     const char* base_name,
     const dbNameUniquifyType& uniquify,
-    uint& unique_index,
+    uint32_t& unique_index,
     const std::function<bool(const char*)>& exists)
 {
   dbBlock* block = (dbBlock*) this;
@@ -3883,6 +3928,22 @@ std::string dbBlock::makeNewNetName(dbModInst* parent,
   auto exists = [this](const char* name) { return findNet(name) != nullptr; };
   return block->makeNewName(
       parent, base_name, uniquify, block->unique_net_index_, exists);
+}
+
+std::string dbBlock::makeNewModNetName(dbModule* parent,
+                                       const char* base_name,
+                                       const dbNameUniquifyType& uniquify)
+{
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
+  auto exists = [parent](const char* name) {
+    return parent->getModNet(name) != nullptr
+           || parent->findModBTerm(name) != nullptr;
+  };
+  return block->makeNewName(parent->getModInst(),
+                            base_name,
+                            uniquify,
+                            block->unique_net_index_,
+                            exists);
 }
 
 std::string dbBlock::makeNewInstName(dbModInst* parent,

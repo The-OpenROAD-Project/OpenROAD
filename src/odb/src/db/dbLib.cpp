@@ -3,6 +3,7 @@
 
 #include "dbLib.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -18,7 +19,6 @@
 #include "dbPropertyItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -176,7 +176,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
   stream >> lib.site_hash_;
   // In the older schema we can't set the tech here, we handle this later in
   // dbDatabase.
-  if (lib.getDatabase()->isSchema(db_schema_block_tech)) {
+  if (lib.getDatabase()->isSchema(kSchemaBlockTech)) {
     stream >> lib.tech_;
   }
   stream >> *lib.master_tbl_;
@@ -275,7 +275,7 @@ void dbLib::setLefUnits(int units)
   lib->lef_units_ = units;
 }
 
-char dbLib::getHierarchyDelimiter()
+char dbLib::getHierarchyDelimiter() const
 {
   _dbLib* lib = (_dbLib*) this;
   return lib->hier_delimiter_;
@@ -316,7 +316,7 @@ dbLib* dbLib::create(dbDatabase* db_,
   return (dbLib*) lib;
 }
 
-dbLib* dbLib::getLib(dbDatabase* db_, uint dbid_)
+dbLib* dbLib::getLib(dbDatabase* db_, uint32_t dbid_)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
   return (dbLib*) db->lib_tbl_->getPtr(dbid_);

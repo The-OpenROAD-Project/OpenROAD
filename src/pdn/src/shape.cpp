@@ -223,7 +223,7 @@ bool Shape::cut(const ObstructionTree& obstructions,
                 std::vector<std::unique_ptr<Shape>>& replacements,
                 const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator-=;
   using Rectangle = boost::polygon::rectangle_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
@@ -429,7 +429,21 @@ odb::dbBox* Shape::addBPinToDb(const odb::Rect& rect) const
   // find existing bterm, else make it
   odb::dbBTerm* bterm = nullptr;
   if (net_->getBTermCount() == 0) {
-    bterm = odb::dbBTerm::create(net_, net_->getConstName());
+    bterm = getGridComponent()->getBlock()->findBTerm(net_->getConstName());
+    if (bterm != nullptr) {
+      odb::dbNet* net = bterm->getNet();
+      if (net != nullptr && net != net_) {
+        getLogger()->error(utl::PDN,
+                           214,
+                           "BTerm {} already exists for a different net ({})",
+                           net_->getName(),
+                           net->getName());
+      } else {
+        bterm->connect(net_);
+      }
+    } else {
+      bterm = odb::dbBTerm::create(net_, net_->getConstName());
+    }
     bterm->setIoType(odb::dbIoType::INOUT);
   } else {
     bterm = net_->get1stBTerm();

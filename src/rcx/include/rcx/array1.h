@@ -10,10 +10,10 @@
 namespace rcx {
 
 template <class T>
-class Ath__array1D
+class Array1D
 {
  public:
-  explicit Ath__array1D(int chunk = 0)
+  explicit Array1D(int chunk = 0)
   {
     chunk_ = chunk;
     if (chunk_ <= 0) {
@@ -30,7 +30,7 @@ class Ath__array1D
     }
     iter_cnt_ = 0;
   }
-  ~Ath__array1D()
+  ~Array1D()
   {
     if (array_ != nullptr) {
       ::free(array_);

@@ -51,6 +51,16 @@ TEST_F(CallbackFixture, test_inst_and_iterm)
   EXPECT_EQ(cb_.events[0], "PreMove inst i1");
   EXPECT_EQ(cb_.events[1], "PostMove inst i1");
   cb_.clearEvents();
+  i1->setPlacementStatus(dbPlacementStatus::FIRM);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Change inst status: i1 -> FIRM");
+  cb_.clearEvents();
+  i1->setPlacementStatus(dbPlacementStatus::FIRM);
+  EXPECT_EQ(cb_.events.size(), 0);
+  i1->setPlacementStatus(dbPlacementStatus::NONE);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Change inst status: i1 -> NONE");
+  cb_.clearEvents();
   i1->findITerm("a")->connect(n1);
   EXPECT_EQ(cb_.events.size(), 2);
   EXPECT_EQ(cb_.events[0], "PreConnect iterm to net n1");
@@ -121,6 +131,17 @@ TEST_F(CallbackFixture, test_bpin)
   dbBPin* pin = dbBPin::create(block->findBTerm("IN1"));
   EXPECT_EQ(cb_.events.size(), 1);
   EXPECT_EQ(cb_.events[0], "Create BPin for IN1");
+  cb_.clearEvents();
+  pin->setPlacementStatus(dbPlacementStatus::FIRM);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Change BPin status: <dbBPin:1> -> FIRM");
+  cb_.clearEvents();
+  pin->setPlacementStatus(dbPlacementStatus::FIRM);
+  EXPECT_EQ(cb_.events.size(), 0);
+  cb_.clearEvents();
+  pin->setPlacementStatus(dbPlacementStatus::NONE);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Change BPin status: <dbBPin:1> -> NONE");
   cb_.clearEvents();
   dbBox* box
       = dbBox::create(pin, db_->getTech()->findLayer("L1"), 0, 0, 100, 100);

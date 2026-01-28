@@ -21,7 +21,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
 
@@ -167,6 +166,7 @@ class GlobalRouter
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void ensurePinsPositions(odb::dbNet* db_net);
+  bool findCoveredAccessPoint(const Net* net, Pin& pin);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -202,6 +202,8 @@ class GlobalRouter
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
                      float ratio_margin,
+                     bool jumper_only,
+                     bool diode_only,
                      int num_threads = 1);
   void updateResources(const int& init_x,
                        const int& init_y,
@@ -223,6 +225,7 @@ class GlobalRouter
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
+  bool haveDbGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
@@ -230,7 +233,7 @@ class GlobalRouter
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
   void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
-  void connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  bool connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
   void findBufferPinPostions(Net* net1,
                              Net* net2,
                              odb::Point& pin_pos1,
@@ -304,7 +307,8 @@ class GlobalRouter
 
   bool findPinAccessPointPositions(
       const Pin& pin,
-      std::map<int, std::vector<PointPair>>& ap_positions);
+      std::map<int, std::vector<PointPair>>& ap_positions,
+      bool all_access_points = false);
   void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
   void getGridSize(int& x_grids, int& y_grids);
   int getGridTileSize();
@@ -327,6 +331,7 @@ class GlobalRouter
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
+  void updateNetPins(Net* net);
 
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
@@ -390,6 +395,7 @@ class GlobalRouter
                                 Pin& pin,
                                 odb::Point& pos_on_grid,
                                 bool has_access_points);
+  void updatePinAccessPoints();
   void suggestAdjustment();
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
@@ -577,8 +583,8 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbNetCreate(odb::dbNet* net) override;
-  void inDbNetPreMerge(odb::dbNet* preserved_net,
-                       odb::dbNet* removed_net) override;
+  void inDbNetPostMerge(odb::dbNet* preserved_net,
+                        odb::dbNet* removed_net) override;
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;

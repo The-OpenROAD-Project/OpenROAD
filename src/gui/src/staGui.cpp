@@ -26,6 +26,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ranges>
 #include <set>
 #include <string>
 #include <utility>
@@ -35,6 +36,7 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -42,10 +44,12 @@
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 
 Q_DECLARE_METATYPE(sta::Corner*);
 
@@ -261,11 +265,10 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   beginResetModel();
 
   if (sort_order == Qt::AscendingOrder) {
-    std::stable_sort(
-        timing_paths_.begin(), timing_paths_.end(), std::move(sort_func));
+    std::ranges::stable_sort(timing_paths_, std::move(sort_func));
   } else {
-    std::stable_sort(
-        timing_paths_.rbegin(), timing_paths_.rend(), std::move(sort_func));
+    std::ranges::stable_sort(std::ranges::reverse_view(timing_paths_),
+                             std::move(sort_func));
   }
 
   endResetModel();
@@ -369,9 +372,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
 
     if (index.row() == kClockSummaryRow) {
       int start_idx = getClockEndIndex();
-      if (start_idx < 0) {
-        start_idx = 0;
-      }
+      start_idx = std::max(start_idx, 0);
       const auto& node = nodes_->at(start_idx);
 
       switch (col_index) {
@@ -487,6 +488,7 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
   addDisplayControl(kDataPathLabel, true);
   addDisplayControl(kLaunchClockLabel, true);
   addDisplayControl(kCaptureClockLabel, true);
+  addDisplayControl(kLegendLabel, true);
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)
@@ -544,8 +546,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
                                        bool draw_clock,
                                        bool draw_signal)
 {
-  for (auto node_itr = nodes->rbegin(); node_itr != nodes->rend(); node_itr++) {
-    const auto& node = *node_itr;
+  for (auto& node : std::ranges::reverse_view(*nodes)) {
     if (node->isClock() && !draw_clock) {
       continue;
     }
@@ -610,6 +611,16 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
                 checkDisplayControl(kDataPathLabel));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
+
+  if (checkDisplayControl(kLegendLabel)) {
+    DiscreteLegend legend;
+    legend.addLegendKey(kCaptureClockColor, "Capture");
+    legend.addLegendKey(kClockColor, "Launch");
+    legend.addLegendKey(kSignalColor, "Signal");
+    legend.addLegendKey(kPathInstColor, "Inst");
+    legend.addLegendKey(kTermColor, "Term");
+    legend.draw(painter);
+  }
 }
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter,
@@ -792,7 +803,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
         odb::dbInst* inst = pin->getPinAsITerm()->getInst();
 
         if (inst != nullptr) {
-          if (instances.count(inst) == 0) {
+          if (!instances.contains(inst)) {
             instances[inst] = pin.get();
           } else {
             auto& worst_pin = instances[inst];
@@ -884,9 +895,9 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
       const int color_index = color_count * scale;
       const double slack = max_timing_ - timing_range * scale;
       const std::string text = units->asString(slack) + text_units;
-      legend.push_back({color_index, text});
+      legend.emplace_back(color_index, text);
     }
-    std::reverse(legend.begin(), legend.end());
+    std::ranges::reverse(legend);
     color_generator_.drawLegend(painter, legend);
   }
 }
@@ -1010,7 +1021,7 @@ void PinSetWidget::addPin(const sta::Pin* pin)
     return;
   }
 
-  if (std::find(pins_.begin(), pins_.end(), pin) != pins_.end()) {
+  if (std::ranges::find(pins_, pin) != pins_.end()) {
     return;
   }
 
@@ -1019,7 +1030,7 @@ void PinSetWidget::addPin(const sta::Pin* pin)
 
 void PinSetWidget::removePin(const sta::Pin* pin)
 {
-  pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
+  pins_.erase(std::ranges::find(pins_, pin));
 }
 
 void PinSetWidget::removeSelectedPins()
@@ -1311,7 +1322,7 @@ void TimingControlsDialog::setThruPin(
 
   auto new_pins = pins;
   if (pins.empty()) {
-    new_pins.push_back({});  // add one row
+    new_pins.emplace_back();  // add one row
   }
 
   for (const auto& pin_set : new_pins) {
@@ -1342,7 +1353,7 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
   if (row->isAddMode()) {
     addThruRow({});
   } else {
-    auto find_row = std::find(thru_.begin(), thru_.end(), row);
+    auto find_row = std::ranges::find(thru_, row);
     const int row_index = std::distance(thru_.begin(), find_row);
 
     layout_->removeRow(kThruStartRow + row_index);

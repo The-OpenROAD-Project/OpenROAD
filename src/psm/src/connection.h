@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "node.h"
 
@@ -90,6 +91,8 @@ class Connection
   template <typename T>
   bool hasNodeOfType() const;
 };
+
+using Connections = std::vector<std::unique_ptr<Connection>>;
 
 class LayerConnection : public Connection
 {

@@ -3,6 +3,7 @@
 
 #include "dbBlockage.h"
 
+#include <cstdint>
 #include <cstring>
 
 #include "dbBlock.h"
@@ -11,7 +12,6 @@
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
@@ -245,7 +245,7 @@ void dbBlockage::destroy(dbBlockage* blockage)
   block->blockage_tbl_->destroy(bkg);
 }
 
-dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint dbid_)
+dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBlockage*) block->blockage_tbl_->getPtr(dbid_);

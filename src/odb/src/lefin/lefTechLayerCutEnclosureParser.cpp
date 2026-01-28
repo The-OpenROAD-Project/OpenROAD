@@ -32,7 +32,7 @@ void lefTechLayerCutEnclosureRuleParser::parse(const std::string& s,
   });
 }
 void lefTechLayerCutEnclosureRuleParser::setCutClass(
-    std::string val,
+    const std::string& val,
     odb::dbTechLayerCutEnclosureRule* rule,
     odb::dbTechLayer* layer)
 {

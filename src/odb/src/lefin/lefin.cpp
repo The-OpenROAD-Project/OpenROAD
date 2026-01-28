@@ -260,7 +260,7 @@ bool lefinReader::addGeoms(dbObject* object,
         for (j = 0; j < pathItr->numPoints; j++) {
           int x = dbdist(pathItr->x[j]);
           int y = dbdist(pathItr->y[j]);
-          points.push_back(Point(x, y));
+          points.emplace_back(x, y);
         }
 
         int numX = lround(pathItr->xStart);
@@ -475,7 +475,7 @@ void lefinReader::createPolygon(dbObject* object,
   for (int j = 0; j < p->numPoints; ++j) {
     int x = dbdist(p->x[j] + offset_x);
     int y = dbdist(p->y[j] + offset_y);
-    points.push_back(Point(x, y));
+    points.emplace_back(x, y);
   }
 
   dbPolygon* pbox = nullptr;
@@ -702,6 +702,15 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
                          "LEF58_TWOWIRESFORBIDDENSPACING")) {
         lefTechLayerTwoWiresForbiddenSpcRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINWIDTH")) {
+        MinWidthParser parser(l, this);
+        parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF57_ANTENNAGATEPLUSDIFF")) {
+        AntennaGatePlusDiffParser parser(layer, this);
+        parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_VOLTAGESPACING")) {
+        lefTechLayerVoltageSpacing parser(l, this);
+        parser.parse(layer->propValue(iii));
       } else {
         supported = false;
       }
@@ -732,12 +741,22 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_MAXSPACING")) {
         MaxSpacingParser parser(l, this);
         parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF57_ANTENNAGATEPLUSDIFF")) {
+        AntennaGatePlusDiffParser parser(layer, this);
+        parser.parse(layer->propValue(iii));
       } else {
         supported = false;
       }
     } else if (type.getValue() == dbTechLayerType::MASTERSLICE) {
       if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
+      } else {
+        supported = false;
+      }
+    } else if (type.getValue() == dbTechLayerType::IMPLANT) {
+      if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
+        lefTechLayerAreaRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l, incomplete_props_);
       } else {
         supported = false;
       }
@@ -772,10 +791,15 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
     l->setWidth(dbdist(layer->width()));
   }
 
-  if (layer->hasMinwidth()) {
-    l->setMinWidth(dbdist(layer->minwidth()));
-  } else if (type == dbTechLayerType::ROUTING) {
-    l->setMinWidth(l->getWidth());
+  if (l->getMinWidth() == 0) {
+    if (layer->hasMinwidth()) {
+      l->setMinWidth(dbdist(layer->minwidth()));
+    } else if (type == dbTechLayerType::ROUTING) {
+      l->setMinWidth(l->getWidth());
+    }
+  }
+  if (l->getWrongWayMinWidth() == 0) {
+    l->setWrongWayMinWidth(l->getWrongWayWidth());
   }
 
   if (layer->hasOffset()) {
@@ -1761,7 +1785,8 @@ void lefinReader::site(LefParser::lefiSite* lefsite)
   }
 
   for (dbLib* lib : db_->getLibs()) {
-    if ((site = lib->findSite(lefsite->name()))) {
+    site = lib->findSite(lefsite->name());
+    if (site) {
       logger_->info(utl::ODB,
                     394,
                     "Duplicate site {} in {} already seen in {}",

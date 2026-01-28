@@ -17,6 +17,7 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
@@ -92,9 +93,7 @@ void FlexTAWorker::initTracks()
         frCoord highCoord = (isH ? getRouteBox().yMax() : getRouteBox().xMax());
         int trackNum
             = (lowCoord - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-        if (trackNum < 0) {
-          trackNum = 0;
-        }
+        trackNum = std::max(trackNum, 0);
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
             < lowCoord) {
           trackNum++;
@@ -650,7 +649,7 @@ void FlexTAWorker::initCosts()
       }
       if (trackLoc == std::numeric_limits<frCoord>::max()) {
         std::cout << "Error: FlexTAWorker::initCosts does not find trackLoc"
-                  << std::endl;
+                  << '\n';
         exit(1);
       }
       assignIroute_getCost(iroute.get(), trackLoc, drcCost);
@@ -798,7 +797,7 @@ void FlexTAWorker::initFixedObjs()
         bloatDist = initFixedObjs_calcBloatDist(obj, layerNum, bounds);
         initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
       } else {
-        std::cout << "Warning: unsupported type in initFixedObjs" << std::endl;
+        std::cout << "Warning: unsupported type in initFixedObjs\n";
       }
     }
     auto costResults = [this, layerNum, width](

@@ -1,5 +1,5 @@
 source "helpers.tcl"
-read_lef Nangate45_data/Nangate45.lef
+read_lef Nangate45/Nangate45.lef
 read_def one_site_gap_disallow.def
 detailed_placement
 check_placement

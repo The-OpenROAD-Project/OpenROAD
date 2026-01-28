@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <string.h>
 #include <unistd.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -30,7 +30,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
-#include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
 #include "tst/fixture.h"
 #include "utl/Logger.h"

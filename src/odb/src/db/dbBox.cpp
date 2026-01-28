@@ -4,6 +4,7 @@
 #include "dbBox.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <vector>
@@ -25,7 +26,6 @@
 #include "dbRegion.h"
 #include "dbSWire.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
@@ -38,7 +38,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -322,7 +321,7 @@ _dbTechVia* _dbBox::getTechVia() const
     case dbBoxOwner::MPIN: {
       _dbMaster* master = (_dbMaster*) getOwner();
       _dbLib* lib = (_dbLib*) master->getOwner();
-      _dbDatabase* db = (_dbDatabase*) master->getDatabase();
+      _dbDatabase* db = master->getDatabase();
       _dbTech* tech = db->tech_tbl_->getPtr(lib->tech_);
       return tech->via_tbl_->getPtr(flags_.via_id);
     }
@@ -543,7 +542,7 @@ Orientation2D dbBox::getDir() const
   return rect.getDir();
 }
 
-uint dbBox::getDX() const
+uint32_t dbBox::getDX() const
 {
   const _dbBox* box = (const _dbBox*) this;
   if (box->flags_.octilinear) {
@@ -552,7 +551,7 @@ uint dbBox::getDX() const
   return box->shape_.rect.dx();
 }
 
-uint dbBox::getDY() const
+uint32_t dbBox::getDY() const
 {
   const _dbBox* box = (const _dbBox*) this;
   if (box->flags_.octilinear) {
@@ -668,13 +667,13 @@ dbTechLayer* dbBox::getTechLayer() const
   return (dbTechLayer*) box->getTechLayer();
 }
 
-uint dbBox::getLayerMask() const
+uint32_t dbBox::getLayerMask() const
 {
   const _dbBox* box = (const _dbBox*) this;
   return box->flags_.layer_mask;
 }
 
-void dbBox::setLayerMask(const uint mask)
+void dbBox::setLayerMask(const uint32_t mask)
 {
   _dbBox* box = (_dbBox*) this;
   box->checkMask(mask);
@@ -693,7 +692,7 @@ dbBox* dbBox::create(dbBPin* bpin_,
                      int y1,
                      int x2,
                      int y2,
-                     uint mask)
+                     uint32_t mask)
 {
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
@@ -1004,9 +1003,18 @@ void dbBox::destroy(dbBox* box)
       block->box_tbl_->destroy(db_box);
       break;
     }
+    case dbBoxOwner::INST: {
+      _dbInst* inst = (_dbInst*) box->getBoxOwner();
+      if (inst->halo_ == db_box->getOID()) {
+        // Only remove if this box is the halo box
+        inst->halo_ = 0;
+        _dbBlock* block = (_dbBlock*) inst->getOwner();
+        block->box_tbl_->destroy(db_box);
+      }
+      return;
+    }
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::BLOCK:
-    case dbBoxOwner::INST:
     case dbBoxOwner::BTERM:
     case dbBoxOwner::VIA:
     case dbBoxOwner::OBSTRUCTION:
@@ -1021,19 +1029,19 @@ void dbBox::destroy(dbBox* box)
   }
 }
 
-dbBox* dbBox::getBox(dbBlock* block_, uint dbid_)
+dbBox* dbBox::getBox(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBox*) block->box_tbl_->getPtr(dbid_);
 }
 
-dbBox* dbBox::getBox(dbTech* tech_, uint dbid_)
+dbBox* dbBox::getBox(dbTech* tech_, uint32_t dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbBox*) tech->box_tbl_->getPtr(dbid_);
 }
 
-dbBox* dbBox::getBox(dbMaster* master_, uint dbid_)
+dbBox* dbBox::getBox(dbMaster* master_, uint32_t dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
   return (dbBox*) master->box_tbl_->getPtr(dbid_);
@@ -1087,7 +1095,7 @@ _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
 
 dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 {
-  uint* bit_field = (uint*) &box.flags_;
+  uint32_t* bit_field = (uint32_t*) &box.flags_;
   stream << *bit_field;
   if (box.isOct()) {
     stream << box.shape_.oct;
@@ -1102,12 +1110,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 
 dbIStream& operator>>(dbIStream& stream, _dbBox& box)
 {
-  if (box.getDatabase()->isSchema(db_schema_dbbox_mask)) {
-    uint* bit_field = (uint*) &box.flags_;
+  if (box.getDatabase()->isSchema(kSchemaDbBoxMask)) {
+    uint32_t* bit_field = (uint32_t*) &box.flags_;
     stream >> *bit_field;
-  } else if (box.getDatabase()->isSchema(db_schema_box_layer_bits)) {
+  } else if (box.getDatabase()->isSchema(kSchemaBoxLayerBits)) {
     _dbBoxFlagsWithoutMask old;
-    uint* bit_field = (uint*) &old;
+    uint32_t* bit_field = (uint32_t*) &old;
     stream >> *bit_field;
     box.flags_.owner_type = old.owner_type;
     box.flags_.visited = old.visited;
@@ -1119,7 +1127,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBox& box)
     box.flags_.layer_mask = 0;
   } else {
     _dbBoxFlagsBackwardCompatability old;
-    uint* bit_field = (uint*) &old;
+    uint32_t* bit_field = (uint32_t*) &old;
     stream >> *bit_field;
     box.flags_.owner_type = old.owner_type;
     box.flags_.visited = old.visited;

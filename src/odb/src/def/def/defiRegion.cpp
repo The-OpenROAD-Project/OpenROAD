@@ -138,7 +138,7 @@ void defiRegion::Destroy()
   free((char*) (propNames_));
   free((char*) (propValues_));
   free((char*) (propDValues_));
-  free((char*) (propTypes_));
+  free(propTypes_);
 }
 
 void defiRegion::addRect(int xl, int yl, int xh, int yh)
@@ -215,7 +215,7 @@ void defiRegion::addProperty(const char* name,
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;
@@ -259,7 +259,7 @@ void defiRegion::addNumProperty(const char* name,
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;

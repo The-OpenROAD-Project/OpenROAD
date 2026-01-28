@@ -13,6 +13,7 @@
 #include "boost/icl/interval_set.hpp"
 #include "db/grObj/grNet.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frNode.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
@@ -39,10 +40,7 @@ class FlexGR
          utl::Logger* logger,
          stt::SteinerTreeBuilder* stt_builder,
          RouterConfiguration* router_cfg)
-      : db_(nullptr),
-        design_(designIn),
-        cmap_(nullptr),
-        cmap2D_(nullptr),
+      : design_(designIn),
         logger_(logger),
         stt_builder_(stt_builder),
         router_cfg_(router_cfg)
@@ -65,7 +63,7 @@ class FlexGR
   void main(odb::dbDatabase* db = nullptr);
 
  private:
-  odb::dbDatabase* db_;
+  odb::dbDatabase* db_{nullptr};
   frDesign* design_;
   std::unique_ptr<FlexGRCMap> cmap_;
   std::unique_ptr<FlexGRCMap> cmap2D_;

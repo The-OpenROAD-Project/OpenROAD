@@ -5,7 +5,7 @@
 [INFO ODB-0131]     Created 170 components and 1258 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
-[INFO GRT-0020] Min routing layer: li1
+[INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
@@ -15,9 +15,8 @@
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
-[WARNING GRT-0038] Found blockage outside die area in instance _614_.
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 4112
+[INFO GRT-0004] Blockages: 13
 [INFO GRT-0019] Found 0 clock nets.
 [ERROR GRT-0010] Instance _614_ is not placed.
 GRT-0010

@@ -80,7 +80,6 @@ class lefiAntennaPWL
 class lefiLayerDensity
 {
  public:
-  lefiLayerDensity();
   ~lefiLayerDensity();
 
   void Init(const char* type);
@@ -131,7 +130,7 @@ class lefiParallel
 
   void addParallelLength(int numLength, double* lengths);
   void addParallelWidth(double width);
-  void addParallelWidthSpacing(int numSpacing, double* spacings);
+  void addParallelWidthSpacing(int numSpacing, const double* spacings);
 
   int numLength() const;
   int numWidth() const;
@@ -190,7 +189,7 @@ class lefiTwoWidths
   void addTwoWidths(double width,
                     double runLength,
                     int numSpacing,
-                    double* spacings,
+                    const double* spacings,
                     int hasPRL = 0);
 
   int numWidth() const;
@@ -443,11 +442,8 @@ class lefiLayer
   void setCurrentPoint(double width, double current);
   void setResistancePoint(double width, double res);
   void setCapacitancePoint(double width, double cap);
-  void addProp(const char* name, const char* value, const char type);
-  void addNumProp(const char* name,
-                  const double d,
-                  const char* value,
-                  const char type);
+  void addProp(const char* name, const char* value, char type);
+  void addNumProp(const char* name, double d, const char* value, char type);
   void addAccurrentDensity(const char* type);
   void setAcOneEntry(double num);
   void addAcFrequency();

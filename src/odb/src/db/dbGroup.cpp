@@ -10,6 +10,7 @@
 
 #include "dbBlock.h"
 #include "dbBox.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGroupInstItr.h"
 #include "dbGroupItr.h"
@@ -19,7 +20,6 @@
 #include "dbModInst.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbCommon.h"
@@ -195,7 +195,7 @@ void dbGroup::setType(dbGroupType type)
 {
   _dbGroup* obj = (_dbGroup*) this;
 
-  obj->flags_.type = (uint) type;
+  obj->flags_.type = (uint32_t) type;
 }
 
 dbGroupType dbGroup::getType() const
@@ -225,9 +225,9 @@ void dbGroup::removeModInst(dbModInst* modinst)
     return;
   }
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  uint id = _modinst->getOID();
+  uint32_t id = _modinst->getOID();
   _dbModInst* prev = nullptr;
-  uint cur = _group->modinsts_;
+  uint32_t cur = _group->modinsts_;
   while (cur) {
     _dbModInst* c = _block->modinst_tbl_->getPtr(cur);
     if (cur == id) {
@@ -272,9 +272,9 @@ void dbGroup::removeInst(dbInst* inst)
     return;
   }
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  uint id = _inst->getOID();
+  uint32_t id = _inst->getOID();
   _dbInst* prev = nullptr;
-  uint cur = _group->insts_;
+  uint32_t cur = _group->insts_;
   while (cur) {
     _dbInst* c = _block->inst_tbl_->getPtr(cur);
     if (cur == id) {
@@ -319,9 +319,9 @@ void dbGroup::removeGroup(dbGroup* child)
     return;
   }
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
-  uint id = _child->getOID();
+  uint32_t id = _child->getOID();
   _dbGroup* prev = nullptr;
-  uint cur = _group->groups_;
+  uint32_t cur = _group->groups_;
   while (cur) {
     _dbGroup* c = _block->group_tbl_->getPtr(cur);
     if (cur == id) {
@@ -511,7 +511,7 @@ void dbGroup::destroy(dbGroup* group)
   block->group_tbl_->destroy(_group);
 }
 
-dbGroup* dbGroup::getGroup(dbBlock* block_, uint dbid_)
+dbGroup* dbGroup::getGroup(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbGroup*) block->group_tbl_->getPtr(dbid_);

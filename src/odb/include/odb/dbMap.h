@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "odb/dbSet.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -86,4 +85,4 @@ class dbMap
 
 }  // namespace odb
 
-#include "odb/dbMap.hpp"
+#include "odb/dbMap.inc"  // IWYU pragma: export

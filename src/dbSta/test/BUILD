@@ -7,13 +7,13 @@ load("//test:regression.bzl", "regression_test")
 package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
-COMPULSORY_TESTS = [
+ALL_TESTS = [
     "block_sta1",
     "check_axioms",
     "clock_pin",
     "constant1",
-    # "escape_slash", # different result compared to CMake
-    # "escape_slash_hier", # different result compared to CMake
+    "escape_slash",
+    "escape_slash_hier",
     "find_clks1",
     "find_clks2",
     "get_ports1",
@@ -69,81 +69,22 @@ COMPULSORY_TESTS = [
     "write_verilog9_hier",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
-
 filegroup(
     name = "regression_resources",
-    # Dependencies could be specified more narrowly per test case,
-    # but at least it is not a glob of everything and there are
-    # per test glob patterns below.
     srcs = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",
-        "Nangate45/Nangate45.rcx_rules",
         "Nangate45/Nangate45.tracks",
         "Nangate45/Nangate45.vars",
         "Nangate45/Nangate45_fast.lib",
-        "Nangate45/Nangate45_lvt.lef",
-        "Nangate45/Nangate45_lvt.lib",
         "Nangate45/Nangate45_slow.lib",
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
-        "Nangate45/fake_macros.lef",
-        "Nangate45/fake_macros.lib",
-        "Nangate45/fakeram45.cfg",
-        "Nangate45/fakeram45_1024x32.lef",
-        "Nangate45/fakeram45_1024x32.lib",
-        "Nangate45/fakeram45_256x16.lef",
-        "Nangate45/fakeram45_256x16.lib",
-        "Nangate45/fakeram45_512x64.lef",
-        "Nangate45/fakeram45_512x64.lib",
-        "Nangate45/fakeram45_64x32.lef",
-        "Nangate45/fakeram45_64x32.lib",
-        "Nangate45/fakeram45_64x7.lef",
-        "Nangate45/fakeram45_64x7.lib",
-        "Nangate45/fakeram45_64x96.lef",
-        "Nangate45/fakeram45_64x96.lib",
-        "Nangate45/work_around_yosys/cells.v",
-        "bidir1.lef",
-        "bidir1.lib",
-        "bus1.def",
-        "bus1.lef",
-        "bus1.lib",
-        "bus1.v",
-        "dont_touch_attr.tcl",
-        "dont_touch_attr.v",
-        "example1.def",
-        "example1.dspef",
-        "example1.lef",
-        "example1.sdf",
-        "example1.v",
-        "example1_fast.lib",
-        "example1_slow.lib",
-        "example1_typ.lib",
-        "get_ports1.v",
         "helpers.tcl",
-        "hier1.def",
-        "hier1.sdc",
-        "hier1.v",
-        "hier2_out.vok",
-        "hier_deep.v",
-        "hierclock_gate.v",
-        "hierclock_out.vok",
         "liberty1.lef",
         "liberty1.lib",
-        "pad.lef",
-        "pad.lib",
-        "reg.txt",
-        "reg1.def",
-        "reg1.v",
-        "reg3.def",
-        "reg4.def",
-        "reg5.v",
-        "reg6.def",
-        "report_cell_usage_no_taps.def",
-        "write_verilog9.v",
     ],
 )
 
@@ -155,6 +96,34 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "block_sta1": [
+                "example1_typ.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "find_clks1": [
+                "pad.lef",
+                "pad.lib",
+            ],
+            "get_ports1_hier": [
+                "get_ports1.v",
+            ],
+            "hier2": [
+                "example1_typ.lib",
+                "example1.lef",
+                "hier2_out.vok",
+            ],
+            "hier_deep": [
+                "example1_typ.lib",
+                "example1.lef",
+            ],
+            "hierclock": [
+                "hierclock_gate.v",
+                "hierclock_out.vok",
+            ],
+            "network_edit1": [
+                "reg3.def",
+            ],
             "read_vcd": glob(
                 [
                     "Element.*",
@@ -162,11 +131,118 @@ filegroup(
                     "asap7/*",
                 ],
             ),
+            "read_verilog1": [
+                "reg1.v",
+            ],
+            "read_verilog10": [
+                "hier1.v",
+            ],
+            "read_verilog10_no_prop": [
+                "hier1.v",
+            ],
+            "read_verilog11": [
+                "hier1.v",
+            ],
+            "read_verilog2": [
+                "hier1.v",
+            ],
+            "read_verilog3": [
+                "bus1.lef",
+                "bus1.lib",
+                "bus1.v",
+            ],
+            "read_verilog5": [
+                "bidir1.lef",
+                "bidir1.lib",
+            ],
+            "read_verilog9": [
+                "reg1.v",
+            ],
+            "readdb_hier": [
+                "hier1.v",
+            ],
             "report_cell_usage_file": [
                 "report_cell_usage.def",
             ],
+            "report_cell_usage_modinsts": [
+                "hier1.v",
+            ],
+            "report_cell_usage_modinsts_metrics": [
+                "hier1.v",
+            ],
+            "report_cell_usage_physical_only": [
+                "report_cell_usage_no_taps.def",
+            ],
+            "report_json1": [
+                "reg6.def",
+            ],
+            "report_timing_histogram": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sdc_get1": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sdc_names1": [
+                "hier1.def",
+            ],
+            "sta1": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta2": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+                "example1.sdf",
+                "example1.v",
+            ],
+            "sta3": [
+                "example1_slow.lib",
+                "example1_fast.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta4": [
+                "example1_slow.lib",
+                "example1.dspef",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta5": [
+                "example1_fast.lib",
+                "example1_slow.lib",
+                "example1_typ.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "write_sdc1": [
+                "hier1.sdc",
+                "hier1.v",
+            ],
+            "write_verilog1": [
+                "reg1.def",
+            ],
+            "write_verilog2": [
+                "reg4.def",
+            ],
+            "write_verilog3": [
+                "bus1.def",
+                "bus1.lef",
+                "bus1.lib",
+            ],
             "write_verilog6": [
                 "write_verilog5.def",
+            ],
+            "write_verilog8": [
+                "reg5.v",
+            ],
+            "write_verilog9_hier": [
+                "write_verilog9.v",
             ],
         }.get(test_name, []),
     )
@@ -177,7 +253,6 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -213,6 +288,23 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_read_verilog",
+    srcs = ["cpp/TestReadVerilog.cpp"],
+    data = glob(["cpp/TestReadVerilog*.v"]),
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbReadVerilog",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",

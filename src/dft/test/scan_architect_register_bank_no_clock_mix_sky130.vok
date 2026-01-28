@@ -406,6 +406,12 @@ module top (clk1,
     .Y(\bank1/_030_ ));
  sky130_fd_sc_hd__clkinv_1 \bank1/_127_  (.A(reset),
     .Y(\bank1/_031_ ));
+ sky130_fd_sc_hd__sdfrbp_1 \bank1/_128_  (.D(\bank1/_032_ ),
+    .Q(outputs_32[0]),
+    .RESET_B(\bank1/_000_ ),
+    .SCD(outputs_32[1]),
+    .SCE(scan_enable_0),
+    .CLK(clk1));
  sky130_fd_sc_hd__sdfrbp_1 \bank1/_129_  (.D(\bank1/_033_ ),
     .Q(outputs_32[1]),
     .RESET_B(\bank1/_001_ ),
@@ -592,12 +598,6 @@ module top (clk1,
     .SCD(scan_in_0),
     .SCE(scan_enable_0),
     .CLK(clk1));
- sky130_fd_sc_hd__sdfrbp_1 \bank2/_256_  (.D(\bank2/_064_ ),
-    .Q(outputs_64[11]),
-    .RESET_B(\bank2/_000_ ),
-    .SCD(outputs_64[12]),
-    .SCE(scan_enable_0),
-    .CLK(clk2));
  sky130_fd_sc_hd__clkinv_1 \bank2/_128_  (.A(reset),
     .Y(\bank2/_000_ ));
  sky130_fd_sc_hd__mux2_1 \bank2/_129_  (.A0(outputs_64[10]),
@@ -982,6 +982,12 @@ module top (clk1,
     .Y(\bank2/_062_ ));
  sky130_fd_sc_hd__clkinv_1 \bank2/_255_  (.A(reset),
     .Y(\bank2/_063_ ));
+ sky130_fd_sc_hd__sdfrbp_1 \bank2/_256_  (.D(\bank2/_064_ ),
+    .Q(outputs_64[11]),
+    .RESET_B(\bank2/_000_ ),
+    .SCD(outputs_64[12]),
+    .SCE(scan_enable_0),
+    .CLK(clk2));
  sky130_fd_sc_hd__sdfrbp_1 \bank2/_257_  (.D(\bank2/_065_ ),
     .Q(outputs_64[12]),
     .RESET_B(\bank2/_001_ ),
@@ -1360,10 +1366,4 @@ module top (clk1,
     .SCD(scan_in_1),
     .SCE(scan_enable_0),
     .CLK(clk2));
- sky130_fd_sc_hd__sdfrbp_1 \bank1/_128_  (.D(\bank1/_032_ ),
-    .Q(outputs_32[0]),
-    .RESET_B(\bank1/_000_ ),
-    .SCD(outputs_32[1]),
-    .SCE(scan_enable_0),
-    .CLK(clk1));
 endmodule

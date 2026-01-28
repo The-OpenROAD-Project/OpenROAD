@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -17,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/infra/frPoint.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
@@ -870,33 +872,30 @@ void GuideProcessor::buildGCellPatterns()
     xgp.setHorizontal(false);
     // find first coord >= dieBox.xMin()
     frCoord startCoordX
-        = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
-          + GCELLOFFSETX;
+        = dieBox.xMin() / GCELLGRIDX * GCELLGRIDX + GCELLOFFSETX;
     if (startCoordX > dieBox.xMin()) {
-      startCoordX -= (frCoord) GCELLGRIDX;
+      startCoordX -= GCELLGRIDX;
     }
     xgp.setStartCoord(startCoordX);
     xgp.setSpacing(GCELLGRIDX);
-    if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
+    if ((dieBox.xMax() - GCELLOFFSETX) / GCELLGRIDX < 1) {
       logger_->error(DRT, 174, "GCell cnt x < 1.");
     }
-    xgp.setCount((dieBox.xMax() - (frCoord) startCoordX)
-                 / (frCoord) GCELLGRIDX);
+    xgp.setCount((dieBox.xMax() - startCoordX) / GCELLGRIDX);
 
     ygp.setHorizontal(true);
     // find first coord >= dieBox.yMin()
     frCoord startCoordY
-        = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
-          + GCELLOFFSETY;
+        = dieBox.yMin() / GCELLGRIDY * GCELLGRIDY + GCELLOFFSETY;
     if (startCoordY > dieBox.yMin()) {
-      startCoordY -= (frCoord) GCELLGRIDY;
+      startCoordY -= GCELLGRIDY;
     }
     ygp.setStartCoord(startCoordY);
     ygp.setSpacing(GCELLGRIDY);
-    if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
+    if ((dieBox.yMax() - GCELLOFFSETY) / GCELLGRIDY < 1) {
       logger_->error(DRT, 175, "GCell cnt y < 1.");
     }
-    ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
+    ygp.setCount((dieBox.yMax() - startCoordY) / GCELLGRIDY);
     getDesign()->getTopBlock()->setGCellPatterns(
         {std::move(xgp), std::move(ygp)});
   }
@@ -1605,7 +1604,7 @@ void GuidePathFinder::updateNodeMap(
 void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
 {
   for (auto& [pt, indices] : node_map_) {
-    const uint num_indices = indices.size();
+    const auto num_indices = indices.size();
     if (num_indices != 1) {
       continue;
     }
@@ -1648,7 +1647,7 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
   };
   for (auto& [pt, indices] : node_map_) {
     std::vector<int> visited_indices = getVisitedIndices(indices, visited_);
-    const uint num_indices = visited_indices.size();
+    const auto num_indices = visited_indices.size();
     if (num_indices == 2) {
       const auto first_idx = *(visited_indices.begin());
       const auto second_idx = *std::prev(visited_indices.end());

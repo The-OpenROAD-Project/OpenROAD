@@ -32,6 +32,18 @@ add_dependencies(build_and_test
   TestMetrics
 )
 
+add_executable(TestAlgorithms TestAlgorithms.cpp)
+
+target_link_libraries(TestAlgorithms ${TEST_LIBS})
+
+gtest_discover_tests(TestAlgorithms
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_dependencies(build_and_test
+  TestAlgorithms
+)
+
 add_executable(TestSuppressStdout TestSuppressStdout.cpp)
 
 target_link_libraries(TestSuppressStdout ${TEST_LIBS})

@@ -8,9 +8,7 @@ read_lef "./Nangate45/Nangate45.lef"
 read_lef "./testcases/macro_only.lef"
 read_liberty "./testcases/macro_only.lib"
 
-read_verilog "./testcases/io_constraints1.v"
-link_design "io_constraints1"
-read_def "./testcases/io_constraints1.def" -floorplan_initialize
+read_def "./testcases/io_constraints1.def"
 
 exclude_io_pin_region -region left:* -region right:* -region top:*
 

@@ -3,8 +3,9 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "odb/dbStream.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -20,11 +21,11 @@ class dbAttrTable
 
   ~dbAttrTable() { clear(); }
 
-  T getAttr(uint id) const;
-  void setAttr(uint id, const T& attr);
+  T getAttr(uint32_t id) const;
+  void setAttr(uint32_t id, const T& attr);
 
-  T* getPage(uint page);
-  void resizePageTable(uint page);
+  T* getPage(uint32_t page);
+  void resizePageTable(uint32_t page);
 
   void clear();
 
@@ -35,8 +36,8 @@ class dbAttrTable
   unsigned int page_cnt_ = 0;
   T** pages_ = nullptr;
 
-  static constexpr uint page_size = 32;
-  static constexpr uint page_shift = 5;
+  static constexpr uint32_t kPageSize = 32;
+  static constexpr uint32_t kPageShift = 5;
 
   template <class U>
   friend dbOStream& operator<<(dbOStream& stream, const dbAttrTable<U>& t);
@@ -46,12 +47,12 @@ class dbAttrTable
 };
 
 template <typename T>
-inline T dbAttrTable<T>::getAttr(const uint id) const
+inline T dbAttrTable<T>::getAttr(const uint32_t id) const
 {
   // Pages are not created util the prop-list is being set.
   // This approach allows objects to test for properties without populating
   // pages. (which would populate the table).
-  const unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+  const unsigned int page = (id & ~(kPageSize - 1)) >> kPageShift;
 
   if (page >= page_cnt_) {  // Page not present...
     return T();
@@ -61,16 +62,16 @@ inline T dbAttrTable<T>::getAttr(const uint id) const
     return T();
   }
 
-  const unsigned int offset = id & (page_size - 1);
+  const unsigned int offset = id & (kPageSize - 1);
   return pages_[page][offset];
 }
 
 template <typename T>
-inline void dbAttrTable<T>::setAttr(const uint id, const T& attr)
+inline void dbAttrTable<T>::setAttr(const uint32_t id, const T& attr)
 {
-  const unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+  const unsigned int page = (id & ~(kPageSize - 1)) >> kPageShift;
   T* pg = getPage(page);
-  const unsigned int offset = id & (page_size - 1);
+  const unsigned int offset = id & (kPageSize - 1);
   pg[offset] = attr;
 }
 
@@ -90,16 +91,16 @@ inline void dbAttrTable<T>::clear()
 }
 
 template <typename T>
-inline T* dbAttrTable<T>::getPage(const uint page)
+inline T* dbAttrTable<T>::getPage(const uint32_t page)
 {
   if (page >= page_cnt_) {
     resizePageTable(page);
   }
 
   if (pages_[page] == nullptr) {
-    pages_[page] = new T[page_size];
+    pages_[page] = new T[kPageSize];
 
-    for (int i = 0; i < page_size; ++i) {
+    for (int i = 0; i < kPageSize; ++i) {
       pages_[page][i] = 0U;
     }
   }
@@ -108,7 +109,7 @@ inline T* dbAttrTable<T>::getPage(const uint page)
 }
 
 template <typename T>
-inline void dbAttrTable<T>::resizePageTable(const uint page)
+inline void dbAttrTable<T>::resizePageTable(const uint32_t page)
 {
   T** old_pages = pages_;
   unsigned int old_page_cnt = page_cnt_;
@@ -143,7 +144,7 @@ inline bool dbAttrTable<T>::operator==(const dbAttrTable<T>& rhs) const
     return false;
   }
 
-  const uint n = page_cnt_ * page_size;
+  const uint32_t n = page_cnt_ * kPageSize;
 
   for (int i = 0; i < n; ++i) {
     if (getAttr(i) != rhs.getAttr(i)) {
@@ -165,9 +166,9 @@ inline dbOStream& operator<<(dbOStream& stream, const dbAttrTable<T>& t)
     } else {
       stream << (i + 1);
 
-      uint j;
+      uint32_t j;
 
-      for (j = 0; j < dbAttrTable<T>::page_size; ++j) {
+      for (j = 0; j < dbAttrTable<T>::kPageSize; ++j) {
         stream << t.pages_[i][j];
       }
     }
@@ -190,16 +191,16 @@ inline dbIStream& operator>>(dbIStream& stream, dbAttrTable<T>& t)
   t.pages_ = new T*[t.page_cnt_];
 
   for (int i = 0; i < t.page_cnt_; ++i) {
-    uint p;
+    uint32_t p;
     stream >> p;
 
     if (p == 0U) {
       t.pages_[i] = nullptr;
     } else {
-      t.pages_[i] = new T[dbAttrTable<T>::page_size];
-      uint j;
+      t.pages_[i] = new T[dbAttrTable<T>::kPageSize];
+      uint32_t j;
 
-      for (j = 0; j < dbAttrTable<T>::page_size; j++) {
+      for (j = 0; j < dbAttrTable<T>::kPageSize; j++) {
         stream >> t.pages_[i][j];
       }
     }

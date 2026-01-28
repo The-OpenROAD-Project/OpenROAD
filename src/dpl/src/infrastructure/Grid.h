@@ -20,6 +20,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
+#include "utl/Logger.h"
 
 namespace dpl {
 
@@ -65,7 +66,7 @@ class PixelPt
 class Grid
 {
  public:
-  void init(Logger* logger) { logger_ = logger; }
+  void init(utl::Logger* logger) { logger_ = logger; }
   void setCore(const odb::Rect& core) { core_ = core; }
   void initGrid(odb::dbDatabase* db,
                 odb::dbBlock* block,
@@ -190,7 +191,7 @@ class Grid
   void visitDbRows(odb::dbBlock* block,
                    const std::function<void(odb::dbRow*)>& func) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
   Pixels pixels_;

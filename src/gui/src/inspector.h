@@ -83,8 +83,7 @@ class SelectedItemModel : public QStandardItemModel
                     const QColor& editable,
                     QObject* parent = nullptr);
 
-  QVariant data(const QModelIndex& index,
-                int role = Qt::DisplayRole) const override;
+  QVariant data(const QModelIndex& index, int role) const override;
 
   const QColor& getSelectableColor() { return selectable_item_; }
   const QColor& getEditableColor() { return editable_item_; }
@@ -116,7 +115,7 @@ class SelectedItemModel : public QStandardItemModel
   void makeItemEditor(const std::string& name,
                       QStandardItem* item,
                       const Selected& selected,
-                      const EditorItemDelegate::EditType type,
+                      EditorItemDelegate::EditType type,
                       const Descriptor::Editor& editor);
 
   const QColor selectable_item_;

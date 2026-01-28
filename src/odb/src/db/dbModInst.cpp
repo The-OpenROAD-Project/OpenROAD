@@ -14,6 +14,7 @@
 #include <cstdlib>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
@@ -21,9 +22,10 @@
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbCommon.h"
 #include "dbGroup.h"
 #include "dbModBTerm.h"
@@ -31,6 +33,8 @@
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -101,15 +105,8 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   // User Code Begin >>
   dbBlock* block = (dbBlock*) (obj.getOwner());
   _dbDatabase* db_ = (_dbDatabase*) (block->getDataBase());
-  if (db_->isSchema(db_schema_update_hierarchy)) {
+  if (db_->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.moditerms_;
-  }
-  if (db_->isSchema(db_schema_db_remove_hash)) {
-    _dbBlock* block = (_dbBlock*) (((dbDatabase*) db_)->getChip()->getBlock());
-    _dbModule* module = block->module_tbl_->getPtr(obj.parent_);
-    if (obj.name_) {
-      module->modinst_hash_[obj.name_] = obj.getId();
-    }
   }
   // User Code End >>
   return stream;
@@ -273,9 +270,9 @@ void dbModInst::destroy(dbModInst* modinst)
   _master->mod_inst_.clear();
 
   // unlink from parent start
-  uint id = _modinst->getOID();
+  uint32_t id = _modinst->getOID();
   _dbModInst* prev = nullptr;
-  uint cur = _module->modinsts_;
+  uint32_t cur = _module->modinsts_;
   while (cur) {
     _dbModInst* c = _block->modinst_tbl_->getPtr(cur);
     if (cur == id) {
@@ -336,7 +333,7 @@ dbSet<dbModITerm> dbModInst::getModITerms()
   return dbSet<dbModITerm>(_mod_inst, _block->module_modinstmoditerm_itr_);
 }
 
-dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
+dbModInst* dbModInst::getModInst(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbModInst*) block->modinst_tbl_->getPtr(dbid_);
@@ -445,7 +442,7 @@ void dbModInst::removeUnusedPortsAndPins()
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     assert(mod_bterm != nullptr);
 
-    if (busmodbterms.count(mod_bterm) > 0) {
+    if (busmodbterms.contains(mod_bterm)) {
       continue;  // Do not remove bus ports
     }
 

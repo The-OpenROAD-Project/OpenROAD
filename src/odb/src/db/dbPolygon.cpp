@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbBoxItr.h"
@@ -188,7 +188,7 @@ dbPolygon* dbPolygon::create(dbMPin* pin_,
   return (dbPolygon*) box;
 }
 
-Polygon _dbPolygon::checkPolygon(std::vector<Point> polygon)
+Polygon _dbPolygon::checkPolygon(const std::vector<Point>& polygon)
 {
   if (polygon.size() < 4) {
     return {};

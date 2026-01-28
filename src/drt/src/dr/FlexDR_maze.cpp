@@ -20,8 +20,10 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/drObj/drFig.h"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
+#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBTerm.h"
@@ -29,6 +31,7 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexMazeTypes.h"
@@ -54,8 +57,8 @@ static frSquaredDistance pt2boxDistSquare(const odb::Point& pt,
                                           const odb::Rect& box)
 
 {
-  frCoord dx = std::max(std::max(box.xMin() - pt.x(), pt.x() - box.xMax()), 0);
-  frCoord dy = std::max(std::max(box.yMin() - pt.y(), pt.y() - box.yMax()), 0);
+  frCoord dx = std::max({box.xMin() - pt.x(), pt.x() - box.xMax(), 0});
+  frCoord dy = std::max({box.yMin() - pt.y(), pt.y() - box.yMax(), 0});
   return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
 }
 
@@ -1199,8 +1202,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 
   if (lef58con != nullptr) {
     lef58conSpc = lef58con->getDefaultSpacing();
-    bloatDist
-        = std::max(bloatDist, std::max(lef58conSpc.first, lef58conSpc.second));
+    bloatDist = std::max({bloatDist, lef58conSpc.first, lef58conSpc.second});
   }
 
   FlexMazeIdx mIdx1;
@@ -1389,8 +1391,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const odb::Rect& box,
   }
   if (lef58con != nullptr) {
     lef58conSpc = lef58con->getDefaultSpacing();
-    bloatDist
-        = std::max(bloatDist, std::max(lef58conSpc.first, lef58conSpc.second));
+    bloatDist = std::max({bloatDist, lef58conSpc.first, lef58conSpc.second});
   }
 
   FlexMazeIdx mIdx1;
@@ -1599,7 +1600,7 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
   };
   // sort
   if (mazeIter == 0) {
-    sort(rerouteNets.begin(), rerouteNets.end(), rerouteNetsComp);
+    std::ranges::sort(rerouteNets, rerouteNetsComp);
     // to be removed
     if (router_cfg_->OR_SEED != -1 && rerouteNets.size() >= 2) {
       std::uniform_int_distribution<int> distribution(0,
@@ -1631,7 +1632,7 @@ bool FlexDRWorker::mazeIterInit_sortRerouteQueue(
         };
   // sort
   if (mazeIter == 0) {
-    sort(rerouteNets.begin(), rerouteNets.end(), rerouteNetsComp);
+    std::ranges::sort(rerouteNets, rerouteNetsComp);
   }
   return true;
 }
@@ -1939,8 +1940,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           if (router_cfg_->VERBOSE > 0) {
             std::cout
                 << "Warning: no output maze log specified, skipped writing "
-                   "maze log"
-                << std::endl;
+                   "maze log\n";
           }
         } else {
           gridGraph_.print();
@@ -2039,7 +2039,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
             net->setModified(true);
             writeGCPatchesToDRWorker();
           } else {
-            rerouteQueue.push({net, numReroute + 1, false, net});
+            rerouteQueue.emplace(net, numReroute + 1, false, net);
           }
           gcWorker_->clearPWires();
         }
@@ -2388,13 +2388,13 @@ drPin* FlexDRWorker::routeNet_getNextDst(
   // Find the next dst pin nearest to the src
   for (auto& [mazeIdx, setS] : mazeIdx2unConnPins) {
     gridGraph_.getPoint(pt, mazeIdx.x(), mazeIdx.y());
-    frCoord dx = std::max(std::max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
-    frCoord dy = std::max(std::max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
-    frCoord dz = std::max(std::max(gridGraph_.getZHeight(ccMazeIdx1.z())
-                                       - gridGraph_.getZHeight(mazeIdx.z()),
-                                   gridGraph_.getZHeight(mazeIdx.z())
-                                       - gridGraph_.getZHeight(ccMazeIdx2.z())),
-                          0);
+    frCoord dx = std::max({ll.x() - pt.x(), pt.x() - ur.x(), 0});
+    frCoord dy = std::max({ll.y() - pt.y(), pt.y() - ur.y(), 0});
+    frCoord dz = std::max({gridGraph_.getZHeight(ccMazeIdx1.z())
+                               - gridGraph_.getZHeight(mazeIdx.z()),
+                           gridGraph_.getZHeight(mazeIdx.z())
+                               - gridGraph_.getZHeight(ccMazeIdx2.z()),
+                           0});
     if (dx + dy + dz < currDist) {
       currDist = dx + dy + dz;
       nextDst = *(setS.begin());
@@ -2460,7 +2460,7 @@ void FlexDRWorker::routeNet_postAstarUpdate(
       }
     }
   } else {
-    std::cout << "Error: routeNet_postAstarUpdate path is empty" << std::endl;
+    std::cout << "Error: routeNet_postAstarUpdate path is empty\n";
   }
   // must be before comment line ABC so that the used actual src is set in
   // gridgraph

@@ -10,6 +10,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "db/obj/frBlockObject.h"
+#include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRTree.h"
@@ -60,7 +61,7 @@ void FlexTAWorkerRegionQuery::add(taPinFig* fig)
     impl_->shapes.at(obj->getViaDef()->getCutLayerNum())
         .insert(std::make_pair(box, obj));
   } else {
-    std::cout << "Error: unsupported region query add" << std::endl;
+    std::cout << "Error: unsupported region query add\n";
   }
 }
 
@@ -79,7 +80,7 @@ void FlexTAWorkerRegionQuery::remove(taPinFig* fig)
     impl_->shapes.at(obj->getViaDef()->getCutLayerNum())
         .remove(std::make_pair(box, obj));
   } else {
-    std::cout << "Error: unsupported region query add" << std::endl;
+    std::cout << "Error: unsupported region query add\n";
   }
 }
 

@@ -351,10 +351,10 @@ void tmg_conn::splitBySj(const int j,
         continue;
       }
       if (ptV_[rcV_[k].from_idx].y > ptV_[rcV_[k].to_idx].y) {
-        rcV_[k].shape.setYmin(ptV_[rcV_[j].from_idx].y - rcV_[k].width / 2);
+        rcV_[k].shape.setYmin(ptV_[rcV_[j].from_idx].y - (rcV_[k].width / 2));
         nymax = ptV_[rcV_[j].from_idx].y + rcV_[k].width / 2;
       } else {
-        rcV_[k].shape.setYmax(ptV_[rcV_[j].from_idx].y + rcV_[k].width / 2);
+        rcV_[k].shape.setYmax(ptV_[rcV_[j].from_idx].y + (rcV_[k].width / 2));
         nymin = ptV_[rcV_[j].from_idx].y - rcV_[k].width / 2;
       }
       x = ptV_[rcV_[k].from_idx].x;
@@ -367,10 +367,10 @@ void tmg_conn::splitBySj(const int j,
         continue;
       }
       if (ptV_[rcV_[k].from_idx].x > ptV_[rcV_[k].to_idx].x) {
-        rcV_[k].shape.setXmin(ptV_[rcV_[j].from_idx].x - rcV_[k].width / 2);
+        rcV_[k].shape.setXmin(ptV_[rcV_[j].from_idx].x - (rcV_[k].width / 2));
         nxmax = ptV_[rcV_[j].from_idx].x + rcV_[k].width / 2;
       } else {
-        rcV_[k].shape.setXmax(ptV_[rcV_[j].from_idx].x + rcV_[k].width / 2);
+        rcV_[k].shape.setXmax(ptV_[rcV_[j].from_idx].x + (rcV_[k].width / 2));
         nxmin = ptV_[rcV_[j].from_idx].x - rcV_[k].width / 2;
       }
       x = ptV_[rcV_[j].from_idx].x;

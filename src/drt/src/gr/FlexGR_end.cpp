@@ -7,8 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNode.h"
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 
 namespace drt {
@@ -63,7 +65,7 @@ void FlexGRWorker::endRemoveNets_objs(const frOrderedIdSet<frNet*>& modNets)
           endRemoveNets_pathSeg(cptr);
         }
       } else {
-        std::cout << "Error: endRemoveNet hasNet() empty" << std::endl;
+        std::cout << "Error: endRemoveNet hasNet() empty\n";
       }
     } else if (rptr->typeId() == grcVia) {
       auto cptr = static_cast<grVia*>(rptr);
@@ -72,10 +74,10 @@ void FlexGRWorker::endRemoveNets_objs(const frOrderedIdSet<frNet*>& modNets)
           endRemoveNets_via(cptr);
         }
       } else {
-        std::cout << "Error: endRemoveNet hasNet() empty" << std::endl;
+        std::cout << "Error: endRemoveNet hasNet() empty\n";
       }
     } else {
-      std::cout << "Error: endRemoveNets unsupported type" << std::endl;
+      std::cout << "Error: endRemoveNets unsupported type\n";
     }
   }
 }

@@ -19,12 +19,9 @@
 
 namespace ord {
 // Defined in OpenRoad.i
-est::EstimateParasitics *
-getEstimateParasitics();
-utl::Logger*
-getLogger();
-void
-ensureLinked();
+est::EstimateParasitics* getEstimateParasitics();
+utl::Logger* getLogger();
+void ensureLinked();
 }
 
 namespace sta {
@@ -95,7 +92,7 @@ using est::ParasiticsSrc;
   else if (stringEq(arg, "detailed_routing"))
     $1 = ParasiticsSrc::detailed_routing;
   else {
-    Logger* logger = ord::getLogger();
+    utl::Logger* logger = ord::getLogger();
     try {
       logger->error(utl::EST, 19, "Unknown parasitics source '{}'.", arg);
     } catch (const std::exception &e) {
@@ -264,7 +261,7 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
         if (file->is_open()) {
           spef_files[corner] = std::move(file);
         } else {
-          Logger* logger = ord::getLogger();
+          utl::Logger* logger = ord::getLogger();
           logger->error(utl::EST,
                         7,
                         "Can't open file " + file_path);

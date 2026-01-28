@@ -7,18 +7,17 @@
 #include <cstdlib>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbModInst.h"
 #include "dbPowerSwitch.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cmath>
-#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -83,11 +82,11 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj.parent_;
   stream >> obj.area_;
   // User Code Begin >>
-  if (stream.getDatabase()->isSchema(db_schema_level_shifter)) {
+  if (stream.getDatabase()->isSchema(kSchemaLevelShifter)) {
     stream >> obj.levelshifters_;
   }
 
-  if (stream.getDatabase()->isSchema(db_schema_power_domain_voltage)) {
+  if (stream.getDatabase()->isSchema(kSchemaPowerDomainVoltage)) {
     stream >> obj.voltage_;
   }
   // User Code End >>

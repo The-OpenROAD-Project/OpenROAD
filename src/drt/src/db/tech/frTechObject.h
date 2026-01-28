@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <iostream>
 #include <map>
@@ -13,6 +14,7 @@
 #include <vector>
 
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
@@ -210,9 +212,7 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getSpacing(z) > spc) {
-        spc = nd->getSpacing(z);
-      }
+      spc = std::max(nd->getSpacing(z), spc);
     }
     return spc;
   }
@@ -221,9 +221,7 @@ class frTechObject
   {
     frCoord spc = 0;
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules_) {
-      if (nd->getWidth(z) > spc) {
-        spc = nd->getWidth(z);
-      }
+      spc = std::max(nd->getWidth(z), spc);
     }
     return spc;
   }

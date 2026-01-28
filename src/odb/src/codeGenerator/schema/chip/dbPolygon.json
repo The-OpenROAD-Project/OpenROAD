@@ -4,7 +4,7 @@
   "fields":[
     {
       "name": "owner_type",
-      "type": "uint",
+      "type": "uint32_t",
       "bits": 4,
       "flags": [
         "private"
@@ -12,7 +12,7 @@
     },
     {
       "name": "layer_id",
-      "type": "uint",
+      "type": "uint32_t",
       "bits": 9,
       "flags": [
         "private"
@@ -32,7 +32,7 @@
     },
     {
       "name": "owner_",
-      "type": "uint",
+      "type": "uint32_t",
       "flags": [
         "private"
       ],

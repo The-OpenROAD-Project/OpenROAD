@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -19,10 +20,10 @@ class _dbTechLayer;
 
 struct dbFillFlags
 {
-  uint opc : 1;
-  uint mask_id : 2;
-  uint layer_id : 8;
-  uint spare_bits : 21;
+  uint32_t opc : 1;
+  uint32_t mask_id : 2;
+  uint32_t layer_id : 8;
+  uint32_t spare_bits : 21;
 };
 
 class _dbFill : public _dbObject
@@ -58,7 +59,7 @@ inline _dbFill::_dbFill(_dbDatabase*)
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbFill& fill)
 {
-  uint* bit_field = (uint*) &fill.flags_;
+  uint32_t* bit_field = (uint32_t*) &fill.flags_;
   stream << *bit_field;
   stream << fill.rect_;
   return stream;
@@ -66,7 +67,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbFill& fill)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbFill& fill)
 {
-  uint* bit_field = (uint*) &fill.flags_;
+  uint32_t* bit_field = (uint32_t*) &fill.flags_;
   stream >> *bit_field;
   stream >> fill.rect_;
   return stream;

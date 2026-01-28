@@ -26,6 +26,7 @@
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
 #include "distributed/drUpdate.h"
@@ -59,7 +60,6 @@
 using odb::dbTechLayerType;
 
 namespace drt {
-
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
                          utl::CallBackHandler* callback_handler,
@@ -696,19 +696,19 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  dr_->searchRepair({size,
-                     offset,
-                     mazeEndIter,
-                     workerDRCCost,
-                     workerMarkerCost,
-                     workerFixedShapeCost,
-                     workerMarkerDecay,
-                     getMode(ripupMode),
-                     followGuide});
+  FlexDR::SearchRepairArgs args = {.size = size,
+                                   .offset = offset,
+                                   .mazeEndIter = mazeEndIter,
+                                   .workerDRCCost = workerDRCCost,
+                                   .workerMarkerCost = workerMarkerCost,
+                                   .workerFixedShapeCost = workerFixedShapeCost,
+                                   .workerMarkerDecay = workerMarkerDecay,
+                                   .ripupMode = getMode(ripupMode),
+                                   .followGuide = followGuide};
+  dr_->searchRepair(args);
   dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
-
 void TritonRoute::endFR()
 {
   if (router_cfg_->SINGLE_STEP_DR) {
@@ -1126,6 +1126,12 @@ void TritonRoute::addInstancePAData(frInst* inst)
   }
 }
 
+void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
+{
+  if (pa_) {
+    pa_->addAvoidViaDef(via_def);
+  }
+}
 void TritonRoute::updateDirtyPAData()
 {
   if (pa_) {

@@ -4,49 +4,49 @@
     "fields": [
         {
             "name":"flags_",
-            "type":"uint",
+            "type":"uint32_t",
             "flags":["private"],
             "default":"0",
-            "schema":"db_schema_update_hierarchy"
+            "schema":"kSchemaUpdateHierarchy"
         },
         {
             "name": "from_",
             "type": "int",
             "flags":["no-set"],
             "default":"0",
-            "schema":"db_schema_odb_busport"
+            "schema":"kSchemaOdbBusport"
         },
         {
             "name":"to_",
             "type":"int",
             "flags":["no-set"],
             "default":"0",
-            "schema":"db_schema_odb_busport"
+            "schema":"kSchemaOdbBusport"
         },
         {
             "name":"port_",
             "type":"dbId<_dbModBTerm>",
             "flags":["no-set"],
-            "schema":"db_schema_odb_busport",
+            "schema":"kSchemaOdbBusport",
             "parent":"dbBlock"
         },
         {
             "name":"members_",
             "type":"dbId<_dbModBTerm>",
-            "schema":"db_schema_odb_busport",
+            "schema":"kSchemaOdbBusport",
             "parent":"dbBlock"
         },
         {
             "name":"last_",
             "type":"dbId<_dbModBTerm>",
-            "schema":"db_schema_odb_busport",
+            "schema":"kSchemaOdbBusport",
             "parent":"dbBlock"
         },
         {
             "name":"parent_",
             "type":"dbId<_dbModule>",
             "flags":["no-set"],
-            "schema":"db_schema_odb_busport",
+            "schema":"kSchemaOdbBusport",
             "parent":"dbBlock"
         }
     ],

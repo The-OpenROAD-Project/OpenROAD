@@ -14,6 +14,7 @@
 #include "SplitLoadMove.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -33,7 +34,6 @@ using std::vector;
 
 using utl::RSZ;
 
-using sta::dbITerm;
 using sta::Edge;
 using sta::Instance;
 using sta::InstancePinIterator;
@@ -77,6 +77,31 @@ bool CloneMove::doMove(const Path* drvr_path,
                        PathExpanded* expanded,
                        float setup_slack_margin)
 {
+  // CloneMove: Optimize timing by cloning a combinational gate to split loads
+  //
+  // Purpose: Reduce capacitive load on critical path by dividing loads into
+  //          two groups based on timing slack.
+  //
+  // Algorithm:
+  //   1. Check if lower than #fanout threshold, tri-state driver, dont_touch,
+  //   ECO pending cell, or single output  -> return false.
+  //   2. Sort fanout loads by decreasing order of slack margin (fanout_slack -
+  //   driver_slack). High slack margin first.
+  //   - It is safer to drive high slack margin cells with the clone. The
+  //   original cell drives the critical path.
+  //   3. Decide the location for the clone cell
+  //   4. Move half of loads w/ high slack margin to the output of the clone
+  //   cell.
+  //
+  // Result: Critical loads see reduced capacitance, improving setup timing.
+  //
+  // Precondition:
+  // - Fanout count must exceed split_load_min_fanout_
+  // - No tri-state driver
+  // - No dont_touch
+  // - No pending-move cell
+  // - No multiple output cell
+  //
   Pin* drvr_pin = drvr_path->pin(this);
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Path* load_path = expanded->path(drvr_index + 1);
@@ -140,15 +165,14 @@ bool CloneMove::doMove(const Path* drvr_path,
     fanout_slacks.emplace_back(fanout_vertex, slack_margin);
   }
 
-  sort(fanout_slacks.begin(),
-       fanout_slacks.end(),
-       [this](const pair<Vertex*, Slack>& pair1,
-              const pair<Vertex*, Slack>& pair2) {
-         return (pair1.second > pair2.second
-                 || (pair1.second == pair2.second
-                     && network_->pathNameLess(pair1.first->pin(),
-                                               pair2.first->pin())));
-       });
+  std::ranges::sort(fanout_slacks,
+                    [this](const pair<Vertex*, Slack>& pair1,
+                           const pair<Vertex*, Slack>& pair2) {
+                      return (pair1.second > pair2.second
+                              || (pair1.second == pair2.second
+                                  && network_->pathNameLess(
+                                      pair1.first->pin(), pair2.first->pin())));
+                    });
 
   Instance* drvr_inst = db_network_->instance(drvr_pin);
 
@@ -218,11 +242,11 @@ bool CloneMove::doMove(const Path* drvr_path,
       auto libPort = network_->libertyPort(
           pin);  // get the liberty port of the original inst/pin
       // Hierarchy fix: make sure modnet on input supported
-      dbNet* dbnet = db_network_->flatNet(pin);
+      odb::dbNet* dbnet = db_network_->flatNet(pin);
       odb::dbModNet* modnet = db_network_->hierNet(pin);
       // get the iterm
       Pin* clone_pin = db_network_->findPin(clone_inst, libPort->name());
-      dbITerm* iterm = db_network_->flatPin(clone_pin);
+      odb::dbITerm* iterm = db_network_->flatPin(clone_pin);
 
       sta_->connectPin(
           clone_inst,
@@ -274,7 +298,7 @@ bool CloneMove::doMove(const Path* drvr_path,
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
     Vertex* load_vertex = fanout_slack.first;
     Pin* load_pin = load_vertex->pin();
-    dbITerm* load_iterm = db_network_->flatPin(load_pin);
+    odb::dbITerm* load_iterm = db_network_->flatPin(load_pin);
 
     // Leave top level ports connected to original net so verilog port names are
     // preserved.

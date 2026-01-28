@@ -72,7 +72,7 @@ TEST_F(CheckerFixture, test_overlapping_chips)
   auto markers = overlapping_category->getMarkers();
   EXPECT_EQ(markers.size(), 1);
 
-  if (markers.size() > 0) {
+  if (!markers.empty()) {
     auto marker = *markers.begin();
     auto sources = marker->getSources();
     EXPECT_EQ(sources.size(), 2);
@@ -127,7 +127,7 @@ TEST_F(CheckerFixture, test_floating_chips)
   auto markers = floating_category->getMarkers();
   EXPECT_EQ(markers.size(), 1);
 
-  if (markers.size() > 0) {
+  if (!markers.empty()) {
     auto marker = *markers.begin();
     auto sources = marker->getSources();
     EXPECT_EQ(sources.size(), 1);

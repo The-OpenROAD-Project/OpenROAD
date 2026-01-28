@@ -30,6 +30,12 @@ module place_sort (clock,
  input scan_in_0;
 
 
+ sky130_fd_sc_hd__sdfsbp_1 ff10_clk1_rising (.D(port1),
+    .Q(output10),
+    .SCD(output1),
+    .SCE(scan_enable_0),
+    .SET_B(set_b),
+    .CLK(clock));
  sky130_fd_sc_hd__sdfsbp_1 ff1_clk1_rising (.D(port1),
     .Q(output1),
     .SCD(output5),
@@ -81,12 +87,6 @@ module place_sort (clock,
  sky130_fd_sc_hd__sdfsbp_1 ff9_clk1_rising (.D(port1),
     .Q(output9),
     .SCD(output7),
-    .SCE(scan_enable_0),
-    .SET_B(set_b),
-    .CLK(clock));
- sky130_fd_sc_hd__sdfsbp_1 ff10_clk1_rising (.D(port1),
-    .Q(output10),
-    .SCD(output1),
     .SCE(scan_enable_0),
     .SET_B(set_b),
     .CLK(clock));

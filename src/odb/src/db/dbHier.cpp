@@ -13,7 +13,6 @@
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 
@@ -46,10 +45,6 @@ _dbHier::_dbHier(_dbDatabase*, const _dbHier& i)
     : inst_(i.inst_),
       child_block_(i.child_block_),
       child_bterms_(i.child_bterms_)
-{
-}
-
-_dbHier::~_dbHier()
 {
 }
 

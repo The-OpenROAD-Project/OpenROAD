@@ -31,7 +31,7 @@ SimulatedAnnealing::SimulatedAnnealing(
     Core* core,
     std::vector<Slot>& slots,
     const std::vector<Constraint>& constraints,
-    Logger* logger,
+    utl::Logger* logger,
     odb::dbDatabase* db)
     : netlist_(netlist),
       core_(core),
@@ -682,7 +682,7 @@ int SimulatedAnnealing::rearrangeConstrainedGroups(int constraint_idx)
       groups_cnt++;
     }
 
-    std::sort(group_limits_list.begin(), group_limits_list.end());
+    std::ranges::sort(group_limits_list);
     utl::shuffle(aux_indices.begin(), aux_indices.end(), generator_);
 
     int cnt = 0;

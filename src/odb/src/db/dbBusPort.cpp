@@ -4,7 +4,10 @@
 // Generator Code Begin Cpp
 #include "dbBusPort.h"
 
+#include <cstdint>
+
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbModBTerm.h"
@@ -13,7 +16,6 @@
 #include "dbModule.h"
 #include "dbModuleBusPortModBTermItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
 namespace odb {
@@ -60,25 +62,25 @@ _dbBusPort::_dbBusPort(_dbDatabase* db)
 
 dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
+  if (obj.getDatabase()->isSchema(kSchemaUpdateHierarchy)) {
     stream >> obj.flags_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
     stream >> obj.from_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
     stream >> obj.to_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
     stream >> obj.port_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
     stream >> obj.members_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
     stream >> obj.last_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_odb_busport)) {
+  if (obj.getDatabase()->isSchema(kSchemaOdbBusport)) {
     stream >> obj.parent_;
   }
   return stream;

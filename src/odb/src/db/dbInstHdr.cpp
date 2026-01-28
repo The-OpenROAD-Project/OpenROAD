@@ -12,7 +12,6 @@
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 
 namespace odb {
@@ -73,10 +72,6 @@ _dbInstHdr::_dbInstHdr(_dbDatabase*, const _dbInstHdr& i)
       master_(i.master_),
       mterms_(i.mterms_),
       inst_cnt_(i.inst_cnt_)
-{
-}
-
-_dbInstHdr::~_dbInstHdr()
 {
 }
 
