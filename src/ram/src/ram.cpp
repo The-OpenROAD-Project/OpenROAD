@@ -528,6 +528,7 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
 void RamGen::ramFiller(const vector<std::string>& filler_cells)
 {
   vector<odb::dbMaster*> filler_masters;
+  filler_masters.reserve(filler_cells.size());
   for (const std::string& cell : filler_cells) {
     filler_masters.push_back(db_->findMaster(cell.c_str()));
   }
