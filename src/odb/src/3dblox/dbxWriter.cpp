@@ -3,8 +3,6 @@
 
 #include "dbxWriter.h"
 
-#include <yaml-cpp/yaml.h>
-
 #include <string>
 #include <vector>
 
