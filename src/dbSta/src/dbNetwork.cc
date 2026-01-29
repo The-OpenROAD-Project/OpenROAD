@@ -2308,6 +2308,7 @@ void dbNetwork::readDbNetlistAfter()
   makeTopCell();
   findConstantNets();
   checkLibertyCorners();
+  checkLibertyCellsWithoutLef();
 }
 
 void dbNetwork::makeTopCell()
@@ -2377,6 +2378,35 @@ void dbNetwork::findConstantNets()
       addConstantNet(dbToSta(dnet), LogicValue::zero);
     } else if (dnet->getSigType() == dbSigType::POWER) {
       addConstantNet(dbToSta(dnet), LogicValue::one);
+    }
+  }
+}
+
+void dbNetwork::checkLibertyCellsWithoutLef() const
+{
+  std::vector<std::string> cells_without_lef;
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{libertyLibraryIterator()};
+  while (lib_iter->hasNext()) {
+    LibertyLibrary* lib = lib_iter->next();
+    LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext()) {
+      LibertyCell* cell = cell_iter.next();
+      odb::dbMaster* master = staToDb(cell);
+      if (!master) {
+        cells_without_lef.emplace_back(cell->name());
+        cell->setDontUse(true);
+      }
+    }
+  }
+
+  if (!cells_without_lef.empty()) {
+    logger_->warn(ORD,
+                  2056,
+                  "The following {} liberty cell(s) do not have LEF masters "
+                  "and will be marked as dont-use:",
+                  cells_without_lef.size());
+    for (const auto& cell : cells_without_lef) {
+      logger_->report("  {}", cell);
     }
   }
 }
