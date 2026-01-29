@@ -1258,16 +1258,20 @@ void NesterovPlace::createCbkGCell(odb::dbInst* db_inst, odb::dbRegion* region)
   }
 
   for (auto group : region->getGroups()) {
+    bool found_nb = false;
     for (auto& nb : nbVec_) {
       if (group == nb->getGroup()) {
         nb->createCbkGCell(db_inst, gcell_index);
+        found_nb = true;
       }
     }
-    log_->warn(GPL,
-             8,
-             "Unable to find group ({}) to insert instance ({}).",
-             group->getName(),
-             db_inst->getName());
+    if (!found_nb) {
+      log_->warn(GPL,
+               8,
+               "Unable to find NesterovBase for group ({}) to insert instance ({}).",
+               group->getName(),
+               db_inst->getName());
+    }
   }
 }
 
