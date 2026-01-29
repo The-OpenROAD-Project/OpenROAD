@@ -139,6 +139,8 @@ def regression_test(
         ]],
         allow_empty = True,  # Allow to be empty; see also TODO above.
     )
+    if len(test_files) == 0:
+        fail("No test file found for " + name)
     data = _pop(kwargs, "data", [])
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
