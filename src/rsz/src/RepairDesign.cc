@@ -93,58 +93,12 @@ void RepairDesign::init()
   pre_checks_ = std::make_unique<PreChecks>(resizer_);
   parasitics_src_ = estimate_parasitics_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();
-  computeSlewRCFactor();
 
   r_strongest_buffer_ = std::numeric_limits<float>::max();
   for (auto buffer : resizer_->buffer_cells_) {
     r_strongest_buffer_ = std::min(r_strongest_buffer_,
                                    resizer_->bufferDriveResistance(buffer));
   }
-}
-
-void RepairDesign::computeSlewRCFactor()
-{
-  using sta::RiseFall;
-  const sta::LibertyLibrary* library = network_->defaultLibertyLibrary();
-  float factor = 0.0;
-  for (auto rf : sta::RiseFall::range()) {
-    // cast both rise and fall into 1->0 transition
-    float th_low, th_high;
-    if (rf == sta::RiseFall::rise()) {
-      // flip
-      th_low = 1.0 - library->slewUpperThreshold(rf);
-      th_high = 1.0 - library->slewLowerThreshold(rf);
-    } else {
-      th_low = library->slewLowerThreshold(rf);
-      th_high = library->slewUpperThreshold(rf);
-    }
-    // compute crossing times assuming RC=1 where R is driving resistance and C
-    // is load
-    float t_high = -log(th_high);
-    float t_low = -log(th_low);
-    // scale by slew derate
-    float rf_factor = (t_low - t_high) / library->slewDerateFromLibrary();
-    // check the factor has the right order of magnitude
-    if (!(rf_factor > 0.1 && rf_factor < 10.0)) {
-      logger_->error(
-          RSZ,
-          101,
-          "RC slew modeling shape factor is out of range: {:.3e} for {}",
-          rf_factor,
-          rf->name());
-    }
-    debugPrint(logger_,
-               RSZ,
-               "slew_rc",
-               1,
-               "transition {} factor {:.3e}",
-               rf->name(),
-               rf_factor);
-    factor = std::max(factor, rf_factor);
-  }
-  // Apply 10% modeling pessmism
-  const float pessimism = 0.10;
-  slew_rc_factor_ = factor * (1 + pessimism);
 }
 
 // Repair long wires, max slew, max capacitance, max fanout violations
@@ -1391,8 +1345,9 @@ void RepairDesign::repairNetVia(const BufferedNetPtr& bnet,
   bnet->setCapacitance(bnet->ref()->cap());
   bnet->setFanout(bnet->ref()->fanout());
   float r_via = bnet->viaResistance(corner_, resizer_, estimate_parasitics_);
-  bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
-                       - (r_via * bnet->ref()->cap() * slew_rc_factor_));
+  bnet->setMaxLoadSlew(
+      bnet->ref()->maxLoadSlew()
+      - (r_via * bnet->ref()->cap() * resizer_->slew_shape_factor_));
 }
 
 void RepairDesign::repairNetWire(
@@ -1454,7 +1409,7 @@ void RepairDesign::repairNetWire(
 
   double load_slew
       = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap + r_wire * c_wire / 2)
-        * slew_rc_factor_;
+        * resizer_->slew_shape_factor_;
 
   debugPrint(logger_,
              RSZ,
@@ -1477,8 +1432,9 @@ void RepairDesign::repairNetWire(
 
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
-  bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
-                       - (r_wire * (c_wire / 2 + ref_cap) * slew_rc_factor_));
+  bnet->setMaxLoadSlew(
+      bnet->ref()->maxLoadSlew()
+      - (r_wire * (c_wire / 2 + ref_cap) * resizer_->slew_shape_factor_));
 
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
@@ -1539,9 +1495,11 @@ void RepairDesign::repairNetWire(
       // in terms of the wire segment's length (in Elmore approx.).
       //
       // We solve a quadratic eq. to find the maximum conforming length.
-      float a = wire_res * wire_cap / 2;
-      float b = (r_drvr * wire_cap) + (wire_res * ref_cap);
-      float c = (r_drvr * ref_cap) - (max_load_slew_margined / slew_rc_factor_);
+      float a = wire_res * wire_cap * resizer_->slew_shape_factor_ / 2;
+      float b = (r_drvr * wire_cap)
+                + (wire_res * ref_cap * resizer_->slew_shape_factor_);
+      float c = (r_drvr * ref_cap * resizer_->slew_shape_factor_)
+                - max_load_slew_margined;
       float l = (-b + sqrt(b * b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
         split_length = min(split_length, metersToDbu(l));
@@ -1606,14 +1564,15 @@ void RepairDesign::repairNetWire(
       c_wire = length1 * wire_cap;
       load_slew = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
                    + r_wire * c_wire / 2)
-                  * slew_rc_factor_;
+                  * resizer_->slew_shape_factor_;
       buffer_cell = resizer_->findTargetCell(
           resizer_->buffer_lowest_drive_, load_cap, false);
 
       bnet->setCapacitance(load_cap);
       bnet->setFanout(repeater_fanout);
       bnet->setMaxLoadSlew(
-          max_load_slew - (r_wire * (c_wire / 2 + ref_cap) * slew_rc_factor_));
+          max_load_slew
+          - (r_wire * (c_wire / 2 + ref_cap) * resizer_->slew_shape_factor_));
 
       debugPrint(logger_,
                  RSZ,
@@ -1706,7 +1665,7 @@ void RepairDesign::repairNetJunc(
 
   // Calculate estimated slew based on RC
   float r_drvr = resizer_->driveResistance(drvr_pin_);
-  float load_slew = r_drvr * load_cap * slew_rc_factor_;
+  float load_slew = r_drvr * load_cap * resizer_->slew_shape_factor_;
   bool load_slew_violation = load_slew > max_load_slew_margined;
 
   const char* repeater_reason = nullptr;
@@ -1721,9 +1680,9 @@ void RepairDesign::repairNetJunc(
                level,
                delayAsString(load_slew, this, 3),
                delayAsString(max_load_slew_margined, this, 3));
-    double slew_left = r_drvr * cap_left * slew_rc_factor_;
+    double slew_left = r_drvr * cap_left * resizer_->slew_shape_factor_;
     double slew_slack_left = maxSlewMargined(max_load_slew_left) - slew_left;
-    double slew_right = r_drvr * cap_right * slew_rc_factor_;
+    double slew_right = r_drvr * cap_right * resizer_->slew_shape_factor_;
     double slew_slack_right = maxSlewMargined(max_load_slew_right) - slew_right;
     debugPrint(logger_,
                RSZ,

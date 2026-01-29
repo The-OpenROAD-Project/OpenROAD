@@ -9,14 +9,12 @@
 #include <string>
 
 #include "odb/geom.h"
-#include "spdlog/fmt/fmt.h"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Transition.hh"
-#include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
@@ -218,18 +216,10 @@ class BufferedNet
 
   struct Metrics
   {
-    int max_load_wl;
     FixedDelay slack = FixedDelay::ZERO;
     float cap;
     float max_load_slew;
     float fanout;
-
-    Metrics withMaxLoadWl(int max_load_wl)
-    {
-      Metrics ret = *this;
-      ret.max_load_wl = max_load_wl;
-      return ret;
-    }
 
     Metrics withSlack(FixedDelay slack)
     {
@@ -248,8 +238,10 @@ class BufferedNet
 
   Metrics metrics() const
   {
-    return Metrics{
-        maxLoadWireLength(), slack(), cap(), maxLoadSlew(), fanout()};
+    return Metrics{.slack = slack(),
+                   .cap = cap(),
+                   .max_load_slew = maxLoadSlew(),
+                   .fanout = fanout()};
   }
 
   bool fitsEnvelope(Metrics target);

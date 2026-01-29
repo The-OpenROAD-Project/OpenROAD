@@ -239,8 +239,6 @@ class RepairDesign : sta::dbStaState
                      bool end,
                      int repaired_net_count) const;
 
-  void computeSlewRCFactor();
-
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
