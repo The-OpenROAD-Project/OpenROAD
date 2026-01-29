@@ -954,6 +954,13 @@ class NesterovBase
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
 
+  // Calculate the dot product of the gradient with the step vector.
+  // This is used to calculate the reset condition. If this value
+  // is greater than 0 you should zero out your momentum for the
+  // gradient.
+  // See https://arxiv.org/abs/1204.3982
+  float getGradientMomentumStoppingHeuristic() const;
+
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
 
