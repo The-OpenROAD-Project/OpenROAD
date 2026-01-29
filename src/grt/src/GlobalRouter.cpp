@@ -230,6 +230,7 @@ NetRouteMap GlobalRouter::getPartialRoutes()
         partial_routes_ = fastroute_->getPlanarRoutes();
       } else {
         partial_routes_ = cugr_->getRoutes();
+        updatePinAccessPoints();
       }
       net_routes = partial_routes_;
     }

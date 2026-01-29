@@ -81,7 +81,6 @@ class CUGR
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
-  NetRouteMap getPlanarRoutes();
   void updateDbCongestion();
   void getITermsAccessPoints(
       odb::dbNet* net,

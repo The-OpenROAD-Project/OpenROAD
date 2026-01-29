@@ -57,7 +57,6 @@ void CUGR::init(const int min_routing_layer,
 {
   design_ = std::make_unique<Design>(db_,
                                      logger_,
-
                                      sta_,
                                      constants_,
                                      min_routing_layer,
@@ -261,6 +260,7 @@ void CUGR::write(const std::string& guide_file)
 
 NetRouteMap CUGR::getRoutes()
 {
+  // TODO: Investigate empty routes
   NetRouteMap routes;
   for (const auto& net : gr_nets_) {
     if (net->getNumPins() < 2) {
