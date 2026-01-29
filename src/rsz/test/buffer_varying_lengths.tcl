@@ -50,7 +50,6 @@ proc arrival { vertex } {
 }
 
 proc summarize_solution { } {
-  sta::network_changed
   estimate_parasitics -placement
   sta::find_timing
   puts "-------------------------------------------------------------"
