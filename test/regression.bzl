@@ -4,6 +4,8 @@
 """Instantiate a regression test based on .py or .tcl
 files using resources in //test:regression_resources"""
 
+load("@openroad_rules_python//python:defs.bzl", "py_test")
+
 def _regression_test_impl(ctx):
     # Declare the test script output
     test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
@@ -140,6 +142,7 @@ def regression_test(
         allow_empty = True,  # Allow to be empty; see also TODO above.
     )
     data = _pop(kwargs, "data", [])
+    deps = _pop(kwargs, "deps", [])
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
     tags = _pop(kwargs, "tags", [])
@@ -151,23 +154,35 @@ def regression_test(
         # Tests with test_type="standalone_python" can still run.
         is_openroad_python_test = ext == "py" and test_type != "standalone_python"
         test_tags = tags + (["manual"] if is_openroad_python_test else [])
-        regression_rule_test(
-            name = name + "-" + ext + "_test",
-            test_file = test_file,
-            test_name = name,
-            test_type = test_type,
-            data = [
-                "//test:regression_resources",
-            ] + test_files + data,
-            bazel_test_sh = "//test:bazel_test.sh",
-            openroad = "//:openroad",
-            regression_test = "//test:regression_test.sh",
-            # top showed me 50-400mByte of usage, so "enormous" for
-            # long running tests, but the OpenROAD tests are generally
-            # "small" by design.
-            #
-            # https://bazel.build/reference/be/common-definitions#test.size
-            size = size,
-            tags = test_tags,
-            **kwargs
-        )
+
+        if test_type == "standalone_python":
+            py_test(
+                name = name + "-" + ext + "_test",
+                srcs = [test_file],
+                main = test_file,
+                deps = deps + ["//docs/src/scripts:doc_test_utils"],
+                data = ["//test:regression_resources"] + test_files + data,
+                size = size,
+                tags = test_tags,
+            )
+        else:
+            regression_rule_test(
+                name = name + "-" + ext + "_test",
+                test_file = test_file,
+                test_name = name,
+                test_type = test_type,
+                data = [
+                    "//test:regression_resources",
+                ] + test_files + data,
+                bazel_test_sh = "//test:bazel_test.sh",
+                openroad = "//:openroad",
+                regression_test = "//test:regression_test.sh",
+                # top showed me 50-400mByte of usage, so "enormous" for
+                # long running tests, but the OpenROAD tests are generally
+                # "small" by design.
+                #
+                # https://bazel.build/reference/be/common-definitions#test.size
+                size = size,
+                tags = test_tags,
+                **kwargs
+            )

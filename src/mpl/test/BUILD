@@ -44,7 +44,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "mpl_man_tcl_check",
-    "mpl_readme_msgs_check",
+    # "mpl_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -61,166 +61,179 @@ filegroup(
     ],
 )
 
+# Local file resources for tests (used in glob)
+_LOCAL_TEST_RESOURCES = {
+    "boundary_push1": [
+        "testcases/boundary_push1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "boundary_push2": [
+        "testcases/boundary_push2.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "boundary_push3": [
+        "testcases/boundary_push2.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "centralization1": [
+        "testcases/centralization1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "clocked_macro": [
+        "testcases/clocked_macro.def",
+        "testcases/clocked_macro.lef",
+        "testcases/clocked_macro.lib",
+        "testcases/clocked_macro.v",
+    ],
+    "fixed_covers": [
+        "Nangate45_io/dummy_pads.lef",
+        "testcases/fixed_macros1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "fixed_ios1": [
+        "Nangate45/Nangate45_fast.lib",
+        "testcases/fixed_ios1.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "fixed_macros1": [
+        "testcases/fixed_macros1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "fixed_macros2": [
+        "testcases/fixed_macros2.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "guides1": [
+        "testcases/guides1.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "guides2": [
+        "testcases/macro_only.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+        "testcases/macro_only.v",
+    ],
+    "io_constraints1": [
+        "testcases/io_constraints1.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "io_constraints10": [
+        "testcases/io_constraints1.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "io_constraints2": [
+        "testcases/io_constraints1.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "io_constraints3": [
+        "testcases/io_constraints3.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "io_constraints4": [
+        "testcases/io_constraints4.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "io_constraints5": [
+        "testcases/io_constraints4.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "io_constraints6": [
+        "Nangate45/Nangate45_fast.lib",
+        "testcases/io_constraints6.def",
+        "testcases/macro_only.lef",
+    ],
+    "io_constraints7": [
+        "Nangate45/Nangate45_fast.lib",
+        "testcases/io_constraints6.def",
+        "testcases/macro_only.lef",
+    ],
+    "io_constraints8": [
+        "Nangate45/Nangate45_fast.lib",
+        "testcases/io_constraints6.def",
+        "testcases/macro_only.lef",
+    ],
+    "io_constraints9": [
+        "testcases/io_constraints1.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+    ],
+    "io_pads1": [
+        "Nangate45_io/dummy_pads.lef",
+        "testcases/io_pads1.def",
+        "testcases/macro_only.lef",
+    ],
+    "keep_clustering_data": [
+        "Nangate45/Nangate45_fast.lib",
+        "testcases/io_constraints6.def",
+        "testcases/macro_only.lef",
+    ],
+    "macro_only": [
+        "testcases/macro_only.def",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+        "testcases/macro_only.v",
+    ],
+    "macros_without_pins1": [
+        "Nangate45_io/dummy_pads.lef",
+        "testcases/macros_without_pins1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "mixed_ios1": [
+        "Nangate45/Nangate45_fast.lib",
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+        "testcases/mixed_ios1.def",
+    ],
+    "no_unfixed_macros": [
+        "testcases/macro_only.lef",
+        "testcases/macro_only.lib",
+        "testcases/macro_only.v",
+        "testcases/no_unfixed_macros.def",
+    ],
+    "orientation_improve1": [
+        "testcases/orientation_improve1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "orientation_improve2": [
+        "testcases/orientation_improve1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "orientation_improve3": [
+        "testcases/orientation_improve1.def",
+        "testcases/orientation_improve1.lef",
+    ],
+    "unfixed_cells_dont_fit_in_core": [
+        "testcases/macro_only.lef",
+        "testcases/unfixed_cells_dont_fit_in_core.def",
+    ],
+}
+
+# Bazel label resources for tests (doctest resources)
+_LABEL_TEST_RESOURCES = {
+    "mpl_man_tcl_check": [
+        "//src/mpl:README.md",
+    ],
+    "mpl_readme_msgs_check": [
+        "//src/mpl:README.md",
+    ],
+}
+
 [
     filegroup(
         name = test_name + "_resources",
         srcs = [":regression_resources"] + glob(
             [
                 test_name + ".*",
-            ] + {
-                "boundary_push1": [
-                    "testcases/boundary_push1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push2": [
-                    "testcases/boundary_push2.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push3": [
-                    "testcases/boundary_push2.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "centralization1": [
-                    "testcases/centralization1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "clocked_macro": [
-                    "testcases/clocked_macro.def",
-                    "testcases/clocked_macro.lef",
-                    "testcases/clocked_macro.lib",
-                    "testcases/clocked_macro.v",
-                ],
-                "fixed_covers": [
-                    "Nangate45_io/dummy_pads.lef",
-                    "testcases/fixed_macros1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "fixed_ios1": [
-                    "Nangate45/Nangate45_fast.lib",
-                    "testcases/fixed_ios1.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "fixed_macros1": [
-                    "testcases/fixed_macros1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "fixed_macros2": [
-                    "testcases/fixed_macros2.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "guides1": [
-                    "testcases/guides1.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "guides2": [
-                    "testcases/macro_only.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                    "testcases/macro_only.v",
-                ],
-                "io_constraints1": [
-                    "testcases/io_constraints1.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "io_constraints10": [
-                    "testcases/io_constraints1.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "io_constraints2": [
-                    "testcases/io_constraints1.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "io_constraints3": [
-                    "testcases/io_constraints3.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "io_constraints4": [
-                    "testcases/io_constraints4.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "io_constraints5": [
-                    "testcases/io_constraints4.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "io_constraints6": [
-                    "Nangate45/Nangate45_fast.lib",
-                    "testcases/io_constraints6.def",
-                    "testcases/macro_only.lef",
-                ],
-                "io_constraints7": [
-                    "Nangate45/Nangate45_fast.lib",
-                    "testcases/io_constraints6.def",
-                    "testcases/macro_only.lef",
-                ],
-                "io_constraints8": [
-                    "Nangate45/Nangate45_fast.lib",
-                    "testcases/io_constraints6.def",
-                    "testcases/macro_only.lef",
-                ],
-                "io_constraints9": [
-                    "testcases/io_constraints1.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                ],
-                "io_pads1": [
-                    "Nangate45_io/dummy_pads.lef",
-                    "testcases/io_pads1.def",
-                    "testcases/macro_only.lef",
-                ],
-                "keep_clustering_data": [
-                    "Nangate45/Nangate45_fast.lib",
-                    "testcases/io_constraints6.def",
-                    "testcases/macro_only.lef",
-                ],
-                "macro_only": [
-                    "testcases/macro_only.def",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                    "testcases/macro_only.v",
-                ],
-                "macros_without_pins1": [
-                    "Nangate45_io/dummy_pads.lef",
-                    "testcases/macros_without_pins1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "mixed_ios1": [
-                    "Nangate45/Nangate45_fast.lib",
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                    "testcases/mixed_ios1.def",
-                ],
-                "no_unfixed_macros": [
-                    "testcases/macro_only.lef",
-                    "testcases/macro_only.lib",
-                    "testcases/macro_only.v",
-                    "testcases/no_unfixed_macros.def",
-                ],
-                "orientation_improve1": [
-                    "testcases/orientation_improve1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "orientation_improve2": [
-                    "testcases/orientation_improve1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "orientation_improve3": [
-                    "testcases/orientation_improve1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "unfixed_cells_dont_fit_in_core": [
-                    "testcases/macro_only.lef",
-                    "testcases/unfixed_cells_dont_fit_in_core.def",
-                ],
-            }.get(test_name, []),
-        ),
+            ] + _LOCAL_TEST_RESOURCES.get(test_name, []),
+        ) + _LABEL_TEST_RESOURCES.get(test_name, []),
     )
     for test_name in ALL_TESTS
 ]
@@ -230,6 +243,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
