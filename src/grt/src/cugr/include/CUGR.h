@@ -1,7 +1,6 @@
 #pragma once
 
 #include <csignal>
-#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -104,11 +103,6 @@ class CUGR
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
-  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
-  void getViaStackRange(int net_id,
-                        int node_id,
-                        int16_t& bot_pin_l,
-                        int16_t& top_pin_l);
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
@@ -121,7 +115,6 @@ class CUGR
   utl::CallBackHandler* callback_handler_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;
-  NetRouteMap partial_routes_;
   NetRouteMap routes_;
 
   Constants constants_;
