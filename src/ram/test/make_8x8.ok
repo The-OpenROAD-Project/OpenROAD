@@ -7,8 +7,6 @@
 [INFO RAM-0016] Selected clock gate cell sky130_fd_sc_hd__dlclkp_1
 [INFO RAM-0016] Selected buffer cell sky130_fd_sc_hd__buf_1
 [INFO PDN-0001] Inserting grid: ram_grid
-Found 0 macro blocks.
-Using 2 tracks default min distance between IO pins.
 [INFO PPL-0067] Restrict pins [ D[0] D[1] D[2] D[3] D[4] ... ] to region 0.00u-125.12u at the TOP edge.
 [INFO PPL-0001] Number of available slots 288
 [INFO PPL-0002] Number of I/O             29
