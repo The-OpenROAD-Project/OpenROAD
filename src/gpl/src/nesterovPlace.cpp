@@ -1248,15 +1248,27 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 {
 }
 
-void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
+void NesterovPlace::createCbkGCell(odb::dbInst* db_inst, odb::dbRegion* region)
 {
-  auto gcell_index = nbc_->createCbkGCell(db_inst);
   // Always create gcell on top-level
-  nbVec_[0]->createCbkGCell(db_inst, gcell_index);
-  // TODO: create new gcell in its proper region
-  // for (auto& nesterov : nbVec_) {
-  //   nesterov->createCbkGCell(db_inst, gcell_index);
-  // }
+  auto gcell_index = nbc_->createCbkGCell(db_inst);
+  if (!region) {
+    nbVec_[0]->createCbkGCell(db_inst, gcell_index);
+    return;
+  }
+
+  for (auto group : region->getGroups()) {
+    for (auto& nb : nbVec_) {
+      if (group == nb->getGroup()) {
+        nb->createCbkGCell(db_inst, gcell_index);
+      }
+    }
+    log_->warn(GPL,
+             8,
+             "Unable to find group ({}) to insert instance ({}).",
+             group->getName(),
+             db_inst->getName());
+  }
 }
 
 void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
@@ -1348,13 +1360,13 @@ void nesterovDbCbk::inDbPostMoveInst(odb::dbInst* db_inst)
 
 void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst)
 {
-  nesterov_place_->createCbkGCell(db_inst);
+  nesterov_place_->createCbkGCell(db_inst, nullptr);
 }
 
 // TODO: use the region to create new gcell.
 void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
 {
-  nesterov_place_->createCbkGCell(db_inst);
+  nesterov_place_->createCbkGCell(db_inst, region);
 }
 
 void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)

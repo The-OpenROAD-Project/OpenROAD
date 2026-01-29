@@ -71,7 +71,7 @@ class NesterovPlace
   void resizeGCell(odb::dbInst*);
   void moveGCell(odb::dbInst*);
 
-  void createCbkGCell(odb::dbInst*);
+  void createCbkGCell(odb::dbInst*, odb::dbRegion*);
   void createGNet(odb::dbNet*);
   void createCbkITerm(odb::dbITerm*);
 
