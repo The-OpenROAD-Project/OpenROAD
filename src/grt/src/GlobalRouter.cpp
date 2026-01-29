@@ -102,7 +102,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
 {
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
-  cugr_ = new CUGR(db_, logger_, stt_builder_, sta_);
+  cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
 }
 
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -226,7 +226,12 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   } else {
     partial_routes_.clear();
     if (routes_.empty()) {
-      partial_routes_ = fastroute_->getPlanarRoutes();
+      if (!use_cugr_) {
+        partial_routes_ = fastroute_->getPlanarRoutes();
+      } else {
+        partial_routes_ = cugr_->getRoutes();
+        updatePinAccessPoints();
+      }
       net_routes = partial_routes_;
     }
   }
@@ -2051,7 +2056,11 @@ void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
         301,
         "Timing is not available, setting critical nets percentage to 0.");
   }
-  fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
+  if (use_cugr_) {
+    cugr_->setCriticalNetsPercentage(critical_nets_percentage);
+  } else {
+    fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
+  }
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
