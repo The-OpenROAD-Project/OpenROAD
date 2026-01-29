@@ -269,6 +269,14 @@ filegroup(
             "regions3": [
                 "Nangate45/fake_macros.lef",
             ],
+            "dpl_man_tcl_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/dpl:README.md",
+            ],
+            "dpl_readme_msgs_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/dpl:README.md",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -279,6 +287,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

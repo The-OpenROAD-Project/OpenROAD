@@ -60,6 +60,14 @@ filegroup(
                 "sky130hs/sky130hs_tt.lib",
                 "sky130hs/sky130hs_std_cell.lef",
             ],
+            "ant_man_tcl_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/ant:README.md",
+            ],
+            "ant_readme_msgs_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/ant:README.md",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -70,6 +78,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

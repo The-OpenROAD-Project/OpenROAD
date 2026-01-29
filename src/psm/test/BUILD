@@ -163,7 +163,16 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ),
+        ) + {
+            "psm_man_tcl_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/psm:README.md",
+            ],
+            "psm_readme_msgs_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/psm:README.md",
+            ],
+        }.get(test_name, []),
     )
     for test_name in ALL_TESTS
 ]
@@ -173,6 +182,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

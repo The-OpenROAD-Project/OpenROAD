@@ -10,7 +10,6 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
-
 cc_library(
     name = "tap",
     srcs = [
@@ -96,3 +95,5 @@ python_wrap_cc(
         "src",
     ],
 )
+
+exports_files(["README.md"])

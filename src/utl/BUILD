@@ -12,7 +12,6 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
-
 # TODO: the prometheus target should be broken out, and possibly logger.
 # However, there are cyclic dependencies currently between all these, which
 # need to be taken care of first
@@ -200,3 +199,5 @@ python_wrap_cc(
     ],
     visibility = ["//visibility:public"],
 )
+
+exports_files(["README.md"])

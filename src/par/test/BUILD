@@ -77,7 +77,16 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ),
+        ) + {
+            "par_man_tcl_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/par:README.md",
+            ],
+            "par_readme_msgs_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/par:README.md",
+            ],
+        }.get(test_name, []),
     )
     for test_name in ALL_TESTS
 ]
@@ -88,6 +97,7 @@ filegroup(
         data = [":" + test_name + "_resources"],
         tags = ["manual"] if test_name in MANUAL_TESTS or
                              test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

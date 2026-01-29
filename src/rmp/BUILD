@@ -9,7 +9,6 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
-
 cc_library(
     name = "rmp",
     srcs = [
@@ -112,3 +111,5 @@ tcl_wrap_cc(
         "//src/odb:swig",
     ],
 )
+
+exports_files(["README.md"])

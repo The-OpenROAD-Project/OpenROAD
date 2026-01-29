@@ -10,7 +10,6 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
-
 cc_library(
     name = "private_hdrs",
     hdrs = [
@@ -139,3 +138,5 @@ python_wrap_cc(
         "include",
     ],
 )
+
+exports_files(["README.md"])

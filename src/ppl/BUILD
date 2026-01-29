@@ -10,7 +10,6 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
-
 cc_library(
     name = "ppl",
     srcs = [
@@ -116,3 +115,5 @@ python_wrap_cc(
         "//src/odb:swig-py",
     ],
 )
+
+exports_files(["README.md"])

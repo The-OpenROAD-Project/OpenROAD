@@ -12,7 +12,6 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
-
 filegroup(
     name = "swig_imports",
     srcs = glob([
@@ -212,3 +211,5 @@ python_wrap_cc(
         "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
     ],
 )
+
+exports_files(["README.md"])

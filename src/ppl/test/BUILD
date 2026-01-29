@@ -165,6 +165,14 @@ filegroup(
             "multi_track_pattern2": ["multi_track_pattern1.lef"],
             "pin_length_error": ["on_grid.def"],
             "write_pin_placement6": ["write_pin_placement5.def"],
+            "ppl_man_tcl_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/ppl:README.md",
+            ],
+            "ppl_readme_msgs_check": [
+                "//docs/src/scripts:doc_test_utils",
+                "//src/ppl:README.md",
+            ],
         }.get(
             test_name,
             [
@@ -186,6 +194,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
