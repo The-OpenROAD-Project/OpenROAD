@@ -650,23 +650,22 @@ HardMacro::HardMacro(int width, int height, const std::string& name)
   pin_y_ = height / 2;
 }
 
-HardMacro::HardMacro(odb::dbInst* inst, int halo_width, int halo_height)
+HardMacro::HardMacro(odb::dbInst* inst, Halo halo)
 {
   inst_ = inst;
   block_ = inst->getBlock();
   name_ = inst->getName();
 
-  halo_width_ = halo_width;
-  halo_height_ = halo_height;
+  halo_ = halo;
 
   odb::dbMaster* master = inst->getMaster();
-  width_ = master->getWidth() + 2 * halo_width;
-  height_ = master->getHeight() + 2 * halo_height;
+  width_ = master->getWidth() + 2 * halo_.width;
+  height_ = master->getHeight() + 2 * halo.height;
 
   if (inst_->isFixed()) {
     const odb::Rect& box = inst->getBBox()->getBox();
-    x_ = box.xMin() - halo_width_;
-    y_ = box.yMin() - halo_height_;
+    x_ = box.xMin() - halo_.width;
+    y_ = box.yMin() - halo_.height;
     fixed_ = true;
   }
 
@@ -683,13 +682,13 @@ HardMacro::HardMacro(odb::dbInst* inst, int halo_width, int halo_height)
       }
     }
   }
-  pin_x_ = ((bbox.xMin() + bbox.xMax()) / 2) + halo_width_;
-  pin_y_ = ((bbox.yMin() + bbox.yMax()) / 2) + halo_height_;
+  pin_x_ = ((bbox.xMin() + bbox.xMax()) / 2) + halo_.width;
+  pin_y_ = ((bbox.yMin() + bbox.yMax()) / 2) + halo_.height;
 }
 
 // overload the comparison operators
 // based on area, width, height order
-// When we compare, we also consider the effect of halo_width
+// When we compare, we also consider the effect of halo
 bool HardMacro::operator<(const HardMacro& macro) const
 {
   if (getArea() != macro.getArea()) {
@@ -734,7 +733,7 @@ odb::Rect HardMacro::getBBox() const
 }
 
 // Get Physical Information
-// Note that the default X and Y include halo_width
+// Note that the default X and Y include halo
 void HardMacro::setLocation(const odb::Point& location)
 {
   if (getArea() == 0) {
@@ -765,15 +764,15 @@ odb::Point HardMacro::getLocation() const
   return {x_, y_};
 }
 
-// Note that the real X and Y does NOT include halo_width
+// Note that the real X and Y does NOT include halo
 void HardMacro::setRealLocation(const odb::Point& location)
 {
   if (getArea() == 0) {
     return;
   }
 
-  x_ = location.x() - halo_width_;
-  y_ = location.y() - halo_height_;
+  x_ = location.x() - halo_.width;
+  y_ = location.y() - halo_.height;
 }
 
 void HardMacro::setRealX(int x)
@@ -782,7 +781,7 @@ void HardMacro::setRealX(int x)
     return;
   }
 
-  x_ = x - halo_width_;
+  x_ = x - halo_.width;
 }
 
 void HardMacro::setRealY(int y)
@@ -791,32 +790,32 @@ void HardMacro::setRealY(int y)
     return;
   }
 
-  y_ = y - halo_height_;
+  y_ = y - halo_.height;
 }
 
 odb::Point HardMacro::getRealLocation() const
 {
-  return {x_ + halo_width_, y_ + halo_height_};
+  return {x_ + halo_.width, y_ + halo_.height};
 }
 
 int HardMacro::getRealX() const
 {
-  return x_ + halo_width_;
+  return x_ + halo_.width;
 }
 
 int HardMacro::getRealY() const
 {
-  return y_ + halo_height_;
+  return y_ + halo_.height;
 }
 
 int HardMacro::getRealWidth() const
 {
-  return width_ - 2 * halo_width_;
+  return width_ - 2 * halo_.width;
 }
 
 int HardMacro::getRealHeight() const
 {
-  return height_ - 2 * halo_height_;
+  return height_ - 2 * halo_.height;
 }
 
 int64_t HardMacro::getRealArea() const

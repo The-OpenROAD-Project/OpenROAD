@@ -121,6 +121,24 @@ set_macro_guidance_region
 | `-macro_name` | The name of a macro of the design. |
 | `-region` | The lower left corner and upper right corner {lx ly ux uy} of the region in microns. |
 
+
+### Set Macro Halo
+
+Command for setting a halo for specific macros. If unset, the macro will use the default values specified in MACRO_PLACE_HALO.
+
+```tcl
+set_macro_halo
+    -macro_name macro_name
+    -halo {width height}
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-macro_name` | The name of a macro of the design. |
+| `-halo` | The width and height of the halo, in microns. |
+
 ## Example scripts
 
 Example of a script demonstrating how to run `mpl` on a sample design of `bp_fe_top` as follows:
