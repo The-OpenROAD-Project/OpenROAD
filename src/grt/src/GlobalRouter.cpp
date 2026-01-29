@@ -229,7 +229,7 @@ NetRouteMap GlobalRouter::getPartialRoutes()
       if (!use_cugr_) {
         partial_routes_ = fastroute_->getPlanarRoutes();
       } else {
-        partial_routes_ = cugr_->getPlanarRoutes();
+        partial_routes_ = cugr_->getRoutes();
       }
       net_routes = partial_routes_;
     }
