@@ -4,6 +4,7 @@
 #include "db/obj/frVia.h"
 
 #include "db/drObj/drVia.h"
+#include "db/obj/frFig.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
 
@@ -22,7 +23,7 @@ frVia::frVia(const drVia& in)
 template <class Archive>
 void frVia::serialize(Archive& ar, const unsigned int version)
 {
-  (ar) & boost::serialization::base_object<frRef>(*this);
+  (ar) & boost::serialization::base_object<frPinFig>(*this);
   (ar) & origin_;
   bool tmp = false;
   if (is_loading(ar)) {

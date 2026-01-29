@@ -14,10 +14,7 @@ namespace drt {
 class frFig : public frBlockObject
 {
  public:
-  // getters
   virtual odb::Rect getBBox() const = 0;
-  // setters
-  // others
   virtual void move(const odb::dbTransform& xform) = 0;
   virtual bool intersects(const odb::Rect& box) const = 0;
 
@@ -37,19 +34,11 @@ class frNet;
 class frConnFig : public frFig
 {
  public:
-  // getters
   virtual bool hasNet() const = 0;
   virtual frNet* getNet() const = 0;
-  // setters
   virtual void addToNet(frNet* in) = 0;
   virtual void removeFromNet() = 0;
-  // others
 
-  /* from frFig
-   * getBBox
-   * move
-   * overlaps
-   */
  protected:
   frConnFig() = default;
 
@@ -67,27 +56,12 @@ class frBPin;
 class frPinFig : public frConnFig
 {
  public:
-  // getters
   virtual bool hasPin() const = 0;
   virtual frPin* getPin() const = 0;
-  // setters
   virtual void addToPin(frPin* in) = 0;
   virtual void addToPin(frBPin* in) = 0;
   virtual void removeFromPin() = 0;
-  // others
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
-
-  /* from frFig
-   * getBBox
-   * move
-   * overlaps
-   */
  protected:
   frPinFig() = default;
 

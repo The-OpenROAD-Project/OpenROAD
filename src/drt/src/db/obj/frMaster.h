@@ -25,9 +25,8 @@ class Parser;
 class frMaster : public frBlockObject
 {
  public:
-  // constructors
   frMaster(const frString& name) : name_(name) {}
-  // getters
+
   odb::Rect getBBox() const
   {
     odb::Rect box;
@@ -85,7 +84,6 @@ class frMaster : public frBlockObject
     return updated_pa_indices_;
   }
 
-  // setters
   void addTerm(std::unique_ptr<frMTerm> in)
   {
     in->setIndexInOwner(terms_.size());
@@ -124,7 +122,7 @@ class frMaster : public frBlockObject
   void setMasterType(const odb::dbMasterType& in) { masterType_ = in; }
   void setHasPinAccessUpdate(int in) { updated_pa_indices_.insert(in); }
   void clearUpdatedPAIndices() { updated_pa_indices_.clear(); }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcMaster; }
 
  protected:

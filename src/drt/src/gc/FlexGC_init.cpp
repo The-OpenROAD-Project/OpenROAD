@@ -229,24 +229,24 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    odb::dbTransform xform = via->getTransform();
+    const odb::Point origin = via->getOrigin();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       odb::Rect box = fig->getBBox();
-      xform.apply(box);
+      box.moveDelta(origin.x(), origin.y());
       currNet->addPolygon(box, layerNum, false);
     }
     // push cut layer rect
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
       odb::Rect box = fig->getBBox();
-      xform.apply(box);
+      box.moveDelta(origin.x(), origin.y());
       currNet->addRectangle(box, layerNum, false);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       odb::Rect box = fig->getBBox();
-      xform.apply(box);
+      box.moveDelta(origin.x(), origin.y());
       currNet->addPolygon(box, layerNum, false);
     }
   } else if (obj->typeId() == frcPatchWire) {
@@ -355,10 +355,10 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
-    odb::dbTransform xform = via->getTransform();
+    const odb::Point origin = via->getOrigin();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       odb::Rect box = fig->getBBox();
-      xform.apply(box);
+      box.moveDelta(origin.x(), origin.y());
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
@@ -371,14 +371,14 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     layerNum = via->getViaDef()->getCutLayerNum();
     for (auto& fig : via->getViaDef()->getCutFigs()) {
       odb::Rect box = fig->getBBox();
-      xform.apply(box);
+      box.moveDelta(origin.x(), origin.y());
       currNet->addRectangle(box, layerNum);
     }
     // push layer2 rect
     layerNum = via->getViaDef()->getLayer2Num();
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       odb::Rect box = fig->getBBox();
-      xform.apply(box);
+      box.moveDelta(origin.x(), origin.y());
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()

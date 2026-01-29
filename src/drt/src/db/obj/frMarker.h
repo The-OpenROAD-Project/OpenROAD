@@ -19,7 +19,6 @@ class frConstraint;
 class frMarker : public frFig
 {
  public:
-  // constructors
   frMarker() = default;
   frMarker& operator=(const frMarker&) = default;
   frMarker(const frMarker& in)
@@ -31,7 +30,7 @@ class frMarker : public frFig
         vioIsH_(in.vioIsH_)
   {
   }
-  // setters
+
   void setConstraint(frConstraint* constraintIn) { constraint_ = constraintIn; }
 
   void setBBox(const odb::Rect& bboxIn) { bbox_ = bboxIn; }
@@ -53,13 +52,6 @@ class frMarker : public frFig
   {
     victims_.emplace_back(obj, tupleIn);
   }
-  // getters
-
-  /* from frFig
-   * getBBox
-   * move, in .cpp
-   * intersects in .cpp
-   */
 
   odb::Rect getBBox() const override { return bbox_; }
   frLayerNum getLayerNum() const { return layerNum_; }
@@ -92,7 +84,6 @@ class frMarker : public frFig
 
   bool intersects(const odb::Rect& box) const override { return false; }
 
-  // others
   frBlockObjectEnum typeId() const override { return frcMarker; }
 
   void setIter(frListIter<std::unique_ptr<frMarker>>& in) { iter_ = in; }
