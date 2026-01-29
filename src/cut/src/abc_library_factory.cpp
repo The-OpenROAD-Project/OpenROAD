@@ -368,7 +368,7 @@ AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Corner* corner)
   return *this;
 }
 
-AbcLibrary AbcLibraryFactory::Build()
+utl::UniquePtrWithDeleter<abc::SC_Lib> AbcLibraryFactory::BuildScl()
 {
   if (!db_sta_) {
     logger_->error(utl::CUT, 19, "Build called with null sta library");
@@ -400,10 +400,13 @@ AbcLibrary AbcLibraryFactory::Build()
   abc::Abc_SclHashCells(abc_library);
   abc::Abc_SclLinkCells(abc_library);
 
-  return AbcLibrary(
-      utl::UniquePtrWithDeleter<abc::SC_Lib>(
-          abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }),
-      logger_);
+  return utl::UniquePtrWithDeleter<abc::SC_Lib>(
+      abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); });
+}
+
+AbcLibrary AbcLibraryFactory::Build()
+{
+  return AbcLibrary(BuildScl(), logger_);
 }
 
 std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromCorner(
@@ -589,6 +592,21 @@ bool AbcLibrary::IsSupportedCell(const std::string& cell_name)
     }
   }
   return supported_cells_.find(cell_name) != supported_cells_.end();
+}
+
+const std::set<std::string>& AbcLibrary::SupportedCells()
+{
+  if (supported_cells_.empty()) {
+    int num_gates = abc::SC_LibCellNum(abc_library_.get());
+    for (int i = 0; i < num_gates; i++) {
+      abc::SC_Cell* cell = abc::SC_LibCell(abc_library_.get(), i);
+      if (cell->n_outputs != 1) {
+        continue;
+      }
+      supported_cells_.insert(cell->pName);
+    }
+  }
+  return supported_cells_;
 }
 
 void AbcLibrary::InitializeConstGates()

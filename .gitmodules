@@ -4,3 +4,6 @@
 [submodule "src/abc"]
 	path = third-party/abc
 	url = ../../The-OpenROAD-Project/abc.git
+[submodule "third-party/mockturtle"]
+	path = third-party/mockturtle
+	url = https://github.com/antmicro/mockturtle

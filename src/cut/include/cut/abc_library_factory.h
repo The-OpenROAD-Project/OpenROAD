@@ -34,6 +34,7 @@ class AbcLibrary
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
   abc::Mio_Library_t* mio_library();
   bool IsSupportedCell(const std::string& cell_name);
+  const std::set<std::string>& SupportedCells();
   bool IsConst0Cell(const std::string& cell_name);
   bool IsConst1Cell(const std::string& cell_name);
   bool IsConstCell(const std::string& cell_name);
@@ -64,6 +65,7 @@ class AbcLibraryFactory
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
   AbcLibraryFactory& AddResizer(rsz::Resizer* resizer);
   AbcLibraryFactory& SetCorner(sta::Corner* corner);
+  utl::UniquePtrWithDeleter<abc::SC_Lib> BuildScl();
   AbcLibrary Build();
 
  private:
