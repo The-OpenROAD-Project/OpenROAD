@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <cstdint>
+#include <cstddef>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -30,7 +30,6 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "robin_hood.h"
-#include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
