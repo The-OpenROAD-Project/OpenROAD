@@ -40,6 +40,10 @@ class GRNet
   {
     routing_tree_ = std::move(tree);
   }
+  void setSlack(float slack) { slack_ = slack; }
+  float getSlack() const { return slack_; }
+  void setCritical(bool is_critical) { is_critical_ = is_critical; }
+  bool isCritical() const { return is_critical_; }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
@@ -63,6 +67,8 @@ class GRNet
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;
+  float slack_;
+  bool is_critical_;
 };
 
 }  // namespace grt
