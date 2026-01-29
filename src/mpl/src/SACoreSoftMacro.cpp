@@ -1201,7 +1201,7 @@ void SACoreSoftMacro::attemptCentralization(const float pre_cost)
   calPenalty();
 
   // revert centralization
-  if (calNormCost() > pre_cost && !is_single_array_single_std_cell_cluster) {
+  if (calNormCost() > pre_cost && !force_centralization_) {
     centralization_was_reverted_ = true;
 
     setClustersLocations(clusters_locations);

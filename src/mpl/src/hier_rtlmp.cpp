@@ -1371,9 +1371,9 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->setIsSingleArraySingleStdCellCluster(
-          single_array_single_std_cell_cluster);
-
+      if (single_array_single_std_cell_cluster) {
+        sa->forceCentralization();
+      }
       sa_batch.push_back(std::move(sa));
     }
 
