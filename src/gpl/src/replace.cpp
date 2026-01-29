@@ -162,7 +162,6 @@ void Replace::doPlace(const int threads, const PlaceOptions& options)
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
-  log_->info(GPL, 5, "Execute conjugate gradient initial placement.");
   if (pbc_ == nullptr) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
@@ -303,7 +302,7 @@ int Replace::doNesterovPlace(const int threads,
     return 0;
   }
 
-  log_->info(GPL, 7, "Execute nesterov global placement.");
+  log_->info(GPL, 7, "---- Execute Nesterov Global Placement.");
   if (options.timingDrivenMode) {
     rs_->resizeSlackPreamble();
   }

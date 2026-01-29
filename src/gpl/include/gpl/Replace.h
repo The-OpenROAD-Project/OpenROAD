@@ -53,6 +53,7 @@ struct PlaceOptions
   float initialPlaceNetWeightScale = 800;
 
   bool skipIoMode = false;
+  bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;
