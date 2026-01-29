@@ -389,6 +389,7 @@ void EstimateParasitics::estimateParasitics(
   switch (src) {
     case ParasiticsSrc::placement:
       estimateWireParasitics(spef_writer.get());
+      parasitics_src_ = ParasiticsSrc::placement;
       break;
     case ParasiticsSrc::global_routing:
       estimateGlobalRouteRC(spef_writer.get());
