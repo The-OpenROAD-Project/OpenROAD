@@ -152,10 +152,20 @@ set_skip_large_fanout(int skip_large_fanout)
   getGlobalRouter()->setSkipLargeFanoutNets(skip_large_fanout);
 }
 
-void
-global_route(bool start_incremental, bool end_incremental)
+void start_incremental()
 {
-  getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
+  getGlobalRouter()->startIncremental();
+}
+
+void end_incremental()
+{
+  getGlobalRouter()->endIncremental();
+}
+
+void
+global_route()
+{
+  getGlobalRouter()->globalRoute(true);
 }
 
 std::vector<int>
