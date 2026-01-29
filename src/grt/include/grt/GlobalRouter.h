@@ -182,7 +182,7 @@ class GlobalRouter
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void startIncremental();
-  void endIncremental();
+  void endIncremental(bool save_guides = false);
   void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes();

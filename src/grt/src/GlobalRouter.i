@@ -159,7 +159,8 @@ void start_incremental()
 
 void end_incremental()
 {
-  getGlobalRouter()->endIncremental();
+  // Save guides by default when ending incremental routing from Tcl interface.
+  getGlobalRouter()->endIncremental(true);
 }
 
 void
