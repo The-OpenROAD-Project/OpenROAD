@@ -7,16 +7,23 @@ LOG_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.log"
 
 mkdir -p ${RESULTS_DIR}
 
-ORD_ARGS=""
-if [ "$TEST_TYPE" == "python" ]; then
-    ORD_ARGS="-python"
-fi
-
 echo "Directory: ${PWD}"
 echo "Results Directory: ${RESULTS_DIR}"
-echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT |& tee $LOG_FILE"
 
-$OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit $TEST_NAME.$TEST_EXT |& tee $LOG_FILE
+case "$TEST_TYPE" in
+    standalone_python)
+        CMD="python3 $TEST_NAME.$TEST_EXT"
+        ;;
+    python)
+        CMD="$OPENROAD_EXE -python -no_splash -no_init -exit $TEST_NAME.$TEST_EXT"
+        ;;
+    *)
+        CMD="$OPENROAD_EXE -no_splash -no_init -exit $TEST_NAME.$TEST_EXT"
+        ;;
+esac
+
+echo "Command: $CMD"
+$CMD |& tee $LOG_FILE
 
 echo "Exitcode:  $?"
 

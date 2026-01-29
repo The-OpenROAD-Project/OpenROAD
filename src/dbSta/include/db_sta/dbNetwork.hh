@@ -442,6 +442,7 @@ class dbNetwork : public ConcreteNetwork
 
  protected:
   void readDbNetlistAfter();
+  void checkLibertyCellsWithoutLef() const;
   void makeTopCell();
   void findConstantNets();
   void makeAccessHashes();

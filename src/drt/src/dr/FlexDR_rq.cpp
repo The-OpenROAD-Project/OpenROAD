@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "db/drObj/drFig.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frRTree.h"

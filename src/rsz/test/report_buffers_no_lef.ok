@@ -1,0 +1,276 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_L_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[WARNING ORD-2011] LEF master FAx1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master HAxp5_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master XOR2x2_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OR2x2_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OA21x2_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OAI21x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master NOR2x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OR4x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master AO21x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master NAND2x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master AO221x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master TIEHIx1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master AOI211x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master AND3x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OA211x2_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OAI22x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master AND4x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master AND5x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master DFFHQNx1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OR3x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master OR5x1_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2011] LEF master XNOR2x2_ASAP7_75t_L has no liberty cell.
+[WARNING ORD-2056] The following 37 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  BUFx10_ASAP7_75t_R
+  BUFx12_ASAP7_75t_R
+  BUFx12f_ASAP7_75t_R
+  BUFx16f_ASAP7_75t_R
+  BUFx24_ASAP7_75t_R
+  BUFx2_ASAP7_75t_R
+  BUFx3_ASAP7_75t_R
+  BUFx4_ASAP7_75t_R
+  BUFx4f_ASAP7_75t_R
+  BUFx5_ASAP7_75t_R
+  BUFx6f_ASAP7_75t_R
+  BUFx8_ASAP7_75t_R
+  CKINVDCx10_ASAP7_75t_R
+  CKINVDCx11_ASAP7_75t_R
+  CKINVDCx12_ASAP7_75t_R
+  CKINVDCx14_ASAP7_75t_R
+  CKINVDCx16_ASAP7_75t_R
+  CKINVDCx20_ASAP7_75t_R
+  CKINVDCx5p33_ASAP7_75t_R
+  CKINVDCx6p67_ASAP7_75t_R
+  CKINVDCx8_ASAP7_75t_R
+  CKINVDCx9p33_ASAP7_75t_R
+  HB1xp67_ASAP7_75t_R
+  HB2xp67_ASAP7_75t_R
+  HB3xp67_ASAP7_75t_R
+  HB4xp67_ASAP7_75t_R
+  INVx11_ASAP7_75t_R
+  INVx13_ASAP7_75t_R
+  INVx1_ASAP7_75t_R
+  INVx2_ASAP7_75t_R
+  INVx3_ASAP7_75t_R
+  INVx4_ASAP7_75t_R
+  INVx5_ASAP7_75t_R
+  INVx6_ASAP7_75t_R
+  INVx8_ASAP7_75t_R
+  INVxp33_ASAP7_75t_R
+  INVxp67_ASAP7_75t_R
+********************************************************************************
+Buffer Report:
+There are 32 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 2 VT types:
+VT type[index]: # buffers, ave leakage
+  L      [1]: 16, 2.1e-09
+  SL     [2]: 16, 2.1e-08
+
+There are 0 cell footprint types:
+
+There are 1 cell site types:
+  asap7sc7p5t [H=270]: 32 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+BUFx24_ASAP7_75t_L                          507.0 1.2e-12 7.0e-09 270 N/A     L
+BUFx16f_ASAP7_75t_L                         605.7 1.5e-12 5.0e-09 270 N/A     L
+BUFx12_ASAP7_75t_L                          735.8 9.2e-13 3.5e-09 270 N/A     L
+BUFx12f_ASAP7_75t_L                         740.6 1.8e-12 4.0e-09 270 N/A     L
+BUFx10_ASAP7_75t_L                          848.3 1.1e-12 3.0e-09 270 N/A     L
+BUFx8_ASAP7_75t_L                          1029.8 9.1e-13 2.3e-09 270 N/A     L
+BUFx6f_ASAP7_75t_L                         1314.4 1.6e-12 2.0e-09 270 N/A     L
+BUFx5_ASAP7_75t_L                          1566.7 1.0e-12 1.5e-09 270 N/A     L
+BUFx4f_ASAP7_75t_L                         1918.3 2.0e-12 1.3e-09 270 N/A     L
+BUFx4_ASAP7_75t_L                          1935.3 1.1e-12 1.2e-09 270 N/A     L
+BUFx3_ASAP7_75t_L                          2546.9 1.7e-12 1.0e-09 270 N/A     L
+BUFx2_ASAP7_75t_L                          3769.6 2.1e-12 6.7e-10 270 N/A     L
+HB1xp67_ASAP7_75t_L                       11193.4 3.6e-12 2.5e-10 270 N/A     L
+HB2xp67_ASAP7_75t_L                       11222.2 5.6e-12 2.0e-10 270 N/A     L
+HB3xp67_ASAP7_75t_L                       11261.0 7.1e-12 1.9e-10 270 N/A     L
+HB4xp67_ASAP7_75t_L                       11327.4 8.6e-12 1.8e-10 270 N/A     L
+BUFx24_ASAP7_75t_SL                         477.7 1.2e-12 7.1e-08 270 N/A     SL
+BUFx16f_ASAP7_75t_SL                        560.3 1.4e-12 5.1e-08 270 N/A     SL
+BUFx12_ASAP7_75t_SL                         672.7 8.8e-13 3.6e-08 270 N/A     SL
+BUFx12f_ASAP7_75t_SL                        678.2 1.7e-12 4.1e-08 270 N/A     SL
+BUFx10_ASAP7_75t_SL                         772.0 1.0e-12 3.1e-08 270 N/A     SL
+BUFx8_ASAP7_75t_SL                          933.6 8.5e-13 2.4e-08 270 N/A     SL
+BUFx6f_ASAP7_75t_SL                        1184.3 1.5e-12 2.0e-08 270 N/A     SL
+BUFx5_ASAP7_75t_SL                         1409.8 9.6e-13 1.5e-08 270 N/A     SL
+BUFx4f_ASAP7_75t_SL                        1722.6 1.8e-12 1.4e-08 270 N/A     SL
+BUFx4_ASAP7_75t_SL                         1738.9 9.9e-13 1.2e-08 270 N/A     SL
+BUFx3_ASAP7_75t_SL                         2283.7 1.5e-12 1.0e-08 270 N/A     SL
+BUFx2_ASAP7_75t_SL                         3376.5 1.9e-12 6.8e-09 270 N/A     SL
+HB1xp67_ASAP7_75t_SL                      10001.5 3.3e-12 2.6e-09 270 N/A     SL
+HB2xp67_ASAP7_75t_SL                      10024.0 5.2e-12 2.0e-09 270 N/A     SL
+HB3xp67_ASAP7_75t_SL                      10054.6 6.6e-12 1.9e-09 270 N/A     SL
+HB4xp67_ASAP7_75t_SL                      10112.8 8.1e-12 1.8e-09 270 N/A     SL
+
+Filtered Buffer Report:
+There are 10 buffers after filtering based on threshold voltage,
+cell footprint, drive strength and cell site
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+BUFx12_ASAP7_75t_L                          735.8 9.2e-13 3.5e-09 270 N/A     L
+BUFx24_ASAP7_75t_L                          507.0 1.2e-12 7.0e-09 270 N/A     L
+BUFx8_ASAP7_75t_L                          1029.8 9.1e-13 2.3e-09 270 N/A     L
+BUFx10_ASAP7_75t_L                          848.3 1.1e-12 3.0e-09 270 N/A     L
+BUFx5_ASAP7_75t_L                          1566.7 1.0e-12 1.5e-09 270 N/A     L
+BUFx4_ASAP7_75t_L                          1935.3 1.1e-12 1.2e-09 270 N/A     L
+BUFx3_ASAP7_75t_L                          2546.9 1.7e-12 1.0e-09 270 N/A     L
+BUFx2_ASAP7_75t_L                          3769.6 2.1e-12 6.7e-10 270 N/A     L
+HB2xp67_ASAP7_75t_L                       11222.2 5.6e-12 2.0e-10 270 N/A     L
+HB3xp67_ASAP7_75t_L                       11261.0 7.1e-12 1.9e-10 270 N/A     L
+
+Hold Buffer Report:
+HB4xp67_ASAP7_75t_L is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 4 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+BUFx3_ASAP7_75t_L                             0.1 6.5e-16 1.0e-11  2546.9
+BUFx8_ASAP7_75t_L                             0.2 8.8e-16 1.6e-11  1029.8
+BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
+BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
+--------------------------------------------------------------------------------
+[INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
+********************************************************************************
+Buffer Report:
+There are 32 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 2 VT types:
+VT type[index]: # buffers, ave leakage
+  L      [1]: 16, 2.1e-09
+  SL     [2]: 16, 2.1e-08
+
+There are 0 cell footprint types:
+
+There are 1 cell site types:
+  asap7sc7p5t [H=270]: 32 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+BUFx24_ASAP7_75t_L                          507.0 1.2e-12 7.0e-09 270 N/A     L
+BUFx16f_ASAP7_75t_L                         605.7 1.5e-12 5.0e-09 270 N/A     L
+BUFx12_ASAP7_75t_L                          735.8 9.2e-13 3.5e-09 270 N/A     L
+BUFx12f_ASAP7_75t_L                         740.6 1.8e-12 4.0e-09 270 N/A     L
+BUFx10_ASAP7_75t_L                          848.3 1.1e-12 3.0e-09 270 N/A     L
+BUFx8_ASAP7_75t_L                          1029.8 9.1e-13 2.3e-09 270 N/A     L
+BUFx6f_ASAP7_75t_L                         1314.4 1.6e-12 2.0e-09 270 N/A     L
+BUFx5_ASAP7_75t_L                          1566.7 1.0e-12 1.5e-09 270 N/A     L
+BUFx4f_ASAP7_75t_L                         1918.3 2.0e-12 1.3e-09 270 N/A     L
+BUFx4_ASAP7_75t_L                          1935.3 1.1e-12 1.2e-09 270 N/A     L
+BUFx3_ASAP7_75t_L                          2546.9 1.7e-12 1.0e-09 270 N/A     L
+BUFx2_ASAP7_75t_L                          3769.6 2.1e-12 6.7e-10 270 N/A     L
+HB1xp67_ASAP7_75t_L                       11193.4 3.6e-12 2.5e-10 270 N/A     L
+HB2xp67_ASAP7_75t_L                       11222.2 5.6e-12 2.0e-10 270 N/A     L
+HB3xp67_ASAP7_75t_L                       11261.0 7.1e-12 1.9e-10 270 N/A     L
+HB4xp67_ASAP7_75t_L                       11327.4 8.6e-12 1.8e-10 270 N/A     L
+BUFx24_ASAP7_75t_SL                         477.7 1.2e-12 7.1e-08 270 N/A     SL
+BUFx16f_ASAP7_75t_SL                        560.3 1.4e-12 5.1e-08 270 N/A     SL
+BUFx12_ASAP7_75t_SL                         672.7 8.8e-13 3.6e-08 270 N/A     SL
+BUFx12f_ASAP7_75t_SL                        678.2 1.7e-12 4.1e-08 270 N/A     SL
+BUFx10_ASAP7_75t_SL                         772.0 1.0e-12 3.1e-08 270 N/A     SL
+BUFx8_ASAP7_75t_SL                          933.6 8.5e-13 2.4e-08 270 N/A     SL
+BUFx6f_ASAP7_75t_SL                        1184.3 1.5e-12 2.0e-08 270 N/A     SL
+BUFx5_ASAP7_75t_SL                         1409.8 9.6e-13 1.5e-08 270 N/A     SL
+BUFx4f_ASAP7_75t_SL                        1722.6 1.8e-12 1.4e-08 270 N/A     SL
+BUFx4_ASAP7_75t_SL                         1738.9 9.9e-13 1.2e-08 270 N/A     SL
+BUFx3_ASAP7_75t_SL                         2283.7 1.5e-12 1.0e-08 270 N/A     SL
+BUFx2_ASAP7_75t_SL                         3376.5 1.9e-12 6.8e-09 270 N/A     SL
+HB1xp67_ASAP7_75t_SL                      10001.5 3.3e-12 2.6e-09 270 N/A     SL
+HB2xp67_ASAP7_75t_SL                      10024.0 5.2e-12 2.0e-09 270 N/A     SL
+HB3xp67_ASAP7_75t_SL                      10054.6 6.6e-12 1.9e-09 270 N/A     SL
+HB4xp67_ASAP7_75t_SL                      10112.8 8.1e-12 1.8e-09 270 N/A     SL
+
+Filtered Buffer Report:
+All 32 buffers are available because buffer pruning has been disabled
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+HB4xp67_ASAP7_75t_L                       11327.4 8.6e-12 1.8e-10 270 N/A     L
+HB3xp67_ASAP7_75t_L                       11261.0 7.1e-12 1.9e-10 270 N/A     L
+HB2xp67_ASAP7_75t_L                       11222.2 5.6e-12 2.0e-10 270 N/A     L
+HB1xp67_ASAP7_75t_L                       11193.4 3.6e-12 2.5e-10 270 N/A     L
+HB4xp67_ASAP7_75t_SL                      10112.8 8.1e-12 1.8e-09 270 N/A     SL
+HB3xp67_ASAP7_75t_SL                      10054.6 6.6e-12 1.9e-09 270 N/A     SL
+HB2xp67_ASAP7_75t_SL                      10024.0 5.2e-12 2.0e-09 270 N/A     SL
+HB1xp67_ASAP7_75t_SL                      10001.5 3.3e-12 2.6e-09 270 N/A     SL
+BUFx2_ASAP7_75t_L                          3769.6 2.1e-12 6.7e-10 270 N/A     L
+BUFx2_ASAP7_75t_SL                         3376.5 1.9e-12 6.8e-09 270 N/A     SL
+BUFx3_ASAP7_75t_L                          2546.9 1.7e-12 1.0e-09 270 N/A     L
+BUFx3_ASAP7_75t_SL                         2283.7 1.5e-12 1.0e-08 270 N/A     SL
+BUFx4_ASAP7_75t_L                          1935.3 1.1e-12 1.2e-09 270 N/A     L
+BUFx4f_ASAP7_75t_L                         1918.3 2.0e-12 1.3e-09 270 N/A     L
+BUFx4_ASAP7_75t_SL                         1738.9 9.9e-13 1.2e-08 270 N/A     SL
+BUFx4f_ASAP7_75t_SL                        1722.6 1.8e-12 1.4e-08 270 N/A     SL
+BUFx5_ASAP7_75t_L                          1566.7 1.0e-12 1.5e-09 270 N/A     L
+BUFx5_ASAP7_75t_SL                         1409.8 9.6e-13 1.5e-08 270 N/A     SL
+BUFx6f_ASAP7_75t_L                         1314.4 1.6e-12 2.0e-09 270 N/A     L
+BUFx6f_ASAP7_75t_SL                        1184.3 1.5e-12 2.0e-08 270 N/A     SL
+BUFx8_ASAP7_75t_L                          1029.8 9.1e-13 2.3e-09 270 N/A     L
+BUFx8_ASAP7_75t_SL                          933.6 8.5e-13 2.4e-08 270 N/A     SL
+BUFx10_ASAP7_75t_L                          848.3 1.1e-12 3.0e-09 270 N/A     L
+BUFx10_ASAP7_75t_SL                         772.0 1.0e-12 3.1e-08 270 N/A     SL
+BUFx12f_ASAP7_75t_L                         740.6 1.8e-12 4.0e-09 270 N/A     L
+BUFx12_ASAP7_75t_L                          735.8 9.2e-13 3.5e-09 270 N/A     L
+BUFx12f_ASAP7_75t_SL                        678.2 1.7e-12 4.1e-08 270 N/A     SL
+BUFx12_ASAP7_75t_SL                         672.7 8.8e-13 3.6e-08 270 N/A     SL
+BUFx16f_ASAP7_75t_L                         605.7 1.5e-12 5.0e-09 270 N/A     L
+BUFx16f_ASAP7_75t_SL                        560.3 1.4e-12 5.1e-08 270 N/A     SL
+BUFx24_ASAP7_75t_L                          507.0 1.2e-12 7.0e-09 270 N/A     L
+BUFx24_ASAP7_75t_SL                         477.7 1.2e-12 7.1e-08 270 N/A     SL
+
+Hold Buffer Report:
+HB4xp67_ASAP7_75t_L is the buffer chosen for hold fixing
+********************************************************************************
+
+Fast Buffer Report:
+There are 4 fast buffers
+--------------------------------------------------------------------------------
+Cell                                        Area  Input  Intrinsic Drive 
+                                                   Cap    Delay    Res
+--------------------------------------------------------------------------------
+BUFx3_ASAP7_75t_L                             0.1 6.5e-16 1.0e-11  2546.9
+BUFx8_ASAP7_75t_L                             0.2 8.8e-16 1.6e-11  1029.8
+BUFx10_ASAP7_75t_L                            0.2 1.3e-15 1.3e-11   848.3
+BUFx24_ASAP7_75t_L                            0.4 2.4e-15 1.6e-11   507.0
+--------------------------------------------------------------------------------
+The following 0 cells are equivalent to BUFx2_ASAP7_75t_R:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+-----------------------------------------------------------------------------
+The following 2 cells are equivalent to BUFx2_ASAP7_75t_L:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+BUFx2_ASAP7_75t_L                           0.073  1.00 6.71e-10  1.00   L
+BUFx2_ASAP7_75t_SL                          0.073  1.00 6.81e-09 10.15   SL
+-----------------------------------------------------------------------------
+The following 2 cells are equivalent to BUFx2_ASAP7_75t_SL:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+BUFx2_ASAP7_75t_L                           0.073  1.00 6.71e-10  0.10   L
+BUFx2_ASAP7_75t_SL                          0.073  1.00 6.81e-09  1.00   SL
+-----------------------------------------------------------------------------

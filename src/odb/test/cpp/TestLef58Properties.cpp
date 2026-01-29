@@ -606,5 +606,18 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(voltage_table.at(2.5), 140);
   EXPECT_EQ(voltage_table.at(3.3), 280);
   EXPECT_EQ(voltage_table.at(5.0), 420);
+
+  // LEF58_MINWIDTH
+  layer = dbTech->findLayer("metal3");
+  EXPECT_EQ(layer->getMinWidth(), 140);
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 140);
+
+  layer = dbTech->findLayer("metal4");
+  EXPECT_EQ(layer->getMinWidth(), 280);
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
+
+  layer = dbTech->findLayer("metal5");
+  EXPECT_EQ(layer->getMinWidth(), 280);
+  EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
 }
 }  // namespace odb

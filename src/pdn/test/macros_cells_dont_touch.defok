@@ -1873,7 +1873,7 @@ PINS 269 ;
         + PLACED ( 399930 221340 ) N ;
 END PINS
 SPECIALNETS 4 ;
-    - VDD ( * VDD ) + USE POWER ;
+    - VDD ( dcache.data.data_arrays_0.data_arrays_0_ext.mem VDD ) + USE POWER ;
     - VDD2 ( frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem VDD ) ( TAP_544 VDD ) ( TAP_543 VDD ) ( TAP_542 VDD ) ( TAP_541 VDD ) ( TAP_540 VDD ) ( TAP_539 VDD )
       ( TAP_538 VDD ) ( TAP_537 VDD ) ( TAP_536 VDD ) ( TAP_535 VDD ) ( TAP_534 VDD ) ( TAP_533 VDD ) ( TAP_532 VDD ) ( TAP_531 VDD )
       ( TAP_530 VDD ) ( TAP_529 VDD ) ( TAP_528 VDD ) ( TAP_527 VDD ) ( TAP_526 VDD ) ( TAP_525 VDD ) ( TAP_524 VDD ) ( TAP_523 VDD )

@@ -133,6 +133,3 @@ or_integration_tests(
     widthtable
 )
 
-# Skipped
-#pdn_man_tcl_check
-#pdn_readme_msgs_check

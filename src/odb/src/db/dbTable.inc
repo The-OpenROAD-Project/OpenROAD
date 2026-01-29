@@ -12,7 +12,6 @@
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
-#include "dbTable.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"

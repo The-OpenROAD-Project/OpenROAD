@@ -31,9 +31,15 @@ class drAccessPattern : public drBlockObject
   {
     return (dir == frDirEnum::U) ? vU_ : vD_;
   }
-  const frViaDef* getAccessViaDef(const frDirEnum& dir = frDirEnum::U)
+  const frViaDef* getAccessViaDef()
   {
-    return (dir == frDirEnum::U) ? (*vU_)[vUIdx_] : (*vD_)[vDIdx_];
+    if (hasAccessViaDef(frDirEnum::U)) {
+      return (*vU_)[vUIdx_];
+    }
+    if (hasAccessViaDef(frDirEnum::D)) {
+      return (*vD_)[vDIdx_];
+    }
+    return nullptr;
   }
   bool nextAccessViaDef(const frDirEnum& dir = frDirEnum::U);
   bool prevAccessViaDef(const frDirEnum& dir = frDirEnum::U);

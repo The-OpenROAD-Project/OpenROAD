@@ -14,6 +14,7 @@
 #include "db/obj/frAccess.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
 #include "global.h"

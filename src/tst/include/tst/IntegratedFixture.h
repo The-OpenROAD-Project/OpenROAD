@@ -30,7 +30,9 @@ class IntegratedFixture : public tst::Fixture
   ~IntegratedFixture() override = default;
 
  protected:
-  void readVerilogAndSetup(const std::string& verilog_file);
+  void readVerilogAndSetup(const std::string& verilog_file,
+                           bool init_default_sdc = true);
+  void initStaDefaultSdc();
   void dumpVerilogAndOdb(const std::string& name) const;
   void removeFile(const std::string& path);
 

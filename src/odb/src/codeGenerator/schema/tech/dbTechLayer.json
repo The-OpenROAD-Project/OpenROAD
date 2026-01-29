@@ -132,6 +132,12 @@
       ]
     },
     {
+      "type": "uint32_t",
+      "default": "0",
+      "name": "wrong_way_min_width_",
+      "schema" : "kSchemaTechLayerMinWidthWrongway"
+    },
+    {
       "name":"layer_adjustment_",
       "default": "0",
       "type":"float",

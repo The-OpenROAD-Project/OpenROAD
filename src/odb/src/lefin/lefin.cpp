@@ -702,6 +702,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
                          "LEF58_TWOWIRESFORBIDDENSPACING")) {
         lefTechLayerTwoWiresForbiddenSpcRuleParser parser(this);
         parser.parse(layer->propValue(iii), l);
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINWIDTH")) {
+        MinWidthParser parser(l, this);
+        parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF57_ANTENNAGATEPLUSDIFF")) {
         AntennaGatePlusDiffParser parser(layer, this);
         parser.parse(layer->propValue(iii));
@@ -788,10 +791,15 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
     l->setWidth(dbdist(layer->width()));
   }
 
-  if (layer->hasMinwidth()) {
-    l->setMinWidth(dbdist(layer->minwidth()));
-  } else if (type == dbTechLayerType::ROUTING) {
-    l->setMinWidth(l->getWidth());
+  if (l->getMinWidth() == 0) {
+    if (layer->hasMinwidth()) {
+      l->setMinWidth(dbdist(layer->minwidth()));
+    } else if (type == dbTechLayerType::ROUTING) {
+      l->setMinWidth(l->getWidth());
+    }
+  }
+  if (l->getWrongWayMinWidth() == 0) {
+    l->setWrongWayMinWidth(l->getWrongWayWidth());
   }
 
   if (layer->hasOffset()) {

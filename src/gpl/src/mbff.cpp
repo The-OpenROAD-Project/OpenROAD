@@ -2316,13 +2316,6 @@ void MBFF::ReadLibs()
       const int idx = GetBitIdx(num_slots);
       const Mask array_mask = GetArrayMask(tmp_tray, true);
 
-      debugPrint(log_,
-                 GPL,
-                 "mbff",
-                 1,
-                 "Found tray {} mask: {}",
-                 master->getName(),
-                 array_mask.to_string());
       if (best_master_[array_mask].empty()) {
         best_master_[array_mask].resize(num_sizes_, nullptr);
         tray_area_[array_mask].resize(num_sizes_,
@@ -2338,8 +2331,18 @@ void MBFF::ReadLibs()
 
       const float cur_area = (master->getHeight() / multiplier_)
                              * (master->getWidth() / multiplier_);
-      sta::PowerResult tray_power
+      const sta::PowerResult tray_power
           = sta_->power(network_->dbToSta(tmp_tray), corner_);
+
+      debugPrint(log_,
+                 GPL,
+                 "mbff",
+                 1,
+                 "Found tray {} mask: {} area: {} leakage power: {}",
+                 master->getName(),
+                 array_mask.to_string(),
+                 cur_area,
+                 tray_power.leakage());
 
       if (tray_area_[array_mask][idx] > cur_area) {
         tray_area_[array_mask][idx] = cur_area;

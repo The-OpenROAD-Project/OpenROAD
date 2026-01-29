@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "boost/icl/interval_set.hpp"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"

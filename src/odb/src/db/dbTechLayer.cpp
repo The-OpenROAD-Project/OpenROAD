@@ -98,6 +98,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (wrong_way_width_ != rhs.wrong_way_width_) {
     return false;
   }
+  if (wrong_way_min_width_ != rhs.wrong_way_min_width_) {
+    return false;
+  }
   if (layer_adjustment_ != rhs.layer_adjustment_) {
     return false;
   }
@@ -364,6 +367,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
   flags_ = {};
   wrong_way_width_ = 0;
+  wrong_way_min_width_ = 0;
   layer_adjustment_ = 0;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
@@ -539,6 +543,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
+  if (obj.getDatabase()->isSchema(kSchemaTechLayerMinWidthWrongway)) {
+    stream >> obj.wrong_way_min_width_;
+  }
   if (obj.getDatabase()->isSchema(kSchemaOrthSpcTbl)) {
     stream >> obj.orth_spacing_tbl_;
   }
@@ -644,6 +651,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
+  stream << obj.wrong_way_min_width_;
   stream << obj.orth_spacing_tbl_;
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
@@ -946,6 +954,19 @@ uint32_t dbTechLayer::getWrongWayWidth() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return obj->wrong_way_width_;
+}
+
+void dbTechLayer::setWrongWayMinWidth(uint32_t wrong_way_min_width)
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  obj->wrong_way_min_width_ = wrong_way_min_width;
+}
+
+uint32_t dbTechLayer::getWrongWayMinWidth() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return obj->wrong_way_min_width_;
 }
 
 void dbTechLayer::setLayerAdjustment(float layer_adjustment)

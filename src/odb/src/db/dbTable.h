@@ -135,4 +135,4 @@ dbOStream& operator<<(dbOStream& stream,
 
 }  // namespace odb
 
-#include "dbTable.inc"
+#include "dbTable.inc"  // IWYU pragma: export

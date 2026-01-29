@@ -1,4 +1,16 @@
 [INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[WARNING ORD-2056] The following 11 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  snl_ff2x1
+  snl_invx2
+  snl_lenqnx1
+  snl_lqx1
+  snl_mux21x1
+  snl_nand02x1
+  snl_nand02x2
+  snl_oa012x1
+  snl_or02x1
+  snl_tbufx1
+  snl_xor2x1
 module reg5 (out,
     clk,
     in);

@@ -3004,6 +3004,11 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     props.emplace_back("Minimum width",
                        Property::convert_dbu(layer->getMinWidth(), true));
   }
+  if (layer->getWrongWayMinWidth() != 0) {
+    props.emplace_back(
+        "Wrong way minimum width",
+        Property::convert_dbu(layer->getWrongWayMinWidth(), true));
+  }
   if (layer->hasMaxWidth()) {
     props.emplace_back("Max width",
                        Property::convert_dbu(layer->getMaxWidth(), true));
