@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "odb/geom.h"
 #include "spdlog/fmt/fmt.h"
@@ -295,5 +296,38 @@ class BufferedNet
 
   const sta::Corner* corner_ = nullptr;
 };
+
+// Template magic to make it easier to write algorithms descending
+// over the buffer tree in the form of lambdas; it allows recursive
+// lambda calling and it keeps track of the level number which is important
+// for good debug prints
+//
+// https://stackoverflow.com/questions/2067988/how-to-make-a-recursive-lambda
+template <class F>
+struct visitor
+{
+  F f;
+  int level = 0;
+  explicit visitor(F&& f) : f(std::forward<F>(f)) {}
+  template <class... Args>
+  decltype(auto) operator()(Args&&... args)
+  {
+    level++;
+    decltype(auto) ret = f(*this, level, std::forward<Args>(args)...);
+    level--;
+    return ret;
+  }
+
+  // delete the copy constructor
+  visitor(const visitor&) = delete;
+  visitor& operator=(const visitor&) = delete;
+};
+
+template <typename F, class... Args>
+static decltype(auto) visitTree(F&& f, Args&&... args)
+{
+  visitor<std::decay_t<F>> v{std::forward<F>(f)};
+  return v(std::forward<Args>(args)...);
+}
 
 }  // namespace rsz
