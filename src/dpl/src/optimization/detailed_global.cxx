@@ -8,14 +8,21 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <vector>
 
+#include "boost/token_functions.hpp"
 #include "boost/tokenizer.hpp"
+#include "detailed_generator.h"
 #include "detailed_manager.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
+#include "infrastructure/network.h"
 #include "objective/detailed_hpwl.h"
+#include "util/journal.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -63,46 +70,79 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr, const std::string& command)
 void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
                              std::vector<std::string>& args)
 {
-  // Given the arguments, figure out which routine to run to do the reordering.
+  // Two-pass budget-constrained congestion-aware optimization using
+  // Journal-based state management
 
   mgr_ = mgrPtr;
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
+  swap_params_ = &mgr_->getGlobalSwapParams();
+  const GlobalSwapParams& params = *swap_params_;
 
-  int passes = 1;
-  double tol = 0.01;
+  int passes = params.passes;
+  double tol = params.tolerance;
+  tradeoff_ = params.tradeoff;
+
   for (size_t i = 1; i < args.size(); i++) {
     if (args[i] == "-p" && i + 1 < args.size()) {
       passes = std::atoi(args[++i].c_str());
     } else if (args[i] == "-t" && i + 1 < args.size()) {
       tol = std::atof(args[++i].c_str());
+    } else if (args[i] == "-x" && i + 1 < args.size()) {
+      tradeoff_ = std::atof(args[++i].c_str());
     }
   }
   passes = std::max(passes, 1);
   tol = std::max(tol, 0.01);
+  tradeoff_ = std::max(0.0, std::min(1.0, tradeoff_));  // Clamp to [0.0, 1.0]
 
-  int64_t last_hpwl, curr_hpwl, init_hpwl;
   uint64_t hpwl_x, hpwl_y;
-
-  curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
-  init_hpwl = curr_hpwl;
+  int64_t init_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   if (init_hpwl == 0) {
     return;
   }
+
+  const int row_height = arch_->getRow(0)->getHeight().v;
+
+  // Store original displacement limits for restoration later.
+  // Note: DetailedMgr stores displacement limits in DBU, while setMaxDisplacement
+  // expects values in "sites" (scaled by row height). Convert to keep units
+  // consistent and avoid overflow.
+  int orig_disp_x_dbu, orig_disp_y_dbu;
+  mgr_->getMaxDisplacement(orig_disp_x_dbu, orig_disp_y_dbu);
+  const int orig_disp_x_sites = std::max(1, orig_disp_x_dbu / row_height);
+  const int orig_disp_y_sites = std::max(1, orig_disp_y_dbu / row_height);
+  mgr_->getLogger()->info(
+      DPL,
+      906,
+      "Starting two-pass congestion-aware global swap optimization "
+      "(tradeoff={:.1f})",
+      tradeoff_);
+
+  const int chip_width_dbu = arch_->getMaxX().v - arch_->getMinX().v;
+  const int chip_height_dbu = arch_->getMaxY().v - arch_->getMinY().v;
+  const int chip_width_sites = std::max(1, chip_width_dbu / row_height);
+  const int chip_height_sites = std::max(1, chip_height_dbu / row_height);
+
+  // PASS 1: HPWL Profiling Pass
+  mgr_->getLogger()->info(
+      DPL, 907, "Pass 1: HPWL profiling to determine budget");
+
+  // Clear journal to ensure clean state tracking for profiling pass
+  mgr_->getJournal().clear();
+
+  is_profiling_pass_ = true;
+  congestion_weight_ = 0.0;  // Pure HPWL optimization
+
+  int64_t last_hpwl, curr_hpwl = init_hpwl;
   for (int p = 1; p <= passes; p++) {
     last_hpwl = curr_hpwl;
-
-    // XXX: Actually, global swapping is nothing more than random
-    // greedy improvement in which the move generating is done
-    // using this object to generate a target which is the optimal
-    // region for each candidate cell.
     globalSwap();
-
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
     mgr_->getLogger()->info(DPL,
-                            306,
-                            "Pass {:3d} of global swaps; hpwl is {:.6e}.",
+                            316,
+                            "Profiling pass {:d}; hpwl is {:.6e}.",
                             p,
                             (double) curr_hpwl);
 
@@ -111,21 +151,187 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
       break;
     }
   }
-  double curr_imp = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
+
+  // Calculate budget allowance from profiling pass
+  double optimal_hpwl = curr_hpwl;
+  double profiling_excess = params.profiling_excess;
+  if (profiling_excess <= 0.0) {
+    profiling_excess = 1.10;
+  }
+  budget_hpwl_ = optimal_hpwl * profiling_excess;
+  const double budget_pct = ((budget_hpwl_ / optimal_hpwl) - 1.0) * 100.0;
+  mgr_->getLogger()->info(
+      DPL,
+      908,
+      "Profiling complete. Optimal HPWL={:.2f}, Budget HPWL={:.2f} ({:+.1f}%)",
+      optimal_hpwl,
+      budget_hpwl_,
+      budget_pct);
+
+  // Restore initial state using Journal's built-in undo mechanism
   mgr_->getLogger()->info(DPL,
-                          307,
-                          "End of global swaps; objective is {:.6e}, "
-                          "improvement is {:.2f} percent.",
-                          (double) curr_hpwl,
-                          curr_imp);
+                          917,
+                          "Undoing {} profiling moves to restore initial state",
+                          mgr_->getJournal().size());
+  mgr_->getJournal().undo();
+  mgr_->getJournal().clear();  // Clear journal for second pass
+
+  // PASS 2: Iterative Budget-Constrained Congestion Optimization (4 iterations)
+  mgr_->getLogger()->info(DPL,
+                          909,
+                          "Pass 2: Iterative budget-constrained congestion "
+                          "optimization (4 stages)");
+  is_profiling_pass_ = false;
+
+  // Re-compute utilization density map to ensure it's synchronized with
+  // restored placement
+  const float area_weight = static_cast<float>(params.area_weight);
+  const float pin_weight = static_cast<float>(params.pin_weight);
+  mgr_->getGrid()->computeUtilizationMap(network_, area_weight, pin_weight);
+  mgr_->getLogger()->info(
+      DPL, 918, "Re-computed utilization density map after state restoration");
+
+  // Calculate adaptive congestion weight once for all iterations
+  congestion_weight_ = calculateAdaptiveCongestionWeight();
+
+  // Define the iterative refinement schedule
+  std::vector<double> budget_multipliers = params.budget_multipliers;
+  if (budget_multipliers.empty()) {
+    budget_multipliers = {1.10};
+  }
+  const std::vector<std::string> stage_names
+      = {"Exploratory", "Consolidation", "Fine-tuning", "Final Polish"};
+
+  curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+
+  // Iterative refinement loop
+  for (size_t iteration = 0; iteration < budget_multipliers.size();
+       iteration++) {
+    // Update budget for this iteration
+    budget_hpwl_ = optimal_hpwl * budget_multipliers[iteration];
+    std::string stage_name;
+    if (iteration < stage_names.size()) {
+      stage_name = stage_names[iteration];
+    } else {
+      stage_name = "Stage " + std::to_string(iteration + 1);
+    }
+    if (iteration == 0) {
+      mgr_->setMaxDisplacement(chip_width_sites, chip_height_sites);
+      mgr_->getLogger()->info(DPL,
+                              921,
+                              "Iteration {} ({}): temporary displacement set "
+                              "to chip dimensions ({}, {})",
+                              iteration + 1,
+                              stage_name,
+                              chip_width_sites,
+                              chip_height_sites);
+    } else if (iteration == 1) {
+      mgr_->setMaxDisplacement(orig_disp_x_sites * 10, orig_disp_y_sites * 10);
+      mgr_->getLogger()->info(
+          DPL,
+          922,
+          "Iteration {} ({}): displacement relaxed to 10x original ({}, {})",
+          iteration + 1,
+          stage_name,
+          orig_disp_x_sites * 10,
+          orig_disp_y_sites * 10);
+    } else {
+      mgr_->setMaxDisplacement(orig_disp_x_sites, orig_disp_y_sites);
+      mgr_->getLogger()->info(
+          DPL,
+          923,
+          "Iteration {} ({}): displacement restored to original ({}, {})",
+          iteration + 1,
+          stage_name,
+          orig_disp_x_sites,
+          orig_disp_y_sites);
+    }
+
+    mgr_->getLogger()->info(
+        DPL,
+        919,
+        "Iteration {}: {} stage - Budget={:.2f} ({:.0f}% of optimal)",
+        iteration + 1,
+        stage_name,
+        budget_hpwl_,
+        (budget_multipliers[iteration] - 1.0) * 100.0);
+
+    // Run optimization passes for this iteration
+    for (int p = 1; p <= passes; p++) {
+      last_hpwl = curr_hpwl;
+      globalSwap();
+      curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+
+      mgr_->getLogger()->info(
+          DPL,
+          331,
+          "Congestion optimization iteration {} pass {:d}; hpwl is {:.6e}.",
+          iteration + 1,
+          p,
+          (double) curr_hpwl);
+
+      if (last_hpwl == 0
+          || std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol) {
+        break;
+      }
+    }
+
+    // Report iteration results
+    const double iteration_improvement
+        = ((init_hpwl - curr_hpwl) / static_cast<double>(init_hpwl)) * 100.0;
+    double budget_utilization = 0.0;
+    const double budget_range = budget_hpwl_ - optimal_hpwl;
+    if (std::abs(budget_range) > std::numeric_limits<double>::epsilon()) {
+      budget_utilization = ((curr_hpwl - optimal_hpwl) / budget_range) * 100.0;
+    }
+    mgr_->getLogger()->info(DPL,
+                            920,
+                            "Iteration {} complete: HPWL={:.6e}, "
+                            "improvement={:.2f}%, budget utilization={:.1f}%",
+                            iteration + 1,
+                            static_cast<double>(curr_hpwl),
+                            iteration_improvement,
+                            budget_utilization);
+  }
+
+  // Final reporting
+  double final_improvement
+      = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
+  double final_budget_utilization = 0.0;
+  const double final_budget_range = budget_hpwl_ - optimal_hpwl;
+  if (std::abs(final_budget_range) > std::numeric_limits<double>::epsilon()) {
+    final_budget_utilization
+        = ((curr_hpwl - optimal_hpwl) / final_budget_range) * 100.0;
+  }
+
+  mgr_->getLogger()->info(
+      DPL,
+      910,
+      "Two-pass optimization complete: "
+      "final HPWL={:.6e}, improvement={:.2f}%, budget utilization={:.1f}%",
+      (double) curr_hpwl,
+      final_improvement,
+      final_budget_utilization);
+
+  // Ensure original displacement limits are fully restored
+  mgr_->setMaxDisplacement(orig_disp_x_sites, orig_disp_y_sites);
+  mgr_->getLogger()->info(
+      DPL,
+      924,
+      "Final restoration: displacement limits restored to original ({}, {})",
+      orig_disp_x_sites,
+      orig_disp_y_sites);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 void DetailedGlobalSwap::globalSwap()
 {
-  // Nothing for than random greedy improvement with only a hpwl objective
-  // and done such that every candidate cell is considered once!!!
+  // Two-pass budget-constrained global swap: profiling pass or congestion
+  // optimization pass
+  if (swap_params_ == nullptr && mgr_ != nullptr) {
+    swap_params_ = &mgr_->getGlobalSwapParams();
+  }
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
@@ -142,25 +348,180 @@ void DetailedGlobalSwap::globalSwap()
   hpwlObj.init(mgr_, nullptr);  // Ignore orientation.
 
   double currHpwl = hpwlObj.curr();
-  double nextHpwl = 0.;
+  const double initHpwl = currHpwl;
+
+  // Determine budget constraint based on pass type
+  double maxAllowedHpwl;
+  if (is_profiling_pass_) {
+    // In profiling pass: use generous budget for pure HPWL optimization
+    maxAllowedHpwl = initHpwl * 2.0;  // Allow large changes during profiling
+    mgr_->getLogger()->info(
+        DPL,
+        914,
+        "Profiling pass: initial HPWL={:.2f}, generous budget={:.2f}",
+        initHpwl,
+        maxAllowedHpwl);
+  } else {
+    // In congestion optimization pass: use strict budget from profiling
+    maxAllowedHpwl = budget_hpwl_;
+    mgr_->getLogger()->info(DPL,
+                            915,
+                            "Congestion optimization pass: initial "
+                            "HPWL={:.2f}, budget={:.2f} (from profiling)",
+                            initHpwl,
+                            maxAllowedHpwl);
+  }
+
+  int moves_since_normalization = 0;
+  const int normalization_interval
+      = swap_params_ ? swap_params_->normalization_interval : 1000;
+
   // Consider each candidate cell once.
   for (auto ndi : candidates) {
-    if (!generate(ndi)) {
+    // Hybrid move generation: Smart Swap logic
+    bool move_generated = false;
+
+    // Phase 1: Try wirelength-optimal move (unless we decide to override with
+    // exploration)
+    if (mgr_->getRandom(1000) >= static_cast<int>(tradeoff_ * 1000)) {
+      move_generated = generateWirelengthOptimalMove(ndi);
+    }
+
+    // Phase 2: If no move generated OR we decided to override, try random
+    // exploration move
+    if (!move_generated) {
+      move_generated = generateRandomMove(ndi);
+    }
+
+    if (!move_generated) {
+      continue;  // No valid move found with either generator
+    }
+
+    // Calculate HPWL delta
+    double hpwl_delta = hpwlObj.delta(mgr_->getJournal());
+    double nextHpwl = currHpwl - hpwl_delta;  // Projected HPWL after this move
+
+    // Calculate congestion improvement (only relevant in second pass)
+    double congestion_improvement = 0.0;
+    if (!is_profiling_pass_) {  // Only calculate congestion improvement in
+                                // second pass
+      const auto& journal = mgr_->getJournal();
+      if (!journal.empty()) {
+        for (const auto& action_ptr : journal) {
+          // Only handle MoveCellAction types
+          if (action_ptr->typeId() != JournalActionTypeEnum::MOVE_CELL) {
+            continue;
+          }
+
+          const MoveCellAction* move_action
+              = static_cast<const MoveCellAction*>(action_ptr.get());
+          Node* moved_cell = move_action->getNode();
+          if (!moved_cell
+              || moved_cell->getId() >= congestion_contribution_.size()) {
+            continue;
+          }
+
+          // Get original and new grid coordinates
+          const auto* grid = mgr_->getGrid();
+          const GridX orig_grid_x = grid->gridX(move_action->getOrigLeft());
+          const GridY orig_grid_y
+              = grid->gridSnapDownY(move_action->getOrigBottom());
+          const GridX new_grid_x = grid->gridX(move_action->getNewLeft());
+          const GridY new_grid_y
+              = grid->gridSnapDownY(move_action->getNewBottom());
+
+          // Calculate pixel indices (row-major order)
+          const int row_site_count = grid->getRowSiteCount().v;
+          const int orig_pixel_idx
+              = (orig_grid_y.v * row_site_count) + orig_grid_x.v;
+          const int new_pixel_idx
+              = (new_grid_y.v * row_site_count) + new_grid_x.v;
+
+          // Get utilization densities at original and new locations
+          const float orig_density
+              = grid->getUtilizationDensity(orig_pixel_idx);
+          const float new_density = grid->getUtilizationDensity(new_pixel_idx);
+
+          // Get pre-calculated congestion contribution for this cell
+          const double cell_cong_contrib
+              = congestion_contribution_[moved_cell->getId()];
+
+          // ΔCongestion = (orig_density - new_density) scaled by the cell's
+          // weighted contribution.
+          congestion_improvement
+              += (orig_density - new_density) * cell_cong_contrib;
+        }
+      }
+    }
+
+    // Hybrid acceptance criteria: budget constraint + combined objective
+    if (nextHpwl > maxAllowedHpwl) {
+      // Hard constraint violated: reject move regardless of other benefits
+      mgr_->rejectMove();
       continue;
     }
 
-    double delta = hpwlObj.delta(mgr_->getJournal());
+    // Within budget: evaluate combined profit
+    double combined_profit
+        = hpwl_delta + (congestion_weight_ * congestion_improvement);
 
-    nextHpwl = currHpwl - delta;  // -delta is +ve is less.
-
-    if (nextHpwl <= currHpwl) {
+    if (combined_profit > 0) {
+      // Accept: move is profitable and within budget
       hpwlObj.accept();
       mgr_->acceptMove();
       currHpwl = nextHpwl;
+
+      // Update utilization map for accepted moves (only in congestion
+      // optimization pass)
+      if (!is_profiling_pass_) {
+        const auto& journal = mgr_->getJournal();
+        if (!journal.empty()) {
+          for (const auto& action_ptr : journal) {
+            if (action_ptr->typeId() != JournalActionTypeEnum::MOVE_CELL) {
+              continue;
+            }
+
+            const MoveCellAction* move_action
+                = static_cast<const MoveCellAction*>(action_ptr.get());
+            Node* moved_cell = move_action->getNode();
+            if (!moved_cell) {
+              continue;
+            }
+
+            // Remove cell from old location and add to new location
+            mgr_->getGrid()->updateUtilizationMap(moved_cell,
+                                                  move_action->getOrigLeft(),
+                                                  move_action->getOrigBottom(),
+                                                  false);
+            mgr_->getGrid()->updateUtilizationMap(moved_cell,
+                                                  move_action->getNewLeft(),
+                                                  move_action->getNewBottom(),
+                                                  true);
+
+            moves_since_normalization++;
+          }
+        }
+        // Lazy normalization
+        if (moves_since_normalization >= normalization_interval) {
+          mgr_->getGrid()->normalizeUtilization();
+          moves_since_normalization = 0;
+        }
+      }
     } else {
       mgr_->rejectMove();
     }
   }
+
+  // Report final statistics
+  const double finalDegradation = ((currHpwl - initHpwl) / initHpwl) * 100.0;
+  const char* pass_name
+      = is_profiling_pass_ ? "Profiling" : "Congestion optimization";
+  mgr_->getLogger()->info(DPL,
+                          916,
+                          "{} pass complete: final HPWL={:.2f}, change={:.1f}%",
+                          pass_name,
+                          currHpwl,
+                          finalDegradation);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -275,7 +636,7 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, odb::Rect& bbox)
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool DetailedGlobalSwap::generate(Node* ndi)
+bool DetailedGlobalSwap::generateWirelengthOptimalMove(Node* ndi)
 {
   double yi = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
   double xi = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
@@ -292,10 +653,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
     return false;
   }
 
-  // Observe displacement limit.  I suppose there are options.
-  // If we cannot move into the optimal region, we could try
-  // to move closer to it.  Or, we could just reject if we cannot
-  // get into the optimal region.
+  // Observe displacement limit.
   int dispX, dispY;
   mgr_->getMaxDisplacement(dispX, dispY);
   odb::Rect lbox(ndi->getLeft().v - dispX,
@@ -365,15 +723,132 @@ bool DetailedGlobalSwap::generate(Node* ndi)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+bool DetailedGlobalSwap::generateRandomMove(Node* ndi)
+{
+  // Generate a random move within the current displacement constraints
+  // This is for exploration and power optimization purposes
+
+  if (mgr_->getNumReverseCellToSegs(ndi->getId()) != 1) {
+    return false;
+  }
+  int si = mgr_->getReverseCellToSegs(ndi->getId())[0]->getSegId();
+
+  // Get current displacement limits
+  int dispX, dispY;
+  mgr_->getMaxDisplacement(dispX, dispY);
+
+  // Define the search area around the current cell position
+  DbuX curr_x = ndi->getLeft();
+  DbuY curr_y = ndi->getBottom();
+
+  DbuX min_x = std::max(arch_->getMinX(), curr_x - dispX);
+  DbuX max_x = std::min(arch_->getMaxX(), curr_x + dispX);
+  DbuY min_y = std::max(arch_->getMinY(), curr_y - dispY);
+  DbuY max_y = std::min(arch_->getMaxY(), curr_y + dispY);
+
+  // Try up to 10 random locations within the displacement area
+  const int max_attempts = 10;
+  for (int attempt = 0; attempt < max_attempts; attempt++) {
+    // Generate random coordinates within the allowed displacement area
+    DbuX rand_x{min_x.v + mgr_->getRandom(max_x.v - min_x.v + 1)};
+    DbuY rand_y{min_y.v + mgr_->getRandom(max_y.v - min_y.v + 1)};
+
+    // Find the appropriate row and segment for this random location
+    int rj = arch_->find_closest_row(rand_y);
+    rand_y = DbuY{arch_->getRow(rj)->getBottom()};  // Row alignment
+
+    int sj = -1;
+    for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+      DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
+      if (rand_x >= segPtr->getMinX() && rand_x <= segPtr->getMaxX()) {
+        sj = segPtr->getSegId();
+        break;
+      }
+    }
+
+    if (sj == -1) {
+      continue;  // Invalid segment, try another random location
+    }
+
+    if (ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
+      continue;  // Wrong region, try another location
+    }
+
+    // Try to execute the move/swap to this random location
+    if (mgr_->tryMove(ndi, curr_x, curr_y, si, rand_x, rand_y, sj)) {
+      ++moves_;
+      return true;
+    }
+    if (mgr_->trySwap(ndi, curr_x, curr_y, si, rand_x, rand_y, sj)) {
+      ++swaps_;
+      return true;
+    }
+  }
+
+  return false;  // Could not find a valid random move after max_attempts
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool DetailedGlobalSwap::generate(Node* ndi)
+{
+  // Hybrid move generation: Smart Swap logic
+  bool move_generated = false;
+
+  // Phase 1: Try wirelength-optimal move (unless we decide to override with
+  // exploration)
+  if (mgr_->getRandom(1000) >= static_cast<int>(tradeoff_ * 1000)) {
+    move_generated = generateWirelengthOptimalMove(ndi);
+  }
+
+  // Phase 2: If no move generated OR we decided to override, try random
+  // exploration move
+  if (!move_generated) {
+    move_generated = generateRandomMove(ndi);
+  }
+
+  return move_generated;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 void DetailedGlobalSwap::init(DetailedMgr* mgr)
 {
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
+  swap_params_ = &mgr->getGlobalSwapParams();
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
   std::ranges::fill(edgeMask_, 0);
+
+  // Congestion-aware placement initialization.
+  const float area_weight = static_cast<float>(swap_params_->area_weight);
+  const float pin_weight = static_cast<float>(swap_params_->pin_weight);
+  mgr_->getGrid()->computeUtilizationMap(network_, area_weight, pin_weight);
+
+  congestion_contribution_.resize(network_->getNumNodes());
+  for (const auto& node_ptr : network_->getNodes()) {
+    Node* node = node_ptr.get();
+    if (node && node->getType() == Node::Type::CELL) {
+      const double cell_area
+          = static_cast<double>(node->getWidth().v) * node->getHeight().v;
+      const double num_pins = static_cast<double>(node->getNumPins());
+      congestion_contribution_[node->getId()]
+          = area_weight * cell_area + pin_weight * num_pins;
+    }
+  }
+
+  // Calculate adaptive congestion weight by sampling typical HPWL deltas and
+  // improvements.
+  congestion_weight_ = calculateAdaptiveCongestionWeight();
+
+  mgr_->getLogger()->info(
+      DPL,
+      901,
+      "Initialized congestion-aware global swap with adaptive weight={:.3f}",
+      congestion_weight_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -386,10 +861,134 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
+  swap_params_ = &mgr->getGlobalSwapParams();
 
   Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
   return generate(ndi);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+double DetailedGlobalSwap::calculateAdaptiveCongestionWeight()
+{
+  const int num_samples = swap_params_ ? swap_params_->sampling_moves : 150;
+  const double user_knob
+      = swap_params_ ? swap_params_->user_congestion_weight : 35.0;
+
+  // Get candidate cells for sampling
+  std::vector<Node*> candidates = mgr_->getSingleHeightCells();
+  if (candidates.size() < 2) {
+    return 1.0 * mgr_->getGrid()->getSiteWidth().v;
+  }
+
+  // Create temporary HPWL objective for sampling
+  DetailedHPWL hpwlObj(network_);
+  hpwlObj.init(mgr_, nullptr);
+
+  double total_hpwl_delta = 0.0;
+  double total_cong_improvement = 0.0;
+  int valid_samples = 0;
+
+  // Sample random swaps to estimate typical deltas
+  for (int i = 0; i < num_samples && i < candidates.size(); i++) {
+    // Pick a random candidate cell
+    Node* cell_a = candidates[mgr_->getRandom(candidates.size())];
+
+    // Try to generate a move/swap for this cell
+    if (!generate(cell_a)) {
+      continue;  // Skip if no valid move found
+    }
+
+    // Calculate HPWL delta
+    double hpwl_delta = hpwlObj.delta(mgr_->getJournal());
+
+    // Calculate congestion improvement
+    double cong_improvement = 0.0;
+    const auto& journal = mgr_->getJournal();
+    if (!journal.empty()) {
+      for (const auto& action_ptr : journal) {
+        if (action_ptr->typeId() != JournalActionTypeEnum::MOVE_CELL) {
+          continue;
+        }
+
+        const MoveCellAction* move_action
+            = static_cast<const MoveCellAction*>(action_ptr.get());
+        Node* moved_cell = move_action->getNode();
+        if (!moved_cell
+            || moved_cell->getId() >= congestion_contribution_.size()) {
+          continue;
+        }
+
+        // Get grid coordinates
+        const auto* grid = mgr_->getGrid();
+        const GridX orig_grid_x = grid->gridX(move_action->getOrigLeft());
+        const GridY orig_grid_y
+            = grid->gridSnapDownY(move_action->getOrigBottom());
+        const GridX new_grid_x = grid->gridX(move_action->getNewLeft());
+        const GridY new_grid_y
+            = grid->gridSnapDownY(move_action->getNewBottom());
+
+        // Calculate pixel indices
+        const int row_site_count = grid->getRowSiteCount().v;
+        const int orig_pixel_idx
+            = (orig_grid_y.v * row_site_count) + orig_grid_x.v;
+        const int new_pixel_idx
+            = (new_grid_y.v * row_site_count) + new_grid_x.v;
+
+        // Get densities
+        const float orig_density = grid->getUtilizationDensity(orig_pixel_idx);
+        const float new_density = grid->getUtilizationDensity(new_pixel_idx);
+
+        // Get cell contribution
+        const double cell_cong_contrib
+            = congestion_contribution_[moved_cell->getId()];
+
+        // Calculate improvement
+        cong_improvement += (orig_density - new_density) * cell_cong_contrib;
+      }
+    }
+
+    // Accumulate magnitudes
+    total_hpwl_delta += std::abs(hpwl_delta);
+    total_cong_improvement += std::abs(cong_improvement);
+    valid_samples++;
+
+    // Always reject the sample move
+    mgr_->rejectMove();
+  }
+
+  if (valid_samples == 0) {
+    mgr_->getLogger()->warn(
+        DPL,
+        902,
+        "No valid samples for adaptive weight calculation, using fallback");
+    return 1.0 * mgr_->getGrid()->getSiteWidth().v;
+  }
+
+  // Calculate averages
+  double avg_hpwl_delta = total_hpwl_delta / valid_samples;
+  double avg_cong_improvement = total_cong_improvement / valid_samples;
+
+  // Calculate adaptive weight
+  double adaptive_weight;
+  if (avg_cong_improvement > 0) {
+    adaptive_weight = (avg_hpwl_delta / avg_cong_improvement) * user_knob;
+  } else {
+    adaptive_weight = 0.5 * mgr_->getGrid()->getSiteWidth().v;
+  }
+
+  mgr_->getLogger()->info(DPL,
+                          903,
+                          "Adaptive congestion weight: avg_hpwl_delta={:.2f}, "
+                          "avg_cong_improvement={:.6f}, "
+                          "samples={}, weight={:.3f}",
+                          avg_hpwl_delta,
+                          avg_cong_improvement,
+                          valid_samples,
+                          adaptive_weight);
+
+  return adaptive_weight;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
