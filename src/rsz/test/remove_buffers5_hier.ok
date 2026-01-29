@@ -10,11 +10,7 @@
 [WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
 [INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
-[WARNING ORD-2012] Liberty cell fakeram7_256x32 has no LEF master.
-[WARNING ORD-2013] instance dmem/dmem0 LEF master fakeram7_256x32 not found.
-[WARNING ORD-2013] instance dmem/dmem1 LEF master fakeram7_256x32 not found.
-[WARNING ORD-2013] instance dmem/dmem2 LEF master fakeram7_256x32 not found.
-[WARNING ORD-2013] instance dmem/dmem3 LEF master fakeram7_256x32 not found.
+[INFO ODB-0227] LEF file: asap7/fakeram7_256x32.lef, created 1 library cells
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: riscv.dp.pcreg.q[31]$_DFF_PP0_
             (rising edge-triggered flip-flop clocked by clk)
@@ -47,23 +43,23 @@ Path Type: max
   23.50  433.80 v _14612_/Y (AND3x1_ASAP7_75t_R)
   15.36  449.17 v _14705_/Y (AND3x1_ASAP7_75t_R)
   15.84  465.01 v _14708_/Y (OA21x2_ASAP7_75t_R)
-  27.90  492.91 v _14724_/Y (OA33x2_ASAP7_75t_R)
-  17.84  510.75 v dmem/_155_/Y (BUFx2_ASAP7_75t_R)
-  39.34  550.09 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
-  19.21  569.30 v dmem/_171_/Y (BUFx6f_ASAP7_75t_R)
-  18.57  587.87 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
-  12.67  600.55 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
-   9.60  610.15 ^ _15354_/Y (INVx1_ASAP7_75t_R)
-  25.17  635.32 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
-  18.71  654.03 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
-  18.76  672.79 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
-  12.93  685.72 v _15381_/Y (NOR3x1_ASAP7_75t_R)
-  17.14  702.86 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
-  30.83  733.69 ^ _15383_/Y (BUFx2_ASAP7_75t_R)
-  13.67  747.36 v _15888_/Y (NOR2x1_ASAP7_75t_R)
-  19.94  767.30 v _15889_/Y (AO22x1_ASAP7_75t_R)
-   0.00  767.30 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-         767.30   data arrival time
+  37.00  502.01 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  21.57  523.57 v dmem/_155_/Y (BUFx2_ASAP7_75t_R)
+  39.42  562.99 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  19.21  582.20 v dmem/_171_/Y (BUFx6f_ASAP7_75t_R)
+  18.57  600.77 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  12.67  613.45 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+   9.60  623.05 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.17  648.22 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.71  666.93 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76  685.69 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  12.93  698.62 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  17.14  715.76 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  30.83  746.59 ^ _15383_/Y (BUFx2_ASAP7_75t_R)
+  13.67  760.26 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  19.94  780.20 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00  780.20 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+         780.20   data arrival time
 
 3000.00 3000.00   clock clk (rise edge)
    0.00 3000.00   clock network delay (ideal)
@@ -73,9 +69,9 @@ Path Type: max
         2991.38   data required time
 ---------------------------------------------------------
         2991.38   data required time
-        -767.30   data arrival time
+        -780.20   data arrival time
 ---------------------------------------------------------
-        2224.08   slack (MET)
+        2211.18   slack (MET)
 
 
 [INFO RSZ-0026] Removed 1053 buffers.
@@ -106,20 +102,20 @@ Path Type: max
   23.50 2715.53 v _14612_/Y (AND3x1_ASAP7_75t_R)
   15.36 2730.89 v _14705_/Y (AND3x1_ASAP7_75t_R)
   15.93 2746.83 v _14708_/Y (OA21x2_ASAP7_75t_R)
- 121.72 2868.55 v _14724_/Y (OA33x2_ASAP7_75t_R)
-  84.32 2952.87 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
-  32.17 2985.04 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
-  13.36 2998.40 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
-   9.99 3008.39 ^ _15354_/Y (INVx1_ASAP7_75t_R)
-  25.22 3033.61 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
-  18.74 3052.35 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
-  18.76 3071.11 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
-  13.00 3084.12 v _15381_/Y (NOR3x1_ASAP7_75t_R)
-  92.42 3176.54 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
-  28.20 3204.74 v _15888_/Y (NOR2x1_ASAP7_75t_R)
-  25.20 3229.94 v _15889_/Y (AO22x1_ASAP7_75t_R)
-   0.00 3229.94 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-        3229.94   data arrival time
+ 127.53 2874.36 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  85.50 2959.86 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  32.20 2992.06 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  13.40 3005.46 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+  10.17 3015.64 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.25 3040.88 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.74 3059.62 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76 3078.38 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  13.00 3091.39 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  92.42 3183.81 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  28.20 3212.01 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  25.20 3237.22 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00 3237.22 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+        3237.22   data arrival time
 
 3000.00 3000.00   clock clk (rise edge)
    0.00 3000.00   clock network delay (ideal)
@@ -129,9 +125,9 @@ Path Type: max
         2989.02   data required time
 ---------------------------------------------------------
         2989.02   data required time
-        -3229.94   data arrival time
+        -3237.22   data arrival time
 ---------------------------------------------------------
-        -240.93   slack (VIOLATED)
+        -248.20   slack (VIOLATED)
 
 
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
@@ -162,20 +158,20 @@ Path Type: max
   23.50 2715.53 v _14612_/Y (AND3x1_ASAP7_75t_R)
   15.36 2730.89 v _14705_/Y (AND3x1_ASAP7_75t_R)
   15.93 2746.83 v _14708_/Y (OA21x2_ASAP7_75t_R)
- 121.72 2868.55 v _14724_/Y (OA33x2_ASAP7_75t_R)
-  84.32 2952.87 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
-  32.17 2985.04 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
-  13.36 2998.40 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
-   9.99 3008.39 ^ _15354_/Y (INVx1_ASAP7_75t_R)
-  25.22 3033.61 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
-  18.74 3052.35 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
-  18.76 3071.11 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
-  13.00 3084.12 v _15381_/Y (NOR3x1_ASAP7_75t_R)
-  92.42 3176.54 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
-  28.20 3204.74 v _15888_/Y (NOR2x1_ASAP7_75t_R)
-  25.20 3229.94 v _15889_/Y (AO22x1_ASAP7_75t_R)
-   0.00 3229.94 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-        3229.94   data arrival time
+ 127.53 2874.36 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  85.50 2959.86 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  32.20 2992.06 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  13.40 3005.46 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+  10.17 3015.64 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.25 3040.88 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.74 3059.62 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76 3078.38 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  13.00 3091.39 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  92.42 3183.81 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  28.20 3212.01 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  25.20 3237.22 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00 3237.22 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+        3237.22   data arrival time
 
 3000.00 3000.00   clock clk (rise edge)
    0.00 3000.00   clock network delay (ideal)
@@ -185,9 +181,9 @@ Path Type: max
         2989.02   data required time
 ---------------------------------------------------------
         2989.02   data required time
-        -3229.94   data arrival time
+        -3237.22   data arrival time
 ---------------------------------------------------------
-        -240.93   slack (VIOLATED)
+        -248.20   slack (VIOLATED)
 
 
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
@@ -218,20 +214,20 @@ Path Type: max
   23.50 2715.53 v _14612_/Y (AND3x1_ASAP7_75t_R)
   15.36 2730.89 v _14705_/Y (AND3x1_ASAP7_75t_R)
   15.93 2746.83 v _14708_/Y (OA21x2_ASAP7_75t_R)
- 121.72 2868.55 v _14724_/Y (OA33x2_ASAP7_75t_R)
-  84.32 2952.87 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
-  32.17 2985.04 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
-  13.36 2998.40 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
-   9.99 3008.39 ^ _15354_/Y (INVx1_ASAP7_75t_R)
-  25.22 3033.61 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
-  18.74 3052.35 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
-  18.76 3071.11 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
-  13.00 3084.12 v _15381_/Y (NOR3x1_ASAP7_75t_R)
-  92.42 3176.54 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
-  28.20 3204.74 v _15888_/Y (NOR2x1_ASAP7_75t_R)
-  25.20 3229.94 v _15889_/Y (AO22x1_ASAP7_75t_R)
-   0.00 3229.94 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-        3229.94   data arrival time
+ 127.53 2874.36 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  85.50 2959.86 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  32.20 2992.06 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  13.40 3005.46 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+  10.17 3015.64 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.25 3040.88 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.74 3059.62 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76 3078.38 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  13.00 3091.39 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  92.42 3183.81 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  28.20 3212.01 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  25.20 3237.22 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00 3237.22 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+        3237.22   data arrival time
 
 3000.00 3000.00   clock clk (rise edge)
    0.00 3000.00   clock network delay (ideal)
@@ -241,9 +237,9 @@ Path Type: max
         2989.02   data required time
 ---------------------------------------------------------
         2989.02   data required time
-        -3229.94   data arrival time
+        -3237.22   data arrival time
 ---------------------------------------------------------
-        -240.93   slack (VIOLATED)
+        -248.20   slack (VIOLATED)
 
 
 No differences found.

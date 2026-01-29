@@ -530,9 +530,15 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
       sta::Instance* sta_inst = db_network_->dbToSta(inst);
       sta::LibertyCell* cell = network_->libertyCell(sta_inst);
       dbMaster* master = db_network_->staToDb(cell);
+      if (master == nullptr) {
+        continue;
+      }
       sta::LibertyCellSeq swappable_cells = getSwappableCells(cell);
       for (sta::LibertyCell* target_cell : swappable_cells) {
         dbMaster* target_master = db_network_->staToDb(target_cell);
+        if (target_master == nullptr) {
+          continue;
+        }
         // Pick a cell that has the matching site, the same VT type
         // and equal or less drive resistance.  swappable_cells are
         // sorted in decreasing order of drive resistance.
@@ -861,6 +867,9 @@ void Resizer::findBuffers()
   for (sta::LibertyCell* buffer : buffer_list) {
     const char* footprint = buffer->footprint();
     odb::dbMaster* master = db_network_->staToDb(buffer);
+    if (master == nullptr) {
+      continue;
+    }
     auto vt_type = cellVTType(master);
     bool footprint_matches
         = best_footprint.empty() || (footprint && best_footprint == footprint);
@@ -1651,7 +1660,10 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
       base_cell->name(),
       (match_cell_footprint ? " with matching cell_footprint:" : ":"));
   odb::dbMaster* master = db_network_->staToDb(base_cell);
-  double base_area = block_->dbuAreaToMicrons(master->getArea());
+  double base_area = 0.0;
+  if (master) {
+    base_area = block_->dbuAreaToMicrons(master->getArea());
+  }
   std::optional<float> base_leakage = cellLeakage(base_cell);
   if (base_leakage) {
     logger_->report(
@@ -1672,6 +1684,9 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      if (equiv_master == nullptr) {
+        continue;
+      }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
       if (equiv_cell_leakage) {
@@ -1708,6 +1723,9 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      if (equiv_master == nullptr) {
+        continue;
+      }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                       cell_name,
@@ -1786,6 +1804,9 @@ void Resizer::reportBuffers(bool filtered)
     float c_in = input->capacitance();
     std::optional<float> cell_leak = cellLeakage(buffer);
     odb::dbMaster* master = db_network_->staToDb(buffer);
+    if (master == nullptr) {
+      continue;
+    }
 
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                     buffer->name(),
@@ -1827,6 +1848,9 @@ void Resizer::reportBuffers(bool filtered)
       float c_in = input->capacitance();
       std::optional<float> cell_leak = cellLeakage(buffer);
       odb::dbMaster* master = db_network_->staToDb(buffer);
+      if (master == nullptr) {
+        continue;
+      }
 
       logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                       buffer->name(),
@@ -1869,16 +1893,18 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
       }
       if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
-        buffer_list.emplace_back(buffer);
+        odb::dbMaster* master = db_network_->staToDb(buffer);
+        if (!master) {
+          continue;
+        }
+
+        // Track site distribution
+        lib_data_->cells_by_site[master->getSite()]++;
 
         // Track cell footprint distribution
         if (buffer->footprint()) {
           lib_data_->cells_by_footprint[buffer->footprint()]++;
         }
-
-        // Track site distribution
-        odb::dbMaster* master = db_network_->staToDb(buffer);
-        lib_data_->cells_by_site[master->getSite()]++;
 
         // Track VT category leakage data
         VTCategory vt_category = cellVTType(master);
@@ -1887,6 +1913,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         VTLeakageStats& vt_stats
             = lib_data_->vt_leakage_by_category[vt_category];
         vt_stats.add_cell_leakage(cellLeakage(buffer));
+
+        buffer_list.emplace_back(buffer);
       }
     }
   }
@@ -2048,13 +2076,13 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   }
 
   sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
-  if (equiv_cells == nullptr) {
+  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
+  if (equiv_cells == nullptr || source_cell_master == nullptr) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
 
   sta::LibertyCellSeq vt_equiv_cells;
-  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   int64_t source_cell_area = source_cell_master->getArea();
 
   // VT equiv cell should have the same area, footprint, site and function class
@@ -2116,7 +2144,8 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
       sta::LibertyCell* next_cell = *std::next(it);
       dbMaster* curr_master = db_network_->staToDb(curr_cell);
       dbMaster* next_master = db_network_->staToDb(next_cell);
-      if (cellVTType(curr_master) == cellVTType(next_master)) {
+      if (curr_master && next_master
+          && (cellVTType(curr_master) == cellVTType(next_master))) {
         const std::string curr_name = curr_cell->name();
         const std::string next_name = next_cell->name();
         size_t curr_common_len = getCommonLength(curr_name, source_name);
@@ -2991,6 +3020,10 @@ void Resizer::findTargetLoads()
   if (target_load_map_ == nullptr) {
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews();
+
+    if (tgt_slew_corner_ == nullptr) {
+      return;
+    }
 
     target_load_map_ = std::make_unique<CellTargetLoadMap>();
     // Find target loads at the tgt_slew_corner.
