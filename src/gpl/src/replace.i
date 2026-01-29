@@ -52,6 +52,9 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys,
            "-routability_max_inflation_ratio",
            options.routabilityMaxInflationRatio);
+  checkKey(keys,
+           "-routability_min_congestion_for_inflation",
+           options.routabilityMinCongestionForInflation);
   checkKey(keys, "-pad_left", options.padLeft);
   checkKey(keys, "-pad_right", options.padRight);
   checkKey(keys,

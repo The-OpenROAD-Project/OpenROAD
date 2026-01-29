@@ -223,7 +223,7 @@ RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
       maxInflationRatio(options.routabilityMaxInflationRatio),
       maxDensity(options.routabilityMaxDensity),
       ignoreEdgeRatio(0.8),
-      minInflationRatio(1.01),
+      minCongestionForInflation(options.routabilityMinCongestionForInflation),
       rcK1(options.routabilityRcK1),
       rcK2(options.routabilityRcK2),
       rcK3(options.routabilityRcK3),
@@ -406,10 +406,78 @@ void RouteBase::calculateRudyTiles()
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
 
     // update inflation Ratio
-    if (ratio >= rbVars_.minInflationRatio) {
-      float inflationRatio = std::pow(ratio, rbVars_.inflationRatioCoef);
+    if (ratio >= rbVars_.minCongestionForInflation) {
+      float inflationRatio = std::pow(ratio / rbVars_.minCongestionForInflation,
+                                      rbVars_.inflationRatioCoef);
       inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
       tile->setInflationRatio(inflationRatio);
+    }
+  }
+
+  // Calculate statistics for inflation ratios
+  if (log_->debugCheck(GPL, "rudy", 1)) {
+    std::vector<float> inflation_ratios;
+    inflation_ratios.reserve(tg_->tiles().size());
+    for (auto& tile : tg_->tiles()) {
+      inflation_ratios.push_back(tile->inflationRatio());
+    }
+
+    if (!inflation_ratios.empty()) {
+      std::ranges::sort(inflation_ratios.begin(), inflation_ratios.end());
+      float sum = 0.0f;
+      for (float val : inflation_ratios) {
+        sum += val;
+      }
+      float mean = sum / inflation_ratios.size();
+      float median = inflation_ratios[inflation_ratios.size() / 2];
+      float variance = 0.0f;
+      for (float val : inflation_ratios) {
+        variance += (val - mean) * (val - mean);
+      }
+      float stddev = std::sqrt(variance / inflation_ratios.size());
+      log_->report(
+          "RUDY Inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
+          "Dev: "
+          "{:.4f}",
+          mean,
+          median,
+          stddev);
+
+      // Histogram (10 buckets)
+      float min_val = inflation_ratios.front();
+      float max_val = inflation_ratios.back();
+
+      if (max_val - min_val < 1e-6) {
+        log_->report(
+            "RUDY Inflation ratio statistics - All tiles have inflation ratio: "
+            "{:.4f}",
+            min_val);
+      } else {
+        const int num_buckets = 10;
+        float step = (max_val - min_val) / num_buckets;
+        std::vector<int> bucket_counts(num_buckets, 0);
+
+        for (float val : inflation_ratios) {
+          int bucket = static_cast<int>((val - min_val) / step);
+          if (bucket >= num_buckets) {
+            bucket = num_buckets - 1;
+          }
+          bucket_counts[bucket]++;
+        }
+
+        log_->report("RUDY Inflation ratio distribution:");
+        for (int i = 0; i < num_buckets; i++) {
+          float range_start = min_val + i * step;
+          float range_end = min_val + (i + 1) * step;
+          float percentage = static_cast<float>(bucket_counts[i])
+                             / inflation_ratios.size() * 100.0f;
+          log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
+                       range_start,
+                       range_end,
+                       bucket_counts[i],
+                       percentage);
+        }
+      }
     }
   }
 
@@ -499,8 +567,10 @@ void RouteBase::updateGrtRoute()
         ratio = 0.0;
       }
       //  update inflation Ratio
-      if (ratio >= rbVars_.minInflationRatio) {
-        float inflationRatio = std::pow(ratio, rbVars_.inflationRatioCoef);
+      if (ratio >= rbVars_.minCongestionForInflation) {
+        float inflationRatio
+            = std::pow(ratio / rbVars_.minCongestionForInflation,
+                       rbVars_.inflationRatioCoef);
         inflationRatio = std::fmin(inflationRatio, rbVars_.maxInflationRatio);
         tile->setInflationRatio(inflationRatio);
       }
@@ -622,10 +692,10 @@ std::pair<bool, bool> RouteBase::routability(
   std::vector<double> prev_total_gcells_area(nbVec_.size());
   std::vector<double> prev_expected_gcells_area(nbVec_.size());
   dbBlock* block = db_->getChip()->getBlock();
-  for (int i = 0; i < nbVec_.size(); i++) {
-    inflatedAreaDelta_[i] = 0;
+  for (int nb_index = 0; nb_index < nbVec_.size(); nb_index++) {
+    inflatedAreaDelta_[nb_index] = 0;
     // run bloating and get inflatedAreaDelta_
-    for (auto& gCellHandle : nbVec_[i]->getGCells()) {
+    for (auto& gCellHandle : nbVec_[nb_index]->getGCells()) {
       // only care about "standard cell"
       if (!gCellHandle->isStdInstance()) {
         continue;
@@ -636,7 +706,7 @@ std::pair<bool, bool> RouteBase::routability(
                     "Gcell {} from group {} is a Std instance, but is not "
                     "from NesterovBaseCommon. This shouldn't happen.",
                     gCellHandle->getName(),
-                    nbVec_[i]->getGroup()->getName());
+                    nbVec_[nb_index]->getGroup()->getName());
       }
       auto gCell = nbc_->getGCellByIndex(gCellHandle.getStorageIndex());
 
@@ -656,8 +726,8 @@ std::pair<bool, bool> RouteBase::routability(
         continue;
       }
 
-      int64_t prevCellArea = static_cast<int64_t>(gCell->dx())
-                             * static_cast<int64_t>(gCell->dy());
+      int64_t prev_cell_area = static_cast<int64_t>(gCell->dx())
+                               * static_cast<int64_t>(gCell->dy());
 
       // bloat
       gCell->setSize(static_cast<int>(std::round(
@@ -666,20 +736,24 @@ std::pair<bool, bool> RouteBase::routability(
                          gCell->dy() * std::sqrt(tile->inflatedRatio()))),
                      GCell::GCellChange::kRoutability);
 
-      int64_t newCellArea = static_cast<int64_t>(gCell->dx())
-                            * static_cast<int64_t>(gCell->dy());
+      int64_t new_cell_area = static_cast<int64_t>(gCell->dx())
+                              * static_cast<int64_t>(gCell->dy());
 
       // deltaArea is equal to area * deltaRatio
       // both of original and density size will be changed
-      inflatedAreaDelta_[i] += newCellArea - prevCellArea;
+      inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;
+    }
+
+    if (log_->debugCheck(GPL, "rudy", 1)) {
+      printGCellInflation();
     }
     accumulatedInflatedAreaDelta_[i] += inflatedAreaDelta_[i];
 
     float inflated_area_delta_microns
-        = block->dbuAreaToMicrons(inflatedAreaDelta_[i]);
+        = block->dbuAreaToMicrons(inflatedAreaDelta_[nb_index]);
     float inflated_area_delta_percentage
-        = (static_cast<float>(inflatedAreaDelta_[i])
-           / nbVec_[i]->getNesterovInstsArea())
+        = (static_cast<float>(inflatedAreaDelta_[nb_index])
+           / nbVec_[nb_index]->getNesterovInstsArea())
           * 100.0f;
     log_->info(GPL,
                51,
@@ -691,28 +765,29 @@ std::pair<bool, bool> RouteBase::routability(
                52,
                format_label_float,
                "Placement target density:",
-               nbVec_[i]->getTargetDensity());
+               nbVec_[nb_index]->getTargetDensity());
 
-    prev_white_space_area[i] = nbVec_[i]->getWhiteSpaceArea();
-    prev_movable_area[i] = nbVec_[i]->getMovableArea();
-    prev_total_filler_area[i] = nbVec_[i]->getTotalFillerArea();
-    prev_total_gcells_area[i]
-        = nbVec_[i]->getNesterovInstsArea() + nbVec_[i]->getTotalFillerArea();
-    prev_expected_gcells_area[i]
-        = inflatedAreaDelta_[i] + prev_total_gcells_area[i];
+    prev_white_space_area[nb_index] = nbVec_[nb_index]->getWhiteSpaceArea();
+    prev_movable_area[nb_index] = nbVec_[nb_index]->getMovableArea();
+    prev_total_filler_area[nb_index] = nbVec_[nb_index]->getTotalFillerArea();
+    prev_total_gcells_area[nb_index] = nbVec_[nb_index]->getNesterovInstsArea()
+                                       + nbVec_[nb_index]->getTotalFillerArea();
+    prev_expected_gcells_area[nb_index]
+        = inflatedAreaDelta_[nb_index] + prev_total_gcells_area[nb_index];
 
-    nbVec_[i]->cutFillerCells(inflatedAreaDelta_[i]);
+    nbVec_[nb_index]->cutFillerCells(inflatedAreaDelta_[nb_index]);
 
     // max density detection
-    if (nbVec_[i]->getTargetDensity() > rbVars_.maxDensity) {
-      log_->info(GPL,
-                 53,
-                 "Target density {:.4f} exceeds the maximum allowed {:.4f}{}.",
-                 nbVec_[i]->getTargetDensity(),
-                 rbVars_.maxDensity,
-                 nbVec_[i]->getGroup()
-                     ? " in group " + string(nbVec_[i]->getGroup()->getName())
-                     : "");
+    if (nbVec_[nb_index]->getTargetDensity() > rbVars_.maxDensity) {
+      log_->info(
+          GPL,
+          53,
+          "Target density {:.4f} exceeds the maximum allowed {:.4f}{}.",
+          nbVec_[nb_index]->getTargetDensity(),
+          rbVars_.maxDensity,
+          nbVec_[nb_index]->getGroup()
+              ? " in group " + string(nbVec_[nb_index]->getGroup()->getName())
+              : "");
 
       revertToMinCongestion();
       return std::make_pair(false, true);
@@ -1019,4 +1094,78 @@ void RouteBase::increaseCounter()
   log_->info(GPL, 40, "Routability iteration: {}", revert_count_);
 }
 
+void RouteBase::printGCellInflation() const
+{
+  std::vector<float> cell_inflation_ratios;
+  for (auto& gCell : nbc_->getGCells()) {
+    if (!gCell->isStdInstance()) {
+      continue;
+    }
+    auto master = gCell->insts()[0]->dbInst()->getMaster();
+    int64_t orig_cell_area = static_cast<int64_t>(master->getWidth())
+                             * static_cast<int64_t>(master->getHeight());
+
+    int64_t cur_cell_area
+        = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
+    if (orig_cell_area > 0) {
+      float inflation_ratio
+          = static_cast<float>(cur_cell_area) / orig_cell_area;
+      cell_inflation_ratios.push_back(inflation_ratio);
+    }
+  }
+
+  if (!cell_inflation_ratios.empty()) {
+    std::ranges::sort(cell_inflation_ratios);
+    float sum = 0.0f;
+    for (float val : cell_inflation_ratios) {
+      sum += val;
+    }
+    float mean = sum / cell_inflation_ratios.size();
+    float median = cell_inflation_ratios[cell_inflation_ratios.size() / 2];
+    float variance = 0.0f;
+    for (float val : cell_inflation_ratios) {
+      variance += (val - mean) * (val - mean);
+    }
+    float stddev = std::sqrt(variance / cell_inflation_ratios.size());
+    log_->report(
+        "Cell inflation ratio statistics - Mean: {:.4f}, Median: {:.4f}, Std "
+        "Dev: {:.4f}",
+        mean,
+        median,
+        stddev);
+
+    // Histogram (10 buckets)
+    float min_val = cell_inflation_ratios.front();
+    float max_val = cell_inflation_ratios.back();
+
+    if (max_val - min_val < 1e-6) {
+      log_->report("All cells have inflation ratio: {:.4f}", min_val);
+    } else {
+      const int num_buckets = 10;
+      float step = (max_val - min_val) / num_buckets;
+      std::vector<int> bucket_counts(num_buckets, 0);
+
+      for (float val : cell_inflation_ratios) {
+        int bucket = static_cast<int>((val - min_val) / step);
+        if (bucket >= num_buckets) {
+          bucket = num_buckets - 1;
+        }
+        bucket_counts[bucket]++;
+      }
+
+      log_->report("Cell inflation ratio distribution:");
+      for (int j = 0; j < num_buckets; j++) {
+        float range_start = min_val + j * step;
+        float range_end = min_val + (j + 1) * step;
+        float percentage = static_cast<float>(bucket_counts[j])
+                           / cell_inflation_ratios.size() * 100.0f;
+        log_->report("[{:.2f}, {:.2f}): {} ({:.2f}%)",
+                     range_start,
+                     range_end,
+                     bucket_counts[j],
+                     percentage);
+      }
+    }
+  }
+}
 }  // namespace gpl

@@ -131,7 +131,7 @@ struct RouteBaseVars
   const float maxInflationRatio;
   const float maxDensity;
   const float ignoreEdgeRatio;
-  const float minInflationRatio;
+  const float minCongestionForInflation;
 
   // targetRC metric coefficients.
   const float rcK1, rcK2, rcK3, rcK4;
@@ -175,6 +175,8 @@ class RouteBase
   int64_t getTotalInflation() const;
   int getRevertCount() const;
 
+  void printGCellInflation() const;
+
  private:
   RouteBaseVars rbVars_;
   odb::dbDatabase* db_ = nullptr;
@@ -212,8 +214,6 @@ class RouteBase
 
   // update revert_count_
   void increaseCounter();
-
-  // routability funcs
-  void initGCells();
 };
+
 }  // namespace gpl
