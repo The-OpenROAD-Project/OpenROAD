@@ -50,7 +50,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "ifp_man_tcl_check",
-    "ifp_readme_msgs_check",
+    # "ifp_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -129,11 +129,9 @@ filegroup(
             ],
         ) + {
             "ifp_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/ifp:README.md",
             ],
             "ifp_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/ifp:README.md",
             ],
         }.get(test_name, []),

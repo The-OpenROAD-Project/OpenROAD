@@ -65,7 +65,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "pad_man_tcl_check",
-    "pad_readme_msgs_check",
+    # "pad_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 # TODO: Enable once difference between bazel and ctest is resolved.
@@ -210,11 +210,9 @@ filegroup(
             ],
         ) + {
             "pad_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/pad:README.md",
             ],
             "pad_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/pad:README.md",
             ],
         }.get(test_name, []),

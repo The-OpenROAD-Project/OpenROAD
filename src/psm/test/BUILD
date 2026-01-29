@@ -48,7 +48,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "psm_man_tcl_check",
-    "psm_readme_msgs_check",
+    # "psm_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -165,11 +165,9 @@ filegroup(
             ],
         ) + {
             "psm_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/psm:README.md",
             ],
             "psm_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/psm:README.md",
             ],
         }.get(test_name, []),

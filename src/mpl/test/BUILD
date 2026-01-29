@@ -44,7 +44,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "mpl_man_tcl_check",
-    "mpl_readme_msgs_check",
+    # "mpl_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -219,11 +219,9 @@ _LOCAL_TEST_RESOURCES = {
 # Bazel label resources for tests (doctest resources)
 _LABEL_TEST_RESOURCES = {
     "mpl_man_tcl_check": [
-        "//docs/src/scripts:doc_test_utils",
         "//src/mpl:README.md",
     ],
     "mpl_readme_msgs_check": [
-        "//docs/src/scripts:doc_test_utils",
         "//src/mpl:README.md",
     ],
 }

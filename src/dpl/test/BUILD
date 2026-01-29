@@ -90,7 +90,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "dpl_man_tcl_check",
-    "dpl_readme_msgs_check",
+    # "dpl_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -144,6 +144,12 @@ filegroup(
             ],
             "check9": [
                 "extra.lef",
+            ],
+            "dpl_man_tcl_check": [
+                "//src/dpl:README.md",
+            ],
+            "dpl_readme_msgs_check": [
+                "//src/dpl:README.md",
             ],
             "edge_spacing": [
                 "multi_height_rows.def",
@@ -268,14 +274,6 @@ filegroup(
             ],
             "regions3": [
                 "Nangate45/fake_macros.lef",
-            ],
-            "dpl_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
-                "//src/dpl:README.md",
-            ],
-            "dpl_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
-                "//src/dpl:README.md",
             ],
         }.get(test_name, []),
     )

@@ -133,7 +133,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "ppl_man_tcl_check",
-    "ppl_readme_msgs_check",
+    # "ppl_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -164,15 +164,13 @@ filegroup(
             "multi_track_pattern1": ["multi_track_pattern2.lef"],
             "multi_track_pattern2": ["multi_track_pattern1.lef"],
             "pin_length_error": ["on_grid.def"],
-            "write_pin_placement6": ["write_pin_placement5.def"],
             "ppl_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/ppl:README.md",
             ],
             "ppl_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/ppl:README.md",
             ],
+            "write_pin_placement6": ["write_pin_placement5.def"],
         }.get(
             test_name,
             [

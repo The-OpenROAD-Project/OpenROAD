@@ -32,7 +32,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "rmp_man_tcl_check",
-    "rmp_readme_msgs_check",
+    # "rmp_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -118,11 +118,9 @@ filegroup(
             "asap7/setRC.tcl",
         ] if "asap7" in test_name else []) + ({
             "rmp_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/rmp:README.md",
             ],
             "rmp_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/rmp:README.md",
             ],
         }.get(test_name, [])),

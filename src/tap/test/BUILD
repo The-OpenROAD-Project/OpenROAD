@@ -44,7 +44,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "tap_man_tcl_check",
-    "tap_readme_msgs_check",
+    # "tap_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -153,11 +153,9 @@ filegroup(
             "multiple_calls": ["gcd_ripup.def"],
             "overlap_cover": ["sky130hs_data/cover.lef"],
             "tap_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/tap:README.md",
             ],
             "tap_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/tap:README.md",
             ],
         }.get(

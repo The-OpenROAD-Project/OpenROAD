@@ -21,7 +21,7 @@ COMPULSORY_TESTS = [
 MANUAL_TESTS = [
     "generate_rules",
     "rcx_man_tcl_check",
-    "rcx_readme_msgs_check",
+    # "rcx_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 # TODO: Enable once difference between bazel and ctest is resolved.
@@ -96,11 +96,9 @@ filegroup(
             "ext_pattern": ["generate_pattern.defok"],
             "gcd": ["ext_pattern.rules"],
             "rcx_man_tcl_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/rcx:README.md",
             ],
             "rcx_readme_msgs_check": [
-                "//docs/src/scripts:doc_test_utils",
                 "//src/rcx:README.md",
             ],
         }.get(test_name, []),
