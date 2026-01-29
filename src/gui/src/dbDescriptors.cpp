@@ -41,6 +41,7 @@
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
 #include "options.h"
+#include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
@@ -1639,6 +1640,12 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
 {
   odb::dbObject* sink_object = getSink(object);
   auto net = getObject(object);
+  if (net == nullptr) {
+    utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->warn(
+        utl::GUI, 111, "Net is nullptr in DbNetDescriptor::highlight().");
+    return;
+  }
 
   auto* iterm_descriptor = Gui::get()->getDescriptor<odb::dbITerm*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
