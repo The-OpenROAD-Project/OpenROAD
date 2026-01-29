@@ -231,7 +231,15 @@ proc global_route { args } {
   set start_incremental [info exists flags(-start_incremental)]
   set end_incremental [info exists flags(-end_incremental)]
 
-  grt::global_route $start_incremental $end_incremental
+  if { $start_incremental && $end_incremental } {
+    utl::error GRT 295 "Only one of -start_incremental or -end_incremental can be used."
+  } elseif { $start_incremental } {
+    grt::start_incremental
+  } elseif { $end_incremental } {
+    grt::end_incremental
+  } else {
+    grt::global_route
+  }
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)

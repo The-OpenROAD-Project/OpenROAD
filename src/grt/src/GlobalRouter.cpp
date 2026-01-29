@@ -314,12 +314,32 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
   return false;
 }
 
-void GlobalRouter::globalRoute(bool save_guides,
-                               bool start_incremental,
-                               bool end_incremental)
+void GlobalRouter::startIncremental()
+{
+  is_incremental_ = true;
+  if (!initialized_ || haveDetailedRoutes()) {
+    int min_layer, max_layer;
+    getMinMaxLayer(min_layer, max_layer);
+    initFastRoute(min_layer, max_layer);
+  }
+  grouter_cbk_ = new GRouteDbCbk(this);
+  grouter_cbk_->addOwner(block_);
+}
+
+void GlobalRouter::endIncremental(bool save_guides)
+{
+  is_incremental_ = true;
+  fastroute_->setResistanceAware(resistance_aware_);
+  updateDirtyRoutes();
+  grouter_cbk_->removeOwner();
+  delete grouter_cbk_;
+  grouter_cbk_ = nullptr;
+  finishGlobalRouting(save_guides);
+}
+
+void GlobalRouter::globalRoute(bool save_guides)
 {
   bool has_routable_nets = false;
-  is_incremental_ = (start_incremental || end_incremental);
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
     if (net->getITerms().size() + net->getBTerms().size() > 1) {
@@ -334,76 +354,57 @@ void GlobalRouter::globalRoute(bool save_guides,
                   "(with at least 2 terms)");
     return;
   }
-  if (start_incremental && end_incremental) {
-    logger_->error(GRT,
-                   251,
-                   "The start_incremental and end_incremental flags cannot be "
-                   "defined together");
-  } else if (start_incremental) {
-    if (!initialized_ || haveDetailedRoutes()) {
-      int min_layer, max_layer;
-      getMinMaxLayer(min_layer, max_layer);
-      initFastRoute(min_layer, max_layer);
-    }
-    grouter_cbk_ = new GRouteDbCbk(this);
-    grouter_cbk_->addOwner(block_);
-  } else {
-    try {
-      if (end_incremental) {
-        fastroute_->setResistanceAware(resistance_aware_);
-        updateDirtyRoutes();
-        grouter_cbk_->removeOwner();
-        delete grouter_cbk_;
-        grouter_cbk_ = nullptr;
-      } else {
-        clear();
-        block_ = db_->getChip()->getBlock();
 
-        int min_layer, max_layer;
-        getMinMaxLayer(min_layer, max_layer);
+  try {
+    clear();
+    block_ = db_->getChip()->getBlock();
 
-        std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
-        if (use_cugr_) {
-          int min_layer, max_layer;
-          getMinMaxLayer(min_layer, max_layer);
-          std::set<odb::dbNet*> clock_nets;
-          findClockNets(nets, clock_nets);
-          cugr_->init(min_layer, max_layer, clock_nets);
-          cugr_->route();
-          routes_ = cugr_->getRoutes();
-          updatePinAccessPoints();
-        } else {
-          if (verbose_) {
-            reportResources();
-          }
+    int min_layer, max_layer;
+    getMinMaxLayer(min_layer, max_layer);
 
-          routes_ = findRouting(nets, min_layer, max_layer);
-        }
+    std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+    if (use_cugr_) {
+      std::set<odb::dbNet*> clock_nets;
+      findClockNets(nets, clock_nets);
+      cugr_->init(min_layer, max_layer, clock_nets);
+      cugr_->route();
+      routes_ = cugr_->getRoutes();
+      updatePinAccessPoints();
+    } else {
+      if (verbose_) {
+        reportResources();
       }
-    } catch (...) {
-      updateDbCongestion();
-      saveCongestion();
-      throw;
-    }
 
+      routes_ = findRouting(nets, min_layer, max_layer);
+    }
+  } catch (...) {
     updateDbCongestion();
     saveCongestion();
+    throw;
+  }
 
-    if (verbose_ && !use_cugr_) {
-      reportCongestion();
+  finishGlobalRouting(save_guides);
+}
+
+void GlobalRouter::finishGlobalRouting(bool save_guides)
+{
+  updateDbCongestion();
+  saveCongestion();
+
+  if (verbose_ && !use_cugr_) {
+    reportCongestion();
+  }
+  computeWirelength();
+  if (verbose_) {
+    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
+  }
+  if (save_guides) {
+    std::vector<odb::dbNet*> nets;
+    nets.reserve(block_->getNets().size());
+    for (odb::dbNet* db_net : block_->getNets()) {
+      nets.push_back(db_net);
     }
-    computeWirelength();
-    if (verbose_) {
-      logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-    }
-    if (save_guides) {
-      std::vector<odb::dbNet*> nets;
-      nets.reserve(block_->getNets().size());
-      for (odb::dbNet* db_net : block_->getNets()) {
-        nets.push_back(db_net);
-      }
-      saveGuides(nets);
-    }
+    saveGuides(nets);
   }
 
   if (is_congested_) {
