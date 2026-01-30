@@ -399,6 +399,21 @@ std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
 
   return aps_on_grid;
 }
+
+AccessPoint GridGraph::selectAccessPoint(
+    const std::vector<AccessPoint>& access_points) const
+{
+  AccessPoint best_ap;
+  int votes = -1;
+
+  for (const AccessPoint& ap : access_points) {
+    int equals = std::count(access_points.begin(), access_points.end(), ap);
+    if (equals > votes) {
+      votes = equals;
+      best_ap = ap;
+    }
+  }
+  return best_ap;
 }
 
 bool GridGraph::findODBAccessPoints(
