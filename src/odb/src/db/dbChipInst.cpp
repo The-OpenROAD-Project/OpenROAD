@@ -148,6 +148,12 @@ void dbChipInst::setOrient(dbOrientType3D orient)
   obj->orient_ = orient;
 }
 
+void dbChipInst::setOrigin(const Point3D& origin)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+  obj->origin_ = origin;
+}
+
 void dbChipInst::setLoc(const Point3D& loc)
 {
   _dbChipInst* obj = (_dbChipInst*) this;
