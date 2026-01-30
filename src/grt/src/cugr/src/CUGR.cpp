@@ -338,9 +338,18 @@ void CUGR::sortNetIndices(std::vector<int>& netIndices) const
     auto& net = gr_nets_[netIndex];
     halfParameters[netIndex] = net->getBoundingBox().hp();
   }
-  std::ranges::sort(netIndices, [&](int lhs, int rhs) {
-    return halfParameters[lhs] < halfParameters[rhs];
-  });
+
+  std::vector<float> net_slacks(gr_nets_.size());
+  for (int netIndex : netIndices) {
+    net_slacks[netIndex] = gr_nets_[netIndex]->getSlack();
+  }
+
+  auto compareSlackAndHPWL = [&](int lhs, int rhs) {
+    return std::tie(net_slacks[lhs], halfParameters[lhs])
+           < std::tie(net_slacks[rhs], halfParameters[rhs]);
+  };
+
+  std::ranges::sort(netIndices, compareSlackAndHPWL);
 }
 
 void CUGR::getGuides(const GRNet* net,
