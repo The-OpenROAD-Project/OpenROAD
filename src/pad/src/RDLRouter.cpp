@@ -877,7 +877,8 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
       gui_->addSnap(target.center, snap);
     }
     gui_->zoomToSnap(true);
-    gui_->pause(!isDebugNet(target.terminal->getNet()));
+    gui_->pause(!isDebugNet(target.terminal->getNet())
+                && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -923,7 +924,8 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
       gui_->addSnap(target.center, snap);
     }
     gui_->zoomToSnap(true);
-    gui_->pause(!isDebugNet(target.terminal->getNet()));
+    gui_->pause(!isDebugNet(target.terminal->getNet())
+                && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -1020,7 +1022,8 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 
   if (logger_->debugCheck(utl::PAD, "Terminal", 1) && gui_ != nullptr) {
     gui_->zoomToSnap(false);
-    gui_->pause(!isDebugNet(target.terminal->getNet()));
+    gui_->pause(!isDebugNet(target.terminal->getNet())
+                && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -2030,6 +2033,15 @@ bool RDLRouter::isDebugNet(odb::dbNet* net) const
   }
 
   return net == debug_net_;
+}
+
+bool RDLRouter::isDebugPin(odb::dbITerm* pin) const
+{
+  if (debug_pin_ == nullptr) {
+    return false;
+  }
+
+  return pin == debug_pin_;
 }
 
 }  // namespace pad
