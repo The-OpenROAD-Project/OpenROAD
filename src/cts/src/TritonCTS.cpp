@@ -252,37 +252,6 @@ void TritonCTS::setupCharacterization()
                                          estimate_parasitics_,
                                          network_,
                                          logger_);
-  float highest = -1;
-  std::vector<odb::dbMaster*> delayBufs ;
-  for (const std::string& master_name : options_->getBufferList()) {
-    odb::dbMaster* buf = db_->findMaster(master_name.c_str());
-    sta::Cell* masterCell = network_->dbToSta(buf);
-
-    sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
-    sta::LibertyCellPortBitIterator port_iter(libertyCell);
-    float cellDrvrRes = 0;
-    while (port_iter.hasNext()) {
-      auto port = port_iter.next();
-      if (port->direction()->isOutput()) {
-        cellDrvrRes = port->driveResistance();
-      }
-    }
-
-    logger_->report("{}: delay = {} drv res = {},",
-                    buf->getName(),
-                    techChar_->computeBufferDelay(buf, 0),
-                    cellDrvrRes);
-
-    if (sta::fuzzyLessEqual(highest, cellDrvrRes)) {
-      highest = cellDrvrRes;
-      delayBufMaster_ = buf;
-    }
-  }
-  logger_->report("Clokc cell with highest driver resistance = {");
-  for (auto master: delayBufs) {
-    logger_->report("{} delay = {},",master->getName(), techChar_->computeBufferDelay(master, 0));
-  }
-  logger_->report("}");
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
@@ -290,6 +259,7 @@ void TritonCTS::setupCharacterization()
   options_->setNumBuffersInserted(0);
   options_->setNumClockRoots(0);
   options_->setNumClockSubnets(0);
+  delayBufMaster_ = db_->findMaster(options_->getRootBuffer().c_str());
 }
 
 void TritonCTS::checkCharacterization()
@@ -2619,7 +2589,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
                                                  network_,
                                                  openSta_,
                                                  delayBufMaster_,
-                                                 techChar_->getLengthUnit(),
+                                                 techChar_.get(),
                                                  capPerDBU);
       totalDelayBuff += balancer.run();
     }

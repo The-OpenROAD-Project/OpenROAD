@@ -56,6 +56,11 @@ class CtsOptions : public odb::dbBlockCallBackObj
     bufferList_ = buffers;
   }
   std::vector<std::string> getBufferList() const { return bufferList_; }
+  void setDlyBufferList(const std::vector<std::string>& buffers)
+  {
+    dlyBufferList_ = buffers;
+  }
+  std::vector<std::string> getDlyBufferList() const { return dlyBufferList_; }
   std::string getBufferListToString() const
   {
     std::ostringstream buffer_names;
@@ -404,6 +409,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;
   std::vector<std::string> bufferList_;
+  std::vector<std::string> dlyBufferList_;
   std::vector<odb::dbNet*> clockNetsObjs_;
   std::vector<odb::dbNet*> skipNets_;
   utl::Logger* logger_ = nullptr;
