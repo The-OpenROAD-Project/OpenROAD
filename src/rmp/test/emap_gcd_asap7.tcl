@@ -50,6 +50,8 @@ resynth_emap -corner fast \
 
 repair_timing
 
+write_verilog ./emap_out.v
+
 report_cell_usage
 report_timing_histogram
 report_checks
