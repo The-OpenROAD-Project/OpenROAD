@@ -197,7 +197,6 @@ LogicCut::BuildMappedMockturtleNetwork(
     const std::string cell_name = driver_cell->name();
     const std::string pin_name = network->portName(driver_pin);
 
-    logger->report("DRV {} {}", cell_name, pin_name);
     auto gate_it = gate_by_name.find(std::format("{}_{}", cell_name, pin_name));
     if (gate_it == gate_by_name.end()) {
       logger->error(utl::CUT,

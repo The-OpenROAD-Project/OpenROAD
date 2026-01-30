@@ -216,7 +216,6 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);
   sta::InstanceSet cut_instances
       = GetCutInstances(cut_vertices, supported_cells);
-  sta::dbNetwork* network = open_sta_->getDbNetwork();
 
   // Remove primary outputs who are undriven. This can happen when a flop
   // feeds into another flop where the logic cone is essentially just a wire.
