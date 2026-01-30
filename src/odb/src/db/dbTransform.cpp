@@ -79,11 +79,13 @@ static const dbOrientType::Value orientMul[8][8] = {{dbOrientType::R0,
                                                      dbOrientType::R270,
                                                      dbOrientType::R0}};
 
+// Serialize transform: orientation (2D) and offset (3D).
+// Note: mirror_z_ is NOT serialized to maintain backward compatibility
+// with existing .odb files. 3D mirroring is reconstructed from the
+// dbOrientType when needed.
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t)
 {
-  stream << (int) t.orient_;
-  stream << t.offset_;
-  stream << (int) t.orient_;
+  stream << static_cast<int>(t.orient_);
   stream << t.offset_;
   return stream;
 }
@@ -92,7 +94,7 @@ dbIStream& operator>>(dbIStream& stream, dbTransform& t)
 {
   int orient;
   stream >> orient;
-  t.orient_ = (dbOrientType::Value) orient;
+  t.orient_ = static_cast<dbOrientType::Value>(orient);
   stream >> t.offset_;
   return stream;
 }

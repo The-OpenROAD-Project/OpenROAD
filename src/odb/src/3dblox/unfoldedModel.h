@@ -6,10 +6,12 @@
 #include <deque>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "odb/3dblox.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -22,63 +24,62 @@ class dbChipConn;
 class dbChipNet;
 
 struct UnfoldedChip;
-
-struct UnfoldedRegion
-{
-  dbChipRegionInst* region_inst;
-  dbChipRegion::Side effective_side;
-  Cuboid cuboid;
-  UnfoldedChip* parent_chip = nullptr;
-};
+struct UnfoldedRegion;
 
 struct UnfoldedBump
 {
-  dbChipBumpInst* bump_inst;
-  UnfoldedRegion* parent_region;
+  dbChipBumpInst* bump_inst = nullptr;
+  UnfoldedRegion* parent_region = nullptr;
   Point3D global_position;
-  std::string logical_net_name;
-  std::string port_name;
 };
 
-struct UnfoldedRegionFull : public UnfoldedRegion
+struct UnfoldedRegion
 {
+  dbChipRegionInst* region_inst = nullptr;
+  dbChipRegion::Side effective_side = dbChipRegion::Side::FRONT;
+  Cuboid cuboid;
+  UnfoldedChip* parent_chip = nullptr;
   std::deque<UnfoldedBump> bumps;
+  bool isUsed = false;
 
   int getSurfaceZ() const;
-  bool isFacingUp() const;
-  bool isFacingDown() const;
+  bool isFront() const { return effective_side == dbChipRegion::Side::FRONT; }
+  bool isBack() const { return effective_side == dbChipRegion::Side::BACK; }
+  bool isInternal() const
+  {
+    return effective_side == dbChipRegion::Side::INTERNAL;
+  }
+  bool isInternalExt() const
+  {
+    return effective_side == dbChipRegion::Side::INTERNAL_EXT;
+  }
 };
 
 struct UnfoldedConnection
 {
-  dbChipConn* connection;
-  UnfoldedRegionFull* top_region;
-  UnfoldedRegionFull* bottom_region;
-  Cuboid connection_cuboid;
-
-  bool isValid() const;
+  dbChipConn* connection = nullptr;
+  UnfoldedRegion* top_region = nullptr;
+  UnfoldedRegion* bottom_region = nullptr;
 };
 
 struct UnfoldedNet
 {
-  dbChipNet* chip_net;
+  dbChipNet* chip_net = nullptr;
   std::vector<UnfoldedBump*> connected_bumps;
-
-  std::vector<UnfoldedBump*> getDisconnectedBumps(
-      int bump_pitch_tolerance) const;
 };
 
 struct UnfoldedChip
 {
-  std::string getName() const;
-  std::string getPathKey() const;
+  std::string name;
+  bool isParentOf(const UnfoldedChip* other) const;
 
   std::vector<dbChipInst*> chip_inst_path;
   Cuboid cuboid;
+  dbTransform transform;
 
-  bool z_flipped = false;
-  std::deque<UnfoldedRegionFull> regions;
-  std::vector<UnfoldedConnection*> connected_conns;
+  std::deque<UnfoldedRegion> regions;
+
+  std::unordered_map<dbChipRegionInst*, UnfoldedRegion*> region_map;
 };
 
 class UnfoldedModel
@@ -87,30 +88,36 @@ class UnfoldedModel
   UnfoldedModel(utl::Logger* logger, dbChip* chip);
 
   const std::deque<UnfoldedChip>& getChips() const { return unfolded_chips_; }
-  const std::deque<UnfoldedConnection>& getConnections() const
+  const std::vector<UnfoldedConnection>& getConnections() const
   {
     return unfolded_connections_;
   }
-  const std::deque<UnfoldedNet>& getNets() const { return unfolded_nets_; }
+  const std::vector<UnfoldedNet>& getNets() const { return unfolded_nets_; }
 
  private:
-  void unfoldChip(dbChipInst* chip_inst, UnfoldedChip& unfolded_chip);
-  void unfoldBumps(UnfoldedRegionFull& uf_region,
-                   const std::vector<dbChipInst*>& path);
-  void unfoldConnections(dbChip* chip);
-  void unfoldConnectionsRecursive(dbChip* chip,
-                                  const std::vector<dbChipInst*>& parent_path);
-  void unfoldNets(dbChip* chip);
+  UnfoldedChip* buildUnfoldedChip(dbChipInst* chip_inst,
+                                  std::vector<dbChipInst*>& path,
+                                  const dbTransform& parent_xform,
+                                  Cuboid& local_cuboid);
+  void registerUnfoldedChip(UnfoldedChip& uf_chip);
+  void unfoldRegions(UnfoldedChip& uf_chip,
+                     dbChipInst* inst,
+                     const dbTransform& transform);
+  void unfoldBumps(UnfoldedRegion& uf_region, const dbTransform& transform);
+  void unfoldConnections(dbChip* chip,
+                         const std::vector<dbChipInst*>& parent_path);
+  void unfoldNets(dbChip* chip, const std::vector<dbChipInst*>& parent_path);
 
   UnfoldedChip* findUnfoldedChip(const std::vector<dbChipInst*>& path);
-  UnfoldedRegionFull* findUnfoldedRegion(UnfoldedChip* chip,
-                                         dbChipRegionInst* region_inst);
+  UnfoldedRegion* findUnfoldedRegion(UnfoldedChip* chip,
+                                     dbChipRegionInst* region_inst);
 
   utl::Logger* logger_;
   std::deque<UnfoldedChip> unfolded_chips_;
-  std::deque<UnfoldedConnection> unfolded_connections_;
-  std::deque<UnfoldedNet> unfolded_nets_;
-  std::map<std::string, UnfoldedChip*> chip_path_map_;
+  std::vector<UnfoldedConnection> unfolded_connections_;
+  std::vector<UnfoldedNet> unfolded_nets_;
+  std::map<std::vector<dbChipInst*>, UnfoldedChip*> chip_path_map_;
+  std::unordered_map<dbChipBumpInst*, UnfoldedBump*> bump_inst_map_;
 };
 
 }  // namespace odb
