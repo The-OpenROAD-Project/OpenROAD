@@ -14,6 +14,7 @@
 #include "Layers.h"
 #include "geo.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "robin_hood.h"
 
 namespace grt {

@@ -89,16 +89,25 @@ void GRNet::addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap)
 bool GRNet::isLocal() const
 {
   bool is_local = true;
-  PointT first_ap = iterm_to_ap_.begin()->second.point;
-  for (const auto& ap : iterm_to_ap_) {
-    const PointT& ap_pos = ap.second.point;
+  PointT first_ap;
+
+  if (!iterm_to_ap_.empty()) {
+    first_ap = iterm_to_ap_.begin()->second.point;
+  } else if (!bterm_to_ap_.empty()) {
+    first_ap = bterm_to_ap_.begin()->second.point;
+  } else {
+    return true;
+  }
+
+  for (const auto& [_, ap] : iterm_to_ap_) {
+    const PointT& ap_pos = ap.point;
     if (ap_pos != first_ap) {
       is_local = false;
     }
   }
 
-  for (const auto& ap : bterm_to_ap_) {
-    const PointT& ap_pos = ap.second.point;
+  for (const auto& [_, ap] : bterm_to_ap_) {
+    const PointT& ap_pos = ap.point;
     if (ap_pos != first_ap) {
       is_local = false;
     }

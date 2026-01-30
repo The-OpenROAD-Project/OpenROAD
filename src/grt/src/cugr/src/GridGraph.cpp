@@ -22,6 +22,8 @@
 #include "geo.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "robin_hood.h"
 #include "utl/Logger.h"
 
