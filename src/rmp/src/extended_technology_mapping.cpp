@@ -3,6 +3,7 @@
 
 #include "extended_technology_mapping.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <sstream>
@@ -38,7 +39,12 @@
 #include "utl/Logger.h"
 
 namespace abc {
-Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib * p, float Slew, float Gain, int nGatesMin, int fUseAll, int * pnCellCount);  // NOLINT
+Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib* p,
+                                   float Slew,
+                                   float Gain,
+                                   int nGatesMin,
+                                   int fUseAll,
+                                   int* pnCellCount);  // NOLINT
 }  // namespace abc
 
 namespace rmp {
@@ -150,9 +156,10 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
   odb::dbChip* chip = sta->db()->getChip();
   odb::dbBlock* block = chip->getBlock();
+  sta::dbNetwork* db_network = sta->getDbNetwork();
 
   // Delete nets that only belong to the cut set.
-  sta::NetSet nets_to_be_deleted(sta->getDbNetwork());
+  sta::NetSet nets_to_be_deleted(db_network);
   std::unordered_set<sta::Net*> primary_input_or_output_nets;
 
   for (sta::Net* net : cut.primary_inputs()) {
@@ -164,10 +171,10 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
   for (const sta::Instance* instance : cut.cut_instances()) {
     auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
-        sta->getDbNetwork()->pinIterator(instance));
+        db_network->pinIterator(instance));
     while (pin_iterator->hasNext()) {
       sta::Pin* pin = pin_iterator->next();
-      sta::Net* connected_net = sta->getDbNetwork()->net(pin);
+      sta::Net* connected_net = db_network->net(pin);
       if (connected_net == nullptr) {
         // This net is not connected to anything, so we cannot delete it.
         // This can happen if you have an unconnected output port.
@@ -183,12 +190,12 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       }
     }
   }
-  for (const sta::Instance* instance : cut.cut_instances()) {
-    sta->getDbNetwork()->deleteInstance(const_cast<sta::Instance*>(instance));
-  }
 
+  for (const sta::Instance* instance : cut.cut_instances()) {
+    db_network->deleteInstance(const_cast<sta::Instance*>(instance));
+  }
   for (const sta::Net* net : nets_to_be_deleted) {
-    sta->getDbNetwork()->deleteNet(const_cast<sta::Net*>(net));
+    db_network->deleteNet(const_cast<sta::Net*>(net));
   }
 
   // Add mapped network into design
@@ -220,32 +227,42 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     return net;
   };
 
-  auto node_index = [&](const BlockNtk::node& n) -> auto {
-    return topo_ntk.node_to_index(n);
+  auto node_index = [&](const BlockNtk::node& n) -> uint32_t {
+    return static_cast<uint32_t>(topo_ntk.node_to_index(n));
   };
 
-  // Primary inputs: nets + BTerms
-  {
-    topo_ntk.foreach_pi([&](const BlockNtk::node& n) {
-      const auto idx = node_index(n);
-      std::string name = ntk.get_name(topo_ntk.make_signal(n));
+  auto node_output_signal = [&](const BlockNtk::node& n, uint32_t k) {
+    auto s = topo_ntk.make_signal(n);  // output pin 0
+    for (uint32_t i = 0; i < k; ++i) {
+      s = topo_ntk.next_output_pin(s);
+    }
+    return s;
+  };
 
-      odb::dbNet* net = block->findNet(name.c_str());
-      if (!net) {
-        throw std::runtime_error(std::format("Failed to find net {}", name));
-      }
+  // Primary inputs
+  topo_ntk.foreach_pi([&](const BlockNtk::node& n) {
+    const auto idx = node_index(n);
 
-      node_out_nets[idx].resize(1);
-      node_out_nets[idx][0] = net;
-    });
-  }
+    const std::string name = ntk.get_name(topo_ntk.make_signal(n));
+    if (name.empty()) {
+      throw std::runtime_error(std::format("PI node {} has empty name", idx));
+    }
+
+    odb::dbNet* net = block->findNet(name.c_str());
+    if (!net) {
+      throw std::runtime_error(std::format("Failed to find PI net {}", name));
+    }
+
+    node_out_nets[idx].resize(1);
+    node_out_nets[idx][0] = net;
+  });
 
   // Gates: create instances + output nets (no inputs connected yet)
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
     const auto idx = node_index(n);
 
     CellMapping mapping = map_cell_from_standard_cell(topo_ntk, n, logger);
-    odb::dbMaster* master;
+    odb::dbMaster* master = nullptr;
     for (const auto& lib : libs) {
       master = lib->findMaster(mapping.master_name.c_str());
       if (master) {
@@ -257,7 +274,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
           std::format("Cannot find master {}", mapping.master_name));
     }
 
-    std::string inst_name = std::format("n_{}", idx);
+    const std::string inst_name = std::format("n_{}", idx);
     odb::dbInst* inst = odb::dbInst::create(block, master, inst_name.c_str());
     if (!inst) {
       throw std::runtime_error(
@@ -266,7 +283,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
                       mapping.master_name));
     }
 
-    auto out_mterms = getSignalOutputs(master);
+    const auto out_mterms = getSignalOutputs(master);
     const uint32_t num_cell_outputs = static_cast<uint32_t>(out_mterms.size());
     const uint32_t num_node_outputs = topo_ntk.num_outputs(n);
 
@@ -298,13 +315,12 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       }
 
       std::string net_name;
-      topo_ntk.foreach_po([&](auto const& f, auto index) {
-        if (topo_ntk.get_node(f) == n
-            && topo_ntk.get_output_pin(f) == out_pin_idx) {
-          net_name = ntk.get_output_name(index);
+      {
+        auto out_sig = node_output_signal(n, out_pin_idx);
+        if (ntk.has_name(out_sig)) {
+          net_name = ntk.get_name(out_sig);
         }
-      });
-
+      }
       if (net_name.empty()) {
         net_name = std::format("n_{}_o_{}", idx, out_pin_idx);
       }
@@ -315,7 +331,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       }
       if (!net) {
         throw std::runtime_error(
-            std::format("Failed to create net {}", net_name));
+            std::format("Failed to create/find net {}", net_name));
       }
 
       o_iterm->connect(net);
@@ -323,11 +339,13 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     }
   });
 
+  // Connect gate inputs to driver nets
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
     const auto idx = node_index(n);
 
     CellMapping mapping = map_cell_from_standard_cell(topo_ntk, n, logger);
-    std::string inst_name = std::format("n_{}", idx);
+
+    const std::string inst_name = std::format("n_{}", idx);
     odb::dbInst* inst = block->findInst(inst_name.c_str());
     if (!inst) {
       throw std::runtime_error(std::format("Instance {} not found", inst_name));
@@ -378,6 +396,56 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       it->connect(src_net);
     });
   });
+
+  // Connect mapped POs to the existing cut boundary nets
+  std::vector<odb::dbNet*> boundary_po_dbnets;
+  boundary_po_dbnets.reserve(cut.primary_outputs().size());
+  for (sta::Net* sta_net : cut.primary_outputs()) {
+    odb::dbNet* db_net = db_network->staToDb(sta_net);
+    if (!db_net) {
+      throw std::runtime_error(std::format(
+          "cut primary output net {} has no dbNet", db_network->name(sta_net)));
+    }
+    boundary_po_dbnets.push_back(db_net);
+  }
+
+  // Connect each mapped PO driver to corresponding boundary net by merging.
+  topo_ntk.foreach_po([&](const BlockNtk::signal& f, uint32_t po_index) {
+    if (po_index >= boundary_po_dbnets.size()) {
+      throw std::runtime_error(std::format(
+          "Mapped network has more POs ({}) than cut.primary_outputs ({})",
+          po_index + 1,
+          boundary_po_dbnets.size()));
+    }
+
+    odb::dbNet* boundary_net = boundary_po_dbnets[po_index];
+
+    odb::dbNet* driver_net = nullptr;
+    auto src_node = topo_ntk.get_node(f);
+
+    if (topo_ntk.is_constant(src_node)) {
+      const bool value = topo_ntk.is_complemented(f);
+      driver_net = ensure_const_net(value);
+    } else {
+      const auto src_idx = node_index(src_node);
+      uint32_t out_pin_idx = 0;
+      if (topo_ntk.is_multioutput(src_node)) {
+        out_pin_idx = topo_ntk.get_output_pin(f);
+      }
+
+      if (src_idx >= node_out_nets.size()
+          || out_pin_idx >= node_out_nets[src_idx].size()
+          || node_out_nets[src_idx][out_pin_idx] == nullptr) {
+        throw std::runtime_error(
+            std::format("Missing driver net for PO index {}", po_index));
+      }
+      driver_net = node_out_nets[src_idx][out_pin_idx];
+    }
+
+    if (driver_net && boundary_net && driver_net != boundary_net) {
+      driver_net->mergeNet(boundary_net);
+    }
+  });
 }
 
 }  // anonymous namespace
@@ -414,7 +482,8 @@ void extended_technology_mapping(sta::dbSta* sta,
     auto abc_library = factory.BuildScl();
     auto lib = abc_library.get();
     int cell_count = 0;
-    auto genlib_vec = abc::Abc_SclProduceGenlibStr(lib, Abc_SclComputeAverageSlew(lib), 200.0f, 0, true, &cell_count);
+    auto genlib_vec = abc::Abc_SclProduceGenlibStr(
+        lib, Abc_SclComputeAverageSlew(lib), 200.0f, 0, true, &cell_count);
     // ABC ends the file with '.end', but mockturtle doesn't like that
     for (int i = 0; i < sizeof(".end\n\0"); i++) {
       Vec_StrPop(genlib_vec);
@@ -471,6 +540,12 @@ void extended_technology_mapping(sta::dbSta* sta,
   // Create mockturtle AIG network
   auto [ntk, cut]
       = extract_logic_to_mockturtle(sta, corner, resizer, tech_lib, logger);
+
+  sta::dbNetwork* network = sta->getDbNetwork();
+  for (const auto& c : cut.cut_instances()) {
+    logger->report(
+        "CUT {} {}", network->name(c), network->libertyCell(c)->name());
+  }
 
   // Extended technology mapping statistics
   mockturtle::emap_stats st;
