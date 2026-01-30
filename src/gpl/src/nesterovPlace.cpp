@@ -1296,7 +1296,7 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
       }
       if (!updated) {
         log_->error(GPL,
-                    326,
+                    328,
                     "NesterovPlace destroyCbkGCell failed to update db_inst {}",
                     replaced.first->getName());
       }
