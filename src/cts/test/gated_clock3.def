@@ -601,7 +601,7 @@ END PINS
 
 NETS 5 ;
 - clk
-  ( PIN clk ) ( gclk1 CK ) ( gclk3 CK ) ( gclk4 CK )
+  ( PIN clk ) ( gclk1 CK ) ( gclk2 CK ) ( gclk4 CK )
   ( ff0 CK ) ( ff1 CK ) ( ff2 CK ) ( ff3 CK ) ( ff4 CK ) ( ff5 CK )
   ( ff6 CK ) ( ff7 CK ) ( ff8 CK ) ( ff9 CK ) ( ff10 CK ) ( ff11 CK )
   ( ff12 CK ) ( ff13 CK ) ( ff14 CK ) ( ff15 CK ) ( ff16 CK ) ( ff17 CK )
@@ -620,11 +620,9 @@ NETS 5 ;
   ( ff90 CK ) ( ff91 CK ) ( ff92 CK ) ( ff93 CK ) ( ff94 CK ) ( ff95 CK )
   ( ff96 CK ) ( ff97 CK ) ( ff98 CK ) ( ff99 CK ) ( ff100 CK ) ( ff101 CK )
   ( ff102 CK ) ( ff103 CK ) ( ff104 CK ) ( ff105 CK ) ( ff106 CK ) ( ff107 CK )
-  ( ff108 CK ) ( ff109 CK ) ( ff110 CK ) ( ff111 CK ) ( ff112 CK ) ( ff113 CK )
-  ( ff114 CK ) ( ff115 CK ) ( ff116 CK ) ( ff117 CK ) ( ff118 CK ) ( ff119 CK )
+  ( ff117 CK ) ( ff118 CK ) ( ff119 CK )
   ( ff120 CK ) ( ff121 CK ) ( ff122 CK ) ( ff123 CK ) ( ff124 CK ) ( ff125 CK )
-  ( ff126 CK ) ( ff127 CK ) ( ff128 CK ) ( ff129 CK ) ( ff130 CK ) ( ff131 CK )
-  ( ff132 CK ) ( ff133 CK ) ( ff134 CK ) ( ff135 CK ) ( ff136 CK ) ( ff137 CK )
+  ( ff135 CK ) ( ff136 CK ) ( ff137 CK )
   ( ff138 CK ) ( ff139 CK ) ( ff140 CK ) ( ff141 CK ) ( ff142 CK ) ( ff143 CK )
  ;
 - gclk1
@@ -647,7 +645,11 @@ NETS 5 ;
   ( ff180 CK ) ( ff181 CK ) ( ff182 CK ) ( ff183 CK ) ( ff184 CK ) ( ff185 CK )
   ( ff186 CK ) ( ff187 CK ) ( ff188 CK )
   ( ff198 CK ) ( ff199 CK ) ( ff200 CK ) ( ff201 CK ) ( ff202 CK ) ( ff203 CK )
-  ( ff204 CK ) ( ff205 CK ) ( ff206 CK )  
+  ( ff204 CK ) ( ff205 CK ) ( ff206 CK )
+  ( ff126 CK ) ( ff127 CK ) ( ff128 CK ) ( ff129 CK ) ( ff130 CK ) ( ff131 CK )
+  ( ff132 CK ) ( ff133 CK ) ( ff134 CK )
+  ( ff108 CK ) ( ff109 CK ) ( ff110 CK ) ( ff111 CK ) ( ff112 CK ) ( ff113 CK )
+  ( ff114 CK ) ( ff115 CK ) ( ff116 CK )
  ;
 - gclk3
   ( gclk3 GCK )
@@ -661,7 +663,7 @@ NETS 5 ;
   ( ff282 CK ) ( ff283 CK ) ( ff284 CK ) ( ff285 CK ) ( ff286 CK ) ( ff287 CK )
  ;
 - gclk4
-  ( gclk4 GCK ) ( gclk2 CK )
+  ( gclk4 GCK ) ( gclk3 CK )
   ( ff153 CK ) ( ff154 CK ) ( ff155 CK )
   ( ff156 CK ) ( ff157 CK ) ( ff158 CK ) ( ff159 CK ) ( ff160 CK ) ( ff161 CK )
   ( ff171 CK ) ( ff172 CK ) ( ff173 CK )
