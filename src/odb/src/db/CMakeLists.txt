@@ -151,6 +151,7 @@ add_library(db
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
     dbTechLayerTwoWiresForbiddenSpcRule.cpp
+    dbTechLayerVoltageSpacing.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
     dbChipBumpInstItr.cpp

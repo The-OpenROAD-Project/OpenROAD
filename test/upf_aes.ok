@@ -12,11 +12,14 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 215932.66 um.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: ( 30.360 32.640 ) ( 969.680 968.320 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:     368817.475 um^2
+[INFO GPL-0037] Total instances area:       368817.475 um^2
+[INFO GPL-0035] Pin density area adjust:     51093.513 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:             18005
 [INFO GPL-0007] Movable instances:               17661
 [INFO GPL-0008] Fixed instances:                     0
@@ -33,7 +36,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                    50.747 %
 [INFO GPL-0020] Standard cells area:        143938.422 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Initializing region: PD_AES_1
+[INFO GPL-0032] ---- Initialize Region: PD_AES_1
 [INFO GPL-0006] Number of instances:             16862
 [INFO GPL-0007] Movable instances:               16862
 [INFO GPL-0008] Fixed instances:                     0
@@ -50,7 +53,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                    48.382 %
 [INFO GPL-0020] Standard cells area:        137986.283 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Initializing region: PD_AES_2
+[INFO GPL-0032] ---- Initialize Region: PD_AES_2
 [INFO GPL-0006] Number of instances:             16862
 [INFO GPL-0007] Movable instances:               16862
 [INFO GPL-0008] Fixed instances:                     0
@@ -67,7 +70,10 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                    48.382 %
 [INFO GPL-0020] Standard cells area:        137986.283 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 17661	Region center = 33724
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.5175
 [INFO GPL-0024] Movable insts average area:      8.150 um^2
 [INFO GPL-0025] Ideal bin area:                 15.750 um^2
@@ -76,7 +82,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):         128 ,    128
 [INFO GPL-0029] Bin size (W * H):       7.338 *  7.310 um
 [INFO GPL-0030] Number of bins:                  16384
-[INFO GPL-0033] Initializing Nesterov region: PD_AES_1
+[INFO GPL-0033] ---- Initialize Nesterov Region: PD_AES_1
 [INFO GPL-0023] Placement target density:       0.4938
 [INFO GPL-0024] Movable insts average area:      8.183 um^2
 [INFO GPL-0025] Ideal bin area:                 16.571 um^2
@@ -85,7 +91,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):         128 ,    128
 [INFO GPL-0029] Bin size (W * H):       4.844 *  3.594 um
 [INFO GPL-0030] Number of bins:                  16384
-[INFO GPL-0033] Initializing Nesterov region: PD_AES_2
+[INFO GPL-0033] ---- Initialize Nesterov Region: PD_AES_2
 [INFO GPL-0023] Placement target density:       0.4938
 [INFO GPL-0024] Movable insts average area:      8.183 um^2
 [INFO GPL-0025] Ideal bin area:                 16.571 um^2
@@ -94,7 +100,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):         128 ,    128
 [INFO GPL-0029] Bin size (W * H):       4.844 *  3.594 um
 [INFO GPL-0030] Number of bins:                  16384
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------

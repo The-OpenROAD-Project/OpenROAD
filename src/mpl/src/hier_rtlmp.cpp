@@ -180,6 +180,11 @@ void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
   keep_clustering_data_ = keep_clustering_data;
 }
 
+void HierRTLMP::setDataFlowDriven()
+{
+  clustering_engine_->setDataFlowDriven();
+}
+
 // Top Level Function
 // The flow of our MacroPlacer is divided into 6 stages.
 // 1) Multilevel Autoclustering:
@@ -247,6 +252,11 @@ void HierRTLMP::run()
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
+  clustering_engine_ = std::make_unique<ClusteringEngine>(
+      block_, network_, logger_, tritonpart_, graphics_.get());
+
+  // Set target structure
+  clustering_engine_->setTree(tree_.get());
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -256,11 +266,6 @@ void HierRTLMP::init()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
-  clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_, graphics_.get());
-
-  // Set target structure
-  clustering_engine_->setTree(tree_.get());
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -1411,7 +1416,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
   if (!best_sa) {
     logger_->error(MPL,
                    40,
-                   "Cluster placement failed!\nId: {}\nName: {}",
+                   "Annealing engine failed to find a valid solution.\nCluster "
+                   "Id: {}\n Cluster Name: {}",
                    parent->getId(),
                    parent->getName());
   }
@@ -3090,16 +3096,24 @@ void Snapper::attemptSnapToExtraPatterns(
     }
   }
 
-  if (best_snapped_pins != total_pins) {
-    reportUnalignedPins(layers_data_list, target_direction);
-  }
-
   snapPinToPosition(snap_pin, positions[best_index], target_direction);
+
+  if (best_snapped_pins != total_pins) {
+    totalAlignedPins(layers_data_list, target_direction, true);
+
+    logger_->warn(MPL,
+                  2,
+                  "Could not align all pins of the macro {} to the track-grid. "
+                  "{} out of {} pins were aligned.",
+                  inst_->getName(),
+                  best_snapped_pins,
+                  total_pins);
+  }
 }
 
 int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
                               const odb::dbTechLayerDir& direction,
-                              bool report_unaligned_pins)
+                              bool error_unaligned_right_way_on_grid)
 {
   int pins_aligned = 0;
 
@@ -3119,22 +3133,14 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
         pins_aligned++;
         i++;
       } else if (pin_centers[i] < data.available_positions[j]) {
-        if (report_unaligned_pins) {
-          if (data.track_grid->getTechLayer()->isRightWayOnGridOnly()) {
-            logger_->error(MPL,
-                           5,
-                           "Couldn't align pin {} from the RightWayOnGridOnly "
-                           "layer {} with the track-grid.",
-                           data.pins[i]->getName(),
-                           data.track_grid->getTechLayer()->getName());
-          } else {
-            logger_->warn(
-                MPL,
-                2,
-                "Couldn't align pin {} from layer {} to the track-grid.",
-                data.pins[i]->getName(),
-                data.track_grid->getTechLayer()->getName());
-          }
+        if (error_unaligned_right_way_on_grid
+            && data.track_grid->getTechLayer()->isRightWayOnGridOnly()) {
+          logger_->error(MPL,
+                         5,
+                         "Couldn't align pin {} from the RightWayOnGridOnly "
+                         "layer {} with the track-grid.",
+                         data.pins[i]->getName(),
+                         data.track_grid->getTechLayer()->getName());
         }
 
         i++;
@@ -3144,12 +3150,6 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
     }
   }
   return pins_aligned;
-}
-
-void Snapper::reportUnalignedPins(const LayerDataList& layers_data_list,
-                                  const odb::dbTechLayerDir& direction)
-{
-  totalAlignedPins(layers_data_list, direction, true);
 }
 
 void Snapper::alignWithManufacturingGrid(int& origin)

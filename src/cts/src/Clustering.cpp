@@ -42,7 +42,7 @@ struct Sink
 };
 
 Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
-                       Logger* logger)
+                       utl::Logger* logger)
 {
   logger_ = logger;
   sinks_.reserve(sinks.size());
@@ -54,7 +54,7 @@ Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
 Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
                        const float xBranch,
                        const float yBranch,
-                       Logger* logger)
+                       utl::Logger* logger)
     : Clustering(sinks, logger)
 {
   branching_point_ = {xBranch, yBranch};

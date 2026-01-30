@@ -203,6 +203,7 @@ class Cluster
   UniqueClusterVector releaseChildren();
   Cluster* getParent() const;
   const UniqueClusterVector& getChildren() const;
+  std::vector<Cluster*> getRawChildren() const;
 
   bool isLeaf() const;
   std::string getIsLeafString() const;

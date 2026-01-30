@@ -142,7 +142,7 @@ bool SizeUpMatchMove::doMove(const Path* drvr_path,
     if (prev_drvr_pin == nullptr) {
       return false;
     }
-    Vertex* prev_drvr_vertex = graph_->pinDrvrVertex(prev_drvr_pin);
+    sta::Vertex* prev_drvr_vertex = graph_->pinDrvrVertex(prev_drvr_pin);
     if (prev_drvr_vertex == nullptr) {
       return false;
     }

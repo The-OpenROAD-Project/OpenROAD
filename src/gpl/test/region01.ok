@@ -19,11 +19,14 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 7235.17 um.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:       6974.189 um^2
+[INFO GPL-0037] Total instances area:         6974.189 um^2
+[INFO GPL-0035] Pin density area adjust:       477.053 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:               103
 [INFO GPL-0007] Movable instances:                   0
 [INFO GPL-0008] Fixed instances:                     0
@@ -40,7 +43,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     0.000 %
 [INFO GPL-0020] Standard cells area:             0.000 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Initializing region: spm_inst_0_domain
+[INFO GPL-0032] ---- Initialize Region: spm_inst_0_domain
 [INFO GPL-0006] Number of instances:               315
 [INFO GPL-0007] Movable instances:                 315
 [INFO GPL-0008] Fixed instances:                     0
@@ -57,7 +60,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                    16.128 %
 [INFO GPL-0020] Standard cells area:          3725.621 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Initializing region: spm_inst_1_domain
+[INFO GPL-0032] ---- Initialize Region: spm_inst_1_domain
 [INFO GPL-0006] Number of instances:               315
 [INFO GPL-0007] Movable instances:                 315
 [INFO GPL-0008] Fixed instances:                     0
@@ -75,12 +78,15 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0020] Standard cells area:          3725.621 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [WARNING GPL-0123] No placeable instances in the top-level region. Removing it.
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 0	Region center = 630
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 12377325
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 9412947
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 9412947
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 9412947
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 9412947
-[INFO GPL-0033] Initializing Nesterov region: spm_inst_0_domain
+[INFO GPL-0033] ---- Initialize Nesterov Region: spm_inst_0_domain
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:     11.827 um^2
 [INFO GPL-0025] Ideal bin area:                 16.896 um^2
@@ -89,7 +95,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
 [INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0033] Initializing Nesterov region: spm_inst_1_domain
+[INFO GPL-0033] ---- Initialize Nesterov Region: spm_inst_1_domain
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:     11.827 um^2
 [INFO GPL-0025] Ideal bin area:                 16.896 um^2
@@ -98,7 +104,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
 [INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
         0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.76e-15 |  (spm_inst_0_domain)
         0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.36e-15 |  (spm_inst_1_domain)
        10 |   0.9825 |  5.884226e+03 |   -0.64% |  4.49e-15 |  (spm_inst_0_domain)

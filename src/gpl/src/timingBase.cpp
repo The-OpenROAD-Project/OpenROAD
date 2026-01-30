@@ -11,10 +11,12 @@
 #include <utility>
 #include <vector>
 
+#include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -25,10 +27,12 @@ using utl::GPL;
 TimingBase::TimingBase() = default;
 
 TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
+                       grt::GlobalRouter* grt,
                        rsz::Resizer* rs,
                        utl::Logger* log)
     : TimingBase()
 {
+  grt_ = grt;
   rs_ = rs;
   nbc_ = std::move(nbc);
   log_ = log;

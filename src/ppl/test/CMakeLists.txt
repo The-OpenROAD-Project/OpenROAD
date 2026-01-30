@@ -125,6 +125,3 @@ or_integration_tests(
     write_pin_placement6
 )
 
-# Skipped
-#ppl_man_tcl_check
-#ppl_readme_msgs_check

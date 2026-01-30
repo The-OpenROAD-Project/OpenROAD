@@ -3,6 +3,8 @@
 
 #include "cut/logic_cut.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>

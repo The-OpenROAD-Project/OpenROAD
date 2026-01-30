@@ -3,6 +3,7 @@
 
 sta::define_cmd_args "global_placement" {\
     [-skip_initial_place]\
+    [-force_center_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
@@ -35,6 +36,7 @@ sta::define_cmd_args "global_placement" {\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
+    [-disable_pin_density_adjust]\
     [-enable_routing_congestion]
 }
 
@@ -57,6 +59,7 @@ proc global_placement { args } {
       -keep_resize_below_overflow \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
+      -force_center_initial_place \
       -skip_nesterov_place \
       -timing_driven \
       -routability_driven \
@@ -64,6 +67,7 @@ proc global_placement { args } {
       -skip_io \
       -incremental \
       -disable_revert_if_diverge \
+      -disable_pin_density_adjust \
       -enable_routing_congestion}
 
   sta::check_argc_eq0 "global_placement" $args

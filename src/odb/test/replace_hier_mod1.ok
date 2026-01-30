@@ -10,11 +10,14 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 20.11 um.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:         60.382 um^2
+[INFO GPL-0037] Total instances area:           60.382 um^2
+[INFO GPL-0035] Pin density area adjust:        -5.299 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:                21
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
@@ -31,6 +34,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     0.115 %
 [INFO GPL-0020] Standard cells area:            55.083 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 21	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 1271990
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 78507
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000007 HPWL: 79932
@@ -116,10 +122,14 @@ Equivalence check - pre
 Repair timing output passed/skipped equivalence test
 ### swap bc1 to inv_chain ###
 [INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:         59.850 um^2
+[INFO GPL-0037] Total instances area:           59.850 um^2
+[INFO GPL-0035] Pin density area adjust:        -5.299 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:                21
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
@@ -138,13 +148,15 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 19 placed instances
 [INFO GPL-0155] Identified 2 not placed instances
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 2	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000007 HPWL: 2671580
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 280725
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 280720
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000011 HPWL: 280723
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000006 HPWL: 280724
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.598 um^2
 [INFO GPL-0025] Ideal bin area:                  3.711 um^2
@@ -153,7 +165,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -194,7 +206,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 Placement Analysis
 ---------------------------------
@@ -275,10 +287,14 @@ Equivalence check - swap (buffer_chain -> inv_chain)
 Repair timing output passed/skipped equivalence test
 ### swap bc1 back to buffer_chain ###
 [INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:         60.382 um^2
+[INFO GPL-0037] Total instances area:           60.382 um^2
+[INFO GPL-0035] Pin density area adjust:        -5.299 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:                21
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
@@ -297,13 +313,15 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 19 placed instances
 [INFO GPL-0155] Identified 2 not placed instances
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 2	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 2647380
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 277863
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 277862
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 277858
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 277862
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.623 um^2
 [INFO GPL-0025] Ideal bin area:                  3.747 um^2
@@ -312,7 +330,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -329,7 +347,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
 Placement Analysis
 ---------------------------------
@@ -410,10 +428,14 @@ Equivalence check - swap for rollback (inv_chain -> buffer_chain)
 Repair timing output passed/skipped equivalence test
 ### swap bc1 back to inv_chain ###
 [INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:         59.850 um^2
+[INFO GPL-0037] Total instances area:           59.850 um^2
+[INFO GPL-0035] Pin density area adjust:        -5.299 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:                21
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
@@ -432,13 +454,15 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 19 placed instances
 [INFO GPL-0155] Identified 2 not placed instances
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 2	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000002 HPWL: 2589420
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 222114
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000005 HPWL: 222114
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000004 HPWL: 222112
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 222113
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.598 um^2
 [INFO GPL-0025] Ideal bin area:                  3.711 um^2
@@ -447,7 +471,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -464,7 +488,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 Placement Analysis
 ---------------------------------

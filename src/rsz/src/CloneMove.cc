@@ -34,7 +34,6 @@ using std::vector;
 
 using utl::RSZ;
 
-using sta::dbITerm;
 using sta::Edge;
 using sta::Instance;
 using sta::InstancePinIterator;
@@ -243,11 +242,11 @@ bool CloneMove::doMove(const Path* drvr_path,
       auto libPort = network_->libertyPort(
           pin);  // get the liberty port of the original inst/pin
       // Hierarchy fix: make sure modnet on input supported
-      dbNet* dbnet = db_network_->flatNet(pin);
+      odb::dbNet* dbnet = db_network_->flatNet(pin);
       odb::dbModNet* modnet = db_network_->hierNet(pin);
       // get the iterm
       Pin* clone_pin = db_network_->findPin(clone_inst, libPort->name());
-      dbITerm* iterm = db_network_->flatPin(clone_pin);
+      odb::dbITerm* iterm = db_network_->flatPin(clone_pin);
 
       sta_->connectPin(
           clone_inst,
@@ -299,7 +298,7 @@ bool CloneMove::doMove(const Path* drvr_path,
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
     Vertex* load_vertex = fanout_slack.first;
     Pin* load_pin = load_vertex->pin();
-    dbITerm* load_iterm = db_network_->flatPin(load_pin);
+    odb::dbITerm* load_iterm = db_network_->flatPin(load_pin);
 
     // Leave top level ports connected to original net so verilog port names are
     // preserved.

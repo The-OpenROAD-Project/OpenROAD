@@ -18,14 +18,11 @@
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "utl/Logger.h"
 #include "utl/unique_name.h"
 
 namespace abc {
 }  // namespace abc
-
-namespace utl {
-class Logger;
-}
 
 namespace odb {
 class dbDatabase;
@@ -44,8 +41,6 @@ class dbSta;
 }  // namespace sta
 
 namespace rmp {
-
-using utl::Logger;
 
 enum class Mode
 {
@@ -109,7 +104,7 @@ class Restructure
                   int& level_gain,
                   float& delay_val);
 
-  Logger* logger_;
+  utl::Logger* logger_;
   utl::UniqueName name_generator_;
   std::string logfile_;
   std::string locell_;

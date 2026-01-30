@@ -9,7 +9,6 @@
 #include "dbScanInst.h"
 #include "dbScanList.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 
 namespace odb {
 

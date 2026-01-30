@@ -1052,6 +1052,16 @@ struct less<odb::dbTechLayerTwoWiresForbiddenSpcRule*>
 };
 
 template <>
+struct less<odb::dbTechLayerVoltageSpacing*>
+{
+  bool operator()(const odb::dbTechLayerVoltageSpacing* lhs,
+                  const odb::dbTechLayerVoltageSpacing* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbTechLayerWidthTableRule*>
 {
   bool operator()(const odb::dbTechLayerWidthTableRule* lhs,

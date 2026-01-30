@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbGDSStructure.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGDSARef.h"
 #include "dbGDSBoundary.h"
@@ -14,7 +15,6 @@
 #include "dbGDSText.h"
 #include "dbHashTable.hpp"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"

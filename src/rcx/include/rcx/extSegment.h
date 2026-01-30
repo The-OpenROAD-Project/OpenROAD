@@ -37,8 +37,6 @@ class Wire;
 
 class extMeasure;
 
-using utl::Logger;
-
 class extSegment  // assume cross-section on the z-direction
 {
  public:

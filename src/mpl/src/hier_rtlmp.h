@@ -103,6 +103,8 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
   void setKeepClusteringData(bool keep_clustering_data);
+  void setDataFlowDriven();
+
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugShowClustersIds(bool show_clusters_ids);
@@ -385,9 +387,7 @@ class Snapper
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
   int totalAlignedPins(const LayerDataList& layers_data_list,
                        const odb::dbTechLayerDir& direction,
-                       bool report_unaligned_pins = false);
-  void reportUnalignedPins(const LayerDataList& layers_data_list,
-                           const odb::dbTechLayerDir& direction);
+                       bool error_unaligned_right_way_on_grid = false);
 
   LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);

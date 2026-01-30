@@ -17,5 +17,4 @@ Die Area: (0.00, 0.00) (220.02, 221.20),  Floorplan Area: (0.00, 0.00) (220.02, 
 	Floorplan Utilization: 0.03
 	Manufacturing Grid: 10
 
-[WARNING MPL-0014] No Liberty data found for std cells. Continuing without dataflow.
 No differences found.

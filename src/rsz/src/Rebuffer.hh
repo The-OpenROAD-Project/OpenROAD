@@ -4,36 +4,31 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
+#include <memory>
+#include <optional>
+#include <tuple>
 #include <vector>
 
 #include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/geom.h"
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/Transition.hh"
+#include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
 }
 
 namespace rsz {
-
-using utl::Logger;
-
-using odb::Point;
-using sta::Corner;
-using sta::dbNetwork;
-using sta::Delay;
-using sta::Instance;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::MinMax;
-using sta::Net;
-using sta::Path;
-using sta::Pin;
-using sta::RiseFall;
-using sta::RiseFallBoth;
-using sta::Slack;
-using sta::Slew;
-using sta::Vertex;
 
 class Resizer;
 class BufferedNet;
@@ -46,13 +41,13 @@ class Rebuffer : public sta::dbStaState
 {
  public:
   Rebuffer(Resizer* resizer);
-  void fullyRebuffer(Pin* user_pin = nullptr);
+  void fullyRebuffer(sta::Pin* user_pin = nullptr);
 
  protected:
   void init();
   void initOnCorner(sta::Corner* corner);
 
-  void annotateLoadSlacks(BufferedNetPtr& tree, Vertex* root_vertex);
+  void annotateLoadSlacks(BufferedNetPtr& tree, sta::Vertex* root_vertex);
   void annotateTiming(const BufferedNetPtr& tree);
   BufferedNetPtr stripTreeBuffers(const BufferedNetPtr& tree);
   BufferedNetPtr resteiner(const BufferedNetPtr& tree);
@@ -62,9 +57,10 @@ class Rebuffer : public sta::dbStaState
                              FixedDelay slack_target,
                              float alpha);
 
-  void setPin(Pin* drvr_pin);
+  void setPin(sta::Pin* drvr_pin);
 
-  std::tuple<Delay, Delay, Slew> drvrPinTiming(const BufferedNetPtr& bnet);
+  std::tuple<sta::Delay, sta::Delay, sta::Slew> drvrPinTiming(
+      const BufferedNetPtr& bnet);
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
   std::optional<FixedDelay> evaluateOption(const BufferedNetPtr& option,
                                            // Only used for debug print.
@@ -73,18 +69,20 @@ class Rebuffer : public sta::dbStaState
   float maxSlewMargined(float max_slew);
   float maxCapMargined(float max_cap);
 
-  bool loadSlewSatisfactory(LibertyPort* driver, const BufferedNetPtr& bnet);
+  bool loadSlewSatisfactory(sta::LibertyPort* driver,
+                            const BufferedNetPtr& bnet);
 
-  FixedDelay bufferDelay(LibertyCell* cell,
-                         const RiseFallBoth* rf,
+  FixedDelay bufferDelay(sta::LibertyCell* cell,
+                         const sta::RiseFallBoth* rf,
                          float load_cap);
 
   BufferedNetPtr addWire(const BufferedNetPtr& p,
-                         Point wire_end,
+                         odb::Point wire_end,
                          int wire_layer,
                          int level = -1);
 
-  BufferedNetPtr importBufferTree(const Pin* drvr_pin, const Corner* corner);
+  BufferedNetPtr importBufferTree(const sta::Pin* drvr_pin,
+                                  const sta::Corner* corner);
 
   void insertBufferOptions(BufferedNetSeq& opts,
                            int level,
@@ -97,32 +95,32 @@ class Rebuffer : public sta::dbStaState
                            BufferedNetPtr assured_opt,
                            int level);
 
-  std::vector<Instance*> collectImportedTreeBufferInstances(
-      Pin* drvr_pin,
+  std::vector<sta::Instance*> collectImportedTreeBufferInstances(
+      sta::Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
   int exportBufferTree(const BufferedNetPtr& choice,
-                       Net* net,  // output of buffer.
+                       sta::Net* net,  // output of buffer.
                        int level,
-                       Instance* parent_in,
+                       sta::Instance* parent_in,
                        const char* instance_base_name);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
 
-  int fanout(Vertex* vertex) const;
-  int wireLengthLimitImpliedByLoadSlew(LibertyCell*);
-  int wireLengthLimitImpliedByMaxCap(LibertyCell*);
+  int fanout(sta::Vertex* vertex) const;
+  int wireLengthLimitImpliedByLoadSlew(sta::LibertyCell*);
+  int wireLengthLimitImpliedByMaxCap(sta::LibertyCell*);
 
   BufferedNetPtr attemptTopologyRewrite(const BufferedNetPtr& node,
                                         const BufferedNetPtr& left,
                                         const BufferedNetPtr& right,
                                         float best_cap);
 
-  float findBufferLoadLimitImpliedByDriverSlew(LibertyCell* cell);
+  float findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell);
   void characterizeBufferLimits();
 
   struct BufferSize
   {
-    LibertyCell* cell;
+    sta::LibertyCell* cell;
     FixedDelay intrinsic_delay;
     float margined_max_cap;
     float driver_resistance;
@@ -132,24 +130,24 @@ class Rebuffer : public sta::dbStaState
                               const BufferedNetPtr& bnet,
                               int extra_wire_length = 0);
 
-  bool hasTopLevelOutputPort(Net* net);
-  int rebufferPin(const Pin* drvr_pin);
+  bool hasTopLevelOutputPort(sta::Net* net);
+  int rebufferPin(const sta::Pin* drvr_pin);
 
-  Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
 
   std::vector<BufferSize> buffer_sizes_;
-  std::map<LibertyCell*, BufferSize*> buffer_sizes_index_;
+  std::map<sta::LibertyCell*, BufferSize*> buffer_sizes_index_;
 
-  Pin* pin_ = nullptr;
+  sta::Pin* pin_ = nullptr;
   float fanout_limit_ = 0.0f;
   float drvr_pin_max_slew_ = 0.0f;
   float drvr_load_high_water_mark_ = 0.0f;
-  const Corner* corner_ = nullptr;
-  LibertyPort* drvr_port_ = nullptr;
-  Path* arrival_paths_[RiseFall::index_count] = {nullptr};
+  const sta::Corner* corner_ = nullptr;
+  sta::LibertyPort* drvr_port_ = nullptr;
+  sta::Path* arrival_paths_[sta::RiseFall::index_count] = {nullptr};
 
   int resizer_max_wire_length_ = 0;
   int wire_length_step_ = 0;
@@ -163,8 +161,8 @@ class Rebuffer : public sta::dbStaState
   float slew_margin_ = 20.0f;
   float cap_margin_ = 20.0f;
 
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;

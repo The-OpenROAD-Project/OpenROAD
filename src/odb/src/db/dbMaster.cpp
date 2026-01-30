@@ -25,7 +25,6 @@
 #include "dbPolygonItr.h"
 #include "dbSite.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"

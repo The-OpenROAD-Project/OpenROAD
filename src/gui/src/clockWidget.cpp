@@ -53,6 +53,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbBTerm*);

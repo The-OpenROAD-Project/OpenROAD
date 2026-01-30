@@ -2,6 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -9,9 +10,15 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
-#include "sta/StaState.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -27,30 +34,6 @@ namespace rsz {
 class Resizer;
 class RemoveBuffer;
 class BaseMove;
-
-using odb::Point;
-using utl::Logger;
-
-using sta::Corner;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::DcalcAnalysisPt;
-using sta::Delay;
-using sta::Instance;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::MinMax;
-using sta::Net;
-using sta::Path;
-using sta::PathExpanded;
-using sta::Pin;
-using sta::RiseFall;
-using sta::RiseFallBoth;
-using sta::Slack;
-using sta::Slew;
-using sta::StaState;
-using sta::TimingArc;
-using sta::Vertex;
 
 struct OptoParams
 {
@@ -109,7 +92,7 @@ class RepairSetup : public sta::dbStaState
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
   // For testing.
-  void repairSetup(const Pin* end_pin);
+  void repairSetup(const sta::Pin* end_pin);
   // For testing.
   void reportSwappablePins();
   // Rebuffer one net (for testing).
@@ -117,9 +100,11 @@ class RepairSetup : public sta::dbStaState
 
  private:
   void init();
-  bool repairPath(Path* path, Slack path_slack, float setup_slack_margin);
-  int fanout(Vertex* vertex);
-  bool hasTopLevelOutputPort(Net* net);
+  bool repairPath(sta::Path* path,
+                  sta::Slack path_slack,
+                  float setup_slack_margin);
+  int fanout(sta::Vertex* vertex);
+  bool hasTopLevelOutputPort(sta::Net* net);
 
   void printProgress(int iteration,
                      bool force,
@@ -136,15 +121,15 @@ class RepairSetup : public sta::dbStaState
                            int& num_viols,
                            int max_iterations);
   bool swapVTCritCells(const OptoParams& params, int& num_viols);
-  void traverseFaninCone(Vertex* endpoint,
-                         std::unordered_map<Instance*, float>& crit_insts,
-                         std::unordered_set<Vertex*>& visited,
-                         std::unordered_set<Instance*>& notSwappable,
+  void traverseFaninCone(sta::Vertex* endpoint,
+                         std::unordered_map<sta::Instance*, float>& crit_insts,
+                         std::unordered_set<sta::Vertex*>& visited,
+                         std::unordered_set<sta::Instance*>& notSwappable,
                          const OptoParams& params);
-  Slack getInstanceSlack(Instance* inst);
+  sta::Slack getInstanceSlack(sta::Instance* inst);
 
-  Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
 
@@ -157,10 +142,10 @@ class RepairSetup : public sta::dbStaState
 
   std::vector<BaseMove*> move_sequence_;
 
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
-  sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
+  sta::UnorderedMap<sta::LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int print_interval_ = 10;

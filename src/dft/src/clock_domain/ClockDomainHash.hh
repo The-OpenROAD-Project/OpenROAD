@@ -3,10 +3,12 @@
 
 #pragma once
 
+#include <cstddef>
 #include <functional>
 
 #include "ClockDomain.hh"
 #include "ScanArchitectConfig.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

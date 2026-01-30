@@ -3,11 +3,11 @@
 
 #pragma once
 #include "db_sta/dbSta.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
 class Resizer;
-using utl::Logger;
 using dbSta = sta::dbSta;
 
 class PreChecks
@@ -18,7 +18,7 @@ class PreChecks
   void checkCapLimit(const sta::Pin* drvr_pin);
 
  private:
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   dbSta* sta_ = nullptr;
   Resizer* resizer_;
 

@@ -42,6 +42,3 @@ or_integration_tests(
     upf_test
 )
 
-# Skipped
-#ifp_man_tcl_check
-#ifp_readme_msgs_check

@@ -33,6 +33,7 @@
 #include <utility>
 #include <vector>
 
+#include "utl/prometheus/client_metric.h"
 #include "utl/prometheus/collectable.h"
 #include "utl/prometheus/hash.h"
 #include "utl/prometheus/prometheus_metric.h"

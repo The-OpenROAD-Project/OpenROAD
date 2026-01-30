@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 [WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
-[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
@@ -19,7 +19,7 @@
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
@@ -28,7 +28,7 @@
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      18009         18009          0.00%
+metal1     Horizontal          0             0          0.00%
 metal2     Vertical        17918         17918          0.00%
 metal3     Horizontal      24480         24480          0.00%
 metal4     Vertical        12172         12172          0.00%
@@ -40,37 +40,36 @@ metal9     Horizontal       2142          2142          0.00%
 metal10    Vertical         2142          2142          0.00%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 1881
-[INFO GRT-0198] Via related Steiner nodes: 58
+[INFO GRT-0197] Via related to pin nodes: 2686
+[INFO GRT-0198] Via related Steiner nodes: 44
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 2602
-[INFO GRT-0112] Final usage 3D: 10343
+[INFO GRT-0111] Final number of vias: 3503
+[INFO GRT-0112] Final usage 3D: 13033
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1           18009           557            3.09%             0 /  0 /  0
-metal2           17918          1175            6.56%             0 /  0 /  0
-metal3           24480           687            2.81%             0 /  0 /  0
-metal4           12172            35            0.29%             0 /  0 /  0
-metal5           12240            27            0.22%             0 /  0 /  0
-metal6           12172            56            0.46%             0 /  0 /  0
+metal1               0             0            0.00%             0 /  0 /  0
+metal2           17918          1172            6.54%             0 /  0 /  0
+metal3           24480          1212            4.95%             0 /  0 /  0
+metal4           12172            41            0.34%             0 /  0 /  0
+metal5           12240            51            0.42%             0 /  0 /  0
+metal6           12172            48            0.39%             0 /  0 /  0
 metal7            4284             0            0.00%             0 /  0 /  0
 metal8            4284             0            0.00%             0 /  0 /  0
 metal9            2142             0            0.00%             0 /  0 /  0
 metal10           2142             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           109843          2537            2.31%             0 /  0 /  0
+Total            91834          2524            2.75%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 10909 um
+[INFO GRT-0018] Total wirelength: 10767 um
 [INFO GRT-0014] Routed nets: 563
 [INFO GRT-0278] Global route wire length by layer:
 Layer    Wire length  Percentage
 --------------------------------
-metal1   1587.45um    21%
-metal2   3348.75um    46%
-metal3   1957.95um    27%
-metal4     99.75um     1%
-metal5     76.95um     1%
-metal6    159.60um     2%
+metal2   3340.20um    46%
+metal3   3454.20um    48%
+metal4    116.85um     1%
+metal5    145.35um     2%
+metal6    136.80um     1%
 --------------------------------

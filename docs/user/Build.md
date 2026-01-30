@@ -15,6 +15,12 @@ OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`
 There are three methods for building OpenROAD (in order of recommendation): prebuilt binaries, docker images, and finally, local build.  
 ```
 
+## Build and install with Bazel
+
+Build OpenROAD with GUI support and install into ../install/OpenROAD/bin
+
+    bazelisk run --//:platform=gui //:install
+
 ## Build with Prebuilt Binaries
 
 Courtesy of [Precision Innovations](https://precisioninno.com/), there are prebuilt binaries

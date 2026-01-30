@@ -3,42 +3,31 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/StaState.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
 }
 
-namespace sta {
-class PathExpanded;
-}
-
 namespace rsz {
 
 class Resizer;
-
-using utl::Logger;
-
-using sta::Corner;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::DcalcAnalysisPt;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::MinMax;
-using sta::Net;
-using sta::Path;
-using sta::PathExpanded;
-using sta::Pin;
-using sta::Slack;
-using sta::StaState;
-using sta::TimingArc;
-using sta::Vertex;
 
 class BufferedNet;
 enum class BufferedNetType;
@@ -51,48 +40,49 @@ class RecoverPower : public sta::dbStaState
   RecoverPower(Resizer* resizer);
   bool recoverPower(float recover_power_percent, bool verbose);
   // For testing.
-  Vertex* recoverPower(const Pin* end_pin);
+  sta::Vertex* recoverPower(const sta::Pin* end_pin);
 
  private:
   void init();
-  Vertex* recoverPower(const Path* path, Slack path_slack);
-  bool meetsSizeCriteria(const LibertyCell* cell,
-                         const LibertyCell* candidate,
+  sta::Vertex* recoverPower(const sta::Path* path, sta::Slack path_slack);
+  bool meetsSizeCriteria(const sta::LibertyCell* cell,
+                         const sta::LibertyCell* candidate,
                          bool match_size);
-  bool downsizeDrvr(const Path* drvr_path,
+  bool downsizeDrvr(const sta::Path* drvr_path,
                     int drvr_index,
-                    PathExpanded* expanded,
+                    sta::PathExpanded* expanded,
                     bool only_same_size_swap,
-                    Slack path_slack);
+                    sta::Slack path_slack);
 
-  LibertyCell* downsizeCell(const LibertyPort* in_port,
-                            const LibertyPort* drvr_port,
-                            float load_cap,
-                            float prev_drive,
-                            const DcalcAnalysisPt* dcalc_ap,
-                            bool match_size,
-                            Slack path_slack);
-  int fanout(Vertex* vertex);
-  bool hasTopLevelOutputPort(Net* net);
+  sta::LibertyCell* downsizeCell(const sta::LibertyPort* in_port,
+                                 const sta::LibertyPort* drvr_port,
+                                 float load_cap,
+                                 float prev_drive,
+                                 const sta::DcalcAnalysisPt* dcalc_ap,
+                                 bool match_size,
+                                 sta::Slack path_slack);
+  int fanout(sta::Vertex* vertex);
+  bool hasTopLevelOutputPort(sta::Net* net);
 
   BufferedNetSeq addWireAndBuffer(BufferedNetSeq Z,
                                   BufferedNetPtr bnet_wire,
                                   int level);
-  float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap);
-  float bufferInputCapacitance(LibertyCell* buffer_cell,
-                               const DcalcAnalysisPt* dcalc_ap);
-  Slack slackPenalized(BufferedNetPtr bnet);
-  Slack slackPenalized(BufferedNetPtr bnet, int index);
+  float pinCapacitance(const sta::Pin* pin,
+                       const sta::DcalcAnalysisPt* dcalc_ap);
+  float bufferInputCapacitance(sta::LibertyCell* buffer_cell,
+                               const sta::DcalcAnalysisPt* dcalc_ap);
+  sta::Slack slackPenalized(BufferedNetPtr bnet);
+  sta::Slack slackPenalized(BufferedNetPtr bnet, int index);
 
   void printProgress(int iteration, bool force, bool end) const;
 
-  Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
   int resize_count_ = 0;
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
   // Paths with slack more than this would be considered for power recovery
   static constexpr float setup_slack_margin_ = 1e-11;

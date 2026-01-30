@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <array>
 #include <cstdint>
 #include <cstdlib>

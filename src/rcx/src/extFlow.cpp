@@ -1266,7 +1266,7 @@ uint32_t extMain::couplingFlow(Rect& extRect,
   return 0;
 }
 
-dbRSeg* extMain::getRseg(dbNet* net, uint32_t shapeId, Logger* logger)
+dbRSeg* extMain::getRseg(dbNet* net, uint32_t shapeId, utl::Logger* logger)
 {
   int rsegId2 = 0;
   net->getWire()->getProperty(shapeId, rsegId2);

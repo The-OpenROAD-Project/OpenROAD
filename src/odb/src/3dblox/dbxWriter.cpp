@@ -11,6 +11,7 @@
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 
 namespace odb {
 

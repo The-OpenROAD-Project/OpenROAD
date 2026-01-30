@@ -17,6 +17,7 @@
 #include "sta/Corner.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -25,7 +26,7 @@ namespace sta {
 using std::map;
 using utl::ORD;
 
-SpefWriter::SpefWriter(Logger* logger,
+SpefWriter::SpefWriter(utl::Logger* logger,
                        dbSta* sta,
                        std::map<Corner*, std::ostream*>& spef_streams)
     : logger_(logger),

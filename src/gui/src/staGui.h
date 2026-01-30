@@ -30,7 +30,6 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
-#include "sta/PathExpanded.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "staGuiInterface.h"
@@ -246,6 +245,7 @@ class TimingPathRenderer : public gui::Renderer
   static constexpr const char* kDataPathLabel = "Data path";
   static constexpr const char* kLaunchClockLabel = "Launch clock";
   static constexpr const char* kCaptureClockLabel = "Capture clock";
+  static constexpr const char* kLegendLabel = "Legend";
 };
 
 class TimingConeRenderer : public gui::Renderer

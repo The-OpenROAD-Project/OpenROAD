@@ -156,7 +156,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   const Point drvr_loc = db_network_->location(drvr_pin);
 
   // Identify loads to split (top 50% with most slack)
-  PinSet load_pins(network_);
+  sta::PinSet load_pins(network_);
   const int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
     Vertex* load_vertex = fanout_slacks[i].first;

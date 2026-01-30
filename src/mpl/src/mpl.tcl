@@ -28,6 +28,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
+                                          -data_flow_driven \
                                         }
 proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
@@ -41,7 +42,7 @@ proc rtl_macro_placer { args } {
          -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-keep_clustering_data}
+    flags {-keep_clustering_data -data_flow_driven}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -188,7 +189,8 @@ proc rtl_macro_placer { args } {
       $target_util \
       $min_ar \
       $report_directory \
-      [info exists flags(-keep_clustering_data)]]
+      [info exists flags(-keep_clustering_data)] \
+      [info exists flags(-data_flow_driven)]]
   } {
     return false
   }

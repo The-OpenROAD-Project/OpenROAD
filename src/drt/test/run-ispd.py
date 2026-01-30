@@ -143,7 +143,7 @@ design_list_ispd19 = [
     ("ispd19_test7", 0, 0),
     ("ispd19_test8", 0, 0),
     ("ispd19_test9", 0, 0),
-    ("ispd19_test10", 15, 25),
+    ("ispd19_test10", 12, 25),
 ]
 
 os.makedirs(args.workspace, exist_ok=True)

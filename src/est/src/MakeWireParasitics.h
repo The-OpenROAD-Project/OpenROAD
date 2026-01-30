@@ -15,6 +15,7 @@
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Set.hh"
 
 namespace sta {

@@ -37,6 +37,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/VisitPathEnds.hh"
+#include "utl/Logger.h"
 
 namespace gui {
 
@@ -270,6 +271,11 @@ void TimingPath::populateNodeList(sta::Path* path,
       fanout_ += node_fanout;
     }
 
+    sta::dbNetwork* network = sta->getDbNetwork();
+    if (network->flatNet(pin) == nullptr) {
+      sta->getLogger()->error(
+          utl::GUI, 111, "Timing pin {} has a null net.", network->name(pin));
+    }
     list.push_back(std::make_unique<TimingPathNode>(pin_object,
                                                     pin,
                                                     pin_is_clock,

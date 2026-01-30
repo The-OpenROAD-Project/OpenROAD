@@ -152,10 +152,21 @@ set_skip_large_fanout(int skip_large_fanout)
   getGlobalRouter()->setSkipLargeFanoutNets(skip_large_fanout);
 }
 
-void
-global_route(bool start_incremental, bool end_incremental)
+void start_incremental()
 {
-  getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
+  getGlobalRouter()->startIncremental();
+}
+
+void end_incremental()
+{
+  // Save guides by default when ending incremental routing from Tcl interface.
+  getGlobalRouter()->endIncremental(true);
+}
+
+void
+global_route()
+{
+  getGlobalRouter()->globalRoute(true);
 }
 
 std::vector<int>
@@ -178,7 +189,7 @@ add_net_to_route(odb::dbNet* net)
 }
 
 void
-highlight_net_route(odb::dbNet *net, bool show_segments, bool show_pin_locations)
+highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
   if (!gui::Gui::enabled()) {
     return;
@@ -189,7 +200,7 @@ highlight_net_route(odb::dbNet *net, bool show_segments, bool show_pin_locations
     router->setRenderer(std::make_unique<GrouteRenderer>(router, router->db()->getTech()));
   }
 
-  router->getRenderer()->highlightRoute(net, show_segments, show_pin_locations);
+  router->getRenderer()->highlightRoute(net, show_pin_locations);
 }
 
 void

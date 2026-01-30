@@ -296,3 +296,20 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "test_read_verilog",
+    srcs = ["cpp/TestReadVerilog.cpp"],
+    data = glob(["cpp/TestReadVerilog*.v"]),
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbReadVerilog",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

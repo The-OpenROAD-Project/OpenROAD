@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -1493,7 +1495,7 @@ uint32_t extDistWidthRCTable::writeRulesOverUnder(FILE* fp, bool bin)
 }
 extMetRCTable::extMetRCTable(uint32_t layerCnt,
                              AthPool<extDistRC>* rcPool,
-                             Logger* logger,
+                             utl::Logger* logger,
                              bool OUREVERSEORDER)
 {
   logger_ = logger;
@@ -2162,7 +2164,7 @@ uint32_t extRCTable::addCapOver(uint32_t met, uint32_t metUnder, extDistRC* rc)
   return _inTable[met][metUnder]->add(rc);
 }
 
-extRCModel::extRCModel(uint32_t layerCnt, const char* name, Logger* logger)
+extRCModel::extRCModel(uint32_t layerCnt, const char* name, utl::Logger* logger)
 {
   logger_ = logger;
   _layerCnt = layerCnt;
@@ -2197,7 +2199,7 @@ extRCModel::extRCModel(uint32_t layerCnt, const char* name, Logger* logger)
   _metLevel = 0;
 }
 
-extRCModel::extRCModel(const char* name, Logger* logger)
+extRCModel::extRCModel(const char* name, utl::Logger* logger)
 {
   logger_ = logger;
   _layerCnt = 0;

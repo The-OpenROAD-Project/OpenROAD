@@ -13,7 +13,6 @@
 #include "dbHashTable.hpp"
 #include "dbName.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 

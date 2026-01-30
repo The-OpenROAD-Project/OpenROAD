@@ -10,6 +10,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "tst/IntegratedFixture.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -2554,7 +2555,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case24)
   // - "n1" is created first and has all the connections at first.
   // - "w1" is created later and takes over all the connections.
   // - "n1" has no connection at the end.
-  EXPECT_EQ(std::string(target_net->getConstName()), "w1");
+  EXPECT_EQ(std::string(target_net->getConstName()), "n1");
 
   dbModNet* modnet_n1 = block_->findModNet("n1");
   ASSERT_NE(modnet_n1, nullptr);
@@ -2595,7 +2596,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case24)
   sta_->updateTiming(true);
   num_warning = db_network_->checkAxioms();
   num_warning += sta_->checkSanity();
-  EXPECT_EQ(num_warning, 1);  // 'n1' is dangling
+  EXPECT_EQ(num_warning, 0);
 
   //----------------------------------------------------
   // Insert buffer
@@ -2634,7 +2635,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case24)
   // Post sanity check - this was failing with ORD-2030 before the fix
   num_warning = db_network_->checkAxioms();
   num_warning += sta_->checkSanity();
-  EXPECT_EQ(num_warning, 3);
+  EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");

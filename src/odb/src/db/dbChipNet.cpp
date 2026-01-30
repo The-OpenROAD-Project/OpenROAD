@@ -13,9 +13,9 @@
 #include "dbChipBumpInst.h"
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbChipNet>;

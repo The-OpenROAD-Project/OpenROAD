@@ -6,29 +6,25 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "sta/Network.hh"
 
 namespace rsz {
 
-using odb::dbBlockCallBackObj;
-using odb::dbInst;
-using odb::dbITerm;
-using odb::dbNet;
-using sta::dbNetwork;
-using sta::Network;
-
 class Resizer;
 
-class OdbCallBack : public dbBlockCallBackObj
+class OdbCallBack : public odb::dbBlockCallBackObj
 {
  public:
-  OdbCallBack(Resizer* resizer, Network* network, dbNetwork* db_network);
+  OdbCallBack(Resizer* resizer,
+              sta::Network* network,
+              sta::dbNetwork* db_network);
 
-  void inDbNetDestroy(dbNet* net) override;
+  void inDbNetDestroy(odb::dbNet* net) override;
 
  private:
   Resizer* resizer_;
-  Network* network_;
-  dbNetwork* db_network_;
+  sta::Network* network_;
+  sta::dbNetwork* db_network_;
 };
 
 }  // namespace rsz

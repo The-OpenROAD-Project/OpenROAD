@@ -3,7 +3,11 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "ScanArchitect.hh"
+#include "ScanCell.hh"
 #include "utl/Logger.h"
 
 namespace dft {

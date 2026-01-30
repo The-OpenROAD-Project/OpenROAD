@@ -17,6 +17,7 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"

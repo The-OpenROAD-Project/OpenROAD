@@ -36,6 +36,7 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -43,10 +44,12 @@
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
+#include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 
 Q_DECLARE_METATYPE(sta::Corner*);
 
@@ -485,6 +488,7 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
   addDisplayControl(kDataPathLabel, true);
   addDisplayControl(kLaunchClockLabel, true);
   addDisplayControl(kCaptureClockLabel, true);
+  addDisplayControl(kLegendLabel, true);
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)
@@ -607,6 +611,16 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
                 checkDisplayControl(kDataPathLabel));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
+
+  if (checkDisplayControl(kLegendLabel)) {
+    DiscreteLegend legend;
+    legend.addLegendKey(kCaptureClockColor, "Capture");
+    legend.addLegendKey(kClockColor, "Launch");
+    legend.addLegendKey(kSignalColor, "Signal");
+    legend.addLegendKey(kPathInstColor, "Inst");
+    legend.addLegendKey(kTermColor, "Term");
+    legend.draw(painter);
+  }
 }
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter,

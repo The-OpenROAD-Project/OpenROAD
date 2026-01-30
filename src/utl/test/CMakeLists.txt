@@ -14,9 +14,6 @@ or_integration_tests(
     cpp_tests
 )
 
-# Skipped
 #test_error_exception
-#utl_man_tcl_check
-#utl_readme_msgs_check
 
 add_subdirectory(cpp)

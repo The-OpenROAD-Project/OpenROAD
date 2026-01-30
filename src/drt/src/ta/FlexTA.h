@@ -12,6 +12,7 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"

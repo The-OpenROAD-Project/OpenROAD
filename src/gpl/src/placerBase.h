@@ -102,7 +102,7 @@ class Instance
   void addPin(Pin* pin);
   const std::vector<Pin*>& getPins() const { return pins_; }
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
-  void extendSizeByScale(double scale, utl::Logger* logger);
+  int64_t extendSizeByScale(double scale, utl::Logger* logger);
 
  private:
   odb::dbInst* inst_ = nullptr;
@@ -276,6 +276,7 @@ struct PlacerBaseVars
   const int padLeft;
   const int padRight;
   const bool skipIoMode;
+  const bool disablePinDensityAdjust;
 };
 
 // Class includes everything from PlacerBase that is not region specific
@@ -360,7 +361,7 @@ class PlacerBase
              odb::dbGroup* group = nullptr);
   ~PlacerBase();
 
-  const std::vector<Instance*>& getInsts() const { return insts_; }
+  const std::vector<Instance*>& getInsts() const { return pb_insts_; }
 
   //
   // placeInsts : a real instance that need to be placed
@@ -404,7 +405,7 @@ class PlacerBase
 
   std::vector<Instance> instStor_;
 
-  std::vector<Instance*> insts_;
+  std::vector<Instance*> pb_insts_;
 
   std::vector<Instance*> placeInsts_;
   std::vector<Instance*> fixedInsts_;

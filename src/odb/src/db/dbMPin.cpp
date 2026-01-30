@@ -16,7 +16,6 @@
 #include "dbMaster.h"
 #include "dbPolygonItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"

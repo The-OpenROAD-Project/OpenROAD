@@ -13,6 +13,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -64,13 +65,13 @@ void PreChecks::checkSlewLimit(float ref_cap, float max_load_slew)
   }
 }
 
-void PreChecks::checkCapLimit(const Pin* drvr_pin)
+void PreChecks::checkCapLimit(const sta::Pin* drvr_pin)
 {
   if (!min_cap_load_computed_) {
     min_cap_load_computed_ = true;
     // Find the smallest buffer/inverter input cap
     min_cap_load_ = sta::INF;
-    dbNetwork* network = resizer_->getDbNetwork();
+    sta::dbNetwork* network = resizer_->getDbNetwork();
     std::unique_ptr<sta::LibertyLibraryIterator> lib_iter{
         network->libertyLibraryIterator()};
 
@@ -91,8 +92,8 @@ void PreChecks::checkCapLimit(const Pin* drvr_pin)
   }
 
   float cap1, max_cap1, cap_slack1;
-  const Corner* corner1;
-  const RiseFall* tr1;
+  const sta::Corner* corner1;
+  const sta::RiseFall* tr1;
   sta_->checkCapacitance(drvr_pin,
                          nullptr,
                          sta::MinMax::max(),
@@ -102,7 +103,7 @@ void PreChecks::checkCapLimit(const Pin* drvr_pin)
                          max_cap1,
                          cap_slack1);
   if (max_cap1 > 0 && max_cap1 < min_cap_load_) {
-    dbNetwork* network = resizer_->getDbNetwork();
+    sta::dbNetwork* network = resizer_->getDbNetwork();
     const sta::Unit* cap_unit = sta_->units()->capacitanceUnit();
     std::string master_name = "-";
     if (sta::Instance* inst = network->instance(drvr_pin)) {

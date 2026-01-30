@@ -31,6 +31,8 @@
 #pragma warning(disable : 4786)
 #endif
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

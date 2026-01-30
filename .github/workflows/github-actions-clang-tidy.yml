@@ -19,7 +19,7 @@ jobs:
         with:
           clang_tidy_version: 19
           build_dir: "./build"
-          cmake_command: cmake . -B build
+          cmake_command: cmake . -B build -D Boost_DIR=/usr/local/lib/cmake/Boost-1.89.0
           config_file: ".clang-tidy"
           exclude: "*/codeGenerator/templates/*,third-party/*,test/orfs/*"
           split_workflow: true

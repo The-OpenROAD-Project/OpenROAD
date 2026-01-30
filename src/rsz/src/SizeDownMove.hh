@@ -2,37 +2,35 @@
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
 #include "BaseMove.hh"
+#include "sta/ArcDelayCalc.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 
 namespace rsz {
-
-using sta::ArcDelay;
-using sta::InstancePinIterator;
-using sta::LoadPinIndexMap;
-using sta::NetConnectedPinIterator;
-using sta::Path;
-using sta::PathExpanded;
-using sta::Slack;
-using sta::Slew;
 
 class SizeDownMove : public BaseMove
 {
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
+  bool doMove(const sta::Path* drvr_path,
               int drvr_index,
-              Slack drvr_slack,
-              PathExpanded* expanded,
+              sta::Slack drvr_slack,
+              sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 
   const char* name() override { return "SizeDownMove"; }
 
  private:
-  LibertyCell* downSizeGate(const LibertyPort* drvr_port,
-                            const LibertyPort* load_port,
-                            const Pin* load_pin,
-                            const DcalcAnalysisPt* dcalc_ap,
-                            float slack_margin);
+  sta::LibertyCell* downSizeGate(const sta::LibertyPort* drvr_port,
+                                 const sta::LibertyPort* load_port,
+                                 const sta::Pin* load_pin,
+                                 const sta::DcalcAnalysisPt* dcalc_ap,
+                                 float slack_margin);
 };
 
 }  // namespace rsz

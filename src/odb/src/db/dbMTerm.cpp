@@ -3,6 +3,8 @@
 
 #include "dbMTerm.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -17,7 +19,6 @@
 #include "dbMPinItr.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerAntennaRule.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"

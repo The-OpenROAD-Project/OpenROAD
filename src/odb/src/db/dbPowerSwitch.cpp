@@ -9,6 +9,7 @@
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMTerm.h"
@@ -16,7 +17,6 @@
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "utl/Logger.h"
 // User Code Begin Includes

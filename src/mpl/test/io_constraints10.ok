@@ -18,6 +18,5 @@ Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 
 	Floorplan Utilization: 0.08
 	Manufacturing Grid: 10
 
-[WARNING MPL-0014] No Liberty data found for std cells. Continuing without dataflow.
 [WARNING MPL-0055] Couldn't find a solution for the specified utilization. The utilization was adjusted to 0.29163226.
 No differences found.

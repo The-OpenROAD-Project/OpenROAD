@@ -47,7 +47,8 @@ InstanceBuilder& InstanceBuilder::connectPort(sta::LibertyPort* const port,
   return *this;
 }
 
-void NetworkBuilder::init(Logger* const logger, sta::dbNetwork* const network)
+void NetworkBuilder::init(utl::Logger* const logger,
+                          sta::dbNetwork* const network)
 {
   logger_ = logger;
   network_ = network;

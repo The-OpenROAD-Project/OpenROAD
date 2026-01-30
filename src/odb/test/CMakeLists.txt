@@ -80,8 +80,5 @@ or_integration_tests(
     test_wire_codec
 )
 
-# Skipped
-#odb_man_tcl_check
-#odb_readme_msgs_check
 
 add_subdirectory(cpp)

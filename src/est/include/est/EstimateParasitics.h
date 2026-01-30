@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/SteinerTree.h"
@@ -21,21 +22,16 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/Corner.hh"
-#include "sta/Delay.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Hash.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
-
-namespace grt {
-class GlobalRouter;
-class IncrementalGRoute;
-}  // namespace grt
-
-namespace stt {
-class SteinerTreeBuilder;
-}  // namespace stt
 
 namespace utl {
 class CallBackHandler;
@@ -43,46 +39,12 @@ class CallBackHandler;
 
 namespace est {
 
-using utl::Logger;
-
-using stt::SteinerTreeBuilder;
-
-using grt::GlobalRouter;
-using grt::IncrementalGRoute;
-
-using sta::ArcDelay;
-using sta::Corner;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::dbStaState;
-using sta::DcalcAnalysisPt;
-using sta::Delay;
-using sta::Instance;
-using sta::InstanceSeq;
-using sta::LibertyCellSeq;
-using sta::LibertyCellSet;
-using sta::LibertyLibrarySeq;
-using sta::MinMax;
-using sta::Net;
-using sta::NetSeq;
-using sta::Parasitic;
-using sta::ParasiticNode;
-using sta::Parasitics;
-using sta::Pin;
-using sta::PinSeq;
-using sta::Required;
-using sta::Slack;
-using sta::Slew;
-using sta::SpefWriter;
-using sta::UnorderedSet;
-using sta::VertexSeq;
-
 using SteinerPt = int;
 
 class NetHash
 {
  public:
-  size_t operator()(const Net* net) const { return hashPtr(net); }
+  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
 };
 
 enum class ParasiticsSrc
@@ -109,24 +71,24 @@ class AbstractSteinerRenderer;
 class OdbCallBack;
 class EstimateParasiticsCallBack;
 
-class EstimateParasitics : public dbStaState
+class EstimateParasitics : public sta::dbStaState
 {
  public:
-  EstimateParasitics(Logger* logger,
+  EstimateParasitics(utl::Logger* logger,
                      utl::CallBackHandler* callback_handler,
                      odb::dbDatabase* db,
-                     dbSta* sta,
-                     SteinerTreeBuilder* stt_builder,
-                     GlobalRouter* global_router);
+                     sta::dbSta* sta,
+                     stt::SteinerTreeBuilder* stt_builder,
+                     grt::GlobalRouter* global_router);
   ~EstimateParasitics() override;
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(odb::dbTechLayer* layer,
-                  const Corner* corner,
+                  const sta::Corner* corner,
                   double res,
                   double cap);
   void layerRC(odb::dbTechLayer* layer,
-               const Corner* corner,
+               const sta::Corner* corner,
                // Return values.
                double& res,
                double& cap) const;
@@ -135,58 +97,59 @@ class EstimateParasitics : public dbStaState
   void sortClkAndSignalLayers();
   // Set the resistance and capacitance used for horizontal parasitics on signal
   // nets.
-  void setHWireSignalRC(const Corner* corner,
+  void setHWireSignalRC(const sta::Corner* corner,
                         double res,   // ohms/meter
                         double cap);  // farads/meter
   // Set the resistance and capacitance used for vertical wires parasitics on
   // signal nets.
-  void setVWireSignalRC(const Corner* corner,
+  void setVWireSignalRC(const sta::Corner* corner,
                         double res,   // ohms/meter
                         double cap);  // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setHWireClkRC(const Corner* corner,
+  void setHWireClkRC(const sta::Corner* corner,
                      double res,
                      double cap);  // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setVWireClkRC(const Corner* corner,
+  void setVWireClkRC(const sta::Corner* corner,
                      double res,
                      double cap);  // farads/meter
   // ohms/meter, farads/meter
-  void wireSignalRC(const Corner* corner,
+  void wireSignalRC(const sta::Corner* corner,
                     // Return values.
                     double& res,
                     double& cap) const;
-  double wireSignalResistance(const Corner* corner) const;
-  double wireSignalHResistance(const Corner* corner) const;
-  double wireSignalVResistance(const Corner* corner) const;
-  double wireClkResistance(const Corner* corner) const;
-  double wireClkHResistance(const Corner* corner) const;
-  double wireClkVResistance(const Corner* corner) const;
+  double wireSignalResistance(const sta::Corner* corner) const;
+  double wireSignalHResistance(const sta::Corner* corner) const;
+  double wireSignalVResistance(const sta::Corner* corner) const;
+  double wireClkResistance(const sta::Corner* corner) const;
+  double wireClkHResistance(const sta::Corner* corner) const;
+  double wireClkVResistance(const sta::Corner* corner) const;
   // farads/meter
-  double wireSignalCapacitance(const Corner* corner) const;
-  double wireSignalHCapacitance(const Corner* corner) const;
-  double wireSignalVCapacitance(const Corner* corner) const;
-  double wireClkCapacitance(const Corner* corner) const;
-  double wireClkHCapacitance(const Corner* corner) const;
-  double wireClkVCapacitance(const Corner* corner) const;
+  double wireSignalCapacitance(const sta::Corner* corner) const;
+  double wireSignalHCapacitance(const sta::Corner* corner) const;
+  double wireSignalVCapacitance(const sta::Corner* corner) const;
+  double wireClkCapacitance(const sta::Corner* corner) const;
+  double wireClkHCapacitance(const sta::Corner* corner) const;
+  double wireClkVCapacitance(const sta::Corner* corner) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
-                          std::map<Corner*, std::ostream*>& spef_streams_);
-  void estimateWireParasitics(SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Net* net, SpefWriter* spef_writer = nullptr);
-  void estimateWireParasitic(const Pin* drvr_pin,
-                             const Net* net,
-                             SpefWriter* spef_writer = nullptr);
-  void makeWireParasitic(Net* net,
-                         Pin* drvr_pin,
-                         Pin* load_pin,
+                          std::map<sta::Corner*, std::ostream*>& spef_streams_);
+  void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
+  void estimateWireParasitic(const sta::Net* net,
+                             sta::SpefWriter* spef_writer = nullptr);
+  void estimateWireParasitic(const sta::Pin* drvr_pin,
+                             const sta::Net* net,
+                             sta::SpefWriter* spef_writer = nullptr);
+  void makeWireParasitic(sta::Net* net,
+                         sta::Pin* drvr_pin,
+                         sta::Pin* load_pin,
                          double wire_length,  // meters
-                         const Corner* corner,
-                         Parasitics* parasitics);
+                         const sta::Corner* corner,
+                         sta::Parasitics* parasitics);
   bool haveEstimatedParasitics() const;
-  void parasiticsInvalid(const Net* net);
+  void parasiticsInvalid(const sta::Net* net);
   void parasiticsInvalid(const odb::dbNet* net);
-  void eraseParasitics(const Net* net);
+  void eraseParasitics(const sta::Net* net);
   bool parasiticsValid() const;
 
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
@@ -201,7 +164,7 @@ class EstimateParasitics : public dbStaState
     incremental_parasitics_enabled_ = enabled;
   }
 
-  void removeNetFromParasiticsInvalid(Net* net)
+  void removeNetFromParasiticsInvalid(sta::Net* net)
   {
     parasitics_invalid_.erase(net);
   }
@@ -218,17 +181,17 @@ class EstimateParasitics : public dbStaState
   // Returns nullptr if net has less than 2 pins or any pin is not placed.
   SteinerTree* makeSteinerTree(odb::Point drvr_location,
                                const std::vector<odb::Point>& sink_locations);
-  SteinerTree* makeSteinerTree(const Pin* drvr_pin);
+  SteinerTree* makeSteinerTree(const sta::Pin* drvr_pin);
   void updateParasitics(bool save_guides = false);
-  void ensureWireParasitic(const Pin* drvr_pin);
-  void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
-  void highlightSteiner(const Pin* drvr);
+  void ensureWireParasitic(const sta::Pin* drvr_pin);
+  void ensureWireParasitic(const sta::Pin* drvr_pin, const sta::Net* net);
+  void highlightSteiner(const sta::Pin* drvr);
 
-  dbNetwork* getDbNetwork() { return db_network_; }
+  sta::dbNetwork* getDbNetwork() { return db_network_; }
   odb::dbBlock* getBlock() { return block_; }
-  GlobalRouter* getGlobalRouter() { return global_router_; }
-  IncrementalGRoute* getIncrementalGRT() { return incr_groute_; }
-  void setIncrementalGRT(IncrementalGRoute* incr_groute)
+  grt::GlobalRouter* getGlobalRouter() { return global_router_; }
+  grt::IncrementalGRoute* getIncrementalGRT() { return incr_groute_; }
+  void setIncrementalGRT(grt::IncrementalGRoute* incr_groute)
   {
     incr_groute_ = incr_groute;
   }
@@ -237,37 +200,40 @@ class EstimateParasitics : public dbStaState
 
   void initBlock();
 
-  Logger* getLogger() { return logger_; }
+  utl::Logger* getLogger() { return logger_; }
 
  private:
   void ensureParasitics();
-  void estimateWireParasiticSteiner(const Pin* drvr_pin,
-                                    const Net* net,
-                                    SpefWriter* spef_writer);
-  void makePadParasitic(const Net* net, SpefWriter* spef_writer);
-  bool isPadNet(const Net* net) const;
-  bool isPadPin(const Pin* pin) const;
-  bool isPad(const Instance* inst) const;
-  float pinCapacitance(const Pin* pin, const DcalcAnalysisPt* dcalc_ap) const;
-  odb::dbTechLayer* getPinLayer(const Pin* pin);
-  double computeAverageCutResistance(Corner* corner);
-  void parasiticNodeConnectPins(Parasitic* parasitic,
-                                ParasiticNode* node,
+  void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
+                                    const sta::Net* net,
+                                    sta::SpefWriter* spef_writer);
+  void makePadParasitic(const sta::Net* net, sta::SpefWriter* spef_writer);
+  bool isPadNet(const sta::Net* net) const;
+  bool isPadPin(const sta::Pin* pin) const;
+  bool isPad(const sta::Instance* inst) const;
+  float pinCapacitance(const sta::Pin* pin,
+                       const sta::DcalcAnalysisPt* dcalc_ap) const;
+  odb::dbTechLayer* getPinLayer(const sta::Pin* pin);
+  double computeAverageCutResistance(sta::Corner* corner);
+  void parasiticNodeConnectPins(sta::Parasitic* parasitic,
+                                sta::ParasiticNode* node,
                                 SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id,
-                                Corner* corner,
-                                std::set<const Pin*>& connected_pins,
+                                sta::Corner* corner,
+                                std::set<const sta::Pin*>& connected_pins,
                                 bool is_clk);
-  void net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const;
+  void net2Pins(const sta::Net* net,
+                const sta::Pin*& pin1,
+                const sta::Pin*& pin2) const;
   double dbuToMeters(int dist) const;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
-  SteinerTreeBuilder* stt_builder_ = nullptr;
-  GlobalRouter* global_router_ = nullptr;
-  IncrementalGRoute* incr_groute_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  stt::SteinerTreeBuilder* stt_builder_ = nullptr;
+  grt::GlobalRouter* global_router_ = nullptr;
+  grt::IncrementalGRoute* incr_groute_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   std::unique_ptr<OdbCallBack> db_cbk_;
@@ -285,9 +251,9 @@ class EstimateParasitics : public dbStaState
   std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
-  const DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
+  const sta::DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
 
-  UnorderedSet<const Net*, NetHash> parasitics_invalid_;
+  sta::UnorderedSet<const sta::Net*, NetHash> parasitics_invalid_;
 
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
@@ -296,8 +262,8 @@ class EstimateParasitics : public dbStaState
   bool incremental_parasitics_enabled_ = false;
 
   // constants
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 };
 
 class IncrementalParasiticsGuard

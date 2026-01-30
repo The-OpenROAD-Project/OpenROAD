@@ -479,6 +479,10 @@ void GraphicsImpl::drawMBFF(gui::Painter& painter)
 
 void GraphicsImpl::drawObjects(gui::Painter& painter)
 {
+  if (!enabled()) {
+    return;
+  }
+
   switch (mode_) {
     case Mbff:
       drawMBFF(painter);

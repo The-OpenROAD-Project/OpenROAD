@@ -4,10 +4,14 @@
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
 [INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:        569.772 um^2
+[INFO GPL-0037] Total instances area:          569.772 um^2
+[INFO GPL-0035] Pin density area adjust:        49.963 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:               294
 [INFO GPL-0007] Movable instances:                 294
 [INFO GPL-0008] Fixed instances:                     0
@@ -27,7 +31,7 @@
 [INFO GPL-0154] Identified 294 placed instances
 [INFO GPL-0155] Identified 0 not placed instances
 [INFO GPL-0156] Identified all instances as placed. Unlocking all instances and running nesterov from scratch.
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.108 um^2
 [INFO GPL-0025] Ideal bin area:                  3.011 um^2
@@ -36,7 +40,7 @@
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------

@@ -45,7 +45,7 @@ class extMain;
 
 extSpef::extSpef(odb::dbTech* tech,
                  dbBlock* blk,
-                 Logger* logger,
+                 utl::Logger* logger,
                  const char* version,
                  extMain* extmain)
 {
@@ -129,7 +129,7 @@ void extSpef::set_single_pi(const bool v)
   _singleP = v;
 }
 
-void extSpef::setLogger(Logger* logger)
+void extSpef::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
 }

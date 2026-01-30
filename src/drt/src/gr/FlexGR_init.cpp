@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frViaDef.h"

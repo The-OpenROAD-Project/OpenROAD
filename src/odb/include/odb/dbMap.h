@@ -85,4 +85,4 @@ class dbMap
 
 }  // namespace odb
 
-#include "odb/dbMap.hpp"
+#include "odb/dbMap.inc"  // IWYU pragma: export

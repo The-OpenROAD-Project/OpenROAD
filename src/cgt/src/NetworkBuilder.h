@@ -10,16 +10,15 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 #include "utl/deleter.h"
 
 namespace cgt {
 
-using utl::Logger;
-
 class InstanceBuilder
 {
  public:
-  InstanceBuilder(Logger* logger,
+  InstanceBuilder(utl::Logger* logger,
                   sta::dbNetwork* network,
                   sta::LibertyCell* cell,
                   sta::LibertyPort* clk,
@@ -54,7 +53,7 @@ class InstanceBuilder
  private:
   InstanceBuilder& connectPort(sta::LibertyPort* port, sta::Net* net);
 
-  Logger* logger_;
+  utl::Logger* logger_;
   sta::dbNetwork* network_;
   sta::LibertyPort* clk_ = nullptr;
   std::array<sta::LibertyPort*, 2> inputs_;
@@ -65,7 +64,7 @@ class InstanceBuilder
 class NetworkBuilder
 {
  public:
-  void init(Logger* logger, sta::dbNetwork* network);
+  void init(utl::Logger* logger, sta::dbNetwork* network);
 
   InstanceBuilder makeAnd(const char* name)
   {
@@ -114,7 +113,7 @@ class NetworkBuilder
   }
 
  private:
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
 
   sta::LibertyCell* and_cell_ = nullptr;
@@ -135,7 +134,7 @@ class NetworkBuilder
   sta::LibertyPort* clkgate_output_ = nullptr;
 };
 
-inline InstanceBuilder::InstanceBuilder(Logger* logger,
+inline InstanceBuilder::InstanceBuilder(utl::Logger* logger,
                                         sta::dbNetwork* network,
                                         sta::LibertyCell* cell,
                                         sta::LibertyPort* clk,

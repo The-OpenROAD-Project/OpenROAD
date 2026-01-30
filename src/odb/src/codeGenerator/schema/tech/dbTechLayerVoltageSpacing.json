@@ -1,0 +1,25 @@
+{
+  "name": "dbTechLayerVoltageSpacing",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bit",
+      "name": "tocut_above"
+    },
+    {
+      "type": "bit",
+      "name": "tocut_below"
+    },
+    {
+      "type": "std::map<float,int>",
+      "name": "table_",
+      "flags": [
+        "no-get",
+        "no-set"
+      ]
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

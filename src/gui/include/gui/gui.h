@@ -651,6 +651,54 @@ class SpectrumGenerator
  private:
   static const unsigned char kSpectrum[256][3];
   double scale_;
+  static constexpr int kLegendColorIncrement = 2;
+};
+
+class Legend
+{
+ public:
+  virtual ~Legend() = default;
+
+  virtual void draw(Painter& painter) const = 0;
+
+ protected:
+  Legend() = default;
+};
+
+// A legend for a linear spectrum of colors
+// The colors are specified as continuous from low to high
+// For example, a heat map legend
+class LinearLegend : public Legend
+{
+ public:
+  LinearLegend(const std::vector<Painter::Color>& colors);
+
+  // Set the legend key as a vector of (color, text) pairs
+  void setLegendKey(
+      const std::vector<std::pair<Painter::Color, std::string>>& legend_key);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<Painter::Color> colors_;
+  std::vector<std::pair<Painter::Color, std::string>> legend_key_;
+};
+
+// A legend for discrete colors
+// Each color is associated with a text label
+// For example, a timing path legend
+class DiscreteLegend : public Legend
+{
+ public:
+  DiscreteLegend() = default;
+
+  // Add a (color, text) entry to the legend
+  void addLegendKey(const Painter::Color& color, const std::string& text);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<std::pair<Painter::Color, std::string>> color_key_;
 };
 
 // A chart with a single X axis and potentially multiple Y axes
