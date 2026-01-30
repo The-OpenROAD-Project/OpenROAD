@@ -21,6 +21,7 @@
 #include "GRTree.h"
 #include "geo.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "robin_hood.h"
 #include "utl/Logger.h"
 
@@ -365,31 +366,39 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
-AccessPoint GridGraph::translateAccessPointsToGrid(
-    odb::dbAccessPoint* ap,
-    int x,
-    int y,
-    AccessPointSet& selected_access_points) const
+std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
+    const std::vector<odb::dbAccessPoint*>& aps,
+    const odb::Point& inst_location) const
 {
   const int amount_per_x = design_->getDieRegion().hx() / x_size_;
   const int amount_per_y = design_->getDieRegion().hy() / y_size_;
-  auto point = ap->getPoint();
-  auto layer = ap->getLayer();
-  const int ap_x = ((point.getX() + x) / amount_per_x >= x_size_)
-                       ? x_size_ - 1
-                       : (point.getX() + x) / amount_per_x;
-  const int ap_y = ((point.getY() + y) / amount_per_y >= y_size_)
-                       ? y_size_ - 1
-                       : (point.getY() + y) / amount_per_y;
-  const PointT selected_point = PointT(ap_x, ap_y);
-  const int num_layer = ((layer->getNumber() - 2) > (getNumLayers() - 1))
-                            ? getNumLayers() - 1
-                            : layer->getNumber() - 2;
-  const IntervalT selected_layer = IntervalT(num_layer);
-  const AccessPoint ap_new{.point = selected_point, .layers = selected_layer};
-  selected_access_points.emplace(ap_new);
+  std::vector<AccessPoint> aps_on_grid;
+  for (const auto& ap : aps) {
+    odb::Point ap_position = ap->getPoint();
+    odb::dbTechLayer* layer = ap->getLayer();
 
-  return ap_new;
+    // Transform AP position according to instance location and orientation.
+    odb::dbTransform xform;
+    xform.setOffset({inst_location.getX(), inst_location.getY()});
+    xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+    xform.apply(ap_position);
+
+    const int ap_x = (ap_position.getX() / amount_per_x >= x_size_)
+                         ? x_size_ - 1
+                         : ap_position.getX() / amount_per_x;
+    const int ap_y = ((ap_position.getY() / amount_per_y >= y_size_)
+                          ? y_size_ - 1
+                          : ap_position.getY() / amount_per_y);
+    const PointT selected_point = PointT(ap_x, ap_y);
+    const int num_layer = ((layer->getNumber() - 2) > (getNumLayers() - 1))
+                              ? getNumLayers() - 1
+                              : layer->getNumber() - 2;
+    const IntervalT selected_layer = IntervalT(num_layer);
+    aps_on_grid.emplace_back(selected_point, selected_layer);
+  }
+
+  return aps_on_grid;
+}
 }
 
 bool GridGraph::findODBAccessPoints(

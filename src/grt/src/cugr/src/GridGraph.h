@@ -155,11 +155,11 @@ class GridGraph
   {
     return unit_length_short_costs_[layer_index];
   }
-  AccessPoint translateAccessPointsToGrid(
-      odb::dbAccessPoint* ap,
-      int x,
-      int y,
-      AccessPointSet& selected_access_points) const;
+  std::vector<AccessPoint> translateAccessPointsToGrid(
+      const std::vector<odb::dbAccessPoint*>& ap,
+      const odb::Point& inst_location) const;
+  AccessPoint selectAccessPoint(
+      const std::vector<AccessPoint>& access_points) const;
   bool findODBAccessPoints(GRNet* net,
                            AccessPointSet& selected_access_points) const;
 
