@@ -1036,46 +1036,45 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
   // FIXME: We may want to switch to dynamically increasing slack passes
   constexpr int decreasing_slack_max_passes = 50;
 
-  // Sort failing endpoints by slack.
-  const VertexSet* endpoints = sta_->endpoints();
-  vector<pair<Vertex*, Slack>> violating_ends;
+  violator_collector_->init(setup_slack_margin);
 
-  // Should check here whether we can figure out the clock domain for each
-  // vertex. This may be the place where we can do some round robin fun to
-  // individually control each clock domain instead of just fixating on fixing
-  // one.
-  for (Vertex* end : *endpoints) {
-    const Slack end_slack = sta_->vertexSlack(end, max_);
-    if (fuzzyLess(end_slack, setup_slack_margin)) {
-      violating_ends.emplace_back(end, end_slack);
-    }
+  int max_endpoint_count = violator_collector_->getMaxEndpointCount();
+  if (max_endpoint_count == 0) {
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               1,
+               "LEGACY{} Phase: No violating endpoints, exiting",
+               phase_marker);
+    return;
   }
-  std::ranges::stable_sort(violating_ends,
-                           [](const auto& end_slack1, const auto& end_slack2) {
-                             return end_slack1.second < end_slack2.second;
-                           });
+  debugPrint(logger_,
+             RSZ,
+             "repair_setup",
+             1,
+             "LEGACY{} Phase: {} violating endpoints found",
+             phase_marker,
+             max_endpoint_count);
 
   int end_index = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
   printProgress(opto_iteration, false, false, phase_marker);
   float fix_rate_threshold = inc_fix_rate_threshold_;
-  if (violating_ends.empty()) {
-    debugPrint(logger_,
-               RSZ,
-               "repair_setup",
-               1,
-               "LEGACY{} Phase: No violating endpoints found",
-               phase_marker);
-  } else {
-    min_viol_ = -violating_ends.back().second;
-    max_viol_ = -violating_ends.front().second;
-  }
 
-  // Main Legacy Phase loop - Repair each violating endpoint starting with worst
-  for (const auto& end_original_slack : violating_ends) {
+  const auto& violating_ends = violator_collector_->getViolatingEndpoints();
+  min_viol_ = -violating_ends.back().second;
+  max_viol_ = -violating_ends.front().second;
+
+  // Main Legacy Phase loop - Repair each violating endpoint starting with
+  // worst
+  while (violator_collector_->hasMoreEndpoints()) {
     fallback_ = false;
-    Vertex* end = end_original_slack.first;
+    violator_collector_->advanceToNextEndpoint();
+    Vertex* end = violator_collector_->getCurrentEndpoint();
+    if (!end) {
+      continue;
+    }
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
     Vertex* worst_vertex;
@@ -1172,6 +1171,7 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                    delayAsString(setup_slack_margin, sta_, digits));
         break;
       }
+
       Path* end_path = sta_->vertexWorstSlackPath(end, max_);
       float prev_tns_local = sta_->totalNegativeSlack(max_);
 
@@ -1296,6 +1296,7 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
       }
       if (end_index == 1) {
         end = worst_vertex;
+        violator_collector_->useWorstEndpoint(end);
       }
       pass++;
       if (max_iterations > 0 && opto_iteration >= max_iterations) {
@@ -2823,20 +2824,7 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
     move_sequence_.push_back(resizer_->swap_pins_move_.get());
   }
 
-  // Sort remaining failing endpoints
-  const VertexSet* endpoints = sta_->endpoints();
-  vector<pair<Vertex*, Slack>> violating_ends;
-  for (Vertex* end : *endpoints) {
-    const Slack end_slack = sta_->vertexSlack(end, max_);
-    if (fuzzyLess(end_slack, params.setup_slack_margin)) {
-      violating_ends.emplace_back(end, end_slack);
-    }
-  }
-  std::ranges::stable_sort(violating_ends,
-                           [](const auto& end_slack1, const auto& end_slack2) {
-                             return end_slack1.second < end_slack2.second;
-                           });
-  num_viols = violating_ends.size();
+  violator_collector_->init(params.setup_slack_margin);
 
   float curr_tns = sta_->totalNegativeSlack(max_);
   if (fuzzyGreaterEqual(curr_tns, 0)) {
@@ -2851,7 +2839,8 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
   }
 
   int end_index = 0;
-  int max_end_count = violating_ends.size();
+  int max_end_count = violator_collector_->getMaxEndpointCount();
+  num_viols = max_end_count;
   if (max_end_count == 0) {
     debugPrint(logger_,
                RSZ,
@@ -2872,19 +2861,20 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
   printProgress(opto_iteration, false, false, phase_marker);
 
   float prev_tns = curr_tns;
-  Slack curr_worst_slack = violating_ends[0].second;
+  Slack curr_worst_slack = violator_collector_->getWNS();
   Slack prev_worst_slack = curr_worst_slack;
   bool prev_termination = false;
   bool two_cons_terminations = false;
   float fix_rate_threshold = inc_fix_rate_threshold_;
 
-  for (const auto& end_original_slack : violating_ends) {
+  while (violator_collector_->hasMoreEndpoints()) {
     if (max_iterations > 0 && opto_iteration >= max_iterations) {
       break;
     }
 
     fallback_ = false;
-    Vertex* end = end_original_slack.first;
+    violator_collector_->advanceToNextEndpoint();
+    Vertex* end = violator_collector_->getCurrentEndpoint();
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
     Vertex* worst_vertex;

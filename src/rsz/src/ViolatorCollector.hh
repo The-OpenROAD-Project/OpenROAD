@@ -297,6 +297,7 @@ class ViolatorCollector
   std::map<const Pin*, int> endpoint_times_considered_;
 
   // Current endpoint iteration state
+  bool iteration_began_;
   Vertex* current_endpoint_;
   Slack current_end_original_slack_;
   int current_endpoint_index_;

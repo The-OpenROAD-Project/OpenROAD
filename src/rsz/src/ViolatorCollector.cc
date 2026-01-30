@@ -219,6 +219,7 @@ void ViolatorCollector::init(float slack_margin)
   if (!violating_ends_.empty()) {
     setToEndpoint(0);
   }
+  iteration_began_ = false;
 }
 
 void ViolatorCollector::collectBySlack()
@@ -2071,11 +2072,16 @@ void ViolatorCollector::resetEndpointPasses()
 
 bool ViolatorCollector::hasMoreEndpoints() const
 {
-  return current_endpoint_index_ + 1 < static_cast<int>(violating_ends_.size());
+  if (iteration_began_) {
+    return current_endpoint_index_ + 1
+           < static_cast<int>(violating_ends_.size());
+  }
+  return !violating_ends_.empty();
 }
 
 void ViolatorCollector::setToEndpoint(int index)
 {
+  iteration_began_ = true;
   current_endpoint_index_ = index;
   const auto& end_slack_pair = violating_ends_[current_endpoint_index_];
   current_endpoint_ = graph_->pinLoadVertex(end_slack_pair.first);
@@ -2094,7 +2100,9 @@ void ViolatorCollector::setToStartpoint(int index)
 void ViolatorCollector::advanceToNextEndpoint()
 {
   if (hasMoreEndpoints()) {
-    current_endpoint_index_++;
+    if (iteration_began_) {
+      current_endpoint_index_++;
+    }
     current_pass_count_ = 0;  // Reset pass count for new endpoint
     setToEndpoint(current_endpoint_index_);
     debugPrint(
