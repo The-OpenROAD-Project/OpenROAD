@@ -715,38 +715,103 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer, double ext
 
 void TechChar::createDelayBufList()
 {
+  bool drvrRes = true;
   std::vector<std::string> delay_buffers;
   float prevDrvrRes = -1;
-  std::vector<std::string> buffers = options_->getBufferList();
+  float prevInternalDelay = -1;
+  std::vector<std::string> buffersDrvRes = options_->getBufferList();
   // Sort buffers in ascending order of max cap limit
   std::ranges::sort(
-      buffers, [this](const std::string& buf1, const std::string& buf2) {
+      buffersDrvRes, [this](const std::string& buf1, const std::string& buf2) {
         return (this->getDrvrResistance(buf1) < this->getDrvrResistance(buf2));
       });
   logger_->report("Buffer list = [");
-  for (std::string buffer : buffers) {
-    float drvrRes;
-    sta::ArcDelay delay;
-    drvrRes = getDrvrResistance(buffer);
-    delay = computeBufferDelay(buffer, 0);
+  for (const std::string& buffer : buffersDrvRes) {
+    float drvrRes = getDrvrResistance(buffer);
+    sta::ArcDelay delay = computeBufferDelay(buffer, 0);
     float intrinsicDelay = getinternalDelay(buffer);
     logger_->report("{}, driveRes = {}, delay = {}, intrinsic delay: {}", buffer, drvrRes, delay, intrinsicDelay);
     logger_->report("prevDrvrRes: {}, {}",prevDrvrRes, ((prevDrvrRes - drvrRes) / drvrRes));
+  }
+  logger_->report("]");
+  for (const std::string& buffer : buffersDrvRes) {
+    float drvrRes = getDrvrResistance(buffer);
+    float intrinsicDelay = getinternalDelay(buffer);
+
     if (prevDrvrRes == -1) {
       prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
       delay_buffers.push_back(buffer);
     } else if ((drvrRes - prevDrvrRes) / drvrRes > 0.1) {
       delay_buffers.push_back(buffer);
       prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
+    } else if (intrinsicDelay > prevInternalDelay) {
+      delay_buffers.pop_back();
+      delay_buffers.push_back(buffer);
+      prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
     }
   }
   logger_->report("]");
 
-  logger_->report("Delay Buffer list = [");
-  for (std::string buffer : delay_buffers) {
+  logger_->report("Delay Buffer list based on drvrRes = [");
+  for (const std::string& buffer : delay_buffers) {
     logger_->report("{}, ", buffer);
   }
   logger_->report("]");
+
+  if(drvrRes) {
+    options_->setDlyBufferList(delay_buffers);
+    return;
+  }
+  delay_buffers.clear();
+  prevDrvrRes = -1;
+  prevInternalDelay = -1;
+  std::vector<std::string> buffersIntDly = options_->getBufferList();
+  // Sort buffers in ascending order of max cap limit
+  std::ranges::sort(
+      buffersIntDly, [this](const std::string& buf1, const std::string& buf2) {
+        return (this->getinternalDelay(buf1) < this->getinternalDelay(buf2));
+      });
+  logger_->report("Buffer list = [");
+  for (const std::string& buffer : buffersIntDly) {
+    float drvrRes = getDrvrResistance(buffer);
+    sta::ArcDelay delay = computeBufferDelay(buffer, 0);
+    float intrinsicDelay = getinternalDelay(buffer);
+    logger_->report("{}, driveRes = {}, delay = {}, intrinsic delay: {}", buffer, drvrRes, delay, intrinsicDelay);
+    logger_->report("prevInternalDelay: {}, {}",prevInternalDelay, ((prevInternalDelay - intrinsicDelay) / intrinsicDelay));
+  }
+  logger_->report("]");
+  for (const std::string& buffer : buffersIntDly) {
+    float drvrRes = getDrvrResistance(buffer);
+    float intrinsicDelay = getinternalDelay(buffer);
+    logger_->report("{}, driveRes = {}, intrinsic delay: {}", buffer, drvrRes, intrinsicDelay);
+    logger_->report("prevInternalDelay: {}, {}",prevInternalDelay, ((prevInternalDelay - intrinsicDelay) / intrinsicDelay));
+
+    if (prevInternalDelay == -1) {
+      prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
+      delay_buffers.push_back(buffer);
+    } else if ((intrinsicDelay - prevInternalDelay) / intrinsicDelay > 0.1) {
+      delay_buffers.push_back(buffer);
+      prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
+    } else if (drvrRes > prevDrvrRes) {
+      delay_buffers.pop_back();
+      delay_buffers.push_back(buffer);
+      prevDrvrRes = drvrRes;
+      prevInternalDelay = intrinsicDelay;
+    }
+  }
+  logger_->report("]");
+
+  logger_->report("Delay Buffer list based on internal delay = [");
+  for (const std::string& buffer : delay_buffers) {
+    logger_->report("{}, ", buffer);
+  }
+  logger_->report("]");
+  options_->setDlyBufferList(delay_buffers);
 }
 
 void TechChar::finalizeRootSinkBuffers()
