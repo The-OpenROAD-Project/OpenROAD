@@ -541,12 +541,6 @@ void extended_technology_mapping(sta::dbSta* sta,
   auto [ntk, cut]
       = extract_logic_to_mockturtle(sta, corner, resizer, tech_lib, logger);
 
-  sta::dbNetwork* network = sta->getDbNetwork();
-  for (const auto& c : cut.cut_instances()) {
-    logger->report(
-        "CUT {} {}", network->name(c), network->libertyCell(c)->name());
-  }
-
   // Extended technology mapping statistics
   mockturtle::emap_stats st;
 
