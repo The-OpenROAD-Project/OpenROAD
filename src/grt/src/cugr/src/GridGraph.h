@@ -27,6 +27,10 @@ struct AccessPoint
 {
   PointT point;
   IntervalT layers;
+  bool operator==(const AccessPoint& ap) const
+  {
+    return point == ap.point && layers == ap.layers;
+  }
 };
 
 // Only hash and compare on the point, not the layers
