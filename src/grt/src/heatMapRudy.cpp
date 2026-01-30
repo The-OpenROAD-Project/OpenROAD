@@ -163,11 +163,6 @@ void RUDYDataSource::inDbInstCreate(odb::dbInst*)
   destroyMap();
 }
 
-void RUDYDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
-{
-  destroyMap();
-}
-
 void RUDYDataSource::inDbInstDestroy(odb::dbInst*)
 {
   destroyMap();
