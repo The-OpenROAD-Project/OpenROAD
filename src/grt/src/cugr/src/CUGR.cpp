@@ -75,7 +75,7 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-float CUGR::CalculatePartialSlack()
+float CUGR::calculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(gr_nets_.size());
@@ -97,12 +97,12 @@ float CUGR::CalculatePartialSlack()
                        : slacks[std::min(static_cast<size_t>(threshold_index),
                                          slacks.size() - 1)];
 
-  // Set the non critical nets slack as the lowest float, so they can be
-  // ordered by overflow (and ordered first than the critical nets)
+  // Set the non critical nets slack as the maximum float value, so they can be
+  // ordered by the default sorting method.
   for (const int& netIndex : net_indices_) {
     if (gr_nets_[netIndex]->getSlack() > slack_th) {
       gr_nets_[netIndex]->setSlack(
-          std::ceil(std::numeric_limits<float>::lowest()));
+          std::ceil(std::numeric_limits<float>::max()));
     }
   }
 
