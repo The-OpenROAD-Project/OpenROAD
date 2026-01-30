@@ -2494,7 +2494,7 @@ void ClusteringEngine::createHardMacros()
   const odb::Rect& core = block_->getCoreArea();
 
   auto macro_insts
-      = block_->getInsts() | std::ranges::views::filter(&odb::dbInst::isBlock);
+      = std::views::filter(block_->getInsts(), &odb::dbInst::isBlock);
 
   for (odb::dbInst* inst : macro_insts) {
     if (inst->isFixed()) {
