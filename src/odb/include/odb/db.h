@@ -7369,6 +7369,8 @@ class dbChipInst : public dbObject
 
   void setOrient(dbOrientType3D orient);
 
+  void setOrigin(const Point3D& origin);
+
   void setLoc(const Point3D& loc);
 
   Point3D getLoc() const;

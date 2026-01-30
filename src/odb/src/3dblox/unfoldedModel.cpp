@@ -220,10 +220,10 @@ void UnfoldedModel::unfoldConnections(
     if (top || bot) {
       UnfoldedConnection uf_conn{
           .connection = conn, .top_region = top, .bottom_region = bot};
-      if (top && top->isInternalExt()) {
+      if (top != nullptr && top->isInternalExt()) {
         top->isUsed = true;
       }
-      if (bot && bot->isInternalExt()) {
+      if (bot != nullptr && bot->isInternalExt()) {
         bot->isUsed = true;
       }
       unfolded_connections_.push_back(uf_conn);
@@ -241,9 +241,9 @@ void UnfoldedModel::unfoldNets(dbChip* chip,
       std::vector<dbChipInst*> rel_path;
       dbChipBumpInst* b_inst = net->getBumpInst(i, rel_path);
 
-      auto it = bump_inst_map_.find(b_inst);
-      if (it != bump_inst_map_.end()) {
-        uf_net.connected_bumps.push_back(it->second);
+      auto iter = bump_inst_map_.find(b_inst);
+      if (iter != bump_inst_map_.end()) {
+        uf_net.connected_bumps.push_back(iter->second);
       }
     }
     unfolded_nets_.push_back(std::move(uf_net));
