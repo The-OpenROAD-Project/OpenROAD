@@ -283,10 +283,9 @@ void CUGR::write(const std::string& guide_file)
 
 NetRouteMap CUGR::getRoutes()
 {
-  // TODO: Investigate empty routes
   NetRouteMap routes;
   for (const auto& net : gr_nets_) {
-    if (net->getNumPins() < 2) {
+    if (net->getNumPins() < 2 || net->isLocal()) {
       continue;
     }
     odb::dbNet* db_net = net->getDbNet();
