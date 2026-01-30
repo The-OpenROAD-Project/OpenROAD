@@ -151,12 +151,12 @@ class GridGraph
   {
     return unit_length_short_costs_[layer_index];
   }
-  void translateAccessPointsToGrid(
+  AccessPoint translateAccessPointsToGrid(
       odb::dbAccessPoint* ap,
       int x,
       int y,
       AccessPointSet& selected_access_points) const;
-  bool findODBAccessPoints(const GRNet* net,
+  bool findODBAccessPoints(GRNet* net,
                            AccessPointSet& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;

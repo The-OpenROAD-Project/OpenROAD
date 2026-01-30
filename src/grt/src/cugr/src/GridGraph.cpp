@@ -365,7 +365,7 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
-void GridGraph::translateAccessPointsToGrid(
+AccessPoint GridGraph::translateAccessPointsToGrid(
     odb::dbAccessPoint* ap,
     int x,
     int y,
@@ -388,44 +388,57 @@ void GridGraph::translateAccessPointsToGrid(
   const IntervalT selected_layer = IntervalT(num_layer);
   const AccessPoint ap_new{.point = selected_point, .layers = selected_layer};
   selected_access_points.emplace(ap_new);
+
+  return ap_new;
 }
 
 bool GridGraph::findODBAccessPoints(
-    const GRNet* net,
+    GRNet* net,
     AccessPointSet& selected_access_points) const
 {
   std::vector<odb::dbAccessPoint*> access_points;
   odb::dbNet* db_net = net->getDbNet();
-  if (db_net->getBTermCount() != 0) {
-    for (odb::dbBTerm* bterms : db_net->getBTerms()) {
-      for (const odb::dbBPin* bpin : bterms->getBPins()) {
-        const std::vector<odb::dbAccessPoint*>& bpin_pas
-            = bpin->getAccessPoints();
-        // Iterates per each AP and converts to CUGR structures
-        access_points.insert(
-            access_points.begin(), bpin_pas.begin(), bpin_pas.end());
-        for (auto ap : bpin_pas) {
-          translateAccessPointsToGrid(ap, 0, 0, selected_access_points);
-        }
+
+  for (odb::dbBTerm* bterms : db_net->getBTerms()) {
+    for (const odb::dbBPin* bpin : bterms->getBPins()) {
+      const std::vector<odb::dbAccessPoint*>& bpin_pas
+          = bpin->getAccessPoints();
+      // Iterates per each AP and converts to CUGR structures
+      access_points.insert(
+          access_points.begin(), bpin_pas.begin(), bpin_pas.end());
+      for (auto ap : bpin_pas) {
+        AccessPoint on_grid_ap
+            = translateAccessPointsToGrid(ap, 0, 0, selected_access_points);
+        net->addBTermAccessPoint(bterms, on_grid_ap);
       }
-    }
-  } else {
-    for (auto iterms : db_net->getITerms()) {
-      auto pref_access_points = iterms->getPrefAccessPoints();
-      if (!pref_access_points.empty()) {
-        access_points.insert(access_points.end(),
-                             pref_access_points.begin(),
-                             pref_access_points.end());
-        // Iterates in ITerm prefered APs and convert to CUGR strucutres
-        for (auto ap : pref_access_points) {
-          int x, y;
-          iterms->getInst()->getLocation(x, y);
-          translateAccessPointsToGrid(ap, x, y, selected_access_points);
-        }
-      }
-      // Currently ignoring non preferred APs
     }
   }
+
+  for (auto iterm : db_net->getITerms()) {
+    auto pref_access_points = iterm->getPrefAccessPoints();
+    if (!pref_access_points.empty()) {
+      access_points.insert(access_points.end(),
+                           pref_access_points.begin(),
+                           pref_access_points.end());
+    } else if (!iterm->getInst()->isCore()) {
+      // For non-core cells, DRT does not assign preferred APs.
+      // Use all APs to ensure the guides covering at least one AP.
+      for (const auto& [pin, aps] : iterm->getAccessPoints()) {
+        access_points.insert(access_points.end(), aps.begin(), aps.end());
+      }
+    }
+
+    // Iterates in ITerm prefered APs and convert to CUGR strucutres
+    for (auto ap : pref_access_points) {
+      int x, y;
+      iterm->getInst()->getLocation(x, y);
+      AccessPoint on_grid_ap
+          = translateAccessPointsToGrid(ap, x, y, selected_access_points);
+      net->addITermAccessPoint(iterm, on_grid_ap);
+    }
+  }
+
+  // Currently ignoring non preferred APs
   if (access_points.empty()) {
     return false;
   }
