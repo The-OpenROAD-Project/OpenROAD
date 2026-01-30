@@ -261,17 +261,21 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
 static dbChip::ChipType getChipType(const std::string& type,
                                     utl::Logger* logger)
 {
-  static const std::map<std::string, dbChip::ChipType> type_map
-      = {{"die", dbChip::ChipType::DIE},
-         {"rdl", dbChip::ChipType::RDL},
-         {"ip", dbChip::ChipType::IP},
-         {"substrate", dbChip::ChipType::SUBSTRATE},
-         {"hier", dbChip::ChipType::HIER}};
-
-  if (type_map.contains(type)) {
-    return type_map.at(type);
+  if (type == "die") {
+    return dbChip::ChipType::DIE;
   }
-
+  if (type == "rdl") {
+    return dbChip::ChipType::RDL;
+  }
+  if (type == "ip") {
+    return dbChip::ChipType::IP;
+  }
+  if (type == "substrate") {
+    return dbChip::ChipType::SUBSTRATE;
+  }
+  if (type == "hier") {
+    return dbChip::ChipType::HIER;
+  }
   logger->error(
       utl::ODB, 527, "3DBV Parser Error: Invalid chip type: {}", type);
 }
@@ -322,9 +326,8 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   }
   // Check if chiplet already exists
   auto chip = db_->findChip(chiplet.name.c_str());
-  auto chip_type = getChipType(chiplet.type, logger_);
   if (chip != nullptr) {
-    if (chip->getChipType() != chip_type
+    if (chip->getChipType() != getChipType(chiplet.type, logger_)
         || chip->getChipType() != dbChip::ChipType::HIER) {
       logger_->error(utl::ODB,
                      530,
@@ -333,7 +336,8 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     }
     // chiplet already exists, update it
   } else {
-    chip = dbChip::create(db_, tech, chiplet.name, chip_type);
+    chip = dbChip::create(
+        db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
   }
   if (tech != nullptr) {
     odb::dbStringProperty::create(chip, "3dblox_tech", tech->getName().c_str());
@@ -400,16 +404,18 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 static dbChipRegion::Side getChipRegionSide(const std::string& side,
                                             utl::Logger* logger)
 {
-  static const std::map<std::string, dbChipRegion::Side> side_map
-      = {{"front", dbChipRegion::Side::FRONT},
-         {"back", dbChipRegion::Side::BACK},
-         {"internal", dbChipRegion::Side::INTERNAL},
-         {"internal_ext", dbChipRegion::Side::INTERNAL_EXT}};
-
-  if (side_map.contains(side)) {
-    return side_map.at(side);
+  if (side == "front") {
+    return dbChipRegion::Side::FRONT;
   }
-
+  if (side == "back") {
+    return dbChipRegion::Side::BACK;
+  }
+  if (side == "internal") {
+    return dbChipRegion::Side::INTERNAL;
+  }
+  if (side == "internal_ext") {
+    return dbChipRegion::Side::INTERNAL_EXT;
+  }
   logger->error(
       utl::ODB, 528, "3DBV Parser Error: Invalid chip region side: {}", side);
 }
@@ -540,16 +546,15 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
 dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
   dbChip* chip = db_->findChip(design.name.c_str());
-  if (!chip) {
+  if (chip == nullptr) {
     chip = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
   }
-
-  if (!design.external.verilog_file.empty()
-      && !odb::dbProperty::find(chip, "verilog_file")) {
-    odb::dbStringProperty::create(
-        chip, "verilog_file", design.external.verilog_file.c_str());
+  if (!design.external.verilog_file.empty()) {
+    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
+      odb::dbStringProperty::create(
+          chip, "verilog_file", design.external.verilog_file.c_str());
+    }
   }
-
   db_->setTopChip(chip);
   return chip;
 }
@@ -587,14 +592,10 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
   // XY should be origin-based for hierarchical designs.
   // Z should be "low-point" based (starts at loc.z) to avoid overlap in
   // stacking.
-  Point3D adjustment(master_cuboid.lll().x(),
-                     master_cuboid.lll().y(),
-                     master_cuboid.lll().z());
-  Point3D adjusted_loc(
-      chip_inst.loc.x * db_->getDbuPerMicron() + adjustment.x(),
-      chip_inst.loc.y * db_->getDbuPerMicron() + adjustment.y(),
-      chip_inst.z * db_->getDbuPerMicron());
-  inst->setLoc(adjusted_loc);
+  const int dbu = db_->getDbuPerMicron();
+  inst->setOrigin(Point3D(chip_inst.loc.x * dbu,
+                          chip_inst.loc.y * dbu,
+                          chip_inst.z * dbu - master_cuboid.lll().z()));
 
   if (!chip_inst.external.verilog_file.empty()) {
     if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
@@ -648,10 +649,11 @@ dbChipRegionInst* ThreeDBlox::resolvePath(const std::string& path,
   // Replace the last part with just the chip instance name
   path_parts.back() = last_chip_inst;
 
-  // TODO: Traverse hierarchy and find region
+  // Traverse hierarchy and find region
   path_insts.reserve(path_parts.size());
   dbChip* curr_chip = db_->getChip();
   dbChipInst* curr_chip_inst = nullptr;
+
   for (const auto& inst_name : path_parts) {
     curr_chip_inst = curr_chip->findChipInst(inst_name);
     if (curr_chip_inst == nullptr) {
