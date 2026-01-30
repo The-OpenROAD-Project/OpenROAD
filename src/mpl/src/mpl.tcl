@@ -302,15 +302,23 @@ proc set_macro_halo { args } {
     utl::error MPL 38 "-halo is required."
   }
 
-  if { [llength $halo] != 2 } {
-    utl::error MPL 54 "-halo must be a list of 2 values."
+  set length [llength $halo]
+
+  if { length != 2 || length != 4 } {
+    utl::error MPL 54 "-halo must be a list of 2 or 4 values."
   }
 
-  lassign $halo width height
-  set width $width
-  set height $height
+  if { length == 2} {
+    lassign $halo left bottom
+    set right $left
+    set top $botom
+  }
 
-  mpl::set_macro_halo $macro $width $height
+  if { length == 4} {
+    lassign $halo left bottom right top
+  }
+
+  mpl::set_macro_halo $macro $left $bottom $right $top
 }
 
 namespace eval mpl {

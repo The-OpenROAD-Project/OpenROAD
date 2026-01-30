@@ -113,7 +113,7 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
 
 void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
 {
-  tree_->default_halo = {.width = halo_width, .height = halo_height};
+  tree_->default_halo = {halo_width, halo_height, halo_width, halo_height};
 }
 
 void HierRTLMP::setGuidanceRegions(
@@ -123,10 +123,12 @@ void HierRTLMP::setGuidanceRegions(
 }
 
 void HierRTLMP::setMacroHalo(odb::dbInst* macro,
-                             int halo_width,
-                             int halo_height)
+                             int left,
+                             int bottom,
+                             int right,
+                             int top)
 {
-  macro_to_halo_[macro] = {.width = halo_width, .height = halo_height};
+  macro_to_halo_[macro] = {left, bottom, right, top};
 }
 
 // Options related to clustering

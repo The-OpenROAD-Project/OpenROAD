@@ -656,13 +656,13 @@ HardMacro::HardMacro(odb::dbInst* inst, Halo halo)
   halo_ = halo;
 
   odb::dbMaster* master = inst->getMaster();
-  width_ = master->getWidth() + 2 * halo_.width;
-  height_ = master->getHeight() + 2 * halo.height;
+  width_ = master->getWidth() + halo_.left + halo_.right;
+  height_ = master->getHeight() + halo_.bottom + halo_.top;
 
   if (inst_->isFixed()) {
     const odb::Rect& box = inst->getBBox()->getBox();
-    x_ = box.xMin() - halo_.width;
-    y_ = box.yMin() - halo_.height;
+    x_ = box.xMin() - halo_.left;
+    y_ = box.yMin() - halo_.bottom;
     fixed_ = true;
   }
 
@@ -679,8 +679,8 @@ HardMacro::HardMacro(odb::dbInst* inst, Halo halo)
       }
     }
   }
-  pin_x_ = ((bbox.xMin() + bbox.xMax()) / 2) + halo_.width;
-  pin_y_ = ((bbox.yMin() + bbox.yMax()) / 2) + halo_.height;
+  pin_x_ = ((bbox.xMin() + bbox.xMax()) / 2) + (halo_.left + halo_.right) / 2;
+  pin_y_ = ((bbox.yMin() + bbox.yMax()) / 2) + (halo_.bottom + halo_.top) / 2;
 }
 
 bool HardMacro::operator<(const HardMacro& macro) const
@@ -762,8 +762,8 @@ void HardMacro::setRealLocation(const odb::Point& location)
     return;
   }
 
-  x_ = location.x() - halo_.width;
-  y_ = location.y() - halo_.height;
+  x_ = location.x() - halo_.left;
+  y_ = location.y() - halo_.bottom;
 }
 
 void HardMacro::setRealX(int x)
@@ -772,7 +772,7 @@ void HardMacro::setRealX(int x)
     return;
   }
 
-  x_ = x - halo_.width;
+  x_ = x - halo_.left;
 }
 
 void HardMacro::setRealY(int y)
@@ -781,32 +781,32 @@ void HardMacro::setRealY(int y)
     return;
   }
 
-  y_ = y - halo_.height;
+  y_ = y - halo_.bottom;
 }
 
 odb::Point HardMacro::getRealLocation() const
 {
-  return {x_ + halo_.width, y_ + halo_.height};
+  return {x_ + halo_.left, y_ + halo_.bottom};
 }
 
 int HardMacro::getRealX() const
 {
-  return x_ + halo_.width;
+  return x_ + halo_.left;
 }
 
 int HardMacro::getRealY() const
 {
-  return y_ + halo_.height;
+  return y_ + halo_.bottom;
 }
 
 int HardMacro::getRealWidth() const
 {
-  return width_ - 2 * halo_.width;
+  return width_ - 2 * halo_.left;
 }
 
 int HardMacro::getRealHeight() const
 {
-  return height_ - 2 * halo_.height;
+  return height_ - 2 * halo_.bottom;
 }
 
 int64_t HardMacro::getRealArea() const

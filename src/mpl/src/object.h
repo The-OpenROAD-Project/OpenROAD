@@ -246,8 +246,25 @@ class HardMacro
  public:
   struct Halo
   {
-    int width{0};
-    int height{0};
+    int left{0};
+    int bottom{0};
+    int right{0};
+    int top{0};
+
+    Halo() = default;
+
+    Halo(int left, int bottom, int right, int top)
+        : left(left), bottom(bottom), right(right), top(top)
+    {
+    }
+
+    Halo(odb::dbBox* def_halo)
+    {
+      left = def_halo->xMin();
+      bottom = def_halo->yMin();
+      right = def_halo->xMax();
+      top = def_halo->yMax();
+    }
   };
 
   HardMacro(const odb::Point& location,
@@ -307,6 +324,7 @@ class HardMacro
   std::string getMasterName() const;
 
  private:
+<<<<<<< HEAD
   std::string name_;
 
   // Lower-left corner:

@@ -305,7 +305,7 @@ void ClusteringEngine::reportDesignData()
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tHalo width: {:.2f}\n"
+      "\tHalo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
       "\tHalo height: {:.2f}\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
@@ -317,8 +317,10 @@ void ClusteringEngine::reportDesignData()
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(tree_->default_halo.width),
-      block_->dbuToMicrons(tree_->default_halo.height),
+      block_->dbuToMicrons(tree_->default_halo.left),
+      block_->dbuToMicrons(tree_->default_halo.bottom),
+      block_->dbuToMicrons(tree_->default_halo.right),
+      block_->dbuToMicrons(tree_->default_halo.top),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -2076,9 +2078,17 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo = macro_to_halo_.contains(inst)
-                                 ? macro_to_halo_.at(inst)
-                                 : tree_->default_halo;
+      HardMacro::Halo halo
+          = macro_to_halo_.contains(inst) ? macro_to_halo_.at(inst)
+            : inst->getHalo() != nullptr  ? HardMacro::Halo(inst->getHalo())
+                                          : tree_->default_halo;
+
+      logger_->report("MACRO {} HALO {} {} {} {}",
+                      inst->getName(),
+                      halo.left,
+                      halo.bottom,
+                      halo.right,
+                      halo.top);
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
