@@ -908,6 +908,7 @@ void RepairSetup::printProgress(const int iteration,
     // Re-collect violating endpoints if all phases ended
     if (end) {
       violator_collector_->collectViolatingEndpoints();
+      violator_collector_->collectViolatingStartpoints();
     }
     // Always calculate both startpoint and endpoint metrics for display
     Slack wns = violator_collector_->getWNS();          // WNS is same for both

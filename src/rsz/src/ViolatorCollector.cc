@@ -208,6 +208,7 @@ void ViolatorCollector::init(float slack_margin)
   slack_margin_ = slack_margin;
 
   collectViolatingEndpoints();
+  collectViolatingStartpoints();
 
   pin_data_.clear();
   violating_pins_.clear();
