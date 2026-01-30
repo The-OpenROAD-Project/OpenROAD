@@ -48,10 +48,12 @@ int LatencyBalancer::run()
                 33,
                 "Balancing latency for clock {}",
                 root_->getClock().getSdcName());
+  wireSegmentUnit_ = techChar_->getLengthUnit();
   initSta();
   findLeafBuilders(root_);
   buildGraph(root_->getTopInputNet());
   bufferDelay_ = computeBufferDelay(0);
+  computeBuffersDelay(0);
   balanceLatencies(0);
   logger_->info(CTS,
                 36,
@@ -109,6 +111,16 @@ sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
   }
 
   return max_rise_delay;
+}
+
+void LatencyBalancer::computeBuffersDelay(double extra_out_cap)
+{
+  std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
+  logger_->report("Buffer list = [");
+  for(const std::string& buffer : dlyBuffers) {
+    logger_->report("{} : {}", buffer, techChar_->computeBufferDelay(buffer, extra_out_cap) * std::pow(10, 14));
+    bufferDelays_.push_back(techChar_->computeBufferDelay(buffer, 0.0) * std::pow(10, 14));
+  }
 }
 
 void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
@@ -396,6 +408,46 @@ void LatencyBalancer::computeNumberOfDelayBuffers(int nodeId,
   }
 }
 
+int LatencyBalancer::computeNumberOfDelayBuffers(double delayNeeded,
+                                                  int srcX,
+                                                  int srcY)
+{
+  std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
+  int target = delayNeeded * std::pow(10, 14);
+  logger_->report("  target = {}", target);
+  std::vector<int> dp(target + 1, 0);
+  std::vector<int> dp_elements(target + 1, -1);
+  for(int w = 0; w <= target; w++) {
+    for(int i = 0; i < bufferDelays_.size(); i++) {
+      const int delay = bufferDelays_[i];
+      if(delay > w) {
+        continue;
+      }
+
+      if(dp[w] <= dp[w - delay] + delay) {
+        dp_elements[w] = i;
+        dp[w] = dp[w - delay] + delay;
+      }
+    }
+  }
+
+  std::cout<<"  Max achievable wiegth = "<<dp[target]<<std::endl;
+  std::cout<<"  Buffers used: [";
+  int w = dp[target];
+  std::vector<std::string> selectedBuffers;
+  while(w > 0) {
+    if(w == dp[target]){
+      std::cout<< dlyBuffers[dp_elements[w]];
+    } else {
+      std::cout<<", "<< dlyBuffers[dp_elements[w]];
+    }
+    selectedBuffers.push_back(dlyBuffers[dp_elements[w]]);
+    w -= bufferDelays_[dp_elements[w]];
+  }
+  std::cout<<"]"<<std::endl;
+  return selectedBuffers.size();
+}
+
 void LatencyBalancer::balanceLatencies(int nodeId)
 {
   GraphNode* node = &graph_[nodeId];
@@ -409,6 +461,7 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   // children
   std::vector<odb::dbITerm*> sinksInput;
   int previouBufToInsert = 0;
+  double previouDlyNeeded = 0;
   int srcX, srcY;
   if (node->inputTerm == nullptr) {
     odb::dbNet* rootNet = root_->getTopInputNet();
@@ -422,12 +475,18 @@ void LatencyBalancer::balanceLatencies(int nodeId)
 
   double maxArrival = std::numeric_limits<double>::min();
   std::map<int, std::vector<odb::dbITerm*>> buffersNeeded2Childern;
+  std::map<double, std::vector<odb::dbITerm*>> delyaNeeded2Childern;
   for (int child : node->childrenIds) {
     balanceLatencies(child);
+    if(graph_[child].arrival == 0.0) {
+      continue;
+    }
     computeNumberOfDelayBuffers(child, srcX, srcY);
     maxArrival = std::max(graph_[child].arrival, maxArrival);
     buffersNeeded2Childern[graph_[child].nBuffInsert].push_back(
         graph_[child].inputTerm);
+    double dlyNeeded = worseDelay_ - graph_[child].arrival;
+    delyaNeeded2Childern[dlyNeeded].push_back(graph_[child].inputTerm);
   }
 
   // If the children need a different amount of buffers insert this difference
@@ -453,6 +512,44 @@ void LatencyBalancer::balanceLatencies(int nodeId)
     sinksInput.push_back(delauBuffInput);
 
     previouBufToInsert = bufToInsert;
+  }
+  logger_->report("at node {}", node->name);
+  sinksInput.clear();
+  // If the children need a different amount of buffers insert this difference
+  for (auto& [dlyNeeded, children] :
+       std::ranges::reverse_view(delyaNeeded2Childern)) {
+    if (dlyNeeded == -1) {
+      continue;
+    }
+    std::cout<<" sinks [";
+    for(auto c : children) {
+      std::cout<<c->getInst()->getName()<<", ";
+    }
+    std::cout<<"]"<<std::endl;
+    logger_->report(" need {} delay", dlyNeeded);
+    if (!previouDlyNeeded) {
+      previouDlyNeeded = dlyNeeded;
+      sinksInput.clear();
+      sinksInput = std::move(children);
+      continue;
+    }
+
+    double dlyDiff = previouDlyNeeded - dlyNeeded;
+    logger_->report(" previous delay = {}", previouDlyNeeded);
+    logger_->report(" Has a {} dly diff with previous", dlyDiff);
+    int numBuffers = computeNumberOfDelayBuffers(dlyDiff, srcX, srcY);
+    if(!numBuffers) {
+      sinksInput.insert(sinksInput.end(), children.begin(), children.end());
+      logger_->report(" Not possible to insert buffers");
+      continue;
+    }
+    logger_->report(" dly buffers needed: {}", numBuffers);
+
+    sinksInput.clear();
+    sinksInput = std::move(children);
+    //sinksInput.push_back(delauBuffInput);
+
+    previouDlyNeeded = dlyNeeded;
   }
 
   node->nBuffInsert = previouBufToInsert;
