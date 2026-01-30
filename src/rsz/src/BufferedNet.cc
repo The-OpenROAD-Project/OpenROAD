@@ -973,8 +973,7 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
 
 bool BufferedNet::fitsEnvelope(Metrics target)
 {
-  return maxLoadWireLength() <= target.max_load_wl && slack() >= target.slack
-         && sta::fuzzyLessEqual(cap(), target.cap)
+  return slack() >= target.slack && sta::fuzzyLessEqual(cap(), target.cap)
          && sta::fuzzyGreaterEqual(maxLoadSlew(), target.max_load_slew)
          && sta::fuzzyLessEqual(fanout(), target.fanout);
 }

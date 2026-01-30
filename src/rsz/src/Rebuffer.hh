@@ -116,7 +116,7 @@ class Rebuffer : public sta::dbStaState
                                         float best_cap);
 
   float findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell);
-  void characterizeBufferLimits();
+  void characterizeBuffers();
 
   struct BufferSize
   {
@@ -124,7 +124,14 @@ class Rebuffer : public sta::dbStaState
     FixedDelay intrinsic_delay;
     float margined_max_cap;
     float driver_resistance;
+    float long_wire_spacing;
+    float long_wire_delay_per_meter;
+    float long_wire_delay_per_farad;
+    float input_cap;
   };
+
+  sta::Delay characterizationDelay(BufferSize& size, float load_cap);
+  void findLongWireOptimum(Rebuffer::BufferSize& size);
 
   bool bufferSizeCanDriveLoad(const BufferSize& size,
                               const BufferedNetPtr& bnet,
@@ -164,9 +171,8 @@ class Rebuffer : public sta::dbStaState
   const sta::MinMax* min_ = sta::MinMax::min();
   const sta::MinMax* max_ = sta::MinMax::max();
 
-  // Elmore factor for 20-80% slew thresholds.
-  static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr float relaxation_factor_ = 0.01;
+  static constexpr float delay_shape_factor_ = 0.69;
 
   double long_wire_stepping_runtime_ = 0;
 

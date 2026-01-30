@@ -5,6 +5,7 @@ or_integration_tests(
     repair_fanout1_hier
     repair_fanout2_hier
     repair_fanout3_hier      
+    repair_setup2
     buffer_ports1
     buffer_ports3
     buffer_ports4
@@ -191,7 +192,5 @@ or_integration_tests(
   PASSFAIL_TESTS
     cpp_tests
 )
-
-#repair_setup2
 
 add_subdirectory(cpp)

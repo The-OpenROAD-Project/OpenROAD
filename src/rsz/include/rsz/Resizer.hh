@@ -769,6 +769,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isRegister(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
 
+  void computeSlewShapeFactor();
+  ////////////////////////////////////////////////////////////////
+
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
@@ -891,6 +894,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<SizeUpMatchMove> size_up_match_move_;
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
+
+  // For Elmore slew modeling, see computeSlewShapeFactor()
+  float slew_shape_factor_ = 0.0;
 
   friend class BufferedNet;
   friend class GateCloner;
