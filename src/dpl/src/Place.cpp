@@ -58,6 +58,63 @@ std::string Opendp::printBgBox(
                      queryBox.max_corner().y());
 }
 
+bool Opendp::M1Missaligned(Node* cell) 
+{
+  auto inst = cell->getDbInst();
+  std::string master_name = inst->getMaster()->getName();
+  bool isEEQ = master_name.size() > 4 && master_name.substr(master_name.size() - 4) == "_EEQ";
+  int site_witdh = 480;
+
+  const bool alignment_swapped = (inst->getOrient() == dbOrientType::R180 || inst->getOrient() == dbOrientType::MY);
+  int width = inst->getMaster()->getWidth()/site_witdh;
+  inst->getITerms();
+
+  const bool bad_mirror = alignment_swapped && (width % 2 == 0);
+
+  int site = cell->getLeft().v/site_witdh;
+
+  bool swap = (site % 2) == 0;
+  if (bad_mirror) {
+    swap = !swap;
+  }
+  if (isEEQ) {
+    swap = !swap;
+  }
+  return swap;
+}
+
+void Opendp::eeqSwap(odb::dbInst* db_inst) 
+{
+  
+  std::string master_name = db_inst->getMaster()->getName();
+  if (master_name.size() > 4 && master_name.substr(master_name.size() - 4) == "_EEQ") {
+    master_name = master_name.substr(0, master_name.size() - 4);
+  } else {      
+    master_name += "_EEQ";
+  }
+  odb::dbMaster* new_master = db_->findMaster(master_name.c_str());
+  if (new_master == nullptr) {
+    return;
+  }
+  if (!db_inst->swapMaster(new_master)) {
+    logger_->error(DPL, 9986, "Could not swap {} to master {}", db_inst->getName(), master_name);
+  }
+}
+
+void Opendp::fixParity()
+{
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    // inst->get
+    if (!M1Missaligned(cell.get())) {
+      continue;
+    }
+    eeqSwap(cell->getDbInst());
+  }
+}
+
 void Opendp::detailedPlacement()
 {
   if (debug_observer_) {
@@ -83,6 +140,7 @@ void Opendp::detailedPlacement()
   }
 
   place();
+  fixParity();
 
   if (debug_observer_) {
     logger_->report("Pause after detail placement.");
