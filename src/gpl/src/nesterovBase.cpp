@@ -1891,7 +1891,7 @@ NesterovBase::NesterovBase(
   log_ = log;
   log_->info(GPL,
              33,
-             "Initializing Nesterov region: {}",
+             "---- Initialize Nesterov Region: {}",
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level");
 
   // Set a fixed seed

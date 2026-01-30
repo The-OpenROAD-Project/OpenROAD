@@ -217,6 +217,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
+  utl::Logger* getLogger() { return logger_; }
+
   // Sanity checkers
   int checkSanity();
   void checkSanityNetlistConsistency() const;

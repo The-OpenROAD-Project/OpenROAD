@@ -2601,11 +2601,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
   // Start incremental global routing if global routing parasitics are being
   // used.
   if (parasitics_src == est::ParasiticsSrc::global_routing) {
-    const bool save_guides = false;
-    const bool start_incremental = true;
-    const bool end_incremental = false;
-    global_router_->globalRoute(
-        save_guides, start_incremental, end_incremental);
+    global_router_->startIncremental();
   }
 
   repair_design_->repairDesign(max_wire_length_,
@@ -2627,11 +2623,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 
   // End incremental global routing if global routing parasitics were used.
   if (parasitics_src == est::ParasiticsSrc::global_routing) {
-    const bool save_guides = false;
-    const bool start_incremental = false;
-    const bool end_incremental = true;
-    global_router_->globalRoute(
-        save_guides, start_incremental, end_incremental);
+    global_router_->endIncremental();
   } else {
     // Fully rebuffer doesn't work with global routing parasitics.
     // TODO: fix the function to understand the parasitics from the global
