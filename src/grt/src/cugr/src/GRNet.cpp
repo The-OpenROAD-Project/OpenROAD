@@ -20,6 +20,8 @@ GRNet::GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph)
   const int numPins = baseNet.getNumPins();
   pin_access_points_.resize(numPins);
   layer_range_ = baseNet.getLayerRange();
+  slack_ = 0;
+  is_critical_ = false;
 
   int pin_index = 0;
   for (CUGRPin& pin : baseNet.getPins()) {

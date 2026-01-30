@@ -560,11 +560,11 @@ void Verilog2db::makeChildInsts(Instance* inst,
       Cell* cell = network_->cell(child);
       dbMaster* master = getMaster(cell);
       if (master == nullptr) {
-        logger_->warn(ORD,
-                      2013,
-                      "instance {} LEF master {} not found.",
-                      child_name,
-                      network_->name(cell));
+        logger_->error(ORD,
+                       2013,
+                       "instance {} LEF master {} not found.",
+                       child_name,
+                       network_->name(cell));
         continue;
       }
 

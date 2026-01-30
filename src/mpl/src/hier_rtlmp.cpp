@@ -3096,16 +3096,24 @@ void Snapper::attemptSnapToExtraPatterns(
     }
   }
 
-  if (best_snapped_pins != total_pins) {
-    reportUnalignedPins(layers_data_list, target_direction);
-  }
-
   snapPinToPosition(snap_pin, positions[best_index], target_direction);
+
+  if (best_snapped_pins != total_pins) {
+    totalAlignedPins(layers_data_list, target_direction, true);
+
+    logger_->warn(MPL,
+                  2,
+                  "Could not align all pins of the macro {} to the track-grid. "
+                  "{} out of {} pins were aligned.",
+                  inst_->getName(),
+                  best_snapped_pins,
+                  total_pins);
+  }
 }
 
 int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
                               const odb::dbTechLayerDir& direction,
-                              bool report_unaligned_pins)
+                              bool error_unaligned_right_way_on_grid)
 {
   int pins_aligned = 0;
 
@@ -3125,22 +3133,14 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
         pins_aligned++;
         i++;
       } else if (pin_centers[i] < data.available_positions[j]) {
-        if (report_unaligned_pins) {
-          if (data.track_grid->getTechLayer()->isRightWayOnGridOnly()) {
-            logger_->error(MPL,
-                           5,
-                           "Couldn't align pin {} from the RightWayOnGridOnly "
-                           "layer {} with the track-grid.",
-                           data.pins[i]->getName(),
-                           data.track_grid->getTechLayer()->getName());
-          } else {
-            logger_->warn(
-                MPL,
-                2,
-                "Couldn't align pin {} from layer {} to the track-grid.",
-                data.pins[i]->getName(),
-                data.track_grid->getTechLayer()->getName());
-          }
+        if (error_unaligned_right_way_on_grid
+            && data.track_grid->getTechLayer()->isRightWayOnGridOnly()) {
+          logger_->error(MPL,
+                         5,
+                         "Couldn't align pin {} from the RightWayOnGridOnly "
+                         "layer {} with the track-grid.",
+                         data.pins[i]->getName(),
+                         data.track_grid->getTechLayer()->getName());
         }
 
         i++;
@@ -3150,12 +3150,6 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
     }
   }
   return pins_aligned;
-}
-
-void Snapper::reportUnalignedPins(const LayerDataList& layers_data_list,
-                                  const odb::dbTechLayerDir& direction)
-{
-  totalAlignedPins(layers_data_list, direction, true);
 }
 
 void Snapper::alignWithManufacturingGrid(int& origin)
