@@ -60,17 +60,17 @@ num of nets :        411
 num of special nets: 2
 gcell grid:          41 x 41 x 6
 stage 1: pattern routing
-113 / 411 nets have overflow.
+105 / 411 nets have overflow.
 stage 2: pattern routing with possible detours
-60 / 411 nets have overflow.
+63 / 411 nets have overflow.
 stage 3: maze routing on sparsified routing graph
-18 / 411 nets have overflow.
+19 / 411 nets have overflow.
 routing statistics
-wire length (metric):  61974
-total via count:       3303
+wire length (metric):  62545
+total via count:       3294
 total wire overflow:   0
-min resource: -0.8472222222222232
-bottleneck:   (3, 17, 9)
-[INFO GRT-0018] Total wirelength: 31096 um
+min resource: -0.9861111111111116
+bottleneck:   (3, 20, 27)
+[INFO GRT-0018] Total wirelength: 31291 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.

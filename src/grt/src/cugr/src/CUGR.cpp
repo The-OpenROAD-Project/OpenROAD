@@ -358,7 +358,7 @@ void CUGR::sortNetIndices(std::vector<int>& netIndices) const
            < std::tie(net_slacks[rhs], halfParameters[rhs]);
   };
 
-  std::ranges::sort(netIndices, compareSlackAndHPWL);
+  std::ranges::stable_sort(netIndices, compareSlackAndHPWL);
 }
 
 void CUGR::getGuides(const GRNet* net,
