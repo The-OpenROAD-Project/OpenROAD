@@ -76,24 +76,35 @@ void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
   }
 }
 
+void GRNet::addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap)
+{
+  bterm_to_ap_[bterm] = ap;
+}
+
+void GRNet::addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap)
+{
+  iterm_to_ap_[iterm] = ap;
+}
+
 bool GRNet::isLocal() const
 {
+  bool is_local = true;
   PointT first_ap = iterm_to_ap_.begin()->second.point;
   for (const auto& ap : iterm_to_ap_) {
     const PointT& ap_pos = ap.second.point;
     if (ap_pos != first_ap) {
-      return false;
+      is_local = false;
     }
   }
 
   for (const auto& ap : bterm_to_ap_) {
     const PointT& ap_pos = ap.second.point;
     if (ap_pos != first_ap) {
-      return false;
+      is_local = false;
     }
   }
 
-  return true;
+  return is_local;
 }
 
 }  // namespace grt
