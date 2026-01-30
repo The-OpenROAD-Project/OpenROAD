@@ -55,6 +55,7 @@ class GRNet
   {
     return iterm_to_ap_;
   }
+  bool isLocal() const;
 
  private:
   int index_;

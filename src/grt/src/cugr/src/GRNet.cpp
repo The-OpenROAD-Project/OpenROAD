@@ -76,4 +76,24 @@ void GRNet::addPreferredAccessPoint(int pin_index, const AccessPoint& ap)
   }
 }
 
+bool GRNet::isLocal() const
+{
+  PointT first_ap = iterm_to_ap_.begin()->second.point;
+  for (const auto& ap : iterm_to_ap_) {
+    const PointT& ap_pos = ap.second.point;
+    if (ap_pos != first_ap) {
+      return false;
+    }
+  }
+
+  for (const auto& ap : bterm_to_ap_) {
+    const PointT& ap_pos = ap.second.point;
+    if (ap_pos != first_ap) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  // namespace grt
