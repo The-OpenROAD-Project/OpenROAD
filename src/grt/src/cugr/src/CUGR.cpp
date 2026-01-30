@@ -167,6 +167,11 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
     return;
   }
   logger_->report("stage 2: pattern routing with possible detours");
+
+  if (critical_nets_percentage_ != 0) {
+    calculatePartialSlack();
+  }
+
   // (2d) direction -> x -> y -> has overflow?
   GridGraphView<bool> congestionView;
   grid_graph_->extractCongestionView(congestionView);
@@ -193,6 +198,11 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
     return;
   }
   logger_->report("stage 3: maze routing on sparsified routing graph");
+
+  if (critical_nets_percentage_ != 0) {
+    calculatePartialSlack();
+  }
+
   for (const int netIndex : netIndices) {
     grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(),
                             /*ripup*/ true);
