@@ -1008,6 +1008,8 @@ bool RepairSetup::terminateProgress(const int iteration,
                  1,
                  "{}{} Phase: Exiting at iteration {} because incr fix rate "
                  "{:0.2f}% is < {:0.2f}% [endpoint {}/{}]",
+                 phase_name,
+                 phase_marker,
                  iteration,
                  inc_fix_rate * 100,
                  fix_rate_threshold * 100,
