@@ -13,6 +13,7 @@
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
+#include "TechChar.h"
 #include "Util.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"
@@ -53,7 +54,7 @@ class LatencyBalancer
                   sta::dbNetwork* network,
                   sta::dbSta* sta,
                   odb::dbMaster* delayBufMaster,
-                  double scalingUnit,
+                  TechChar* techChar,
                   double capPerDBU)
       : root_(root),
         options_(options),
@@ -62,7 +63,7 @@ class LatencyBalancer
         network_(network),
         openSta_(sta),
         delayBufMaster_(delayBufMaster),
-        wireSegmentUnit_(scalingUnit),
+        techChar_(techChar),
         capPerDBU_(capPerDBU),
         worseDelay_(std::numeric_limits<float>::min())
   {
@@ -74,6 +75,7 @@ class LatencyBalancer
  private:
   void initSta();
   void findLeafBuilders(TreeBuilder* builder);
+  void computeBuffersDelay(double extra_out_cap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -86,6 +88,7 @@ class LatencyBalancer
                                unsigned& numSinks);
 
   void computeNumberOfDelayBuffers(int nodeId, int srcX, int srcY);
+  int computeNumberOfDelayBuffers(double delayNeeded,int srcX, int srcY);
   // DFS search throw the tree graph to insert delay buffers. At each node,
   // evaluate the delay of the its children, if the children need delay buffers
   // and need different ammount of delay buffers, isert this difference, to the
@@ -109,11 +112,13 @@ class LatencyBalancer
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timingGraph_ = nullptr;
   odb::dbMaster* delayBufMaster_ = nullptr;
+  TechChar* techChar_ = nullptr;
   double wireSegmentUnit_;
   float bufferDelay_;
   double capPerDBU_;
   float worseDelay_;
   int delayBufIndex_{0};
+  std::vector<int> bufferDelays_;
   std::vector<GraphNode> graph_;
   std::map<std::string, TreeBuilder*> inst2builder_;
 };
