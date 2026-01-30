@@ -2493,41 +2493,41 @@ void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
 
-  auto macro_insts
-      = std::views::filter(block_->getInsts(), &odb::dbInst::isBlock);
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock()) {
+      if (inst->isFixed()) {
+        logger_->info(MPL, 62, "Found fixed macro {}.", inst->getName());
 
-  for (odb::dbInst* inst : macro_insts) {
-    if (inst->isFixed()) {
-      logger_->info(MPL, 62, "Found fixed macro {}.", inst->getName());
+        if (!inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
+          addIgnorableMacro(inst);
+          logger_->info(MPL,
+                        63,
+                        "{} is outside the macro placement area and will be "
+                        "ignored.",
+                        inst->getName());
+          continue;
+        }
 
-      if (!inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
-        addIgnorableMacro(inst);
-        logger_->info(MPL,
-                      63,
-                      "{} is outside the macro placement area and will be "
-                      "ignored.",
-                      inst->getName());
-        continue;
+        tree_->has_fixed_macros = true;
       }
 
-      tree_->has_fixed_macros = true;
+      HardMacro::Halo halo = macro_to_halo_.contains(inst)
+                                 ? macro_to_halo_.at(inst)
+                                 : tree_->default_halo;
+
+      auto macro = std::make_unique<HardMacro>(inst, halo);
+
+      if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
+        logger_->error(
+            MPL,
+            6,
+            "Found macro that does not fit in the core.\nName: {}\n{}",
+            inst->getName(),
+            generateMacroAndCoreDimensionsTable(macro.get(), core));
+      }
+
+      tree_->maps.inst_to_hard[inst] = std::move(macro);
     }
-
-    HardMacro::Halo halo = macro_to_halo_.contains(inst)
-                               ? macro_to_halo_.at(inst)
-                               : tree_->default_halo;
-
-    auto macro = std::make_unique<HardMacro>(inst, halo);
-
-    if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
-      logger_->error(MPL,
-                     6,
-                     "Found macro that does not fit in the core.\nName: {}\n{}",
-                     inst->getName(),
-                     generateMacroAndCoreDimensionsTable(macro.get(), core));
-    }
-
-    tree_->maps.inst_to_hard[inst] = std::move(macro);
   }
 }
 
