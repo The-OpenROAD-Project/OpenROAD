@@ -117,6 +117,14 @@ float CUGR::getNetSlack(odb::dbNet* net)
   return slack;
 }
 
+void CUGR::setInitialNetSlacks()
+{
+  for (const auto& net : gr_nets_) {
+    float slack = getNetSlack(net->getDbNet());
+    net->setSlack(slack);
+  }
+}
+
 void CUGR::updateOverflowNets(std::vector<int>& netIndices)
 {
   netIndices.clear();
@@ -132,6 +140,11 @@ void CUGR::updateOverflowNets(std::vector<int>& netIndices)
 void CUGR::patternRoute(std::vector<int>& netIndices)
 {
   logger_->report("stage 1: pattern routing");
+
+  if (critical_nets_percentage_ != 0) {
+    setInitialNetSlacks();
+  }
+
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
     PatternRoute patternRoute(gr_nets_[netIndex].get(),

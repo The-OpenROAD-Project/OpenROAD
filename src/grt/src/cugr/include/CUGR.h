@@ -95,6 +95,7 @@ class CUGR
  private:
   float calculatePartialSlack();
   float getNetSlack(odb::dbNet* net);
+  void setInitialNetSlacks();
   void updateOverflowNets(std::vector<int>& netIndices);
   void patternRoute(std::vector<int>& netIndices);
   void patternRouteWithDetours(std::vector<int>& netIndices);
