@@ -1330,13 +1330,9 @@ dbInst* dbInst::create(dbBlock* block_,
 
   if (region) {
     region->addInst((dbInst*) inst_impl);
-    for (dbBlockCallBackObj* cb : block->callbacks_) {
-      cb->inDbInstCreate((dbInst*) inst_impl, region);
-    }
-  } else {
-    for (dbBlockCallBackObj* cb : block->callbacks_) {
-      cb->inDbInstCreate((dbInst*) inst_impl);
-    }
+  }
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
+    cb->inDbInstCreate((dbInst*) inst_impl);
   }
 
   for (int i = 0; i < mterm_cnt; ++i) {

@@ -103,11 +103,6 @@ void PinDensityDataSource::inDbInstCreate(odb::dbInst*)
   destroyMap();
 }
 
-void PinDensityDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
-{
-  destroyMap();
-}
-
 void PinDensityDataSource::inDbInstDestroy(odb::dbInst*)
 {
   destroyMap();

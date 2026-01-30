@@ -664,11 +664,6 @@ void BrowserWidget::inDbInstCreate(odb::dbInst*)
   markModelModified();
 }
 
-void BrowserWidget::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
-{
-  markModelModified();
-}
-
 void BrowserWidget::inDbInstDestroy(odb::dbInst*)
 {
   markModelModified();

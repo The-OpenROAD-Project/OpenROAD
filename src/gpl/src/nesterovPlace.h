@@ -71,7 +71,7 @@ class NesterovPlace
   void resizeGCell(odb::dbInst*);
   void moveGCell(odb::dbInst*);
 
-  void createCbkGCell(odb::dbInst*, odb::dbRegion*);
+  void createCbkGCell(odb::dbInst*);
   void createGNet(odb::dbNet*);
   void createCbkITerm(odb::dbITerm*);
 
@@ -183,7 +183,6 @@ class nesterovDbCbk : public odb::dbBlockCallBackObj
   nesterovDbCbk(NesterovPlace* nesterov_place_);
 
   void inDbInstCreate(odb::dbInst*) override;
-  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
   void inDbInstDestroy(odb::dbInst*) override;
 
   void inDbITermCreate(odb::dbITerm*) override;

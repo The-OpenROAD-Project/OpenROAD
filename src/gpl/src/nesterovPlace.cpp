@@ -1248,10 +1248,12 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 {
 }
 
-void NesterovPlace::createCbkGCell(odb::dbInst* db_inst, odb::dbRegion* region)
+void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 {
   // Always create gcell on top-level
   auto gcell_index = nbc_->createCbkGCell(db_inst);
+
+  odb::dbRegion* region = db_inst->getRegion();
   if (!region) {
     nbVec_[0]->createCbkGCell(db_inst, gcell_index);
     return;
@@ -1365,13 +1367,7 @@ void nesterovDbCbk::inDbPostMoveInst(odb::dbInst* db_inst)
 
 void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst)
 {
-  nesterov_place_->createCbkGCell(db_inst, nullptr);
-}
-
-// TODO: use the region to create new gcell.
-void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
-{
-  nesterov_place_->createCbkGCell(db_inst, region);
+  nesterov_place_->createCbkGCell(db_inst);
 }
 
 void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)
