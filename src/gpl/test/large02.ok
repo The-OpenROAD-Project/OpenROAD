@@ -133,7 +133,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.7067
 [INFO GPL-1008]     - For 80% usage of free space: 0.7950
 [INFO GPL-1014] Final placement area: 820485.73 (+0.00%)
-Differences found at line 852.
-    - FE_DBTC0_n442065 INV_X1 + SOURCE TIMING + PLACED ( 1563254 1800060 ) FS ;
-    - FE_DBTC0_n442065 INV_X1 + SOURCE TIMING + PLACED ( 1741940 1960775 ) FS ;
+No differences found.
 final hpwl: 11963763272
