@@ -269,6 +269,12 @@ class Cluster
 class HardMacro
 {
  public:
+  struct Halo
+  {
+    int width = 0;
+    int height = 0;
+  };
+
   // Create a macro with specified size
   // Model fixed terminals
   HardMacro(const odb::Point& location,
@@ -281,7 +287,7 @@ class HardMacro
   HardMacro(int width, int height, const std::string& name);
 
   // create a macro from dbInst
-  HardMacro(odb::dbInst* inst, int halo_width = 0, int halo_height = 0);
+  HardMacro(odb::dbInst* inst, Halo halo);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -294,7 +300,7 @@ class HardMacro
   bool isClusterOfUnconstrainedIOPins() const;
 
   // Get Physical Information
-  // Note that the default X and Y include halo_width
+  // Note that the default X and Y include halo
   void setLocation(const odb::Point& location);
   void setX(int x);
   void setY(int y);
@@ -307,14 +313,14 @@ class HardMacro
   // The position of pins relative to the origin of the canvas;
   int getAbsPinX() const { return pin_x_; }
   int getAbsPinY() const { return pin_y_; }
-  // width, height (include halo_width)
+  // width, height (includes halo)
   int getWidth() const { return width_; }
   int getHeight() const { return height_; }
   int64_t getArea() const { return width_ * static_cast<int64_t>(height_); }
   odb::Rect getBBox() const;
   bool isFixed() const { return fixed_; }
 
-  // Note that the real X and Y does NOT include halo_width
+  // Note that the real X and Y does NOT include halo
   void setRealLocation(const odb::Point& location);
   void setRealX(int x);
   void setRealY(int y);
@@ -337,13 +343,12 @@ class HardMacro
   // We define x_, y_ and orientation_ here
   // to avoid keep updating OpenDB during simulated annealing
   // Also enable the multi-threading
-  int x_ = 0;            // lower left corner
-  int y_ = 0;            // lower left corner
-  int halo_width_ = 0;   // halo width
-  int halo_height_ = 0;  // halo height
-  int width_ = 0;        // width_ = macro_width + 2 * halo_width
-  int height_ = 0;       // height_ = macro_height + 2 * halo_width
-  std::string name_;     // macro name
+  int x_ = 0;  // lower left corner
+  int y_ = 0;  // lower left corner
+  Halo halo_;
+  int width_ = 0;     // width_ = macro_width + 2 * halo_.width
+  int height_ = 0;    // height_ = macro_height + 2 * halo_.height
+  std::string name_;  // macro name
   odb::dbOrientType orientation_ = odb::dbOrientType::R0;
 
   // we assume all the pins locate at the center of all pins

@@ -793,6 +793,34 @@ get_clock_buffer_footprint_cmd()
   return resizer->getClockBufferFootprint().c_str();
 }
 
+void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const Corner *corner)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  std::map<const Pin*, float> load_pin_slew;
+  
+  ArcDelay old_delay[RiseFall::index_count];
+  ArcDelay new_delay[RiseFall::index_count];
+  Slew old_drvr_slew[RiseFall::index_count];
+  Slew new_drvr_slew[RiseFall::index_count];
+  float old_cap, new_cap;
+  if (!resizer->computeNewDelaysSlews(drvr_pin,
+                                      buffer_instance,
+                                      corner,
+                                      old_delay,
+                                      new_delay,
+                                      old_drvr_slew,
+                                      new_drvr_slew,
+                                      old_cap,
+                                      new_cap)) {  
+    return;
+  }
+  (void) resizer->estimateSlewsAfterBufferRemoval
+    (drvr_pin, buffer_instance, std::max(new_drvr_slew[RiseFall::riseIndex()],
+                                         new_drvr_slew[RiseFall::fallIndex()]),
+     corner, load_pin_slew);
+}
+
 } // namespace
 
 %} // inline

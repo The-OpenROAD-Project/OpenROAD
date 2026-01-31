@@ -198,6 +198,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                                  bool exclude_buffers,
                                  bool exclude_inverters) const;
 
+  utl::Logger* getLogger() { return logger_; }
+
   // Sanity checkers
   int checkSanity();
   void checkSanityNetlistConsistency() const;
