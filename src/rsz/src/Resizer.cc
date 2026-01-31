@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -117,10 +118,8 @@ using sta::ArcDelayCalc;
 using sta::BfsBkwdIterator;
 using sta::BfsFwdIterator;
 using sta::BfsIndex;
-using sta::BufferUse;
 using sta::ClkArrivalSearchPred;
 using sta::Clock;
-using sta::CLOCK;
 using sta::ConcreteLibraryCellIterator;
 using sta::Corner;
 using sta::Corners;
@@ -5599,9 +5598,10 @@ static bool containsIgnoreCase(const std::string& str,
                                const std::string& substr)
 {
   auto it = std::ranges::search(str, substr, [](char a, char b) {
-    return std::tolower(a) == std::tolower(b);
+    return std::tolower(static_cast<unsigned char>(a))
+           == std::tolower(static_cast<unsigned char>(b));
   });
-  return it != str.end();
+  return !it.empty();  // Check if subrange is non-empty
 }
 
 void Resizer::setClockBufferString(const std::string& clk_str)

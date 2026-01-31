@@ -80,7 +80,8 @@ proc set_cts_config { args } {
       set clk_str $keys(-clock_buffer_string)
       rsz::set_clock_buffer_string_cmd $clk_str
     } else {
-      utl::error CTS 133 "-clock_buffer_string cannot be set because -clock_buffer_footprint is already defined."
+      utl::error CTS 133 "-clock_buffer_string cannot be set because\
+        -clock_buffer_footprint is already defined."
     }
   }
   if { [info exists keys(-clock_buffer_footprint)] } {
@@ -88,7 +89,8 @@ proc set_cts_config { args } {
       set footprint $keys(-clock_buffer_footprint)
       rsz::set_clock_buffer_footprint_cmd $footprint
     } else {
-      utl::error CTS 134 "-clock_buffer_footprint cannot be set because -clock_buffer_string is already defined."
+      utl::error CTS 134 "-clock_buffer_footprint cannot be set because\
+        -clock_buffer_string is already defined."
     }
   }
   if { [info exists keys(-branching_point_buffers_distance)] } {

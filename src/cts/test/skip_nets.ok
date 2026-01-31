@@ -7,6 +7,8 @@
 CTS config:
 -apply_ndr:                          HALF
 -buf_list:                           CLKBUF_X3 
+-clock_buffer_footprint:             unset
+-clock_buffer_string:                unset
 -branching_point_buffers_distance:   480000
 -clustering_exponent:                4
 -clustering_unbalance_ratio:         0.6
