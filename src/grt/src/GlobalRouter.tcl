@@ -174,6 +174,8 @@ proc global_route { args } {
     utl::error GRT 52 "Missing dbBlock."
   }
 
+  grt::set_use_cugr [info exists flags(-use_cugr)]
+
   grt::set_verbose [info exists flags(-verbose)]
 
   if { [info exists keys(-grid_origin)] } {
@@ -213,8 +215,6 @@ proc global_route { args } {
     sta::check_percent "-critical_nets_percentage" $percentage
     grt::set_critical_nets_percentage $percentage
   }
-
-  grt::set_use_cugr [info exists flags(-use_cugr)]
 
   if { [info exists keys(-skip_large_fanout_nets)] } {
     set fanout $keys(-skip_large_fanout_nets)

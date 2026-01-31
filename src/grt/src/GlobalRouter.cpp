@@ -370,6 +370,7 @@ void GlobalRouter::globalRoute(bool save_guides)
       cugr_->route();
       routes_ = cugr_->getRoutes();
       updatePinAccessPoints();
+      addRemainingGuides(routes_, nets, min_layer, max_layer);
     } else {
       if (verbose_) {
         reportResources();
