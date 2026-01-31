@@ -165,10 +165,8 @@ bool RDLRoute::isIntersecting(RDLRoute* other, int extent) const
 
   // check intersection with routed other
   for (const auto& pt : other->getRoutePoints()) {
-    const odb::Rect rect(
-        pt.x() - margin, pt.y() - margin, pt.x() + margin, pt.y() + margin);
-
-    if (boost::geometry::intersects(line_segment, rect)) {
+    if (boost::geometry::intersects(
+            line_segment, RDLRoute::getPointObstruction(pt, margin))) {
       return true;
     }
   }
@@ -185,10 +183,8 @@ bool RDLRoute::isIntersecting(const odb::Line& line, int extent) const
   const std::vector<odb::Point> line_segment = line.getPoints();
 
   for (const auto& pt : route_pts_) {
-    const odb::Rect rect(
-        pt.x() - extent, pt.y() - extent, pt.x() + extent, pt.y() + extent);
-
-    if (boost::geometry::intersects(line_segment, rect)) {
+    if (boost::geometry::intersects(
+            line_segment, RDLRoute::getPointObstruction(pt, extent))) {
       return true;
     }
   }
@@ -202,12 +198,7 @@ bool RDLRoute::isIntersecting(const odb::Point& point, int extent) const
     return false;
   }
 
-  extent /= 2;
-
-  const odb::Rect point_rect(point.x() - extent,
-                             point.y() - extent,
-                             point.x() + extent,
-                             point.y() + extent);
+  const odb::Rect point_rect = RDLRoute::getPointObstruction(point, extent);
 
   for (const auto& pt : route_pts_) {
     const odb::Rect rect(
@@ -219,6 +210,40 @@ bool RDLRoute::isIntersecting(const odb::Point& point, int extent) const
   }
 
   return false;
+}
+
+odb::Rect RDLRoute::getPointObstruction(const odb::Point& pt, int dist)
+{
+  return odb::Rect(pt.x() - dist, pt.y() - dist, pt.x() + dist, pt.y() + dist);
+}
+
+odb::Polygon RDLRoute::getEdgeObstruction(const odb::Point& pt0,
+                                          const odb::Point& pt1,
+                                          int dist)
+{
+  const odb::Oct check_oct(pt0, pt1, 2 * dist);
+
+  std::vector<odb::Point> points = check_oct.getPoints();
+
+  if (check_oct.getDir() == odb::Oct::RIGHT) {
+    points[1].setX(check_oct.getCenterLow().x() + dist);
+    points[2].setY(check_oct.getCenterHigh().y() - dist);
+    points[5].setX(check_oct.getCenterHigh().x() - dist);
+    points[6].setY(check_oct.getCenterLow().y() + dist);
+  } else {
+    points[3].setY(check_oct.getCenterLow().y() + dist);
+    points[4].setX(check_oct.getCenterHigh().x() + dist);
+    points[7].setY(check_oct.getCenterHigh().y() - dist);
+    points[8].setX(check_oct.getCenterLow().x() - dist);
+    points[0] = points[8];
+  }
+
+  return points;
+}
+
+bool RDLRoute::is45DegreeEdge(const odb::Point& pt0, const odb::Point& pt1)
+{
+  return pt0.x() != pt1.x() && pt0.y() != pt1.y();
 }
 
 bool RDLRoute::contains(const odb::Point& pt) const

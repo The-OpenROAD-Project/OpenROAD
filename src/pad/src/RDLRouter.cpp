@@ -892,13 +892,14 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
   TerminalAccess access;
 
   // Remove snap points that would cause a violation
-  //   insersects another route
+  //   intersects another route
+  const int extent = (spacing_ + width_) / 2;
   std::set<odb::Point> snap_pts = target.grid_access;
   for (auto snap_itr = snap_pts.begin(); snap_itr != snap_pts.end();) {
     bool erase = false;
 
     for (const auto& route : routes_) {
-      if (route->isIntersecting(*snap_itr, spacing_ + width_)) {
+      if (route->isIntersecting(*snap_itr, extent)) {
         erase = true;
         break;
       }
@@ -1040,41 +1041,20 @@ void RDLRouter::uncommitRoute(const std::vector<RDLRouter::GridEdge>& route)
 odb::Rect RDLRouter::getPointObstruction(const odb::Point& pt) const
 {
   const int check_dist = width_ / 2 + spacing_ + 1;
-  return odb::Rect(pt.x() - check_dist,
-                   pt.y() - check_dist,
-                   pt.x() + check_dist,
-                   pt.y() + check_dist);
+  return RDLRoute::getPointObstruction(pt, check_dist);
 }
 
 odb::Polygon RDLRouter::getEdgeObstruction(const odb::Point& pt0,
                                            const odb::Point& pt1) const
 {
   const int check_dist = width_ / 2 + spacing_ + 1;
-
-  const odb::Oct check_oct(pt0, pt1, 2 * check_dist);
-
-  std::vector<odb::Point> points = check_oct.getPoints();
-
-  if (check_oct.getDir() == odb::Oct::RIGHT) {
-    points[1].setX(check_oct.getCenterLow().x() + check_dist);
-    points[2].setY(check_oct.getCenterHigh().y() - check_dist);
-    points[5].setX(check_oct.getCenterHigh().x() - check_dist);
-    points[6].setY(check_oct.getCenterLow().y() + check_dist);
-  } else {
-    points[3].setY(check_oct.getCenterLow().y() + check_dist);
-    points[4].setX(check_oct.getCenterHigh().x() + check_dist);
-    points[7].setY(check_oct.getCenterHigh().y() - check_dist);
-    points[8].setX(check_oct.getCenterLow().x() - check_dist);
-    points[0] = points[8];
-  }
-
-  return points;
+  return RDLRoute::getEdgeObstruction(pt0, pt1, check_dist);
 }
 
 bool RDLRouter::is45DegreeEdge(const odb::Point& pt0,
                                const odb::Point& pt1) const
 {
-  return pt0.x() != pt1.x() && pt0.y() != pt1.y();
+  return RDLRoute::is45DegreeEdge(pt0, pt1);
 }
 
 std::set<GridGraphEdge> RDLRouter::getVertexEdges(
