@@ -5598,10 +5598,9 @@ bool Resizer::isClockCellCandidate(sta::LibertyCell* cell)
 static bool containsIgnoreCase(const std::string& str,
                                const std::string& substr)
 {
-  auto it = std::search(
-      str.begin(), str.end(), substr.begin(), substr.end(), [](char a, char b) {
-        return tolower(a) == tolower(b);
-      });
+  auto it = std::ranges::search(str, substr, [](char a, char b) {
+    return std::tolower(a) == std::tolower(b);
+  });
   return it != str.end();
 }
 

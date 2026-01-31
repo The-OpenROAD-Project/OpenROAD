@@ -305,8 +305,10 @@ proc reset_cts_config { args } {
     cts::reset_buffer_list
     utl::info CTS 213 "Buffer list has been removed."
   }
-  if { $reset_all || [info exists flags(-clock_buffer_string)] \
-       || [info exists flags(-clock_buffer_footprint)] } {
+  if {
+    $reset_all || [info exists flags(-clock_buffer_string)]
+    || [info exists flags(-clock_buffer_footprint)]
+  } {
     rsz::reset_clock_buffer_pattern_cmd
   }
   if { $reset_all || [info exists flags(-clustering_exponent)] } {
