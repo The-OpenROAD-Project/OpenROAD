@@ -73,7 +73,6 @@
 #include "sta/NetworkCmp.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
-#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -151,8 +150,6 @@ using sta::SearchPredNonReg2;
 using sta::VertexIterator;
 using sta::VertexOutEdgeIterator;
 
-using sta::BufferUse;
-using sta::CLOCK;
 using sta::LeakagePower;
 using sta::LeakagePowerSeq;
 
@@ -991,9 +988,9 @@ void Resizer::findBuffersNoPruning()
 
       for (sta::LibertyCell* buffer : *lib->buffers()) {
         if (exclude_clock_buffers_) {
-          BufferUse buffer_use = sta_->getBufferUse(buffer);
+          BufferUse buffer_use = getBufferUse(buffer);
 
-          if (buffer_use == CLOCK) {
+          if (buffer_use == BufferUse::CLOCK) {
             continue;
           }
         }
@@ -1886,8 +1883,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     sta::LibertyLibrary* lib = lib_iter->next();
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (exclude_clock_buffers_) {
-        BufferUse buffer_use = sta_->getBufferUse(buffer);
-        if (buffer_use == CLOCK) {
+        BufferUse buffer_use = getBufferUse(buffer);
+        if (buffer_use == BufferUse::CLOCK) {
           continue;
         }
       }
@@ -5581,6 +5578,69 @@ bool Resizer::isClockCellCandidate(sta::LibertyCell* cell)
           && !cell->isIsolationCell() && !cell->isLevelShifter());
 }
 
+////////////////////////////////////////////////////////////////
+// Clock buffer pattern configuration
+
+static bool containsIgnoreCase(const std::string& str,
+                               const std::string& substr)
+{
+  auto it = std::search(
+      str.begin(), str.end(), substr.begin(), substr.end(), [](char a, char b) {
+        return tolower(a) == tolower(b);
+      });
+  return it != str.end();
+}
+
+void Resizer::setClockBufferString(const std::string& clk_str)
+{
+  clock_buffer_string_ = clk_str;
+  clock_buffer_footprint_.clear();
+  logger_->info(RSZ, 205, "Clock buffer string set to '{}'", clk_str);
+}
+
+void Resizer::setClockBufferFootprint(const std::string& footprint)
+{
+  clock_buffer_footprint_ = footprint;
+  clock_buffer_string_.clear();
+  logger_->info(RSZ, 206, "Clock buffer footprint set to '{}'", footprint);
+}
+
+void Resizer::resetClockBufferPattern()
+{
+  clock_buffer_string_.clear();
+  clock_buffer_footprint_.clear();
+  logger_->info(RSZ, 207, "Clock buffer string and footprint have been reset");
+}
+
+BufferUse Resizer::getBufferUse(sta::LibertyCell* buffer)
+{
+  // is_clock_cell is a custom lib attribute that may not exist,
+  // so we also use the name/footprint pattern to help
+  if (buffer->isClockCell()) {
+    return BufferUse::CLOCK;
+  }
+
+  if (!clock_buffer_string_.empty()) {
+    if (containsIgnoreCase(buffer->name(), clock_buffer_string_)) {
+      return BufferUse::CLOCK;
+    }
+  } else if (!clock_buffer_footprint_.empty()) {
+    const char* footprint = buffer->footprint();
+    if (footprint && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+      return BufferUse::CLOCK;
+    }
+  } else {
+    // Default: check for "CLKBUF" in cell name
+    if (containsIgnoreCase(buffer->name(), "CLKBUF")) {
+      return BufferUse::CLOCK;
+    }
+  }
+
+  return BufferUse::DATA;
+}
+
+////////////////////////////////////////////////////////////////
+
 void Resizer::inferClockBufferList(const char* lib_name,
                                    std::vector<std::string>& buffers)
 {
@@ -5588,20 +5648,20 @@ void Resizer::inferClockBufferList(const char* lib_name,
   // criteria.
   sta::Vector<sta::LibertyCell*> clock_cell_attribute_buffers;
   sta::Vector<sta::LibertyCell*> lef_use_clock_buffers;
+  sta::Vector<sta::LibertyCell*> user_clock_buffers;
   sta::Vector<sta::LibertyCell*> clkbuf_pattern_buffers;
   sta::Vector<sta::LibertyCell*> buf_pattern_buffers;
   sta::Vector<sta::LibertyCell*> all_candidate_buffers;
 
-  // Patterns for matching common clock buffer and general buffer naming
-  // conventions.
-  sta::PatternMatch patternClkBuf(".*CLKBUF.*",
-                                  /* is_regexp */ true,
-                                  /* nocase */ true,
-                                  /* Tcl_interp* */ sta_->tclInterp());
-  sta::PatternMatch patternBuf(".*BUF.*",
-                               /* is_regexp */ true,
-                               /* nocase */ true,
-                               /* Tcl_interp* */ nullptr);
+  // Determine the pattern to use for clock buffer matching.
+  // If user has configured a string or footprint via set_opt_config, use that.
+  // Otherwise, fall back to the default "CLKBUF" pattern.
+  std::string clock_pattern = "CLKBUF";  // Default pattern
+  bool use_user_string = hasClockBufferString();
+  bool use_user_footprint = hasClockBufferFootprint();
+  if (use_user_string) {
+    clock_pattern = clock_buffer_string_;
+  }
 
   // 1. Iterate over all liberty libraries to find candidate cells.
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
@@ -5634,20 +5694,27 @@ void Resizer::inferClockBufferList(const char* lib_name,
           break;  // Avoid duplicates for multiple clock pins
         }
       }
-    }
 
-    // Priority 3: Collections based on naming pattern matching (CLKBUF).
-    for (sta::LibertyCell* buffer :
-         lib->findLibertyCellsMatching(&patternClkBuf)) {
-      if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+      // Priority 3: User-configured string or footprint matching.
+      if (use_user_string) {
+        if (containsIgnoreCase(buffer->name(), clock_buffer_string_)) {
+          user_clock_buffers.emplace_back(buffer);
+        }
+      } else if (use_user_footprint) {
+        const char* footprint = buffer->footprint();
+        if (footprint
+            && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+          user_clock_buffers.emplace_back(buffer);
+        }
+      }
+
+      // Priority 4: Default CLKBUF pattern matching (case-insensitive).
+      if (containsIgnoreCase(buffer->name(), clock_pattern)) {
         clkbuf_pattern_buffers.emplace_back(buffer);
       }
-    }
 
-    // Priority 4: Collections based on naming pattern matching (BUF).
-    for (sta::LibertyCell* buffer :
-         lib->findLibertyCellsMatching(&patternBuf)) {
-      if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+      // Priority 5: General BUF pattern matching (case-insensitive).
+      if (containsIgnoreCase(buffer->name(), "BUF")) {
         buf_pattern_buffers.emplace_back(buffer);
       }
     }
@@ -5684,7 +5751,30 @@ void Resizer::inferClockBufferList(const char* lib_name,
         }
       }
     }
+  } else if (!user_clock_buffers.empty()) {
+    // Priority 3: User-configured string or footprint matching.
+    selected_ptr = &user_clock_buffers;
+    for (sta::LibertyCell* buffer : *selected_ptr) {
+      if (use_user_string) {
+        debugPrint(logger_,
+                   RSZ,
+                   "inferClockBufferList",
+                   1,
+                   "{} found by user-configured string '{}'",
+                   buffer->name(),
+                   clock_buffer_string_);
+      } else if (use_user_footprint) {
+        debugPrint(logger_,
+                   RSZ,
+                   "inferClockBufferList",
+                   1,
+                   "{} found by user-configured footprint '{}'",
+                   buffer->name(),
+                   clock_buffer_footprint_);
+      }
+    }
   } else if (!clkbuf_pattern_buffers.empty()) {
+    // Priority 4: Default CLKBUF pattern matching.
     selected_ptr = &clkbuf_pattern_buffers;
     for (sta::LibertyCell* buffer : *selected_ptr) {
       debugPrint(logger_,

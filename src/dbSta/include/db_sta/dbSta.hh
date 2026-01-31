@@ -96,23 +96,6 @@ class dbStaState : public sta::StaState
   dbSta* sta_ = nullptr;
 };
 
-enum BufferUse
-{
-  DATA,
-  CLOCK
-};
-
-class BufferUseAnalyser
-{
- public:
-  BufferUseAnalyser();
-
-  BufferUse getBufferUse(sta::LibertyCell* buffer);
-
- private:
-  std::unique_ptr<sta::PatternMatch> clkbuf_pattern_;
-};
-
 class dbSta : public Sta, public odb::dbDatabaseObserver
 {
  public:
@@ -215,8 +198,6 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                                  bool exclude_buffers,
                                  bool exclude_inverters) const;
 
-  BufferUse getBufferUse(sta::LibertyCell* buffer);
-
   // Sanity checkers
   int checkSanity();
   void checkSanityNetlistConsistency() const;
@@ -250,8 +231,6 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
   std::set<dbStaState*> sta_states_;
-
-  std::unique_ptr<BufferUseAnalyser> buffer_use_analyser_;
 };
 
 // Utilities for TestCell
