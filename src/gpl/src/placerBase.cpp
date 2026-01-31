@@ -507,7 +507,7 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm, utl::Logger* logger)
   Rect bbox = bTerm->getBBox();
   if (bbox.isInverted()) {
     logger->error(
-        GPL, 1, "{} toplevel port is not placed.", bTerm->getConstName());
+        GPL, 326, "{} toplevel port is not placed.", bTerm->getConstName());
   }
 
   // Just center
@@ -751,6 +751,7 @@ PlacerBaseCommon::~PlacerBaseCommon()
 
 void PlacerBaseCommon::init()
 {
+  log_->info(GPL, 1, "---- Initialize GPL Main Data Structures");
   log_->info(GPL, 2, "DBU: {}", db_->getTech()->getDbUnitsPerMicron());
 
   dbBlock* block = db_->getChip()->getBlock();
@@ -1078,7 +1079,7 @@ PlacerBase::PlacerBase(odb::dbDatabase* db,
   group_ = group;
   log_->info(GPL,
              32,
-             "Initializing region: {}",
+             "---- Initialize Region: {}",
              (group_ == nullptr) ? "Top-level" : group_->getName());
   init();
 }

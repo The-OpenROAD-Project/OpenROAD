@@ -137,6 +137,17 @@ add_guidance_region(odb::dbInst* macro,
   getMacroPlacer()->addGuidanceRegion(macro, region);
 }
 
+void
+set_macro_halo(odb::dbInst* macro, 
+               float width, 
+               float height) 
+{
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  int width_dbu = block->micronsToDbu(width);
+  int height_dbu = block->micronsToDbu(height);
+
+  getMacroPlacer()->setMacroHalo(macro, width_dbu, height_dbu);
+}
 
 void
 set_macro_placement_file(std::string file_name)

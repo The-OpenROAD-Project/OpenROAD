@@ -18,6 +18,7 @@ TESTS = [
     "congestion6",
     "congestion7",
     "critical_nets_percentage",
+    "critical_nets_percentage_cugr",
     "cugr_adjustment1",
     "cugr_adjustment2",
     "cugr_adjustment3",
@@ -120,6 +121,7 @@ filegroup(
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
+    "critical_nets_percentage_cugr",
     "cugr_adjustment1",
     "cugr_adjustment2",
     "cugr_adjustment3",

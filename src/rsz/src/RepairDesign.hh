@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -80,6 +81,7 @@ class RepairDesign : sta::dbStaState
                                int length_violations,
                                int repaired_net_count);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
+  float getSlewRCFactor();
 
  protected:
   void init();
@@ -273,10 +275,12 @@ class RepairDesign : sta::dbStaState
 
   // Shape factor: what we need to multiply the RC product with
   // to get a slew estimate
-  float slew_rc_factor_ = 0;
+  std::optional<float> slew_rc_factor_;
 
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
+
+  friend class Resizer;
 };
 
 }  // namespace rsz

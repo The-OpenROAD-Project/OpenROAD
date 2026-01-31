@@ -111,20 +111,22 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setHaloWidth(int halo_width)
+void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
 {
-  tree_->halo_width = halo_width;
-}
-
-void HierRTLMP::setHaloHeight(int halo_height)
-{
-  tree_->halo_height = halo_height;
+  tree_->default_halo = {.width = halo_width, .height = halo_height};
 }
 
 void HierRTLMP::setGuidanceRegions(
     const std::map<odb::dbInst*, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
+}
+
+void HierRTLMP::setMacroHalo(odb::dbInst* macro,
+                             int halo_width,
+                             int halo_height)
+{
+  macro_to_halo_[macro] = {.width = halo_width, .height = halo_height};
 }
 
 // Options related to clustering
@@ -266,6 +268,12 @@ void HierRTLMP::init()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
+  clustering_engine_ = std::make_unique<ClusteringEngine>(
+      block_, network_, logger_, tritonpart_, graphics_.get());
+
+  // Set target structure
+  clustering_engine_->setTree(tree_.get());
+  clustering_engine_->setHalos(macro_to_halo_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
