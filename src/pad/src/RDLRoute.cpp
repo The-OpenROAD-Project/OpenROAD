@@ -192,20 +192,44 @@ bool RDLRoute::isIntersecting(const odb::Line& line, int extent) const
   return false;
 }
 
-bool RDLRoute::isIntersecting(const odb::Point& point, int extent) const
+bool RDLRoute::isIntersecting(const odb::Point& point,
+                              int width,
+                              int spacing) const
 {
   if (!isRouted()) {
     return false;
   }
 
-  const odb::Rect point_rect = RDLRoute::getPointObstruction(point, extent);
+  const int sq_extect = (width + spacing) / 2;
+  const odb::Rect point_rect = RDLRoute::getPointObstruction(point, sq_extect);
 
-  if (!getBBox(extent).intersects(point_rect)) {
+  if (!getBBox(sq_extect).intersects(point_rect)) {
     return false;
   }
 
-  for (const auto& pt : route_pts_) {
-    if (point_rect.intersects(RDLRoute::getPointObstruction(pt, extent))) {
+  std::vector<std::pair<odb::Point, odb::Point>> edges45;
+  for (int i = 0; i < route_pts_.size(); i++) {
+    const auto& pt = route_pts_[i];
+    if (point_rect.intersects(RDLRoute::getPointObstruction(pt, sq_extect))) {
+      return true;
+    }
+
+    if (i > 0) {
+      const auto& prev_pt = route_pts_[i - 1];
+      if (RDLRoute::is45DegreeEdge(prev_pt, pt)) {
+        edges45.emplace_back(prev_pt, pt);
+      }
+    }
+  }
+
+  if (edges45.empty()) {
+    return false;
+  }
+
+  const int oct_extent = width / 2 + spacing + 1;
+  for (const auto& [prev_pt, pt] : edges45) {
+    if (boost::geometry::covered_by(
+            point, RDLRoute::getEdgeObstruction(prev_pt, pt, oct_extent))) {
       return true;
     }
   }

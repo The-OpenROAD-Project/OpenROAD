@@ -893,13 +893,12 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 
   // Remove snap points that would cause a violation
   //   intersects another route
-  const int extent = (spacing_ + width_) / 2;
   std::set<odb::Point> snap_pts = target.grid_access;
   for (auto snap_itr = snap_pts.begin(); snap_itr != snap_pts.end();) {
     bool erase = false;
 
     for (const auto& route : routes_) {
-      if (route->isIntersecting(*snap_itr, extent)) {
+      if (route->isIntersecting(*snap_itr, width_, spacing_)) {
         erase = true;
         break;
       }

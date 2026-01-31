@@ -93,7 +93,7 @@ class RDLRoute
 
   bool isIntersecting(RDLRoute* other, int extent) const;
   bool isIntersecting(const odb::Line& line, int extent) const;
-  bool isIntersecting(const odb::Point& point, int extent) const;
+  bool isIntersecting(const odb::Point& point, int width, int spacing) const;
 
  private:
   odb::dbITerm* iterm_;
