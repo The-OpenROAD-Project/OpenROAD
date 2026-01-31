@@ -123,7 +123,7 @@ void RDLRoute::setRoute(
     }
   }
 
-  routed_ = true;
+  setRouted();
 }
 
 void RDLRoute::resetRoute()
@@ -200,11 +200,12 @@ bool RDLRoute::isIntersecting(const odb::Point& point, int extent) const
 
   const odb::Rect point_rect = RDLRoute::getPointObstruction(point, extent);
 
-  for (const auto& pt : route_pts_) {
-    const odb::Rect rect(
-        pt.x() - extent, pt.y() - extent, pt.x() + extent, pt.y() + extent);
+  if (!getBBox(extent).intersects(point_rect)) {
+    return false;
+  }
 
-    if (point_rect.intersects(rect)) {
+  for (const auto& pt : route_pts_) {
+    if (point_rect.intersects(RDLRoute::getPointObstruction(pt, extent))) {
       return true;
     }
   }
@@ -308,10 +309,12 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
     if (!check.empty()) {
       // There is nothing to do
       locked_ = true;
-      routed_ = true;
 
       routed_terminals_.insert(iterm_);
       routed_terminals_.insert(iterm);
+
+      setRouted();
+
       return;
     }
   }
@@ -336,9 +339,10 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
       }
       // There is nothing to do
       locked_ = true;
-      routed_ = true;
       routed_terminals_.insert(iterm_);
       routed_terminals_.insert(iterm);
+
+      setRouted();
 
       return;
     }
@@ -360,6 +364,34 @@ std::set<odb::dbITerm*> RDLRoute::getRoutedTerminals() const
   }
 
   return terms;
+}
+
+void RDLRoute::setRouted()
+{
+  routed_ = true;
+
+  // Compute BBox
+  bbox_.mergeInit();
+
+  for (odb::dbITerm* iterm : getRoutedTerminals()) {
+    bbox_.merge(iterm->getBBox());
+  }
+  for (const odb::Point& pt : route_pts_) {
+    bbox_.merge(pt);
+  }
+  for (const odb::Rect& stub : stubs_) {
+    bbox_.merge(stub);
+  }
+}
+
+odb::Rect RDLRoute::getBBox(int bloat) const
+{
+  if (bloat == 0) {
+    return bbox_;
+  }
+  odb::Rect bloated_bbox;
+  bbox_.bloat(bloat, bloated_bbox);
+  return bloated_bbox;
 }
 
 }  // namespace pad
