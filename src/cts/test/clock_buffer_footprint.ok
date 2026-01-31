@@ -5,7 +5,7 @@
 [INFO ODB-0131]     Created 300 components and 2100 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 300 connections.
 [INFO RSZ-0206] Clock buffer footprint set to 'DLY'
-*******************************************
+*****************************************************
 CTS config:
 -apply_ndr:                          HALF
 -buf_list:                           undefined
@@ -28,7 +28,7 @@ CTS config:
 -skip_nets:                          undefined
 -tree_buf:                           undefined
 -wire_unit:                          20
-****'***************************************
+*****************************************************
 [INFO CTS-0050] Root buffer is sg13g2_dlygate4sd1_1.
 [INFO CTS-0051] Sink buffer is sg13g2_dlygate4sd1_1.
 [INFO CTS-0052] The following clock buffers will be used for CTS:

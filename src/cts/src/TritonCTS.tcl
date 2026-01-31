@@ -75,7 +75,9 @@ proc set_cts_config { args } {
     set strategy $keys(-apply_ndr)
     cts::set_apply_ndr $strategy
   }
-  if { [info exists keys(-clock_buffer_string)] } {
+  if { [info exists keys(-clock_buffer_string)] && [info exists keys(-clock_buffer_footprint)] } {
+    utl::error CTS 135 "-clock_buffer_string and -clock_buffer_footprint are mutually exclusive."
+  } elseif { [info exists keys(-clock_buffer_string)] } {
     if { ![rsz::has_clock_buffer_footprint_cmd] } {
       set clk_str $keys(-clock_buffer_string)
       rsz::set_clock_buffer_string_cmd $clk_str
@@ -83,8 +85,7 @@ proc set_cts_config { args } {
       utl::error CTS 133 "-clock_buffer_string cannot be set because\
         -clock_buffer_footprint is already defined."
     }
-  }
-  if { [info exists keys(-clock_buffer_footprint)] } {
+  } elseif { [info exists keys(-clock_buffer_footprint)] } {
     if { ![rsz::has_clock_buffer_string_cmd] } {
       set footprint $keys(-clock_buffer_footprint)
       rsz::set_clock_buffer_footprint_cmd $footprint
@@ -234,7 +235,7 @@ proc report_cts_config { args } {
   if { [rsz::has_clock_buffer_footprint_cmd] } {
     set clock_buffer_footprint [rsz::get_clock_buffer_footprint_cmd]
   }
-  puts "*******************************************"
+  puts "*****************************************************"
   puts "CTS config:"
   puts "-apply_ndr:                          $ndr_strategy"
   puts "-buf_list:                           $buffer_list"
@@ -257,7 +258,7 @@ proc report_cts_config { args } {
   puts "-skip_nets:                          $skip_nets_list"
   puts "-tree_buf:                           $tree_buffer"
   puts "-wire_unit:                          $wire_segment_unit"
-  puts "****'***************************************"
+  puts "*****************************************************"
 }
 
 sta::define_cmd_args "reset_cts_config" {[-apply_ndr] \

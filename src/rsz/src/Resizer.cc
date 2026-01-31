@@ -5669,12 +5669,8 @@ void Resizer::inferClockBufferList(const char* lib_name,
   // Determine the pattern to use for clock buffer matching.
   // If user has configured a string or footprint via set_opt_config, use that.
   // Otherwise, fall back to the default "CLKBUF" pattern.
-  std::string clock_pattern = "CLKBUF";  // Default pattern
   bool use_user_string = hasClockBufferString();
   bool use_user_footprint = hasClockBufferFootprint();
-  if (use_user_string) {
-    clock_pattern = clock_buffer_string_;
-  }
 
   // 1. Iterate over all liberty libraries to find candidate cells.
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
@@ -5722,7 +5718,7 @@ void Resizer::inferClockBufferList(const char* lib_name,
       }
 
       // Priority 4: Default CLKBUF pattern matching (case-insensitive).
-      if (containsIgnoreCase(buffer->name(), clock_pattern)) {
+      if (containsIgnoreCase(buffer->name(), "CLKBUF")) {
         clkbuf_pattern_buffers.emplace_back(buffer);
       }
 
