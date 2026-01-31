@@ -183,7 +183,6 @@ class nesterovDbCbk : public odb::dbBlockCallBackObj
   nesterovDbCbk(NesterovPlace* nesterov_place_);
 
   void inDbInstCreate(odb::dbInst*) override;
-  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
   void inDbInstDestroy(odb::dbInst*) override;
 
   void inDbITermCreate(odb::dbITerm*) override;
