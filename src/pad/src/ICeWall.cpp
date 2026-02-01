@@ -1484,6 +1484,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                                         turn_penalty,
                                         max_iterations);
   router_->setRDLDebugNet(rdl_net_debug_);
+  router_->setRDLDebugPin(rdl_pin_debug_);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }
@@ -1522,6 +1523,20 @@ void ICeWall::routeRDLDebugNet(const char* net)
 
   if (router_ != nullptr) {
     router_->setRDLDebugNet(rdl_net_debug_);
+  }
+}
+
+void ICeWall::routeRDLDebugPin(const char* pin)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  rdl_pin_debug_ = block->findITerm(pin);
+
+  if (router_ != nullptr) {
+    router_->setRDLDebugPin(rdl_pin_debug_);
   }
 }
 
