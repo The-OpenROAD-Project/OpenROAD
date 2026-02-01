@@ -585,17 +585,15 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
   }
   inst->setOrient(orient.value());
   inst->setLoc(Point3D{
-      chip_inst.loc.x * db_->getDbuPerMicron(),
-      chip_inst.loc.y * db_->getDbuPerMicron(),
-      chip_inst.z * db_->getDbuPerMicron(),
+      static_cast<int>(chip_inst.loc.x * db_->getDbuPerMicron()),
+      static_cast<int>(chip_inst.loc.y * db_->getDbuPerMicron()),
+      static_cast<int>(chip_inst.z * db_->getDbuPerMicron()),
   });
 
   if (!chip_inst.external.verilog_file.empty()) {
     if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
       std::string verilog_file = chip_inst.external.verilog_file;
-      if (std::filesystem::path(verilog_file).is_relative()) {
-        verilog_file = std::filesystem::absolute(verilog_file).string();
-      }
+      verilog_file = std::filesystem::absolute(verilog_file).string();
       odb::dbStringProperty::create(chip, "verilog_file", verilog_file.c_str());
     }
   }
