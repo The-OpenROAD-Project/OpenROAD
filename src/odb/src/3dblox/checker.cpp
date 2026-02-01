@@ -123,8 +123,8 @@ void Checker::checkOverlappingChips(const UnfoldedModel& model,
       marker->addSource(inst1->chip_inst_path.back());
       marker->addSource(inst2->chip_inst_path.back());
 
-      std::string comment = "Chips " + inst1->getName() + " and "
-                            + inst2->getName() + " overlap";
+      std::string comment
+          = "Chips " + inst1->name + " and " + inst2->name + " overlap";
       marker->setComment(comment);
     }
   }
