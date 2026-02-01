@@ -2,30 +2,25 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 %{
-#include "LoggerCommon.h"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "utl/IpChecker.h"
-#include "utl/Logger.h"
 
+#include "utl/Logger.h"
+#include "LoggerCommon.h"
+    
 namespace ord {
 // Defined in OpenRoad.i
-utl::Logger* getLogger();
+utl::Logger *
+getLogger();
+}
 
-odb::dbDatabase* getDb();
-
-sta::dbSta* getSta();
-}  // namespace ord
-
-using ord::getLogger;
-using utl::Logger;
 using utl::ToolId;
+using utl::Logger;
+using ord::getLogger;
+
 %}
 
-%typemap(in) utl::ToolId
-{
+%typemap(in) utl::ToolId {
   int length;
-  const char* arg = Tcl_GetStringFromObj($input, &length);
+  const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
 }
 
@@ -37,6 +32,7 @@ using utl::ToolId;
 %include "LoggerCommon.h"
 
 %inline %{
+
 namespace utl {
 
 void teeFileBegin(const std::string& filename)
@@ -105,36 +101,6 @@ void startPrometheusEndpoint(uint16_t port)
   logger->startPrometheusEndpoint(port);
 }
 
-}  // namespace utl
+} // namespace
 
-bool check_ip_cmd(const char* master_name,
-                  bool check_all,
-                  int max_polygons,
-                  const char* report_file,
-                  bool verbose)
-{
-  odb::dbDatabase* db = ord::getDb();
-  sta::dbSta* sta = ord::getSta();
-  utl::Logger* logger = ord::getLogger();
-
-  utl::IpChecker checker(db, sta, logger);
-
-  utl::IpCheckerConfig config;
-  config.max_polygons = max_polygons;
-  config.verbose = verbose;
-  checker.setConfig(config);
-
-  bool result;
-  if (check_all) {
-    result = checker.checkAll();
-  } else {
-    result = checker.checkMaster(master_name);
-  }
-
-  if (strlen(report_file) > 0) {
-    checker.writeReport(report_file);
-  }
-
-  return result;
-}
-%}
+%} // inline

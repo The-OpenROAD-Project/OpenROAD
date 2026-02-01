@@ -63,7 +63,3 @@ projectview.bazelproject
 .bsp/
 .bazelbsp/
 /buildifier
-
-check_ip_test.lef
-check_ip_test.v
-

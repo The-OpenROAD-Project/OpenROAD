@@ -73,7 +73,6 @@ target_sources(utl
   PRIVATE
     src/LoggerCommon.cpp
     src/MakeLogger.cpp
-    src/IpChecker.cpp
 )
   
 target_include_directories(utl
