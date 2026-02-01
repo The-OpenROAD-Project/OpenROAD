@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "db/obj/frRef.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
@@ -16,10 +16,9 @@
 namespace drt {
 class frNet;
 class drVia;
-class frVia : public frRef
+class frVia : public frPinFig
 {
  public:
-  // constructors
   frVia() = default;
   frVia(const frViaDef* in) : viaDef_(in) {}
   frVia(const frViaDef* def_in, const odb::Point& pt_in)
@@ -27,7 +26,7 @@ class frVia : public frRef
   {
   }
   frVia(const frVia& in)
-      : frRef(in),
+      : frPinFig(in),
         origin_(in.origin_),
         viaDef_(in.viaDef_),
         owner_(in.owner_),
@@ -38,7 +37,7 @@ class frVia : public frRef
   {
   }
   frVia(const drVia& in);
-  // getters
+
   const frViaDef* getViaDef() const { return viaDef_; }
   odb::Rect getLayer1BBox() const
   {
@@ -47,7 +46,7 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getLayer1Figs()) {
       box.merge(fig->getBBox());
     }
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
   odb::Rect getCutBBox() const
@@ -57,7 +56,7 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getCutFigs()) {
       box.merge(fig->getBBox());
     }
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
   odb::Rect getLayer2BBox() const
@@ -67,39 +66,17 @@ class frVia : public frRef
     for (auto& fig : viaDef_->getLayer2Figs()) {
       box.merge(fig->getBBox());
     }
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
-  // setters
+
   void setViaDef(const frViaDef* in) { viaDef_ = in; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcVia; }
 
-  /* from frRef
-   * getOrient
-   * setOrient
-   * getOrigin
-   * setOrigin
-   * getTransform
-   * setTransform
-   */
+  odb::Point getOrigin() const { return origin_; }
+  void setOrigin(const odb::Point& tmpPoint) { origin_ = tmpPoint; }
 
-  odb::dbOrientType getOrient() const override { return odb::dbOrientType(); }
-  void setOrient(const odb::dbOrientType& tmpOrient) override { ; }
-  odb::Point getOrigin() const override { return origin_; }
-  void setOrigin(const odb::Point& tmpPoint) override { origin_ = tmpPoint; }
-  odb::dbTransform getTransform() const override
-  {
-    return odb::dbTransform(origin_);
-  }
-  void setTransform(const odb::dbTransform& xformIn) override {}
-
-  /* from frPinFig
-   * hasPin
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
   bool hasPin() const override
   {
     return (owner_)
@@ -116,12 +93,6 @@ class frVia : public frRef
   }
   void removeFromPin() override { owner_ = nullptr; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
   bool hasNet() const override
   {
     return (owner_) && (owner_->typeId() == frcNet);
@@ -132,12 +103,6 @@ class frVia : public frRef
     owner_ = reinterpret_cast<frBlockObject*>(in);
   }
   void removeFromNet() override { owner_ = nullptr; }
-
-  /* from frFig
-   * getBBox
-   * move
-   * intersects
-   */
 
   odb::Rect getBBox() const override
   {
@@ -195,7 +160,7 @@ class frVia : public frRef
       }
     }
     odb::Rect box(xl, yl, xh, yh);
-    getTransform().apply(box);
+    box.moveDelta(origin_.x(), origin_.y());
     return box;
   }
   void move(const odb::dbTransform& xform) override { ; }

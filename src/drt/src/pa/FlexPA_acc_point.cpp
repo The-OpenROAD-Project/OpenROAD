@@ -1595,9 +1595,10 @@ void FlexPA::genAllAccessPoints()
 }
 void FlexPA::revertAccessPoints(frInst* inst)
 {
-  const odb::dbTransform xform = inst->getTransform();
-  const odb::Point offset(xform.getOffset());
-  odb::dbTransform revertXform(odb::Point(-offset.getX(), -offset.getY()));
+  const odb::Point offset = inst->getDBInst()->getLocation();
+
+  const odb::dbTransform revertXform(
+      odb::Point(-offset.getX(), -offset.getY()));
 
   const auto pin_access_idx = inst->getPinAccessIdx();
   for (auto& inst_term : inst->getInstTerms()) {

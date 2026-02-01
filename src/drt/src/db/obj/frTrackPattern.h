@@ -10,7 +10,6 @@ namespace drt {
 class frTrackPattern : public frBlockObject
 {
  public:
-  // constructors
   frTrackPattern() = default;
   frTrackPattern(bool tmpIsH,
                  frCoord tmpSC,
@@ -24,14 +23,13 @@ class frTrackPattern : public frBlockObject
         layerNum_(tmpLN)
   {
   }
-  // getters
   // vertical track has horizontal = true;
   bool isHorizontal() const { return horizontal_; }
   frCoord getStartCoord() const { return startCoord_; }
   frUInt4 getNumTracks() const { return numTracks_; }
   frUInt4 getTrackSpacing() const { return trackSpacing_; }
   frLayerNum getLayerNum() const { return layerNum_; }
-  // setters
+
   // vertical track has horizontal = true;
   void setHorizontal(bool tmpIsHorizontal) { horizontal_ = tmpIsHorizontal; }
   void setStartCoord(frCoord tmpStartCoord) { startCoord_ = tmpStartCoord; }

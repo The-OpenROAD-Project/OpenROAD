@@ -27,7 +27,6 @@ class frMTerm;
 class frAccessPoint : public frBlockObject
 {
  public:
-  // constructors
   frAccessPoint(const odb::Point& point, frLayerNum layerNum)
       : point_(point), layerNum_(layerNum)
   {
@@ -45,7 +44,7 @@ class frAccessPoint : public frBlockObject
   {
   }
   frAccessPoint& operator=(const frAccessPoint&) = delete;
-  // getters
+
   const odb::Point& getPoint() const { return point_; }
   frLayerNum getLayerNum() const { return layerNum_; }
   bool hasAccess() const
@@ -141,7 +140,7 @@ class frAccessPoint : public frBlockObject
     return typeH_;
   }
   bool isViaAllowed() const { return allow_via_; }
-  // setters
+
   void setPoint(const odb::Point& in) { point_ = in; }
   void setLayer(const frLayerNum& layerNum) { layerNum_ = layerNum; }
   void setAccess(const frDirEnum& dir, bool isValid = true)
@@ -187,7 +186,7 @@ class frAccessPoint : public frBlockObject
     }
   }
   void setAllowVia(bool in) { allow_via_ = in; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcAccessPoint; }
   frCoord x() const { return point_.x(); }
   frCoord y() const { return point_.y(); }
@@ -228,7 +227,6 @@ class frPinAccess : public frBlockObject
     }
   }
 
-  // getters
   const std::vector<std::unique_ptr<frAccessPoint>>& getAccessPoints() const
   {
     return aps_;
@@ -236,7 +234,7 @@ class frPinAccess : public frBlockObject
   frAccessPoint* getAccessPoint(int idx) const { return aps_[idx].get(); }
   int getNumAccessPoints() const { return aps_.size(); }
   frPin* getPin() const { return pin_; }
-  // setters
+
   void addAccessPoint(std::unique_ptr<frAccessPoint> in)
   {
     in->setId(aps_.size());
@@ -244,7 +242,7 @@ class frPinAccess : public frBlockObject
     aps_.push_back(std::move(in));
   }
   void setPin(frPin* in) { pin_ = in; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcPinAccess; }
   void clearAccessPoints() { aps_.clear(); }
 

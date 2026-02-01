@@ -129,8 +129,7 @@ void FlexPA::updateDirtyInsts()
     if (old_unique_class == new_unique_class) {  // same unique class
       if (updateSkipInstTerm(inst)) {            // a new connection added
         dirty_unique_classes.insert(old_unique_class);
-      } else if (inst->getLatestPATransform()
-                 != inst->getTransform()) {  // cell has been moved
+      } else if (inst->isMovedSincePA()) {
         pattern_insts.insert(inst);
       }
     } else {  // cell changed unique class

@@ -18,17 +18,16 @@ class frBlock;
 class frBTerm : public frTerm
 {
  public:
-  // constructors
   frBTerm(const frString& name) : frTerm(name) {}
   frBTerm(const frBTerm& in) = delete;
   frBTerm& operator=(const frBTerm&) = delete;
-  // getters
+
   bool hasNet() const override { return (net_); }
   frNet* getNet() const override { return net_; }
   const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
   bool hasPinAccessUpdate() const { return has_pin_access_update_; }
   void setHasPinAccessUpdate(bool in) { has_pin_access_update_ = in; }
-  // setters
+
   void addToNet(frNet* in) { net_ = in; }
   void addPin(std::unique_ptr<frBPin> in)
   {
@@ -46,7 +45,7 @@ class frBTerm : public frTerm
     in->setId(pins_.size());
     pins_.push_back(std::move(in));
   }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcBTerm; }
   frAccessPoint* getAccessPoint(frCoord x,
                                 frCoord y,

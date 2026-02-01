@@ -63,7 +63,6 @@ cc_library(
         "src/db/obj/frNode.h",
         "src/db/obj/frPin.h",
         "src/db/obj/frRPin.h",
-        "src/db/obj/frRef.h",
         "src/db/obj/frShape.h",
         "src/db/obj/frTerm.h",
         "src/db/obj/frTrackPattern.h",
