@@ -144,7 +144,7 @@ void UnfoldedModel::registerUnfoldedChip(UnfoldedChip& chip)
     chip.region_map[region.region_inst] = &region;
     for (auto& bump : region.bumps) {
       bump.parent_region = &region;
-      bump_inst_map_[bump.bump_inst] = &bump;
+      bump_inst_map_[{bump.bump_inst, chip.chip_inst_path}] = &bump;
     }
   }
   chip_path_map_[chip.chip_inst_path] = &chip;
@@ -241,9 +241,10 @@ void UnfoldedModel::unfoldNets(dbChip* chip,
       std::vector<dbChipInst*> rel_path;
       dbChipBumpInst* b_inst = net->getBumpInst(i, rel_path);
 
-      auto iter = bump_inst_map_.find(b_inst);
-      if (iter != bump_inst_map_.end()) {
-        uf_net.connected_bumps.push_back(iter->second);
+      auto it
+          = bump_inst_map_.find({b_inst, concatPath(parent_path, rel_path)});
+      if (it != bump_inst_map_.end()) {
+        uf_net.connected_bumps.push_back(it->second);
       }
     }
     unfolded_nets_.push_back(std::move(uf_net));

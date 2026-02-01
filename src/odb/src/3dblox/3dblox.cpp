@@ -584,18 +584,11 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
                    chip_inst.name);
   }
   inst->setOrient(orient.value());
-  dbChip* master = inst->getMasterChip();
-  Cuboid master_cuboid = master->getCuboid();
-  dbTransform t(inst->getOrient());
-  t.apply(master_cuboid);
-
-  // XY should be origin-based for hierarchical designs.
-  // Z should be "low-point" based (starts at loc.z) to avoid overlap in
-  // stacking.
-  const int dbu = db_->getDbuPerMicron();
-  inst->setOrigin(Point3D(chip_inst.loc.x * dbu,
-                          chip_inst.loc.y * dbu,
-                          chip_inst.z * dbu - master_cuboid.lll().z()));
+  inst->setLoc(Point3D{
+      chip_inst.loc.x * db_->getDbuPerMicron(),
+      chip_inst.loc.y * db_->getDbuPerMicron(),
+      chip_inst.z * db_->getDbuPerMicron(),
+  });
 
   if (!chip_inst.external.verilog_file.empty()) {
     if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {

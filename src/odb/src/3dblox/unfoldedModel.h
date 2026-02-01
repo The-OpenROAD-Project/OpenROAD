@@ -117,7 +117,8 @@ class UnfoldedModel
   std::vector<UnfoldedConnection> unfolded_connections_;
   std::vector<UnfoldedNet> unfolded_nets_;
   std::map<std::vector<dbChipInst*>, UnfoldedChip*> chip_path_map_;
-  std::unordered_map<dbChipBumpInst*, UnfoldedBump*> bump_inst_map_;
+  std::map<std::pair<dbChipBumpInst*, std::vector<dbChipInst*>>, UnfoldedBump*>
+      bump_inst_map_;
 };
 
 }  // namespace odb
