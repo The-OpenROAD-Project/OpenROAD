@@ -8,6 +8,8 @@
 
 #include "baseWriter.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 #include "yaml-cpp/yaml.h"
 
@@ -78,8 +80,9 @@ void DbxWriter::writeStackInstance(YAML::Node& stack_instance_node,
                                    odb::dbChipInst* inst)
 {
   const double u = inst->getDb()->getDbuPerMicron();
-  const double loc_x = inst->getLoc().x() / u;
-  const double loc_y = inst->getLoc().y() / u;
+  const Point3D origin = inst->getTransform().getOffset3D();
+  const double loc_x = origin.x() / u;
+  const double loc_y = origin.y() / u;
   YAML::Node loc_out;
   loc_out.SetStyle(YAML::EmitterStyle::Flow);
   loc_out.push_back(loc_x);
