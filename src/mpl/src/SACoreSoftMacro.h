@@ -71,7 +71,25 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void enableEnhancements() { enhancements_on_ = true; };
 
+  void setIsSingleArraySingleStdCellCluster(bool value)
+  {
+    is_single_array_single_std_cell_cluster = value;
+  }
+
  private:
+  // Used to calculate notches
+  struct Neighbors
+  {
+    bool top = true;
+    bool bottom = true;
+    bool left = true;
+    bool right = true;
+
+    int total() { return top + bottom + left + right; }
+
+    bool operator==(const Neighbors&) const = default;
+  };
+
   float calNormCost() const override;
   void calPenalty() override;
 
@@ -84,7 +102,18 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   int getSegmentIndex(int segment, const std::vector<int>& coords);
 
   void calBoundaryPenalty();
-  float calSingleNotchPenalty(float width, float height);
+  void fillCoordsLists(std::vector<int>& x_coords, std::vector<int>& y_coords);
+  Neighbors findNeighbors(std::vector<std::vector<bool>>& grid,
+                          int start_row,
+                          int start_col,
+                          int end_row,
+                          int end_col);
+  bool isSegmentEmpty(std::vector<std::vector<bool>>& grid,
+                      int start_row,
+                      int tart_col,
+                      int end_row,
+                      int end_col);
+  float calSingleNotchPenalty(int width, int height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
   void calFixedMacrosPenalty();
@@ -136,6 +165,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;
+  bool is_single_array_single_std_cell_cluster = false;
 };
 
 }  // namespace mpl
