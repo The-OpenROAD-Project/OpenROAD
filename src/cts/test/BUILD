@@ -52,7 +52,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "cts_man_tcl_check",
-    "cts_readme_msgs_check",
+    # "cts_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -147,6 +147,12 @@ filegroup(
             "check_wire_rc_cts": [
                 "check_buffers.def",
             ],
+            "cts_man_tcl_check": [
+                "//src/cts:README.md",
+            ],
+            "cts_readme_msgs_check": [
+                "//src/cts:README.md",
+            ],
             "dummy_load": [
                 "check_buffers.def",
             ],
@@ -220,6 +226,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

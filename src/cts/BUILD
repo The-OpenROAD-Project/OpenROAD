@@ -139,3 +139,5 @@ python_wrap_cc(
         "include",
     ],
 )
+
+exports_files(["README.md"])
