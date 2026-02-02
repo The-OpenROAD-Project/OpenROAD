@@ -1384,6 +1384,11 @@ void InitFloorplan::reportAreas()
                   "Result utilization:",
                   block_->dbuAreaToMicrons(design_area) / core_area_um);
   }
+  logger_->info(IFP,
+          32,
+          "{:27} {:15d}",
+          "Number of instances:",
+          block_->getInsts().size());
 }
 
 }  // namespace ifp
