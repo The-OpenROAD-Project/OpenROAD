@@ -884,8 +884,11 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     int via_layer_idx = guide->getViaLayer() != nullptr
                             ? guide->getViaLayer()->getRoutingLevel()
                             : 0;
-    boxToGlobalRouting(
-        guide->getBox(), layer_idx, via_layer_idx, routes_[db_net]);
+    boxToGlobalRouting(guide->getBox(),
+                       layer_idx,
+                       via_layer_idx,
+                       routes_[db_net],
+                       guide->ignoreUsage());
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
@@ -894,13 +897,16 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     logger_->error(GRT,
                    303,
                    "Fail to restore routing segments from guides for net {}. "
-                   "The following pins are not covered: {}",
+                   "The following pins are not covered: {}.",
                    net->getName(),
                    pins_not_covered);
   }
 
   net->setRestoreRouteFromGuides(false);
   net->setAreSegmentsRestored(true);
+
+  makeFastrouteNet(net);
+
   updateNetResources(net, false);
 
   return true;
