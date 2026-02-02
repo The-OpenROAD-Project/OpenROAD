@@ -322,11 +322,6 @@ class UvDRCSlewBuffer
                                 RCTreeNodePtr d,
                                 int buffer_step);
 
-  void CalculateBufferSolutions(RCTreeNodePtr node,
-                                double unit_r,
-                                double unit_c,
-                                int max_cap);
-
   int MaxLengthForSlew(sta::LibertyCell* buffer_cell,
                        const sta::Corner* corner);
   int MaxLengthForSlewAlpert(sta::LibertyCell* buffer_cell,
@@ -347,8 +342,8 @@ class UvDRCSlewBuffer
   // TODO: DELETE THIS
   int user_max_wire_length_ = std::numeric_limits<int>::max();  // in DBU
 
-  float slew_margin_ = 0.0;
-  float cap_margin_ = 0.0;
+  // float slew_margin_ = 0.0;
+  // float cap_margin_ = 0.0;
 };
 
 }  // namespace uv_drc

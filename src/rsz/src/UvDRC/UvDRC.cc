@@ -154,7 +154,7 @@ std::vector<BufferSolution> LoadNode::CalcBufferSolutions(
   auto limit = SlewLimit(sta, resizer, corner);
   assert(cap > 0);
   assert(limit > 0);
-  if (cap <= max_cap) {
+  if (max_cap <= 0 || cap <= max_cap) {
     return {BufferSolution{cap, 0.0, limit, BufferLocMap{}}};
   }
   // Find a suitable buffer
@@ -241,9 +241,10 @@ std::vector<BufferSolution> WireNode::CalcBufferSolutions(const sta::Corner* cor
                        * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR;
     float total_cap = sol.cap + wire_c;
     float total_wire_slew = sol.wire_slew + wire_slew;
-    if (total_cap <= max_cap && total_wire_slew <= sol.limit) {
+    if ((max_cap <= 0 || total_cap <= max_cap) && total_wire_slew <= sol.limit) {
       // Solution with no buffer
-      BufferSolution new_sol {total_cap, total_wire_slew, sol.limit, sol.buffer_locs};
+      BufferSolution new_sol{
+          total_cap, total_wire_slew, sol.limit, sol.buffer_locs};
       AddSolutionAndEnsureDominance(solutions, new_sol);
     }
 
@@ -291,7 +292,7 @@ std::vector<BufferSolution> JuncNode::CalcBufferSolutions(
           = sol1.limit - sol1.wire_slew > sol2.limit - sol2.wire_slew;
       float total_wire_slew = choose_slew1 ? sol1.wire_slew : sol2.wire_slew;
       float limit = choose_slew1 ? sol1.limit : sol2.limit;
-      if (total_cap <= max_cap) {
+      if (max_cap <= 0 || total_cap <= max_cap) {
         BufferLocMap combined_locs = sol1.buffer_locs;
         combined_locs.insert(sol2.buffer_locs.begin(),
                              sol2.buffer_locs.end());
@@ -715,15 +716,6 @@ int UvDRCSlewBuffer::MaxLengthForCap(sta::LibertyCell* buffer_cell,
   }
 
   return std::numeric_limits<int>::max();
-}
-
-void CalculateBufferSolutions(RCTreeNodePtr node,
-                              double unit_r,
-                              double unit_c,
-                              int max_cap)
-{
-  if (node->Type() == RCTreeNodeType::LOAD) {
-  }
 }
 
 void UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
