@@ -5,7 +5,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstddef>
+#include <cstdlib>
+#include <map>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -17,12 +20,14 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
@@ -82,7 +87,6 @@ BaseMove::BaseMove(Resizer* resizer)
   db_network_ = resizer_->db_network_;
   dbStaState::init(resizer_->sta_);
   sta_ = resizer_->sta_;
-  dbu_ = resizer_->dbu_;
   opendp_ = resizer_->opendp_;
 
   accepted_count_ = 0;
@@ -170,12 +174,8 @@ double BaseMove::area(dbMaster* master)
   if (!master->isCoreAutoPlaceable()) {
     return 0;
   }
-  return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
-}
-
-double BaseMove::dbuToMeters(int dist) const
-{
-  return dist / (dbu_ * 1e+6);
+  return resizer_->dbuToMeters(master->getWidth())
+         * resizer_->dbuToMeters(master->getHeight());
 }
 
 // Rise/fall delays across all timing arcs into drvr_port.
@@ -412,7 +412,7 @@ Instance* BaseMove::makeBuffer(LibertyCell* cell,
 // removal if slack doesn't become violating (no new violations)
 //
 //               input_net                             output_net
-//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
+//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>  FO inst pin
 //               |
 //               ------>  (side_input_pin1  side_out_pin1) ----->
 //               |
@@ -425,28 +425,40 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     return false;
   }
 
-  // Prep for delay calc
-  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
   const DcalcAnalysisPt* dcalc_ap
       = params.corner->findDcalcAnalysisPt(resizer_->max_);
-  LibertyPort* prev_drvr_port = network_->libertyPort(params.prev_driver_pin);
-  if (prev_drvr_port == nullptr) {
+  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
+
+  ArcDelay old_delay[RiseFall::index_count];
+  ArcDelay new_delay[RiseFall::index_count];
+  Slew old_drvr_slew[RiseFall::index_count];
+  Slew new_drvr_slew[RiseFall::index_count];
+  float old_cap, new_cap;
+  if (!resizer_->computeNewDelaysSlews(params.prev_driver_pin,
+                                       params.driver,
+                                       params.corner,
+                                       old_delay,
+                                       new_delay,
+                                       old_drvr_slew,
+                                       new_drvr_slew,
+                                       old_cap,
+                                       new_cap)) {
     return false;
   }
-  LibertyPort *buffer_input_port, *buffer_output_port;
-  params.driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
 
-  // Compute delay degradation at prev driver due to increased load cap
-  resizer_->annotateInputSlews(network_->instance(params.prev_driver_pin),
-                               dcalc_ap);
-  ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
-  Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
-  float old_cap = dcalc->loadCap(params.prev_driver_pin, dcalc_ap);
-  resizer_->gateDelays(prev_drvr_port, old_cap, dcalc_ap, old_delay, old_slew);
-  float new_cap = old_cap + dcalc->loadCap(params.driver_pin, dcalc_ap)
-                  - resizer_->portCapacitance(buffer_input_port, params.corner);
-  resizer_->gateDelays(prev_drvr_port, new_cap, dcalc_ap, new_delay, new_slew);
+  // Check for max cap violation
+  if (!checkMaxCapOK(params.prev_driver_pin, new_cap - old_cap)) {
+    debugPrint(logger_,
+               RSZ,
+               "remove_buffer",
+               1,
+               "buffer {} is not removed "
+               "because of max cap violation",
+               db_network_->name(params.driver));
+    return false;
+  }
+
+  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
   float delay_degrad
       = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
   float delay_imp
@@ -454,35 +466,59 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
                               params.driver_path->transition(sta_),
                               dcalc->loadCap(params.driver_pin, dcalc_ap),
                               dcalc_ap);
-  resizer_->resetInputSlews();
 
   // Check if degraded delay & slew can be absorbed by driver pin fanouts
-  Net* output_net = network_->net(params.driver_pin);
-  auto pin_iter = std::unique_ptr<NetConnectedPinIterator>(
-      network_->connectedPinIterator(output_net));
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (pin == params.driver_pin) {
-      continue;
+  // Model slew degradation across wire from prev_drv_pin to the FO inst pin
+  // based on Elmore delay that considers layers and vias for accurate
+  // wire cap/res computation.
+  // prev_driver_pin --->  (driver_input_pin   driver_pin) --->  pin
+  //                 ^                                        ^
+  //                 |                                        |
+  //              old_driver_slew                         old_load_slew
+  //
+  // prev_driver_pin ----------------------------------------->  pin
+  //                 ^                                        ^
+  //                 |                                        |
+  //              new_driver_slew                         new_load_slew
+  //
+  std::map<const Pin*, float> load_pin_slew;
+  if (!resizer_->estimateSlewsAfterBufferRemoval(
+          params.prev_driver_pin,
+          params.driver,
+          new_drvr_slew[prev_driver_rf->index()],
+          params.corner,
+          load_pin_slew)) {
+    return false;
+  }
+  for (const auto& [load_pin, estimated_new_load_slew] : load_pin_slew) {
+    Vertex* load_vertex = graph_->pinLoadVertex(load_pin);
+    assert(load_vertex != nullptr);
+    Slew old_load_slew[RiseFall::index_count];
+    for (auto rf : RiseFall::range()) {
+      old_load_slew[rf->index()] = sta_->vertexSlew(load_vertex, rf, dcalc_ap);
     }
-    float old_slack = sta_->pinSlack(pin, resizer_->max_);
-    float new_slack = old_slack - delay_degrad + delay_imp;
-    if (fuzzyGreater(old_slack, new_slack)) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-                 "because new output pin slack {} is worse than old slack {}",
-                 db_network_->name(params.driver), db_network_->name(pin),
-                 new_slack, old_slack);
-      // clang-format on
-      return false;
+    Slew new_load_slew[RiseFall::index_count];
+    for (auto rf : RiseFall::range()) {
+      new_load_slew[rf->index()] = estimated_new_load_slew;
     }
 
-    // Check if output pin of direct fanout instance can absorb delay and slew
+    debugPrint(
+        logger_,
+        RSZ,
+        "remove_buffer",
+        1,
+        "estimated in slew at fanout pin {} is {}, prev drvr out slew={}",
+        db_network_->name(load_pin),
+        estimated_new_load_slew,
+        new_drvr_slew[prev_driver_rf->index()]);
+
+    // Check if output pin of direct fanout instance can absorb delay and
+    // slew
     // degradation
-    if (!estimateInputSlewImpact(network_->instance(pin),
+    if (!estimateInputSlewImpact(network_->instance(load_pin),
                                  dcalc_ap,
-                                 old_slew,
-                                 new_slew,
+                                 old_load_slew,
+                                 new_load_slew,
                                  delay_degrad - delay_imp,
                                  params,
                                  /* accept if slack improves */ true)) {
@@ -493,7 +529,7 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   // Check side fanout paths.  Side fanout paths get no delay benefit from
   // buffer removal.
   Net* input_net = network_->net(params.prev_driver_pin);
-  pin_iter = std::unique_ptr<NetConnectedPinIterator>(
+  auto pin_iter = std::unique_ptr<NetConnectedPinIterator>(
       network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const Pin* side_input_pin = pin_iter->next();
@@ -504,23 +540,29 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     float old_slack = sta_->pinSlack(side_input_pin, resizer_->max_);
     float new_slack = old_slack - delay_degrad - params.setup_slack_margin;
     if (new_slack < 0) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-                 "because side input pin {} will have a violating slack of {}:"
-                 " old slack={}, slack margin={}, delay_degrad={}",
-                 db_network_->name(params.driver),
-                 db_network_->name(side_input_pin), new_slack, old_slack,
-                 params.setup_slack_margin, delay_degrad);
-      // clang-format on
-      return false;
+      float slack_degrad = old_slack - new_slack;
+      const float kSlackDegradRatioLimit = 0.1;
+      if (old_slack >= 0
+          || (old_slack < 0
+              && slack_degrad > kSlackDegradRatioLimit * abs(old_slack))) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
+                   "because side input pin {} will have a violating slack of {}:"
+                   " old slack={}, slack margin={}, delay_degrad={}",
+                   db_network_->name(params.driver),
+                   db_network_->name(side_input_pin), new_slack, old_slack,
+                   params.setup_slack_margin, delay_degrad);
+        // clang-format on
+        return false;
+      }
     }
 
     // Consider secondary degradation at side out pin from degraded input
     // slew.
     if (!estimateInputSlewImpact(network_->instance(side_input_pin),
                                  dcalc_ap,
-                                 old_slew,
-                                 new_slew,
+                                 old_drvr_slew,
+                                 new_drvr_slew,
                                  delay_degrad,
                                  params,
                                  /* accept only if no new viol */ false)) {
@@ -635,7 +677,7 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell* cell = drvr_port->libertyCell();
-  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
@@ -693,7 +735,7 @@ bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
     return false;
   }
 
-  dbInst* dinst = db_network_->staToDb(inst);
+  odb::dbInst* dinst = db_network_->staToDb(inst);
   dbMaster* master = dinst->getMaster();
   resizer_->designAreaIncr(-area(master));
   Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
@@ -730,7 +772,7 @@ bool BaseMove::checkMaxCapViolation(Instance* inst,
     if (!network_->direction(pin)->isAnyInput()) {
       continue;
     }
-    PinSet* drivers = network_->drivers(pin);
+    sta::PinSet* drivers = network_->drivers(pin);
     if (drivers) {
       // Calculate capacitance delta (new - old)
       float old_cap = getInputPinCapacitance(pin, current_cell);
@@ -782,7 +824,7 @@ float BaseMove::getInputPinCapacitance(Pin* pin, const LibertyCell* cell)
 bool BaseMove::checkMaxCapOK(const Pin* drvr_pin, float cap_delta)
 {
   float cap, max_cap, cap_slack;
-  const Corner* corner;
+  const sta::Corner* corner;
   const RiseFall* tr;
   sta_->checkCapacitance(drvr_pin,
                          nullptr /* corner */,
@@ -982,14 +1024,14 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
 
 ////////////////////////////////////////////////////////////////
 
-LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
+sta::LibertyCellSeq BaseMove::getSwappableCells(LibertyCell* base)
 {
   if (base->isBuffer()) {
     if (!resizer_->buffer_fast_sizes_.contains(base)) {
-      return LibertyCellSeq();
+      return sta::LibertyCellSeq();
     }
 
-    LibertyCellSeq buffer_sizes;
+    sta::LibertyCellSeq buffer_sizes;
     buffer_sizes.reserve(resizer_->buffer_fast_sizes_.size());
     for (LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
       buffer_sizes.push_back(buffer);

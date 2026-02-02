@@ -23,6 +23,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -1617,7 +1618,10 @@ float FastRouteCore::CalculatePartialSlack()
   // defined by the user
   const int threshold_index
       = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  const float slack_th = slacks[threshold_index];
+  const float slack_th
+      = slacks.empty() ? 0.0f
+                       : slacks[std::min(static_cast<size_t>(threshold_index),
+                                         slacks.size() - 1)];
 
   // Set the non critical nets slack as the lowest float, so they can be
   // ordered by overflow (and ordered first than the critical nets)
@@ -2319,7 +2323,7 @@ void FastRouteCore::freeRR()
   }
 }
 
-int FastRouteCore::edgeShift(Tree& t, const int net)
+int FastRouteCore::edgeShift(stt::Tree& t, const int net)
 {
   // TODO: check this size
   const int sizeV = 2 * nets_[net]->getNumPins();
@@ -2669,7 +2673,7 @@ int FastRouteCore::edgeShift(Tree& t, const int net)
 }
 
 // exchange Steiner nodes at the same position, then call edgeShift()
-int FastRouteCore::edgeShiftNew(Tree& t, const int net)
+int FastRouteCore::edgeShiftNew(stt::Tree& t, const int net)
 {
   int numShift = edgeShift(t, net);
   const int deg = t.deg;

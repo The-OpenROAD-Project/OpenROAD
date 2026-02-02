@@ -25,11 +25,14 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 71118.48 um.
 >> global_placement -skip_nesterov_place
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.560  5.040 ) um
 [INFO GPL-0004] CoreBBox: ( 10.080 10.080 ) ( 2989.840 2988.720 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:     2015955.648 um^2
+[INFO GPL-0037] Total instances area:       2015955.648 um^2
+[INFO GPL-0035] Pin density area adjust:    174882.176 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:             39109
 [INFO GPL-0007] Movable instances:               39109
 [INFO GPL-0008] Fixed instances:                     0
@@ -46,6 +49,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                    24.684 %
 [INFO GPL-0020] Standard cells area:        2190837.824 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 39109	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00348564 HPWL: 2176639240
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00646186 HPWL: 2048471250
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00263091 HPWL: 2074467989

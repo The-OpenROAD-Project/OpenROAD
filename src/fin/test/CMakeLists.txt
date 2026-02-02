@@ -4,6 +4,3 @@ or_integration_tests(
     gcd_fill
 )
 
-# Skipped
-#fin_man_tcl_check
-#fin_readme_msgs_check

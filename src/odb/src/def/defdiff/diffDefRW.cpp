@@ -30,6 +30,8 @@
 // This program is the diffDef core program.  It has all the callback
 // routines and write it out to a temporary file.
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cctype>
 #include <cstdint>
 #include <cstdio>

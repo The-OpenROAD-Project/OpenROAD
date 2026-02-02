@@ -3,15 +3,27 @@
 
 #pragma once
 
+#include <memory>
+#include <optional>
+#include <vector>
+
 #include "BufferedNet.hh"
 #include "PreChecks.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
+#include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
+#include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
 namespace est {
@@ -23,33 +35,19 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using sta::Corner;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::Edge;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::MinMax;
-using sta::Net;
-using sta::Pin;
-using sta::PinSeq;
-using sta::Slew;
-using sta::StaState;
-using sta::Vertex;
-
 // Region for partioning fanout pins.
 class LoadRegion
 {
  public:
   LoadRegion();
-  LoadRegion(PinSeq& pins, odb::Rect& bbox);
+  LoadRegion(sta::PinSeq& pins, odb::Rect& bbox);
 
-  PinSeq pins_;
+  sta::PinSeq pins_;
   odb::Rect bbox_;  // dbu
   std::vector<LoadRegion> regions_;
 };
 
-class RepairDesign : dbStaState
+class RepairDesign : sta::dbStaState
 {
  public:
   explicit RepairDesign(Resizer* resizer);
@@ -70,7 +68,7 @@ class RepairDesign : dbStaState
                     int& fanout_violations,
                     int& length_violations);
   int insertedBufferCount() const { return inserted_buffer_count_; }
-  void repairNet(Net* net,
+  void repairNet(sta::Net* net,
                  double max_wire_length,
                  double slew_margin,
                  double cap_margin);
@@ -83,154 +81,158 @@ class RepairDesign : dbStaState
                                int length_violations,
                                int repaired_net_count);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
+  float getSlewRCFactor();
 
  protected:
   void init();
 
-  bool getCin(const Pin* drvr_pin, float& cin);
-  bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
+  bool getCin(const sta::Pin* drvr_pin, float& cin);
+  bool getLargestSizeCin(const sta::Pin* drvr_pin, float& cin);
   void findBufferSizes();
-  bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
+  bool performGainBuffering(sta::Net* net,
+                            const sta::Pin* drvr_pin,
+                            int max_fanout);
   void performEarlySizingRound(int& repaired_net_count);
 
-  void checkDriverArcSlew(const Corner* corner,
-                          const Instance* inst,
-                          const TimingArc* arc,
+  void checkDriverArcSlew(const sta::Corner* corner,
+                          const sta::Instance* inst,
+                          const sta::TimingArc* arc,
                           float load_cap,
                           float limit,
                           float& violation);
-  bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
+  bool repairDriverSlew(const sta::Corner* corner, const sta::Pin* drvr_pin);
 
-  void repairDriver(Vertex* drvr,
+  void repairDriver(sta::Vertex* drvr,
                     bool check_slew,
                     bool check_cap,
                     bool check_fanout,
                     int max_length,  // dbu
                     bool resize_drvr,
-                    Corner* corner_w_load_slew_viol,
+                    sta::Corner* corner_w_load_slew_viol,
                     int& repaired_net_count,
                     int& slew_violations,
                     int& cap_violations,
                     int& fanout_violations,
                     int& length_violations);
 
-  void repairNet(Net* net,
-                 const Pin* drvr_pin,
-                 Vertex* drvr,
+  void repairNet(sta::Net* net,
+                 const sta::Pin* drvr_pin,
+                 sta::Vertex* drvr,
                  bool check_slew,
                  bool check_cap,
                  bool check_fanout,
                  int max_length,  // dbu
                  bool resize_drvr,
-                 Corner* corner_w_load_slew_viol,  // if not null, signals
-                                                   // a violation hidden by
-                                                   // an annotation
+                 sta::Corner* corner_w_load_slew_viol,  // if not null, signals
+                                                        // a violation hidden by
+                                                        // an annotation
                  int& repaired_net_count,
                  int& slew_violations,
                  int& cap_violations,
                  int& fanout_violations,
                  int& length_violations);
-  bool needRepairCap(const Pin* drvr_pin,
+  bool needRepairCap(const sta::Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
-                     const Corner*& corner);
+                     const sta::Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
-  void checkSlew(const Pin* drvr_pin,
+  void checkSlew(const sta::Pin* drvr_pin,
                  // Return values.
-                 Slew& slew,
+                 sta::Slew& slew,
                  float& limit,
                  float& slack,
-                 const Corner*& corner);
-  float bufferInputMaxSlew(LibertyCell* buffer, const Corner* corner) const;
+                 const sta::Corner*& corner);
+  float bufferInputMaxSlew(sta::LibertyCell* buffer,
+                           const sta::Corner* corner) const;
   void repairNet(const BufferedNetPtr& bnet,
-                 const Pin* drvr_pin,
+                 const sta::Pin* drvr_pin,
                  float max_cap,
                  int max_length,  // dbu
-                 const Corner* corner);
+                 const sta::Corner* corner);
   void repairNet(const BufferedNetPtr& bnet,
                  int level,
                  // Return values.
                  int& wire_length,
-                 PinSeq& load_pins);
+                 sta::PinSeq& load_pins);
   void checkSlewLimit(float ref_cap, float max_load_slew);
   void repairNetVia(const BufferedNetPtr& bnet,
                     int level,
                     // Return values.
                     int& wire_length,
-                    PinSeq& load_pins);
+                    sta::PinSeq& load_pins);
   void repairNetWire(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int& wire_length,
-                     PinSeq& load_pins);
+                     sta::PinSeq& load_pins);
   void repairNetJunc(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int& wire_length,
-                     PinSeq& load_pins);
+                     sta::PinSeq& load_pins);
   void repairNetLoad(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int& wire_length,
-                     PinSeq& load_pins);
+                     sta::PinSeq& load_pins);
   float maxSlewMargined(float max_slew);
-  double findSlewLoadCap(LibertyPort* drvr_port,
+  double findSlewLoadCap(sta::LibertyPort* drvr_port,
                          double slew,
-                         const Corner* corner);
-  double gateSlewDiff(LibertyPort* drvr_port,
+                         const sta::Corner* corner);
+  double gateSlewDiff(sta::LibertyPort* drvr_port,
                       double load_cap,
                       double slew,
-                      const DcalcAnalysisPt* dcalc_ap);
-  LoadRegion findLoadRegions(const Net* net,
-                             const Pin* drvr_pin,
+                      const sta::DcalcAnalysisPt* dcalc_ap);
+  LoadRegion findLoadRegions(const sta::Net* net,
+                             const sta::Pin* drvr_pin,
                              int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
   void makeRegionRepeaters(LoadRegion& region,
                            int max_fanout,
                            int level,
-                           const Pin* drvr_pin,
+                           const sta::Pin* drvr_pin,
                            bool check_slew,
                            bool check_cap,
                            int max_length,
                            bool resize_drvr);
-  void makeFanoutRepeater(PinSeq& repeater_loads,
-                          PinSeq& repeater_inputs,
+  void makeFanoutRepeater(sta::PinSeq& repeater_loads,
+                          sta::PinSeq& repeater_inputs,
                           const odb::Rect& bbox,
-                          const Point& loc,
+                          const odb::Point& loc,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
                           bool resize_drvr);
-  PinSeq findLoads(const Pin* drvr_pin);
-  odb::Rect findBbox(PinSeq& pins);
-  Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
-  bool isRepeater(const Pin* load_pin);
+  sta::PinSeq findLoads(const sta::Pin* drvr_pin);
+  odb::Rect findBbox(sta::PinSeq& pins);
+  odb::Point findClosedPinLoc(const sta::Pin* drvr_pin, sta::PinSeq& pins);
+  bool isRepeater(const sta::Pin* load_pin);
   bool makeRepeater(const char* reason,
-                    const Point& loc,
-                    LibertyCell* buffer_cell,
+                    const odb::Point& loc,
+                    sta::LibertyCell* buffer_cell,
                     bool resize,
                     int level,
                     // Return values.
-                    PinSeq& load_pins,
+                    sta::PinSeq& load_pins,
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
   bool makeRepeater(const char* reason,
                     int x,
                     int y,
-                    LibertyCell* buffer_cell,
+                    sta::LibertyCell* buffer_cell,
                     bool resize,
                     int level,
                     // Return values.
-                    PinSeq& load_pins,
+                    sta::PinSeq& load_pins,
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew,
-                    Net*& out_net,
-                    Pin*& repeater_in_pin,
-                    Pin*& repeater_out_pin);
-  LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
-  bool hasInputPort(const Net* net);
+                    sta::Net*& out_net,
+                    sta::Pin*& repeater_in_pin,
+                    sta::Pin*& repeater_out_pin);
+  sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
+  bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
@@ -241,8 +243,8 @@ class RepairDesign : dbStaState
 
   void computeSlewRCFactor();
 
-  Logger* logger_ = nullptr;
-  dbNetwork* db_network_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
@@ -251,20 +253,20 @@ class RepairDesign : dbStaState
   est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::none;
 
   // Gain buffering
-  std::vector<LibertyCell*> buffer_sizes_;
+  std::vector<sta::LibertyCell*> buffer_sizes_;
 
   // Implicit arguments to repairNet bnet recursion.
-  const Pin* drvr_pin_ = nullptr;
+  const sta::Pin* drvr_pin_ = nullptr;
   float max_cap_ = 0;
   int max_length_ = 0;
   double slew_margin_ = 0;
   double cap_margin_ = 0;
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 
   int print_interval_ = 0;
   std::shared_ptr<ResizerObserver> graphics_;
@@ -273,10 +275,12 @@ class RepairDesign : dbStaState
 
   // Shape factor: what we need to multiply the RC product with
   // to get a slew estimate
-  float slew_rc_factor_ = 0;
+  std::optional<float> slew_rc_factor_;
 
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
+
+  friend class Resizer;
 };
 
 }  // namespace rsz

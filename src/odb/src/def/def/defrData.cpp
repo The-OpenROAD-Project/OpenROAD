@@ -29,6 +29,8 @@
 
 #include "defrData.hpp"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>

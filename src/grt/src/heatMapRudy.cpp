@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"

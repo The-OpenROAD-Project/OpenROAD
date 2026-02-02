@@ -68,6 +68,7 @@ global_placement
     [-timing_driven]
     [-routability_driven]
     [-skip_initial_place]
+    [-force_center_initial_place]
     [-incremental]
     [-bin_grid_count grid_count]
     [-density target_density]
@@ -96,6 +97,7 @@ global_placement
     [-timing_driven_nets_percentage]
     [-keep_resize_below_overflow]
     [-disable_revert_if_diverge]
+    [-disable_pin_density_adjust]
     [-enable_routing_congestion]
 ```
 
@@ -106,6 +108,7 @@ global_placement
 | `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
 | `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
+| `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
 | `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
 | `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
@@ -120,6 +123,7 @@ global_placement
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
+| `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
 
 #### Routability-Driven Arguments

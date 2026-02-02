@@ -3,6 +3,7 @@
 
 #include "dbBlock.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 #include <unistd.h>
 
 #include <algorithm>
@@ -110,7 +111,6 @@
 #include "dbScanInst.h"
 #include "dbScanListScanInstItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechLayerRule.h"
@@ -174,7 +174,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   max_cap_node_id_ = 0;
   max_rseg_id_ = 0;
   max_cc_seg_id_ = 0;
-  min_routing_layer_ = 1;
+  min_routing_layer_ = 2;
   max_routing_layer_ = -1;
   min_layer_for_clock_ = -1;
   max_layer_for_clock_ = -2;

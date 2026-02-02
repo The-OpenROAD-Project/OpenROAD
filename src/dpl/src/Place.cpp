@@ -31,7 +31,9 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "optimization/detailed_orient.h"
 #include "util/journal.h"
+#include "util/symmetry.h"
 #include "utl/Logger.h"
 // #define ODP_DEBUG
 
@@ -55,6 +57,7 @@ std::string Opendp::printBgBox(
                      queryBox.max_corner().x(),
                      queryBox.max_corner().y());
 }
+
 void Opendp::detailedPlacement()
 {
   if (debug_observer_) {
@@ -301,6 +304,27 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 
 void Opendp::place()
 {
+  int move_count = 0;
+  auto report_placement = [this, &move_count](
+                              Node* cell, bool mapped, bool shifted) {
+    if (jump_moves_ > 0 && (move_count++ % jump_moves_ != 0)) {
+      return;
+    }
+    if (debug_observer_) {
+      const char* type = isMultiRow(cell) ? "multi-row" : "single-row";
+      if (mapped) {
+        logger_->report("Successful mapMove(), {} cell {}", type, cell->name());
+      } else if (shifted) {
+        logger_->report(
+            "Successful shiftMove(), {} cell {}", type, cell->name());
+      } else {
+        logger_->report(
+            "Unsuccessful placement, {} cell {}", type, cell->name());
+      }
+      debug_observer_->redrawAndPause();
+    }
+  };
+
   vector<Node*> sorted_cells;
   sorted_cells.reserve(network_->getNumCells());
 
@@ -330,16 +354,40 @@ void Opendp::place()
                    1,
                    "Placing multi-row cell {}",
                    cell->name());
-        if (!mapMove(cell)) {
-          shiftMove(cell);
+        bool mapped = mapMove(cell);
+        bool shifted = false;
+        if (!mapped) {
+          shifted = shiftMove(cell);
+        }
+
+        if (iterative_placement_) {
+          odb::Point initial_location = getOdbLocation(cell);
+          odb::Point final_location = getDplLocation(cell);
+          float len
+              = odb::Point::squaredDistance(initial_location, final_location);
+          if (len > 0) {
+            report_placement(cell, mapped, shifted);
+          }
         }
       }
     }
   }
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
-      if (!mapMove(cell)) {
-        shiftMove(cell);
+      bool mapped = mapMove(cell);
+      bool shifted = false;
+      if (!mapped) {
+        shifted = shiftMove(cell);
+      }
+
+      if (iterative_placement_) {
+        odb::Point initial_location = getOdbLocation(cell);
+        odb::Point final_location = getDplLocation(cell);
+        float len
+            = odb::Point::squaredDistance(initial_location, final_location);
+        if (len > 0) {
+          report_placement(cell, mapped, shifted);
+        }
       }
     }
   }
@@ -966,7 +1014,39 @@ bool Opendp::checkPixels(const Node* cell,
   }
 
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
+
+  // Check for symmetry
+  auto* dbMaster = cell->getDbInst()->getMaster();
+  unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
+  if (!checkMasterSym(masterSym, orient)) {
+    return false;
+  }
+
   return drc_engine_->checkDRC(cell, x, y, orient);
+}
+
+bool Opendp::checkMasterSym(unsigned masterSym, unsigned cellOri) const
+{
+  using odb::dbOrientType;
+  switch (cellOri) {
+    case dbOrientType::R0:
+      return true;
+    case dbOrientType::MX:
+      return (masterSym & Symmetry_X) != 0;
+    case dbOrientType::MY:
+      return (masterSym & Symmetry_Y) != 0;
+    case dbOrientType::R180:
+      return (masterSym & Symmetry_X) && (masterSym & Symmetry_Y);
+    case dbOrientType::R90:
+    case dbOrientType::R270:
+      return (masterSym & Symmetry_ROT90) != 0;
+    case dbOrientType::MXR90:
+    case dbOrientType::MYR90:
+      return (masterSym & Symmetry_ROT90) && (masterSym & Symmetry_X)
+             && (masterSym & Symmetry_Y);
+    default:
+      return false;
+  }
 }
 
 ////////////////////////////////////////////////////////////////

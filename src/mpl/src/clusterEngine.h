@@ -95,8 +95,7 @@ struct PhysicalHierarchy
   BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
-  int halo_width{0};
-  int halo_height{0};
+  HardMacro::Halo default_halo;
   int64_t macro_with_halo_area{0};
 
   // The constraint set by the user.
@@ -144,6 +143,8 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
+  void setHalos(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
+  void setDataFlowDriven() { data_flow_driven_ = true; };
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -153,6 +154,8 @@ class ClusteringEngine
                                   int cluster_id,
                                   bool include_macro);
 
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
   void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                std::vector<HardMacro>& sa_macros,
                                UniqueClusterVector& macro_clusters,
@@ -175,11 +178,12 @@ class ClusteringEngine
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                                  const odb::Rect& core) const;
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void addIgnorableMacro(odb::dbInst* inst);
   void setDieArea();
   void setFloorplanShape();
+  void createHardMacros();
+  bool movableCellsFitInMacroPlacementArea() const;
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
@@ -310,18 +314,20 @@ class ClusteringEngine
   int max_std_cell_{0};
   int min_std_cell_{0};
 
-  // Variables for data flow
+  // Variables for data flow:
   DataFlow data_connections_;
-
   // The register distance between two macros for
   // them to be considered connected when creating data flow.
-  const int max_num_of_hops_ = 5;
+  const int max_num_of_hops_{5};
+  bool data_flow_driven_{false};
+
   const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
+  std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
 };
 
 }  // namespace mpl

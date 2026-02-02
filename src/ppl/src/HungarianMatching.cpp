@@ -23,7 +23,7 @@ HungarianMatching::HungarianMatching(const Section& section,
                                      Netlist* netlist,
                                      Core* core,
                                      std::vector<Slot>& slots,
-                                     Logger* logger,
+                                     utl::Logger* logger,
                                      odb::dbDatabase* db)
     : netlist_(netlist),
       core_(core),

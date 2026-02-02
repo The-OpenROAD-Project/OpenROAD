@@ -4,7 +4,6 @@
 #include "dbNet.h"
 
 #include <algorithm>
-#include <boost/container/small_vector.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -16,6 +15,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "boost/container/small_vector.hpp"
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
@@ -46,7 +46,6 @@
 #include "dbSWire.h"
 #include "dbSWireItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"

@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "ScanCell.hh"
+#include "ScanPin.hh"
 #include "utl/Logger.h"
 
 namespace dft {

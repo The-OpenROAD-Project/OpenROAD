@@ -63,15 +63,15 @@ clk I
 14 gclk1:1 gclk1:GCK 1e-06
 *END
 
-*D_NET gclk3 0.16457
+*D_NET gclk3 0.164533
 *CONN
 *I gclk3:GCK O *D CLKGATE_X1
 *I clkbuf_0_gclk3:A I *D CLKBUF_X3
 *CAP
-1 gclk3:0 0.0822849
-2 gclk3:1 0.0822849
+1 gclk3:0 0.0822667
+2 gclk3:1 0.0822667
 *RES
-1 gclk3:0 gclk3:1 0.00338701
+1 gclk3:0 gclk3:1 0.00338626
 2 gclk3:0 clkbuf_0_gclk3:A 1e-06
 3 gclk3:0 clkbuf_0_gclk3:A 1e-06
 4 gclk3:0 clkbuf_0_gclk3:A 1e-06
@@ -87,7 +87,7 @@ clk I
 14 gclk3:1 gclk3:GCK 1e-06
 *END
 
-*D_NET gclk4 0.998439
+*D_NET gclk4 0.998476
 *CONN
 *I gclk4:GCK O *D CLKGATE_X1
 *I clkbuf_0_gclk4:A I *D CLKBUF_X3
@@ -95,8 +95,8 @@ clk I
 *CAP
 1 gclk4:0 0.0382598
 2 gclk4:1 0.0239192
-3 gclk4:2 0.437041
-4 gclk4:3 0.49922
+3 gclk4:2 0.437059
+4 gclk4:3 0.499238
 *RES
 1 gclk4:0 gclk4:3 0.00157485
 2 gclk4:0 delaybuf_1_core:A 1e-06
@@ -111,7 +111,7 @@ clk I
 11 gclk4:1 gclk4:GCK 1e-06
 12 gclk4:1 gclk4:GCK 1e-06
 13 gclk4:1 gclk4:GCK 1e-06
-14 gclk4:2 gclk4:3 0.0179895
+14 gclk4:2 gclk4:3 0.0179902
 15 gclk4:2 clkbuf_0_gclk4:A 1e-06
 16 gclk4:2 clkbuf_0_gclk4:A 1e-06
 17 gclk4:2 clkbuf_0_gclk4:A 1e-06
@@ -1915,15 +1915,15 @@ clk I
 60 clknet_4_15__leaf_hi_gclk5:8 clkbuf_4_15__f_hi_gclk5:Z 1e-06
 *END
 
-*D_NET clknet_0_gclk4 0.548992
+*D_NET clknet_0_gclk4 0.549029
 *CONN
 *I clkbuf_0_gclk4:Z O *D CLKBUF_X3
 *I clkbuf_1_0__f_gclk4:A I *D CLKBUF_X3
 *CAP
-1 clknet_0_gclk4:0 0.274496
-2 clknet_0_gclk4:1 0.274496
+1 clknet_0_gclk4:0 0.274514
+2 clknet_0_gclk4:1 0.274514
 *RES
-1 clknet_0_gclk4:0 clknet_0_gclk4:1 0.0112988
+1 clknet_0_gclk4:0 clknet_0_gclk4:1 0.0112995
 2 clknet_0_gclk4:0 clkbuf_1_0__f_gclk4:A 1e-06
 3 clknet_0_gclk4:0 clkbuf_1_0__f_gclk4:A 1e-06
 4 clknet_0_gclk4:0 clkbuf_1_0__f_gclk4:A 1e-06
@@ -2297,7 +2297,7 @@ clk I
 44 clknet_2_3__leaf_gclk4_regs:2 clkbuf_2_3__f_gclk4_regs:Z 1e-06
 *END
 
-*D_NET clknet_0_gclk3 1.59432
+*D_NET clknet_0_gclk3 1.59428
 *CONN
 *I clkbuf_0_gclk3:Z O *D CLKBUF_X3
 *I clkbuf_2_0__f_gclk3:A I *D CLKBUF_X3
@@ -2306,10 +2306,10 @@ clk I
 *I clkbuf_2_3__f_gclk3:A I *D CLKBUF_X3
 *CAP
 1 clknet_0_gclk3:0 0.361251
-2 clknet_0_gclk3:1 0.421076
-3 clknet_0_gclk3:2 0.122698
-4 clknet_0_gclk3:3 0.0819565
-5 clknet_0_gclk3:4 0.253387
+2 clknet_0_gclk3:1 0.421095
+3 clknet_0_gclk3:2 0.122679
+4 clknet_0_gclk3:3 0.0819383
+5 clknet_0_gclk3:4 0.253368
 6 clknet_0_gclk3:5 0.353953
 *RES
 1 clknet_0_gclk3:0 clknet_0_gclk3:1 0.0148698
@@ -2323,7 +2323,7 @@ clk I
 9 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
 10 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
 11 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
-12 clknet_0_gclk3:1 clknet_0_gclk3:5 0.00246253
+12 clknet_0_gclk3:1 clknet_0_gclk3:5 0.00246328
 13 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
 14 clknet_0_gclk3:2 clknet_0_gclk3:2 1e-06
 15 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
@@ -2332,14 +2332,14 @@ clk I
 18 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
 19 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
 20 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
-21 clknet_0_gclk3:3 clknet_0_gclk3:2 0.00337349
+21 clknet_0_gclk3:3 clknet_0_gclk3:2 0.00337274
 22 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 23 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 24 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 25 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 26 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 27 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
-28 clknet_0_gclk3:4 clknet_0_gclk3:5 0.0104299
+28 clknet_0_gclk3:4 clknet_0_gclk3:5 0.0104291
 29 clknet_0_gclk3:4 clkbuf_2_3__f_gclk3:A 1e-06
 30 clknet_0_gclk3:4 clkbuf_2_3__f_gclk3:A 1e-06
 31 clknet_0_gclk3:4 clkbuf_2_3__f_gclk3:A 1e-06

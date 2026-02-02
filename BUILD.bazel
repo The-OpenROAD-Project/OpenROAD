@@ -5,6 +5,8 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -16,6 +18,22 @@ package(
         # TODO(b/299593765): Fix strict ordering.
         "-libcxx_assertions",
     ],
+)
+
+# Notification target to notify user if --config=opt (with LTO) is not used.
+notification_rule(
+    name = "opt_notification",
+    is_opt = select(
+        {
+            ":lto_on": True,
+            "//conditions:default": False,
+        },
+    ),
+)
+
+config_setting(
+    name = "lto_on",
+    values = {"copt": "-flto"},
 )
 
 exports_files([
@@ -153,6 +171,7 @@ cc_binary(
     deps = [
         ":openroad_lib",
         ":openroad_version",
+        ":opt_notification",
         ":ord",
         "//bazel:runfiles",
         "//src/cut",
@@ -372,4 +391,11 @@ filegroup(
         "src/options.i",
     ],
     visibility = ["@//:__subpackages__"],
+)
+
+sh_binary(
+    name = "install",
+    srcs = ["//bazel:install.sh"],
+    args = [],
+    data = [":openroad"],
 )

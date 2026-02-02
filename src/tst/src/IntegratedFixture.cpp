@@ -72,7 +72,8 @@ IntegratedFixture::IntegratedFixture(Technology tech,
   db_network_->setHierarchy();
 }
 
-void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
+void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file,
+                                            bool init_default_sdc)
 {
   ord::dbVerilogNetwork verilog_network(sta_.get());
   sta::VerilogReader verilog_reader(&verilog_network);
@@ -89,6 +90,13 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
   sta_->postReadDef(block_);
 
+  if (init_default_sdc) {
+    initStaDefaultSdc();
+  }
+}
+
+void IntegratedFixture::initStaDefaultSdc()
+{
   // Timing setup
   sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
   ASSERT_NE(top_cell, nullptr);

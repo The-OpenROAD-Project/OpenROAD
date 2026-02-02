@@ -18,7 +18,13 @@
 namespace utl {
 class Logger;
 }
+
+namespace LefParser {
+class lefiLayer;
+}  // namespace LefParser
+
 namespace odb {
+
 class lefTechLayerSpacingEolParser
 {
  public:
@@ -359,6 +365,49 @@ class MaxSpacingParser
 
  private:
   void setMaxSpacing(dbTechLayerMaxSpacingRule*, double);
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class lefTechLayerVoltageSpacing
+{
+ public:
+  lefTechLayerVoltageSpacing(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class AntennaGatePlusDiffParser
+{
+ public:
+  AntennaGatePlusDiffParser(LefParser::lefiLayer* layer,
+                            lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  LefParser::lefiLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class MinWidthParser
+{
+ public:
+  MinWidthParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
   dbTechLayer* layer_;
   lefinReader* lefin_;
 };

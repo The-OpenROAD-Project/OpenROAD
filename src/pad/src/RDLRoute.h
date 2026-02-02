@@ -83,9 +83,17 @@ class RDLRoute
     return access_dest_;
   }
 
+  odb::Rect getBBox(int bloat = 0) const;
+
+  static odb::Rect getPointObstruction(const odb::Point& pt, int dist);
+  static odb::Polygon getEdgeObstruction(const odb::Point& pt0,
+                                         const odb::Point& pt1,
+                                         int dist);
+  static bool is45DegreeEdge(const odb::Point& pt0, const odb::Point& pt1);
+
   bool isIntersecting(RDLRoute* other, int extent) const;
   bool isIntersecting(const odb::Line& line, int extent) const;
-  bool isIntersecting(const odb::Point& point, int extent) const;
+  bool isIntersecting(const odb::Point& point, int width, int spacing) const;
 
  private:
   odb::dbITerm* iterm_;
@@ -105,11 +113,13 @@ class RDLRoute
   const RouteTarget* route_dest_;
   std::set<odb::dbITerm*> routed_terminals_;
   std::set<odb::Rect> stubs_;
+  odb::Rect bbox_;
 
   RDLRouter::TerminalAccess access_source_;
   RDLRouter::TerminalAccess access_dest_;
 
   bool contains(const odb::Point& pt) const;
+  void setRouted();
 };
 
 }  // namespace pad
