@@ -222,10 +222,6 @@ void ThreeDBlox::calculateSize(dbChip* chip)
 {
   Cuboid cuboid;
   cuboid.mergeInit();
-  if (chip->getWidth() > 0 && chip->getHeight() > 0) {
-    cuboid.merge(Cuboid(
-        0, 0, 0, chip->getWidth(), chip->getHeight(), chip->getThickness()));
-  }
   for (auto inst : chip->getChipInsts()) {
     cuboid.merge(inst->getCuboid());
   }
@@ -339,8 +335,11 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     chip = dbChip::create(
         db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
   }
-  if (tech != nullptr) {
-    odb::dbStringProperty::create(chip, "3dblox_tech", tech->getName().c_str());
+  if (!chiplet.external.verilog_file.empty()) {
+    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
+      odb::dbStringProperty::create(
+          chip, "verilog_file", chiplet.external.verilog_file.c_str());
+    }
   }
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
@@ -428,16 +427,8 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
       layer = tech->findLayer(region.layer.c_str());
     }
   }
-  dbTechLayer* layer_to_pass = (chip->getBlock() != nullptr) ? layer : nullptr;
-  dbChipRegion* chip_region
-      = dbChipRegion::create(chip,
-                             region.name,
-                             getChipRegionSide(region.side, logger_),
-                             layer_to_pass);
-  if (layer != nullptr && layer_to_pass == nullptr) {
-    odb::dbStringProperty::create(
-        chip_region, "3dblox_layer", layer->getName().c_str());
-  }
+  dbChipRegion* chip_region = dbChipRegion::create(
+      chip, region.name, getChipRegionSide(region.side, logger_), layer);
   Rect box;
   box.mergeInit();
   for (const auto& coord : region.coords) {
@@ -546,9 +537,7 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
 dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
   dbChip* chip = db_->findChip(design.name.c_str());
-  if (chip == nullptr) {
-    chip = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
-  }
+  chip = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
   if (!design.external.verilog_file.empty()) {
     if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
       odb::dbStringProperty::create(
@@ -589,14 +578,6 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
       static_cast<int>(chip_inst.loc.y * db_->getDbuPerMicron()),
       static_cast<int>(chip_inst.z * db_->getDbuPerMicron()),
   });
-
-  if (!chip_inst.external.verilog_file.empty()) {
-    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
-      std::string verilog_file = chip_inst.external.verilog_file;
-      verilog_file = std::filesystem::absolute(verilog_file).string();
-      odb::dbStringProperty::create(chip, "verilog_file", verilog_file.c_str());
-    }
-  }
 }
 static std::vector<std::string> splitPath(const std::string& path)
 {

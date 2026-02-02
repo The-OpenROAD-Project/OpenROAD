@@ -17,21 +17,22 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
+namespace odb {
+
 namespace {
 
-std::vector<odb::dbChipInst*> concatPath(
-    const std::vector<odb::dbChipInst*>& head,
-    const std::vector<odb::dbChipInst*>& tail)
+std::vector<dbChipInst*> concatPath(const std::vector<dbChipInst*>& head,
+                                    const std::vector<dbChipInst*>& tail)
 {
   if (tail.empty()) {
     return head;
   }
-  std::vector<odb::dbChipInst*> full = head;
+  std::vector<dbChipInst*> full = head;
   full.insert(full.end(), tail.begin(), tail.end());
   return full;
 }
 
-std::string getFullPathName(const std::vector<odb::dbChipInst*>& path)
+std::string getFullPathName(const std::vector<dbChipInst*>& path)
 {
   std::string name;
   for (auto* p : path) {
@@ -43,40 +44,28 @@ std::string getFullPathName(const std::vector<odb::dbChipInst*>& path)
   return name;
 }
 
-odb::dbChipRegion::Side mirrorSide(odb::dbChipRegion::Side side)
+UnfoldedRegionSide mirrorSide(UnfoldedRegionSide side)
 {
-  if (side == odb::dbChipRegion::Side::FRONT) {
-    return odb::dbChipRegion::Side::BACK;
+  if (side == UnfoldedRegionSide::TOP) {
+    return UnfoldedRegionSide::BOTTOM;
   }
-  if (side == odb::dbChipRegion::Side::BACK) {
-    return odb::dbChipRegion::Side::FRONT;
+  if (side == UnfoldedRegionSide::BOTTOM) {
+    return UnfoldedRegionSide::TOP;
   }
   return side;
 }
 
 }  // namespace
 
-namespace odb {
-
 int UnfoldedRegion::getSurfaceZ() const
 {
-  if (isFront()) {
+  if (isTop()) {
     return cuboid.zMax();
   }
-  if (isBack()) {
+  if (isBottom()) {
     return cuboid.zMin();
   }
   return cuboid.zCenter();
-}
-
-bool UnfoldedChip::isParentOf(const UnfoldedChip* other) const
-{
-  if (chip_inst_path.size() >= other->chip_inst_path.size()) {
-    return false;
-  }
-  return std::equal(chip_inst_path.begin(),
-                    chip_inst_path.end(),
-                    other->chip_inst_path.begin());
 }
 
 UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
@@ -103,21 +92,28 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   dbTransform total = inst_xform;
   total.concat(parent_xform);
 
+  if (master->getChipType() == dbChip::ChipType::HIER) {
+    Cuboid merged_cuboid;
+    merged_cuboid.mergeInit();
+    for (auto* sub : master->getChipInsts()) {
+      Cuboid sub_local;
+      buildUnfoldedChip(sub, path, total, sub_local);
+      merged_cuboid.merge(sub_local);
+    }
+    local = merged_cuboid;
+    inst_xform.apply(local);
+
+    unfoldConnections(master, path);
+    unfoldNets(master, path);
+    path.pop_back();
+    return nullptr;
+  }
+
   UnfoldedChip uf_chip;
   uf_chip.name = getFullPathName(path);
   uf_chip.chip_inst_path = path;
   uf_chip.transform = total;
-
-  if (master->getChipType() == dbChip::ChipType::HIER) {
-    uf_chip.cuboid.mergeInit();
-    for (auto* sub : master->getChipInsts()) {
-      Cuboid sub_local;
-      buildUnfoldedChip(sub, path, total, sub_local);
-      uf_chip.cuboid.merge(sub_local);
-    }
-  } else {
-    uf_chip.cuboid = master->getCuboid();
-  }
+  uf_chip.cuboid = master->getCuboid();
 
   // Calculate cuboid in parent space for hierarchical merging
   local = uf_chip.cuboid;
@@ -125,16 +121,17 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
 
   // Transform cuboid to global space
   uf_chip.transform.apply(uf_chip.cuboid);
-  unfoldRegions(uf_chip, inst, uf_chip.transform);
+  unfoldRegions(uf_chip, inst);
 
   unfolded_chips_.push_back(std::move(uf_chip));
-  registerUnfoldedChip(unfolded_chips_.back());
+  UnfoldedChip* created_chip = &unfolded_chips_.back();
+  registerUnfoldedChip(*created_chip);
 
   unfoldConnections(master, path);
   unfoldNets(master, path);
 
   path.pop_back();
-  return &unfolded_chips_.back();
+  return created_chip;
 }
 
 void UnfoldedModel::registerUnfoldedChip(UnfoldedChip& chip)
@@ -150,23 +147,57 @@ void UnfoldedModel::registerUnfoldedChip(UnfoldedChip& chip)
   chip_path_map_[chip.chip_inst_path] = &chip;
 }
 
-void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip,
-                                  dbChipInst* inst,
-                                  const dbTransform& transform)
+void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst)
 {
-  for (auto* region_inst : inst->getRegions()) {
-    auto side = region_inst->getChipRegion()->getSide();
-    if (transform.isMirrorZ()) {
+  auto regions = inst->getRegions();
+  if (regions.empty()) {
+    return;
+  }
+
+  int min_zc = std::numeric_limits<int>::max();
+  int max_zc = std::numeric_limits<int>::min();
+
+  for (auto* region_inst : regions) {
+    int zc = region_inst->getChipRegion()->getCuboid().zCenter();
+    min_zc = std::min(min_zc, zc);
+    max_zc = std::max(max_zc, zc);
+  }
+
+  const int chip_thickness = inst->getMasterChip()->getThickness();
+
+  for (auto* region_inst : regions) {
+    auto region = region_inst->getChipRegion();
+    int zc = region->getCuboid().zCenter();
+
+    UnfoldedRegionSide side = UnfoldedRegionSide::INTERNAL;
+    if (min_zc == max_zc) {
+      side = (zc < chip_thickness / 2) ? UnfoldedRegionSide::BOTTOM
+                                       : UnfoldedRegionSide::TOP;
+    } else {
+      if (zc == min_zc) {
+        side = UnfoldedRegionSide::BOTTOM;
+      } else if (zc == max_zc) {
+        side = UnfoldedRegionSide::TOP;
+      }
+    }
+
+    // Preserve INTERNAL_EXT if it's geometrically internal
+    if (side == UnfoldedRegionSide::INTERNAL
+        && region->getSide() == dbChipRegion::Side::INTERNAL_EXT) {
+      side = UnfoldedRegionSide::INTERNAL_EXT;
+    }
+
+    if (uf_chip.transform.isMirrorZ()) {
       side = mirrorSide(side);
     }
 
     UnfoldedRegion uf_region;
     uf_region.region_inst = region_inst;
     uf_region.effective_side = side;
-    uf_region.cuboid = region_inst->getChipRegion()->getCuboid();
+    uf_region.cuboid = region->getCuboid();
 
-    transform.apply(uf_region.cuboid);
-    unfoldBumps(uf_region, transform);
+    uf_chip.transform.apply(uf_region.cuboid);
+    unfoldBumps(uf_region, uf_chip.transform);
     uf_chip.regions.push_back(std::move(uf_region));
   }
 }

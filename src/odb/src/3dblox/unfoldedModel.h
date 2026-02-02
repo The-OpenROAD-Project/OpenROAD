@@ -24,6 +24,14 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipNet;
 
+enum class UnfoldedRegionSide
+{
+  TOP,
+  BOTTOM,
+  INTERNAL,
+  INTERNAL_EXT
+};
+
 struct UnfoldedChip;
 struct UnfoldedRegion;
 
@@ -37,22 +45,22 @@ struct UnfoldedBump
 struct UnfoldedRegion
 {
   dbChipRegionInst* region_inst = nullptr;
-  dbChipRegion::Side effective_side = dbChipRegion::Side::FRONT;
+  UnfoldedRegionSide effective_side = UnfoldedRegionSide::TOP;
   Cuboid cuboid;
   UnfoldedChip* parent_chip = nullptr;
   std::deque<UnfoldedBump> bumps;
   bool isUsed = false;
 
   int getSurfaceZ() const;
-  bool isFront() const { return effective_side == dbChipRegion::Side::FRONT; }
-  bool isBack() const { return effective_side == dbChipRegion::Side::BACK; }
+  bool isTop() const { return effective_side == UnfoldedRegionSide::TOP; }
+  bool isBottom() const { return effective_side == UnfoldedRegionSide::BOTTOM; }
   bool isInternal() const
   {
-    return effective_side == dbChipRegion::Side::INTERNAL;
+    return effective_side == UnfoldedRegionSide::INTERNAL;
   }
   bool isInternalExt() const
   {
-    return effective_side == dbChipRegion::Side::INTERNAL_EXT;
+    return effective_side == UnfoldedRegionSide::INTERNAL_EXT;
   }
 };
 
@@ -101,9 +109,7 @@ class UnfoldedModel
                                   const dbTransform& parent_xform,
                                   Cuboid& local_cuboid);
   void registerUnfoldedChip(UnfoldedChip& uf_chip);
-  void unfoldRegions(UnfoldedChip& uf_chip,
-                     dbChipInst* inst,
-                     const dbTransform& transform);
+  void unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst);
   void unfoldBumps(UnfoldedRegion& uf_region, const dbTransform& transform);
   void unfoldConnections(dbChip* chip,
                          const std::vector<dbChipInst*>& parent_path);
