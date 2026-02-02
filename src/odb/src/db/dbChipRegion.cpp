@@ -7,13 +7,13 @@
 #include <string>
 
 #include "dbChipBump.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
-#include <algorithm>
 #include <cstdint>
 
 #include "dbChip.h"
@@ -145,53 +145,8 @@ Cuboid dbChipRegion::getCuboid() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
   const Rect& box = obj->box_;
-  const int chip_thickness = getChip()->getThickness();
-  const Side side = getSide();
-
-  int z_bot = 0;
-  int z_top = 0;
-
-  if (dbTechLayer* layer = getLayer()) {
-    uint32_t total_thick = 0;
-    uint32_t layer_top_rel = 0;
-    uint32_t layer_thick = 0;
-    bool found = false;
-
-    if (dbTech* tech = layer->getTech()) {
-      for (dbTechLayer* l : tech->getLayers()) {
-        uint32_t thick = 0;
-        if (l->getThickness(thick)) {
-          total_thick += thick;
-          if (!found) {
-            layer_top_rel += thick;
-            if (l == layer) {
-              found = true;
-              layer_thick = thick;
-            }
-          }
-        }
-      }
-    }
-
-    if (side == Side::BACK) {
-      z_top = layer_top_rel;
-    } else {
-      z_top = chip_thickness - (total_thick - layer_top_rel);
-    }
-    z_bot = z_top - layer_thick;
-  } else {
-    // Default logic
-    if (side == Side::FRONT) {
-      z_top = z_bot = chip_thickness;
-    } else if (side == Side::BACK) {
-      z_top = z_bot = 0;
-    } else {
-      z_bot = 0;
-      z_top = chip_thickness;
-    }
-  }
-
-  return Cuboid(box.xMin(), box.yMin(), z_bot, box.xMax(), box.yMax(), z_top);
+  return Cuboid(
+      box.xMin(), box.yMin(), obj->z_min_, box.xMax(), box.yMax(), obj->z_max_);
 }
 
 dbChip* dbChipRegion::getChip() const
@@ -280,6 +235,31 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   chip_region->side_ = static_cast<uint8_t>(side);
   chip_region->layer_ = (_layer != nullptr) ? _layer->getOID() : 0;
   chip_region->box_ = Rect();  // Initialize with empty rectangle
+
+  int z_bot = 0;
+  int z_top = 0;
+  const int chip_thickness = chip->getThickness();
+
+  if (layer != nullptr) {
+    if (dbTech* tech = layer->getTech()) {
+      for (dbTechLayer* l : tech->getLayers()) {
+        uint32_t thick = 0;
+        if (l->getThickness(thick)) {
+          z_top += thick;
+          if (l == layer) {
+            z_bot = z_top - thick;
+            break;
+          }
+        }
+      }
+    }
+  } else {
+    z_bot = 0;
+    z_top = chip_thickness;
+  }
+
+  chip_region->z_min_ = z_bot;
+  chip_region->z_max_ = z_top;
 
   return (dbChipRegion*) chip_region;
 }

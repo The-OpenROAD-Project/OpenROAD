@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <deque>
 #include <map>
+#include <limits>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -73,8 +74,7 @@ UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
 {
   std::vector<dbChipInst*> path;
   for (dbChipInst* inst : chip->getChipInsts()) {
-    Cuboid local;
-    buildUnfoldedChip(inst, path, dbTransform(), local);
+    buildUnfoldedChip(inst, path, dbTransform());
   }
   unfoldConnections(chip, {});
   unfoldNets(chip, {});
@@ -82,8 +82,7 @@ UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
 
 UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
                                                std::vector<dbChipInst*>& path,
-                                               const dbTransform& parent_xform,
-                                               Cuboid& local)
+                                               const dbTransform& parent_xform)
 {
   dbChip* master = inst->getMasterChip();
   path.push_back(inst);
@@ -93,15 +92,9 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   total.concat(parent_xform);
 
   if (master->getChipType() == dbChip::ChipType::HIER) {
-    Cuboid merged_cuboid;
-    merged_cuboid.mergeInit();
     for (auto* sub : master->getChipInsts()) {
-      Cuboid sub_local;
-      buildUnfoldedChip(sub, path, total, sub_local);
-      merged_cuboid.merge(sub_local);
+      buildUnfoldedChip(sub, path, total);
     }
-    local = merged_cuboid;
-    inst_xform.apply(local);
 
     unfoldConnections(master, path);
     unfoldNets(master, path);
@@ -115,10 +108,6 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   uf_chip.transform = total;
   uf_chip.cuboid = master->getCuboid();
 
-  // Calculate cuboid in parent space for hierarchical merging
-  local = uf_chip.cuboid;
-  inst_xform.apply(local);
-
   // Transform cuboid to global space
   uf_chip.transform.apply(uf_chip.cuboid);
   unfoldRegions(uf_chip, inst);
@@ -126,9 +115,6 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   unfolded_chips_.push_back(std::move(uf_chip));
   UnfoldedChip* created_chip = &unfolded_chips_.back();
   registerUnfoldedChip(*created_chip);
-
-  unfoldConnections(master, path);
-  unfoldNets(master, path);
 
   path.pop_back();
   return created_chip;
@@ -154,37 +140,23 @@ void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst)
     return;
   }
 
-  int min_zc = std::numeric_limits<int>::max();
-  int max_zc = std::numeric_limits<int>::min();
-
-  for (auto* region_inst : regions) {
-    int zc = region_inst->getChipRegion()->getCuboid().zCenter();
-    min_zc = std::min(min_zc, zc);
-    max_zc = std::max(max_zc, zc);
-  }
-
-  const int chip_thickness = inst->getMasterChip()->getThickness();
-
   for (auto* region_inst : regions) {
     auto region = region_inst->getChipRegion();
-    int zc = region->getCuboid().zCenter();
 
     UnfoldedRegionSide side = UnfoldedRegionSide::INTERNAL;
-    if (min_zc == max_zc) {
-      side = (zc < chip_thickness / 2) ? UnfoldedRegionSide::BOTTOM
-                                       : UnfoldedRegionSide::TOP;
-    } else {
-      if (zc == min_zc) {
-        side = UnfoldedRegionSide::BOTTOM;
-      } else if (zc == max_zc) {
+    switch (region->getSide()) {
+      case dbChipRegion::Side::FRONT:
         side = UnfoldedRegionSide::TOP;
-      }
-    }
-
-    // Preserve INTERNAL_EXT if it's geometrically internal
-    if (side == UnfoldedRegionSide::INTERNAL
-        && region->getSide() == dbChipRegion::Side::INTERNAL_EXT) {
-      side = UnfoldedRegionSide::INTERNAL_EXT;
+        break;
+      case dbChipRegion::Side::BACK:
+        side = UnfoldedRegionSide::BOTTOM;
+        break;
+      case dbChipRegion::Side::INTERNAL:
+        side = UnfoldedRegionSide::INTERNAL;
+        break;
+      case dbChipRegion::Side::INTERNAL_EXT:
+        side = UnfoldedRegionSide::INTERNAL_EXT;
+        break;
     }
 
     if (uf_chip.transform.isMirrorZ()) {
@@ -197,8 +169,8 @@ void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst)
     uf_region.cuboid = region->getCuboid();
 
     uf_chip.transform.apply(uf_region.cuboid);
-    unfoldBumps(uf_region, uf_chip.transform);
     uf_chip.regions.push_back(std::move(uf_region));
+    unfoldBumps(uf_chip.regions.back(), uf_chip.transform);
   }
 }
 
