@@ -216,7 +216,6 @@ class TritonCTS
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
-  odb::dbMaster* delayBufMaster_ = nullptr;
   std::vector<std::unique_ptr<TreeBuilder>> builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;
