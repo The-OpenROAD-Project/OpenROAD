@@ -246,7 +246,8 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              int min_layer,
                              int max_layer,
                              float slack,
-                             std::vector<int8_t>* edge_cost_per_layer)
+                             std::vector<int8_t>* edge_cost_per_layer,
+                             bool routed)
 {
   int netID;
   bool exists;
@@ -278,7 +279,7 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              edge_cost_per_layer);
   // Don't add local nets to the list of ids that will be routed. It is only
   // necessary to add them to make mergeNet work with local nets.
-  if (!is_local) {
+  if (!is_local && !routed) {
     net_ids_.push_back(netID);
   }
 
