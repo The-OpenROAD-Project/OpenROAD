@@ -14,7 +14,6 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
-#include "sta/PortDirection.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -78,33 +77,98 @@ void RCTreeNode::DebugPrint(int indent, utl::Logger* logger)
   }
 }
 
-void LoadNode::CalcBufferSolutions(const sta::Corner* corner,
-                                   double unit_r,
-                                   double unit_c,
-                                   int max_cap,
-                                   rsz::Resizer* resizer,
-                                   sta::dbSta* sta,
-                                   BufferCandidates& buffer_candidates)
+// 0: sol1 / sol2 cannot dominate each other
+// 1: sol1 dominates sol2
+// -1: sol2 dominates sol1
+int RCTreeNode::IsDominated(BufferSolution& sol1, BufferSolution& sol2)
+{
+  bool sol1_better_in_all = true;
+  bool sol2_better_in_all = true;
+
+  if (sol1.cap > sol2.cap) {
+    sol1_better_in_all = false;
+  } else if (sol1.cap < sol2.cap) {
+    sol2_better_in_all = false;
+  }
+
+  if (sol1.wire_slew > sol2.wire_slew) {
+    sol1_better_in_all = false;
+  } else if (sol1.wire_slew < sol2.wire_slew) {
+    sol2_better_in_all = false;
+  }
+
+  if (sol1.buffer_locs.size() > sol2.buffer_locs.size()) {
+    sol1_better_in_all = false;
+  } else if (sol1.buffer_locs.size() < sol2.buffer_locs.size()) {
+    sol2_better_in_all = false;
+  }
+
+  if (sol1.limit < sol2.limit) {
+    sol1_better_in_all = false;
+  } else if (sol1.limit > sol2.limit) {
+    sol2_better_in_all = false;
+  }
+
+  if (sol1_better_in_all && !sol2_better_in_all) {
+    return 1;
+  }
+  if (!sol1_better_in_all && sol2_better_in_all) {
+    return -1;
+  }
+  return 0;
+}
+
+void RCTreeNode::AddSolutionAndEnsureDominance(
+    std::vector<BufferSolution>& solutions,
+    BufferSolution new_sol)
+{
+  // Check if the new solution is dominated by any existing solution
+  for (auto it = solutions.begin(); it != solutions.end();) {
+    int dom_result = IsDominated(new_sol, *it);
+    if (dom_result == -1) {
+      // New solution is dominated by an existing solution
+      return;
+    }
+
+    if (dom_result == 1) {
+      // New solution dominates an existing solution
+      it = solutions.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  // If not dominated, add the new solution
+  solutions.push_back(new_sol);
+}
+
+std::vector<BufferSolution> LoadNode::CalcBufferSolutions(
+    const sta::Corner* corner,
+    double unit_r,
+    double unit_c,
+    int max_cap,
+    rsz::Resizer* resizer,
+    sta::dbSta* sta,
+    BufferCandidates& buffer_candidates)
 {
   auto cap = SinkInCap(resizer);
   auto limit = SlewLimit(sta, resizer, corner);
   assert(cap > 0);
   assert(limit > 0);
   if (cap <= max_cap) {
-    BufferSolutionPtr solution
-        = std::make_shared<BufferSolution>(false, cap, 0.0, 0, limit);
-    buffer_solutions_.push_back(solution);
-  } else {
-    for (auto& buffer_cand : buffer_candidates) {
-      if (buffer_cand.load_cap_limit >= cap) {
-        // TODO: we do not have a weight for different buffer sizes in this demo
-        BufferSolutionPtr solution = std::make_shared<BufferSolution>(
-            true, buffer_cand.input_cap, 0.0, 1, buffer_cand.input_slew_limit);
-        buffer_solutions_.push_back(solution);
-        break;
-      }
+    return {BufferSolution{cap, 0.0, limit, BufferLocMap{}}};
+  }
+  // Find a suitable buffer
+  for (auto& buffer_cand : buffer_candidates) {
+    if (buffer_cand.load_cap_limit >= cap) {
+      // TODO: we do not have a weight for different buffer sizes in this demo
+      BufferSolution solution(buffer_cand.input_cap,
+                              0.0,
+                              buffer_cand.input_slew_limit,
+                              BufferLocMap{{this, buffer_cand.cell}});
+      return {solution};
     }
   }
+  return {};  // No suitable solution.
 }
 
 float LoadNode::SlewLimit(sta::dbSta* sta,
@@ -145,11 +209,123 @@ float LoadNode::SinkInCap(rsz::Resizer* resizer)
   return port->capacitance();
 }
 
+std::vector<BufferSolution> WireNode::CalcBufferSolutions(const sta::Corner* corner,
+                                   double unit_r,
+                                   double unit_c,
+                                   int max_cap,
+                                   rsz::Resizer* resizer,
+                                   sta::dbSta* sta,
+                                   BufferCandidates& buffer_candidates)
+{
+  // Aggregate downstream solutions
+  std::vector<BufferSolution> downstream_solutions
+      = downstream_->CalcBufferSolutions(
+          corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates);
+  if (downstream_solutions.empty()) { // No valid downstream solution
+    return {};
+  }
+
+  auto distance = odb::Point::manhattanDistance(loc_, downstream_->Location());
+  if (distance == 0) {  // no wire segment
+    return downstream_solutions;
+  }
+
+  std::vector<BufferSolution> solutions {};
+  auto distance_meter = resizer->dbuToMeters(distance);
+  // Wire delay and slew calculation
+  double wire_r = unit_r * distance_meter;
+  double wire_c = unit_c * distance_meter;
+
+  for (auto& sol : downstream_solutions) {
+    double wire_slew = wire_r * (sol.cap + wire_c / 2)
+                       * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR;
+    float total_cap = sol.cap + wire_c;
+    float total_wire_slew = sol.wire_slew + wire_slew;
+    if (total_cap <= max_cap && total_wire_slew <= sol.limit) {
+      // Solution with no buffer
+      BufferSolution new_sol {total_cap, total_wire_slew, sol.limit, sol.buffer_locs};
+      AddSolutionAndEnsureDominance(solutions, new_sol);
+    }
+
+    // Buffered solution
+    for (auto& buffer_cand : buffer_candidates) {
+      if (buffer_cand.load_cap_limit >= total_cap) {
+        BufferSolution new_sol{buffer_cand.input_cap,
+                               0.0,
+                               buffer_cand.input_slew_limit,
+                               sol.buffer_locs};
+        new_sol.buffer_locs[this] = buffer_cand.cell;
+        AddSolutionAndEnsureDominance(solutions, new_sol);
+        break;
+      }
+    }
+  }
+
+  return solutions;
+}
+
+std::vector<BufferSolution> JuncNode::CalcBufferSolutions(
+    const sta::Corner* corner,
+    double unit_r,
+    double unit_c,
+    int max_cap,
+    rsz::Resizer* resizer,
+    sta::dbSta* sta,
+    BufferCandidates& buffer_candidates)
+{
+  auto child1_solutions = downstream1_->CalcBufferSolutions(
+      corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates);
+  auto child2_solutions = downstream2_->CalcBufferSolutions(
+      corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates);
+  
+  if (child1_solutions.empty() || child2_solutions.empty()) {
+    return {};
+  }
+
+  std::vector<BufferSolution> solutions{};
+  // Combine child solutions
+  for (auto& sol1 : child1_solutions) {
+    for (auto& sol2 : child2_solutions) {
+      float total_cap = sol1.cap + sol2.cap;
+      bool choose_slew1
+          = sol1.limit - sol1.wire_slew > sol2.limit - sol2.wire_slew;
+      float total_wire_slew = choose_slew1 ? sol1.wire_slew : sol2.wire_slew;
+      float limit = choose_slew1 ? sol1.limit : sol2.limit;
+      if (total_cap <= max_cap) {
+        BufferLocMap combined_locs = sol1.buffer_locs;
+        combined_locs.insert(sol2.buffer_locs.begin(),
+                             sol2.buffer_locs.end());
+        BufferSolution new_sol{total_cap, total_wire_slew, limit, combined_locs};
+        AddSolutionAndEnsureDominance(solutions, new_sol);
+      }
+
+      // buffered sol at JUNC's input
+      for (auto& buffer_cand : buffer_candidates) {
+        if (buffer_cand.load_cap_limit >= total_cap) {
+          BufferLocMap combined_locs = sol1.buffer_locs;
+          combined_locs.insert(sol2.buffer_locs.begin(),
+                               sol2.buffer_locs.end());
+          combined_locs[this] = buffer_cand.cell;
+          BufferSolution new_sol{buffer_cand.input_cap,
+                                 0.0,
+                                 buffer_cand.input_slew_limit,
+                                 combined_locs};
+          AddSolutionAndEnsureDominance(solutions, new_sol);
+          break;
+        }
+      }
+    }
+  }
+
+  return solutions;
+}
+
 void UvDRCSlewBuffer::InitBufferCandidates()
 {
-  // TODO: In this demo, we only use the default slew/cap metrics from liberty file, without considering its performance on given corner.
+  // TODO: In this demo, we only use the default slew/cap metrics from liberty
+  // file, without considering its performance on given corner.
 
-  if (!buffer_candidates_.empty()) { // init done
+  if (!buffer_candidates_.empty()) {  // init done
     return;
   }
 
@@ -159,7 +335,7 @@ void UvDRCSlewBuffer::InitBufferCandidates()
     float drive_resistance = out->driveResistance();
 
     float input_cap = in->capacitance();
-    
+
     bool exists;
 
     float in_slew_limit = sta::INF;
@@ -405,7 +581,8 @@ void UvDRCSlewBuffer::PrepareBufferSlotsHelper(RCTreeNodePtr u,
     u->RemoveDownstreamNode(d);
     u->AddDownstreamNode(prevWireNode);
   } else if (u->Type() == RCTreeNodeType::JUNCTION
-             && distance > 0) {  // We still need a Buffer slot at junctions' outputs
+             && distance
+                    > 0) {  // We still need a Buffer slot at junctions' outputs
     RCTreeNodePtr wireNode = std::make_shared<WireNode>(u_loc);
     wireNode->AddDownstreamNode(d);
     u->RemoveDownstreamNode(d);
@@ -459,20 +636,19 @@ int UvDRCSlewBuffer::MaxLengthForSlewOpenROAD(sta::LibertyCell* buffer_cell,
     return std::numeric_limits<int>::max();
   }
   static constexpr float k_slew_margin = 0.2f;  // 20%
-  max_slew *= (1 - k_slew_margin);  // * 0.8
+  max_slew *= (1 - k_slew_margin);              // * 0.8
 
   double unit_r, unit_c;
   resizer_->estimate_parasitics_->wireSignalRC(corner, unit_r, unit_c);
 
   double r_drvr = out->driveResistance();
   double in_cap = in->capacitance();
-  double slew_rc_factor = k_openroad_slew_factor;  // 1.39
   // Solve quadratic equation to get max length
   // 0.5 r c l^2 + (r * C_Load + R_drvr * c) l + R_drvr * C_Load = Max_Slew /
   // Delay_Slew_Factor
   const double a = unit_r * unit_c / 2;
   const double b = unit_c * r_drvr + unit_r * in_cap;
-  const double c = r_drvr * in_cap - max_slew / slew_rc_factor;
+  const double c = r_drvr * in_cap - max_slew / K_OPENROAD_SLEW_FACTOR;
   const double d = b * b - 4 * a * c;
   if (d < 0) {
     resizer_->logger()->warn(
@@ -529,7 +705,7 @@ int UvDRCSlewBuffer::MaxLengthForCap(sta::LibertyCell* buffer_cell,
   float cap_limit;
   out->capacitanceLimit(sta::MinMax::max(), cap_limit, cap_limit_exists);
 
-  static constexpr float k_cap_margin = 0.2f;   // 20%
+  static constexpr float k_cap_margin = 0.2f;  // 20%
   if (cap_limit_exists) {
     double wire_res, wire_cap;
     resizer_->estimate_parasitics_->wireSignalRC(corner, wire_res, wire_cap);
@@ -554,9 +730,6 @@ void UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
                           const sta::Corner* corner,
                           int max_cap)
 {
-  // TODO: DELETE THIS
-  TestFunction();
-
   InitBufferCandidates();
   RCTreeNodePtr root = nullptr;
   {
@@ -574,39 +747,27 @@ void UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
 
   double unit_r, unit_c;
   resizer_->estimate_parasitics_->wireSignalRC(corner, unit_r, unit_c);
-  root->CalcBufferSolutions(corner,
-                            unit_r,
-                            unit_c,
-                            max_cap,
-                            resizer_,
-                            resizer_->sta_,
-                            buffer_candidates_);
-  
-  auto& solutions = root->BufferSolutions();
+
+  auto solutions = root->CalcBufferSolutions(corner,
+                                             unit_r,
+                                             unit_c,
+                                             max_cap,
+                                             resizer_,
+                                             resizer_->sta_,
+                                             buffer_candidates_);
   if (solutions.empty()) {
     throw std::runtime_error("No buffer solutions found for the root node.");
   }
   std::sort(solutions.begin(),
             solutions.end(),
-            [](const BufferSolutionPtr& a, const BufferSolutionPtr& b) {
-              return a->area < b->area;
+            [](BufferSolution& a, BufferSolution& b) {
+              return a.buffer_locs.size() < b.buffer_locs.size();
             });
   auto& best_solution = solutions.front();
   resizer_->logger()->report(
-      "Best buffer solution for the root node: area = {}",
-      best_solution->area);
-  
-  // TODO: Apply the best buffer solution to the netlist
-}
+      "Best buffer solution for the root node: area = {}", best_solution.buffer_locs.size());
 
-void UvDRCSlewBuffer::TestFunction()
-{
-  resizer_->logger()->report("UvDRCSlewBuffer TestFunction called.");
-  // std::vector<int> x = {0, 6, 4, 4};
-  // std::vector<int> y = {4, 4, 6, 2};
-  // stt::SteinerTreeBuilder builder{nullptr, nullptr};
-  // stt::Tree tree = builder.makeSteinerTree(x, y, 0);
-  // tree.printTree(resizer_->logger());
+  // TODO: Apply the best buffer solution to the netlist
 }
 
 }  // namespace uv_drc

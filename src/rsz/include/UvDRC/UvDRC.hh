@@ -12,9 +12,11 @@
 #include <sta/Network.hh>
 #include <sta/Path.hh>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 #include "sta/Corner.hh"
+#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 namespace uv_drc {
@@ -54,18 +56,17 @@ struct BufferCandidate
 using BufferCandidates = std::vector<BufferCandidate>;
 
 struct BufferSolution;
-using BufferSolutionPtr = std::shared_ptr<BufferSolution>;
 class RCTreeNode;
 using RCTreeNodePtr = std::shared_ptr<RCTreeNode>;
 
+using BufferLocMap = std::unordered_map<RCTreeNode*, sta::LibertyCell*>;
+
 struct BufferSolution
 {
-  bool is_buffered;
   float cap;
   float wire_slew;
-  std::size_t area;  // buffer_count
   float limit;
-  std::vector<BufferSolutionPtr> children;
+  BufferLocMap buffer_locs;
 };
 
 enum class RCTreeNodeType
@@ -89,28 +90,30 @@ class RCTreeNode
   virtual void RemoveDownstreamNode(RCTreeNodePtr ptr) = 0;
   virtual std::vector<RCTreeNodePtr> DownstreamNodes() = 0;
   virtual std::size_t DownstreamNodeCount() = 0;
-  std::vector<BufferSolutionPtr>& BufferSolutions()
-  {
-    return buffer_solutions_;
-  }
-  virtual void CalcBufferSolutions(const sta::Corner* corner,
-                                   double unit_r,
-                                   double unit_c,
-                                   int max_cap,
-                                   rsz::Resizer* resizer,
-                                   sta::dbSta* sta,
-                                   BufferCandidates& buffer_candidate)
+  virtual std::vector<BufferSolution> CalcBufferSolutions(
+      const sta::Corner* corner,
+      double unit_r,
+      double unit_c,
+      int max_cap,
+      rsz::Resizer* resizer,
+      sta::dbSta* sta,
+      BufferCandidates& buffer_candidate)
       = 0;
+  void AddSolutionAndEnsureDominance(std::vector<BufferSolution>& solutions,
+                                     BufferSolution new_sol);
 
   void DebugPrint(utl::Logger* logger);
 
  protected:
   void DebugPrint(int indent, utl::Logger* logger);
+  // 0: sol1 / sol2 cannot dominate each other
+  // 1: sol1 dominates sol2
+  // -1: sol2 dominates sol1
+  int IsDominated(BufferSolution& sol1, BufferSolution& sol2);
 
  protected:
   odb::Point loc_;
   RCTreeNodeType type_;
-  std::vector<BufferSolutionPtr> buffer_solutions_;
 };
 
 class LoadNode : public RCTreeNode
@@ -131,13 +134,14 @@ class LoadNode : public RCTreeNode
   }
   std::vector<RCTreeNodePtr> DownstreamNodes() override { return {}; }
   std::size_t DownstreamNodeCount() override { return 0; }
-  void CalcBufferSolutions(const sta::Corner* corner,
-                           double unit_r,
-                           double unit_c,
-                           int max_cap,
-                           rsz::Resizer* resizer,
-                           sta::dbSta* sta,
-                           BufferCandidates& buffer_candidates) override;
+  std::vector<BufferSolution> CalcBufferSolutions(
+      const sta::Corner* corner,
+      double unit_r,
+      double unit_c,
+      int max_cap,
+      rsz::Resizer* resizer,
+      sta::dbSta* sta,
+      BufferCandidates& buffer_candidate) override;
 
  protected:
   float SlewLimit(sta::dbSta* sta,
@@ -149,11 +153,51 @@ class LoadNode : public RCTreeNode
   const sta::Pin* pin_;
 };
 
-class DrivNode : public RCTreeNode
+class WireNode : public RCTreeNode
+{
+ public:
+  WireNode(odb::Point loc, RCTreeNodeType type = RCTreeNodeType::WIRE) : RCTreeNode(loc, type) {}
+  ~WireNode() override = default;
+  void AddDownstreamNode(RCTreeNodePtr ptr) override
+  {
+    if (downstream_ != nullptr) {
+      throw std::runtime_error("Wire node can only have one downstream node.");
+    }
+    downstream_ = ptr;
+  }
+  std::vector<RCTreeNodePtr> DownstreamNodes() override
+  {
+    return {downstream_};
+  }
+  void RemoveDownstreamNode(RCTreeNodePtr ptr) override
+  {
+    if (downstream_ != ptr) {
+      throw std::runtime_error(
+          "Remove non-matching downstream node from Wire node.");
+    }
+    downstream_ = nullptr;
+  }
+  std::size_t DownstreamNodeCount() override
+  {
+    return downstream_ == nullptr ? 0 : 1;
+  }
+  std::vector<BufferSolution> CalcBufferSolutions(
+      const sta::Corner* corner,
+      double unit_r,
+      double unit_c,
+      int max_cap,
+      rsz::Resizer* resizer,
+      sta::dbSta* sta,
+      BufferCandidates& buffer_candidate) override;
+ protected:
+  RCTreeNodePtr downstream_;
+};
+
+class DrivNode : public WireNode
 {
  public:
   DrivNode(odb::Point loc, const sta::Pin* pin)
-      : RCTreeNode(loc, RCTreeNodeType::DRIVER), pin_(pin)
+      : WireNode(loc, RCTreeNodeType::DRIVER), pin_(pin)
   {
   }
   ~DrivNode() override = default;
@@ -181,61 +225,9 @@ class DrivNode : public RCTreeNode
   {
     return downstream_ == nullptr ? 0 : 1;
   }
-  void CalcBufferSolutions(const sta::Corner* corner,
-                           double unit_r,
-                           double unit_c,
-                           int max_cap,
-                           rsz::Resizer* resizer,
-                           sta::dbSta* sta,
-                           BufferCandidates& buffer_candidates) override
-  { /* TODO: IMPL */
-  }
 
- private:
+ protected:
   const sta::Pin* pin_;
-  RCTreeNodePtr downstream_;
-};
-
-class WireNode : public RCTreeNode
-{
- public:
-  WireNode(odb::Point loc) : RCTreeNode(loc, RCTreeNodeType::WIRE) {}
-  ~WireNode() override = default;
-  void AddDownstreamNode(RCTreeNodePtr ptr) override
-  {
-    if (downstream_ != nullptr) {
-      throw std::runtime_error("Wire node can only have one downstream node.");
-    }
-    downstream_ = ptr;
-  }
-  std::vector<RCTreeNodePtr> DownstreamNodes() override
-  {
-    return {downstream_};
-  }
-  void RemoveDownstreamNode(RCTreeNodePtr ptr) override
-  {
-    if (downstream_ != ptr) {
-      throw std::runtime_error(
-          "Remove non-matching downstream node from Wire node.");
-    }
-    downstream_ = nullptr;
-  }
-  std::size_t DownstreamNodeCount() override
-  {
-    return downstream_ == nullptr ? 0 : 1;
-  }
-  void CalcBufferSolutions(const sta::Corner* corner,
-                           double unit_r,
-                           double unit_c,
-                           int max_cap,
-                           rsz::Resizer* resizer,
-                           sta::dbSta* sta,
-                           BufferCandidates& buffer_candidates) override
-  { /* TODO: IMPL */
-  }
-
- private:
-  RCTreeNodePtr downstream_;
 };
 
 class JuncNode : public RCTreeNode
@@ -279,15 +271,14 @@ class JuncNode : public RCTreeNode
     }
     return count;
   }
-  void CalcBufferSolutions(const sta::Corner* corner,
-                           double unit_r,
-                           double unit_c,
-                           int max_cap,
-                           rsz::Resizer* resizer,
-                           sta::dbSta* sta,
-                           BufferCandidates& buffer_candidates) override
-  { /* TODO: IMPL */
-  }
+  std::vector<BufferSolution> CalcBufferSolutions(
+      const sta::Corner* corner,
+      double unit_r,
+      double unit_c,
+      int max_cap,
+      rsz::Resizer* resizer,
+      sta::dbSta* sta,
+      BufferCandidates& buffer_candidate) override;
 
  private:
   RCTreeNodePtr downstream1_;
@@ -306,8 +297,8 @@ class UvDRCSlewBuffer
   ~UvDRCSlewBuffer() = default;
   void Run(const sta::Pin* drvr_pin, const sta::Corner* corner, int max_cap);
 
+  static constexpr double K_OPENROAD_SLEW_FACTOR = 1.39; // From OpenROAD
  private:
-  void TestFunction();
   void InitBufferCandidates();
   void SetMaxWireLength(int max_length_dbu)
   {
@@ -358,8 +349,6 @@ class UvDRCSlewBuffer
 
   float slew_margin_ = 0.0;
   float cap_margin_ = 0.0;
-
-  static constexpr float k_openroad_slew_factor = 1.39;
 };
 
 }  // namespace uv_drc
