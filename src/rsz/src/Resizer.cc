@@ -112,49 +112,61 @@ using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSet;
 
-using sta::ConcreteLibraryCellIterator;
-using sta::FindNetDrvrLoads;
-using sta::FuncExpr;
-using sta::InstancePinIterator;
-using sta::LeafInstanceIterator;
-using sta::Level;
-using sta::LibertyCellIterator;
-using sta::LibertyLibraryIterator;
-using sta::NetConnectedPinIterator;
-using sta::NetIterator;
-using sta::NetPinIterator;
-using sta::NetTermIterator;
-using sta::Port;
-using sta::PortDirection;
-using sta::stringLess;
-using sta::TimingArcSet;
-using sta::TimingArcSetSeq;
-using sta::TimingRole;
-
 using sta::ArcDcalcResult;
+using sta::ArcDelay;
 using sta::ArcDelayCalc;
 using sta::BfsBkwdIterator;
 using sta::BfsFwdIterator;
 using sta::BfsIndex;
+using sta::BufferUse;
 using sta::ClkArrivalSearchPred;
 using sta::Clock;
+using sta::CLOCK;
+using sta::ConcreteLibraryCellIterator;
+using sta::Corner;
 using sta::Corners;
+using sta::DcalcAnalysisPt;
 using sta::Edge;
+using sta::FindNetDrvrLoads;
+using sta::FuncExpr;
 using sta::fuzzyEqual;
 using sta::fuzzyGreaterEqual;
+using sta::GateTimingModel;
 using sta::INF;
 using sta::InputDrive;
-using sta::LoadPinIndexMap;
-using sta::PinConnectedPinIterator;
-using sta::Sdc;
-using sta::SearchPredNonReg2;
-using sta::VertexIterator;
-using sta::VertexOutEdgeIterator;
-
-using sta::BufferUse;
-using sta::CLOCK;
+using sta::Instance;
+using sta::InstancePinIterator;
+using sta::LeafInstanceIterator;
 using sta::LeakagePower;
 using sta::LeakagePowerSeq;
+using sta::Level;
+using sta::LibertyCell;
+using sta::LibertyCellIterator;
+using sta::LibertyLibraryIterator;
+using sta::LibertyPort;
+using sta::LoadPinIndexMap;
+using sta::NetConnectedPinIterator;
+using sta::NetIterator;
+using sta::NetPinIterator;
+using sta::NetTermIterator;
+using sta::Pin;
+using sta::PinConnectedPinIterator;
+using sta::Port;
+using sta::PortDirection;
+using sta::Pvt;
+using sta::RiseFall;
+using sta::Sdc;
+using sta::SearchPredNonReg2;
+using sta::Slew;
+using sta::stringLess;
+using sta::TimingArc;
+using sta::TimingArcSet;
+using sta::TimingArcSetSeq;
+using sta::TimingRole;
+using sta::Vertex;
+using sta::VertexInEdgeIterator;
+using sta::VertexIterator;
+using sta::VertexOutEdgeIterator;
 
 Resizer::Resizer(utl::Logger* logger,
                  odb::dbDatabase* db,
@@ -530,9 +542,15 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
       sta::Instance* sta_inst = db_network_->dbToSta(inst);
       sta::LibertyCell* cell = network_->libertyCell(sta_inst);
       dbMaster* master = db_network_->staToDb(cell);
+      if (master == nullptr) {
+        continue;
+      }
       sta::LibertyCellSeq swappable_cells = getSwappableCells(cell);
       for (sta::LibertyCell* target_cell : swappable_cells) {
         dbMaster* target_master = db_network_->staToDb(target_cell);
+        if (target_master == nullptr) {
+          continue;
+        }
         // Pick a cell that has the matching site, the same VT type
         // and equal or less drive resistance.  swappable_cells are
         // sorted in decreasing order of drive resistance.
@@ -861,6 +879,9 @@ void Resizer::findBuffers()
   for (sta::LibertyCell* buffer : buffer_list) {
     const char* footprint = buffer->footprint();
     odb::dbMaster* master = db_network_->staToDb(buffer);
+    if (master == nullptr) {
+      continue;
+    }
     auto vt_type = cellVTType(master);
     bool footprint_matches
         = best_footprint.empty() || (footprint && best_footprint == footprint);
@@ -1651,7 +1672,10 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
       base_cell->name(),
       (match_cell_footprint ? " with matching cell_footprint:" : ":"));
   odb::dbMaster* master = db_network_->staToDb(base_cell);
-  double base_area = block_->dbuAreaToMicrons(master->getArea());
+  double base_area = 0.0;
+  if (master) {
+    base_area = block_->dbuAreaToMicrons(master->getArea());
+  }
   std::optional<float> base_leakage = cellLeakage(base_cell);
   if (base_leakage) {
     logger_->report(
@@ -1672,6 +1696,9 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      if (equiv_master == nullptr) {
+        continue;
+      }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
       if (equiv_cell_leakage) {
@@ -1708,6 +1735,9 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      if (equiv_master == nullptr) {
+        continue;
+      }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                       cell_name,
@@ -1786,6 +1816,9 @@ void Resizer::reportBuffers(bool filtered)
     float c_in = input->capacitance();
     std::optional<float> cell_leak = cellLeakage(buffer);
     odb::dbMaster* master = db_network_->staToDb(buffer);
+    if (master == nullptr) {
+      continue;
+    }
 
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                     buffer->name(),
@@ -1827,6 +1860,9 @@ void Resizer::reportBuffers(bool filtered)
       float c_in = input->capacitance();
       std::optional<float> cell_leak = cellLeakage(buffer);
       odb::dbMaster* master = db_network_->staToDb(buffer);
+      if (master == nullptr) {
+        continue;
+      }
 
       logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                       buffer->name(),
@@ -1869,16 +1905,18 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
       }
       if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
-        buffer_list.emplace_back(buffer);
+        odb::dbMaster* master = db_network_->staToDb(buffer);
+        if (!master) {
+          continue;
+        }
+
+        // Track site distribution
+        lib_data_->cells_by_site[master->getSite()]++;
 
         // Track cell footprint distribution
         if (buffer->footprint()) {
           lib_data_->cells_by_footprint[buffer->footprint()]++;
         }
-
-        // Track site distribution
-        odb::dbMaster* master = db_network_->staToDb(buffer);
-        lib_data_->cells_by_site[master->getSite()]++;
 
         // Track VT category leakage data
         VTCategory vt_category = cellVTType(master);
@@ -1887,6 +1925,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         VTLeakageStats& vt_stats
             = lib_data_->vt_leakage_by_category[vt_category];
         vt_stats.add_cell_leakage(cellLeakage(buffer));
+
+        buffer_list.emplace_back(buffer);
       }
     }
   }
@@ -2048,13 +2088,13 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   }
 
   sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
-  if (equiv_cells == nullptr) {
+  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
+  if (equiv_cells == nullptr || source_cell_master == nullptr) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
 
   sta::LibertyCellSeq vt_equiv_cells;
-  dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   int64_t source_cell_area = source_cell_master->getArea();
 
   // VT equiv cell should have the same area, footprint, site and function class
@@ -2116,7 +2156,8 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
       sta::LibertyCell* next_cell = *std::next(it);
       dbMaster* curr_master = db_network_->staToDb(curr_cell);
       dbMaster* next_master = db_network_->staToDb(next_cell);
-      if (cellVTType(curr_master) == cellVTType(next_master)) {
+      if (curr_master && next_master
+          && (cellVTType(curr_master) == cellVTType(next_master))) {
         const std::string curr_name = curr_cell->name();
         const std::string next_name = next_cell->name();
         size_t curr_common_len = getCommonLength(curr_name, source_name);
@@ -2556,14 +2597,25 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
 {
   initBlock();
 
+  est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
+                                          ? est::ParasiticsSrc::global_routing
+                                          : est::ParasiticsSrc::placement;
+  estimate_parasitics_->setParasiticsSrc(parasitics_src);
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
   }
   ensureLevelDrvrVertices();
-  estimate_parasitics_->estimateWireParasitics();
+  estimate_parasitics_->estimateParasitics(parasitics_src);
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
+
+  // Start incremental global routing if global routing parasitics are being
+  // used.
+  if (parasitics_src == est::ParasiticsSrc::global_routing) {
+    global_router_->startIncremental();
+  }
+
   repair_design_->repairDesign(max_wire_length_,
                                0.0,
                                0.0,
@@ -2580,7 +2632,16 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           fanout_violations,
                                           length_violations,
                                           repaired_net_count);
-  fullyRebuffer(nullptr);
+
+  // End incremental global routing if global routing parasitics were used.
+  if (parasitics_src == est::ParasiticsSrc::global_routing) {
+    global_router_->endIncremental();
+  } else {
+    // Fully rebuffer doesn't work with global routing parasitics.
+    // TODO: fix the function to understand the parasitics from the global
+    // routing.
+    fullyRebuffer(nullptr);
+  }
   ensureLevelDrvrVertices();
 
   findResizeSlacks1();
@@ -2963,6 +3024,10 @@ void Resizer::findTargetLoads()
   if (target_load_map_ == nullptr) {
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews();
+
+    if (tgt_slew_corner_ == nullptr) {
+      return;
+    }
 
     target_load_map_ = std::make_unique<CellTargetLoadMap>();
     // Find target loads at the tgt_slew_corner.
@@ -5683,6 +5748,363 @@ void Resizer::inferClockBufferList(const char* lib_name,
                  buffer->name());
     }
   }
+}
+
+float Resizer::getSlewRCFactor() const
+{
+  return repair_design_->getSlewRCFactor();
+}
+
+Slew Resizer::findDriverSlewForLoad(Pin* drvr_pin,
+                                    float load,
+                                    const Corner* corner)
+{
+  const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  Slew max_slew = 0;
+
+  VertexInEdgeIterator edge_iter(graph_->pinDrvrVertex(drvr_pin), graph_);
+  while (edge_iter.hasNext()) {
+    Edge* edge = edge_iter.next();
+    TimingArcSet* arc_set = edge->timingArcSet();
+    const TimingRole* role = arc_set->role();
+    if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
+        && role != TimingRole::tristateEnable()
+        && role != TimingRole::clockTreePathMin()
+        && role != TimingRole::clockTreePathMax()) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        Slew in_slew = graph_delay_calc_->edgeFromSlew(
+            edge->from(graph_), in_rf, role, dcalc_ap);
+        GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
+        if (model) {
+          ArcDelay arc_delay;
+          Slew arc_slew;
+          const Pvt* pvt = dcalc_ap->operatingConditions();
+          model->gateDelay(pvt, in_slew, load, false, arc_delay, arc_slew);
+          max_slew = std::max(max_slew, arc_slew);
+        }
+      }
+    }
+  }
+
+  return max_slew;
+}
+
+// Compute new delays and slews for the driver that drives the buffer
+// Return delays, slews and load cap before and after the buffer removal
+bool Resizer::computeNewDelaysSlews(Pin* driver_pin,
+                                    Instance* buffer,
+                                    const Corner* corner,
+                                    // return values
+                                    ArcDelay old_delay[RiseFall::index_count],
+                                    ArcDelay new_delay[RiseFall::index_count],
+                                    Slew old_drvr_slew[RiseFall::index_count],
+                                    Slew new_drvr_slew[RiseFall::index_count],
+                                    // caps seen by driver_pin
+                                    float& old_load_cap,
+                                    float& new_load_cap)
+{
+  // Prep for delay calc
+  sta::GraphDelayCalc* dcalc = sta_->graphDelayCalc();
+  const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  LibertyPort* driver_port = network_->libertyPort(driver_pin);
+  if (driver_port == nullptr) {
+    return false;
+  }
+
+  LibertyCell* buffer_cell = network_->libertyCell(buffer);
+  if (!buffer_cell || !buffer_cell->isBuffer()) {
+    return false;
+  }
+
+  LibertyPort *buffer_input_port, *buffer_output_port;
+  buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+  if (!buffer_input_port || !buffer_output_port) {
+    return false;
+  }
+  Pin* buffer_out_pin = network_->findPin(buffer, buffer_output_port);
+  if (!buffer_out_pin) {
+    return false;
+  }
+
+  annotateInputSlews(network_->instance(driver_pin), dcalc_ap);
+
+  // Compute current delays/slews/loads
+  old_load_cap = dcalc->loadCap(driver_pin, dcalc_ap);
+  gateDelays(driver_port, old_load_cap, dcalc_ap, old_delay, old_drvr_slew);
+
+  // new_load_cap = current_load_on_driver + load_after_buffer -
+  // buffer_input_cap
+  new_load_cap = old_load_cap + dcalc->loadCap(buffer_out_pin, dcalc_ap)
+                 - portCapacitance(buffer_input_port, corner);
+
+  // Compute new delays/slews with updated lods
+  gateDelays(driver_port, new_load_cap, dcalc_ap, new_delay, new_drvr_slew);
+
+  resetInputSlews();
+  return true;
+}
+
+bool Resizer::estimateSlewsAfterBufferRemoval(
+    Pin* drvr_pin,
+    Instance* buffer_instance,
+    Slew drvr_slew,
+    const Corner* corner,
+    std::map<const Pin*, float>& load_pin_slew)
+{
+  resizePreamble();
+  ensureLevelDrvrVertices();
+  repair_design_->init();
+
+  using BnetPtr = BufferedNetPtr;
+
+  LibertyCell* cell = network_->libertyCell(buffer_instance);
+  if (!cell->isBuffer()) {
+    return false;
+  }
+  LibertyPort *in_port, *out_port;
+  cell->bufferPorts(in_port, out_port);
+
+  Pin* buffer_load_pin = network_->findPin(buffer_instance, in_port);
+  Pin* buffer_drvr_pin = network_->findPin(buffer_instance, out_port);
+  if (!buffer_load_pin || !buffer_drvr_pin) {
+    logger_->report("Failed to find buffer pins\n");
+    return false;
+  }
+
+  BnetPtr tree1 = makeBufferedNet(drvr_pin, corner);
+  BnetPtr tree2 = makeBufferedNet(buffer_drvr_pin, corner);
+  BnetPtr stitched_tree = stitchTrees(tree1, buffer_load_pin, tree2);
+
+  if (stitched_tree == tree1) {
+    return false;
+  }
+
+  const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+
+  // Calibration part 1 for input path: drvr_pin -> buffer_load_pin (tree1)
+  // Get current driver slew with buffer in place
+  //
+  // drvr_pin --> buffer_load_pin --> buffer_drvr_pin --> load_pin
+  //          tree1                                 tree2
+  //
+  Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
+  assert(drvr_vertex != nullptr);
+  float drvr_slew_with_buf
+      = std::max(sta_->vertexSlew(drvr_vertex, RiseFall::rise(), dcalc_ap),
+                 sta_->vertexSlew(drvr_vertex, RiseFall::fall(), dcalc_ap));
+  std::map<const Pin*, float> drv2buf_slew;
+  if (!estimateSlewsInTree(
+          drvr_pin, drvr_slew_with_buf, tree1, corner, drv2buf_slew)) {
+    return false;
+  }
+  auto it = drv2buf_slew.find(buffer_load_pin);
+  assert(it != drv2buf_slew.end());
+  float estimated_drv2buf_slew = it->second;
+  Vertex* buf_load_vertex = graph_->pinLoadVertex(buffer_load_pin);
+  assert(buf_load_vertex != nullptr);
+  float actual_drv2buf_slew
+      = std::max(sta_->vertexSlew(buf_load_vertex, RiseFall::rise(), dcalc_ap),
+                 sta_->vertexSlew(buf_load_vertex, RiseFall::fall(), dcalc_ap));
+  float in_calib_factor = !sta::fuzzyZero(estimated_drv2buf_slew)
+                              ? (actual_drv2buf_slew / estimated_drv2buf_slew)
+                              : 1.0f;
+  debugPrint(logger_,
+             RSZ,
+             "slew_check",
+             1,
+             "estimated drv2buf slew at buffer load pin {} ={} actual slew={}:"
+             " in_calib={}",
+             network_->name(buffer_load_pin),
+             estimated_drv2buf_slew,
+             actual_drv2buf_slew,
+             in_calib_factor);
+
+  //
+  // Calibration part 2 for output path: buffer_drvr_pin -> load_pin (tree2)
+  //
+  Vertex* buf_drvr_vertex = graph_->pinDrvrVertex(buffer_drvr_pin);
+  assert(buf_drvr_vertex != nullptr);
+  float buf_drvr_slew
+      = std::max(sta_->vertexSlew(buf_drvr_vertex, RiseFall::rise(), dcalc_ap),
+                 sta_->vertexSlew(buf_drvr_vertex, RiseFall::fall(), dcalc_ap));
+  std::map<const Pin*, float> buf2load_slew;
+  if (!estimateSlewsInTree(
+          buffer_drvr_pin, buf_drvr_slew, tree2, corner, buf2load_slew)) {
+    return false;
+  }
+  std::map<const Pin*, float> out_calib_factors;
+  for (const auto& [load_pin, estimated_buf2load_slew] : buf2load_slew) {
+    Vertex* load_vertex = graph_->pinLoadVertex(load_pin);
+    assert(load_vertex != nullptr);
+    float actual_buf2load_slew
+        = std::max(sta_->vertexSlew(load_vertex, RiseFall::rise(), dcalc_ap),
+                   sta_->vertexSlew(load_vertex, RiseFall::fall(), dcalc_ap));
+    float out_calib_factor
+        = !sta::fuzzyZero(estimated_buf2load_slew)
+              ? (actual_buf2load_slew / estimated_buf2load_slew)
+              : 1.0f;
+    out_calib_factors[load_pin] = in_calib_factor * out_calib_factor;
+
+    debugPrint(logger_,
+               RSZ,
+               "slew_check",
+               1,
+               "estimated buf2load slew at load pin {} ={} actual slew={}:"
+               " in_calib={} out_calib={}",
+               network_->name(load_pin),
+               estimated_buf2load_slew,
+               actual_buf2load_slew,
+               in_calib_factor,
+               out_calib_factor);
+  }
+
+  // Estimate slews in stitched tree with driver slew after buffer removal
+  if (!estimateSlewsInTree(
+          drvr_pin, drvr_slew, stitched_tree, corner, load_pin_slew)) {
+    return false;
+  }
+
+  // Apply calibration factors
+  for (auto it = load_pin_slew.begin(); it != load_pin_slew.end(); ++it) {
+    auto calib_it = out_calib_factors.find(it->first);
+    if (calib_it != out_calib_factors.end()) {
+      it->second *= calib_it->second;
+      debugPrint(logger_,
+                 RSZ,
+                 "slew_check",
+                 1,
+                 "load pin {} has slew {}: calib_factor {}",
+                 network_->name(it->first),
+                 it->second,
+                 calib_it->second);
+    }
+  }
+
+  return true;
+}
+
+bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
+                                  Slew drvr_slew,
+                                  const BufferedNetPtr& tree,
+                                  const Corner* corner,
+                                  std::map<const Pin*, float>& load_pin_slew)
+{
+  resizePreamble();
+  ensureLevelDrvrVertices();
+  repair_design_->init();
+
+  if (!tree) {
+    logger_->report("Tree is null\n");
+    return false;
+  }
+
+  load_pin_slew.clear();
+
+  float worst_slew_slack = std::numeric_limits<float>::infinity();
+  float worst_pin_slew = 0.0f;
+  const Pin* worst_pin = nullptr;
+
+  debugPrint(logger_,
+             RSZ,
+             "slew_check",
+             3,
+             "drvr pin slew {}",
+             delayAsString(drvr_slew, this));
+
+  using BnetType = BufferedNetType;
+  using BnetPtr = BufferedNetPtr;
+
+  // Propagate slew through the tree - inline the visitor
+  visitTree(
+      [&](auto& recurse, int level, const BnetPtr& node, double upstream_slew)
+          -> int {
+        if (!node) {
+          return 0;
+        }
+
+        switch (node->type()) {
+          case BnetType::via: {
+            double r_via
+                = node->viaResistance(corner, this, estimate_parasitics_);
+            double t_via = r_via * node->ref()->cap()
+                           * repair_design_->slew_rc_factor_.value();
+            debugPrint(logger_,
+                       RSZ,
+                       "slew_check",
+                       3,
+                       "{:{}s}via degradation {}",
+                       "",
+                       level,
+                       delayAsString(t_via, this));
+            recurse(node->ref(), upstream_slew + t_via);
+            return 0;
+          }
+          case BnetType::wire: {
+            odb::Point from_loc = node->location();
+            odb::Point to_loc = node->ref()->location();
+            double length
+                = dbuToMeters(odb::Point::manhattanDistance(from_loc, to_loc));
+            double unit_res, unit_cap;
+            node->wireRC(
+                corner, this, estimate_parasitics_, unit_res, unit_cap);
+            double t_wire = length * unit_res
+                            * (node->ref()->cap() + length * unit_cap / 2)
+                            * repair_design_->slew_rc_factor_.value();
+            debugPrint(logger_,
+                       RSZ,
+                       "slew_check",
+                       3,
+                       "{:{}s}wire degradation {}",
+                       "",
+                       level,
+                       delayAsString(t_wire, this));
+            recurse(node->ref(), upstream_slew + t_wire);
+            return 0;
+          }
+          case BnetType::junction:
+            recurse(node->ref(), upstream_slew);
+            recurse(node->ref2(), upstream_slew);
+            return 0;
+          case BnetType::load: {
+            debugPrint(logger_,
+                       RSZ,
+                       "slew_check",
+                       3,
+                       "{:{}s}load {} slew {}",
+                       "",
+                       level,
+                       network_->name(node->loadPin()),
+                       delayAsString(upstream_slew, this));
+            load_pin_slew[node->loadPin()] = upstream_slew;
+            double load_slew_slack = node->maxLoadSlew() - upstream_slew;
+            if (load_slew_slack < worst_slew_slack) {
+              worst_slew_slack = load_slew_slack;
+              worst_pin_slew = upstream_slew;
+              worst_pin = node->loadPin();
+            }
+            return 0;
+          }
+          case BnetType::buffer: {
+            abort();
+          }
+        }
+        return 0;
+      },
+      tree,
+      drvr_slew);
+
+  if (worst_pin) {
+    debugPrint(logger_,
+               RSZ,
+               "slew_check",
+               1,
+               "worst pin {} slew {}",
+               network_->name(worst_pin),
+               delayAsString(worst_pin_slew, sta_));
+  }
+
+  return true;
 }
 
 }  // namespace rsz

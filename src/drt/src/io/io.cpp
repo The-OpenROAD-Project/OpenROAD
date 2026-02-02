@@ -25,6 +25,7 @@
 #include "db/obj/frAccess.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frNode.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
@@ -1700,6 +1701,14 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       tmpLayer->setWidthTblOrthCon(ucon.get());
       getTech()->addUConstraint(std::move(ucon));
     }
+  }
+  if (layer->getWrongWayMinWidth() != 0
+      && layer->getWrongWayMinWidth() != layer->getMinWidth()) {
+    logger_->warn(utl::DRT,
+                  625,
+                  "LEF58_MINWIDTH rule with WRONGDIRECTION is not supported "
+                  "for layer {}.",
+                  layer->getName());
   }
 }
 
