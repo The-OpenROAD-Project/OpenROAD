@@ -2783,6 +2783,8 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             jumper_count++;
           }
 
+          guide->setIgnoreUsage(segment.ignoreUsage());
+
           if (!use_cugr_) {
             RoutePt route_pt1(
                 segment.init_x, segment.init_y, segment.init_layer);
@@ -3246,7 +3248,8 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
                                       int layer,
                                       int via_layer,
-                                      GRoute& route)
+                                      GRoute& route,
+                                      bool ignore_usage)
 {
   const int tile_size = grid_->getTileSize();
   int x0 = (tile_size * (route_bds.xMin() / tile_size)) + (tile_size / 2);
@@ -3256,16 +3259,22 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
   const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2);
 
   if (x0 == x1 && y0 == y1) {
-    route.emplace_back(x0, y0, layer, x1, y1, via_layer);
+    GSegment seg(x0, y0, layer, x1, y1, via_layer);
+    seg.setIgnoreUsage(ignore_usage);
+    route.emplace_back(seg);
   }
 
   while (y0 == y1 && (x0 + tile_size) <= x1) {
-    route.emplace_back(x0, y0, layer, x0 + tile_size, y0, layer);
+    GSegment seg(x0, y0, layer, x0 + tile_size, y0, layer);
+    seg.setIgnoreUsage(ignore_usage);
+    route.emplace_back(seg);
     x0 += tile_size;
   }
 
   while (x0 == x1 && (y0 + tile_size) <= y1) {
-    route.emplace_back(x0, y0, layer, x0, y0 + tile_size, layer);
+    GSegment seg(x0, y0, layer, x0, y0 + tile_size, layer);
+    seg.setIgnoreUsage(ignore_usage);
+    route.emplace_back(seg);
     y0 += tile_size;
   }
 }
