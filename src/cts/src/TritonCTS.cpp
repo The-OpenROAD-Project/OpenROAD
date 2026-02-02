@@ -243,7 +243,6 @@ void TritonCTS::setupCharacterization()
   options_->setNumBuffersInserted(0);
   options_->setNumClockRoots(0);
   options_->setNumClockSubnets(0);
-  delayBufMaster_ = db_->findMaster(options_->getRootBuffer().c_str());
 }
 
 void TritonCTS::checkCharacterization()
@@ -2576,7 +2575,6 @@ void TritonCTS::balanceMacroRegisterLatencies()
                                                  db_,
                                                  network_,
                                                  openSta_,
-                                                 delayBufMaster_,
                                                  techChar_.get(),
                                                  capPerDBU);
       totalDelayBuff += balancer.run();
