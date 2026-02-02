@@ -213,6 +213,9 @@ void dbGuide::destroy(dbGuide* guide)
     block->journal_->pushParam(_guide->layer_);
     block->journal_->pushParam(_guide->via_layer_);
     block->journal_->pushParam(_guide->is_congested_);
+    block->journal_->pushParam(_guide->is_jumper_);
+    block->journal_->pushParam(_guide->ignore_usage_);
+    block->journal_->pushParam(_guide->is_connect_to_term_);
     block->journal_->endAction();
   }
 
