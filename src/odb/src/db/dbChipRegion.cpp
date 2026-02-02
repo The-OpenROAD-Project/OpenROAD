@@ -166,18 +166,10 @@ dbTechLayer* dbChipRegion::getLayer() const
   _dbChipRegion* obj = (_dbChipRegion*) this;
   dbChip* chip = (dbChip*) obj->getOwner();
 
-  dbTech* tech = nullptr;
-  if (chip->getBlock() != nullptr) {
-    tech = chip->getBlock()->getTech();
-  }
-  if (tech == nullptr) {
-    tech = chip->getTech();
-  }
-
+  dbTech* tech = chip->getTech();
   if (tech == nullptr) {
     return nullptr;
   }
-
   dbTechLayer* layer = nullptr;
   if (obj->layer_ != 0) {
     _dbTech* _tech = (_dbTech*) tech;

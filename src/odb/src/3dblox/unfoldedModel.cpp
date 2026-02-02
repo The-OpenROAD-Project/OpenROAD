@@ -3,11 +3,9 @@
 
 #include "unfoldedModel.h"
 
-#include <algorithm>
 #include <cstdint>
 #include <deque>
 #include <map>
-#include <limits>
 #include <string>
 #include <unordered_map>
 #include <utility>
