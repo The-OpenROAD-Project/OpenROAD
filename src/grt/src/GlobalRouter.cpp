@@ -1447,7 +1447,8 @@ void GlobalRouter::makeFastrouteNet(Net* net)
                                      min_layer - 1,
                                      max_layer - 1,
                                      net->getSlack(),
-                                     edge_cost_per_layer);
+                                     edge_cost_per_layer,
+                                     net->areSegmentsRestored());
   // TODO: improve net layer range with more dynamic layer restrictions
   // when there's no room in the specified range
   // See https://github.com/The-OpenROAD-Project/OpenROAD/pull/2893 and
