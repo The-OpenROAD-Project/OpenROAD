@@ -4319,6 +4319,9 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
     fastroute_->mergeNet(db_net, net->getMergedNet());
   } else {
     fastroute_->removeNet(db_net);
+    if (net->areSegmentsRestored()) {
+      updateNetResources(net, true);
+    }
   }
   delete net;
   db_net_map_.erase(db_net);
