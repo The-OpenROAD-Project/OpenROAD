@@ -272,4 +272,40 @@ cc_test(
     ],
 )
 
-# TODO: more to come.
+cc_test(
+    name = "TestSwapMaster",
+    srcs = [
+        "TestSwapMaster.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSwapMasterUnusedPort",
+    srcs = [
+        "TestSwapMasterUnusedPort.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

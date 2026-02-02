@@ -174,6 +174,8 @@ proc global_route { args } {
     utl::error GRT 52 "Missing dbBlock."
   }
 
+  grt::set_use_cugr [info exists flags(-use_cugr)]
+
   grt::set_verbose [info exists flags(-verbose)]
 
   if { [info exists keys(-grid_origin)] } {
@@ -214,8 +216,6 @@ proc global_route { args } {
     grt::set_critical_nets_percentage $percentage
   }
 
-  grt::set_use_cugr [info exists flags(-use_cugr)]
-
   if { [info exists keys(-skip_large_fanout_nets)] } {
     set fanout $keys(-skip_large_fanout_nets)
     sta::check_positive_integer "-skip_large_fanout_nets" $fanout
@@ -231,7 +231,15 @@ proc global_route { args } {
   set start_incremental [info exists flags(-start_incremental)]
   set end_incremental [info exists flags(-end_incremental)]
 
-  grt::global_route $start_incremental $end_incremental
+  if { $start_incremental && $end_incremental } {
+    utl::error GRT 295 "Only one of -start_incremental or -end_incremental can be used."
+  } elseif { $start_incremental } {
+    grt::start_incremental
+  } elseif { $end_incremental } {
+    grt::end_incremental
+  } else {
+    grt::global_route
+  }
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)

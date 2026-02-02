@@ -20,6 +20,7 @@ class dbBTerm;
 
 namespace sta {
 class dbSta;
+class dbNetwork;
 }  // namespace sta
 
 namespace stt {
@@ -28,6 +29,7 @@ class SteinerTreeBuilder;
 
 namespace utl {
 class Logger;
+class CallBackHandler;
 }  // namespace utl
 
 namespace grt {
@@ -68,6 +70,7 @@ class CUGR
  public:
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
+       utl::CallBackHandler* callback_handler,
        stt::SteinerTreeBuilder* stt_builder,
        sta::dbSta* sta);
   ~CUGR();
@@ -84,8 +87,15 @@ class CUGR
   void getBTermsAccessPoints(
       odb::dbNet* net,
       std::map<odb::dbBTerm*, odb::Point3D>& access_points);
+  void setCriticalNetsPercentage(float percentage)
+  {
+    critical_nets_percentage_ = percentage;
+  }
 
  private:
+  float calculatePartialSlack();
+  float getNetSlack(odb::dbNet* net);
+  void setInitialNetSlacks();
   void updateOverflowNets(std::vector<int>& netIndices);
   void patternRoute(std::vector<int>& netIndices);
   void patternRouteWithDetours(std::vector<int>& netIndices);
@@ -97,18 +107,23 @@ class CUGR
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
+  std::vector<int> net_indices_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
   std::map<odb::dbNet*, GRNet*> db_net_map_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
+  utl::CallBackHandler* callback_handler_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;
+  NetRouteMap routes_;
 
   Constants constants_;
 
   int area_of_pin_patches_ = 0;
   int area_of_wire_patches_ = 0;
+
+  float critical_nets_percentage_ = 0;
 };
 
 }  // namespace grt

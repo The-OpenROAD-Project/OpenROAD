@@ -899,19 +899,6 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
       //         net_name = u0/_001_        <-- External net crossing module
       //                                        boundary.
       std::string old_net_name = old_net->getName();
-      if (old_net->isInternalTo(old_module) == false) {
-        // Skip external net crossing module boundary.
-        // It will be connected later.
-        debugPrint(logger,
-                   utl::ODB,
-                   "replace_design",
-                   3,
-                   "    Skip: non-internal dbNet '{}' of old_module '{}'.\n",
-                   old_net_name,
-                   old_module->getHierarchicalName());
-        continue;
-      }
-
       new_net_name += block->getBaseName(old_net_name.c_str());
       auto it = new_net_name_map.find(new_net_name);
       if (it != new_net_name_map.end()) {

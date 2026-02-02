@@ -139,7 +139,6 @@ class BaseMove : public sta::dbStaState
 
   double area(sta::Cell* cell);
   double area(odb::dbMaster* master);
-  double dbuToMeters(int dist) const;
 
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,

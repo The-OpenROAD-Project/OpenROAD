@@ -444,7 +444,6 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   painter.setPen(gui::Painter::kWhite, true);
-  painter.setBrush(gui::Painter::kDarkRed);
 
   i = 0;
   for (const auto& macro : hard_macros_) {
@@ -452,48 +451,58 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    const int lx = macro.getX();
-    const int ly = macro.getY();
-    const int width = macro.getWidth();
-    const int height = macro.getHeight();
-    const int ux = lx + width;
-    const int uy = ly + height;
-    odb::Rect bbox(lx, ly, ux, uy);
+    const int width = macro.getRealWidth();
+    const int height = macro.getRealHeight();
 
-    bbox.moveDelta(outline_.xMin(), outline_.yMin());
+    odb::Rect halo_bbox(macro.getX(),
+                        macro.getY(),
+                        macro.getX() + macro.getWidth(),
+                        macro.getY() + macro.getHeight());
+    odb::Rect macro_bbox(macro.getRealX(),
+                         macro.getRealY(),
+                         macro.getRealX() + width,
+                         macro.getRealY() + height);
 
-    painter.drawRect(bbox);
-    painter.drawString(bbox.xCenter(),
-                       bbox.yCenter(),
+    halo_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+    macro_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.setBrush(gui::Painter::kDarkRed);
+    painter.drawRect(halo_bbox);
+
+    painter.setBrush(gui::Painter::kRed);
+    painter.drawRect(macro_bbox);
+
+    painter.drawString(macro_bbox.xCenter(),
+                       macro_bbox.yCenter(),
                        gui::Painter::kCenter,
                        std::to_string(i++));
     switch (macro.getOrientation().getValue()) {
       case odb::dbOrientType::R0: {
-        painter.drawLine(bbox.xMin(),
-                         bbox.yMin() + 0.1 * height,
-                         bbox.xMin() + 0.1 * width,
-                         bbox.yMin());
+        painter.drawLine(macro_bbox.xMin(),
+                         macro_bbox.yMin() + 0.1 * height,
+                         macro_bbox.xMin() + 0.1 * width,
+                         macro_bbox.yMin());
         break;
       }
       case odb::dbOrientType::MX: {
-        painter.drawLine(bbox.xMin(),
-                         bbox.yMax() - 0.1 * height,
-                         bbox.xMin() + 0.1 * width,
-                         bbox.yMax());
+        painter.drawLine(macro_bbox.xMin(),
+                         macro_bbox.yMax() - 0.1 * height,
+                         macro_bbox.xMin() + 0.1 * width,
+                         macro_bbox.yMax());
         break;
       }
       case odb::dbOrientType::MY: {
-        painter.drawLine(bbox.xMax(),
-                         bbox.yMin() + 0.1 * height,
-                         bbox.xMax() - 0.1 * width,
-                         bbox.yMin());
+        painter.drawLine(macro_bbox.xMax(),
+                         macro_bbox.yMin() + 0.1 * height,
+                         macro_bbox.xMax() - 0.1 * width,
+                         macro_bbox.yMin());
         break;
       }
       case odb::dbOrientType::R180: {
-        painter.drawLine(bbox.xMax(),
-                         bbox.yMax() - 0.1 * height,
-                         bbox.xMax() - 0.1 * width,
-                         bbox.yMax());
+        painter.drawLine(macro_bbox.xMax(),
+                         macro_bbox.yMax() - 0.1 * height,
+                         macro_bbox.xMax() - 0.1 * width,
+                         macro_bbox.yMax());
         break;
       }
       case odb::dbOrientType::R90:

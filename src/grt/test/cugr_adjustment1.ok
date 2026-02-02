@@ -33,7 +33,7 @@ stage 1: pattern routing
 0 / 579 nets have overflow.
 routing statistics
 wire length (metric):  36712
-total via count:       4413
+total via count:       4407
 total wire overflow:   0
 min resource: 0.5
 bottleneck:   (8, 0, 4)

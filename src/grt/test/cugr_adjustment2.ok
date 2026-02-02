@@ -34,11 +34,11 @@ stage 1: pattern routing
 stage 2: pattern routing with possible detours
 0 / 579 nets have overflow.
 routing statistics
-wire length (metric):  36712
-total via count:       4442
+wire length (metric):  36802
+total via count:       4437
 total wire overflow:   0
-min resource: 0.399999737739563
-bottleneck:   (3, 18, 9)
-[INFO GRT-0018] Total wirelength: 10342 um
+min resource: 0.3999999761581421
+bottleneck:   (8, 0, 4)
+[INFO GRT-0018] Total wirelength: 10362 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

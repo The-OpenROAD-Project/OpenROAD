@@ -61,11 +61,11 @@ gcell grid:          38 x 38 x 6
 stage 1: pattern routing
 0 / 15 nets have overflow.
 routing statistics
-wire length (metric):  2354
-total via count:       186
+wire length (metric):  2841
+total via count:       193
 total wire overflow:   0
 min resource: 1
 bottleneck:   (5, 0, 0)
-[INFO GRT-0018] Total wirelength: 1404 um
+[INFO GRT-0018] Total wirelength: 1598 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

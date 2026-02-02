@@ -181,9 +181,9 @@ class GlobalRouter
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
-  void globalRoute(bool save_guides = false,
-                   bool start_incremental = false,
-                   bool end_incremental = false);
+  void startIncremental();
+  void endIncremental(bool save_guides = false);
+  void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
   NetRouteMap getPartialRoutes();
@@ -326,6 +326,7 @@ class GlobalRouter
   void writePinLocations(const char* file_name);
 
  private:
+  void finishGlobalRouting(bool save_guides = false);
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);

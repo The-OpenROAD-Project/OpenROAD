@@ -149,6 +149,7 @@ class RDLRouter
 
   void setRDLGui(RDLGui* gui) { gui_ = gui; }
   void setRDLDebugNet(odb::dbNet* net) { debug_net_ = net; }
+  void setRDLDebugPin(odb::dbITerm* term) { debug_pin_ = term; }
 
   odb::Rect getPointObstruction(const odb::Point& pt) const;
   odb::Polygon getEdgeObstruction(const odb::Point& pt0,
@@ -210,6 +211,7 @@ class RDLRouter
 
   int getBloatFactor() const;
   bool isDebugNet(odb::dbNet* net) const;
+  bool isDebugPin(odb::dbITerm* pin) const;
 
   utl::Logger* logger_;
   odb::dbBlock* block_;
@@ -246,6 +248,7 @@ class RDLRouter
   // Debugging
   RDLGui* gui_;
   odb::dbNet* debug_net_{nullptr};
+  odb::dbITerm* debug_pin_{nullptr};
 
   // Consts
   static constexpr const char* kRouteProperty = "RDL_ROUTE";
