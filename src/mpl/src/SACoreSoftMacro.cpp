@@ -732,7 +732,7 @@ bool SACoreSoftMacro::isSegmentEmpty(std::vector<std::vector<bool>>& grid,
 
 float SACoreSoftMacro::calSingleNotchPenalty(int width, int height)
 {
-  return std::sqrt((width * height) / static_cast<double>(outline_.area()));
+  return std::sqrt((static_cast<double>(width) * height) / outline_.area());
 }
 
 // If there is no HardMacroCluster, we do not consider the notch penalty
