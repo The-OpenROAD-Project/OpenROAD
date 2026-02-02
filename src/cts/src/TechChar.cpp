@@ -24,6 +24,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
@@ -36,7 +37,6 @@
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -690,13 +690,15 @@ void TechChar::initCharacterization()
   }
 }
 
-sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer, double extra_out_cap)
+sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer,
+                                           double extra_out_cap)
 {
   sta::ArcDelay max_rise_delay = 0;
 
   odb::dbMaster* bufferMaster = db_->findMaster(buffer.c_str());
   sta::Cell* bufferMasterCell = db_network_->dbToSta(bufferMaster);
-  sta::LibertyCell* libertyMasterCell = db_network_->libertyCell(bufferMasterCell);
+  sta::LibertyCell* libertyMasterCell
+      = db_network_->libertyCell(bufferMasterCell);
   sta::LibertyPort *input, *output;
   libertyMasterCell->bufferPorts(input, output);
   for (sta::Corner* corner : *openSta_->corners()) {
@@ -745,15 +747,7 @@ void TechChar::createDelayBufList()
       buffersDrvRes, [this](const std::string& buf1, const std::string& buf2) {
         return (this->getDrvrResistance(buf1) < this->getDrvrResistance(buf2));
       });
-  logger_->report("Buffer list = [");
-  for (const std::string& buffer : buffersDrvRes) {
-    float drvrRes = getDrvrResistance(buffer);
-    sta::ArcDelay delay = computeBufferDelay(buffer, 0);
-    float intrinsicDelay = getinternalDelay(buffer);
-    logger_->report("{}, driveRes = {}, delay = {}, intrinsic delay: {}", buffer, drvrRes, delay, intrinsicDelay);
-    logger_->report("prevDrvrRes: {}, {}",prevDrvrRes, ((prevDrvrRes - drvrRes) / drvrRes));
-  }
-  logger_->report("]");
+
   for (const std::string& buffer : buffersDrvRes) {
     float drvrRes = getDrvrResistance(buffer);
     float intrinsicDelay = getinternalDelay(buffer);
@@ -773,15 +767,8 @@ void TechChar::createDelayBufList()
       prevInternalDelay = intrinsicDelay;
     }
   }
-  logger_->report("]");
 
-  logger_->report("Delay Buffer list based on drvrRes = [");
-  for (const std::string& buffer : delay_buffers) {
-    logger_->report("{}, ", buffer);
-  }
-  logger_->report("]");
-
-  if(drvrRes) {
+  if (drvrRes) {
     options_->setDlyBufferList(delay_buffers);
     return;
   }
@@ -794,20 +781,10 @@ void TechChar::createDelayBufList()
       buffersIntDly, [this](const std::string& buf1, const std::string& buf2) {
         return (this->getinternalDelay(buf1) < this->getinternalDelay(buf2));
       });
-  logger_->report("Buffer list = [");
-  for (const std::string& buffer : buffersIntDly) {
-    float drvrRes = getDrvrResistance(buffer);
-    sta::ArcDelay delay = computeBufferDelay(buffer, 0);
-    float intrinsicDelay = getinternalDelay(buffer);
-    logger_->report("{}, driveRes = {}, delay = {}, intrinsic delay: {}", buffer, drvrRes, delay, intrinsicDelay);
-    logger_->report("prevInternalDelay: {}, {}",prevInternalDelay, ((prevInternalDelay - intrinsicDelay) / intrinsicDelay));
-  }
-  logger_->report("]");
+
   for (const std::string& buffer : buffersIntDly) {
     float drvrRes = getDrvrResistance(buffer);
     float intrinsicDelay = getinternalDelay(buffer);
-    logger_->report("{}, driveRes = {}, intrinsic delay: {}", buffer, drvrRes, intrinsicDelay);
-    logger_->report("prevInternalDelay: {}, {}",prevInternalDelay, ((prevInternalDelay - intrinsicDelay) / intrinsicDelay));
 
     if (prevInternalDelay == -1) {
       prevDrvrRes = drvrRes;
@@ -824,13 +801,6 @@ void TechChar::createDelayBufList()
       prevInternalDelay = intrinsicDelay;
     }
   }
-  logger_->report("]");
-
-  logger_->report("Delay Buffer list based on internal delay = [");
-  for (const std::string& buffer : delay_buffers) {
-    logger_->report("{}, ", buffer);
-  }
-  logger_->report("]");
   options_->setDlyBufferList(delay_buffers);
 }
 

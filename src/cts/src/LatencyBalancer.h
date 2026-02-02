@@ -40,6 +40,7 @@ struct GraphNode
   std::string name;
   std::vector<int> childrenIds;
   double arrival = 0.0;
+  double dlyNeeded = -1.0;
   int nBuffInsert = -1;
   odb::dbITerm* inputTerm = nullptr;
 };
@@ -53,7 +54,6 @@ class LatencyBalancer
                   odb::dbDatabase* db,
                   sta::dbNetwork* network,
                   sta::dbSta* sta,
-                  odb::dbMaster* delayBufMaster,
                   TechChar* techChar,
                   double capPerDBU)
       : root_(root),
@@ -62,7 +62,6 @@ class LatencyBalancer
         db_(db),
         network_(network),
         openSta_(sta),
-        delayBufMaster_(delayBufMaster),
         techChar_(techChar),
         capPerDBU_(capPerDBU),
         worseDelay_(std::numeric_limits<float>::min())
@@ -70,12 +69,11 @@ class LatencyBalancer
   }
 
   int run();
-  sta::ArcDelay computeBufferDelay(double extra_out_cap);
 
  private:
   void initSta();
   void findLeafBuilders(TreeBuilder* builder);
-  void computeBuffersDelay(double extra_out_cap);
+  void computeBuffersDelay(std::vector<int>& buffersDelay, double extra_out_cap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -86,18 +84,16 @@ class LatencyBalancer
                                odb::dbITerm* iterm,
                                float& sumArrivals,
                                unsigned& numSinks);
-
-  void computeNumberOfDelayBuffers(int nodeId, int srcX, int srcY);
-  int computeNumberOfDelayBuffers(double delayNeeded,int srcX, int srcY);
+  std::vector<std::string> computeNumberOfDelayBuffers(double delayNeeded,int srcX, int srcY, const std::vector<odb::dbITerm*>& sinks);
   // DFS search throw the tree graph to insert delay buffers. At each node,
   // evaluate the delay of the its children, if the children need delay buffers
   // and need different ammount of delay buffers, isert this difference, to the
   // child that need more buffers.
   void balanceLatencies(int nodeId);
   odb::dbITerm* insertDelayBuffers(
-      int numBuffers,
       int srcX,
       int srcY,
+      const std::vector<std::string>& buffersMaster,
       const std::vector<odb::dbITerm*>& sinksInput);
   bool propagateClock(odb::dbITerm* input);
   bool isSink(odb::dbITerm* iterm);
@@ -111,14 +107,13 @@ class LatencyBalancer
   sta::dbNetwork* network_ = nullptr;
   sta::dbSta* openSta_ = nullptr;
   sta::Graph* timingGraph_ = nullptr;
-  odb::dbMaster* delayBufMaster_ = nullptr;
   TechChar* techChar_ = nullptr;
   double wireSegmentUnit_;
   float bufferDelay_;
   double capPerDBU_;
   float worseDelay_;
   int delayBufIndex_{0};
-  std::vector<int> bufferDelays_;
+  std::vector<int> buffersDelay_;
   std::vector<GraphNode> graph_;
   std::map<std::string, TreeBuilder*> inst2builder_;
 };
