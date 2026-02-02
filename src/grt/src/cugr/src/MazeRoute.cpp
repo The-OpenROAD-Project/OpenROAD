@@ -38,8 +38,8 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
     pxs.emplace_back(pin.point.x());
     pys.emplace_back(pin.point.y());
   }
-  std::ranges::sort(pxs);
-  std::ranges::sort(pys);
+  std::ranges::stable_sort(pxs);
+  std::ranges::stable_sort(pys);
 
   const int xSize = grid_graph_->getSize(0);
   const int ySize = grid_graph_->getSize(1);
