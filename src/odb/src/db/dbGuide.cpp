@@ -176,6 +176,7 @@ dbGuide* dbGuide::create(dbNet* net,
   guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
   guide->is_jumper_ = false;
+  guide->ignore_usage_ = false;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
 }
@@ -262,6 +263,18 @@ void dbGuide::setIsJumper(bool jumper)
   if (db->isSchema(kSchemaHasJumpers)) {
     guide->is_jumper_ = jumper;
   }
+}
+
+bool dbGuide::ignoreUsage() const
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  return guide->ignore_usage_;
+}
+
+void dbGuide::setIgnoreUsage(bool ignore_usage)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  guide->ignore_usage_ = ignore_usage;
 }
 
 bool dbGuide::isConnectedToTerm() const
