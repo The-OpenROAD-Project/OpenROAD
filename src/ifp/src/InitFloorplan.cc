@@ -71,13 +71,13 @@ void validateCoreSpacing(odb::dbBlock* block,
 {
   utl::Validator v(logger, IFP);
   v.check_non_negative(
-      "core_space_bottom (um) ", block->dbuToMicrons(core_space_bottom), 32);
+      "core_space_bottom (um) ", block->dbuToMicrons(core_space_bottom), 350);
   v.check_non_negative(
-      "core_space_top (um) ", block->dbuToMicrons(core_space_top), 33);
+      "core_space_top (um) ", block->dbuToMicrons(core_space_top), 351);
   v.check_non_negative(
-      "core_space_left (um) ", block->dbuToMicrons(core_space_left), 34);
+      "core_space_left (um) ", block->dbuToMicrons(core_space_left), 352);
   v.check_non_negative(
-      "core_space_right (um) ", block->dbuToMicrons(core_space_right), 35);
+      "core_space_right (um) ", block->dbuToMicrons(core_space_right), 353);
 }
 }  // namespace
 
@@ -91,7 +91,7 @@ InitFloorplan::InitFloorplan(dbBlock* block,
 void InitFloorplan::checkGap(const int gap)
 {
   if (gap != std::numeric_limits<int32_t>::min() && gap <= 0) {
-    logger_->error(IFP, 36, "Gap must be positive ({})", gap);
+    logger_->error(IFP, 354, "Gap must be positive ({})", gap);
   }
 }
 
@@ -152,15 +152,16 @@ void InitFloorplan::makeDieUtilization(double utilization,
                                        int core_space_right)
 {
   utl::Validator v(logger_, IFP);
-  v.check_non_negative("utilization", utilization, 12);
-  v.check_positive("aspect_ratio", aspect_ratio, 36);
+  v.check_non_negative("utilization", utilization, 355);
+  v.check_positive("aspect_ratio", aspect_ratio, 356);
   validateCoreSpacing(block_,
                       logger_,
                       core_space_bottom,
                       core_space_top,
                       core_space_left,
-                      core_space_right);
+                      core_space_right);  
   utilization /= 100;
+  logger_->info(IFP, 19, "{:27} {:10.3f}", "Target utilization:", utilization);
   const double design_area = designArea();
   const double core_area = design_area / utilization;
   const int core_width = std::sqrt(core_area / aspect_ratio);
@@ -194,13 +195,13 @@ void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
   auto points = polygon.getPoints();
 
   if (points.empty()) {
-    logger_->error(IFP, 987, "No polygon vertices provided.");
+    logger_->error(IFP, 357, "No polygon vertices provided.");
     return;
   }
 
   if (points.size() < 4) {
     logger_->error(IFP,
-                   988,
+                   358,
                    "Polygon must have at least 4 vertices. Got {} vertices.",
                    points.size());
     return;
@@ -232,14 +233,14 @@ void InitFloorplan::makePolygonRows(
   auto points = core_polygon.getPoints();
 
   if (points.empty()) {
-    logger_->error(IFP, 991, "No core polygon vertices provided.");
+    logger_->error(IFP, 359, "No core polygon vertices provided.");
     return;
   }
 
   if (points.size() < 4) {
     logger_->error(
         IFP,
-        992,
+        360,
         "Core polygon must have at least 4 vertices. Got {} vertices.",
         points.size());
     return;
@@ -255,7 +256,7 @@ void InitFloorplan::makePolygonRows(
   // Set up the sites as in the original makeRows function
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
-    logger_->error(IFP, 1005, "Floorplan die area is 0. Cannot build rows.");
+    logger_->error(IFP, 361, "Floorplan die area is 0. Cannot build rows.");
     return;
   }
 
@@ -265,7 +266,7 @@ void InitFloorplan::makePolygonRows(
 
   if (!block_die_area.contains(core_bbox)) {
     logger_->error(
-        IFP, 1004, "Die area must contain the core polygon bounding box.");
+        IFP, 362, "Die area must contain the core polygon bounding box.");
     return;
   }
 
@@ -298,6 +299,7 @@ void InitFloorplan::makePolygonRows(
                 997,
                 "Completed polygon-aware row generation using {} vertices",
                 points.size() - 1);
+  reportAreas();
 }
 
 double InitFloorplan::designArea()
@@ -331,7 +333,7 @@ void InitFloorplan::checkInstanceDimensions(const odb::Rect& core) const
 
     if (fails) {
       logger_->error(utl::IFP,
-                     2,
+                     363,
                      "{} ({:.3f}um, {:.3f}um) does not fit in the core area: "
                      "({:.3f}um, {:.3f}um) - ({:.3f}um, {:.3f}um)",
                      inst->getName(),
@@ -365,7 +367,7 @@ void InitFloorplan::makeRowsWithSpacing(
 
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
-    logger_->error(IFP, 64, "Floorplan die area is 0. Cannot build rows.");
+    logger_->error(IFP, 364, "Floorplan die area is 0. Cannot build rows.");
   }
 
   validateCoreSpacing(block_,
@@ -404,11 +406,11 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
-    logger_->error(IFP, 63, "Floorplan die area is 0. Cannot build rows.");
+    logger_->error(IFP, 365, "Floorplan die area is 0. Cannot build rows.");
   }
 
   if (!block_die_area.contains(core)) {
-    logger_->error(IFP, 55, "Die area must contain the core area.");
+    logger_->error(IFP, 366, "Die area must contain the core area.");
   }
 
   checkInstanceDimensions(core);
@@ -463,7 +465,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
       if (row_parity != RowParity::NONE) {
         logger_->error(
             IFP,
-            51,
+            367,
             "Constraining row parity is not supported for hybrid rows.");
       }
       makeHybridRows(base_site, sites_by_name, snapped_core);
@@ -486,6 +488,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
                /* halo_x */ 0,
                /* halo_y */ 0,
                logger_);
+  reportAreas();
 }
 
 // this function is used to create regions ( split overlapped rows and create
@@ -727,7 +730,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
           IFP,
-          54,
+          368,
           "Site {} height {}um is not a multiple of site {} height {}um.",
           site->getName(),
           block_->dbuToMicrons(site->getHeight()),
@@ -789,7 +792,7 @@ int InitFloorplan::getOffset(dbSite* base_hybrid_site,
   }
 
   logger_->error(IFP,
-                 48,
+                 369,
                  "Site {} is incompatible with site {}",
                  site->getName(),
                  base_hybrid_site->getName());
@@ -890,7 +893,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
                                    const std::string& prefix)
 {
   utl::Validator v(logger_, IFP);
-  v.check_non_null("tie_term", tie_term, 43);
+  v.check_non_null("tie_term", tie_term, 370);
 
   auto* master = tie_term->getMaster();
 
@@ -898,7 +901,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
   auto* lib_port = network_->libertyPort(port);
   if (!lib_port) {
     logger_->error(utl::IFP,
-                   53,
+                   371,
                    "Liberty cell or port {}/{} not found.",
                    master->getName(),
                    tie_term->getName());
@@ -914,7 +917,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
     look_for = odb::dbSigType::POWER;
   } else {
     logger_->error(utl::IFP,
-                   29,
+                   372,
                    "Unable to determine tiecell ({}) function.",
                    master->getName());
   }
@@ -995,19 +998,19 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   utl::Validator v(logger_, IFP);
   string layer_inform = "On layer " + layer->getName() + ": ";
 
-  v.check_non_null("layer", layer, 38);
+  v.check_non_null("layer", layer, 373);
   v.check_non_negative((layer_inform + "x_offset (um)").c_str(),
                        block_->dbuToMicrons(x_offset),
-                       39);
+                       374);
   v.check_positive((layer_inform + "x_pitch (um)").c_str(),
                    block_->dbuToMicrons(x_pitch),
-                   40);
+                   375);
   v.check_non_negative((layer_inform + "y_offset (um)").c_str(),
                        block_->dbuToMicrons(y_offset),
-                       41);
+                       376);
   v.check_positive((layer_inform + "y_pitch (um)").c_str(),
                    block_->dbuToMicrons(y_pitch),
-                   42);
+                   377);
 
   Rect die_area = block_->getDieArea();
 
@@ -1084,7 +1087,7 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
                                          int first_last_pitch)
 {
   if (layer->getDirection() != dbTechLayerDir::HORIZONTAL) {
-    logger_->error(IFP, 44, "Non horizontal layer uses property LEF58_PITCH.");
+    logger_->error(IFP, 378, "Non horizontal layer uses property LEF58_PITCH.");
   }
 
   int cell_row_height = 0;
@@ -1098,7 +1101,7 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
 
   if (cell_row_height == 0) {
     logger_->error(
-        IFP, 45, "No routing Row found in layer {}", layer->getName());
+        IFP, 379, "No routing Row found in layer {}", layer->getName());
   }
   Rect die_area = block_->getDieArea();
 
@@ -1127,7 +1130,7 @@ void InitFloorplan::makePolygonRowsScanline(
   if (base_site->hasRowPattern()) {
     logger_->error(
         IFP,
-        1000,
+        380,
         "Hybrid rows not yet supported with polygon-aware generation.");
   }
 
@@ -1163,7 +1166,7 @@ void InitFloorplan::makePolygonRowsScanline(
       if (site->getHeight() % base_site->getHeight() != 0) {
         logger_->error(
             IFP,
-            1001,
+            381,
             "Site {} height {}um is not a multiple of site {} height {}um.",
             site->getName(),
             block_->dbuToMicrons(site->getHeight()),
@@ -1340,6 +1343,47 @@ void InitFloorplan::makeUniformRowsPolygon(
                 "Added {} polygon-aware rows for site {}.",
                 rows_created,
                 site->getName());
+}
+
+void InitFloorplan::reportAreas()
+{
+  odb::Rect die = block_->getDieArea();
+  odb::Rect core = block_->getCoreArea();
+  logger_->info(IFP,
+                12,
+                "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+                "Die BBox:",
+                block_->dbuToMicrons(die.xMin()),
+                block_->dbuToMicrons(die.yMin()),
+                block_->dbuToMicrons(die.xMax()),
+                block_->dbuToMicrons(die.yMax()));
+  logger_->info(IFP,
+                13,
+                "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+                "Core BBox:",
+                block_->dbuToMicrons(core.xMin()),
+                block_->dbuToMicrons(core.yMin()),
+                block_->dbuToMicrons(core.xMax()),
+                block_->dbuToMicrons(core.yMax()));
+  logger_->info(IFP,
+                16,
+                "{:27} {:15.3f} um^2",
+                "Core area:",
+                block_->dbuAreaToMicrons(core.area()));
+  int64_t design_area = static_cast<int64_t>(designArea());
+  logger_->info(IFP,
+                17,
+                "{:27} {:15.3f} um^2",
+                "Instances area:",
+                block_->dbuAreaToMicrons(design_area));
+  double core_area_um = block_->dbuAreaToMicrons(core.area());
+  if (core_area_um > 0) {
+    logger_->info(IFP,
+                  20,
+                  "{:27} {:15.3f}",
+                  "Result utilization:",
+                  block_->dbuAreaToMicrons(design_area) / core_area_um);
+  }
 }
 
 }  // namespace ifp

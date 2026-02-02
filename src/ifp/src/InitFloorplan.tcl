@@ -22,13 +22,13 @@ proc initialize_floorplan { args } {
   # Existing validation
   if { [info exists keys(-utilization)] } {
     if { [info exists keys(-core_area)] } {
-      utl::error IFP 20 "-core_area cannot be used with -utilization."
+      utl::error IFP 300 "-core_area cannot be used with -utilization."
     }
   }
 
   if { [info exists keys(-die_area)] } {
     if { [info exists keys(-core_space)] } {
-      utl::error IFP 24 "-core_space cannot be used with -die_area."
+      utl::error IFP 301 "-core_space cannot be used with -die_area."
     }
   }
 
@@ -53,10 +53,12 @@ proc initialize_floorplan { args } {
 
   # Branch to polygon flow if polygon mode detected
   if { $is_polygon_mode } {
+    utl::info IFP 23 "Initializing floorplan in polygon mode."
     ifp::make_polygon_die_helper [array get keys]
     ifp::make_polygon_rows_helper [array get keys]
     return
   } else {
+    utl::info IFP 24 "Initializing floorplan in rectangular mode."
     ifp::make_die_helper [array get keys]
     make_rows_helper [array get keys]
   }
@@ -85,7 +87,7 @@ proc make_rows_helper { key_array } {
   if { [info exists keys(-site)] } {
     set site [ifp::find_site $keys(-site)]
   } else {
-    utl::error IFP 35 "use -site to add placement rows."
+    utl::error IFP 302 "use -site to add placement rows."
   }
 
   set additional_sites {}
@@ -106,7 +108,7 @@ proc make_rows_helper { key_array } {
   if { [info exists keys(-row_parity)] } {
     set row_parity $keys(-row_parity)
     if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
-      utl::error IFP 57 "-row_parity must be NONE, ODD or EVEN"
+      utl::error IFP 303 "-row_parity must be NONE, ODD or EVEN"
     }
   }
 
@@ -118,12 +120,12 @@ proc make_rows_helper { key_array } {
 
   if { [info exists keys(-core_area)] } {
     if { [info exists keys(-core_space)] } {
-      utl::error IFP 60 "-core_space cannot be used with -core_area."
+      utl::error IFP 304 "-core_space cannot be used with -core_area."
     }
 
     set core_area $keys(-core_area)
     if { [llength $core_area] != 4 } {
-      utl::error IFP 59 "-core_area is a list of 4 coordinates."
+      utl::error IFP 305 "-core_area is a list of 4 coordinates."
     }
     lassign $core_area core_lx core_ly core_ux core_uy
     sta::check_positive_float "-core_area" $core_lx
@@ -160,7 +162,7 @@ proc make_rows_helper { key_array } {
       sta::check_positive_float "-core_space" $core_sp_left
       sta::check_positive_float "-core_space" $core_sp_right
     } else {
-      utl::error IFP 58 "-core_space is either a list of 4 margins or one value for all margins."
+      utl::error IFP 306 "-core_space is either a list of 4 margins or one value for all margins."
     }
 
     ord::ensure_linked
@@ -179,7 +181,7 @@ proc make_rows_helper { key_array } {
     return
   }
 
-  utl::error IFP 62 "no -core_area or -core_space specified."
+  utl::error IFP 307 "no -core_area or -core_space specified."
 }
 
 sta::define_cmd_args "make_tracks" {[layer]\
@@ -203,10 +205,10 @@ proc make_tracks { args } {
     set layer_name [lindex $args 0]
     set layer [$tech findLayer $layer_name]
     if { $layer == "NULL" } {
-      utl::error "IFP" 10 "layer $layer_name not found."
+      utl::error "IFP" 308 "layer $layer_name not found."
     }
     if { [$layer getType] != "ROUTING" } {
-      utl::error "IFP" 25 "layer $layer_name is not a routing layer."
+      utl::error "IFP" 309 "layer $layer_name is not a routing layer."
     }
 
     if { [info exists keys(-x_pitch)] } {
@@ -272,12 +274,12 @@ proc insert_tiecells { args } {
     }
   }
   if { $master == "NULL" } {
-    utl::error "IFP" 31 "Unable to find master: $tie_cell"
+    utl::error "IFP" 310 "Unable to find master: $tie_cell"
   }
 
   set mterm [$master findMTerm $port]
-  if { $master == "NULL" } {
-    utl::error "IFP" 32 "Unable to find master pin: $args"
+  if { $mterm == "NULL" } {
+    utl::error "IFP" 311 "Unable to find master pin: $args"
   }
 
   ord::ensure_linked
@@ -303,7 +305,7 @@ proc make_die_helper { key_array } {
   if { [info exists keys(-utilization)] } {
     set util $keys(-utilization)
     if { [info exists keys(-die_area)] } {
-      utl::error IFP 14 "-die_area cannot be used with -utilization."
+      utl::error IFP 312 "-die_area cannot be used with -utilization."
     }
     if { [info exists keys(-core_space)] } {
       set core_sp $keys(-core_space)
@@ -316,10 +318,10 @@ proc make_die_helper { key_array } {
       } elseif { [llength $core_sp] == 4 } {
         lassign $core_sp core_sp_bottom core_sp_top core_sp_left core_sp_right
       } else {
-        utl::error IFP 13 "-core_space is either a list of 4 margins or one value for all margins."
+        utl::error IFP 313 "-core_space is either a list of 4 margins or one value for all margins."
       }
     } else {
-      utl::error IFP 34 "no -core_space specified."
+      utl::error IFP 314 "no -core_space specified."
     }
     if { [info exists keys(-aspect_ratio)] } {
       set aspect_ratio $keys(-aspect_ratio)
@@ -327,6 +329,7 @@ proc make_die_helper { key_array } {
     } else {
       set aspect_ratio 1.0
     }
+    utl::info IFP 25 "Defining die area using utilization: $util and aspect ratio: $aspect_ratio."
     ifp::make_die_util $util $aspect_ratio \
       [ord::microns_to_dbu $core_sp_bottom] \
       [ord::microns_to_dbu $core_sp_top] \
@@ -337,14 +340,14 @@ proc make_die_helper { key_array } {
 
   if { [info exists keys(-die_area)] } {
     if { [info exists keys(-utilization)] } {
-      utl::error IFP 23 "-utilization cannot be used with -die_area."
+      utl::error IFP 315 "-utilization cannot be used with -die_area."
     }
     if { [info exists keys(-aspect_ratio)] } {
-      utl::error IFP 33 "-aspect_ratio cannot be used with -die_area."
+      utl::error IFP 316 "-aspect_ratio cannot be used with -die_area."
     }
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
-      utl::error IFP 15 "-die_area is a list of 4 coordinates."
+      utl::error IFP 317 "-die_area is a list of 4 coordinates."
     }
     lassign $die_area die_lx die_ly die_ux die_uy
     sta::check_positive_float "-die_area" $die_lx
@@ -355,28 +358,29 @@ proc make_die_helper { key_array } {
     ord::ensure_linked
 
     # convert die coordinates to dbu.
+    utl::info IFP 29 "Defining die area with explicit coordinates: ($die_lx, $die_ly) to ($die_ux, $die_uy)"
     ifp::make_die \
       [ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
       [ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy]
     return
   }
 
-  utl::error IFP 19 "no -utilization or -die_area specified."
+  utl::error IFP 318 "no -utilization or -die_area specified."
 }
 
 proc make_polygon_die_helper { key_array } {
   array set keys $key_array
 
   if { ![info exists keys(-die_area)] } {
-    utl::error IFP 75 "no -die_area specified for polygon floorplan."
+    utl::error IFP 319 "no -die_area specified for polygon floorplan."
   }
   set die_vertices $keys(-die_area)
   if { [llength $die_vertices] % 2 != 0 } {
-    utl::error IFP 76 "-die_area must have an even number of coordinates (x y pairs)."
+    utl::error IFP 320 "-die_area must have an even number of coordinates (x y pairs)."
   }
 
   if { [llength $die_vertices] < 8 } {
-    utl::error IFP 77 "-die_area must have at least 4 vertices (8 coordinates)."
+    utl::error IFP 321 "-die_area must have at least 4 vertices (8 coordinates)."
   }
 
   # Clear any previous polygon data
@@ -389,7 +393,7 @@ proc make_polygon_die_helper { key_array } {
   foreach {x y} $die_vertices {
     # Validate coordinates are numeric
     if { ![string is double -strict $x] || ![string is double -strict $y] } {
-      utl::error IFP 78 "Invalid die polygon coordinate\
+      utl::error IFP 322 "Invalid die polygon coordinate\
       at position [expr $point_count*2]: '$x $y' - must be numeric"
     }
     # Check for negative coordinates
@@ -413,7 +417,7 @@ proc make_polygon_rows_helper { key_array } {
 
   # Validate that core_area is specified for polygon floorplan
   if { ![info exists keys(-core_area)] } {
-    utl::error IFP 85 "no -core_area specified for polygonal floorplan."
+    utl::error IFP 323 "no -core_area specified for polygonal floorplan."
   }
 
   # Get the site information (required for polygon rows)
@@ -421,7 +425,7 @@ proc make_polygon_rows_helper { key_array } {
   if { [info exists keys(-site)] } {
     set site [ifp::find_site $keys(-site)]
   } else {
-    utl::error IFP 80 "use -site to add placement rows for polygon floorplan."
+    utl::error IFP 324 "use -site to add placement rows for polygon floorplan."
   }
 
   # Get additional sites
@@ -445,7 +449,7 @@ proc make_polygon_rows_helper { key_array } {
   if { [info exists keys(-row_parity)] } {
     set row_parity $keys(-row_parity)
     if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
-      utl::error IFP 81 "-row_parity must be NONE, ODD or EVEN"
+      utl::error IFP 325 "-row_parity must be NONE, ODD or EVEN"
     }
   }
 
@@ -459,11 +463,11 @@ proc make_polygon_rows_helper { key_array } {
   if { [info exists keys(-core_area)] } {
     set core_vertices $keys(-core_area)
     if { [llength $core_vertices] % 2 != 0 } {
-      utl::error IFP 82 "-core_area must have an even number of coordinates (x y pairs)."
+      utl::error IFP 326 "-core_area must have an even number of coordinates (x y pairs)."
     }
 
     if { [llength $core_vertices] < 8 } {
-      utl::error IFP 83 "-core_area must have at least 4 vertices (8 coordinates)."
+      utl::error IFP 327 "-core_area must have at least 4 vertices (8 coordinates)."
     }
 
     # Convert micron coordinates to DBU and create polygon vertices list
@@ -472,7 +476,7 @@ proc make_polygon_rows_helper { key_array } {
     foreach {x y} $core_vertices {
       # Validate coordinates are numeric
       if { ![string is double -strict $x] || ![string is double -strict $y] } {
-        utl::error IFP 84 "Invalid core polygon coordinate\
+        utl::error IFP 328 "Invalid core polygon coordinate\
         at position [expr $point_count*2]: '$x $y' - must be numeric"
       }
 

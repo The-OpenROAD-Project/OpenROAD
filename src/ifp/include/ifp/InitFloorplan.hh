@@ -154,6 +154,7 @@ class InitFloorplan
                            int core_uy,
                            int gap);
   void addUsedSites(std::map<std::string, odb::dbSite*>& sites_by_name) const;
+  void reportAreas();
 
   // Private methods for polygon-aware row generation using scanline
   // intersection
