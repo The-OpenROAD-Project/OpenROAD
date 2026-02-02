@@ -6,7 +6,7 @@ UNITS DISTANCE MICRONS 2000 ;
 
 DIEAREA ( 0 0 ) ( 200000 200000 ) ;
 
-COMPONENTS 292 ;
+COMPONENTS 293 ;
 - ff287 DFF_X1 + PLACED ( 193420 170800 ) N
  ;
 - ff286 DFF_X1 + PLACED ( 183160 170800 ) N
@@ -256,6 +256,8 @@ COMPONENTS 292 ;
 - ff167 DFF_X1 + PLACED ( 61180 106400 ) FS
  ;
 - gclk2 CLKGATE_X1 + PLACED ( 50160 100800 ) FS
+ ;
+- gclk5 CLKGATE_X1 + PLACED ( 50160 100800 ) FS
  ;
 - ff166 DFF_X1 + PLACED ( 50160 106400 ) FS
  ;
@@ -599,26 +601,22 @@ PINS 1 ;
   + FIXED ( 100000 200000 ) S ;
 END PINS
 
-NETS 5 ;
+NETS 6 ;
 - clk
-  ( PIN clk ) ( gclk1 CK ) ( gclk2 CK ) ( gclk4 CK )
+  ( PIN clk ) ( gclk1 CK ) ( gclk2 CK ) ( gclk5 CK ) ( gclk4 CK )
   ( ff0 CK ) ( ff1 CK ) ( ff2 CK ) ( ff3 CK ) ( ff4 CK ) ( ff5 CK )
   ( ff6 CK ) ( ff7 CK ) ( ff8 CK ) ( ff9 CK ) ( ff10 CK ) ( ff11 CK )
   ( ff12 CK ) ( ff13 CK ) ( ff14 CK ) ( ff15 CK ) ( ff16 CK ) ( ff17 CK )
   ( ff18 CK ) ( ff19 CK ) ( ff20 CK ) ( ff21 CK ) ( ff22 CK ) ( ff23 CK )
   ( ff24 CK ) ( ff25 CK ) ( ff26 CK ) ( ff27 CK ) ( ff28 CK ) ( ff29 CK )
   ( ff30 CK ) ( ff31 CK ) ( ff32 CK ) ( ff33 CK ) ( ff34 CK ) ( ff35 CK )
-  ( ff36 CK ) ( ff37 CK ) ( ff38 CK ) ( ff39 CK ) ( ff40 CK ) ( ff41 CK )
-  ( ff42 CK ) ( ff43 CK ) ( ff44 CK ) ( ff45 CK ) ( ff46 CK ) ( ff47 CK )
+  ( ff45 CK ) ( ff46 CK ) ( ff47 CK )
   ( ff48 CK ) ( ff49 CK ) ( ff50 CK ) ( ff51 CK ) ( ff52 CK ) ( ff53 CK )
-  ( ff54 CK ) ( ff55 CK ) ( ff56 CK ) ( ff57 CK ) ( ff58 CK ) ( ff59 CK )
-  ( ff60 CK ) ( ff61 CK ) ( ff62 CK ) ( ff63 CK ) ( ff64 CK ) ( ff65 CK )
+  ( ff63 CK ) ( ff64 CK ) ( ff65 CK )
   ( ff66 CK ) ( ff67 CK ) ( ff68 CK ) ( ff69 CK ) ( ff70 CK ) ( ff71 CK )
-  ( ff72 CK ) ( ff73 CK ) ( ff74 CK ) ( ff75 CK ) ( ff76 CK ) ( ff77 CK )
-  ( ff78 CK ) ( ff79 CK ) ( ff80 CK ) ( ff81 CK ) ( ff82 CK ) ( ff83 CK )
+  ( ff81 CK ) ( ff82 CK ) ( ff83 CK )
   ( ff84 CK ) ( ff85 CK ) ( ff86 CK ) ( ff87 CK ) ( ff88 CK ) ( ff89 CK )
-  ( ff90 CK ) ( ff91 CK ) ( ff92 CK ) ( ff93 CK ) ( ff94 CK ) ( ff95 CK )
-  ( ff96 CK ) ( ff97 CK ) ( ff98 CK ) ( ff99 CK ) ( ff100 CK ) ( ff101 CK )
+  ( ff99 CK ) ( ff100 CK ) ( ff101 CK )
   ( ff102 CK ) ( ff103 CK ) ( ff104 CK ) ( ff105 CK ) ( ff106 CK ) ( ff107 CK )
   ( ff117 CK ) ( ff118 CK ) ( ff119 CK )
   ( ff120 CK ) ( ff121 CK ) ( ff122 CK ) ( ff123 CK ) ( ff124 CK ) ( ff125 CK )
@@ -631,10 +629,6 @@ NETS 5 ;
   ( ff222 CK ) ( ff223 CK ) ( ff224 CK )
   ( ff234 CK ) ( ff235 CK ) ( ff236 CK ) ( ff237 CK ) ( ff238 CK ) ( ff239 CK )
   ( ff240 CK ) ( ff241 CK ) ( ff242 CK ) 
-  ( ff252 CK ) ( ff253 CK ) ( ff254 CK ) ( ff255 CK ) ( ff256 CK ) ( ff257 CK )
-  ( ff258 CK ) ( ff259 CK ) ( ff260 CK ) 
-  ( ff270 CK ) ( ff271 CK ) ( ff272 CK ) ( ff273 CK ) ( ff274 CK ) ( ff275 CK )
-  ( ff276 CK ) ( ff277 CK ) ( ff278 CK ) 
  ;
 - gclk2
   ( gclk2 GCK )
@@ -650,7 +644,23 @@ NETS 5 ;
   ( ff132 CK ) ( ff133 CK ) ( ff134 CK )
   ( ff108 CK ) ( ff109 CK ) ( ff110 CK ) ( ff111 CK ) ( ff112 CK ) ( ff113 CK )
   ( ff114 CK ) ( ff115 CK ) ( ff116 CK )
+  ( ff90 CK ) ( ff91 CK ) ( ff92 CK ) ( ff93 CK ) ( ff94 CK ) ( ff95 CK )
+  ( ff96 CK ) ( ff97 CK ) ( ff98 CK )
+  ( ff72 CK ) ( ff73 CK ) ( ff74 CK ) ( ff75 CK ) ( ff76 CK ) ( ff77 CK )
+  ( ff78 CK ) ( ff79 CK ) ( ff80 CK )
+  ( ff54 CK ) ( ff55 CK ) ( ff56 CK ) ( ff57 CK ) ( ff58 CK ) ( ff59 CK )
+  ( ff60 CK ) ( ff61 CK ) ( ff62 CK )
+  ( ff36 CK ) ( ff37 CK ) ( ff38 CK ) ( ff39 CK ) ( ff40 CK ) ( ff41 CK )
+  ( ff42 CK ) ( ff43 CK ) ( ff44 CK )
  ;
+
+- gclk5
+  ( gclk5 GCK )
+  ( ff252 CK ) ( ff253 CK ) ( ff254 CK ) ( ff255 CK ) ( ff256 CK ) ( ff257 CK )
+  ( ff258 CK ) ( ff259 CK ) ( ff260 CK ) 
+  ( ff270 CK ) ( ff271 CK ) ( ff272 CK ) ( ff273 CK ) ( ff274 CK ) ( ff275 CK )
+  ( ff276 CK ) ( ff277 CK ) ( ff278 CK ) 
+;
 - gclk3
   ( gclk3 GCK )
   ( ff225 CK ) ( ff226 CK ) ( ff227 CK )
