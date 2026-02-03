@@ -105,9 +105,10 @@ namespace {
 
 // Returns the vertex of a constant 1 or 0 cell if the driver of the input
 // pin is a constant 0 or 1 cell. Otherwise return nullptr.
+template <Library T>
 sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
                                        sta::Vertex* input_vertex,
-                                       AbcLibrary& abc_library,
+                                       T& library,
                                        utl::Logger* logger)
 {
   sta::Graph* graph = network->graph();
@@ -131,58 +132,28 @@ sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
   }
   // Okay if the cell we're looking for is actually a const cell add it.
   sta::LibertyCell* liberty_cell = network->libertyCell(instance);
-  if (!abc_library.IsConstCell(liberty_cell->name())) {
-    return nullptr;
-  }
-  sta::Vertex* constant_vertex = graph->vertex(network->vertexId(constant_pin));
 
-  return constant_vertex;
-}
+  if constexpr (is_mockturtle_library_v<T>) {
+    auto const& gates = library.get_gates();
 
-template <unsigned NInputs>
-sta::Vertex* GetConstantVertexIfExists(
-    sta::dbNetwork* network,
-    sta::Vertex* input_vertex,
-    mockturtle::tech_library<NInputs>& mockturtle_library,
-    utl::Logger* logger)
-{
-  sta::Graph* graph = network->graph();
-  // If it's constant add the driving pin. If we have multiple drivers
-  // bad things are happening.
-  sta::PinSet* constant_driver = network->drivers(input_vertex->pin());
-  if (constant_driver->size() != 1) {
-    logger->error(
-        utl::CUT,
-        50,
-        "constant vertex: {} should have exactly one constant driver. "
-        "Has {}, please report this internal error.",
-        input_vertex->name(network),
-        constant_driver->size());
-  }
+    auto gate = std::find_if(
+        gates.begin(), gates.end(), [&](mockturtle::gate const& g) {
+          return g.name == liberty_cell->name();
+        });
 
-  const sta::Pin* constant_pin = *constant_driver->begin();
-  sta::Instance* instance = network->instance(constant_pin);
-  if (!instance) {
-    return nullptr;
-  }
-  // Okay if the cell we're looking for is actually a const cell add it.
-  sta::LibertyCell* liberty_cell = network->libertyCell(instance);
+    if (gate == gates.end()) {
+      return nullptr;
+    }
 
-  auto const& gates = mockturtle_library.get_gates();
+    auto const& f = gate->function;
 
-  auto gate = std::find_if(
-      gates.begin(), gates.end(), [&](mockturtle::gate const& g) {
-        return g.name == liberty_cell->name();
-      });
-
-  if (gate == gates.end()) {
-    return nullptr;
-  }
-
-  auto const& f = gate->function;
-
-  if (!(kitty::is_const0(f) || kitty::is_const0(~f))) {
-    return nullptr;
+    if (!(kitty::is_const0(f) || kitty::is_const0(~f))) {
+      return nullptr;
+    }
+  } else {
+    if (!library.IsConstCell(liberty_cell->name())) {
+      return nullptr;
+    }
   }
 
   sta::Vertex* constant_vertex = graph->vertex(network->vertexId(constant_pin));
