@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include <fmt/format.h>
+#include <spdlog/fmt/bundled/format.h>
 
 #include <algorithm>
 #include <cassert>
