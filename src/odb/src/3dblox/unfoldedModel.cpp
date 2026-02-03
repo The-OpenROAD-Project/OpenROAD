@@ -183,7 +183,7 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
       transform.apply(global_xy);
       uf_region.bumps.push_back(
           {.bump_inst = bump_inst,
-           .parent_region = &uf_region,
+           .parent_region = nullptr,  // set later in registerUnfoldedChip
            .global_position = Point3D(global_xy.x(), global_xy.y(), z)});
     }
   }

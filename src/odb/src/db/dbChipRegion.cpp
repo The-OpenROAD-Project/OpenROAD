@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChipRegion.h"
 
+#include <cstdint>
 #include <string>
 
 #include "dbChipBump.h"
@@ -41,6 +42,12 @@ bool _dbChipRegion::operator==(const _dbChipRegion& rhs) const
   if (box_ != rhs.box_) {
     return false;
   }
+  if (z_min_ != rhs.z_min_) {
+    return false;
+  }
+  if (z_max_ != rhs.z_max_) {
+    return false;
+  }
   if (*chip_bump_tbl_ != *rhs.chip_bump_tbl_) {
     return false;
   }
@@ -56,6 +63,8 @@ bool _dbChipRegion::operator<(const _dbChipRegion& rhs) const
 _dbChipRegion::_dbChipRegion(_dbDatabase* db)
 {
   side_ = static_cast<uint8_t>(dbChipRegion::Side::FRONT);
+  z_min_ = 0;
+  z_max_ = 0;
   chip_bump_tbl_ = new dbTable<_dbChipBump>(
       db, this, (GetObjTbl_t) &_dbChipRegion::getObjectTable, dbChipBumpObj);
 }
@@ -66,6 +75,8 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.side_;
   stream >> obj.layer_;
   stream >> obj.box_;
+  stream >> obj.z_min_;
+  stream >> obj.z_max_;
   if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_bump_tbl_;
   }
@@ -78,6 +89,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipRegion& obj)
   stream << obj.side_;
   stream << obj.layer_;
   stream << obj.box_;
+  stream << obj.z_min_;
+  stream << obj.z_max_;
   stream << *obj.chip_bump_tbl_;
   return stream;
 }
@@ -172,8 +185,7 @@ dbTechLayer* dbChipRegion::getLayer() const
   }
   dbTechLayer* layer = nullptr;
   if (obj->layer_ != 0) {
-    _dbTech* _tech = (_dbTech*) tech;
-    layer = (dbTechLayer*) _tech->layer_tbl_->getPtr(obj->layer_);
+    layer = dbTechLayer::getTechLayer(tech, obj->layer_);
   }
 
   return layer;
@@ -228,30 +240,32 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   chip_region->layer_ = (_layer != nullptr) ? _layer->getOID() : 0;
   chip_region->box_ = Rect();  // Initialize with empty rectangle
 
-  int z_bot = 0;
-  int z_top = 0;
   const int chip_thickness = chip->getThickness();
 
   if (layer != nullptr) {
-    if (dbTech* tech = layer->getTech()) {
-      for (dbTechLayer* l : tech->getLayers()) {
-        uint32_t thick = 0;
-        if (l->getThickness(thick)) {
-          z_top += thick;
-          if (l == layer) {
-            z_bot = z_top - thick;
-            break;
-          }
+    dbTech* tech = layer->getTech();
+    for (dbTechLayer* l : tech->getLayers()) {
+      uint32_t thick = 0;
+      if (l->getThickness(thick)) {
+        chip_region->z_min_ = chip_region->z_max_;
+        chip_region->z_max_ += thick;
+        if (l == layer) {
+          break;
         }
       }
     }
   } else {
-    z_bot = 0;
-    z_top = chip_thickness;
+    if (side == dbChipRegion::Side::FRONT) {
+      chip_region->z_min_ = chip_thickness;
+      chip_region->z_max_ = chip_thickness;
+    } else if (side == dbChipRegion::Side::BACK) {
+      chip_region->z_min_ = 0;
+      chip_region->z_max_ = 0;
+    } else {
+      chip_region->z_min_ = 0;
+      chip_region->z_max_ = chip_thickness;
+    }
   }
-
-  chip_region->z_min_ = z_bot;
-  chip_region->z_max_ = z_top;
 
   return (dbChipRegion*) chip_region;
 }
