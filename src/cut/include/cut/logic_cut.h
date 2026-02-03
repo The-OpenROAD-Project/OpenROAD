@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cassert>
+#include <format>
 #include <utility>
 #include <vector>
 
