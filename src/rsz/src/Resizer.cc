@@ -5852,7 +5852,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     const Corner* corner,
     std::map<const Pin*, float>& load_pin_slew)
 {
-  resizePreamble();
   ensureLevelDrvrVertices();
   repair_design_->init();
 
