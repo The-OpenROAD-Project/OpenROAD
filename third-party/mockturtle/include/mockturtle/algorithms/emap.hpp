@@ -44,7 +44,7 @@
 #include <kitty/hash.hpp>
 #include <kitty/static_truth_table.hpp>
 
-#include <fmt/format.h>
+#include <spdlog/fmt/bundled/format.h>
 #include <parallel_hashmap/phmap.h>
 
 #include "../networks/aig.hpp"

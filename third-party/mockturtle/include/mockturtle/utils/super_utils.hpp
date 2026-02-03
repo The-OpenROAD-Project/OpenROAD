@@ -37,7 +37,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <fmt/format.h>
+#include <spdlog/fmt/bundled/format.h>
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 

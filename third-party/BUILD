@@ -17,4 +17,7 @@ cc_library(
         "mockturtle/lib/parallel_hashmap/"
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        "@spdlog",
+    ],
 )
