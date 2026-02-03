@@ -4,7 +4,6 @@
 // Generator Code Begin Cpp
 #include "dbChipRegion.h"
 
-#include <cstdint>
 #include <string>
 
 #include "dbChipBump.h"
