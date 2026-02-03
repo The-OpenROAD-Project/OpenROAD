@@ -45,7 +45,7 @@ write_verilog_for_eqy $test_name before "None"
 puts "-- After --\n"
 
 resynth_emap -corner fast \
-  -target timings \
+  -target timing \
   -map_multioutput
 
 repair_timing
