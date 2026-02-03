@@ -199,12 +199,12 @@ private:
 
 public:
   explicit tech_library( std::vector<gate> const& gates, tech_library_params const ps = {}, super_lib const& supergates_spec = {} )
-      : _gates( gates ),
+      : _use_supergates( false ),
+        _gates( gates ),
         _supergates_spec( supergates_spec ),
         _ps( ps ),
         _cells( get_standard_cells( _gates ) ),
         _super( _gates, _supergates_spec, super_utils_params{ ps.load_multioutput_gates_single, ps.verbose } ),
-        _use_supergates( false ),
         _struct( _gates, struct_library_params{ ps.load_minimum_size_only, ps.very_verbose } ),
         _super_lib(),
         _multi_lib(),
@@ -224,12 +224,12 @@ public:
   }
 
   explicit tech_library( std::vector<gate> const& gates, super_lib const& supergates_spec, tech_library_params const ps = {} )
-      : _gates( gates ),
+      : _use_supergates( true ),
+        _gates( gates ),
         _supergates_spec( supergates_spec ),
         _ps( ps ),
         _cells( get_standard_cells( _gates ) ),
         _super( _gates, _supergates_spec, super_utils_params{ ps.load_multioutput_gates_single, ps.verbose } ),
-        _use_supergates( true ),
         _struct( _gates, struct_library_params{ ps.load_minimum_size_only, ps.very_verbose } ),
         _super_lib(),
         _multi_lib(),

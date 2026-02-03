@@ -178,7 +178,7 @@ public:
 
     operator block_storage::node_type::pointer_type() const
     {
-      return { index, ( output << 1 ) | complement };
+      return {index, (static_cast<uint64_t>(output) << 1) | complement};
     }
 
     operator uint64_t() const
@@ -834,7 +834,7 @@ public:
 
   signal next_output_pin( signal const& f ) const
   {
-    return { f.index, f.complement, f.output + 1 };
+    return { f.index, f.complement, static_cast<uint64_t>(f.output) + 1 };
   }
 
   uint32_t node_to_index( node const& n ) const

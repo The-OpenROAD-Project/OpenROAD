@@ -384,7 +384,6 @@ private:
   inline uint32_t compute_support( composed_gate<NInputs>& s )
   {
     std::array<uint8_t, NInputs> used_pins{};
-    uint32_t support = 0;
 
     return compute_support_rec( s, used_pins );
   }

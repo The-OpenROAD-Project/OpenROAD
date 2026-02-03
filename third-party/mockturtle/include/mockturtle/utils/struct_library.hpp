@@ -397,10 +397,10 @@ private:
         {
           print_rule( elem, elem[elem.size() - 1] );
           std::cout << "\n";
-          for ( const std::pair<uint32_t, supergates_list_t>& elem : _label_to_gate )
+          for ( const auto& [label, gates] : _label_to_gate )
           {
-            std::cout << elem.first << "\n";
-            for ( auto sg : elem.second )
+            std::cout << label << "\n";
+            for ( auto sg : gates )
             {
               std::cout << ( sg.root )->root->expression << "\n";
             }
@@ -584,8 +584,8 @@ private:
 
   std::tuple<int, int> try_bottom_dec( kitty::dynamic_truth_table& tt, uint32_t num_vars )
   {
-    uint32_t i;
-    uint32_t j;
+    uint32_t i = 0;
+    uint32_t j = 0;
     dsd_node res;
     for ( i = 0; i < num_vars; i++ )
     {
@@ -892,7 +892,7 @@ private:
       }
       else if ( n.type == node_type::or_ )
       {
-        new_node = { node_type::and_, n.index, { { ~n.fanin[0].inv, n.fanin[0].index }, { ~n.fanin[1].inv, n.fanin[1].index } } };
+        new_node = { node_type::and_, n.index, { { n.fanin[0].inv ^ 1u, n.fanin[0].index }, { n.fanin[1].inv ^ 1u, n.fanin[1].index } } };
         if ( get_father( rule, n ) != nullptr )
         {
           dsd_node* father = find_node( aig_rule, get_father( rule, n )->index );
@@ -1237,6 +1237,8 @@ private:
   template<class TT>
   dsd_node is_top_dec( const TT& tt, uint32_t var_index, bool allow_xor = false, TT* func = nullptr )
   {
+    constexpr uint32_t kInvalidIndex = (1u << 31) - 1; // 0x7fffffff
+
     static_assert( kitty::is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
 
     auto var = tt.construct();
@@ -1249,7 +1251,7 @@ private:
         *func = kitty::cofactor1( tt, var_index );
       }
       dsd_node res = { node_type::and_, var_index, {} };
-      res.fanin.push_back( { 0, UINT32_MAX } );
+      res.fanin.push_back( { 0, kInvalidIndex } );
       return res;
     }
     else if ( kitty::implies( var, tt ) )
@@ -1259,7 +1261,7 @@ private:
         *func = kitty::cofactor0( tt, var_index );
       }
       dsd_node res = { node_type::or_, var_index, {} };
-      res.fanin.push_back( { 0, UINT32_MAX } );
+      res.fanin.push_back( { 0, kInvalidIndex } );
       return res;
     }
     else if ( kitty::implies( tt, ~var ) )
@@ -1269,7 +1271,7 @@ private:
         *func = kitty::cofactor0( tt, var_index );
       }
       dsd_node res = { node_type::and_, var_index, {} };
-      res.fanin.push_back( { 1, UINT32_MAX } );
+      res.fanin.push_back( { 1, kInvalidIndex } );
       return res;
     }
     else if ( kitty::implies( ~var, tt ) )
@@ -1279,7 +1281,7 @@ private:
         *func = kitty::cofactor1( tt, var_index );
       }
       dsd_node res = { node_type::or_, var_index, {} };
-      res.fanin.push_back( { 1, UINT32_MAX } );
+      res.fanin.push_back( { 1, kInvalidIndex } );
       return res;
     }
 
@@ -1296,7 +1298,7 @@ private:
           *func = co0;
         }
         dsd_node res = { node_type::xor_, var_index, {} };
-        res.fanin.push_back( { 0, UINT32_MAX } );
+        res.fanin.push_back( { 0, kInvalidIndex } );
         return res;
       }
     }
@@ -1451,20 +1453,24 @@ private:
 
   std::string to_string( node_type t )
   {
-    if ( t == node_type::and_ )
-      return "*";
-    if ( t == node_type::or_ )
-      return "+";
-    if ( t == node_type::mux_ )
-      return "+";
-    if ( t == node_type::xor_ )
-      return "xor";
-    if ( t == node_type::pi_ )
-      return "pi";
-    if ( t == node_type::none )
-      return "none";
-    if ( t == node_type::zero_ )
-      return "zero";
+    switch (t) {
+      case node_type::and_:
+        return "*";
+      case node_type::or_:
+        return "+";
+      case node_type::mux_:
+        return "+";
+      case node_type::xor_:
+        return "xor";
+      case node_type::pi_:
+        return "pi";
+      case node_type::none:
+        return "none";
+      case node_type::zero_:
+        return "zero";
+      default:
+        return "";
+    }
   }
 
   void print_dsd_node( dsd_node& n )
