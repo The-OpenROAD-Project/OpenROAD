@@ -86,7 +86,7 @@ struct supergate
   std::vector<uint8_t> permutation{};
 
   /* pin negations */
-  uint16_t polarity{ 0 };
+  uint32_t polarity{ 0 };
 };
 
 } // namespace mockturtle

@@ -1165,7 +1165,6 @@ private:
     static constexpr uint32_t max_cut_size = CutSize > 6 ? 6 : CutSize;
 
     auto index = ntk.node_to_index( n );
-    auto& node_data = node_match[index];
     emap_cut_sort_type sort = emap_cut_sort_type::AREA;
 
     /* compute cuts */
@@ -1385,7 +1384,6 @@ private:
     for ( auto const& n : topo_order )
     {
       auto const index = ntk.node_to_index( n );
-      auto& node_data = node_match[index];
 
       if ( ntk.is_constant( n ) )
       {
@@ -1393,7 +1391,7 @@ private:
         match_constants( index );
         continue;
       }
-      else if ( ntk.is_pi( n ) )
+      if ( ntk.is_pi( n ) )
       {
         add_unit_cut( index );
         continue;
@@ -1430,12 +1428,11 @@ private:
   void merge_cuts_structural( node<Ntk> const& n )
   {
     auto index = ntk.node_to_index( n );
-    auto& node_data = node_match[index];
     emap_cut_sort_type sort = emap_cut_sort_type::AREA;
 
     /* compute cuts */
     const auto fanin = 2;
-    std::array<uint32_t, 2> children_phase;
+    std::array<uint32_t, 2> children_phase{};
     ntk.foreach_fanin( ntk.index_to_node( index ), [&]( auto child, auto i ) {
       lcuts[i] = &cuts[ntk.node_to_index( ntk.get_node( child ) )];
       children_phase[i] = ntk.is_complemented( child ) ? 1 : 0;
@@ -2947,7 +2944,6 @@ private:
       if ( node_data.same_match )
       {
         /* pick best implementation between the two alternatives */
-        unsigned best_match_phase = node_data.best_gate[0] == nullptr ? 1 : 0;
         unsigned use_phase = g0.gate == nullptr ? 1 : 0;
         if ( g0.gate != nullptr && g1.gate != nullptr )
         {
@@ -3413,7 +3409,6 @@ private:
     {
       /* store local validity and comparison info */
       bool valid = true;
-      bool is_best = true;
       bool respects_required = true;
       uint32_t it_counter = 0;
 
@@ -3547,7 +3542,6 @@ private:
   template<bool DO_AREA>
   void multi_node_update( node<Ntk> const& n )
   {
-    uint32_t check_index = ntk.node_to_index( n );
     multi_match_t const& tuple_data = multi_node_match[node_tuple_match[ntk.node_to_index( n )].index][0];
     uint64_t signature = 0;
 
@@ -3763,8 +3757,7 @@ private:
     cut->ignore = true;
     rcuts.append_cut( cut );
 
-    uint32_t num_cuts_after = rcuts.size();
-    assert( num_cuts_after == num_cuts_pre + 1 );
+    assert( rcuts.size() == num_cuts_pre + 1 );
 
     rcuts.limit( num_cuts_pre );
 
@@ -5092,7 +5085,6 @@ private:
   {
     static_assert( max_multioutput_cut_size > 1 && max_multioutput_cut_size < 7 );
 
-    uint32_t counter = 0;
     multi_leaves_set_t leaves = { 0 };
 
     ntk.foreach_gate( [&]( auto const& n ) {
