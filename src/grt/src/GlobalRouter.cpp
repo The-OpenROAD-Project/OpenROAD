@@ -4,6 +4,7 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -339,6 +340,7 @@ void GlobalRouter::endIncremental(bool save_guides)
 
 void GlobalRouter::globalRoute(bool save_guides)
 {
+  auto start = std::chrono::steady_clock::now();
   bool has_routable_nets = false;
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
@@ -385,6 +387,16 @@ void GlobalRouter::globalRoute(bool save_guides)
   }
 
   finishGlobalRouting(save_guides);
+  auto end = std::chrono::steady_clock::now();
+  if (verbose_) {
+    auto runtime
+        = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+    int hour = runtime.count() / 3600;
+    int min = (runtime.count() % 3600) / 60;
+    int sec = runtime.count() % 60;
+    logger_->info(
+        GRT, 303, "Global routing runtime = {:02}:{:02}:{:02}", hour, min, sec);
+  }
 }
 
 void GlobalRouter::finishGlobalRouting(bool save_guides)
