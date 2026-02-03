@@ -752,6 +752,7 @@ void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const 
   Slew old_drvr_slew[RiseFall::index_count];
   Slew new_drvr_slew[RiseFall::index_count];
   float old_cap, new_cap;
+  resizer->resizeSlackPreamble();
   if (!resizer->computeNewDelaysSlews(drvr_pin,
                                       buffer_instance,
                                       corner,
@@ -763,7 +764,6 @@ void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const 
                                       new_cap)) {  
     return;
   }
-  resizer->resizeSlackPreamble();
   (void) resizer->estimateSlewsAfterBufferRemoval
     (drvr_pin, buffer_instance, std::max(new_drvr_slew[RiseFall::riseIndex()],
                                          new_drvr_slew[RiseFall::fallIndex()]),
