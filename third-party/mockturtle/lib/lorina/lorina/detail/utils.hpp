@@ -27,8 +27,6 @@
 
 #pragma once
 
-#include <spdlog/fmt/bundled/format.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cctype>
