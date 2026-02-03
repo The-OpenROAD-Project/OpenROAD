@@ -151,7 +151,7 @@ proc run_equivalence_test { test args } {
 
   if { [info exists ::env(EQUIVALENCE_CHECK)] } {
     exec rm -rf $run_dir
-    catch { exec eqy -d $run_dir $test_script > /dev/null }
+    catch { exec eqy -j 15 -d $run_dir $test_script > /dev/null }
     set count 0
     catch {
       set count [exec grep -c "Successfully proved designs equivalent" \
