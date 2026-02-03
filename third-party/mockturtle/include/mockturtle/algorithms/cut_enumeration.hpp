@@ -46,8 +46,6 @@
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 
-#include <spdlog/fmt/bundled/format.h>
-
 #include "../traits.hpp"
 #include "../utils/cuts.hpp"
 #include "../utils/mixed_radix.hpp"

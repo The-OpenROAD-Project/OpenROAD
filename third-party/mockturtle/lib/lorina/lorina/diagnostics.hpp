@@ -35,7 +35,6 @@
 #include <cassert>
 #include <iostream>
 #include <map>
-#include <spdlog/fmt/bundled/format.h>
 #include <string_view>
 
 namespace lorina

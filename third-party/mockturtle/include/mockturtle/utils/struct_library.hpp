@@ -1449,7 +1449,6 @@ private:
     return max_depth + 1;
   }
 
-#pragma region Report
   std::string to_string( node_type t )
   {
     if ( t == node_type::and_ )
@@ -1524,7 +1523,6 @@ private:
       std::cout << ")";
     }
   }
-#pragma endregion
 
 private:
   bool gate_disjoint{ false }; /* flag for gate support*/

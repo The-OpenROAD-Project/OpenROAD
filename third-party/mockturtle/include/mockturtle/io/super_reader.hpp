@@ -34,7 +34,6 @@
 
 #include "../traits.hpp"
 
-#include <spdlog/fmt/bundled/format.h>
 #include <lorina/super.hpp>
 
 namespace mockturtle

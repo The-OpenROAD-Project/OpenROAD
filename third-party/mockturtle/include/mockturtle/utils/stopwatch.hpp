@@ -37,8 +37,6 @@
 #include <iostream>
 #include <type_traits>
 
-#include <spdlog/fmt/bundled/format.h>
-
 namespace mockturtle
 {
 
