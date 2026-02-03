@@ -781,7 +781,6 @@ _install_common_dev() {
     _install_lemon
     _install_spdlog
     _install_gtest
-    _install_abseil
 
     if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
         _install_equivalence_deps
@@ -1143,6 +1142,7 @@ main() {
                     ubuntu_version_normalized="20.04"
                 fi
                 _install_or_tools "ubuntu" "${ubuntu_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
@@ -1188,6 +1188,7 @@ main() {
                     fi
                 fi
                 _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${or_tools_arch}" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Darwin")
@@ -1206,6 +1207,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "opensuse" "leap" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             cat <<EOF
 To enable GCC-11 you need to run:
@@ -1225,6 +1227,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "debian" "${debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         *)
