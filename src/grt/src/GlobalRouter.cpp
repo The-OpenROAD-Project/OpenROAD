@@ -928,7 +928,7 @@ void GlobalRouter::updateNetResources(Net* net, bool increase)
 {
   GRoute& segments = routes_[net->getDbNet()];
   for (GSegment& segment : segments) {
-    if (!segment.isVia()) {
+    if (!segment.isVia() && !segment.ignoreUsage()) {
       updateResources(segment.init_x,
                       segment.init_y,
                       segment.final_x,
@@ -5067,6 +5067,12 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
     std::vector<GSegment> connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
+
+    // Segments created to connect the two nets should not be considered when
+    // computing resources from restored guides.
+    for (GSegment& seg : connection) {
+      seg.setIgnoreUsage(true);
+    }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
   } else {
