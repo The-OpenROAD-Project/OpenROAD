@@ -907,7 +907,7 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
   std::string pins_not_covered;
   if (!netIsCovered(db_net, pins_not_covered)) {
     logger_->error(GRT,
-                   303,
+                   304,
                    "Fail to restore routing segments from guides for net {}. "
                    "The following pins are not covered: {}.",
                    net->getName(),
