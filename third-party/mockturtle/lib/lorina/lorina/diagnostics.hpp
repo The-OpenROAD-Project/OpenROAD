@@ -33,9 +33,9 @@
 #pragma once
 
 #include <cassert>
-#include <format>
 #include <iostream>
 #include <map>
+#include <spdlog/fmt/bundled/format.h>
 #include <string_view>
 
 namespace lorina
@@ -189,13 +189,13 @@ inline void diagnostic_engine::emit_static_diagnostic( diag_id id, std::vector<s
   switch ( args.size() )
   {
   case 1:
-    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0]) ) );
+    client_->handle_diagnostic( level, fmt::vformat( message_view, fmt::make_format_args(args[0]) ) );
     break;
   case 2:
-    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1]) ) );
+    client_->handle_diagnostic( level, fmt::vformat( message_view, fmt::make_format_args(args[0], args[1]) ) );
     break;
   case 3:
-    client_->handle_diagnostic( level, std::vformat( message_view, std::make_format_args(args[0], args[1], args[2]) ) );
+    client_->handle_diagnostic( level, fmt::vformat( message_view, fmt::make_format_args(args[0], args[1], args[2]) ) );
     break;
   default:
   case 0:

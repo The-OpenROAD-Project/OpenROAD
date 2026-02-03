@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <format>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -134,7 +133,7 @@ CellMapping map_cell_from_standard_cell(const BlockNtk& ntk,
 
   if (sc.gates.empty()) {
     throw std::runtime_error(
-        std::format("Standard cell {} has no gates (node {})",
+        fmt::format("Standard cell {} has no gates (node {})",
                     sc.name,
                     ntk.node_to_index(n)));
   }
@@ -221,7 +220,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     }
     if (!net) {
       throw std::runtime_error(
-          std::format("Failed to create or find const net {}", net_name));
+          fmt::format("Failed to create or find const net {}", net_name));
     }
 
     cache = net;
@@ -246,12 +245,12 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
     const std::string name = ntk.get_name(topo_ntk.make_signal(n));
     if (name.empty()) {
-      throw std::runtime_error(std::format("PI node {} has empty name", idx));
+      throw std::runtime_error(fmt::format("PI node {} has empty name", idx));
     }
 
     odb::dbNet* net = block->findNet(name.c_str());
     if (!net) {
-      throw std::runtime_error(std::format("Failed to find PI net {}", name));
+      throw std::runtime_error(fmt::format("Failed to find PI net {}", name));
     }
 
     node_out_nets[idx].resize(1);
@@ -272,14 +271,14 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     }
     if (!master) {
       throw std::runtime_error(
-          std::format("Cannot find master {}", mapping.master_name));
+          fmt::format("Cannot find master {}", mapping.master_name));
     }
 
-    const std::string inst_name = std::format("n_{}", idx);
+    const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = odb::dbInst::create(block, master, inst_name.c_str());
     if (!inst) {
       throw std::runtime_error(
-          std::format("Failed to create dbInst {} for master {}",
+          fmt::format("Failed to create dbInst {} for master {}",
                       inst_name,
                       mapping.master_name));
     }
@@ -294,7 +293,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     }
 
     if (num_cell_outputs < num_node_outputs) {
-      throw std::runtime_error(std::format(
+      throw std::runtime_error(fmt::format(
           "Cell {} has only {} signal outputs but node {} has {} outputs",
           mapping.master_name,
           num_cell_outputs,
@@ -311,7 +310,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
       odb::dbITerm* o_iterm = inst->findITerm(pin_name.c_str());
       if (!o_iterm) {
-        throw std::runtime_error(std::format(
+        throw std::runtime_error(fmt::format(
             "Instance {} has no output ITerm {}", inst_name, pin_name));
       }
 
@@ -323,7 +322,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
         }
       }
       if (net_name.empty()) {
-        net_name = std::format("n_{}_o_{}", idx, out_pin_idx);
+        net_name = fmt::format("n_{}_o_{}", idx, out_pin_idx);
       }
 
       odb::dbNet* net = block->findNet(net_name.c_str());
@@ -332,7 +331,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       }
       if (!net) {
         throw std::runtime_error(
-            std::format("Failed to create/find net {}", net_name));
+            fmt::format("Failed to create/find net {}", net_name));
       }
 
       o_iterm->connect(net);
@@ -346,16 +345,16 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
     CellMapping mapping = map_cell_from_standard_cell(topo_ntk, n, logger);
 
-    const std::string inst_name = std::format("n_{}", idx);
+    const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = block->findInst(inst_name.c_str());
     if (!inst) {
-      throw std::runtime_error(std::format("Instance {} not found", inst_name));
+      throw std::runtime_error(fmt::format("Instance {} not found", inst_name));
     }
 
     uint32_t fanin_idx = 0;
     topo_ntk.foreach_fanin(n, [&](const BlockNtk::signal& f) {
       if (fanin_idx >= mapping.input_pins.size()) {
-        throw std::runtime_error(std::format(
+        throw std::runtime_error(fmt::format(
             "Not enough input pins in cell {} (node {}), fanins={} inputs={}",
             mapping.master_name,
             idx,
@@ -381,7 +380,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
             || out_pin_idx >= node_out_nets[src_idx].size()
             || node_out_nets[src_idx][out_pin_idx] == nullptr) {
           throw std::runtime_error(
-              std::format("Missing driver net for fanin of {} (node {})",
+              fmt::format("Missing driver net for fanin of {} (node {})",
                           mapping.master_name,
                           idx));
         }
@@ -391,7 +390,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       const std::string& pin_name = mapping.input_pins[fanin_idx++];
       odb::dbITerm* it = inst->findITerm(pin_name.c_str());
       if (!it) {
-        throw std::runtime_error(std::format(
+        throw std::runtime_error(fmt::format(
             "Master {} had no input ITerm {}", mapping.master_name, pin_name));
       }
       it->connect(src_net);
@@ -404,7 +403,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   for (sta::Net* sta_net : cut.primary_outputs()) {
     odb::dbNet* db_net = db_network->staToDb(sta_net);
     if (!db_net) {
-      throw std::runtime_error(std::format(
+      throw std::runtime_error(fmt::format(
           "cut primary output net {} has no dbNet", db_network->name(sta_net)));
     }
     boundary_po_dbnets.push_back(db_net);
@@ -413,7 +412,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   // Connect each mapped PO driver to corresponding boundary net by merging.
   topo_ntk.foreach_po([&](const BlockNtk::signal& f, uint32_t po_index) {
     if (po_index >= boundary_po_dbnets.size()) {
-      throw std::runtime_error(std::format(
+      throw std::runtime_error(fmt::format(
           "Mapped network has more POs ({}) than cut.primary_outputs ({})",
           po_index + 1,
           boundary_po_dbnets.size()));
@@ -438,7 +437,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
           || out_pin_idx >= node_out_nets[src_idx].size()
           || node_out_nets[src_idx][out_pin_idx] == nullptr) {
         throw std::runtime_error(
-            std::format("Missing driver net for PO index {}", po_index));
+            fmt::format("Missing driver net for PO index {}", po_index));
       }
       driver_net = node_out_nets[src_idx][out_pin_idx];
     }
