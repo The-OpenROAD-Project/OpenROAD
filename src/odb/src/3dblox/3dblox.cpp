@@ -536,7 +536,8 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
 
 dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
-  dbChip* chip = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
+  dbChip* chip
+      = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
   if (!design.external.verilog_file.empty()) {
     if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
       odb::dbStringProperty::create(
