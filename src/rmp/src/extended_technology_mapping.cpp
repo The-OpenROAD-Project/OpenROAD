@@ -459,6 +459,11 @@ void extended_technology_mapping(sta::dbSta* sta,
                                  rsz::Resizer* resizer,
                                  utl::Logger* logger)
 {
+  sta->ensureGraph();
+  sta->ensureLevelized();
+  sta->searchPreamble();
+  sta->ensureClkNetwork();
+
   // Configure emap parameters
   mockturtle::emap_params ps;
 
