@@ -22,7 +22,6 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "sta/Clock.hh"
 #include "sta/SdcClass.hh"

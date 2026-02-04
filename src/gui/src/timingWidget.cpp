@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "gui_utils.h"
 #include "odb/db.h"
 #include "odb/defout.h"
@@ -356,18 +357,21 @@ void TimingWidget::addCommandsMenuActions()
           [this] { writePathDef(timing_paths_table_index_, kFromStartToEnd); });
 
   QMenu* focus_nets_menu = new QMenu("Focus Nets", this);
-  connect(focus_nets_menu->addAction("All"), &QAction::triggered, [this] {
-    focusNets(timing_paths_table_index_, TimingPath::PathSection::kAll);
-  });
-  connect(focus_nets_menu->addAction("Launch"), &QAction::triggered, [this] {
-    focusNets(timing_paths_table_index_, TimingPath::PathSection::kLaunch);
-  });
-  connect(focus_nets_menu->addAction("Data"), &QAction::triggered, [this] {
-    focusNets(timing_paths_table_index_, TimingPath::PathSection::kData);
-  });
-  connect(focus_nets_menu->addAction("Capture"), &QAction::triggered, [this] {
-    focusNets(timing_paths_table_index_, TimingPath::PathSection::kCapture);
-  });
+
+  auto add_focus_action
+      = [&](const QString& menu_entry, TimingPath::PathSection path_section) {
+          connect(focus_nets_menu->addAction(menu_entry),
+                  &QAction::triggered,
+                  [this, path_section] {
+                    focusNets(timing_paths_table_index_, path_section);
+                  });
+        };
+
+  add_focus_action("All", TimingPath::PathSection::kAll);
+  add_focus_action("Launch", TimingPath::PathSection::kLaunch);
+  add_focus_action("Data", TimingPath::PathSection::kData);
+  add_focus_action("Capture", TimingPath::PathSection::kCapture);
+
   commands_menu_->addMenu(focus_nets_menu);
 }
 

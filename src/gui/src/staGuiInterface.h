@@ -198,10 +198,6 @@ class TimingPath
                            float offset,
                            bool clock_expanded);
   std::vector<odb::dbNet*> getNets(const PathSection& path_section) const;
-  void getNets(std::vector<odb::dbNet*>& nets,
-               const TimingNodeList& nodes,
-               bool only_clock,
-               bool only_data) const;
 
  private:
   TimingNodeList path_nodes_;
@@ -240,6 +236,10 @@ class TimingPath
                           float& prev_inst_delay,
                           bool& pin_belongs_to_inverter_pair_instance);
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
+  void getNets(std::vector<odb::dbNet*>& nets,
+               const TimingNodeList& nodes,
+               bool only_clock,
+               bool only_data) const;
 };
 
 class ClockTree
