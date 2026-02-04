@@ -106,26 +106,26 @@ Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0065] Resynthesis: Iteration 14 of genetic algorithm
 [INFO RMP-0066] Resynthesis: Best result is of individual 0
 [INFO RMP-0067] Resynthesis: End of slack tuning, applying ABC operations
-[INFO RMP-0068] Resynthesis: Worst slack is -1.4094392e-11
-[-14.094,  70.046): ***** (18)
-[ 70.046, 154.186): **************************** (111)
-[154.186, 238.327): ******** (31)
-[238.327, 322.467):  (0)
-[322.467, 406.607):  (0)
-[406.607, 490.747): ************************************************** (195)
-[490.747, 574.888): ******************* (74)
-[574.888, 659.028): * (3)
-[659.028, 743.168): ********************************* (130)
-[743.168, 827.309]: ********************************* (129)
+[INFO RMP-0068] Resynthesis: Worst slack is -3.8994585e-11
+[-38.995,  47.636): *** (11)
+[ 47.636, 134.266): *********************** (89)
+[134.266, 220.896): **************** (60)
+[220.896, 307.527):  (0)
+[307.527, 394.157):  (0)
+[394.157, 480.787): ************************************************** (190)
+[480.787, 567.418): ******************* (74)
+[567.418, 654.048): ** (8)
+[654.048, 740.678): ********************************** (130)
+[740.678, 827.309]: ********************************** (129)
 Cell type report:                       Count       Area
   Buffer                                  990      72.03
-  Inverter                                587      26.51
+  Inverter                                554      25.12
   Sequential cell                         562     163.88
-  Multi-Input combinational cell        10166    1052.53
-  Total                                 12305    1314.94
-Startpoint: u0/w[0][1]$_DFF_P_
+  Multi-Input combinational cell        10115    1050.18
+  Total                                 12221    1311.21
+Startpoint: u0/w[0][9]$_DFF_P_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: u0/subword[10]$_DFF_P_
+Endpoint: u0/subword[18]$_DFF_P_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -135,38 +135,39 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ u0/w[0][1]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
-  84.80   84.80 ^ u0/w[0][1]$_DFF_P_/QN (DFFHQNx1_ASAP7_75t_R)
-  56.35  141.15 ^ cut_240794/Y (XOR2xp5_ASAP7_75t_R)
-  74.24  215.39 ^ cut_240795/Y (XOR2xp5_ASAP7_75t_R)
-  47.20  262.59 ^ cut_240796/Y (XOR2xp5_ASAP7_75t_R)
-  50.22  312.82 v cut_240798/Y (AOI21xp33_ASAP7_75t_R)
-  78.52  391.33 ^ cut_240827/Y (INVx1_ASAP7_75t_R)
-  84.22  475.55 v _13443_/Y (INVx1_ASAP7_75t_R)
- 130.50  606.06 v _23153_/SN (HAxp5_ASAP7_75t_R)
-  84.48  690.54 ^ cut_240865/Y (NOR2xp33_ASAP7_75t_R)
-  82.71  773.25 v cut_241124/Y (NOR2xp33_ASAP7_75t_R)
-  69.73  842.98 ^ cut_241253/Y (NAND2xp33_ASAP7_75t_R)
-  36.61  879.59 ^ _13633_/Y (AO21x1_ASAP7_75t_R)
-  37.34  916.93 ^ _13634_/Y (OA211x2_ASAP7_75t_R)
-  26.19  943.12 ^ _13635_/Y (AO21x1_ASAP7_75t_R)
-  14.01  957.13 v _13652_/Y (AOI21x1_ASAP7_75t_R)
-  47.25 1004.38 v _13675_/Y (OA21x2_ASAP7_75t_R)
-   0.00 1004.38 v u0/subword[10]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
-        1004.38   data arrival time
+   0.00    0.00 ^ u0/w[0][9]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+  86.37   86.37 v u0/w[0][9]$_DFF_P_/QN (DFFHQNx1_ASAP7_75t_R)
+  55.92  142.29 v cut_226294/Y (XNOR2xp5_ASAP7_75t_R)
+  63.13  205.41 v cut_226295/Y (XNOR2xp5_ASAP7_75t_R)
+  43.42  248.84 v cut_226296/Y (XNOR2xp5_ASAP7_75t_R)
+ 190.48  439.32 ^ cut_226298/Y (AOI21xp33_ASAP7_75t_R)
+ 150.43  589.75 v cut_226299/Y (INVx1_ASAP7_75t_R)
+  72.55  662.29 ^ _23145_/CON (HAxp5_ASAP7_75t_R)
+  74.18  736.47 v cut_226232/Y (NAND2xp33_ASAP7_75t_R)
+  55.55  792.02 ^ cut_226500/Y (NOR2xp33_ASAP7_75t_R)
+  52.63  844.65 v cut_226501/Y (NOR2xp33_ASAP7_75t_R)
+  31.34  875.99 ^ cut_226502/Y (OAI21xp33_ASAP7_75t_R)
+  20.47  896.46 v cut_226503/Y (NAND2xp33_ASAP7_75t_R)
+  20.52  916.97 ^ cut_226504/Y (NAND2xp33_ASAP7_75t_R)
+  17.19  934.16 v cut_226505/Y (NAND2xp33_ASAP7_75t_R)
+  28.00  962.16 ^ cut_226527/Y (NAND2xp33_ASAP7_75t_R)
+  21.71  983.87 v cut_226528/Y (NOR2xp33_ASAP7_75t_R)
+  25.40 1009.27 ^ cut_226573/Y (NOR2xp33_ASAP7_75t_R)
+   0.00 1009.27 ^ u0/subword[18]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+        1009.27   data arrival time
 
 1000.00 1000.00   clock core_clock (rise edge)
    0.00 1000.00   clock network delay (ideal)
    0.00 1000.00   clock reconvergence pessimism
-        1000.00 ^ u0/subword[10]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
-  -9.72  990.28   library setup time
-         990.28   data required time
+        1000.00 ^ u0/subword[18]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -29.72  970.28   library setup time
+         970.28   data required time
 ---------------------------------------------------------
-         990.28   data required time
-        -1004.38   data arrival time
+         970.28   data required time
+        -1009.27   data arrival time
 ---------------------------------------------------------
-         -14.09   slack (VIOLATED)
+         -38.99   slack (VIOLATED)
 
 
-wns max -14.09
-tns max -47.05
+wns max -38.99
+tns max -146.02
