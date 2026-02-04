@@ -1132,44 +1132,9 @@ void Resizer::getPins(sta::Instance* inst, PinVector& pins) const
   delete pin_iter;
 }
 
-void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
-{
-  if (iterm_to && iterm_from) {
-    //
-    // The concept of this function is we are moving the name of the net
-    // in the iterm_from to the iterm_to.  We preferentially use
-    // the modnet name, if present.
-    //
-    odb::dbNet* to_db_net = iterm_to->getNet();
-    odb::dbModNet* to_mod_net = iterm_to->getModNet();
-
-    odb::dbModNet* from_mod_net = iterm_from->getModNet();
-    odb::dbNet* from_db_net = iterm_from->getNet();
-
-    std::string required_name
-        = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
-    std::string to_name
-        = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
-
-    if (from_mod_net && to_mod_net) {
-      from_mod_net->rename(to_name.c_str());
-      to_mod_net->rename(required_name.c_str());
-    } else if (from_db_net && to_db_net) {
-      to_db_net->swapNetNames(from_db_net);
-    } else if (from_mod_net && to_db_net) {
-      to_db_net->rename(required_name.c_str());
-      from_mod_net->rename(to_name.c_str());
-    } else if (to_mod_net && from_db_net) {
-      to_mod_net->rename(required_name.c_str());
-      from_db_net->rename(to_name.c_str());
-    }
-  }
-}
-
 /*
 Make sure all the top pins are buffered
 */
-
 sta::Instance* Resizer::bufferInput(const sta::Pin* top_pin,
                                     sta::LibertyCell* buffer_cell,
                                     bool verbose)
