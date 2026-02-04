@@ -30,7 +30,6 @@
 #include "sta/Liberty.hh"
 #include "sta/SdcClass.hh"
 #include "staGui.h"
-#include "staGuiInterface.h"
 
 namespace gui {
 
@@ -355,6 +354,21 @@ void TimingWidget::addCommandsMenuActions()
   connect(commands_menu_->addAction("Write path DEF"),
           &QAction::triggered,
           [this] { writePathDef(timing_paths_table_index_, kFromStartToEnd); });
+
+  QMenu* focus_nets_menu = new QMenu("Focus Nets", this);
+  connect(focus_nets_menu->addAction("All"), &QAction::triggered, [this] {
+    focusNets(timing_paths_table_index_, TimingPath::PathSection::kAll);
+  });
+  connect(focus_nets_menu->addAction("Launch"), &QAction::triggered, [this] {
+    focusNets(timing_paths_table_index_, TimingPath::PathSection::kLaunch);
+  });
+  connect(focus_nets_menu->addAction("Data"), &QAction::triggered, [this] {
+    focusNets(timing_paths_table_index_, TimingPath::PathSection::kData);
+  });
+  connect(focus_nets_menu->addAction("Capture"), &QAction::triggered, [this] {
+    focusNets(timing_paths_table_index_, TimingPath::PathSection::kCapture);
+  });
+  commands_menu_->addMenu(focus_nets_menu);
 }
 
 void TimingWidget::showCommandsMenu(const QPoint& pos)
@@ -395,6 +409,20 @@ void TimingWidget::writePathDef(const QModelIndex& selected_index,
   const std::string file_name
       = fmt::format("path{}.def", selected_index.row() + 1);
   def_out.writeBlock(block, file_name.c_str());
+}
+
+void TimingWidget::focusNets(const QModelIndex& selected_index,
+                             const TimingPath::PathSection& path_section)
+{
+  TimingPathsModel* focus_model
+      = static_cast<TimingPathsModel*>(focus_view_->model());
+  TimingPath* selected_path = focus_model->getPathAt(selected_index);
+  std::vector<odb::dbNet*> nets = selected_path->getNets(path_section);
+
+  Gui* gui = Gui::get();
+  for (odb::dbNet* net : nets) {
+    gui->addFocusNet(net);
+  }
 }
 
 // The nodes must be written within curly braces to

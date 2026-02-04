@@ -132,6 +132,12 @@ class RenderThread : public QThread
                         const odb::Rect& bounds,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
+  void drawNetsRouteGuides(Painter& painter,
+                           const std::set<odb::dbNet*>& nets,
+                           odb::dbTechLayer* layer);
+  void drawNetRouteGuides(Painter& painter,
+                          odb::dbNet* net,
+                          odb::dbTechLayer* layer);
   void drawNetTracks(Painter& painter, odb::dbTechLayer* layer);
   void drawModuleView(QPainter* painter,
                       const std::vector<odb::dbInst*>& insts);

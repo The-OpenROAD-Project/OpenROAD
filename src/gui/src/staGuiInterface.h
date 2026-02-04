@@ -144,6 +144,14 @@ class TimingPathNode
 class TimingPath
 {
  public:
+  enum PathSection
+  {
+    kAll,
+    kLaunch,
+    kData,
+    kCapture
+  };
+
   TimingPath();
 
   void setStartClock(const char* name) { start_clk_ = name; }
@@ -189,6 +197,11 @@ class TimingPath
                            sta::DcalcAnalysisPt* dcalc_ap,
                            float offset,
                            bool clock_expanded);
+  std::vector<odb::dbNet*> getNets(const PathSection& path_section) const;
+  void getNets(std::vector<odb::dbNet*>& nets,
+               const TimingNodeList& nodes,
+               bool only_clock,
+               bool only_data) const;
 
  private:
   TimingNodeList path_nodes_;
