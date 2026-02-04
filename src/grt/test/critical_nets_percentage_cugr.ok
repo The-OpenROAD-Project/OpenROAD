@@ -1,0 +1,43 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 1162 components and 5669 component-terminals.
+[INFO ODB-0133]     Created 348 nets and 1021 connections.
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 70
+[INFO GRT-0019] Found 6 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+design statistics
+lib DBU:             1000
+die region (in DBU): [x: (0, 299960), y: (0, 300130)]
+num of nets :        348
+num of special nets: 0
+gcell grid:          41 x 41 x 6
+stage 1: pattern routing
+291 / 348 nets have overflow.
+stage 2: pattern routing with possible detours
+295 / 348 nets have overflow.
+stage 3: maze routing on sparsified routing graph
+289 / 348 nets have overflow.
+routing statistics
+wire length (metric):  45108
+total via count:       2665
+total wire overflow:   258
+min resource: -3.7638890080981797
+bottleneck:   (3, 16, 26)
+[INFO GRT-0018] Total wirelength: 23608 um
+[INFO GRT-0014] Routed nets: 348
+No differences found.

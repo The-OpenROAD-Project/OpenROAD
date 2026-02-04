@@ -31,10 +31,8 @@ or_integration_tests(
     fixed_macros2
     fixed_covers
     macros_without_pins1
+    unfixed_cells_dont_fit_in_core
 )
 
-# Skipped
-#mpl_man_tcl_check
-#mpl_readme_msgs_check
 
 add_subdirectory(cpp)

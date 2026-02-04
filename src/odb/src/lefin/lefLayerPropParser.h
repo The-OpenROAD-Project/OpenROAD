@@ -369,6 +369,20 @@ class MaxSpacingParser
   lefinReader* lefin_;
 };
 
+class lefTechLayerVoltageSpacing
+{
+ public:
+  lefTechLayerVoltageSpacing(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
 class AntennaGatePlusDiffParser
 {
  public:
@@ -381,6 +395,20 @@ class AntennaGatePlusDiffParser
 
  private:
   LefParser::lefiLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class MinWidthParser
+{
+ public:
+  MinWidthParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  dbTechLayer* layer_;
   lefinReader* lefin_;
 };
 

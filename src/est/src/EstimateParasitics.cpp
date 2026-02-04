@@ -389,6 +389,7 @@ void EstimateParasitics::estimateParasitics(
   switch (src) {
     case ParasiticsSrc::placement:
       estimateWireParasitics(spef_writer.get());
+      parasitics_src_ = ParasiticsSrc::placement;
       break;
     case ParasiticsSrc::global_routing:
       estimateGlobalRouteRC(spef_writer.get());
@@ -430,8 +431,20 @@ void EstimateParasitics::updateParasitics(bool save_guides)
         // TODO: remove this check (we expect all to be flat net)
         //
         if (!(db_network_->isFlat(net))) {
+          debugPrint(logger_,
+                     EST,
+                     "estimate_parasitics",
+                     1,
+                     "non-flat net {} is skipped",
+                     sdc_network_->pathName(net));
           continue;
         }
+        debugPrint(logger_,
+                   EST,
+                   "estimate_parasitics",
+                   1,
+                   "net {} para is estimated for placement",
+                   sdc_network_->pathName(net));
         estimateWireParasitic(net);
       }
       break;
@@ -440,6 +453,12 @@ void EstimateParasitics::updateParasitics(bool save_guides)
       // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes(save_guides);
       for (const sta::Net* net : parasitics_invalid_) {
+        debugPrint(logger_,
+                   EST,
+                   "estimate_parasitics",
+                   1,
+                   "net {} para is estimated for GR or DR",
+                   sdc_network_->pathName(net));
         estimateGlobalRouteRC(db_network_->staToDb(net));
       }
       break;
@@ -455,6 +474,12 @@ void EstimateParasitics::updateParasitics(bool save_guides)
   // groute call.
   if (parasitics_src_ != ParasiticsSrc::none) {
     for (const sta::Net* net : parasitics_invalid_) {
+      debugPrint(logger_,
+                 EST,
+                 "estimate_parasitics",
+                 1,
+                 "net {} delays from fanin invalidated",
+                 sdc_network_->pathName(net));
       sta_->delaysInvalidFromFanin(net);
     }
   }

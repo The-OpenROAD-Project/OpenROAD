@@ -3,6 +3,11 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(features = ["layering_check"])
 
+exports_files(
+    ["install.sh"],
+    visibility = ["//visibility:public"],
+)
+
 compile_pip_requirements(
     name = "requirements",
     src = "requirements.in",
