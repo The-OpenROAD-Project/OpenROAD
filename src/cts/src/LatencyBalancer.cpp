@@ -77,18 +77,19 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
   std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
   debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = [");
   for (const std::string& buffer : dlyBuffers) {
+    int bufDelay = techChar_->computeBufferDelay(buffer, extra_out_cap)
+                   * std::pow(10, 14);
     debugPrint(logger_,
                CTS,
                "insertion delay",
                3,
                "{} : {}",
                buffer,
-               techChar_->computeBufferDelay(buffer, extra_out_cap)
-                   * std::pow(10, 14));
-    buffersDelay.push_back(techChar_->computeBufferDelay(buffer, 0.0)
+               bufDelay);
+    buffersDelay.push_back(techChar_->computeBufferDelay(buffer, extra_out_cap)
                            * std::pow(10, 14));
   }
-  debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = ]");
+  debugPrint(logger_, CTS, "insertion delay", 3, "]");
 }
 
 void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
