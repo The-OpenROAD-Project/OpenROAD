@@ -296,3 +296,36 @@ suppress_message ORD 30
 # suppress grt message with the suggested adjustment
 suppress_message GRT 303
 suppress_message GRT 704
+
+proc get_3dblox_marker_count { category_name } {
+  set top_chip [[ord::get_db] getChip]
+  if { $top_chip == "NULL" } {
+    return 0
+  }
+  set top_category [$top_chip findMarkerCategory "3DBlox"]
+  if { $top_category == "NULL" } {
+    return 0
+  }
+  
+  # Try top-level first (for backward compatibility or flat structure)
+  set category [$top_category findMarkerCategory $category_name]
+  if { $category != "NULL" } {
+    return [$category getMarkerCount]
+  }
+  
+  # Try sub-categories
+  foreach sub {"Connectivity" "Physical" "Constraint"} {
+    set sub_cat [$top_category findMarkerCategory $sub]
+    if { $sub_cat != "NULL" } {
+      set category [$sub_cat findMarkerCategory $category_name]
+      if { $category != "NULL" } {
+        return [$category getMarkerCount]
+      }
+    }
+  }
+  return 0
+}
+
+proc get_3dblox_connected_errors { } {
+  return [get_3dblox_marker_count "Connected regions"]
+}

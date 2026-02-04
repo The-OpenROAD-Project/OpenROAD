@@ -1,0 +1,38 @@
+#!define NG45_PATH ../Nangate45
+
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+ChipletDef:
+  SoC:
+    type: die
+    design_area: [1000, 1000]
+    thickness: 300
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [1000, 0]
+          - [1000, 1000]
+          - [0, 1000]
+      back_reg:
+        side: back
+        coords:
+          - [0, 0]
+          - [1000, 0]
+          - [1000, 1000]
+          - [0, 1000]
+      back_reg:
+        side: back
+        coords:
+          - [0, 0]
+          - [1000, 0]
+          - [1000, 1000]
+          - [0, 1000]
+    external:
+      APR_tech_file: [NG45_PATH/*_tech.lef]
+      liberty_file: [NG45_PATH/fake_macros.lib]
+      LEF_file: [NG45_PATH/fake_macros.lef, NG45_PATH/fake_bumps.lef]
+      DEF_file: ../fake_macros.def

@@ -1,18 +1,5 @@
 source "helpers.tcl"
 
-proc get_3dblox_marker_count { sub_category_name } {
-  set top_chip [[ord::get_db] getChip]
-  set category [$top_chip findMarkerCategory "3DBlox"]
-  if { $category == "NULL" } {
-    return 0
-  }
-  set sub_category [$category findMarkerCategory $sub_category_name]
-  if { $sub_category == "NULL" } {
-    return 0
-  }
-  return [$sub_category getMarkerCount]
-}
-
 # 1. Load clean design
 read_3dbx "data/example.3dbx"
 set db [ord::get_db]
@@ -29,30 +16,20 @@ set t1 [$master1 getThickness]
 set inst2 [$top_chip findChipInst "soc_inst_duplicate"]
 
 # Verify it is clean initially
-check "Initial overlap count" { get_3dblox_marker_count "Overlapping chips" } 0
 check "Initial floating count" { get_3dblox_marker_count "Floating chips" } 0
 
-# 2. Test Partial Overlap
-# Move inst2 to partially overlap with inst1
-set p [odb::Point3D]
-$p set [expr $x1 + $w1 / 4] [expr $y1 + $h1 / 4] [expr $z1 + $t1 / 2]
-$inst2 setLoc $p
-
-check_3dblox
-check "Partial overlap detected" { get_3dblox_marker_count "Overlapping chips" } 1
-
-# 3. Test Touching (Stacked Exactly)
+# 2. Test Touching (Stacked Exactly)
 # Place inst2 exactly on top of inst1
+set p [odb::Point3D]
 $p set $x1 $y1 [expr $z1 + $t1]
 $inst2 setLoc $p
 
 check_3dblox
-check "Touching chips no overlap" { get_3dblox_marker_count "Overlapping chips" } 0
 check "Touching chips not floating" { get_3dblox_marker_count "Floating chips" } 0
 
 # 4. Test Vertical Gap (Floating)
-# Move inst2 slightly higher
-$p set $x1 $y1 [expr $z1 + $t1 + 1]
+# Move inst2 significantly higher (more than connection thickness of 4000)
+$p set $x1 $y1 [expr $z1 + $t1 + 10000]
 $inst2 setLoc $p
 
 check_3dblox

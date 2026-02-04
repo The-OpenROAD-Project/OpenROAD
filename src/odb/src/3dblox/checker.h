@@ -4,7 +4,6 @@
 #pragma once
 
 #include "odb/db.h"
-#include "odb/geom.h"
 #include "unfoldedModel.h"
 #include "utl/Logger.h"
 
@@ -17,26 +16,19 @@ class Checker
  public:
   Checker(utl::Logger* logger);
   ~Checker() = default;
-  void check(odb::dbChip* chip);
+  void check(dbChip* chip);
 
  private:
+  struct ContactSurfaces
+  {
+    bool valid;
+    int top_z;
+    int bot_z;
+  };
   void checkFloatingChips(const UnfoldedModel& model,
                           dbMarkerCategory* category);
-  void checkOverlappingChips(const UnfoldedModel& model,
-                             dbMarkerCategory* category);
-  void checkConnectionRegions(const UnfoldedModel& model,
-                              dbChip* chip,
-                              dbMarkerCategory* category);
-  void checkBumpPhysicalAlignment(const UnfoldedModel& model,
-                                  dbMarkerCategory* category);
-  void checkNetConnectivity(const UnfoldedModel& model,
-                            dbChip* chip,
-                            dbMarkerCategory* category);
-
-  bool isOverlapFullyInConnections(const UnfoldedChip* chip1,
-                                   const UnfoldedChip* chip2,
-                                   const Cuboid& overlap) const;
-
+  ContactSurfaces getContactSurfaces(const UnfoldedConnection& conn) const;
+  bool isValid(const UnfoldedConnection& conn) const;
   utl::Logger* logger_;
 };
 

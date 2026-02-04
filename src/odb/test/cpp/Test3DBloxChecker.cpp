@@ -49,56 +49,6 @@ class CheckerFixture : public tst::Fixture
   dbChip* chip3_;
 };
 
-TEST_F(CheckerFixture, test_overlapping_chips)
-{
-  // Create two overlapping chip instances
-  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
-  inst1->setLoc(Point3D(0, 0, 0));
-  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
-
-  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
-  // Place inst2 overlapping with inst1
-  inst2->setLoc(Point3D(1000, 1000, 0));  // Overlaps with inst1
-  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
-
-  // Run checker
-  ThreeDBlox three_dblox(&logger_, db_.get());
-  three_dblox.check();
-
-  // Verify markers were created
-  auto category = top_chip_->findMarkerCategory("3DBlox");
-  ASSERT_NE(category, nullptr);
-
-  auto overlapping_category = category->findMarkerCategory("Overlapping chips");
-  ASSERT_NE(overlapping_category, nullptr);
-
-  auto markers = overlapping_category->getMarkers();
-  EXPECT_EQ(markers.size(), 1);
-
-  if (!markers.empty()) {
-    auto marker = *markers.begin();
-    auto sources = marker->getSources();
-    EXPECT_EQ(sources.size(), 2);
-    EXPECT_EQ(marker->getBBox(), odb::Rect(1000, 1000, 2000, 2000));
-    // Verify both chip instances are in the sources
-    bool found_inst1 = false;
-    bool found_inst2 = false;
-    for (auto src : sources) {
-      if (src->getObjectType() == dbObjectType::dbChipInstObj) {
-        auto chip_inst = static_cast<dbChipInst*>(src);
-        if (chip_inst->getName() == "inst1") {
-          found_inst1 = true;
-        }
-        if (chip_inst->getName() == "inst2") {
-          found_inst2 = true;
-        }
-      }
-    }
-    EXPECT_TRUE(found_inst1);
-    EXPECT_TRUE(found_inst2);
-  }
-}
-
 TEST_F(CheckerFixture, test_floating_chips)
 {
   // Create three chip instances: two connected, one floating
@@ -124,7 +74,11 @@ TEST_F(CheckerFixture, test_floating_chips)
   auto category = top_chip_->findMarkerCategory("3DBlox");
   ASSERT_NE(category, nullptr);
 
-  auto floating_category = category->findMarkerCategory("Floating chips");
+  auto connectivity_category = category->findMarkerCategory("Connectivity");
+  ASSERT_NE(connectivity_category, nullptr);
+
+  auto floating_category
+      = connectivity_category->findMarkerCategory("Floating chips");
   ASSERT_NE(floating_category, nullptr);
 
   auto markers = floating_category->getMarkers();
@@ -164,16 +118,14 @@ TEST_F(CheckerFixture, test_no_violations)
   auto category = top_chip_->findMarkerCategory("3DBlox");
   ASSERT_NE(category, nullptr);
 
-  auto overlapping_category = category->findMarkerCategory("Overlapping chips");
-  if (overlapping_category != nullptr) {
-    auto markers = overlapping_category->getMarkers();
-    EXPECT_EQ(markers.size(), 0);
-  }
-
-  auto floating_category = category->findMarkerCategory("Floating chips");
-  if (floating_category != nullptr) {
-    auto markers = floating_category->getMarkers();
-    EXPECT_EQ(markers.size(), 0);
+  auto connectivity_category = category->findMarkerCategory("Connectivity");
+  if (connectivity_category != nullptr) {
+    auto floating_category
+        = connectivity_category->findMarkerCategory("Floating chips");
+    if (floating_category != nullptr) {
+      auto markers = floating_category->getMarkers();
+      EXPECT_EQ(markers.size(), 0);
+    }
   }
 }
 
@@ -207,14 +159,12 @@ TEST_F(CheckerFixture, test_multiple_violations)
   auto category = top_chip_->findMarkerCategory("3DBlox");
   ASSERT_NE(category, nullptr);
 
-  // Check overlapping chips
-  auto overlapping_category = category->findMarkerCategory("Overlapping chips");
-  ASSERT_NE(overlapping_category, nullptr);
-  auto overlapping_markers = overlapping_category->getMarkers();
-  EXPECT_GT(overlapping_markers.size(), 0);
+  auto connectivity_category = category->findMarkerCategory("Connectivity");
+  ASSERT_NE(connectivity_category, nullptr);
 
   // Check floating chips
-  auto floating_category = category->findMarkerCategory("Floating chips");
+  auto floating_category
+      = connectivity_category->findMarkerCategory("Floating chips");
   ASSERT_NE(floating_category, nullptr);
   auto floating_markers = floating_category->getMarkers();
   EXPECT_EQ(floating_markers.size(), 1);

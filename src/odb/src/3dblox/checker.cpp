@@ -5,11 +5,14 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <map>
-#include <utility>
+#include <numeric>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/dbObject.h"
+#include "odb/geom.h"
 #include "unfoldedModel.h"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
@@ -20,138 +23,143 @@ Checker::Checker(utl::Logger* logger) : logger_(logger)
 {
 }
 
-void Checker::check(odb::dbChip* chip)
+void Checker::check(dbChip* chip)
 {
   UnfoldedModel model(logger_, chip);
+  auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
+  auto* conn_cat = dbMarkerCategory::createOrReplace(top_cat, "Connectivity");
 
-  odb::dbMarkerCategory* category
-      = odb::dbMarkerCategory::createOrReplace(chip, "3DBlox");
-  checkFloatingChips(model, category);
-  checkOverlappingChips(model, category);
+  checkFloatingChips(model, conn_cat);
 }
 
 void Checker::checkFloatingChips(const UnfoldedModel& model,
-                                 odb::dbMarkerCategory* category)
+                                 dbMarkerCategory* category)
 {
   const auto& chips = model.getChips();
-  utl::UnionFind union_find(chips.size());
+  utl::UnionFind uf(chips.size());
+  std::unordered_map<const UnfoldedChip*, int> chip_map;
+  for (size_t i = 0; i < chips.size(); ++i) {
+    chip_map[&chips[i]] = (int) i;
+  }
 
-  for (size_t i = 0; i < chips.size(); i++) {
-    auto cuboid_i = chips[i].cuboid;
-    for (size_t j = i + 1; j < chips.size(); j++) {
-      auto cuboid_j = chips[j].cuboid;
-      if (cuboid_i.intersects(cuboid_j)) {
-        union_find.unite(i, j);
+  for (const auto& conn : model.getConnections()) {
+    if (isValid(conn) && conn.top_region && conn.bottom_region) {
+      auto it1 = chip_map.find(conn.top_region->parent_chip);
+      auto it2 = chip_map.find(conn.bottom_region->parent_chip);
+      if (it1 != chip_map.end() && it2 != chip_map.end()) {
+        uf.unite(it1->second, it2->second);
       }
     }
   }
 
-  std::map<int, std::vector<const UnfoldedChip*>> sets;
-  for (size_t i = 0; i < chips.size(); i++) {
-    sets[union_find.find(i)].push_back(&chips[i]);
-  }
+  std::vector<int> sorted(chips.size());
+  std::iota(sorted.begin(), sorted.end(), 0);
+  std::ranges::sort(sorted, [&](int a, int b) {
+    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
+  });
 
-  if (sets.size() > 1) {
-    std::vector<std::vector<const UnfoldedChip*>> insts_sets;
-    insts_sets.reserve(sets.size());
-    for (auto& [root, chips_list] : sets) {
-      insts_sets.emplace_back(chips_list);
-    }
-
-    std::ranges::sort(insts_sets,
-                      [](const std::vector<const UnfoldedChip*>& a,
-                         const std::vector<const UnfoldedChip*>& b) -> bool {
-                        return a.size() > b.size();
-                      });
-
-    odb::dbMarkerCategory* floating_chips_category
-        = odb::dbMarkerCategory::createOrReplace(category, "Floating chips");
-    logger_->warn(utl::ODB,
-                  151,
-                  "Found {} floating chip sets",
-                  (int) insts_sets.size() - 1);
-
-    for (size_t i = 1; i < insts_sets.size(); i++) {
-      auto& insts_set = insts_sets[i];
-      odb::dbMarker* marker = odb::dbMarker::create(floating_chips_category);
-      for (auto* inst : insts_set) {
-        marker->addShape(Rect(inst->cuboid.xMin(),
-                              inst->cuboid.yMin(),
-                              inst->cuboid.xMax(),
-                              inst->cuboid.yMax()));
-        marker->addSource(inst->chip_inst_path.back());
+  for (size_t i = 0; i < sorted.size(); ++i) {
+    const auto& c1 = chips[sorted[i]].cuboid;
+    for (size_t j = i + 1; j < sorted.size(); ++j) {
+      if (chips[sorted[j]].cuboid.xMin() > c1.xMax()) {
+        break;
       }
-    }
-  }
-}
-
-void Checker::checkOverlappingChips(const UnfoldedModel& model,
-                                    odb::dbMarkerCategory* category)
-{
-  const auto& chips = model.getChips();
-  std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
-
-  for (size_t i = 0; i < chips.size(); i++) {
-    auto cuboid_i = chips[i].cuboid;
-    for (size_t j = i + 1; j < chips.size(); j++) {
-      auto cuboid_j = chips[j].cuboid;
-      if (cuboid_i.overlaps(cuboid_j)) {
-        overlaps.emplace_back(&chips[i], &chips[j]);
+      if (c1.intersects(chips[sorted[j]].cuboid)) {
+        uf.unite(sorted[i], sorted[j]);
       }
     }
   }
 
-  if (!overlaps.empty()) {
-    odb::dbMarkerCategory* overlapping_chips_category
-        = odb::dbMarkerCategory::createOrReplace(category, "Overlapping chips");
+  std::vector<std::vector<const UnfoldedChip*>> groups(chips.size());
+  for (size_t i = 0; i < chips.size(); ++i) {
+    groups[uf.find((int) i)].push_back(&chips[i]);
+  }
+  std::erase_if(groups, [](const auto& g) { return g.empty(); });
+
+  if (groups.size() > 1) {
+    std::ranges::sort(groups, [](const auto& a, const auto& b) {
+      return a.size() > b.size();
+    });
+    auto* cat = dbMarkerCategory::createOrReplace(category, "Floating chips");
     logger_->warn(
-        utl::ODB, 156, "Found {} overlapping chips", (int) overlaps.size());
-
-    for (const auto& [inst1, inst2] : overlaps) {
-      odb::dbMarker* marker = odb::dbMarker::create(overlapping_chips_category);
-
-      auto cuboid1 = inst1->cuboid;
-      auto cuboid2 = inst2->cuboid;
-      auto intersection = cuboid1.intersect(cuboid2);
-
-      odb::Rect bbox(intersection.xMin(),
-                     intersection.yMin(),
-                     intersection.xMax(),
-                     intersection.yMax());
-      marker->addShape(bbox);
-
-      marker->addSource(inst1->chip_inst_path.back());
-      marker->addSource(inst2->chip_inst_path.back());
-
-      std::string comment
-          = "Chips " + inst1->name + " and " + inst2->name + " overlap";
-      marker->setComment(comment);
+        utl::ODB, 151, "Found {} floating chip sets", groups.size() - 1);
+    for (size_t i = 1; i < groups.size(); ++i) {
+      auto* marker = dbMarker::create(cat);
+      for (auto* chip : groups[i]) {
+        marker->addShape(Rect(chip->cuboid.xMin(),
+                              chip->cuboid.yMin(),
+                              chip->cuboid.xMax(),
+                              chip->cuboid.yMax()));
+        marker->addSource(chip->chip_inst_path.back());
+      }
+      marker->setComment("Isolated chip set starting with "
+                         + groups[i][0]->name);
     }
   }
 }
 
-void Checker::checkConnectionRegions(const UnfoldedModel& model,
-                                     dbChip* chip,
-                                     dbMarkerCategory* category)
+Checker::ContactSurfaces Checker::getContactSurfaces(
+    const UnfoldedConnection& conn) const
 {
+  auto* r1 = conn.top_region;
+  auto* r2 = conn.bottom_region;
+  if (!r1 || !r2) {
+    return {.valid = false, .top_z = 0, .bot_z = 0};
+  }
+
+  auto up = [](auto* r) { return r->isTop() || r->isInternal(); };
+  auto down = [](auto* r) { return r->isBottom() || r->isInternal(); };
+
+  bool r1_down_r2_up = down(r1) && up(r2);
+  bool r1_up_r2_down = up(r1) && down(r2);
+
+  if (!r1_down_r2_up && !r1_up_r2_down) {
+    return {.valid = false, .top_z = 0, .bot_z = 0};
+  }
+
+  if (r1_down_r2_up && r1_up_r2_down) {
+    if (r1->cuboid.zCenter() < r2->cuboid.zCenter()) {
+      r1_down_r2_up = false;
+    } else {
+      r1_up_r2_down = false;
+    }
+  }
+
+  auto* top = r1_down_r2_up ? r1 : r2;
+  auto* bot = r1_down_r2_up ? r2 : r1;
+  int top_z = top->isInternal() ? top->cuboid.zMin() : top->getSurfaceZ();
+  int bot_z = bot->isInternal() ? bot->cuboid.zMax() : bot->getSurfaceZ();
+  return {.valid = true, .top_z = top_z, .bot_z = bot_z};
 }
 
-void Checker::checkBumpPhysicalAlignment(const UnfoldedModel& model,
-                                         dbMarkerCategory* category)
+bool Checker::isValid(const UnfoldedConnection& conn) const
 {
-}
+  if (!conn.top_region || !conn.bottom_region) {
+    return true;
+  }
+  if (!conn.top_region->cuboid.xyIntersects(conn.bottom_region->cuboid)) {
+    return false;
+  }
+  if (conn.top_region->isInternalExt() || conn.bottom_region->isInternalExt()) {
+    return true;
+  }
 
-void Checker::checkNetConnectivity(const UnfoldedModel& model,
-                                   dbChip* chip,
-                                   dbMarkerCategory* category)
-{
-}
+  if ((conn.top_region->isInternal() || conn.bottom_region->isInternal())
+      && std::max(conn.top_region->cuboid.zMin(),
+                  conn.bottom_region->cuboid.zMin())
+             <= std::min(conn.top_region->cuboid.zMax(),
+                         conn.bottom_region->cuboid.zMax())) {
+    return true;
+  }
 
-bool Checker::isOverlapFullyInConnections(const UnfoldedChip* chip1,
-                                          const UnfoldedChip* chip2,
-                                          const Cuboid& overlap) const
-{
-  return false;
+  auto surfaces = getContactSurfaces(conn);
+  if (!surfaces.valid) {
+    return false;
+  }
+  if (surfaces.top_z < surfaces.bot_z) {
+    return false;
+  }
+  return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
 }
 
 }  // namespace odb
