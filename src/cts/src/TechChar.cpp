@@ -737,7 +737,7 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer,
 
 void TechChar::createDelayBufList()
 {
-  bool drvrRes = true;
+  bool drvrRes = false;
   std::vector<std::string> delay_buffers;
   float prevDrvrRes = -1;
   float prevInternalDelay = -1;
