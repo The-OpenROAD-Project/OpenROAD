@@ -1351,6 +1351,9 @@ void HierRTLMP::placeChildren(Cluster* parent)
       std::vector<SoftMacro> inflated_macros
           = applyUtilization(utilization, outline, macros);
 
+      const bool single_array_single_std_cell_cluster
+          = singleArraySingleStdCellCluster(macros);
+
       std::unique_ptr<SACoreSoftMacro> sa
           = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
@@ -1376,7 +1379,9 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-
+      if (single_array_single_std_cell_cluster) {
+        sa->forceCentralization();
+      }
       sa_batch.push_back(std::move(sa));
     }
 
