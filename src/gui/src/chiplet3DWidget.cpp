@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025, The OpenROAD Authors
+
 #include "chiplet3DWidget.h"
 
 #include <GL/gl.h>
 
 #include <QMouseEvent>
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -47,8 +48,6 @@ Chiplet3DWidget::Chiplet3DWidget(QWidget* parent) : QOpenGLWidget(parent)
 {
   // No initial rotation
 }
-
-Chiplet3DWidget::~Chiplet3DWidget() = default;
 
 void Chiplet3DWidget::setChip(odb::dbChip* chip)
 {
@@ -208,7 +207,7 @@ void Chiplet3DWidget::buildGeometries()
     distance_ = DEFAULT_DISTANCE;
   }
 
-  const std::vector<QVector3D> palette = {
+  static const std::vector<QVector3D> palette = {
       {0.0f, 1.0f, 0.0f},  // Green
       {1.0f, 1.0f, 0.0f},  // Yellow
       {0.0f, 1.0f, 1.0f},  // Cyan

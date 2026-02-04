@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025, The OpenROAD Authors
+
 #pragma once
 
 #include <QMatrix4x4>
 #include <QOpenGLWidget>
 #include <QQuaternion>
 #include <QVector2D>
+#include <QVector3D>
 #include <cstdint>
 #include <vector>
 
@@ -23,7 +27,7 @@ class Chiplet3DWidget : public QOpenGLWidget
 
  public:
   explicit Chiplet3DWidget(QWidget* parent = nullptr);
-  ~Chiplet3DWidget() override;
+  ~Chiplet3DWidget() override = default;
 
   void setChip(odb::dbChip* chip);
   void setLogger(utl::Logger* logger);
