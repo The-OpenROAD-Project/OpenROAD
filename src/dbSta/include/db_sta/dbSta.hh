@@ -3,21 +3,26 @@
 
 #pragma once
 
+#include <cstdint>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
+#include "odb/dbObject.h"
+#include "sta/Clock.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Sta.hh"
+#include "utl/Logger.h"
 
 namespace ord {
 class OpenRoad;
-}
-
-namespace utl {
-class Logger;
 }
 
 namespace sta {
@@ -79,19 +84,6 @@ class dbStaReport;
 class dbStaCbk;
 class PatternMatch;
 class TestCell;
-
-using utl::Logger;
-
-using odb::dbBlock;
-using odb::dbBlockCallBackObj;
-using odb::dbBTerm;
-using odb::dbDatabase;
-using odb::dbInst;
-using odb::dbITerm;
-using odb::dbLib;
-using odb::dbMaster;
-using odb::dbNet;
-using odb::dbTech;
 
 // Handles registering and unregistering with dbSta
 class dbStaState : public sta::StaState
@@ -176,11 +168,11 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   // this dbSta instance (e.g. TCL interpreter, units, etc.)
   std::unique_ptr<dbSta> makeBlockSta(odb::dbBlock* block);
 
-  dbDatabase* db() { return db_; }
+  odb::dbDatabase* db() { return db_; }
   dbNetwork* getDbNetwork() { return db_network_; }
   dbStaReport* getDbReport() { return db_report_; }
 
-  Slack netSlack(const dbNet* net, const MinMax* min_max);
+  Slack netSlack(const odb::dbNet* net, const MinMax* min_max);
 
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
@@ -189,8 +181,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void postRead3Dbx(odb::dbChip* chip) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
-  std::set<dbNet*> findClkNets();
-  std::set<dbNet*> findClkNets(const Clock* clk);
+  std::set<odb::dbNet*> findClkNets();
+  std::set<odb::dbNet*> findClkNets(const Clock* clk);
 
   void deleteInstance(Instance* inst) override;
   void deleteNet(Net* net) override;
@@ -210,9 +202,9 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                        const char* stage_name);
   void countInstancesByType(odb::dbModule* module,
                             InstTypeMap& inst_type_stats,
-                            std::vector<dbInst*>& insts);
+                            std::vector<odb::dbInst*>& insts);
   void countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
-                                        std::vector<dbInst*>& insts);
+                                        std::vector<odb::dbInst*>& insts);
   void addInstanceByTypeInstance(odb::dbInst* inst,
                                  InstTypeMap& inst_type_stats);
 
@@ -225,11 +217,21 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
+  utl::Logger* getLogger() { return logger_; }
+
   // Sanity checkers
   int checkSanity();
+  void checkSanityNetlistConsistency() const;
   void checkSanityDrvrVertexEdges(const Pin* pin) const;
   void checkSanityDrvrVertexEdges(const odb::dbObject* term) const;
   void checkSanityDrvrVertexEdges() const;
+
+  // Debugging utilities
+  void dumpModInstPinSlacks(const char* mod_inst_name,
+                            const char* filename,
+                            const MinMax* min_max = MinMax::max());
+  void dumpModInstGraphConnections(const char* mod_inst_name,
+                                   const char* filename);
 
   using Sta::netSlack;
   using Sta::replaceCell;
@@ -243,8 +245,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                    Cell* to_cell,
                    LibertyCell* to_lib_cell) override;
 
-  dbDatabase* db_ = nullptr;
-  Logger* logger_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 
   dbNetwork* db_network_ = nullptr;
   dbStaReport* db_report_ = nullptr;

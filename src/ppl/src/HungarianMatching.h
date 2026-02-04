@@ -14,14 +14,9 @@
 #include "Slots.h"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace ppl {
-
-using utl::Logger;
 
 class HungarianMatching
 {
@@ -30,7 +25,7 @@ class HungarianMatching
                     Netlist* netlist,
                     Core* core,
                     std::vector<Slot>& slots,
-                    Logger* logger,
+                    utl::Logger* logger,
                     odb::dbDatabase* db);
   virtual ~HungarianMatching() = default;
   void findAssignment();
@@ -58,7 +53,7 @@ class HungarianMatching
   int group_slots_;
   Edge edge_;
   const int hungarian_fail_ = std::numeric_limits<int>::max();
-  Logger* logger_;
+  utl::Logger* logger_;
   odb::dbDatabase* db_;
 
   void createMatrix();

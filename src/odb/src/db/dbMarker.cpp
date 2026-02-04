@@ -10,6 +10,7 @@
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbITerm.h"
 #include "dbInst.h"
@@ -17,7 +18,6 @@
 #include "dbNet.h"
 #include "dbObstruction.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbVector.h"

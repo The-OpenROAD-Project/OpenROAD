@@ -1,6 +1,7 @@
 or_integration_tests(
   "drt"
   TESTS
+    down_access_term
     drc_test
     ispd18_sample
     ispd18_sample_incr
@@ -18,6 +19,3 @@ or_integration_tests(
     gc_test
 )
 
-# Skipped
-#drt_man_tcl_check
-#drt_readme_msgs_check

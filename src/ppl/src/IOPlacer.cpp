@@ -34,7 +34,7 @@ namespace ppl {
 
 using utl::PPL;
 
-IOPlacer::IOPlacer(odb::dbDatabase* db, Logger* logger)
+IOPlacer::IOPlacer(odb::dbDatabase* db, utl::Logger* logger)
     : logger_(logger), top_grid_(nullptr), ioplacer_renderer_(nullptr), db_(db)
 {
   netlist_ = std::make_unique<Netlist>();

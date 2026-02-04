@@ -10,6 +10,7 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
+    "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
     "check_buffers",
@@ -43,6 +44,7 @@ COMPULSORY_TESTS = [
     "simple_test_clustered",
     "simple_test_clustered_max_cap",
     "simple_test_hier",
+    "sink_clustering_collision",
     "skip_nets",
     "twice",
 ]
@@ -61,85 +63,24 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
-        "16sinks.def",
-        "ModNangate45/ModNangate45.lef",
-        "ModNangate45/ModNangate45_typ.lib",
         "Nangate45/Nangate45.lef",
-        "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",
-        "Nangate45/Nangate45.rcx_rules",
         "Nangate45/Nangate45.tracks",
         "Nangate45/Nangate45.vars",
-        "Nangate45/Nangate45_fast.lib",
-        "Nangate45/Nangate45_lvt.lef",
-        "Nangate45/Nangate45_lvt.lib",
-        "Nangate45/Nangate45_slow.lib",
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
-        "Nangate45/fake_macros.lef",
-        "Nangate45/fake_macros.lib",
-        "Nangate45/fakeram45.cfg",
-        "Nangate45/fakeram45_1024x32.lef",
-        "Nangate45/fakeram45_1024x32.lib",
-        "Nangate45/fakeram45_256x16.lef",
-        "Nangate45/fakeram45_256x16.lib",
-        "Nangate45/fakeram45_512x64.lef",
-        "Nangate45/fakeram45_512x64.lib",
-        "Nangate45/fakeram45_64x32.lef",
-        "Nangate45/fakeram45_64x32.lib",
-        "Nangate45/fakeram45_64x7.lef",
-        "Nangate45/fakeram45_64x7.lib",
-        "Nangate45/fakeram45_64x96.lef",
-        "Nangate45/fakeram45_64x96.lib",
-        "Nangate45/work_around_yosys/cells.v",
-        "array_dummy.tcl",
-        "array_full_flow.tcl",
-        "array_tile.lef",
-        "array_tile.lib",
-        "array_tile_ins_delay.lef",
-        "array_tile_ins_delay.lib",
-        "check_buffers.def",
-        "cts-helpers.tcl",
         "helpers.tcl",
-        "ihp-sg13g2_data/IOLib.lef",
-        "ihp-sg13g2_data/IOLib_dummy.lib",
+    ],
+)
+
+filegroup(
+    name = "ihp_resources",
+    srcs = [
         "ihp-sg13g2_data/setRC.tcl",
         "ihp-sg13g2_data/sg13g2_stdcell.lef",
         "ihp-sg13g2_data/sg13g2_stdcell_typ_1p20V_25C.lib",
         "ihp-sg13g2_data/sg13g2_tech.lef",
-        "no_clock.def",
-        "pad.lef",
-        "pad.lib",
-        "simple_test_hier_out.vok",
-        "simple_test_out.defok",
-        "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
-        "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
-        "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
-        "sky130hd/sky130_fd_sc_hd_merged.lef",
-        "sky130hd/sky130hd.pdn.tcl",
-        "sky130hd/sky130hd.rc",
-        "sky130hd/sky130hd.rcx_rules",
-        "sky130hd/sky130hd.tlef",
-        "sky130hd/sky130hd.tracks",
-        "sky130hd/sky130hd.vars",
-        "sky130hd/sky130hd_multi_patterned.tlef",
-        "sky130hd/sky130hd_std_cell.lef",
-        "sky130hd/sky130hd_std_cell_vt.lef",
-        "sky130hd/sky130hd_tt.lib",
-        "sky130hd/sky130hd_vt.tlef",
-        "sky130hd/work_around_yosys/formal_pdk.v",
-        "sky130hs/sky130_fd_sc_hs__tt_025C_1v80.lib",
-        "sky130hs/sky130_fd_sc_hs_merged.lef",
-        "sky130hs/sky130hs.pdn.tcl",
-        "sky130hs/sky130hs.rc",
-        "sky130hs/sky130hs.rcx_rules",
-        "sky130hs/sky130hs.tlef",
-        "sky130hs/sky130hs.tracks",
-        "sky130hs/sky130hs.vars",
-        "sky130hs/sky130hs_ip_global.cfg",
-        "sky130hs/sky130hs_std_cell.lef",
-        "sky130hs/sky130hs_tt.lib",
     ],
 )
 
@@ -151,8 +92,57 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "array": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_dummy": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_full_flow": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_ins_delay": [
+                "array_tile.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "array_max_wl": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_no_blockages": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_repair_clock_nets": [
+                "array_tile.lef",
+                "array_tile.lib",
+                "array_max_wl.defok",
+            ],
+            "check_buffer_inference1": [
+                "ModNangate45/ModNangate45_typ.lib",
+                "check_buffers.def",
+            ],
+            "check_buffer_inference2": [
+                "ModNangate45/ModNangate45.lef",
+                "check_buffers.def",
+            ],
+            "check_buffer_inference3": [
+                "check_buffers.def",
+            ],
+            "check_charBuf": [
+                "16sinks.def",
+            ],
+            "check_max_fanout1": [
+                ":ihp_resources",
+            ],
             "check_max_fanout2": [
                 "check_buffers.def",
+            ],
+            "check_max_fanout3": [
+                ":ihp_resources",
             ],
             "check_wire_rc_cts": [
                 "check_buffers.def",
@@ -160,11 +150,65 @@ filegroup(
             "dummy_load": [
                 "check_buffers.def",
             ],
+            "find_clock": [
+                "16sinks.def",
+            ],
+            "find_clock_pad": [
+                "pad.lef",
+                "pad.lib",
+            ],
+            "gated_clock5": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "hier_insertion_delay": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "insertion_delay": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "inverters": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "lvt_lib": [
+                "cts-helpers.tcl",
+                "Nangate45/Nangate45_lvt.lef",
+                "Nangate45/Nangate45_lvt.lib",
+            ],
             "max_cap": [
                 "//src/rsz/test:hi_fanout.tcl",
+                "sky130hs/sky130hs.rc",
+                "sky130hs/sky130hs.tlef",
+                "sky130hs/sky130hs_std_cell.lef",
+                "sky130hs/sky130hs_tt.lib",
+            ],
+            "no_clocks": [
+                "no_clock.def",
+            ],
+            "post_cts_opt": [
+                "cts-helpers.tcl",
+            ],
+            "simple_test": [
+                "16sinks.def",
+                "simple_test_out.defok",
+            ],
+            "simple_test_clustered": [
+                "cts-helpers.tcl",
+            ],
+            "simple_test_clustered_max_cap": [
+                "cts-helpers.tcl",
+            ],
+            "simple_test_hier": [
+                "simple_test_hier_out.vok",
             ],
             "skip_nets": [
                 "gated_clock2.def",
+            ],
+            "twice": [
+                "16sinks.def",
             ],
         }.get(test_name, []),
     )

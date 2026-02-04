@@ -15,10 +15,18 @@
 #include <utility>
 #include <vector>
 
+#include "est/EstimateParasitics.h"
+#include "est/SteinerTree.h"
 #include "grt/GRoute.h"
+#include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
+#include "sta/MinMax.hh"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Transition.hh"
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include "spdlog/fmt/fmt.h"
 #include "sta/Fuzzy.hh"
@@ -36,10 +44,12 @@
 
 namespace sta {
 class Port;
-}
+class Pin;
+}  // namespace sta
 
 namespace rsz {
 
+using sta::Pin;
 using sta::Port;
 using std::make_shared;
 using std::max;
@@ -75,9 +85,9 @@ FixedDelay::FixedDelay(sta::Delay float_value, Resizer* resizer)
 
 // load
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
-                         const Pin* load_pin,
-                         const Corner* corner,
+                         const odb::Point& location,
+                         const sta::Pin* load_pin,
+                         const sta::Corner* corner,
                          const Resizer* resizer)
 {
   if (type != BufferedNetType::load) {
@@ -89,22 +99,22 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   load_pin_ = load_pin;
   corner_ = corner;
 
-  Network* network = resizer->network();
-  LibertyPort* load_port = network->libertyPort(load_pin);
+  sta::Network* network = resizer->network();
+  sta::LibertyPort* load_port = network->libertyPort(load_pin);
   if (load_port) {
     cap_ = resizer->portCapacitance(load_port, corner);
     fanout_ = resizer->portFanoutLoad(load_port);
     max_load_slew_ = resizer->maxInputSlew(load_port, corner);
   } else if (network->isTopLevelPort(load_pin)) {
     Port* port = network->port(load_pin);
-    for (auto rf : RiseFall::range()) {
+    for (auto rf : sta::RiseFall::range()) {
       float pin_cap, wire_cap;
       int fanout;
       bool has_pin_cap, has_wire_cap, has_fanout;
       resizer->sdc_->portExtCap(port,
                                 rf,
                                 corner,
-                                MinMax::max(),
+                                sta::MinMax::max(),
                                 pin_cap,
                                 has_pin_cap,
                                 wire_cap,
@@ -120,7 +130,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // junc
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          const BufferedNetPtr& ref,
                          const BufferedNetPtr& ref2,
                          const Resizer* resizer)
@@ -145,10 +155,10 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // wire
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          const int layer,
                          const BufferedNetPtr& ref,
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics)
 {
@@ -173,11 +183,11 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // via
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
+                         const odb::Point& location,
                          const int layer,
                          const int ref_layer,
                          const BufferedNetPtr& ref,
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          const Resizer* resizer)
 {
   if (type != BufferedNetType::via) {
@@ -200,10 +210,10 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
 // buffer
 BufferedNet::BufferedNet(const BufferedNetType type,
-                         const Point& location,
-                         LibertyCell* buffer_cell,
+                         const odb::Point& location,
+                         sta::LibertyCell* buffer_cell,
                          const BufferedNetPtr& ref,
-                         const Corner* corner,
+                         const sta::Corner* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics)
 {
@@ -218,7 +228,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   ref_ = ref;
   corner_ = corner;
 
-  LibertyPort *input, *output;
+  sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   cap_ = resizer->portCapacitance(input, corner);
   fanout_ = resizer->portFanoutLoad(input);
@@ -252,9 +262,9 @@ void BufferedNet::reportTree(const int level, const Resizer* resizer) const
 
 std::string BufferedNet::to_string(const Resizer* resizer) const
 {
-  Network* sdc_network = resizer->sdcNetwork();
-  Units* units = resizer->units();
-  Unit* dist_unit = units->distanceUnit();
+  sta::Network* sdc_network = resizer->sdcNetwork();
+  sta::Units* units = resizer->units();
+  sta::Unit* dist_unit = units->distanceUnit();
   const char* x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 2);
   const char* y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 2);
   const char* cap = units->capacitanceUnit()->asString(cap_);
@@ -393,7 +403,7 @@ int BufferedNet::maxLoadWireLength() const
   return 0;
 }
 
-void BufferedNet::wireRC(const Corner* corner,
+void BufferedNet::wireRC(const sta::Corner* corner,
                          const Resizer* resizer,
                          const est::EstimateParasitics* estimate_parasitics,
                          // Return values.
@@ -427,7 +437,7 @@ void BufferedNet::wireRC(const Corner* corner,
 }
 
 double BufferedNet::viaResistance(
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics)
 {
@@ -479,8 +489,8 @@ static const char* to_string(const BufferedNetType type)
 
 ////////////////////////////////////////////////////////////////
 
-BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
-                                        const Corner* corner)
+BufferedNetPtr Resizer::makeBufferedNet(const sta::Pin* drvr_pin,
+                                        const sta::Corner* corner)
 {
   switch (estimate_parasitics_->getParasiticsSrc()) {
     case est::ParasiticsSrc::placement:
@@ -496,7 +506,7 @@ BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
 
 using SteinerPtAdjacents = std::vector<std::vector<SteinerPt>>;
 using SteinerPtPinVisited
-    = std::unordered_set<Point, est::PointHash, est::PointEqual>;
+    = std::unordered_set<odb::Point, est::PointHash, est::PointEqual>;
 
 static BufferedNetPtr makeBufferedNetFromTree(
     const est::SteinerTree* tree,
@@ -505,20 +515,20 @@ static BufferedNetPtr makeBufferedNetFromTree(
     const SteinerPtAdjacents& adjacents,
     const int level,
     SteinerPtPinVisited& pins_visited,
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
-    const Network* network)
+    utl::Logger* logger,
+    const sta::Network* network)
 {
   BufferedNetPtr bnet = nullptr;
-  const PinSeq* pins = tree->pins(to);
-  const Point to_loc = tree->location(to);
+  const sta::PinSeq* pins = tree->pins(to);
+  const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (pins && pins_visited.find(to_loc) == pins_visited.end()) {
     pins_visited.insert(to_loc);
-    for (const Pin* pin : *pins) {
+    for (const sta::Pin* pin : *pins) {
       if (network->isLoad(pin)) {
         BufferedNetPtr bnet1 = make_shared<BufferedNet>(
             BufferedNetType::load, tree->location(to), pin, corner, resizer);
@@ -585,8 +595,8 @@ static BufferedNetPtr makeBufferedNetFromTree(
 }
 
 // Make BufferedNet from steiner tree.
-BufferedNetPtr Resizer::makeBufferedNetSteiner(const Pin* drvr_pin,
-                                               const Corner* corner)
+BufferedNetPtr Resizer::makeBufferedNetSteiner(const sta::Pin* drvr_pin,
+                                               const sta::Corner* corner)
 {
   BufferedNetPtr bnet;
   est::SteinerTree* tree = estimate_parasitics_->makeSteinerTree(drvr_pin);
@@ -629,15 +639,15 @@ static BufferedNetPtr makeBufferedNetFromTree2(
     const SteinerPtAdjacents& adjacents,
     const int level,
     SteinerPtPinVisited& pins_visited,
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
-    const Network* network,
-    std::map<Point, std::vector<BufferedNetPtr>>& sink_map)
+    utl::Logger* logger,
+    const sta::Network* network,
+    std::map<odb::Point, std::vector<BufferedNetPtr>>& sink_map)
 {
   BufferedNetPtr bnet = nullptr;
-  const Point to_loc = tree->location(to);
+  const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (sink_map.contains(to_loc)
@@ -698,13 +708,13 @@ static BufferedNetPtr makeBufferedNetFromTree2(
 // Make BufferedNet from Steiner tree. This is similar to
 // makeBufferedNetSteiner but supports sinks of type BufferedNetPtr
 BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
-    Point root,
+    odb::Point root,
     const std::vector<BufferedNetPtr>& sinks,
-    const Corner* corner)
+    const sta::Corner* corner)
 {
   BufferedNetPtr bnet = nullptr;
-  std::vector<Point> sink_points;
-  std::map<Point, std::vector<BufferedNetPtr>> sink_map;
+  std::vector<odb::Point> sink_points;
+  std::map<odb::Point, std::vector<BufferedNetPtr>> sink_map;
   for (const auto& sink : sinks) {
     sink_points.push_back(sink->location());
     sink_map[sink->location()].push_back(sink);
@@ -745,6 +755,184 @@ BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
 
 ////////////////////////////////////////////////////////////////
 
+BufferedNetPtr Resizer::stitchTrees(const BufferedNetPtr& outer_tree,
+                                    Pin* stitching_load,
+                                    const BufferedNetPtr& inner_tree)
+{
+  using BnetType = BufferedNetType;
+  using BnetPtr = BufferedNetPtr;
+  return visitTree(
+      [this, stitching_load, inner_tree](
+          auto& recurse, int level, const BnetPtr& node) -> BufferedNetPtr {
+        if (!node) {
+          return nullptr;
+        }
+        switch (node->type()) {
+          case BnetType::via: {
+            BnetPtr new_ref = recurse(node->ref());
+            if (!new_ref) {
+              return nullptr;
+            }
+            if (new_ref == node->ref()) {
+              // Optimization: do not create a new node if it would be
+              // equivalent to the existing one; analogously below for wire and
+              // junction
+              return node;
+            }
+            return std::make_shared<BufferedNet>(BnetType::via,
+                                                 node->location(),
+                                                 node->layer(),
+                                                 node->refLayer(),
+                                                 new_ref,
+                                                 node->corner(),
+                                                 this);
+          }
+          case BnetType::wire: {
+            BnetPtr new_ref = recurse(node->ref());
+            if (!new_ref) {
+              return nullptr;
+            }
+            if (new_ref == node->ref()) {
+              return node;
+            }
+            return std::make_shared<BufferedNet>(
+                BnetType::wire,
+                node->location(),
+                node->layer(),
+                new_ref,  // Fixed: was recurse(node->ref())
+                node->corner(),
+                this,
+                estimate_parasitics_);
+          }
+          case BnetType::junction: {
+            BnetPtr new_ref = recurse(node->ref());
+            BnetPtr new_ref2 = recurse(node->ref2());
+            if (!new_ref || !new_ref2) {
+              return nullptr;
+            }
+            if (new_ref == node->ref() && new_ref2 == node->ref2()) {
+              return node;
+            }
+            return std::make_shared<BufferedNet>(
+                BnetType::junction, node->location(), new_ref, new_ref2, this);
+          }
+          case BnetType::load: {
+            if (node->loadPin() == stitching_load) {
+              // This is the buffer input pin we want to replace
+              // Connect buffer input location to buffer output location with
+              // wire
+              odb::Point buffer_in_loc = node->location();
+              int buffer_in_layer = node->layer();
+              odb::Point buffer_out_loc = inner_tree->location();
+              int buffer_out_layer = inner_tree->layer();
+
+              // Check if we need to add connection
+              if (buffer_in_loc == buffer_out_loc
+                  && buffer_in_layer == buffer_out_layer) {
+                // Same location and layer - just splice in inner_tree
+                return inner_tree;
+              }
+              if (buffer_in_layer == buffer_out_layer) {
+                // Same layer but different location - add wire segment
+                debugPrint(logger_,
+                           RSZ,
+                           "buffer_removal",
+                           2,
+                           "Adding wire from buffer input ({}, {}) to output "
+                           "({}, {}) on layer {}",
+                           buffer_in_loc.getX(),
+                           buffer_in_loc.getY(),
+                           buffer_out_loc.getX(),
+                           buffer_out_loc.getY(),
+                           buffer_in_layer);
+
+                return std::make_shared<BufferedNet>(BnetType::wire,
+                                                     buffer_in_loc,
+                                                     buffer_in_layer,
+                                                     inner_tree,
+                                                     node->corner(),
+                                                     this,
+                                                     estimate_parasitics_);
+              }
+              // Different layers - need via(s) + wire
+              debugPrint(logger_,
+                         RSZ,
+                         "buffer_removal",
+                         2,
+                         "Adding via+wire from buffer input ({}, {}, layer "
+                         "{}) to output ({}, {}, layer {})",
+                         buffer_in_loc.getX(),
+                         buffer_in_loc.getY(),
+                         buffer_in_layer,
+                         buffer_out_loc.getX(),
+                         buffer_out_loc.getY(),
+                         buffer_out_layer);
+
+              // Validate layer range
+              if (buffer_in_layer < 1 || buffer_out_layer < 1) {
+                // layer assignment is incomplete
+                return inner_tree;
+              }
+
+              // Build connection: start from inner_tree and work backwards
+              BnetPtr current = inner_tree;
+
+              // Add via stack from buffer_out_layer to buffer_in_layer
+              int layer_step = (buffer_in_layer > buffer_out_layer) ? 1 : -1;
+              odb::Point current_loc = buffer_out_loc;
+
+              debugPrint(
+                  logger_,
+                  RSZ,
+                  "buffer_removal",
+                  1,
+                  "Creating via stack: from_layer={} to_layer={} step={}",
+                  buffer_out_layer,
+                  buffer_in_layer,
+                  layer_step);
+              for (int layer = buffer_out_layer; layer != buffer_in_layer;
+                   layer += layer_step) {
+                int next_layer = layer + layer_step;
+                debugPrint(logger_,
+                           RSZ,
+                           "buffer_removal",
+                           2,
+                           "Creating via from layer {} to layer {}",
+                           layer,
+                           next_layer);
+                current = std::make_shared<BufferedNet>(BnetType::via,
+                                                        current_loc,
+                                                        layer,
+                                                        next_layer,
+                                                        current,
+                                                        node->corner(),
+                                                        this);
+              }
+              // Add wire if locations differ
+              if (buffer_in_loc != buffer_out_loc) {
+                current = std::make_shared<BufferedNet>(BnetType::wire,
+                                                        buffer_in_loc,
+                                                        buffer_in_layer,
+                                                        current,
+                                                        node->corner(),
+                                                        this,
+                                                        estimate_parasitics_);
+              }
+
+              return current;
+            }
+            // Not the stitching load, return as-is
+            return node;
+          }
+          default:
+            logger_->critical(RSZ, 130, "unhandled BufferedNet type");
+        }
+      },
+      outer_tree);
+}
+
+////////////////////////////////////////////////////////////////
+
 using grt::RoutePt;
 
 class RoutePtHash
@@ -765,9 +953,9 @@ using GRoutePtAdjacents
 size_t RoutePtHash::operator()(const RoutePt& pt) const
 {
   size_t hash = sta::hash_init_value;
-  est::hashIncr(hash, pt.x());
-  est::hashIncr(hash, pt.y());
-  est::hashIncr(hash, pt.layer());
+  sta::hashIncr(hash, pt.x());
+  sta::hashIncr(hash, pt.y());
+  sta::hashIncr(hash, pt.layer());
   return hash;
 }
 
@@ -779,7 +967,7 @@ bool RoutePtEqual::operator()(const RoutePt& pt1, const RoutePt& pt2) const
 static const RoutePt route_pt_null(0, 0, 0);
 
 using RoutePtSet = std::unordered_set<RoutePt, RoutePtHash, RoutePtEqual>;
-using RoutePtPinMap = std::unordered_map<RoutePt, PinSeq, RoutePtHash>;
+using RoutePtPinMap = std::unordered_map<RoutePt, sta::PinSeq, RoutePtHash>;
 
 static BufferedNetPtr makeBufferedNet(
     RoutePt& from,
@@ -787,11 +975,11 @@ static BufferedNetPtr makeBufferedNet(
     GRoutePtAdjacents& adjacents,
     RoutePtPinMap& loc_pin_map,
     int level,
-    const Corner* corner,
+    const sta::Corner* corner,
     const Resizer* resizer,
     const est::EstimateParasitics* estimate_parasitics,
-    Logger* logger,
-    dbNetwork* db_network,
+    utl::Logger* logger,
+    sta::dbNetwork* db_network,
     RoutePtSet& visited)
 {
   if (visited.find(to) != visited.end()) {
@@ -800,12 +988,12 @@ static BufferedNetPtr makeBufferedNet(
   }
   visited.insert(to);
 
-  Point from_pt(from.x(), from.y());
-  Point to_pt(to.x(), to.y());
+  odb::Point from_pt(from.x(), from.y());
+  odb::Point to_pt(to.x(), to.y());
 
   BufferedNetPtr bnet = nullptr;
-  const PinSeq& pins = loc_pin_map[to];
-  for (const Pin* pin : pins) {
+  const sta::PinSeq& pins = loc_pin_map[to];
+  for (const sta::Pin* pin : pins) {
     if (db_network->isLoad(pin)) {
       auto load_bnet = make_shared<BufferedNet>(
           BufferedNetType::load, to_pt, pin, corner, resizer);
@@ -872,11 +1060,11 @@ static BufferedNetPtr makeBufferedNet(
   return bnet;
 }
 
-BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
-                                              const Corner* corner)
+BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
+                                              const sta::Corner* corner)
 {
-  dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
-  const Net* net = db_network_->dbToSta(db_net);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
+  const sta::Net* net = db_network_->dbToSta(db_net);
   assert(db_net != nullptr);
 
   std::vector<grt::PinGridLocation> pin_grid_locs
@@ -887,8 +1075,8 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
   RoutePtPinMap loc_pin_map;
 
   for (grt::PinGridLocation& pin_loc : pin_grid_locs) {
-    Pin* pin = pin_loc.iterm ? db_network_->dbToSta(pin_loc.iterm)
-                             : db_network_->dbToSta(pin_loc.bterm);
+    sta::Pin* pin = pin_loc.iterm ? db_network_->dbToSta(pin_loc.iterm)
+                                  : db_network_->dbToSta(pin_loc.bterm);
     RoutePt pin_route_pt(
         pin_loc.grid_pt.getX(), pin_loc.grid_pt.getY(), pin_loc.conn_layer);
     debugPrint(logger_,
@@ -944,7 +1132,8 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
                                                visited);
     if (bnet) {
       if (bnet->loadCount() != pin_grid_locs.size() - 1) {
-        // we are subtracting one to account for driver at the root of the tree
+        // we are subtracting one to account for driver at the root of the
+        // tree
         logger_->error(RSZ,
                        74,
                        "failed to build tree from gloubal routes: found route "

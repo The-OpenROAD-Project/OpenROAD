@@ -1,0 +1,87 @@
+>> read_lef gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef, created 13 layers, 60 vias
+>> read_lef gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef, created 229 library cells
+>> read_verilog jpeg.v
+>> link_design jpeg_encoder -hier
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+>> read_sdc jpeg.sdc
+>> initialize_floorplan -site GF018hv5v_green_sc9 -die_area {0 0 3000 3000} -core_area {10 10 2990 2990}
+[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.080, 10.080).
+[INFO IFP-0001] Added 591 rows of 5321 site GF018hv5v_green_sc9.
+>> place_pins -hor_layers Metal3 -ver_layers Metal2
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 10704
+[INFO PPL-0002] Number of I/O             48
+[INFO PPL-0003] Number of I/O w/sink      47
+[INFO PPL-0004] Number of I/O w/o sink    1
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 71118.48 um.
+>> global_placement -skip_nesterov_place
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.560  5.040 ) um
+[INFO GPL-0004] CoreBBox: ( 10.080 10.080 ) ( 2989.840 2988.720 ) um
+[INFO GPL-0036] Movable instances area:     2015955.648 um^2
+[INFO GPL-0037] Total instances area:       2015955.648 um^2
+[INFO GPL-0035] Pin density area adjust:    174882.176 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:             39109
+[INFO GPL-0007] Movable instances:               39109
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                  48135
+[INFO GPL-0011] Number of pins:                 147797
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 3000.000 3000.000 ) um
+[INFO GPL-0013] Core BBox: ( 10.080 10.080 ) ( 2989.840 2988.720 ) um
+[INFO GPL-0016] Core area:                  8875632.326 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                8875632.326 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:     2190837.824 um^2
+[INFO GPL-0019] Utilization:                    24.684 %
+[INFO GPL-0020] Standard cells area:        2190837.824 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 39109	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00348564 HPWL: 2176639240
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00646186 HPWL: 2048471250
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00263091 HPWL: 2074467989
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00037565 HPWL: 2089430273
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00031989 HPWL: 2095443593
+[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00031966 HPWL: 2103629503
+[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00028756 HPWL: 2107529200
+[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00047894 HPWL: 2111078807
+[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00042393 HPWL: 2112683404
+[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00038011 HPWL: 2114817118
+[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00034675 HPWL: 2115256278
+[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00053985 HPWL: 2116421899
+[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00041260 HPWL: 2116242085
+[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00043734 HPWL: 2117068031
+[InitialPlace]  Iter: 15 conjugate gradient residual: 0.00037490 HPWL: 2116696633
+[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00053397 HPWL: 2117262641
+[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00063165 HPWL: 2116240984
+[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00050783 HPWL: 2116052882
+[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00038458 HPWL: 2115331484
+[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00047263 HPWL: 2115620073
+number instances in verilog is 39260
+wns max -85.02
+tns max -174582.05
+replace_arith_module -path_count 100 -target setup -slack_margin 0.0
+[INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
+[INFO RSZ-0152] Analyzing 100 critical paths with slack < 0.00
+[INFO RSZ-0153] Identified 3788 violating endpoints
+[INFO RSZ-0154] Identified 64 critical arithmetic instances
+[INFO RSZ-0160] 64 arithmetic instances have swapped to improve 'setup' target
+wns max -51.38
+tns max -111291.84
+wns max -51.38
+tns max -111291.84

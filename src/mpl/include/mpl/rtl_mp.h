@@ -63,10 +63,10 @@ class MacroPlacer
              float notch_weight,
              float macro_blockage_weight,
              float target_util,
-             float target_dead_space,
              float min_ar,
              const char* report_directory,
-             bool keep_clustering_data);
+             bool keep_clustering_data,
+             bool data_flow_driven);
 
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
@@ -78,6 +78,7 @@ class MacroPlacer
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
+  void setMacroHalo(odb::dbInst* macro, int halo_width, int halo_height);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

@@ -11,12 +11,13 @@
 #include <vector>
 
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 #include "odb/isotropy.h"
 using odb::horizontal;
 namespace drt {
-KDTree::KDTree(const std::vector<Point>& points)
+KDTree::KDTree(const std::vector<odb::Point>& points)
 {
-  std::vector<std::pair<int, Point>> points_with_ids;
+  std::vector<std::pair<int, odb::Point>> points_with_ids;
   points_with_ids.reserve(points.size());
   for (int i = 0; i < points.size(); ++i) {
     points_with_ids.emplace_back(i, points[i]);
@@ -25,28 +26,28 @@ KDTree::KDTree(const std::vector<Point>& points)
 }
 
 std::unique_ptr<KDTreeNode> KDTree::buildTree(
-    const std::vector<std::pair<int, Point>>& points,
-    const Orientation2D& orient)
+    const std::vector<std::pair<int, odb::Point>>& points,
+    const odb::Orientation2D& orient)
 {
   if (points.empty()) {
     return nullptr;
   }
 
   auto sorted_points = points;
-  std::ranges::sort(
-      sorted_points,
-      [orient](const std::pair<int, Point>& a, const std::pair<int, Point>& b) {
-        return orient == horizontal ? a.second.x() < b.second.x()
-                                    : a.second.y() < b.second.y();
-      });
+  std::ranges::sort(sorted_points,
+                    [orient](const std::pair<int, odb::Point>& a,
+                             const std::pair<int, odb::Point>& b) {
+                      return orient == horizontal ? a.second.x() < b.second.x()
+                                                  : a.second.y() < b.second.y();
+                    });
 
   const size_t median_index = sorted_points.size() / 2;
   std::unique_ptr<KDTreeNode> node = std::make_unique<KDTreeNode>(
       sorted_points[median_index].first, sorted_points[median_index].second);
 
-  std::vector<std::pair<int, Point>> left_points(
+  std::vector<std::pair<int, odb::Point>> left_points(
       sorted_points.begin(), sorted_points.begin() + median_index);
-  std::vector<std::pair<int, Point>> right_points(
+  std::vector<std::pair<int, odb::Point>> right_points(
       sorted_points.begin() + median_index + 1, sorted_points.end());
   const auto next_orient = orient.turn_90();
   node->left = buildTree(left_points, next_orient);
@@ -55,7 +56,8 @@ std::unique_ptr<KDTreeNode> KDTree::buildTree(
   return node;
 }
 
-std::vector<int> KDTree::radiusSearch(const Point& target, int radius) const
+std::vector<int> KDTree::radiusSearch(const odb::Point& target,
+                                      int radius) const
 {
   std::vector<int> result;
   const frSquaredDistance radius_square
@@ -65,9 +67,9 @@ std::vector<int> KDTree::radiusSearch(const Point& target, int radius) const
 }
 
 void KDTree::radiusSearchHelper(KDTreeNode* node,
-                                const Point& target,
+                                const odb::Point& target,
                                 const frSquaredDistance radius_square,
-                                const Orientation2D& orient,
+                                const odb::Orientation2D& orient,
                                 std::vector<int>& result) const
 {
   if (!node) {

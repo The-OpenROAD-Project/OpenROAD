@@ -61,9 +61,6 @@ module top (clk,
     .Q(reg1_q));
  DFF_X1 reg2 (.D(n3),
     .Q(reg2_q));
- XOR2_X1 xor1 (.A(reg1_q),
-    .B(sub1_out1),
-    .Z(n3));
  sub_module1 sub1_inst (.sub1_in1(in1),
     .sub1_in2(in2),
     .sub1_in3(in3),
@@ -71,6 +68,9 @@ module top (clk,
     .sub1_in5(in5),
     .sub1_out1(sub1_out1),
     .sub1_out2(sub1_out2));
+ XOR2_X1 xor1 (.A(reg1_q),
+    .B(sub1_out1),
+    .Z(n3));
  assign out2 = n4;
  assign out3 = n5;
  assign out4 = n5;
@@ -96,15 +96,15 @@ module sub_module1 (sub1_in1,
 
  OAI21_X1 oai_inst (.B1(sub1_in1),
     .ZN(sub1_out1));
- XNOR2_X1 xnor_inst (.A(sub2_out2),
-    .B(sub1_in5),
-    .ZN(sub1_out2));
  sub_module2 sub2_inst (.sub2_in1(sub1_in1),
     .sub2_in2(sub1_in2),
     .sub2_in3(sub1_in3),
     .sub2_in4(sub1_in4),
     .sub2_out1(sub2_out1),
     .sub2_out2(sub2_out2));
+ XNOR2_X1 xnor_inst (.A(sub2_out2),
+    .B(sub1_in5),
+    .ZN(sub1_out2));
 endmodule
 module sub_module2 (sub2_in1,
     sub2_in2,

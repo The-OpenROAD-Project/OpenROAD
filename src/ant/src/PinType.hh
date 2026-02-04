@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include <cstddef>
 #include <string>
+#include <utility>
 
 #include "odb/db.h"
 

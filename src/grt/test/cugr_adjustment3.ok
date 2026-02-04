@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 [WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
-[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
@@ -19,7 +19,7 @@
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
@@ -30,17 +30,17 @@ num of nets :        579
 num of special nets: 0
 gcell grid:          35 x 35 x 10
 stage 1: pattern routing
-369 / 579 nets have overflow.
+334 / 579 nets have overflow.
 stage 2: pattern routing with possible detours
-324 / 579 nets have overflow.
+320 / 579 nets have overflow.
 stage 3: maze routing on sparsified routing graph
-347 / 579 nets have overflow.
+315 / 579 nets have overflow.
 routing statistics
-wire length (metric):  37972
-total via count:       3093
-total wire overflow:   455
-min resource: -3.899999499320984
-bottleneck:   (2, 16, 7)
-[INFO GRT-0018] Total wirelength: 10747 um
+wire length (metric):  38167
+total via count:       4654
+total wire overflow:   457
+min resource: -2.999999761581421
+bottleneck:   (5, 15, 9)
+[INFO GRT-0018] Total wirelength: 10821 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

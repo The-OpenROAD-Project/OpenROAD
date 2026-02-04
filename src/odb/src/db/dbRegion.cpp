@@ -3,6 +3,8 @@
 
 #include "dbRegion.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -19,7 +21,6 @@
 #include "dbRegionGroupItr.h"
 #include "dbRegionInstItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"

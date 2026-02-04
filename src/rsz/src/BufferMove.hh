@@ -2,6 +2,11 @@
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
 #include "BaseMove.hh"
+#include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 
 namespace est {
 class EstimateParasitics;
@@ -9,40 +14,26 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using sta::ArcDelay;
-using sta::Instance;
-using sta::InstancePinIterator;
-using sta::LoadPinIndexMap;
-using sta::Net;
-using sta::NetConnectedPinIterator;
-using sta::Path;
-using sta::PathExpanded;
-using sta::Pin;
-using sta::RiseFallBoth;
-using sta::Slack;
-using sta::Slew;
-using sta::Vertex;
-
 class BufferMove : public BaseMove
 {
  public:
   BufferMove(Resizer* resizer);
 
-  bool doMove(const Path* drvr_path,
+  bool doMove(const sta::Path* drvr_path,
               int drvr_index,
-              Slack drvr_slack,
-              PathExpanded* expanded,
+              sta::Slack drvr_slack,
+              sta::PathExpanded* expanded,
               float setup_slack_margin) override;
 
   const char* name() override { return "BufferMove"; }
 
-  void rebufferNet(const Pin* drvr_pin);
+  void rebufferNet(const sta::Pin* drvr_pin);
 
  private:
-  int rebuffer(const Pin* drvr_pin);
+  int rebuffer(const sta::Pin* drvr_pin);
 
-  void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
-  bool hasTopLevelOutputPort(Net* net);
+  void debugCheckMultipleBuffers(sta::Path* path, sta::PathExpanded* expanded);
+  bool hasTopLevelOutputPort(sta::Net* net);
 };
 
 }  // namespace rsz

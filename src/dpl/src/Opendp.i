@@ -95,9 +95,13 @@ optimize_mirroring_cmd()
 
 void
 set_debug_cmd(float min_displacement,
-              const odb::dbInst* debug_instance)
+              const odb::dbInst* debug_instance,
+              int jump_moves,
+              bool iterative_placement)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setJumpMoves(jump_moves);
+  opendp->setIterativePlacement(iterative_placement);
   if (dpl::Graphics::guiActive()) {
       std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
           opendp, min_displacement, debug_instance);

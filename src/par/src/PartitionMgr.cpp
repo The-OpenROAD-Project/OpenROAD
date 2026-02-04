@@ -803,7 +803,7 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
 
   reinterpret_cast<ConcreteNetwork*>(network)->setTopInstance(top_inst);
 
-  writeVerilog(file_name, true, false, {}, network);
+  writeVerilog(file_name, false, {}, network);
 
   delete network;
 }

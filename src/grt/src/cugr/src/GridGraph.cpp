@@ -21,6 +21,9 @@
 #include "GRTree.h"
 #include "geo.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "robin_hood.h"
 #include "utl/Logger.h"
 
@@ -365,71 +368,110 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
   return cost;
 }
 
-void GridGraph::translateAccessPointsToGrid(
-    odb::dbAccessPoint* ap,
-    int x,
-    int y,
-    AccessPointSet& selected_access_points) const
+std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
+    const std::vector<odb::dbAccessPoint*>& aps,
+    const odb::Point& inst_location) const
 {
   const int amount_per_x = design_->getDieRegion().hx() / x_size_;
   const int amount_per_y = design_->getDieRegion().hy() / y_size_;
-  auto point = ap->getPoint();
-  auto layer = ap->getLayer();
-  const int ap_x = ((point.getX() + x) / amount_per_x >= x_size_)
-                       ? x_size_ - 1
-                       : (point.getX() + x) / amount_per_x;
-  const int ap_y = ((point.getY() + y) / amount_per_y >= y_size_)
-                       ? y_size_ - 1
-                       : (point.getY() + y) / amount_per_y;
-  const PointT selected_point = PointT(ap_x, ap_y);
-  const int num_layer = ((layer->getNumber() - 2) > (getNumLayers() - 1))
-                            ? getNumLayers() - 1
-                            : layer->getNumber() - 2;
-  const IntervalT selected_layer = IntervalT(num_layer);
-  const AccessPoint ap_new{.point = selected_point, .layers = selected_layer};
-  selected_access_points.emplace(ap_new);
+  std::vector<AccessPoint> aps_on_grid;
+  for (const auto& ap : aps) {
+    odb::Point ap_position = ap->getPoint();
+    odb::dbTechLayer* layer = ap->getLayer();
+
+    // Transform AP position according to instance location and orientation.
+    odb::dbTransform xform;
+    xform.setOffset({inst_location.getX(), inst_location.getY()});
+    xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+    xform.apply(ap_position);
+
+    const int ap_x = (ap_position.getX() / amount_per_x >= x_size_)
+                         ? x_size_ - 1
+                         : ap_position.getX() / amount_per_x;
+    const int ap_y = ((ap_position.getY() / amount_per_y >= y_size_)
+                          ? y_size_ - 1
+                          : ap_position.getY() / amount_per_y);
+    const PointT selected_point = PointT(ap_x, ap_y);
+    const int num_layer = ((layer->getNumber() - 2) > (getNumLayers() - 1))
+                              ? getNumLayers() - 1
+                              : layer->getNumber() - 2;
+    const IntervalT selected_layer = IntervalT(num_layer);
+    aps_on_grid.emplace_back(selected_point, selected_layer);
+  }
+
+  return aps_on_grid;
+}
+
+AccessPoint GridGraph::selectAccessPoint(
+    const std::vector<AccessPoint>& access_points) const
+{
+  AccessPoint best_ap;
+  int votes = -1;
+
+  for (const AccessPoint& ap : access_points) {
+    int equals = std::count(access_points.begin(), access_points.end(), ap);
+    if (equals > votes) {
+      votes = equals;
+      best_ap = ap;
+    }
+  }
+  return best_ap;
 }
 
 bool GridGraph::findODBAccessPoints(
-    const GRNet* net,
+    GRNet* net,
     AccessPointSet& selected_access_points) const
 {
+  bool has_aps = false;
   std::vector<odb::dbAccessPoint*> access_points;
   odb::dbNet* db_net = net->getDbNet();
-  if (db_net->getBTermCount() != 0) {
-    for (odb::dbBTerm* bterms : db_net->getBTerms()) {
-      for (const odb::dbBPin* bpin : bterms->getBPins()) {
-        const std::vector<odb::dbAccessPoint*>& bpin_pas
-            = bpin->getAccessPoints();
-        // Iterates per each AP and converts to CUGR structures
-        access_points.insert(
-            access_points.begin(), bpin_pas.begin(), bpin_pas.end());
-        for (auto ap : bpin_pas) {
-          translateAccessPointsToGrid(ap, 0, 0, selected_access_points);
-        }
-      }
+
+  for (odb::dbBTerm* bterm : db_net->getBTerms()) {
+    for (const odb::dbBPin* bpin : bterm->getBPins()) {
+      const std::vector<odb::dbAccessPoint*>& bpin_pas
+          = bpin->getAccessPoints();
+      access_points.insert(
+          access_points.begin(), bpin_pas.begin(), bpin_pas.end());
     }
-  } else {
-    for (auto iterms : db_net->getITerms()) {
-      auto pref_access_points = iterms->getPrefAccessPoints();
-      if (!pref_access_points.empty()) {
-        access_points.insert(access_points.end(),
-                             pref_access_points.begin(),
-                             pref_access_points.end());
-        // Iterates in ITerm prefered APs and convert to CUGR strucutres
-        for (auto ap : pref_access_points) {
-          int x, y;
-          iterms->getInst()->getLocation(x, y);
-          translateAccessPointsToGrid(ap, x, y, selected_access_points);
-        }
-      }
-      // Currently ignoring non preferred APs
+    std::vector<AccessPoint> aps_on_grid
+        = translateAccessPointsToGrid(access_points, odb::Point(0, 0));
+    if (!aps_on_grid.empty()) {
+      AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
+      selected_access_points.emplace(selected_ap);
+      net->addBTermAccessPoint(bterm, selected_ap);
+      access_points.clear();
+      has_aps = true;
     }
   }
-  if (access_points.empty()) {
-    return false;
+
+  for (auto iterm : db_net->getITerms()) {
+    const auto& pref_access_points = iterm->getPrefAccessPoints();
+    if (!pref_access_points.empty()) {
+      access_points.insert(access_points.end(),
+                           pref_access_points.begin(),
+                           pref_access_points.end());
+    } else if (!iterm->getInst()->isCore()) {
+      // For non-core cells, DRT does not assign preferred APs.
+      // Use all APs to ensure the guides covering at least one AP.
+      for (const auto& [pin, aps] : iterm->getAccessPoints()) {
+        access_points.insert(access_points.end(), aps.begin(), aps.end());
+      }
+    }
+
+    int x, y;
+    iterm->getInst()->getLocation(x, y);
+    std::vector<AccessPoint> aps_on_grid
+        = translateAccessPointsToGrid(access_points, odb::Point(x, y));
+    AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
+    if (!aps_on_grid.empty()) {
+      selected_access_points.emplace(selected_ap);
+      net->addITermAccessPoint(iterm, selected_ap);
+      access_points.clear();
+      has_aps = true;
+    }
   }
-  return true;
+
+  return has_aps;
 }
 
 AccessPointSet GridGraph::selectAccessPoints(GRNet* net) const

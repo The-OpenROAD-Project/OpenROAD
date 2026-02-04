@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "bmapParser.h"
+#include "bmapWriter.h"
 #include "checker.h"
 #include "dbvParser.h"
 #include "dbvWriter.h"
@@ -50,6 +51,8 @@ ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
 
 void ThreeDBlox::readDbv(const std::string& dbv_file)
 {
+  std::string full_path = std::filesystem::absolute(dbv_file).string();
+  read_files_.insert(full_path);
   DbvParser parser(logger_);
   DbvData data = parser.parseFile(dbv_file);
   if (db_->getDbuPerMicron() == 0) {
@@ -78,6 +81,8 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
 
 void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
+  std::string full_path = std::filesystem::absolute(dbx_file).string();
+  read_files_.insert(full_path);
   DbxParser parser(logger_);
   DbxData data = parser.parseFile(dbx_file);
   readHeaderIncludes(data.header.includes);
@@ -121,6 +126,16 @@ std::unordered_set<odb::dbLib*> getUsedLibs(odb::dbChip* chip)
   }
   return libs;
 }
+std::unordered_set<odb::dbChipRegion*> getChipletRegions(odb::dbChip* chip)
+{
+  std::unordered_set<odb::dbChipRegion*> regions;
+  for (const auto chipinst : chip->getChipInsts()) {
+    for (const auto region : chipinst->getMasterChip()->getChipRegions()) {
+      regions.insert(region);
+    }
+  }
+  return regions;
+}
 std::string getResultsDirectoryPath(const std::string& file_path)
 {
   std::string current_dir_path;
@@ -149,7 +164,7 @@ void ThreeDBlox::writeDbv(const std::string& dbv_file, odb::dbChip* chip)
   }
   // write used techs
   for (auto tech : getUsedTechs(chip)) {
-    if (written_techs_.find(tech) != written_techs_.end()) {
+    if (written_techs_.contains(tech)) {
       continue;
     }
     written_techs_.insert(tech);
@@ -160,7 +175,7 @@ void ThreeDBlox::writeDbv(const std::string& dbv_file, odb::dbChip* chip)
   }
   // write used libs
   for (auto lib : getUsedLibs(chip)) {
-    if (written_libs_.find(lib) != written_libs_.end()) {
+    if (written_libs_.contains(lib)) {
       continue;
     }
     written_libs_.insert(lib);
@@ -168,6 +183,13 @@ void ThreeDBlox::writeDbv(const std::string& dbv_file, odb::dbChip* chip)
     utl::OutStreamHandler stream_handler(lib_file_path.c_str());
     odb::lefout lef_writer(logger_, stream_handler.getStream());
     lef_writer.writeLib(lib);
+  }
+  // write bmaps
+  for (auto region : getChipletRegions(chip)) {
+    std::string bmap_file_path = current_dir_path
+                                 + std::string(region->getChip()->getName())
+                                 + "_" + region->getName() + ".bmap";
+    writeBMap(bmap_file_path, region);
   }
 
   DbvWriter writer(logger_, db_);
@@ -189,6 +211,13 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
   writer.writeChiplet(dbx_file, chip);
 }
 
+void ThreeDBlox::writeBMap(const std::string& bmap_file,
+                           odb::dbChipRegion* region)
+{
+  BmapWriter writer(logger_);
+  writer.writeFile(bmap_file, region);
+}
+
 void ThreeDBlox::calculateSize(dbChip* chip)
 {
   Cuboid cuboid;
@@ -204,6 +233,19 @@ void ThreeDBlox::calculateSize(dbChip* chip)
 void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
 {
   for (const auto& include : includes) {
+    // Resolve full path to check against read_files_
+    // Note: This logic assumes 'include' is relative to CWD or is absolute.
+    // If recursively parsed files have includes relative to themselves,
+    // the parser (DbxParser) handles finding them, but we might check the wrong
+    // string here if we don't know the base path.
+    // However, since we don't have base path info readily available without API
+    // change, we use absolute() as a best-effort de-duplication key.
+    std::string full_path = std::filesystem::absolute(include).string();
+    if (read_files_.contains(full_path)) {
+      continue;
+    }
+    read_files_.insert(full_path);
+
     if (include.find(".3dbv") != std::string::npos) {
       readDbv(include);
     } else if (include.find(".3dbx") != std::string::npos) {
@@ -212,7 +254,8 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
   }
 }
 
-dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
+static dbChip::ChipType getChipType(const std::string& type,
+                                    utl::Logger* logger)
 {
   if (type == "die") {
     return dbChip::ChipType::DIE;
@@ -233,7 +276,7 @@ dbChip::ChipType getChipType(const std::string& type, utl::Logger* logger)
       utl::ODB, 527, "3DBV Parser Error: Invalid chip type: {}", type);
 }
 
-std::string getFileName(const std::string& tech_file_path)
+static std::string getFileName(const std::string& tech_file_path)
 {
   std::filesystem::path tech_file_path_fs(tech_file_path);
   return tech_file_path_fs.stem().string();
@@ -291,6 +334,12 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   } else {
     chip = dbChip::create(
         db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
+  }
+  if (!chiplet.external.verilog_file.empty()) {
+    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
+      odb::dbStringProperty::create(
+          chip, "verilog_file", chiplet.external.verilog_file.c_str());
+    }
   }
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
@@ -351,8 +400,8 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   }
 }
 
-dbChipRegion::Side getChipRegionSide(const std::string& side,
-                                     utl::Logger* logger)
+static dbChipRegion::Side getChipRegionSide(const std::string& side,
+                                            utl::Logger* logger)
 {
   if (side == "front") {
     return dbChipRegion::Side::FRONT;
@@ -373,7 +422,10 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
 {
   dbTechLayer* layer = nullptr;
   if (!region.layer.empty()) {
-    // TODO: add layer
+    dbTech* tech = chip->getTech();
+    if (tech) {
+      layer = tech->findLayer(region.layer.c_str());
+    }
   }
   dbChipRegion* chip_region = dbChipRegion::create(
       chip, region.name, getChipRegionSide(region.side, logger_), layer);
@@ -410,7 +462,8 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
                      "3DBV Parser Error: Bump cell type {} not found",
                      entry.bump_cell_type);
     }
-    if (master->getLib()->getTech() != chip->getTech()) {
+    dbTech* master_tech = master->getLib()->getTech();
+    if (master_tech != chip->getTech()) {
       logger_->error(utl::ODB,
                      532,
                      "3DBV Parser Error: Bump cell type {} is not in the same "
@@ -422,36 +475,61 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
   auto bump = dbChipBump::create(chip_region, inst);
+
   Rect bbox;
   inst->getMaster()->getPlacementBoundary(bbox);
   int x = (entry.x * db_->getDbuPerMicron()) - bbox.xCenter()
           + chip->getOffset().x();
   int y = (entry.y * db_->getDbuPerMicron()) - bbox.yCenter()
           + chip->getOffset().y();
+
   inst->setOrigin(x, y);
   inst->setPlacementStatus(dbPlacementStatus::FIRM);
+
+  dbNet* net = nullptr;
   if (entry.net_name != "-") {
-    auto net = block->findNet(entry.net_name.c_str());
+    net = block->findNet(entry.net_name.c_str());
     if (net == nullptr) {
-      logger_->error(utl::ODB,
-                     534,
-                     "3DBV Parser Error: Bump net {} not found",
-                     entry.net_name);
+      net = dbNet::create(block, entry.net_name.c_str());
+      debugPrint(logger_,
+                 utl::ODB,
+                 "3dblox",
+                 1,
+                 "Creating missing net {} for bump {}",
+                 entry.net_name,
+                 entry.bump_inst_name);
     }
     bump->setNet(net);
-    inst->getITerms().begin()->connect(net);
+    if (!inst->getITerms().empty()) {
+      inst->getITerms().begin()->connect(net);
+    }
   }
   if (entry.port_name != "-") {
     auto bterm = block->findBTerm(entry.port_name.c_str());
     if (bterm == nullptr) {
-      logger_->error(utl::ODB,
-                     533,
-                     "3DBV Parser Error: Bump port {} not found",
-                     entry.port_name);
+      if (net != nullptr) {
+        bterm = dbBTerm::create(net, entry.port_name.c_str());
+        debugPrint(logger_,
+                   utl::ODB,
+                   "3dblox",
+                   1,
+                   "Creating missing port {} for bump {}",
+                   entry.port_name,
+                   entry.bump_inst_name);
+      } else {
+        logger_->warn(utl::ODB,
+                      545,
+                      "Cannot create missing port {} for bump {} because no "
+                      "net is specified.",
+                      entry.port_name,
+                      entry.bump_inst_name);
+      }
     }
-    bump->setBTerm(bterm);
-    if (bump->getNet()) {
-      bterm->connect(bump->getNet());
+    if (bterm != nullptr) {
+      bump->setBTerm(bterm);
+      if (bump->getNet()) {
+        bterm->connect(bump->getNet());
+      }
     }
   }
 }
@@ -460,6 +538,12 @@ dbChip* ThreeDBlox::createDesignTopChiplet(const DesignDef& design)
 {
   dbChip* chip
       = dbChip::create(db_, nullptr, design.name, dbChip::ChipType::HIER);
+  if (!design.external.verilog_file.empty()) {
+    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
+      odb::dbStringProperty::create(
+          chip, "verilog_file", design.external.verilog_file.c_str());
+    }
+  }
   db_->setTopChip(chip);
   return chip;
 }
@@ -477,7 +561,7 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
   }
   dbChipInst* inst = dbChipInst::create(db_->getChip(), chip, chip_inst.name);
   auto orient_str = chip_inst.orient;
-  if (dup_orient_map.find(orient_str) != dup_orient_map.end()) {
+  if (dup_orient_map.contains(orient_str)) {
     orient_str = dup_orient_map[orient_str];
   }
   auto orient = dbOrientType3D::fromString(orient_str);
@@ -489,11 +573,13 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
                    chip_inst.name);
   }
   inst->setOrient(orient.value());
-  inst->setLoc(Point3D(chip_inst.loc.x * db_->getDbuPerMicron(),
-                       chip_inst.loc.y * db_->getDbuPerMicron(),
-                       chip_inst.z * db_->getDbuPerMicron()));
+  inst->setLoc(Point3D{
+      static_cast<int>(chip_inst.loc.x * db_->getDbuPerMicron()),
+      static_cast<int>(chip_inst.loc.y * db_->getDbuPerMicron()),
+      static_cast<int>(chip_inst.z * db_->getDbuPerMicron()),
+  });
 }
-std::vector<std::string> splitPath(const std::string& path)
+static std::vector<std::string> splitPath(const std::string& path)
 {
   std::vector<std::string> parts;
   std::istringstream stream(path);
@@ -535,10 +621,11 @@ dbChipRegionInst* ThreeDBlox::resolvePath(const std::string& path,
   // Replace the last part with just the chip instance name
   path_parts.back() = last_chip_inst;
 
-  // TODO: Traverse hierarchy and find region
+  // Traverse hierarchy and find region
   path_insts.reserve(path_parts.size());
   dbChip* curr_chip = db_->getChip();
   dbChipInst* curr_chip_inst = nullptr;
+
   for (const auto& inst_name : path_parts) {
     curr_chip_inst = curr_chip->findChipInst(inst_name);
     if (curr_chip_inst == nullptr) {
@@ -600,7 +687,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
   std::map<odb::dbMaster*, BPinInfo> bpininfo;
   for (const auto& [inst, bterm] : bumps) {
     dbMaster* master = inst->getMaster();
-    if (bpininfo.find(master) != bpininfo.end()) {
+    if (bpininfo.contains(master)) {
       continue;
     }
 
@@ -643,7 +730,8 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
         top_shape_ptr = &(*top_shapes.begin());
       }
 
-      bpininfo.emplace(master, BPinInfo{max_layer, *top_shape_ptr});
+      bpininfo.emplace(master,
+                       BPinInfo{.layer = max_layer, .rect = *top_shape_ptr});
     }
   }
 

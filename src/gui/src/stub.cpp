@@ -98,6 +98,15 @@ SpectrumGenerator::SpectrumGenerator(double scale) : scale_(scale)
 {
 }
 
+void DiscreteLegend::addLegendKey(const Painter::Color& color,
+                                  const std::string& text)
+{
+}
+
+void DiscreteLegend::draw(Painter& painter) const
+{
+}
+
 bool Renderer::checkDisplayControl(const std::string& /* name */)
 {
   return false;

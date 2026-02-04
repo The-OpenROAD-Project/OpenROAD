@@ -54,27 +54,35 @@ using sta::Slew;
 using sta::Vertex;
 using sta::VertexOutEdgeIterator;
 
+/// SplitLoadMove: Optimize timing by splitting high-fanout nets
+///
+/// Purpose: Reduce capacitive load on critical path by dividing loads into
+///          two groups based on timing slack.
+///
+/// @param drvr_path Path including the driver pin
+/// @param drvr_index Index of the driver pin in the path
+/// @param drvr_slack Slack at the driver pin
+/// @param expanded Expanded path containing detailed timing information
+/// @param setup_slack_margin Target slack margin for setup timing optimization.
+///                           Paths with slack less than this margin are
+///                           considered violating even if it is positive.
+///
+/// Algorithm:
+///   1. Sort all fanout loads by slack margin (timing slack relative to
+///      driver)
+///   2. Upper 50% (loads with MORE timing slack)  -> driven by new buffer
+///   3. Lower 50% (loads on CRITICAL path)        -> driven by original driver
+///
+/// Result: Critical loads see reduced capacitance, improving setup timing.
+///
+/// Precondition: Fanout count must exceed split_load_min_fanout_
+///
 bool SplitLoadMove::doMove(const Path* drvr_path,
                            int drvr_index,
                            Slack drvr_slack,
                            PathExpanded* expanded,
                            float setup_slack_margin)
 {
-  // SplitLoadMove: Optimize timing by splitting high-fanout nets
-  //
-  // Purpose: Reduce capacitive load on critical path by dividing loads into
-  //          two groups based on timing slack.
-  //
-  // Algorithm:
-  //   1. Sort all fanout loads by slack margin (timing slack relative to
-  //   driver)
-  //   2. Upper 50% (loads with MORE timing slack)  → driven by new buffer
-  //   3. Lower 50% (loads on CRITICAL path)        → driven by original driver
-  //
-  // Result: Critical loads see reduced capacitance, improving setup timing.
-  //
-  // Precondition: Fanout count must exceed split_load_min_fanout_
-  //
   Pin* drvr_pin = drvr_path->pin(this);
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Path* load_path = expanded->path(drvr_index + 1);
@@ -148,7 +156,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   const Point drvr_loc = db_network_->location(drvr_pin);
 
   // Identify loads to split (top 50% with most slack)
-  PinSet load_pins(network_);
+  sta::PinSet load_pins(network_);
   const int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
     Vertex* load_vertex = fanout_slacks[i].first;

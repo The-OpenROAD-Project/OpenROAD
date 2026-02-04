@@ -8,6 +8,8 @@
 #include "aig/aig/aig.h"
 #include "aig/gia/gia.h"
 #include "base/abc/abc.h"
+#include "db_sta/dbSta.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "utl/deleter.h"

@@ -11,6 +11,8 @@
 #include "gia.h"
 #include "slack_tuning_strategy.h"
 #include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "utl/Logger.h"
 #include "utl/unique_name.h"
 
 namespace rmp {

@@ -20,19 +20,14 @@
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "utl/Logger.h"
 // NOLINTNEXTLINE
 #include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
-namespace utl {
-class Logger;
-}
-
 namespace dpl {
-
-using utl::Logger;
 
 class Node;
 class Group;
@@ -84,7 +79,7 @@ struct IRDrop;
 class Opendp
 {
  public:
-  Opendp(odb::dbDatabase* db, Logger* logger);
+  Opendp(odb::dbDatabase* db, utl::Logger* logger);
   ~Opendp();
 
   Opendp(const Opendp&) = delete;
@@ -104,6 +99,8 @@ class Opendp
   void setPadding(odb::dbMaster* master, int left, int right);
   void setPadding(odb::dbInst* inst, int left, int right);
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
+  void setJumpMoves(int jump_moves);
+  void setIterativePlacement(bool iterative);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -136,6 +133,9 @@ class Opendp
   // Journalling
   Journal* getJournal() const;
   void setJournal(Journal* journal);
+
+  odb::Point getOdbLocation(const Node* cell) const;
+  odb::Point getDplLocation(const Node* cell) const;
 
  private:
   using bgPoint
@@ -198,6 +198,7 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
+  bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
   bool shiftMove(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);
@@ -310,7 +311,7 @@ class Opendp
   void unplaceCell(Node* cell);
   void setGridLoc(Node* cell, GridX x, GridY y);
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   odb::Rect core_;
@@ -350,6 +351,8 @@ class Opendp
 
   std::unique_ptr<DplObserver> debug_observer_;
   std::unique_ptr<Node> dummy_cell_;
+  int jump_moves_ = 0;
+  bool iterative_placement_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

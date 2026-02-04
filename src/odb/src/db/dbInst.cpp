@@ -35,7 +35,6 @@
 #include "dbRegion.h"
 #include "dbScanInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"

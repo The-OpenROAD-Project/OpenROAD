@@ -123,13 +123,13 @@ enum dbObjectType
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerSpacingTablePrlRuleObj,
   dbTechLayerTwoWiresForbiddenSpcRuleObj,
+  dbTechLayerVoltageSpacingObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
   // Generator Code End DbObjectType
 
   // Lib Objects
   dbLibObj,
-  dbGDSLibObj,
   dbSiteObj,
   dbMasterObj,
   dbMPinObj,

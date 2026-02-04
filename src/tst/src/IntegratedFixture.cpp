@@ -72,7 +72,8 @@ IntegratedFixture::IntegratedFixture(Technology tech,
   db_network_->setHierarchy();
 }
 
-void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
+void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file,
+                                            bool init_default_sdc)
 {
   ord::dbVerilogNetwork verilog_network(sta_.get());
   sta::VerilogReader verilog_reader(&verilog_network);
@@ -89,6 +90,13 @@ void IntegratedFixture::readVerilogAndSetup(const std::string& verilog_file)
   block_->setDieArea(odb::Rect(0, 0, 1000, 1000));
   sta_->postReadDef(block_);
 
+  if (init_default_sdc) {
+    initStaDefaultSdc();
+  }
+}
+
+void IntegratedFixture::initStaDefaultSdc()
+{
   // Timing setup
   sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
   ASSERT_NE(top_cell, nullptr);
@@ -169,7 +177,7 @@ void IntegratedFixture::dumpVerilogAndOdb(const std::string& name) const
 {
   // Write verilog
   std::string vlog_file = name + ".v";
-  sta::writeVerilog(vlog_file.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(vlog_file.c_str(), false, {}, sta_->network());
 
   // Dump ODB content
   std::ofstream orig_odb_file(name + "_odb.txt");
@@ -190,7 +198,7 @@ void IntegratedFixture::writeAndCompareVerilogOutputString(
     bool remove_file)
 {
   const std::string verilog_file = test_name + "_post.v";
-  sta::writeVerilog(verilog_file.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(verilog_file.c_str(), false, {}, sta_->network());
 
   std::ifstream file(verilog_file);
   std::string content((std::istreambuf_iterator<char>(file)),
@@ -211,7 +219,7 @@ void IntegratedFixture::writeAndCompareVerilogOutputFile(
   const std::string golden_file
       = getFilePath(test_root_path_ + "cpp/" + golden_verilog_file);
   const std::string verilog_file = test_name + "_out.v";
-  sta::writeVerilog(verilog_file.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(verilog_file.c_str(), false, {}, sta_->network());
 
   // Read new verilog content
   std::ifstream if_out(verilog_file);

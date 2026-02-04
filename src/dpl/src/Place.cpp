@@ -31,7 +31,9 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "optimization/detailed_orient.h"
 #include "util/journal.h"
+#include "util/symmetry.h"
 #include "utl/Logger.h"
 // #define ODP_DEBUG
 
@@ -55,6 +57,7 @@ std::string Opendp::printBgBox(
                      queryBox.max_corner().x(),
                      queryBox.max_corner().y());
 }
+
 void Opendp::detailedPlacement()
 {
   if (debug_observer_) {
@@ -301,6 +304,27 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 
 void Opendp::place()
 {
+  int move_count = 0;
+  auto report_placement = [this, &move_count](
+                              Node* cell, bool mapped, bool shifted) {
+    if (jump_moves_ > 0 && (move_count++ % jump_moves_ != 0)) {
+      return;
+    }
+    if (debug_observer_) {
+      const char* type = isMultiRow(cell) ? "multi-row" : "single-row";
+      if (mapped) {
+        logger_->report("Successful mapMove(), {} cell {}", type, cell->name());
+      } else if (shifted) {
+        logger_->report(
+            "Successful shiftMove(), {} cell {}", type, cell->name());
+      } else {
+        logger_->report(
+            "Unsuccessful placement, {} cell {}", type, cell->name());
+      }
+      debug_observer_->redrawAndPause();
+    }
+  };
+
   vector<Node*> sorted_cells;
   sorted_cells.reserve(network_->getNumCells());
 
@@ -330,16 +354,40 @@ void Opendp::place()
                    1,
                    "Placing multi-row cell {}",
                    cell->name());
-        if (!mapMove(cell)) {
-          shiftMove(cell);
+        bool mapped = mapMove(cell);
+        bool shifted = false;
+        if (!mapped) {
+          shifted = shiftMove(cell);
+        }
+
+        if (iterative_placement_) {
+          odb::Point initial_location = getOdbLocation(cell);
+          odb::Point final_location = getDplLocation(cell);
+          float len
+              = odb::Point::squaredDistance(initial_location, final_location);
+          if (len > 0) {
+            report_placement(cell, mapped, shifted);
+          }
         }
       }
     }
   }
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
-      if (!mapMove(cell)) {
-        shiftMove(cell);
+      bool mapped = mapMove(cell);
+      bool shifted = false;
+      if (!mapped) {
+        shifted = shiftMove(cell);
+      }
+
+      if (iterative_placement_) {
+        odb::Point initial_location = getOdbLocation(cell);
+        odb::Point final_location = getDplLocation(cell);
+        float len
+            = odb::Point::squaredDistance(initial_location, final_location);
+        if (len > 0) {
+          report_placement(cell, mapped, shifted);
+        }
       }
     }
   }
@@ -915,40 +963,90 @@ bool Opendp::checkPixels(const Node* cell,
         return false;
       }
     }
-    if (disallow_one_site_gaps_) {
-      // here we need to check for abutting first, if there is an abutting
-      // cell then we continue as there is nothing wrong with it if there is
-      // no abutting cell, we will then check cells at 1+ distances we only
-      // need to check on the left and right sides
-      const GridX x_begin = max(GridX{0}, x - 1);
-      const GridY y_begin = max(GridY{0}, y - 1);
-      // inclusive search, so we don't add 1 to the end
-      const GridX x_finish = min(x_end, grid_->getRowSiteCount() - 1);
-      const GridY y_finish = min(y_end, grid_->getRowCount() - 1);
+  }
 
-      auto isAbutted = [this](const GridX x, const GridY y) {
-        const Pixel* pixel = grid_->gridPixel(x, y);
-        return (pixel == nullptr || pixel->cell);
-      };
+  if (disallow_one_site_gaps_) {
+    // here we need to check for abutting first, if there is an abutting
+    // cell then we continue as there is nothing wrong with it if there is
+    // no abutting cell, we will then check cells at 1+ distances we only
+    // need to check on the left and right sides
+    const GridX x_begin = max(GridX{0}, x - 1);
+    const GridY y_begin = max(GridY{0}, y);
+    // inclusive search, so we don't add 1 to the end
+    const GridX x_finish = min(x_end, grid_->getRowSiteCount() - 1);
+    const GridY y_finish = min(y_end, grid_->getRowCount() - 1);
 
-      auto cellAtSite = [this](const GridX x, const GridY y) {
-        const Pixel* pixel = grid_->gridPixel(x, y);
-        return (pixel != nullptr && pixel->cell);
-      };
-      for (GridY y = y_begin; y <= y_finish; ++y) {
-        // left side
-        if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
-          return false;
-        }
-        // right side
-        if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
-          return false;
-        }
+    auto isAbutted = [this](const GridX x, const GridY y) {
+      const Pixel* pixel = grid_->gridPixel(x, y);
+      return (pixel == nullptr || pixel->cell);
+    };
+
+    auto cellAtSite = [this](const GridX x, const GridY y) {
+      const Pixel* pixel = grid_->gridPixel(x, y);
+      return (pixel != nullptr && pixel->cell);
+    };
+    for (GridY y = y_begin; y < y_finish; ++y) {
+      // left side
+      if (!isAbutted(x_begin, y) && cellAtSite(x_begin - 1, y)) {
+        debugPrint(logger_,
+                   DPL,
+                   "one_site_gap",
+                   1,
+                   "One site gap left of {}  at ({}, {})",
+                   cell->name(),
+                   x,
+                   y);
+        return false;
+      }
+      // right side
+      if (!isAbutted(x_finish, y) && cellAtSite(x_finish + 1, y)) {
+        debugPrint(logger_,
+                   DPL,
+                   "one_site_gap",
+                   1,
+                   "One site gap right of {} at ({}, {})",
+                   cell->name(),
+                   x,
+                   y);
+        return false;
       }
     }
   }
+
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
+
+  // Check for symmetry
+  auto* dbMaster = cell->getDbInst()->getMaster();
+  unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
+  if (!checkMasterSym(masterSym, orient)) {
+    return false;
+  }
+
   return drc_engine_->checkDRC(cell, x, y, orient);
+}
+
+bool Opendp::checkMasterSym(unsigned masterSym, unsigned cellOri) const
+{
+  using odb::dbOrientType;
+  switch (cellOri) {
+    case dbOrientType::R0:
+      return true;
+    case dbOrientType::MX:
+      return (masterSym & Symmetry_X) != 0;
+    case dbOrientType::MY:
+      return (masterSym & Symmetry_Y) != 0;
+    case dbOrientType::R180:
+      return (masterSym & Symmetry_X) && (masterSym & Symmetry_Y);
+    case dbOrientType::R90:
+    case dbOrientType::R270:
+      return (masterSym & Symmetry_ROT90) != 0;
+    case dbOrientType::MXR90:
+    case dbOrientType::MYR90:
+      return (masterSym & Symmetry_ROT90) && (masterSym & Symmetry_X)
+             && (masterSym & Symmetry_Y);
+    default:
+      return false;
+  }
 }
 
 ////////////////////////////////////////////////////////////////
