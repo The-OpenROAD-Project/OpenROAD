@@ -1,5 +1,5 @@
-[INFO ODB-0227] LEF file: ihp-sg13g2_data/sg13g2_tech.lef, created 19 layers, 300 vias
-[INFO ODB-0227] LEF file: ihp-sg13g2_data/sg13g2_stdcell.lef, created 78 library cells
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_stdcell.lef, created 78 library cells
 [INFO ODB-0128] Design: multi_sink
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 300 components and 2100 component-terminals.
