@@ -58,12 +58,14 @@ class RepairDesign : dbStaState
                     double slew_margin,
                     double cap_margin,
                     double buffer_gain,
-                    bool verbose);
+                    bool verbose,
+                    bool uvdrc);
   void repairDesign(double max_wire_length,  // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
                     bool initial_sizing,
                     bool verbose,
+                    bool uvdrc,
                     int& repaired_net_count,
                     int& slew_violations,
                     int& cap_violations,
@@ -263,6 +265,7 @@ class RepairDesign : dbStaState
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
+  bool uvdrc_ = false;
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
 

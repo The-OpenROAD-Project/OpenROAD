@@ -313,7 +313,8 @@ repair_design_cmd(double max_length,
                   double cap_margin,
                   bool pre_placement,
                   bool match_cell_footprint,
-                  bool verbose)
+                  bool verbose,
+                  bool uvdrc)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -322,7 +323,8 @@ repair_design_cmd(double max_length,
                         cap_margin,
                         pre_placement,
                         match_cell_footprint,
-                        verbose);
+                        verbose,
+                        uvdrc);
 }
 
 int

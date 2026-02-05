@@ -2557,6 +2557,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                0.0,
                                0.0,
                                false,
+                               false,
                                repaired_net_count,
                                slew_violations,
                                cap_violations,
@@ -4148,7 +4149,8 @@ void Resizer::repairDesign(double max_wire_length,
                            double cap_margin,
                            double buffer_gain,
                            bool match_cell_footprint,
-                           bool verbose)
+                           bool verbose,
+                           bool uvdrc)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -4160,7 +4162,7 @@ void Resizer::repairDesign(double max_wire_length,
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
-      max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
+      max_wire_length, slew_margin, cap_margin, buffer_gain, verbose, uvdrc);
 }
 
 int Resizer::repairDesignBufferCount() const

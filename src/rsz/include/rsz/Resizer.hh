@@ -441,7 +441,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
       bool match_cell_footprint,
-      bool verbose);
+      bool verbose,
+      bool uvdrc);
   int repairDesignBufferCount() const;
   // for debugging
   void repairNet(Net* net,

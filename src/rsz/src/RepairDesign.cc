@@ -18,6 +18,7 @@
 
 #include "BufferedNet.hh"
 #include "ResizerObserver.hh"
+#include "UvDRC/UvDRC.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -51,7 +52,6 @@
 #include "utl/Logger.h"
 #include "utl/mem_stats.h"
 #include "utl/scope.h"
-#include "UvDRC/UvDRC.hh"
 
 namespace rsz {
 
@@ -150,7 +150,8 @@ void RepairDesign::repairDesign(double max_wire_length,
                                 double slew_margin,
                                 double cap_margin,
                                 double buffer_gain,
-                                bool verbose)
+                                bool verbose,
+                                bool uvdrc)
 {
   init();
 
@@ -161,6 +162,7 @@ void RepairDesign::repairDesign(double max_wire_length,
                cap_margin,
                buffer_gain,
                verbose,
+               uvdrc,
                repaired_net_count,
                slew_violations,
                cap_violations,
@@ -294,6 +296,7 @@ void RepairDesign::repairDesign(
     double cap_margin,
     bool initial_sizing,
     bool verbose,
+    bool uvdrc,
     int& repaired_net_count,
     int& slew_violations,
     int& cap_violations,
@@ -312,6 +315,7 @@ void RepairDesign::repairDesign(
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
+  uvdrc_ = uvdrc;
 
   sta_->checkSlewLimitPreamble();
   sta_->checkCapacitanceLimitPreamble();
@@ -1179,7 +1183,6 @@ void RepairDesign::repairNet(Net* net,
 
     // For tristate nets all we can do is resize the driver.
     if (!resizer_->isTristateDriver(drvr_pin)) {
-      resizer_->uv_drc_slew_buffer_->Run(drvr_pin, corner, max_cap);
       BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner);
 
       if (!bnet) {
@@ -1196,7 +1199,12 @@ void RepairDesign::repairNet(Net* net,
         // Insert buffers on the Steiner tree if need be
         if (repair_cap || repair_load_slew || repair_wire) {
           repaired_net = true;
-          repairNet(bnet, drvr_pin, max_cap, max_length, corner);
+          if (uvdrc_) {
+            inserted_buffer_count_ += resizer_->uv_drc_slew_buffer_->Run(
+                drvr_pin, corner, max_cap);
+          } else {
+            repairNet(bnet, drvr_pin, max_cap, max_length, corner);
+          }
         }
       }
     }

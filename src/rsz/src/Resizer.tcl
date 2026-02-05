@@ -148,12 +148,13 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-buffer_gain gain] \
                                       [-pre_placement] \
                                       [-match_cell_footprint] \
-                                      [-verbose]}
+                                      [-verbose]
+                                      [-uvdrc]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-match_cell_footprint -verbose -pre_placement}
+    flags {-match_cell_footprint -verbose -pre_placement -uvdrc}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -171,8 +172,9 @@ proc repair_design { args } {
   set max_wire_length [rsz::check_max_wire_length $max_wire_length false]
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
+  set uvdrc [info exists flags(-uvdrc)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
-    $pre_placement $match_cell_footprint $verbose
+    $pre_placement $match_cell_footprint $verbose $uvdrc
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}

@@ -18,7 +18,7 @@ set_max_transition .05 [current_design]
 # print order is not stable across ports so just count violations
 puts "Found [sta::max_slew_violation_count] violations"
 
-repair_design
+repair_design -uvdrc
 
 report_check_types -max_slew -max_cap -max_fanout -violators
 

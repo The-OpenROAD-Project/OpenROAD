@@ -12,11 +12,14 @@
 #include <sta/Network.hh>
 #include <sta/Path.hh>
 #include <stdexcept>
+#include <tuple>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "sta/Corner.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace uv_drc {
@@ -86,6 +89,7 @@ class RCTreeNode
   RCTreeNodeType Type() { return type_; }
   odb::Point Location() const { return loc_; }
   virtual const sta::Pin* pin() const { return nullptr; }
+  virtual const sta::Pin* LoadPin() const { return nullptr; }
   virtual void AddDownstreamNode(RCTreeNodePtr ptr) = 0;
   virtual void RemoveDownstreamNode(RCTreeNodePtr ptr) = 0;
   virtual std::vector<RCTreeNodePtr> DownstreamNodes() = 0;
@@ -102,6 +106,34 @@ class RCTreeNode
   void AddSolutionAndEnsureDominance(std::vector<BufferSolution>& solutions,
                                      BufferSolution new_sol);
 
+  sta::PinSeq MakeBuffer(BufferSolution& sol,
+                         rsz::Resizer* resizer,
+                         sta::Network* network)
+  {
+    sta::PinSeq load_pins;
+    for (auto d : DownstreamNodes()) {
+      auto d_pins = d->MakeBuffer(sol, resizer, network);
+      load_pins.insert(load_pins.end(), d_pins.begin(), d_pins.end());
+    }
+    if (LoadPin() != nullptr) {
+      load_pins.push_back(LoadPin());
+    }
+    if (auto itr = sol.buffer_locs.find(this); itr != sol.buffer_locs.end()) {
+      sta::LibertyCell* buffer_cell = itr->second;
+      auto buffer = resizer->insertBufferBeforeLoads(
+          nullptr, &load_pins, buffer_cell, &loc_, "UvDRCSlew");
+      if (!buffer) {
+        throw std::runtime_error("Failed to insert buffer.");
+      }
+      sta::LibertyPort* buffer_input_port;
+      sta::LibertyPort* buffer_output_port;
+      buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
+      sta::PinSeq new_load_pins{};
+      new_load_pins.push_back(network->findPin(buffer, buffer_input_port));
+      std::swap(load_pins, new_load_pins);
+    }
+    return load_pins;
+  }
   void DebugPrint(utl::Logger* logger);
 
  protected:
@@ -142,6 +174,7 @@ class LoadNode : public RCTreeNode
       rsz::Resizer* resizer,
       sta::dbSta* sta,
       BufferCandidates& buffer_candidate) override;
+  const sta::Pin* LoadPin() const override { return pin_; }
 
  protected:
   float SlewLimit(sta::dbSta* sta,
@@ -156,7 +189,10 @@ class LoadNode : public RCTreeNode
 class WireNode : public RCTreeNode
 {
  public:
-  WireNode(odb::Point loc, RCTreeNodeType type = RCTreeNodeType::WIRE) : RCTreeNode(loc, type) {}
+  WireNode(odb::Point loc, RCTreeNodeType type = RCTreeNodeType::WIRE)
+      : RCTreeNode(loc, type)
+  {
+  }
   ~WireNode() override = default;
   void AddDownstreamNode(RCTreeNodePtr ptr) override
   {
@@ -189,6 +225,7 @@ class WireNode : public RCTreeNode
       rsz::Resizer* resizer,
       sta::dbSta* sta,
       BufferCandidates& buffer_candidate) override;
+
  protected:
   RCTreeNodePtr downstream_;
 };
@@ -295,9 +332,11 @@ class UvDRCSlewBuffer
   {
   }
   ~UvDRCSlewBuffer() = default;
-  void Run(const sta::Pin* drvr_pin, const sta::Corner* corner, int max_cap);
+  std::size_t Run(const sta::Pin* drvr_pin,
+                  const sta::Corner* corner,
+                  int max_cap);
 
-  static constexpr double K_OPENROAD_SLEW_FACTOR = 1.39; // From OpenROAD
+  static constexpr double K_OPENROAD_SLEW_FACTOR = 1.39;  // From OpenROAD
  private:
   void InitBufferCandidates();
   void SetMaxWireLength(int max_length_dbu)
