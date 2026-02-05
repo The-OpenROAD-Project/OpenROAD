@@ -546,7 +546,7 @@ void RamGen::ramRouting(int thread_count)
   global_router_->setCongestionReportIterStep(0);
   global_router_->setAllowCongestion(false);
   global_router_->setResistanceAware(false);
-  global_router_->globalRoute(true, false, false);
+  global_router_->globalRoute(true);
   drt::ParamStruct params;
   params.verbose = 0;
   params.num_threads = thread_count;
