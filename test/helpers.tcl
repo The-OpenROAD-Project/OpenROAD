@@ -306,13 +306,13 @@ proc get_3dblox_marker_count { category_name } {
   if { $top_category == "NULL" } {
     return 0
   }
-  
+
   # Try top-level first (for backward compatibility or flat structure)
   set category [$top_category findMarkerCategory $category_name]
   if { $category != "NULL" } {
     return [$category getMarkerCount]
   }
-  
+
   # Try sub-categories
   foreach sub {"Connectivity" "Physical" "Constraint"} {
     set sub_cat [$top_category findMarkerCategory $sub]
