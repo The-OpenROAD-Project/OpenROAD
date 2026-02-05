@@ -48,6 +48,7 @@ resynth_emap -corner fast \
   -target timing \
   -map_multioutput
 
+suppress_message RSZ 75
 repair_timing
 
 write_verilog ./emap_out.v
