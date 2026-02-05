@@ -92,7 +92,8 @@ class Opendp
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
-                         const std::string& report_file_name = std::string(""));
+                         const std::string& report_file_name = std::string(""),
+                         bool incremental = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -101,6 +102,7 @@ class Opendp
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
   void setJumpMoves(int jump_moves);
   void setIterativePlacement(bool iterative);
+  void setDeepIterativePlacement(bool deep_iterative);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -156,6 +158,7 @@ class Opendp
 
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
+  friend class CellPlaceOrderLess;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
   void convertDbToCell(odb::dbInst* db_inst, Node& cell);
@@ -185,9 +188,14 @@ class Opendp
   bool checkOverlap(const Node* cell, const DbuRect& rect) const;
   static bool isInside(const odb::Rect& cell, const odb::Rect& box);
   bool isInside(const Node* cell, const odb::Rect& rect) const;
-  PixelPt searchNearestSite(const Node* cell, GridX x, GridY y) const;
+  PixelPt diamondSearch(const Node* cell, GridX x, GridY y) const;
+  PixelPt diamondSearchSmart(const Node* cell,
+                             GridX x,
+                             GridY y,
+                             bool& smart_placed) const;
   int calcDist(GridPt p0, GridPt p1) const;
   bool canBePlaced(const Node* cell, GridX bin_x, GridY bin_y) const;
+  int canBePlacedSmart(const Node* cell, GridX bin_x, GridY bin_y) const;
   bool checkRegionOverlap(const Node* cell,
                           GridX x,
                           GridY y,
@@ -198,8 +206,15 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
+  int checkPixelsSmart(const Node* cell,
+                       GridX x,
+                       GridY y,
+                       GridX x_end,
+                       GridY y_end) const;
   bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
   bool shiftMove(Node* cell);
+  bool newShiftMove(Node* cell);
+  bool ripUpAndDynamicPlace(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);
   int distChange(const Node* cell, DbuX x, DbuY y) const;
@@ -220,7 +235,8 @@ class Opendp
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
-  void place();
+  void place(bool first_pass);
+  void retryPlace();
   void placeGroups2();
   void brickPlace1(const Group* group);
   void brickPlace2(const Group* group);
@@ -278,6 +294,7 @@ class Opendp
   // Place fillers
   dbMasterSeq filterFillerMasters(const dbMasterSeq& filler_masters) const;
   MasterByImplant splitByImplant(const dbMasterSeq& filler_masters);
+  void setInitialGridCells();
   void setGridCells();
   dbMasterSeq& gapFillers(odb::dbTechLayer* implant,
                           GridX gap,
@@ -327,6 +344,7 @@ class Opendp
   int max_displacement_y_ = 0;  // sites
   bool disallow_one_site_gaps_ = false;
   std::vector<Node*> placement_failures_;
+  int impossible_placement_ = 0;
 
   // 2D pixel grid
   std::unique_ptr<Grid> grid_;
@@ -352,7 +370,10 @@ class Opendp
   std::unique_ptr<DplObserver> debug_observer_;
   std::unique_ptr<Node> dummy_cell_;
   int jump_moves_ = 0;
+  int move_count_ = 1;
   bool iterative_placement_ = false;
+  bool deep_iterative_placement_ = false;
+  bool incremental_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;
