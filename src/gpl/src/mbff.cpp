@@ -3,9 +3,6 @@
 
 #include "mbff.h"
 
-#include <lemon/list_graph.h>
-#include <lemon/network_simplex.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -22,6 +19,8 @@
 #include "AbstractGraphics.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "lemon/list_graph.h"
+#include "lemon/network_simplex.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
