@@ -15,8 +15,6 @@
 #include "absl/hash/hash.h"
 #include "absl/random/random.h"
 #include "cut/abc_library_factory.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "gia.h"
 #include "rsz/Resizer.hh"
 #include "slack_tuning_strategy.h"
