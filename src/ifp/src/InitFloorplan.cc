@@ -164,7 +164,7 @@ void InitFloorplan::makeDieUtilization(double utilization,
   logger_->info(
       IFP,
       25,
-      "Defining die area using utilization: {}% and aspect ratio: {}.",
+      "Defining die area using utilization: {:.2f}\% and aspect ratio: {}.",
       utilization * 100,
       aspect_ratio);
   const double design_area = designArea();
@@ -186,14 +186,14 @@ void InitFloorplan::makeDieUtilization(double utilization,
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
-  logger_->info(IFP,
-                29,
-                "Defining die area with explicit coordinates: \
-    ({}, {}) to ({}, {})",
-                die.xMin(),
-                die.yMin(),
-                die.xMax(),
-                die.yMax());
+  logger_->info(
+      IFP,
+      29,
+      "Defining die area with explicit coordinates:({}, {}) to ({}, {})",
+      die.xMin(),
+      die.yMin(),
+      die.xMax(),
+      die.yMax());
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
@@ -698,7 +698,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
   const uint32_t site_dx = base_site->getWidth();
   const int rows_x = core_dx / site_dx;
 
-  auto make_rows = [&](dbSite* site) -> int {
+  auto make_rows = [&](dbSite* site) {
     const uint32_t site_dy = site->getHeight();
     int rows_y = core_dy / site_dy;
     bool flip = flipped_sites.find(site) != flipped_sites.end();
@@ -733,20 +733,13 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
                     site_dx);
       y += site_dy;
     }
-    if (rows_y == 0) {
-      logger_->warn(IFP, 61, "No rows created for site {}.", site->getName());
-    } else {
-      logger_->info(IFP,
-                    1,
-                    "Added {} rows of {} site {}.",
-                    rows_y,
-                    rows_x,
-                    site->getName());
-    }
-    return rows_y;
+    logger_->info(IFP,
+                  1,
+                  "Added {} rows of {} site {}.",
+                  rows_y,
+                  rows_x,
+                  site->getName());
   };
-
-  int total_rows = 0;
   for (const auto& [name, site] : sites_by_name) {
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
@@ -758,13 +751,9 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
           base_site->getName(),
           block_->dbuToMicrons(base_site->getHeight()));
     }
-    total_rows += make_rows(site);
+    make_rows(site);
   }
   block_->setCoreArea(block_->computeCoreArea());
-
-  if (total_rows == 0) {
-    logger_->error(IFP, 65, "No rows created in the core area.");
-  }
 }
 
 int InitFloorplan::getOffset(dbSite* base_hybrid_site,
