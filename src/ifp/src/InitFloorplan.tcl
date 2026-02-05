@@ -52,7 +52,7 @@ proc initialize_floorplan { args } {
   }
 
   # Branch to polygon flow if polygon mode detected
-  if { $is_polygon_mode } {    
+  if { $is_polygon_mode } {
     ifp::make_polygon_die_helper [array get keys]
     ifp::make_polygon_rows_helper [array get keys]
     return
@@ -276,7 +276,7 @@ proc insert_tiecells { args } {
   }
 
   set mterm [$master findMTerm $port]
-  if { $mterm == "NULL" } {
+  if { $master == "NULL" } {
     utl::error "IFP" 311 "Unable to find master pin: $args"
   }
 
@@ -326,7 +326,7 @@ proc make_die_helper { key_array } {
       sta::check_positive_float "-aspect_ratio" $aspect_ratio
     } else {
       set aspect_ratio 1.0
-    }    
+    }
     ifp::make_die_util $util $aspect_ratio \
       [ord::microns_to_dbu $core_sp_bottom] \
       [ord::microns_to_dbu $core_sp_top] \
