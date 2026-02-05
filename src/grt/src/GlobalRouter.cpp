@@ -4352,8 +4352,13 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
       // If deleted net has segments restored from ODB, we need to mark the
       // preserved net as having segments restore to ensure proper handling of
       // the capacities used by the deleted net.
+      // Remove usage from the preserved net.
       fastroute_->clearNetRoute(preserved_net->getDbNet());
+      // Remove usage of the deleted net.
+      updateNetResources(deleted_net, true);
       preserved_net->setAreSegmentsRestored(true);
+      // Include usage of the merged net.
+      updateNetResources(preserved_net, false);
     } else {
       fastroute_->mergeNet(db_net, preserved_net->getDbNet());
     }
