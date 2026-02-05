@@ -159,7 +159,7 @@ void InitFloorplan::makeDieUtilization(double utilization,
                       core_space_bottom,
                       core_space_top,
                       core_space_left,
-                      core_space_right);  
+                      core_space_right);
   utilization /= 100;
   logger_->info(IFP, 19, "{:27} {:10.3f}", "Target utilization:", utilization);
   const double design_area = designArea();
@@ -1385,10 +1385,10 @@ void InitFloorplan::reportAreas()
                   block_->dbuAreaToMicrons(design_area) / core_area_um);
   }
   logger_->info(IFP,
-          32,
-          "{:27} {:15d}",
-          "Number of instances:",
-          block_->getInsts().size());
+                32,
+                "{:27} {:15d}",
+                "Number of instances:",
+                block_->getInsts().size());
 }
 
 }  // namespace ifp
