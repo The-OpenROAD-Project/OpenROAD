@@ -52,13 +52,11 @@ proc initialize_floorplan { args } {
   }
 
   # Branch to polygon flow if polygon mode detected
-  if { $is_polygon_mode } {
-    utl::info IFP 23 "Initializing floorplan in polygon mode."
+  if { $is_polygon_mode } {    
     ifp::make_polygon_die_helper [array get keys]
     ifp::make_polygon_rows_helper [array get keys]
     return
   } else {
-    utl::info IFP 24 "Initializing floorplan in rectangular mode."
     ifp::make_die_helper [array get keys]
     make_rows_helper [array get keys]
   }
@@ -357,8 +355,6 @@ proc make_die_helper { key_array } {
     ord::ensure_linked
 
     # convert die coordinates to dbu.
-    utl::info IFP 29 "Defining die area with explicit coordinates: \
-    ($die_lx, $die_ly) to ($die_ux, $die_uy)"
     ifp::make_die \
       [ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
       [ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy]

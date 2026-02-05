@@ -206,6 +206,7 @@ void InitFloorplan::makeDie(const odb::Rect& die)
 void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
 {
   auto points = polygon.getPoints();
+  logger_->info(IFP, 23, "Initializing floorplan in polygon mode.");
 
   if (points.empty()) {
     logger_->error(IFP, 357, "No polygon vertices provided.");
