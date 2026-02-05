@@ -380,18 +380,28 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
 
   // adjust buffers delay for wire cap
   odb::Rect loadPinsBbox = odb::Rect();
+  std::string sinkMaster;
   loadPinsBbox.mergeInit();
   for (odb::dbITerm* sinkInput : sinks) {
     int sinkX, sinkY;
     sinkInput->getAvgXY(&sinkX, &sinkY);
     loadPinsBbox.merge({sinkX, sinkY});
+    sinkMaster = sinkInput->getInst()->getMaster()->getName();
   }
 
-  float offsetX = (float) (loadPinsBbox.xCenter() - srcX) / (dp[target] + 1);
-  float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (dp[target] + 1);
+  int w = target;
+  int nBufs = 0;
+  while (dp_elements[w] != -1) {
+    nBufs++;
+    w -= buffersDelay_[dp_elements[w]];
+  }
+
+  float offsetX = (float) (loadPinsBbox.xCenter() - srcX) / (nBufs + 1);
+  float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (nBufs + 1);
   std::vector<int> adjustedBuffersDelay;
+  double extraOutCap = (std::abs(offsetX) + std::abs(offsetY)) * capPerDBU_;
   computeBuffersDelay(adjustedBuffersDelay,
-                      (std::abs(offsetX) + std::abs(offsetY)) * capPerDBU_);
+                      extraOutCap);
 
   dp.assign(target + 1, 0);
   dp_elements.assign(target + 1, -1);
@@ -402,19 +412,33 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
         continue;
       }
 
-      if (dp[w] <= dp[w - delay] + delay) {
+      int prevBuf = dp_elements[w-delay];
+      std::string load;
+      if(prevBuf == -1) {
+        load = sinkMaster;
+      } else {
+        load = dlyBuffers[prevBuf];
+      }
+      int updatedDelay = techChar_->computeDriverBufferDelay(dlyBuffers[i], load, extraOutCap) * std::pow(10, 14);
+      if (std::abs(dp[w] - w) >= std::abs(dp[w - delay] + updatedDelay - w)) {
         dp_elements[w] = i;
-        dp[w] = dp[w - delay] + delay;
+        dp[w] = dp[w - delay] + updatedDelay;
       }
     }
   }
 
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             2,
+             "  Max achievable delay {}",
+             dp[target]);
   std::stringstream tmp;
   tmp << "[";
-  int w = dp[target];
+  w = target;
   std::vector<std::string> selectedBuffers;
-  while (w > 0) {
-    if (w == dp[target]) {
+  while (dp_elements[w] != -1) {
+    if (w == target) {
       tmp << dlyBuffers[dp_elements[w]];
     } else {
       tmp << ", " << dlyBuffers[dp_elements[w]];
@@ -423,12 +447,6 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     w -= adjustedBuffersDelay[dp_elements[w]];
   }
   tmp << "]";
-  debugPrint(logger_,
-             CTS,
-             "insertion delay",
-             2,
-             "  Max achievable delay {}",
-             dp[target]);
   debugPrint(
       logger_, CTS, "insertion delay", 2, "  using buffers {}", tmp.str());
   return selectedBuffers;

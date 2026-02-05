@@ -735,9 +735,64 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer,
   return max_rise_delay;
 }
 
+sta::ArcDelay TechChar::computeDriverBufferDelay(const std::string& driver,
+                                                 const std::string& load,
+                                                 double extra_out_cap)
+{
+  sta::ArcDelay max_rise_delay = 0;
+
+  odb::dbMaster* driverMaster = db_->findMaster(driver.c_str());
+  sta::Cell* driverMasterCell = db_network_->dbToSta(driverMaster);
+  sta::LibertyCell* libertyDriverCell
+      = db_network_->libertyCell(driverMasterCell);
+  sta::LibertyPort *input, *output;
+  libertyDriverCell->bufferPorts(input, output);
+
+  odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
+  sta::Cell* loadMasterCell = db_network_->dbToSta(loadMaster);
+  sta::LibertyCell* libertyLoadCell
+      = db_network_->libertyCell(loadMasterCell);
+  sta::LibertyPort *inputLoad, *outputLoad;
+  libertyLoadCell->bufferPorts(inputLoad, outputLoad);
+
+  extra_out_cap += inputLoad->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+
+  for (sta::Corner* corner : *openSta_->corners()) {
+    const sta::DcalcAnalysisPt* dcalc_ap
+        = corner->findDcalcAnalysisPt(sta::MinMax::max());
+    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+
+    for (sta::TimingArcSet* arc_set :
+         libertyDriverCell->timingArcSets(input, output)) {
+      for (sta::TimingArc* arc : arc_set->arcs()) {
+        sta::GateTimingModel* model
+            = dynamic_cast<sta::GateTimingModel*>(arc->model());
+        const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
+        // Only look at rise-rise arcs
+        if (model != nullptr && in_rf == sta::RiseFall::rise()
+            && out_rf == sta::RiseFall::rise()) {
+          double load_cap = extra_out_cap;
+          sta::ArcDelay arc_delay;
+          sta::Slew arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          // Cycle the arc_slew through the gate delay calculator once more
+          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          // and once more
+          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+
+          max_rise_delay = std::max(arc_delay, max_rise_delay);
+        }
+      }
+    }
+  }
+
+  return max_rise_delay;
+}
+
 void TechChar::createDelayBufList()
 {
-  bool drvrRes = false;
+  bool drvrRes = true;
   std::vector<std::string> delay_buffers;
   float prevDrvrRes = -1;
   float prevInternalDelay = -1;
