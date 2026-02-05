@@ -5992,9 +5992,6 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
                                   const Corner* corner,
                                   std::map<const Pin*, float>& load_pin_slew)
 {
-  ensureLevelDrvrVertices();
-  repair_design_->init();
-
   if (!tree) {
     logger_->report("Tree is null\n");
     return false;
