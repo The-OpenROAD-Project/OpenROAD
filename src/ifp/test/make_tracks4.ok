@@ -1,5 +1,12 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0029] Defining die area with explicit coordinates:(0, 0) to (400000, 400000)
 [WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
 [INFO IFP-0001] Added 127 rows of 947 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 200.000 200.000 ) um
+[INFO IFP-0013] Core BBox: ( 10.070 11.200 ) ( 190.000 189.000 ) um
+[INFO IFP-0016] Core area:                        31991.554 um^2
+[INFO IFP-0017] Instances area:                      15.428 um^2
+[INFO IFP-0020] Result utilization:                   0.000
+[INFO IFP-0032] Number of instances:                      5
 [WARNING IFP-0021] Track pattern for metal2 will be skipped due to x_offset > die width.
 [WARNING IFP-0022] Track pattern for metal2 will be skipped due to y_offset > die height.
