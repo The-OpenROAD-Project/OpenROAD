@@ -75,7 +75,7 @@ proc rtl_macro_placer { args } {
   set guidance_weight 10.0
   set fence_weight 10.0
   set boundary_weight 50.0
-  set notch_weight 10.0
+  set notch_weight 50.0
   set macro_blockage_weight 10.0
   set target_util 0.25
   set min_ar 0.33

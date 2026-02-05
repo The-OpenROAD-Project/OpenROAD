@@ -162,7 +162,6 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
       if (better) {
         failed_move_threshold = 0;
         resizer_->journalEnd();
-        resizer_->journalBegin();
         debugPrint(logger_,
                    RSZ,
                    "recover_power",
@@ -172,6 +171,9 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                    ends_with_slack.size(),
                    worst_slack_before,
                    worst_slack_after);
+        if (resizer_->overMaxArea()) {
+          break;
+        }
       } else {
         // Save the vertex to avoid trying it again.
         bad_vertices_.insert(changed);
@@ -197,10 +199,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                    worst_slack_before,
                    worst_slack_after);
       }
-      if (resizer_->overMaxArea()) {
-        resizer_->journalEnd();
-        break;
-      }
+    } else {
+      resizer_->journalEnd();
     }
   }
 
