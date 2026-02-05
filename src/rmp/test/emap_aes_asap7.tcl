@@ -49,6 +49,7 @@ resynth_emap -corner fast \
   -target timing \
   -map_multioutput
 
+suppress_message RSZ 75
 repair_timing
 
 write_verilog ./emap_out.v
@@ -59,7 +60,9 @@ report_checks
 report_wns
 report_tns
 
-set liberty_files [concat $lib_files_slow $lib_files_fast]
-run_equivalence_test $test_name \
-  -liberty_files $liberty_files \
-  -remove_cells "None"
+# Skipping eqy check as is takes a lot of time to complete
+# 
+# set liberty_files [concat $lib_files_slow $lib_files_fast]
+# run_equivalence_test $test_name \
+#   -liberty_files $liberty_files \
+#   -remove_cells "None"

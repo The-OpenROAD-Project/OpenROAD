@@ -87,6 +87,9 @@ wns max -30.92
 tns max -191.30
 -- After --
 
+[i] WARNING: library does not contain cells that can implement output pin 1 of the multi-output cell FAx1_ASAP7_75t_R
+[i] WARNING: library does not contain cells that could match the delay of output pin 2 of multi-output cell HAxp5_ASAP7_75t_R
+[i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
 Extended technology mapping stats:
 	area: 948.2800074964762
 	delay: 199.64000034332275
@@ -94,55 +97,97 @@ Extended technology mapping stats:
 	inverters: 0
 	multioutput gates: 8
 
+[i] Report cells usage:
+[i] A2O1A1Ixp33_ASAP7_75t_R  	 Instance =        705	 Area =        63.45     6.69 %
+[i] A2O1A1O1Ixp25_ASAP7_75t_R	 Instance =        212	 Area =        27.56     2.91 %
+[i] AO211x2_ASAP7_75t_R      	 Instance =          1	 Area =         0.23     0.02 %
+[i] AO21x1_ASAP7_75t_R       	 Instance =        206	 Area =        18.54     1.96 %
+[i] AO221x1_ASAP7_75t_R      	 Instance =          2	 Area =         0.30     0.03 %
+[i] AO22x1_ASAP7_75t_R       	 Instance =          7	 Area =         0.91     0.10 %
+[i] AO31x2_ASAP7_75t_R       	 Instance =          8	 Area =         1.84     0.19 %
+[i] AO32x1_ASAP7_75t_R       	 Instance =          1	 Area =         0.12     0.01 %
+[i] AOI211xp5_ASAP7_75t_R    	 Instance =        453	 Area =        40.77     4.30 %
+[i] AOI21xp33_ASAP7_75t_R    	 Instance =       1496	 Area =       104.72    11.04 %
+[i] AOI221xp5_ASAP7_75t_R    	 Instance =         22	 Area =         2.20     0.23 %
+[i] AOI22xp33_ASAP7_75t_R    	 Instance =        120	 Area =        10.80     1.14 %
+[i] AOI311xp33_ASAP7_75t_R   	 Instance =         38	 Area =         3.80     0.40 %
+[i] AOI31xp33_ASAP7_75t_R    	 Instance =        458	 Area =        41.22     4.35 %
+[i] AOI321xp33_ASAP7_75t_R   	 Instance =         21	 Area =         2.52     0.27 %
+[i] AOI32xp33_ASAP7_75t_R    	 Instance =         15	 Area =         1.50     0.16 %
+[i] AOI33xp33_ASAP7_75t_R    	 Instance =          4	 Area =         0.48     0.05 %
+[i] INVx1_ASAP7_75t_R        	 Instance =       1316	 Area =        52.64     5.55 %
+[i] O2A1O1Ixp33_ASAP7_75t_R  	 Instance =        509	 Area =        45.81     4.83 %
+[i] OA211x2_ASAP7_75t_R      	 Instance =         17	 Area =         2.04     0.22 %
+[i] OA21x2_ASAP7_75t_R       	 Instance =        122	 Area =        12.20     1.29 %
+[i] OA221x2_ASAP7_75t_R      	 Instance =          2	 Area =         0.46     0.05 %
+[i] OA222x2_ASAP7_75t_R      	 Instance =          1	 Area =         0.17     0.02 %
+[i] OA22x2_ASAP7_75t_R       	 Instance =          3	 Area =         0.45     0.05 %
+[i] OA31x2_ASAP7_75t_R       	 Instance =          2	 Area =         0.44     0.05 %
+[i] OAI211xp5_ASAP7_75t_R    	 Instance =        458	 Area =        41.22     4.35 %
+[i] OAI21xp33_ASAP7_75t_R    	 Instance =       1968	 Area =       137.76    14.53 %
+[i] OAI221xp5_ASAP7_75t_R    	 Instance =         59	 Area =         5.90     0.62 %
+[i] OAI222xp33_ASAP7_75t_R   	 Instance =          1	 Area =         0.15     0.02 %
+[i] OAI22xp33_ASAP7_75t_R    	 Instance =        126	 Area =        11.34     1.20 %
+[i] OAI311xp33_ASAP7_75t_R   	 Instance =        104	 Area =        10.40     1.10 %
+[i] OAI31xp33_ASAP7_75t_R    	 Instance =        601	 Area =        54.09     5.70 %
+[i] OAI321xp33_ASAP7_75t_R   	 Instance =         37	 Area =         4.44     0.47 %
+[i] OAI32xp33_ASAP7_75t_R    	 Instance =         28	 Area =         2.80     0.30 %
+[i] OAI33xp33_ASAP7_75t_R    	 Instance =         11	 Area =         1.32     0.14 %
+[i] AND2x2_ASAP7_75t_R       	 Instance =         24	 Area =         2.16     0.23 %
+[i] AND3x1_ASAP7_75t_R       	 Instance =         21	 Area =         1.89     0.20 %
+[i] AND4x1_ASAP7_75t_R       	 Instance =          5	 Area =         0.50     0.05 %
+[i] HAxp5_ASAP7_75t_R        	 Instance =          8	 Area =         1.04     0.11 %
+[i] MAJIxp5_ASAP7_75t_R      	 Instance =          1	 Area =         0.10     0.01 %
+[i] NAND2xp33_ASAP7_75t_R    	 Instance =       1005	 Area =        60.30     6.36 %
+[i] NAND3xp33_ASAP7_75t_R    	 Instance =        325	 Area =        22.75     2.40 %
+[i] NAND4xp25_ASAP7_75t_R    	 Instance =         45	 Area =         4.05     0.43 %
+[i] NAND5xp2_ASAP7_75t_R     	 Instance =          1	 Area =         0.10     0.01 %
+[i] NOR2xp33_ASAP7_75t_R     	 Instance =        783	 Area =        46.98     4.95 %
+[i] NOR3xp33_ASAP7_75t_R     	 Instance =        249	 Area =        17.43     1.84 %
+[i] NOR4xp25_ASAP7_75t_R     	 Instance =         26	 Area =         2.34     0.25 %
+[i] NOR5xp2_ASAP7_75t_R      	 Instance =          4	 Area =         0.40     0.04 %
+[i] OR2x2_ASAP7_75t_R        	 Instance =         19	 Area =         1.71     0.18 %
+[i] OR3x1_ASAP7_75t_R        	 Instance =          4	 Area =         0.36     0.04 %
+[i] OR4x1_ASAP7_75t_R        	 Instance =          2	 Area =         0.20     0.02 %
+[i] XNOR2xp5_ASAP7_75t_R     	 Instance =        368	 Area =        47.84     5.04 %
+[i] XOR2xp5_ASAP7_75t_R      	 Instance =        258	 Area =        33.54     3.54 %
+[i] TOTAL                    	 Instance =      12282	 Area =       948.28   100.00 %
+[i] Report stats: area = 948.28; delay = 199.64;
 [WARNING EST-0027] no estimated parasitics. Using wire load models.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
-[INFO RSZ-0094] Found 233 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 233 out of 233 (100.00%) violating endpoints...
+[INFO RSZ-0094] Found 225 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 225 out of 225 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2845.526 |  -439747.4 |    233 | u0/w[0][13]$_DFF_P_/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_9483/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_7250/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_3104/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_8370/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone46/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_10012/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_5581/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_5581/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_5581/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_11748/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_9520/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_9511/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_11127/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_7779/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone19/Y
-    final |       0 |     272 |        4 |     91 |    16 |    +1.2% |    0.012 |        0.0 |      0 | u0/w[1][7]$_DFF_P_/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2845.526 |  -427848.5 |    225 | u0/w[0][13]$_DFF_P_/D
+    final |       0 |     261 |        4 |     88 |    15 |    +1.2% |    0.630 |        0.0 |      0 | text_out[90]$_DFF_P_/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 4 buffers, 4 to split loads.
-[INFO RSZ-0051] Resized 272 instances: 272 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 16 instances.
-[INFO RSZ-0049] Cloned 91 instances.
+[INFO RSZ-0051] Resized 261 instances: 261 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 15 instances.
+[INFO RSZ-0049] Cloned 88 instances.
 [INFO RSZ-0033] No hold violations found.
 Cell type report:                       Count       Area
   Timing Repair Buffer                      4       0.41
-  Inverter                               1316      57.84
+  Inverter                               1316      57.80
   Timing Repair inverter                   21       0.92
   Sequential cell                         562     163.91
-  Multi-Input combinational cell        11036     908.20
-  Total                                 12939    1131.28
-[  0.012,  88.942): ************************************************** (160)
-[ 88.942, 177.873): * (1)
-[177.873, 266.804): ********* (29)
-[266.804, 355.734): ************** (45)
-[355.734, 444.665): ******* (21)
-[444.665, 533.595): ** (7)
-[533.595, 622.526): ** (7)
-[622.526, 711.457): ************** (45)
-[711.457, 800.387): ************************************* (117)
-[800.387, 889.318]: ***************************************** (130)
-Startpoint: ld (input port clocked by core_clock)
-Endpoint: u0/w[1][7]$_DFF_P_
+  Multi-Input combinational cell        11033     908.03
+  Total                                 12936    1131.06
+[  0.630,  89.499): ************************************************** (160)
+[ 89.499, 178.368): ** (6)
+[178.368, 267.236): ******** (25)
+[267.236, 356.105): ********** (33)
+[356.105, 444.974): ****** (19)
+[444.974, 533.843): *** (8)
+[533.843, 622.711): *** (9)
+[622.711, 711.580): ******** (27)
+[711.580, 800.449): ******************************************** (142)
+[800.449, 889.318]: ****************************************** (133)
+Startpoint: sa32_sub[7]$_DFF_P_
+            (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: text_out[90]$_DFF_P_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -152,37 +197,36 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
- 200.00  200.00 v input external delay
-   0.00  200.00 v ld (in)
-  91.46  291.46 ^ n_827/Y (INVx3_ASAP7_75t_R)
-  54.17  345.63 ^ n_1370/Y (AND2x2_ASAP7_75t_R)
-  35.69  381.32 v n_1371/Y (AOI22xp33_ASAP7_75t_R)
- 110.63  491.95 ^ n_1372/Y (NAND2x1p5_ASAP7_75t_R)
-  99.58  591.53 v n_1411/Y (INVx1_ASAP7_75t_R)
- 111.62  703.15 ^ n_1515/Y (AOI21xp33_ASAP7_75t_R)
-  77.67  780.81 v n_1705/Y (NOR2xp33_ASAP7_75t_R)
-  37.24  818.06 ^ n_1804/Y (A2O1A1Ixp33_ASAP7_75t_R)
-  34.80  852.86 v n_1805/Y (A2O1A1Ixp33_ASAP7_75t_R)
-  34.96  887.82 ^ n_1807/Y (OAI211xp5_ASAP7_75t_R)
-  34.31  922.13 v n_1813/Y (AOI21xp33_ASAP7_75t_R)
-  35.39  957.52 ^ n_1815/Y (OAI211xp5_ASAP7_75t_R)
-  27.85  985.37 v n_1816/Y (OAI21xp33_ASAP7_75t_R)
-   0.00  985.37 v u0/w[1][7]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
-         985.37   data arrival time
+   0.00    0.00 ^ sa32_sub[7]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ 130.57  130.57 ^ sa32_sub[7]$_DFF_P_/QN (DFFHQNx1_ASAP7_75t_R)
+  74.23  204.80 v n_9445/Y (NOR2xp33_ASAP7_75t_R)
+  69.16  273.96 ^ n_9446/Y (AOI21xp33_ASAP7_75t_R)
+  32.46  306.42 v n_9447/Y (OAI211xp5_ASAP7_75t_R)
+  77.54  383.96 ^ n_9450/Y (A2O1A1O1Ixp25_ASAP7_75t_R)
+  99.89  483.86 v n_9451/Y (AOI21x1_ASAP7_75t_R)
+ 119.44  603.30 ^ n_9452/Y (INVx1_ASAP7_75t_R)
+  88.51  691.82 v n_9575/Y (NOR2xp67_ASAP7_75t_R)
+  91.62  783.44 ^ n_9655/Y (AOI21xp33_ASAP7_75t_R)
+  57.80  841.24 ^ n_9972/Y (OA21x2_ASAP7_75t_R)
+  16.34  857.57 v n_9973/Y (AOI31xp33_ASAP7_75t_R)
+  34.32  891.89 ^ n_9979/Y (A2O1A1Ixp33_ASAP7_75t_R)
+  28.03  919.92 v n_9988/Y (OAI22xp33_ASAP7_75t_R)
+  46.97  966.89 ^ n_9989/Y (AOI32xp33_ASAP7_75t_R)
+   0.00  966.89 ^ text_out[90]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+         966.89   data arrival time
 
 1000.00 1000.00   clock core_clock (rise edge)
    0.00 1000.00   clock network delay (ideal)
    0.00 1000.00   clock reconvergence pessimism
-        1000.00 ^ u0/w[1][7]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
- -14.62  985.38   library setup time
-         985.38   data required time
+        1000.00 ^ text_out[90]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -32.48  967.52   library setup time
+         967.52   data required time
 ---------------------------------------------------------
-         985.38   data required time
-        -985.37   data arrival time
+         967.52   data required time
+        -966.89   data arrival time
 ---------------------------------------------------------
-           0.01   slack (MET)
+           0.63   slack (MET)
 
 
 wns max 0.00
 tns max 0.00
-Repair timing output passed/skipped equivalence test
