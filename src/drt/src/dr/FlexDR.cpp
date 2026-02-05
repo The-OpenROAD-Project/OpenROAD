@@ -3,8 +3,6 @@
 
 #include "dr/FlexDR.h"
 
-#include <dst/JobMessage.h>
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -43,6 +41,7 @@
 #include "dr/FlexDR_conn.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
