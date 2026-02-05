@@ -161,7 +161,12 @@ void InitFloorplan::makeDieUtilization(double utilization,
                       core_space_left,
                       core_space_right);
   utilization /= 100;
-  logger_->info(IFP, 19, "{:27} {:10.3f}", "Target utilization:", utilization);
+  logger_->info(
+      IFP,
+      25,
+      "Defining die area using utilization: {}% and aspect ratio: {}.",
+      utilization * 100,
+      aspect_ratio);
   const double design_area = designArea();
   const double core_area = design_area / utilization;
   const int core_width = std::sqrt(core_area / aspect_ratio);
@@ -181,6 +186,14 @@ void InitFloorplan::makeDieUtilization(double utilization,
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
+  logger_->info(IFP,
+                29,
+                "Defining die area with explicit coordinates: \
+    ({}, {}) to ({}, {})",
+                die.xMin(),
+                die.yMin(),
+                die.xMax(),
+                die.yMax());
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),

@@ -328,8 +328,7 @@ proc make_die_helper { key_array } {
       sta::check_positive_float "-aspect_ratio" $aspect_ratio
     } else {
       set aspect_ratio 1.0
-    }
-    utl::info IFP 25 "Defining die area using utilization: $util and aspect ratio: $aspect_ratio."
+    }    
     ifp::make_die_util $util $aspect_ratio \
       [ord::microns_to_dbu $core_sp_bottom] \
       [ord::microns_to_dbu $core_sp_top] \
@@ -358,7 +357,8 @@ proc make_die_helper { key_array } {
     ord::ensure_linked
 
     # convert die coordinates to dbu.
-    utl::info IFP 29 "Defining die area with explicit coordinates: ($die_lx, $die_ly) to ($die_ux, $die_uy)"
+    utl::info IFP 29 "Defining die area with explicit coordinates: \
+    ($die_lx, $die_ly) to ($die_ux, $die_uy)"
     ifp::make_die \
       [ord::microns_to_dbu $die_lx] [ord::microns_to_dbu $die_ly] \
       [ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy]
