@@ -656,6 +656,7 @@ fully_rebuffer(Pin *pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  resizer->resizeSlackPreamble();
   resizer->fullyRebuffer(pin);
 }
 
