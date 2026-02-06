@@ -30,6 +30,7 @@
 #include "odb/db.h"
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
+#include "pa/FlexPA_unique.h"
 #include "serialization.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
