@@ -148,18 +148,24 @@ std::vector<BufferSolution> LoadNode::CalcBufferSolutions(
     int max_cap,
     rsz::Resizer* resizer,
     sta::dbSta* sta,
-    BufferCandidates& buffer_candidates)
+    BufferCandidates& buffer_candidates,
+    float r_drvr)
 {
   auto cap = SinkInCap(resizer);
   auto limit = SlewLimit(sta, resizer, corner);
   assert(cap > 0);
   assert(limit > 0);
-  if (max_cap <= 0 || cap <= max_cap) {
+  if ((max_cap <= 0 || cap <= max_cap)
+      && r_drvr * cap * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR <= limit) {
     return {BufferSolution{cap, 0.0, limit, BufferLocMap{}}};
   }
+
   // Find a suitable buffer
   for (auto& buffer_cand : buffer_candidates) {
-    if (buffer_cand.load_cap_limit >= cap) {
+    if (buffer_cand.load_cap_limit >= cap
+        && buffer_cand.drive_resistance * cap
+                   * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR
+               <= limit) {
       // TODO: we do not have a weight for different buffer sizes in this demo
       BufferSolution solution(buffer_cand.input_cap,
                               0.0,
@@ -216,12 +222,19 @@ std::vector<BufferSolution> WireNode::CalcBufferSolutions(
     int max_cap,
     rsz::Resizer* resizer,
     sta::dbSta* sta,
-    BufferCandidates& buffer_candidates)
+    BufferCandidates& buffer_candidates,
+    float r_drvr)
 {
   // Aggregate downstream solutions
   std::vector<BufferSolution> downstream_solutions
-      = downstream_->CalcBufferSolutions(
-          corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates);
+      = downstream_->CalcBufferSolutions(corner,
+                                         unit_r,
+                                         unit_c,
+                                         max_cap,
+                                         resizer,
+                                         sta,
+                                         buffer_candidates,
+                                         r_drvr);
   if (downstream_solutions.empty()) {  // No valid downstream solution
     return {};
   }
@@ -243,7 +256,10 @@ std::vector<BufferSolution> WireNode::CalcBufferSolutions(
     float total_cap = sol.cap + wire_c;
     float total_wire_slew = sol.wire_slew + wire_slew;
     if ((max_cap <= 0 || total_cap <= max_cap)
-        && total_wire_slew <= sol.limit) {
+        && total_wire_slew
+                   + r_drvr * total_cap
+                         * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR
+               <= sol.limit) {
       // Solution with no buffer
       BufferSolution new_sol{
           total_cap, total_wire_slew, sol.limit, sol.buffer_locs};
@@ -252,7 +268,10 @@ std::vector<BufferSolution> WireNode::CalcBufferSolutions(
 
     // Buffered solution
     for (auto& buffer_cand : buffer_candidates) {
-      if (buffer_cand.load_cap_limit >= total_cap) {
+      if (buffer_cand.load_cap_limit >= total_cap
+          && buffer_cand.drive_resistance * total_cap
+                     * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR
+                 <= sol.limit) {
         BufferSolution new_sol{buffer_cand.input_cap,
                                0.0,
                                buffer_cand.input_slew_limit,
@@ -274,12 +293,13 @@ std::vector<BufferSolution> JuncNode::CalcBufferSolutions(
     int max_cap,
     rsz::Resizer* resizer,
     sta::dbSta* sta,
-    BufferCandidates& buffer_candidates)
+    BufferCandidates& buffer_candidates,
+    float r_drvr)
 {
   auto child1_solutions = downstream1_->CalcBufferSolutions(
-      corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates);
+      corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates, r_drvr);
   auto child2_solutions = downstream2_->CalcBufferSolutions(
-      corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates);
+      corner, unit_r, unit_c, max_cap, resizer, sta, buffer_candidates, r_drvr);
 
   if (child1_solutions.empty() || child2_solutions.empty()) {
     return {};
@@ -294,7 +314,11 @@ std::vector<BufferSolution> JuncNode::CalcBufferSolutions(
           = sol1.limit - sol1.wire_slew > sol2.limit - sol2.wire_slew;
       float total_wire_slew = choose_slew1 ? sol1.wire_slew : sol2.wire_slew;
       float limit = choose_slew1 ? sol1.limit : sol2.limit;
-      if (max_cap <= 0 || total_cap <= max_cap) {
+      if ((max_cap <= 0 || total_cap <= max_cap)
+          && total_wire_slew
+                     + r_drvr * total_cap
+                           * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR
+                 <= limit) {
         BufferLocMap combined_locs = sol1.buffer_locs;
         combined_locs.insert(sol2.buffer_locs.begin(), sol2.buffer_locs.end());
         BufferSolution new_sol{
@@ -304,7 +328,10 @@ std::vector<BufferSolution> JuncNode::CalcBufferSolutions(
 
       // buffered sol at JUNC's input
       for (auto& buffer_cand : buffer_candidates) {
-        if (buffer_cand.load_cap_limit >= total_cap) {
+        if (buffer_cand.load_cap_limit >= total_cap
+            && buffer_cand.drive_resistance * total_cap
+                       * UvDRCSlewBuffer::K_OPENROAD_SLEW_FACTOR
+                   <= limit) {
           BufferLocMap combined_locs = sol1.buffer_locs;
           combined_locs.insert(sol2.buffer_locs.begin(),
                                sol2.buffer_locs.end());
@@ -742,13 +769,19 @@ std::size_t UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
   double unit_r, unit_c;
   resizer_->estimate_parasitics_->wireSignalRC(corner, unit_r, unit_c);
 
+  float r_drvr = resizer_->driveResistance(drvr_pin);
+  for (auto& cand : buffer_candidates_) {
+    r_drvr = std::max(r_drvr, cand.drive_resistance);
+  }
+
   auto solutions = root->CalcBufferSolutions(corner,
                                              unit_r,
                                              unit_c,
                                              max_cap,
                                              resizer_,
                                              resizer_->sta_,
-                                             buffer_candidates_);
+                                             buffer_candidates_,
+                                             r_drvr);
   if (solutions.empty()) {
     throw std::runtime_error("No buffer solutions found for the root node.");
   }

@@ -101,7 +101,8 @@ class RCTreeNode
       int max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
-      BufferCandidates& buffer_candidate)
+      BufferCandidates& buffer_candidates,
+      float r_drvr)
       = 0;
   void AddSolutionAndEnsureDominance(std::vector<BufferSolution>& solutions,
                                      BufferSolution new_sol);
@@ -173,7 +174,8 @@ class LoadNode : public RCTreeNode
       int max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
-      BufferCandidates& buffer_candidate) override;
+      BufferCandidates& buffer_candidates,
+      float r_drvr) override;
   const sta::Pin* LoadPin() const override { return pin_; }
 
  protected:
@@ -224,7 +226,8 @@ class WireNode : public RCTreeNode
       int max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
-      BufferCandidates& buffer_candidate) override;
+      BufferCandidates& buffer_candidates,
+      float r_drvr) override;
 
  protected:
   RCTreeNodePtr downstream_;
@@ -315,7 +318,8 @@ class JuncNode : public RCTreeNode
       int max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
-      BufferCandidates& buffer_candidate) override;
+      BufferCandidates& buffer_candidates,
+      float r_drvr) override;
 
  private:
   RCTreeNodePtr downstream1_;
