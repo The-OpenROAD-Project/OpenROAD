@@ -3354,6 +3354,20 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
                                                    sta::LibertyPort* tie_port,
                                                    int separation_dbu)
 {
+  odb::dbITerm* load_iterm = nullptr;
+  odb::dbBTerm* load_bterm = nullptr;
+  odb::dbModITerm* load_mod_iterm = nullptr;
+  db_network_->staToDb(load_pin, load_iterm, load_bterm, load_mod_iterm);
+
+  uint32_t load_pin_id = 0;
+  if (load_iterm != nullptr) {
+    load_pin_id = load_iterm->getId();
+  } else if (load_bterm != nullptr) {
+    load_pin_id = load_bterm->getId();
+  } else if (load_mod_iterm != nullptr) {
+    load_pin_id = load_mod_iterm->getId();
+  }
+
   sta::LibertyCell* tie_cell = tie_port->libertyCell();
 
   // Create the tie instance in the parent of the existing tie instance
@@ -3388,16 +3402,23 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
   assert(new_tie_out_pin != nullptr);
   odb::dbITerm* new_tie_iterm = db_network_->flatPin(new_tie_out_pin);
 
-  odb::dbITerm* load_iterm = nullptr;
-  odb::dbBTerm* load_bterm = nullptr;
-  odb::dbModITerm* load_mod_iterm = nullptr;
-  db_network_->staToDb(load_pin, load_iterm, load_bterm, load_mod_iterm);
-
   std::string connection_name = "net";
+
+  debugPrint(logger_,
+             RSZ,
+             "repair_tie_fanout",
+             1,
+             "load_pin_id={} load_pin={} tie_inst={} tie_port={}/{}",
+             load_pin_id,
+             sdc_network_->pathName(load_pin),
+             network_->name(new_tie_inst),
+             tie_cell->name(),
+             tie_port->name());
 
   // load_pin is a flat pin
   if (load_iterm) {
     // Connect the tie instance output pin to the load pin.
+    debugPrint(logger_, RSZ, "repair_tie_fanout", 1, "  connect flat iterm");
     load_iterm->disconnect();  // This is required
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_iterm, connection_name.c_str());
@@ -3410,6 +3431,8 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
     // handle it. If load_mod_iterm is disconnected first,
     // hierarchicalConnect() cannot find the matching flat net with the
     // load_mod_iterm.
+    debugPrint(
+        logger_, RSZ, "repair_tie_fanout", 1, "  connect hier mod_iterm");
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_mod_iterm, connection_name.c_str());
     return new_tie_inst;
@@ -3419,6 +3442,7 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
   if (load_bterm) {
     // Create a new net and connect both the tie cell output and the top-level
     // port to it.
+    debugPrint(logger_, RSZ, "repair_tie_fanout", 1, "  connect bterm");
     sta::Net* new_net = db_network_->makeNet(
         connection_name.c_str(), parent, odb::dbNameUniquifyType::IF_NEEDED);
     new_tie_iterm->connect(db_network_->staToDb(new_net));
