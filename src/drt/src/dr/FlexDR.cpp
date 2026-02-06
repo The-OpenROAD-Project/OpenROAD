@@ -36,6 +36,7 @@
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "distributed/RoutingJobDescription.h"
+#include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_conn.h"

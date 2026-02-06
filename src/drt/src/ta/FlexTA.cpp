@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "frDesign.h"
 #include "frProfileTask.h"
 #include "global.h"
 #include "odb/dbTypes.h"
