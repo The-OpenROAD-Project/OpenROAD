@@ -23,7 +23,6 @@ class frPin : public frBlockObject
   frPin(const frPin& in) = delete;
   frPin& operator=(const frPin&) = delete;
 
-  // getters
   const std::vector<std::unique_ptr<frPinFig>>& getFigs() const
   {
     return pinFigs_;
@@ -33,7 +32,6 @@ class frPin : public frBlockObject
   bool hasPinAccess() const { return !aps_.empty(); }
   frPinAccess* getPinAccess(int idx) const { return aps_[idx].get(); }
 
-  // setters
   void addPinFig(std::unique_ptr<frPinFig> in)
   {
     in->addToPin(this);

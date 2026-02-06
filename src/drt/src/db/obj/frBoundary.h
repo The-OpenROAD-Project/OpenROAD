@@ -15,12 +15,11 @@ namespace drt {
 class frBoundary : public frFig
 {
  public:
-  // getters
   const std::vector<odb::Point>& getPoints() const { return points_; }
   frUInt4 getNumPoints() const { return points_.size(); }
-  // setters
+
   void setPoints(const std::vector<odb::Point>& pIn) { points_ = pIn; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcBoundary; }
 
   odb::Rect getBBox() const override

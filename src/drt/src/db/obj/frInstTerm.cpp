@@ -20,8 +20,7 @@ frString frInstTerm::getName() const
 frAccessPoint* frInstTerm::getAccessPoint(frCoord x, frCoord y, frLayerNum lNum)
 {
   auto inst = getInst();
-  odb::dbTransform shiftXform = inst->getTransform();
-  odb::Point offset(shiftXform.getOffset());
+  const odb::Point offset = inst->getDBTransform().getOffset();
   x = x - offset.getX();
   y = y - offset.getY();
   return term_->getAccessPoint(x, y, lNum, inst->getPinAccessIdx());

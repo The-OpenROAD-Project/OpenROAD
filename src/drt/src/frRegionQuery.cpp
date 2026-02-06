@@ -371,12 +371,12 @@ void frRegionQuery::removeMarker(frMarker* in)
 void frRegionQuery::Impl::add(frVia* via,
                               ObjectsByLayer<frBlockObject>& allShapes)
 {
-  odb::dbTransform xform = via->getTransform();
+  const odb::Point origin = via->getOrigin();
   for (auto& uShape : via->getViaDef()->getLayer1Figs()) {
     auto shape = uShape.get();
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
-      xform.apply(frb);
+      frb.moveDelta(origin.x(), origin.y());
       allShapes.at(via->getViaDef()->getLayer1Num()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 11, "Unsupported region query add.");
@@ -386,7 +386,7 @@ void frRegionQuery::Impl::add(frVia* via,
     auto shape = uShape.get();
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
-      xform.apply(frb);
+      frb.moveDelta(origin.x(), origin.y());
       allShapes.at(via->getViaDef()->getLayer2Num()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 12, "Unsupported region query add.");
@@ -396,7 +396,7 @@ void frRegionQuery::Impl::add(frVia* via,
     auto shape = uShape.get();
     if (shape->typeId() == frcRect) {
       odb::Rect frb = shape->getBBox();
-      xform.apply(frb);
+      frb.moveDelta(origin.x(), origin.y());
       allShapes.at(via->getViaDef()->getCutLayerNum()).emplace_back(frb, via);
     } else {
       logger->error(DRT, 13, "Unsupported region query add.");

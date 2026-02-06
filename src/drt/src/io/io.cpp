@@ -132,12 +132,8 @@ frInst* io::Parser::setInst(odb::dbInst* db_inst)
   }
   frMaster* master
       = getDesign()->name2master_.at(db_inst->getMaster()->getName());
-  auto inst = std::make_unique<frInst>(db_inst->getName(), master, db_inst);
+  auto inst = std::make_unique<frInst>(master, db_inst);
 
-  int x, y;
-  db_inst->getLocation(x, y);
-  inst->setOrigin(odb::Point(x, y));
-  inst->setOrient(db_inst->getOrient());
   int numInstTerms = 0;
   inst->setPinAccessIdx(db_inst->getPinAccessIdx());
   for (auto& term : inst->getMaster()->getTerms()) {

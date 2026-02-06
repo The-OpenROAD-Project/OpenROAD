@@ -246,7 +246,7 @@ void FlexPA::genInstRowPattern(std::vector<frInst*>& insts)
   genInstRowPatternPerform(nodes, insts);
   genInstRowPatternCommit(nodes, insts);
   for (auto& inst : insts) {
-    inst->setLatestPATransform();
+    inst->setPATransform();
     inst->setHasPinAccessUpdate(true);
   }
 }

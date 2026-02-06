@@ -18,12 +18,9 @@ class frBPin : public frPin
   frBPin(const frBPin&) = delete;
   frBPin& operator=(const frBPin&) = delete;
 
-  // getters
   frBTerm* getTerm() const { return term_; }
-
-  // setters
   void setTerm(frBTerm* in) { term_ = in; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcBPin; }
 
  protected:

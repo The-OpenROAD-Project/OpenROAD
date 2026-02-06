@@ -21,31 +21,8 @@ class drPatchWire;
 class frShape : public frPinFig
 {
  public:
-  // setters
   virtual void setLayerNum(frLayerNum tmpLayerNum) = 0;
-  // getters
   virtual frLayerNum getLayerNum() const = 0;
-  // others
-
-  /* from frPinFig
-   * hasPin
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
-
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
-
-  /* from frFig
-   * getBBox
-   * move
-   * intersects
-   */
 
   virtual void setIter(frListIter<std::unique_ptr<frShape>>& in) = 0;
   virtual frListIter<std::unique_ptr<frShape>> getIter() const = 0;
@@ -59,7 +36,6 @@ class frShape : public frPinFig
   }
 
  protected:
-  // constructors
   frShape() = default;
   frShape(frBlockObject* owner) : owner_(owner) {}
 
@@ -75,7 +51,6 @@ class frShape : public frPinFig
 class frRect : public frShape
 {
  public:
-  // constructors
   frRect() = default;
   frRect(const frRect& in) : frShape(in), box_(in.box_), layer_(in.layer_) {}
   frRect& operator=(const frRect&) = default;
@@ -84,10 +59,7 @@ class frRect : public frShape
   {
   }
 
-  // setters
   void setBBox(const odb::Rect& boxIn) { box_ = boxIn; }
-  // getters
-  // others
   bool isHor() const
   {
     frCoord xSpan = box_.dx();
@@ -108,18 +80,9 @@ class frRect : public frShape
   }
   frBlockObjectEnum typeId() const override { return frcRect; }
 
-  /* from frShape
-   * setLayerNum
-   * getLayerNum
-   */
   void setLayerNum(frLayerNum numIn) override { layer_ = numIn; }
   frLayerNum getLayerNum() const override { return layer_; }
 
-  /* from frPinFig
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
@@ -134,12 +97,6 @@ class frRect : public frShape
 
   void removeFromPin() override { owner_ = nullptr; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
   bool hasNet() const override
   {
     return (owner_) && (owner_->typeId() == frcNet);
@@ -154,11 +111,6 @@ class frRect : public frShape
 
   void removeFromNet() override { owner_ = nullptr; }
 
-  /* from frFig
-   * getBBox
-   * move, in .cpp
-   * intersects in .cpp
-   */
   odb::Rect getBBox() const override { return box_; }
   void move(const odb::dbTransform& xform) override { xform.apply(box_); }
   bool intersects(const odb::Rect& box) const override
@@ -200,7 +152,6 @@ class frRect : public frShape
 class frPatchWire : public frShape
 {
  public:
-  // constructors
   frPatchWire() = default;
   frPatchWire(const frPatchWire& in)
       : frShape(in),
@@ -210,25 +161,15 @@ class frPatchWire : public frShape
   {
   }
   frPatchWire(const drPatchWire& in);
-  // setters
+
   void setOffsetBox(const odb::Rect& in) { offsetBox_ = in; }
   void setOrigin(const odb::Point& in) { origin_ = in; }
-  // getters
-  // others
+
   frBlockObjectEnum typeId() const override { return frcPatchWire; }
 
-  /* from frShape
-   * setLayerNum
-   * getLayerNum
-   */
   void setLayerNum(frLayerNum numIn) override { layer_ = numIn; }
   frLayerNum getLayerNum() const override { return layer_; }
 
-  /* from frPinFig
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
@@ -243,12 +184,6 @@ class frPatchWire : public frShape
 
   void removeFromPin() override { owner_ = nullptr; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
   bool hasNet() const override
   {
     return (owner_) && (owner_->typeId() == frcNet);
@@ -263,11 +198,6 @@ class frPatchWire : public frShape
 
   void removeFromNet() override { owner_ = nullptr; }
 
-  /* from frFig
-   * getBBox
-   * move, in .cpp
-   * intersects in .cpp
-   */
   odb::Rect getBBox() const override
   {
     odb::dbTransform xform(origin_);
@@ -314,34 +244,24 @@ class frPatchWire : public frShape
 class frPolygon : public frShape
 {
  public:
-  // constructors
   frPolygon() = default;
   frPolygon(const frPolygon& in)
       : frShape(in), points_(in.points_), layer_(in.layer_)
   {
   }
-  // setters
+
   void setPoints(const std::vector<odb::Point>& pointsIn)
   {
     points_ = pointsIn;
   }
-  // getters
+
   const std::vector<odb::Point>& getPoints() const { return points_; }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcPolygon; }
 
-  /* from frShape
-   * setLayerNum
-   * getLayerNum
-   */
   void setLayerNum(frLayerNum numIn) override { layer_ = numIn; }
   frLayerNum getLayerNum() const override { return layer_; }
 
-  /* from frPinFig
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
@@ -356,12 +276,6 @@ class frPolygon : public frShape
 
   void removeFromPin() override { owner_ = nullptr; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
   bool hasNet() const override
   {
     return (owner_) && (owner_->typeId() == frcNet);
@@ -376,11 +290,6 @@ class frPolygon : public frShape
 
   void removeFromNet() override { owner_ = nullptr; }
 
-  /* from frFig
-   * getBBox
-   * move, in .cpp
-   * intersects, in .cpp
-   */
   odb::Rect getBBox() const override
   {
     frCoord llx = 0;
@@ -438,7 +347,6 @@ class frPolygon : public frShape
 class frPathSeg : public frShape
 {
  public:
-  // constructors
   frPathSeg() = default;
   frPathSeg(const frPathSeg& in)
       : frShape(in),
@@ -451,7 +359,7 @@ class frPathSeg : public frShape
   }
   frPathSeg(const drPathSeg& in);
   frPathSeg(const taPathSeg& in);
-  // getters
+
   std::pair<odb::Point, odb::Point> getPoints() const { return {begin_, end_}; }
   const odb::Point& getBeginPoint() const { return begin_; }
   const odb::Point& getEndPoint() const { return end_; }
@@ -484,7 +392,7 @@ class frPathSeg : public frShape
     return style_.getBeginStyle() == frcTruncateEndStyle;
   }
   bool isEndTruncated() { return style_.getEndStyle() == frcTruncateEndStyle; }
-  // setters
+
   void setPoints(const odb::Point& beginIn, const odb::Point& endIn)
   {
     begin_ = beginIn;
@@ -512,21 +420,11 @@ class frPathSeg : public frShape
   {
     style_.setEndStyle(es, ext);
   }
-  // others
   frBlockObjectEnum typeId() const override { return frcPathSeg; }
 
-  /* from frShape
-   * setLayerNum
-   * getLayerNum
-   */
   void setLayerNum(frLayerNum numIn) override { layer_ = numIn; }
   frLayerNum getLayerNum() const override { return layer_; }
 
-  /* from frPinFig
-   * getPin
-   * addToPin
-   * removeFromPin
-   */
   frPin* getPin() const override { return reinterpret_cast<frPin*>(owner_); }
 
   void addToPin(frPin* in) override
@@ -541,12 +439,6 @@ class frPathSeg : public frShape
 
   void removeFromPin() override { owner_ = nullptr; }
 
-  /* from frConnFig
-   * hasNet
-   * getNet
-   * addToNet
-   * removeFromNet
-   */
   bool hasNet() const override
   {
     return (owner_) && (owner_->typeId() == frcNet);
@@ -561,11 +453,6 @@ class frPathSeg : public frShape
 
   void removeFromNet() override { owner_ = nullptr; }
 
-  /* from frFig
-   * getBBox
-   * move, in .cpp
-   * intersects, in .cpp
-   */
   // needs to be updated
   odb::Rect getBBox() const override
   {

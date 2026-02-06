@@ -33,9 +33,8 @@ class frGuide;
 class frBlock : public frBlockObject
 {
  public:
-  // constructors
   frBlock(const frString& name) : name_(name) {}
-  // getters
+
   frUInt4 getDBUPerUU() const { return dbUnit_; }
   odb::Rect getBBox() const
   {
@@ -317,7 +316,6 @@ class frBlock : public frBlockObject
   frNet* getFakeVSSNet() { return fakeSNets_[0].get(); }
   frNet* getFakeVDDNet() { return fakeSNets_[1].get(); }
 
-  // setters
   void setDBUPerUU(frUInt4 uIn) { dbUnit_ = uIn; }
   void addTerm(std::unique_ptr<frBTerm> in)
   {
@@ -441,7 +439,7 @@ class frBlock : public frBlockObject
   {
     fakeSNets_.push_back(std::move(in));
   }
-  // others
+
   frBlockObjectEnum typeId() const override { return frcBlock; }
 
  private:
