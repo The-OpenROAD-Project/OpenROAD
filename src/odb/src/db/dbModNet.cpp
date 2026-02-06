@@ -203,6 +203,16 @@ void dbModNet::rename(const char* new_name)
 
   _dbBlock* block = (_dbBlock*) obj->getOwner();
 
+  if (getParent()->getModNet(new_name) != nullptr) {
+    block->getLogger()->error(
+        utl::ODB,
+        495,
+        "dbModNet::rename(): Found a duplicate dbModNet name '{}' in the "
+        "module '{}'. Review the name creation logic.",
+        new_name,
+        getParent()->getName());
+  }
+
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
              "DB_EDIT",
@@ -308,11 +318,20 @@ dbModNet* dbModNet::getModNet(dbBlock* block, uint32_t id)
 
 dbModNet* dbModNet::create(dbModule* parent_module, const char* base_name)
 {
-  assert(parent_module->getModNet(base_name) == nullptr);
-
-  // give illusion of scoping.
   _dbModule* parent = (_dbModule*) parent_module;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
+
+  if (parent_module->getModNet(base_name) != nullptr) {
+    block->getLogger()->error(
+        utl::ODB,
+        492,
+        "dbModNet::create(): Found a duplicate dbModNet name '{}' in the "
+        "module '{}'. Review the name creation logic.",
+        base_name,
+        parent_module->getHierarchicalName());
+  }
+
+  // give illusion of scoping.
   _dbModNet* modnet = block->modnet_tbl_->create();
   // defaults
   modnet->name_ = safe_strdup(base_name);
