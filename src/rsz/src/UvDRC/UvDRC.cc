@@ -570,8 +570,8 @@ void UvDRCSlewBuffer::PrepareBufferSlots(RCTreeNodePtr root,
 
   auto buffer_step = max_wire_length / 2;
 
-  resizer_->logger()->report("Preparing buffer slots with buffer step: {}",
-                             buffer_step);
+  // resizer_->logger()->report("Preparing buffer slots with buffer step: {}",
+  //                            buffer_step);
 
   // Prepare buffer slots per max_wire_length
   auto d_nodes = root->DownstreamNodes();
@@ -763,7 +763,7 @@ std::size_t UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
 
     PrepareBufferSlots(root, corner);
 
-    root->DebugPrint(resizer_->logger());
+    // root->DebugPrint(resizer_->logger());
   }
 
   double unit_r, unit_c;
@@ -791,9 +791,9 @@ std::size_t UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
               return a.buffer_locs.size() < b.buffer_locs.size();
             });
   auto& best_solution = solutions.front();
-  resizer_->logger()->report(
-      "Best buffer solution for the root node: area = {}",
-      best_solution.buffer_locs.size());
+  // resizer_->logger()->report(
+  //     "Best buffer solution for the root node: area = {}",
+  //     best_solution.buffer_locs.size());
   if (best_solution.buffer_locs.size() > 0) {
     root->MakeBuffer(best_solution, resizer_, resizer_->sta_->network());
   }
