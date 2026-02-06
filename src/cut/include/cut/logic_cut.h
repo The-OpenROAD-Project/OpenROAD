@@ -134,7 +134,7 @@ LogicCut::BuildMappedMockturtleNetwork(
   ntk.get_constant(false);
 
   // Build a map: cell name -> mockturtle gate*
-  std::unordered_map<std::string, const gate*> gate_by_name;
+  std::map<std::string, const gate*> gate_by_name;
 
   const auto gates = mockturtle_library.get_gates();
 
@@ -143,13 +143,13 @@ LogicCut::BuildMappedMockturtleNetwork(
   }
 
   // Build a set of CUT instances for quick membership checks
-  std::unordered_set<const sta::Instance*> cut_instances_set;
+  std::set<const sta::Instance*> cut_instances_set;
   for (const sta::Instance* inst : cut_instances_) {
     cut_instances_set.insert(inst);
   }
 
   // Net -> AIG signal memoization
-  std::unordered_map<const sta::Net*, signal> net_to_signal;
+  std::map<const sta::Net*, signal> net_to_signal;
 
   // Create PIs for primary_inputs_ (CUT boundary inputs)
   std::vector<sta::Net*> sorted_inputs(primary_inputs_.begin(),

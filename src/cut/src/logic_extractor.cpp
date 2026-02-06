@@ -4,7 +4,7 @@
 #include "cut/logic_extractor.h"
 
 #include <memory>
-#include <unordered_set>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -76,12 +76,12 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
     std::vector<sta::Vertex*>& cut_vertices)
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
-  std::unordered_set<const sta::Pin*> pins;
+  std::set<const sta::Pin*> pins;
   for (sta::Vertex* vertex : cut_vertices) {
     pins.insert(vertex->pin());
   }
 
-  std::unordered_set<sta::Vertex*> endpoint_vertex;
+  std::set<sta::Vertex*> endpoint_vertex;
   for (sta::Vertex* vertex : endpoints_) {
     endpoint_vertex.insert(vertex);
   }
@@ -122,7 +122,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
 
-  std::unordered_set<const sta::Pin*> cut_set_vertices;
+  std::set<const sta::Pin*> cut_set_vertices;
   for (sta::Vertex* vertex : cut_vertices) {
     cut_set_vertices.insert(vertex->pin());
   }
@@ -233,8 +233,7 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
 
-  std::unordered_set<sta::Net*> primary_input_nets;
-  primary_input_nets.reserve(primary_io_pins.size());
+  std::set<sta::Net*> primary_input_nets;
   for (sta::Pin* pin : primary_io_pins) {
     sta::Net* net = nullptr;
     // check if this pin is a terminal

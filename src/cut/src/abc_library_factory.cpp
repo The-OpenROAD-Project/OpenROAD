@@ -8,7 +8,7 @@
 #include <cmath>
 #include <cstring>
 #include <optional>
-#include <unordered_set>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -285,7 +285,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
 
     // ABC has a limit of one timing arc per input pin. Keep track
     // of pins that have already recieved a timing arc.
-    std::unordered_set<std::string> pins;
+    std::set<std::string> pins;
     for (sta::TimingArcSet* arc_set :
          cell_port->libertyCell()->timingArcSets(nullptr, cell_port)) {
       // If the from pin is an output it means that this is

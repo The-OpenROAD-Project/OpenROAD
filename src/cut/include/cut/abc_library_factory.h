@@ -6,7 +6,7 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <unordered_set>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -49,8 +49,8 @@ class AbcLibrary
   utl::UniquePtrWithDeleter<abc::Mio_Library_t> mio_library_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::set<std::string> supported_cells_;
-  std::unordered_set<std::string> const1_gates_;
-  std::unordered_set<std::string> const0_gates_;
+  std::set<std::string> const1_gates_;
+  std::set<std::string> const0_gates_;
   std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const0_cell_;
   std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const1_cell_;
   bool const_gates_initalized_ = false;

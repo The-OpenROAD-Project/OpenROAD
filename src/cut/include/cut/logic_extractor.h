@@ -4,7 +4,7 @@
 #pragma once
 
 #include <type_traits>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 #include "cut/abc_library_factory.h"
@@ -222,9 +222,9 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
 {
   std::vector<sta::Vertex*> result(cut_vertices.begin(), cut_vertices.end());
   sta::dbNetwork* network = open_sta_->getDbNetwork();
-  std::unordered_set<sta::Vertex*> endpoint_set(endpoints_.begin(),
+  std::set<sta::Vertex*> endpoint_set(endpoints_.begin(),
                                                 endpoints_.end());
-  std::unordered_set<sta::Vertex*> cut_vertex_set(cut_vertices.begin(),
+  std::set<sta::Vertex*> cut_vertex_set(cut_vertices.begin(),
                                                   cut_vertices.end());
 
   for (sta::Vertex* vertex : cut_vertices) {
