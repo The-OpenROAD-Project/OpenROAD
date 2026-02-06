@@ -160,7 +160,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
   // Delete nets that only belong to the cut set.
   sta::NetSet nets_to_be_deleted(db_network);
-  std::unordered_set<sta::Net*> primary_input_or_output_nets;
+  std::set<sta::Net*> primary_input_or_output_nets;
 
   for (sta::Net* net : cut.primary_inputs()) {
     primary_input_or_output_nets.insert(net);
