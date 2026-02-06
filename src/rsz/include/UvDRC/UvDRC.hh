@@ -152,8 +152,14 @@ class RCTreeNode
 class LoadNode : public RCTreeNode
 {
  public:
-  LoadNode(odb::Point loc, const sta::Pin* pin)
-      : RCTreeNode(loc, RCTreeNodeType::LOAD), pin_(pin)
+  LoadNode(odb::Point loc,
+           const sta::Pin* pin,
+           float load_cap,
+           float slew_limit)
+      : RCTreeNode(loc, RCTreeNodeType::LOAD),
+        pin_(pin),
+        load_cap_(load_cap),
+        slew_limit_(slew_limit)
   {
   }
   ~LoadNode() override = default;
@@ -179,13 +185,9 @@ class LoadNode : public RCTreeNode
   const sta::Pin* LoadPin() const override { return pin_; }
 
  protected:
-  float SlewLimit(sta::dbSta* sta,
-                  rsz::Resizer* resizer,
-                  const sta::Corner* corner);
-  float SinkInCap(rsz::Resizer* resizer);
-
- protected:
   const sta::Pin* pin_;
+  float load_cap_;
+  float slew_limit_;
 };
 
 class WireNode : public RCTreeNode
@@ -353,6 +355,7 @@ class UvDRCSlewBuffer
                             LocVec& locs,
                             PinVec& pins);
   RCTreeNodePtr BuildRCTree(const sta::Pin* drvr_pin,
+                            const sta::Corner* corner,
                             stt::Tree& tree,
                             LocVec& locs,
                             PinVec& pins);
