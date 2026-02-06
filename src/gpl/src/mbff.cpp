@@ -36,6 +36,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
+#include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Path.hh"
@@ -2110,6 +2111,41 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
   return ans;
 }
 
+float MBFF::getLeakage(odb::dbMaster* master)
+{
+  sta::Cell* cell = network_->dbToSta(master);
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  sta::LibertyCell* corner_cell
+      = lib_cell->cornerCell(corner_, sta::MinMax::max());
+  float cell_leakage;
+  bool cell_leakage_exists;
+  corner_cell->leakagePower(cell_leakage, cell_leakage_exists);
+  if (cell_leakage_exists) {
+    return cell_leakage;
+  }
+
+  // Look for unconditional power
+  cell_leakage = 0;
+  for (sta::LeakagePower* leak : *corner_cell->leakagePowers()) {
+    if (leak->when()) {
+      continue;
+    }
+    cell_leakage += leak->power();
+  }
+
+  // There should be a third method here of looking at conditional
+  // power if unconditional isn't present.  However opensta doesn't
+  // keep the related_pg_pin for leakage making it impossible to do
+  // correctly.  If it did you would sum average power for each
+  // pg_pin.
+
+  if (cell_leakage == 0) {
+    log_->warn(GPL, 327, "No leakage found for {}", master->getName());
+  }
+
+  return cell_leakage;
+}
+
 void MBFF::SetVars(const std::vector<Flop>& flops)
 {
   // get min height and width
@@ -2122,9 +2158,8 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
         = std::min(single_bit_height_, master->getHeight() / multiplier_);
     single_bit_width_
         = std::min(single_bit_width_, master->getWidth() / multiplier_);
-    sta::PowerResult ff_power
-        = sta_->power(network_->dbToSta(insts_[flop.idx]), corner_);
-    single_bit_power_ = std::min(single_bit_power_, ff_power.leakage());
+    const float leakage = getLeakage(insts_[flop.idx]->getMaster());
+    single_bit_power_ = std::min(single_bit_power_, leakage);
   }
 }
 
@@ -2330,8 +2365,7 @@ void MBFF::ReadLibs()
 
       const float cur_area = (master->getHeight() / multiplier_)
                              * (master->getWidth() / multiplier_);
-      const sta::PowerResult tray_power
-          = sta_->power(network_->dbToSta(tmp_tray), corner_);
+      const float leakage = getLeakage(tmp_tray->getMaster());
 
       debugPrint(log_,
                  GPL,
@@ -2341,11 +2375,11 @@ void MBFF::ReadLibs()
                  master->getName(),
                  array_mask.to_string(),
                  cur_area,
-                 tray_power.leakage());
+                 leakage);
 
       if (tray_area_[array_mask][idx] > cur_area) {
         tray_area_[array_mask][idx] = cur_area;
-        tray_power_[array_mask][idx] = tray_power.leakage();
+        tray_power_[array_mask][idx] = leakage;
         best_master_[array_mask][idx] = master;
         pin_mappings_[array_mask][idx] = GetPinMapping(tmp_tray);
         tray_width_[array_mask][idx] = master->getWidth() / multiplier_;
