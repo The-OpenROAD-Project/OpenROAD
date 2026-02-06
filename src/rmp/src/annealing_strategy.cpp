@@ -7,8 +7,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
+#include <random>
 #include <utility>
 #include <vector>
 
