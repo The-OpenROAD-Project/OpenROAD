@@ -11,6 +11,7 @@ bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_scala")
 git_override(
     module_name = "rules_scala",
