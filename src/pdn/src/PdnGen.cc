@@ -23,10 +23,12 @@
 #include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"
+#include "shape.h"
 #include "sroute.h"
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 #include "via_repair.h"
 
 namespace pdn {
