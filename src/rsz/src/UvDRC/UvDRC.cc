@@ -757,7 +757,7 @@ std::size_t UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
     auto [locs, loc_map] = InitNetConnections(drvr_pin);
     auto steiner_tree = MakeSteinerTree(drvr_pin, locs, loc_map);
 
-    steiner_tree.printTree(resizer_->logger());
+    // steiner_tree.printTree(resizer_->logger());
 
     root = BuildRCTree(drvr_pin, steiner_tree, locs, loc_map);
 
