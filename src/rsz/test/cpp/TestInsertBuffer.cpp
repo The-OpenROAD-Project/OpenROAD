@@ -23,7 +23,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
   {
     if (debug_) {
       logger_.setDebugLevel(utl::ODB, "DB_EDIT", 3);
-      logger_.setDebugLevel(utl::ODB, "insert_buffer", 9);
+      logger_.setDebugLevel(utl::ODB, "insert_buffer", 3);
     }
   }
 
@@ -36,7 +36,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
     sta_->postReadDef(block_);
   }
 
-  bool debug_ = true;  // Set to true to generate debug output
+  bool debug_ = false;  // Set to true to generate debug output
 };
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
