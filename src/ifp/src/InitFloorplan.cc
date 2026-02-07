@@ -140,6 +140,7 @@ void InitFloorplan::initFloorplan(
 {
   checkGap(gap);
 
+  logger_->info(IFP, 34, "Defining die area with explicit coordinates");
   makeDie(die);
   makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
 }
@@ -186,14 +187,13 @@ void InitFloorplan::makeDieUtilization(double utilization,
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
-  logger_->info(
-      IFP,
-      29,
-      "Defining die area with explicit coordinates:({}, {}) to ({}, {})",
-      die.xMin(),
-      die.yMin(),
-      die.xMax(),
-      die.yMax());
+  logger_->info(IFP,
+                29,
+                "Defining die area: ({}, {}) to ({}, {}) DBU",
+                die.xMin(),
+                die.yMin(),
+                die.xMax(),
+                die.yMax());
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
@@ -285,6 +285,14 @@ void InitFloorplan::makePolygonRows(
   }
 
   checkInstanceDimensions(core_bbox);
+
+  logger_->info(IFP,
+                33,
+                "Defining core area: ({}, {}) to ({}, {}) DBU",
+                core_bbox.xMin(),
+                core_bbox.yMin(),
+                core_bbox.xMax(),
+                core_bbox.yMax());
 
   // Set up sites by name (same as original makeRows)
   SitesByName sites_by_name;
@@ -417,6 +425,14 @@ void InitFloorplan::makeRows(const odb::Rect& core,
                              const int gap)
 {
   checkGap(gap);
+
+  logger_->info(IFP,
+                31,
+                "Defining core area: ({}, {}) to ({}, {}) DBU",
+                core.xMin(),
+                core.yMin(),
+                core.xMax(),
+                core.yMax());
 
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
