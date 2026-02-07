@@ -66,5 +66,5 @@ Using 2 tracks default min distance between IO pins.
 [INFO DRT-0036] via4 guide region query size = 0.
 [INFO DRT-0036] met5 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
-[ERROR UTL-0013] detailed routing was interupted and may have modified the database.
-Error: make_8x8.tcl, 23 UTL-0013
+No differences found.
+No differences found.
