@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -579,6 +580,15 @@ dbModule* dbInsertBuffer::findLCA(dbModule* m1, dbModule* m2) const
   return m1;
 }
 
+std::optional<bool> dbInsertBuffer::getCachedReusability(dbModNet* net) const
+{
+  auto it = is_target_only_cache_.find(net);
+  if (it != is_target_only_cache_.end()) {
+    return it->second;
+  }
+  return std::nullopt;
+}
+
 bool dbInsertBuffer::checkAllLoadsAreTargets(
     dbModNet* start_net,
     const std::set<dbObject*>& load_pins) const
@@ -588,9 +598,8 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
   }
 
   // Check cache first
-  auto it = is_target_only_cache_.find(start_net);
-  if (it != is_target_only_cache_.end()) {
-    return it->second;
+  if (std::optional<bool> result = getCachedReusability(start_net)) {
+    return *result;
   }
 
   std::set<dbModNet*> visited;
@@ -601,9 +610,8 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
     }
 
     // Check cache
-    auto it = is_target_only_cache_.find(net);
-    if (it != is_target_only_cache_.end()) {
-      return it->second;
+    if (std::optional<bool> result = getCachedReusability(net)) {
+      return *result;
     }
 
     // Cycle detection
@@ -657,7 +665,7 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
     }
 
     // Cache result
-    is_target_only_cache_[net] = result;
+    markModNetReusability(net, result);
     return result;
   };
 
@@ -796,6 +804,11 @@ bool dbInsertBuffer::tryReuseModNetInModule(dbObject*& load_obj,
   }
 
   for (dbModNet* candidate_net : it->second) {
+    // Check if this net has been tainted (marked as fan-in of the buffer)
+    if (isMarkedAsNotReusable(candidate_net)) {
+      continue;
+    }
+
     dbModBTerm* modbterm = nullptr;
     for (dbModBTerm* bterm : candidate_net->getModBTerms()) {
       if (bterm->getIoType() == dbIoType::INPUT) {
@@ -837,10 +850,14 @@ void dbInsertBuffer::createNewHierConnection(dbObject*& load_obj,
   mod_bterm->connect(mod_net);
 
   // Register this new net as reusable for subsequent loads
-  is_target_only_cache_[mod_net] = true;
+  markModNetReusability(mod_net, true);
   module_reusable_nets_[current_module].insert(mod_net);
 
   // Connect lower level object (either leaf ITerm or previous ModITerm)
+  // jk: necessary?
+  if (load_obj->getObjectType() == dbModITermObj) {
+    static_cast<dbModITerm*>(load_obj)->disconnect();
+  }
   connect(load_obj, mod_net);
 
   // Create Pin (ModITerm) on the instance of current module in the parent
@@ -1448,6 +1465,12 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
         }
       }
     }
+
+    // Mark all nets in the fanin cone of the buffer input as non-reusable
+    // to prevent creating loops when connecting the buffer output.
+    if (dbModNet* input_mod_net = buf_input_iterm_->getModNet()) {
+      markFaninModNetsNotReusable(input_mod_net);
+    }
   }
 
   // 2. Connect Buffer Output to the New Net (Flat & Hier)
@@ -1474,6 +1497,57 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
       dlogMovedBTermLoad(load_idx, num_loads, load);
     }
     load_idx++;
+  }
+}
+
+bool dbInsertBuffer::isMarkedAsNotReusable(dbModNet* net) const
+{
+  std::optional<bool> result = getCachedReusability(net);
+  return result && *result == false;
+}
+
+void dbInsertBuffer::markModNetReusability(dbModNet* net,
+                                           bool is_reusable) const
+{
+  is_target_only_cache_[net] = is_reusable;
+}
+
+void dbInsertBuffer::markFaninModNetsNotReusable(dbModNet* net)
+{
+  if (!net) {
+    return;
+  }
+
+  // If already marked as false, stop (already visited).
+  if (isMarkedAsNotReusable(net)) {
+    return;
+  }
+  markModNetReusability(net, false);
+
+  // 1. Child Instances (Down hierarchy, but Upstream signal flow)
+  // Look for Child OUTPUT ports driving this net.
+  for (dbModITerm* miterm : net->getModITerms()) {
+    dbModBTerm* child_bterm = miterm->getChildModBTerm();
+    if (child_bterm
+        && (child_bterm->getIoType() == dbIoType::OUTPUT
+            || child_bterm->getIoType() == dbIoType::INOUT)) {
+      if (dbModNet* child_net = child_bterm->getModNet()) {
+        markFaninModNetsNotReusable(child_net);
+      }
+    }
+  }
+
+  // 2. Parent Module (Up hierarchy, but Upstream signal flow)
+  // Look for Parent INPUT ports driving this net.
+  for (dbModBTerm* mbterm : net->getModBTerms()) {
+    if (mbterm->getIoType() == dbIoType::INPUT
+        || mbterm->getIoType() == dbIoType::INOUT) {
+      if (dbModITerm* parent_miterm = mbterm->getParentModITerm()) {
+        if (dbModNet* parent_net = parent_miterm->getModNet()) {
+          markFaninModNetsNotReusable(parent_net);
+        }
+      }
+    }
   }
 }
 

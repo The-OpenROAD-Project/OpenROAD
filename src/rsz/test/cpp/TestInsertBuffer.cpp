@@ -23,7 +23,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
   {
     if (debug_) {
       logger_.setDebugLevel(utl::ODB, "DB_EDIT", 3);
-      logger_.setDebugLevel(utl::ODB, "insert_buffer", 3);
+      logger_.setDebugLevel(utl::ODB, "insert_buffer", 9);
     }
   }
 
@@ -36,7 +36,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
     sta_->postReadDef(block_);
   }
 
-  bool debug_ = false;  // Set to true to generate debug output
+  bool debug_ = true;  // Set to true to generate debug output
 };
 
 TEST_F(TestInsertBuffer, AfterDriver_Case1)
@@ -2929,6 +2929,158 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case28)
   EXPECT_EQ(num_warning, 0);
 
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Test case for ORD-2030 ERROR by insertBufferBeforeLoads()
+TEST_F(TestInsertBuffer, BeforeLoads_Case29)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  // Get ODB objects
+  dbMaster* buffer_master = db_->findMaster("BUF_X4");
+  ASSERT_TRUE(buffer_master);
+
+  // Target net
+  dbNet* target_net = block_->findNet("n1");
+  ASSERT_NE(target_net, nullptr);
+
+  // Top module
+  dbModule* top_mod = block_->getTopModule();
+  ASSERT_NE(top_mod, nullptr);
+
+  // load0 in top module
+  dbInst* load0 = block_->findInst("load0");
+  ASSERT_NE(load0, nullptr);
+  dbITerm* load0_a = load0->findITerm("A");
+  ASSERT_NE(load0_a, nullptr);
+
+  // H1 module and its loads
+  dbModule* mod_h0 = block_->findModule("H0");
+  ASSERT_NE(mod_h0, nullptr);
+  dbInst* load1 = block_->findInst("h0/load1");
+  ASSERT_NE(load1, nullptr);
+  dbITerm* load1_a = load1->findITerm("A");
+  ASSERT_NE(load1_a, nullptr);
+
+  dbModNet* modnet_n1 = block_->findModNet("n1");
+  ASSERT_NE(modnet_n1, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Insert buffer before load1/A (in H1) AND load0/A (in top)
+  std::set<dbObject*> targets;
+  targets.insert(load0_a);
+  targets.insert(load1_a);
+
+  dbInst* new_buf = target_net->insertBufferBeforeLoads(
+      targets, buffer_master, nullptr, "new_buf");
+  ASSERT_TRUE(new_buf);
+
+  //----------------------------------------------------
+  // Verify Results
+  //----------------------------------------------------
+  // Buffer should be placed in TOP module (LCA of load0 and load1)
+  EXPECT_EQ(new_buf->getModule(), top_mod);
+
+  // TODO: Dangling modnet "n1" is not removed
+  modnet_n1 = block_->findModNet("n1");
+  ASSERT_NE(modnet_n1, nullptr);
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+}
+
+// Reproduction of ORD-2030 bug using Verilog input
+// Fixed by preventing reuse of ModNets connected to Output/Inout ports.
+TEST_F(TestInsertBuffer, BeforeLoads_Case30)
+{
+  // Get the test name dynamically from the gtest framework.
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+
+  // Read verilog
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  block_ = db_->getChip()->getBlock();
+  ASSERT_TRUE(block_);
+
+  // Find Flat Net
+  dbNet* flat_net = block_->findNet("ic_debug_addr_2");
+  ASSERT_TRUE(flat_net);
+
+  // Find Buffer Master
+  dbMaster* buffer_master = db_->findMaster("BUF_X1");
+  ASSERT_TRUE(buffer_master);
+
+  // Collect Load Pins
+  std::vector<dbObject*> load_pins;
+
+  // Top loads
+  std::vector<std::string> top_loads = {"u_2884",
+                                        "u_2885",
+                                        "u_2924",
+                                        "u_2961",
+                                        "u_2999",
+                                        "u_3034",
+                                        "u_3041",
+                                        "u_3048",
+                                        "u_3055"};
+  for (const auto& name : top_loads) {
+    dbInst* inst = block_->findInst(name.c_str());
+    ASSERT_TRUE(inst);
+    dbITerm* pin = inst->findITerm("A");
+    ASSERT_TRUE(pin);
+    load_pins.push_back(pin);
+  }
+
+  // Internal loads (swerv/ifu/...)
+  std::vector<std::string> internal_loads
+      = {"u_11044", "u_11045", "u_11046", "u_11047"};
+  for (const auto& name : internal_loads) {
+    std::string full_name = "swerv_inst/ifu/" + name;
+    dbInst* inst = block_->findInst(full_name.c_str());
+    ASSERT_TRUE(inst) << "Internal load " << full_name << " not found";
+    dbITerm* pin = inst->findITerm("A");
+    ASSERT_TRUE(pin);
+    load_pins.push_back(pin);
+  }
+
+  // Run insert_buffer
+  odb::dbInst* buf_inst
+      = flat_net->insertBufferBeforeLoads(load_pins, buffer_master, nullptr);
+
+  // Verify
+  ASSERT_TRUE(buf_inst);
+
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+
+  // Expect 1 warning for 'swerv_inst/dec_tlu/zero_' has no driver (from 1'b0
+  // connection)
+  EXPECT_LE(num_warning, 1);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
 }
 
 }  // namespace odb

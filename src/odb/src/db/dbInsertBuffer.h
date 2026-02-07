@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -88,6 +89,9 @@ class dbInsertBuffer
       const std::set<dbModNet*>& modnets_in_target_module) const;
   bool checkAllLoadsAreTargets(dbModNet* net,
                                const std::set<dbObject*>& load_pins) const;
+  bool isMarkedAsNotReusable(dbModNet* net) const;
+  std::optional<bool> getCachedReusability(dbModNet* net) const;
+  void markModNetReusability(dbModNet* net, bool is_reusable) const;
   bool getPinLocation(const dbObject* pin, int& x, int& y) const;
   bool computeCentroid(const dbObject* drvr_pin,
                        const std::set<dbObject*>& load_pins,
@@ -108,6 +112,13 @@ class dbInsertBuffer
   /// pins for the buffer being inserted.
   ///
   void populateReusableModNets(const std::set<dbObject*>& load_pins);
+
+  ///
+  /// Traverses the netlist upstream (fanin cone) from the given net and marks
+  /// all visited dbModNets as 'false' in is_target_only_cache_. This prevents
+  /// reusing any net that is part of the buffer's fanin, avoiding loops.
+  ///
+  void markFaninModNetsNotReusable(dbModNet* net);
 
   //------------------------------------------------------------------
   // Helper functions for hierarchicalConnect
