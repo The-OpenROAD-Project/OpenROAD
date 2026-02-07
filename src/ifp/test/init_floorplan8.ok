@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO IFP-0029] Defining die area with explicit coordinates:(0, 0) to (300000, 300000)
+[INFO IFP-0029] Defining die area: (0, 0) to (300000, 300000) DBU
+[INFO IFP-0031] Defining core area: (40000, 40000) to (260000, 260000) DBU
 [WARNING IFP-0028] Core area lower left (20.000, 20.000) snapped to (20.140, 21.000).
 [INFO IFP-0001] Added 77 rows of 578 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 150.000 150.000 ) um

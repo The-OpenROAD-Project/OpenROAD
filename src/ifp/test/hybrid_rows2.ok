@@ -4,7 +4,8 @@
 [WARNING ORD-2011] LEF master MOCK_HYBRID_AG has no liberty cell.
 [WARNING ORD-2011] LEF master MOCK_HYBRID_G has no liberty cell.
 [WARNING ORD-2011] LEF master MOCK_HYBRID_GA has no liberty cell.
-[INFO IFP-0029] Defining die area with explicit coordinates:(0, 0) to (2200000, 2200000)
+[INFO IFP-0029] Defining die area: (0, 0) to (2200000, 2200000) DBU
+[INFO IFP-0031] Defining core area: (200000, 200000) to (2000000, 2000000) DBU
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 102.400).
 [INFO IFP-0049] Added 560 rows from site HybridAG row pattern.
 [INFO IFP-0050] Added 280 rows of site HybridAG.
