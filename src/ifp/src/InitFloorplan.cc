@@ -140,7 +140,6 @@ void InitFloorplan::initFloorplan(
 {
   checkGap(gap);
 
-  logger_->info(IFP, 34, "Defining die area with explicit coordinates");
   makeDie(die);
   makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
 }
