@@ -22,6 +22,9 @@ git_override(
 bazel_dep(name = "rules_verilator", version = "0.1.0")
 bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
+# TODO: fix uses of @com_google_absl and use @abseil-cpp directly
+bazel_dep(name = "abseil-cpp", version = "20260107.0", repo_name = "com_google_absl")
+
 BOOST_VERSION = "1.89.0.bcr.2"
 
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
@@ -66,12 +69,13 @@ bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "or-tools", version = "9.14.bcr.1")
 bazel_dep(name = "spdlog", version = "1.15.1")
-bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
+bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "yaml-cpp", version = "0.8.0")
 
 # Make compilation DB (and possibly build cleaner)
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 
 # Use HEAD of master upstream to fix bugs such as missing stdint include
 git_override(
@@ -91,10 +95,6 @@ git_override(
     commit = "90cfbab79df93960c5493f8a75df6199fb80fe26",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
-
-bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True)
-
-bazel_dep(name = "abseil-cpp", version = "20240722.0", repo_name = "com_google_absl")
 
 # Dependencies needed by one of the rules_hdl repos. Once they are on
 # BCR, they should depend on their own version.
