@@ -138,6 +138,8 @@ set_cts_config
     [-apply_ndr strategy]
     [-buf_list <list_of_buffers>]
     [-branching_point_buffers_distance distance]
+    [-clock_buffer_footprint string]
+    [-clock_buffer_string string]
     [-clustering_exponent power]
     [-clustering_unbalance_ratio capacity]
     [-delay_buffer_derate derate_value]
@@ -163,6 +165,8 @@ set_cts_config
 | `-apply_ndr` | Applies 2X spacing non-default rule to clock nets except leaf-level nets following some strategy. There are four strategy options: `none, root_only, half, full`. If this is not specified, the default value is `none`. |
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
 | `-branching_point_buffers_distance` | Distance (in microns) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the `-distance_between_buffers` value to be set. |
+| `-clock_buffer_footprint` | sub-string that identifies clock buffers by liberty cell_footprint attribute. This option is mutually exclusive with -clock_buffer_string. |
+| `-clock_buffer_string` | sub-string that identifies clock buffers by name.  The default is CLKBUF.  This option is mutally exclusive with -clock_buffer_footprint. |
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). The default value is `0.6`, and the allowed values are floats `[0, 1.0]`. |
 | `-delay_buffer_derate` | This option balances latencies between macro cells and registers by inserting delay buffers.  The default value is `1.0`, meaning all needed delay buffers are inserted.  A value of 0.5 means only half of necessary delay buffers are inserted.  A value of 0.0 means no insertion of delay buffers. |
@@ -197,6 +201,8 @@ reset_cts_config
     [-apply_ndr]
     [-buf_list]
     [-branching_point_buffers_distance]
+    [-clock_buffer_footprint]
+    [-clock_buffer_string]
     [-clustering_exponent]
     [-clustering_unbalance_ratio]
     [-delay_buffer_derate]
