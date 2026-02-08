@@ -45,6 +45,7 @@
 #include "odb/geom.h"
 #include "util/color.h"
 #include "util/journal.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPL;

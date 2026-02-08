@@ -8,6 +8,7 @@
 #include "db/obj/frFig.h"
 #include "db/obj/frShape.h"
 #include "distributed/drUpdate.h"
+#include "frBaseTypes.h"
 #include "ta/FlexTA.h"
 
 namespace drt {

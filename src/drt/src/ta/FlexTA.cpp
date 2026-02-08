@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
 #include "global.h"
