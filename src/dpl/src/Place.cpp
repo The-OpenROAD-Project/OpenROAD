@@ -623,7 +623,7 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
              cell->getBottom(),
              grid_pt.x,
              grid_pt.y);
-  const PixelPt pixel_pt = searchNearestSite(cell, grid_pt.x, grid_pt.y);
+  const PixelPt pixel_pt = diamondSearch(cell, grid_pt.x, grid_pt.y);
   debugPrint(logger_,
              DPL,
              "place",
@@ -644,45 +644,91 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
   return false;
 }
 
-bool Opendp::shiftMove(Node* cell)
+bool Opendp::shiftMove(Node* target_cell)
 {
-  const GridPt grid_pt = legalGridPt(cell, true);
+  const GridPt taget_cell_pixel = legalGridPt(target_cell, true);
   // magic number alert
   const GridY boundary_margin{3};
-  const GridX margin_width{grid_->gridPaddedWidth(cell).v * boundary_margin.v};
+  const GridX margin_width{grid_->gridPaddedWidth(target_cell).v
+                           * (1 + boundary_margin.v)};
   std::set<Node*> region_cells;
-  for (GridX x = grid_pt.x - margin_width; x < grid_pt.x + margin_width; x++) {
-    for (GridY y = grid_pt.y - boundary_margin; y < grid_pt.y + boundary_margin;
+  for (GridX x = taget_cell_pixel.x - margin_width;
+       x <= (taget_cell_pixel.x + margin_width);
+       x++) {
+    for (GridY y = taget_cell_pixel.y - boundary_margin;
+         y <= (taget_cell_pixel.y + boundary_margin);
          y++) {
       Pixel* pixel = grid_->gridPixel(x, y);
       if (pixel) {
-        Node* cell = pixel->cell;
-        if (cell && !cell->isFixed()) {
-          region_cells.insert(cell);
+        Node* cell_in_pixel = pixel->cell;
+        if (cell_in_pixel && !cell_in_pixel->isFixed()) {
+          region_cells.insert(cell_in_pixel);
         }
       }
     }
   }
 
+  if (deep_iterative_placement_ && debug_observer_) {
+    logger_->report("pause after legalGridPt() inside shiftMove(), cell {}",
+                    target_cell->name());
+    debug_observer_->redrawAndPause();
+  }
+
   // erase region cells
   for (Node* around_cell : region_cells) {
-    if (cell->inGroup() == around_cell->inGroup()) {
+    if (target_cell->inGroup() == around_cell->inGroup()) {
       unplaceCell(around_cell);
     }
   }
 
+  if (deep_iterative_placement_ && debug_observer_) {
+    logger_->report("pause after unplacing cells inside shiftMove()");
+    debug_observer_->redrawAndPause();
+  }
+
   // place target cell
-  if (!mapMove(cell)) {
-    placement_failures_.push_back(cell);
+  bool success = true;
+  if (!mapMove(target_cell)) {
+    if (deep_iterative_placement_ && debug_observer_) {
+      logger_->report("failed mapMove() inside shiftMove() for target cell {}",
+                      target_cell->name());
+    }
+    placement_failures_.push_back(target_cell);
+    success = false;
+  }
+
+  if (deep_iterative_placement_ && debug_observer_) {
+    logger_->report("pause after placing target cell inside shiftMove()");
+    debug_observer_->redrawAndPause();
   }
 
   // re-place erased cells
   for (Node* around_cell : region_cells) {
-    if (cell->inGroup() == around_cell->inGroup() && !mapMove(around_cell)) {
-      placement_failures_.push_back(cell);
+    if (deep_iterative_placement_ && debug_observer_) {
+      logger_->report(
+          "pause before mapMove() inside shiftMove() for surrounding cell {}",
+          around_cell->name());
+      debug_observer_->redrawAndPause();
+    }
+
+    if (target_cell->inGroup() == around_cell->inGroup()
+        && !mapMove(around_cell)) {
+      if (debug_observer_) {
+        logger_->report(
+            "failed mapMove() inside shiftMove() for surrounding cell {}",
+            around_cell->name());
+      }
+      placement_failures_.push_back(around_cell);
+      success = false;
     }
   }
-  return placement_failures_.empty();
+
+  if (deep_iterative_placement_ && debug_observer_) {
+    logger_->report("pause after placing surrounding cells inside shiftMove()");
+    debug_observer_->redrawAndPause();
+  }
+
+  return success;
 }
 
 bool Opendp::swapCells(Node* cell1, Node* cell2)
@@ -735,7 +781,7 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
 bool Opendp::refineMove(Node* cell)
 {
   const GridPt grid_pt = legalGridPt(cell, false);
-  const PixelPt pixel_pt = searchNearestSite(cell, grid_pt.x, grid_pt.y);
+  const PixelPt pixel_pt = diamondSearch(cell, grid_pt.x, grid_pt.y);
 
   if (pixel_pt.pixel) {
     if (abs(grid_pt.x - pixel_pt.x) > max_displacement_x_
@@ -768,9 +814,9 @@ int Opendp::distChange(const Node* cell, const DbuX x, const DbuY y) const
 
 ////////////////////////////////////////////////////////////////
 
-PixelPt Opendp::searchNearestSite(const Node* cell,
-                                  const GridX x,
-                                  const GridY y) const
+PixelPt Opendp::diamondSearch(const Node* cell,
+                              const GridX x,
+                              const GridY y) const
 {
   // Diamond search limits.
   GridX x_min = x - max_displacement_x_;
