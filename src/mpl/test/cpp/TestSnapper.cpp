@@ -411,8 +411,8 @@ TEST_F(TestSnapper, SingleLayerWithUnalignablePin)
   std::string snap_warning = testing::internal::GetCapturedStdout();
 
   std::string expected_warning
-      = "[WARNING MPL-0002] Couldn't align pin macro/pin2 from layer H1 to the "
-        "track-grid.\n";
+      = "[WARNING MPL-0002] Could not align all pins of the macro macro to the "
+        "track-grid. 1 out of 2 pins were aligned.\n";
   // Snapped to manufacturing grid
   EXPECT_EQ(macro->getOrigin().x(), 1500);
   // 1523 (origin) + 25 (pin center) equals 1548 which is

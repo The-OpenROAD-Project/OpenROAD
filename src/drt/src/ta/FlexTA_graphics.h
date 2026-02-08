@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "db/obj/frBlock.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
 #include "ta/AbstractTAGraphics.h"

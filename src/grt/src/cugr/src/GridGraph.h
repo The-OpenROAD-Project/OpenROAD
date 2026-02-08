@@ -14,6 +14,7 @@
 #include "Layers.h"
 #include "geo.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "robin_hood.h"
 
 namespace grt {
@@ -27,6 +28,10 @@ struct AccessPoint
 {
   PointT point;
   IntervalT layers;
+  bool operator==(const AccessPoint& ap) const
+  {
+    return point == ap.point && layers == ap.layers;
+  }
 };
 
 // Only hash and compare on the point, not the layers
@@ -151,12 +156,12 @@ class GridGraph
   {
     return unit_length_short_costs_[layer_index];
   }
-  void translateAccessPointsToGrid(
-      odb::dbAccessPoint* ap,
-      int x,
-      int y,
-      AccessPointSet& selected_access_points) const;
-  bool findODBAccessPoints(const GRNet* net,
+  std::vector<AccessPoint> translateAccessPointsToGrid(
+      const std::vector<odb::dbAccessPoint*>& ap,
+      const odb::Point& inst_location) const;
+  AccessPoint selectAccessPoint(
+      const std::vector<AccessPoint>& access_points) const;
+  bool findODBAccessPoints(GRNet* net,
                            AccessPointSet& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;

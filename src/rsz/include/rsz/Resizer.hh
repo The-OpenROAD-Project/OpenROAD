@@ -495,6 +495,36 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Library analysis data
   std::unique_ptr<LibraryAnalysisData> lib_data_;
 
+  // Compute slew RC factor based on library slew thresholds
+  float getSlewRCFactor() const;
+
+  sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
+                                  float load,
+                                  const sta::Corner* corner);
+  bool computeNewDelaysSlews(
+      sta::Pin* driver_pin,
+      sta::Instance* buffer,
+      const sta::Corner* corner,
+      // return values
+      sta::ArcDelay old_delay[sta::RiseFall::index_count],
+      sta::ArcDelay new_delay[sta::RiseFall::index_count],
+      sta::Slew old_drvr_slew[sta::RiseFall::index_count],
+      sta::Slew new_drvr_slew[sta::RiseFall::index_count],
+      // caps seen by driver_pin
+      float& old_load_cap,
+      float& new_load_cap);
+  bool estimateSlewsAfterBufferRemoval(
+      sta::Pin* drvr_pin,
+      sta::Instance* buffer_instance,
+      sta::Slew drvr_slew,
+      const sta::Corner* corner,
+      std::map<const sta::Pin*, float>& load_pin_slew);
+  bool estimateSlewsInTree(sta::Pin* drvr_pin,
+                           sta::Slew drvr_slew,
+                           const BufferedNetPtr& tree,
+                           const sta::Corner* corner,
+                           std::map<const sta::Pin*, float>& load_pin_slew);
+
  protected:
   void init();
   double computeDesignArea();
@@ -752,6 +782,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                std::unordered_set<sta::Instance*>& notSwappable,
                                sta::LibertyCell*& best_lib_cell);
 
+  BufferedNetPtr stitchTrees(const BufferedNetPtr& outer_tree,
+                             sta::Pin* stitching_load,
+                             const BufferedNetPtr& inner_tree);
+
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
@@ -830,6 +864,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
   bool match_cell_footprint_ = false;
+  bool equiv_cells_made_ = false;
+
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
   // insert a buffer in the middle of. Theoretically computed using the smallest

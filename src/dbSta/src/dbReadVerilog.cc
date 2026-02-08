@@ -3,8 +3,6 @@
 
 #include "db_sta/dbReadVerilog.hh"
 
-#include <odb/dbSet.h>
-
 #include <cstddef>
 #include <cstring>
 #include <fstream>
@@ -18,6 +16,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
@@ -560,11 +559,11 @@ void Verilog2db::makeChildInsts(Instance* inst,
       Cell* cell = network_->cell(child);
       dbMaster* master = getMaster(cell);
       if (master == nullptr) {
-        logger_->warn(ORD,
-                      2013,
-                      "instance {} LEF master {} not found.",
-                      child_name,
-                      network_->name(cell));
+        logger_->error(ORD,
+                       2013,
+                       "instance {} LEF master {} not found.",
+                       child_name,
+                       network_->name(cell));
         continue;
       }
 

@@ -31,6 +31,7 @@
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "map/mio/mio.h"
 #include "odb/db.h"
 #include "sta/Bfs.hh"
 #include "sta/ClkNetwork.hh"

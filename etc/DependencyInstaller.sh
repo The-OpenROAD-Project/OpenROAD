@@ -62,8 +62,8 @@ LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
 GTEST_VERSION="1.17.0"
 GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-ABSL_VERSION="20240722.0"
-ABSL_CHECKSUM="740fb8f35ebdf82740c294bde408b9c0"
+ABSL_VERSION="20260107.0"
+ABSL_CHECKSUM="2a7add2ee848dd4591f41b0f6339d624"
 BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
@@ -450,6 +450,17 @@ _install_boost() {
     else
         INSTALL_SUMMARY+=("Boost: system=${boost_installed_version}, required=${required_version}, status=skipped")
     fi
+
+    local boost_cmake_dir=""
+    if [[ -d "${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
+        boost_cmake_dir="${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}"
+    elif [[ -d "${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
+        boost_cmake_dir="${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}"
+    fi
+
+    if [[ -n "${boost_cmake_dir}" ]]; then
+        CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_DIR=$(realpath "${boost_cmake_dir}") "
+    fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath "${boost_prefix}") "
 }
 
@@ -708,13 +719,6 @@ _install_or_tools() {
                 CMAKE_PACKAGE_ROOT_ARGS+=" -D ortools_ROOT=${or_tools_install_dir} "
                 OR_TOOLS_PATH=${or_tools_install_dir}
 
-                # Remove conflicting Boost configuration files included in OR-Tools
-                for lib_dir in "lib" "lib64"; do
-                    if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
-                        find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-                    fi
-                done
-
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=skipped")
                 return
             else
@@ -745,13 +749,6 @@ _install_or_tools() {
             _execute "Extracting or-tools..." tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
         )
     fi
-
-    # Remove conflicting Boost configuration files included in OR-Tools
-    for lib_dir in "lib" "lib64"; do
-        if [[ -d "${OR_TOOLS_PATH}/${lib_dir}/cmake" ]]; then
-            find "${OR_TOOLS_PATH}/${lib_dir}/cmake" -maxdepth 1 -type d \( -name "Boost-*" -o -name "boost_*-*" \) -exec rm -rf {} +
-        fi
-    done
 
     INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, status=installed")
 
@@ -784,7 +781,6 @@ _install_common_dev() {
     _install_lemon
     _install_spdlog
     _install_gtest
-    _install_abseil
 
     if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
         _install_equivalence_deps
@@ -1146,6 +1142,7 @@ main() {
                     ubuntu_version_normalized="20.04"
                 fi
                 _install_or_tools "ubuntu" "${ubuntu_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
@@ -1191,6 +1188,7 @@ main() {
                     fi
                 fi
                 _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${or_tools_arch}" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Darwin")
@@ -1209,6 +1207,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "opensuse" "leap" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             cat <<EOF
 To enable GCC-11 you need to run:
@@ -1228,6 +1227,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "debian" "${debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         *)
