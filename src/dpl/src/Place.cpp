@@ -656,9 +656,9 @@ bool Opendp::shiftMove(Node* cell)
          y++) {
       Pixel* pixel = grid_->gridPixel(x, y);
       if (pixel) {
-        Node* cell = pixel->cell;
-        if (cell && !cell->isFixed()) {
-          region_cells.insert(cell);
+        Node* cell_tmp = pixel->cell;
+        if (cell_tmp && !cell_tmp->isFixed()) {
+          region_cells.insert(cell_tmp);
         }
       }
     }
