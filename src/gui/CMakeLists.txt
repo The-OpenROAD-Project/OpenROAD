@@ -7,6 +7,7 @@ option(BUILD_GUI "Build the GUI" ON)
 # If Qt is not installed there will not be cmake
 # support for the package so this needs to be "quiet".
 find_package(Qt5 QUIET COMPONENTS Core Widgets Charts)
+find_package(OpenGL REQUIRED)
 
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -69,6 +70,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/colorGenerator.cpp
     src/bufferTreeDescriptor.cpp
     src/chartsWidget.cpp
+    src/chiplet3DWidget.cpp
     src/GUIProgress.cpp
     src/dropdownCheckboxes.cpp
     resources/resource.qrc
@@ -81,6 +83,7 @@ if (Qt5_FOUND AND BUILD_GUI)
       Qt5::Core
       Qt5::Widgets
       Qt5::Charts
+      OpenGL::GL
       utl_lib
       Boost::boost
       OpenSTA
