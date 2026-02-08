@@ -112,16 +112,6 @@ void Graphics::drawObjects(gui::Painter& painter)
       painter.drawRect(bbox);
       continue;
     }
-    
-    if (cell == dp_->dummy_cell_) {
-      auto color = gui::Painter::kYellow;
-      color.a = 100;
-      painter.setPen(color);
-      painter.setBrush(color);
-      odb::Rect bbox = cell->getDbInst()->getBBox()->getBox();
-      painter.drawRect(bbox);
-      continue;
-    }
 
     odb::Point initial_location = dp_->getOdbLocation(cell.get());
     odb::Point final_location = dp_->getDplLocation(cell.get());

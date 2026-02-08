@@ -68,6 +68,11 @@ void Opendp::detailedPlacement()
   initGrid();
   // Paint fixed cells.
   setFixedGridCells();
+  // Paint initially place2d cells (respecting already legalized ones).
+  if (incremental_) {
+    logger_->report("setInitialGridCells()");
+    setInitialGridCells();
+  }
   // group mapping & x_axis dummycell insertion
   groupInitPixels2();
   // y axis dummycell insertion
@@ -304,29 +309,45 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 
 void Opendp::place()
 {
-  int move_count = 0;
-  auto report_placement = [this, &move_count](
-                              Node* cell, bool mapped, bool shifted) {
-    if (jump_moves_ > 0 && (move_count++ % jump_moves_ != 0)) {
-      return;
-    }
+  auto report_placement = [this](Node* cell, bool mapped, bool shifted) {
     if (debug_observer_) {
       const char* type = isMultiRow(cell) ? "multi-row" : "single-row";
       if (mapped) {
-        logger_->report("Successful mapMove(), {} cell {}", type, cell->name());
-      } else if (shifted) {
-        logger_->report(
-            "Successful shiftMove(), {} cell {}", type, cell->name());
+        logger_->report("Successful mapMove(), {} cell {}, #moves: {}",
+                        type,
+                        cell->name(),
+                        move_count_);
       } else {
         logger_->report(
-            "Unsuccessful placement, {} cell {}", type, cell->name());
+            "Failed mapMove(), {} cell {}, trying shiftMove(), #moves: {}",
+            type,
+            cell->name(),
+            move_count_);
+        if (shifted) {
+          logger_->report("Successful shiftMove(), {} cell {}, #moves: {}",
+                          type,
+                          cell->name(),
+                          move_count_);
+        } else {
+          logger_->report("Unsuccessful placement, {} cell {}, #moves: {}",
+                          type,
+                          cell->name(),
+                          move_count_);
+        }
       }
+      move_count_++;
+      if (jump_moves_ > 0 && (move_count_ % jump_moves_ != 0)) {
+        deep_iterative_placement_ = false;
+        return;
+      }
+      deep_iterative_placement_ = true;
       debug_observer_->redrawAndPause();
     }
   };
 
   vector<Node*> sorted_cells;
   sorted_cells.reserve(network_->getNumCells());
+  int failed_map_move = 0, failed_shift_move = 0, success_map_move = 0;
 
   for (auto& cell : network_->getNodes()) {
     if (cell->getType() != Node::CELL) {
@@ -358,7 +379,11 @@ void Opendp::place()
         bool shifted = false;
         if (!mapped) {
           shifted = shiftMove(cell);
+          if (!shifted) {
+            failed_shift_move++;
+          }
         }
+        mapped == 1 ? success_map_move++ : failed_map_move++;
 
         if (iterative_placement_) {
           odb::Point initial_location = getOdbLocation(cell);
@@ -372,13 +397,26 @@ void Opendp::place()
       }
     }
   }
+
+  int count = 0;
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
+      if (iterative_placement_) {
+        count++;
+        logger_->report("Placing single-row cell {}, count {}, %: {:.2f}",
+                        cell->name(),
+                        count,
+                        100.0 * count / sorted_cells.size());
+      }
       bool mapped = mapMove(cell);
       bool shifted = false;
       if (!mapped) {
         shifted = shiftMove(cell);
+        if (!shifted) {
+          failed_shift_move++;
+        }
       }
+      mapped == 1 ? success_map_move++ : failed_map_move++;
 
       if (iterative_placement_) {
         odb::Point initial_location = getOdbLocation(cell);
@@ -390,6 +428,28 @@ void Opendp::place()
         }
       }
     }
+  }
+
+  if (iterative_placement_) {
+    logger_->report(
+        "Total counters:\n"
+        "\t#cells: {}\n"
+        "\t#Failed mapMove(): {}, #Success mapMove(): {}\n"
+        "\t% Success mapMove(): {:.2f}\n"
+        "\t#Failed shiftMove(): {}\n"
+        "\t% Success shiftMove(): {:.2f}",
+        sorted_cells.size(),
+        failed_map_move,
+        success_map_move,
+        success_map_move > 0
+            ? 100.0 * success_map_move / (failed_map_move + success_map_move)
+            : 0,
+        failed_shift_move,
+        failed_map_move > 0
+            ? 100.0 * (failed_map_move - failed_shift_move) / (failed_map_move)
+            : 0);
+
+    logger_->report("Placement failures: {}", placement_failures_.size());
   }
 }
 
