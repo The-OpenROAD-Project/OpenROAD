@@ -92,8 +92,7 @@ class Opendp
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
-                         const std::string& report_file_name = std::string(""),
-                         bool incremental = false);
+                         const std::string& report_file_name = std::string(""));
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -373,7 +372,6 @@ class Opendp
   int move_count_ = 1;
   bool iterative_placement_ = false;
   bool deep_iterative_placement_ = false;
-  bool incremental_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;
