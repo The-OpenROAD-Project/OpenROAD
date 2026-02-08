@@ -74,6 +74,20 @@ using IRDropByPoint = std::map<odb::Point, double>;
 struct GapInfo;
 struct DecapCell;
 struct IRDrop;
+
+struct GlobalSwapParams
+{
+  int passes = 2;
+  double tolerance = 0.01;
+  double tradeoff = 0.4;
+  double profiling_excess = 1.10;
+  std::vector<double> budget_multipliers{1.50, 1.25, 1.10, 1.04};
+  double area_weight = 0.4;
+  double pin_weight = 0.6;
+  double user_congestion_weight = 35.0;
+  int sampling_moves = 150;
+  int normalization_interval = 1000;
+};
 ////////////////////////////////////////////////////////////////
 
 class Opendp
@@ -115,6 +129,23 @@ class Opendp
                        bool verbose);
   void removeFillers();
   void optimizeMirroring();
+  void resetGlobalSwapParams();
+  void configureGlobalSwapParams(int passes,
+                                 double tolerance,
+                                 double tradeoff,
+                                 double area_weight,
+                                 double pin_weight,
+                                 double user_weight,
+                                 int sampling_moves,
+                                 int normalization_interval,
+                                 double profiling_excess,
+                                 const std::vector<double>& budget_multipliers);
+  const GlobalSwapParams& getGlobalSwapParams() const
+  {
+    return global_swap_params_;
+  }
+  void setExtraDplEnabled(bool enabled) { extra_dpl_enabled_ = enabled; }
+  bool isExtraDplEnabled() const { return extra_dpl_enabled_; }
 
   // Place decap cells
   void addDecapMaster(odb::dbMaster* decap_master, double decap_cap);
@@ -358,6 +389,8 @@ class Opendp
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
+  GlobalSwapParams global_swap_params_;
+  bool extra_dpl_enabled_ = false;
 };
 
 int divRound(int dividend, int divisor);

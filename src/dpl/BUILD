@@ -52,6 +52,8 @@ cc_library(
         "src/optimization/detailed_generator.h",
         "src/optimization/detailed_global.cxx",
         "src/optimization/detailed_global.h",
+        "src/optimization/detailed_global_legacy.cxx",
+        "src/optimization/detailed_global_legacy.h",
         "src/optimization/detailed_manager.cxx",
         "src/optimization/detailed_manager.h",
         "src/optimization/detailed_mis.cxx",
