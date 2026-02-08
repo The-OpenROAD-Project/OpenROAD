@@ -91,6 +91,8 @@ target_compile_definitions(utl
 target_link_libraries(utl
   PUBLIC
     utl_lib
+    odb
+    dbSta
 )
 
 messages(
@@ -103,3 +105,4 @@ messages(
 if(ENABLE_TESTS)
   add_subdirectory(test)
 endif()
+

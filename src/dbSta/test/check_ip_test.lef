@@ -1,0 +1,259 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+LAYER M1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.200 ;
+  WIDTH 0.100 ;
+END M1
+
+LAYER M2
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.200 ;
+  WIDTH 0.100 ;
+END M2
+
+# FinFET layer for LEF-CHK-008 test
+LAYER fin_drawing
+  TYPE MASTERSLICE ;
+END fin_drawing
+
+SITE unit
+  CLASS CORE ;
+  SIZE 0.200 BY 2.000 ;
+  SYMMETRY Y ;
+END unit
+
+# =============================================================================
+# LEF-CHK-000: Macro with good alignment, all checks should pass
+# =============================================================================
+MACRO pass_all_checks
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 10.000 0.200 ;
+    END
+  END VDD
+END pass_all_checks
+
+# =============================================================================
+# LEF-CHK-001: Macro dimensions NOT aligned to manufacturing grid (0.005 um)
+# Width 10.001 is not divisible by 0.005
+# =============================================================================
+MACRO lef001_grid_width
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.001 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef001_grid_width
+
+# =============================================================================
+# LEF-CHK-002: Pin coordinates NOT aligned to manufacturing grid
+# Pin rect uses 0.001 which is not on 0.005 grid
+# =============================================================================
+MACRO lef002_pin_grid
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.001 1.000 0.200 1.200 ;
+    END
+  END A
+END lef002_pin_grid
+
+# =============================================================================
+# LEF-CHK-003: Pin NOT aligned to routing grid
+# Pin center at x=0.555 is not on track grid (expects 0.1, 0.3, 0.5, 0.7...)
+# =============================================================================
+MACRO lef003_routing_grid
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.455 0.955 0.655 1.155 ;
+    END
+  END A
+END lef003_routing_grid
+
+# =============================================================================
+# LEF-CHK-004: Signal pin has NO accessible edge (blocked by obstruction)
+# =============================================================================
+MACRO lef004_signal_blocked
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN SIG
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 1.000 1.000 1.200 1.200 ;
+    END
+  END SIG
+  OBS
+    LAYER M1 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+  END
+END lef004_signal_blocked
+
+# =============================================================================
+# LEF-CHK-005: Power pin has NO accessible edge (blocked by obstruction)
+# =============================================================================
+MACRO lef005_power_blocked
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 1.000 1.000 1.200 1.200 ;
+    END
+  END VDD
+  OBS
+    LAYER M1 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+  END
+END lef005_power_blocked
+
+# =============================================================================
+# LEF-CHK-006: Excessive polygon count (test with -max_polygons 5)
+# This macro has many obstructions to trigger polygon count warning
+# =============================================================================
+MACRO lef006_polygon_count
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+  OBS
+    LAYER M1 ;
+    RECT 2.000 2.000 2.100 2.100 ;
+    RECT 3.000 3.000 3.100 3.100 ;
+    RECT 4.000 4.000 4.100 4.100 ;
+    RECT 5.000 5.000 5.100 5.100 ;
+    RECT 6.000 6.000 6.100 6.100 ;
+    RECT 7.000 7.000 7.100 7.100 ;
+  END
+END lef006_polygon_count
+
+# =============================================================================
+# LEF-CHK-007: Signal pin missing antenna model
+# =============================================================================
+MACRO lef007_no_antenna
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef007_no_antenna
+
+# =============================================================================
+# LEF-CHK-008: FinFET technology detection (info only, use -verbose)
+# Uses fin_drawing layer defined above
+# =============================================================================
+MACRO lef008_finfet
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef008_finfet
+
+# =============================================================================
+# LEF-CHK-009: Signal pin has NO geometry defined
+# =============================================================================
+MACRO lef009_no_geometry
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+  END A
+END lef009_no_geometry
+
+# =============================================================================
+# LEF-CHK-010: Pin geometry smaller than layer minimum width
+# Pin dimensions 0.050 x 0.050 while layer min width is 0.100
+# =============================================================================
+MACRO lef010_small_pin
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.050 1.050 ;
+    END
+  END A
+END lef010_small_pin
+
+END LIBRARY
