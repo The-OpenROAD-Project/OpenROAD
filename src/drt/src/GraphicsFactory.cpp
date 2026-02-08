@@ -11,6 +11,7 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA_graphics.h"

@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "gui/heatMap.h"
 #include "odb/dbTypes.h"
 #include "psm/pdnsim.h"
 #include "sta/Corner.hh"
