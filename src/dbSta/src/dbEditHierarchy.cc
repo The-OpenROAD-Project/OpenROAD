@@ -267,7 +267,6 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
           db_network_->parent(db_network_->dbToSta(source_pin->getInst())),
           odb::dbNameUniquifyType::IF_NEEDED);
       source_db_net = db_network_->staToDb(new_net);
-      connection_name = source_db_net->getConstName();
       source_pin->connect(source_db_net);
     }
 
