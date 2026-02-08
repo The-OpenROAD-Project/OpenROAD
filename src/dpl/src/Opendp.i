@@ -24,10 +24,10 @@ namespace dpl {
 void
 detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
-                       const char* report_file_name,
-                       bool incremental){
+                       const char* report_file_name)
+{
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), incremental);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name));
 }
 
 void
