@@ -51,7 +51,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "ifp_man_tcl_check",
-    "ifp_readme_msgs_check",
+    # "ifp_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -128,7 +128,14 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ),
+        ) + {
+            "ifp_man_tcl_check": [
+                "//src/ifp:README.md",
+            ],
+            "ifp_readme_msgs_check": [
+                "//src/ifp:README.md",
+            ],
+        }.get(test_name, []),
     )
     for test_name in ALL_TESTS
 ]
@@ -138,6 +145,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
