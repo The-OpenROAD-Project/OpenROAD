@@ -3003,7 +3003,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case29)
   num_warning += sta_->checkSanity();
   EXPECT_EQ(num_warning, 0);
 
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 // Reproduction of ORD-2030 bug using Verilog input
@@ -3080,7 +3080,63 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case30)
   EXPECT_LE(num_warning, 1);
 
   // Write verilog and check the content
-  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v", false);
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Test case for hierarchical buffer insertion w/ loads_on_diff_nets=true
+TEST_F(TestInsertBuffer, BeforeLoads_Case31)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  int num_warning = 0;
+
+  // Find buffer master
+  dbMaster* buf_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_master, nullptr);
+
+  // Find the target net to insert a buffer
+  dbNet* target_net = block_->findNet("net5869");
+  ASSERT_NE(target_net, nullptr);
+
+  // Find the load pins
+  dbITerm* load0_a = block_->findITerm("swerv/ifu/_11393_/A");
+  ASSERT_NE(load0_a, nullptr);
+  dbITerm* load1_a = block_->findITerm("swerv/ifu/_11394_/A");
+  ASSERT_NE(load1_a, nullptr);
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Prepare load set - only loads on net848 (hierarchical loads in swerv/ifu)
+  std::set<dbObject*> load_pins;
+  load_pins.insert(load0_a);
+  load_pins.insert(load1_a);
+
+  // Insert buffer before the hierarchical loads
+  dbInst* buf_inst
+      = target_net->insertBufferBeforeLoads(load_pins,
+                                            buf_master,
+                                            nullptr,
+                                            "new_buf",
+                                            nullptr,
+                                            dbNameUniquifyType::IF_NEEDED,
+                                            true);
+  ASSERT_NE(buf_inst, nullptr);
+
+  // Post sanity check
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 }  // namespace odb

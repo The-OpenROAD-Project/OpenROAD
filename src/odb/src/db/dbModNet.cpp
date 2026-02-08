@@ -370,11 +370,12 @@ dbModNet* dbModNet::create(dbModule* parent_module, const char* base_name)
 
 dbModNet* dbModNet::create(dbModule* parent_module,
                            const char* base_name,
-                           const dbNameUniquifyType& uniquify)
+                           const dbNameUniquifyType& uniquify,
+                           dbNet* corresponding_flat_net)
 {
   dbBlock* block = parent_module->getOwner();
-  std::string net_name
-      = block->makeNewModNetName(parent_module, base_name, uniquify);
+  std::string net_name = block->makeNewModNetName(
+      parent_module, base_name, uniquify, corresponding_flat_net);
   return create(parent_module, block->getBaseName(net_name.c_str()));
 }
 

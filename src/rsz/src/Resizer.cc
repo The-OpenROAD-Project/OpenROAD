@@ -5130,7 +5130,7 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
 
 void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
-  // Legalize the position of the buffer in case it leaves the die
+  // Legalize the cell position for accurate parasitic estimation
   if (estimate_parasitics_->getParasiticsSrc()
           == est::ParasiticsSrc::global_routing
       || estimate_parasitics_->getParasiticsSrc()
