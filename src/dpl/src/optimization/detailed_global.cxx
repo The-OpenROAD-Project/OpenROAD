@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -72,10 +73,12 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   mgr_ = mgrPtr;
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
+  swap_params_ = &mgr_->getGlobalSwapParams();
+  const GlobalSwapParams& params = *swap_params_;
 
-  int passes = 2;
-  double tol = 0.01;
-  tradeoff_ = 0.4;  // Default: 40% exploration, 60% wirelength optimization
+  int passes = params.passes;
+  double tol = params.tolerance;
+  tradeoff_ = params.tradeoff;
   
   for (size_t i = 1; i < args.size(); i++) {
     if (args[i] == "-p" && i + 1 < args.size()) {
@@ -99,12 +102,15 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   // Store original displacement limits for restoration later
   int orig_disp_x, orig_disp_y;
   mgr_->getMaxDisplacement(orig_disp_x, orig_disp_y);
-  
-  // Get chip dimensions for unleashing the optimizer
+  mgr_->getLogger()->info(
+      DPL,
+      906,
+      "Starting two-pass congestion-aware global swap optimization "
+      "(tradeoff={:.1f})",
+      tradeoff_);
+
   const int chip_width = arch_->getMaxX().v - arch_->getMinX().v;
   const int chip_height = arch_->getMaxY().v - arch_->getMinY().v;
-
-  mgr_->getLogger()->info(DPL, 906, "Starting two-pass congestion-aware global swap optimization (tradeoff={:.1f})", tradeoff_);
 
   // PASS 1: HPWL Profiling Pass
   mgr_->getLogger()->info(DPL, 907, "Pass 1: HPWL profiling to determine budget");
@@ -128,13 +134,21 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     }
   }
   
-  // Calculate budget: allow 10% degradation from optimal HPWL
+  // Calculate budget allowance from profiling pass
   double optimal_hpwl = curr_hpwl;
-  budget_hpwl_ = optimal_hpwl * 1.10;
-  
-  mgr_->getLogger()->info(DPL, 908, 
-                         "Profiling complete. Optimal HPWL={:.2f}, Budget HPWL={:.2f} (+10%)", 
-                         optimal_hpwl, budget_hpwl_);
+  double profiling_excess = params.profiling_excess;
+  if (profiling_excess <= 0.0) {
+    profiling_excess = 1.10;
+  }
+  budget_hpwl_ = optimal_hpwl * profiling_excess;
+  const double budget_pct = ((budget_hpwl_ / optimal_hpwl) - 1.0) * 100.0;
+  mgr_->getLogger()->info(
+      DPL,
+      908,
+      "Profiling complete. Optimal HPWL={:.2f}, Budget HPWL={:.2f} ({:+.1f}%)",
+      optimal_hpwl,
+      budget_hpwl_,
+      budget_pct);
 
   // Restore initial state using Journal's built-in undo mechanism
   mgr_->getLogger()->info(DPL, 917, "Undoing {} profiling moves to restore initial state", mgr_->getJournal().size());
@@ -146,8 +160,8 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   is_profiling_pass_ = false;
   
   // Re-compute utilization density map to ensure it's synchronized with restored placement
-  const float area_weight = 0.4f;
-  const float pin_weight = 0.6f;
+  const float area_weight = static_cast<float>(params.area_weight);
+  const float pin_weight = static_cast<float>(params.pin_weight);
   mgr_->getGrid()->computeUtilizationMap(network_, area_weight, pin_weight);
   mgr_->getLogger()->info(DPL, 918, "Re-computed utilization density map after state restoration");
   
@@ -155,7 +169,10 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   congestion_weight_ = calculateAdaptiveCongestionWeight();
   
   // Define the iterative refinement schedule
-  const std::vector<double> budget_multipliers = {1.50, 1.25, 1.10, 1.04};  // 50%, 25%, 10%, 4%
+  std::vector<double> budget_multipliers = params.budget_multipliers;
+  if (budget_multipliers.empty()) {
+    budget_multipliers = {1.10};
+  }
   const std::vector<std::string> stage_names = {"Exploratory", "Consolidation", "Fine-tuning", "Final Polish"};
   
   curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
@@ -164,28 +181,48 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   for (size_t iteration = 0; iteration < budget_multipliers.size(); iteration++) {
     // Update budget for this iteration
     budget_hpwl_ = optimal_hpwl * budget_multipliers[iteration];
-    
-    // Set dynamic displacement limits based on iteration stage
-    if (iteration == 0) {
-      // Iteration 1: Unleash the optimizer completely (chip-wide moves allowed)
-      mgr_->setMaxDisplacement(chip_width, chip_height);
-      mgr_->getLogger()->info(DPL, 921, "Unleashing optimizer: max displacement set to chip dimensions ({}, {})", 
-                             chip_width, chip_height);
-    } else if (iteration == 1) {
-      // Iteration 2: Very loose but controlled (10x original)
-      mgr_->setMaxDisplacement(orig_disp_x * 10, orig_disp_y * 10);
-      mgr_->getLogger()->info(DPL, 922, "Loosened displacement: set to 10x original ({}, {})", 
-                             orig_disp_x * 10, orig_disp_y * 10);
+    std::string stage_name;
+    if (iteration < stage_names.size()) {
+      stage_name = stage_names[iteration];
     } else {
-      // Iterations 3 & 4: Restore original tight displacement for fine-tuning
-      mgr_->setMaxDisplacement(orig_disp_x, orig_disp_y);
-      mgr_->getLogger()->info(DPL, 923, "Restored tight displacement: set to original ({}, {})", 
-                             orig_disp_x, orig_disp_y);
+      stage_name = "Stage " + std::to_string(iteration + 1);
     }
-    
-    mgr_->getLogger()->info(DPL, 919, "Iteration {}: {} stage - Budget={:.2f} ({:.0f}% of optimal)", 
-                           iteration + 1, stage_names[iteration], budget_hpwl_, 
-                           (budget_multipliers[iteration] - 1.0) * 100.0);
+    if (iteration == 0) {
+      mgr_->setMaxDisplacement(chip_width, chip_height);
+      mgr_->getLogger()->info(DPL,
+                              921,
+                              "Iteration {} ({}): temporary displacement set to chip dimensions ({}, {})",
+                              iteration + 1,
+                              stage_name,
+                              chip_width,
+                              chip_height);
+    } else if (iteration == 1) {
+      mgr_->setMaxDisplacement(orig_disp_x * 10, orig_disp_y * 10);
+      mgr_->getLogger()->info(DPL,
+                              922,
+                              "Iteration {} ({}): displacement relaxed to 10x original ({}, {})",
+                              iteration + 1,
+                              stage_name,
+                              orig_disp_x * 10,
+                              orig_disp_y * 10);
+    } else {
+      mgr_->setMaxDisplacement(orig_disp_x, orig_disp_y);
+      mgr_->getLogger()->info(DPL,
+                              923,
+                              "Iteration {} ({}): displacement restored to original ({}, {})",
+                              iteration + 1,
+                              stage_name,
+                              orig_disp_x,
+                              orig_disp_y);
+    }
+
+    mgr_->getLogger()->info(DPL,
+                            919,
+                            "Iteration {}: {} stage - Budget={:.2f} ({:.0f}% of optimal)",
+                            iteration + 1,
+                            stage_name,
+                            budget_hpwl_,
+                            (budget_multipliers[iteration] - 1.0) * 100.0);
     
     // Run optimization passes for this iteration
     for (int p = 1; p <= passes; p++) {
@@ -202,15 +239,32 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     }
     
     // Report iteration results
-    double iteration_improvement = ((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.0;
-    double budget_utilization = ((curr_hpwl - optimal_hpwl) / (budget_hpwl_ - optimal_hpwl)) * 100.0;
-    mgr_->getLogger()->info(DPL, 920, "Iteration {} complete: HPWL={:.6e}, improvement={:.2f}%, budget utilization={:.1f}%", 
-                           iteration + 1, (double) curr_hpwl, iteration_improvement, budget_utilization);
+    const double iteration_improvement
+        = ((init_hpwl - curr_hpwl) / static_cast<double>(init_hpwl)) * 100.0;
+    double budget_utilization = 0.0;
+    const double budget_range = budget_hpwl_ - optimal_hpwl;
+    if (std::abs(budget_range) > std::numeric_limits<double>::epsilon()) {
+      budget_utilization
+          = ((curr_hpwl - optimal_hpwl) / budget_range) * 100.0;
+    }
+    mgr_->getLogger()->info(
+        DPL,
+        920,
+        "Iteration {} complete: HPWL={:.6e}, improvement={:.2f}%, budget utilization={:.1f}%",
+        iteration + 1,
+        static_cast<double>(curr_hpwl),
+        iteration_improvement,
+        budget_utilization);
   }
   
   // Final reporting
   double final_improvement = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
-  double final_budget_utilization = ((curr_hpwl - optimal_hpwl) / (budget_hpwl_ - optimal_hpwl)) * 100.0;
+  double final_budget_utilization = 0.0;
+  const double final_budget_range = budget_hpwl_ - optimal_hpwl;
+  if (std::abs(final_budget_range) > std::numeric_limits<double>::epsilon()) {
+    final_budget_utilization
+        = ((curr_hpwl - optimal_hpwl) / final_budget_range) * 100.0;
+  }
   
   mgr_->getLogger()->info(DPL, 910,
                           "Two-pass optimization complete: "
@@ -228,6 +282,9 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 void DetailedGlobalSwap::globalSwap()
 {
   // Two-pass budget-constrained global swap: profiling pass or congestion optimization pass
+  if (swap_params_ == nullptr && mgr_ != nullptr) {
+    swap_params_ = &mgr_->getGlobalSwapParams();
+  }
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
@@ -263,7 +320,9 @@ void DetailedGlobalSwap::globalSwap()
   }
   
   int moves_since_normalization = 0;
-  const int normalization_interval = 1000;
+  const int normalization_interval = swap_params_
+                                         ? swap_params_->normalization_interval
+                                         : 1000;
 
   // Consider each candidate cell once.
   for (auto ndi : candidates) {
@@ -314,8 +373,10 @@ void DetailedGlobalSwap::globalSwap()
           
           // Calculate pixel indices (row-major order)
           const int row_site_count = grid->getRowSiteCount().v;
-          const int orig_pixel_idx = orig_grid_y.v * row_site_count + orig_grid_x.v;
-          const int new_pixel_idx = new_grid_y.v * row_site_count + new_grid_x.v;
+          const int orig_pixel_idx
+              = (orig_grid_y.v * row_site_count) + orig_grid_x.v;
+          const int new_pixel_idx
+              = (new_grid_y.v * row_site_count) + new_grid_x.v;
           
           // Get utilization densities at original and new locations
           const float orig_density = grid->getUtilizationDensity(orig_pixel_idx);
@@ -324,7 +385,8 @@ void DetailedGlobalSwap::globalSwap()
           // Get pre-calculated congestion contribution for this cell
           const double cell_cong_contrib = congestion_contribution_[moved_cell->getId()];
           
-          // Calculate improvement: moving from high density to low density is good
+          // ΔCongestion = (orig_density - new_density) scaled by the cell's
+          // weighted contribution.
           congestion_improvement += (orig_density - new_density) * cell_cong_contrib;
         }
       }
@@ -338,7 +400,7 @@ void DetailedGlobalSwap::globalSwap()
     }
     
     // Within budget: evaluate combined profit
-    double combined_profit = hpwl_delta + congestion_weight_ * congestion_improvement;
+    double combined_profit = hpwl_delta + (congestion_weight_ * congestion_improvement);
     
     if (combined_profit > 0) {
       // Accept: move is profitable and within budget
@@ -678,15 +740,15 @@ void DetailedGlobalSwap::init(DetailedMgr* mgr)
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
+  swap_params_ = &mgr->getGlobalSwapParams();
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
   std::ranges::fill(edgeMask_, 0);
 
   // Congestion-aware placement initialization.
-  constexpr float area_weight = 0.4f;
-  constexpr float pin_weight = 0.6f;
-
+  const float area_weight = static_cast<float>(swap_params_->area_weight);
+  const float pin_weight = static_cast<float>(swap_params_->pin_weight);
   mgr_->getGrid()->computeUtilizationMap(network_, area_weight, pin_weight);
 
   congestion_contribution_.resize(network_->getNumNodes());
@@ -722,6 +784,7 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
+  swap_params_ = &mgr->getGlobalSwapParams();
 
   Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
@@ -732,8 +795,9 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedGlobalSwap::calculateAdaptiveCongestionWeight()
 {
-  const int num_samples = 150;  // Number of random swaps to sample
-  const double user_knob = 35.0;  // Tuning parameter: how much to prioritize congestion over HPWL
+  const int num_samples = swap_params_ ? swap_params_->sampling_moves : 150;
+  const double user_knob
+      = swap_params_ ? swap_params_->user_congestion_weight : 35.0;
   
   // Get candidate cells for sampling
   std::vector<Node*> candidates = mgr_->getSingleHeightCells();
@@ -786,8 +850,10 @@ double DetailedGlobalSwap::calculateAdaptiveCongestionWeight()
         
         // Calculate pixel indices
         const int row_site_count = grid->getRowSiteCount().v;
-        const int orig_pixel_idx = orig_grid_y.v * row_site_count + orig_grid_x.v;
-        const int new_pixel_idx = new_grid_y.v * row_site_count + new_grid_x.v;
+        const int orig_pixel_idx
+            = (orig_grid_y.v * row_site_count) + orig_grid_x.v;
+        const int new_pixel_idx
+            = (new_grid_y.v * row_site_count) + new_grid_x.v;
         
         // Get densities
         const float orig_density = grid->getUtilizationDensity(orig_pixel_idx);

@@ -228,6 +228,20 @@ class Grid
   float area_weight_ = 0.0f;
   float pin_weight_ = 0.0f;
   bool utilization_dirty_ = false;
+  float last_max_area_ = 1.0f;
+  float last_max_pins_ = 1.0f;
+  float last_max_utilization_ = 1.0f;
+
+  int countValidPixels(GridX x_begin,
+                       GridY y_begin,
+                       GridX x_end,
+                       GridY y_end) const;
+  void applyCellContribution(Node* node,
+                             GridX x_begin,
+                             GridY y_begin,
+                             GridX x_end,
+                             GridY y_end,
+                             float scale);
 };
 
 }  // namespace dpl

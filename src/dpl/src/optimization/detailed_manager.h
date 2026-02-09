@@ -88,6 +88,14 @@ class DetailedMgr
     x = maxDispX_;
     y = maxDispY_;
   }
+  void setGlobalSwapParams(const GlobalSwapParams& params)
+  {
+    global_swap_params_ = params;
+  }
+  const GlobalSwapParams& getGlobalSwapParams() const
+  {
+    return global_swap_params_;
+  }
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
   bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
@@ -343,6 +351,7 @@ class DetailedMgr
 
   // Generic place for utilization.
   double targetUt_{1.0};
+  GlobalSwapParams global_swap_params_;
 
   // Target displacement limits.
   int maxDispX_;
