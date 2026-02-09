@@ -401,7 +401,7 @@ void DetailedGlobalSwap::stats()
 {
   mgr_->getLogger()->info(
       DPL,
-      334,
+      348,
       "Generator {:s}, "
       "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
       getName().c_str(),
