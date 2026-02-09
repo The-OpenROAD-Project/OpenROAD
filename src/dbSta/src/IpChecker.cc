@@ -49,7 +49,8 @@ bool IpChecker::checkMaster(const std::string& master_name)
   checkLefMaster(master);
 
   if (warning_count_ > 0) {
-    logger_->error(utl::CHK, 3, "IP Check failed with {} warnings", warning_count_);
+    logger_->error(
+        utl::CHK, 3, "IP Check failed with {} warnings", warning_count_);
   }
 
   return warning_count_ == 0;
@@ -79,7 +80,8 @@ bool IpChecker::checkAll()
   }
 
   if (warning_count_ > 0) {
-    logger_->error(utl::CHK, 6, "IP Check failed with {} warnings", warning_count_);
+    logger_->error(
+        utl::CHK, 6, "IP Check failed with {} warnings", warning_count_);
   }
 
   return warning_count_ == 0;
@@ -91,16 +93,16 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
     return;
   }
 
-  checkManufacturingGridAlignment(master);      // LEF-CHK-001
-  checkPinManufacturingGridAlignment(master);   // LEF-CHK-002
-  checkPinRoutingGridAlignment(master);         // LEF-CHK-003
-  checkSignalPinAccessibility(master);          // LEF-CHK-004
-  checkPowerPinAccessibility(master);           // LEF-CHK-005
-  checkPolygonCount(master);                    // LEF-CHK-006
-  checkAntennaInfo(master);                     // LEF-CHK-007
-  checkFinFetProperty(master);                  // LEF-CHK-008
-  checkPinGeometryPresence(master);             // LEF-CHK-009
-  checkPinMinDimensions(master);                // LEF-CHK-010
+  checkManufacturingGridAlignment(master);     // LEF-CHK-001
+  checkPinManufacturingGridAlignment(master);  // LEF-CHK-002
+  checkPinRoutingGridAlignment(master);        // LEF-CHK-003
+  checkSignalPinAccessibility(master);         // LEF-CHK-004
+  checkPowerPinAccessibility(master);          // LEF-CHK-005
+  checkPolygonCount(master);                   // LEF-CHK-006
+  checkAntennaInfo(master);                    // LEF-CHK-007
+  checkFinFetProperty(master);                 // LEF-CHK-008
+  checkPinGeometryPresence(master);            // LEF-CHK-009
+  checkPinMinDimensions(master);               // LEF-CHK-010
 }
 
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
@@ -120,16 +122,22 @@ void IpChecker::checkManufacturingGridAlignment(odb::dbMaster* master)
   double mfg_grid_um = mfg_grid / 1000.0;
 
   if (width % mfg_grid != 0) {
-    logger_->warn(utl::CHK, 10,
-                  "Master {} width not aligned to manufacturing grid ({:.3f} um)",
-                  master_name, mfg_grid_um);
+    logger_->warn(
+        utl::CHK,
+        10,
+        "Master {} width not aligned to manufacturing grid ({:.3f} um)",
+        master_name,
+        mfg_grid_um);
     warning_count_++;
   }
 
   if (height % mfg_grid != 0) {
-    logger_->warn(utl::CHK, 11,
-                  "Master {} height not aligned to manufacturing grid ({:.3f} um)",
-                  master_name, mfg_grid_um);
+    logger_->warn(
+        utl::CHK,
+        11,
+        "Master {} height not aligned to manufacturing grid ({:.3f} um)",
+        master_name,
+        mfg_grid_um);
     warning_count_++;
   }
 }
@@ -152,13 +160,15 @@ void IpChecker::checkPinManufacturingGridAlignment(odb::dbMaster* master)
         odb::Rect rect = box->getBox();
 
         // Check first misaligned edge and report
-        if (rect.xMin() % mfg_grid != 0 ||
-            rect.yMin() % mfg_grid != 0 ||
-            rect.xMax() % mfg_grid != 0 ||
-            rect.yMax() % mfg_grid != 0) {
-          logger_->warn(utl::CHK, 20,
-                        "Pin {}/{} not aligned to manufacturing grid ({:.3f} um)",
-                        master_name, mterm->getName(), mfg_grid_um);
+        if (rect.xMin() % mfg_grid != 0 || rect.yMin() % mfg_grid != 0
+            || rect.xMax() % mfg_grid != 0 || rect.yMax() % mfg_grid != 0) {
+          logger_->warn(
+              utl::CHK,
+              20,
+              "Pin {}/{} not aligned to manufacturing grid ({:.3f} um)",
+              master_name,
+              mterm->getName(),
+              mfg_grid_um);
           warning_count_++;
           return;  // One warning per pin is enough
         }
@@ -189,8 +199,8 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     odb::dbSigType sig_type = mterm->getSigType();
-    if (sig_type == odb::dbSigType::POWER ||
-        sig_type == odb::dbSigType::GROUND) {
+    if (sig_type == odb::dbSigType::POWER
+        || sig_type == odb::dbSigType::GROUND) {
       continue;
     }
 
@@ -225,23 +235,27 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
         int pin_height = rect.dy();
 
         // Check if pin dimensions are compatible with track pitch
-        bool is_horizontal =
-            (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
+        bool is_horizontal
+            = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 
         bool compatible = false;
         if (is_horizontal) {
           // Horizontal layer: pin height should be compatible with y_pitch
-          compatible = (pin_height % y_pitch == 0) || (y_pitch % pin_height == 0);
+          compatible
+              = (pin_height % y_pitch == 0) || (y_pitch % pin_height == 0);
         } else {
           // Vertical layer: pin width should be compatible with x_pitch
           compatible = (pin_width % x_pitch == 0) || (x_pitch % pin_width == 0);
         }
 
         if (!compatible) {
-          logger_->warn(utl::CHK, 30,
+          logger_->warn(utl::CHK,
+                        30,
                         "Pin {}/{} dimensions not compatible with routing "
                         "track pitch on layer {}",
-                        master_name, mterm->getName(), layer->getName());
+                        master_name,
+                        mterm->getName(),
+                        layer->getName());
           warning_count_++;
         }
       }
@@ -258,14 +272,14 @@ bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
   // Obstructions above can block via access to the pin
   std::vector<odb::Rect> obs_rects;
   int pin_routing_level = layer->getRoutingLevel();
-  
+
   for (odb::dbBox* obs : master->getObstructions()) {
     odb::dbTechLayer* obs_layer = obs->getTechLayer();
     if (!obs_layer) {
       continue;
     }
     int obs_routing_level = obs_layer->getRoutingLevel();
-    
+
     // Check obstructions on same layer or above
     if (obs_routing_level >= pin_routing_level) {
       obs_rects.push_back(obs->getBox());
@@ -280,23 +294,23 @@ bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
   // An edge is accessible if it's not fully covered by obstructions
 
   // North edge (top)
-  odb::Rect north_edge(pin_rect.xMin(), pin_rect.yMax(),
-                       pin_rect.xMax(), pin_rect.yMax() + 1);
+  odb::Rect north_edge(
+      pin_rect.xMin(), pin_rect.yMax(), pin_rect.xMax(), pin_rect.yMax() + 1);
   bool north_blocked = false;
 
   // South edge (bottom)
-  odb::Rect south_edge(pin_rect.xMin(), pin_rect.yMin() - 1,
-                       pin_rect.xMax(), pin_rect.yMin());
+  odb::Rect south_edge(
+      pin_rect.xMin(), pin_rect.yMin() - 1, pin_rect.xMax(), pin_rect.yMin());
   bool south_blocked = false;
 
   // East edge (right)
-  odb::Rect east_edge(pin_rect.xMax(), pin_rect.yMin(),
-                      pin_rect.xMax() + 1, pin_rect.yMax());
+  odb::Rect east_edge(
+      pin_rect.xMax(), pin_rect.yMin(), pin_rect.xMax() + 1, pin_rect.yMax());
   bool east_blocked = false;
 
   // West edge (left)
-  odb::Rect west_edge(pin_rect.xMin() - 1, pin_rect.yMin(),
-                      pin_rect.xMin(), pin_rect.yMax());
+  odb::Rect west_edge(
+      pin_rect.xMin() - 1, pin_rect.yMin(), pin_rect.xMin(), pin_rect.yMax());
   bool west_blocked = false;
 
   for (const auto& obs_rect : obs_rects) {
@@ -325,8 +339,8 @@ void IpChecker::checkSignalPinAccessibility(odb::dbMaster* master)
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     odb::dbSigType sig_type = mterm->getSigType();
-    if (sig_type == odb::dbSigType::POWER ||
-        sig_type == odb::dbSigType::GROUND) {
+    if (sig_type == odb::dbSigType::POWER
+        || sig_type == odb::dbSigType::GROUND) {
       continue;
     }
 
@@ -339,9 +353,12 @@ void IpChecker::checkSignalPinAccessibility(odb::dbMaster* master)
 
         odb::Rect pin_rect = box->getBox();
         if (!hasAccessibleEdge(master, pin_rect, layer)) {
-          logger_->warn(utl::CHK, 40,
+          logger_->warn(utl::CHK,
+                        40,
                         "Signal pin {}/{} has no accessible edge on layer {}",
-                        master_name, mterm->getName(), layer->getName());
+                        master_name,
+                        mterm->getName(),
+                        layer->getName());
           warning_count_++;
           break;  // One warning per pin
         }
@@ -357,8 +374,8 @@ void IpChecker::checkPowerPinAccessibility(odb::dbMaster* master)
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     odb::dbSigType sig_type = mterm->getSigType();
-    if (sig_type != odb::dbSigType::POWER &&
-        sig_type != odb::dbSigType::GROUND) {
+    if (sig_type != odb::dbSigType::POWER
+        && sig_type != odb::dbSigType::GROUND) {
       continue;
     }
 
@@ -371,9 +388,12 @@ void IpChecker::checkPowerPinAccessibility(odb::dbMaster* master)
 
         odb::Rect pin_rect = box->getBox();
         if (!hasAccessibleEdge(master, pin_rect, layer)) {
-          logger_->warn(utl::CHK, 50,
+          logger_->warn(utl::CHK,
+                        50,
                         "Power pin {}/{} has no accessible edge on layer {}",
-                        master_name, mterm->getName(), layer->getName());
+                        master_name,
+                        mterm->getName(),
+                        layer->getName());
           warning_count_++;
           break;
         }
@@ -401,10 +421,12 @@ void IpChecker::checkPolygonCount(odb::dbMaster* master)
   }
 
   if (polygon_count > max_polygons_) {
-    logger_->warn(utl::CHK, 60,
+    logger_->warn(utl::CHK,
+                  60,
                   "Master {} has more than {} polygons, "
                   "which will significantly slow down processes",
-                  master_name, max_polygons_);
+                  master_name,
+                  max_polygons_);
     warning_count_++;
   }
 }
@@ -416,15 +438,17 @@ void IpChecker::checkAntennaInfo(odb::dbMaster* master)
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     odb::dbSigType sig_type = mterm->getSigType();
-    if (sig_type == odb::dbSigType::POWER ||
-        sig_type == odb::dbSigType::GROUND) {
+    if (sig_type == odb::dbSigType::POWER
+        || sig_type == odb::dbSigType::GROUND) {
       continue;
     }
 
     if (!mterm->hasDefaultAntennaModel()) {
-      logger_->warn(utl::CHK, 70,
+      logger_->warn(utl::CHK,
+                    70,
                     "Pin {}/{} missing antenna model",
-                    master_name, mterm->getName());
+                    master_name,
+                    mterm->getName());
       warning_count_++;
     }
   }
@@ -443,13 +467,14 @@ void IpChecker::checkFinFetProperty(odb::dbMaster* master)
   }
 
   for (odb::dbTechLayer* layer : tech->getLayers()) {
-   std::string layer_name_lower = layer->getName();
-    std::transform(layer_name_lower.begin(), layer_name_lower.end(), layer_name_lower.begin(),
-                   [](unsigned char c){ return std::tolower(c); });
+    std::string layer_name_lower = layer->getName();
+    std::transform(layer_name_lower.begin(),
+                   layer_name_lower.end(),
+                   layer_name_lower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
     if (layer_name_lower.find("fin") != std::string::npos) {
-      logger_->info(utl::CHK, 80,
-                    "FinFET technology detected for {}",
-                    master->getName());
+      logger_->info(
+          utl::CHK, 80, "FinFET technology detected for {}", master->getName());
       return;
     }
   }
@@ -471,9 +496,11 @@ void IpChecker::checkPinGeometryPresence(odb::dbMaster* master)
     }
 
     if (!has_geometry) {
-      logger_->warn(utl::CHK, 90,
+      logger_->warn(utl::CHK,
+                    90,
                     "Pin {}/{} has no geometry",
-                    master_name, mterm->getName());
+                    master_name,
+                    mterm->getName());
       warning_count_++;
     }
   }
@@ -501,11 +528,14 @@ void IpChecker::checkPinMinDimensions(odb::dbMaster* master)
         int shape_width = rect.minDXDY();
 
         if (static_cast<uint32_t>(shape_width) < min_width) {
-          logger_->warn(utl::CHK, 100,
+          logger_->warn(utl::CHK,
+                        100,
                         "Pin {}/{} geometry width ({}) less than layer "
                         "minimum width ({})",
-                        master_name, mterm->getName(),
-                        shape_width, min_width);
+                        master_name,
+                        mterm->getName(),
+                        shape_width,
+                        min_width);
           warning_count_++;
         }
       }
