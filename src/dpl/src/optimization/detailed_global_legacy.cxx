@@ -335,7 +335,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   DbuX xj{(int) std::floor(0.5 * (bbox.xMin() + bbox.xMax())
                            - 0.5 * ndi->getWidth().v)};
   DbuY yj{(int) std::floor(0.5 * (bbox.yMin() + bbox.yMax())
-                           - 0.5 * ndi->getHeight().v)};
+                           - (0.5 * ndi->getHeight().v))};
 
   // Row and segment for the destination.
   int rj = arch_->find_closest_row(yj);
