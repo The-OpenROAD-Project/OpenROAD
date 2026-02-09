@@ -117,7 +117,7 @@ std::vector<odb::dbMTerm*> getSignalOutputs(odb::dbMaster* master)
   auto by_name = [](odb::dbMTerm* a, odb::dbMTerm* b) {
     return std::strcmp(a->getName().c_str(), b->getName().c_str()) < 0;
   };
-  std::sort(outs.begin(), outs.end(), by_name);
+  std::stable_sort(outs.begin(), outs.end(), by_name);
 
   return outs;
 }
