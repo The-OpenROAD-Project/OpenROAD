@@ -112,17 +112,68 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   mgr_->getMaxDisplacement(orig_disp_x_dbu, orig_disp_y_dbu);
   const int orig_disp_x_sites = std::max(1, orig_disp_x_dbu / row_height);
   const int orig_disp_y_sites = std::max(1, orig_disp_y_dbu / row_height);
-  mgr_->getLogger()->info(
-      DPL,
-      906,
-      "Starting two-pass congestion-aware global swap optimization "
-      "(tradeoff={:.1f})",
-      tradeoff_);
-
   const int chip_width_dbu = arch_->getMaxX().v - arch_->getMinX().v;
   const int chip_height_dbu = arch_->getMaxY().v - arch_->getMinY().v;
   const int chip_width_sites = std::max(1, chip_width_dbu / row_height);
   const int chip_height_sites = std::max(1, chip_height_dbu / row_height);
+
+  auto compute_stdcell_utilization = [&]() -> double {
+    double placeable_area = 0.0;
+    for (const auto* row : arch_->getRows()) {
+      if (row == nullptr) {
+        continue;
+      }
+      placeable_area += static_cast<double>(row->getNumSites())
+                        * static_cast<double>(row->getSiteSpacing().v)
+                        * static_cast<double>(row->getHeight().v);
+    }
+    if (placeable_area <= 0.0) {
+      return 0.0;
+    }
+
+    double stdcell_area = 0.0;
+    for (const auto& node_ptr : network_->getNodes()) {
+      Node* node = node_ptr.get();
+      if (node == nullptr || node->getType() != Node::Type::CELL) {
+        continue;
+      }
+      if (!node->isStdCell() || node->isFixed()) {
+        continue;
+      }
+      stdcell_area += static_cast<double>(node->getWidth().v)
+                      * static_cast<double>(node->getHeight().v);
+    }
+    return stdcell_area / placeable_area;
+  };
+
+  constexpr double kTaperUtilStart = 0.80;
+  constexpr double kTaperUtilFull = 0.90;
+  const double stdcell_utilization = compute_stdcell_utilization();
+  double intensity = 0.0;
+  if (kTaperUtilFull > kTaperUtilStart) {
+    intensity = (stdcell_utilization - kTaperUtilStart)
+                / (kTaperUtilFull - kTaperUtilStart);
+  }
+  extra_dpl_intensity_ = std::clamp(intensity, 0.0, 1.0);
+  extra_dpl_alpha_ = extra_dpl_intensity_ * extra_dpl_intensity_;
+
+  const double base_tradeoff = tradeoff_;
+  const bool pass2_allow_random_moves = extra_dpl_intensity_ >= 0.25;
+  const double pass2_tradeoff
+      = pass2_allow_random_moves ? base_tradeoff * extra_dpl_intensity_ : 0.0;
+
+  mgr_->getLogger()->info(
+      DPL,
+      906,
+      "Starting two-pass congestion-aware global swap optimization "
+      "(stdcell_util={:.3f}, intensity={:.2f} [{:.2f}..{:.2f}], tradeoff={:.2f}->{:.2f}, random_moves={})",
+      stdcell_utilization,
+      extra_dpl_intensity_,
+      kTaperUtilStart,
+      kTaperUtilFull,
+      base_tradeoff,
+      pass2_tradeoff,
+      pass2_allow_random_moves ? "on" : "off");
 
   // PASS 1: HPWL Profiling Pass
   mgr_->getLogger()->info(
@@ -133,6 +184,8 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
   is_profiling_pass_ = true;
   congestion_weight_ = 0.0;  // Pure HPWL optimization
+  tradeoff_ = 0.0;
+  allow_random_moves_ = false;  // Match legacy generator during profiling
 
   int64_t last_hpwl, curr_hpwl = init_hpwl;
   for (int p = 1; p <= passes; p++) {
@@ -182,6 +235,8 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
                           "Pass 2: Iterative budget-constrained congestion "
                           "optimization (4 stages)");
   is_profiling_pass_ = false;
+  tradeoff_ = pass2_tradeoff;
+  allow_random_moves_ = pass2_allow_random_moves;
 
   // Re-compute utilization density map to ensure it's synchronized with
   // restored placement
@@ -191,8 +246,21 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   mgr_->getLogger()->info(
       DPL, 918, "Re-computed utilization density map after state restoration");
 
-  // Calculate adaptive congestion weight once for all iterations
-  congestion_weight_ = calculateAdaptiveCongestionWeight();
+  // Calculate adaptive congestion weight once for all iterations and apply a
+  // utilization-based taper so low-util designs behave more like legacy.
+  if (extra_dpl_alpha_ <= 0.0) {
+    congestion_weight_ = 0.0;
+  } else {
+    const double base_congestion_weight = calculateAdaptiveCongestionWeight();
+    congestion_weight_ = base_congestion_weight * extra_dpl_alpha_;
+    mgr_->getLogger()->info(DPL,
+                            925,
+                            "Tapered congestion weight: base={:.3f}, "
+                            "scale={:.3f}, effective={:.3f}",
+                            base_congestion_weight,
+                            extra_dpl_alpha_,
+                            congestion_weight_);
+  }
 
   // Define the iterative refinement schedule
   std::vector<double> budget_multipliers = params.budget_multipliers;
@@ -204,57 +272,65 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
   curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
+  const double min_budget_multiplier = std::max(
+      1.0, static_cast<double>(init_hpwl) / std::max(1.0, optimal_hpwl));
+
   // Iterative refinement loop
   for (size_t iteration = 0; iteration < budget_multipliers.size();
        iteration++) {
     // Update budget for this iteration
-    budget_hpwl_ = optimal_hpwl * budget_multipliers[iteration];
+    const double requested_multiplier = budget_multipliers[iteration] > 0.0
+                                            ? budget_multipliers[iteration]
+                                            : 1.0;
+    const double effective_multiplier = std::max(
+        min_budget_multiplier,
+        min_budget_multiplier
+            + extra_dpl_alpha_ * (requested_multiplier - min_budget_multiplier));
+    budget_hpwl_ = optimal_hpwl * effective_multiplier;
     std::string stage_name;
     if (iteration < stage_names.size()) {
       stage_name = stage_names[iteration];
     } else {
       stage_name = "Stage " + std::to_string(iteration + 1);
     }
+    int disp_x_sites = orig_disp_x_sites;
+    int disp_y_sites = orig_disp_y_sites;
     if (iteration == 0) {
-      mgr_->setMaxDisplacement(chip_width_sites, chip_height_sites);
-      mgr_->getLogger()->info(DPL,
-                              921,
-                              "Iteration {} ({}): temporary displacement set "
-                              "to chip dimensions ({}, {})",
-                              iteration + 1,
-                              stage_name,
-                              chip_width_sites,
-                              chip_height_sites);
+      const double mult = 1.0 + extra_dpl_alpha_ * 4.0;  // up to 5x
+      disp_x_sites = std::max(
+          1, static_cast<int>(std::llround(orig_disp_x_sites * mult)));
+      disp_y_sites = std::max(
+          1, static_cast<int>(std::llround(orig_disp_y_sites * mult)));
     } else if (iteration == 1) {
-      mgr_->setMaxDisplacement(orig_disp_x_sites * 10, orig_disp_y_sites * 10);
-      mgr_->getLogger()->info(
-          DPL,
-          922,
-          "Iteration {} ({}): displacement relaxed to 10x original ({}, {})",
-          iteration + 1,
-          stage_name,
-          orig_disp_x_sites * 10,
-          orig_disp_y_sites * 10);
-    } else {
-      mgr_->setMaxDisplacement(orig_disp_x_sites, orig_disp_y_sites);
-      mgr_->getLogger()->info(
-          DPL,
-          923,
-          "Iteration {} ({}): displacement restored to original ({}, {})",
-          iteration + 1,
-          stage_name,
-          orig_disp_x_sites,
-          orig_disp_y_sites);
+      const double mult = 1.0 + extra_dpl_alpha_ * 2.0;  // up to 3x
+      disp_x_sites = std::max(
+          1, static_cast<int>(std::llround(orig_disp_x_sites * mult)));
+      disp_y_sites = std::max(
+          1, static_cast<int>(std::llround(orig_disp_y_sites * mult)));
     }
+    disp_x_sites = std::min(disp_x_sites, chip_width_sites);
+    disp_y_sites = std::min(disp_y_sites, chip_height_sites);
+    mgr_->setMaxDisplacement(disp_x_sites, disp_y_sites);
+    mgr_->getLogger()->info(
+        DPL,
+        921,
+        "Iteration {} ({}): displacement set to ({}, {})",
+        iteration + 1,
+        stage_name,
+        disp_x_sites,
+        disp_y_sites);
 
     mgr_->getLogger()->info(
         DPL,
         919,
-        "Iteration {}: {} stage - Budget={:.2f} ({:.0f}% of optimal)",
+        "Iteration {}: {} stage - "
+        "Budget={:.2f} (req={:.3f}x, eff={:.3f}x, min={:.3f}x)",
         iteration + 1,
         stage_name,
         budget_hpwl_,
-        (budget_multipliers[iteration] - 1.0) * 100.0);
+        requested_multiplier,
+        effective_multiplier,
+        min_budget_multiplier);
 
     // Run optimization passes for this iteration
     for (int p = 1; p <= passes; p++) {
@@ -389,7 +465,7 @@ void DetailedGlobalSwap::globalSwap()
 
     // Phase 2: If no move generated OR we decided to override, try random
     // exploration move
-    if (!move_generated) {
+    if (!move_generated && allow_random_moves_) {
       move_generated = generateRandomMove(ndi);
     }
 
@@ -803,7 +879,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
 
   // Phase 2: If no move generated OR we decided to override, try random
   // exploration move
-  if (!move_generated) {
+  if (!move_generated && allow_random_moves_) {
     move_generated = generateRandomMove(ndi);
   }
 

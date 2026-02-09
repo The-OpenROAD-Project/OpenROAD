@@ -67,6 +67,11 @@ class DetailedGlobalSwap : public DetailedGenerator
   double congestion_weight_ = 0.0;
   std::vector<double> congestion_contribution_;
   const GlobalSwapParams* swap_params_ = nullptr;
+
+  // Extra DPL tapering (0 = legacy-like, 1 = full extra).
+  double extra_dpl_intensity_ = 1.0;
+  double extra_dpl_alpha_ = 1.0;
+  bool allow_random_moves_ = true;
 };
 
 }  // namespace dpl
