@@ -797,9 +797,12 @@ void SACoreSoftMacro::calNotchPenalty()
     }
   }
 
+  std::vector<std::vector<bool>> visited(num_y,
+                                         std::vector<bool>(num_x, false));
+
   for (int start_row = 0; start_row < num_y; start_row++) {
     for (int start_col = 0; start_col < num_x; start_col++) {
-      if (grid[start_row][start_col]) {
+      if (grid[start_row][start_col] || visited[start_row][start_col]) {
         continue;
       }
 
@@ -851,6 +854,12 @@ void SACoreSoftMacro::calNotchPenalty()
         }
       }
 
+      for (int i = start_row; i < end_row; i++) {
+        for (int j = start_col; j < end_col; j++) {
+          visited[i][j] = true;
+        }
+      }
+
       width = x_coords[end_col + 1] - x_coords[start_col];
       height = y_coords[end_row + 1] - y_coords[start_row];
 
@@ -859,7 +868,9 @@ void SACoreSoftMacro::calNotchPenalty()
         if (height < notch_h_th_) {
           is_notch = true;
         }
-      } else if (current_neighbors.left && current_neighbors.right) {
+      }
+
+      if (current_neighbors.left && current_neighbors.right) {
         if (width < notch_v_th_) {
           is_notch = true;
         }
@@ -867,6 +878,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
       if (is_notch) {
         notch_penalty_ += calSingleNotchPenalty(width, height);
+
         if (graphics_) {
           graphics_->addNotch(odb::Rect(x_coords[start_col],
                                         y_coords[start_row],
