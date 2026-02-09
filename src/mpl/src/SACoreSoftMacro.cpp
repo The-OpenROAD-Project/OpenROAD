@@ -631,7 +631,7 @@ void SACoreSoftMacro::fillCoordsLists(std::vector<int>& x_coords,
   std::vector<int> y_point;
 
   for (auto& macro : macros_) {
-    if (macro.isStdCellCluster()) {
+    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
     }
     x_point.push_back(macro.getX());
@@ -720,10 +720,14 @@ bool SACoreSoftMacro::isSegmentEmpty(std::vector<std::vector<bool>>& grid,
                                      int end_col)
 {
   for (int i = start_row; i <= end_row; i++) {
-    for (int j = start_col; j <= end_col; j++) {
-      if (grid[i][j]) {
-        return false;
-      }
+    if (grid[i][end_col]) {
+      return false;
+    }
+  }
+
+  for (int j = start_col; j <= end_col; j++) {
+    if (grid[end_row][j]) {
+      return false;
     }
   }
 
@@ -779,7 +783,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
   std::vector<std::vector<bool>> grid(num_y, std::vector<bool>(num_x, false));
   for (auto& macro : macros_) {
-    if (macro.isStdCellCluster()) {
+    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
     }
     int x_start = getSegmentIndex(macro.getX(), x_coords);
@@ -851,9 +855,7 @@ void SACoreSoftMacro::calNotchPenalty()
       height = y_coords[end_row + 1] - y_coords[start_row];
 
       bool is_notch = false;
-      if (current_neighbors.total() == 4) {
-        is_notch = true;
-      } else if (current_neighbors.top && current_neighbors.bottom) {
+      if (current_neighbors.top && current_neighbors.bottom) {
         if (height < notch_h_th_) {
           is_notch = true;
         }
