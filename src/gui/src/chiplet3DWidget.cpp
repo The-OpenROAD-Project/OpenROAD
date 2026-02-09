@@ -271,7 +271,6 @@ void Chiplet3DWidget::buildGeometries()
     indices_lines_.push_back(base + 6);
     indices_lines_.push_back(base + 3);
     indices_lines_.push_back(base + 7);
-
   }
 }
 
