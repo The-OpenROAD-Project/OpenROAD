@@ -22,6 +22,7 @@
 #include "optimization/detailed_generator.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
+#include "util/journal.h"
 
 namespace dpl {
 
