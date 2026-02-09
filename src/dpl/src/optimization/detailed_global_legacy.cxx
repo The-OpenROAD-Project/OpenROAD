@@ -333,7 +333,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
 
   // Position target so center of cell at center of box.
   DbuX xj{(int) std::floor(0.5 * (bbox.xMin() + bbox.xMax())
-                           - 0.5 * ndi->getWidth().v)};
+                           - (0.5 * ndi->getWidth().v))};
   DbuY yj{(int) std::floor((0.5 * (bbox.yMin() + bbox.yMax()))
                            - (0.5 * ndi->getHeight().v))};
 
