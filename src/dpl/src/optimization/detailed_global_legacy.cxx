@@ -338,7 +338,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
 
   // Row and segment for the destination.
   int rj = arch_->find_closest_row(yj);
-  yj = DbuY{arch_->getRow(rj)->getBottom()};  // Row alignment.
+  yj = arch_->getRow(rj)->getBottom();  // Row alignment.
   int sj = -1;
   for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
     DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
@@ -400,7 +400,7 @@ void DetailedGlobalSwap::stats()
 {
   mgr_->getLogger()->info(
       DPL,
-      334,
+      348,
       "Generator {:s}, "
       "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
       getName().c_str(),
