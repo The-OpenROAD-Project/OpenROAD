@@ -256,6 +256,8 @@ class TechChar
   // Characterization attributes
 
   void initCharacterization();
+  bool isClkDlyCell(const std::string& cellName);
+  bool isDlyCell(const std::string& cellName);
   void createDelayBufList();
   void finalizeRootSinkBuffers();
   void trimSortBufferList(std::vector<std::string>& buffers);
