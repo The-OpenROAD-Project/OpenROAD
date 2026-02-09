@@ -23,7 +23,6 @@ constexpr float SCENE_RADIUS_FACTOR = 0.75f;
 constexpr float INITIAL_DISTANCE_FACTOR = 3.0f;
 constexpr float THICKNESS_FACTOR = 0.02f;
 constexpr float LAYER_GAP_FACTOR = 2.0f;
-constexpr float Z_LEVEL_GAP_FACTOR = 5.0f;
 constexpr float Z_FIT_FACTOR = 3.0f;
 constexpr float MIN_DISTANCE_CHECK = 100.0f;
 constexpr float DEFAULT_DISTANCE = 1000.0f;
@@ -217,17 +216,11 @@ void Chiplet3DWidget::buildGeometries()
       {1.0f, 0.0f, 0.0f}   // Red
   };
 
-  int chip_idx = 0;
   for (const auto& c : chips) {
-    int bloat_val = static_cast<int>(
-        -chip_idx * (std::min(c.die.dx(), c.die.dy()) * 0.02));
-    odb::Rect draw_die;
-    c.die.bloat(bloat_val, draw_die);
-
-    std::vector<odb::Point> pts = {{draw_die.xMin(), draw_die.yMin()},
-                                   {draw_die.xMax(), draw_die.yMin()},
-                                   {draw_die.xMax(), draw_die.yMax()},
-                                   {draw_die.xMin(), draw_die.yMax()}};
+    std::vector<odb::Point> pts = {{c.die.xMin(), c.die.yMin()},
+                                   {c.die.xMax(), c.die.yMin()},
+                                   {c.die.xMax(), c.die.yMax()},
+                                   {c.die.xMin(), c.die.yMax()}};
     for (auto& p : pts) {
       c.xform.apply(p);
     }
@@ -235,13 +228,12 @@ void Chiplet3DWidget::buildGeometries()
     // Color by Depth (proportional to Z)
     QVector3D color = palette[c.assigned_z_level % palette.size()];
 
-    // Z Calculation based on Assigned Level
-    // Using a gap factor of 5.0 to clearly separate layers as requested
-    // ("torre")
-    float z_level_base = c.assigned_z_level * thickness * Z_LEVEL_GAP_FACTOR;
+    // Z Calculation based on Real Z
+    float z_level_base = static_cast<float>(c.real_z);
+    float z_thickness = static_cast<float>(c.thickness);
 
     float z0 = z_level_base - center_.z();
-    float z1 = z_level_base + thickness - center_.z();
+    float z1 = z_level_base + z_thickness - center_.z();
 
     int base = vertices_.size();
     for (const auto& p : pts) {
@@ -280,7 +272,6 @@ void Chiplet3DWidget::buildGeometries()
     indices_lines_.push_back(base + 3);
     indices_lines_.push_back(base + 7);
 
-    chip_idx++;
   }
 }
 
