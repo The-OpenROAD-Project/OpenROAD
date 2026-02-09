@@ -73,9 +73,9 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
 
-  int passes = 1;
+  int passes = 2;
   double tol = 0.01;
-  tradeoff_ = 0.2;  // Default: 20% exploration, 80% wirelength optimization
+  tradeoff_ = 0.4;  // Default: 40% exploration, 60% wirelength optimization
   
   for (size_t i = 1; i < args.size(); i++) {
     if (args[i] == "-p" && i + 1 < args.size()) {
