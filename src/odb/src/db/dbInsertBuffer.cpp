@@ -917,8 +917,9 @@ bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
     top_mod_iterm = nullptr;  // Already in same module, no hierarchy handling
   } else {
     dbObject* load_obj = (dbObject*) load_pin;
-    std::string base_name
-        = block_->getBaseName(load_pin->getNet()->getConstName());
+    dbNet* load_net = load_pin->getNet();
+    std::string base_name = block_->getBaseName(
+        load_net ? load_net->getConstName() : net_->getConstName());
 
     while (current_module != target_module && current_module != nullptr) {
       if (current_module->getModInst()
