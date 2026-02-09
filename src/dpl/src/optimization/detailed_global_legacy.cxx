@@ -281,7 +281,7 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, odb::Rect& bbox)
 bool DetailedGlobalSwap::generate(Node* ndi)
 {
   double yi = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
-  double xi = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
+  double xi = ndi->getLeft().v + (0.5 * ndi->getWidth().v);
 
   // Determine optimal region.
   odb::Rect bbox;
