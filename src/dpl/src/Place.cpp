@@ -709,8 +709,7 @@ bool Opendp::shiftMove(Node* target_cell)
   const GridPt taget_cell_pixel = legalGridPt(target_cell, true);
   // magic number alert
   const GridY boundary_margin{3};
-  const GridX margin_width{grid_->gridPaddedWidth(target_cell).v
-                           * (1 + boundary_margin.v)};
+  const GridX margin_width{grid_->gridPaddedWidth(target_cell).v * (1 + boundary_margin.v)};
   std::set<Node*> region_cells;
   for (GridX x = taget_cell_pixel.x - margin_width;
        x <= (taget_cell_pixel.x + margin_width);
