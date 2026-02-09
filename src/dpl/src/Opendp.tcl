@@ -160,12 +160,13 @@ sta::define_cmd_args "improve_placement" {\
     [-random_seed seed]\
     [-max_displacement disp|{disp_x disp_y}]\
     [-global_swap_args {options}]\
+    [-enable_extra_dpl bool]\
     [-disallow_one_site_gaps]\
 }
 
 proc improve_placement { args } {
   sta::parse_key_args "improve_placement" args \
-    keys {-random_seed -max_displacement -global_swap_args} \
+    keys {-random_seed -max_displacement -global_swap_args -enable_extra_dpl} \
     flags {-disallow_one_site_gaps}
 
   if { [ord::get_db_block] == "NULL" } {
@@ -381,3 +382,11 @@ proc get_row_site { } {
   return [[lindex [[ord::get_db_block] getRows] 0] getSite]
 }
 }
+  set extra_dpl_enabled 0
+  if { [info exists keys(-enable_extra_dpl)] } {
+    set extra_dpl_enabled $keys(-enable_extra_dpl)
+  } elseif { [info exists ::env(ENABLE_EXTRA_DPL)] } {
+    set extra_dpl_enabled $::env(ENABLE_EXTRA_DPL)
+  }
+  set extra_dpl_enabled [expr {$extra_dpl_enabled ? 1 : 0}]
+  dpl::set_extra_dpl_cmd $extra_dpl_enabled

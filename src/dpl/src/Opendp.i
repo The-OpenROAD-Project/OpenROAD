@@ -158,6 +158,12 @@ void configure_global_swap_params_cmd(int passes,
                                     budget_multipliers);
 }
 
+void set_extra_dpl_cmd(bool enable)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setExtraDplEnabled(enable);
+}
+
 } // namespace
 
 %} // inline

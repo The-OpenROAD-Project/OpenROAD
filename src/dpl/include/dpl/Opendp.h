@@ -144,6 +144,11 @@ class Opendp
   {
     return global_swap_params_;
   }
+  void setExtraDplEnabled(bool enabled)
+  {
+    extra_dpl_enabled_ = enabled;
+  }
+  bool isExtraDplEnabled() const { return extra_dpl_enabled_; }
 
   // Place decap cells
   void addDecapMaster(odb::dbMaster* decap_master, double decap_cap);
@@ -388,6 +393,7 @@ class Opendp
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
   GlobalSwapParams global_swap_params_;
+  bool extra_dpl_enabled_ = false;
 };
 
 int divRound(int dividend, int divisor);

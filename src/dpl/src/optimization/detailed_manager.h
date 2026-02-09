@@ -96,6 +96,8 @@ class DetailedMgr
   {
     return global_swap_params_;
   }
+  void setExtraDplEnabled(bool enabled) { extra_dpl_enabled_ = enabled; }
+  bool isExtraDplEnabled() const { return extra_dpl_enabled_; }
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
   bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
@@ -352,6 +354,7 @@ class DetailedMgr
   // Generic place for utilization.
   double targetUt_{1.0};
   GlobalSwapParams global_swap_params_;
+  bool extra_dpl_enabled_ = false;
 
   // Target displacement limits.
   int maxDispX_;
