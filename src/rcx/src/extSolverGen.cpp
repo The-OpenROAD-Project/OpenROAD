@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include "rcx/extSolverGen.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -12,6 +14,7 @@
 
 #include "parse.h"
 #include "rcx/extModelGen.h"
+#include "rcx/extprocess.h"
 #include "utl/Logger.h"
 
 namespace rcx {
