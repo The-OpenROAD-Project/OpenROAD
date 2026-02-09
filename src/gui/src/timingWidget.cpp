@@ -31,6 +31,7 @@
 #include "sta/Liberty.hh"
 #include "sta/SdcClass.hh"
 #include "staGui.h"
+#include "staGuiInterface.h"
 
 namespace gui {
 

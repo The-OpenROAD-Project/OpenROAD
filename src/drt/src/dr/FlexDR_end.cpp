@@ -16,6 +16,7 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "distributed/drUpdate.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
