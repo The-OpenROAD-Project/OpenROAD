@@ -3171,7 +3171,8 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case32)
   // "swerv/ifu/_11393_/A" is not connected intentionally for test.
   // Thus, checkAxioms() should not be called.
   // num_warning = db_network_->checkAxioms();
-  num_warning += sta_->checkSanity();
+  num_warning = sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
 
   // Prepare load set
   std::set<dbObject*> load_pins;
