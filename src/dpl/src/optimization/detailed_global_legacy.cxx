@@ -4,6 +4,7 @@
 #include "detailed_global_legacy.h"
 
 #include <algorithm>
+#include <boost/token_functions.hpp>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +17,8 @@
 #include "dpl/Opendp.h"
 #include "infrastructure/Objects.h"
 #include "objective/detailed_hpwl.h"
+#include "optimization/detailed_generator.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 namespace dpl {
