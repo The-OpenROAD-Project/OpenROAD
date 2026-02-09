@@ -704,6 +704,16 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
   return false;
 }
 
+void Opendp::deepIterativePause(const std::string& message, bool only_print)
+{
+  if (deep_iterative_placement_ && debug_observer_) {
+    logger_->report(message);
+    if (!only_print) {
+      debug_observer_->redrawAndPause();
+    }
+  }
+}
+
 bool Opendp::shiftMove(Node* target_cell)
 {
   const GridPt taget_cell_pixel = legalGridPt(target_cell, true);
@@ -728,11 +738,8 @@ bool Opendp::shiftMove(Node* target_cell)
     }
   }
 
-  if (deep_iterative_placement_ && debug_observer_) {
-    logger_->report("pause after legalGridPt() inside shiftMove(), cell {}",
-                    target_cell->name());
-    debug_observer_->redrawAndPause();
-  }
+  deepIterativePause("pause after legalGridPt() inside shiftMove(), cell "
+                     + target_cell->name());
 
   // erase region cells
   for (Node* around_cell : region_cells) {
@@ -741,52 +748,39 @@ bool Opendp::shiftMove(Node* target_cell)
     }
   }
 
-  if (deep_iterative_placement_ && debug_observer_) {
-    logger_->report("pause after unplacing cells inside shiftMove()");
-    debug_observer_->redrawAndPause();
-  }
+  deepIterativePause("pause after unplacing cells inside shiftMove()");
 
   // place target cell
   bool success = true;
   if (!mapMove(target_cell)) {
-    if (deep_iterative_placement_ && debug_observer_) {
-      logger_->report("failed mapMove() inside shiftMove() for target cell {}",
-                      target_cell->name());
-    }
+    deepIterativePause("failed mapMove() inside shiftMove() for target cell "
+                           + target_cell->name(),
+                       /*only_print=*/true);
     placement_failures_.push_back(target_cell);
     success = false;
   }
 
-  if (deep_iterative_placement_ && debug_observer_) {
-    logger_->report("pause after placing target cell inside shiftMove()");
-    debug_observer_->redrawAndPause();
-  }
+  deepIterativePause("pause after placing target cell inside shiftMove()");
 
   // re-place erased cells
   for (Node* around_cell : region_cells) {
-    if (deep_iterative_placement_ && debug_observer_) {
-      logger_->report(
-          "pause before mapMove() inside shiftMove() for surrounding cell {}",
-          around_cell->name());
-      debug_observer_->redrawAndPause();
-    }
+    deepIterativePause(
+        "pause before mapMove() inside shiftMove() for surrounding cell "
+        + around_cell->name());
 
     if (target_cell->inGroup() == around_cell->inGroup()
         && !mapMove(around_cell)) {
-      if (debug_observer_) {
-        logger_->report(
-            "failed mapMove() inside shiftMove() for surrounding cell {}",
-            around_cell->name());
-      }
+      deepIterativePause(
+          "failed mapMove() inside shiftMove() for surrounding cell "
+              + around_cell->name(),
+          /*only_print=*/true);
       placement_failures_.push_back(around_cell);
       success = false;
     }
   }
 
-  if (deep_iterative_placement_ && debug_observer_) {
-    logger_->report("pause after placing surrounding cells inside shiftMove()");
-    debug_observer_->redrawAndPause();
-  }
+  deepIterativePause(
+      "pause after placing surrounding cells inside shiftMove()");
 
   return success;
 }

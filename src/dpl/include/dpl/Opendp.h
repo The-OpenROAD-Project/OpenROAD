@@ -207,6 +207,7 @@ class Opendp
   int distChange(const Node* cell, DbuX x, DbuY y) const;
   bool swapCells(Node* cell1, Node* cell2);
   bool refineMove(Node* cell);
+  void deepIterativePause(const std::string& message, bool only_print = false);
 
   DbuPt legalPt(const Node* cell, const DbuPt& pt) const;
   GridPt legalGridPt(const Node* cell, const DbuPt& pt) const;
