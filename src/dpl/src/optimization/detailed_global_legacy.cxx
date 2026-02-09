@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
-// This file exists to preserve traditional DPO behavior and should at some point be merged with the newer DPO flow more cohesively.
+// This file exists to preserve traditional DPO behavior and should at some
+// point be merged with the newer DPO flow more cohesively.
 
 #include "detailed_global_legacy.h"
 
@@ -25,7 +26,6 @@
 namespace dpl {
 
 namespace legacy {
-
 
 using utl::DPL;
 
@@ -413,7 +413,6 @@ void DetailedGlobalSwap::stats()
       swaps_,
       moves_);
 }
-
 
 }  // namespace legacy
 
