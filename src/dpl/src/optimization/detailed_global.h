@@ -16,6 +16,7 @@ class Edge;
 class Architecture;
 class DetailedMgr;
 class Network;
+class Journal;
 struct GlobalSwapParams;
 
 class DetailedGlobalSwap : public DetailedGenerator
@@ -63,6 +64,7 @@ class DetailedGlobalSwap : public DetailedGenerator
   // Two-pass optimization state
   double budget_hpwl_ = 0.0;
   bool is_profiling_pass_ = false;
+  Journal* profiling_journal_ = nullptr;
   double tradeoff_ = 0.2;
   double congestion_weight_ = 0.0;
   std::vector<double> congestion_contribution_;

@@ -217,6 +217,8 @@ class DetailedMgr
 
   void shuffle(std::vector<Node*>& nodes);
   int getRandom(int limit) const { return (*rng_)() % limit; }
+  Placer_RNG getRngState() const { return *rng_; }
+  void setRngState(const Placer_RNG& state) { *rng_ = state; }
 
   void getSpaceAroundCell(int seg,
                           int ix,

@@ -147,36 +147,140 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     return stdcell_area / placeable_area;
   };
 
-  // This path is intended for high-utilization designs. For lower utilization,
-  // fall back to the legacy global swap to avoid PPA regressions.
-  constexpr double kTaperUtilStart = 0.85;
-  constexpr double kTaperUtilFull = 0.95;
   const double stdcell_utilization = compute_stdcell_utilization();
-  double intensity = 0.0;
-  if (kTaperUtilFull > kTaperUtilStart) {
-    intensity = (stdcell_utilization - kTaperUtilStart)
-                / (kTaperUtilFull - kTaperUtilStart);
+  const float area_weight = static_cast<float>(params.area_weight);
+  const float pin_weight = static_cast<float>(params.pin_weight);
+  if (mgr_->getGrid() != nullptr) {
+    mgr_->getGrid()->computeUtilizationMap(network_, area_weight, pin_weight);
   }
-  extra_dpl_intensity_ = std::clamp(intensity, 0.0, 1.0);
+
+  struct DensityStats
+  {
+    int valid_pixels = 0;
+    double mean = 0.0;
+    double p50 = 0.0;
+    double p95 = 0.0;
+    double p99 = 0.0;
+    double frac_gt_080 = 0.0;
+    double frac_gt_090 = 0.0;
+  };
+
+  auto compute_density_stats = [&]() -> DensityStats {
+    DensityStats stats;
+    const Grid* grid = mgr_->getGrid();
+    if (grid == nullptr) {
+      return stats;
+    }
+    const int rows = grid->getRowCount().v;
+    const int cols = grid->getRowSiteCount().v;
+    if (rows <= 0 || cols <= 0) {
+      return stats;
+    }
+
+    constexpr int kBins = 200;
+    std::vector<int> hist(kBins, 0);
+    int64_t valid = 0;
+    int64_t count80 = 0;
+    int64_t count90 = 0;
+    double sum = 0.0;
+
+    for (GridY y{0}; y < grid->getRowCount(); y++) {
+      for (GridX x{0}; x < grid->getRowSiteCount(); x++) {
+        const Pixel& pixel = grid->pixel(y, x);
+        if (!pixel.is_valid) {
+          continue;
+        }
+        const int idx = (y.v * cols) + x.v;
+        float density = grid->getUtilizationDensity(idx);
+        density = std::clamp(density, 0.0f, 1.0f);
+        sum += density;
+        if (density > 0.80f) {
+          count80++;
+        }
+        if (density > 0.90f) {
+          count90++;
+        }
+        const int bin = std::min(
+            kBins - 1,
+            static_cast<int>(density * static_cast<float>(kBins - 1)));
+        hist[bin]++;
+        valid++;
+      }
+    }
+
+    if (valid <= 0) {
+      return stats;
+    }
+
+    auto percentile_from_hist = [&](const double q) -> double {
+      const int64_t target
+          = static_cast<int64_t>(std::ceil(q * static_cast<double>(valid)));
+      int64_t cum = 0;
+      for (int b = 0; b < kBins; b++) {
+        cum += hist[b];
+        if (cum >= target) {
+          return static_cast<double>(b) / static_cast<double>(kBins - 1);
+        }
+      }
+      return 1.0;
+    };
+
+    stats.valid_pixels = static_cast<int>(valid);
+    stats.mean = sum / static_cast<double>(valid);
+    stats.p50 = percentile_from_hist(0.50);
+    stats.p95 = percentile_from_hist(0.95);
+    stats.p99 = percentile_from_hist(0.99);
+    stats.frac_gt_080 = static_cast<double>(count80) / valid;
+    stats.frac_gt_090 = static_cast<double>(count90) / valid;
+    return stats;
+  };
+
+  const DensityStats density_stats = compute_density_stats();
+
+  auto smoothstep = [](const double edge0,
+                       const double edge1,
+                       const double x) -> double {
+    if (edge1 <= edge0) {
+      return x < edge0 ? 0.0 : 1.0;
+    }
+    double t = (x - edge0) / (edge1 - edge0);
+    t = std::clamp(t, 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+  };
+
+  const double util_score = smoothstep(0.70, 0.92, stdcell_utilization);
+  const double p95_score = smoothstep(0.55, 0.82, density_stats.p95);
+  const double frac90_score = smoothstep(0.01, 0.08, density_stats.frac_gt_090);
+  const double hotspot_score = (0.80 * p95_score) + (0.20 * frac90_score);
+  const double combined_score = util_score * hotspot_score;
+
+  // Intensity is a 0..1 knob that smart-tapers the effect of the alternate
+  // global swap. If the score is 0, fall back to legacy behavior to avoid
+  // perturbing low-util designs.
+  extra_dpl_intensity_ = std::clamp(combined_score, 0.0, 1.0);
   extra_dpl_alpha_ = extra_dpl_intensity_ * extra_dpl_intensity_;
 
-  constexpr double kBypassIntensity = 0.25;
-  if (extra_dpl_intensity_ < kBypassIntensity) {
+  if (extra_dpl_intensity_ <= 0.0) {
     mgr_->getLogger()->info(
         DPL,
-        926,
-        "Extra DPL bypass: stdcell_util={:.3f}, intensity={:.2f} < {:.2f}; "
-        "using legacy global swap",
+        905,
+        "Extra DPL enabled but intensity=0 "
+        "(stdcell_util={:.3f}, util_score={:.2f}, utilmap: mean={:.3f} p95={:.3f} "
+        "p99={:.3f} frac>0.80={:.3f} frac>0.90={:.3f}); using legacy global swap.",
         stdcell_utilization,
-        extra_dpl_intensity_,
-        kBypassIntensity);
-    legacy::DetailedGlobalSwap gs(arch_, network_);
-    gs.run(mgrPtr, args);
+        util_score,
+        density_stats.mean,
+        density_stats.p95,
+        density_stats.p99,
+        density_stats.frac_gt_080,
+        density_stats.frac_gt_090);
+    legacy::DetailedGlobalSwap legacy_swap;
+    legacy_swap.run(mgrPtr, args);
     return;
   }
 
   const double base_tradeoff = tradeoff_;
-  const bool pass2_allow_random_moves = extra_dpl_intensity_ >= 0.25;
+  const bool pass2_allow_random_moves = extra_dpl_intensity_ >= 0.50;
   const double pass2_tradeoff
       = pass2_allow_random_moves ? base_tradeoff * extra_dpl_intensity_ : 0.0;
 
@@ -184,11 +288,16 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
       DPL,
       906,
       "Starting two-pass congestion-aware global swap optimization "
-      "(stdcell_util={:.3f}, intensity={:.2f} [{:.2f}..{:.2f}], tradeoff={:.2f}->{:.2f}, random_moves={})",
+      "(stdcell_util={:.3f}, util_score={:.2f}, utilmap: mean={:.3f} p95={:.3f} p99={:.3f} frac>0.80={:.3f} frac>0.90={:.3f}, intensity={:.2f}, alpha={:.3f}, tradeoff={:.2f}->{:.2f}, random_moves={})",
       stdcell_utilization,
+      util_score,
+      density_stats.mean,
+      density_stats.p95,
+      density_stats.p99,
+      density_stats.frac_gt_080,
+      density_stats.frac_gt_090,
       extra_dpl_intensity_,
-      kTaperUtilStart,
-      kTaperUtilFull,
+      extra_dpl_alpha_,
       base_tradeoff,
       pass2_tradeoff,
       pass2_allow_random_moves ? "on" : "off");
@@ -200,13 +309,22 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   // Clear journal to ensure clean state tracking for profiling pass
   mgr_->getJournal().clear();
 
+  // Snapshot RNG state so Pass 2 is not affected by profiling randomness.
+  const Placer_RNG rng_state = mgr_->getRngState();
+  Journal profiling_journal(mgr_->getGrid(), mgr_);
+  profiling_journal.clear();
+  profiling_journal_ = &profiling_journal;
+
   is_profiling_pass_ = true;
   congestion_weight_ = 0.0;  // Pure HPWL optimization
   tradeoff_ = 0.0;
   allow_random_moves_ = false;  // Match legacy generator during profiling
 
+  const int profiling_passes
+      = std::max(1, static_cast<int>(std::ceil(passes * extra_dpl_alpha_)));
+
   int64_t last_hpwl, curr_hpwl = init_hpwl;
-  for (int p = 1; p <= passes; p++) {
+  for (int p = 1; p <= profiling_passes; p++) {
     last_hpwl = curr_hpwl;
     globalSwap();
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
@@ -243,26 +361,30 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   mgr_->getLogger()->info(DPL,
                           917,
                           "Undoing {} profiling moves to restore initial state",
-                          mgr_->getJournal().size());
-  mgr_->getJournal().undo();
+                          profiling_journal.size());
+  profiling_journal.undo();
+  profiling_journal.clear();
+  profiling_journal_ = nullptr;
   mgr_->getJournal().clear();  // Clear journal for second pass
+  mgr_->setRngState(rng_state);
 
   // PASS 2: Iterative Budget-Constrained Congestion Optimization (4 iterations)
-  mgr_->getLogger()->info(DPL,
-                          909,
-                          "Pass 2: Iterative budget-constrained congestion "
-                          "optimization (4 stages)");
+  mgr_->getLogger()->info(
+      DPL,
+      909,
+      "Pass 2: Iterative budget-constrained congestion optimization "
+      "(alpha={:.3f})",
+      extra_dpl_alpha_);
   is_profiling_pass_ = false;
   tradeoff_ = pass2_tradeoff;
   allow_random_moves_ = pass2_allow_random_moves;
 
-  // Re-compute utilization density map to ensure it's synchronized with
-  // restored placement
-  const float area_weight = static_cast<float>(params.area_weight);
-  const float pin_weight = static_cast<float>(params.pin_weight);
-  mgr_->getGrid()->computeUtilizationMap(network_, area_weight, pin_weight);
-  mgr_->getLogger()->info(
-      DPL, 918, "Re-computed utilization density map after state restoration");
+  // Utilization density map was computed before profiling and remains in sync
+  // after Journal undo (profiling does not update the map). Ensure the map is
+  // normalized for accurate density queries.
+  if (mgr_->getGrid() != nullptr) {
+    mgr_->getGrid()->normalizeUtilization();
+  }
 
   // Calculate adaptive congestion weight once for all iterations and apply a
   // utilization-based taper so low-util designs behave more like legacy.
@@ -288,6 +410,67 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   const std::vector<std::string> stage_names
       = {"Exploratory", "Consolidation", "Fine-tuning", "Final Polish"};
 
+  const size_t num_stages = budget_multipliers.size();
+  const int base_stage_passes = std::max(
+      1,
+      static_cast<int>(std::llround(passes * extra_dpl_intensity_)));
+  const int extra_stage_passes = std::max(
+      0,
+      static_cast<int>(std::llround(
+          passes * (static_cast<double>(num_stages - 1) * extra_dpl_alpha_))));
+  const int total_stage_passes
+      = std::max(1, base_stage_passes + extra_stage_passes);
+
+  std::vector<double> stage_weights(num_stages, 0.0);
+  if (num_stages == 1) {
+    stage_weights[0] = 1.0;
+  } else {
+    // High intensity: spend more time in exploratory stages.
+    const double denom = static_cast<double>(num_stages * (num_stages + 1)) / 2.0;
+    std::vector<double> high(num_stages, 0.0);
+    for (size_t i = 0; i < num_stages; i++) {
+      high[i] = static_cast<double>(num_stages - i) / denom;
+    }
+
+    // Low intensity: concentrate passes in the last stages.
+    std::vector<double> low(num_stages, 0.0);
+    if (num_stages == 2) {
+      low[0] = 0.25;
+      low[1] = 0.75;
+    } else {
+      low[num_stages - 2] = 0.30;
+      low[num_stages - 1] = 0.70;
+    }
+
+    for (size_t i = 0; i < num_stages; i++) {
+      stage_weights[i]
+          = (1.0 - extra_dpl_alpha_) * low[i] + extra_dpl_alpha_ * high[i];
+    }
+  }
+
+  std::vector<int> stage_passes(num_stages, 0);
+  std::vector<double> stage_fracs(num_stages, 0.0);
+  int allocated = 0;
+  for (size_t i = 0; i < num_stages; i++) {
+    const double exact = total_stage_passes * stage_weights[i];
+    const int whole = static_cast<int>(std::floor(exact));
+    stage_passes[i] = whole;
+    stage_fracs[i] = exact - whole;
+    allocated += whole;
+  }
+  int remaining = total_stage_passes - allocated;
+  while (remaining > 0) {
+    size_t best = 0;
+    for (size_t i = 1; i < num_stages; i++) {
+      if (stage_fracs[i] > stage_fracs[best]) {
+        best = i;
+      }
+    }
+    stage_passes[best] += 1;
+    stage_fracs[best] = -1.0;
+    remaining--;
+  }
+
   curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
   const double min_budget_multiplier = std::max(
@@ -296,6 +479,9 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   // Iterative refinement loop
   for (size_t iteration = 0; iteration < budget_multipliers.size();
        iteration++) {
+    if (stage_passes[iteration] <= 0) {
+      continue;
+    }
     // Update budget for this iteration
     const double requested_multiplier = budget_multipliers[iteration] > 0.0
                                             ? budget_multipliers[iteration]
@@ -342,16 +528,17 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
         DPL,
         919,
         "Iteration {}: {} stage - "
-        "Budget={:.2f} (req={:.3f}x, eff={:.3f}x, min={:.3f}x)",
+        "passes={}, Budget={:.2f} (req={:.3f}x, eff={:.3f}x, min={:.3f}x)",
         iteration + 1,
         stage_name,
+        stage_passes[iteration],
         budget_hpwl_,
         requested_multiplier,
         effective_multiplier,
         min_budget_multiplier);
 
     // Run optimization passes for this iteration
-    for (int p = 1; p <= passes; p++) {
+    for (int p = 1; p <= stage_passes[iteration]; p++) {
       last_hpwl = curr_hpwl;
       globalSwap();
       curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
@@ -560,6 +747,38 @@ void DetailedGlobalSwap::globalSwap()
         = hpwl_delta + (congestion_weight_ * congestion_improvement);
 
     if (combined_profit > 0) {
+      if (is_profiling_pass_ && profiling_journal_ != nullptr) {
+        const auto& journal = mgr_->getJournal();
+        for (const auto& action_ptr : journal) {
+          if (action_ptr == nullptr) {
+            continue;
+          }
+          switch (action_ptr->typeId()) {
+            case JournalActionTypeEnum::MOVE_CELL: {
+              const auto* move_action
+                  = static_cast<const MoveCellAction*>(action_ptr.get());
+              profiling_journal_->addAction(
+                  MoveCellAction(move_action->getNode(),
+                                 move_action->getOrigLeft(),
+                                 move_action->getOrigBottom(),
+                                 move_action->getNewLeft(),
+                                 move_action->getNewBottom(),
+                                 move_action->wasPlaced(),
+                                 move_action->getOrigSegs(),
+                                 move_action->getNewSegs()));
+              break;
+            }
+            case JournalActionTypeEnum::UNPLACE_CELL: {
+              const auto* unplace_action
+                  = static_cast<const UnplaceCellAction*>(action_ptr.get());
+              profiling_journal_->addAction(UnplaceCellAction(
+                  unplace_action->getNode(), unplace_action->wasHold()));
+              break;
+            }
+          }
+        }
+      }
+
       // Accept: move is profitable and within budget
       hpwlObj.accept();
       mgr_->acceptMove();
