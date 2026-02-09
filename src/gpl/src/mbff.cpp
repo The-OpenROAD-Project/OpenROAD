@@ -30,6 +30,7 @@
 #include "ortools/sat/cp_model.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
