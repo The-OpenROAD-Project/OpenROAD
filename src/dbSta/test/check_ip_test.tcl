@@ -10,48 +10,48 @@ puts "=============================================="
 puts "IP Checker Test Suite"
 puts "=============================================="
 
-# Load the test LEF file  
+# Load the test LEF file
 set script_dir [file dirname [info script]]
 set test_lef "$script_dir/check_ip_test.lef"
 puts "Loading: $test_lef"
 read_lef $test_lef
 
 # Helper to run a test that expects failure
-proc test_check_fails {test_name master_name {extra_args ""}} {
-    puts "\n--- Test: $test_name ---"
-    puts "Testing master: $master_name"
-    if {$extra_args ne ""} {
-        set cmd "check_ip -master $master_name $extra_args"
-    } else {
-        set cmd "check_ip -master $master_name"
-    }
-    puts "Command: $cmd"
-    if {[catch {eval $cmd} err]} {
-        puts "EXPECTED FAILURE: $err"
-        return 1
-    } else {
-        puts "UNEXPECTED PASS - this test should have failed!"
-        return 0
-    }
+proc test_check_fails { test_name master_name { extra_args "" } } {
+  puts "\n--- Test: $test_name ---"
+  puts "Testing master: $master_name"
+  if { $extra_args ne "" } {
+    set cmd "check_ip -master $master_name $extra_args"
+  } else {
+    set cmd "check_ip -master $master_name"
+  }
+  puts "Command: $cmd"
+  if { [catch { eval $cmd } err] } {
+    puts "EXPECTED FAILURE: $err"
+    return 1
+  } else {
+    puts "UNEXPECTED PASS - this test should have failed!"
+    return 0
+  }
 }
 
 # Helper to run a test that expects success
-proc test_check_passes {test_name master_name {extra_args ""}} {
-    puts "\n--- Test: $test_name ---"
-    puts "Testing master: $master_name"
-    if {$extra_args ne ""} {
-        set cmd "check_ip -master $master_name $extra_args"
-    } else {
-        set cmd "check_ip -master $master_name"
-    }
-    puts "Command: $cmd"
-    if {[catch {eval $cmd} err]} {
-        puts "UNEXPECTED FAILURE: $err"
-        return 0
-    } else {
-        puts "PASS: No warnings"
-        return 1
-    }
+proc test_check_passes { test_name master_name { extra_args "" } } {
+  puts "\n--- Test: $test_name ---"
+  puts "Testing master: $master_name"
+  if { $extra_args ne "" } {
+    set cmd "check_ip -master $master_name $extra_args"
+  } else {
+    set cmd "check_ip -master $master_name"
+  }
+  puts "Command: $cmd"
+  if { [catch { eval $cmd } err] } {
+    puts "UNEXPECTED FAILURE: $err"
+    return 0
+  } else {
+    puts "PASS: No warnings"
+    return 1
+  }
 }
 
 puts "\n=============================================="
