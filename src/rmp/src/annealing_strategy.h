@@ -7,6 +7,7 @@
 #include <random>
 #include <vector>
 
+#include "aig/gia/gia.h"
 #include "cut/abc_library_factory.h"
 #include "gia.h"
 #include "slack_tuning_strategy.h"

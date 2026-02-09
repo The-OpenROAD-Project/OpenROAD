@@ -9,6 +9,7 @@
 
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
+#include "objective/detailed_objective.h"
 #include "optimization/detailed_manager.h"
 #include "optimization/detailed_orient.h"
 

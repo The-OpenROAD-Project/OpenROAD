@@ -16,9 +16,11 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "boost/serialization/export.hpp"
+#include "db/drObj/drAccessPattern.h"
 #include "db/drObj/drFig.h"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "db/infra/frBox.h"
 #include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/infra/frTime.h"

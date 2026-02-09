@@ -23,6 +23,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "pdn/PdnGen.hh"
 #include "renderer.h"
 #include "shape.h"
 #include "techlayer.h"
