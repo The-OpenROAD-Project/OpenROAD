@@ -91,8 +91,6 @@ target_compile_definitions(utl
 target_link_libraries(utl
   PUBLIC
     utl_lib
-    odb
-    dbSta
 )
 
 messages(
