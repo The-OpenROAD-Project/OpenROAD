@@ -14,10 +14,12 @@
 #include <vector>
 
 #include "PlacementDRC.h"
-#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/predicates.hpp"
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
+// NOLINTNEXTLINE(misc-include-cleaner)  // Needed for DecapCell/GapInfo
+// completeness in ~Opendp()
 #include "infrastructure/DecapObjects.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
@@ -237,16 +239,17 @@ void Opendp::resetGlobalSwapParams()
   global_swap_params_ = GlobalSwapParams();
 }
 
-void Opendp::configureGlobalSwapParams(int passes,
-                                       double tolerance,
-                                       double tradeoff,
-                                       double area_weight,
-                                       double pin_weight,
-                                       double user_weight,
-                                       int sampling_moves,
-                                       int normalization_interval,
-                                       double profiling_excess,
-                                       const std::vector<double>& budget_multipliers)
+void Opendp::configureGlobalSwapParams(
+    int passes,
+    double tolerance,
+    double tradeoff,
+    double area_weight,
+    double pin_weight,
+    double user_weight,
+    int sampling_moves,
+    int normalization_interval,
+    double profiling_excess,
+    const std::vector<double>& budget_multipliers)
 {
   if (passes > 0) {
     global_swap_params_.passes = passes;

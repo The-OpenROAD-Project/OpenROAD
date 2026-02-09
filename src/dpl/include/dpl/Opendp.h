@@ -144,10 +144,7 @@ class Opendp
   {
     return global_swap_params_;
   }
-  void setExtraDplEnabled(bool enabled)
-  {
-    extra_dpl_enabled_ = enabled;
-  }
+  void setExtraDplEnabled(bool enabled) { extra_dpl_enabled_ = enabled; }
   bool isExtraDplEnabled() const { return extra_dpl_enabled_; }
 
   // Place decap cells
