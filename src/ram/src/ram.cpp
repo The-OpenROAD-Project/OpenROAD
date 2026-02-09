@@ -521,7 +521,7 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
       odb::Direction2D::North, die_bounds.xMin(), die_bounds.xMax());
   block_->addBTermConstraintByDirection(dbIoType::OUTPUT, top_constraint);
 
-  block_->addBTermsToConstraint(D_bTerms_, top_constraint);
+  block_->addBTermsToConstraint(data_inputs_, top_constraint);
   auto pin_tech = block_->getDb()->getTech();
   ioPlacer_->addHorLayer(pin_tech->findLayer(hor_name));
   ioPlacer_->addVerLayer(pin_tech->findLayer(ver_name));
@@ -610,7 +610,8 @@ void RamGen::generate(const int bytes_per_word,
   // input bterms
   int num_inputs = std::ceil(std::log2(word_count));
   for (int i = 0; i < num_inputs; ++i) {
-    addr_.push_back(makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT));
+    addr_inputs_.push_back(
+        makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT));
   }
 
   // vector of nets storing inverter nets
@@ -630,7 +631,7 @@ void RamGen::generate(const int bytes_per_word,
         // places inverted address for each input
         decoder_input_nets[word][input] = inv_addr[input];
       } else {  // puts original input in invert nets
-        decoder_input_nets[word][input] = addr_[input]->getNet();
+        decoder_input_nets[word][input] = addr_inputs_[input]->getNet();
       }
       word_num /= 2;
     }
@@ -644,7 +645,7 @@ void RamGen::generate(const int bytes_per_word,
     auto decoder_name = fmt::format("decoder_{}", row);
 
     if (word_count == 2) {
-      dbNet* addr_net = (row == 0 ? inv_addr[0] : addr_[0]->getNet());
+      dbNet* addr_net = (row == 0 ? inv_addr[0] : addr_inputs_[0]->getNet());
       for (int i = 0; i < read_ports; ++i) {
         word_decoder_nets[row].push_back(addr_net);
       }
@@ -665,7 +666,7 @@ void RamGen::generate(const int bytes_per_word,
   for (int col = 0; col < bytes_per_word; ++col) {
     array<dbNet*, 8> D_nets;  // net for buffers
     for (int bit = 0; bit < 8; ++bit) {
-      D_bTerms_.push_back(
+      data_inputs_.push_back(
           makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT));
       D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit + col * 8), "net");
     }
@@ -677,7 +678,7 @@ void RamGen::generate(const int bytes_per_word,
         auto out_name = fmt::format("Q[{}]", bit + col * 8);
         q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
       }
-      Q_.push_back(q_bTerms);
+      q_outputs_.push_back(q_bTerms);
     } else {
       for (int read_port = 0; read_port < read_ports; ++read_port) {
         array<dbBTerm*, 8> q_bTerms;
@@ -685,7 +686,7 @@ void RamGen::generate(const int bytes_per_word,
           auto out_name = fmt::format("Q{}[{}]", read_port, bit + col * 8);
           q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
         }
-        Q_.push_back(q_bTerms);
+        q_outputs_.push_back(q_bTerms);
       }
     }
 
@@ -700,7 +701,7 @@ void RamGen::generate(const int bytes_per_word,
                    write_enable[col]->getNet(),
                    word_decoder_nets[row],
                    D_nets,
-                   Q_);
+                   q_outputs_);
     }
 
     for (int bit = 0; bit < 8; ++bit) {
@@ -709,7 +710,7 @@ void RamGen::generate(const int bytes_per_word,
                    "buffer",
                    fmt::format("in[{}]", bit + col * 8),
                    buffer_cell_,
-                   {{"A", D_bTerms_[bit]->getNet()}, {"X", D_nets[bit]}});
+                   {{"A", data_inputs_[bit]->getNet()}, {"X", D_nets[bit]}});
       ram_grid.addCell(std::move(buffer_grid_cell), col * 9 + bit);
     }
   }
@@ -723,7 +724,7 @@ void RamGen::generate(const int bytes_per_word,
                    "decoder",
                    fmt::format("inv_{}", i),
                    inv_cell_,
-                   {{"A", addr_[i]->getNet()}, {"Y", inv_addr[i]}});
+                   {{"A", addr_inputs_[i]->getNet()}, {"Y", inv_addr[i]}});
       cell_inv_layout->addCell(std::move(inv_grid_cell));
       for (int filler_count = 0; filler_count < num_inputs - 1;
            ++filler_count) {
@@ -736,7 +737,7 @@ void RamGen::generate(const int bytes_per_word,
                  "decoder",
                  fmt::format("inv_{}", 0),
                  inv_cell_,
-                 {{"A", addr_[0]->getNet()}, {"Y", inv_addr[0]}});
+                 {{"A", addr_inputs_[0]->getNet()}, {"Y", inv_addr[0]}});
     cell_inv_layout->addCell(std::move(inv_grid_cell));
   }
 

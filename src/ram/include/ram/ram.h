@@ -154,9 +154,9 @@ class RamGen
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
-  std::vector<odb::dbBTerm*> addr_;
-  std::vector<std::array<odb::dbBTerm*, 8>> Q_;
-  std::vector<odb::dbBTerm*> D_bTerms_;
+  std::vector<odb::dbBTerm*> addr_inputs_;
+  std::vector<odb::dbBTerm*> data_inputs_;
+  std::vector<std::array<odb::dbBTerm*, 8>> q_outputs_;
 };
 
 }  // namespace ram
