@@ -10,6 +10,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -304,7 +305,7 @@ void Opendp::setInitialGridCells()
 
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
-      if (conflicted.count(node.get())) {
+      if (conflicted.contains(node.get())) {
         continue;
       }
 
