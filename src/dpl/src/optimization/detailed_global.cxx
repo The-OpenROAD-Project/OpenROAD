@@ -147,8 +147,10 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     return stdcell_area / placeable_area;
   };
 
-  constexpr double kTaperUtilStart = 0.80;
-  constexpr double kTaperUtilFull = 0.90;
+  // This path is intended for high-utilization designs. For lower utilization,
+  // fall back to the legacy global swap to avoid PPA regressions.
+  constexpr double kTaperUtilStart = 0.85;
+  constexpr double kTaperUtilFull = 0.95;
   const double stdcell_utilization = compute_stdcell_utilization();
   double intensity = 0.0;
   if (kTaperUtilFull > kTaperUtilStart) {
