@@ -2218,21 +2218,24 @@ void Resizer::checkLibertyForAllCorners()
 
 void Resizer::makeEquivCells()
 {
-  sta::LibertyLibrarySeq libs;
-  LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
-    // massive kludge until makeEquivCells is fixed to only incldue link cells
-    LibertyCellIterator cell_iter(lib);
-    if (cell_iter.hasNext()) {
-      sta::LibertyCell* cell = cell_iter.next();
-      if (isLinkCell(cell)) {
-        libs.emplace_back(lib);
+  if (!equiv_cells_made_) {
+    sta::LibertyLibrarySeq libs;
+    LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      // massive kludge until makeEquivCells is fixed to only incldue link cells
+      LibertyCellIterator cell_iter(lib);
+      if (cell_iter.hasNext()) {
+        sta::LibertyCell* cell = cell_iter.next();
+        if (isLinkCell(cell)) {
+          libs.emplace_back(lib);
+        }
       }
     }
+    delete lib_iter;
+    sta_->makeEquivCells(&libs, nullptr);
+    equiv_cells_made_ = true;
   }
-  delete lib_iter;
-  sta_->makeEquivCells(&libs, nullptr);
 }
 
 // When there are multiple VT layers, create a composite name
@@ -3990,7 +3993,7 @@ double Resizer::findMaxWireLength1(bool issue_error)
                  1,
                  "Buffer {} has max_wire_length {}",
                  buffer_cell->name(),
-                 units_->distanceUnit()->asString(buffer_length));
+                 units_->distanceUnit()->asString(buffer_length, 1));
     }
   }
 
@@ -5434,6 +5437,7 @@ void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
   swappable_cells_cache_.clear();
+  equiv_cells_made_ = false;
 }
 
 void Resizer::copyDontUseFromLiberty()
@@ -5461,7 +5465,6 @@ void Resizer::copyDontUseFromLiberty()
 
 void Resizer::fullyRebuffer(sta::Pin* user_pin)
 {
-  resizePreamble();
   rebuffer_->fullyRebuffer(user_pin);
 }
 
@@ -5989,10 +5992,6 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
                                   const Corner* corner,
                                   std::map<const Pin*, float>& load_pin_slew)
 {
-  resizePreamble();
-  ensureLevelDrvrVertices();
-  repair_design_->init();
-
   if (!tree) {
     logger_->report("Tree is null\n");
     return false;

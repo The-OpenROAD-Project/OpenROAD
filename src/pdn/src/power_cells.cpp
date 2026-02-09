@@ -14,6 +14,8 @@
 #include "domain.h"
 #include "grid.h"
 #include "odb/db.h"
+#include "pdn/PdnGen.hh"
+#include "shape.h"
 #include "straps.h"
 #include "utl/Logger.h"
 

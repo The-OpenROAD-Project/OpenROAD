@@ -3,9 +3,6 @@
 
 #include "Clustering.h"
 
-#include <lemon/list_graph.h>
-#include <lemon/maps.h>
-#include <lemon/network_simplex.h>
 #include <sys/timeb.h>
 
 #include <algorithm>
@@ -19,6 +16,9 @@
 #include <utility>
 #include <vector>
 
+#include "lemon/list_graph.h"
+#include "lemon/maps.h"
+#include "lemon/network_simplex.h"
 #include "utl/Logger.h"
 
 namespace cts::CKMeans {

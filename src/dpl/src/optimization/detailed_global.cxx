@@ -16,6 +16,8 @@
 #include "dpl/Opendp.h"
 #include "infrastructure/Objects.h"
 #include "objective/detailed_hpwl.h"
+#include "optimization/detailed_generator.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 namespace dpl {

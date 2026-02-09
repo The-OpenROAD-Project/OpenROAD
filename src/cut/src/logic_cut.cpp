@@ -20,6 +20,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
+#include "map/scl/sclLib.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
