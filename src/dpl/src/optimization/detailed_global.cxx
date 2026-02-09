@@ -15,6 +15,7 @@
 #include "boost/token_functions.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed_generator.h"
+#include "detailed_global_legacy.h"
 #include "detailed_manager.h"
 #include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
@@ -156,6 +157,21 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   }
   extra_dpl_intensity_ = std::clamp(intensity, 0.0, 1.0);
   extra_dpl_alpha_ = extra_dpl_intensity_ * extra_dpl_intensity_;
+
+  constexpr double kBypassIntensity = 0.25;
+  if (extra_dpl_intensity_ < kBypassIntensity) {
+    mgr_->getLogger()->info(
+        DPL,
+        926,
+        "Extra DPL bypass: stdcell_util={:.3f}, intensity={:.2f} < {:.2f}; "
+        "using legacy global swap",
+        stdcell_utilization,
+        extra_dpl_intensity_,
+        kBypassIntensity);
+    legacy::DetailedGlobalSwap gs(arch_, network_);
+    gs.run(mgrPtr, args);
+    return;
+  }
 
   const double base_tradeoff = tradeoff_;
   const bool pass2_allow_random_moves = extra_dpl_intensity_ >= 0.25;
