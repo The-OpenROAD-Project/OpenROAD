@@ -280,6 +280,15 @@ proc improve_placement { args } {
         $global_swap_budget_str
   }
 
+  set extra_dpl_enabled 0
+  if { [info exists keys(-enable_extra_dpl)] } {
+    set extra_dpl_enabled $keys(-enable_extra_dpl)
+  } elseif { [info exists ::env(ENABLE_EXTRA_DPL)] } {
+    set extra_dpl_enabled $::env(ENABLE_EXTRA_DPL)
+  }
+  set extra_dpl_enabled [expr {$extra_dpl_enabled ? 1 : 0}]
+  dpl::set_extra_dpl_cmd $extra_dpl_enabled
+
   sta::check_argc_eq0 "improve_placement" $args
   dpl::improve_placement_cmd $seed $max_displacement_x $max_displacement_y
 }
@@ -382,11 +391,3 @@ proc get_row_site { } {
   return [[lindex [[ord::get_db_block] getRows] 0] getSite]
 }
 }
-  set extra_dpl_enabled 0
-  if { [info exists keys(-enable_extra_dpl)] } {
-    set extra_dpl_enabled $keys(-enable_extra_dpl)
-  } elseif { [info exists ::env(ENABLE_EXTRA_DPL)] } {
-    set extra_dpl_enabled $::env(ENABLE_EXTRA_DPL)
-  }
-  set extra_dpl_enabled [expr {$extra_dpl_enabled ? 1 : 0}]
-  dpl::set_extra_dpl_cmd $extra_dpl_enabled

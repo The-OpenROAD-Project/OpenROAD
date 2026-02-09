@@ -63,6 +63,7 @@ class DetailedGlobalSwap : public DetailedGenerator
   int swaps_;
 };
 
+
 }  // namespace legacy
 
 }  // namespace dpl
