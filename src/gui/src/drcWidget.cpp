@@ -20,6 +20,7 @@
 
 #include "dbDescriptors.h"
 #include "gui/gui.h"
+#include "inspector.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

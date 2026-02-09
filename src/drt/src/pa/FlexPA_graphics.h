@@ -15,6 +15,7 @@
 #include "gui/gui.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 
 namespace odb {
 class dbDatabase;
