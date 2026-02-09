@@ -13,7 +13,9 @@
 #include "gui/gui.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
+#include "shape.h"
 #include "straps.h"
+#include "via.h"
 
 namespace pdn {
 

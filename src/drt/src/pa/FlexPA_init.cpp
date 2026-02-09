@@ -14,6 +14,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;

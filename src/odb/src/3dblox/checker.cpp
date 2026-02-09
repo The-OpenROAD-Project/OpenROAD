@@ -34,21 +34,21 @@ void Checker::checkFloatingChips(const UnfoldedModel& model,
                                  odb::dbMarkerCategory* category)
 {
   const auto& chips = model.getChips();
-  utl::UnionFind uf(chips.size());
+  utl::UnionFind union_find(chips.size());
 
   for (size_t i = 0; i < chips.size(); i++) {
     auto cuboid_i = chips[i].cuboid;
     for (size_t j = i + 1; j < chips.size(); j++) {
       auto cuboid_j = chips[j].cuboid;
       if (cuboid_i.intersects(cuboid_j)) {
-        uf.unite(i, j);
+        union_find.unite(i, j);
       }
     }
   }
 
   std::map<int, std::vector<const UnfoldedChip*>> sets;
   for (size_t i = 0; i < chips.size(); i++) {
-    sets[uf.find(i)].push_back(&chips[i]);
+    sets[union_find.find(i)].push_back(&chips[i]);
   }
 
   if (sets.size() > 1) {
@@ -60,7 +60,7 @@ void Checker::checkFloatingChips(const UnfoldedModel& model,
 
     std::ranges::sort(insts_sets,
                       [](const std::vector<const UnfoldedChip*>& a,
-                         const std::vector<const UnfoldedChip*>& b) {
+                         const std::vector<const UnfoldedChip*>& b) -> bool {
                         return a.size() > b.size();
                       });
 
@@ -123,8 +123,8 @@ void Checker::checkOverlappingChips(const UnfoldedModel& model,
       marker->addSource(inst1->chip_inst_path.back());
       marker->addSource(inst2->chip_inst_path.back());
 
-      std::string comment = "Chips " + inst1->getName() + " and "
-                            + inst2->getName() + " overlap";
+      std::string comment
+          = "Chips " + inst1->name + " and " + inst2->name + " overlap";
       marker->setComment(comment);
     }
   }
