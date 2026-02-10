@@ -648,22 +648,23 @@ void SACoreSoftMacro::fillCoordsLists(std::vector<int>& x_coords,
   std::ranges::sort(y_point);
 
   int epsilon = outline_.dx() / 100;
-  for (int i = 0; i < x_point.size(); i++) {
-    if (i + 1 < x_point.size()
-        && std::abs(x_point[i + 1] - x_point[i]) <= epsilon) {
-      continue;
+  x_coords.push_back(x_point.back());
+  for (int i = x_point.size() - 2; i >= 0; i--) {
+    if (x_coords.back() - x_point[i] > epsilon) {
+      x_coords.push_back(x_point[i]);
     }
-    x_coords.push_back(x_point[i]);
   }
+  std::ranges::reverse(x_coords);
 
   epsilon = outline_.dy() / 100;
-  for (int i = 0; i < y_point.size(); i++) {
-    if (i + 1 < y_point.size()
-        && std::abs(y_point[i + 1] - y_point[i]) <= epsilon) {
-      continue;
+  y_coords.push_back(y_point.back());
+
+  for (int i = y_point.size() - 2; i >= 0; i--) {
+    if (y_coords.back() - y_point[i] > epsilon) {
+      y_coords.push_back(y_point[i]);
     }
-    y_coords.push_back(y_point[i]);
   }
+  std::ranges::reverse(y_coords);
 }
 
 SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
@@ -854,8 +855,8 @@ void SACoreSoftMacro::calNotchPenalty()
         }
       }
 
-      for (int i = start_row; i < end_row; i++) {
-        for (int j = start_col; j < end_col; j++) {
+      for (int i = start_row; i < end_row + 1; i++) {
+        for (int j = start_col; j < end_col + 1; j++) {
           visited[i][j] = true;
         }
       }
@@ -878,7 +879,6 @@ void SACoreSoftMacro::calNotchPenalty()
 
       if (is_notch) {
         notch_penalty_ += calSingleNotchPenalty(width, height);
-
         if (graphics_) {
           graphics_->addNotch(odb::Rect(x_coords[start_col],
                                         y_coords[start_row],
