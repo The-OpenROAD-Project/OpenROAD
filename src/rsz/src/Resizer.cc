@@ -4187,10 +4187,7 @@ double Resizer::computeDesignArea()
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
     // Don't count fillers otherwise you'll always get 100% utilization
-    if (!master->isFiller())
-        // && master->getType() != odb::dbMasterType::CORE_WELLTAP
-        // && !master->isEndCap()) 
-        {
+    if (!master->isFiller()) {
       design_area += area(master);
     }
   }
