@@ -716,24 +716,29 @@ SACoreSoftMacro::NotchVicinity SACoreSoftMacro::checkNotchVicinity(
   return vicnity;
 }
 
-bool SACoreSoftMacro::isSegmentEmpty(const std::vector<std::vector<bool>>& grid,
-                                     const int start_row,
-                                     const int start_col,
-                                     const int end_row,
-                                     const int end_col)
+bool SACoreSoftMacro::isRowEmpty(const std::vector<std::vector<bool>>& grid,
+                                 const int row,
+                                 const int start_col,
+                                 const int end_col)
 {
-  for (int i = start_row; i <= end_row; i++) {
-    if (grid[i][end_col]) {
+  for (int col = start_col; col <= end_col; col++) {
+    if (grid[row][col]) {
       return false;
     }
   }
+  return true;
+}
 
-  for (int j = start_col; j <= end_col; j++) {
-    if (grid[end_row][j]) {
+bool SACoreSoftMacro::isColEmpty(const std::vector<std::vector<bool>>& grid,
+                                 const int col,
+                                 const int start_row,
+                                 const int end_row)
+{
+  for (int row = start_row; row <= end_row; row++) {
+    if (grid[row][col]) {
       return false;
     }
   }
-
   return true;
 }
 
@@ -821,7 +826,7 @@ void SACoreSoftMacro::calNotchPenalty()
         if (expand_rows) {
           end_row += 1;
           if (end_row < num_y
-              && isSegmentEmpty(grid, start_row, start_col, end_row, end_col)) {
+              && isRowEmpty(grid, end_row, start_col, end_col)) {
             NotchVicinity expanded_vicinity = checkNotchVicinity(
                 grid, start_row, start_col, end_row, end_col);
             if (expanded_vicinity.total() > current_vicinity.total()
@@ -840,7 +845,7 @@ void SACoreSoftMacro::calNotchPenalty()
         if (expand_cols) {
           end_col += 1;
           if (end_col < num_x
-              && isSegmentEmpty(grid, start_row, start_col, end_row, end_col)) {
+              && isColEmpty(grid, end_col, start_row, end_row)) {
             NotchVicinity expanded_vicinity = checkNotchVicinity(
                 grid, start_row, start_col, end_row, end_col);
             if (expanded_vicinity.total() > current_vicinity.total()

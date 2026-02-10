@@ -106,11 +106,14 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
       int start_col,
       int end_row,
       int end_col);
-  static bool isSegmentEmpty(const std::vector<std::vector<bool>>& grid,
-                             int start_row,
-                             int tart_col,
-                             int end_row,
-                             int end_col);
+  static bool isRowEmpty(const std::vector<std::vector<bool>>& grid,
+                         int row,
+                         int start_col,
+                         int end_col);
+  static bool isColEmpty(const std::vector<std::vector<bool>>& grid,
+                         int col,
+                         int start_row,
+                         int end_row);
   float calSingleNotchPenalty(int width, int height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
