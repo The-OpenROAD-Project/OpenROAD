@@ -18,8 +18,8 @@ PINS 1 ;
 END PINS
 NETS 4 ;
     - hier3/net ( hier3/alu1/hier2/load1 A ) ( hier3/alu1_2 H ) ( hier3/alu1/load2 A ) + USE SIGNAL ;
-    - net ( alu0/hier2/load1 A ) ( alu0_1 H ) ( alu0/load2 A ) + USE SIGNAL ;
-    - net2 ( load0 A ) ( load0_3 H ) + USE SIGNAL ;
+    - net ( load0 A ) ( load0_3 H ) + USE SIGNAL ;
+    - net_1 ( alu0/hier2/load1 A ) ( alu0_1 H ) ( alu0/load2 A ) + USE SIGNAL ;
     - top_in ( PIN top_in ) + USE SIGNAL ;
 END NETS
 END DESIGN

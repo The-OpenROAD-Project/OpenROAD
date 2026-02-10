@@ -13,7 +13,9 @@
 #include "odb/wOrder.h"
 #include "parse.h"
 #include "rcx/extMeasureRC.h"
+#include "rcx/extModelGen.h"
 #include "rcx/extPattern.h"
+#include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
 namespace rcx {

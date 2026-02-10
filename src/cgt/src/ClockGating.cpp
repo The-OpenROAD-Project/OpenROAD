@@ -37,6 +37,8 @@
 #include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
