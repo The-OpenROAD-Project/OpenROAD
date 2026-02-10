@@ -27,6 +27,7 @@
 #include "gtest/gtest.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
+#include "misc/vec/vecPtr.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/lefin.h"

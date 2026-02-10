@@ -23,6 +23,7 @@
 #include "ord/OpenRoad.hh"
 #include "pdn/PdnGen.hh"
 #include "ppl/IOPlacer.h"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
