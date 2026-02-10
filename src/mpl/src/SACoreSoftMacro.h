@@ -100,16 +100,17 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void calBoundaryPenalty();
   void fillCoordsLists(std::vector<int>& x_coords, std::vector<int>& y_coords);
-  NotchVicinity checkNotchVicinity(std::vector<std::vector<bool>>& grid,
-                                   int start_row,
-                                   int start_col,
-                                   int end_row,
-                                   int end_col);
-  bool isSegmentEmpty(std::vector<std::vector<bool>>& grid,
-                      int start_row,
-                      int tart_col,
-                      int end_row,
-                      int end_col);
+  static NotchVicinity checkNotchVicinity(
+      const std::vector<std::vector<bool>>& grid,
+      int start_row,
+      int start_col,
+      int end_row,
+      int end_col);
+  static bool isSegmentEmpty(const std::vector<std::vector<bool>>& grid,
+                             int start_row,
+                             int tart_col,
+                             int end_row,
+                             int end_col);
   float calSingleNotchPenalty(int width, int height);
   void calNotchPenalty();
   void calMacroBlockagePenalty();
