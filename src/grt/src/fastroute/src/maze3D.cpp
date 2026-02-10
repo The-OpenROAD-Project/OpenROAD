@@ -725,8 +725,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          : kHighDetourPenalty);
   }
 
-  const int endIND = tree_order_pv_.size(); // * 0.9;
-  const int max_reroute_iter = 5;
+  // Don't need to reroute every net during first GRT run, let it for the
+  // incremental optimizations
+  const int endIND = is_incremental_grt_ ? tree_order_pv_.size()
+                                         : tree_order_pv_.size() * 0.8;
+  const int kMaxRerouteIter = 5;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
@@ -734,7 +737,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     FrNet* net = nets_[netID];
     int8_t edge_cost = 0;
 
-    // Debug mode Tree 3D after layer assignament
+    // Debug mode Tree 3D during maze
     if (debug_->isOn() && debug_->tree3D) {
       if (net->getDbNet() == debug_->net) {
         logger_->report("Tree 3D during maze route 3D");
@@ -755,7 +758,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     auto& treenodes = sttrees_[netID].nodes;
     const int origEng = enlarge;
 
-    do {  // Reroute if any structural change occurs (shift)
+    // Reroute if any structural change occurs (shift)
+    do {
       structural_change = false;
 
       for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
@@ -1581,6 +1585,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
         }
 
+        // Debug mode edges 3D
+        if (debug_->isOn() && debug_->edges3D) {
+          if (net->getDbNet() == debug_->net) {
+            logger_->report("Edge {} 3D during maze route 3D", edgeID);
+            StTreeVisualization(sttrees_[netID], net, true);
+          }
+        }
+
         if (!n1Shift && !n2Shift) {
           continue;
         }
@@ -1594,7 +1606,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (structural_change) {
         reroute_iter++;
       }
-    } while (structural_change && reroute_iter <= max_reroute_iter);
+    } while (structural_change && reroute_iter <= kMaxRerouteIter);
   }  // nets loop
 }
 

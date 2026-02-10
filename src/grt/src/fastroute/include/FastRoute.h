@@ -60,6 +60,7 @@ struct DebugSetting
   bool rectilinearSTree = false;
   bool tree2D = false;
   bool tree3D = false;
+  bool edges3D = false;
   std::unique_ptr<AbstractFastRouteRenderer> renderer;
   std::string sttInputFileName;
 
@@ -250,6 +251,7 @@ class FastRouteCore
   void setDebugRectilinearSTree(bool rectiliniarSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
