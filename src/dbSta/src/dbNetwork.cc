@@ -68,6 +68,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "odb/geom.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
+#include "sta/Iterator.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"

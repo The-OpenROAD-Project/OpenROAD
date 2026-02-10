@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -73,7 +74,6 @@
 #include "sta/NetworkCmp.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
-#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -118,10 +118,8 @@ using sta::ArcDelayCalc;
 using sta::BfsBkwdIterator;
 using sta::BfsFwdIterator;
 using sta::BfsIndex;
-using sta::BufferUse;
 using sta::ClkArrivalSearchPred;
 using sta::Clock;
-using sta::CLOCK;
 using sta::ConcreteLibraryCellIterator;
 using sta::Corner;
 using sta::Corners;
@@ -1003,9 +1001,9 @@ void Resizer::findBuffersNoPruning()
 
       for (sta::LibertyCell* buffer : *lib->buffers()) {
         if (exclude_clock_buffers_) {
-          BufferUse buffer_use = sta_->getBufferUse(buffer);
+          BufferUse buffer_use = getBufferUse(buffer);
 
-          if (buffer_use == CLOCK) {
+          if (buffer_use == BufferUse::CLOCK) {
             continue;
           }
         }
@@ -1132,44 +1130,9 @@ void Resizer::getPins(sta::Instance* inst, PinVector& pins) const
   delete pin_iter;
 }
 
-void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
-{
-  if (iterm_to && iterm_from) {
-    //
-    // The concept of this function is we are moving the name of the net
-    // in the iterm_from to the iterm_to.  We preferentially use
-    // the modnet name, if present.
-    //
-    odb::dbNet* to_db_net = iterm_to->getNet();
-    odb::dbModNet* to_mod_net = iterm_to->getModNet();
-
-    odb::dbModNet* from_mod_net = iterm_from->getModNet();
-    odb::dbNet* from_db_net = iterm_from->getNet();
-
-    std::string required_name
-        = from_mod_net ? from_mod_net->getName() : from_db_net->getName();
-    std::string to_name
-        = to_mod_net ? to_mod_net->getName() : to_db_net->getName();
-
-    if (from_mod_net && to_mod_net) {
-      from_mod_net->rename(to_name.c_str());
-      to_mod_net->rename(required_name.c_str());
-    } else if (from_db_net && to_db_net) {
-      to_db_net->swapNetNames(from_db_net);
-    } else if (from_mod_net && to_db_net) {
-      to_db_net->rename(required_name.c_str());
-      from_mod_net->rename(to_name.c_str());
-    } else if (to_mod_net && from_db_net) {
-      to_mod_net->rename(required_name.c_str());
-      from_db_net->rename(to_name.c_str());
-    }
-  }
-}
-
 /*
 Make sure all the top pins are buffered
 */
-
 sta::Instance* Resizer::bufferInput(const sta::Pin* top_pin,
                                     sta::LibertyCell* buffer_cell,
                                     bool verbose)
@@ -1898,8 +1861,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     sta::LibertyLibrary* lib = lib_iter->next();
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (exclude_clock_buffers_) {
-        BufferUse buffer_use = sta_->getBufferUse(buffer);
-        if (buffer_use == CLOCK) {
+        BufferUse buffer_use = getBufferUse(buffer);
+        if (buffer_use == BufferUse::CLOCK) {
           continue;
         }
       }
@@ -2218,21 +2181,24 @@ void Resizer::checkLibertyForAllCorners()
 
 void Resizer::makeEquivCells()
 {
-  sta::LibertyLibrarySeq libs;
-  LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
-    // massive kludge until makeEquivCells is fixed to only incldue link cells
-    LibertyCellIterator cell_iter(lib);
-    if (cell_iter.hasNext()) {
-      sta::LibertyCell* cell = cell_iter.next();
-      if (isLinkCell(cell)) {
-        libs.emplace_back(lib);
+  if (!equiv_cells_made_) {
+    sta::LibertyLibrarySeq libs;
+    LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      // massive kludge until makeEquivCells is fixed to only incldue link cells
+      LibertyCellIterator cell_iter(lib);
+      if (cell_iter.hasNext()) {
+        sta::LibertyCell* cell = cell_iter.next();
+        if (isLinkCell(cell)) {
+          libs.emplace_back(lib);
+        }
       }
     }
+    delete lib_iter;
+    sta_->makeEquivCells(&libs, nullptr);
+    equiv_cells_made_ = true;
   }
-  delete lib_iter;
-  sta_->makeEquivCells(&libs, nullptr);
 }
 
 // When there are multiple VT layers, create a composite name
@@ -3389,6 +3355,20 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
                                                    sta::LibertyPort* tie_port,
                                                    int separation_dbu)
 {
+  odb::dbITerm* load_iterm = nullptr;
+  odb::dbBTerm* load_bterm = nullptr;
+  odb::dbModITerm* load_mod_iterm = nullptr;
+  db_network_->staToDb(load_pin, load_iterm, load_bterm, load_mod_iterm);
+
+  uint32_t load_pin_id = 0;
+  if (load_iterm != nullptr) {
+    load_pin_id = load_iterm->getId();
+  } else if (load_bterm != nullptr) {
+    load_pin_id = load_bterm->getId();
+  } else if (load_mod_iterm != nullptr) {
+    load_pin_id = load_mod_iterm->getId();
+  }
+
   sta::LibertyCell* tie_cell = tie_port->libertyCell();
 
   // Create the tie instance in the parent of the existing tie instance
@@ -3423,16 +3403,23 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
   assert(new_tie_out_pin != nullptr);
   odb::dbITerm* new_tie_iterm = db_network_->flatPin(new_tie_out_pin);
 
-  odb::dbITerm* load_iterm = nullptr;
-  odb::dbBTerm* load_bterm = nullptr;
-  odb::dbModITerm* load_mod_iterm = nullptr;
-  db_network_->staToDb(load_pin, load_iterm, load_bterm, load_mod_iterm);
-
   std::string connection_name = "net";
+
+  debugPrint(logger_,
+             RSZ,
+             "repair_tie_fanout",
+             1,
+             "load_pin_id={} load_pin={} tie_inst={} tie_port={}/{}",
+             load_pin_id,
+             sdc_network_->pathName(load_pin),
+             network_->name(new_tie_inst),
+             tie_cell->name(),
+             tie_port->name());
 
   // load_pin is a flat pin
   if (load_iterm) {
     // Connect the tie instance output pin to the load pin.
+    debugPrint(logger_, RSZ, "repair_tie_fanout", 1, "  connect flat iterm");
     load_iterm->disconnect();  // This is required
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_iterm, connection_name.c_str());
@@ -3445,6 +3432,8 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
     // handle it. If load_mod_iterm is disconnected first,
     // hierarchicalConnect() cannot find the matching flat net with the
     // load_mod_iterm.
+    debugPrint(
+        logger_, RSZ, "repair_tie_fanout", 1, "  connect hier mod_iterm");
     db_network_->hierarchicalConnect(
         new_tie_iterm, load_mod_iterm, connection_name.c_str());
     return new_tie_inst;
@@ -3454,6 +3443,7 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
   if (load_bterm) {
     // Create a new net and connect both the tie cell output and the top-level
     // port to it.
+    debugPrint(logger_, RSZ, "repair_tie_fanout", 1, "  connect bterm");
     sta::Net* new_net = db_network_->makeNet(
         connection_name.c_str(), parent, odb::dbNameUniquifyType::IF_NEEDED);
     new_tie_iterm->connect(db_network_->staToDb(new_net));
@@ -3990,7 +3980,7 @@ double Resizer::findMaxWireLength1(bool issue_error)
                  1,
                  "Buffer {} has max_wire_length {}",
                  buffer_cell->name(),
-                 units_->distanceUnit()->asString(buffer_length));
+                 units_->distanceUnit()->asString(buffer_length, 1));
     }
   }
 
@@ -5141,7 +5131,7 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
 
 void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
-  // Legalize the position of the buffer in case it leaves the die
+  // Legalize the cell position for accurate parasitic estimation
   if (estimate_parasitics_->getParasiticsSrc()
           == est::ParasiticsSrc::global_routing
       || estimate_parasitics_->getParasiticsSrc()
@@ -5434,6 +5424,7 @@ void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
   swappable_cells_cache_.clear();
+  equiv_cells_made_ = false;
 }
 
 void Resizer::copyDontUseFromLiberty()
@@ -5461,7 +5452,6 @@ void Resizer::copyDontUseFromLiberty()
 
 void Resizer::fullyRebuffer(sta::Pin* user_pin)
 {
-  resizePreamble();
   rebuffer_->fullyRebuffer(user_pin);
 }
 
@@ -5593,6 +5583,69 @@ bool Resizer::isClockCellCandidate(sta::LibertyCell* cell)
           && !cell->isIsolationCell() && !cell->isLevelShifter());
 }
 
+////////////////////////////////////////////////////////////////
+// Clock buffer pattern configuration
+
+static bool containsIgnoreCase(const std::string& str,
+                               const std::string& substr)
+{
+  auto it = std::ranges::search(str, substr, [](char a, char b) {
+    return std::tolower(static_cast<unsigned char>(a))
+           == std::tolower(static_cast<unsigned char>(b));
+  });
+  return !it.empty();  // Check if subrange is non-empty
+}
+
+void Resizer::setClockBufferString(const std::string& clk_str)
+{
+  clock_buffer_string_ = clk_str;
+  clock_buffer_footprint_.clear();
+  logger_->info(RSZ, 205, "Clock buffer string set to '{}'", clk_str);
+}
+
+void Resizer::setClockBufferFootprint(const std::string& footprint)
+{
+  clock_buffer_footprint_ = footprint;
+  clock_buffer_string_.clear();
+  logger_->info(RSZ, 206, "Clock buffer footprint set to '{}'", footprint);
+}
+
+void Resizer::resetClockBufferPattern()
+{
+  clock_buffer_string_.clear();
+  clock_buffer_footprint_.clear();
+  logger_->info(RSZ, 207, "Clock buffer string and footprint have been reset");
+}
+
+BufferUse Resizer::getBufferUse(sta::LibertyCell* buffer)
+{
+  // is_clock_cell is a custom lib attribute that may not exist,
+  // so we also use the name/footprint pattern to help
+  if (buffer->isClockCell()) {
+    return BufferUse::CLOCK;
+  }
+
+  if (!clock_buffer_string_.empty()) {
+    if (containsIgnoreCase(buffer->name(), clock_buffer_string_)) {
+      return BufferUse::CLOCK;
+    }
+  } else if (!clock_buffer_footprint_.empty()) {
+    const char* footprint = buffer->footprint();
+    if (footprint && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+      return BufferUse::CLOCK;
+    }
+  } else {
+    // Default: check for "CLKBUF" in cell name
+    if (containsIgnoreCase(buffer->name(), "CLKBUF")) {
+      return BufferUse::CLOCK;
+    }
+  }
+
+  return BufferUse::DATA;
+}
+
+////////////////////////////////////////////////////////////////
+
 void Resizer::inferClockBufferList(const char* lib_name,
                                    std::vector<std::string>& buffers)
 {
@@ -5600,20 +5653,16 @@ void Resizer::inferClockBufferList(const char* lib_name,
   // criteria.
   sta::Vector<sta::LibertyCell*> clock_cell_attribute_buffers;
   sta::Vector<sta::LibertyCell*> lef_use_clock_buffers;
+  sta::Vector<sta::LibertyCell*> user_clock_buffers;
   sta::Vector<sta::LibertyCell*> clkbuf_pattern_buffers;
   sta::Vector<sta::LibertyCell*> buf_pattern_buffers;
   sta::Vector<sta::LibertyCell*> all_candidate_buffers;
 
-  // Patterns for matching common clock buffer and general buffer naming
-  // conventions.
-  sta::PatternMatch patternClkBuf(".*CLKBUF.*",
-                                  /* is_regexp */ true,
-                                  /* nocase */ true,
-                                  /* Tcl_interp* */ sta_->tclInterp());
-  sta::PatternMatch patternBuf(".*BUF.*",
-                               /* is_regexp */ true,
-                               /* nocase */ true,
-                               /* Tcl_interp* */ nullptr);
+  // Determine the pattern to use for clock buffer matching.
+  // If user has configured a string or footprint via set_opt_config, use that.
+  // Otherwise, fall back to the default "CLKBUF" pattern.
+  bool use_user_string = hasClockBufferString();
+  bool use_user_footprint = hasClockBufferFootprint();
 
   // 1. Iterate over all liberty libraries to find candidate cells.
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
@@ -5646,20 +5695,27 @@ void Resizer::inferClockBufferList(const char* lib_name,
           break;  // Avoid duplicates for multiple clock pins
         }
       }
-    }
 
-    // Priority 3: Collections based on naming pattern matching (CLKBUF).
-    for (sta::LibertyCell* buffer :
-         lib->findLibertyCellsMatching(&patternClkBuf)) {
-      if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+      // Priority 3: User-configured string or footprint matching.
+      if (use_user_string) {
+        if (containsIgnoreCase(buffer->name(), clock_buffer_string_)) {
+          user_clock_buffers.emplace_back(buffer);
+        }
+      } else if (use_user_footprint) {
+        const char* footprint = buffer->footprint();
+        if (footprint
+            && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+          user_clock_buffers.emplace_back(buffer);
+        }
+      }
+
+      // Priority 4: Default CLKBUF pattern matching (case-insensitive).
+      if (containsIgnoreCase(buffer->name(), "CLKBUF")) {
         clkbuf_pattern_buffers.emplace_back(buffer);
       }
-    }
 
-    // Priority 4: Collections based on naming pattern matching (BUF).
-    for (sta::LibertyCell* buffer :
-         lib->findLibertyCellsMatching(&patternBuf)) {
-      if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+      // Priority 5: General BUF pattern matching (case-insensitive).
+      if (containsIgnoreCase(buffer->name(), "BUF")) {
         buf_pattern_buffers.emplace_back(buffer);
       }
     }
@@ -5696,7 +5752,30 @@ void Resizer::inferClockBufferList(const char* lib_name,
         }
       }
     }
+  } else if (!user_clock_buffers.empty()) {
+    // Priority 3: User-configured string or footprint matching.
+    selected_ptr = &user_clock_buffers;
+    for (sta::LibertyCell* buffer : *selected_ptr) {
+      if (use_user_string) {
+        debugPrint(logger_,
+                   RSZ,
+                   "inferClockBufferList",
+                   1,
+                   "{} found by user-configured string '{}'",
+                   buffer->name(),
+                   clock_buffer_string_);
+      } else if (use_user_footprint) {
+        debugPrint(logger_,
+                   RSZ,
+                   "inferClockBufferList",
+                   1,
+                   "{} found by user-configured footprint '{}'",
+                   buffer->name(),
+                   clock_buffer_footprint_);
+      }
+    }
   } else if (!clkbuf_pattern_buffers.empty()) {
+    // Priority 4: Default CLKBUF pattern matching.
     selected_ptr = &clkbuf_pattern_buffers;
     for (sta::LibertyCell* buffer : *selected_ptr) {
       debugPrint(logger_,
@@ -5852,7 +5931,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     const Corner* corner,
     std::map<const Pin*, float>& load_pin_slew)
 {
-  resizePreamble();
   ensureLevelDrvrVertices();
   repair_design_->init();
 
@@ -5990,10 +6068,6 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
                                   const Corner* corner,
                                   std::map<const Pin*, float>& load_pin_slew)
 {
-  resizePreamble();
-  ensureLevelDrvrVertices();
-  repair_design_->init();
-
   if (!tree) {
     logger_->report("Tree is null\n");
     return false;

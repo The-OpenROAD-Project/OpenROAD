@@ -2647,6 +2647,7 @@ bool dbNet::isInternalTo(dbModule* module) const
 
 void dbNet::checkSanityModNetConsistency() const
 {
+  bool issued_warning = false;
   utl::Logger* logger = getImpl()->getLogger();
 
   // 1. Find all related dbModNets with this dbNet.
@@ -2687,6 +2688,7 @@ void dbNet::checkSanityModNetConsistency() const
       flat_iterms, hier_iterms, std::back_inserter(iterms_in_flat_only));
 
   if (iterms_in_flat_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  484,
                  "SanityCheck: dbNet '{}' has ITerms not present in its "
@@ -2702,6 +2704,7 @@ void dbNet::checkSanityModNetConsistency() const
       hier_iterms, flat_iterms, std::back_inserter(iterms_in_hier_only));
 
   if (iterms_in_hier_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  488,
                  "SanityCheck: dbNet '{}' is missing ITerms that are present "
@@ -2721,6 +2724,7 @@ void dbNet::checkSanityModNetConsistency() const
       flat_bterms, hier_bterms, std::back_inserter(bterms_in_flat_only));
 
   if (bterms_in_flat_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  486,
                  "SanityCheck: dbNet '{}' has BTerms not present in its "
@@ -2736,6 +2740,7 @@ void dbNet::checkSanityModNetConsistency() const
       hier_bterms, flat_bterms, std::back_inserter(bterms_in_hier_only));
 
   if (bterms_in_hier_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  490,
                  "SanityCheck: dbNet '{}' is missing BTerms that are present "
@@ -2744,9 +2749,14 @@ void dbNet::checkSanityModNetConsistency() const
     for (dbBTerm* bterm : bterms_in_hier_only) {
       logger->warn(utl::ODB,
                    491,
-                   "  - BTerm: {} (in hier, not in flat)",
+                   "  - BTerm: {} (in hier net, not in flat net)",
                    bterm->getName());
     }
+  }
+
+  // Print debug information
+  if (issued_warning) {
+    dump(true);
   }
 }
 

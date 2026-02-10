@@ -17,6 +17,7 @@
 #include "Padding.h"
 #include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"

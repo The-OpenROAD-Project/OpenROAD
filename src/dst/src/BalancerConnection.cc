@@ -3,8 +3,6 @@
 
 #include "BalancerConnection.h"
 
-#include <dst/JobMessage.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -25,6 +23,7 @@
 #include "dst/BalancerJobDescription.h"
 #include "dst/BroadcastJobDescription.h"
 #include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "utl/Logger.h"
 
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)

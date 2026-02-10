@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"

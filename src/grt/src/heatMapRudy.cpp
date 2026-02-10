@@ -12,6 +12,7 @@
 
 #include "grt/GlobalRouter.h"
 #include "gui/gui.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

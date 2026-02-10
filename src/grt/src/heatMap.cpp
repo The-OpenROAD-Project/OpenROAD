@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"

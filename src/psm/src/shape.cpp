@@ -15,6 +15,8 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "connection.h"
+#include "ir_network.h"
 #include "node.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"

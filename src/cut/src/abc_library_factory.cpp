@@ -13,7 +13,13 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "misc/util/abc_global.h"
+#include "misc/vec/vecFlt.h"
+#include "misc/vec/vecInt.h"
+#include "misc/vec/vecPtr.h"
+#include "misc/vec/vecWrd.h"
 #include "rsz/Resizer.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "utl/Logger.h"

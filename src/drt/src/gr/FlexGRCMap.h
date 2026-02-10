@@ -15,6 +15,7 @@ constexpr int CMAPFRACSIZE = 1;
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frGCellPattern.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"

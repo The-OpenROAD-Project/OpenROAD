@@ -14,6 +14,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
@@ -296,6 +297,7 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
         db_network_->parent(db_network_->dbToSta(source_pin->getInst())),
         odb::dbNameUniquifyType::IF_NEEDED);
     source_db_net = db_network_->staToDb(new_net);
+    connection_name = source_db_net->getConstName();
     source_pin->connect(source_db_net);
     dlogHierConnConnectSrcToFlatNet(source_pin, connection_name);
   }
@@ -493,6 +495,7 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
                              db_network_->topInstance(),
                              odb::dbNameUniquifyType::IF_NEEDED);
   odb::dbNet* new_flat_net = db_network_->staToDb(new_flat_net_sta);
+  connection_name = new_flat_net->getConstName();
 
   // 2.3. Connect: driver pin -> new flat net
   source_pin->connect(new_flat_net);
@@ -618,8 +621,15 @@ std::string dbEditHierarchy::makeUniqueName(odb::dbModule* module,
 
   std::string unique_name = base_name;
   int id = 0;
+
+  Instance* inst = db_network_->dbToSta(module->getModInst());
+  if (inst == nullptr) {
+    inst = db_network_->topInstance();
+  }
+
+  // Check collision with both hierarchical ports and flat & hier nets
   while (module->findModBTerm(unique_name.c_str())
-         || module->getModNet(unique_name.c_str())) {
+         || db_network_->findNet(inst, unique_name.c_str())) {
     id++;
     unique_name = fmt::format("{}_{}", base_name, id);
   }

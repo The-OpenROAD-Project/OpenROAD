@@ -6,6 +6,7 @@
 #include <tuple>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
 #include "db/tech/frConstraint.h"
 #include "distributed/frArchive.h"
 #include "frBaseTypes.h"

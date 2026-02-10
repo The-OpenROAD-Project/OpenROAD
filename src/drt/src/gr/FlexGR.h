@@ -11,7 +11,9 @@
 
 #include "boost/icl/interval_map.hpp"
 #include "boost/icl/interval_set.hpp"
+#include "db/grObj/grFig.h"
 #include "db/grObj/grNet.h"
+#include "db/grObj/grShape.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNode.h"
 #include "db/tech/frTechObject.h"

@@ -13,6 +13,7 @@
 
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frRPin.h"
 #include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

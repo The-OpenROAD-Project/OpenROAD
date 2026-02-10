@@ -148,6 +148,7 @@ TESTS = [
     "repair_tie10_hier",
     "repair_tie11_hier",
     "repair_tie12_hier",
+    "repair_tie13_hier",
     "repair_wire1",
     "repair_wire10",
     "repair_wire11",

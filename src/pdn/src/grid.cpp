@@ -24,9 +24,11 @@
 #include "odb/isotropy.h"
 #include "power_cells.h"
 #include "rings.h"
+#include "shape.h"
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 
 namespace pdn {
 

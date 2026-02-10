@@ -11,6 +11,7 @@
 #include "db/gcObj/gcShape.h"
 #include "frBaseTypes.h"
 #include "frRTree.h"
+#include "gc/FlexGC.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/geom.h"
 

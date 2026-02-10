@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "DplObserver.h"
+#include "dpl/Opendp.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"

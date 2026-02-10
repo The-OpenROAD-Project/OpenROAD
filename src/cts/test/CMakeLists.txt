@@ -20,6 +20,7 @@ or_integration_tests(
     check_max_fanout2
     check_max_fanout3
     check_wire_rc_cts
+    clock_buffer_footprint
     dummy_load
     find_clock
     find_clock_pad

@@ -5,7 +5,10 @@
 
 #include <cstdint>
 
+#include "infrastructure/Objects.h"
+#include "objective/detailed_objective.h"
 #include "optimization/detailed_orient.h"
+#include "util/journal.h"
 
 namespace dpl {
 

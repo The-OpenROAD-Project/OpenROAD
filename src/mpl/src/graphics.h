@@ -68,6 +68,8 @@ class Graphics : public gui::Renderer, public MplObserver
   void setCurrentCluster(Cluster* current_cluster) override;
   void setGuides(const std::map<int, odb::Rect>& guides) override;
   void setFences(const std::map<int, odb::Rect>& fences) override;
+  void addNotch(const odb::Rect& notch) override;
+  void clearNotches() override;
   void setIOConstraintsMap(
       const ClusterToBoundaryRegionMap& io_cluster_to_constraint) override;
   void setBlockedRegionsForPins(
@@ -88,6 +90,7 @@ class Graphics : public gui::Renderer, public MplObserver
                       gui::Painter& painter);
   void drawFences(gui::Painter& painter);
   void drawGuides(gui::Painter& painter);
+  void drawNotches(gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
   template <typename T>
@@ -131,6 +134,7 @@ class Graphics : public gui::Renderer, public MplObserver
   Cluster* current_cluster_{nullptr};
   std::map<int, odb::Rect> guides_;  // Id -> Guidance Region
   std::map<int, odb::Rect> fences_;  // Id -> Fence
+  std::vector<odb::Rect> notches_;
 
   int x_mark_size_{0};  // For blocked regions.
 

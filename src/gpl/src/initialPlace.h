@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <Eigen/SparseCore>
 #include <memory>
 #include <vector>
 
+#include "Eigen/SparseCore"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 

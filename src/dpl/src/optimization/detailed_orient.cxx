@@ -13,6 +13,7 @@
 #include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Objects.h"
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "odb/db.h"

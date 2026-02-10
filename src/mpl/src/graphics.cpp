@@ -404,9 +404,10 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawCluster(root_, painter);
   }
 
-  // Draw blockages only during SA for SoftMacros
+  // Draw blockages and notches only during SA for SoftMacros
   if (!soft_macros_.empty()) {
     drawAllBlockages(painter);
+    drawNotches(painter);
   }
 
   painter.setPen(gui::Painter::kWhite, true);
@@ -570,6 +571,20 @@ void Graphics::drawGuides(gui::Painter& painter)
                        gui::Painter::Anchor::kCenter,
                        std::to_string(macro_id),
                        false /* rotate 90 */);
+  }
+}
+
+void Graphics::drawNotches(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::kYellow, true);
+
+  for (const auto& notch : notches_) {
+    odb::Rect rect = notch;
+    rect.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.setBrush(gui::Painter::kYellow, gui::Painter::kDiagonal);
+
+    painter.drawRect(rect);
   }
 }
 
@@ -745,6 +760,16 @@ void Graphics::setGuides(const std::map<int, odb::Rect>& guides)
 void Graphics::setFences(const std::map<int, odb::Rect>& fences)
 {
   fences_ = fences;
+}
+
+void Graphics::addNotch(const odb::Rect& notch)
+{
+  notches_.emplace_back(notch);
+}
+
+void Graphics::clearNotches()
+{
+  notches_.clear();
 }
 
 void Graphics::setIOConstraintsMap(

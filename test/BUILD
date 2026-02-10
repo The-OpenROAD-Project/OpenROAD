@@ -35,6 +35,20 @@ filegroup(
 )
 
 filegroup(
+    name = "ihp-sg13g2_data",
+    srcs = [
+        "ihp-sg13g2/IOLib.lef",
+        "ihp-sg13g2/IOLib_dummy.lib",
+        "ihp-sg13g2/setRC.tcl",
+        "ihp-sg13g2/sg13g2_stdcell.lef",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p50V_25C.lib",
+        "ihp-sg13g2/sg13g2_tech.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "regression_resources",
     # TODO Refine glob later.
     #

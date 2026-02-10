@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "colorGenerator.h"
+#include "gui/gui.h"
 #include "layoutViewer.h"
 #include "odb/db.h"
 #include "odb/geom.h"

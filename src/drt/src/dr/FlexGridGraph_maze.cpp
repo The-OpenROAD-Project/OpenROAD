@@ -11,9 +11,11 @@
 #include <string>
 #include <vector>
 
+#include "db/drObj/drPin.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
+#include "dr/FlexWavefront.h"
 #include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

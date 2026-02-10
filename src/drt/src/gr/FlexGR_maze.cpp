@@ -11,6 +11,10 @@
 #include <utility>
 #include <vector>
 
+#include "db/grObj/grFig.h"
+#include "db/grObj/grNet.h"
+#include "db/grObj/grNode.h"
+#include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
 #include "dr/FlexMazeTypes.h"

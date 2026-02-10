@@ -3,8 +3,6 @@
 
 #include "db_sta/dbReadVerilog.hh"
 
-#include <odb/dbSet.h>
-
 #include <cstddef>
 #include <cstring>
 #include <fstream>
@@ -18,6 +16,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"

@@ -36,6 +36,8 @@ class _dbChipRegion : public _dbObject
   uint8_t side_;
   dbId<_dbTechLayer> layer_;
   Rect box_;
+  int z_min_;
+  int z_max_;
   dbTable<_dbChipBump>* chip_bump_tbl_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj);

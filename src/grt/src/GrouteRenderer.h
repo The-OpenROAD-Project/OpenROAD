@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "AbstractGrouteRenderer.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "odb/db.h"

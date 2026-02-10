@@ -22,6 +22,7 @@
 #include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 
 namespace pdn {
 

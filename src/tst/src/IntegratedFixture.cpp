@@ -3,8 +3,6 @@
 
 #include "tst/IntegratedFixture.h"
 
-#include <gtest/gtest.h>
-
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -13,6 +11,7 @@
 
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Clock.hh"

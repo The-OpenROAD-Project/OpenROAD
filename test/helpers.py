@@ -113,6 +113,7 @@ def make_design(tech):
     logger.suppressMessage(utl.ORD, 30)
 
     # suppress grt message with the suggested adjustment
+    logger.suppressMessage(utl.GRT, 303)
     logger.suppressMessage(utl.GRT, 704)
 
     return design

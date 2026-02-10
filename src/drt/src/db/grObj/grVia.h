@@ -5,6 +5,8 @@
 
 #include <memory>
 
+#include "db/grObj/grNet.h"
+#include "db/grObj/grPin.h"
 #include "db/grObj/grRef.h"
 #include "db/obj/frNode.h"
 #include "db/tech/frViaDef.h"

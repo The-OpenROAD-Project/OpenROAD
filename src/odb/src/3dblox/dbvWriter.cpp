@@ -180,6 +180,9 @@ void DbvWriter::writeExternal(YAML::Node& external_node, odb::dbChip* chiplet)
     if (chiplet->getBlock() != nullptr) {
       writeDef(external_node, chiplet);
     }
+    if (auto prop = odb::dbStringProperty::find(chiplet, "verilog_file")) {
+      external_node["verilog_file"] = prop->getValue();
+    }
   }
 }
 

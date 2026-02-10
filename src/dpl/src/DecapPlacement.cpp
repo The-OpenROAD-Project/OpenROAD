@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>

@@ -528,6 +528,8 @@ DisplayControls::DisplayControls(QWidget* parent)
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.flywires_only, "Flywires only", misc, Qt::Unchecked);
+  makeLeafItem(
+      misc_.focused_nets_guides, "Focused nets guides", misc, Qt::Unchecked);
   makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
   setNameItemDoubleClickAction(misc_.labels, [this]() {
     label_font_
@@ -1877,6 +1879,11 @@ bool DisplayControls::isGCellGridVisible() const
 bool DisplayControls::isFlywireHighlightOnly() const
 {
   return isModelRowVisible(&misc_.flywires_only);
+}
+
+bool DisplayControls::areFocusedNetsGuidesVisible() const
+{
+  return isModelRowVisible(&misc_.focused_nets_guides);
 }
 
 bool DisplayControls::areIOPinsVisible() const

@@ -184,6 +184,13 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
           chiplet_node["external"], "DEF_file", chiplet.external.def_file);
       chiplet.external.def_file = resolvePath(chiplet.external.def_file);
     }
+    if (chiplet_node["external"]["verilog_file"]) {
+      extractValue(chiplet_node["external"],
+                   "verilog_file",
+                   chiplet.external.verilog_file);
+      chiplet.external.verilog_file
+          = resolvePath(chiplet.external.verilog_file);
+    }
   }
 }
 

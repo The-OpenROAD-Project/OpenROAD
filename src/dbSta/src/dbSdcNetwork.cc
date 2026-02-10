@@ -13,6 +13,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/ParseBus.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/SdcNetwork.hh"
 
 namespace sta {
 
