@@ -7,8 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBPin.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frNet.h"
 #include "db/obj/frPin.h"
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"

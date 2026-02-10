@@ -891,6 +891,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
   bool match_cell_footprint_ = false;
+  bool equiv_cells_made_ = false;
+
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
   // insert a buffer in the middle of. Theoretically computed using the smallest

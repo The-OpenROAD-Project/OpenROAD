@@ -7,10 +7,12 @@
 #include <iostream>
 #include <vector>
 
+#include "db/grObj/grNode.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
+#include "gr/FlexGRWavefront.h"
 #include "odb/geom.h"
 
 namespace drt {
