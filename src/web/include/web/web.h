@@ -13,7 +13,9 @@ namespace web {
 struct Color;
 class Search;
 
-// A simple web server
+class TileGenerator;
+
+// A layout web server
 
 class WebServer
 {
@@ -24,20 +26,10 @@ class WebServer
   void serve();
 
  private:
-  odb::Rect getBounds() const;
-  std::vector<unsigned char> generateTile(const std::string& layer,
-                                          int z,
-                                          int x,
-                                          int y);
-  void setPixel(std::vector<unsigned char>& image,
-                int x,
-                int y,
-                const Color& c);
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
-  std::unique_ptr<Search> search_;
-  static constexpr int tile_size_in_pixel = 256;
+  std::shared_ptr<TileGenerator> generator_;
 };
 
 }  // namespace web

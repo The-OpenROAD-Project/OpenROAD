@@ -25,6 +25,7 @@ Promise.all([layersRequest, boundsRequest])
         return Promise.all([layersJson, boundsJson]);
     })
     .then(data => {
+        console.log(data);
         // --- Load Layers ---
         const layerNames = data[0].layers;
         layerNames.forEach(name => {
