@@ -56,6 +56,7 @@
 #include "sta/StaMain.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
 
