@@ -154,11 +154,11 @@ LogicCut::BuildMappedMockturtleNetwork(
   // Create PIs for primary_inputs_ (CUT boundary inputs)
   std::vector<sta::Net*> sorted_inputs(primary_inputs_.begin(),
                                        primary_inputs_.end());
-  std::sort(sorted_inputs.begin(),
-            sorted_inputs.end(),
-            [network](sta::Net* a, sta::Net* b) {
-              return network->id(a) < network->id(b);
-            });
+  std::stable_sort(sorted_inputs.begin(),
+                   sorted_inputs.end(),
+                   [network](sta::Net* a, sta::Net* b) {
+                     return network->id(a) < network->id(b);
+                   });
 
   for (sta::Net* net : sorted_inputs) {
     const signal pi = ntk.create_pi(network->name(net));
@@ -238,11 +238,11 @@ LogicCut::BuildMappedMockturtleNetwork(
   // Hook up primary outputs
   std::vector<sta::Net*> sorted_outputs(primary_outputs_.begin(),
                                         primary_outputs_.end());
-  std::sort(sorted_outputs.begin(),
-            sorted_outputs.end(),
-            [network](sta::Net* a, sta::Net* b) {
-              return network->id(a) < network->id(b);
-            });
+  std::stable_sort(sorted_outputs.begin(),
+                   sorted_outputs.end(),
+                   [network](sta::Net* a, sta::Net* b) {
+                     return network->id(a) < network->id(b);
+                   });
 
   for (sta::Net* net : sorted_outputs) {
     const signal s = build_net_signal(net, 0);
