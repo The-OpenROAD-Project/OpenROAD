@@ -22,7 +22,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "dft_man_tcl_check",
-    "dft_readme_msgs_check",
+    # "dft_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
@@ -45,6 +45,12 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "dft_man_tcl_check": [
+                "//src/dft:README.md",
+            ],
+            "dft_readme_msgs_check": [
+                "//src/dft:README.md",
+            ],
             "scan_architect_clock_mix_sky130": [
                 "scan_architect_sky130.v",
             ],
@@ -72,6 +78,7 @@ filegroup(
         name = test_name,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

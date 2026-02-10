@@ -95,3 +95,5 @@ tcl_wrap_cc(
         "//src/odb:swig",
     ],
 )
+
+exports_files(["README.md"])

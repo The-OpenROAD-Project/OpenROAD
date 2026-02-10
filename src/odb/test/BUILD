@@ -225,7 +225,7 @@ PASSFAIL_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "odb_man_tcl_check",
-    "odb_readme_msgs_check",
+    # "odb_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 # TODO: Enable once difference between bazel and ctest is resolved.
@@ -363,6 +363,12 @@ filegroup(
             "dump_netlists_withfill": [
                 "dump_netlists_withfill_cdl.ok",
             ],
+            "odb_man_tcl_check": [
+                "//src/odb:README.md",
+            ],
+            "odb_readme_msgs_check": [
+                "//src/odb:README.md",
+            ],
             "read_abstract_lef": [
                 "gcd_abstract_lef.lefok",
             ],
@@ -388,6 +394,7 @@ filegroup(
         data = [":" + test_name + "_resources"],
         tags = ["manual"] if test_name in MANUAL_TESTS or
                              test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

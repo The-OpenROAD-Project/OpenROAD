@@ -96,3 +96,5 @@ python_wrap_cc(
         "src",
     ],
 )
+
+exports_files(["README.md"])

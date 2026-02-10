@@ -27,7 +27,7 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "drt_man_tcl_check",
-    "drt_readme_msgs_check",
+    # "drt_readme_msgs_check",  # TODO: fix relative paths for Bazel
 ]
 
 # TODO: Enable once difference between bazel and ctest is resolved.
@@ -107,7 +107,14 @@ filegroup(
         ] if test_name in [
             "ispd18_sample_incr",
             "single_step",
-        ] else []),
+        ] else []) + ({
+            "drt_man_tcl_check": [
+                "//src/drt:README.md",
+            ],
+            "drt_readme_msgs_check": [
+                "//src/drt:README.md",
+            ],
+        }.get(test_name, [])),
     )
     for test_name in ALL_TESTS
 ]
@@ -118,6 +125,7 @@ filegroup(
         data = [":" + test_name + "_resources"],
         tags = ["manual"] if test_name in MANUAL_TESTS or
                              test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        test_type = "standalone_python" if test_name in MANUAL_TESTS else "",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

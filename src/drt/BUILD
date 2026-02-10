@@ -326,3 +326,5 @@ python_wrap_cc(
         "//src/odb:swig-py",
     ],
 )
+
+exports_files(["README.md"])

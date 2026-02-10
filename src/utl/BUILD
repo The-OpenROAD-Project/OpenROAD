@@ -200,3 +200,5 @@ python_wrap_cc(
     ],
     visibility = ["//visibility:public"],
 )
+
+exports_files(["README.md"])
