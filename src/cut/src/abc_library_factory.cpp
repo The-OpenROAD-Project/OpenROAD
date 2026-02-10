@@ -19,6 +19,7 @@
 #include "misc/vec/vecPtr.h"
 #include "misc/vec/vecWrd.h"
 #include "rsz/Resizer.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "utl/Logger.h"
