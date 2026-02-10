@@ -727,7 +727,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool hasPins(sta::Net* net);
   void getPins(sta::Net* net, PinVector& pins) const;
   void getPins(sta::Instance* inst, PinVector& pins) const;
-  void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   odb::Point tieLocation(const sta::Pin* load, int separation);
   sta::InstanceSeq findClkInverters();
   void cloneClkInverter(sta::Instance* inv);
