@@ -26,11 +26,16 @@ class Checker
     int top_z;
     int bot_z;
   };
-  void checkFloatingChips(dbChip* chip, const UnfoldedModel& model);
-  void checkOverlappingChips(dbChip* chip, const UnfoldedModel& model);
-  void checkConnectionRegions(dbChip* chip, const UnfoldedModel& model);
-  void checkBumpPhysicalAlignment(dbChip* chip, const UnfoldedModel& model);
-  void checkNetConnectivity(dbChip* chip, const UnfoldedModel& model);
+  void checkFloatingChips(dbMarkerCategory* top_cat,
+                          const UnfoldedModel& model);
+  void checkOverlappingChips(dbMarkerCategory* top_cat,
+                             const UnfoldedModel& model);
+  void checkConnectionRegions(dbMarkerCategory* top_cat,
+                              const UnfoldedModel& model);
+  void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
+                                  const UnfoldedModel& model);
+  void checkNetConnectivity(dbMarkerCategory* top_cat,
+                            const UnfoldedModel& model);
   bool isOverlapFullyInConnections(const UnfoldedChip* chip1,
                                    const UnfoldedChip* chip2,
                                    const Cuboid& overlap) const;

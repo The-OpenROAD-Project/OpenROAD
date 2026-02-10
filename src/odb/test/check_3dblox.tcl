@@ -34,7 +34,7 @@ $p set $x1 $y1 [expr $z1 + $t1 + 10000]
 $inst2 setLoc $p
 
 check_3dblox
-check "Vertical gap detected as floating" { get_3dblox_marker_count "Floating chips" } 2
+check "Vertical gap detected as floating" { get_3dblox_marker_count "Floating chips" } 1
 
 # 4. Test Multiple Floating Sets
 # Create another chip far away
@@ -43,8 +43,8 @@ $p set [expr $x1 + 10 * $w1] [expr $y1 + 10 * $h1] $z1
 $inst3 setLoc $p
 
 check_3dblox
-# Should find 3 sets of floating chips (inst1, inst2 and inst3 are all separate from each other)
-check "Multiple floating sets detected" { get_3dblox_marker_count "Floating chips" } 3
+# Should find 2 sets of floating chips (inst1, inst2 and inst3 are all separate from each other)
+check "Multiple floating sets detected" { get_3dblox_marker_count "Floating chips" } 2
 
 # 5. Test Partial Overlap
 # Move inst2 to partially overlap with inst1

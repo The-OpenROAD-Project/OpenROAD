@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -26,12 +27,14 @@ Checker::Checker(utl::Logger* logger) : logger_(logger)
 void Checker::check(dbChip* chip)
 {
   UnfoldedModel model(logger_, chip);
+  auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
 
-  checkFloatingChips(chip, model);
-  checkOverlappingChips(chip, model);
+  checkFloatingChips(top_cat, model);
+  checkOverlappingChips(top_cat, model);
 }
 
-void Checker::checkFloatingChips(dbChip* chip, const UnfoldedModel& model)
+void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
+                                 const UnfoldedModel& model)
 {
   const auto& chips = model.getChips();
   // Add one more node for "ground" (external world: package, PCB, ...)
@@ -68,19 +71,31 @@ void Checker::checkFloatingChips(dbChip* chip, const UnfoldedModel& model)
 
   std::vector<std::vector<const UnfoldedChip*>> groups(chips.size() + 1);
   for (size_t i = 0; i < chips.size(); ++i) {
-    groups[uf.find((int) i)].push_back(&chips[i]);
+    groups[uf.find(i)].push_back(&chips[i]);
   }
+  auto ground_leader = uf.find(ground_node);
+  const bool ground_empty = groups[ground_leader].empty();
+  groups.erase(groups.begin() + ground_leader);
+
   std::erase_if(groups, [](const auto& g) { return g.empty(); });
 
   std::ranges::sort(
-      groups, [](const auto& a, const auto& b) { return a.size() > b.size(); });
+      groups, [](const auto& a, const auto& b) { return a.size() < b.size(); });
 
-  if (groups.size() > 1) {
-    auto* top_cat = dbMarkerCategory::createOrGet(chip, "3DBlox");
-    auto* conn_cat = dbMarkerCategory::createOrGet(top_cat, "Connectivity");
-    auto* cat = dbMarkerCategory::createOrReplace(conn_cat, "Floating chips");
+  if (ground_empty) {
+    logger_->warn(
+        utl::ODB,
+        206,
+        "No ground group found. Erasing biggest group from floating chips.");
+    if (!groups.empty()) {
+      groups.pop_back();
+    }
+  }
+
+  if (!groups.empty()) {
+    auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Floating chips");
     logger_->warn(utl::ODB, 151, "Found {} floating chip sets", groups.size());
-    for (const auto& group : groups) {
+    for (const auto& group : groups | std::views::reverse) {
       auto* marker = dbMarker::create(cat);
       for (auto* chip : group) {
         marker->addShape(Rect(chip->cuboid.xMin(),
@@ -94,7 +109,8 @@ void Checker::checkFloatingChips(dbChip* chip, const UnfoldedModel& model)
   }
 }
 
-void Checker::checkOverlappingChips(dbChip* chip, const UnfoldedModel& model)
+void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
+                                    const UnfoldedModel& model)
 {
   const auto& chips = model.getChips();
   std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
@@ -110,10 +126,7 @@ void Checker::checkOverlappingChips(dbChip* chip, const UnfoldedModel& model)
   }
 
   if (!overlaps.empty()) {
-    auto* top_cat = dbMarkerCategory::createOrGet(chip, "3DBlox");
-    auto* conn_cat = dbMarkerCategory::createOrGet(top_cat, "Connectivity");
-    auto* cat
-        = dbMarkerCategory::createOrReplace(conn_cat, "Overlapping chips");
+    auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Overlapping chips");
     logger_->warn(
         utl::ODB, 156, "Found {} overlapping chips", (int) overlaps.size());
 
@@ -140,16 +153,18 @@ void Checker::checkOverlappingChips(dbChip* chip, const UnfoldedModel& model)
   }
 }
 
-void Checker::checkConnectionRegions(dbChip* chip, const UnfoldedModel& model)
+void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
+                                     const UnfoldedModel& model)
 {
 }
 
-void Checker::checkBumpPhysicalAlignment(dbChip* chip,
+void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
                                          const UnfoldedModel& model)
 {
 }
 
-void Checker::checkNetConnectivity(dbChip* chip, const UnfoldedModel& model)
+void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
+                                   const UnfoldedModel& model)
 {
 }
 
@@ -193,10 +208,11 @@ bool Checker::isValid(const UnfoldedConnection& conn) const
     return false;
   }
   if (conn.top_region->isInternalExt() || conn.bottom_region->isInternalExt()) {
-    return std::max(conn.top_region->cuboid.zMin(),
-                    conn.bottom_region->cuboid.zMin())
-           <= std::min(conn.top_region->cuboid.zMax(),
-                       conn.bottom_region->cuboid.zMax());
+    return conn.top_region->parent_chip == conn.bottom_region->parent_chip
+           && std::max(conn.top_region->cuboid.zMin(),
+                       conn.bottom_region->cuboid.zMin())
+                  <= std::min(conn.top_region->cuboid.zMax(),
+                              conn.bottom_region->cuboid.zMax());
   }
 
   auto surfaces = getMatingSurfaces(conn);

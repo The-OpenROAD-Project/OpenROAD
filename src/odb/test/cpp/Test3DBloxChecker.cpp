@@ -61,11 +61,7 @@ class CheckerFixture : public tst::Fixture
     if (!category) {
       return {};
     }
-    auto conn_cat = category->findMarkerCategory("Connectivity");
-    if (!conn_cat) {
-      return {};
-    }
-    auto float_cat = conn_cat->findMarkerCategory("Floating chips");
+    auto float_cat = category->findMarkerCategory("Floating chips");
     if (!float_cat) {
       return {};
     }
@@ -83,11 +79,7 @@ class CheckerFixture : public tst::Fixture
     if (!category) {
       return {};
     }
-    auto conn_cat = category->findMarkerCategory("Connectivity");
-    if (!conn_cat) {
-      return {};
-    }
-    auto overlap_cat = conn_cat->findMarkerCategory("Overlapping chips");
+    auto overlap_cat = category->findMarkerCategory("Overlapping chips");
     if (!overlap_cat) {
       return {};
     }
@@ -168,11 +160,11 @@ TEST_F(CheckerFixture, test_single_floating_chip)
 
   check();
   auto markers = getFloatingMarkers();
-  EXPECT_EQ(markers.size(), 2);
+  EXPECT_EQ(markers.size(), 1);
 
   if (!markers.empty()) {
     auto sources = markers[0]->getSources();
-    EXPECT_EQ(sources.size(), 2);
+    EXPECT_EQ(sources.size(), 1);
   }
 }
 
@@ -205,7 +197,7 @@ TEST_F(CheckerFixture, test_multiple_floating_groups)
 
   check();
   auto markers = getFloatingMarkers();
-  EXPECT_EQ(markers.size(), 3);
+  EXPECT_EQ(markers.size(), 2);
 }
 
 TEST_F(CheckerFixture, test_connectivity_gap)
@@ -232,7 +224,7 @@ TEST_F(CheckerFixture, test_connectivity_gap)
   // Move inst2 to 800
   inst2->setLoc(Point3D(0, 0, 800));
   check();
-  EXPECT_EQ(getFloatingMarkers().size(), 2);
+  EXPECT_EQ(getFloatingMarkers().size(), 1);
 }
 
 }  // namespace
