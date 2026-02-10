@@ -647,6 +647,8 @@ void SACoreSoftMacro::fillCoordsLists(std::vector<int>& x_coords,
   std::ranges::sort(x_point);
   std::ranges::sort(y_point);
 
+  // getSegmentIndex requires the bigger value
+  // from points within the same epsilon to work properly
   int epsilon = outline_.dx() / 100;
   x_coords.push_back(x_point.back());
   for (int i = x_point.size() - 2; i >= 0; i--) {
@@ -667,7 +669,7 @@ void SACoreSoftMacro::fillCoordsLists(std::vector<int>& x_coords,
   std::ranges::reverse(y_coords);
 }
 
-SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
+SACoreSoftMacro::NotchVicinity SACoreSoftMacro::findNeighbors(
     std::vector<std::vector<bool>>& grid,
     int start_row,
     int start_col,
@@ -677,11 +679,11 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   int num_y = grid.size();
   int num_x = grid.front().size();
 
-  Neighbors neighbors;
+  NotchVicinity vicnity;
   if (start_row > 0) {
     for (int i = start_col; i <= end_col; i++) {
       if (!grid[start_row - 1][i]) {
-        neighbors.bottom = false;
+        vicnity.bottom = false;
         break;
       }
     }
@@ -689,7 +691,7 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   if (end_row < num_y - 1) {
     for (int i = start_col; i <= end_col; i++) {
       if (!grid[end_row + 1][i]) {
-        neighbors.top = false;
+        vicnity.top = false;
         break;
       }
     }
@@ -697,7 +699,7 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   if (start_col > 0) {
     for (int i = start_row; i <= end_row; i++) {
       if (!grid[i][start_col - 1]) {
-        neighbors.left = false;
+        vicnity.left = false;
         break;
       }
     }
@@ -705,13 +707,13 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   if (end_col < num_x - 1) {
     for (int i = start_row; i <= end_row; i++) {
       if (!grid[i][end_col + 1]) {
-        neighbors.right = false;
+        vicnity.right = false;
         break;
       }
     }
   }
 
-  return neighbors;
+  return vicnity;
 }
 
 bool SACoreSoftMacro::isSegmentEmpty(std::vector<std::vector<bool>>& grid,
@@ -810,7 +812,7 @@ void SACoreSoftMacro::calNotchPenalty()
       int end_row = start_row;
       int end_col = start_col;
 
-      Neighbors current_neighbors
+      NotchVicinity current_vicinity
           = findNeighbors(grid, start_row, start_col, end_row, end_col);
       bool expand_rows = true;
       bool expand_cols = true;
@@ -820,11 +822,11 @@ void SACoreSoftMacro::calNotchPenalty()
           end_row += 1;
           if (end_row < num_y
               && isSegmentEmpty(grid, start_row, start_col, end_row, end_col)) {
-            Neighbors expanded_neighbors
+            NotchVicinity expanded_vicinity
                 = findNeighbors(grid, start_row, start_col, end_row, end_col);
-            if (expanded_neighbors.total() > current_neighbors.total()
-                || expanded_neighbors == current_neighbors) {
-              current_neighbors = expanded_neighbors;
+            if (expanded_vicinity.total() > current_vicinity.total()
+                || expanded_vicinity == current_vicinity) {
+              current_vicinity = expanded_vicinity;
             } else {
               expand_rows = false;
               end_row -= 1;
@@ -839,11 +841,11 @@ void SACoreSoftMacro::calNotchPenalty()
           end_col += 1;
           if (end_col < num_x
               && isSegmentEmpty(grid, start_row, start_col, end_row, end_col)) {
-            Neighbors expanded_neighbors
+            NotchVicinity expanded_vicinity
                 = findNeighbors(grid, start_row, start_col, end_row, end_col);
-            if (expanded_neighbors.total() > current_neighbors.total()
-                || expanded_neighbors == current_neighbors) {
-              current_neighbors = expanded_neighbors;
+            if (expanded_vicinity.total() > current_vicinity.total()
+                || expanded_vicinity == current_vicinity) {
+              current_vicinity = expanded_vicinity;
             } else {
               expand_cols = false;
               end_col -= 1;
@@ -865,13 +867,13 @@ void SACoreSoftMacro::calNotchPenalty()
       height = y_coords[end_row + 1] - y_coords[start_row];
 
       bool is_notch = false;
-      if (current_neighbors.top && current_neighbors.bottom) {
+      if (current_vicinity.top && current_vicinity.bottom) {
         if (height < notch_h_th_) {
           is_notch = true;
         }
       }
 
-      if (current_neighbors.left && current_neighbors.right) {
+      if (current_vicinity.left && current_vicinity.right) {
         if (width < notch_v_th_) {
           is_notch = true;
         }
