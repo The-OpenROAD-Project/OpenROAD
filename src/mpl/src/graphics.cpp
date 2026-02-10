@@ -407,7 +407,6 @@ void Graphics::drawObjects(gui::Painter& painter)
   // Draw blockages and notches only during SA for SoftMacros
   if (!soft_macros_.empty()) {
     drawAllBlockages(painter);
-    drawNotches(painter);
   }
 
   painter.setPen(gui::Painter::kWhite, true);
@@ -547,6 +546,10 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawGuides(painter);
     drawFences(painter);
   }
+
+  if (!soft_macros_.empty()) {
+    drawNotches(painter);
+  }
 }
 
 template <typename T>
@@ -581,6 +584,8 @@ void Graphics::drawNotches(gui::Painter& painter)
   for (const auto& notch : notches_) {
     odb::Rect rect = notch;
     rect.moveDelta(outline_.xMin(), outline_.yMin());
+
+    // painter.setBrush(gui::Painter::kYellow, gui::Painter::kNone);
 
     painter.setBrush(gui::Painter::kYellow, gui::Painter::kDiagonal);
 
