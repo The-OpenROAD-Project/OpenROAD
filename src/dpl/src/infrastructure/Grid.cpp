@@ -23,6 +23,7 @@
 #include "boost/polygon/rectangle_data.hpp"
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
+#include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
