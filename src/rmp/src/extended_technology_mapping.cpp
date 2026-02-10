@@ -408,6 +408,10 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     }
     boundary_po_dbnets.push_back(db_net);
   }
+  std::stable_sort(
+      boundary_po_dbnets.begin(),
+      boundary_po_dbnets.end(),
+      [](odb::dbNet* a, odb::dbNet* b) { return a->getId() < b->getId(); });
 
   // Connect each mapped PO driver to corresponding boundary net by merging.
   topo_ntk.foreach_po([&](const BlockNtk::signal& f, uint32_t po_index) {
