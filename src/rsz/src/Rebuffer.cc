@@ -1810,7 +1810,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                               buffer_cell,
                                               &buffer_loc,
                                               instance_base_name,
-                                              nullptr /*new_net_base_name*/,
+                                              kDefaultNetBaseName,
                                               odb::dbNameUniquifyType::ALWAYS,
                                               true /*loads_on_diff_nets*/));
 
