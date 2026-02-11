@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <limits>
 #include <memory>
 #include <tuple>
@@ -2172,7 +2173,8 @@ void FastRouteCore::writeCongestionMap(const std::string& filename)
   for (int l = 0; l < num_layers_; l++) {
     for (int x = 0; x < x_grid_; x++) {
       for (int y = 0; y < y_grid_; y++) {
-        const int cap = h_edges_3D_[l][y][x].real_cap + v_edges_3D_[l][y][x].real_cap;
+        const int cap
+            = h_edges_3D_[l][y][x].real_cap + v_edges_3D_[l][y][x].real_cap;
         const int red = h_edges_3D_[l][y][x].red + v_edges_3D_[l][y][x].red;
         const int usage
             = h_edges_3D_[l][y][x].usage + v_edges_3D_[l][y][x].usage;

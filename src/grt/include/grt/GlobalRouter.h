@@ -163,7 +163,7 @@ class GlobalRouter
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
-  void updateNetResources(Net* net, bool increase);
+  void updateNetResources(Net* net, bool release_resources);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);

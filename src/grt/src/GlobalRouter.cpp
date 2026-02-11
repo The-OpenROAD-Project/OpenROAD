@@ -926,7 +926,7 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
   return true;
 }
 
-void GlobalRouter::updateNetResources(Net* net, bool increase)
+void GlobalRouter::updateNetResources(Net* net, bool release_resources)
 {
   GRoute& segments = routes_[net->getDbNet()];
   for (GSegment& segment : segments) {
@@ -936,7 +936,7 @@ void GlobalRouter::updateNetResources(Net* net, bool increase)
                       segment.final_x,
                       segment.final_y,
                       segment.final_layer,
-                      increase ? -1 : 1,
+                      release_resources ? -1 : 1,
                       net->getDbNet());
     }
   }
@@ -3280,22 +3280,19 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
   const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2);
 
   if (x0 == x1 && y0 == y1) {
-    GSegment seg(x0, y0, layer, x1, y1, via_layer);
-    seg.setIgnoreUsage(ignore_usage);
-    route.emplace_back(seg);
+    route.emplace_back(x0, y0, layer, x1, y1, via_layer);
+    route.back().setIgnoreUsage(ignore_usage);
   }
 
   while (y0 == y1 && (x0 + tile_size) <= x1) {
-    GSegment seg(x0, y0, layer, x0 + tile_size, y0, layer);
-    seg.setIgnoreUsage(ignore_usage);
-    route.emplace_back(seg);
+    route.emplace_back(x0, y0, layer, x0 + tile_size, y0, layer);
+    route.back().setIgnoreUsage(ignore_usage);
     x0 += tile_size;
   }
 
   while (x0 == x1 && (y0 + tile_size) <= y1) {
-    GSegment seg(x0, y0, layer, x0, y0 + tile_size, layer);
-    seg.setIgnoreUsage(ignore_usage);
-    route.emplace_back(seg);
+    route.emplace_back(x0, y0, layer, x0, y0 + tile_size, layer);
+    route.back().setIgnoreUsage(ignore_usage);
     y0 += tile_size;
   }
 }
