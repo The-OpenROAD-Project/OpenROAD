@@ -5,7 +5,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "unfoldedModel.h"
+#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 
 namespace odb {

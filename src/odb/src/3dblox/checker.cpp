@@ -14,7 +14,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "unfoldedModel.h"
+#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
 
