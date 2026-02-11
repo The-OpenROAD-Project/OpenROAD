@@ -817,69 +817,70 @@ static bool containsIgnoreCase(const std::string& str,
 
 void TechChar::createDelayBufList()
 {
-
-  const char* lib_name
-        = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
-  std::vector<std::string> footprintClkDly;
-  std::vector<std::string> footprintDly;
-  std::vector<std::string> nameClkDly;
-  std::vector<std::string> nameDly;
-  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
-      db_network_->libertyLibraryIterator());
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
-    // Filter by library name if provided.
-    if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
-      continue;
-    }
-    
-    for (sta::LibertyCell* buffer : *lib->buffers()) {
-      if (buffer->dontUse() || resizer_->dontUse(buffer) || buffer->alwaysOn()
-          || buffer->isIsolationCell() || buffer->isLevelShifter()) {
+  if(options_->isBufferListInferred()){
+    const char* lib_name
+          = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
+    std::vector<std::string> footprintClkDly;
+    std::vector<std::string> footprintDly;
+    std::vector<std::string> nameClkDly;
+    std::vector<std::string> nameDly;
+    std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+        db_network_->libertyLibraryIterator());
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      // Filter by library name if provided.
+      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
         continue;
       }
-      const char* footprint_cstr = buffer->footprint();
-      std::string footprint = footprint_cstr ? footprint_cstr : "";
-      if(isClkDlyCell(footprint)) {
-        footprintClkDly.push_back(std::string(buffer->name())); 
-      }
+      
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
+        if (buffer->dontUse() || resizer_->dontUse(buffer) || buffer->alwaysOn()
+            || buffer->isIsolationCell() || buffer->isLevelShifter()) {
+          continue;
+        }
+        const char* footprint_cstr = buffer->footprint();
+        std::string footprint = footprint_cstr ? footprint_cstr : "";
+        if(isClkDlyCell(footprint)) {
+          footprintClkDly.push_back(std::string(buffer->name())); 
+        }
 
-      if(isDlyCell(footprint)) {
-        footprintDly.push_back(std::string(buffer->name()));
-      }
+        if(isDlyCell(footprint)) {
+          footprintDly.push_back(std::string(buffer->name()));
+        }
 
-      if(containsIgnoreCase(buffer->name(), "CLKDLY") || containsIgnoreCase(buffer->name(), "CLKDEL")) {
-        nameClkDly.push_back(std::string(buffer->name()));
-      }
+        if(containsIgnoreCase(buffer->name(), "CLKDLY") || containsIgnoreCase(buffer->name(), "CLKDEL")) {
+          nameClkDly.push_back(std::string(buffer->name()));
+        }
 
-      if(containsIgnoreCase(buffer->name(), "DLY") || containsIgnoreCase(buffer->name(), "DEL")) {
-        nameDly.push_back(std::string(buffer->name()));
-      }
-    }    
-  }
+        if(containsIgnoreCase(buffer->name(), "DLY") || containsIgnoreCase(buffer->name(), "DEL")) {
+          nameDly.push_back(std::string(buffer->name()));
+        }
+      }    
+    }
 
-  if(!footprintClkDly.empty()) {
-    options_->setDlyBufferList(footprintClkDly);
-    logger_->report("Using footpring for clkdly");
-    return;
-  }
+    if(!footprintClkDly.empty()) {
+      options_->setDlyBufferList(footprintClkDly);
+      logger_->report("Using footpring for clkdly");
+      return;
+    }
 
-  if(!footprintDly.empty()) {
-    options_->setDlyBufferList(footprintDly);
-    logger_->report("Using footpring for dly");
-    return;
-  }
+    if(!nameClkDly.empty()) {
+      options_->setDlyBufferList(nameClkDly);
+      logger_->report("Using name for clkdly");
+      return;
+    }
 
-  if(!nameClkDly.empty()) {
-    options_->setDlyBufferList(nameClkDly);
-    logger_->report("Using name for clkdly");
-    return;
-  }
+    if(!footprintDly.empty()) {
+      options_->setDlyBufferList(footprintDly);
+      logger_->report("Using footpring for dly");
+      return;
+    }
 
-  if(!nameDly.empty()) {
-    options_->setDlyBufferList(nameDly);
-    logger_->report("Using name for dly");
-    return;
+    if(!nameDly.empty()) {
+      options_->setDlyBufferList(nameDly);
+      logger_->report("Using name for dly");
+      return;
+    }
   }
 
   bool drvrRes = true;
