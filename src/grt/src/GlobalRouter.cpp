@@ -908,12 +908,16 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
 
   std::string pins_not_covered;
   if (!netIsCovered(db_net, pins_not_covered)) {
-    logger_->error(GRT,
-                   304,
-                   "Fail to restore routing segments from guides for net {}. "
-                   "The following pins are not covered: {}.",
-                   net->getName(),
-                   pins_not_covered);
+    // Restored nets can be uncovered due to preferred access points changes
+    // after the restoration. In this case, allow GRT to reroute these nets.
+    // TODO: investigate and fix the cause of the preferred AP change.
+    logger_->warn(GRT,
+                  304,
+                  "Fail to restore routing segments from guides for net {}. "
+                  "The following pins are not covered: {}.",
+                  net->getName(),
+                  pins_not_covered);
+    return false;
   }
 
   net->setRestoreRouteFromGuides(false);
