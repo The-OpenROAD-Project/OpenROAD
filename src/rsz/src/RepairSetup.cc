@@ -472,7 +472,6 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     }  // while pass <= max_passes
     if (journal_open) {
       resizer_->journalEnd();
-      journal_open = false;
     }
     if (verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, false, num_viols);
