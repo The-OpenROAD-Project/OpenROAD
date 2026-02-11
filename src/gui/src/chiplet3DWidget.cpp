@@ -7,6 +7,7 @@
 
 #include <QMouseEvent>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -16,17 +17,15 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 
 namespace {
-constexpr float SCENE_RADIUS_FACTOR = 0.75f;
 constexpr float INITIAL_DISTANCE_FACTOR = 3.0f;
 constexpr float THICKNESS_FACTOR = 0.02f;
 constexpr float LAYER_GAP_FACTOR = 2.0f;
-constexpr float Z_FIT_FACTOR = 3.0f;
 constexpr float MIN_DISTANCE_CHECK = 100.0f;
 constexpr float DEFAULT_DISTANCE = 1000.0f;
-constexpr float SAFE_SIZE_FACTOR = 1.0f;
 constexpr float DEFAULT_SAFE_SIZE = 1000.0f;
 constexpr float NEAR_FAR_FACTOR = 2.0f;
 constexpr float MIN_Z_NEAR = 10.0f;
@@ -39,6 +38,13 @@ constexpr float ROTATION_SENSITIVITY = 2.0f;
 constexpr float PAN_SENSITIVITY = 0.002f;
 constexpr float ZOOM_IN_FACTOR = 0.9f;
 constexpr float ZOOM_OUT_FACTOR = 1.1f;
+static const std::array<QVector3D, 7> COLOR_PALETTE = {{{0.0f, 1.0f, 0.0f},
+                                                        {1.0f, 1.0f, 0.0f},
+                                                        {0.0f, 1.0f, 1.0f},
+                                                        {1.0f, 0.0f, 1.0f},
+                                                        {1.0f, 0.5f, 0.0f},
+                                                        {0.5f, 0.5f, 1.0f},
+                                                        {1.0f, 0.0f, 0.0f}}};
 }  // namespace
 
 namespace gui {
@@ -74,175 +80,43 @@ void Chiplet3DWidget::buildGeometries()
   if (!chip_) {
     return;
   }
+  odb::Cuboid global_cuboid = chip_->getCuboid();
+  odb::UnfoldedModel model(logger_, chip_);
+  odb::dbTransform center_transform
+      = odb::dbTransform(odb::Point3D(-global_cuboid.xCenter(),
+                                      -global_cuboid.yCenter(),
+                                      -global_cuboid.zCenter()));
 
   vertices_.clear();
   indices_lines_.clear();
 
-  odb::Rect global_bbox;
-  global_bbox.mergeInit();
-
-  std::vector<std::tuple<odb::dbChip*, odb::dbTransform, int, int>> stack;
-  stack.emplace_back(chip_, odb::dbTransform(), 0, 0);
-
-  struct ChipData
-  {
-    odb::Rect die;               // Original die
-    odb::Rect transformed_bbox;  // Transformed XY bounding box for collision
-    odb::dbTransform xform;
-    int depth;
-    std::string name;
-    uint64_t area;
-    int real_z;
-    int thickness;
-    int assigned_z_level;
-  };
-  std::vector<ChipData> chips;
-
-  while (!stack.empty()) {
-    auto [curr_chip, curr_xform, depth, curr_z] = stack.back();
-    stack.pop_back();
-
-    odb::dbBlock* block = curr_chip->getBlock();
-    if (block) {
-      odb::Rect die = block->getDieArea();
-      if (die.dx() > 0 && die.dy() > 0) {
-        // Calculate transformed bbox for collision detection
-        odb::Rect bbox;
-        bbox.mergeInit();
-        std::vector<odb::Point> pts = {{die.xMin(), die.yMin()},
-                                       {die.xMax(), die.yMin()},
-                                       {die.xMax(), die.yMax()},
-                                       {die.xMin(), die.yMax()}};
-        for (auto& p : pts) {
-          curr_xform.apply(p);
-          bbox.merge(p);
-          global_bbox.merge(p);
-        }
-
-        int calculated_depth = curr_z / 100;
-
-        chips.emplace_back(die,
-                           bbox,
-                           curr_xform,
-                           calculated_depth,
-                           block->getName(),
-                           static_cast<uint64_t>(die.area()),
-                           curr_z,
-                           curr_chip->getThickness());
-      }
-    }
-
-    for (auto inst : curr_chip->getChipInsts()) {
-      odb::dbTransform next_xform = curr_xform;
-      odb::dbTransform inst_xform = inst->getTransform();
-      next_xform.concat(inst_xform);
-      stack.emplace_back(inst->getMasterChip(),
-                         next_xform,
-                         depth + 1,
-                         curr_z + inst->getLoc().z());
-    }
-  }
-
-  if (chips.empty()) {
-    if (logger_) {
-      logger_->info(utl::GUI, 82, "[3D Viewer] No chips found.");
-    }
-    return;
-  }
-
-  // Auto-Stacking Algorithm
-  // Sort by Z Ascending
-  std::ranges::sort(chips, [](const ChipData& a, const ChipData& b) {
-    return a.real_z < b.real_z;
-  });
-
-  std::vector<ChipData*> placed;
-  int max_level = 0;
-
-  for (size_t i = 0; i < chips.size(); ++i) {
-    int level = 0;
-    // If it's not the very first (largest) chip, start at level 1 to sit on top
-    // of base
-    if (i > 0) {
-      level = 1;
-    }
-
-    bool collision = true;
-    while (collision) {
-      collision = false;
-      for (auto* other : placed) {
-        if (other->assigned_z_level == level) {
-          // Check XY intersection
-          if (chips[i].transformed_bbox.intersects(other->transformed_bbox)) {
-            collision = true;
-            break;
-          }
-        }
-      }
-      if (collision) {
-        level++;
-      }
-    }
-    chips[i].assigned_z_level = level;
-    placed.push_back(&chips[i]);
-    max_level = std::max(max_level, level);
-  }
-
   // Center and Camera
-  float cx = (global_bbox.xMin() + global_bbox.xMax()) / 2.0f;
-  float cy = (global_bbox.yMin() + global_bbox.yMax()) / 2.0f;
+  float cx = (global_cuboid.xMin() + global_cuboid.xMax()) / 2.0f;
+  float cy = (global_cuboid.yMin() + global_cuboid.yMax()) / 2.0f;
   center_ = QVector3D(cx, cy, 0.0f);
 
-  float max_dim = std::max(global_bbox.dx(), global_bbox.dy());
-  scene_radius_ = max_dim * SCENE_RADIUS_FACTOR;
-  distance_ = scene_radius_ * INITIAL_DISTANCE_FACTOR;
-  float thickness = max_dim * THICKNESS_FACTOR;
+  // Calculate bounding sphere radius (half-diagonal of bounding box)
+  // This remains constant regardless of rotation
+  float dx = global_cuboid.dx();
+  float dy = global_cuboid.dy();
+  float dz = global_cuboid.dz() * LAYER_GAP_FACTOR;  // with gap factor
+  bounding_radius_ = std::sqrt(dx * dx + dy * dy + dz * dz) / 2.0f;
 
-  scene_height_ = (max_level + 1) * thickness * LAYER_GAP_FACTOR;  // Gap factor
-
-  float z_fit_distance = scene_height_ * Z_FIT_FACTOR;
-  distance_ = std::max(distance_, z_fit_distance);
+  distance_ = bounding_radius_ * INITIAL_DISTANCE_FACTOR;
   if (distance_ < MIN_DISTANCE_CHECK) {
     distance_ = DEFAULT_DISTANCE;
   }
 
-  static const std::vector<QVector3D> palette = {
-      {0.0f, 1.0f, 0.0f},  // Green
-      {1.0f, 1.0f, 0.0f},  // Yellow
-      {0.0f, 1.0f, 1.0f},  // Cyan
-      {1.0f, 0.0f, 1.0f},  // Magenta
-      {1.0f, 0.5f, 0.0f},  // Orange
-      {0.5f, 0.5f, 1.0f},  // Light Blue
-      {1.0f, 0.0f, 0.0f}   // Red
-  };
-
-  for (const auto& c : chips) {
-    std::vector<odb::Point> pts = {{c.die.xMin(), c.die.yMin()},
-                                   {c.die.xMax(), c.die.yMin()},
-                                   {c.die.xMax(), c.die.yMax()},
-                                   {c.die.xMin(), c.die.yMax()}};
-    for (auto& p : pts) {
-      c.xform.apply(p);
-    }
-
+  int index = 0;
+  for (const auto& chip : model.getChips()) {
+    odb::Cuboid draw_cuboid = chip.cuboid;
+    center_transform.apply(draw_cuboid);
     // Color by Depth (proportional to Z)
-    QVector3D color = palette[c.assigned_z_level % palette.size()];
-
-    // Z Calculation based on Real Z
-    float z_level_base = static_cast<float>(c.real_z);
-    float z_thickness = static_cast<float>(c.thickness);
-
-    float z0 = z_level_base - center_.z();
-    float z1 = z_level_base + z_thickness - center_.z();
+    QVector3D color = COLOR_PALETTE[index++ % COLOR_PALETTE.size()];
 
     int base = vertices_.size();
-    for (const auto& p : pts) {
-      vertices_.push_back(
-          {QVector3D(p.x() - center_.x(), p.y() - center_.y(), z0), color});
-    }
-    for (const auto& p : pts) {
-      vertices_.push_back(
-          {QVector3D(p.x() - center_.x(), p.y() - center_.y(), z1), color});
+    for (const auto& p : draw_cuboid.getPoints()) {
+      vertices_.push_back({QVector3D(p.x(), p.y(), p.z()), color});
     }
 
     indices_lines_.push_back(base + 0);
@@ -281,7 +155,8 @@ void Chiplet3DWidget::paintGL()
   glMatrixMode(GL_PROJECTION);
   QMatrix4x4 proj;
 
-  float safe_size = std::max(scene_radius_, scene_height_ * SAFE_SIZE_FACTOR);
+  // Use bounding_radius_ which is rotation-invariant
+  float safe_size = bounding_radius_;
   if (safe_size < 1.0f) {
     safe_size = DEFAULT_SAFE_SIZE;
   }
