@@ -173,7 +173,7 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
-  sta::ArcDelay computeBufferDelay(const std::string& buffer, double extra_out_cap);
+  sta::ArcDelay computeBufferDelay(const std::string& driver, const std::string& load, double load_cap);
   sta::ArcDelay computeDriverBufferDelay(const std::string& driver,
                                          const std::string& load,
                                          double extra_out_cap);

@@ -690,24 +690,34 @@ void TechChar::initCharacterization()
   }
 }
 
-sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer,
-                                           double extra_out_cap)
+sta::ArcDelay TechChar::computeBufferDelay(const std::string& driver,
+                                            const std::string& load,
+                                            double load_cap)
 {
   sta::ArcDelay max_rise_delay = 0;
 
-  odb::dbMaster* bufferMaster = db_->findMaster(buffer.c_str());
-  sta::Cell* bufferMasterCell = db_network_->dbToSta(bufferMaster);
-  sta::LibertyCell* libertyMasterCell
-      = db_network_->libertyCell(bufferMasterCell);
+  odb::dbMaster* driverMaster = db_->findMaster(driver.c_str());
+  sta::Cell* driverMasterCell = db_network_->dbToSta(driverMaster);
+  sta::LibertyCell* libertyDriverCell
+      = db_network_->libertyCell(driverMasterCell);
   sta::LibertyPort *input, *output;
-  libertyMasterCell->bufferPorts(input, output);
+  libertyDriverCell->bufferPorts(input, output);
+
+  odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
+  sta::Cell* loadMasterCell = db_network_->dbToSta(loadMaster);
+  sta::LibertyCell* libertyLoadCell
+      = db_network_->libertyCell(loadMasterCell);
+  sta::LibertyPort *inputLoad, *outputLoad;
+  libertyLoadCell->bufferPorts(inputLoad, outputLoad);
+
+  load_cap += inputLoad->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
   for (sta::Corner* corner : *openSta_->corners()) {
     const sta::DcalcAnalysisPt* dcalc_ap
         = corner->findDcalcAnalysisPt(sta::MinMax::max());
     const sta::Pvt* pvt = dcalc_ap->operatingConditions();
 
     for (sta::TimingArcSet* arc_set :
-         libertyMasterCell->timingArcSets(input, output)) {
+         libertyDriverCell->timingArcSets(input, output)) {
       for (sta::TimingArc* arc : arc_set->arcs()) {
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());
@@ -717,7 +727,6 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& buffer,
         if (model != nullptr && in_rf == sta::RiseFall::rise()
             && out_rf == sta::RiseFall::rise()) {
           double in_cap = input->capacitance(in_rf, sta::MinMax::max());
-          double load_cap = in_cap + extra_out_cap;
           sta::ArcDelay arc_delay;
           sta::Slew arc_slew;
           model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
@@ -817,69 +826,70 @@ static bool containsIgnoreCase(const std::string& str,
 
 void TechChar::createDelayBufList()
 {
-
-  const char* lib_name
-        = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
-  std::vector<std::string> footprintClkDly;
-  std::vector<std::string> footprintDly;
-  std::vector<std::string> nameClkDly;
-  std::vector<std::string> nameDly;
-  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
-      db_network_->libertyLibraryIterator());
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
-    // Filter by library name if provided.
-    if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
-      continue;
-    }
-    
-    for (sta::LibertyCell* buffer : *lib->buffers()) {
-      if (buffer->dontUse() || resizer_->dontUse(buffer) || buffer->alwaysOn()
-          || buffer->isIsolationCell() || buffer->isLevelShifter()) {
+  if(options_->isBufferListInferred()){
+    const char* lib_name
+          = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
+    std::vector<std::string> footprintClkDly;
+    std::vector<std::string> footprintDly;
+    std::vector<std::string> nameClkDly;
+    std::vector<std::string> nameDly;
+    std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+        db_network_->libertyLibraryIterator());
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      // Filter by library name if provided.
+      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
         continue;
       }
-      const char* footprint_cstr = buffer->footprint();
-      std::string footprint = footprint_cstr ? footprint_cstr : "";
-      if(isClkDlyCell(footprint)) {
-        footprintClkDly.push_back(std::string(buffer->name())); 
-      }
+      
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
+        if (buffer->dontUse() || resizer_->dontUse(buffer) || buffer->alwaysOn()
+            || buffer->isIsolationCell() || buffer->isLevelShifter()) {
+          continue;
+        }
+        const char* footprint_cstr = buffer->footprint();
+        std::string footprint = footprint_cstr ? footprint_cstr : "";
+        if(isClkDlyCell(footprint)) {
+          footprintClkDly.push_back(std::string(buffer->name())); 
+        }
 
-      if(isDlyCell(footprint)) {
-        footprintDly.push_back(std::string(buffer->name()));
-      }
+        if(isDlyCell(footprint)) {
+          footprintDly.push_back(std::string(buffer->name()));
+        }
 
-      if(containsIgnoreCase(buffer->name(), "CLKDLY") || containsIgnoreCase(buffer->name(), "CLKDEL")) {
-        nameClkDly.push_back(std::string(buffer->name()));
-      }
+        if(containsIgnoreCase(buffer->name(), "CLKDLY") || containsIgnoreCase(buffer->name(), "CLKDEL")) {
+          nameClkDly.push_back(std::string(buffer->name()));
+        }
 
-      if(containsIgnoreCase(buffer->name(), "DLY") || containsIgnoreCase(buffer->name(), "DEL")) {
-        nameDly.push_back(std::string(buffer->name()));
-      }
-    }    
-  }
+        if(containsIgnoreCase(buffer->name(), "DLY") || containsIgnoreCase(buffer->name(), "DEL")) {
+          nameDly.push_back(std::string(buffer->name()));
+        }
+      }    
+    }
 
-  if(!footprintClkDly.empty()) {
-    options_->setDlyBufferList(footprintClkDly);
-    logger_->report("Using footpring for clkdly");
-    return;
-  }
+    if(!footprintClkDly.empty()) {
+      options_->setDlyBufferList(footprintClkDly);
+      logger_->report("Using footpring for clkdly");
+      return;
+    }
 
-  if(!footprintDly.empty()) {
-    options_->setDlyBufferList(footprintDly);
-    logger_->report("Using footpring for dly");
-    return;
-  }
+    if(!nameClkDly.empty()) {
+      options_->setDlyBufferList(nameClkDly);
+      logger_->report("Using name for clkdly");
+      return;
+    }
 
-  if(!nameClkDly.empty()) {
-    options_->setDlyBufferList(nameClkDly);
-    logger_->report("Using name for clkdly");
-    return;
-  }
+    if(!footprintDly.empty()) {
+      options_->setDlyBufferList(footprintDly);
+      logger_->report("Using footpring for dly");
+      return;
+    }
 
-  if(!nameDly.empty()) {
-    options_->setDlyBufferList(nameDly);
-    logger_->report("Using name for dly");
-    return;
+    if(!nameDly.empty()) {
+      options_->setDlyBufferList(nameDly);
+      logger_->report("Using name for dly");
+      return;
+    }
   }
 
   bool drvrRes = true;
