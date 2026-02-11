@@ -508,9 +508,8 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
       continue;
     }
 
-    const std::string pin_name = modbterm->getName();
     dbModITerm* moditerm
-        = dbModITerm::create(modinst, pin_name.c_str(), modbterm);
+        = dbModITerm::create(modinst, modbterm->getName(), modbterm);
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
