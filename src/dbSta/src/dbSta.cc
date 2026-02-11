@@ -54,8 +54,10 @@
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
+#include "sta/StringUtil.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
 

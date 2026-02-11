@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "CtsOptions.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbSet.h"
