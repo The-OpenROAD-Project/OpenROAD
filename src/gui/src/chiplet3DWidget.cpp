@@ -7,11 +7,9 @@
 
 #include <QMouseEvent>
 #include <algorithm>
+#include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
-#include <string>
-#include <tuple>
 #include <vector>
 
 #include "odb/db.h"
@@ -22,7 +20,6 @@
 
 namespace {
 constexpr float INITIAL_DISTANCE_FACTOR = 3.0f;
-constexpr float THICKNESS_FACTOR = 0.02f;
 constexpr float LAYER_GAP_FACTOR = 2.0f;
 constexpr float MIN_DISTANCE_CHECK = 100.0f;
 constexpr float DEFAULT_DISTANCE = 1000.0f;
