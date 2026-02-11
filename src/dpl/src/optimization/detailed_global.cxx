@@ -106,9 +106,9 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   const int row_height = arch_->getRow(0)->getHeight().v;
 
   // Store original displacement limits for restoration later.
-  // Note: DetailedMgr stores displacement limits in DBU, while setMaxDisplacement
-  // expects values in "sites" (scaled by row height). Convert to keep units
-  // consistent and avoid overflow.
+  // Note: DetailedMgr stores displacement limits in DBU, while
+  // setMaxDisplacement expects values in "sites" (scaled by row height).
+  // Convert to keep units consistent and avoid overflow.
   int orig_disp_x_dbu, orig_disp_y_dbu;
   mgr_->getMaxDisplacement(orig_disp_x_dbu, orig_disp_y_dbu);
   const int orig_disp_x_sites = std::max(1, orig_disp_x_dbu / row_height);
@@ -237,9 +237,8 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
   const DensityStats density_stats = compute_density_stats();
 
-  auto smoothstep = [](const double edge0,
-                       const double edge1,
-                       const double x) -> double {
+  auto smoothstep
+      = [](const double edge0, const double edge1, const double x) -> double {
     if (edge1 <= edge0) {
       return x < edge0 ? 0.0 : 1.0;
     }
@@ -261,19 +260,20 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   extra_dpl_alpha_ = extra_dpl_intensity_ * extra_dpl_intensity_;
 
   if (extra_dpl_intensity_ <= 0.0) {
-    mgr_->getLogger()->info(
-        DPL,
-        905,
-        "Extra DPL enabled but intensity=0 "
-        "(stdcell_util={:.3f}, util_score={:.2f}, utilmap: mean={:.3f} p95={:.3f} "
-        "p99={:.3f} frac>0.80={:.3f} frac>0.90={:.3f}); using legacy global swap.",
-        stdcell_utilization,
-        util_score,
-        density_stats.mean,
-        density_stats.p95,
-        density_stats.p99,
-        density_stats.frac_gt_080,
-        density_stats.frac_gt_090);
+    mgr_->getLogger()->info(DPL,
+                            905,
+                            "Extra DPL enabled but intensity=0 "
+                            "(stdcell_util={:.3f}, util_score={:.2f}, utilmap: "
+                            "mean={:.3f} p95={:.3f} "
+                            "p99={:.3f} frac>0.80={:.3f} frac>0.90={:.3f}); "
+                            "using legacy global swap.",
+                            stdcell_utilization,
+                            util_score,
+                            density_stats.mean,
+                            density_stats.p95,
+                            density_stats.p99,
+                            density_stats.frac_gt_080,
+                            density_stats.frac_gt_090);
     legacy::DetailedGlobalSwap legacy_swap;
     legacy_swap.run(mgrPtr, args);
     return;
@@ -288,7 +288,10 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
       DPL,
       906,
       "Starting two-pass congestion-aware global swap optimization "
-      "(stdcell_util={:.3f}, util_score={:.2f}, utilmap: mean={:.3f} p95={:.3f} p99={:.3f} frac>0.80={:.3f} frac>0.90={:.3f}, intensity={:.2f}, alpha={:.3f}, tradeoff={:.2f}->{:.2f}, random_moves={})",
+      "(stdcell_util={:.3f}, util_score={:.2f}, utilmap: mean={:.3f} "
+      "p95={:.3f} p99={:.3f} frac>0.80={:.3f} frac>0.90={:.3f}, "
+      "intensity={:.2f}, alpha={:.3f}, tradeoff={:.2f}->{:.2f}, "
+      "random_moves={})",
       stdcell_utilization,
       util_score,
       density_stats.mean,
@@ -412,8 +415,7 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
   const size_t num_stages = budget_multipliers.size();
   const int base_stage_passes = std::max(
-      1,
-      static_cast<int>(std::llround(passes * extra_dpl_intensity_)));
+      1, static_cast<int>(std::llround(passes * extra_dpl_intensity_)));
   const int extra_stage_passes = std::max(
       0,
       static_cast<int>(std::llround(
@@ -426,7 +428,8 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     stage_weights[0] = 1.0;
   } else {
     // High intensity: spend more time in exploratory stages.
-    const double denom = static_cast<double>(num_stages * (num_stages + 1)) / 2.0;
+    const double denom
+        = static_cast<double>(num_stages * (num_stages + 1)) / 2.0;
     std::vector<double> high(num_stages, 0.0);
     for (size_t i = 0; i < num_stages; i++) {
       high[i] = static_cast<double>(num_stages - i) / denom;
@@ -486,10 +489,11 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     const double requested_multiplier = budget_multipliers[iteration] > 0.0
                                             ? budget_multipliers[iteration]
                                             : 1.0;
-    const double effective_multiplier = std::max(
-        min_budget_multiplier,
-        min_budget_multiplier
-            + extra_dpl_alpha_ * (requested_multiplier - min_budget_multiplier));
+    const double effective_multiplier
+        = std::max(min_budget_multiplier,
+                   min_budget_multiplier
+                       + extra_dpl_alpha_
+                             * (requested_multiplier - min_budget_multiplier));
     budget_hpwl_ = optimal_hpwl * effective_multiplier;
     std::string stage_name;
     if (iteration < stage_names.size()) {
@@ -515,14 +519,13 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     disp_x_sites = std::min(disp_x_sites, chip_width_sites);
     disp_y_sites = std::min(disp_y_sites, chip_height_sites);
     mgr_->setMaxDisplacement(disp_x_sites, disp_y_sites);
-    mgr_->getLogger()->info(
-        DPL,
-        921,
-        "Iteration {} ({}): displacement set to ({}, {})",
-        iteration + 1,
-        stage_name,
-        disp_x_sites,
-        disp_y_sites);
+    mgr_->getLogger()->info(DPL,
+                            921,
+                            "Iteration {} ({}): displacement set to ({}, {})",
+                            iteration + 1,
+                            stage_name,
+                            disp_x_sites,
+                            disp_y_sites);
 
     mgr_->getLogger()->info(
         DPL,
