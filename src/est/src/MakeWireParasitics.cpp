@@ -14,6 +14,7 @@
 #include "est/EstimateParasitics.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
+#include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"

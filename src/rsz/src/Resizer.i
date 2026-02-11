@@ -742,6 +742,58 @@ insert_buffer_before_loads_cmd(Net *net,
   return inst;
 }
 
+void
+set_clock_buffer_string_cmd(const char* clk_str)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setClockBufferString(clk_str);
+}
+
+void
+set_clock_buffer_footprint_cmd(const char* footprint)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setClockBufferFootprint(footprint);
+}
+
+void
+reset_clock_buffer_pattern_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->resetClockBufferPattern();
+}
+
+bool
+has_clock_buffer_string_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->hasClockBufferString();
+}
+
+bool
+has_clock_buffer_footprint_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->hasClockBufferFootprint();
+}
+
+const char*
+get_clock_buffer_string_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->getClockBufferString().c_str();
+}
+
+const char*
+get_clock_buffer_footprint_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->getClockBufferFootprint().c_str();
+}
+
 void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const Corner *corner)
 {
   ensureLinked();

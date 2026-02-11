@@ -17,3 +17,16 @@ report_opt_config
 
 report_buffers -filtered
 rsz::report_fast_buffer_sizes
+
+puts "\n==== set clock buffer footprint to DLY ==="
+set_cts_config -clock_buffer_footprint DLY
+report_buffers
+
+reset_cts_config -clock_buffer_footprint
+puts "\n==== set clock buffer string to dlygate ==="
+set_cts_config -clock_buffer_string dlygate
+report_buffers
+
+puts "\n==== set clock buffer footprint to DLY ==="
+puts "==== should get an error ==="
+set_cts_config -clock_buffer_footprint DLY
