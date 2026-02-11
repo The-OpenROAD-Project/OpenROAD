@@ -1,0 +1,87 @@
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_stdcell.lef, created 78 library cells
+[INFO ODB-0128] Design: multi_sink
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 300 components and 2100 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 300 connections.
+[INFO RSZ-0206] Clock buffer footprint set to 'DLY'
+*****************************************************
+CTS config:
+-apply_ndr:                          HALF
+-buf_list:                           undefined
+-clock_buffer_footprint:             DLY
+-clock_buffer_string:                unset
+-branching_point_buffers_distance:   240000
+-clustering_exponent:                4
+-clustering_unbalance_ratio:         0.6
+-delay_buffer_derate:                1.0
+-distance_between_buffers:           100000
+-library:                            undefined
+-macro_clustering_max_diameter:      50.0
+-macro_clustering_size:              4
+-num_static_layers:                  1
+-root_buf:                           undefined
+-sink_buffer_max_cap_derate:         0.01
+-sink_clustering_levels:             0
+-sink_clustering_max_diameter:       50.0
+-sink_clustering_size:               20
+-skip_nets:                          undefined
+-tree_buf:                           undefined
+-wire_unit:                          20
+*****************************************************
+[INFO CTS-0050] Root buffer is sg13g2_dlygate4sd1_1.
+[INFO CTS-0051] Sink buffer is sg13g2_dlygate4sd1_1.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    sg13g2_dlygate4sd1_1
+[INFO CTS-0049] Characterization buffer is sg13g2_dlygate4sd1_1.
+[INFO CTS-0007] Net "clk" found for clock "clk".
+[INFO CTS-0010]  Clock net "clk" has 300 sinks.
+[INFO CTS-0008] TritonCTS found 1 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 300.
+[INFO CTS-0090]  Sinks will be clustered based on buffer max cap.
+[INFO CTS-0030]  Number of static layers: 1.
+[INFO CTS-0020]  Wire segment unit: 18900  dbu (18 um).
+[INFO CTS-0021]  Distance between buffers: 2 units (100 um).
+[INFO CTS-0206] Best clustering solution was found from clustering size of 8 and clustering diameter of 50.
+[INFO CTS-0019]  Total number of sinks after clustering: 105.
+[INFO CTS-0024]  Normalized sink region: [(0.612787, 0.387143), (10.2149, 9.79328)].
+[INFO CTS-0025]     Width:  9.6021.
+[INFO CTS-0026]     Height: 9.4061.
+ Level 1
+    Direction: Horizontal
+    Sinks per sub-region: 53
+    Sub-region size: 4.8010 X 9.4061
+[INFO CTS-0034]     Segment length (rounded): 2.
+ Level 2
+    Direction: Vertical
+    Sinks per sub-region: 27
+    Sub-region size: 4.8010 X 4.7031
+[INFO CTS-0034]     Segment length (rounded): 2.
+ Level 3
+    Direction: Horizontal
+    Sinks per sub-region: 14
+    Sub-region size: 2.4005 X 4.7031
+[INFO CTS-0034]     Segment length (rounded): 1.
+ Level 4
+    Direction: Vertical
+    Sinks per sub-region: 7
+    Sub-region size: 2.4005 X 2.3515
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 8.
+[INFO CTS-0035]  Number of sinks covered: 105.
+[INFO CTS-0018]     Created 130 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 4.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 4.
+[INFO CTS-0015]     Created 130 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:15, 3:90, 6:7, 7:9..
+[INFO CTS-0017]     Max level of the clock tree: 4.
+[INFO CTS-0098] Clock net "clk"
+[INFO CTS-0099]  Sinks 322
+[INFO CTS-0100]  Leaf buffers 105
+[INFO CTS-0101]  Average sink wire length 270.68 um
+[INFO CTS-0102]  Path depth 3 - 4
+[INFO CTS-0207]  Dummy loads inserted 22
+Found 0 unconnected buffers.

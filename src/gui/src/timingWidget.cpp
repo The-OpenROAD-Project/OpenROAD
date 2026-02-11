@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "gui_utils.h"
 #include "odb/db.h"
 #include "odb/defout.h"
@@ -355,6 +356,24 @@ void TimingWidget::addCommandsMenuActions()
   connect(commands_menu_->addAction("Write path DEF"),
           &QAction::triggered,
           [this] { writePathDef(timing_paths_table_index_, kFromStartToEnd); });
+
+  QMenu* focus_nets_menu = new QMenu("Focus Nets", this);
+
+  auto add_focus_action
+      = [&](const QString& menu_entry, TimingPath::PathSection path_section) {
+          connect(focus_nets_menu->addAction(menu_entry),
+                  &QAction::triggered,
+                  [this, path_section] {
+                    focusNets(timing_paths_table_index_, path_section);
+                  });
+        };
+
+  add_focus_action("All", TimingPath::PathSection::kAll);
+  add_focus_action("Launch", TimingPath::PathSection::kLaunch);
+  add_focus_action("Data", TimingPath::PathSection::kData);
+  add_focus_action("Capture", TimingPath::PathSection::kCapture);
+
+  commands_menu_->addMenu(focus_nets_menu);
 }
 
 void TimingWidget::showCommandsMenu(const QPoint& pos)
@@ -395,6 +414,20 @@ void TimingWidget::writePathDef(const QModelIndex& selected_index,
   const std::string file_name
       = fmt::format("path{}.def", selected_index.row() + 1);
   def_out.writeBlock(block, file_name.c_str());
+}
+
+void TimingWidget::focusNets(const QModelIndex& selected_index,
+                             const TimingPath::PathSection& path_section)
+{
+  TimingPathsModel* focus_model
+      = static_cast<TimingPathsModel*>(focus_view_->model());
+  TimingPath* selected_path = focus_model->getPathAt(selected_index);
+  std::vector<odb::dbNet*> nets = selected_path->getNets(path_section);
+
+  Gui* gui = Gui::get();
+  for (odb::dbNet* net : nets) {
+    gui->addFocusNet(net);
+  }
 }
 
 // The nodes must be written within curly braces to

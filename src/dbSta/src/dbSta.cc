@@ -49,14 +49,15 @@
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
-#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
+#include "sta/StringUtil.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
 
@@ -249,7 +250,6 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = std::make_unique<dbStaCbk>(this);
-  buffer_use_analyser_ = std::make_unique<BufferUseAnalyser>();
 }
 
 void dbSta::updateComponentsState()
@@ -928,11 +928,6 @@ void dbSta::checkSanityDrvrVertexEdges() const
   }
 }
 
-BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
-{
-  return buffer_use_analyser_->getBufferUse(buffer);
-}
-
 ////////////////////////////////////////////////////////////////
 
 // Network edit functions.
@@ -1294,28 +1289,6 @@ void dbStaCbk::inDbModBTermPostConnect(odb::dbModBTerm* modbterm)
 
 void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 {
-}
-
-////////////////////////////////////////////////////////////////
-
-BufferUseAnalyser::BufferUseAnalyser()
-{
-  clkbuf_pattern_
-      = std::make_unique<sta::PatternMatch>(".*CLKBUF.*",
-                                            /* is_regexp */ true,
-                                            /* nocase */ true,
-                                            /* Tcl_interp* */ nullptr);
-}
-
-BufferUse BufferUseAnalyser::getBufferUse(sta::LibertyCell* buffer)
-{
-  // is_clock_cell is a custom lib attribute that may not exist,
-  // so we also use the name pattern to help
-  if (buffer->isClockCell() || clkbuf_pattern_->match(buffer->name())) {
-    return CLOCK;
-  }
-
-  return DATA;
 }
 
 ////////////////////////////////////////////////////////////////

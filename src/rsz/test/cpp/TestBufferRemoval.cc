@@ -28,6 +28,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/PathAnalysisPt.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/nangate45_fixture.h"
