@@ -54,8 +54,7 @@ class Chiplet3DWidget : public QOpenGLWidget
   float pan_x_ = 0.0f;
   float pan_y_ = 0.0f;
 
-  float scene_radius_ = 10.0f;
-  float scene_height_ = 10.0f;
+  float bounding_radius_ = 10.0f;  // Rotation-invariant bounding sphere radius
   QVector3D center_ = QVector3D(0, 0, 0);
 
   struct VertexData
