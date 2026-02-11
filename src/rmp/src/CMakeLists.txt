@@ -65,6 +65,7 @@ target_link_libraries(rmp_lib
     cut
     ${ABC_LIBRARY}
     absl_hash
+    absl_city
 )
 
 target_link_libraries(rmp
