@@ -10,6 +10,7 @@
 #include <random>
 #include <vector>
 
+#include "aig/gia/gia.h"
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbSta.hh"
 #include "resynthesis_strategy.h"

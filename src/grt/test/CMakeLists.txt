@@ -16,6 +16,7 @@ or_integration_tests(
     congestion6
     congestion7
     critical_nets_percentage
+    critical_nets_percentage_cugr
     cugr_adjustment1
     cugr_adjustment2
     cugr_adjustment3

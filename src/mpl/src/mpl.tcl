@@ -28,7 +28,6 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
-                                          -data_flow_driven \
                                         }
 proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
@@ -42,7 +41,7 @@ proc rtl_macro_placer { args } {
          -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-keep_clustering_data -data_flow_driven}
+    flags {-keep_clustering_data}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -75,7 +74,7 @@ proc rtl_macro_placer { args } {
   set guidance_weight 10.0
   set fence_weight 10.0
   set boundary_weight 50.0
-  set notch_weight 10.0
+  set notch_weight 50.0
   set macro_blockage_weight 10.0
   set target_util 0.25
   set min_ar 0.33
@@ -189,8 +188,7 @@ proc rtl_macro_placer { args } {
       $target_util \
       $min_ar \
       $report_directory \
-      [info exists flags(-keep_clustering_data)] \
-      [info exists flags(-data_flow_driven)]]
+      [info exists flags(-keep_clustering_data)]]
   } {
     return false
   }
@@ -280,6 +278,39 @@ proc set_macro_guidance_region { args } {
   }
 
   mpl::add_guidance_region $macro $x1 $y1 $x2 $y2
+}
+
+sta::define_cmd_args "set_macro_halo" { -macro_name macro_name \
+                                        -halo halo }
+proc set_macro_halo { args } {
+  sta::parse_key_args "set_macro_halo" args \
+    keys { -macro_name -halo } flags {}
+
+  sta::check_argc_eq0 "set_macro_halo" $args
+
+  if { [info exists keys(-macro_name)] } {
+    set macro_name $keys(-macro_name)
+  } else {
+    utl::error MPL 48 "-macro_name is required."
+  }
+
+  set macro [mpl::parse_macro_name "set_macro_halo" $macro_name]
+
+  if { [info exists keys(-halo)] } {
+    set halo $keys(-halo)
+  } else {
+    utl::error MPL 38 "-halo is required."
+  }
+
+  if { [llength $halo] != 2 } {
+    utl::error MPL 54 "-halo must be a list of 2 values."
+  }
+
+  lassign $halo width height
+  set width $width
+  set height $height
+
+  mpl::set_macro_halo $macro $width $height
 }
 
 namespace eval mpl {

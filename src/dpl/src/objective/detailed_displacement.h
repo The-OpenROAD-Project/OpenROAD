@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "detailed_objective.h"
+#include "dpl/Opendp.h"
+#include "infrastructure/architecture.h"
 
 namespace dpl {
 

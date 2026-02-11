@@ -15,7 +15,9 @@ constexpr int GRFRACSIZE = 1;
 #include <map>
 #include <vector>
 
+#include "db/grObj/grNode.h"
 #include "db/grObj/grPin.h"
+#include "db/obj/frGCellPattern.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"

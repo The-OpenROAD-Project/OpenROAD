@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "CtsOptions.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -30,6 +31,7 @@
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
@@ -393,6 +395,8 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
             const unsigned delay = seg.getDelay();
             const unsigned inputCap = seg.getInputCap();
             const unsigned inputSlew = seg.getInputSlew();
+            const int wl2FirstBuffer = seg.getWl2FirstBuffer();
+            const int lastWl = seg.getLastWl();
 
             WireSegment& fakeSeg = createWireSegment(
                 fakeLength, load, outSlew, power, delay, inputCap, inputSlew);
@@ -401,6 +405,8 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
               fakeSeg.addBuffer(seg.getBufferLocation(buf));
               fakeSeg.addBufferMaster(seg.getBufferMaster(buf));
             }
+            fakeSeg.setWl2FirstBuffer(wl2FirstBuffer);
+            fakeSeg.setLastWl(lastWl);
           });
     }
   }

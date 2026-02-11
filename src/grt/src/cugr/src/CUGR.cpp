@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -12,6 +13,7 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -75,7 +77,7 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-float CUGR::CalculatePartialSlack()
+float CUGR::calculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(gr_nets_.size());
@@ -97,12 +99,12 @@ float CUGR::CalculatePartialSlack()
                        : slacks[std::min(static_cast<size_t>(threshold_index),
                                          slacks.size() - 1)];
 
-  // Set the non critical nets slack as the lowest float, so they can be
-  // ordered by overflow (and ordered first than the critical nets)
+  // Set the non critical nets slack as the maximum float value, so they can be
+  // ordered by the default sorting method.
   for (const int& netIndex : net_indices_) {
     if (gr_nets_[netIndex]->getSlack() > slack_th) {
       gr_nets_[netIndex]->setSlack(
-          std::ceil(std::numeric_limits<float>::lowest()));
+          std::ceil(std::numeric_limits<float>::max()));
     }
   }
 
@@ -115,6 +117,14 @@ float CUGR::getNetSlack(odb::dbNet* net)
   sta::Net* sta_net = network->dbToSta(net);
   float slack = sta_->netSlack(sta_net, sta::MinMax::max());
   return slack;
+}
+
+void CUGR::setInitialNetSlacks()
+{
+  for (const auto& net : gr_nets_) {
+    float slack = getNetSlack(net->getDbNet());
+    net->setSlack(slack);
+  }
 }
 
 void CUGR::updateOverflowNets(std::vector<int>& netIndices)
@@ -132,6 +142,11 @@ void CUGR::updateOverflowNets(std::vector<int>& netIndices)
 void CUGR::patternRoute(std::vector<int>& netIndices)
 {
   logger_->report("stage 1: pattern routing");
+
+  if (critical_nets_percentage_ != 0) {
+    setInitialNetSlacks();
+  }
+
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
     PatternRoute patternRoute(gr_nets_[netIndex].get(),
@@ -154,6 +169,11 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
     return;
   }
   logger_->report("stage 2: pattern routing with possible detours");
+
+  if (critical_nets_percentage_ != 0) {
+    calculatePartialSlack();
+  }
+
   // (2d) direction -> x -> y -> has overflow?
   GridGraphView<bool> congestionView;
   grid_graph_->extractCongestionView(congestionView);
@@ -180,6 +200,11 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
     return;
   }
   logger_->report("stage 3: maze routing on sparsified routing graph");
+
+  if (critical_nets_percentage_ != 0) {
+    calculatePartialSlack();
+  }
+
   for (const int netIndex : netIndices) {
     grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(),
                             /*ripup*/ true);
@@ -260,10 +285,9 @@ void CUGR::write(const std::string& guide_file)
 
 NetRouteMap CUGR::getRoutes()
 {
-  // TODO: Investigate empty routes
   NetRouteMap routes;
   for (const auto& net : gr_nets_) {
-    if (net->getNumPins() < 2) {
+    if (net->getNumPins() < 2 || net->isLocal()) {
       continue;
     }
     odb::dbNet* db_net = net->getDbNet();
@@ -325,9 +349,18 @@ void CUGR::sortNetIndices(std::vector<int>& netIndices) const
     auto& net = gr_nets_[netIndex];
     halfParameters[netIndex] = net->getBoundingBox().hp();
   }
-  std::ranges::sort(netIndices, [&](int lhs, int rhs) {
-    return halfParameters[lhs] < halfParameters[rhs];
-  });
+
+  std::vector<float> net_slacks(gr_nets_.size());
+  for (int netIndex : netIndices) {
+    net_slacks[netIndex] = gr_nets_[netIndex]->getSlack();
+  }
+
+  auto compareSlackAndHPWL = [&](int lhs, int rhs) {
+    return std::tie(net_slacks[lhs], halfParameters[lhs])
+           < std::tie(net_slacks[rhs], halfParameters[rhs]);
+  };
+
+  std::ranges::stable_sort(netIndices, compareSlackAndHPWL);
 }
 
 void CUGR::getGuides(const GRNet* net,

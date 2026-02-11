@@ -38,44 +38,6 @@ using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
 using PathInsts = std::vector<std::set<odb::dbInst*>>;
 
-struct DataFlowHypergraph
-{
-  std::vector<std::vector<int>> vertices;
-  std::vector<std::vector<int>> backward_vertices;
-  std::vector<std::vector<int>> hyperedges;
-};
-
-// For data flow computation.
-struct VerticesMaps
-{
-  std::map<int, odb::dbBTerm*> id_to_bterm;
-  std::map<int, odb::dbInst*> id_to_std_cell;
-  std::map<int, odb::dbITerm*> id_to_macro_pin;
-
-  // Each index represents a vertex in which
-  // the flow is interrupted.
-  std::vector<bool> stoppers;
-};
-
-struct DataFlow
-{
-  bool is_empty{false};
-
-  // Macro Pins --> Registers
-  // Registers --> Macro Pins
-  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_regs;
-
-  // IO --> Register
-  // Register --> IO
-  // IO --> Macro Pin
-  // Macro Pin --> IO
-  std::vector<std::pair<odb::dbBTerm*, PathInsts>> io_and_regs;
-
-  // Macro Pin --> Macros
-  // Macros --> Macro Pin
-  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_macros;
-};
-
 struct PhysicalHierarchyMaps
 {
   std::map<int, Cluster*> id_to_cluster;
@@ -95,8 +57,7 @@ struct PhysicalHierarchy
   BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
-  int halo_width{0};
-  int halo_height{0};
+  HardMacro::Halo default_halo;
   int64_t macro_with_halo_area{0};
 
   // The constraint set by the user.
@@ -144,7 +105,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setDataFlowDriven() { data_flow_driven_ = true; };
+  void setHalos(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -154,6 +115,8 @@ class ClusteringEngine
                                   int cluster_id,
                                   bool include_macro);
 
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
   void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                std::vector<HardMacro>& sa_macros,
                                UniqueClusterVector& macro_clusters,
@@ -176,11 +139,11 @@ class ClusteringEngine
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                                  const odb::Rect& core) const;
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void addIgnorableMacro(odb::dbInst* inst);
   void setDieArea();
   void setFloorplanShape();
+  void createHardMacros();
   bool movableCellsFitInMacroPlacementArea() const;
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
@@ -254,37 +217,9 @@ class ClusteringEngine
 
   void clearConnections();
   void buildNetListConnections();
-  void buildDataFlowConnections();
   Net buildNet(odb::dbNet* db_net) const;
   void connectClusters(const Net& net);
   void connect(Cluster* a, Cluster* b, float connection_weight) const;
-
-  // Methods for data flow
-  void createDataFlow();
-  bool stdCellsHaveLiberty();
-  VerticesMaps computeVertices();
-  void computeIOVertices(VerticesMaps& vertices_maps);
-  void computePadVertices(VerticesMaps& vertices_maps);
-  void computeStdCellVertices(VerticesMaps& vertices_maps);
-  void computeMacroPinVertices(VerticesMaps& vertices_maps);
-  DataFlowHypergraph computeHypergraph(int num_of_vertices);
-  void dataFlowDFSIOPin(int parent,
-                        int idx,
-                        const VerticesMaps& vertices_maps,
-                        const DataFlowHypergraph& hypergraph,
-                        std::vector<std::set<odb::dbInst*>>& insts,
-                        std::vector<bool>& visited,
-                        bool backward_search);
-  void dataFlowDFSMacroPin(int parent,
-                           int idx,
-                           const VerticesMaps& vertices_maps,
-                           const DataFlowHypergraph& hypergraph,
-                           std::vector<std::set<odb::dbInst*>>& std_cells,
-                           std::vector<std::set<odb::dbInst*>>& macros,
-                           std::vector<bool>& visited,
-                           bool backward_search);
-  std::set<int> computeSinks(const std::set<odb::dbInst*>& insts);
-  float computeConnWeight(int hops);
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   int64_t computeArea(odb::dbInst* inst);
@@ -312,19 +247,13 @@ class ClusteringEngine
   int max_std_cell_{0};
   int min_std_cell_{0};
 
-  // Variables for data flow:
-  DataFlow data_connections_;
-  // The register distance between two macros for
-  // them to be considered connected when creating data flow.
-  const int max_num_of_hops_{5};
-  bool data_flow_driven_{false};
-
   const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
+  std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
 };
 
 }  // namespace mpl
