@@ -77,7 +77,7 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
   std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
   debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = [");
   for (const std::string& buffer : dlyBuffers) {
-    int bufDelay = techChar_->computeBufferDelay(buffer, extra_out_cap)
+    int bufDelay = techChar_->computeBufferDelay(buffer, buffer, extra_out_cap)
                    * std::pow(10, 14);
     debugPrint(logger_,
                CTS,
@@ -86,7 +86,7 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
                "{} : {}",
                buffer,
                bufDelay);
-    buffersDelay.push_back(techChar_->computeBufferDelay(buffer, extra_out_cap)
+    buffersDelay.push_back(techChar_->computeBufferDelay(buffer, buffer, extra_out_cap)
                            * std::pow(10, 14));
   }
   debugPrint(logger_, CTS, "insertion delay", 3, "]");
@@ -363,13 +363,16 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   for (int w = 0; w <= target; w++) {
     for (int i = 0; i < buffersDelay_.size(); i++) {
       const int delay = buffersDelay_[i];
+      int bestPrevWeight;
       if (delay > w) {
-        continue;
+        bestPrevWeight = 0;
+      } else {
+        bestPrevWeight = dp[w-delay];
       }
 
-      if (dp[w] <= dp[w - delay] + delay) {
+      if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + delay - w)) {
         dp_elements[w] = i;
-        dp[w] = dp[w - delay] + delay;
+        dp[w] = bestPrevWeight + delay;
       }
     }
   }
@@ -378,6 +381,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     return {};
   }
 
+  logger_->report("Initial best = {}", dp[target]);
   // adjust buffers delay for wire cap
   odb::Rect loadPinsBbox = odb::Rect();
   std::string sinkMaster;
@@ -391,10 +395,12 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
 
   int w = target;
   int nBufs = 0;
-  while (dp_elements[w] != -1) {
+  while (w > 0 && dp_elements[w] != -1) {
     nBufs++;
     w -= buffersDelay_[dp_elements[w]];
   }
+
+  logger_->report("Initial n bufs = {}", nBufs);
 
   float offsetX = (float) (loadPinsBbox.xCenter() - srcX) / (nBufs + 1);
   float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (nBufs + 1);
@@ -408,11 +414,16 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   for (int w = 0; w <= target; w++) {
     for (int i = 0; i < adjustedBuffersDelay.size(); i++) {
       const int delay = adjustedBuffersDelay[i];
+      int bestPrevWeight;
+      int prevBuf;
       if (delay > w) {
-        continue;
+        bestPrevWeight = 0;
+        prevBuf = -1;
+      } else {
+        bestPrevWeight = dp[w-delay];
+        prevBuf = dp_elements[w-delay];
       }
 
-      int prevBuf = dp_elements[w-delay];
       std::string load;
       if(prevBuf == -1) {
         load = sinkMaster;
@@ -420,9 +431,9 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
         load = dlyBuffers[prevBuf];
       }
       int updatedDelay = techChar_->computeDriverBufferDelay(dlyBuffers[i], load, extraOutCap) * std::pow(10, 14);
-      if (std::abs(dp[w] - w) >= std::abs(dp[w - delay] + updatedDelay - w)) {
+      if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + updatedDelay - w)) {
         dp_elements[w] = i;
-        dp[w] = dp[w - delay] + updatedDelay;
+        dp[w] = bestPrevWeight + updatedDelay;
       }
     }
   }
@@ -437,7 +448,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   tmp << "[";
   w = target;
   std::vector<std::string> selectedBuffers;
-  while (dp_elements[w] != -1) {
+  while (w > 0 && dp_elements[w] != -1) {
     if (w == target) {
       tmp << dlyBuffers[dp_elements[w]];
     } else {
