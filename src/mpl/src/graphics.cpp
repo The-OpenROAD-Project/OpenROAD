@@ -148,7 +148,7 @@ void Graphics::report(const float norm_cost)
   report(fence_penalty_);
   report(guidance_penalty_);
   report(boundary_penalty_);
-  report(macro_blockage_penalty_);
+  report(soft_blockage_penalty_);
   report(fixed_macros_penalty_);
   report(notch_penalty_);
   report(std::optional<PenaltyData>({"Total", 1.0f, norm_cost, 1.0f}));
@@ -257,7 +257,7 @@ void Graphics::resetPenalties()
   fence_penalty_.reset();
   guidance_penalty_.reset();
   boundary_penalty_.reset();
-  macro_blockage_penalty_.reset();
+  soft_blockage_penalty_.reset();
   notch_penalty_.reset();
 }
 
@@ -266,9 +266,9 @@ void Graphics::setNotchPenalty(const PenaltyData& penalty)
   notch_penalty_ = penalty;
 }
 
-void Graphics::setMacroBlockagePenalty(const PenaltyData& penalty)
+void Graphics::setSoftBlockagePenalty(const PenaltyData& penalty)
 {
-  macro_blockage_penalty_ = penalty;
+  soft_blockage_penalty_ = penalty;
 }
 
 void Graphics::setFixedMacrosPenalty(const PenaltyData& penalty)
@@ -341,22 +341,13 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
   }
 }
 
-void Graphics::drawAllBlockages(gui::Painter& painter)
+void Graphics::drawSoftBlockages(gui::Painter& painter)
 {
-  if (!macro_blockages_.empty()) {
+  if (!soft_blockages_.empty()) {
     painter.setPen(gui::Painter::kGray, true);
     painter.setBrush(gui::Painter::kGray, gui::Painter::kDiagonal);
 
-    for (const auto& blockage : macro_blockages_) {
-      drawOffsetRect(blockage, "", painter);
-    }
-  }
-
-  if (!placement_blockages_.empty()) {
-    painter.setPen(gui::Painter::kGreen, true);
-    painter.setBrush(gui::Painter::kGreen, gui::Painter::kDiagonal);
-
-    for (const auto& blockage : placement_blockages_) {
+    for (const auto& blockage : soft_blockages_) {
       drawOffsetRect(blockage, "", painter);
     }
   }
@@ -406,7 +397,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   // Draw blockages and notches only during SA for SoftMacros
   if (!soft_macros_.empty()) {
-    drawAllBlockages(painter);
+    drawSoftBlockages(painter);
     drawNotches(painter);
   }
 
@@ -669,8 +660,7 @@ void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
   to.addY(outline_.yMin());
 }
 
-// Give some transparency to mixed and hard so we can see overlap with
-// macro blockages.
+// Give some transparency so we can see the blockages beneath.
 void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
@@ -680,7 +670,7 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
   }
 
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
-    painter.setBrush(gui::Painter::kDarkBlue);
+    painter.setBrush(gui::Painter::Color(0x00, 0x00, 0x80, 150));
   } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
     // dark red
     painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
@@ -690,15 +680,9 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
   }
 }
 
-void Graphics::setMacroBlockages(const std::vector<odb::Rect>& macro_blockages)
+void Graphics::setSoftBlockages(const std::vector<odb::Rect>& soft_blockages)
 {
-  macro_blockages_ = macro_blockages;
-}
-
-void Graphics::setPlacementBlockages(
-    const std::vector<odb::Rect>& placement_blockages)
-{
-  placement_blockages_ = placement_blockages;
+  soft_blockages_ = soft_blockages;
 }
 
 void Graphics::setShowBundledNets(bool show_bundled_nets)
@@ -797,8 +781,7 @@ void Graphics::eraseDrawing()
 
   soft_macros_.clear();
   hard_macros_.clear();
-  macro_blockages_.clear();
-  placement_blockages_.clear();
+  soft_blockages_.clear();
   nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();

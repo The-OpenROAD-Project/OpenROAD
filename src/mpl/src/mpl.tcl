@@ -22,7 +22,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -fence_weight fence_weight \
                                           -boundary_weight boundary_weight \
                                           -notch_weight notch_weight \
-                                          -macro_blockage_weight macro_blockage_weight \
+                                          -soft_blockage_weight soft_blockage_weight \
                                           -target_util   target_util \
                                           -min_ar  min_ar \
                                           -report_directory report_directory \
@@ -37,7 +37,7 @@ proc rtl_macro_placer { args } {
          -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight \
-         -macro_blockage_weight -target_util \
+         -soft_blockage_weight -target_util \
          -min_ar \
          -report_directory \
          -write_macro_placement } \
@@ -75,7 +75,7 @@ proc rtl_macro_placer { args } {
   set fence_weight 10.0
   set boundary_weight 50.0
   set notch_weight 50.0
-  set macro_blockage_weight 10.0
+  set soft_blockage_weight 10.0
   set target_util 0.25
   set min_ar 0.33
   set report_directory "hier_rtlmp"
@@ -151,8 +151,8 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-notch_weight)] } {
     set notch_weight $keys(-notch_weight)
   }
-  if { [info exists keys(-macro_blockage_weight)] } {
-    set macro_blockage_weight $keys(-macro_blockage_weight)
+  if { [info exists keys(-soft_blockage_weight)] } {
+    set soft_blockage_weight $keys(-soft_blockage_weight)
   }
   if { [info exists keys(-target_util)] } {
     set target_util $keys(-target_util)
@@ -184,7 +184,7 @@ proc rtl_macro_placer { args } {
       $fence_lx $fence_ly $fence_ux $fence_uy \
       $area_weight $outline_weight $wirelength_weight \
       $guidance_weight $fence_weight $boundary_weight \
-      $notch_weight $macro_blockage_weight \
+      $notch_weight $soft_blockage_weight \
       $target_util \
       $min_ar \
       $report_directory \
