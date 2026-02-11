@@ -55,6 +55,15 @@
         ]
       },
       {
+        "name":"ignore_usage_",
+        "type":"bool",
+        "schema":"kSchemaIgnoreUsage",
+        "default":"false",
+        "flags": [
+          "private"
+        ]
+      },
+      {
         "name":"is_connect_to_term_",
         "type":"bool",
         "schema":"kSchemaGuideConnectedToTerm",
