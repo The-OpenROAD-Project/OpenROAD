@@ -51,8 +51,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float target_util,
                           const float min_ar,
                           const char* report_directory,
-                          const bool keep_clustering_data,
-                          const bool data_flow_driven) {
+                          const bool keep_clustering_data) {
 
   auto macro_placer = getMacroPlacer();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
@@ -84,8 +83,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              target_util,
                              min_ar,
                              report_directory,
-                             keep_clustering_data,
-                             data_flow_driven);
+                             keep_clustering_data);
 }
 
 void set_debug_cmd(odb::dbBlock* block,
@@ -137,6 +135,17 @@ add_guidance_region(odb::dbInst* macro,
   getMacroPlacer()->addGuidanceRegion(macro, region);
 }
 
+void
+set_macro_halo(odb::dbInst* macro, 
+               float width, 
+               float height) 
+{
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  int width_dbu = block->micronsToDbu(width);
+  int height_dbu = block->micronsToDbu(height);
+
+  getMacroPlacer()->setMacroHalo(macro, width_dbu, height_dbu);
+}
 
 void
 set_macro_placement_file(std::string file_name)

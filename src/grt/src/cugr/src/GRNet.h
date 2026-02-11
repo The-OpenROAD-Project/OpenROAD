@@ -47,6 +47,8 @@ class GRNet
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
+  void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
+  void addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap);
   const std::map<odb::dbBTerm*, AccessPoint>& getBTermAccessPoints() const
   {
     return bterm_to_ap_;
@@ -55,6 +57,7 @@ class GRNet
   {
     return iterm_to_ap_;
   }
+  bool isLocal() const;
 
  private:
   int index_;

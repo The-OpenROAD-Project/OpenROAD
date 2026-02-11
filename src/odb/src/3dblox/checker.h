@@ -5,7 +5,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "unfoldedModel.h"
+#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -17,26 +17,30 @@ class Checker
  public:
   Checker(utl::Logger* logger);
   ~Checker() = default;
-  void check(odb::dbChip* chip);
+  void check(dbChip* chip);
 
  private:
-  void checkFloatingChips(const UnfoldedModel& model,
-                          dbMarkerCategory* category);
-  void checkOverlappingChips(const UnfoldedModel& model,
-                             dbMarkerCategory* category);
-  void checkConnectionRegions(const UnfoldedModel& model,
-                              dbChip* chip,
-                              dbMarkerCategory* category);
-  void checkBumpPhysicalAlignment(const UnfoldedModel& model,
-                                  dbMarkerCategory* category);
-  void checkNetConnectivity(const UnfoldedModel& model,
-                            dbChip* chip,
-                            dbMarkerCategory* category);
-
+  struct MatingSurfaces
+  {
+    bool valid;
+    int top_z;
+    int bot_z;
+  };
+  void checkFloatingChips(dbMarkerCategory* top_cat,
+                          const UnfoldedModel& model);
+  void checkOverlappingChips(dbMarkerCategory* top_cat,
+                             const UnfoldedModel& model);
+  void checkConnectionRegions(dbMarkerCategory* top_cat,
+                              const UnfoldedModel& model);
+  void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
+                                  const UnfoldedModel& model);
+  void checkNetConnectivity(dbMarkerCategory* top_cat,
+                            const UnfoldedModel& model);
   bool isOverlapFullyInConnections(const UnfoldedChip* chip1,
                                    const UnfoldedChip* chip2,
                                    const Cuboid& overlap) const;
-
+  MatingSurfaces getMatingSurfaces(const UnfoldedConnection& conn) const;
+  bool isValid(const UnfoldedConnection& conn) const;
   utl::Logger* logger_;
 };
 
