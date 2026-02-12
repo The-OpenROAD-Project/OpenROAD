@@ -30,16 +30,27 @@ class Logger;
 
 namespace rmp {
 
-struct SolutionSlack final
+class SolutionSlack final
 {
-  using Type = std::vector<GiaOp>;
-  Type solution_;
+ public:
+  using ResultOps = std::vector<GiaOp>;
+
+ private:
+  ResultOps solution_;
   std::optional<sta::Slack> worst_slack_ = std::nullopt;
 
+ public:
+  explicit SolutionSlack() = default;
+  explicit SolutionSlack(ResultOps solution) : solution_{std::move(solution)} {}
+  explicit SolutionSlack(ResultOps& solution, sta::Slack worst_slack)
+      : solution_{solution}, worst_slack_{worst_slack}
+  {
+  }
+
   std::string toString() const;
-  Type RandomNeighbor(const Type& all_ops,
-                      utl::Logger* logger,
-                      std::mt19937& random) const;
+  ResultOps RandomNeighbor(const ResultOps& all_ops,
+                           utl::Logger* logger,
+                           std::mt19937& random) const;
 
   sta::Vertex* Evaluate(const std::vector<sta::Vertex*>& candidate_vertices,
                         cut::AbcLibrary& abc_library,
@@ -47,6 +58,9 @@ struct SolutionSlack final
                         sta::dbSta* sta,
                         utl::UniqueName& name_generator,
                         utl::Logger* logger);
+  ResultOps Solution() const { return solution_; }
+  ResultOps& Solution() { return solution_; }
+  std::optional<sta::Slack> WorstSlack() const { return worst_slack_; }
 };
 
 // TODO docs
