@@ -183,8 +183,8 @@ class HierRTLMP
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustSoftBlockageWeight();
   void placeChildren(Cluster* parent);
-  RectList findIntersections(const RectList& candidate_blockages,
-                             const odb::Rect& outline) const;
+  RectList findOffsetIntersections(const RectList& candidate_blockages,
+                                   const odb::Rect& outline) const;
   void eliminateOverlaps(std::vector<odb::Rect>& blockages) const;
   void createSoftMacrosForBlockages(const std::vector<odb::Rect>& blockages,
                                     std::vector<SoftMacro>& macros);

@@ -1157,7 +1157,7 @@ void HierRTLMP::setMacroClustersShapes(
 }
 
 // Recommendation from the original implementation:
-// For single level, increase macro blockage weight to
+// For single level, increase soft blockage weight to
 // half of the outline weight.
 void HierRTLMP::adjustSoftBlockageWeight()
 {
@@ -1167,7 +1167,7 @@ void HierRTLMP::adjustSoftBlockageWeight()
                MPL,
                "hierarchical_macro_placement",
                1,
-               "Tree max level is {}, Changing macro blockage weight from {} "
+               "Tree max level is {}, Changing soft blockage weight from {} "
                "to {} (half of the outline weight)",
                tree_->max_level,
                cluster_placement_weights_.soft_blockage,
@@ -1213,11 +1213,12 @@ void HierRTLMP::placeChildren(Cluster* parent)
   std::map<int, odb::Rect> guides;
   std::vector<SoftMacro> macros;
 
-  RectList hard_blockages = findIntersections(placement_blockages_, outline);
+  RectList hard_blockages
+      = findOffsetIntersections(placement_blockages_, outline);
   eliminateOverlaps(hard_blockages);
   createSoftMacrosForBlockages(hard_blockages, macros);
 
-  RectList soft_blockages = findIntersections(io_blockages_, outline);
+  RectList soft_blockages = findOffsetIntersections(io_blockages_, outline);
   if (graphics_) {
     graphics_->setSoftBlockages(soft_blockages);
   }
@@ -1483,14 +1484,15 @@ std::vector<float> HierRTLMP::computeUtilizationList(
   return utilization_list;
 }
 
-RectList HierRTLMP::findIntersections(const RectList& candidate_blockages,
-                                      const odb::Rect& outline) const
+RectList HierRTLMP::findOffsetIntersections(const RectList& candidate_blockages,
+                                            const odb::Rect& outline) const
 {
   RectList intersections;
 
   for (const odb::Rect& candidate_blockage : candidate_blockages) {
     odb::Rect intersection;
     candidate_blockage.intersection(outline, intersection);
+    intersection.moveDelta(-outline.xMin(), -outline.yMin());
     intersections.push_back(intersection);
   }
 
