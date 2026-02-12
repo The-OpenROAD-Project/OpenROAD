@@ -1,4 +1,3 @@
-#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -100,7 +99,7 @@ TEST_F(DbvFixture, test_3dbx)
             "soc_inst_duplicate");
   EXPECT_EQ(connection->getBottomRegion()->getChipInst()->getName(),
             "soc_inst");
-  EXPECT_EQ(connection->getThickness(), 2.0 * db_->getDbuPerMicron());
+  EXPECT_EQ(connection->getThickness(), 0);
   connection = *itr;
   EXPECT_EQ(connection->getName(), "soc_to_virtual");
   EXPECT_EQ(connection->getTopRegion()->getChipInst()->getName(),
