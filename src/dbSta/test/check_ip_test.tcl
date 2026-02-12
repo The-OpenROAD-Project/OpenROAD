@@ -13,8 +13,13 @@ puts "=============================================="
 # Load the test LEF file
 set script_dir [file dirname [info script]]
 set test_lef "$script_dir/check_ip_test.lef"
+set test_def "$script_dir/check_ip_test.def"
 puts "Loading: $test_lef"
 read_lef $test_lef
+
+# Load DEF to set up track grids (needed for LEF-CHK-003)
+puts "Loading: $test_def (track grid definitions)"
+read_def $test_def
 
 # Helper to run a test that expects failure
 proc test_check_fails { test_name master_name { extra_args "" } } {
@@ -67,11 +72,17 @@ test_check_fails "LEF-CHK-001: Macro width not aligned to mfg grid" "lef001_grid
 # Test 2: LEF-CHK-002 - Pin coordinates not on manufacturing grid
 test_check_fails "LEF-CHK-002: Pin coords not aligned to mfg grid" "lef002_pin_grid"
 
-# Test 3: LEF-CHK-003 - Pin not aligned to routing grid
-# NOTE: This check requires track grids which need a full design setup.
-# Skipping as it requires external PDK files.
-puts "\n--- Test: LEF-CHK-003: Pin not aligned to routing grid ---"
-puts "SKIPPED: Requires track grids (needs full design setup with PDK)"
+# Test 3a: LEF-CHK-003 - Single-pattern pass (pin distances are multiples of pitch)
+test_check_passes "LEF-CHK-003a: Single-pattern compatible (PASS)" "lef003a_single_pass"
+
+# Test 3b: LEF-CHK-003 - Single-pattern fail (pin distance GCD not multiple of pitch)
+test_check_fails "LEF-CHK-003b: Single-pattern incompatible (FAIL)" "lef003b_single_fail"
+
+# Test 3c: LEF-CHK-003 - Multi-pattern pass (effective pitch from two track patterns)
+test_check_passes "LEF-CHK-003c: Multi-pattern effective pitch (PASS)" "lef003c_multi_pass"
+
+# Test 3d: LEF-CHK-003 - Multi-pattern fail (still can't align with effective pitch)
+test_check_fails "LEF-CHK-003d: Multi-pattern still incompatible (FAIL)" "lef003d_multi_fail"
 
 # Test 4: LEF-CHK-004 - Signal pin not accessible
 test_check_fails "LEF-CHK-004: Signal pin blocked by obstruction" "lef004_signal_blocked"

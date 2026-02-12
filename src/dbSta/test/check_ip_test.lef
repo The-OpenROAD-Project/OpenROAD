@@ -98,10 +98,13 @@ MACRO lef002_pin_grid
 END lef002_pin_grid
 
 # =============================================================================
-# LEF-CHK-003: Pin NOT aligned to routing grid
-# Pin center at x=0.555 is not on track grid (expects 0.1, 0.3, 0.5, 0.7...)
+# LEF-CHK-003a: Pin distances compatible with single-pattern track grid (PASS)
+# Two minimum-width pins on M1 (horizontal, pitch 0.200 = 200 DBU)
+# Pin A center_y = (1000+1100)/2 = 1050
+# Pin B center_y = (1400+1500)/2 = 1450
+# Distance = 400, GCD = 400. 400 % 200 == 0 -> PASS
 # =============================================================================
-MACRO lef003_routing_grid
+MACRO lef003a_single_pass
   CLASS BLOCK ;
   ORIGIN 0 0 ;
   SIZE 10.000 BY 10.000 ;
@@ -111,10 +114,137 @@ MACRO lef003_routing_grid
     ANTENNAMODEL OXIDE1 ;
     PORT
       LAYER M1 ;
-      RECT 0.455 0.955 0.655 1.155 ;
+      RECT 0.000 1.000 0.200 1.100 ;
     END
   END A
-END lef003_routing_grid
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.400 0.200 1.500 ;
+    END
+  END B
+END lef003a_single_pass
+
+# =============================================================================
+# LEF-CHK-003b: Pin distances NOT compatible with single-pattern grid (FAIL)
+# Three minimum-width pins on M2 (vertical, pitch 0.200 = 200 DBU)
+# Pin A center_x = (100+200)/2 = 150
+# Pin B center_x = (250+350)/2 = 300
+# Pin C center_x = (380+480)/2 = 430
+# Distances: 150, 130. GCD = 10. 10 % 200 != 0 -> FAIL
+# =============================================================================
+MACRO lef003b_single_fail
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.100 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.250 1.000 0.350 1.200 ;
+    END
+  END B
+  PIN C
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.380 1.000 0.480 1.200 ;
+    END
+  END C
+END lef003b_single_fail
+
+# =============================================================================
+# LEF-CHK-003c: Multi-pattern effective pitch allows alignment (PASS)
+# M2 has two track patterns: pitch=200 at offsets 0 and 100
+# Effective pitch = GCD(200, 200, |100-0|) = 100
+# Two minimum-width pins on M2:
+# Pin A center_x = (100+200)/2 = 150
+# Pin B center_x = (400+500)/2 = 450
+# Distance = 300. GCD = 300. 300 % 100 == 0 -> PASS
+# Note: 300 % 200 != 0, so this would FAIL with single pattern.
+# This demonstrates that the effective pitch matters.
+# =============================================================================
+MACRO lef003c_multi_pass
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.100 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.400 1.000 0.500 1.200 ;
+    END
+  END B
+END lef003c_multi_pass
+
+# =============================================================================
+# LEF-CHK-003d: Multi-pattern effective pitch still can't align (FAIL)
+# M2 effective pitch = 100 (from two patterns above)
+# Three minimum-width pins on M2:
+# Pin A center_x = (100+200)/2 = 150
+# Pin B center_x = (230+330)/2 = 280
+# Pin C center_x = (390+490)/2 = 440
+# Distances: 130, 160. GCD(130, 160) = 10. 10 % 100 != 0 -> FAIL
+# =============================================================================
+MACRO lef003d_multi_fail
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.100 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.230 1.000 0.330 1.200 ;
+    END
+  END B
+  PIN C
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.390 1.000 0.490 1.200 ;
+    END
+  END C
+END lef003d_multi_fail
 
 # =============================================================================
 # LEF-CHK-004: Signal pin has NO accessible edge (blocked by obstruction)

@@ -3,8 +3,6 @@
 
 #include "db_sta/IpChecker.hh"
 
-#include <set>
-
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -92,6 +90,13 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
   if (!master) {
     return;
   }
+   // Only check BLOCK macros, not standard cells.
+  if (!master->isBlock()) {
+    logger_->info(utl::CHK, 8,
+                  "Skipping master {} (class is not BLOCK)",
+                  master->getName());
+    return;
+  }
 
   checkManufacturingGridAlignment(master);     // LEF-CHK-001
   checkPinManufacturingGridAlignment(master);  // LEF-CHK-002
@@ -118,8 +123,9 @@ void IpChecker::checkManufacturingGridAlignment(odb::dbMaster* master)
   uint32_t height = master->getHeight();
   std::string master_name = master->getName();
 
-  // Convert to microns for display (assuming DBU = nm)
-  double mfg_grid_um = mfg_grid / 1000.0;
+  // Convert to microns for display
+  double dbu_per_micron = tech->getDbUnitsPerMicron();
+  double mfg_grid_um = mfg_grid / dbu_per_micron;
 
   if (width % mfg_grid != 0) {
     logger_->warn(
@@ -151,7 +157,8 @@ void IpChecker::checkPinManufacturingGridAlignment(odb::dbMaster* master)
   }
 
   int mfg_grid = tech->getManufacturingGrid();
-  double mfg_grid_um = mfg_grid / 1000.0;
+  double dbu_per_micron = tech->getDbUnitsPerMicron();
+  double mfg_grid_um = mfg_grid / dbu_per_micron;
   std::string master_name = master->getName();
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -170,7 +177,7 @@ void IpChecker::checkPinManufacturingGridAlignment(odb::dbMaster* master)
               mterm->getName(),
               mfg_grid_um);
           warning_count_++;
-          return;  // One warning per pin is enough
+          return;  // One warning per master is enough
         }
       }
     }
@@ -197,6 +204,10 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
 
   std::string master_name = master->getName();
 
+  // Collect minimum-width signal pin centers grouped by layer
+  // key: layer, value: list of pin center positions along routing direction
+  std::map<odb::dbTechLayer*, std::vector<int>> layer_pin_centers;
+
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     odb::dbSigType sig_type = mterm->getSigType();
     if (sig_type == odb::dbSigType::POWER
@@ -211,54 +222,108 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
           continue;
         }
 
-        odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
-        if (!track_grid) {
-          continue;
-        }
-
-        // Get track pitches (step) from track grid patterns
-        int origin_x = 0, line_count_x = 0, x_pitch = 0;
-        int origin_y = 0, line_count_y = 0, y_pitch = 0;
-        if (track_grid->getNumGridPatternsX() > 0) {
-          track_grid->getGridPatternX(0, origin_x, line_count_x, x_pitch);
-        }
-        if (track_grid->getNumGridPatternsY() > 0) {
-          track_grid->getGridPatternY(0, origin_y, line_count_y, y_pitch);
-        }
-
-        if (x_pitch <= 0 || y_pitch <= 0) {
-          continue;
-        }
-
         odb::Rect rect = box->getBox();
-        int pin_width = rect.dx();
-        int pin_height = rect.dy();
+        uint32_t min_width = layer->getWidth();
+        bool is_horizontal =
+            (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 
-        // Check if pin dimensions are compatible with track pitch
-        bool is_horizontal
-            = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
-
-        bool compatible = false;
-        if (is_horizontal) {
-          // Horizontal layer: pin height should be compatible with y_pitch
-          compatible
-              = (pin_height % y_pitch == 0) || (y_pitch % pin_height == 0);
-        } else {
-          // Vertical layer: pin width should be compatible with x_pitch
-          compatible = (pin_width % x_pitch == 0) || (x_pitch % pin_width == 0);
+        // Only check minimum-width pins
+        // For wider pins, routing can connect regardless of offset
+        int pin_dim = is_horizontal ? rect.dy() : rect.dx();
+        if (min_width > 0 && static_cast<uint32_t>(pin_dim) > min_width) {
+          continue;  // Wider than minimum, skip for now
         }
 
-        if (!compatible) {
-          logger_->warn(utl::CHK,
-                        30,
-                        "Pin {}/{} dimensions not compatible with routing "
-                        "track pitch on layer {}",
-                        master_name,
-                        mterm->getName(),
-                        layer->getName());
-          warning_count_++;
-        }
+        // Pin center along the routing direction
+        int center = is_horizontal
+                         ? (rect.yMin() + rect.yMax()) / 2
+                         : (rect.xMin() + rect.xMax()) / 2;
+        layer_pin_centers[layer].push_back(center);
       }
+    }
+  }
+
+  // For each layer, compute GCD of distances and check against track pitch
+  for (auto& [layer, centers] : layer_pin_centers) {
+    if (centers.size() < 2) {
+      continue;  // Need at least 2 pins to compute distances
+    }
+
+    // Sort and compute distances between consecutive pin centers
+    std::sort(centers.begin(), centers.end());
+    int distance_gcd = 0;
+    for (size_t i = 1; i < centers.size(); i++) {
+      int dist = centers[i] - centers[i - 1];
+      if (dist > 0) {
+        distance_gcd = std::gcd(distance_gcd, dist);
+      }
+    }
+
+    if (distance_gcd == 0) {
+      continue;  // All pins at same position
+    }
+
+    odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
+    if (!track_grid) {
+      continue;
+    }
+
+    // Compute the effective pitch across all track patterns on this layer.
+    // Multiple patterns with different offsets create a finer effective pitch.
+    bool is_horizontal =
+        (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
+    int num_patterns = is_horizontal
+                           ? track_grid->getNumGridPatternsY()
+                           : track_grid->getNumGridPatternsX();
+
+    if (num_patterns == 0) {
+      continue;
+    }
+
+    // Collect all origins and pitches
+    std::vector<int> origins;
+    int effective_pitch = 0;
+
+    for (int i = 0; i < num_patterns; i++) {
+      int origin = 0, line_count = 0, pitch = 0;
+      if (is_horizontal) {
+        track_grid->getGridPatternY(i, origin, line_count, pitch);
+      } else {
+        track_grid->getGridPatternX(i, origin, line_count, pitch);
+      }
+
+      if (pitch > 0) {
+        effective_pitch = std::gcd(effective_pitch, pitch);
+        origins.push_back(origin);
+      }
+    }
+
+    // The offsets between pattern origins also refine the effective pitch
+    for (size_t i = 1; i < origins.size(); i++) {
+      int offset_diff = std::abs(origins[i] - origins[0]);
+      if (offset_diff > 0) {
+        effective_pitch = std::gcd(effective_pitch, offset_diff);
+      }
+    }
+
+    if (effective_pitch <= 0) {
+      continue;
+    }
+
+    // Pin distance GCD must be a multiple of the effective pitch
+    bool compatible = (distance_gcd % effective_pitch == 0);
+
+    if (!compatible) {
+      logger_->warn(utl::CHK,
+                    30,
+                    "Master {} signal pins on layer {} cannot be aligned "
+                    "to any track pattern (pin distance GCD={} is not a "
+                    "multiple of effective track pitch {})",
+                    master_name, 
+                    layer->getName(),
+                    distance_gcd, 
+                    effective_pitch);
+      warning_count_++;
     }
   }
 }
