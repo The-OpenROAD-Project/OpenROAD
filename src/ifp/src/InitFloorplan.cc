@@ -20,7 +20,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/util.h"
-#include "sta/Debug.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
