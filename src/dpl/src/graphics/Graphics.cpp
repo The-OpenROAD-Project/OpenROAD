@@ -94,7 +94,6 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     if (!cell->isPlaced()) {
       auto color = gui::Painter::kDarkMagenta;
-      // color.a = 50;
       painter.setPen(color);
       painter.setBrush(color);
       odb::Rect bbox;
